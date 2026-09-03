@@ -505,11 +505,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public String getDynamicCodePlus10() {
-            return SystemUtils.calculateDynamicCode();
-        }
-
-        @JavascriptInterface
         public String getNetworkStatusJson() {
             return SystemUtils.getNetworkStatus().toJson().toString();
         }
@@ -541,22 +536,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         public String getCarIp() {
             String ip = SystemUtils.getCarIpAddress();
             return ip != null ? ip : "127.0.0.1";
-        }
-
-        @JavascriptInterface
-        public void copyToClipboard(String text) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        ClipboardManager cm = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-                        ClipData clip = ClipData.newPlainText("code", text);
-                        cm.setPrimaryClip(clip);
-                        Toast.makeText(context, "已复制: " + text, Toast.LENGTH_SHORT).show();
-                    } catch (Exception ignored) {
-                    }
-                }
-            });
         }
 
         @JavascriptInterface
@@ -617,29 +596,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     AutoPilotManager.getInstance().startAutoInject(MainActivity.this, targetFile);
                 }
             });
-        }
-
-        @JavascriptInterface
-        public void cancelAutoPilot() {
-            AutoPilotManager.getInstance().cancel(context);
-        }
-
-        @JavascriptInterface
-        public String getDownloadedAmapListJson() {
-            try {
-                List<File> apks = AutoPilotManager.scanDownloadedAmapApks();
-                JSONArray arr = new JSONArray();
-                for (File apk : apks) {
-                    JSONObject item = new JSONObject();
-                    item.put("filename", apk.getName());
-                    item.put("path", apk.getAbsolutePath());
-                    item.put("sizeStr", String.format(java.util.Locale.CHINA, "%.1f MB", apk.length() / (1024.0 * 1024.0)));
-                    arr.put(item);
-                }
-                return arr.toString();
-            } catch (Exception e) {
-                return "[]";
-            }
         }
 
         @JavascriptInterface
@@ -731,29 +687,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public String checkRabbitPostReboot() {
-            JSONObject res = ThemePatcher.checkRabbitPostRebootStatus(context);
-            return res.toString();
-        }
-
-        @JavascriptInterface
-        public boolean isRabbitSafeModeEnabled() {
-            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            return prefs.getBoolean("rabbit_safe_mode_enabled", true);
-        }
-
-        @JavascriptInterface
         public boolean setRabbitSafeModeEnabled(boolean enabled) {
             android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             prefs.edit().putBoolean("rabbit_safe_mode_enabled", enabled).apply();
             pushDeviceInfoToWeb();
             return enabled;
-        }
-
-        @JavascriptInterface
-        public boolean isAutostartEnabled() {
-            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            return prefs.getBoolean("autostart_enabled", false);
         }
 
         @JavascriptInterface
@@ -904,22 +842,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     MainActivity.this.softReboot();
                 }
             });
-        }
-
-        @JavascriptInterface
-        public void uninstallAmap() {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    AdbClient.execute(context, "pm uninstall com.autonavi.amapauto");
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            showToast("已发送卸载高德指令 (com.autonavi.amapauto)");
-                        }
-                    });
-                }
-            }).start();
         }
 
         @JavascriptInterface
@@ -1144,27 +1066,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public boolean wakeBluetoothAudio() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            boolean ok = SystemUtils.wakeBluetoothAudioChannel(MainActivity.this);
-                            if (ok) {
-                                showToast(" 蓝牙音频通道选通信号已发送 (๑•̀ㅂ•́)و");
-                            } else {
-                                showToast("蓝牙音频通道选通信号已发送");
-                            }
-                        }
-                    }).start();
-                }
-            });
-            return true;
-        }
-
-        @JavascriptInterface
         public boolean toggleFreezeAppStore(final boolean freeze) {
             mainHandler.post(new Runnable() {
                 @Override
@@ -1188,30 +1089,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public boolean toggleFreezeMultimedia(final boolean freeze) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            SystemUtils.OpResult res1 = SystemUtils.setPackageEnabled(MainActivity.this, "com.ecarx.multimedia", !freeze);
-                            SystemUtils.OpResult res2 = SystemUtils.setPackageEnabled(MainActivity.this, "com.ecarx.xcmedia", !freeze);
-                            boolean ok = (res1 != null && res1.success) || (res2 != null && res2.success);
-                            if (freeze) {
-                                showToast(" 已安全冻结原厂多媒体伴听，释放后台运存 (๑•̀ㅂ•́)و");
-                            } else {
-                                showToast(" 已解冻恢复原厂多媒体伴听");
-                            }
-                            pushDeviceInfoToWeb();
-                        }
-                    }).start();
-                }
-            });
-            return true;
-        }
-
-        @JavascriptInterface
         public boolean isNightMode() {
             try {
                 int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
@@ -1219,28 +1096,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             } catch (Exception e) {
                 return false;
             }
-        }
-
-        @JavascriptInterface
-        public void openPermissions() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                        intent.setData(Uri.parse("package:" + context.getPackageName()));
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        context.startActivity(intent);
-                    } catch (Exception e) {
-                        try {
-                            Intent intent = new Intent(android.provider.Settings.ACTION_SETTINGS);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            context.startActivity(intent);
-                        } catch (Exception ignored) {
-                        }
-                    }
-                }
-            });
         }
 
         @JavascriptInterface
@@ -1353,27 +1208,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
                 }
             }).start();
-        }
-
-        @JavascriptInterface
-        public void showAllApps() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(context, "已装应用列表可直接在车机原生应用抽屉查看", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public void toggleFloatingCapsule() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    FloatingWindowService.ensureServiceStarted(MainActivity.this);
-                    Toast.makeText(context, "已唤起桌面悬浮小胶囊", Toast.LENGTH_SHORT).show();
-                }
-            });
         }
 
         @JavascriptInterface

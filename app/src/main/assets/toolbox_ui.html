@@ -472,10 +472,13 @@ body.light .app-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.06);
   display: flex; align-items: center; gap: 6px; margin-left: 10px; flex-shrink: 0;
 }
 .btn-dl {
-  height: 52px; min-width: 112px; padding: 0 18px; border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  border: none; color: #fff; font-size: 17px; font-weight: 900;
+  height: 56px; min-width: 120px; padding: 0 20px; border-radius: 10px;
+  background: var(--btn-bg);
+  border: 1.5px solid var(--border-strong);
+  color: var(--txt-strong);
+  font-size: 17px; font-weight: 900;
   cursor: pointer; transition: all 0.15s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   display: inline-flex; align-items: center; justify-content: center;
 }
 .btn-dl:active { transform: scale(0.96); }
@@ -827,6 +830,77 @@ body.light .changelog-item {
   z-index: 99; backdrop-filter: blur(8px);
 }
 .toast-banner.show { display: flex; }
+
+@keyframes rebootSlide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+
+/* ========== 全站统一黑白自适应车规按键规范 ========== */
+.btn-ctrl-lg,
+.btn-ctrl-md,
+.btn-icon,
+.btn-dl,
+.btn-redl,
+.btn-mini {
+  background: var(--btn-bg) !important;
+  border: 1.5px solid var(--border-strong) !important;
+  color: var(--txt-strong) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+  transition: all 0.12s ease !important;
+}
+
+.btn-ctrl-lg:active,
+.btn-ctrl-md:active,
+.btn-icon:active,
+.btn-dl:active,
+.btn-redl:active,
+.btn-mini:active {
+  background: rgba(255, 255, 255, 0.16) !important;
+  transform: scale(0.97) !important;
+}
+
+/* 彻底中性化：去除所有蓝色/渐变/高危彩色引导底色，统一为黑白自适应 */
+.btn-icon.primary, .btn-icon.highlight,
+.btn-ctrl-lg.highlight, .btn-ctrl-lg.danger,
+.btn-ctrl-md.primary, .btn-ctrl-md.highlight, .btn-ctrl-md.danger,
+.btn-mini.highlight, .btn-mini.danger, .btn-mini.freeze, .btn-mini.unfreeze,
+.btn-dl.done, .btn-dl.updating, .btn-dl.danger {
+  background: var(--btn-bg) !important;
+  border: 1.5px solid var(--border-strong) !important;
+  color: var(--txt-strong) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* 白天模式自适应：纯净白底、深墨黑字、微灰边框 */
+body.light .btn-ctrl-lg,
+body.light .btn-ctrl-md,
+body.light .btn-icon,
+body.light .btn-dl,
+body.light .btn-redl,
+body.light .btn-mini,
+body.light .btn-icon.primary, body.light .btn-icon.highlight,
+body.light .btn-ctrl-lg.highlight, body.light .btn-ctrl-lg.danger,
+body.light .btn-ctrl-md.primary, body.light .btn-ctrl-md.highlight, body.light .btn-ctrl-md.danger,
+body.light .btn-mini.highlight, body.light .btn-mini.danger, body.light .btn-mini.freeze, body.light .btn-mini.unfreeze,
+body.light .btn-dl.done, body.light .btn-dl.updating, body.light .btn-dl.danger {
+  background: #FFFFFF !important;
+  border: 1.5px solid rgba(15, 23, 42, 0.22) !important;
+  color: #0F172A !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light .btn-ctrl-lg:active,
+body.light .btn-ctrl-md:active,
+body.light .btn-icon:active,
+body.light .btn-dl:active,
+body.light .btn-redl:active,
+body.light .btn-mini:active {
+  background: #F1F5F9 !important;
+  transform: scale(0.97) !important;
+}
+
 </style>
 </head>
 <body>
@@ -884,16 +958,27 @@ body.light .changelog-item {
           <span class="dot green" id="rabbitStatusDot"></span> <span id="rabbitStatusText">就绪</span>
         </div>
       </div>
-      <div style="display:flex; flex-direction:column; gap:6px;">
-        <button class="btn-ctrl-lg highlight" style="min-height:48px; font-size:17.5px; font-weight:900; background:linear-gradient(135deg, var(--accent), var(--accent2)); color:#fff; border:none; box-shadow:0 3px 14px rgba(0,174,185,0.45);" onclick="handleStartAutoPilot(null)">一键卡兔子向导 (保姆级半自动)</button>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-          <button class="btn-ctrl-lg" style="min-height:44px; font-size:15px;" onclick="handleSelectApkInject()">选择导航 APK 注入</button>
-          <button class="btn-ctrl-lg" style="min-height:44px; font-size:15px;" onclick="handleOpenThemeManager()">打开车机主题</button>
-          <button class="btn-ctrl-lg danger" style="min-height:44px; font-size:15px;" onclick="handleSoftReboot()">一键软重启 (5秒)</button>
-          <button class="btn-ctrl-lg" style="min-height:44px; font-size:15px; border-color:#EF4444; color:#FCA5A5;" onclick="handleHardReboot()">完整硬重启</button>
-          <button class="btn-ctrl-lg" style="min-height:40px; font-size:14px; font-weight:800; border-color:var(--accent); color:var(--accent);" id="btnRestoreOfficialTheme" onclick="handleRestoreOfficialTheme()">还原官方原版时钟</button>
-          <button class="btn-ctrl-lg" style="min-height:40px; font-size:14px;" onclick="handleUninstallAmap()">卸载已安装高德</button>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn-ctrl-lg" style="min-height:64px; font-size:19px; font-weight:900;" onclick="handleStartAutoPilot(null)">一键卡兔子向导 (保姆级半自动)</button>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" onclick="handleSelectApkInject()">
+            <span style="font-size:16px; font-weight:900;">选择导航 APK 注入</span>
+            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">手动选择安装包</span>
+          </button>
+          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" onclick="handleOpenThemeManager()">
+            <span style="font-size:16px; font-weight:900;">打开车机主题</span>
+            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">原厂主题应用中心</span>
+          </button>
+          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" id="btnSoftReboot" onclick="handleSoftReboot()">
+            <span style="font-size:16px; font-weight:900;">一键软重启 (5秒)</span>
+            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">快速重载系统服务</span>
+          </button>
+          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" id="btnHardReboot" onclick="handleHardReboot()">
+            <span style="font-size:16px; font-weight:900;">完整硬重启</span>
+            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">整车硬件冷启动</span>
+          </button>
         </div>
+        <button class="btn-ctrl-lg" style="min-height:48px; font-size:14.5px; font-weight:800;" onclick="handleUninstallAmap()">卸载已安装高德 (恢复原厂底包)</button>
       </div>
     </div>
 
@@ -903,21 +988,21 @@ body.light .changelog-item {
         <div class="card-title">常用系统快捷通道</div>
         <div style="font-size:11.5px; color:var(--txt-dim); font-weight:700;">点击均提供二次防误触确认</div>
       </div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 6px;">
-        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:6px 4px; min-height:50px;" onclick="handleOpenFileManager()">
-          <span style="font-weight:800; font-size:13px;">原生文件管理</span>
-          <span class="btn-status-pill blue">直接安装APK</span>
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:12px 6px; min-height:76px;" onclick="handleOpenFileManager()">
+          <span style="font-weight:900; font-size:14.5px;">原生文件管理</span>
+          <span class="btn-status-pill blue" style="font-size:11.5px;">直接安装APK</span>
         </button>
-        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:6px 4px; min-height:50px;" onclick="handleToggleWhitelist()">
-          <span style="font-weight:800; font-size:13px;">白名单放行</span>
-          <span class="btn-status-pill green" id="pillWhitelist">已放行</span>
+        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:12px 6px; min-height:76px;" onclick="handleToggleWhitelist()">
+          <span style="font-weight:900; font-size:14.5px;">白名单放行</span>
+          <span class="btn-status-pill green" id="pillWhitelist" style="font-size:11.5px;">已放行</span>
         </button>
-        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:6px 4px; min-height:50px;" onclick="handleToggleFreezeAppStore()">
-          <span style="font-weight:800; font-size:13px;">冻结应用商店</span>
-          <span class="btn-status-pill green" id="pillAppstore">已冻结</span>
+        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:12px 6px; min-height:76px;" onclick="handleToggleFreezeAppStore()">
+          <span style="font-weight:900; font-size:14.5px;">冻结应用商店</span>
+          <span class="btn-status-pill green" id="pillAppstore" style="font-size:11.5px;">已冻结</span>
         </button>
       </div>
-      <button class="btn-ctrl-md highlight" style="width:100%; min-height:40px; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="handleOpenDeepToolsModal()">
+      <button class="btn-ctrl-md" style="width:100%; min-height:50px; font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="handleOpenDeepToolsModal()">
         <span>打开车机深度工具箱 (ADB / 动态暗码 / 清理 / 全量组件)</span>
       </button>
     </div>
@@ -954,7 +1039,7 @@ body.light .changelog-item {
         <button class="tab-item" onclick="switchCategory('navigation')">车载导航</button>
         <button class="tab-item" onclick="switchCategory('music')">音乐应用</button>
         <button class="tab-item" onclick="switchCategory('tool')">车机工具</button>
-        <button class="tab-item" id="btnRefreshApps" style="color:var(--accent); font-weight:800; border:1px solid var(--border);" onclick="handleRefreshCloudApps()">刷新</button>
+        <button class="tab-item" id="btnRefreshApps" style="font-weight:800;" onclick="handleRefreshCloudApps()">刷新</button>
         <button class="tab-item" style="color:var(--txt-dim); border:1px solid var(--border);" onclick="handleOpenCleanDialog()">清理</button>
       </div>
     </div>
@@ -970,7 +1055,7 @@ body.light .changelog-item {
   <div class="modal-card" style="width:560px;">
     <div class="modal-header">
       <div class="modal-title" id="rabbitInstallModalTitle">高德地图安装指引</div>
-      <button class="modal-close" onclick="closeModal('rabbitInstallModal')">×</button>
+      <button class="modal-close" onclick="closeModal('rabbitInstallModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div class="modal-info-box">
       <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong); margin-bottom:4px;" id="rabbitInstallAppName">高德地图 8.5</div>
@@ -982,7 +1067,7 @@ body.light .changelog-item {
       标准安装流程：启动向导 -> 主题应用兔子时钟 -> 一键软重启 -> 开机秒弹安装器完成覆盖。
     </div>
     <div class="modal-actions" style="display:flex; flex-direction:column; gap:8px;">
-      <button class="btn-ctrl-md primary" style="height:44px; font-size:14.5px; font-weight:900;" onclick="handleRabbitAutoPilotInstall()">一键卡兔子向导 (保姆级半自动 · 推荐)</button>
+      <button class="btn-ctrl-md" style="height:44px; font-size:14.5px; font-weight:900;" onclick="handleRabbitAutoPilotInstall()">一键卡兔子向导 (保姆级半自动)</button>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
         <button class="btn-ctrl-md" style="height:38px; font-size:13px;" onclick="handleRabbitOpenFolder()">打开原生文件管理</button>
         <button class="btn-ctrl-md" style="height:38px; font-size:13px;" onclick="handleRabbitReInject()">仅重新注入伪装</button>
@@ -997,7 +1082,7 @@ body.light .changelog-item {
   <div class="modal-card" style="width:560px;">
     <div class="modal-header">
       <div class="modal-title" id="rabbitPostRebootTitle">兔子时钟就绪 · 白名单已自动放行</div>
-      <button class="modal-close" onclick="dismissPostRebootModal()">×</button>
+      <button class="modal-close" onclick="dismissPostRebootModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div class="modal-info-box" style="background:rgba(16, 185, 129, 0.08); border-color:rgba(16, 185, 129, 0.35);">
       <div style="font-size:13.5px; font-weight:800; color:var(--success); margin-bottom:4px;" id="rabbitPostRebootHeader">白名单权限已自动开启 · 伪装与锁已自愈清除</div>
@@ -1024,7 +1109,7 @@ body.light .changelog-item {
   <div class="modal-card" style="width:560px;">
     <div class="modal-header">
       <div class="modal-title">选择要注入安装的高德地图版本</div>
-      <button class="modal-close" onclick="closeModal('selectAmapForAutoModal')">×</button>
+      <button class="modal-close" onclick="closeModal('selectAmapForAutoModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="font-size:13px; color:var(--txt-dim); margin-bottom:12px;">
       检测到机身 Download 目录存在多个高德安装包，请点击选择目标版本启动半自动向导：
@@ -1045,7 +1130,7 @@ body.light .changelog-item {
   <div class="modal-card" style="width:500px;">
     <div class="modal-header">
       <div class="modal-title">退出车机控制台</div>
-      <button class="modal-close" onclick="closeModal('exitAppModal')">×</button>
+      <button class="modal-close" onclick="closeModal('exitAppModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="padding:12px 4px; font-size:13.5px; color:var(--txt-dim); line-height:1.6;">
       你可以将工具箱【最小化到后台】（悬浮胶囊随时唤回），或【彻底退出】关闭所有后台服务与悬浮窗。
@@ -1064,7 +1149,7 @@ body.light .changelog-item {
   <div class="modal-card" style="width:540px;">
     <div class="modal-header">
       <div class="modal-title">关于吉利车机控制台</div>
-      <button class="modal-close" onclick="closeModal('aboutModal')">×</button>
+      <button class="modal-close" onclick="closeModal('aboutModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div class="about-box">
       <div class="about-item">
@@ -1110,7 +1195,7 @@ body.light .changelog-item {
   <div class="modal-card" style="width:600px; max-width:94vw;">
     <div class="modal-header">
       <div class="modal-title">发现吉利工具箱新版本</div>
-      <button class="modal-close" onclick="closeModal('updateModal')">×</button>
+      <button class="modal-close" onclick="closeModal('updateModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
 
     <!-- 升级版本对比流动横幅 -->
@@ -1150,7 +1235,7 @@ body.light .changelog-item {
   <div class="modal-card" style="width:640px;">
     <div class="modal-header">
       <div class="modal-title">主题皮肤选择 & 实时预览</div>
-      <button class="modal-close" onclick="closeModal('skinModal')">×</button>
+      <button class="modal-close" onclick="closeModal('skinModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="font-size:12px; color:var(--txt-dim); margin-bottom:2px;">
       点击任意主题即可立即全屏实时预览色彩效果，自动保存车机偏好设置：
@@ -1169,7 +1254,7 @@ body.light .changelog-item {
   <div class="modal-card" style="width:580px;">
     <div class="modal-header">
       <div class="modal-title">今日车机动态暗码 & 工程模式</div>
-      <button class="modal-close" onclick="closeModal('dynamicCodeModal')">×</button>
+      <button class="modal-close" onclick="closeModal('dynamicCodeModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
       <!-- 加10模式 卡片 (缤越COOL / E02 推荐优先) -->
@@ -1207,7 +1292,7 @@ body.light .changelog-item {
   <div class="modal-card" style="width:560px;">
     <div class="modal-header">
       <div class="modal-title">下载目录存储清理</div>
-      <button class="modal-close" onclick="closeModal('cleanDialogModal')">×</button>
+      <button class="modal-close" onclick="closeModal('cleanDialogModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="font-size:12px; color:var(--txt-dim); margin-bottom:2px;">
       目标目录：<code>/sdcard/Download/</code>
@@ -1246,7 +1331,7 @@ body.light .changelog-item {
           <span class="dot green" id="adbModalStatusDot"></span> <span id="adbModalStatusText">ADB 探测中...</span>
         </div>
       </div>
-      <button class="modal-close" onclick="closeModal('freezeModal')">×</button>
+      <button class="modal-close" onclick="closeModal('freezeModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); border-radius:8px; padding:6px 10px; font-size:11.5px; color:#FBBF24; line-height:1.45;">
       <b>原厂推荐建议</b>：优先冻结【吉利应用商店】，可彻底杜绝每次关机重启后白名单被重置为 0，实现<b>永久免重置安装第三方 APK</b>！
@@ -1315,7 +1400,7 @@ body.light .changelog-item {
           <span class="dot green" id="terminalAdbStatusDot"></span> <span id="terminalAdbStatusText">ADB 已就绪</span>
         </div>
       </div>
-      <button class="modal-close" onclick="closeModal('adbTerminalModal')">×</button>
+      <button class="modal-close" onclick="closeModal('adbTerminalModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
 
     <!-- 命令输入栏 -->
@@ -1356,7 +1441,7 @@ body.light .changelog-item {
   <div class="modal-card" style="width:700px;">
     <div class="modal-header">
       <div class="modal-title">车机全量应用高级管理</div>
-      <button class="modal-close" onclick="closeModal('allAppsModal')">×</button>
+      <button class="modal-close" onclick="closeModal('allAppsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     
     <!-- 搜索框 -->
@@ -1393,13 +1478,13 @@ body.light .changelog-item {
   <div class="modal-card" style="width:540px; max-width:94vw;">
     <div class="modal-header">
       <div class="modal-title" id="universalConfirmTitle">操作意图核准</div>
-      <button class="modal-close" onclick="closeModal('universalConfirmModal')">×</button>
+      <button class="modal-close" onclick="closeModal('universalConfirmModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div id="universalConfirmDesc" class="modal-info-box" style="font-size:13.5px; color:var(--txt-strong); line-height:1.65; margin-bottom:16px;">
     </div>
     <div class="modal-actions" style="justify-content:flex-end; gap:12px;">
       <button class="btn-ctrl-md" style="min-width:100px;" onclick="closeModal('universalConfirmModal')">取消</button>
-      <button class="btn-ctrl-md primary" id="universalConfirmOkBtn" style="min-width:130px; font-weight:800;" onclick="proceedUniversalConfirm()">确认执行</button>
+      <button class="btn-ctrl-md" id="universalConfirmOkBtn" style="min-width:130px; font-weight:800;" onclick="proceedUniversalConfirm()">确认执行</button>
     </div>
   </div>
 </div>
@@ -1414,7 +1499,7 @@ body.light .changelog-item {
     </div>
     <div class="modal-actions" style="justify-content:space-between; margin-top:6px;">
       <button class="btn-icon" style="height:36px; padding:0 14px;" onclick="cancelTripleConfirm()">取消操作</button>
-      <button class="btn-icon primary" id="confirmNextBtn" style="height:36px; padding:0 18px;" onclick="proceedTripleConfirm()">我已清楚，下一步 -></button>
+      <button class="btn-icon" id="confirmNextBtn" style="height:36px; padding:0 18px;" onclick="proceedTripleConfirm()">我已清楚，下一步 -></button>
     </div>
   </div>
 </div>
@@ -1424,7 +1509,7 @@ body.light .changelog-item {
   <div class="modal-card" style="width:520px; text-align:center;">
     <div class="modal-header">
       <div class="modal-title">手机无线快传 (扫码直连·免输网址)</div>
-      <button class="modal-close" onclick="closeModal('qrModal')">×</button>
+      <button class="modal-close" onclick="closeModal('qrModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="padding: 10px 0; display:flex; flex-direction:column; align-items:center;">
       <!-- 超大号高对比度纯白底二维码卡片 -->
@@ -1448,11 +1533,11 @@ body.light .changelog-item {
   <div class="modal-card" style="width:580px;">
     <div class="modal-header">
       <div class="modal-title">车机守护与系统设置</div>
-      <button class="modal-close" onclick="closeModal('settingsModal')">×</button>
+      <button class="modal-close" onclick="closeModal('settingsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
-    <div class="about-list" style="margin-bottom:14px;">
+    <div class="about-list" style="margin-bottom:10px;">
       <!-- 1. 开机自启 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
         <div>
           <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">车机开机自启动</div>
           <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingAutostartHint">开机自动在后台启动工具箱并放行白名单权限</div>
@@ -1461,7 +1546,7 @@ body.light .changelog-item {
       </div>
 
       <!-- 2. 全局悬浮胶囊 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
         <div>
           <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">全局悬浮小胶囊</div>
           <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingFloatingHint">在桌面与任意应用常驻小胶囊，随时唤回控制台</div>
@@ -1470,7 +1555,7 @@ body.light .changelog-item {
       </div>
 
       <!-- 3. 座舱联动与智能语音 (替代 TSK) -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
         <div>
           <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">座舱联动与智能语音 (替代 TSK)</div>
           <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingVehicleAutoHint">四门迎宾播报、转向灯360全景、大灯高德夜间联动与熄火告别</div>
@@ -1479,7 +1564,7 @@ body.light .changelog-item {
       </div>
 
       <!-- 3. 无线快传常驻 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
         <div>
           <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">手机无线快传服务 (8888 端口)</div>
           <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;">工具箱启动即在后台监听，同局域网手机随时扫码直连</div>
@@ -1488,16 +1573,16 @@ body.light .changelog-item {
       </div>
 
       <!-- 4. 卡主题安全防护 (仅限导航) -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
         <div>
           <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">卡主题安全防护 (仅限导航白名单)</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingRabbitSafeHint">锁定仅允许高德/百度/腾讯等导航类应用伪装，防止常规或系统软件导致开机死锁</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingRabbitSafeHint">锁定仅允许高德/百度/腾讯等车载导航伪装，防止非兼容软件导致车机开机死锁或变砖</div>
         </div>
         <button class="btn-ctrl-md highlight" id="btnSettingRabbitSafe" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleToggleRabbitSafeMode()">已开启</button>
       </div>
 
       <!-- 5. 主题皮肤与护眼配色 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
         <div>
           <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">主题皮肤与护眼配色</div>
           <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;">精选 8 套车载座舱护眼色彩体系（极光青、暖阳金、竹翠绿等）</div>
@@ -1506,7 +1591,7 @@ body.light .changelog-item {
       </div>
 
       <!-- 6. 工具箱运行操作日志 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
         <div>
           <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">工具箱运行操作日志</div>
           <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingLogHint">保存于 /sdcard/Download/geely_toolbox.log (自动滚动轮转防膨胀)</div>
@@ -1514,9 +1599,9 @@ body.light .changelog-item {
         <button class="btn-ctrl-md highlight" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="closeModal('settingsModal'); handleOpenLogModal();">查看日志</button>
       </div>
     </div>
-    <div class="modal-actions" style="justify-content:space-between;">
-      <button class="btn-ctrl-md" style="min-width:110px; font-size:13px;" onclick="closeModal('settingsModal'); handleShowAbout();">关于与更新</button>
-      <button class="btn-ctrl-md primary" style="min-width:110px;" onclick="closeModal('settingsModal')">完成</button>
+    <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-top:8px;">
+      <button class="btn-ctrl-md" style="min-width:120px; height:42px; font-size:14px; font-weight:800;" onclick="closeModal('settingsModal'); handleShowAbout();">关于与更新</button>
+      <button class="btn-ctrl-md primary" style="min-width:120px; height:42px; font-size:14px; font-weight:800;" onclick="closeModal('settingsModal')">完成</button>
     </div>
   </div>
 </div>
@@ -1526,7 +1611,7 @@ body.light .changelog-item {
   <div class="modal-card" style="width:640px;">
     <div class="modal-header">
       <div class="modal-title">车机深度工具箱</div>
-      <button class="modal-close" onclick="closeModal('deepToolsModal')">×</button>
+      <button class="modal-close" onclick="closeModal('deepToolsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="font-size:12px; color:var(--txt-dim); margin-bottom:12px;">包含 ADB 系统组件冻结、工程暗码与深度存储清理等高级功能。</div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
@@ -1595,7 +1680,7 @@ body.light .changelog-item {
   <div class="modal-card" style="width:680px; max-width:94vw;">
     <div class="modal-header">
       <div class="modal-title">座舱联动与智能语音</div>
-      <button class="modal-close" onclick="closeModal('vehicleAutoModal')">×</button>
+      <button class="modal-close" onclick="closeModal('vehicleAutoModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="font-size:12px; color:var(--txt-dim); margin-bottom:12px;">
       基于车机底层 CAN 信号原生联动，彻底替代第三方 Tasker/TSK。所有功能默认关闭，每一项均支持独立开启、关闭与音频自定义。
@@ -1718,7 +1803,7 @@ body.light .changelog-item {
         <span>工具箱运行操作日志</span>
         <span class="pill" style="font-size:11px; padding:2px 8px;" id="logModalSizeBadge">0 KB</span>
       </div>
-      <button class="modal-close" onclick="closeModal('logModal')">×</button>
+      <button class="modal-close" onclick="closeModal('logModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:12px; color:var(--txt-dim);">
       <div>
@@ -1746,7 +1831,7 @@ body.light .changelog-item {
   <div class="modal-card">
     <div class="modal-header">
       <div class="modal-title">赞赏支持作者</div>
-      <button class="modal-close" onclick="closeModal('rewardModal')">×</button>
+      <button class="modal-close" onclick="closeModal('rewardModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <img src="file:///android_res/drawable/img_reward_code.png" class="reward-img" alt="赞赏码" onerror="this.style.display='none'">
     <div class="reward-tip">感谢你对吉利车机工具箱与车载生态的支持 (๑•̀ㅂ•́)و<br>专注纯净、流畅、原版的高品质车载体验</div>
@@ -2309,7 +2394,7 @@ function renderAllAppsList() {
 
     var actionsHtml = '<button class="btn-mini" onclick="callBridge(\'launchApp\', \'' + app.pkg + '\')">打开</button>';
     if (isProt) {
-      actionsHtml += '<span class="pill" style="font-size:10px; color:var(--txt-dim); padding:2px 8px; border:1px solid var(--border);" title="车机底层关键服务，系统已自动保护禁止冻结与卸载">🔒 核心受保护</span>';
+      actionsHtml += '<span class="pill" style="font-size:10px; color:var(--txt-dim); padding:2px 8px; border:1px solid var(--border);" title="车机底层关键服务，系统已自动保护禁止冻结与卸载">[核心受保护]</span>';
     } else {
       var freezeBtnTxt = app.frozen ? '解冻' : '冻结';
       var freezeBtnClass = app.frozen ? 'btn-mini unfreeze' : 'btn-mini freeze';
@@ -2341,6 +2426,20 @@ function renderAllAppsList() {
 
 // 提取 OTA 直链
 function handleExtractOta() {
+  showUniversalConfirm({
+    title: '扫描提取车机系统 OTA 升级包？',
+    desc: '<b>操作说明</b>：扫描 <code>/sdcard/</code> 及系统升级缓存，提取吉利原厂车机已下载的固件 OTA 差分更新包直链与本地路径。<br><br>' +
+          '• <b>适用场景</b>：用于车机系统固件备份、提取或分析升级包。<br><br>' +
+          '确认开始扫描？',
+    btnText: '开始扫描',
+    isDanger: false,
+    onConfirm: function() {
+      _executeExtractOta();
+    }
+  });
+}
+
+function _executeExtractOta() {
   var resJson = callBridge('extractOta');
   var box = document.getElementById('otaResultBox');
   var urlTxt = document.getElementById('otaUrlText');
@@ -2370,8 +2469,18 @@ function handleOpenCleanDialog() {
 }
 
 function executeCleanEmptyFolders() {
-  callBridge('cleanCache');
   closeModal('cleanDialogModal');
+  showUniversalConfirm({
+    title: '确认清理下载目录空文件夹？',
+    desc: '<b>操作说明</b>：自动扫描并安全删除 <code>/sdcard/Download/</code> 目录下的空子文件夹与零字节临时碎片。<br><br>' +
+          '• <b>安全性说明</b>：<b>100% 绝对安全</b>，绝对不会删除任何已下载的 APK 安装包、音乐或配置数据。<br><br>' +
+          '是否确认立即清理？',
+    btnText: '确认清理',
+    isDanger: false,
+    onConfirm: function() {
+      callBridge('cleanCache');
+    }
+  });
 }
 
 function requestCleanAllDownloads() {
@@ -2690,9 +2799,7 @@ function handleRealExitApp() {
   }, 300);
 }
 
-function handleExitApp() {
-  handlePromptExit();
-}
+
 
 function switchCategory(cat) {
   currentCategory = cat;
@@ -2762,9 +2869,7 @@ function handleOpenSkinModal() {
   openModal('skinModal');
 }
 
-function handleCycleSkin() {
-  handleOpenSkinModal();
-}
+
 
 function showToast(msg) {
   var t = document.getElementById('toastBanner');
@@ -2801,9 +2906,85 @@ function callBridge(funcName) {
   }
 }
 
-function handleSelectApkInject() { callBridge('selectApkInject'); }
-function handleOpenThemeManager() { callBridge('openThemeManager'); }
-function handleSoftReboot() { callBridge('softReboot'); }
+function handleSelectApkInject() {
+  showUniversalConfirm({
+    title: '确认【选择导航 APK 进行时钟注入】？',
+    desc: '<b>操作说明</b>：从机身 <code>/sdcard/Download/</code> 目录手动浏览并挑选一个专车导航 APK 安装包，准备打包伪装进兔子时钟。<br><br>' +
+          '• <b>适用场景</b>：当你通过手机无线快传或 U 盘导入了不同版本的第三方车机导航时使用；<br>' +
+          '• <b>安全保护</b>：受卡主题安全策略保护，系统将自动校验包名，严禁选择非导航类应用。<br><br>' +
+          '是否确认打开文件选择？',
+    btnText: '选择 APK',
+    isDanger: false,
+    onConfirm: function() {
+      callBridge('selectApkInject');
+    }
+  });
+}
+function handleOpenThemeManager() {
+  showUniversalConfirm({
+    title: '确认调起吉利原厂【主题中心】？',
+    desc: '<b>操作说明</b>：直接打开车机系统原厂自带的「主题中心」应用界面。<br><br>' +
+          '• <b>主要用途</b>：在完成兔子伪装注入后，需进入主题中心找到并应用『兔子时钟』屏保主题；应用后返回控制台执行【一键软重启】即可。<br><br>' +
+          '是否确认立即打开？',
+    btnText: '打开主题',
+    isDanger: false,
+    onConfirm: function() {
+      callBridge('openThemeManager');
+    }
+  });
+}
+
+var isRebooting = false;
+
+function showRebootingOverlay(type, title, msg) {
+  var overlay = document.getElementById('rebootingOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'rebootingOverlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.background = 'rgba(0, 0, 0, 0.78)';
+    overlay.style.backdropFilter = 'blur(10px)';
+    overlay.style.webkitBackdropFilter = 'blur(10px)';
+    overlay.style.zIndex = '999999';
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    document.body.appendChild(overlay);
+  }
+  var badgeText = type === 'hard' ? '整车冷启动' : '快速系统重载';
+  var badgeColor = type === 'hard' ? 'var(--accent)' : 'var(--accent)';
+  overlay.innerHTML = '<div style="background:var(--card); border:2px solid var(--accent); border-radius:18px; padding:32px 42px; text-align:center; max-width:500px; box-shadow:0 14px 44px rgba(0,0,0,0.5);">' +
+    '<div style="display:inline-block; font-size:12px; font-weight:800; padding:3px 12px; border-radius:12px; background:rgba(0,174,185,0.12); color:' + badgeColor + '; margin-bottom:12px;">' + badgeText + '</div>' +
+    '<div style="font-size:22px; font-weight:900; color:var(--txt-strong); margin-bottom:12px;">' + title + '</div>' +
+    '<div style="font-size:14px; color:var(--txt-dim); line-height:1.6; margin-bottom:22px;">' + msg + '</div>' +
+    '<div style="width:100%; height:6px; background:rgba(0,0,0,0.12); border-radius:3px; overflow:hidden; position:relative;">' +
+      '<div style="width:50%; height:100%; background:var(--accent); border-radius:3px; animation: rebootSlide 1.2s infinite ease-in-out;"></div>' +
+    '</div>' +
+  '</div>';
+  overlay.style.display = 'flex';
+}
+
+function handleSoftReboot() {
+  if (isRebooting) return;
+  showUniversalConfirm({
+    title: '准备执行【一键软重启车机】？',
+    desc: '<b>操作效果</b>：仅快速重载 Android 虚拟机与系统服务 (5~8秒)，无需整车断电。<br><br>• 重启瞬间自动放行白名单权限并清除伪装时钟；<br>• 是否确认立即软重启？',
+    btnText: '确认软重启',
+    isDanger: false,
+    onConfirm: function() {
+      if (isRebooting) return;
+      isRebooting = true;
+      showRebootingOverlay('soft', '车机正在执行【一键软重启】，请稍候...', '正在快速重载 Android 系统服务与白名单，底层指令已发送，屏幕即将关闭并重新加载，无需重复点击。');
+      callBridge('softReboot');
+    }
+  });
+}
+
 function handleRestoreOfficialTheme() {
   showUniversalConfirm({
     title: '还原吉利官方原版时钟？',
@@ -2831,7 +3012,20 @@ function handleRestoreOfficialTheme() {
   });
 }
 function handleUninstallAmap() { requestAppAction('com.autonavi.amapauto', '高德地图', 'uninstall', false); }
-function handleOpenFileManager() { callBridge('openFileManager'); }
+function handleOpenFileManager() {
+  showUniversalConfirm({
+    title: '确认打开车机【原生文件管理器】？',
+    desc: '<b>操作说明</b>：调起 Android 原厂文件管理器，定位至 <code>/sdcard/Download/</code> 目录。<br><br>' +
+          '• <b>适用场景</b>：在【白名单已放行】状态下，直接点击 APK 安装普通第三方软件（如 QQ音乐、网易云、工具箱等）；<br>' +
+          '• <b>重要提醒</b>：原厂高德地图带有吉利系统级签名保护，无法通过文件管理器直接点击覆盖，必须通过【一键卡兔子向导】进行伪装覆盖。<br><br>' +
+          '是否确认打开文件管理？',
+    btnText: '打开文件管理',
+    isDanger: false,
+    onConfirm: function() {
+      callBridge('openFileManager');
+    }
+  });
+}
 function handleMinimize() { callBridge('minimizeApp'); }
 
 var _selectedNavApp = null;
@@ -2845,11 +3039,26 @@ function openRabbitInstallGuideModal(app) {
 }
 
 function handleStartAutoPilot(filename) {
-  if (window.ToolboxBridge && typeof window.ToolboxBridge.startAutoPilotInject === 'function') {
-    window.ToolboxBridge.startAutoPilotInject(filename || '');
-  } else {
-    showToast('当前环境未就绪');
-  }
+  showUniversalConfirm({
+    title: '确认启动【一键卡兔子向导 (保姆级半自动)】？',
+    desc: '<b>操作说明</b>：将专车高德地图打包伪装写入车机『兔子时钟』屏保主题，全自动引导完成免白名单覆盖安装。<br><br>' +
+          '• <b>执行流程</b>：<br>' +
+          '  1. 自动将高德安装包注入进兔子时钟屏保；<br>' +
+          '  2. 自动唤起车机【主题中心】，请手动点击应用『兔子时钟』；<br>' +
+          '  3. 屏幕将显示半自动悬浮 HUD 倒计时，指引点击【一键软重启】；<br>' +
+          '  4. 开机后白名单自动放行，秒级弹出覆盖安装器完成升级。<br><br>' +
+          '• <b>安全提示</b>：全程不破坏车机官方底层系统，中途可随时取消。<br><br>' +
+          '是否确认立即开始向导？',
+    btnText: '开始向导',
+    isDanger: false,
+    onConfirm: function() {
+      if (window.ToolboxBridge && typeof window.ToolboxBridge.startAutoPilotInject === 'function') {
+        window.ToolboxBridge.startAutoPilotInject(filename || '');
+      } else {
+        showToast('当前环境未就绪');
+      }
+    }
+  });
 }
 
 function handleRabbitAutoPilotInstall() {
@@ -2888,15 +3097,23 @@ function selectAmapAndStartAuto(filename) {
 var isAutostartOn = false;
 
 function handleToggleAutostart() {
-  if (window.ToolboxBridge && typeof window.ToolboxBridge.setAutostartEnabled === 'function') {
-    isAutostartOn = !isAutostartOn;
-    window.ToolboxBridge.setAutostartEnabled(isAutostartOn);
-    updateAutostartUi(isAutostartOn);
-    showToast(isAutostartOn ? '已开启车机开机自启 (๑•̀ㅂ•́)و' : '已关闭车机开机自启');
-  } else {
-    isAutostartOn = !isAutostartOn;
-    updateAutostartUi(isAutostartOn);
-  }
+  var nextState = !isAutostartOn;
+  showUniversalConfirm({
+    title: '确认' + (nextState ? '开启' : '关闭') + '【车机开机自启动】？',
+    desc: nextState ?
+      '<b>操作说明</b>：开启后，车机点火开机时将在后台毫秒级静默自启控制台。<br><br>• <b>主要作用</b>：自动放行白名单权限、自愈清理临时伪装锁、保障座舱自动化流畅运行。<br><br>确认开启？' :
+      '<b>操作说明</b>：关闭后，车机点火开机时将不再自动启动控制台后台服务。<br><br>• <b>注意</b>：开机自动放行白名单功能将依赖手动点击唤醒。<br><br>确认关闭？',
+    btnText: nextState ? '确认开启' : '确认关闭',
+    isDanger: false,
+    onConfirm: function() {
+      isAutostartOn = nextState;
+      if (window.ToolboxBridge && typeof window.ToolboxBridge.setAutostartEnabled === 'function') {
+        window.ToolboxBridge.setAutostartEnabled(nextState);
+      }
+      updateAutostartUi(nextState);
+      showToast(nextState ? '已开启车机开机自启' : '已关闭车机开机自启');
+    }
+  });
 }
 
 function updateAutostartUi(enabled) {
@@ -2920,21 +3137,29 @@ var isRabbitSafeModeOn = true;
 
 function handleToggleRabbitSafeMode() {
   if (isRabbitSafeModeOn) {
-    if (confirm('【安全提示】\n\n关闭「卡主题安全防护」后，将允许你选择其他第三方应用尝试伪装打包进时钟。\n\n⚠️ 注意：若错误伪装非专车定制软件，可能导致应用闪退；（底层仍将永久拦截系统设置/框架，防止车机变砖）。\n\n确定要切换为专家模式并关闭该保护吗？')) {
-      isRabbitSafeModeOn = false;
-      if (window.ToolboxBridge && typeof window.ToolboxBridge.setRabbitSafeModeEnabled === 'function') {
-        window.ToolboxBridge.setRabbitSafeModeEnabled(false);
+    showUniversalConfirm({
+      title: '切换【卡主题安全防护】模式？',
+      desc: '<b>安全提示</b>：关闭「卡主题安全防护」后，将允许你选择其他第三方应用尝试伪装打包进时钟。<br><br>' +
+            '• <b>高危风险警告</b>：若错误伪装非专车定制或不兼容软件，开机时将引发系统屏保崩溃死循环，<b>极易导致车机卡死、开机动画无限循环或变砖</b>！（工具箱底层将尽力拦截，但强烈建议普通车主保持开启）。<br><br>' +
+            '确定要切换为专家模式并关闭该防护吗？',
+      btnText: '关闭防护 (专家模式)',
+      isDanger: false,
+      onConfirm: function() {
+        isRabbitSafeModeOn = false;
+        if (window.ToolboxBridge && typeof window.ToolboxBridge.setRabbitSafeModeEnabled === 'function') {
+          window.ToolboxBridge.setRabbitSafeModeEnabled(false);
+        }
+        updateRabbitSafeModeUi(false);
+        showToast('已关闭卡主题安全限制 (专家模式)');
       }
-      updateRabbitSafeModeUi(false);
-      showToast('已关闭卡主题安全限制 (专家模式)');
-    }
+    });
   } else {
     isRabbitSafeModeOn = true;
     if (window.ToolboxBridge && typeof window.ToolboxBridge.setRabbitSafeModeEnabled === 'function') {
       window.ToolboxBridge.setRabbitSafeModeEnabled(true);
     }
     updateRabbitSafeModeUi(true);
-    showToast('已开启卡主题安全防护 (推荐模式)');
+    showToast('已开启卡主题安全防护');
   }
 }
 
@@ -2948,19 +3173,12 @@ function updateRabbitSafeModeUi(enabled) {
   var hint = document.getElementById('settingRabbitSafeHint');
   if (hint) {
     hint.innerText = isRabbitSafeModeOn ?
-      '锁定仅允许高德/百度/腾讯等导航类应用伪装，防止常规或系统软件导致开机死锁' :
+      '锁定仅允许高德/百度/腾讯等车载导航伪装，防止非兼容软件导致车机开机死锁或变砖' :
       '专家模式：允许任意应用尝试时钟伪装（系统核心组件仍受永久保护）';
   }
 }
 
-function handleRabbitDirectInstall() {
-  if (_selectedNavApp && _selectedNavApp.filename) {
-    callBridge('installDownloadedApk', _selectedNavApp.filename);
-  } else {
-    callBridge('openFileManager');
-  }
-  closeModal('rabbitInstallModal');
-}
+
 
 function handleRabbitOpenFolder() {
   callBridge('openFileManager');
@@ -2968,12 +3186,24 @@ function handleRabbitOpenFolder() {
 }
 
 function handleRabbitReInject() {
-  if (_selectedNavApp && _selectedNavApp.filename) {
-    callBridge('injectApkDirectly', _selectedNavApp.filename);
-  } else {
-    handleSelectApkInject();
-  }
+  var appName = (_selectedNavApp && _selectedNavApp.name) ? _selectedNavApp.name : '目标导航';
+  var fileName = (_selectedNavApp && _selectedNavApp.filename) ? _selectedNavApp.filename : null;
   closeModal('rabbitInstallModal');
+  showUniversalConfirm({
+    title: '确认【仅重新注入伪装主题】？',
+    desc: '<b>操作说明</b>：仅将【' + appName + '】打包伪装写入车机『兔子时钟』屏保主题，<b>不启动向导流程、不自动跳转主题</b>。<br><br>' +
+          '• <b>适用场景</b>：适合熟悉操作的老车主纯手动安装，或向导中途意外中断时快速重写伪装包；<br>' +
+          '• <b>后续操作</b>：注入完成后，需自行在主页点击【打开车机主题】应用兔子时钟，再点击【一键软重启】完成覆盖。',
+    btnText: '确认注入',
+    isDanger: false,
+    onConfirm: function() {
+      if (fileName) {
+        callBridge('injectApkDirectly', fileName);
+      } else {
+        handleSelectApkInject();
+      }
+    }
+  });
 }
 
 function dismissPostRebootModal() {
@@ -2984,12 +3214,23 @@ function dismissPostRebootModal() {
 }
 
 function handlePostRebootInstall() {
-  if (_postRebootFilename) {
-    callBridge('installDownloadedApk', _postRebootFilename);
-  } else {
-    callBridge('openFileManager');
-  }
+  var targetFile = _postRebootFilename;
   dismissPostRebootModal();
+  showUniversalConfirm({
+    title: '调起高德地图系统覆盖安装器？',
+    desc: '<b>操作说明</b>：开机白名单权限现已放行，点击将直接调用系统原生 PackageInstaller 弹出高德地图覆盖升级确认。<br><br>' +
+          '• <b>后续自动化</b>：安装完成后系统将自动恢复官方原版时钟，彻底闭环。<br><br>' +
+          '确认立即调起安装器？',
+    btnText: '立即安装',
+    isDanger: false,
+    onConfirm: function() {
+      if (targetFile) {
+        callBridge('installDownloadedApk', targetFile);
+      } else {
+        callBridge('openFileManager');
+      }
+    }
+  });
 }
 
 function handlePostRebootOpenFolder() {
@@ -3006,6 +3247,24 @@ function handleDownloadApp(id, isRedownload) {
   var app = CLOUD_APPS.find(function(a) { return a.id === id; });
   if (!app) return;
 
+  if (isRedownload && app.status === 'ready') {
+    showUniversalConfirm({
+      title: '确认重新下载【' + app.name + '】？',
+      desc: '<b>操作说明</b>：将重新从服务器下载【' + app.name + '】（大小：' + (app.size || '未知') + '），并覆盖本地已有的安装包。<br><br>' +
+            '• <b>流量提示</b>：若使用车载热点或手机热点，请注意数据流量消耗。<br><br>' +
+            '是否确认重新下载？',
+      btnText: '重新下载',
+      isDanger: false,
+      onConfirm: function() {
+        _doDownloadApp(app, true);
+      }
+    });
+    return;
+  }
+  _doDownloadApp(app, isRedownload);
+}
+
+function _doDownloadApp(app, isRedownload) {
   if (app.status === 'ready' && !isRedownload) {
     if (app.category === 'navigation') {
       openRabbitInstallGuideModal(app);
@@ -3087,6 +3346,20 @@ window.onCloudAppsRefreshComplete = function(success, message) {
 };
 
 function handleDumpLogcat() {
+  showUniversalConfirm({
+    title: '抓取车机系统 Logcat 运行日志？',
+    desc: '<b>操作说明</b>：后台抓取车机最近的系统运行日志并导出保存至 <code>/sdcard/Download/system_logcat.txt</code>。<br><br>' +
+          '• <b>适用场景</b>：用于排查应用崩溃、闪退或底层硬件异常。<br><br>' +
+          '确认立即抓取？',
+    btnText: '抓取保存',
+    isDanger: false,
+    onConfirm: function() {
+      _executeDumpLogcat();
+    }
+  });
+}
+
+function _executeDumpLogcat() {
   var btn = document.getElementById('btnDumpLogcat');
   if (btn) {
     btn.disabled = true;
@@ -3224,9 +3497,9 @@ function showUniversalConfirm(opts) {
   if (okBtn) {
     okBtn.innerText = opts.btnText || '确认执行';
     if (opts.isDanger) {
-      okBtn.className = 'btn-ctrl-md danger';
+      okBtn.className = 'btn-ctrl-md';
     } else {
-      okBtn.className = 'btn-ctrl-md primary';
+      okBtn.className = 'btn-ctrl-md';
     }
   }
   pendingUniversalConfirmCallback = opts.onConfirm || null;
@@ -3270,20 +3543,7 @@ function handleToggleWhitelist() {
   });
 }
 
-function handleWakeBluetoothAudio() {
-  showUniversalConfirm({
-    title: '准备执行【蓝牙通道选通】？',
-    desc: '<b>操作效果</b>：向车机蓝牙 A2DP 音频服务与音频焦点管理器发送选通信号，恢复第三方播放器（如 QQ音乐/网易云/导航）的蓝牙发声音频通道。<br><br>是否确认立即选通？',
-    btnText: '确认选通',
-    onConfirm: function() {
-      if (window.ToolboxBridge && typeof window.ToolboxBridge.wakeBluetoothAudio === 'function') {
-        window.ToolboxBridge.wakeBluetoothAudio();
-      } else {
-        showToast('蓝牙音频选通已触发');
-      }
-    }
-  });
-}
+
 
 var isMultimediaFrozen = false;
 function handleToggleFreezeAppStore() {
@@ -3306,25 +3566,7 @@ function handleToggleFreezeAppStore() {
   });
 }
 
-function handleToggleFreezeMultimedia() {
-  var isFrozen = (cachedDeviceInfo && cachedDeviceInfo.multimedia_frozen);
-  var actName = isFrozen ? '解冻恢复多媒体伴听' : '安全冻结多媒体伴听';
-  var descHtml = isFrozen ?
-    '<b>操作效果</b>：将解冻恢复吉利原厂多媒体伴听服务 (com.ecarx.multimedia & com.ecarx.xcmedia)。<br>• 恢复原厂酷我音乐与本地 USB 音乐播放通道。<br><br>是否确认执行解冻？' :
-    '<b>操作效果</b>：将安全冻结吉利原厂多媒体伴听服务。<br>• 释放约 <b>80MB~120MB 后台运行内存</b>，极大缓解 E02 芯片运存压力；<br>• 彻底杜绝原厂酷我与 QQ音乐/网易云争抢音频焦点；<br>• <b>原车蓝牙电话接打与方向盘电话按键不受任何影响</b>。<br><br>是否确认立即执行冻结？';
-  showUniversalConfirm({
-    title: '准备执行【' + actName + '】？',
-    desc: descHtml,
-    btnText: '确认' + (isFrozen ? '解冻' : '冻结'),
-    onConfirm: function() {
-      if (window.ToolboxBridge && typeof window.ToolboxBridge.toggleFreezeMultimedia === 'function') {
-        window.ToolboxBridge.toggleFreezeMultimedia(!isFrozen);
-      } else {
-        showToast((isFrozen ? '已解冻' : '已冻结') + '原厂多媒体伴听');
-      }
-    }
-  });
-}
+
 
 function handleShowAbout() {
   openModal('aboutModal');
@@ -3348,12 +3590,16 @@ function handleOpenDialer() {
 }
 
 function handleHardReboot() {
+  if (isRebooting) return;
   showUniversalConfirm({
     title: '确认执行【完整硬重启 (冷启动)】？',
-    desc: '<b>操作说明</b>：将彻底切断并重新初始化整车车机 Linux 内核、MCU 与硬件电源（整机冷启动，耗时约 25~35 秒）。<br><br>• 适用于车机驱动卡死、网络异常或深度故障排查；<br>• <b>若仅为卡兔子时钟安装高德，推荐使用更快的 5秒【一键软重启】</b>。<br><br>是否确认立即执行完整硬重启？',
+    desc: '<b>操作说明</b>：将彻底切断并重新初始化整车车机 Linux 内核、MCU 与硬件电源（整机冷启动，耗时约 25~35 秒）。<br><br>• 适用于车机驱动卡死、网络异常或深度故障排查；<br>• 是否确认立即执行完整硬重启？',
     btnText: '确认硬重启',
-    isDanger: true,
+    isDanger: false,
     onConfirm: function() {
+      if (isRebooting) return;
+      isRebooting = true;
+      showRebootingOverlay('hard', '车机正在执行【完整硬重启】，请稍候...', '整车硬件与 Linux 内核正在深度冷启动重载，系统即将断电并重新通电，无需重复点击。');
       callBridge('hardReboot');
     }
   });
@@ -3540,13 +3786,23 @@ function handleTestVoice(type) {
 
 var isFloatingWindowOn = false;
 function handleToggleFloatingWindow() {
-  isFloatingWindowOn = !isFloatingWindowOn;
-  if (window.ToolboxBridge && typeof window.ToolboxBridge.toggleFloatingWindow === 'function') {
-    window.ToolboxBridge.toggleFloatingWindow(isFloatingWindowOn);
-  } else {
-    showToast(isFloatingWindowOn ? '全局悬浮小胶囊已开启' : '全局悬浮小胶囊已关闭');
-  }
-  updateFloatingWindowUi(isFloatingWindowOn);
+  var nextState = !isFloatingWindowOn;
+  showUniversalConfirm({
+    title: '确认' + (nextState ? '开启' : '关闭') + '【全局桌面悬浮小胶囊】？',
+    desc: nextState ?
+      '<b>操作说明</b>：开启后将在车机桌面与任意第三方应用界面悬浮一个小胶囊图标。<br><br>• <b>主要作用</b>：行车或使用高德/音乐时，随时轻点小胶囊秒级唤回控制台；支持自由拖拽靠边停靠。<br><br>确认开启？' :
+      '<b>操作说明</b>：关闭后将隐藏桌面悬浮小胶囊。<br><br>确认关闭？',
+    btnText: nextState ? '确认开启' : '确认关闭',
+    isDanger: false,
+    onConfirm: function() {
+      isFloatingWindowOn = nextState;
+      if (window.ToolboxBridge && typeof window.ToolboxBridge.toggleFloatingWindow === 'function') {
+        window.ToolboxBridge.toggleFloatingWindow(nextState);
+      }
+      updateFloatingWindowUi(nextState);
+      showToast(nextState ? '已开启桌面悬浮小胶囊' : '已关闭桌面悬浮小胶囊');
+    }
+  });
 }
 
 function updateFloatingWindowUi(isOn) {
@@ -3831,10 +4087,10 @@ window.updateDeviceInfo = function(infoJson) {
       if (pillA) {
         if (info.appstore_frozen) {
           pillA.className = 'btn-status-pill green';
-          pillA.innerText = '已冻结 ❄';
+          pillA.innerText = '已冻结';
         } else {
           pillA.className = 'btn-status-pill amber';
-          pillA.innerText = '运行中 ⚠️';
+          pillA.innerText = '运行中';
         }
       }
     }

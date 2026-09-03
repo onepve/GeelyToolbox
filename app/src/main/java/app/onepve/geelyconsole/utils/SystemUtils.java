@@ -1197,59 +1197,6 @@ public class SystemUtils {
         }
     }
 
-    public static boolean wakeBluetoothAudioChannel(Context context) {
-        if (context == null) return false;
-        try {
-            // 1. 通过 Shell / ADB 广播唤醒蓝牙 A2DP 与媒体通道（规避普通应用广播引发的 Permission Denial）
-            executePrivileged(context,
-                "am broadcast -a android.bluetooth.a2dp-sink.profile.action.CONNECTION_STATE_CHANGED --ei android.bluetooth.profile.extra.STATE 2 2>/dev/null; " +
-                "am broadcast -a android.bluetooth.adapter.action.STATE_CHANGED --ei android.bluetooth.adapter.extra.STATE 12 2>/dev/null; " +
-                "cmd media_session dispatch play 2>/dev/null; " +
-                "input keyevent KEYCODE_MEDIA_PLAY 2>/dev/null");
-
-            // 2. 申请 AudioManager 媒体焦点
-            android.media.AudioManager am = (android.media.AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            if (am != null) {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    android.media.AudioAttributes playbackAttributes = new android.media.AudioAttributes.Builder()
-                            .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
-                            .build();
-                    android.media.AudioFocusRequest focusRequest = new android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN)
-                            .setAudioAttributes(playbackAttributes)
-                            .setAcceptsDelayedFocusGain(true)
-                            .setOnAudioFocusChangeListener(new android.media.AudioManager.OnAudioFocusChangeListener() {
-                                @Override
-                                public void onAudioFocusChange(int focusChange) {}
-                            })
-                            .build();
-                    am.requestAudioFocus(focusRequest);
-                } else {
-                    am.requestAudioFocus(new android.media.AudioManager.OnAudioFocusChangeListener() {
-                        @Override
-                        public void onAudioFocusChange(int focusChange) {}
-                    }, android.media.AudioManager.STREAM_MUSIC, android.media.AudioManager.AUDIOFOCUS_GAIN);
-                }
-            }
-
-            // 3. 反射尝试向吉利 ECARX EAS 注册选通（安全忽略异常）
-            try {
-                Class<?> clazz = Class.forName("com.ecarx.sdk.mediacenter.MediaCenterAPI");
-                java.lang.reflect.Method getMethod = clazz.getMethod("get", Context.class);
-                Object api = getMethod.invoke(null, context);
-                if (api != null) {
-                    java.lang.reflect.Method reqMethod = api.getClass().getMethod("requestPlay", String.class);
-                    reqMethod.invoke(api, "com.android.bluetooth");
-                }
-            } catch (Throwable ignored) {}
-
-            return true;
-        } catch (Exception e) {
-            Log.e("SystemUtils", "wakeBluetoothAudioChannel error: " + e.getMessage());
-            return true;
-        }
-    }
-
     public static class DetailedAppInfo {
         public String packageName;
         public String appName;
