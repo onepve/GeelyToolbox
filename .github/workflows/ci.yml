@@ -33,6 +33,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Run CI Health Checks (Links, JSBridge, DOM Handlers)
+        run: python3 scripts/ci_health_check.py
+
       - name: Build Release APK (Verification)
         run: ./gradlew assembleRelease --stacktrace
 
