@@ -130,19 +130,61 @@ jobs:
           name: "GeelyConsole ${{ github.ref_name }}"
           files: |
             output/GeelyConsole.apk
-          draft: false
+          draft: true
           prerelease: false
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Cleanup GitHub Action Caches
+      # 发新版时自动清理旧版 Release/Draft 发行版与旧远程 Git Tags，永不堆积
+      - name: Cleanup Old Releases & Tags on Tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          set +e
+          CURRENT_TAG="${{ github.ref_name }}"
+          echo "1. Cleaning up older releases and drafts (except $CURRENT_TAG)..."
+          gh release list -R "${{ github.repository }}" --exclude-drafts=false --json tagName -q ".[].tagName" | while read -r tag; do
+            if [ -n "$tag" ] && [ "$tag" != "$CURRENT_TAG" ]; then
+              echo "Deleting old release: $tag"
+              gh release delete "$tag" -R "${{ github.repository }}" -y 2>/dev/null || true
+            fi
+          done
+
+          echo "2. Cleaning up older remote git tags (except $CURRENT_TAG)..."
+          git ls-remote --tags origin | awk '{print $2}' | sed 's@refs/tags/@@' | grep -v '\^{}' | while read -r tag; do
+            if [ -n "$tag" ] && [ "$tag" != "$CURRENT_TAG" ]; then
+              echo "Deleting old remote tag: $tag"
+              git push origin --delete "$tag" 2>/dev/null || true
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 每次运行无论成功失败，自动清理旧缓存、历史旧构建产物与所有历史 CI 运行记录，防止存储超量
+      - name: Auto Cleanup Old CI Runs, Caches & Artifacts
         if: always()
         run: |
+          set +e
+          echo "1. Cleaning up repository action caches..."
           gh extension install actions/gh-actions-cache 2>/dev/null || true
-          echo "Fetching and clearing repo caches..."
           gh actions-cache list -R "${{ github.repository }}" -L 100 --order desc | cut -f 1 | while read -r key; do
-            [ -n "$key" ] && gh actions-cache delete "$key" -R "${{ github.repository }}" --confirm || true
+            [ -n "$key" ] && gh actions-cache delete "$key" -R "${{ github.repository }}" --confirm 2>/dev/null || true
+          done
+
+          echo "2. Cleaning up repository action artifacts..."
+          gh api repos/"${{ github.repository }}"/actions/artifacts -q '.artifacts[].id' 2>/dev/null | while read -r artifact_id; do
+            if [ -n "$artifact_id" ]; then
+              echo "Deleting artifact: $artifact_id"
+              gh api -X DELETE repos/"${{ github.repository }}"/actions/artifacts/"$artifact_id" 2>/dev/null || true
+            fi
+          done
+
+          echo "3. Cleaning up all old workflow runs (keeping current)..."
+          gh run list -R "${{ github.repository }}" -L 100 --json databaseId -q '.[] | select(.databaseId != ${{ github.run_id }}) | .databaseId' | while read -r run_id; do
+            if [ -n "$run_id" ]; then
+              echo "Deleting old run: $run_id"
+              gh run delete "$run_id" -R "${{ github.repository }}" 2>/dev/null || true
+            fi
           done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
