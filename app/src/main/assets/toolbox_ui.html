@@ -1,0 +1,3909 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<script>
+var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this.parsedData=[];for(var b=[],d=0,e=this.data.length;e>d;d++){var f=this.data.charCodeAt(d);f>65536?(b[0]=240|(1835008&f)>>>18,b[1]=128|(258048&f)>>>12,b[2]=128|(4032&f)>>>6,b[3]=128|63&f):f>2048?(b[0]=224|(61440&f)>>>12,b[1]=128|(4032&f)>>>6,b[2]=128|63&f):f>128?(b[0]=192|(1984&f)>>>6,b[1]=128|63&f):b[0]=f,this.parsedData=this.parsedData.concat(b)}this.parsedData.length!=this.data.length&&(this.parsedData.unshift(191),this.parsedData.unshift(187),this.parsedData.unshift(239))}function b(a,b){this.typeNumber=a,this.errorCorrectLevel=b,this.modules=null,this.moduleCount=0,this.dataCache=null,this.dataList=[]}function i(a,b){if(void 0==a.length)throw new Error(a.length+"/"+b);for(var c=0;c<a.length&&0==a[c];)c++;this.num=new Array(a.length-c+b);for(var d=0;d<a.length-c;d++)this.num[d]=a[d+c]}function j(a,b){this.totalCount=a,this.dataCount=b}function k(){this.buffer=[],this.length=0}function m(){return"undefined"!=typeof CanvasRenderingContext2D}function n(){var a=!1,b=navigator.userAgent;return/android/i.test(b)&&(a=!0,aMat=b.toString().match(/android ([0-9]\.[0-9])/i),aMat&&aMat[1]&&(a=parseFloat(aMat[1]))),a}function r(a,b){for(var c=1,e=s(a),f=0,g=l.length;g>=f;f++){var h=0;switch(b){case d.L:h=l[f][0];break;case d.M:h=l[f][1];break;case d.Q:h=l[f][2];break;case d.H:h=l[f][3]}if(h>=e)break;c++}if(c>l.length)throw new Error("Too long data");return c}function s(a){var b=encodeURI(a).toString().replace(/\%[0-9a-fA-F]{2}/g,"a");return b.length+(b.length!=a?3:0)}a.prototype={getLength:function(){return this.parsedData.length},write:function(a){for(var b=0,c=this.parsedData.length;c>b;b++)a.put(this.parsedData[b],8)}},b.prototype={addData:function(b){var c=new a(b);this.dataList.push(c),this.dataCache=null},isDark:function(a,b){if(0>a||this.moduleCount<=a||0>b||this.moduleCount<=b)throw new Error(a+","+b);return this.modules[a][b]},getModuleCount:function(){return this.moduleCount},make:function(){this.makeImpl(!1,this.getBestMaskPattern())},makeImpl:function(a,c){this.moduleCount=4*this.typeNumber+17,this.modules=new Array(this.moduleCount);for(var d=0;d<this.moduleCount;d++){this.modules[d]=new Array(this.moduleCount);for(var e=0;e<this.moduleCount;e++)this.modules[d][e]=null}this.setupPositionProbePattern(0,0),this.setupPositionProbePattern(this.moduleCount-7,0),this.setupPositionProbePattern(0,this.moduleCount-7),this.setupPositionAdjustPattern(),this.setupTimingPattern(),this.setupTypeInfo(a,c),this.typeNumber>=7&&this.setupTypeNumber(a),null==this.dataCache&&(this.dataCache=b.createData(this.typeNumber,this.errorCorrectLevel,this.dataList)),this.mapData(this.dataCache,c)},setupPositionProbePattern:function(a,b){for(var c=-1;7>=c;c++)if(!(-1>=a+c||this.moduleCount<=a+c))for(var d=-1;7>=d;d++)-1>=b+d||this.moduleCount<=b+d||(this.modules[a+c][b+d]=c>=0&&6>=c&&(0==d||6==d)||d>=0&&6>=d&&(0==c||6==c)||c>=2&&4>=c&&d>=2&&4>=d?!0:!1)},getBestMaskPattern:function(){for(var a=0,b=0,c=0;8>c;c++){this.makeImpl(!0,c);var d=f.getLostPoint(this);(0==c||a>d)&&(a=d,b=c)}return b},createMovieClip:function(a,b,c){var d=a.createEmptyMovieClip(b,c),e=1;this.make();for(var f=0;f<this.modules.length;f++)for(var g=f*e,h=0;h<this.modules[f].length;h++){var i=h*e,j=this.modules[f][h];j&&(d.beginFill(0,100),d.moveTo(i,g),d.lineTo(i+e,g),d.lineTo(i+e,g+e),d.lineTo(i,g+e),d.endFill())}return d},setupTimingPattern:function(){for(var a=8;a<this.moduleCount-8;a++)null==this.modules[a][6]&&(this.modules[a][6]=0==a%2);for(var b=8;b<this.moduleCount-8;b++)null==this.modules[6][b]&&(this.modules[6][b]=0==b%2)},setupPositionAdjustPattern:function(){for(var a=f.getPatternPosition(this.typeNumber),b=0;b<a.length;b++)for(var c=0;c<a.length;c++){var d=a[b],e=a[c];if(null==this.modules[d][e])for(var g=-2;2>=g;g++)for(var h=-2;2>=h;h++)this.modules[d+g][e+h]=-2==g||2==g||-2==h||2==h||0==g&&0==h?!0:!1}},setupTypeNumber:function(a){for(var b=f.getBCHTypeNumber(this.typeNumber),c=0;18>c;c++){var d=!a&&1==(1&b>>c);this.modules[Math.floor(c/3)][c%3+this.moduleCount-8-3]=d}for(var c=0;18>c;c++){var d=!a&&1==(1&b>>c);this.modules[c%3+this.moduleCount-8-3][Math.floor(c/3)]=d}},setupTypeInfo:function(a,b){for(var c=this.errorCorrectLevel<<3|b,d=f.getBCHTypeInfo(c),e=0;15>e;e++){var g=!a&&1==(1&d>>e);6>e?this.modules[e][8]=g:8>e?this.modules[e+1][8]=g:this.modules[this.moduleCount-15+e][8]=g}for(var e=0;15>e;e++){var g=!a&&1==(1&d>>e);8>e?this.modules[8][this.moduleCount-e-1]=g:9>e?this.modules[8][15-e-1+1]=g:this.modules[8][15-e-1]=g}this.modules[this.moduleCount-8][8]=!a},mapData:function(a,b){for(var c=-1,d=this.moduleCount-1,e=7,g=0,h=this.moduleCount-1;h>0;h-=2)for(6==h&&h--;;){for(var i=0;2>i;i++)if(null==this.modules[d][h-i]){var j=!1;g<a.length&&(j=1==(1&a[g]>>>e));var k=f.getMask(b,d,h-i);k&&(j=!j),this.modules[d][h-i]=j,e--,-1==e&&(g++,e=7)}if(d+=c,0>d||this.moduleCount<=d){d-=c,c=-c;break}}}},b.PAD0=236,b.PAD1=17,b.createData=function(a,c,d){for(var e=j.getRSBlocks(a,c),g=new k,h=0;h<d.length;h++){var i=d[h];g.put(i.mode,4),g.put(i.getLength(),f.getLengthInBits(i.mode,a)),i.write(g)}for(var l=0,h=0;h<e.length;h++)l+=e[h].dataCount;if(g.getLengthInBits()>8*l)throw new Error("code length overflow. ("+g.getLengthInBits()+">"+8*l+")");for(g.getLengthInBits()+4<=8*l&&g.put(0,4);0!=g.getLengthInBits()%8;)g.putBit(!1);for(;;){if(g.getLengthInBits()>=8*l)break;if(g.put(b.PAD0,8),g.getLengthInBits()>=8*l)break;g.put(b.PAD1,8)}return b.createBytes(g,e)},b.createBytes=function(a,b){for(var c=0,d=0,e=0,g=new Array(b.length),h=new Array(b.length),j=0;j<b.length;j++){var k=b[j].dataCount,l=b[j].totalCount-k;d=Math.max(d,k),e=Math.max(e,l),g[j]=new Array(k);for(var m=0;m<g[j].length;m++)g[j][m]=255&a.buffer[m+c];c+=k;var n=f.getErrorCorrectPolynomial(l),o=new i(g[j],n.getLength()-1),p=o.mod(n);h[j]=new Array(n.getLength()-1);for(var m=0;m<h[j].length;m++){var q=m+p.getLength()-h[j].length;h[j][m]=q>=0?p.get(q):0}}for(var r=0,m=0;m<b.length;m++)r+=b[m].totalCount;for(var s=new Array(r),t=0,m=0;d>m;m++)for(var j=0;j<b.length;j++)m<g[j].length&&(s[t++]=g[j][m]);for(var m=0;e>m;m++)for(var j=0;j<b.length;j++)m<h[j].length&&(s[t++]=h[j][m]);return s};for(var c={MODE_NUMBER:1,MODE_ALPHA_NUM:2,MODE_8BIT_BYTE:4,MODE_KANJI:8},d={L:1,M:0,Q:3,H:2},e={PATTERN000:0,PATTERN001:1,PATTERN010:2,PATTERN011:3,PATTERN100:4,PATTERN101:5,PATTERN110:6,PATTERN111:7},f={PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],G15:1335,G18:7973,G15_MASK:21522,getBCHTypeInfo:function(a){for(var b=a<<10;f.getBCHDigit(b)-f.getBCHDigit(f.G15)>=0;)b^=f.G15<<f.getBCHDigit(b)-f.getBCHDigit(f.G15);return(a<<10|b)^f.G15_MASK},getBCHTypeNumber:function(a){for(var b=a<<12;f.getBCHDigit(b)-f.getBCHDigit(f.G18)>=0;)b^=f.G18<<f.getBCHDigit(b)-f.getBCHDigit(f.G18);return a<<12|b},getBCHDigit:function(a){for(var b=0;0!=a;)b++,a>>>=1;return b},getPatternPosition:function(a){return f.PATTERN_POSITION_TABLE[a-1]},getMask:function(a,b,c){switch(a){case e.PATTERN000:return 0==(b+c)%2;case e.PATTERN001:return 0==b%2;case e.PATTERN010:return 0==c%3;case e.PATTERN011:return 0==(b+c)%3;case e.PATTERN100:return 0==(Math.floor(b/2)+Math.floor(c/3))%2;case e.PATTERN101:return 0==b*c%2+b*c%3;case e.PATTERN110:return 0==(b*c%2+b*c%3)%2;case e.PATTERN111:return 0==(b*c%3+(b+c)%2)%2;default:throw new Error("bad maskPattern:"+a)}},getErrorCorrectPolynomial:function(a){for(var b=new i([1],0),c=0;a>c;c++)b=b.multiply(new i([1,g.gexp(c)],0));return b},getLengthInBits:function(a,b){if(b>=1&&10>b)switch(a){case c.MODE_NUMBER:return 10;case c.MODE_ALPHA_NUM:return 9;case c.MODE_8BIT_BYTE:return 8;case c.MODE_KANJI:return 8;default:throw new Error("mode:"+a)}else if(27>b)switch(a){case c.MODE_NUMBER:return 12;case c.MODE_ALPHA_NUM:return 11;case c.MODE_8BIT_BYTE:return 16;case c.MODE_KANJI:return 10;default:throw new Error("mode:"+a)}else{if(!(41>b))throw new Error("type:"+b);switch(a){case c.MODE_NUMBER:return 14;case c.MODE_ALPHA_NUM:return 13;case c.MODE_8BIT_BYTE:return 16;case c.MODE_KANJI:return 12;default:throw new Error("mode:"+a)}}},getLostPoint:function(a){for(var b=a.getModuleCount(),c=0,d=0;b>d;d++)for(var e=0;b>e;e++){for(var f=0,g=a.isDark(d,e),h=-1;1>=h;h++)if(!(0>d+h||d+h>=b))for(var i=-1;1>=i;i++)0>e+i||e+i>=b||(0!=h||0!=i)&&g==a.isDark(d+h,e+i)&&f++;f>5&&(c+=3+f-5)}for(var d=0;b-1>d;d++)for(var e=0;b-1>e;e++){var j=0;a.isDark(d,e)&&j++,a.isDark(d+1,e)&&j++,a.isDark(d,e+1)&&j++,a.isDark(d+1,e+1)&&j++,(0==j||4==j)&&(c+=3)}for(var d=0;b>d;d++)for(var e=0;b-6>e;e++)a.isDark(d,e)&&!a.isDark(d,e+1)&&a.isDark(d,e+2)&&a.isDark(d,e+3)&&a.isDark(d,e+4)&&!a.isDark(d,e+5)&&a.isDark(d,e+6)&&(c+=40);for(var e=0;b>e;e++)for(var d=0;b-6>d;d++)a.isDark(d,e)&&!a.isDark(d+1,e)&&a.isDark(d+2,e)&&a.isDark(d+3,e)&&a.isDark(d+4,e)&&!a.isDark(d+5,e)&&a.isDark(d+6,e)&&(c+=40);for(var k=0,e=0;b>e;e++)for(var d=0;b>d;d++)a.isDark(d,e)&&k++;var l=Math.abs(100*k/b/b-50)/5;return c+=10*l}},g={glog:function(a){if(1>a)throw new Error("glog("+a+")");return g.LOG_TABLE[a]},gexp:function(a){for(;0>a;)a+=255;for(;a>=256;)a-=255;return g.EXP_TABLE[a]},EXP_TABLE:new Array(256),LOG_TABLE:new Array(256)},h=0;8>h;h++)g.EXP_TABLE[h]=1<<h;for(var h=8;256>h;h++)g.EXP_TABLE[h]=g.EXP_TABLE[h-4]^g.EXP_TABLE[h-5]^g.EXP_TABLE[h-6]^g.EXP_TABLE[h-8];for(var h=0;255>h;h++)g.LOG_TABLE[g.EXP_TABLE[h]]=h;i.prototype={get:function(a){return this.num[a]},getLength:function(){return this.num.length},multiply:function(a){for(var b=new Array(this.getLength()+a.getLength()-1),c=0;c<this.getLength();c++)for(var d=0;d<a.getLength();d++)b[c+d]^=g.gexp(g.glog(this.get(c))+g.glog(a.get(d)));return new i(b,0)},mod:function(a){if(this.getLength()-a.getLength()<0)return this;for(var b=g.glog(this.get(0))-g.glog(a.get(0)),c=new Array(this.getLength()),d=0;d<this.getLength();d++)c[d]=this.get(d);for(var d=0;d<a.getLength();d++)c[d]^=g.gexp(g.glog(a.get(d))+b);return new i(c,0).mod(a)}},j.RS_BLOCK_TABLE=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],j.getRSBlocks=function(a,b){var c=j.getRsBlockTable(a,b);if(void 0==c)throw new Error("bad rs block @ typeNumber:"+a+"/errorCorrectLevel:"+b);for(var d=c.length/3,e=[],f=0;d>f;f++)for(var g=c[3*f+0],h=c[3*f+1],i=c[3*f+2],k=0;g>k;k++)e.push(new j(h,i));return e},j.getRsBlockTable=function(a,b){switch(b){case d.L:return j.RS_BLOCK_TABLE[4*(a-1)+0];case d.M:return j.RS_BLOCK_TABLE[4*(a-1)+1];case d.Q:return j.RS_BLOCK_TABLE[4*(a-1)+2];case d.H:return j.RS_BLOCK_TABLE[4*(a-1)+3];default:return void 0}},k.prototype={get:function(a){var b=Math.floor(a/8);return 1==(1&this.buffer[b]>>>7-a%8)},put:function(a,b){for(var c=0;b>c;c++)this.putBit(1==(1&a>>>b-c-1))},getLengthInBits:function(){return this.length},putBit:function(a){var b=Math.floor(this.length/8);this.buffer.length<=b&&this.buffer.push(0),a&&(this.buffer[b]|=128>>>this.length%8),this.length++}};var l=[[17,14,11,7],[32,26,20,14],[53,42,32,24],[78,62,46,34],[106,84,60,44],[134,106,74,58],[154,122,86,64],[192,152,108,84],[230,180,130,98],[271,213,151,119],[321,251,177,137],[367,287,203,155],[425,331,241,177],[458,362,258,194],[520,412,292,220],[586,450,322,250],[644,504,364,280],[718,560,394,310],[792,624,442,338],[858,666,482,382],[929,711,509,403],[1003,779,565,439],[1091,857,611,461],[1171,911,661,511],[1273,997,715,535],[1367,1059,751,593],[1465,1125,805,625],[1528,1190,868,658],[1628,1264,908,698],[1732,1370,982,742],[1840,1452,1030,790],[1952,1538,1112,842],[2068,1628,1168,898],[2188,1722,1228,958],[2303,1809,1283,983],[2431,1911,1351,1051],[2563,1989,1423,1093],[2699,2099,1499,1139],[2809,2213,1579,1219],[2953,2331,1663,1273]],o=function(){var a=function(a,b){this._el=a,this._htOption=b};return a.prototype.draw=function(a){function g(a,b){var c=document.createElementNS("http://www.w3.org/2000/svg",a);for(var d in b)b.hasOwnProperty(d)&&c.setAttribute(d,b[d]);return c}var b=this._htOption,c=this._el,d=a.getModuleCount();Math.floor(b.width/d),Math.floor(b.height/d),this.clear();var h=g("svg",{viewBox:"0 0 "+String(d)+" "+String(d),width:"100%",height:"100%",fill:b.colorLight});h.setAttributeNS("http://www.w3.org/2000/xmlns/","xmlns:xlink","http://www.w3.org/1999/xlink"),c.appendChild(h),h.appendChild(g("rect",{fill:b.colorDark,width:"1",height:"1",id:"template"}));for(var i=0;d>i;i++)for(var j=0;d>j;j++)if(a.isDark(i,j)){var k=g("use",{x:String(i),y:String(j)});k.setAttributeNS("http://www.w3.org/1999/xlink","href","#template"),h.appendChild(k)}},a.prototype.clear=function(){for(;this._el.hasChildNodes();)this._el.removeChild(this._el.lastChild)},a}(),p="svg"===document.documentElement.tagName.toLowerCase(),q=p?o:m()?function(){function a(){this._elImage.src=this._elCanvas.toDataURL("image/png"),this._elImage.style.display="block",this._elCanvas.style.display="none"}function d(a,b){var c=this;if(c._fFail=b,c._fSuccess=a,null===c._bSupportDataURI){var d=document.createElement("img"),e=function(){c._bSupportDataURI=!1,c._fFail&&_fFail.call(c)},f=function(){c._bSupportDataURI=!0,c._fSuccess&&c._fSuccess.call(c)};return d.onabort=e,d.onerror=e,d.onload=f,d.src="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==",void 0}c._bSupportDataURI===!0&&c._fSuccess?c._fSuccess.call(c):c._bSupportDataURI===!1&&c._fFail&&c._fFail.call(c)}if(this._android&&this._android<=2.1){var b=1/window.devicePixelRatio,c=CanvasRenderingContext2D.prototype.drawImage;CanvasRenderingContext2D.prototype.drawImage=function(a,d,e,f,g,h,i,j){if("nodeName"in a&&/img/i.test(a.nodeName))for(var l=arguments.length-1;l>=1;l--)arguments[l]=arguments[l]*b;else"undefined"==typeof j&&(arguments[1]*=b,arguments[2]*=b,arguments[3]*=b,arguments[4]*=b);c.apply(this,arguments)}}var e=function(a,b){this._bIsPainted=!1,this._android=n(),this._htOption=b,this._elCanvas=document.createElement("canvas"),this._elCanvas.width=b.width,this._elCanvas.height=b.height,a.appendChild(this._elCanvas),this._el=a,this._oContext=this._elCanvas.getContext("2d"),this._bIsPainted=!1,this._elImage=document.createElement("img"),this._elImage.style.display="none",this._el.appendChild(this._elImage),this._bSupportDataURI=null};return e.prototype.draw=function(a){var b=this._elImage,c=this._oContext,d=this._htOption,e=a.getModuleCount(),f=d.width/e,g=d.height/e,h=Math.round(f),i=Math.round(g);b.style.display="none",this.clear();for(var j=0;e>j;j++)for(var k=0;e>k;k++){var l=a.isDark(j,k),m=k*f,n=j*g;c.strokeStyle=l?d.colorDark:d.colorLight,c.lineWidth=1,c.fillStyle=l?d.colorDark:d.colorLight,c.fillRect(m,n,f,g),c.strokeRect(Math.floor(m)+.5,Math.floor(n)+.5,h,i),c.strokeRect(Math.ceil(m)-.5,Math.ceil(n)-.5,h,i)}this._bIsPainted=!0},e.prototype.makeImage=function(){this._bIsPainted&&d.call(this,a)},e.prototype.isPainted=function(){return this._bIsPainted},e.prototype.clear=function(){this._oContext.clearRect(0,0,this._elCanvas.width,this._elCanvas.height),this._bIsPainted=!1},e.prototype.round=function(a){return a?Math.floor(1e3*a)/1e3:a},e}():function(){var a=function(a,b){this._el=a,this._htOption=b};return a.prototype.draw=function(a){for(var b=this._htOption,c=this._el,d=a.getModuleCount(),e=Math.floor(b.width/d),f=Math.floor(b.height/d),g=['<table style="border:0;border-collapse:collapse;">'],h=0;d>h;h++){g.push("<tr>");for(var i=0;d>i;i++)g.push('<td style="border:0;border-collapse:collapse;padding:0;margin:0;width:'+e+"px;height:"+f+"px;background-color:"+(a.isDark(h,i)?b.colorDark:b.colorLight)+';"></td>');g.push("</tr>")}g.push("</table>"),c.innerHTML=g.join("");var j=c.childNodes[0],k=(b.width-j.offsetWidth)/2,l=(b.height-j.offsetHeight)/2;k>0&&l>0&&(j.style.margin=l+"px "+k+"px")},a.prototype.clear=function(){this._el.innerHTML=""},a}();QRCode=function(a,b){if(this._htOption={width:256,height:256,typeNumber:4,colorDark:"#000000",colorLight:"#ffffff",correctLevel:d.H},"string"==typeof b&&(b={text:b}),b)for(var c in b)this._htOption[c]=b[c];"string"==typeof a&&(a=document.getElementById(a)),this._android=n(),this._el=a,this._oQRCode=null,this._oDrawing=new q(this._el,this._htOption),this._htOption.text&&this.makeCode(this._htOption.text)},QRCode.prototype.makeCode=function(a){this._oQRCode=new b(r(a,this._htOption.correctLevel),this._htOption.correctLevel),this._oQRCode.addData(a),this._oQRCode.make(),this._el.title=a,this._oDrawing.draw(this._oQRCode),this.makeImage()},QRCode.prototype.makeImage=function(){"function"==typeof this._oDrawing.makeImage&&(!this._android||this._android>=3)&&this._oDrawing.makeImage()},QRCode.prototype.clear=function(){this._oDrawing.clear()},QRCode.CorrectLevel=d}();
+</script>
+<title>吉利车机控制台</title>
+<style>
+/* ==================== 100% 视口全自适应 Design Tokens ==================== */
+* {
+  margin: 0; padding: 0; box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+html, body {
+  width: 100%; height: 100%; max-width: 100%; max-height: 100%;
+  overflow: hidden;
+}
+body {
+  font-size: 16px;
+  font-family: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", system-ui, -apple-system, sans-serif;
+  user-select: none;
+  display: flex; flex-direction: column;
+  
+  /* 深色默认 Tokens（夜间护眼模式） */
+  --bg: #0A0D14;
+  --bg2: #161B22;
+  --txt: #E8ECF4;
+  --txt-strong: #FFFFFF;
+  --txt-dim: rgba(255, 255, 255, 0.62);
+  --txt-faint: rgba(255, 255, 255, 0.40);
+  
+  --card: rgba(255, 255, 255, 0.04);
+  --card-hover: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.20);
+  --btn-bg: rgba(255, 255, 255, 0.08);
+  --btn-color: #E2E8F0;
+  
+  --accent: #00AEB9;
+  --accent2: #0284C7;
+  --accent-soft: #2DD4BF;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  --skin-radius: 14px;
+  --skin-radius-sm: 10px;
+  --skin-pill: 20px;
+  
+  background: var(--bg);
+  color: var(--txt);
+  transition: background 0.2s, color 0.2s;
+}
+
+/* ==================== 日间亮色模式（高对比防眩光） ==================== */
+body.light {
+  --bg: #EEF1F6;
+  --bg2: #E2E7F0;
+  --txt: #1E293B;
+  --txt-strong: #0F172A;
+  --txt-dim: rgba(30, 41, 59, 0.82);
+  --txt-faint: rgba(30, 41, 59, 0.55);
+  
+  --card: rgba(255, 255, 255, 0.90);
+  --card-hover: #FFFFFF;
+  --border: rgba(30, 41, 59, 0.14);
+  --border-strong: rgba(30, 41, 59, 0.25);
+  --btn-bg: rgba(255, 255, 255, 0.95);
+  --btn-color: #1E293B;
+  
+  --shadow: 0 4px 20px rgba(30, 50, 90, 0.14);
+  background: linear-gradient(160deg, #F4F7FB 0%, #EEF1F6 45%, #E6EBF4 100%);
+}
+
+/* ==================== 8 套精选护眼与柔和主题皮肤 ==================== */
+body.skin-default {
+  --accent: #0284C7; --accent2: #00AEB9; --accent-soft: #38BDF8;
+}
+body.skin-forest {
+  --accent: #10B981; --accent2: #059669; --accent-soft: #34D399;
+}
+body.skin-amber {
+  --accent: #D97706; --accent2: #F59E0B; --accent-soft: #FBBF24;
+}
+body.skin-aurora {
+  --accent: #00AEB9; --accent2: #0284C7; --accent-soft: #2DD4BF;
+}
+body.skin-amethyst {
+  --accent: #8B5CF6; --accent2: #A855F7; --accent-soft: #C084FC;
+}
+body.skin-pink {
+  --accent: #E11D48; --accent2: #FB7185; --accent-soft: #FDA4AF;
+}
+body.skin-slate {
+  --accent: #64748B; --accent2: #475569; --accent-soft: #94A3B8;
+}
+body.skin-cyber {
+  --bg: #090A10; --bg2: #121420;
+  --accent: #00F0FF; --accent2: #FF0055; --accent-soft: #FFE600;
+  --border: rgba(0, 240, 255, 0.28); --border-strong: rgba(0, 240, 255, 0.50);
+}
+
+/* ==================== 顶栏 Header ==================== */
+header {
+  height: 64px; min-height: 64px; max-height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 14px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  z-index: 10;
+  flex-shrink: 0;
+}
+.brand {
+  display: flex; align-items: center; gap: 8px;
+}
+.brand-icon {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 900; font-size: 18px;
+  box-shadow: 0 2px 8px rgba(0, 174, 185, 0.4);
+}
+.brand-title {
+  font-size: 19px; font-weight: 900; color: var(--txt-strong);
+  letter-spacing: 0.5px; white-space: nowrap;
+}
+.brand-ver {
+  font-size: 12px; padding: 2px 7px; border-radius: 6px;
+  background: var(--btn-bg); color: var(--accent); border: 1px solid var(--border);
+  font-weight: 800; white-space: nowrap;
+}
+
+.top-pills {
+  display: flex; align-items: center; gap: 8px;
+}
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: var(--skin-pill);
+  background: var(--btn-bg); border: 1px solid var(--border);
+  font-size: 13.5px; font-weight: 700; color: var(--txt-strong);
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.pill:active { transform: scale(0.96); }
+.dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--txt-dim); flex-shrink: 0;
+}
+.dot.green {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+}
+.dot.red {
+  background: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
+}
+.dot.blue {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.top-actions {
+  display: flex; align-items: center; gap: 6px;
+}
+.btn-icon {
+  height: 44px; padding: 0 16px; border-radius: var(--skin-radius-sm);
+  background: var(--btn-bg); border: 1.5px solid var(--border-strong);
+  color: var(--btn-color); font-size: 15.5px; font-weight: 900;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.btn-icon:active { transform: scale(0.96); }
+.btn-icon.primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 174, 185, 0.35);
+}
+
+/* ==================== 主体自适应分栏 Layout ==================== */
+main {
+  flex: 1; display: grid; grid-template-columns: 44% 56%; grid-template-rows: 100%;
+  gap: 10px; padding: 8px 12px 10px; overflow: hidden;
+  min-height: 0; height: calc(100% - 64px); max-height: calc(100% - 64px);
+  box-sizing: border-box;
+}
+
+/* 左侧栏：大卡片垂直弹性自适应，绝不超出屏幕 */
+.left-col {
+  display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--skin-radius);
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+  transition: all 0.2s;
+  display: flex; flex-direction: column;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6px; flex-shrink: 0;
+}
+.card-title {
+  font-size: 20px; font-weight: 900; color: var(--txt-strong);
+  display: flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+
+/* 兔子时钟伪装卡片 */
+.rabbit-card {
+  flex-shrink: 0;
+}
+.rabbit-box {
+  background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border);
+  border-radius: var(--skin-radius-sm); padding: 8px 12px; margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+body.light .rabbit-box {
+  background: rgba(0, 0, 0, 0.05);
+}
+.rabbit-status-title {
+  font-size: 14px; font-weight: 800; color: var(--txt-strong);
+}
+.rabbit-status-desc {
+  font-size: 12px; color: var(--txt-dim); margin-top: 2px;
+}
+
+/* 弹性大按钮网格 */
+.grid-btn-2 {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.btn-ctrl-lg {
+  height: 100%; min-height: 64px; border-radius: var(--skin-radius-sm);
+  background: var(--btn-bg); border: 2px solid var(--border-strong);
+  color: var(--txt-strong); font-size: 20px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+.btn-ctrl-lg:active { transform: scale(0.97); }
+.btn-ctrl-lg.highlight {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; border: none;
+  box-shadow: 0 3px 14px rgba(0, 174, 185, 0.4);
+}
+.btn-ctrl-lg.danger {
+  background: rgba(239, 68, 68, 0.18); color: #EF4444; border: 1.5px solid rgba(239, 68, 68, 0.4);
+}
+
+.shortcut-card {
+  flex-shrink: 0;
+}
+.grid-btn-3 {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+}
+.btn-ctrl-md {
+  height: 100%; min-height: 62px; border-radius: var(--skin-radius-sm);
+  background: var(--btn-bg); border: 2px solid var(--border-strong);
+  color: var(--txt-strong); font-size: 18.5px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+.btn-ctrl-md:active { transform: scale(0.97); }
+.btn-ctrl-md.danger {
+  background: #DC2626 !important;
+  color: #FFFFFF !important;
+  border-color: #EF4444 !important;
+}
+.btn-ctrl-md.primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2)) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+}
+
+.btn-status-pill {
+  font-size: 13.5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-weight: 800;
+  display: inline-block;
+  line-height: 1.2;
+  margin-top: 3px;
+}
+.btn-status-pill.green {
+  background: #DCFCE7 !important;
+  color: #15803D !important;
+  border: 1px solid #86EFAC !important;
+}
+.btn-status-pill.amber {
+  background: #FEF3C7 !important;
+  color: #B45309 !important;
+  border: 1px solid #FCD34D !important;
+}
+.btn-status-pill.blue {
+  background: #E0F2FE !important;
+  color: #0369A1 !important;
+  border: 1px solid #7DD3FC !important;
+}
+.btn-status-pill.gray {
+  background: #F1F5F9 !important;
+  color: #475569 !important;
+  border: 1px solid #CBD5E1 !important;
+}
+body.dark .btn-status-pill.green {
+  background: rgba(16, 185, 129, 0.28) !important;
+  color: #34D399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.6) !important;
+}
+body.dark .btn-status-pill.amber {
+  background: rgba(245, 158, 11, 0.28) !important;
+  color: #FBBF24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.6) !important;
+}
+body.dark .btn-status-pill.blue {
+  background: rgba(56, 189, 248, 0.28) !important;
+  color: #38BDF8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.6) !important;
+}
+body.dark .btn-status-pill.gray {
+  background: rgba(148, 163, 184, 0.22) !important;
+  color: #94A3B8 !important;
+  border: 1px solid rgba(148, 163, 184, 0.45) !important;
+}
+
+/* 左下角卡兔子指引大卡片 */
+.guide-card-full {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--skin-radius); padding: 8px 12px;
+  display: flex; flex-direction: column; justify-content: center; gap: 4px;
+  flex-shrink: 0;
+}
+.guide-header {
+  font-size: 16px; font-weight: 900; color: var(--txt-strong);
+  display: flex; align-items: center; gap: 5px;
+}
+.guide-step-item {
+  display: flex; align-items: flex-start; gap: 8px; font-size: 14.5px; color: var(--txt-dim); line-height: 1.5;
+}
+.step-num {
+  background: rgba(0, 174, 185, 0.18); color: var(--accent);
+  padding: 2px 8px; border-radius: 5px; font-weight: 900; font-size: 13px;
+  border: 1px solid rgba(0, 174, 185, 0.35); flex-shrink: 0; margin-top: 1px;
+}
+
+/* 右侧栏：车载精选软件中心 */
+.right-col {
+  display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden;
+}
+
+/* 官方实测机型声明 Banner */
+.disclaimer-banner {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-size: 13.5px;
+  color: #FBBF24;
+  line-height: 1.35;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+body.light .disclaimer-banner {
+  background: rgba(245, 158, 11, 0.10);
+  color: #B45309;
+}
+
+.tab-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6px; flex-shrink: 0;
+}
+.tab-group {
+  display: flex; gap: 5px;
+}
+.tab-item {
+  padding: 5px 12px; border-radius: 7px; font-size: 13.5px; font-weight: 800;
+  background: transparent; color: var(--txt-dim); border: none;
+  cursor: pointer; transition: all 0.15s;
+}
+.tab-item.active {
+  background: var(--btn-bg); color: var(--accent); border: 1px solid var(--border);
+}
+
+.app-list {
+  flex: 1 1 0; min-height: 0; height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column; gap: 8px;
+  padding-right: 6px;
+  touch-action: pan-y;
+}
+.app-list::-webkit-scrollbar { width: 8px; }
+.app-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.20); border-radius: 4px; }
+body.light .app-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.06); }
+.app-list::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+.app-list::-webkit-scrollbar-thumb:hover,
+.app-list::-webkit-scrollbar-thumb:active { background: var(--accent-soft); }
+
+.app-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-radius: var(--skin-radius-sm);
+  background: var(--card); border: 1px solid var(--border);
+  transition: all 0.15s; flex-shrink: 0; min-height: 84px;
+}
+.app-info {
+  display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;
+}
+
+/* 纯文字极简应用类型徽标 */
+.app-type-badge {
+  width: 44px; height: 44px; border-radius: 9px;
+  border: 1.5px solid var(--border-strong);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13.5px; font-weight: 900;
+  flex-shrink: 0; text-align: center; line-height: 1;
+}
+.app-type-badge.nav { background: rgba(0, 174, 185, 0.18); color: var(--accent); border-color: rgba(0, 174, 185, 0.35); }
+.app-type-badge.music { background: rgba(2, 132, 199, 0.18); color: #38BDF8; border-color: rgba(2, 132, 199, 0.35); }
+.app-type-badge.tool { background: rgba(16, 185, 129, 0.18); color: #34D399; border-color: rgba(16, 185, 129, 0.35); }
+.app-type-badge.setting { background: rgba(245, 158, 11, 0.18); color: #FBBF24; border-color: rgba(245, 158, 11, 0.35); }
+
+.app-meta {
+  min-width: 0; flex: 1;
+}
+.app-name-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 3px;
+}
+.app-name {
+  font-size: 20px; font-weight: 900; color: var(--txt-strong);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.app-badge {
+  font-size: 13px; padding: 3px 8px; border-radius: 5px;
+  background: rgba(0, 174, 185, 0.18); color: var(--accent);
+  border: 1px solid rgba(0, 174, 185, 0.35); white-space: nowrap; font-weight: 800;
+}
+.app-desc-marquee-box {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  mask-image: linear-gradient(to right, black calc(100% - 20px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 20px), transparent 100%);
+}
+.app-desc {
+  font-size: 14.5px; color: var(--txt-dim); font-weight: 700;
+  white-space: nowrap; display: inline-block;
+  will-change: transform;
+}
+.app-desc.animate-marquee {
+  animation: app-desc-marquee-slide linear infinite alternate;
+}
+@keyframes app-desc-marquee-slide {
+  0%, 15% { transform: translateX(0); }
+  85%, 100% { transform: translateX(var(--scroll-dist, -60px)); }
+}
+
+.app-action {
+  display: flex; align-items: center; gap: 6px; margin-left: 10px; flex-shrink: 0;
+}
+.btn-dl {
+  height: 52px; min-width: 112px; padding: 0 18px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; color: #fff; font-size: 17px; font-weight: 900;
+  cursor: pointer; transition: all 0.15s;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.btn-dl:active { transform: scale(0.96); }
+.btn-dl.done {
+  background: var(--btn-bg); border: 1.5px solid var(--border); color: var(--success);
+}
+.btn-dl.updating {
+  background: rgba(245, 158, 11, 0.18); border: 1.5px solid rgba(245, 158, 11, 0.35); color: var(--warning);
+}
+.btn-dl.danger {
+  background: rgba(239, 68, 68, 0.18); border: 1.5px solid rgba(239, 68, 68, 0.35); color: var(--danger);
+}
+
+.btn-redl {
+  height: 44px; min-width: 72px; padding: 0 10px; border-radius: 9px;
+  background: var(--btn-bg); border: 1px solid var(--border);
+  color: var(--txt-dim); font-size: 13px; font-weight: 800;
+  cursor: pointer; transition: all 0.15s;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.btn-redl:active { transform: scale(0.96); }
+
+/* ==================== 模态弹窗 Modal ==================== */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  display: none; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.modal-overlay.open {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: none; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.modal-card {
+  width: 720px; max-width: 95vw; max-height: 92vh; overflow-y: auto;
+  background: #0B1120 !important; /* 纯实色高对比，彻底杜绝透底叠影 */
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.95);
+  display: flex; flex-direction: column; gap: 10px;
+  margin: auto;
+}
+body.light .modal-card {
+  background: #FFFFFF !important;
+  border-color: rgba(0, 0, 0, 0.18);
+}
+.app-meta-tags {
+  display: flex; align-items: center; gap: 6px; margin: 3px 0; flex-wrap: wrap;
+}
+.app-meta-tag {
+  font-size: 11.5px; font-weight: 700; color: var(--txt-dim);
+  background: var(--btn-bg); padding: 1px 6px; border-radius: 4px;
+  border: 1px solid var(--border);
+}
+.app-meta-tag.done {
+  color: var(--success); border-color: rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.12);
+}
+body.light .modal-card {
+  background: #FFFFFF;
+  box-shadow: 0 12px 48px rgba(30, 50, 90, 0.28);
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title {
+  font-size: 20px; font-weight: 900; color: var(--txt-strong);
+}
+.modal-close {
+  background: transparent; border: none; color: var(--txt-dim);
+  font-size: 22px; cursor: pointer; line-height: 1;
+}
+
+/* 通用弹窗内容精致卡片（彻底告别旧式灰色背景） */
+.modal-info-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+body.light .modal-info-box {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+}
+
+/* 更新说明与升级弹窗专有拟态卡片 */
+.update-badge-flow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(0, 174, 185, 0.15), rgba(2, 132, 199, 0.15));
+  border: 1.5px solid var(--accent);
+  margin-bottom: 12px;
+}
+body.light .update-badge-flow {
+  background: linear-gradient(135deg, rgba(0, 174, 185, 0.08), rgba(2, 132, 199, 0.08));
+  border-color: var(--accent);
+}
+.update-changelog-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+body.light .update-changelog-card {
+  background: #F8FAFC;
+  border: 1.5px solid #CBD5E1;
+}
+.changelog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.changelog-list::-webkit-scrollbar { width: 6px; }
+.changelog-list::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+.changelog-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  transition: background 0.15s;
+}
+body.light .changelog-item {
+  background: #FFFFFF;
+  border-color: #E2E8F0;
+}
+.changelog-num {
+  min-width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #FFFFFF;
+  font-size: 11.5px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.changelog-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--txt-strong);
+  line-height: 1.55;
+  font-weight: 600;
+}
+
+/* 动态暗码大卡片 */
+.passcode-banner {
+  background: linear-gradient(135deg, rgba(0, 174, 185, 0.18), rgba(2, 132, 199, 0.18));
+  border: 1.5px solid var(--accent); border-radius: var(--skin-radius-sm);
+  padding: 12px; text-align: center;
+}
+.passcode-val {
+  font-size: 32px; font-weight: 900; color: var(--accent-soft);
+  font-family: monospace; letter-spacing: 3px; margin-bottom: 3px;
+  text-shadow: 0 0 14px rgba(0, 174, 185, 0.5);
+}
+.passcode-tip {
+  font-size: 12px; color: var(--txt-dim); font-weight: 600;
+}
+.modal-desc {
+  font-size: 12.5px; color: var(--txt-dim); line-height: 1.55;
+}
+.modal-actions {
+  display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px;
+}
+
+/* 冻结管理 item */
+.freeze-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px; border-radius: var(--skin-radius-sm);
+  background: var(--card); border: 1px solid var(--border);
+}
+.freeze-info {
+  min-width: 0; flex: 1;
+}
+.freeze-title {
+  font-size: 13.5px; font-weight: 800; color: var(--txt-strong);
+  display: flex; align-items: center; gap: 6px;
+}
+.freeze-desc {
+  font-size: 11px; color: var(--txt-dim); margin-top: 1px; line-height: 1.35;
+}
+.freeze-btns {
+  display: flex; gap: 5px; flex-shrink: 0; margin-left: 8px;
+}
+
+/* OTA 直链抓取卡片 */
+.ota-box {
+  background: rgba(0, 174, 185, 0.08); border: 1px solid rgba(0, 174, 185, 0.3);
+  border-radius: var(--skin-radius-sm); padding: 8px 10px;
+}
+.ota-title {
+  font-size: 13px; font-weight: 800; color: var(--accent); display: flex; align-items: center; justify-content: space-between;
+}
+.ota-url-val {
+  font-size: 11px; font-family: monospace; color: var(--txt-strong);
+  background: rgba(0, 0, 0, 0.3); padding: 4px 6px; border-radius: 5px;
+  word-break: break-all; margin: 4px 0; user-select: all;
+}
+
+/* 清理选项卡片 */
+.clean-opt-card {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px; border-radius: var(--skin-radius-sm);
+  background: var(--card); border: 1px solid var(--border);
+}
+.clean-opt-info {
+  min-width: 0; flex: 1;
+}
+.clean-opt-title {
+  font-size: 13.5px; font-weight: 800; color: var(--txt-strong);
+}
+.clean-opt-desc {
+  font-size: 11px; color: var(--txt-dim); margin-top: 1px; line-height: 1.35;
+}
+
+/* 全量应用管理 列表与控制 */
+.search-input {
+  width: 100%; height: 34px; border-radius: 7px;
+  background: var(--btn-bg); border: 1px solid var(--border-strong);
+  padding: 0 10px; color: var(--txt-strong); font-size: 12.5px;
+}
+.filter-tabs {
+  display: flex; gap: 4px; margin: 3px 0;
+}
+.filter-tab {
+  padding: 3px 7px; border-radius: 5px; font-size: 11px; font-weight: 700;
+  background: transparent; color: var(--txt-dim); border: 1px solid var(--border);
+  cursor: pointer;
+}
+.filter-tab.active {
+  background: var(--btn-bg); color: var(--accent); border-color: var(--accent);
+}
+
+.all-apps-list {
+  max-height: 440px; min-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+  padding-right: 6px;
+}
+.all-apps-list::-webkit-scrollbar { width: 8px; }
+.all-apps-list::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+
+.app-manage-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-radius: var(--skin-radius-sm);
+  background: var(--card); border: 1.5px solid var(--border);
+  min-height: 64px;
+}
+.app-manage-meta {
+  min-width: 0; flex: 1;
+}
+.app-manage-name {
+  font-size: 20px; font-weight: 900; color: var(--txt-strong);
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.app-manage-pkg {
+  font-size: 12px; font-family: monospace; color: var(--txt-dim); margin-top: 2px;
+  word-break: break-all;
+}
+.app-manage-actions {
+  display: flex; gap: 6px; flex-shrink: 0; margin-left: 10px;
+}
+
+.btn-mini {
+  height: 38px; padding: 0 14px; border-radius: 7px;
+  background: var(--btn-bg); border: 1.5px solid var(--border);
+  color: var(--txt-strong); font-size: 13.5px; font-weight: 800;
+  cursor: pointer; transition: all 0.15s;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.btn-mini:active { transform: scale(0.96); }
+.btn-mini.danger {
+  color: #EF4444; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15);
+}
+.btn-mini.freeze {
+  color: #00F0FF; border-color: rgba(0, 240, 255, 0.35); background: rgba(0, 240, 255, 0.12);
+}
+.btn-mini.unfreeze {
+  color: #10B981; border-color: rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.12);
+}
+
+/* 三次校验确认弹窗 */
+.confirm-box {
+  background: rgba(239, 68, 68, 0.12); border: 1.5px solid rgba(239, 68, 68, 0.4);
+  border-radius: var(--skin-radius-sm); padding: 12px; text-align: center;
+}
+.confirm-step {
+  font-size: 11px; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 3px;
+}
+.confirm-title {
+  font-size: 15px; font-weight: 800; color: #EF4444; margin-bottom: 5px;
+}
+.confirm-desc {
+  font-size: 12.5px; color: var(--txt-strong); line-height: 1.5; text-align: left;
+}
+
+/* 关于卡片 */
+.about-box {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.about-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 10px; border-radius: 6px; background: var(--card); border: 1px solid var(--border);
+  font-size: 12.5px;
+}
+
+.reward-img {
+  width: 190px; height: 190px; border-radius: 12px; margin: 0 auto;
+  display: block; border: 2px solid var(--border);
+}
+.reward-tip {
+  text-align: center; font-size: 12px; color: var(--txt-dim); line-height: 1.45;
+}
+
+/* ==================== 顶部常驻通知 Banner ==================== */
+.toast-banner {
+  position: fixed; top: 52px; left: 50%; transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.95); border: 1.5px solid var(--accent);
+  padding: 7px 16px; border-radius: var(--skin-pill);
+  color: #fff; font-size: 13px; font-weight: 700;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.65);
+  display: none; align-items: center; justify-content: center;
+  z-index: 99; backdrop-filter: blur(8px);
+}
+.toast-banner.show { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- 顶部常驻提示 -->
+<div id="toastBanner" class="toast-banner">
+  <span id="toastMsg">提示内容</span>
+</div>
+
+<!-- 顶栏 -->
+<header>
+  <div class="brand">
+    <div class="brand-title">吉利车机控制台</div>
+    <div class="brand-ver" id="appVer">v1.1.8</div>
+  </div>
+
+  <div class="top-pills">
+    <div class="pill" style="cursor:pointer;" onclick="handleOpenDialer()" title="点击调起车机拨号盘">
+      <span class="dot blue"></span>
+      <span id="codePlus10PillTxt">暗码(+10): 计算中</span>
+    </div>
+    <div class="pill" style="cursor:pointer;" onclick="handleOpenDialer()" title="点击调起车机拨号盘">
+      <span class="dot blue"></span>
+      <span id="codePlus5PillTxt">暗码(+5): 计算中</span>
+    </div>
+    <div class="pill" onclick="handleShowQrCode()">
+      <span class="dot green" id="ipDot"></span>
+      <span id="ipTxt">IP: 探测中</span>
+    </div>
+  </div>
+
+  <div class="top-actions">
+    <button class="btn-icon" onclick="handleToggleTheme()">日夜模式</button>
+    <button class="btn-icon highlight" onclick="handleShowQrCode()">无线快传</button>
+    <button class="btn-icon" onclick="handleOpenSettingsModal()">设置</button>
+    <button class="btn-icon" style="color:#EF4444; border-color:rgba(239,68,68,0.35);" onclick="handlePromptExit()">退出</button>
+  </div>
+</header>
+
+<!-- 主体自适应分栏 -->
+<main>
+  <!-- 左侧控制区 -->
+  <div class="left-col">
+    <!-- 1. 兔子时钟伪装注入大卡片 -->
+    <div class="card rabbit-card">
+      <div class="card-header">
+        <div class="card-title">兔子时钟伪装注入 (导航专车版覆盖方案)</div>
+      </div>
+      <div class="rabbit-box">
+        <div>
+          <div class="rabbit-status-title" id="rabbitPkg">已伪装: com.autonavi.amapauto</div>
+          <div class="rabbit-status-desc" id="rabbitDetail">大小: 286.7 MB · 防覆写占位已锁定 · 伪装时间: 读取中</div>
+        </div>
+        <div class="pill" style="padding: 2px 7px; font-size: 10.5px;">
+          <span class="dot green" id="rabbitStatusDot"></span> <span id="rabbitStatusText">就绪</span>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <button class="btn-ctrl-lg highlight" style="min-height:48px; font-size:17.5px; font-weight:900; background:linear-gradient(135deg, var(--accent), var(--accent2)); color:#fff; border:none; box-shadow:0 3px 14px rgba(0,174,185,0.45);" onclick="handleStartAutoPilot(null)">一键卡兔子向导 (保姆级半自动)</button>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+          <button class="btn-ctrl-lg" style="min-height:44px; font-size:15px;" onclick="handleSelectApkInject()">选择导航 APK 注入</button>
+          <button class="btn-ctrl-lg" style="min-height:44px; font-size:15px;" onclick="handleOpenThemeManager()">打开车机主题</button>
+          <button class="btn-ctrl-lg danger" style="min-height:44px; font-size:15px;" onclick="handleSoftReboot()">一键软重启 (5秒)</button>
+          <button class="btn-ctrl-lg" style="min-height:44px; font-size:15px; border-color:#EF4444; color:#FCA5A5;" onclick="handleHardReboot()">完整硬重启</button>
+          <button class="btn-ctrl-lg" style="min-height:40px; font-size:14px; font-weight:800; border-color:var(--accent); color:var(--accent);" id="btnRestoreOfficialTheme" onclick="handleRestoreOfficialTheme()">还原官方原版时钟</button>
+          <button class="btn-ctrl-lg" style="min-height:40px; font-size:14px;" onclick="handleUninstallAmap()">卸载已安装高德</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 常用系统快捷通道大卡片 (装软件黄金三剑客 + 深度工具箱抽屉) -->
+    <div class="card shortcut-card">
+      <div class="card-header">
+        <div class="card-title">常用系统快捷通道</div>
+        <div style="font-size:11.5px; color:var(--txt-dim); font-weight:700;">点击均提供二次防误触确认</div>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 6px;">
+        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:6px 4px; min-height:50px;" onclick="handleOpenFileManager()">
+          <span style="font-weight:800; font-size:13px;">原生文件管理</span>
+          <span class="btn-status-pill blue">直接安装APK</span>
+        </button>
+        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:6px 4px; min-height:50px;" onclick="handleToggleWhitelist()">
+          <span style="font-weight:800; font-size:13px;">白名单放行</span>
+          <span class="btn-status-pill green" id="pillWhitelist">已放行</span>
+        </button>
+        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:6px 4px; min-height:50px;" onclick="handleToggleFreezeAppStore()">
+          <span style="font-weight:800; font-size:13px;">冻结应用商店</span>
+          <span class="btn-status-pill green" id="pillAppstore">已冻结</span>
+        </button>
+      </div>
+      <button class="btn-ctrl-md highlight" style="width:100%; min-height:40px; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="handleOpenDeepToolsModal()">
+        <span>打开车机深度工具箱 (ADB / 动态暗码 / 清理 / 全量组件)</span>
+      </button>
+    </div>
+
+    <!-- 3. 卡兔子极简安装 SOP 指引大卡片 -->
+    <div class="guide-card-full">
+      <div class="guide-header"> 高德无损升级·保姆级指引 (按上方大按钮 123 顺序)：</div>
+      <div class="guide-step-item">
+        <span class="step-num">步骤 1</span>
+        <span>右侧下载高德  点上方【选择 APK 注入】(或直接点卡片【一键注入】)；</span>
+      </div>
+      <div class="guide-step-item">
+        <span class="step-num">步骤 2</span>
+        <span>点【打开车机主题】 屏保时钟  应用『兔子时钟』(<b>不管提示成功失败均已注入生效</b>)；</span>
+      </div>
+      <div class="guide-step-item">
+        <span class="step-num">步骤 3</span>
+        <span>点【一键软重启车机】 开机打开工具箱<b>白名单自动放行</b>  直接安装或进 Download 目录安装！</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧精选软件中心 -->
+  <div class="right-col card">
+    <!-- 官方实测机型声明 Banner -->
+    <div class="disclaimer-banner">
+      <span><b>【实测机型声明】</b>以下软件仅在「吉利缤越COOL 2022 (亿咖通 E02 / IHU516G / Android 9)」实测通过，其他车型不做兼容保证，请自行评估后安装。</span>
+    </div>
+
+    <div class="tab-bar">
+      <div class="card-title">车载精选软件中心</div>
+      <div class="tab-group">
+        <button class="tab-item active" onclick="switchCategory('all')">全部</button>
+        <button class="tab-item" onclick="switchCategory('navigation')">车载导航</button>
+        <button class="tab-item" onclick="switchCategory('music')">音乐应用</button>
+        <button class="tab-item" onclick="switchCategory('tool')">车机工具</button>
+        <button class="tab-item" id="btnRefreshApps" style="color:var(--accent); font-weight:800; border:1px solid var(--border);" onclick="handleRefreshCloudApps()">刷新</button>
+        <button class="tab-item" style="color:var(--txt-dim); border:1px solid var(--border);" onclick="handleOpenCleanDialog()">清理</button>
+      </div>
+    </div>
+
+    <div class="app-list" id="appListContainer">
+      <!-- 动态应用卡片流 -->
+    </div>
+  </div>
+</main>
+
+<!-- 高德地图安装与注入引导 Modal -->
+<div class="modal-overlay" id="rabbitInstallModal">
+  <div class="modal-card" style="width:560px;">
+    <div class="modal-header">
+      <div class="modal-title" id="rabbitInstallModalTitle">高德地图安装指引</div>
+      <button class="modal-close" onclick="closeModal('rabbitInstallModal')">×</button>
+    </div>
+    <div class="modal-info-box">
+      <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong); margin-bottom:4px;" id="rabbitInstallAppName">高德地图 8.5</div>
+      <div style="font-size:12.5px; color:var(--txt-dim); line-height:1.6;">
+        吉利原厂高德具备系统签名保护，需先通过保姆级半自动向导伪装打包并应用兔子时钟，软重启后即可完成无损覆盖安装。
+      </div>
+    </div>
+    <div style="font-size:12.5px; color:var(--txt-dim); margin-bottom:14px; line-height:1.6;">
+      标准安装流程：启动向导 -> 主题应用兔子时钟 -> 一键软重启 -> 开机秒弹安装器完成覆盖。
+    </div>
+    <div class="modal-actions" style="display:flex; flex-direction:column; gap:8px;">
+      <button class="btn-ctrl-md primary" style="height:44px; font-size:14.5px; font-weight:900;" onclick="handleRabbitAutoPilotInstall()">一键卡兔子向导 (保姆级半自动 · 推荐)</button>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <button class="btn-ctrl-md" style="height:38px; font-size:13px;" onclick="handleRabbitOpenFolder()">打开原生文件管理</button>
+        <button class="btn-ctrl-md" style="height:38px; font-size:13px;" onclick="handleRabbitReInject()">仅重新注入伪装</button>
+      </div>
+      <button class="btn-ctrl-md" style="height:36px; font-size:13px; color:var(--txt-dim); margin-top:2px;" onclick="closeModal('rabbitInstallModal')">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 兔子时钟注入后首次重启智能就绪通知 Modal -->
+<div class="modal-overlay" id="rabbitPostRebootModal">
+  <div class="modal-card" style="width:560px;">
+    <div class="modal-header">
+      <div class="modal-title" id="rabbitPostRebootTitle">兔子时钟就绪 · 白名单已自动放行</div>
+      <button class="modal-close" onclick="dismissPostRebootModal()">×</button>
+    </div>
+    <div class="modal-info-box" style="background:rgba(16, 185, 129, 0.08); border-color:rgba(16, 185, 129, 0.35);">
+      <div style="font-size:13.5px; font-weight:800; color:var(--success); margin-bottom:4px;" id="rabbitPostRebootHeader">白名单权限已自动开启 · 伪装与锁已自愈清除</div>
+      <div style="font-size:12.5px; color:var(--txt-dim); line-height:1.6;" id="rabbitPostRebootBody">
+        检测到车机刚刚完成软重启！白名单已自动放行，且伪装大包与防覆写锁已在开机瞬间自动清空自愈（已释放 280MB 存储，车机处于官方安全状态）。
+      </div>
+    </div>
+    <div style="font-size:12px; color:var(--txt-dim); margin-bottom:14px; line-height:1.5;" id="rabbitPostRebootTip">
+      现在可以直接安装已伪装的高德地图安装包：
+    </div>
+    <div class="modal-actions" style="display:flex; flex-direction:column; gap:8px;">
+      <button class="btn-icon highlight" style="height:44px; font-size:14.5px; font-weight:900;" onclick="handlePostRebootInstall()">立即调起高德安装器</button>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <button class="btn-icon primary" style="height:40px; font-size:13.5px;" onclick="handlePostRebootOpenFolder()">打开原生文件管理</button>
+        <button class="btn-icon" style="height:40px; font-size:13.5px;" id="btnPostRebootGoAdb" onclick="handlePostRebootGoAdb()">前往车机 ADB 冻结商店</button>
+      </div>
+      <button class="btn-icon" style="height:36px; font-size:13px; color:var(--txt-dim); margin-top:2px;" onclick="dismissPostRebootModal()">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- 多高德版本选择弹窗 Modal -->
+<div class="modal-overlay" id="selectAmapForAutoModal">
+  <div class="modal-card" style="width:560px;">
+    <div class="modal-header">
+      <div class="modal-title">选择要注入安装的高德地图版本</div>
+      <button class="modal-close" onclick="closeModal('selectAmapForAutoModal')">×</button>
+    </div>
+    <div style="font-size:13px; color:var(--txt-dim); margin-bottom:12px;">
+      检测到机身 Download 目录存在多个高德安装包，请点击选择目标版本启动半自动向导：
+    </div>
+    <div id="amapAutoSelectList" style="display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; margin-bottom:14px;">
+      <!-- 动态高德列表 -->
+    </div>
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button class="btn-icon" style="height:36px; padding:0 14px;" onclick="handleSelectApkInject(); closeModal('selectAmapForAutoModal');"> 从文件管理器手动选择...</button>
+      <button class="btn-icon primary" style="height:36px; padding:0 16px;" onclick="closeModal('selectAmapForAutoModal')">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 关于工具箱 Modal -->
+<!-- 退出确认 Modal -->
+<div class="modal-overlay" id="exitAppModal">
+  <div class="modal-card" style="width:500px;">
+    <div class="modal-header">
+      <div class="modal-title">退出车机控制台</div>
+      <button class="modal-close" onclick="closeModal('exitAppModal')">×</button>
+    </div>
+    <div style="padding:12px 4px; font-size:13.5px; color:var(--txt-dim); line-height:1.6;">
+      你可以将工具箱【最小化到后台】（悬浮胶囊随时唤回），或【彻底退出】关闭所有后台服务与悬浮窗。
+    </div>
+    <div class="modal-actions" style="justify-content:space-between; margin-top:14px;">
+      <button class="btn-ctrl-md" style="min-width:130px; font-size:13px; font-weight:800;" onclick="closeModal('exitAppModal'); handleMinimize();">最小化到后台</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-ctrl-md" style="min-width:80px;" onclick="closeModal('exitAppModal')">取消</button>
+        <button class="btn-ctrl-md danger" style="min-width:110px; font-size:13px; font-weight:800;" onclick="closeModal('exitAppModal'); handleRealExitApp();">彻底退出</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="aboutModal">
+  <div class="modal-card" style="width:540px;">
+    <div class="modal-header">
+      <div class="modal-title">关于吉利车机控制台</div>
+      <button class="modal-close" onclick="closeModal('aboutModal')">×</button>
+    </div>
+    <div class="about-box">
+      <div class="about-item">
+        <span style="color:var(--txt-dim);">当前软件版本</span>
+        <span style="font-weight:800; color:var(--accent);" id="aboutVersionText">v1.1.8 (7018)</span>
+      </div>
+      <div class="about-item">
+        <span style="color:var(--txt-dim);">支持车机芯片</span>
+        <span style="font-weight:700;">亿咖通 E02 (IHU516G / Android 9)</span>
+      </div>
+      <div class="about-item">
+        <span style="color:var(--txt-dim);">官方技术支持</span>
+        <span style="font-weight:700; color:var(--txt-strong);">https://onepve.com</span>
+      </div>
+      <div class="about-item">
+        <span style="color:var(--txt-dim);">UI 设计标准</span>
+        <span style="font-weight:700;">车载拟态智能座舱 UI (全自适应视口)</span>
+      </div>
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-weight:800; color:var(--txt-strong);">车机开机自启动</div>
+          <div style="font-size:11.5px; color:var(--txt-dim); margin-top:2px;" id="autostartStatusHint">开机自动拉起悬浮胶囊并放行白名单</div>
+        </div>
+        <button class="btn-mini" id="btnToggleAutostart" style="padding:5px 14px; font-size:12.5px; font-weight:800;" onclick="handleToggleAutostart()">设置</button>
+      </div>
+    </div>
+    <div style="font-size:12px; color:var(--txt-dim); line-height:1.5;">
+      本工具箱专注于吉利车系原厂大屏深度适配，提供无损高德覆盖升级、原厂白名单开机自启、ADB 核心组件冻结、OTA 直链抓取及车载精选生态分发。
+    </div>
+    <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn-icon highlight" style="height:36px; padding:0 14px;" onclick="handleCheckUpdate()">检查更新</button>
+        <button class="btn-icon" style="height:36px; padding:0 12px; font-size:12px;" onclick="handleForceDownloadToolbox()">强制重新下载</button>
+        <button class="btn-icon" style="height:36px; padding:0 12px; font-size:12px;" onclick="handleShowReward()">赞赏支持</button>
+      </div>
+      <button class="btn-icon primary" style="height:36px; padding:0 16px;" onclick="closeModal('aboutModal')">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 工具箱检查更新车载精致弹窗 -->
+<div class="modal-overlay" id="updateModal">
+  <div class="modal-card" style="width:600px; max-width:94vw;">
+    <div class="modal-header">
+      <div class="modal-title">发现吉利工具箱新版本</div>
+      <button class="modal-close" onclick="closeModal('updateModal')">×</button>
+    </div>
+
+    <!-- 升级版本对比流动横幅 -->
+    <div class="update-badge-flow">
+      <span style="font-size:13.5px; font-weight:800; color:var(--txt-strong);">版本升级</span>
+      <span style="font-size:13.5px; font-weight:900; color:var(--accent);" id="modalUpgradeVersionBadge">检测中</span>
+    </div>
+
+    <!-- 升级亮点与功能改进卡片 -->
+    <div class="update-changelog-card">
+      <div style="font-size:12.5px; color:var(--txt-dim); font-weight:800; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+        <span>升级亮点与功能改进</span>
+        <span style="font-size:11px; font-weight:700; color:var(--accent);">E02 / IHU516 专车适配</span>
+      </div>
+      <div id="modalUpgradeChangelog" class="changelog-list"></div>
+    </div>
+
+    <div id="toolboxSelfProgressBox" style="display:none; margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:700; margin-bottom:4px;">
+        <span id="toolboxSelfProgressStatus" style="color:var(--accent);">正在下载更新包...</span>
+        <span id="toolboxSelfProgressSpeed" style="color:var(--txt-dim);">0 KB/s</span>
+      </div>
+      <div style="height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; border:1px solid var(--border);">
+        <div id="toolboxSelfProgressBar" style="width:0%; height:100%; background:linear-gradient(135deg, var(--accent), var(--accent2)); transition:width 0.2s;"></div>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="justify-content:flex-end; gap:10px; margin-top:6px;">
+      <button class="btn-ctrl-md" style="min-width:100px;" onclick="closeModal('updateModal')">稍后再说</button>
+      <button class="btn-ctrl-md highlight" id="btnStartSelfUpdate" style="min-width:160px; font-weight:800;" onclick="handleStartSelfUpdate()">立即更新 (安全直装)</button>
+    </div>
+  </div>
+</div>
+
+<!-- 主题皮肤选择 & 实时预览 Modal -->
+<div class="modal-overlay" id="skinModal">
+  <div class="modal-card" style="width:640px;">
+    <div class="modal-header">
+      <div class="modal-title">主题皮肤选择 & 实时预览</div>
+      <button class="modal-close" onclick="closeModal('skinModal')">×</button>
+    </div>
+    <div style="font-size:12px; color:var(--txt-dim); margin-bottom:2px;">
+      点击任意主题即可立即全屏实时预览色彩效果，自动保存车机偏好设置：
+    </div>
+    <div id="skinCardsContainer" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; max-height:280px; overflow-y:auto; padding-right:2px;">
+      <!-- 动态渲染 8 套皮肤卡片 -->
+    </div>
+    <div class="modal-actions" style="margin-top:8px;">
+      <button class="btn-icon primary" style="height:36px; padding:0 20px;" onclick="closeModal('skinModal')">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 动态暗码 & 工程模式 Modal -->
+<div class="modal-overlay" id="dynamicCodeModal">
+  <div class="modal-card" style="width:580px;">
+    <div class="modal-header">
+      <div class="modal-title">今日车机动态暗码 & 工程模式</div>
+      <button class="modal-close" onclick="closeModal('dynamicCodeModal')">×</button>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+      <!-- 加10模式 卡片 (缤越COOL / E02 推荐优先) -->
+      <div class="passcode-banner" style="padding:10px 8px;">
+        <div style="font-size:12.5px; font-weight:700; color:var(--txt-bright); margin-bottom:4px;">缤越COOL/E02优先 (加10模式)</div>
+        <div class="passcode-val" id="modalDynamicCode" style="font-size:27px; letter-spacing:2px; margin-bottom:2px;">#*190110</div>
+        <div class="passcode-tip">公式: 月份+10 + 2位日期(01-31) + 2位时(01-12)</div>
+      </div>
+      <!-- 加5模式 卡片 (早期GKUI/兼容备用) -->
+      <div class="passcode-banner" style="padding:10px 8px; border-color:rgba(148,163,184,0.3); background:rgba(30,41,59,0.35);">
+        <div style="font-size:12.5px; font-weight:700; color:var(--txt-bright); margin-bottom:4px;">早期GKUI/兼容 (加5模式)</div>
+        <div class="passcode-val" id="modalDynamicCodePlus5" style="font-size:27px; letter-spacing:2px; margin-bottom:2px; color:var(--txt-bright);">#*140110</div>
+        <div class="passcode-tip">公式: 月份+5 + 2位日期(01-31) + 2位时(01-12)</div>
+      </div>
+    </div>
+    <div class="modal-desc">
+      <b>操作说明</b>：<br>
+      1. 请查看并记住上方动态暗码（<b>吉利缤越COOL/银河OS E02车型优先输入左侧加10暗码</b>，如遇老固件无效可再试右侧加5暗码）；<br>
+      2. 点击下方【打开车机拨号盘】进入系统电话界面；<br>
+      3. 在拨号键盘直接手动按键输入该暗码即可解锁隐藏工程设置（车机拨号盘为物理模拟键盘，不支持粘贴）；<br>
+      4. 常见固定暗码参考：<br>
+      &nbsp;&nbsp;• <b>吉利 E02 工程模式</b>：<code>*#32279#</code><br>
+      &nbsp;&nbsp;• <b>原厂系统设置</b>：<code>*#20190520#</code><br>
+      &nbsp;&nbsp;• <b>原厂工厂测试</b>：<code>*#8888#</code>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-icon primary" style="height:38px; padding:0 18px; font-size:13.5px;" onclick="handleOpenDialer()">打开车机拨号盘</button>
+      <button class="btn-icon" style="height:38px; padding:0 16px; font-size:13px;" onclick="closeModal('dynamicCodeModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 下载目录存储清理选择 Modal -->
+<div class="modal-overlay" id="cleanDialogModal">
+  <div class="modal-card" style="width:560px;">
+    <div class="modal-header">
+      <div class="modal-title">下载目录存储清理</div>
+      <button class="modal-close" onclick="closeModal('cleanDialogModal')">×</button>
+    </div>
+    <div style="font-size:12px; color:var(--txt-dim); margin-bottom:2px;">
+      目标目录：<code>/sdcard/Download/</code>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <!-- 选项一：仅清理空目录 -->
+      <div class="clean-opt-card">
+        <div class="clean-opt-info">
+          <div class="clean-opt-title">仅清理零字节无效空目录 (安全推荐)</div>
+          <div class="clean-opt-desc">扫描并删除残留的 0 字节空文件夹，绝不删除任何已下载的 APK 安装包或文件。</div>
+        </div>
+        <button class="btn-mini unfreeze" style="height:32px; padding:0 12px;" onclick="executeCleanEmptyFolders()">仅清理空目录</button>
+      </div>
+      <!-- 选项二：清空全部文件 -->
+      <div class="clean-opt-card">
+        <div class="clean-opt-info">
+          <div class="clean-opt-title" style="color:#EF4444;">清空下载目录下全部文件 (高危/释放空间)</div>
+          <div class="clean-opt-desc">一键删除下载目录下所有 APK 安装包与历史缓存文件，快速释放车机机身存储。</div>
+        </div>
+        <button class="btn-mini danger" style="height:32px; padding:0 12px;" onclick="requestCleanAllDownloads()">清空全部文件</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-icon" style="height:36px; padding:0 16px;" onclick="closeModal('cleanDialogModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 车机 ADB 核心组件与全量应用管理 Modal -->
+<div class="modal-overlay" id="freezeModal">
+  <div class="modal-card" style="width:640px;">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div class="modal-title">车机 ADB 核心组件与应用管理</div>
+        <div class="pill" id="adbModalStatusPill" style="padding:2px 8px; font-size:11px; font-weight:700;">
+          <span class="dot green" id="adbModalStatusDot"></span> <span id="adbModalStatusText">ADB 探测中...</span>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('freezeModal')">×</button>
+    </div>
+    <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); border-radius:8px; padding:6px 10px; font-size:11.5px; color:#FBBF24; line-height:1.45;">
+      <b>原厂推荐建议</b>：优先冻结【吉利应用商店】，可彻底杜绝每次关机重启后白名单被重置为 0，实现<b>永久免重置安装第三方 APK</b>！
+    </div>
+    
+    <div style="display:flex; flex-direction:column; gap:6px;" id="freezeListContainer">
+      <!-- 动态局部实时刷新区域 -->
+    </div>
+
+    <!-- 提取原厂 OTA 升级直链模块 -->
+    <div class="ota-box">
+      <div class="ota-title">
+        <span>抓取原厂 OTA 固件升级下载直链</span>
+        <button class="btn-mini highlight" onclick="handleExtractOta()">立即扫描提取</button>
+      </div>
+      <div id="otaResultBox" style="display:none; margin-top:4px;">
+        <div style="font-size:11px; color:var(--txt-dim);" id="otaSourceTip">从系统实时升级日志中捕获到最新固件：</div>
+        <div class="ota-url-val" id="otaUrlText">https://...</div>
+      </div>
+    </div>
+
+    <!-- 抓取车机全量系统日志 logcat 模块 -->
+    <div class="ota-box" style="background:rgba(2, 132, 199, 0.08); border-color:rgba(2, 132, 199, 0.3);">
+      <div class="ota-title" style="color:var(--accent-soft);">
+        <span>采集车机全量系统日志 (logcat)</span>
+        <button class="btn-mini highlight" id="btnDumpLogcat" onclick="handleDumpLogcat()">立即抓取保存</button>
+      </div>
+      <div id="logcatResultBox" style="display:none; margin-top:4px;">
+        <div style="font-size:11px; color:var(--txt-dim);" id="logcatStatusTip">日志采集完成，已保存至车机下载目录：</div>
+        <div class="ota-url-val" id="logcatPathText">/sdcard/Download/car_full.log</div>
+        <div style="font-size:10.5px; color:var(--txt-dim); margin-top:2px;">提示：可通过手机【无线快传】或【原生文件管理】导出该日志文件进行故障排查与分析。</div>
+      </div>
+    </div>
+
+    <!-- 自定义 ADB 终端与手机远程推送大卡片 -->
+    <div style="background:linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(0, 174, 185, 0.12)); border:1.5px dashed var(--success); border-radius:var(--skin-radius-sm); padding:8px 12px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onclick="openCustomAdbTerminal()">
+      <div>
+        <div style="font-size:13.5px; font-weight:800; color:var(--txt-strong);">车机 ADB 自定义终端 & 手机推送核准</div>
+        <div style="font-size:11px; color:var(--txt-dim); margin-top:1px;">支持手动输入执行 ADB 指令，联动手机快传网页直接推送长命令并在车机人工核对执行</div>
+      </div>
+      <button class="btn-icon primary" style="height:32px; padding:0 12px; font-size:12px;">打开终端 -></button>
+    </div>
+
+    <!-- 底部直达所有应用入口大卡片 -->
+    <div style="background:linear-gradient(135deg, rgba(0, 174, 185, 0.15), rgba(2, 132, 199, 0.15)); border:1.5px dashed var(--accent); border-radius:var(--skin-radius-sm); padding:8px 12px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onclick="switchFromAdbToAllApps()">
+      <div>
+        <div style="font-size:13.5px; font-weight:800; color:var(--txt-strong);">车机所有应用高级管理</div>
+        <div style="font-size:11px; color:var(--txt-dim); margin-top:1px;">支持搜索、原厂/自装分组、冻结/解冻、清除数据与卸载（含三次安全校验）</div>
+      </div>
+      <button class="btn-icon primary" style="height:32px; padding:0 12px; font-size:12px;">进入管理 -></button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-icon primary" style="height:36px; padding:0 18px;" onclick="closeModal('freezeModal')">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- 车机 ADB 自定义终端独立 Modal -->
+<div class="modal-overlay" id="adbTerminalModal">
+  <div class="modal-card" style="width:700px;">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div class="modal-title">车机 ADB 自定义终端</div>
+        <div class="pill" id="terminalAdbStatusPill" style="padding:2px 8px; font-size:11px; font-weight:700;">
+          <span class="dot green" id="terminalAdbStatusDot"></span> <span id="terminalAdbStatusText">ADB 已就绪</span>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('adbTerminalModal')">×</button>
+    </div>
+
+    <!-- 命令输入栏 -->
+    <div style="display:flex; gap:6px;">
+      <input type="text" id="customAdbInput" class="search-input" placeholder="输入 Shell / ADB 指令 (支持手机快传网页直接推送)..." onkeydown="if(event.key==='Enter') executeCustomCommand()">
+      <button class="btn-icon primary" style="height:34px; padding:0 14px; font-size:13px; font-weight:800;" onclick="executeCustomCommand()">执行命令</button>
+      <button class="btn-icon" style="height:34px; padding:0 12px; font-size:12px;" onclick="saveTerminalLogToFile()">保存日志</button>
+      <button class="btn-icon" style="height:34px; padding:0 10px; font-size:12px;" onclick="clearTerminalOutput()">清空输出</button>
+    </div>
+
+    <!-- 手机快传实时直连信息与快捷命令 -->
+    <div id="terminalNetBox" class="modal-info-box" style="padding:10px 12px; margin-bottom:10px;">
+      <div id="terminalNetStatusMsg" style="font-size:12px; font-weight:700; color:var(--accent-soft); line-height:1.45; margin-bottom:6px;">
+        手机快传直连: 正在获取网络状态...
+      </div>
+      <div style="display:flex; gap:4px; flex-wrap:wrap;">
+        <button class="filter-tab" onclick="setTerminalCmd('pm list packages -3')">第三方包名</button>
+        <button class="filter-tab" onclick="setTerminalCmd('getprop ro.build.version.release')">系统版本</button>
+        <button class="filter-tab" onclick="setTerminalCmd('getprop sys.jsbd.apk_verify')">白名单状态</button>
+        <button class="filter-tab" onclick="setTerminalCmd('dumpsys battery')">电源状态</button>
+        <button class="filter-tab" onclick="setTerminalCmd('df -h /sdcard')">磁盘空间</button>
+        <button class="filter-tab" onclick="setTerminalCmd('top -n 1 -m 5')">高负载进程</button>
+      </div>
+    </div>
+
+    <!-- 终端输出视口 -->
+    <pre id="terminalOutputBox" style="background:#090C12; border:1.5px solid rgba(255,255,255,0.15); border-radius:8px; padding:8px 12px; font-family:monospace; font-size:12px; color:#10B981; max-height:220px; min-height:140px; overflow-y:auto; white-space:pre-wrap; word-break:break-all; line-height:1.5;">[ADB 终端已初始化] 欢迎使用吉利车机 ADB 终端 (๑•̀ㅂ•́)و&#10;请输入指令或从手机快传推送命令后点击【执行命令】...</pre>
+
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button class="btn-icon" style="height:36px; padding:0 14px;" onclick="switchToFreezeModal()">返回 ADB 管理</button>
+      <button class="btn-icon primary" style="height:36px; padding:0 18px;" onclick="closeModal('adbTerminalModal')">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- 车机所有应用全量高级管理 Modal -->
+<div class="modal-overlay" id="allAppsModal">
+  <div class="modal-card" style="width:700px;">
+    <div class="modal-header">
+      <div class="modal-title">车机全量应用高级管理</div>
+      <button class="modal-close" onclick="closeModal('allAppsModal')">×</button>
+    </div>
+    
+    <!-- 搜索框 -->
+    <input type="text" id="appSearchInput" class="search-input" placeholder="搜索应用名称或包名 (如: 高德, ecarx, qq)..." oninput="handleSearchApps(this.value)">
+
+    <!-- 分组与状态双重过滤 Tabs -->
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div class="filter-tabs">
+        <button class="filter-tab active" id="typeTab_all" onclick="filterAppType('all')">全部类型</button>
+        <button class="filter-tab" id="typeTab_user" onclick="filterAppType('user')">第三方自装应用</button>
+        <button class="filter-tab" id="typeTab_system" onclick="filterAppType('system')">吉利原厂/系统应用</button>
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" id="stateTab_all" onclick="filterAppState('all')">全部状态</button>
+        <button class="filter-tab" id="stateTab_enabled" onclick="filterAppState('enabled')">未冻结 (活跃)</button>
+        <button class="filter-tab" id="stateTab_disabled" onclick="filterAppState('disabled')">已冻结 (停用)</button>
+      </div>
+    </div>
+
+    <!-- 应用列表容器 -->
+    <div class="all-apps-list" id="allAppsContainer">
+      <!-- 动态渲染应用条目 -->
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-icon" style="height:36px; padding:0 14px;" onclick="switchToAdbModal()">返回车机 ADB</button>
+      <button class="btn-icon primary" style="height:36px; padding:0 18px;" onclick="closeModal('allAppsModal')">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- 通用操作二次防误触确认 Modal -->
+<div class="modal-overlay" id="universalConfirmModal">
+  <div class="modal-card" style="width:540px; max-width:94vw;">
+    <div class="modal-header">
+      <div class="modal-title" id="universalConfirmTitle">操作意图核准</div>
+      <button class="modal-close" onclick="closeModal('universalConfirmModal')">×</button>
+    </div>
+    <div id="universalConfirmDesc" class="modal-info-box" style="font-size:13.5px; color:var(--txt-strong); line-height:1.65; margin-bottom:16px;">
+    </div>
+    <div class="modal-actions" style="justify-content:flex-end; gap:12px;">
+      <button class="btn-ctrl-md" style="min-width:100px;" onclick="closeModal('universalConfirmModal')">取消</button>
+      <button class="btn-ctrl-md primary" id="universalConfirmOkBtn" style="min-width:130px; font-weight:800;" onclick="proceedUniversalConfirm()">确认执行</button>
+    </div>
+  </div>
+</div>
+
+<!-- 高危操作三次递进式安全校验确认 Modal -->
+<div class="modal-overlay" id="tripleConfirmModal">
+  <div class="modal-card" style="width:500px;">
+    <div class="confirm-box">
+      <div class="confirm-step" id="confirmStepLabel">STEP 1 / 3 · 操作意图核准</div>
+      <div class="confirm-title" id="confirmTitle">确认执行操作？</div>
+      <div class="confirm-desc" id="confirmDesc">操作描述内容</div>
+    </div>
+    <div class="modal-actions" style="justify-content:space-between; margin-top:6px;">
+      <button class="btn-icon" style="height:36px; padding:0 14px;" onclick="cancelTripleConfirm()">取消操作</button>
+      <button class="btn-icon primary" id="confirmNextBtn" style="height:36px; padding:0 18px;" onclick="proceedTripleConfirm()">我已清楚，下一步 -></button>
+    </div>
+  </div>
+</div>
+
+<!-- 手机无线快传 (超大二维码·扫码秒连) Modal -->
+<div class="modal-overlay" id="qrModal">
+  <div class="modal-card" style="width:520px; text-align:center;">
+    <div class="modal-header">
+      <div class="modal-title">手机无线快传 (扫码直连·免输网址)</div>
+      <button class="modal-close" onclick="closeModal('qrModal')">×</button>
+    </div>
+    <div style="padding: 10px 0; display:flex; flex-direction:column; align-items:center;">
+      <!-- 超大号高对比度纯白底二维码卡片 -->
+      <div style="background:#FFFFFF; padding:16px; border-radius:18px; border:2px solid var(--border); box-shadow:0 8px 24px rgba(0,0,0,0.3); display:inline-block; margin-bottom:12px;">
+        <div id="qrcodeCanvasContainer" style="width:220px; height:220px; display:flex; align-items:center; justify-content:center;"></div>
+      </div>
+      <div id="qrCodeUrlText" style="font-size:18px; font-weight:900; color:var(--accent); margin-bottom:6px; font-family:monospace;">http://192.168.x.x:8888</div>
+      <div style="font-size:12.5px; color:var(--txt-dim); line-height:1.6; max-width:440px;">
+        请确保手机与车机连接到【同一 Wi-Fi】或【车机/手机热点】。<br>
+        打开手机<b>微信、相机或浏览器“扫一扫”</b>，即可秒开网页无线传输 APK 与命令！
+      </div>
+    </div>
+    <div class="modal-actions" style="justify-content:center;">
+      <button class="btn-ctrl-md primary" style="min-width:140px;" onclick="closeModal('qrModal')">我知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 车机守护与系统设置 Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-card" style="width:580px;">
+    <div class="modal-header">
+      <div class="modal-title">车机守护与系统设置</div>
+      <button class="modal-close" onclick="closeModal('settingsModal')">×</button>
+    </div>
+    <div class="about-list" style="margin-bottom:14px;">
+      <!-- 1. 开机自启 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+        <div>
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">车机开机自启动</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingAutostartHint">开机自动在后台启动工具箱并放行白名单权限</div>
+        </div>
+        <button class="btn-ctrl-md" id="btnSettingAutostart" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleToggleAutostart()">设置</button>
+      </div>
+
+      <!-- 2. 全局悬浮胶囊 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+        <div>
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">全局悬浮小胶囊</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingFloatingHint">在桌面与任意应用常驻小胶囊，随时唤回控制台</div>
+        </div>
+        <button class="btn-ctrl-md" id="btnSettingFloating" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleToggleFloatingWindow()">设置</button>
+      </div>
+
+      <!-- 3. 座舱联动与智能语音 (替代 TSK) -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+        <div>
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">座舱联动与智能语音 (替代 TSK)</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingVehicleAutoHint">四门迎宾播报、转向灯360全景、大灯高德夜间联动与熄火告别</div>
+        </div>
+        <button class="btn-ctrl-md highlight" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleOpenVehicleAutoModal()">进入设置</button>
+      </div>
+
+      <!-- 3. 无线快传常驻 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+        <div>
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">手机无线快传服务 (8888 端口)</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;">工具箱启动即在后台监听，同局域网手机随时扫码直连</div>
+        </div>
+        <span class="btn-status-pill green" style="font-size:12px; padding:4px 10px;">后台常驻</span>
+      </div>
+
+      <!-- 4. 卡主题安全防护 (仅限导航) -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+        <div>
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">卡主题安全防护 (仅限导航白名单)</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingRabbitSafeHint">锁定仅允许高德/百度/腾讯等导航类应用伪装，防止常规或系统软件导致开机死锁</div>
+        </div>
+        <button class="btn-ctrl-md highlight" id="btnSettingRabbitSafe" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleToggleRabbitSafeMode()">已开启</button>
+      </div>
+
+      <!-- 5. 主题皮肤与护眼配色 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+        <div>
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">主题皮肤与护眼配色</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;">精选 8 套车载座舱护眼色彩体系（极光青、暖阳金、竹翠绿等）</div>
+        </div>
+        <button class="btn-ctrl-md" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="closeModal('settingsModal'); handleOpenSkinModal();">切换皮肤</button>
+      </div>
+
+      <!-- 6. 工具箱运行操作日志 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+        <div>
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">工具箱运行操作日志</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingLogHint">保存于 /sdcard/Download/geely_toolbox.log (自动滚动轮转防膨胀)</div>
+        </div>
+        <button class="btn-ctrl-md highlight" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="closeModal('settingsModal'); handleOpenLogModal();">查看日志</button>
+      </div>
+    </div>
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button class="btn-ctrl-md" style="min-width:110px; font-size:13px;" onclick="closeModal('settingsModal'); handleShowAbout();">关于与更新</button>
+      <button class="btn-ctrl-md primary" style="min-width:110px;" onclick="closeModal('settingsModal')">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- 车机深度工具箱二级 Modal -->
+<div class="modal-overlay" id="deepToolsModal">
+  <div class="modal-card" style="width:640px;">
+    <div class="modal-header">
+      <div class="modal-title">车机深度工具箱</div>
+      <button class="modal-close" onclick="closeModal('deepToolsModal')">×</button>
+    </div>
+    <div style="font-size:12px; color:var(--txt-dim); margin-bottom:12px;">包含 ADB 系统组件冻结、工程暗码与深度存储清理等高级功能。</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+      <!-- 工具卡片 1: 车机 ADB -->
+      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px;" onclick="closeModal('deepToolsModal'); handleOpenFreezeManager();">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">车机 ADB 终端 & 冻结</div>
+          <span class="btn-status-pill blue" id="deepPillAppstore">核心管理</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--txt-dim);">执行 ADB 命令行与原厂商店、OTA 系统组件冻结</div>
+      </div>
+
+      <!-- 工具卡片 2: 工程暗码 -->
+      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px;" onclick="closeModal('deepToolsModal'); handleShowDynamicCode();">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">工程模式动态暗码</div>
+          <span class="btn-status-pill blue">拨号直达</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--txt-dim);">计算主流+5 / 变体+10 双轨工程模式动态密码</div>
+      </div>
+
+      <!-- 工具卡片 3: 下载目录清理 -->
+      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px;" onclick="closeModal('deepToolsModal'); handleOpenCleanDialog();">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">下载目录与大文件清理</div>
+          <span class="btn-status-pill gray">空间释放</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--txt-dim);">彻底清空 Download 临时缓存与历史 APK 安装包</div>
+      </div>
+
+      <!-- 工具卡片 4: 全量应用管理 -->
+      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px;" onclick="closeModal('deepToolsModal'); handleOpenAllAppsModal();">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">全量应用与组件管理</div>
+          <span class="btn-status-pill gray">系统组件</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--txt-dim);">查看车机全部 100+ 应用，支持按需禁用与数据清理</div>
+      </div>
+
+      <!-- 工具卡片 5: 座舱联动与智能语音 (替代 TSK) -->
+      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px; grid-column: span 2;" onclick="closeModal('deepToolsModal'); handleOpenVehicleAutoModal();">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">座舱联动与智能语音 (替代 TSK)</div>
+          <span class="btn-status-pill blue">原生自动化</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--txt-dim);">原生监听 CAN 信号，提供四门迎宾播报、转向灯联动 360 (车速≤30km/h 保护)、大灯高德夜间联动与熄火告别</div>
+      </div>
+
+      <!-- 工具卡片 6: 运行操作日志 -->
+      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px; grid-column: span 2;" onclick="closeModal('deepToolsModal'); handleOpenLogModal();">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">工具箱运行操作日志</div>
+          <span class="btn-status-pill green" id="deepPillLogSize">实时记录中</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--txt-dim);">详细记录每步操作时间、成功状态及参数，自动轮转保存于机身 Download/geely_toolbox.log</div>
+      </div>
+    </div>
+    <div class="modal-actions" style="justify-content:flex-end;">
+      <button class="btn-ctrl-md" style="min-width:100px;" onclick="closeModal('deepToolsModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 座舱联动与智能语音 Modal -->
+<div class="modal-overlay" id="vehicleAutoModal">
+  <div class="modal-card" style="width:680px; max-width:94vw;">
+    <div class="modal-header">
+      <div class="modal-title">座舱联动与智能语音</div>
+      <button class="modal-close" onclick="closeModal('vehicleAutoModal')">×</button>
+    </div>
+    <div style="font-size:12px; color:var(--txt-dim); margin-bottom:12px;">
+      基于车机底层 CAN 信号原生联动，彻底替代第三方 Tasker/TSK。所有功能默认关闭，每一项均支持独立开启、关闭与音频自定义。
+    </div>
+    <div class="about-list" style="margin-bottom:14px; max-height:58vh; overflow-y:auto;">
+      <!-- 硬件与屏幕联动分组 -->
+      <div style="font-weight:800; font-size:13px; color:var(--txt-dim); margin:4px 0 6px 4px;">车辆硬件与屏幕联动</div>
+
+      <!-- 1. 转向灯联动 360 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+        <div style="flex:1; padding-right:12px;">
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">转向灯联动 360 全景影像</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;">打转向灯唤起 360 看盲区，灯回正自动关闭。<strong style="color:var(--accent);">内置车速 ≤ 30 km/h 保护，高速变道坚决不遮挡导航。</strong></div>
+        </div>
+        <button class="btn-ctrl-md" id="btnAutoTurn360" style="min-height:36px; min-width:92px; font-size:13px; font-weight:800;" onclick="handleToggleVehicleAuto('vehicle_turn_360_enabled')">已关闭</button>
+      </div>
+
+      <!-- 2. 大灯联动高德日夜模式 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px;">
+        <div style="flex:1; padding-right:12px;">
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">大灯联动高德日夜模式</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;">进隧道或天黑开大灯，高德地图自动切黑夜模式防刺眼；关大灯恢复日间模式。</div>
+        </div>
+        <button class="btn-ctrl-md" id="btnAutoLightNav" style="min-height:36px; min-width:92px; font-size:13px; font-weight:800;" onclick="handleToggleVehicleAuto('vehicle_light_nav_enabled')">已关闭</button>
+      </div>
+
+      <!-- 座舱智能语音播报分组 -->
+      <div style="font-weight:800; font-size:13px; color:var(--txt-dim); margin:16px 0 6px 4px; display:flex; justify-content:space-between; align-items:center;">
+        <span>座舱智能语音明细（每项独立开关与个性替换）</span>
+        <span style="font-size:11.5px; font-weight:normal; color:var(--txt-dim);">内置高品质甜美原声，可一键替换</span>
+      </div>
+
+      <!-- 1. 主驾开门 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; flex-wrap:wrap; gap:8px;">
+        <div style="flex:1; min-width:210px;">
+          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">1. 主驾开门防开门杀播报</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">主驾车门打开瞬间播报（“主驾车门已打开，请注意后方来车”）</div>
+          <div style="font-size:11.5px; color:var(--txt-dim); margin-top:3px;" id="labelCustom_door_fl">当前：内置默认原声</div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button class="btn-ctrl-md" id="btnVoice_door_fl" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fl')">已关闭</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door')">试听</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_fl.mp3')">更换音频</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleResetCustomVoice('door_fl.mp3')">重置</button>
+        </div>
+      </div>
+
+      <!-- 2. 副驾开门迎宾 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; flex-wrap:wrap; gap:8px;">
+        <div style="flex:1; min-width:210px;">
+          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">2. 副驾上车迎宾播报</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">副驾车门打开时温馨迎宾播报（“副驾车门已打开，请注意安全”）</div>
+          <div style="font-size:11.5px; color:var(--txt-dim); margin-top:3px;" id="labelCustom_door_fr">当前：内置默认原声</div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button class="btn-ctrl-md" id="btnVoice_door_fr" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fr')">已关闭</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fr')">试听</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_fr.mp3')">更换音频</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleResetCustomVoice('door_fr.mp3')">重置</button>
+        </div>
+      </div>
+
+      <!-- 3. 副驾关门系安全带提醒 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; flex-wrap:wrap; gap:8px;">
+        <div style="flex:1; min-width:210px;">
+          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">3. 副驾关门系安全带提醒</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">副驾关门就坐后播报提醒（“副驾已就坐，请系好安全带”）</div>
+          <div style="font-size:11.5px; color:var(--txt-dim); margin-top:3px;" id="labelCustom_door_fr_close">当前：内置默认原声</div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button class="btn-ctrl-md" id="btnVoice_door_fr_close" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fr_close')">已关闭</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('seatbelt')">试听</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_fr_close.mp3')">更换音频</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleResetCustomVoice('door_fr_close.mp3')">重置</button>
+        </div>
+      </div>
+
+      <!-- 4. 后排开门安全警示 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; flex-wrap:wrap; gap:8px;">
+        <div style="flex:1; min-width:210px;">
+          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">4. 后排车门开启安全警示</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">后排左/右车门打开时播报，提醒乘客注意车外来车与环境</div>
+          <div style="font-size:11.5px; color:var(--txt-dim); margin-top:3px;" id="labelCustom_door_rear">当前：内置默认原声</div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button class="btn-ctrl-md" id="btnVoice_door_rear" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_rear')">已关闭</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rear')">试听</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_rl.mp3')">更换音频</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleResetCustomVoice('door_rl.mp3')">重置</button>
+        </div>
+      </div>
+
+      <!-- 5. 车辆熄火告别 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; flex-wrap:wrap; gap:8px;">
+        <div style="flex:1; min-width:210px;">
+          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">5. 车辆熄火告别提醒</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">按下熄火按键瞬间播报（“车辆已熄火，请带好随身物品”）</div>
+          <div style="font-size:11.5px; color:var(--txt-dim); margin-top:3px;" id="labelCustom_flameout">当前：内置默认原声</div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button class="btn-ctrl-md" id="btnVoice_flameout" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('vehicle_flameout_voice_enabled')">已关闭</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('flameout')">试听</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('flameout.mp3')">更换音频</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleResetCustomVoice('flameout.mp3')">重置</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
+      <button class="btn-ctrl-md highlight" style="font-size:12.5px; padding:6px 14px;" onclick="handleOpenTtsSettings()">小爱语音设置</button>
+      <button class="btn-ctrl-md primary" style="min-width:100px;" onclick="closeModal('vehicleAutoModal')">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- 工具箱运行操作日志查看 Modal -->
+<div class="modal-overlay" id="logModal">
+  <div class="modal-card" style="width:720px; max-width:92vw;">
+    <div class="modal-header">
+      <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+        <span>工具箱运行操作日志</span>
+        <span class="pill" style="font-size:11px; padding:2px 8px;" id="logModalSizeBadge">0 KB</span>
+      </div>
+      <button class="modal-close" onclick="closeModal('logModal')">×</button>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:12px; color:var(--txt-dim);">
+      <div>
+        <span>存储路径: </span><code id="logModalPath" style="font-size:11px; color:var(--txt-strong);">/sdcard/Download/geely_toolbox.log</code>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button class="btn-mini" onclick="refreshLogContent()">刷新日志</button>
+        <button class="btn-mini danger" onclick="handleClearLogContent()">清空日志</button>
+      </div>
+    </div>
+    <div id="logContentBox" style="background:#0b1120; color:#cbd5e1; font-family:monospace; font-size:11.5px; line-height:1.5; padding:12px 14px; border-radius:8px; border:1px solid var(--border); height:300px; max-height:45vh; overflow-y:auto; white-space:pre-wrap; word-break:break-all; user-select:text;">
+      正在加载日志...
+    </div>
+    <div class="modal-actions" style="justify-content:space-between; margin-top:12px;">
+      <div style="font-size:11.5px; color:var(--txt-dim); display:flex; align-items:center;">
+        * 单文件上限 2MB 自动滚动轮转，自动清理 7 天前旧日志文件
+      </div>
+      <button class="btn-ctrl-md primary" style="min-width:100px;" onclick="closeModal('logModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 赞赏支持 Modal -->
+<div class="modal-overlay" id="rewardModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title">赞赏支持作者</div>
+      <button class="modal-close" onclick="closeModal('rewardModal')">×</button>
+    </div>
+    <img src="file:///android_res/drawable/img_reward_code.png" class="reward-img" alt="赞赏码" onerror="this.style.display='none'">
+    <div class="reward-tip">感谢你对吉利车机工具箱与车载生态的支持 (๑•̀ㅂ•́)و<br>专注纯净、流畅、原版的高品质车载体验</div>
+  </div>
+</div>
+
+<script>
+// ==================== 数据状态与交互 ====================
+var SKINS_DATA = [
+  { id: 'default', name: '极简科技', desc: '经典钛金蓝 · 清爽纯净', colors: ['#0284C7', '#00AEB9', '#38BDF8'] },
+  { id: 'forest', name: '竹翠森林 (护眼推荐)', desc: '柔和竹翠绿 · 缓解视觉疲劳', colors: ['#10B981', '#059669', '#34D399'] },
+  { id: 'amber', name: '暖阳琥珀 (夜行推荐)', desc: '温润琥珀金 · 夜间不刺眼', colors: ['#D97706', '#F59E0B', '#FBBF24'] },
+  { id: 'aurora', name: '极光曜青', desc: '灵动极光青 · 科技座舱', colors: ['#00AEB9', '#0284C7', '#2DD4BF'] },
+  { id: 'amethyst', name: '紫晶夜色', desc: '优雅柔美 · 低饱和淡紫', colors: ['#8B5CF6', '#A855F7', '#C084FC'] },
+  { id: 'pink', name: '落樱粉黛', desc: '甜美可爱 · 清新落樱', colors: ['#E11D48', '#FB7185', '#FDA4AF'] },
+  { id: 'slate', name: '墨韵石灰', desc: '低调沉稳 · 高级板岩灰', colors: ['#64748B', '#475569', '#94A3B8'] },
+  { id: 'cyber', name: '赛博霓虹', desc: '高科赛博 · 动感极客座舱', colors: ['#00F0FF', '#FF0055', '#FFE600'] }
+];
+var currentSkin = 'default';
+var currentCategory = 'all';
+var cachedDynamicCode = '#*190110';
+var cachedDynamicCodePlus5 = '#*140110';
+var cachedDeviceInfo = { whitelist: true, multimedia_frozen: false, appstore_frozen: false };
+var currentCarIp = '127.0.0.1';
+
+// 原厂推荐 ADB 核心冻结列表
+var ADB_CORE_COMPONENTS = [
+  {
+    pkg: 'com.ecarx.appstore',
+    name: '吉利应用商店 (原厂核心)',
+    desc: '原厂商店会在关机重启时强制重置白名单为 0。强烈推荐保持冻结状态。',
+    frozen: false,
+    recommended: true
+  },
+  {
+    pkg: 'ecarx.upgrade',
+    name: '原厂系统升级服务 (OTA)',
+    desc: '拦截车机后台静默推送升级包，防止新系统修补白名单与安装漏洞。',
+    frozen: false,
+    recommended: true
+  },
+  {
+    pkg: 'com.ecarx.cloudradio',
+    name: '原厂伴听收音机 (Radio)',
+    desc: '原厂伴听/FM广播服务。改方控切歌或不听广播的车主可安全冻结。',
+    frozen: false,
+    recommended: false
+  },
+  {
+    pkg: 'com.ecarx.xcmedia',
+    name: '原厂多媒体伴听 (Media)',
+    desc: '原车多媒体服务通道。注：原车蓝牙电话通道强绑定，日常建议保持运行。',
+    frozen: false,
+    recommended: false
+  }
+];
+
+// 全量车机应用列表数据
+var ALL_INSTALLED_APPS = [
+  { pkg: 'com.autonavi.amapauto', name: '高德地图 8.5 (专车定制旗舰)', version: 'v8.5.0', isSystem: false, frozen: false },
+  { pkg: 'com.ecarx.carmedia', name: 'CarMedia 车机媒体方控', version: 'v1.3.3', isSystem: false, frozen: false },
+  { pkg: 'com.tencent.qqmusicpad', name: 'QQ音乐车载版 HD', version: 'v2.5.3.1', isSystem: false, frozen: false },
+  { pkg: 'com.netease.cloudmusic.iot', name: '网易云音乐车载版', version: 'v6.2.81', isSystem: false, frozen: false },
+  { pkg: 'com.ecarx.appstore', name: '吉利应用商店 (XCAppStore)', version: 'v2.1.0', isSystem: true, frozen: false },
+  { pkg: 'ecarx.upgrade', name: '原厂系统升级服务 (OTA)', version: 'v1.0.0', isSystem: true, frozen: false },
+  { pkg: 'com.ecarx.cloudradio', name: '原厂伴听收音机', version: 'v2.0.1', isSystem: true, frozen: false },
+  { pkg: 'com.ecarx.xcmedia', name: '原厂多媒体伴听', version: 'v2.0.4', isSystem: true, frozen: false },
+  { pkg: 'ecarx.membercenter', name: '吉利车主会员中心', version: 'v1.2.0', isSystem: true, frozen: false },
+  { pkg: 'com.ecarx.weather', name: '原厂天气小部件', version: 'v1.1.0', isSystem: true, frozen: false },
+  { pkg: 'com.ecarx.thememanager', name: '吉利原厂主题管理', version: 'v1.0.8', isSystem: true, frozen: false },
+  { pkg: 'com.ecarx.xscreensaver', name: '兔子时钟屏保服务', version: 'v1.0.1', isSystem: true, frozen: false },
+  { pkg: 'com.ecarx.carservice', name: '原厂车身底层服务 (CANBus)', version: 'v1.0.0', isSystem: true, frozen: false },
+  { pkg: 'com.ecarx.launcher', name: '原厂车机桌面启动器', version: 'v1.0.0', isSystem: true, frozen: false },
+  { pkg: 'app.onepve.geelyconsole', name: '吉利车机控制台 (工具箱)', version: 'v1.1.8', isSystem: false, frozen: false },
+];
+
+var SAFE_FREEZE_SYSTEM_PKGS = [
+  'com.ecarx.appstore',
+  'ecarx.upgrade',
+  'com.ecarx.cloudradio',
+  'com.ecarx.radio',
+  'com.ecarx.xcmedia',
+  'com.ecarx.multimedia',
+  'ecarx.membercenter',
+  'com.ecarx.member',
+  'com.ecarx.usercenter',
+  'com.ecarx.weather',
+  'com.ecarx.smartscene',
+  'com.ecarx.screensaver',
+  'com.ecarx.xscreensaver',
+  'com.ecarx.video',
+  'com.ss.android.ugc.aweme.car',
+  'com.volcano.video'
+];
+
+function isProtectedCriticalPackage(pkg, isSystem) {
+  if (!pkg) return false;
+  var p = pkg.toLowerCase().trim();
+  if (p === 'android' ||
+      p === 'com.android.settings' ||
+      p === 'com.android.systemui' ||
+      p === 'com.android.packageinstaller' ||
+      p === 'com.android.permissioncontroller' ||
+      p === 'com.android.server.telecom' ||
+      p === 'com.android.providers.settings' ||
+      p === 'com.android.keyguard' ||
+      p === 'com.android.shell' ||
+      p === 'app.onepve.geelyconsole' ||
+      p.indexOf('inputmethod') !== -1 ||
+      p === 'com.ecarx.carservice' ||
+      p === 'com.ecarx.launcher' ||
+      p === 'com.ecarx.systemui' ||
+      p === 'com.ecarx.service' ||
+      p === 'com.ecarx.btphone' ||
+      p === 'com.ecarx.carsetting' ||
+      p === 'com.ecarx.hvac' ||
+      p === 'com.ecarx.sound' ||
+      p === 'com.ecarx.policy' ||
+      p === 'com.ecarx.ipcamera' ||
+      p === 'com.ecarx.dvr') {
+    return true;
+  }
+  if (isSystem && SAFE_FREEZE_SYSTEM_PKGS.indexOf(p) === -1) {
+    return true;
+  }
+  return false;
+}
+
+var appSearchKeyword = '';
+var appTypeFilter = 'all';
+var appStateFilter = 'all';
+
+// 真实线上同步云端应用库（采用纯文字类型徽标，彻底告别车机 Emoji 字体缺失乱码）
+var CLOUD_APPS = [
+  {
+    "id": "amap_e02_dr_ae86",
+    "category": "navigation",
+    "badgeClass": "nav",
+    "badgeText": "导航",
+    "name": "高德地图 8.5 (86改·Flyme地图/可信锚点/地库惯导/三指飞屏最新版)",
+    "badge": "86改/Flyme地图/最新版",
+    "size": "274.97 MB",
+    "filename": "AutoMap_E02_DeadReckoning_FlyScreen_AE86.apk",
+    "package_name": "com.autonavi.amapauto",
+    "desc": "【高德 8.5 内核·86 改 Flyme 地图·可信锚点精调旗舰】纯 64 位原生编译（体积瘦身优化至 274.97MB），深度重构 EAS 5007 可信视觉锚点状态机与融合定位流（Fused LocInfoA），彻底解决冷启动漂移与浮层撕裂闪屏，完美支持陀螺仪地库惯导与三指滑屏飞仪表。需通过工具箱【兔子时钟伪装】卡主题安装，首次安装建议软重启车机一次。",
+    "updated_at": "2026-09-02",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/AutoMap_E02_DeadReckoning_FlyScreen_AE86.apk"
+  },
+  {
+    "id": "amap_e02_dr_v9",
+    "category": "navigation",
+    "badgeClass": "nav",
+    "badgeText": "导航",
+    "name": "高德地图 8.5 (吉利E02专车定制版·地库惯导/三指飞屏v9版)",
+    "badge": "专车定制/三指飞屏/惯导",
+    "size": "286.7 MB",
+    "filename": "AutoMap_E02_DeadReckoning_FlyScreen_v9.apk",
+    "package_name": "com.autonavi.amapauto",
+    "desc": "【高德 8.5 内核·吉利 E02 专车定制版】作者 QQ: 513677649，纯 64 位原生编译，支持陀螺仪地库惯导、开机冷启动三指滑屏秒飞液晶仪表盘。安装完成后请务必手动软重启一次车机赋予系统权限即可稳定秒开不闪。需通过工具箱【兔子时钟伪装】卡主题安装。",
+    "updated_at": "2026-08-27",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/AutoMap_E02_DeadReckoning_FlyScreen_v9.apk"
+  },
+  {
+    "id": "amap75_flyscreen",
+    "category": "navigation",
+    "badgeClass": "nav",
+    "badgeText": "导航",
+    "name": "高德地图 7.5 (MG横屏红绿灯/飞屏版)",
+    "badge": "轻量主力/横屏红绿灯/飞屏",
+    "size": "111.3 MB",
+    "filename": "AutoMap_7.5_FlyScreen.apk",
+    "package_name": "com.autonavi.amapauto",
+    "desc": "【轻量 7.5 MG版】仅 111MB 极速省运存，目前唯一稳定飞屏的轻量版，集成横屏全向红绿灯实时读秒与仪表盘飞屏。需通过工具箱【兔子时钟伪装】卡主题安装",
+    "updated_at": "2023-09-01",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/AutoMap_7.5_FlyScreen.apk"
+  },
+  {
+    "id": "amap95_trafficlight",
+    "category": "navigation",
+    "badgeClass": "nav",
+    "badgeText": "导航",
+    "name": "高德地图 9.5.13 (全功能带开关/红绿灯版)",
+    "badge": "全功能带开关/红绿灯",
+    "size": "149.78 MB",
+    "filename": "AutoMap_9.5.13_FullFeatures_TrafficLight.apk",
+    "package_name": "com.autonavi.amapauto",
+    "desc": "【高德 9.5 全功能横屏版】集成红绿灯倒计时读秒与随灯变色，内置功能全开关配置，精简优化至 149M，需卡兔子安装",
+    "updated_at": "2026-08-25",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/AutoMap_9.5.13_FullFeatures_TrafficLight.apk"
+  },
+  {
+    "id": "carmedia",
+    "category": "tool",
+    "badgeClass": "tool",
+    "badgeText": "方控",
+    "name": "CarMedia 车机媒体 1.3.3 (稳定推荐版)",
+    "badge": "车友推荐/稳定版方控",
+    "size": "749 KB",
+    "filename": "CarMedia_1.3.3.apk",
+    "package_name": "com.ecarx.carmedia",
+    "desc": "【米小江出品·官方最新修复版】吉利车机专属方控媒体中心：修复连切歌与按键映射，开机自启、方向盘物理按键切歌/播放暂停/自定义应用联动",
+    "updated_at": "2026-08-30",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/CarMedia_1.3.3.apk"
+  },
+  {
+    "id": "mediabridge",
+    "category": "tool",
+    "badgeClass": "tool",
+    "badgeText": "桥接",
+    "name": "多媒体桥接 5.1 (全能歌词/方控增强版)",
+    "badge": "全能歌词/全系音乐桥接",
+    "size": "523 KB",
+    "filename": "MediaBridge_5.1_Car.apk",
+    "package_name": "com.geely.auto.music",
+    "desc": "【吉利专属全能多媒体增强】聚合 QQ音乐/网易云/汽水音乐/酷我/咪咕全系歌词桥接，支持车机仪表盘/HUD/中控大屏元数据与封面双向同步，自带焦点自愈与心跳守护",
+    "updated_at": "2026-08-13",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/MediaBridge_5.1_Car.apk"
+  },
+  {
+    "id": "jiatu_313",
+    "category": "tool",
+    "badgeClass": "tool",
+    "badgeText": "工具",
+    "name": "驾途 3.13 (高德巡航/支持下轮灯联动)",
+    "badge": "高德巡航/下轮灯联动",
+    "size": "538 KB",
+    "filename": "JiaTu_3.13_WheelLight.apk",
+    "package_name": "com.amapcruise.display",
+    "desc": "【高德巡航辅助·支持下轮灯联动】专为车机高德地图设计的轻量级巡航助手，体积仅 538KB 极简流畅，支持下轮灯状态读取、悬浮车速/限速预警与电子眼红绿灯播报。",
+    "updated_at": "2026-08-02",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/JiaTu_3.13_WheelLight.apk"
+  },
+  {
+    "id": "lyrics_companion",
+    "category": "tool",
+    "badgeClass": "tool",
+    "badgeText": "工具",
+    "name": "歌词伴侣 (全能悬浮歌词/蓝牙同步)",
+    "badge": "全能悬浮歌词/蓝牙伴侣",
+    "size": "4.76 MB",
+    "filename": "LyricsCompanion_20260822.apk",
+    "package_name": "com.zuoqirun.lyricscompanion",
+    "desc": "【车载全能悬浮歌词伴侣】适配吉利车机与各类主流音乐 App，支持蓝牙音频歌词抓取、状态栏/悬浮窗逐字歌词展示、自定义字体与双模配色，支持车机开机自启与蓝牙自动连接。",
+    "updated_at": "2026-08-22",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/LyricsCompanion_20260822.apk"
+  },
+  {
+    "id": "qqmusic25",
+    "category": "music",
+    "badgeClass": "music",
+    "badgeText": "音乐",
+    "name": "QQ音乐车载版 2.5.3.1 (HD)",
+    "badge": "车友推荐/高清海报",
+    "size": "38.2 MB",
+    "filename": "QQMusic_2.5.3.1_HD.apk",
+    "package_name": "com.tencent.qqmusicpad",
+    "desc": "车友实测最稳定流畅 HD 版本 · 歌词海报高清显示 · 原生兼容吉利车机 · 搭配 CarMedia 方控切歌",
+    "updated_at": "2023-11-20",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/QQMusic_2.5.3.1_HD.apk"
+  },
+  {
+    "id": "qqmusic21",
+    "category": "music",
+    "badgeClass": "music",
+    "badgeText": "音乐",
+    "name": "QQ音乐车载版 2.1.1.1 (Lite)",
+    "badge": "超低运存/极速精简",
+    "size": "36.9 MB",
+    "filename": "QQMusic_2.1.1.1_Lite.apk",
+    "package_name": "com.tencent.qqmusicpad",
+    "desc": "超低运存仅 ~45MB · 纯净流畅不抢内存 · 搭配 CarMedia 方控切歌",
+    "updated_at": "2022-09-15",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/QQMusic_2.1.1.1_Lite.apk"
+  },
+  {
+    "id": "netease62",
+    "category": "music",
+    "badgeClass": "music",
+    "badgeText": "音乐",
+    "name": "网易云音乐车载版 6.2.81",
+    "badge": "官方正版/黑胶大盘",
+    "size": "70.9 MB",
+    "filename": "NeteaseMusic_6.2.81_Car.apk",
+    "package_name": "com.netease.cloudmusic.iot",
+    "desc": "经典沉浸式旋转黑胶大盘 UI · 杜比全景声 · 手机黑胶 VIP 扫码通用 · 搭配 CarMedia 方控切歌",
+    "updated_at": "2025-12-12",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/NeteaseMusic_6.2.81_Car.apk"
+  },
+  {
+    "id": "netease32",
+    "category": "music",
+    "badgeClass": "music",
+    "badgeText": "音乐",
+    "name": "网易云音乐车载版 3.2.46 (分辨率修正)",
+    "badge": "旧版轻量/分辨率修正",
+    "size": "48.9 MB",
+    "filename": "NeteaseMusic_3.2.46_Car_Resolution.apk",
+    "package_name": "com.netease.cloudmusic.iot",
+    "desc": "网易云 3.2.46 旧版本（含吉利分辨率修正），体积仅 49MB 极速流畅 · 搭配 CarMedia 方控切歌",
+    "updated_at": "2023-07-29",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/NeteaseMusic_3.2.46_Car_Resolution.apk"
+  },
+  {
+    "id": "qishuimusic",
+    "category": "music",
+    "badgeClass": "music",
+    "badgeText": "音乐",
+    "name": "汽水音乐 1.0.10 (官方车机版)",
+    "badge": "抖音互通/吉利歌词联动",
+    "size": "37.97 MB",
+    "filename": "QishuiMusic_1.0.10_Car.apk",
+    "package_name": "com.luna.music.car",
+    "desc": "【字节跳动官方车机版】抖音/汽水音乐生态互通，支持抖音收藏夹无缝同步、AI 个性化推荐；原生适配吉利 ECARX OpenAPI 悬浮歌词服务与方控按键切歌，座舱横屏大触控 UI",
+    "updated_at": "2026-05-26",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/QishuiMusic_1.0.10_Car.apk"
+  },
+  {
+    "id": "qqhelper",
+    "category": "tool",
+    "badgeClass": "tool",
+    "badgeText": "方控",
+    "name": "方向盘切歌助手 1.0.0 (旧版备用)",
+    "badge": "旧版切歌/专用备用",
+    "size": "1.1 MB",
+    "filename": "QQMusic_SteeringHelper_1.0.0.apk",
+    "package_name": "app.onepve.qqmusichelper",
+    "desc": "【旧版切歌助手】早期基于 QQ 音乐私有 AIDL 协议的方向盘切歌工具，仅作为历史版本备用（推荐使用上方的 CarMedia）",
+    "updated_at": "2024-01-10",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/QQMusic_SteeringHelper_1.0.0.apk"
+  },
+  {
+    "id": "geely_ihu516_firmware_rescue",
+    "category": "tool",
+    "badgeClass": "tool",
+    "badgeText": "固件",
+    "name": "吉利缤越COOL原厂降级救砖固件 (IHU516可adb包)",
+    "badge": "终极救砖/防死循环",
+    "size": "2.65 GB",
+    "filename": "Geely_IHU516_Firmware_SW0SX110602H120800000_Rollback.zip",
+    "package_name": "geely.firmware.ihu516",
+    "desc": "【终极救砖保底固件】吉利缤越COOL/银河OS IHU516 官方降级救砖固件包（版本: SW0SX110602H120800000，支持本地adb）。️防开机循环刷机机制：保存的文件名为具体参数长文件名（非原厂触发名 update.zip），日常保存在 U 盘或车机中车机完全不识别为刷机包，绝对不会误触发刷机！救砖时在电脑上重命名改为 update.zip 放入 U 盘根目录插入车机即可刷机恢复出厂。",
+    "updated_at": "2022-08-08",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/Geely_IHU516_Firmware_SW0SX110602H120800000_Rollback.zip"
+  }
+];
+
+// ==================== 渲染函数 ====================
+function renderApps() {
+  var container = document.getElementById('appListContainer');
+  var html = '';
+  var filtered = CLOUD_APPS.filter(function(app) {
+    return currentCategory === 'all' || app.category === currentCategory;
+  });
+
+  filtered.forEach(function(app) {
+    var actionHtml = '';
+
+    if (app.status === 'downloading') {
+      actionHtml = '<button class="btn-dl updating" style="cursor:default;">' + (app.progress || 0) + '% ' + (app.speed ? '(' + app.speed + ')' : '') + '</button>' +
+        '<button class="btn-redl" title="暂停下载" onclick="handlePauseDownload(\'' + app.id + '\')">暂停</button>' +
+        '<button class="btn-redl" title="取消下载" style="color:#EF4444;" onclick="handleCancelDownload(\'' + app.id + '\')">取消</button>';
+    } else if (app.status === 'paused') {
+      actionHtml = '<button class="btn-dl updating" onclick="handleResumeDownload(\'' + app.id + '\')">继续下载 (' + (app.progress || 0) + '%)</button>' +
+        '<button class="btn-redl" title="取消下载" style="color:#EF4444;" onclick="handleCancelDownload(\'' + app.id + '\')">取消</button>';
+    } else if (app.status === 'error') {
+      actionHtml = '<button class="btn-dl danger" onclick="handleDownloadApp(\'' + app.id + '\', true)">重试下载</button>' +
+        '<button class="btn-redl" title="取消" onclick="handleCancelDownload(\'' + app.id + '\')">取消</button>';
+    } else if (app.status === 'updating') {
+      actionHtml = '<button class="btn-dl updating" onclick="handleDownloadApp(\'' + app.id + '\', true)">升级下载</button>';
+    } else if (app.status === 'ready') {
+      var isNav = (app.category === 'navigation');
+      var mainTxt = isNav ? '安装向导' : '直接安装';
+      actionHtml = '<button class="btn-dl done" onclick="handleDownloadApp(\'' + app.id + '\', false)">' + mainTxt + '</button>' +
+        '<button class="btn-redl" title="重新下载覆盖" onclick="handleDownloadApp(\'' + app.id + '\', true)">重下</button>';
+    } else {
+      actionHtml = '<button class="btn-dl" onclick="handleDownloadApp(\'' + app.id + '\', false)">下载</button>';
+    }
+
+    var metaTagsHtml = '<div class="app-meta-tags">' +
+      '<span class="app-meta-tag size-tag">' + (app.size || '') + '</span>' +
+      (app.updated_at ? '<span class="app-meta-tag build-tag">编译: ' + app.updated_at + '</span>' : '') +
+      (app.downloadTime ? '<span class="app-meta-tag done">已下载: ' + app.downloadTime + '</span>' : '') +
+      '</div>';
+
+    html += '<div class="app-item">' +
+      '<div class="app-info">' +
+        '<div class="app-meta">' +
+          '<div class="app-name-row">' +
+            '<span class="app-name">' + app.name + '</span>' +
+            '<span class="app-badge">' + app.badge + '</span>' +
+          '</div>' +
+          metaTagsHtml +
+          '<div class="app-desc-marquee-box"><div class="app-desc" title="' + app.desc + '">' + app.desc + '</div></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="app-action">' +
+        actionHtml +
+      '</div>' +
+    '</div>';
+  });
+
+  container.innerHTML = html;
+  initAppDescMarquees();
+}
+
+// 智能计算并激活应用简介平滑跑马灯
+function initAppDescMarquees() {
+  setTimeout(function() {
+    var boxes = document.querySelectorAll('.app-desc-marquee-box');
+    boxes.forEach(function(box) {
+      var desc = box.querySelector('.app-desc');
+      if (!desc) return;
+      var overflowDist = desc.scrollWidth - box.clientWidth;
+      if (overflowDist > 6) {
+        var duration = Math.max(5, Math.round(overflowDist / 18));
+        desc.style.setProperty('--scroll-dist', '-' + (overflowDist + 14) + 'px');
+        desc.style.animationDuration = duration + 's';
+        desc.classList.add('animate-marquee');
+      } else {
+        desc.classList.remove('animate-marquee');
+      }
+    });
+  }, 60);
+}
+
+window.addEventListener('resize', initAppDescMarquees);
+
+// 同步实际本地下载目录文件状态
+function syncLocalAppStatuses() {
+  try {
+    if (window.ToolboxBridge && typeof window.ToolboxBridge.checkLocalAppStatuses === 'function') {
+      var queryArr = CLOUD_APPS.map(function(a) {
+        return { id: a.id, filename: a.filename, package_name: a.package_name };
+      });
+      var resJson = window.ToolboxBridge.checkLocalAppStatuses(JSON.stringify(queryArr));
+      var res = JSON.parse(resJson);
+      if (res) {
+        CLOUD_APPS.forEach(function(a) {
+          var stat = res[a.id];
+          if (stat) {
+            if (stat.exists) {
+              a.status = 'ready';
+            } else if (a.status !== 'downloading') {
+              a.status = 'download';
+            }
+            a.installed = stat.installed;
+            a.installedVersion = stat.installedVersion;
+            a.downloadTime = stat.downloadTime || '';
+          }
+        });
+      }
+    }
+  } catch(e) {
+    console.error('syncLocalAppStatuses err:', e);
+  }
+}
+
+// 渲染车机 ADB 原厂推荐冻结列表
+function renderAdbFreezeList() {
+  var container = document.getElementById('freezeListContainer');
+  if (!container) return;
+  var html = '';
+  ADB_CORE_COMPONENTS.forEach(function(item) {
+    var badgeClass = item.frozen ? 'dot blue' : 'dot green';
+    var badgeTxt = item.frozen ? '已冻结 (白名单安全)' : '运行中 (会重置白名单)';
+    var btnClass = item.frozen ? 'btn-mini unfreeze' : 'btn-mini freeze';
+    var btnTxt = item.frozen ? '解冻恢复' : '一键冻结';
+    var targetFreeze = !item.frozen;
+
+    html += '<div class="freeze-item">' +
+      '<div class="freeze-info">' +
+        '<div class="freeze-title">' +
+          '<span>' + item.name + '</span>' +
+          '<span class="pill" style="padding:2px 7px; font-size:10.5px;"><span class="' + badgeClass + '"></span> ' + badgeTxt + '</span>' +
+        '</div>' +
+        '<div class="freeze-desc">' + item.desc + '</div>' +
+      '</div>' +
+      '<div class="freeze-btns">' +
+        '<button class="' + btnClass + '" onclick="requestAppAction(\'' + item.pkg + '\', \'' + item.name + '\', \'' + (targetFreeze ? 'freeze' : 'unfreeze') + '\', true)">' + btnTxt + '</button>' +
+      '</div>' +
+    '</div>';
+  });
+  container.innerHTML = html;
+}
+
+// 渲染车机全量应用高级管理列表
+function renderAllAppsList() {
+  var container = document.getElementById('allAppsContainer');
+  if (!container) return;
+  var html = '';
+  
+  var filtered = ALL_INSTALLED_APPS.filter(function(app) {
+    if (appSearchKeyword) {
+      var kw = appSearchKeyword.toLowerCase();
+      if (!app.name.toLowerCase().includes(kw) && !app.pkg.toLowerCase().includes(kw)) {
+        return false;
+      }
+    }
+    if (appTypeFilter === 'user' && app.isSystem) return false;
+    if (appTypeFilter === 'system' && !app.isSystem) return false;
+    if (appStateFilter === 'enabled' && app.frozen) return false;
+    if (appStateFilter === 'disabled' && !app.frozen) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:18px; color:var(--txt-dim); font-size:12px;">没有找到匹配的应用</div>';
+    return;
+  }
+
+  filtered.forEach(function(app) {
+    var isProt = isProtectedCriticalPackage(app.pkg, app.isSystem);
+    var typeBadge = app.isSystem ? '<span style="font-size:9.5px; padding:1px 4px; border-radius:4px; background:rgba(239,68,68,0.15); color:#EF4444; border:1px solid rgba(239,68,68,0.3);">原厂系统</span>' : '<span style="font-size:9.5px; padding:1px 4px; border-radius:4px; background:rgba(0,174,185,0.15); color:var(--accent); border:1px solid rgba(0,174,185,0.3);">第三方</span>';
+    var stateBadge = app.frozen ? '<span style="font-size:9.5px; padding:1px 4px; border-radius:4px; background:rgba(0,240,255,0.15); color:#00F0FF; border:1px solid rgba(0,240,255,0.3);">已冻结</span>' : '<span style="font-size:9.5px; padding:1px 4px; border-radius:4px; background:rgba(16,185,129,0.15); color:#10B981; border:1px solid rgba(16,185,129,0.3);">活跃</span>';
+
+    var actionsHtml = '<button class="btn-mini" onclick="callBridge(\'launchApp\', \'' + app.pkg + '\')">打开</button>';
+    if (isProt) {
+      actionsHtml += '<span class="pill" style="font-size:10px; color:var(--txt-dim); padding:2px 8px; border:1px solid var(--border);" title="车机底层关键服务，系统已自动保护禁止冻结与卸载">🔒 核心受保护</span>';
+    } else {
+      var freezeBtnTxt = app.frozen ? '解冻' : '冻结';
+      var freezeBtnClass = app.frozen ? 'btn-mini unfreeze' : 'btn-mini freeze';
+      var targetFreeze = !app.frozen;
+      actionsHtml += '<button class="' + freezeBtnClass + '" onclick="requestAppAction(\'' + app.pkg + '\', \'' + app.name + '\', \'' + (targetFreeze ? 'freeze' : 'unfreeze') + '\', ' + app.isSystem + ')">' + freezeBtnTxt + '</button>' +
+        '<button class="btn-mini" onclick="requestAppAction(\'' + app.pkg + '\', \'' + app.name + '\', \'clearData\', ' + app.isSystem + ')">清数据</button>';
+      if (!app.isSystem) {
+        actionsHtml += '<button class="btn-mini danger" onclick="requestAppAction(\'' + app.pkg + '\', \'' + app.name + '\', \'uninstall\', ' + app.isSystem + ')">卸载</button>';
+      }
+    }
+
+    html += '<div class="app-manage-item">' +
+      '<div class="app-manage-meta">' +
+        '<div class="app-manage-name">' +
+          '<span>' + app.name + '</span>' +
+          typeBadge +
+          stateBadge +
+        '</div>' +
+        '<div class="app-manage-pkg">' + app.pkg + ((app.version || app.ver) ? ' · v' + (app.version || app.ver).replace(/^v/i, '') : '') + '</div>' +
+      '</div>' +
+      '<div class="app-manage-actions">' +
+        actionsHtml +
+      '</div>' +
+    '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+// 提取 OTA 直链
+function handleExtractOta() {
+  var resJson = callBridge('extractOta');
+  var box = document.getElementById('otaResultBox');
+  var urlTxt = document.getElementById('otaUrlText');
+  var tipTxt = document.getElementById('otaSourceTip');
+  try {
+    var res = JSON.parse(resJson);
+    if (res && res.success && res.url) {
+      tipTxt.innerText = res.details || '成功捕获到原厂 OTA 固件下载直链：';
+      urlTxt.innerText = res.url;
+      box.style.display = 'block';
+      showToast('成功抓取到原厂 OTA 固件下载直链');
+    } else {
+      tipTxt.innerText = '暂未在车机缓存或实时日志中发现待下载 OTA 固件包。';
+      urlTxt.innerText = '未捕获到新固件请求 (当前可能已是最新版本)';
+      box.style.display = 'block';
+    }
+  } catch(e) {
+    tipTxt.innerText = '提取完成：未发现待下载的增量升级包。';
+    urlTxt.innerText = '无升级固件直链';
+    box.style.display = 'block';
+  }
+}
+
+// ==================== 清理功能处理 ====================
+function handleOpenCleanDialog() {
+  openModal('cleanDialogModal');
+}
+
+function executeCleanEmptyFolders() {
+  callBridge('cleanCache');
+  closeModal('cleanDialogModal');
+}
+
+function requestCleanAllDownloads() {
+  closeModal('cleanDialogModal');
+  requestAppAction('/sdcard/Download/*', '下载目录全部文件与安装包', 'cleanAllDownloads', false);
+}
+
+// ==================== 三次递进式安全校验逻辑 ====================
+var currentConfirmAction = null; // { pkg, name, action, isSystem, step }
+
+function requestAppAction(pkg, name, action, isSystem) {
+  if (action === 'unfreeze') {
+    executeConfirmedAction(pkg, name, action);
+    return;
+  }
+
+  if (isProtectedCriticalPackage(pkg, isSystem)) {
+    if (action === 'freeze' || action === 'uninstall' || action === 'clearData') {
+      alert('【系统安全拦截】\n\n应用【' + (name || pkg) + '】属于车机底层核心运行组件，已加入禁止操作保护列表！\n\n禁止执行' + (action === 'freeze' ? '冻结' : (action === 'uninstall' ? '卸载' : '清除数据')) + '操作，以防车机发生系统崩溃或无法开机。');
+      return;
+    }
+  }
+
+  currentConfirmAction = {
+    pkg: pkg,
+    name: name,
+    action: action,
+    isSystem: isSystem,
+    step: 1
+  };
+  showConfirmStep(1);
+  openModal('tripleConfirmModal');
+}
+
+function showConfirmStep(step) {
+  if (!currentConfirmAction) return;
+  currentConfirmAction.step = step;
+  var actName = currentConfirmAction.action === 'freeze' ? '冻结应用' :
+    (currentConfirmAction.action === 'clearData' ? '清除数据与缓存' :
+    (currentConfirmAction.action === 'cleanAllDownloads' ? '清空下载目录全部文件' : '卸载应用'));
+  var isSys = currentConfirmAction.isSystem;
+
+  var stepLabel = document.getElementById('confirmStepLabel');
+  var title = document.getElementById('confirmTitle');
+  var desc = document.getElementById('confirmDesc');
+  var nextBtn = document.getElementById('confirmNextBtn');
+
+  if (step === 1) {
+    stepLabel.innerText = 'STEP 1 / 3 · 操作意图核准';
+    title.innerText = '准备执行【' + actName + '】？';
+    desc.innerHTML = '<b>目标对象</b>：' + currentConfirmAction.name + '<br><b>目标路径/包名</b>：' + currentConfirmAction.pkg + '<br><br><b>效果说明</b>：<br>' +
+      (currentConfirmAction.action === 'freeze' ? '• 冻结后该应用将停止运行且无法启动，相当于临时停用；<br>• 如需恢复，可随时在工具箱点击【解冻】。' :
+      (currentConfirmAction.action === 'clearData' ? '• 将彻底删除该应用的登录态、缓存与本地设置数据；<br>• 适用于解决应用闪退或配置错乱。' :
+      (currentConfirmAction.action === 'cleanAllDownloads' ? '• 将彻底删除 <code>/sdcard/Download/</code> 目录下所有已下载的 APK 与临时缓存；<br>• 删除后可释放车机存储空间，但若需安装未完成的应用须重新下载。' :
+      '• 将从车机中彻底删除该应用文件；<br>• 删除后需重新下载安装。')));
+    nextBtn.innerText = '我已清楚，下一步 (1/3) ->';
+  } else if (step === 2) {
+    stepLabel.innerText = 'STEP 2 / 3 · 风险与依赖评估';
+    title.innerText = isSys ? '警告：检测到该应用为系统核心组件！' : '风险提示与确认';
+    desc.innerHTML = isSys ?
+      '<span style="color:#EF4444; font-weight:800;">【系统组件风险警告】</span><br>该应用属于吉利车机原厂系统组件。' + (currentConfirmAction.pkg === 'com.ecarx.appstore' ? '冻结吉利应用商店属安全推荐操作（可锁死白名单）；' : '对其他原厂组件执行卸载或清除可能导致车机部分硬件联动（如蓝牙音频、主题屏保）异常！') + '<br><br>请评估是否仍确认继续？' :
+      (currentConfirmAction.action === 'cleanAllDownloads' ? '<span style="color:#EF4444; font-weight:800;">【文件不可逆清空警告】</span><br>清空下载目录后，已下载的所有大文件与安装包将全部消失，无法从回收站恢复！<br><br>请确认是否继续？' : '对第三方自装软件执行【' + actName + '】一般不会影响车辆底层安全，但在行车过程中请勿分心操作。<br><br>请确认是否继续？');
+    nextBtn.innerText = '确认风险，下一步 (2/3) ->';
+  } else if (step === 3) {
+    stepLabel.innerText = 'STEP 3 / 3 · 最终物理执行核准';
+    title.innerText = '最终确认：立即发送物理执行指令？';
+    desc.innerHTML = '点击下方【立即执行】后，系统将物理执行 <code>' + (currentConfirmAction.action === 'cleanAllDownloads' ? '清空下载目录' : currentConfirmAction.action) + '</code> 操作并即时生效。<br><br><b style="color:#EF4444;">操作一经确认不可中途取消。</b>';
+    nextBtn.innerText = '确认无误，立即执行！';
+  }
+}
+
+function proceedTripleConfirm() {
+  if (!currentConfirmAction) return;
+  if (currentConfirmAction.step < 3) {
+    showConfirmStep(currentConfirmAction.step + 1);
+  } else {
+    executeConfirmedAction(currentConfirmAction.pkg, currentConfirmAction.name, currentConfirmAction.action);
+    closeModal('tripleConfirmModal');
+    currentConfirmAction = null;
+  }
+}
+
+function cancelTripleConfirm() {
+  closeModal('tripleConfirmModal');
+  currentConfirmAction = null;
+}
+
+function executeConfirmedAction(pkg, name, action) {
+  if (action === 'freeze') {
+    callBridge('togglePackageFreeze', pkg, true);
+    updateLocalAppFreezeState(pkg, true);
+    showToast('已成功冻结: ' + name);
+  } else if (action === 'unfreeze') {
+    callBridge('togglePackageFreeze', pkg, false);
+    updateLocalAppFreezeState(pkg, false);
+    showToast('已成功解冻: ' + name);
+  } else if (action === 'clearData') {
+    callBridge('clearAppData', pkg);
+    showToast('已清除应用数据: ' + name);
+  } else if (action === 'uninstall') {
+    callBridge('uninstallApp', pkg);
+    ALL_INSTALLED_APPS = ALL_INSTALLED_APPS.filter(function(a) { return a.pkg !== pkg; });
+    renderAllAppsList();
+    showToast('已发送卸载指令: ' + name);
+  } else if (action === 'cleanAllDownloads') {
+    callBridge('cleanAllDownloadFiles');
+  }
+}
+
+function updateLocalAppFreezeState(pkg, frozen) {
+  ADB_CORE_COMPONENTS.forEach(function(item) {
+    if (item.pkg === pkg) item.frozen = frozen;
+  });
+  renderAdbFreezeList();
+
+  ALL_INSTALLED_APPS.forEach(function(item) {
+    if (item.pkg === pkg) item.frozen = frozen;
+  });
+  renderAllAppsList();
+}
+
+function handleSearchApps(val) {
+  appSearchKeyword = val;
+  renderAllAppsList();
+}
+function filterAppType(type) {
+  appTypeFilter = type;
+  document.querySelectorAll('#allAppsModal .filter-tab').forEach(function(el) {
+    if (el.id.startsWith('typeTab_')) el.classList.remove('active');
+  });
+  document.getElementById('typeTab_' + type).classList.add('active');
+  renderAllAppsList();
+}
+function filterAppState(state) {
+  appStateFilter = state;
+  document.querySelectorAll('#allAppsModal .filter-tab').forEach(function(el) {
+    if (el.id.startsWith('stateTab_')) el.classList.remove('active');
+  });
+  document.getElementById('stateTab_' + state).classList.add('active');
+  renderAllAppsList();
+}
+
+function handleOpenFreezeManager() {
+  renderAdbFreezeList();
+  probeAdbConnection();
+  openModal('freezeModal');
+}
+function loadAllInstalledApps() {
+  try {
+    if (window.ToolboxBridge && typeof window.ToolboxBridge.getAllInstalledApps === 'function') {
+      var res = window.ToolboxBridge.getAllInstalledApps();
+      var parsed = JSON.parse(res);
+      if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+        ALL_INSTALLED_APPS = parsed;
+      }
+    }
+  } catch (e) {
+    console.error('loadAllInstalledApps err:', e);
+  }
+}
+
+function handleOpenAllAppsModal() {
+  loadAllInstalledApps();
+  renderAllAppsList();
+  openModal('allAppsModal');
+}
+function switchFromAdbToAllApps() {
+  closeModal('freezeModal');
+  loadAllInstalledApps();
+  renderAllAppsList();
+  openModal('allAppsModal');
+}
+function switchToAdbModal() {
+  closeModal('allAppsModal');
+  renderAdbFreezeList();
+  probeAdbConnection();
+  openModal('freezeModal');
+}
+function openCustomAdbTerminal() {
+  closeModal('freezeModal');
+  probeAdbConnection();
+  updateTerminalNetInfo();
+  openModal('adbTerminalModal');
+}
+function switchToFreezeModal() {
+  closeModal('adbTerminalModal');
+  renderAdbFreezeList();
+  probeAdbConnection();
+  openModal('freezeModal');
+}
+
+function probeAdbConnection() {
+  try {
+    if (window.ToolboxBridge && typeof window.ToolboxBridge.probeAdbStatus === 'function') {
+      var resJson = window.ToolboxBridge.probeAdbStatus();
+      var res = JSON.parse(resJson);
+      if (res) {
+        var dot1 = document.getElementById('adbModalStatusDot');
+        var txt1 = document.getElementById('adbModalStatusText');
+        var dot2 = document.getElementById('terminalAdbStatusDot');
+        var txt2 = document.getElementById('terminalAdbStatusText');
+
+        if (res.ready) {
+          if (dot1) dot1.className = 'dot green';
+          if (txt1) txt1.innerText = res.title || 'ADB 已就绪';
+          if (dot2) dot2.className = 'dot green';
+          if (txt2) txt2.innerText = (res.title || 'ADB 已就绪') + ' (' + (res.privilege || '特权') + ')';
+        } else {
+          if (dot1) dot1.className = 'dot red';
+          if (txt1) txt1.innerText = res.title || 'ADB 未连接';
+          if (dot2) dot2.className = 'dot red';
+          if (txt2) txt2.innerText = res.title || 'ADB 未连接';
+        }
+      }
+    }
+  } catch(e) {
+    console.error('probeAdbConnection err:', e);
+  }
+}
+
+function setTerminalCmd(cmd) {
+  var input = document.getElementById('customAdbInput');
+  if (input) {
+    input.value = cmd;
+    input.focus();
+  }
+}
+
+function executeCustomCommand() {
+  var input = document.getElementById('customAdbInput');
+  var box = document.getElementById('terminalOutputBox');
+  if (!input || !box) return;
+
+  var cmd = input.value.trim();
+  if (!cmd) {
+    showToast('请输入要执行的指令');
+    return;
+  }
+
+  var timeStr = new Date().toTimeString().split(' ')[0];
+  box.innerText += '\n\n[' + timeStr + '] $ ' + cmd + '\n正在执行中...';
+  box.scrollTop = box.scrollHeight;
+
+  setTimeout(function() {
+    var resJson = callBridge('executeCustomAdbCommand', cmd);
+    try {
+      var res = JSON.parse(resJson);
+      var out = res.output || res.error || '[无输出返回]';
+      var dur = res.durationMs ? ' (' + res.durationMs + 'ms)' : '';
+      box.innerText += '\n' + out + '\n[退出码: ' + (res.success ? '0 OK' : '1 ERR') + dur + ']';
+    } catch(e) {
+      box.innerText += '\n' + resJson;
+    }
+    box.scrollTop = box.scrollHeight;
+  }, 50);
+}
+
+function clearTerminalOutput() {
+  var box = document.getElementById('terminalOutputBox');
+  if (box) box.innerText = '[终端已清空] 请输入指令或通过手机快传推送命令...';
+}
+
+function updateTerminalNetInfo() {
+  try {
+    var netJson = callBridge('getNetworkStatusJson');
+    if (netJson) {
+      var net = JSON.parse(netJson);
+      updateTerminalNetInfoWithObj(net);
+    }
+  } catch (e) {
+    console.error('updateTerminalNetInfo err:', e);
+  }
+}
+
+function updateTerminalNetInfoWithObj(net) {
+  if (!net) return;
+  var msgEl = document.getElementById('terminalNetStatusMsg');
+  var boxEl = document.getElementById('terminalNetBox');
+  if (!msgEl || !boxEl) return;
+
+  if (net.isWifiOrLan) {
+    msgEl.innerHTML = '<b>手机无线快连</b>：请在同局域网手机浏览器直接访问 <b style="color:#38BDF8; font-family:monospace; font-size:13px;">http://' + net.ip + ':8888</b> 粘贴长命令推送到此屏幕';
+    boxEl.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+    boxEl.style.background = 'rgba(2, 132, 199, 0.12)';
+    msgEl.style.color = '#38BDF8';
+  } else if (net.isCellular) {
+    msgEl.innerHTML = '<b>手机快连提示</b>：当前为车机内置 SIM 移动流量 (<b style="font-family:monospace;">' + net.ip + '</b>)，手机无法跨公网直连！请连同一 Wi-Fi 或开启手机热点供车机连接';
+    boxEl.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+    boxEl.style.background = 'rgba(245, 158, 11, 0.12)';
+    msgEl.style.color = '#FBBF24';
+  } else {
+    msgEl.innerHTML = '<b>手机快连提示</b>：车机尚未连接 Wi-Fi 网络，无法开启手机网页快连 (请连接 Wi-Fi 或开启手机热点)';
+    boxEl.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+    boxEl.style.background = 'rgba(239, 68, 68, 0.1)';
+    msgEl.style.color = '#F87171';
+  }
+}
+
+function saveTerminalLogToFile() {
+  var box = document.getElementById('terminalOutputBox');
+  if (!box || !box.innerText || box.innerText.trim() === '') {
+    showToast('终端当前无日志输出');
+    return;
+  }
+  callBridge('saveTerminalLog', box.innerText.trim());
+}
+
+function handlePromptExit() {
+  openModal('exitAppModal');
+}
+
+function handleRealExitApp() {
+  showToast('正在彻底退出工具箱并清理后台服务...');
+  setTimeout(function() {
+    callBridge('exitApp');
+  }, 300);
+}
+
+function handleExitApp() {
+  handlePromptExit();
+}
+
+function switchCategory(cat) {
+  currentCategory = cat;
+  var items = document.querySelectorAll('.tab-item');
+  items.forEach(function(el) { el.classList.remove('active'); });
+  if (window.event && window.event.target) window.event.target.classList.add('active');
+  renderApps();
+}
+
+// 自动与手动日夜模式双向同步
+function handleToggleTheme() {
+  var isLight = document.body.classList.toggle('light');
+  showToast(isLight ? '已切换至日间亮色模式' : '已切换至夜间深色模式');
+}
+
+function applyDayNightMode(isNight) {
+  if (isNight) {
+    document.body.classList.remove('light');
+  } else {
+    document.body.classList.add('light');
+  }
+}
+
+function renderSkinCards() {
+  var container = document.getElementById('skinCardsContainer');
+  if (!container) return;
+  var html = '';
+  SKINS_DATA.forEach(function(s) {
+    var isActive = (s.id === currentSkin);
+    var borderStyle = isActive ? 'border: 2px solid var(--accent); background: rgba(2, 132, 199, 0.18); box-shadow: 0 0 12px rgba(2, 132, 199, 0.35);' : 'border: 1px solid var(--border); background: var(--card);';
+    var activeBadge = isActive ? '<span style="font-size:11px; font-weight:800; color:var(--accent); background:var(--btn-bg); padding:2px 6px; border-radius:4px; border:1px solid var(--border);">[ 使用中]</span>' : '';
+
+    var dots = '<div style="display:flex; gap:5px; align-items:center;">' +
+      s.colors.map(function(c) { return '<span style="display:inline-block; width:13px; height:13px; border-radius:50%; background:' + c + '; box-shadow: 0 1px 4px rgba(0,0,0,0.35);"></span>'; }).join('') +
+      '</div>';
+
+    html += '<div onclick="selectSkin(\'' + s.id + '\')" style="padding:10px 12px; border-radius:var(--skin-radius-sm); cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:all 0.15s; ' + borderStyle + '">' +
+      '<div style="display:flex; align-items:center; justify-content:space-between;">' +
+        '<div style="font-size:13.5px; font-weight:800; color:var(--txt-strong);">' + s.name + '</div>' +
+        dots +
+      '</div>' +
+      '<div style="display:flex; align-items:center; justify-content:space-between; margin-top:2px;">' +
+        '<div style="font-size:11.5px; color:var(--txt-dim);">' + s.desc + '</div>' +
+        activeBadge +
+      '</div>' +
+    '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function selectSkin(skinId) {
+  SKINS_DATA.forEach(function(s) {
+    document.body.classList.remove('skin-' + s.id);
+  });
+  currentSkin = skinId;
+  if (skinId !== 'default') {
+    document.body.classList.add('skin-' + skinId);
+  }
+  renderSkinCards();
+  var found = SKINS_DATA.find(function(s) { return s.id === skinId; });
+  var name = found ? found.name : skinId;
+  showToast('已切换至【' + name + '】主题 (๑•̀ㅂ•́)و');
+}
+
+function handleOpenSkinModal() {
+  renderSkinCards();
+  openModal('skinModal');
+}
+
+function handleCycleSkin() {
+  handleOpenSkinModal();
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toastBanner');
+  var m = document.getElementById('toastMsg');
+  m.innerText = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function() {
+    t.classList.remove('show');
+  }, 3500);
+}
+
+function openModal(id) {
+  var m = document.getElementById(id);
+  if (m) m.classList.add('open');
+}
+function closeModal(id) {
+  var m = document.getElementById(id);
+  if (m) m.classList.remove('open');
+}
+
+// ==================== Java Bridge 交互 ====================
+function callBridge(funcName) {
+  if (window.ToolboxBridge && typeof window.ToolboxBridge[funcName] === 'function') {
+    try {
+      var args = Array.prototype.slice.call(arguments, 1);
+      return window.ToolboxBridge[funcName].apply(window.ToolboxBridge, args);
+    } catch(e) {
+      console.error(e);
+    }
+  } else {
+    console.log('Call Bridge Mock:', funcName, Array.prototype.slice.call(arguments, 1));
+    showToast('执行: ' + funcName);
+  }
+}
+
+function handleSelectApkInject() { callBridge('selectApkInject'); }
+function handleOpenThemeManager() { callBridge('openThemeManager'); }
+function handleSoftReboot() { callBridge('softReboot'); }
+function handleRestoreOfficialTheme() {
+  showUniversalConfirm({
+    title: '还原吉利官方原版时钟？',
+    desc: '<b>安全说明</b>：将彻底删除本地 280MB 兔子伪装大包与防覆写锁文件，解除拦截，让车机彻底自愈回滚至原厂官方原生屏保时钟。<br><br>• <b>释放空间</b>：立竿见影释放 ~286 MB 机身内部存储；<br>• <b>防误触自愈</b>：彻底拔除残留地雷，日后进入主题中心无需担心误触；<br>• <b>原厂原生</b>：吉利系统检测到锁文件解除后，会自动恢复原版兔子时钟。',
+    btnText: '立即还原官方时钟',
+    isDanger: false,
+    onConfirm: function() {
+      if (window.ToolboxBridge && typeof window.ToolboxBridge.restoreOfficialTheme === 'function') {
+        try {
+          var resStr = window.ToolboxBridge.restoreOfficialTheme();
+          var res = JSON.parse(resStr);
+          if (res && res.success) {
+            showToast('已成功还原官方时钟，释放 ' + (res.freedMb || '0') + ' MB 空间！');
+          } else {
+            showToast(res.message || '还原完成');
+          }
+        } catch(e) {
+          showToast('已执行官方时钟还原');
+        }
+      } else {
+        showToast('当前环境未就绪');
+      }
+      syncRabbitThemeInfo();
+    }
+  });
+}
+function handleUninstallAmap() { requestAppAction('com.autonavi.amapauto', '高德地图', 'uninstall', false); }
+function handleOpenFileManager() { callBridge('openFileManager'); }
+function handleMinimize() { callBridge('minimizeApp'); }
+
+var _selectedNavApp = null;
+var _postRebootFilename = '';
+
+function openRabbitInstallGuideModal(app) {
+  _selectedNavApp = app;
+  var nameEl = document.getElementById('rabbitInstallAppName');
+  if (nameEl) nameEl.innerText = app.name + ' (' + (app.size || '') + ')';
+  openModal('rabbitInstallModal');
+}
+
+function handleStartAutoPilot(filename) {
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.startAutoPilotInject === 'function') {
+    window.ToolboxBridge.startAutoPilotInject(filename || '');
+  } else {
+    showToast('当前环境未就绪');
+  }
+}
+
+function handleRabbitAutoPilotInstall() {
+  if (_selectedNavApp && _selectedNavApp.filename) {
+    handleStartAutoPilot(_selectedNavApp.filename);
+  } else {
+    handleStartAutoPilot(null);
+  }
+  closeModal('rabbitInstallModal');
+}
+
+window.showAmapAutoPilotSelector = function(apksList) {
+  var container = document.getElementById('amapAutoSelectList');
+  if (!container) return;
+  var html = '';
+  if (Array.isArray(apksList)) {
+    apksList.forEach(function(item) {
+      html += '<div onclick="selectAmapAndStartAuto(\'' + item.filename + '\')" class="about-item" style="padding:10px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:all 0.15s; margin-bottom:8px;">' +
+        '<div>' +
+          '<div style="font-size:14px; font-weight:800; color:var(--txt-strong);">' + item.filename + '</div>' +
+          '<div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">体积: ' + item.sizeStr + ' · 位于 Download/</div>' +
+        '</div>' +
+        '<button class="btn-ctrl-md highlight" style="min-height:32px; padding:0 14px; font-size:12.5px; font-weight:800;">选择执行</button>' +
+      '</div>';
+    });
+  }
+  container.innerHTML = html;
+  openModal('selectAmapForAutoModal');
+};
+
+function selectAmapAndStartAuto(filename) {
+  closeModal('selectAmapForAutoModal');
+  handleStartAutoPilot(filename);
+}
+
+var isAutostartOn = false;
+
+function handleToggleAutostart() {
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.setAutostartEnabled === 'function') {
+    isAutostartOn = !isAutostartOn;
+    window.ToolboxBridge.setAutostartEnabled(isAutostartOn);
+    updateAutostartUi(isAutostartOn);
+    showToast(isAutostartOn ? '已开启车机开机自启 (๑•̀ㅂ•́)و' : '已关闭车机开机自启');
+  } else {
+    isAutostartOn = !isAutostartOn;
+    updateAutostartUi(isAutostartOn);
+  }
+}
+
+function updateAutostartUi(enabled) {
+  isAutostartOn = !!enabled;
+  ['btnToggleAutostart', 'btnSettingAutostart'].forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (btn) {
+      btn.innerText = isAutostartOn ? '已开启' : '未开启';
+      btn.className = isAutostartOn ? (id === 'btnToggleAutostart' ? 'btn-mini highlight' : 'btn-ctrl-md highlight') : (id === 'btnToggleAutostart' ? 'btn-mini' : 'btn-ctrl-md');
+    }
+  });
+  ['autostartStatusHint', 'settingAutostartHint'].forEach(function(id) {
+    var hint = document.getElementById(id);
+    if (hint) {
+      hint.innerText = isAutostartOn ? '开机自动放行白名单并拉起悬浮小胶囊' : '开机静默，不自动启动工具箱';
+    }
+  });
+}
+
+var isRabbitSafeModeOn = true;
+
+function handleToggleRabbitSafeMode() {
+  if (isRabbitSafeModeOn) {
+    if (confirm('【安全提示】\n\n关闭「卡主题安全防护」后，将允许你选择其他第三方应用尝试伪装打包进时钟。\n\n⚠️ 注意：若错误伪装非专车定制软件，可能导致应用闪退；（底层仍将永久拦截系统设置/框架，防止车机变砖）。\n\n确定要切换为专家模式并关闭该保护吗？')) {
+      isRabbitSafeModeOn = false;
+      if (window.ToolboxBridge && typeof window.ToolboxBridge.setRabbitSafeModeEnabled === 'function') {
+        window.ToolboxBridge.setRabbitSafeModeEnabled(false);
+      }
+      updateRabbitSafeModeUi(false);
+      showToast('已关闭卡主题安全限制 (专家模式)');
+    }
+  } else {
+    isRabbitSafeModeOn = true;
+    if (window.ToolboxBridge && typeof window.ToolboxBridge.setRabbitSafeModeEnabled === 'function') {
+      window.ToolboxBridge.setRabbitSafeModeEnabled(true);
+    }
+    updateRabbitSafeModeUi(true);
+    showToast('已开启卡主题安全防护 (推荐模式)');
+  }
+}
+
+function updateRabbitSafeModeUi(enabled) {
+  isRabbitSafeModeOn = (enabled !== false);
+  var btn = document.getElementById('btnSettingRabbitSafe');
+  if (btn) {
+    btn.innerText = isRabbitSafeModeOn ? '已开启' : '已关闭 (专家)';
+    btn.className = isRabbitSafeModeOn ? 'btn-ctrl-md highlight' : 'btn-ctrl-md';
+  }
+  var hint = document.getElementById('settingRabbitSafeHint');
+  if (hint) {
+    hint.innerText = isRabbitSafeModeOn ?
+      '锁定仅允许高德/百度/腾讯等导航类应用伪装，防止常规或系统软件导致开机死锁' :
+      '专家模式：允许任意应用尝试时钟伪装（系统核心组件仍受永久保护）';
+  }
+}
+
+function handleRabbitDirectInstall() {
+  if (_selectedNavApp && _selectedNavApp.filename) {
+    callBridge('installDownloadedApk', _selectedNavApp.filename);
+  } else {
+    callBridge('openFileManager');
+  }
+  closeModal('rabbitInstallModal');
+}
+
+function handleRabbitOpenFolder() {
+  callBridge('openFileManager');
+  closeModal('rabbitInstallModal');
+}
+
+function handleRabbitReInject() {
+  if (_selectedNavApp && _selectedNavApp.filename) {
+    callBridge('injectApkDirectly', _selectedNavApp.filename);
+  } else {
+    handleSelectApkInject();
+  }
+  closeModal('rabbitInstallModal');
+}
+
+function dismissPostRebootModal() {
+  closeModal('rabbitPostRebootModal');
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.onPostRebootHandled === 'function') {
+    window.ToolboxBridge.onPostRebootHandled();
+  }
+}
+
+function handlePostRebootInstall() {
+  if (_postRebootFilename) {
+    callBridge('installDownloadedApk', _postRebootFilename);
+  } else {
+    callBridge('openFileManager');
+  }
+  dismissPostRebootModal();
+}
+
+function handlePostRebootOpenFolder() {
+  callBridge('openFileManager');
+  dismissPostRebootModal();
+}
+
+function handlePostRebootGoAdb() {
+  dismissPostRebootModal();
+  handleOpenFreezeManager();
+}
+
+function handleDownloadApp(id, isRedownload) {
+  var app = CLOUD_APPS.find(function(a) { return a.id === id; });
+  if (!app) return;
+
+  if (app.status === 'ready' && !isRedownload) {
+    if (app.category === 'navigation') {
+      openRabbitInstallGuideModal(app);
+    } else {
+      showToast('正在调起系统安装器: ' + app.name);
+      callBridge('installDownloadedApk', app.filename);
+    }
+    return;
+  }
+
+  app.status = 'downloading';
+  app.progress = 0;
+  app.speed = '';
+  renderApps();
+
+  callBridge('downloadApp', app.id, app.url, app.filename);
+}
+
+function handlePauseDownload(id) {
+  var app = CLOUD_APPS.find(function(a) { return a.id === id; });
+  if (app) {
+    app.status = 'paused';
+    renderApps();
+    callBridge('pauseDownload', id);
+    showToast('已暂停下载: ' + app.name);
+  }
+}
+
+function handleResumeDownload(id) {
+  var app = CLOUD_APPS.find(function(a) { return a.id === id; });
+  if (app) {
+    app.status = 'downloading';
+    renderApps();
+    callBridge('downloadApp', app.id, app.url, app.filename);
+  }
+}
+
+function handleCancelDownload(id) {
+  var app = CLOUD_APPS.find(function(a) { return a.id === id; });
+  if (app) {
+    app.status = 'download';
+    app.progress = 0;
+    app.speed = '';
+    renderApps();
+    callBridge('cancelDownload', id);
+    showToast('已取消下载: ' + app.name);
+  }
+}
+
+function handleRefreshCloudApps() {
+  var btn = document.getElementById('btnRefreshApps');
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.45';
+    btn.style.pointerEvents = 'none';
+    btn.innerText = '刷新中...';
+  }
+  showToast('正在从云端拉取最新车载软件列表...');
+  callBridge('refreshCloudApps');
+
+  // 防挂死超时兜底（8秒后自动恢复）
+  clearTimeout(window._refreshAppsTimer);
+  window._refreshAppsTimer = setTimeout(function() {
+    if (window.onCloudAppsRefreshComplete) {
+      window.onCloudAppsRefreshComplete(false, 'timeout');
+    }
+  }, 8000);
+}
+
+window.onCloudAppsRefreshComplete = function(success, message) {
+  clearTimeout(window._refreshAppsTimer);
+  var btn = document.getElementById('btnRefreshApps');
+  if (btn) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+    btn.innerText = '刷新';
+  }
+};
+
+function handleDumpLogcat() {
+  var btn = document.getElementById('btnDumpLogcat');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = '抓取中...';
+  }
+  showToast('正在采集车机系统 logcat 日志...');
+
+  setTimeout(function() {
+    var resJson = callBridge('dumpSystemLogcat');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = '立即抓取保存';
+    }
+    var box = document.getElementById('logcatResultBox');
+    var tip = document.getElementById('logcatStatusTip');
+    var pathTxt = document.getElementById('logcatPathText');
+    try {
+      var res = JSON.parse(resJson);
+      if (res && res.success) {
+        if (tip) tip.innerText = '全量日志采集完成 (' + (res.sizeStr || '') + ')，已保存至：';
+        if (pathTxt) pathTxt.innerText = res.path || '/sdcard/Download/car_full.log';
+        if (box) box.style.display = 'block';
+        showToast('系统日志已成功保存至 ' + res.path);
+      } else {
+        if (tip) tip.innerText = '采集失败: ' + ((res && res.message) ? res.message : '请检查存储权限');
+        if (box) box.style.display = 'block';
+      }
+    } catch(e) {
+      if (tip) tip.innerText = '日志已保存至 /sdcard/Download/car_full.log';
+      if (box) box.style.display = 'block';
+      showToast('日志抓取完成');
+    }
+  }, 100);
+}
+
+function handleCheckUpdate() {
+  callBridge('checkUpdate');
+  showToast('正在连接云端检测新版本...');
+}
+
+function handleForceDownloadToolbox() {
+  closeModal('aboutModal');
+  showToast(' 正在下载吉利工具箱最新安装包...');
+  callBridge('downloadApp', 'geelytoolbox', 'https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk', 'GeelyToolbox.apk');
+}
+
+var currentUpdateData = null;
+window.showToolboxUpdateModal = function(data) {
+  currentUpdateData = data;
+  var currentVer = (document.getElementById('appVer') ? document.getElementById('appVer').innerText : 'v1.1.8');
+  var targetVer = 'v' + (data.version || '1.1.8');
+  var badgeEl = document.getElementById('modalUpgradeVersionBadge');
+  if (badgeEl) badgeEl.innerText = currentVer + ' -> ' + targetVer + ' (code ' + (data.version_code || '7017') + ')';
+  var clEl = document.getElementById('modalUpgradeChangelog');
+  if (clEl) {
+    var rawLog = (data.changelog || '优化系统性能与座舱交互体验。').trim();
+    var lines = rawLog.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+    var html = '';
+    if (lines.length > 0) {
+      lines.forEach(function(line, idx) {
+        var cleanLine = line.replace(/^[0-9]+[\.、\s]+/, '').trim();
+        html += '<div class="changelog-item">' +
+          '<span class="changelog-num">' + (idx + 1) + '</span>' +
+          '<div class="changelog-text">' + cleanLine + '</div>' +
+          '</div>';
+      });
+    } else {
+      html = '<div class="changelog-item"><div class="changelog-text">' + rawLog + '</div></div>';
+    }
+    clEl.innerHTML = html;
+  }
+  var pBox = document.getElementById('toolboxSelfProgressBox');
+  if (pBox) pBox.style.display = 'none';
+  var btn = document.getElementById('btnStartSelfUpdate');
+  if (btn) {
+    btn.disabled = false;
+    btn.innerText = '立即更新 (安全直装)';
+  }
+  openModal('updateModal');
+};
+
+function handleStartSelfUpdate() {
+  if (!currentUpdateData || !currentUpdateData.download_url) {
+    showToast('更新包地址无效');
+    return;
+  }
+  var btn = document.getElementById('btnStartSelfUpdate');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = '下载中...';
+  }
+  var pBox = document.getElementById('toolboxSelfProgressBox');
+  if (pBox) pBox.style.display = 'block';
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.startToolboxSelfUpdate === 'function') {
+    window.ToolboxBridge.startToolboxSelfUpdate(currentUpdateData.download_url, currentUpdateData.version || '1.0.9');
+  }
+}
+
+window.updateToolboxSelfProgress = function(progress, speedStr) {
+  var bar = document.getElementById('toolboxSelfProgressBar');
+  if (bar) bar.style.width = progress + '%';
+  var status = document.getElementById('toolboxSelfProgressStatus');
+  if (status) status.innerText = '正在下载更新包: ' + progress + '%';
+  var speed = document.getElementById('toolboxSelfProgressSpeed');
+  if (speed) speed.innerText = speedStr || '';
+};
+
+window.updateToolboxSelfDone = function() {
+  var status = document.getElementById('toolboxSelfProgressStatus');
+  if (status) status.innerText = '下载完成，正在调起安装器...';
+  var bar = document.getElementById('toolboxSelfProgressBar');
+  if (bar) bar.style.width = '100%';
+  setTimeout(function() {
+    closeModal('updateModal');
+  }, 1200);
+};
+
+window.updateToolboxSelfError = function(err) {
+  var status = document.getElementById('toolboxSelfProgressStatus');
+  if (status) status.innerText = '下载失败: ' + err;
+  var btn = document.getElementById('btnStartSelfUpdate');
+  if (btn) {
+    btn.disabled = false;
+    btn.innerText = '重试更新';
+  }
+};
+
+var pendingUniversalConfirmCallback = null;
+function showUniversalConfirm(opts) {
+  var titleEl = document.getElementById('universalConfirmTitle');
+  var descEl = document.getElementById('universalConfirmDesc');
+  var okBtn = document.getElementById('universalConfirmOkBtn');
+  if (titleEl) titleEl.innerText = opts.title || '操作确认';
+  if (descEl) descEl.innerHTML = opts.desc || '是否确认执行该操作？';
+  if (okBtn) {
+    okBtn.innerText = opts.btnText || '确认执行';
+    if (opts.isDanger) {
+      okBtn.className = 'btn-ctrl-md danger';
+    } else {
+      okBtn.className = 'btn-ctrl-md primary';
+    }
+  }
+  pendingUniversalConfirmCallback = opts.onConfirm || null;
+  openModal('universalConfirmModal');
+}
+
+function proceedUniversalConfirm() {
+  closeModal('universalConfirmModal');
+  if (typeof pendingUniversalConfirmCallback === 'function') {
+    var cb = pendingUniversalConfirmCallback;
+    pendingUniversalConfirmCallback = null;
+    cb();
+  }
+}
+
+function handleOpenFileManager() {
+  showUniversalConfirm({
+    title: '打开车机原生文件管理？',
+    desc: '<b>操作说明</b>：将直接拉起 Android 原生 DocumentsUI 文件管理器。<br><br>• 你可以在 <b>Download</b> 目录下直接点击下载好的 APK 安装包进行覆盖安装；<br>• 适合在已卡兔子/放行白名单后进行手动安装。',
+    btnText: '立即打开',
+    onConfirm: function() {
+      callBridge('openFileManager');
+    }
+  });
+}
+
+function handleToggleWhitelist() {
+  var isEnabled = (cachedDeviceInfo && cachedDeviceInfo.whitelist);
+  var actName = isEnabled ? '关闭白名单' : '开启白名单放行';
+  var descHtml = isEnabled ?
+    '<b>操作效果</b>：将关闭车机白名单验证 (sys.jsbd.apk_verify=0)。<br>关闭后原厂系统将恢复安装拦截。' :
+    '<b>操作效果</b>：将立即开启车机白名单权限 (sys.jsbd.apk_verify=1)。<br>开启后允许直接覆盖安装任意第三方 APK 安装包，无需外接电脑 ADB。<br><br>是否确认立即放行？';
+  showUniversalConfirm({
+    title: '准备执行【' + actName + '】？',
+    desc: descHtml,
+    btnText: isEnabled ? '确认关闭' : '确认放行',
+    onConfirm: function() {
+      callBridge('toggleWhitelist');
+      showToast('正在处理白名单状态...');
+    }
+  });
+}
+
+function handleWakeBluetoothAudio() {
+  showUniversalConfirm({
+    title: '准备执行【蓝牙通道选通】？',
+    desc: '<b>操作效果</b>：向车机蓝牙 A2DP 音频服务与音频焦点管理器发送选通信号，恢复第三方播放器（如 QQ音乐/网易云/导航）的蓝牙发声音频通道。<br><br>是否确认立即选通？',
+    btnText: '确认选通',
+    onConfirm: function() {
+      if (window.ToolboxBridge && typeof window.ToolboxBridge.wakeBluetoothAudio === 'function') {
+        window.ToolboxBridge.wakeBluetoothAudio();
+      } else {
+        showToast('蓝牙音频选通已触发');
+      }
+    }
+  });
+}
+
+var isMultimediaFrozen = false;
+function handleToggleFreezeAppStore() {
+  var isFrozen = (cachedDeviceInfo && cachedDeviceInfo.appstore_frozen);
+  var actName = isFrozen ? '解冻恢复吉利应用商店' : '安全冻结吉利应用商店';
+  var descHtml = isFrozen ?
+    '<b>操作效果</b>：将解冻恢复原厂【吉利应用商店】(com.ecarx.appstore)。<br><br>️ <b>风险提醒</b>：解冻后原厂商店会在每次车机开机重启时自动关闭白名单 (sys.jsbd.apk_verify=0)。若无需下载官方应用，强烈建议保持冻结！' :
+    '<b>操作效果</b>：将立即安全冻结原厂【吉利应用商店】(com.ecarx.appstore)。<br><br>• <b>车机改装核心推荐</b>：彻底杜绝每次关机重启后白名单被重置为 0，实现<b>永久锁定白名单自由安装第三方应用</b>！<br>• 如需恢复官方商店，可随时点击解冻。<br><br>是否确认立即执行安全冻结？';
+  showUniversalConfirm({
+    title: '准备执行【' + actName + '】？',
+    desc: descHtml,
+    btnText: '确认' + (isFrozen ? '解冻' : '冻结'),
+    onConfirm: function() {
+      if (window.ToolboxBridge && typeof window.ToolboxBridge.toggleFreezeAppStore === 'function') {
+        window.ToolboxBridge.toggleFreezeAppStore(!isFrozen);
+      } else {
+        showToast((isFrozen ? '已解冻' : '已冻结') + '吉利应用商店');
+      }
+    }
+  });
+}
+
+function handleToggleFreezeMultimedia() {
+  var isFrozen = (cachedDeviceInfo && cachedDeviceInfo.multimedia_frozen);
+  var actName = isFrozen ? '解冻恢复多媒体伴听' : '安全冻结多媒体伴听';
+  var descHtml = isFrozen ?
+    '<b>操作效果</b>：将解冻恢复吉利原厂多媒体伴听服务 (com.ecarx.multimedia & com.ecarx.xcmedia)。<br>• 恢复原厂酷我音乐与本地 USB 音乐播放通道。<br><br>是否确认执行解冻？' :
+    '<b>操作效果</b>：将安全冻结吉利原厂多媒体伴听服务。<br>• 释放约 <b>80MB~120MB 后台运行内存</b>，极大缓解 E02 芯片运存压力；<br>• 彻底杜绝原厂酷我与 QQ音乐/网易云争抢音频焦点；<br>• <b>原车蓝牙电话接打与方向盘电话按键不受任何影响</b>。<br><br>是否确认立即执行冻结？';
+  showUniversalConfirm({
+    title: '准备执行【' + actName + '】？',
+    desc: descHtml,
+    btnText: '确认' + (isFrozen ? '解冻' : '冻结'),
+    onConfirm: function() {
+      if (window.ToolboxBridge && typeof window.ToolboxBridge.toggleFreezeMultimedia === 'function') {
+        window.ToolboxBridge.toggleFreezeMultimedia(!isFrozen);
+      } else {
+        showToast((isFrozen ? '已解冻' : '已冻结') + '原厂多媒体伴听');
+      }
+    }
+  });
+}
+
+function handleShowAbout() {
+  openModal('aboutModal');
+}
+
+function handleShowDynamicCode() {
+  var code = callBridge('getDynamicCode') || cachedDynamicCode;
+  var code5 = callBridge('getDynamicCodePlus5') || cachedDynamicCodePlus5;
+  cachedDynamicCode = code;
+  cachedDynamicCodePlus5 = code5;
+  document.getElementById('modalDynamicCode').innerText = code;
+  var el5 = document.getElementById('modalDynamicCodePlus5');
+  if (el5) el5.innerText = code5;
+  document.getElementById('codePillTxt').innerText = '暗码: ' + code;
+  openModal('dynamicCodeModal');
+}
+
+function handleOpenDialer() {
+  callBridge('openDialer');
+  closeModal('dynamicCodeModal');
+}
+
+function handleHardReboot() {
+  showUniversalConfirm({
+    title: '确认执行【完整硬重启 (冷启动)】？',
+    desc: '<b>操作说明</b>：将彻底切断并重新初始化整车车机 Linux 内核、MCU 与硬件电源（整机冷启动，耗时约 25~35 秒）。<br><br>• 适用于车机驱动卡死、网络异常或深度故障排查；<br>• <b>若仅为卡兔子时钟安装高德，推荐使用更快的 5秒【一键软重启】</b>。<br><br>是否确认立即执行完整硬重启？',
+    btnText: '确认硬重启',
+    isDanger: true,
+    onConfirm: function() {
+      callBridge('hardReboot');
+    }
+  });
+}
+
+function handleOpenSettingsModal() {
+  openModal('settingsModal');
+  syncSettingsModalUi();
+}
+
+function handleOpenDeepToolsModal() {
+  openModal('deepToolsModal');
+}
+
+function handleOpenLogModal() {
+  openModal('logModal');
+  refreshLogContent();
+}
+
+function refreshLogContent() {
+  var box = document.getElementById('logContentBox');
+  var pathEl = document.getElementById('logModalPath');
+  var sizeBadge = document.getElementById('logModalSizeBadge');
+  if (box) box.innerText = '正在读取日志...';
+
+  if (window.ToolboxBridge) {
+    if (typeof window.ToolboxBridge.getLogInfo === 'function') {
+      try {
+        var info = JSON.parse(window.ToolboxBridge.getLogInfo());
+        if (pathEl && info.path) pathEl.innerText = info.path;
+        if (sizeBadge && info.size) sizeBadge.innerText = info.size;
+      } catch(e) {}
+    }
+    if (typeof window.ToolboxBridge.getRecentLogs === 'function') {
+      try {
+        var logs = window.ToolboxBridge.getRecentLogs(400);
+        if (box) {
+          box.innerText = logs || '暂无运行日志记录。';
+          box.scrollTop = box.scrollHeight;
+        }
+        return;
+      } catch(e) {}
+    }
+  }
+  if (box) box.innerText = '当前环境未接入原生日志接口，或暂无运行日志。';
+}
+
+function handleClearLogContent() {
+  showUniversalConfirm({
+    title: '清空运行操作日志？',
+    desc: '<b>操作说明</b>：将彻底清空机身 Download 目录下的 <code>geely_toolbox.log</code> 及其历史滚动备份文件。<br><br>确认立即清空？',
+    btnText: '清空日志',
+    isDanger: true,
+    onConfirm: function() {
+      if (window.ToolboxBridge && typeof window.ToolboxBridge.clearRunLog === 'function') {
+        window.ToolboxBridge.clearRunLog();
+        showToast('运行日志已清空！');
+      } else {
+        showToast('已清空');
+      }
+      refreshLogContent();
+    }
+  });
+}
+
+var vehicleAutoSettings = {
+  turn_360: false,
+  light_nav: false,
+  flameout_voice: false,
+  voice_door_fl: false,
+  voice_door_fr: false,
+  voice_door_fr_close: false,
+  voice_door_rear: false,
+  custom_door_fl: false,
+  custom_door_fr: false,
+  custom_door_fr_close: false,
+  custom_door_rear: false,
+  custom_flameout: false
+};
+
+function handleOpenVehicleAutoModal() {
+  refreshVehicleAutoUI();
+  openModal('vehicleAutoModal');
+}
+
+function refreshVehicleAutoUI() {
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.getVehicleAutomationSettings === 'function') {
+    try {
+      var raw = window.ToolboxBridge.getVehicleAutomationSettings();
+      var s = JSON.parse(raw || '{}');
+      vehicleAutoSettings = Object.assign({}, vehicleAutoSettings, s);
+    } catch(e) {}
+  }
+  updateAutoBtn('btnAutoTurn360', vehicleAutoSettings.turn_360);
+  updateAutoBtn('btnAutoLightNav', vehicleAutoSettings.light_nav);
+  updateAutoBtn('btnVoice_door_fl', vehicleAutoSettings.voice_door_fl);
+  updateAutoBtn('btnVoice_door_fr', vehicleAutoSettings.voice_door_fr);
+  updateAutoBtn('btnVoice_door_fr_close', vehicleAutoSettings.voice_door_fr_close);
+  updateAutoBtn('btnVoice_door_rear', vehicleAutoSettings.voice_door_rear);
+  updateAutoBtn('btnVoice_flameout', vehicleAutoSettings.flameout_voice);
+
+  updateCustomVoiceLabel('labelCustom_door_fl', vehicleAutoSettings.custom_door_fl);
+  updateCustomVoiceLabel('labelCustom_door_fr', vehicleAutoSettings.custom_door_fr);
+  updateCustomVoiceLabel('labelCustom_door_fr_close', vehicleAutoSettings.custom_door_fr_close);
+  updateCustomVoiceLabel('labelCustom_door_rear', vehicleAutoSettings.custom_door_rear);
+  updateCustomVoiceLabel('labelCustom_flameout', vehicleAutoSettings.custom_flameout);
+}
+
+function updateCustomVoiceLabel(id, isCustom) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (isCustom) {
+    el.innerHTML = '<span style="color:var(--accent); font-weight:700;">当前：已使用自定义音频</span>';
+  } else {
+    el.innerHTML = '当前：内置默认原声';
+  }
+}
+
+function handleSelectCustomVoice(key) {
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.selectCustomVoice === 'function') {
+    window.ToolboxBridge.selectCustomVoice(key);
+  } else {
+    showToast('当前环境不支持文件选择');
+  }
+}
+
+function handleResetCustomVoice(key) {
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.resetCustomVoice === 'function') {
+    window.ToolboxBridge.resetCustomVoice(key);
+  } else {
+    showToast('已重置为内置默认语音');
+  }
+}
+
+function updateAutoBtn(id, enabled) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (enabled) {
+    el.innerText = '已开启';
+    el.className = 'btn-ctrl-md highlight';
+  } else {
+    el.innerText = '已关闭';
+    el.className = 'btn-ctrl-md';
+  }
+}
+
+function handleToggleVehicleAuto(key) {
+  var targetField = '';
+  var btnId = '';
+  if (key === 'vehicle_turn_360_enabled') { targetField = 'turn_360'; btnId = 'btnAutoTurn360'; }
+  else if (key === 'vehicle_light_nav_enabled') { targetField = 'light_nav'; btnId = 'btnAutoLightNav'; }
+  else if (key === 'vehicle_flameout_voice_enabled') { targetField = 'flameout_voice'; btnId = 'btnVoice_flameout'; }
+  else if (key === 'voice_enable_door_fl') { targetField = 'voice_door_fl'; btnId = 'btnVoice_door_fl'; }
+  else if (key === 'voice_enable_door_fr') { targetField = 'voice_door_fr'; btnId = 'btnVoice_door_fr'; }
+  else if (key === 'voice_enable_door_fr_close') { targetField = 'voice_door_fr_close'; btnId = 'btnVoice_door_fr_close'; }
+  else if (key === 'voice_enable_door_rear') { targetField = 'voice_door_rear'; btnId = 'btnVoice_door_rear'; }
+
+  var nextState = !vehicleAutoSettings[targetField];
+  vehicleAutoSettings[targetField] = nextState;
+  updateAutoBtn(btnId, nextState);
+
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.setVehicleAutomationSetting === 'function') {
+    window.ToolboxBridge.setVehicleAutomationSetting(key, nextState);
+  } else {
+    showToast('更新设置: ' + (nextState ? '已开启' : '已关闭'));
+  }
+}
+
+function handleOpenTtsSettings() {
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.openTtsSettings === 'function') {
+    window.ToolboxBridge.openTtsSettings();
+  } else {
+    showToast('正在打开语音引擎设置...');
+  }
+}
+
+function handleTestVoice(type) {
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.testVehicleVoice === 'function') {
+    window.ToolboxBridge.testVehicleVoice(type);
+  } else {
+    showToast('当前环境不支持语音测试');
+  }
+}
+
+var isFloatingWindowOn = false;
+function handleToggleFloatingWindow() {
+  isFloatingWindowOn = !isFloatingWindowOn;
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.toggleFloatingWindow === 'function') {
+    window.ToolboxBridge.toggleFloatingWindow(isFloatingWindowOn);
+  } else {
+    showToast(isFloatingWindowOn ? '全局悬浮小胶囊已开启' : '全局悬浮小胶囊已关闭');
+  }
+  updateFloatingWindowUi(isFloatingWindowOn);
+}
+
+function updateFloatingWindowUi(isOn) {
+  isFloatingWindowOn = isOn;
+  var btn = document.getElementById('btnSettingFloating');
+  var hint = document.getElementById('settingFloatingHint');
+  if (btn) {
+    if (isOn) {
+      btn.className = 'btn-ctrl-md highlight';
+      btn.innerText = ' 已开启';
+    } else {
+      btn.className = 'btn-ctrl-md';
+      btn.innerText = '未开启';
+    }
+  }
+  if (hint) {
+    hint.innerText = isOn ? '在桌面与任意应用常驻小胶囊，随时唤回控制台' : '已关闭悬浮小胶囊，不在桌面显示';
+  }
+}
+
+function syncSettingsModalUi() {
+  if (cachedDeviceInfo) {
+    if (cachedDeviceInfo.autostart !== undefined) updateAutostartUi(cachedDeviceInfo.autostart);
+    if (cachedDeviceInfo.floating_enabled !== undefined) updateFloatingWindowUi(cachedDeviceInfo.floating_enabled);
+  }
+}
+
+var currentQrInstance = null;
+function handleShowQrCode() {
+  var ip = callBridge('getCarIp') || currentCarIp;
+  currentCarIp = ip;
+  var isWifi = (ip && ip.indexOf('.') !== -1 && !ip.startsWith('127.') && ip.indexOf('SIM') === -1 && ip.indexOf('未连') === -1);
+  var ipTxt = document.getElementById('ipTxt');
+  var dotEl = document.getElementById('ipDot');
+  var qrTxt = document.getElementById('qrCodeUrlText');
+  var container = document.getElementById('qrcodeCanvasContainer');
+  
+  if (isWifi) {
+    var fullUrl = 'http://' + ip + ':8888';
+    if (ipTxt) ipTxt.innerText = 'Wi-Fi: ' + ip;
+    if (dotEl) dotEl.className = 'dot green';
+    if (qrTxt) qrTxt.innerHTML = '<b style="color:var(--accent); font-size:18px;">' + fullUrl + '</b>';
+    if (container) {
+      container.innerHTML = '';
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(container, {
+          text: fullUrl,
+          width: 220,
+          height: 220,
+          colorDark: '#0A0D14',
+          colorLight: '#FFFFFF',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+    }
+    callBridge('startWebServer');
+  } else {
+    if (ipTxt) ipTxt.innerText = 'SIM卡/无Wi-Fi (请连热点)';
+    if (dotEl) dotEl.className = 'dot red';
+    if (container) container.innerHTML = '<div style="font-size:44px; color:#F59E0B;">️</div>';
+    if (qrTxt) qrTxt.innerHTML = '<span style="color:#FBBF24; font-size:14px; font-weight:700;">当前处于车机内置 SIM 流量或未连接 Wi-Fi，手机无法跨公网快连！<br>请将车机与手机连接到【同一 Wi-Fi】或开启【手机热点】供车机连接后重试。</span>';
+  }
+  openModal('qrModal');
+}
+
+function handleShowReward() {
+  openModal('rewardModal');
+}
+
+// 供 Java 端下载与云端列表实时回调
+window.updateDownloadProgress = function(appId, progress, speedStr) {
+  var app = CLOUD_APPS.find(function(a) { return a.id === appId; });
+  if (app) {
+    app.status = 'downloading';
+    app.progress = progress;
+    app.speed = speedStr;
+    renderApps();
+  }
+};
+
+window.updateDownloadSuccess = function(appId, filename) {
+  var app = CLOUD_APPS.find(function(a) { return a.id === appId; });
+  if (app) {
+    app.status = 'ready';
+    app.progress = 100;
+    app.speed = '';
+    renderApps();
+    showToast('下载完成: ' + filename);
+  }
+};
+
+window.updateDownloadError = function(appId, errorMsg) {
+  var app = CLOUD_APPS.find(function(a) { return a.id === appId; });
+  if (app) {
+    app.status = 'error';
+    app.progress = 0;
+    app.speed = '';
+    renderApps();
+    showToast('下载失败: ' + errorMsg);
+  }
+};
+
+window.updateDownloadPaused = function(appId) {
+  var app = CLOUD_APPS.find(function(a) { return a.id === appId; });
+  if (app) {
+    app.status = 'paused';
+    renderApps();
+  }
+};
+
+window.updateDownloadCancelled = function(appId) {
+  var app = CLOUD_APPS.find(function(a) { return a.id === appId; });
+  if (app) {
+    app.status = 'download';
+    app.progress = 0;
+    app.speed = '';
+    renderApps();
+  }
+};
+
+// 手机快传网页远程推送 ADB 指令回调
+window.onAdbCommandPushedFromPhone = function(cmd) {
+  openModal('adbTerminalModal');
+  probeAdbConnection();
+  updateTerminalNetInfo();
+  var input = document.getElementById('customAdbInput');
+  var box = document.getElementById('terminalOutputBox');
+  if (input) input.value = cmd;
+  if (box) {
+    var timeStr = new Date().toTimeString().split(' ')[0];
+    box.innerText += '\n\n[' + timeStr + ' 手机推送指令]\n' + cmd + '\n(提示：指令已自动填入输入框，请人工核对无误后点击【执行命令】！)';
+    box.scrollTop = box.scrollHeight;
+  }
+  showToast('收到手机推送的 ADB 指令，已自动填入，请核对！');
+};
+
+// 同步兔子时钟伪装信息与时间
+function syncRabbitThemeInfo(info) {
+  try {
+    var data = info;
+    if (!data && window.ToolboxBridge && typeof window.ToolboxBridge.getRabbitThemeInfo === 'function') {
+      var res = window.ToolboxBridge.getRabbitThemeInfo();
+      data = JSON.parse(res);
+    }
+    if (data) {
+      var pkgEl = document.getElementById('rabbitPkg');
+      var detailEl = document.getElementById('rabbitDetail');
+      var dotEl = document.getElementById('rabbitStatusDot');
+      var txtEl = document.getElementById('rabbitStatusText');
+
+      if (data.exists) {
+        if (pkgEl) pkgEl.innerText = '已伪装: ' + (data.disguisedPkg || 'com.autonavi.amapauto');
+        if (detailEl) detailEl.innerText = '大小: ' + (data.sizeStr || '286.7 MB') + ' · 防覆写锁定 · 伪装时间: ' + (data.timeStr || '未知');
+        if (dotEl) dotEl.className = 'dot green';
+        if (txtEl) txtEl.innerText = '已伪装';
+        var restoreBtn = document.getElementById('btnRestoreOfficialTheme');
+        if (restoreBtn) {
+          restoreBtn.style.borderColor = 'var(--accent)';
+          restoreBtn.style.color = 'var(--accent)';
+          restoreBtn.innerText = '还原官方原版时钟';
+        }
+      } else {
+        if (pkgEl) pkgEl.innerText = '官方原生屏保 (未伪装 · 空间已释放)';
+        if (detailEl) detailEl.innerText = '原厂时钟正常运行 · 防覆写锁已清除 · 0MB 残留';
+        if (dotEl) dotEl.className = 'dot';
+        if (txtEl) txtEl.innerText = '原生纯净';
+        var restoreBtn = document.getElementById('btnRestoreOfficialTheme');
+        if (restoreBtn) {
+          restoreBtn.style.borderColor = 'var(--border)';
+          restoreBtn.style.color = 'var(--txt-dim)';
+          restoreBtn.innerText = '官方原版时钟 (就绪)';
+        }
+      }
+    }
+  } catch(e) {
+    console.error('syncRabbitThemeInfo err:', e);
+  }
+}
+
+window.applyCloudAppsJson = function(jsonStr) {
+  try {
+    var data = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+    if (data && data.apps && data.apps.length > 0) {
+      data.apps.forEach(function(remoteApp) {
+        var cat = (remoteApp.category === 'tools' || remoteApp.category === 'tool') ? 'tool' : (remoteApp.category || 'tool');
+        var bCls = cat === 'navigation' ? 'nav' : (cat === 'music' ? 'music' : (cat === 'tool' ? 'tool' : 'setting'));
+        var bTxt = cat === 'navigation' ? '导航' : (cat === 'music' ? '音乐' : (remoteApp.id.indexOf('firmware') !== -1 ? '固件' : (remoteApp.id.indexOf('carmedia') !== -1 || remoteApp.id.indexOf('helper') !== -1 ? '方控' : (remoteApp.id.indexOf('settings') !== -1 ? '设置' : '工具'))));
+
+        var local = CLOUD_APPS.find(function(a) { return a.id === remoteApp.id; });
+        if (local) {
+          local.name = remoteApp.name || local.name;
+          local.size = remoteApp.size || local.size;
+          local.desc = remoteApp.description || local.desc;
+          local.url = remoteApp.download_url || local.url;
+          local.badge = remoteApp.badge || local.badge;
+          local.filename = remoteApp.filename || local.filename;
+          local.category = cat;
+          local.badgeClass = bCls;
+          local.badgeText = bTxt;
+          local.updated_at = remoteApp.compile_date || remoteApp.updated_at || local.updated_at;
+        } else {
+          CLOUD_APPS.push({
+            id: remoteApp.id,
+            category: cat,
+            badgeClass: bCls,
+            badgeText: bTxt,
+            name: remoteApp.name,
+            badge: remoteApp.badge || '官方云端',
+            size: remoteApp.size,
+            filename: remoteApp.filename,
+            package_name: remoteApp.package_name,
+            desc: remoteApp.description,
+            updated_at: remoteApp.compile_date || remoteApp.updated_at || '',
+            status: 'download',
+            progress: 0,
+            speed: '',
+            url: remoteApp.download_url
+          });
+        }
+      });
+      syncLocalAppStatuses();
+      renderApps();
+    }
+  } catch(e) {
+    console.error('applyCloudAppsJson err:', e);
+  }
+};
+
+// 供 Java 端主动回调更新状态
+window.updateDeviceInfo = function(infoJson) {
+  try {
+    var info = JSON.parse(infoJson);
+    cachedDeviceInfo = info;
+    if (info.ip) {
+      currentCarIp = info.ip;
+      var isWifi = (info.net && info.net.isWifiOrLan) || (info.ip.indexOf('.') !== -1 && !info.ip.startsWith('127.') && info.ip.indexOf('SIM') === -1 && info.ip.indexOf('未连') === -1);
+      var ipEl = document.getElementById('ipTxt');
+      var dotEl = document.getElementById('ipDot');
+      if (isWifi) {
+        if (ipEl) ipEl.innerText = 'Wi-Fi: ' + info.ip;
+        if (dotEl) dotEl.className = 'dot green';
+        var qrEl = document.getElementById('qrCodeUrlText');
+        if (qrEl) qrEl.innerText = 'http://' + info.ip + ':8888';
+      } else {
+        if (ipEl) ipEl.innerText = 'SIM卡模式 (请连Wi-Fi/热点)';
+        if (dotEl) dotEl.className = 'dot red';
+      }
+    }
+    if (info.net) {
+      updateTerminalNetInfoWithObj(info.net);
+    }
+    if (info.dynamicCode) {
+      cachedDynamicCode = info.dynamicCode;
+      var p10 = document.getElementById('codePlus10PillTxt');
+      if (p10) p10.innerText = '暗码(+10): ' + info.dynamicCode;
+      var mCode = document.getElementById('modalDynamicCode');
+      if (mCode) mCode.innerText = info.dynamicCode;
+    }
+    if (info.dynamicCodePlus5) {
+      cachedDynamicCodePlus5 = info.dynamicCodePlus5;
+      var p5 = document.getElementById('codePlus5PillTxt');
+      if (p5) p5.innerText = '暗码(+5): ' + info.dynamicCodePlus5;
+      var el5 = document.getElementById('modalDynamicCodePlus5');
+      if (el5) el5.innerText = info.dynamicCodePlus5;
+    }
+    if (info.whitelist !== undefined) {
+      cachedDeviceInfo.whitelist = info.whitelist;
+      var pillW = document.getElementById('pillWhitelist');
+      if (pillW) {
+        if (info.whitelist) {
+          pillW.className = 'btn-status-pill green';
+          pillW.innerText = '已放行 1';
+        } else {
+          pillW.className = 'btn-status-pill amber';
+          pillW.innerText = '未放行 0';
+        }
+      }
+    }
+    if (info.appstore_frozen !== undefined) {
+      cachedDeviceInfo.appstore_frozen = info.appstore_frozen;
+      var pillA = document.getElementById('pillAppstore');
+      if (pillA) {
+        if (info.appstore_frozen) {
+          pillA.className = 'btn-status-pill green';
+          pillA.innerText = '已冻结 ❄';
+        } else {
+          pillA.className = 'btn-status-pill amber';
+          pillA.innerText = '运行中 ⚠️';
+        }
+      }
+    }
+    if (info.isNight !== undefined) {
+      applyDayNightMode(info.isNight);
+    }
+    if (info.version) {
+      document.getElementById('appVer').innerText = 'v' + info.version;
+      var abVer = document.getElementById('aboutVersionText');
+      if (abVer) abVer.innerText = 'v' + info.version;
+    }
+    if (info.autostart !== undefined) {
+      updateAutostartUi(info.autostart);
+    }
+    if (info.rabbit_safe_mode !== undefined) {
+      updateRabbitSafeModeUi(info.rabbit_safe_mode);
+    }
+    if (info.logSize) {
+      var pillLog = document.getElementById('deepPillLogSize');
+      if (pillLog) pillLog.innerText = info.logSize;
+      var hintLog = document.getElementById('settingLogHint');
+      if (hintLog) hintLog.innerText = '保存于 ' + (info.logPath || '/sdcard/Download/geely_toolbox.log') + ' (' + info.logSize + ')';
+    }
+    if (info.rabbit) {
+      syncRabbitThemeInfo(info.rabbit);
+    }
+    if (info.rabbitPostReboot && info.rabbitPostReboot.hasPendingReboot) {
+      var rb = info.rabbitPostReboot;
+      _postRebootFilename = rb.filename || '';
+      var titleEl = document.getElementById('rabbitPostRebootTitle');
+      var headerEl = document.getElementById('rabbitPostRebootHeader');
+      var bodyEl = document.getElementById('rabbitPostRebootBody');
+      var adbBtn = document.getElementById('btnPostRebootGoAdb');
+
+      if (rb.appstoreDisabled) {
+        if (titleEl) titleEl.innerText = '兔子时钟就绪 · 白名单已自动放行';
+        if (headerEl) headerEl.innerHTML = '<span style="color:var(--success);">白名单权限已自动开启 · 伪装已清除自愈</span>';
+        if (bodyEl) bodyEl.innerText = '检测到车机刚完成软重启！白名单已自动放行，且伪装大包与防覆写锁已在开机瞬间清空自愈（释放 280MB 存储，车机恢复原生纯净安全状态）。可以直接安装高德地图：';
+        if (adbBtn) adbBtn.style.display = 'none';
+      } else {
+        if (titleEl) titleEl.innerText = '兔子时钟就绪 · 白名单已自动放行';
+        if (headerEl) headerEl.innerHTML = '<span style="color:var(--warning);"> 白名单已放行 · ️ 商店未冻结 (伪装已清除)</span>';
+        if (bodyEl) bodyEl.innerText = '检测到车机刚完成软重启！白名单已为你自动开启，伪装大包与锁文件已自动清除自愈。\n\n️ 温馨提示：检测到原厂应用商店尚未冻结，下次熄火开机可能会重置白名单。建议在【车机 ADB】中一键冻结原厂商店！';
+        if (adbBtn) adbBtn.style.display = 'block';
+      }
+      setTimeout(function() {
+        openModal('rabbitPostRebootModal');
+      }, 500);
+    }
+  } catch(e) {}
+};
+
+// 初始化启动时立即检测系统日夜模式与本地已下载文件状态
+(function initStartup() {
+  try {
+    if (window.ToolboxBridge && typeof window.ToolboxBridge.isNightMode === 'function') {
+      var isNight = window.ToolboxBridge.isNightMode();
+      applyDayNightMode(isNight);
+    } else {
+      // 默认日间亮色模式
+      applyDayNightMode(false);
+    }
+  } catch(e) {}
+  syncRabbitThemeInfo();
+  syncLocalAppStatuses();
+  renderApps();
+  renderAdbFreezeList();
+  renderAllAppsList();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 背景与卡片 (夜晚深蓝黑板岩) -->
+    <color name="bg_main">#0B1120</color>
+    <color name="card_bg">#1E293B</color>
+    <color name="card_sub_bg">#0F172A</color>
+    <color name="card_border">#334155</color>
+
+    <!-- 品牌主色 -->
+    <color name="primary">#38BDF8</color>
+    <color name="primary_hover">#0EA5E9</color>
+    <color name="primary_light">#1E3A5F</color>
+
+    <!-- 文本色彩 (柔和亮白与板岩灰) -->
+    <color name="text_primary">#F8FAFC</color>
+    <color name="text_secondary">#94A3B8</color>
+    <color name="text_muted">#64748B</color>
+
+    <!-- 功能强调色 -->
+    <color name="accent_green">#34D399</color>
+    <color name="accent_green_bg">#064E3B</color>
+    <color name="accent_green_border">#047857</color>
+
+    <color name="accent_amber">#FBBF24</color>
+    <color name="accent_amber_bg">#451A03</color>
+    <color name="accent_amber_border">#78350F</color>
+
+    <color name="accent_rose">#FB7185</color>
+    <color name="accent_rose_bg">#4C0519</color>
+    <color name="accent_rose_border">#9F1239</color>
+
+    <!-- 按钮与弹窗 -->
+    <color name="btn_bg">#1E293B</color>
+    <color name="btn_border">#475569</color>
+    <color name="btn_pressed">#334155</color>
+    <color name="dialog_bg">#1E293B</color>
+    <color name="divider">#334155</color>
+
+    <!-- 徽标背景 -->
+    <color name="badge_dynamic_bg">#172554</color>
+    <color name="badge_dynamic_border">#1E40AF</color>
+    <color name="badge_network_bg">#064E3B</color>
+    <color name="badge_network_border">#047857</color>
+</resources>
