@@ -2,16 +2,16 @@ package app.onepve.geelyconsole.utils;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import app.onepve.geelyconsole.MainActivity;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
-import android.graphics.Point;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.DisplayMetrics;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -25,9 +25,12 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+/**
+ * 兔子时钟半自动向导管理器 (Co-Pilot HUD)
+ * 负责后台打包伪装注入、前台半自动悬浮向导挂起与软重启触发。
+ * 全程 100% 纯文字与 0 Emoji，支持无死锁常驻悬浮向导。
+ */
 public class AutoPilotManager {
 
     private static final String TAG = "AutoPilotManager";
@@ -36,13 +39,15 @@ public class AutoPilotManager {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private WindowManager windowManager;
     private View hudOverlayView;
-    private TextView tvStatusTitle;
-    private TextView tvStatusDesc;
-    private Button btnCancel;
 
     private Thread workerThread;
     private volatile boolean isRunning = false;
     private volatile boolean isCancelled = false;
+
+    public interface AutoPilotCallback {
+        void onSuccess(String apkName);
+        void onError(String error);
+    }
 
     public static synchronized AutoPilotManager getInstance() {
         if (instance == null) {
@@ -57,18 +62,32 @@ public class AutoPilotManager {
         return isRunning;
     }
 
+    public static void ensureOverlayPermission(Context context) {
+        if (context == null) return;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (Settings.canDrawOverlays(context)) return;
+            }
+            AdbClient.execute(context, "appops set " + context.getPackageName() + " SYSTEM_ALERT_WINDOW allow");
+        } catch (Exception ignored) {}
+    }
+
     public synchronized void startAutoInject(final Context context, final File targetApk) {
+        startAutoInject(context, targetApk, null);
+    }
+
+    public synchronized void startAutoInject(final Context context, final File targetApk, final AutoPilotCallback callback) {
         if (isRunning) {
-            Toast.makeText(context, "全自动流程已在运行中...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "半自动向导已在运行中...", Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (targetApk == null || !targetApk.exists() || targetApk.length() == 0) {
-            Toast.makeText(context, "未找到有效的高德安装包，请先下载！", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "未找到有效的 APK 安装包，请先下载！", Toast.LENGTH_SHORT).show();
+            if (callback != null) callback.onError("未找到有效的 APK 安装包");
             return;
         }
 
-        // Record temporary autostart for reboot recovery
         try {
             android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             boolean currentPref = prefs.getBoolean("autostart_enabled", false);
@@ -81,21 +100,33 @@ public class AutoPilotManager {
         isRunning = true;
         isCancelled = false;
 
-        // 1. Show Giant HUD Overlay
-        showHudOverlay(context, targetApk.getName());
+        boolean expertMode = false;
+        try {
+            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            expertMode = prefs.getBoolean("expert_rabbit_theme_enabled", false);
+        } catch (Exception ignored) {}
 
-        // 2. Start worker thread
+        if (!expertMode && !MainActivity.isNavigationApp(null, targetApk.getName())) {
+            isRunning = false;
+            Toast.makeText(context, "【安全拦截】默认仅允许高德、百度等地图软件卡时钟伪装！如需测试其他软件请在设置开启专家模式。", Toast.LENGTH_LONG).show();
+            if (callback != null) callback.onError("默认仅允许地图软件卡主题");
+            return;
+        }
+
+        // 确保悬浮窗权限
+        ensureOverlayPermission(context);
+
+        // 启动后台线程执行注入与向导挂起
         workerThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                executeAutoPipeline(context, targetApk);
+                executeSemiAutoPipeline(context, targetApk, callback);
             }
         });
         workerThread.start();
     }
 
     public synchronized void cancel(Context context) {
-        if (!isRunning) return;
         isCancelled = true;
         isRunning = false;
         if (workerThread != null) {
@@ -103,197 +134,93 @@ public class AutoPilotManager {
         }
         hideHudOverlay();
         if (context != null) {
+            try {
+                android.content.SharedPreferences prefs = context.getSharedPreferences("rabbit_theme_prefs", Context.MODE_PRIVATE);
+                prefs.edit().putBoolean("pending_install_after_reboot", false).apply();
+            } catch (Exception ignored) {}
+
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    Toast.makeText(context, "已手动强制停止全自动安装流程", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, "已退出半自动安装向导", Toast.LENGTH_SHORT).show();
                 }
             });
         }
     }
 
-    private void executeAutoPipeline(final Context context, final File targetApk) {
+    private void executeSemiAutoPipeline(final Context context, final File targetApk, final AutoPilotCallback callback) {
         try {
-            DisplayMetrics dm = context.getResources().getDisplayMetrics();
-            int screenW = dm.widthPixels > 0 ? dm.widthPixels : 1920;
-            int screenH = dm.heightPixels > 0 ? dm.heightPixels : 720;
-
-            // ==================== Step 1: 打包注入兔子时钟 ====================
-            updateHud("步骤 1/5: 正在打包伪装至兔子时钟...", "正在将【" + targetApk.getName() + "】写入屏保主题...");
+            // Step 1: 打包伪装至兔子时钟
             boolean ok = ThemePatcher.packageToRabbitTheme(context, targetApk);
             if (!ok) {
-                abortWithToast(context, "步骤 1 失败: 兔子时钟打包写入失败，请检查机身存储权限！");
+                isRunning = false;
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(context, "兔子时钟打包写入失败，请检查机身存储权限！", Toast.LENGTH_LONG).show();
+                        if (callback != null) callback.onError("兔子时钟打包写入失败");
+                    }
+                });
                 return;
             }
-            sleepSafe(1200);
-            if (isCancelled) return;
 
-            // ==================== Step 2: 打开车机主题应用 ====================
-            updateHud("步骤 2/5: 正在打开车机主题中心...", "正在唤起吉利原厂主题管理器...");
-            boolean opened = ThemePatcher.openRabbitThemeSetting(context);
-            if (!opened) {
-                abortWithToast(context, "步骤 2 失败: 未能启动车机主题应用，请手动在应用列表打开！");
+            if (isCancelled) {
+                isRunning = false;
                 return;
             }
-            sleepSafe(2500);
-            if (isCancelled) return;
 
-            // ==================== Step 3: 点击【屏保时钟】分类 ====================
-            updateHud("步骤 3/5: 正在进入【屏保时钟】分类...", "定位并点击顶栏【屏保时钟】分类标签...");
-            Point tabClockPt = findNodeCenterByText(context, "屏保时钟");
-            if (tabClockPt == null) tabClockPt = findNodeCenterByText(context, "屏保");
-            if (tabClockPt == null) tabClockPt = findNodeCenterByText(context, "时钟");
+            // 立下重启后自动安装与白名单自愈 Flag
+            try {
+                android.content.SharedPreferences prefs = context.getSharedPreferences("rabbit_theme_prefs", Context.MODE_PRIVATE);
+                prefs.edit()
+                        .putLong("last_injected_time", System.currentTimeMillis())
+                        .putString("last_injected_filename", targetApk.getName())
+                        .putString("last_injected_path", targetApk.getAbsolutePath())
+                        .putBoolean("pending_install_after_reboot", true)
+                        .apply();
+            } catch (Exception ignored) {}
 
-            if (tabClockPt != null) {
-                clickPoint(context, tabClockPt.x, tabClockPt.y);
-            } else {
-                clickPoint(context, (int) (screenW * 0.45f), (int) (screenH * 0.16f));
-            }
-            sleepSafe(1500);
-            if (isCancelled) return;
+            // 再次确保悬浮窗权限已生效
+            ensureOverlayPermission(context);
 
-            // ==================== Step 4: 从右向左滑动，选到【兔子时钟】 ====================
-            updateHud("步骤 4/5: 正在查找并选中【兔子时钟】...", "在屏保列表中向左滑屏，定位『兔子时钟』...");
-            Point rabbitPt = findNodeCenterByText(context, "兔子时钟");
-            if (rabbitPt == null) rabbitPt = findNodeCenterByText(context, "兔子");
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (isCancelled) return;
 
-            if (rabbitPt == null) {
-                swipeRightToLeft(context, screenW, screenH);
-                sleepSafe(1200);
-                rabbitPt = findNodeCenterByText(context, "兔子时钟");
-                if (rabbitPt == null) rabbitPt = findNodeCenterByText(context, "兔子");
-            }
+                    // 回调通知前端
+                    if (callback != null) {
+                        callback.onSuccess(targetApk.getName());
+                    }
 
-            if (rabbitPt != null) {
-                clickPoint(context, rabbitPt.x, rabbitPt.y);
-            } else {
-                clickPoint(context, (int) (screenW * 0.50f), (int) (screenH * 0.52f));
-            }
-            sleepSafe(1200);
-            if (isCancelled) return;
+                    // 1. 屏幕顶部挂起全景保姆级向导 HUD 横条
+                    showHudOverlay(context, targetApk.getName());
 
-            // ==================== Step 5: 点击【应用】并监听反馈 ====================
-            updateHud("步骤 5/5: 正在点击【应用】主题...", "提交应用指令，等待系统反馈【应用成功】或【应用失败】...");
-            Point applyPt = findNodeCenterByText(context, "应用");
-            if (applyPt == null) applyPt = findNodeCenterByText(context, "使用");
-
-            if (applyPt != null) {
-                clickPoint(context, applyPt.x, applyPt.y);
-            } else {
-                clickPoint(context, (int) (screenW * 0.88f), (int) (screenH * 0.89f));
-            }
-
-            // 监听反馈（只要出现“应用成功”或“应用失败”，即说明注入和应用已经结束）
-            for (int check = 0; check < 8; check++) {
-                if (isCancelled) return;
-                sleepSafe(500);
-                String uiDump = dumpUiHierarchy(context);
-                if (uiDump != null && (uiDump.contains("成功") || uiDump.contains("失败") || uiDump.contains("使用中"))) {
-                    break;
+                    // 2. 唤起车机原厂主题管理器
+                    boolean opened = ThemePatcher.openRabbitThemeSetting(context);
+                    if (!opened) {
+                        Toast.makeText(context, "已伪装写入完成！请手动在应用列表打开主题中心应用『兔子时钟』", Toast.LENGTH_LONG).show();
+                    }
                 }
-            }
-
-            if (isCancelled) return;
-
-            // ==================== Step 6: 倒计时并自动软重启车机 ====================
-            for (int countdown = 3; countdown >= 1; countdown--) {
-                if (isCancelled) return;
-                updateHud("🎉 注入与应用已结束！准备重启车机...", "主题应用指令已完成！车机将在 " + countdown + " 秒后自动软重启生效 (点击右侧可停止)...");
-                sleepSafe(1000);
-            }
-
-            if (isCancelled) return;
-
-            // Trigger soft reboot
-            updateHud("正在执行软重启...", "软重启生效中，开机打开工具箱将自动放行白名单！");
-            AdbClient.execute(context, "setprop ctl.restart zygote");
-            sleepSafe(1000);
+            });
 
         } catch (Exception e) {
-            Log.e(TAG, "Auto pipeline exception: " + e.getMessage(), e);
-            abortWithToast(context, "全自动流程异常: " + e.getMessage());
-        } finally {
+            Log.e(TAG, "SemiAuto pipeline error: " + e.getMessage(), e);
             isRunning = false;
-            hideHudOverlay();
+            final String errMsg = e.getMessage();
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(context, "向导流程异常: " + errMsg, Toast.LENGTH_LONG).show();
+                    if (callback != null) callback.onError("流程异常: " + errMsg);
+                }
+            });
         }
-    }
-
-    private String dumpUiHierarchy(Context context) {
-        try {
-            AdbClient.AdbResult res = AdbClient.execute(context, "uiautomator dump /data/local/tmp/uidump.xml && cat /data/local/tmp/uidump.xml");
-            if (res != null && res.success && res.output != null && !res.output.trim().isEmpty()) {
-                return res.output;
-            }
-        } catch (Exception ignored) {}
-        return null;
-    }
-
-    private Point findNodeCenterByText(Context context, String targetText) {
-        try {
-            String xml = dumpUiHierarchy(context);
-            if (xml == null || xml.isEmpty()) return null;
-
-            Pattern pattern = Pattern.compile("(?:text|content-desc)=\"([^\"]*" + Pattern.quote(targetText) + "[^\"]*)\"[^>]*bounds=\"\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]\"");
-            Matcher m = pattern.matcher(xml);
-            if (m.find()) {
-                int x1 = Integer.parseInt(m.group(2));
-                int y1 = Integer.parseInt(m.group(3));
-                int x2 = Integer.parseInt(m.group(4));
-                int y2 = Integer.parseInt(m.group(5));
-                return new Point((x1 + x2) / 2, (y1 + y2) / 2);
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "findNodeCenterByText err: " + e.getMessage());
-        }
-        return null;
-    }
-
-    private void clickPoint(Context context, int x, int y) {
-        try {
-            AdbClient.execute(context, "input tap " + x + " " + y);
-        } catch (Exception ignored) {}
-    }
-
-    private void swipeRightToLeft(Context context, int screenW, int screenH) {
-        try {
-            int startX = (int) (screenW * 0.80f);
-            int endX = (int) (screenW * 0.20f);
-            int y = (int) (screenH * 0.55f);
-            AdbClient.execute(context, "input swipe " + startX + " " + y + " " + endX + " " + y + " 350");
-        } catch (Exception ignored) {}
-    }
-
-    private void sleepSafe(long ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException ignored) {
-            isCancelled = true;
-        }
-    }
-
-    private void abortWithToast(final Context context, final String msg) {
-        isRunning = false;
-        hideHudOverlay();
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    private void updateHud(final String title, final String desc) {
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (tvStatusTitle != null) tvStatusTitle.setText(title);
-                if (tvStatusDesc != null) tvStatusDesc.setText(desc);
-            }
-        });
     }
 
     /**
-     * 展现座舱超大号全景 HUD 悬浮提示（高度 180~220px，字体 26sp，超大红色停止按钮 72px）
+     * 展现座舱超大号全景 HUD 悬浮提示横条
+     * 100% 纯文字与 0 Emoji，右侧常驻大号实体重启按键
      */
     @SuppressLint("RtlHardcoded")
     private void showHudOverlay(final Context context, final String apkName) {
@@ -323,48 +250,56 @@ public class AutoPilotManager {
                             PixelFormat.TRANSLUCENT
                     );
                     params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-                    params.y = dp2px(context, 16);
+                    params.y = dp2px(context, 12);
 
                     // Build HUGE HUD Root Layout
                     LinearLayout root = new LinearLayout(context);
                     root.setOrientation(LinearLayout.HORIZONTAL);
                     root.setGravity(Gravity.CENTER_VERTICAL);
-                    root.setPadding(dp2px(context, 32), dp2px(context, 20), dp2px(context, 28), dp2px(context, 20));
+                    root.setPadding(dp2px(context, 24), dp2px(context, 14), dp2px(context, 24), dp2px(context, 14));
 
-                    // Background: 96% opacity dark slate with 3.5px neon cyan stroke
+                    // Background: Dark Slate with Teal/Cyan Border
                     GradientDrawable bg = new GradientDrawable();
-                    bg.setColor(Color.parseColor("#F50A0D14"));
-                    bg.setCornerRadius(dp2px(context, 20));
-                    bg.setStroke(dp2px(context, 3.5f), Color.parseColor("#00AEB9"));
+                    bg.setColor(Color.parseColor("#F50B1120"));
+                    bg.setCornerRadius(dp2px(context, 16));
+                    bg.setStroke(dp2px(context, 3), Color.parseColor("#00AEB9"));
                     root.setBackground(bg);
 
-                    // Left Giant Robot Icon (44sp)
-                    TextView tvIcon = new TextView(context);
-                    tvIcon.setText("🤖");
-                    tvIcon.setTextSize(44);
-                    tvIcon.setPadding(0, 0, dp2px(context, 20), 0);
-                    root.addView(tvIcon);
+                    // Left Tag: 純文字 [向导] 胶囊
+                    TextView tvBadge = new TextView(context);
+                    tvBadge.setText("向导");
+                    tvBadge.setTextSize(16);
+                    tvBadge.setTextColor(Color.parseColor("#00AEB9"));
+                    tvBadge.setTypeface(Typeface.DEFAULT_BOLD);
+                    tvBadge.setPadding(dp2px(context, 12), dp2px(context, 6), dp2px(context, 12), dp2px(context, 6));
+                    GradientDrawable badgeBg = new GradientDrawable();
+                    badgeBg.setColor(Color.parseColor("#1A00AEB9"));
+                    badgeBg.setCornerRadius(dp2px(context, 8));
+                    badgeBg.setStroke(dp2px(context, 1.5f), Color.parseColor("#00AEB9"));
+                    tvBadge.setBackground(badgeBg);
+                    root.addView(tvBadge);
 
-                    // Middle Text Column (Huge, Bold, High Visibility)
+                    // Middle Text Column (Huge, Bold, High Contrast)
                     LinearLayout textBox = new LinearLayout(context);
                     textBox.setOrientation(LinearLayout.VERTICAL);
                     LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+                    textLp.setMargins(dp2px(context, 18), 0, dp2px(context, 16), 0);
                     textBox.setLayoutParams(textLp);
 
-                    tvStatusTitle = new TextView(context);
-                    tvStatusTitle.setText("👉 步骤 1/2: 请点击【屏保时钟】➔ 选【兔子时钟】并点应用");
-                    tvStatusTitle.setTextSize(26); // Huge 26sp title
-                    tvStatusTitle.setTextColor(Color.WHITE);
-                    tvStatusTitle.setTypeface(Typeface.DEFAULT_BOLD);
-                    textBox.addView(tvStatusTitle);
+                    TextView tvTitle = new TextView(context);
+                    tvTitle.setText("步骤 1/2: 请在下方点击【屏保时钟】-> 选【兔子时钟】并点击【应用】");
+                    tvTitle.setTextSize(22);
+                    tvTitle.setTextColor(Color.WHITE);
+                    tvTitle.setTypeface(Typeface.DEFAULT_BOLD);
+                    textBox.addView(tvTitle);
 
-                    tvStatusDesc = new TextView(context);
-                    tvStatusDesc.setText("💡 提示：车机提示成功/失败均已生效！应用后请点右侧【⚡ 立即软重启】");
-                    tvStatusDesc.setTextSize(17); // Big 17sp subtitle
-                    tvStatusDesc.setTextColor(Color.parseColor("#38BDF8")); // Bright Cyan Accent
-                    tvStatusDesc.setTypeface(Typeface.DEFAULT_BOLD);
-                    tvStatusDesc.setPadding(0, dp2px(context, 6), 0, 0);
-                    textBox.addView(tvStatusDesc);
+                    TextView tvDesc = new TextView(context);
+                    tvDesc.setText("说明：车机提示“应用成功”或“应用失败”均已生效！应用后请点击右侧【立即软重启】");
+                    tvDesc.setTextSize(15);
+                    tvDesc.setTextColor(Color.parseColor("#38BDF8"));
+                    tvDesc.setTypeface(Typeface.DEFAULT_BOLD);
+                    tvDesc.setPadding(0, dp2px(context, 4), 0, 0);
+                    textBox.addView(tvDesc);
 
                     root.addView(textBox);
 
@@ -372,68 +307,69 @@ public class AutoPilotManager {
                     LinearLayout btnBox = new LinearLayout(context);
                     btnBox.setOrientation(LinearLayout.HORIZONTAL);
                     btnBox.setGravity(Gravity.CENTER_VERTICAL);
-                    btnBox.setPadding(dp2px(context, 16), 0, 0, 0);
 
-                    // 1. Soft Reboot (Primary Action)
+                    // 1. Soft Reboot (Primary Action Button)
                     Button btnSoft = new Button(context);
-                    btnSoft.setText("⚡ 我已应用，立即软重启 ➔");
-                    btnSoft.setTextSize(18);
+                    btnSoft.setText("我已应用，立即软重启");
+                    btnSoft.setTextSize(17);
                     btnSoft.setTextColor(Color.WHITE);
                     btnSoft.setTypeface(Typeface.DEFAULT_BOLD);
-                    btnSoft.setPadding(dp2px(context, 18), dp2px(context, 8), dp2px(context, 18), dp2px(context, 8));
+                    btnSoft.setPadding(dp2px(context, 20), dp2px(context, 6), dp2px(context, 20), dp2px(context, 6));
                     GradientDrawable softBg = new GradientDrawable();
                     softBg.setColor(Color.parseColor("#0284C7"));
-                    softBg.setCornerRadius(dp2px(context, 12));
+                    softBg.setCornerRadius(dp2px(context, 10));
                     softBg.setStroke(dp2px(context, 2), Color.parseColor("#38BDF8"));
                     btnSoft.setBackground(softBg);
                     btnSoft.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
                             hideHudOverlay();
+                            isRunning = false;
                             Toast.makeText(context, "正在执行 5秒极速软重启...", Toast.LENGTH_SHORT).show();
                             SystemUtils.executePrivileged(context, "setprop ctl.restart zygote");
                         }
                     });
-                    LinearLayout.LayoutParams softLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp2px(context, 62));
+                    LinearLayout.LayoutParams softLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp2px(context, 56));
                     softLp.setMargins(0, 0, dp2px(context, 10), 0);
                     btnSoft.setLayoutParams(softLp);
                     btnBox.addView(btnSoft);
 
-                    // 2. Hard Reboot (Cold Restart Action)
+                    // 2. Hard Reboot (Cold Restart Button)
                     Button btnHard = new Button(context);
-                    btnHard.setText("🔄 完整硬重启");
-                    btnHard.setTextSize(16);
+                    btnHard.setText("完整硬重启");
+                    btnHard.setTextSize(15);
                     btnHard.setTextColor(Color.parseColor("#CBD5E1"));
                     btnHard.setTypeface(Typeface.DEFAULT_BOLD);
-                    btnHard.setPadding(dp2px(context, 14), dp2px(context, 8), dp2px(context, 14), dp2px(context, 8));
+                    btnHard.setPadding(dp2px(context, 14), dp2px(context, 6), dp2px(context, 14), dp2px(context, 6));
                     GradientDrawable hardBg = new GradientDrawable();
                     hardBg.setColor(Color.parseColor("#1E293B"));
-                    hardBg.setCornerRadius(dp2px(context, 12));
+                    hardBg.setCornerRadius(dp2px(context, 10));
                     hardBg.setStroke(dp2px(context, 1.5f), Color.parseColor("#475569"));
                     btnHard.setBackground(hardBg);
                     btnHard.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
                             hideHudOverlay();
+                            isRunning = false;
                             Toast.makeText(context, "正在执行车机硬件冷重启...", Toast.LENGTH_SHORT).show();
                             SystemUtils.executePrivileged(context, "reboot || svc power reboot");
                         }
                     });
-                    LinearLayout.LayoutParams hardLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp2px(context, 62));
+                    LinearLayout.LayoutParams hardLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp2px(context, 56));
                     hardLp.setMargins(0, 0, dp2px(context, 10), 0);
                     btnHard.setLayoutParams(hardLp);
                     btnBox.addView(btnHard);
 
                     // 3. Cancel Button
-                    btnCancel = new Button(context);
-                    btnCancel.setText("⏹ 退出向导");
-                    btnCancel.setTextSize(16);
+                    Button btnCancel = new Button(context);
+                    btnCancel.setText("退出向导");
+                    btnCancel.setTextSize(15);
                     btnCancel.setTextColor(Color.WHITE);
                     btnCancel.setTypeface(Typeface.DEFAULT_BOLD);
-                    btnCancel.setPadding(dp2px(context, 14), dp2px(context, 8), dp2px(context, 14), dp2px(context, 8));
+                    btnCancel.setPadding(dp2px(context, 14), dp2px(context, 6), dp2px(context, 14), dp2px(context, 6));
                     GradientDrawable cancelBg = new GradientDrawable();
                     cancelBg.setColor(Color.parseColor("#DC2626"));
-                    cancelBg.setCornerRadius(dp2px(context, 12));
+                    cancelBg.setCornerRadius(dp2px(context, 10));
                     cancelBg.setStroke(dp2px(context, 1.5f), Color.parseColor("#EF4444"));
                     btnCancel.setBackground(cancelBg);
                     btnCancel.setOnClickListener(new View.OnClickListener() {
@@ -442,14 +378,43 @@ public class AutoPilotManager {
                             cancel(context);
                         }
                     });
-                    LinearLayout.LayoutParams cancelLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp2px(context, 62));
+                    LinearLayout.LayoutParams cancelLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp2px(context, 56));
                     btnCancel.setLayoutParams(cancelLp);
                     btnBox.addView(btnCancel);
 
                     root.addView(btnBox);
-
                     hudOverlayView = root;
-                    windowManager.addView(hudOverlayView, params);
+
+                    // Fallback for Window Types
+                    int[] types;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        types = new int[]{
+                                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
+                                WindowManager.LayoutParams.TYPE_PHONE
+                        };
+                    } else {
+                        types = new int[]{
+                                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
+                                WindowManager.LayoutParams.TYPE_PHONE
+                        };
+                    }
+
+                    boolean added = false;
+                    for (int type : types) {
+                        params.type = type;
+                        try {
+                            windowManager.addView(hudOverlayView, params);
+                            added = true;
+                            break;
+                        } catch (Exception e) {
+                            Log.w(TAG, "HUD addView failed with type " + type + ": " + e.getMessage());
+                        }
+                    }
+
+                    if (!added) {
+                        Log.e(TAG, "All window types failed to add HUD!");
+                    }
 
                 } catch (Exception e) {
                     Log.e(TAG, "showHudOverlay error: " + e.getMessage());
@@ -458,7 +423,7 @@ public class AutoPilotManager {
         });
     }
 
-    private void hideHudOverlay() {
+    public void hideHudOverlay() {
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -467,13 +432,23 @@ public class AutoPilotManager {
                         windowManager.removeView(hudOverlayView);
                         hudOverlayView = null;
                     }
-                } catch (Exception ignored) {
-                }
+                } catch (Exception ignored) {}
             }
         });
     }
 
-    public static List<File> scanDownloadedAmapApks() {
+    /**
+     * 扫描 Download 目录下的 APK 安装包（默认模式下仅扫描地图导航类，开启专家模式后放行全部）
+     */
+    public static List<File> scanDownloadedApks(Context context) {
+        boolean expertMode = false;
+        if (context != null) {
+            try {
+                android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                expertMode = prefs.getBoolean("expert_rabbit_theme_enabled", false);
+            } catch (Exception ignored) {}
+        }
+
         List<File> list = new ArrayList<>();
         try {
             File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
@@ -481,16 +456,17 @@ public class AutoPilotManager {
                 File[] files = downloadDir.listFiles(new FileFilter() {
                     @Override
                     public boolean accept(File file) {
-                        if (!file.isFile() || !file.getName().toLowerCase().endsWith(".apk")) {
-                            return false;
-                        }
+                        if (!file.isFile()) return false;
                         String name = file.getName().toLowerCase();
-                        return name.contains("amap") || name.contains("高德") || name.contains("automap");
+                        return name.endsWith(".apk");
                     }
                 });
                 if (files != null) {
                     for (File f : files) {
-                        if (f.length() > 10 * 1024 * 1024) { // > 10MB
+                        if (f.length() > 500 * 1024) { // > 500KB
+                            if (!expertMode && !app.onepve.geelyconsole.MainActivity.isNavigationApp(null, f.getName())) {
+                                continue;
+                            }
                             list.add(f);
                         }
                     }
@@ -498,6 +474,14 @@ public class AutoPilotManager {
             }
         } catch (Exception ignored) {}
         return list;
+    }
+
+    public static List<File> scanDownloadedApks() {
+        return scanDownloadedApks(null);
+    }
+
+    public static List<File> scanDownloadedAmapApks() {
+        return scanDownloadedApks();
     }
 
     private static int dp2px(Context context, float dp) {

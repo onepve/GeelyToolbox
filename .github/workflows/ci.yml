@@ -73,7 +73,7 @@ jobs:
           export AWS_DEFAULT_REGION=auto
           BUCKET="s3://downloads/GeelyToolbox/"
 
-          # 1. 上传 APK（覆盖 GeelyToolbox.apk）
+          # 1. 上传 APK（直接覆盖 GeelyToolbox.apk，本体通过 GitHub Git 历史版本回退）
           aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyToolbox.apk" \
             --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
 

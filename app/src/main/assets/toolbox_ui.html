@@ -914,7 +914,7 @@ body.light .btn-mini:active {
 <header>
   <div class="brand">
     <div class="brand-title">吉利车机控制台</div>
-    <div class="brand-ver" id="appVer">v1.1.9</div>
+    <div class="brand-ver" id="appVer">v1.2.0</div>
   </div>
 
   <div class="top-pills">
@@ -925,6 +925,10 @@ body.light .btn-mini:active {
     <div class="pill" style="cursor:pointer;" onclick="handleOpenDialer()" title="点击调起车机拨号盘">
       <span class="dot blue"></span>
       <span id="codePlus5PillTxt">暗码(+5): 计算中</span>
+    </div>
+    <div class="pill" style="cursor:pointer;" onclick="handleToggleFreezeAppStore()" title="点击切换原厂商店冻结状态">
+      <span class="dot green" id="pillAppstoreDot"></span>
+      <span id="pillAppstore">商店: 探测中</span>
     </div>
     <div class="pill" onclick="handleShowQrCode()">
       <span class="dot green" id="ipDot"></span>
@@ -961,13 +965,13 @@ body.light .btn-mini:active {
       <div style="display:flex; flex-direction:column; gap:8px;">
         <button class="btn-ctrl-lg" style="min-height:64px; font-size:19px; font-weight:900;" onclick="handleStartAutoPilot(null)">一键卡兔子向导 (保姆级半自动)</button>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" onclick="handleSelectApkInject()">
-            <span style="font-size:16px; font-weight:900;">选择导航 APK 注入</span>
-            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">手动选择安装包</span>
-          </button>
           <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" onclick="handleOpenThemeManager()">
             <span style="font-size:16px; font-weight:900;">打开车机主题</span>
             <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">原厂主题应用中心</span>
+          </button>
+          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" onclick="handleClearAmapData()">
+            <span style="font-size:16px; font-weight:900;">清除高德数据</span>
+            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">解决闪退/重置配置</span>
           </button>
           <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" id="btnSoftReboot" onclick="handleSoftReboot()">
             <span style="font-size:16px; font-weight:900;">一键软重启 (5秒)</span>
@@ -978,7 +982,7 @@ body.light .btn-mini:active {
             <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">整车硬件冷启动</span>
           </button>
         </div>
-        <button class="btn-ctrl-lg" style="min-height:48px; font-size:14.5px; font-weight:800;" onclick="handleUninstallAmap()">卸载已安装高德 (恢复原厂底包)</button>
+        <button class="btn-ctrl-lg" style="min-height:48px; font-size:14.5px; font-weight:800;" onclick="handleOpenInstalledMapsModal()">已装地图管理 (快速卸载/清除数据)</button>
       </div>
     </div>
 
@@ -993,13 +997,13 @@ body.light .btn-mini:active {
           <span style="font-weight:900; font-size:14.5px;">原生文件管理</span>
           <span class="btn-status-pill blue" style="font-size:11.5px;">直接安装APK</span>
         </button>
+        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:12px 6px; min-height:76px;" onclick="handleOpenTaskManagerAction()">
+          <span style="font-weight:900; font-size:14.5px;">多任务管理</span>
+          <span class="btn-status-pill purple" style="font-size:11.5px;">切换后台应用</span>
+        </button>
         <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:12px 6px; min-height:76px;" onclick="handleToggleWhitelist()">
           <span style="font-weight:900; font-size:14.5px;">白名单放行</span>
           <span class="btn-status-pill green" id="pillWhitelist" style="font-size:11.5px;">已放行</span>
-        </button>
-        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:12px 6px; min-height:76px;" onclick="handleToggleFreezeAppStore()">
-          <span style="font-weight:900; font-size:14.5px;">冻结应用商店</span>
-          <span class="btn-status-pill green" id="pillAppstore" style="font-size:11.5px;">已冻结</span>
         </button>
       </div>
       <button class="btn-ctrl-md" style="width:100%; min-height:50px; font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="handleOpenDeepToolsModal()">
@@ -1104,22 +1108,121 @@ body.light .btn-mini:active {
   </div>
 </div>
 
-<!-- 多高德版本选择弹窗 Modal -->
+<!-- 多 APK 版本选择弹窗 Modal -->
 <div class="modal-overlay" id="selectAmapForAutoModal">
   <div class="modal-card" style="width:560px;">
     <div class="modal-header">
-      <div class="modal-title">选择要注入安装的高德地图版本</div>
+      <div class="modal-title">选择要注入兔子时钟的安装包</div>
       <button class="modal-close" onclick="closeModal('selectAmapForAutoModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="font-size:13px; color:var(--txt-dim); margin-bottom:12px;">
-      检测到机身 Download 目录存在多个高德安装包，请点击选择目标版本启动半自动向导：
+      检测到机身 Download 目录存在多个 APK 安装包，请点击选择目标文件启动半自动向导：
     </div>
     <div id="amapAutoSelectList" style="display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; margin-bottom:14px;">
-      <!-- 动态高德列表 -->
+      <!-- 动态 APK 列表 -->
     </div>
     <div class="modal-actions" style="justify-content:space-between;">
       <button class="btn-icon" style="height:36px; padding:0 14px;" onclick="handleSelectApkInject(); closeModal('selectAmapForAutoModal');"> 从文件管理器手动选择...</button>
       <button class="btn-icon primary" style="height:36px; padding:0 16px;" onclick="closeModal('selectAmapForAutoModal')">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 兔子时钟半自动向导注入进度 Modal -->
+<div class="modal-overlay" id="autoPilotLoadingModal">
+  <div class="modal-card" style="width:520px; text-align:center; padding:28px 24px;">
+    <div class="spinner" style="margin:0 auto 16px; width:48px; height:48px; border-width:4px;"></div>
+    <div style="font-size:18px; font-weight:900; color:var(--txt-strong); margin-bottom:8px;" id="autoPilotLoadingTitle">正在打包注入兔子时钟屏保...</div>
+    <div style="font-size:13.5px; color:var(--txt-dim); line-height:1.6;" id="autoPilotLoadingDesc">
+      正在将目标安装包写入『兔子时钟』屏保主题<br>底层正在处理大文件打包与加锁，约需 5~10 秒，请稍候...
+    </div>
+  </div>
+</div>
+
+<!-- 无原生系统设置时的手动安装引导 Modal -->
+<div class="modal-overlay" id="manualInstallModal">
+  <div class="modal-card" style="width:560px;">
+    <div class="modal-header">
+      <div class="modal-title" id="manualInstallTitle">应用安装指引</div>
+      <button class="modal-close" onclick="closeModal('manualInstallModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+    <div class="modal-info-box" style="background:rgba(234, 179, 8, 0.08); border-color:rgba(234, 179, 8, 0.35);">
+      <div style="font-size:13.5px; font-weight:800; color:var(--txt-strong); margin-bottom:4px;" id="manualInstallAppHeader">安装包已下载就绪</div>
+      <div style="font-size:12.5px; color:var(--txt-dim); line-height:1.6;" id="manualInstallAppDesc">
+        检测到当前车机未安装【原生系统设置】组件。<br>
+        在缺少系统设置时车机限制直接调起安装界面，请通过以下两种方式手动安装：
+      </div>
+    </div>
+    <div style="font-size:12.5px; color:var(--txt-dim); margin-bottom:14px; line-height:1.6;">
+      • <b>方式 1 (推荐)</b>：点击【打开任务】调起多任务管理，切换至正在运行的文件管理完成安装；<br>
+      • <b>方式 2</b>：点击【打开文件管理】前往机身 Download 目录直接点击安装包。
+    </div>
+    <div class="modal-actions" style="display:flex; flex-direction:column; gap:8px;">
+      <button class="btn-ctrl-md highlight" style="height:44px; font-size:14.5px; font-weight:900;" onclick="handleOpenTaskManagerAction()">打开任务 (任务管理器)</button>
+      <button class="btn-ctrl-md" style="height:42px; font-size:14px; font-weight:800;" onclick="handleOpenFileMgrAction()">打开原生文件管理</button>
+      <button class="btn-ctrl-md" style="height:36px; font-size:13px; color:var(--txt-dim); margin-top:2px;" onclick="closeModal('manualInstallModal')">稍后安装</button>
+    </div>
+  </div>
+</div>
+
+<!-- 已装地图管理 Modal -->
+<div class="modal-overlay" id="installedMapsModal">
+  <div class="modal-card" style="width:620px;">
+    <div class="modal-header">
+      <div class="modal-title">已装地图维护与管理</div>
+      <button class="modal-close" onclick="closeModal('installedMapsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+    <div style="font-size:12.5px; color:var(--txt-dim); margin-bottom:12px; line-height:1.6;">
+      检测当前车机已安装的全部地图导航应用。若升级后出现闪退或定位错乱，请点击【清缓存】；若需更换版本可直接【卸载】。
+    </div>
+    <div id="installedMapsListContainer" style="max-height:300px; overflow-y:auto; margin-bottom:14px;">
+      <!-- 动态已装地图列表 -->
+    </div>
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button class="btn-ctrl-md" style="min-width:140px;" onclick="handleSelectApkInject(); closeModal('installedMapsModal');">手动挑安装包注入...</button>
+      <button class="btn-ctrl-md primary" style="min-width:100px;" onclick="closeModal('installedMapsModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 启动检测 1: 非车机环境提示 Modal -->
+<div class="modal-overlay" id="carEnvCheckModal">
+  <div class="modal-card" style="width:540px;">
+    <div class="modal-header">
+      <div class="modal-title">运行环境检测提示</div>
+    </div>
+    <div class="modal-info-box" style="background:rgba(59, 130, 246, 0.08); border-color:rgba(59, 130, 246, 0.35);">
+      <div style="font-size:14px; font-weight:800; color:var(--txt-strong); margin-bottom:4px;" id="carEnvDetectedModel">检测到当前设备并非吉利车机</div>
+      <div style="font-size:12.5px; color:var(--txt-dim); line-height:1.6;">
+        当前可能运行在电脑模拟器或手机测试环境中。<br>
+        车载 CAN 总线联动、兔子时钟屏保伪装及系统白名单等底层特性仅在吉利实车上完全生效，模拟器中将仅作交互演示。
+      </div>
+    </div>
+    <div class="modal-actions" style="justify-content:flex-end;">
+      <button class="btn-ctrl-md primary" style="min-width:140px; font-weight:800;" onclick="proceedToStep2AppStoreGuard()">我知道了，继续体验</button>
+    </div>
+  </div>
+</div>
+
+<!-- 启动检测 2: 应用商店冻结门禁 Modal -->
+<div class="modal-overlay" id="appstoreGuardModal">
+  <div class="modal-card" style="width:560px;">
+    <div class="modal-header">
+      <div class="modal-title">核心准备：冻结原厂应用商店</div>
+    </div>
+    <div class="modal-info-box" style="background:rgba(239, 68, 68, 0.08); border-color:rgba(239, 68, 68, 0.35);">
+      <div style="font-size:14px; font-weight:800; color:#EF4444; margin-bottom:4px;" id="appstoreGuardHeader">⚠️ 检测到吉利原厂应用商店正在运行！</div>
+      <div style="font-size:12.5px; color:var(--txt-dim); line-height:1.6;" id="appstoreGuardBody">
+        原厂商店在后台会不断自动重置车机系统白名单，导致白名单无法生效、第三方软件无法安装。<br>
+        必须先将其冻结才能锁死白名单并正常安装软件！
+      </div>
+    </div>
+    <div style="font-size:12px; color:var(--txt-dim); margin-bottom:14px; line-height:1.5;" id="appstoreGuardTip">
+      冻结应用商店是车友圈公认的零风险安全操作（不影响车辆任何硬件功能，可随时在控制台一键解冻）。
+    </div>
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button class="btn-ctrl-md" style="min-width:100px; color:var(--txt-dim);" onclick="skipAppstoreGuard()">跳过冻结</button>
+      <button class="btn-ctrl-md highlight" id="btnGuardFreezeAppstore" style="min-width:180px; font-weight:900;" onclick="executeGuardFreezeAppstore()">一键冻结商店 (推荐)</button>
     </div>
   </div>
 </div>
@@ -1154,7 +1257,7 @@ body.light .btn-mini:active {
     <div class="about-box">
       <div class="about-item">
         <span style="color:var(--txt-dim);">当前软件版本</span>
-        <span style="font-weight:800; color:var(--accent);" id="aboutVersionText">v1.1.9 (7019)</span>
+        <span style="font-weight:800; color:var(--accent);" id="aboutVersionText">v1.2.0 (7020)</span>
       </div>
       <div class="about-item">
         <span style="color:var(--txt-dim);">支持车机芯片</span>
@@ -1572,13 +1675,13 @@ body.light .btn-mini:active {
         <span class="btn-status-pill green" style="font-size:12px; padding:4px 10px;">后台常驻</span>
       </div>
 
-      <!-- 4. 卡主题安全防护 (仅限导航) -->
+      <!-- 4. 允许任意应用卡主题 (专家模式) -->
       <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
         <div>
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">卡主题安全防护 (仅限导航白名单)</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingRabbitSafeHint">锁定仅允许高德/百度/腾讯等车载导航伪装，防止非兼容软件导致车机开机死锁或变砖</div>
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">允许任意应用卡主题 (专家模式)</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingExpertRabbitHint">默认关闭。锁定仅允许高德、百度等车载地图软件卡时钟伪装，防止非兼容软件导致车机开机死锁或变砖</div>
         </div>
-        <button class="btn-ctrl-md highlight" id="btnSettingRabbitSafe" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleToggleRabbitSafeMode()">已开启</button>
+        <button class="btn-ctrl-md" id="btnSettingExpertRabbit" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleToggleExpertRabbitTheme()">已关闭 (安全)</button>
       </div>
 
       <!-- 5. 主题皮肤与护眼配色 -->
@@ -1905,10 +2008,11 @@ var ALL_INSTALLED_APPS = [
   { pkg: 'com.ecarx.xscreensaver', name: '兔子时钟屏保服务', version: 'v1.0.1', isSystem: true, frozen: false },
   { pkg: 'com.ecarx.carservice', name: '原厂车身底层服务 (CANBus)', version: 'v1.0.0', isSystem: true, frozen: false },
   { pkg: 'com.ecarx.launcher', name: '原厂车机桌面启动器', version: 'v1.0.0', isSystem: true, frozen: false },
-  { pkg: 'app.onepve.geelyconsole', name: '吉利车机控制台 (工具箱)', version: 'v1.1.9', isSystem: false, frozen: false },
+  { pkg: 'app.onepve.geelyconsole', name: '吉利车机控制台 (工具箱)', version: 'v1.2.0', isSystem: false, frozen: false },
 ];
 
 var SAFE_FREEZE_SYSTEM_PKGS = [
+  'com.autonavi.amapauto',
   'com.ecarx.appstore',
   'ecarx.upgrade',
   'com.ecarx.cloudradio',
@@ -2069,21 +2173,21 @@ var CLOUD_APPS = [
     "url": "https://dl.onepve.com/GeelyToolbox/MediaBridge_5.1_Car.apk"
   },
   {
-    "id": "jiatu_313",
+    "id": "jiatu_317",
     "category": "tool",
     "badgeClass": "tool",
     "badgeText": "工具",
-    "name": "驾途 3.13 (高德巡航/支持下轮灯联动)",
+    "name": "驾途 3.17 (高德巡航/支持下轮灯联动)",
     "badge": "高德巡航/下轮灯联动",
-    "size": "538 KB",
-    "filename": "JiaTu_3.13_WheelLight.apk",
+    "size": "547 KB",
+    "filename": "JiaTu_3.17_WheelLight.apk",
     "package_name": "com.amapcruise.display",
-    "desc": "【高德巡航辅助·支持下轮灯联动】专为车机高德地图设计的轻量级巡航助手，体积仅 538KB 极简流畅，支持下轮灯状态读取、悬浮车速/限速预警与电子眼红绿灯播报。",
-    "updated_at": "2026-08-02",
+    "desc": "【高德巡航辅助·支持下轮灯联动】专为车机高德地图设计的轻量级巡航助手，体积仅 547KB 极简流畅，支持下轮灯状态读取、到达灯色预测、悬浮车速/限速预警与电子眼红绿灯播报。开启白名单后直接安装。",
+    "updated_at": "2026-09-04",
     "status": "download",
     "progress": 0,
     "speed": "",
-    "url": "https://dl.onepve.com/GeelyToolbox/JiaTu_3.13_WheelLight.apk"
+    "url": "https://dl.onepve.com/GeelyToolbox/JiaTu_3.17_WheelLight.apk"
   },
   {
     "id": "lyrics_companion",
@@ -2205,21 +2309,21 @@ var CLOUD_APPS = [
     "url": "https://dl.onepve.com/GeelyToolbox/QQMusic_SteeringHelper_1.0.0.apk"
   },
   {
-    "id": "geely_ihu516_firmware_rescue",
+    "id": "geely_native_settings",
     "category": "tool",
     "badgeClass": "tool",
-    "badgeText": "固件",
-    "name": "吉利缤越COOL原厂降级救砖固件 (IHU516可adb包)",
-    "badge": "终极救砖/防死循环",
-    "size": "2.65 GB",
-    "filename": "Geely_IHU516_Firmware_SW0SX110602H120800000_Rollback.zip",
-    "package_name": "geely.firmware.ihu516",
-    "desc": "【终极救砖保底固件】吉利缤越COOL/银河OS IHU516 官方降级救砖固件包（版本: SW0SX110602H120800000，支持本地adb）。️防开机循环刷机机制：保存的文件名为具体参数长文件名（非原厂触发名 update.zip），日常保存在 U 盘或车机中车机完全不识别为刷机包，绝对不会误触发刷机！救砖时在电脑上重命名改为 update.zip 放入 U 盘根目录插入车机即可刷机恢复出厂。",
-    "updated_at": "2022-08-08",
+    "badgeText": "设置",
+    "name": "原生系统设置 (Android 9 · 缤越COOL实测)",
+    "badge": "直接安装/实测可用",
+    "size": "30.7 MB",
+    "filename": "CarSettings_Android9_Geely_E02.apk",
+    "package_name": "com.android.settings",
+    "desc": "【原生安卓系统设置·吉利缤越COOL实测直装版】实车测试完美兼容，放行白名单后【直接安装】即可使用（⚠️ 坚决禁止使用卡主题伪装！）。安装后可直接调起系统安装器，解锁开发者选项、原生蓝牙配置与原生应用管理。其他车型不做兼容保证。",
+    "updated_at": "2026-09-05",
     "status": "download",
     "progress": 0,
     "speed": "",
-    "url": "https://dl.onepve.com/GeelyToolbox/Geely_IHU516_Firmware_SW0SX110602H120800000_Rollback.zip"
+    "url": "https://dl.onepve.com/GeelyToolbox/CarSettings_Android9_Geely_E02.apk"
   }
 ];
 
@@ -2248,7 +2352,7 @@ function renderApps() {
       actionHtml = '<button class="btn-dl updating" onclick="handleDownloadApp(\'' + app.id + '\', true)">升级下载</button>';
     } else if (app.status === 'ready') {
       var isNav = (app.category === 'navigation');
-      var mainTxt = isNav ? '安装向导' : '直接安装';
+      var mainTxt = isNav ? '安装向导' : (hasSystemSettings ? '直接安装' : '手动安装');
       actionHtml = '<button class="btn-dl done" onclick="handleDownloadApp(\'' + app.id + '\', false)">' + mainTxt + '</button>' +
         '<button class="btn-redl" title="重新下载覆盖" onclick="handleDownloadApp(\'' + app.id + '\', true)">重下</button>';
     } else {
@@ -2518,15 +2622,45 @@ function requestAppAction(pkg, name, action, isSystem) {
 function showConfirmStep(step) {
   if (!currentConfirmAction) return;
   currentConfirmAction.step = step;
-  var actName = currentConfirmAction.action === 'freeze' ? '冻结应用' :
-    (currentConfirmAction.action === 'clearData' ? '清除数据与缓存' :
-    (currentConfirmAction.action === 'cleanAllDownloads' ? '清空下载目录全部文件' : '卸载应用'));
-  var isSys = currentConfirmAction.isSystem;
 
   var stepLabel = document.getElementById('confirmStepLabel');
   var title = document.getElementById('confirmTitle');
   var desc = document.getElementById('confirmDesc');
   var nextBtn = document.getElementById('confirmNextBtn');
+
+  if (currentConfirmAction.action === 'enableExpertRabbit') {
+    if (step === 1) {
+      stepLabel.innerText = 'STEP 1 / 3 · 专家模式意图核准';
+      title.innerText = '申请开启【允许任意应用卡主题 (专家模式)】？';
+      desc.innerHTML = '<b>操作说明</b>：默认状态下，控制台锁定<b>仅允许高德、百度等地图导航类软件</b>卡时钟主题伪装安装。<br><br>' +
+        '• <b>开启效果</b>：开启专家模式后，将解除地图软件限制，允许你挑选任意第三方 APK 伪装打包写入时钟；<br>' +
+        '• <b>特别提醒</b>：时钟屏保进程（xscreensaver）属于车机底层关键常驻组件，非导航软件极易与屏保服务冲突发生异常。普通车主强烈建议保持关闭！';
+      nextBtn.innerText = '我已知晓，下一步 (1/3) ->';
+    } else if (step === 2) {
+      stepLabel.innerText = 'STEP 2 / 3 · 底层真实变砖风险警示';
+      title.innerText = '【高危警示】极易导致车机开机卡死或无限循环变砖！';
+      desc.innerHTML = '<span style="color:#EF4444; font-weight:800;">【底层变砖真实风险严肃警示】</span><br>' +
+        '若将非专车适配、内存占用过大、或包含冲突组件的常规应用（如视频、游戏、未适配工具）伪装写入时钟：<br>' +
+        '1. 车机点火开机时，系统屏保将发生段错误或空指针崩溃；<br>' +
+        '2. 进而触发 Android Zygote 核心服务连续崩溃重启，<b>整车中控将陷入开机动画无限循环死锁，彻底无法进入系统桌面！</b><br>' +
+        '3. 届时必须拆开中控马鞍、取出车机主机、使用金属镊子短接主板测试点通电才能救砖！<br><br>' +
+        '请充分评估风险后确认是否继续？';
+      nextBtn.innerText = '确认知晓变砖风险，下一步 (2/3) ->';
+    } else if (step === 3) {
+      stepLabel.innerText = 'STEP 3 / 3 · 最终免责与物理授权确认';
+      title.innerText = '最终授权：后果自负与免责确认';
+      desc.innerHTML = '点击下方【确认开启】后，系统将正式放行任意应用的时钟伪装权限。<br><br>' +
+        '<b style="color:#EF4444;">郑重免责声明：因自行开启专家模式后伪装非地图软件导致的车机卡死、开机循环死机或变砖，均由操作者本人自行承担全部责任。</b><br><br>' +
+        '确认无误并自愿承担全部风险？';
+      nextBtn.innerText = '确认开启 (后果自负)';
+    }
+    return;
+  }
+
+  var actName = currentConfirmAction.action === 'freeze' ? '冻结应用' :
+    (currentConfirmAction.action === 'clearData' ? '清除数据与缓存' :
+    (currentConfirmAction.action === 'cleanAllDownloads' ? '清空下载目录全部文件' : '卸载应用'));
+  var isSys = currentConfirmAction.isSystem;
 
   if (step === 1) {
     stepLabel.innerText = 'STEP 1 / 3 · 操作意图核准';
@@ -2569,6 +2703,13 @@ function cancelTripleConfirm() {
 }
 
 function executeConfirmedAction(pkg, name, action) {
+  if (action === 'enableExpertRabbit') {
+    isExpertRabbitEnabled = true;
+    callBridge('setExpertRabbitThemeEnabled', true);
+    updateExpertRabbitThemeUi(true);
+    showToast('已开启专家模式：允许任意应用卡主题 (风险自负)');
+    return;
+  }
   if (action === 'freeze') {
     callBridge('togglePackageFreeze', pkg, true);
     updateLocalAppFreezeState(pkg, true);
@@ -3012,49 +3153,132 @@ function handleRestoreOfficialTheme() {
   });
 }
 function handleUninstallAmap() { requestAppAction('com.autonavi.amapauto', '高德地图', 'uninstall', false); }
-function handleOpenFileManager() {
+
+function handleClearAmapData() {
   showUniversalConfirm({
-    title: '确认打开车机【原生文件管理器】？',
-    desc: '<b>操作说明</b>：调起 Android 原厂文件管理器，定位至 <code>/sdcard/Download/</code> 目录。<br><br>' +
-          '• <b>适用场景</b>：在【白名单已放行】状态下，直接点击 APK 安装普通第三方软件（如 QQ音乐、网易云、工具箱等）；<br>' +
-          '• <b>重要提醒</b>：原厂高德地图带有吉利系统级签名保护，无法通过文件管理器直接点击覆盖，必须通过【一键卡兔子向导】进行伪装覆盖。<br><br>' +
-          '是否确认打开文件管理？',
-    btnText: '打开文件管理',
+    title: '确认【清除高德地图数据与缓存】？',
+    desc: '<b>操作说明</b>：将彻底清空车机内高德地图的本地缓存、临时文件与配置文件。<br><br>' +
+          '• <b>适用场景</b>：覆盖升级高德后出现闪退、黑屏、卡在开屏画面，或新旧版本配置冲突时，一键清除数据即可恢复如初；<br>' +
+          '• <b>安全提示</b>：清除后首次打开高德需要重新登录高德账号并下载离线地图。操作 100% 安全，绝不损坏车机系统。',
+    btnText: '立即清除数据',
     isDanger: false,
     onConfirm: function() {
-      callBridge('openFileManager');
+      callBridge('clearAppData', 'com.autonavi.amapauto');
+      showToast('已清除高德地图数据与缓存');
     }
   });
 }
-function handleMinimize() { callBridge('minimizeApp'); }
 
-var _selectedNavApp = null;
-var _postRebootFilename = '';
+function handleOpenInstalledMapsModal() {
+  var container = document.getElementById('installedMapsListContainer');
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--txt-dim);">正在扫描车机已安装地图...</div>';
+  openModal('installedMapsModal');
 
-function openRabbitInstallGuideModal(app) {
-  _selectedNavApp = app;
-  var nameEl = document.getElementById('rabbitInstallAppName');
-  if (nameEl) nameEl.innerText = app.name + ' (' + (app.size || '') + ')';
-  openModal('rabbitInstallModal');
+  setTimeout(function() {
+    var list = [];
+    if (window.ToolboxBridge && typeof window.ToolboxBridge.getInstalledNavigationApps === 'function') {
+      try {
+        var json = window.ToolboxBridge.getInstalledNavigationApps();
+        list = JSON.parse(json);
+      } catch (e) {}
+    }
+    renderInstalledMapsList(list);
+  }, 200);
+}
+
+function renderInstalledMapsList(list) {
+  var container = document.getElementById('installedMapsListContainer');
+  if (!container) return;
+  if (!Array.isArray(list) || list.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:24px; color:var(--txt-dim); font-size:13.5px;">未检测到已安装的地图应用。</div>';
+    return;
+  }
+  var html = '';
+  list.forEach(function(item) {
+    html += '<div class="about-item" style="padding:10px 14px; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+      '<div>' +
+        '<div style="font-size:14px; font-weight:800; color:var(--txt-strong);">' + item.name + ' <span style="font-size:11.5px; color:var(--txt-dim); font-weight:normal;">(' + item.pkg + ')</span></div>' +
+        '<div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">版本: ' + (item.version || '内置') + (item.isSystem ? ' · 原厂系统预装' : ' · 自装应用') + '</div>' +
+      '</div>' +
+      '<div style="display:flex; gap:6px;">' +
+        '<button class="btn-ctrl-md" style="min-height:34px; padding:0 12px; font-size:12.5px;" onclick="handleClearMapAppDirectly(\'' + item.pkg + '\', \'' + item.name + '\')">清缓存</button>' +
+        (item.isSystem ?
+          '<button class="btn-ctrl-md" style="min-height:34px; padding:0 12px; font-size:12.5px;" onclick="requestAppAction(\'' + item.pkg + '\', \'' + item.name + '\', \'uninstall\', true)">卸载更新</button>' :
+          '<button class="btn-ctrl-md danger" style="min-height:34px; padding:0 12px; font-size:12.5px;" onclick="requestAppAction(\'' + item.pkg + '\', \'' + item.name + '\', \'uninstall\', false)">卸载</button>') +
+      '</div>' +
+    '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function handleClearMapAppDirectly(pkg, name) {
+  callBridge('clearAppData', pkg);
+  showToast('已清除【' + name + '】数据与缓存');
 }
 
 function handleStartAutoPilot(filename) {
+  if (filename) {
+    var fnLower = filename.toLowerCase();
+    if (fnLower.indexOf('setting') !== -1 || fnLower.indexOf('设置') !== -1) {
+      showToast('【严禁卡主题】原生系统设置必须直接安装，坚决禁止使用卡时钟主题伪装！');
+      return;
+    }
+  }
+
+  var isNav = false;
+  if (filename) {
+    var fn = filename.toLowerCase();
+    isNav = fn.indexOf('amap') !== -1 || fn.indexOf('gaode') !== -1 || fn.indexOf('高德') !== -1 ||
+            fn.indexOf('baidu') !== -1 || fn.indexOf('百度') !== -1 || fn.indexOf('map') !== -1 ||
+            fn.indexOf('地图') !== -1 || fn.indexOf('navi') !== -1 || fn.indexOf('tencent') !== -1 ||
+            fn.indexOf('腾讯') !== -1 || fn.indexOf('petal') !== -1;
+  }
+
+  if (filename && !isNav) {
+    if (!isExpertRabbitEnabled) {
+      showToast('【安全拦截】默认仅允许高德、百度等地图软件卡主题！请在【设置】开启专家模式。');
+      return;
+    } else {
+      showUniversalConfirm({
+        title: '【高危操作 · 郑重免责声明】',
+        desc: '<span style="color:#EF4444; font-weight:800;">【非地图软件伪装高危警示】</span><br>' +
+              '检测到你正在将【非地图常规软件 (' + filename + ')】尝试伪装写入时钟屏保！<br><br>' +
+              '• <b>严重后果警示</b>：时钟屏保属于底层常驻进程。强行伪装未适配常规软件，极易导致开机屏保崩溃死循环，<b>造成车机中控陷入【开机动画无限循环死机（变砖）】！</b><br>' +
+              '• <b>免责与自负声明</b>：你已主动激活专家模式。因强行伪装非地图软件导致的车机死机或变砖，控制台不承担任何连带责任。若发生开机循环死锁，<b>须自行拆开中控马鞍短接主板测试点通电救砖！</b><br><br>' +
+              '是否确认自愿承担全部风险并继续注入？',
+        btnText: '我已知晓风险，后果自负继续注入',
+        isDanger: true,
+        onConfirm: function() {
+          _doStartAutoPilotInternal(filename);
+        }
+      });
+      return;
+    }
+  }
+
+  _doStartAutoPilotInternal(filename);
+}
+
+function _doStartAutoPilotInternal(filename) {
   showUniversalConfirm({
     title: '确认启动【一键卡兔子向导 (保姆级半自动)】？',
-    desc: '<b>操作说明</b>：将专车高德地图打包伪装写入车机『兔子时钟』屏保主题，全自动引导完成免白名单覆盖安装。<br><br>' +
+    desc: '<b>操作说明</b>：将目标安装包打包伪装写入车机『兔子时钟』屏保主题，半自动引导完成免白名单覆盖安装。<br><br>' +
           '• <b>执行流程</b>：<br>' +
-          '  1. 自动将高德安装包注入进兔子时钟屏保；<br>' +
-          '  2. 自动唤起车机【主题中心】，请手动点击应用『兔子时钟』；<br>' +
-          '  3. 屏幕将显示半自动悬浮 HUD 倒计时，指引点击【一键软重启】；<br>' +
-          '  4. 开机后白名单自动放行，秒级弹出覆盖安装器完成升级。<br><br>' +
-          '• <b>安全提示</b>：全程不破坏车机官方底层系统，中途可随时取消。<br><br>' +
+          '  1. 自动将安装包注入进兔子时钟屏保；<br>' +
+          '  2. 屏幕顶部挂起保姆级向导横条，并自动唤起车机【主题中心】；<br>' +
+          '  3. 请在主题中心点击【屏保时钟】-> 选【兔子时钟】并点【应用】；<br>' +
+          '  4. 点击顶栏横条上的【我已应用，立即软重启】，开机秒弹覆盖安装。<br><br>' +
+          '• <b>安全提示</b>：全程不破坏车机官方底层系统，中途可随时在横条上点击【退出向导】。<br><br>' +
           '是否确认立即开始向导？',
     btnText: '开始向导',
     isDanger: false,
     onConfirm: function() {
+      showAutoPilotLoading(filename || '');
       if (window.ToolboxBridge && typeof window.ToolboxBridge.startAutoPilotInject === 'function') {
         window.ToolboxBridge.startAutoPilotInject(filename || '');
       } else {
+        hideAutoPilotLoading();
         showToast('当前环境未就绪');
       }
     }
@@ -3070,13 +3294,14 @@ function handleRabbitAutoPilotInstall() {
   closeModal('rabbitInstallModal');
 }
 
-window.showAmapAutoPilotSelector = function(apksList) {
+window.showAutoPilotApkSelector = function(apksList) {
+  hideAutoPilotLoading();
   var container = document.getElementById('amapAutoSelectList');
   if (!container) return;
   var html = '';
   if (Array.isArray(apksList)) {
     apksList.forEach(function(item) {
-      html += '<div onclick="selectAmapAndStartAuto(\'' + item.filename + '\')" class="about-item" style="padding:10px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:all 0.15s; margin-bottom:8px;">' +
+      html += '<div onclick="selectApkAndStartAuto(\'' + item.filename + '\')" class="about-item" style="padding:10px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:all 0.15s; margin-bottom:8px;">' +
         '<div>' +
           '<div style="font-size:14px; font-weight:800; color:var(--txt-strong);">' + item.filename + '</div>' +
           '<div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">体积: ' + item.sizeStr + ' · 位于 Download/</div>' +
@@ -3088,11 +3313,13 @@ window.showAmapAutoPilotSelector = function(apksList) {
   container.innerHTML = html;
   openModal('selectAmapForAutoModal');
 };
+window.showAmapAutoPilotSelector = window.showAutoPilotApkSelector;
 
-function selectAmapAndStartAuto(filename) {
+function selectApkAndStartAuto(filename) {
   closeModal('selectAmapForAutoModal');
   handleStartAutoPilot(filename);
 }
+window.selectAmapAndStartAuto = selectApkAndStartAuto;
 
 var isAutostartOn = false;
 
@@ -3133,49 +3360,77 @@ function updateAutostartUi(enabled) {
   });
 }
 
-var isRabbitSafeModeOn = true;
+var isExpertRabbitEnabled = false;
 
-function handleToggleRabbitSafeMode() {
-  if (isRabbitSafeModeOn) {
-    showUniversalConfirm({
-      title: '切换【卡主题安全防护】模式？',
-      desc: '<b>安全提示</b>：关闭「卡主题安全防护」后，将允许你选择其他第三方应用尝试伪装打包进时钟。<br><br>' +
-            '• <b>高危风险警告</b>：若错误伪装非专车定制或不兼容软件，开机时将引发系统屏保崩溃死循环，<b>极易导致车机卡死、开机动画无限循环或变砖</b>！（工具箱底层将尽力拦截，但强烈建议普通车主保持开启）。<br><br>' +
-            '确定要切换为专家模式并关闭该防护吗？',
-      btnText: '关闭防护 (专家模式)',
-      isDanger: false,
-      onConfirm: function() {
-        isRabbitSafeModeOn = false;
-        if (window.ToolboxBridge && typeof window.ToolboxBridge.setRabbitSafeModeEnabled === 'function') {
-          window.ToolboxBridge.setRabbitSafeModeEnabled(false);
-        }
-        updateRabbitSafeModeUi(false);
-        showToast('已关闭卡主题安全限制 (专家模式)');
-      }
-    });
+function handleToggleExpertRabbitTheme() {
+  if (!isExpertRabbitEnabled) {
+    currentConfirmAction = {
+      pkg: 'com.ecarx.xscreensaver',
+      name: '时钟伪装专家模式',
+      action: 'enableExpertRabbit',
+      isSystem: true,
+      step: 1
+    };
+    showConfirmStep(1);
+    openModal('tripleConfirmModal');
   } else {
-    isRabbitSafeModeOn = true;
-    if (window.ToolboxBridge && typeof window.ToolboxBridge.setRabbitSafeModeEnabled === 'function') {
-      window.ToolboxBridge.setRabbitSafeModeEnabled(true);
+    isExpertRabbitEnabled = false;
+    if (window.ToolboxBridge && typeof window.ToolboxBridge.setExpertRabbitThemeEnabled === 'function') {
+      window.ToolboxBridge.setExpertRabbitThemeEnabled(false);
     }
-    updateRabbitSafeModeUi(true);
-    showToast('已开启卡主题安全防护');
+    updateExpertRabbitThemeUi(false);
+    showToast('已恢复安全锁定：仅允许地图软件卡主题');
   }
 }
 
-function updateRabbitSafeModeUi(enabled) {
-  isRabbitSafeModeOn = (enabled !== false);
-  var btn = document.getElementById('btnSettingRabbitSafe');
+function updateExpertRabbitThemeUi(enabled) {
+  isExpertRabbitEnabled = (enabled === true);
+  var btn = document.getElementById('btnSettingExpertRabbit');
+  var hint = document.getElementById('settingExpertRabbitHint');
   if (btn) {
-    btn.innerText = isRabbitSafeModeOn ? '已开启' : '已关闭 (专家)';
-    btn.className = isRabbitSafeModeOn ? 'btn-ctrl-md highlight' : 'btn-ctrl-md';
+    btn.innerText = isExpertRabbitEnabled ? '已开启 (专家模式)' : '已关闭 (安全锁定)';
+    btn.className = isExpertRabbitEnabled ? 'btn-ctrl-md danger' : 'btn-ctrl-md';
   }
-  var hint = document.getElementById('settingRabbitSafeHint');
   if (hint) {
-    hint.innerText = isRabbitSafeModeOn ?
-      '锁定仅允许高德/百度/腾讯等车载导航伪装，防止非兼容软件导致车机开机死锁或变砖' :
-      '专家模式：允许任意应用尝试时钟伪装（系统核心组件仍受永久保护）';
+    hint.innerHTML = isExpertRabbitEnabled ?
+      '<span style="color:#EF4444; font-weight:800;">⚠️ 专家模式已激活：已解除地图限制，允许任意应用尝试时钟伪装（变砖风险自负）</span>' :
+      '默认关闭。锁定仅允许高德、百度等车载地图软件卡时钟伪装，防止非兼容软件导致车机开机死锁或变砖';
   }
+}
+
+// 兼容旧调用别名
+var isRabbitSafeModeOn = true;
+function handleToggleRabbitSafeMode() { handleToggleExpertRabbitTheme(); }
+function updateRabbitSafeModeUi(enabled) { updateExpertRabbitThemeUi(!enabled); }
+
+// ==================== 无原生设置时的手动安装引导 ====================
+var _selectedManualApp = null;
+function openManualInstallModal(app) {
+  _selectedManualApp = app;
+  var titleEl = document.getElementById('manualInstallTitle');
+  var headerEl = document.getElementById('manualInstallAppHeader');
+  if (titleEl) titleEl.innerText = '安装指引：' + (app ? app.name : '应用');
+  if (headerEl) headerEl.innerText = '【' + (app ? app.name : '安装包') + '】已就绪 (' + (app ? (app.size || '') : '') + ')';
+  openModal('manualInstallModal');
+}
+
+window.openManualInstallModalById = function(appId) {
+  var app = CLOUD_APPS.find(function(a) { return a.id === appId; });
+  openManualInstallModal(app);
+};
+
+function handleOpenTaskManagerAction() {
+  closeModal('manualInstallModal');
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.openTaskManager === 'function') {
+    window.ToolboxBridge.openTaskManager();
+  } else {
+    showToast('调起任务管理器...');
+  }
+}
+
+function handleOpenFileMgrAction() {
+  closeModal('manualInstallModal');
+  callBridge('openFileManager');
 }
 
 
@@ -3268,9 +3523,11 @@ function _doDownloadApp(app, isRedownload) {
   if (app.status === 'ready' && !isRedownload) {
     if (app.category === 'navigation') {
       openRabbitInstallGuideModal(app);
-    } else {
+    } else if (hasSystemSettings) {
       showToast('正在调起系统安装器: ' + app.name);
       callBridge('installDownloadedApk', app.filename);
+    } else {
+      openManualInstallModal(app);
     }
     return;
   }
@@ -3409,8 +3666,8 @@ function handleForceDownloadToolbox() {
 var currentUpdateData = null;
 window.showToolboxUpdateModal = function(data) {
   currentUpdateData = data;
-  var currentVer = (document.getElementById('appVer') ? document.getElementById('appVer').innerText : 'v1.1.9');
-  var targetVer = 'v' + (data.version || '1.1.9');
+  var currentVer = (document.getElementById('appVer') ? document.getElementById('appVer').innerText : 'v1.2.0');
+  var targetVer = 'v' + (data.version || '1.2.0');
   var badgeEl = document.getElementById('modalUpgradeVersionBadge');
   if (badgeEl) badgeEl.innerText = currentVer + ' -> ' + targetVer + ' (code ' + (data.version_code || '7017') + ')';
   var clEl = document.getElementById('modalUpgradeChangelog');
@@ -4084,14 +4341,12 @@ window.updateDeviceInfo = function(infoJson) {
     if (info.appstore_frozen !== undefined) {
       cachedDeviceInfo.appstore_frozen = info.appstore_frozen;
       var pillA = document.getElementById('pillAppstore');
+      var dotA = document.getElementById('pillAppstoreDot');
       if (pillA) {
-        if (info.appstore_frozen) {
-          pillA.className = 'btn-status-pill green';
-          pillA.innerText = '已冻结';
-        } else {
-          pillA.className = 'btn-status-pill amber';
-          pillA.innerText = '运行中';
-        }
+        pillA.innerText = info.appstore_frozen ? '商店: 已冻结' : '商店: 运行中';
+      }
+      if (dotA) {
+        dotA.className = info.appstore_frozen ? 'dot green' : 'dot amber';
       }
     }
     if (info.isNight !== undefined) {
@@ -4108,6 +4363,14 @@ window.updateDeviceInfo = function(infoJson) {
     if (info.rabbit_safe_mode !== undefined) {
       updateRabbitSafeModeUi(info.rabbit_safe_mode);
     }
+    if (info.expert_rabbit_enabled !== undefined) {
+      updateExpertRabbitThemeUi(info.expert_rabbit_enabled);
+    }
+    if (info.has_system_settings !== undefined) {
+      hasSystemSettings = !!info.has_system_settings;
+      renderApps();
+    }
+    setTimeout(checkStartupGuard, 400);
     if (info.logSize) {
       var pillLog = document.getElementById('deepPillLogSize');
       if (pillLog) pillLog.innerText = info.logSize;
@@ -4142,6 +4405,76 @@ window.updateDeviceInfo = function(infoJson) {
     }
   } catch(e) {}
 };
+
+// ==================== 启动三步安全门禁交互 ====================
+var hasRunStartupGuard = false;
+
+function checkStartupGuard() {
+  if (hasRunStartupGuard) return;
+  hasRunStartupGuard = true;
+
+  // Step 1: 检查是否车机运行环境
+  var isCar = (cachedDeviceInfo && cachedDeviceInfo.is_car_device !== undefined) ? !!cachedDeviceInfo.is_car_device : true;
+  if (!isCar) {
+    openModal('carEnvCheckModal');
+    return;
+  }
+  proceedToStep2AppStoreGuard();
+}
+
+function proceedToStep2AppStoreGuard() {
+  closeModal('carEnvCheckModal');
+  // Step 2: 检查应用商店是否已冻结
+  var isFrozen = (cachedDeviceInfo && cachedDeviceInfo.appstore_frozen !== undefined) ? !!cachedDeviceInfo.appstore_frozen : true;
+  if (!isFrozen) {
+    openModal('appstoreGuardModal');
+    return;
+  }
+  proceedToStep3Whitelist();
+}
+
+function executeGuardFreezeAppstore() {
+  var btn = document.getElementById('btnGuardFreezeAppstore');
+  var header = document.getElementById('appstoreGuardHeader');
+  var body = document.getElementById('appstoreGuardBody');
+  if (btn) {
+    btn.innerText = '正在冻结并验证...';
+    btn.disabled = true;
+  }
+  callBridge('togglePackageFreeze', 'com.ecarx.appstore', true);
+
+  var pollCount = 0;
+  var timer = setInterval(function() {
+    pollCount++;
+    var frozen = false;
+    if (window.ToolboxBridge && typeof window.ToolboxBridge.isAppstoreFrozen === 'function') {
+      frozen = window.ToolboxBridge.isAppstoreFrozen();
+    }
+    if (frozen || pollCount >= 5) {
+      clearInterval(timer);
+      if (header) header.innerHTML = '<span style="color:var(--success);">已成功冻结原厂应用商店！</span>';
+      if (body) body.innerText = '应用商店已安全停用，白名单已被锁死保护！正在为你自动放行白名单...';
+      if (btn) btn.innerText = '冻结成功！进入系统...';
+      setTimeout(function() {
+        closeModal('appstoreGuardModal');
+        proceedToStep3Whitelist();
+      }, 1200);
+    }
+  }, 700);
+}
+
+function skipAppstoreGuard() {
+  closeModal('appstoreGuardModal');
+  proceedToStep3Whitelist();
+}
+
+function proceedToStep3Whitelist() {
+  // Step 3: 检测并自动放行白名单
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.setApkVerifyWhitelist === 'function') {
+    window.ToolboxBridge.setApkVerifyWhitelist(true);
+  }
+  showToast('白名单权限已就绪，欢迎使用吉利控制台');
+}
 
 // 初始化启动时立即检测系统日夜模式与本地已下载文件状态
 (function initStartup() {

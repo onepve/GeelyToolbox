@@ -281,7 +281,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
                     isWhitelistEnabled = SystemUtils.isApkVerifyWhitelistEnabled();
                     obj.put("whitelist", isWhitelistEnabled);
-                    obj.put("version", "1.1.9");
+                    obj.put("version", "1.2.0");
                     boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) || 
                                            (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.xcmedia") == SystemUtils.APP_STATE_DISABLED);
                     boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
@@ -293,6 +293,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("autostart", prefs.getBoolean("autostart_enabled", false));
                     obj.put("floating_enabled", prefs.getBoolean("floating_enabled", false));
                     obj.put("rabbit_safe_mode", prefs.getBoolean("rabbit_safe_mode_enabled", true));
+                    obj.put("expert_rabbit_enabled", prefs.getBoolean("expert_rabbit_theme_enabled", false));
+                    obj.put("has_system_settings", SystemUtils.isPackageInstalled(MainActivity.this, "com.android.settings"));
+                    obj.put("is_car_device", isCarDevice(MainActivity.this));
                     obj.put("logPath", AppLogger.getLogFilePath());
                     obj.put("logSize", AppLogger.getLogFileSizeStr());
                     String script = "if(window.updateDeviceInfo){window.updateDeviceInfo('" + obj.toString() + "');}";
@@ -570,13 +573,23 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
 
                     if (targetFile == null) {
-                        List<File> apks = AutoPilotManager.scanDownloadedAmapApks();
+                        List<File> apks = AutoPilotManager.scanDownloadedApks(MainActivity.this);
                         if (apks.isEmpty()) {
-                            Toast.makeText(context, "未检测到已下载的高德地图，请先在右侧软件中心选择下载！", Toast.LENGTH_LONG).show();
+                            if (webView != null) {
+                                webView.evaluateJavascript("if(window.hideAutoPilotLoading){window.hideAutoPilotLoading();}", null);
+                            }
+                            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                            boolean expert = prefs.getBoolean("expert_rabbit_theme_enabled", false);
+                            String msg = expert ? "未在 Download 目录检测到 APK 安装包，请先在软件中心下载或通过无线快传传输！"
+                                                : "未在 Download 目录检测到地图导航类 APK，请先在软件商城下载高德/百度地图！";
+                            Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
                             return;
                         } else if (apks.size() == 1) {
                             targetFile = apks.get(0);
                         } else {
+                            if (webView != null) {
+                                webView.evaluateJavascript("if(window.hideAutoPilotLoading){window.hideAutoPilotLoading();}", null);
+                            }
                             try {
                                 JSONArray arr = new JSONArray();
                                 for (File apk : apks) {
@@ -586,14 +599,54 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                     item.put("sizeStr", String.format(java.util.Locale.CHINA, "%.1f MB", apk.length() / (1024.0 * 1024.0)));
                                     arr.put(item);
                                 }
-                                String script = "if(window.showAmapAutoPilotSelector){window.showAmapAutoPilotSelector(" + arr.toString() + ");}";
+                                String script = "if(window.showAutoPilotApkSelector){window.showAutoPilotApkSelector(" + arr.toString() + ");}else if(window.showAmapAutoPilotSelector){window.showAmapAutoPilotSelector(" + arr.toString() + ");}";
                                 webView.evaluateJavascript(script, null);
                             } catch (Exception ignored) {}
                             return;
                         }
                     }
 
-                    AutoPilotManager.getInstance().startAutoInject(MainActivity.this, targetFile);
+                    final File finalTarget = targetFile;
+                    android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                    boolean expert = prefs.getBoolean("expert_rabbit_theme_enabled", false);
+                    if (!expert && !isNavigationApp(null, finalTarget.getName())) {
+                        if (webView != null) {
+                            webView.evaluateJavascript("if(window.hideAutoPilotLoading){window.hideAutoPilotLoading();}", null);
+                        }
+                        Toast.makeText(context, "【安全拦截】默认仅允许高德、百度等地图软件卡时钟伪装。常规应用严禁卡主题以防死机变砖！如需测试其他应用，请在【设置】中开启专家模式。", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    if (webView != null) {
+                        webView.evaluateJavascript("if(window.showAutoPilotLoading){window.showAutoPilotLoading('" + finalTarget.getName() + "');}", null);
+                    }
+
+                    AutoPilotManager.getInstance().startAutoInject(MainActivity.this, finalTarget, new AutoPilotManager.AutoPilotCallback() {
+                        @Override
+                        public void onSuccess(final String apkName) {
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    pushDeviceInfoToWeb();
+                                    if (webView != null) {
+                                        webView.evaluateJavascript("if(window.onAutoPilotSuccess){window.onAutoPilotSuccess('" + apkName + "');}", null);
+                                    }
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onError(final String error) {
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (webView != null) {
+                                        webView.evaluateJavascript("if(window.onAutoPilotError){window.onAutoPilotError('" + error + "');}", null);
+                                    }
+                                }
+                            });
+                        }
+                    });
                 }
             });
         }
@@ -639,13 +692,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                 } catch (Exception ignored) {}
 
                                 android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                                boolean safeMode = prefs.getBoolean("rabbit_safe_mode_enabled", true);
-                                if (safeMode && !isNavigationApp(pkg, apkFile.getName())) {
-                                    final String finalPkg = pkg;
+                                boolean expertMode = prefs.getBoolean("expert_rabbit_theme_enabled", false);
+                                if (!expertMode && !isNavigationApp(pkg, apkFile.getName())) {
                                     mainHandler.post(new Runnable() {
                                         @Override
                                         public void run() {
-                                            showToast("【安全保护】当前仅允许车载导航类专车包使用时钟伪装。常规应用请直接在应用列表中安装。");
+                                            showToast("【安全拦截】默认仅允许高德、百度等地图软件卡时钟伪装。常规应用严禁卡主题以防死机变砖！如需测试其他应用，请在【设置】中开启专家模式。");
                                         }
                                     });
                                     return;
@@ -692,6 +744,52 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             prefs.edit().putBoolean("rabbit_safe_mode_enabled", enabled).apply();
             pushDeviceInfoToWeb();
             return enabled;
+        }
+
+        @JavascriptInterface
+        public boolean setExpertRabbitThemeEnabled(boolean enabled) {
+            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            prefs.edit().putBoolean("expert_rabbit_theme_enabled", enabled).apply();
+            pushDeviceInfoToWeb();
+            return enabled;
+        }
+
+        @JavascriptInterface
+        public boolean isSystemSettingsInstalled() {
+            return SystemUtils.isPackageInstalled(context, "com.android.settings");
+        }
+
+        @JavascriptInterface
+        public void openTaskManager() {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            boolean toggled = false;
+                            try {
+                                Object service = context.getSystemService("statusbar");
+                                Class<?> statusBarManager = Class.forName("android.app.StatusBarManager");
+                                java.lang.reflect.Method expand = statusBarManager.getMethod("toggleRecentApps");
+                                expand.invoke(service);
+                                toggled = true;
+                            } catch (Exception ignored) {}
+
+                            if (!toggled) {
+                                AdbClient.execute(context, "input keyevent 187");
+                            }
+
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(context, "已调起任务管理器，请切换到文件管理器完成安装", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                    }).start();
+                }
+            });
         }
 
         @JavascriptInterface
@@ -923,11 +1021,19 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    AdbClient.execute(context, "pm uninstall " + pkg);
+                    AdbClient.AdbResult res = AdbClient.execute(context, "pm uninstall " + pkg);
+                    if (res == null || !res.success || (res.output != null && (res.output.contains("Failure") || res.output.contains("Error")))) {
+                        res = AdbClient.execute(context, "pm uninstall -k --user 0 " + pkg);
+                    }
+                    final AdbClient.AdbResult finalRes = res;
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            showToast("已发送卸载指令: " + pkg);
+                            if (finalRes != null && finalRes.success && finalRes.output != null && finalRes.output.contains("Success")) {
+                                showToast("已成功卸载/停用: " + pkg);
+                            } else {
+                                showToast("已发送卸载指令: " + pkg);
+                            }
                         }
                     });
                 }
@@ -1109,6 +1215,24 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
                 }
             });
+        }
+
+        @JavascriptInterface
+        public boolean setApkVerifyWhitelist(final boolean enable) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    if (enable) {
+                        SystemUtils.enableApkVerifyWhitelist(context);
+                        isWhitelistEnabled = true;
+                    } else {
+                        SystemUtils.executePrivileged(context, "setprop sys.jsbd.apk_verify 0 && setprop persist.sys.jsbd.apk_verify 0 && setprop sys.geely.apk_verify 0 && setprop persist.sys.geely.apk_verify 0");
+                        isWhitelistEnabled = false;
+                    }
+                    pushDeviceInfoToWeb();
+                }
+            }).start();
+            return true;
         }
 
         @JavascriptInterface
@@ -1331,8 +1455,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                         webView.evaluateJavascript("if(window.updateDownloadSuccess) window.updateDownloadSuccess('" + appId + "', '" + savedFile.getName() + "');", null);
                                     }
                                     if (!id.startsWith("amap") && !id.contains("firmware") && !id.contains("rescue")) {
-                                        Toast.makeText(context, "下载完成，正在调起原生安装器...", Toast.LENGTH_SHORT).show();
-                                        SystemUtils.installApkViaProvider(MainActivity.this, savedFile);
+                                        boolean hasSettings = SystemUtils.isPackageInstalled(MainActivity.this, "com.android.settings");
+                                        if (hasSettings) {
+                                            Toast.makeText(context, "下载完成，正在调起系统安装器...", Toast.LENGTH_SHORT).show();
+                                            SystemUtils.installApkViaProvider(MainActivity.this, savedFile);
+                                        } else {
+                                            Toast.makeText(context, "下载完成: " + savedFile.getName() + "，请通过任务管理或文件管理安装", Toast.LENGTH_LONG).show();
+                                            if (webView != null) {
+                                                webView.evaluateJavascript("if(window.openManualInstallModalById) window.openManualInstallModalById('" + appId + "');", null);
+                                            }
+                                        }
                                     } else {
                                         Toast.makeText(context, "下载完成: " + savedFile.getName() + "\n已保存在 Download 目录", Toast.LENGTH_LONG).show();
                                     }
@@ -1703,11 +1835,65 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         sysTts.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         startActivity(sysTts);
                     } catch (Exception e) {
-                        Toast.makeText(context, "未找到小爱语音引擎或系统TTS设置", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, "未找到语音引擎设置界面", Toast.LENGTH_SHORT).show();
                     }
                 }
             });
         }
+
+        @JavascriptInterface
+        public boolean isCarDevice() {
+            return MainActivity.isCarDevice(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public boolean isAppstoreFrozen() {
+            return SystemUtils.getAppDetailedState(context, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED;
+        }
+
+        @JavascriptInterface
+        public String getInstalledNavigationApps() {
+            JSONArray arr = new JSONArray();
+            try {
+                PackageManager pm = context.getPackageManager();
+                List<PackageInfo> installed = pm.getInstalledPackages(0);
+                for (PackageInfo pi : installed) {
+                    if (pi.packageName == null) continue;
+                    String pkg = pi.packageName.toLowerCase();
+                    if (isNavigationApp(pkg, null) || pkg.equals("com.autonavi.amapauto")) {
+                        JSONObject item = new JSONObject();
+                        item.put("pkg", pi.packageName);
+                        String label = pi.applicationInfo != null ? pm.getApplicationLabel(pi.applicationInfo).toString() : pi.packageName;
+                        item.put("name", label);
+                        item.put("version", pi.versionName != null ? pi.versionName : "");
+                        boolean isSys = (pi.applicationInfo != null && (pi.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0);
+                        item.put("isSystem", isSys);
+                        arr.put(item);
+                    }
+                }
+            } catch (Exception ignored) {}
+            return arr.toString();
+        }
+    }
+
+    public static boolean isCarDevice(Context context) {
+        String model = Build.MODEL != null ? Build.MODEL.toUpperCase() : "";
+        String brand = Build.BRAND != null ? Build.BRAND.toUpperCase() : "";
+        String finger = Build.FINGERPRINT != null ? Build.FINGERPRINT.toUpperCase() : "";
+        if (model.contains("IHU") || model.contains("E02") || model.contains("GEELY") || model.contains("ECARX")
+                || brand.contains("GEELY") || brand.contains("ECARX") || finger.contains("GEELY") || finger.contains("ECARX")) {
+            return true;
+        }
+        if (context != null) {
+            PackageManager pm = context.getPackageManager();
+            try {
+                if (pm.getPackageInfo("com.ecarx.carservice", 0) != null) return true;
+            } catch (Exception ignored) {}
+            try {
+                if (pm.getPackageInfo("com.ecarx.launcher", 0) != null) return true;
+            } catch (Exception ignored) {}
+        }
+        return false;
     }
 
     public static boolean isNavigationApp(String pkg, String filename) {

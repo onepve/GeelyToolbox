@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 import app.onepve.geelyconsole.R;
+import app.onepve.geelyconsole.utils.AdbClient;
 import app.onepve.geelyconsole.utils.AppLogger;
 import app.onepve.geelyconsole.utils.SystemUtils;
 import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
@@ -72,12 +73,15 @@ public class VehicleAutomationService extends Service {
         if (context == null) return;
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            boolean doorVoice = prefs.getBoolean("vehicle_door_voice_enabled", false);
+            boolean doorFl = prefs.getBoolean("voice_enable_door_fl", false);
+            boolean doorFr = prefs.getBoolean("voice_enable_door_fr", false);
+            boolean doorFrClose = prefs.getBoolean("voice_enable_door_fr_close", false);
+            boolean doorRear = prefs.getBoolean("voice_enable_door_rear", false);
             boolean turn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
             boolean lightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
             boolean flameout = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
 
-            boolean shouldRun = doorVoice || turn360 || lightNav || flameout;
+            boolean shouldRun = doorFl || doorFr || doorFrClose || doorRear || turn360 || lightNav || flameout;
 
             Intent intent = new Intent(context, VehicleAutomationService.class);
             if (shouldRun) {
@@ -186,6 +190,9 @@ public class VehicleAutomationService extends Service {
         }
     }
 
+    private static final java.util.regex.Pattern CAN_PATTERN =
+            java.util.regex.Pattern.compile("key\\s*=\\s*([^,\\s]+).*?data\\s*=\\s*(-?\\d+)");
+
     private void startLogcatReader() {
         if (logcatThread != null && logcatThread.isAlive()) return;
 
@@ -194,8 +201,13 @@ public class VehicleAutomationService extends Service {
             public void run() {
                 while (isRunning) {
                     try {
-                        // 过滤 VehicleDataBuilder 与车速 e 标签，极低 CPU 开销
-                        ProcessBuilder pb = new ProcessBuilder("logcat", "-v", "brief", "-s", "VehicleDataBuilder:D", "e:D");
+                        // 确保具备底层系统日志读取权限
+                        try {
+                            AdbClient.execute(VehicleAutomationService.this, "pm grant " + getPackageName() + " android.permission.READ_LOGS");
+                        } catch (Exception ignored) {}
+
+                        // 过滤 VehicleDataBuilder 与车速 e 标签，同时读取 main 与 system 缓冲区
+                        ProcessBuilder pb = new ProcessBuilder("logcat", "-b", "main", "-b", "system", "-v", "brief", "-s", "VehicleDataBuilder:D", "e:D");
                         pb.redirectErrorStream(true);
                         logcatProcess = pb.start();
 
@@ -225,11 +237,12 @@ public class VehicleAutomationService extends Service {
         if (line == null || line.isEmpty()) return;
 
         // 1. 解析车辆实时车速
-        if (line.contains("getVehicleSpeed") || line.contains("speed ==")) {
+        if (line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")) {
             int idx = line.indexOf("speed ==");
+            if (idx == -1) idx = line.indexOf("speed=");
             if (idx != -1) {
                 try {
-                    String sub = line.substring(idx + 8).trim();
+                    String sub = line.substring(idx + (line.contains("speed ==") ? 8 : 6)).trim();
                     StringBuilder num = new StringBuilder();
                     for (int i = 0; i < sub.length(); i++) {
                         char c = sub.charAt(i);
@@ -245,33 +258,16 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // 2. 解析 CAN 数据: parseCanData: key = ..., data = ...
-        if (!line.contains("parseCanData: key = ")) return;
+        // 2. 解析 CAN 数据: parseCanData: key = ..., data = ... (支持灵活正则匹配)
+        if (!line.contains("parseCanData")) return;
 
         try {
-            int keyStart = line.indexOf("key = ") + 6;
-            int comma = line.indexOf(",", keyStart);
-            if (comma == -1) return;
-            String key = line.substring(keyStart, comma).trim();
-
-            int dataStart = line.indexOf("data = ", comma);
-            if (dataStart == -1) return;
-            String valStr = line.substring(dataStart + 7).trim();
-            int val = -1;
-            try {
-                // 提取纯数字
-                StringBuilder num = new StringBuilder();
-                for (int i = 0; i < valStr.length(); i++) {
-                    char c = valStr.charAt(i);
-                    if (Character.isDigit(c) || (c == '-' && num.length() == 0)) num.append(c);
-                    else break;
-                }
-                if (num.length() > 0) val = Integer.parseInt(num.toString());
-            } catch (Exception ignored) {
-                return;
+            java.util.regex.Matcher m = CAN_PATTERN.matcher(line);
+            if (m.find()) {
+                String key = m.group(1).trim();
+                int val = Integer.parseInt(m.group(2).trim());
+                handleCanSignal(key, val);
             }
-
-            handleCanSignal(key, val);
         } catch (Exception ignored) {
         }
     }

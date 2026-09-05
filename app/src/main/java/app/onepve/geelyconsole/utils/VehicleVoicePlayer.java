@@ -120,48 +120,77 @@ public class VehicleVoicePlayer {
 
     private boolean playAssetAudio(final String assetPath) {
         try {
-            final android.content.res.AssetFileDescriptor afd = context.getAssets().openFd(assetPath);
-            if (afd == null) return false;
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    MediaPlayer mp = null;
-                    try {
-                        requestAudioFocus();
-                        mp = new MediaPlayer();
-                        mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                        mp.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
-                        afd.close();
-                        mp.prepare();
-                        mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                            @Override
-                            public void onCompletion(MediaPlayer mediaPlayer) {
-                                abandonAudioFocus();
-                                try { mediaPlayer.release(); } catch (Exception ignored) {}
-                            }
-                        });
-                        mp.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                            @Override
-                            public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
-                                abandonAudioFocus();
-                                try { mediaPlayer.release(); } catch (Exception ignored) {}
-                                return true;
-                            }
-                        });
-                        mp.start();
-                    } catch (Exception e) {
-                        abandonAudioFocus();
-                        if (mp != null) {
-                            try { mp.release(); } catch (Exception ignored) {}
-                        }
-                    }
-                }
-            }).start();
-            return true;
+            java.io.InputStream testIn = context.getAssets().open(assetPath);
+            testIn.close();
         } catch (Exception e) {
-            Log.d(TAG, "Asset audio not found or failed: " + assetPath);
+            Log.d(TAG, "Asset not found: " + assetPath);
             return false;
         }
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                MediaPlayer mp = null;
+                try {
+                    requestAudioFocus();
+                    mp = new MediaPlayer();
+                    mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
+
+                    boolean fdLoaded = false;
+                    try {
+                        android.content.res.AssetFileDescriptor afd = context.getAssets().openFd(assetPath);
+                        if (afd != null) {
+                            mp.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+                            afd.close();
+                            fdLoaded = true;
+                        }
+                    } catch (Exception ignored) {}
+
+                    if (!fdLoaded) {
+                        File cacheDir = new File(context.getCacheDir(), "voice_cache");
+                        if (!cacheDir.exists()) cacheDir.mkdirs();
+                        String safeName = assetPath.replace('/', '_');
+                        File tempFile = new File(cacheDir, safeName);
+                        if (!tempFile.exists() || tempFile.length() == 0) {
+                            try (java.io.InputStream in = context.getAssets().open(assetPath);
+                                 java.io.FileOutputStream out = new java.io.FileOutputStream(tempFile)) {
+                                byte[] buf = new byte[32 * 1024];
+                                int len;
+                                while ((len = in.read(buf)) > 0) {
+                                    out.write(buf, 0, len);
+                                }
+                            }
+                        }
+                        mp.setDataSource(tempFile.getAbsolutePath());
+                    }
+
+                    mp.prepare();
+                    mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                        @Override
+                        public void onCompletion(MediaPlayer mediaPlayer) {
+                            abandonAudioFocus();
+                            try { mediaPlayer.release(); } catch (Exception ignored) {}
+                        }
+                    });
+                    mp.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                        @Override
+                        public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
+                            abandonAudioFocus();
+                            try { mediaPlayer.release(); } catch (Exception ignored) {}
+                            return true;
+                        }
+                    });
+                    mp.start();
+                } catch (Exception e) {
+                    abandonAudioFocus();
+                    if (mp != null) {
+                        try { mp.release(); } catch (Exception ignored) {}
+                    }
+                    Log.e(TAG, "playAssetAudio error: " + e.getMessage());
+                }
+            }
+        }).start();
+        return true;
     }
 
     private void playAudioFile(final File file) {
