@@ -2557,8 +2557,6 @@ function renderApps() {
   var lastGroupTitle = '';
 
   filtered.forEach(function(app) {
-    var actionHtml = '';
-
     if (showGroupTitles) {
       var groupTitle = STORE_GROUP_OF[app.id] || '';
       if (groupTitle && groupTitle !== lastGroupTitle) {
@@ -2567,32 +2565,6 @@ function renderApps() {
           '<span style="flex:1; height:1px; background:linear-gradient(90deg, var(--border-strong), rgba(0,0,0,0));"></span></div>';
         lastGroupTitle = groupTitle;
       }
-    }
-
-    if (app.status === 'downloading') {
-      actionHtml = '<button class="btn-dl updating" style="cursor:default;">' + (app.progress || 0) + '% ' + (app.speed ? '(' + app.speed + ')' : '') + '</button>' +
-        '<button class="btn-redl" title="暂停下载" onclick="handlePauseDownload(\'' + app.id + '\')">暂停</button>' +
-        '<button class="btn-redl" title="取消下载" style="color:#EF4444;" onclick="handleCancelDownload(\'' + app.id + '\')">取消</button>';
-    } else if (app.status === 'paused') {
-      actionHtml = '<button class="btn-dl updating" onclick="handleResumeDownload(\'' + app.id + '\')">继续下载 (' + (app.progress || 0) + '%)</button>' +
-        '<button class="btn-redl" title="取消下载" style="color:#EF4444;" onclick="handleCancelDownload(\'' + app.id + '\')">取消</button>';
-    } else if (app.status === 'error') {
-      actionHtml = '<button class="btn-dl danger" onclick="handleDownloadApp(\'' + app.id + '\', true)">重试下载</button>' +
-        '<button class="btn-redl" title="取消" onclick="handleCancelDownload(\'' + app.id + '\')">取消</button>';
-    } else if (app.status === 'updating') {
-      actionHtml = '<button class="btn-dl updating" onclick="handleDownloadApp(\'' + app.id + '\', true)">升级下载</button>';
-    } else if (app.status === 'ready') {
-      var isNav = (app.category === 'navigation');
-      var mainTxt;
-      if (isExpertRabbitEnabled && isNav) {
-        mainTxt = '安装向导';
-      } else {
-        mainTxt = hasSystemSettings ? '直接安装' : '引导安装';
-      }
-      actionHtml = '<button class="btn-dl done" onclick="handleDownloadApp(\'' + app.id + '\', false)">' + mainTxt + '</button>' +
-        '<button class="btn-redl" title="重新下载覆盖" onclick="handleDownloadApp(\'' + app.id + '\', true)">重下</button>';
-    } else {
-      actionHtml = '<button class="btn-dl" onclick="handleDownloadApp(\'' + app.id + '\', false)">下载</button>';
     }
 
     var metaTagsHtml = '<div class="app-meta-tags">' +
