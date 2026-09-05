@@ -492,7 +492,7 @@ public class AutoPilotManager {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (Exception ignored) {}
         return list;
     }
 
