@@ -1885,7 +1885,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void setCustomVoiceText(String voiceKey, String text) {
-            SharedPreferences prefs = MainActivity.this.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            android.content.SharedPreferences prefs = MainActivity.this.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             if (text == null || text.trim().isEmpty()) {
                 prefs.edit().remove("custom_text_" + voiceKey).apply();
             } else {
@@ -1895,7 +1895,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String getCustomVoiceText(String voiceKey) {
-            SharedPreferences prefs = MainActivity.this.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            android.content.SharedPreferences prefs = MainActivity.this.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             return prefs.getString("custom_text_" + voiceKey, "");
         }
 
