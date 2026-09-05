@@ -1,0 +1,190 @@
+name: Build & Release GeelyConsole APK
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  build:
+    name: Build & Verify APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run CI Health Checks (Links, JSBridge, DOM Handlers)
+        run: python3 scripts/ci_health_check.py
+
+      - name: Build Release APK (Verification)
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Copy & Rename APK
+        run: |
+          mkdir -p output
+          cp app/build/outputs/apk/release/app-release.apk output/GeelyConsole.apk
+
+# APK 直接通过 R2 和 GitHub Release 分发，免占用 Actions Artifact 存储配额
+
+      # 🌟 仅在推送正式版本 Tag (v*) 时才执行 R2 覆盖同步与发布，普通 push 仅作 CI 编译校验
+      - name: Push APK & Metadata to R2 on Tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          set -e
+          # 安装 AWS CLI（R2 兼容 S3 API）
+          if ! command -v aws &>/dev/null; then
+            curl -sL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/awscliv2.zip
+            unzip -qo /tmp/awscliv2.zip -d /tmp/awscli
+            /tmp/awscli/aws/install --update
+          fi
+          # 计算哈希与大小
+          MD5=$(md5sum output/GeelyConsole.apk | cut -d' ' -f1)
+          SHA256=$(sha256sum output/GeelyConsole.apk | cut -d' ' -f1)
+          SIZE=$(stat -c%s output/GeelyConsole.apk)
+          # 版本号从 build.gradle 提取
+          VERSION_NAME=$(grep -oP 'versionName "\K[^"]+' app/build.gradle)
+          VERSION_CODE=$(grep -oP 'versionCode \K[0-9]+' app/build.gradle)
+          SIZE_MB=$(python3 -c "print(f'{$SIZE/1048576:.1f} MB')")
+          echo "→ v$VERSION_NAME (code $VERSION_CODE) md5=$MD5 size=$SIZE_MB"
+
+          # 配置 aws cli 访问 R2
+          export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
+          export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
+          export AWS_DEFAULT_REGION=auto
+          BUCKET="s3://downloads/GeelyToolbox/"
+
+          # 1. 上传 APK（直接覆盖 GeelyToolbox.apk，本体通过 GitHub Git 历史版本回退）
+          aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyToolbox.apk" \
+            --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+
+          # 2. 更新 version.json
+          cat > /tmp/version.json <<'EOF'
+          {
+            "version": "__VER__",
+            "version_code": __CODE__,
+            "min_sdk": 28,
+            "target_sdk": 28,
+            "package_name": "app.onepve.geelyconsole",
+            "size": "__SIZE_MB__",
+            "bytes": __BYTES__,
+            "md5": "__MD5__",
+            "sha256": "__SHA__",
+            "download_url": "https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=__VER__",
+            "changelog": "1. 座舱按键大方块化：2×2 饱满磁贴 (76px 双行标)，触控容错率大幅跃升\\n2. 视觉车规黑白自适应：彻底拔除彩色引导色，纯净中性昼夜自适应\\n3. 全功能防误触核准：所有操作配详细图文说明与场景指引，高危操作 3 步递进确认\\n4. 移除冗余还原官方时钟：开机与安装完成全自动秒级自愈\\n5. CI 5大资产全生命周期自动清理与健康门禁自动化",
+            "release_date": "$(date +%F)"
+          }
+          EOF
+          sed -i "s/__VER__/$VERSION_NAME/g; s/__CODE__/$VERSION_CODE/g; s/__SIZE_MB__/$SIZE_MB/g; s/__BYTES__/$SIZE/g; s/__MD5__/$MD5/g; s/__SHA__/$SHA256/g" /tmp/version.json
+          aws s3 cp /tmp/version.json "${BUCKET}version.json" \
+            --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+
+          # 3. 更新 apps.json toolbox 字段（拉线上 → 改 → 传回）
+          curl -s "https://dl.onepve.com/GeelyToolbox/apps.json?t=$(date +%s)" -o /tmp/apps.json
+          export VER="$VERSION_NAME" CODE="$VERSION_CODE" MD5X="$MD5" SHAX="$SHA256" BYTESX="$SIZE" SIZEMB="$SIZE_MB" TODAY="$(date +%F)"
+          python3 - <<'PYEOF'
+          import json, os
+          with open('/tmp/apps.json', encoding='utf-8') as f:
+              data = json.load(f)
+          data['version'] = os.environ['VER']
+          data['updated_at'] = os.environ['TODAY']
+          tb = data.get('toolbox', {})
+          tb.update({
+              'version': os.environ['VER'], 'version_code': int(os.environ['CODE']),
+              'md5': os.environ['MD5X'], 'sha256': os.environ['SHAX'], 'bytes': int(os.environ['BYTESX']),
+              'size': os.environ['SIZEMB'],
+              'download_url': 'https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=' + os.environ['VER'],
+          })
+          data['toolbox'] = tb
+          with open('/tmp/apps.json', 'w', encoding='utf-8') as f:
+              json.dump(data, f, ensure_ascii=False, indent=4)
+          PYEOF
+          aws s3 cp /tmp/apps.json "${BUCKET}apps.json" \
+            --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+
+          echo "✅ R2 同步完成: v$VERSION_NAME (code $VERSION_CODE) md5=$MD5"
+
+      - name: Publish Official Release on Tag
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "GeelyConsole ${{ github.ref_name }}"
+          files: |
+            output/GeelyConsole.apk
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 发新版时自动清理旧版 Release/Draft 发行版与旧远程 Git Tags，永不堆积
+      - name: Cleanup Old Releases & Tags on Tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          set +e
+          CURRENT_TAG="${{ github.ref_name }}"
+          echo "1. Cleaning up older releases and drafts (except $CURRENT_TAG)..."
+          gh release list -R "${{ github.repository }}" --exclude-drafts=false --json tagName -q ".[].tagName" | while read -r tag; do
+            if [ -n "$tag" ] && [ "$tag" != "$CURRENT_TAG" ]; then
+              echo "Deleting old release: $tag"
+              gh release delete "$tag" -R "${{ github.repository }}" -y 2>/dev/null || true
+            fi
+          done
+
+          echo "2. Cleaning up older remote git tags (except $CURRENT_TAG)..."
+          git ls-remote --tags origin | awk '{print $2}' | sed 's@refs/tags/@@' | grep -v '\^{}' | while read -r tag; do
+            if [ -n "$tag" ] && [ "$tag" != "$CURRENT_TAG" ]; then
+              echo "Deleting old remote tag: $tag"
+              git push origin --delete "$tag" 2>/dev/null || true
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 每次运行无论成功失败，自动清理旧缓存、历史旧构建产物与所有历史 CI 运行记录，防止存储超量
+      - name: Auto Cleanup Old CI Runs, Caches & Artifacts
+        if: always()
+        run: |
+          set +e
+          echo "1. Cleaning up repository action caches..."
+          gh extension install actions/gh-actions-cache 2>/dev/null || true
+          gh actions-cache list -R "${{ github.repository }}" -L 100 --order desc | cut -f 1 | while read -r key; do
+            [ -n "$key" ] && gh actions-cache delete "$key" -R "${{ github.repository }}" --confirm 2>/dev/null || true
+          done
+
+          echo "2. Cleaning up repository action artifacts..."
+          gh api repos/"${{ github.repository }}"/actions/artifacts -q '.artifacts[].id' 2>/dev/null | while read -r artifact_id; do
+            if [ -n "$artifact_id" ]; then
+              echo "Deleting artifact: $artifact_id"
+              gh api -X DELETE repos/"${{ github.repository }}"/actions/artifacts/"$artifact_id" 2>/dev/null || true
+            fi
+          done
+
+          echo "3. Cleaning up all old workflow runs (keeping current)..."
+          gh run list -R "${{ github.repository }}" -L 100 --json databaseId -q '.[] | select(.databaseId != ${{ github.run_id }}) | .databaseId' | while read -r run_id; do
+            if [ -n "$run_id" ]; then
+              echo "Deleting old run: $run_id"
+              gh run delete "$run_id" -R "${{ github.repository }}" 2>/dev/null || true
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
