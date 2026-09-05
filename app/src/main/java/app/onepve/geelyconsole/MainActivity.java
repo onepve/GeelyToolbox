@@ -1190,8 +1190,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                 public void run() {
                                     String script = "if(window.updateToolboxSelfDone){window.updateToolboxSelfDone();}";
                                     webView.evaluateJavascript(script, null);
-                                    showToast("工具箱新版本下载完成，正在通过安全通道调起安装...");
-                                    SystemUtils.installApkViaProvider(MainActivity.this, savedFile);
+                                    boolean launched = SystemUtils.installApkViaProvider(MainActivity.this, savedFile);
+                                    if (!launched) {
+                                        Toast.makeText(MainActivity.this, "未检测到系统安装器，已自动为你打开文件管理，请点击安装包完成升级！", Toast.LENGTH_LONG).show();
+                                        SystemUtils.openDocumentsUI(MainActivity.this);
+                                    } else {
+                                        Toast.makeText(MainActivity.this, "工具箱新版本下载完成，正在调起系统安装器...", Toast.LENGTH_SHORT).show();
+                                    }
                                 }
                             });
                         }

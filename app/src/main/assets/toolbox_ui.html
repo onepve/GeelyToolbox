@@ -1438,40 +1438,44 @@ body.light .btn-mini:active {
 </div>
 
 <div class="modal-overlay" id="aboutModal">
-  <div class="modal-card" style="width:880px; max-width:94vw; padding:22px 28px;">
+  <div class="modal-card" style="width:880px; max-width:94vw; padding:24px 30px;">
     <div class="modal-header">
-      <div class="modal-title">关于吉利车机控制台</div>
+      <div class="modal-title" style="font-size:22px; font-weight:900;">关于吉利车机控制台</div>
       <button class="modal-close" onclick="closeModal('aboutModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
-    <div class="about-box">
-      <div class="about-item">
-        <span style="color:var(--txt-dim);">当前软件版本</span>
-        <span style="font-weight:800; color:var(--accent);" id="aboutVersionText">v1.2.5 (7025)</span>
+    <div class="about-box" style="margin:14px 0 12px;">
+      <div class="about-item" style="padding:10px 14px;">
+        <span style="color:var(--txt-dim); font-size:15px;">当前软件版本</span>
+        <span style="font-weight:900; font-size:15px; color:var(--accent);" id="aboutVersionText">v1.2.5 (7025)</span>
       </div>
-      <div class="about-item">
-        <span style="color:var(--txt-dim);">支持车机芯片</span>
-        <span style="font-weight:700;">亿咖通 E02 (IHU516G / Android 9)</span>
+      <div class="about-item" style="padding:10px 14px;">
+        <span style="color:var(--txt-dim); font-size:15px;">支持车机芯片</span>
+        <span style="font-weight:800; font-size:15px;">亿咖通 E02 (IHU516G / Android 9)</span>
       </div>
-      <div class="about-item">
-        <span style="color:var(--txt-dim);">官方技术支持</span>
-        <span style="font-weight:700; color:var(--txt-strong);">https://onepve.com</span>
+      <div class="about-item" style="padding:10px 14px;">
+        <span style="color:var(--txt-dim); font-size:15px;">车友交流 QQ 群</span>
+        <span style="font-weight:900; font-size:15px; color:var(--txt-strong); letter-spacing:1px;">564654011</span>
       </div>
-      <div class="about-item">
-        <span style="color:var(--txt-dim);">UI 设计标准</span>
-        <span style="font-weight:700;">车载拟态智能座舱 UI (全自适应视口)</span>
+      <div class="about-item" style="padding:10px 14px;">
+        <span style="color:var(--txt-dim); font-size:15px;">作者联系 QQ</span>
+        <span style="font-weight:900; font-size:15px; color:var(--accent2); letter-spacing:1px;">180721484 (迷失)</span>
       </div>
-
+      <div class="about-item" style="padding:10px 14px;">
+        <span style="color:var(--txt-dim); font-size:15px;">官方网站 / 博客</span>
+        <span style="font-weight:800; font-size:15px; color:var(--txt-strong);">https://onepve.com</span>
+      </div>
     </div>
-    <div style="font-size:12px; color:var(--txt-dim); line-height:1.5;">
-      专为吉利车系大屏深度适配打造，提供无损高德升级、系统白名单自启守护、原厂组件冻结、座舱智能语音联动与车载生态分发。
+    <!-- 纯免费公益与自愿赞赏特别声明 -->
+    <div style="background:rgba(2, 132, 199, 0.08); border:1.5px solid rgba(2, 132, 199, 0.25); border-radius:10px; padding:12px 16px; font-size:13.5px; color:var(--txt-strong); line-height:1.65; margin-bottom:14px;">
+      <b>特别声明</b>：本控制台为车友交流纯免费使用，绝无任何商业收费、付费订阅或强制限制。开发与维护全凭个人热爱，仅保留自愿赞赏功能。若工具箱对你有所帮助，觉得软件不错的，欢迎赞赏支持作者持续迭代 (๑•̀ㅂ•́)و✧
     </div>
-    <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
-      <div style="display:flex; gap:8px; align-items:center;">
-        <button class="btn-icon highlight" style="height:36px; padding:0 14px;" onclick="handleCheckUpdate()">检查更新</button>
-        <button class="btn-icon" style="height:36px; padding:0 12px; font-size:12px;" onclick="handleForceDownloadToolbox()">强制重新下载</button>
-        <button class="btn-icon" style="height:36px; padding:0 12px; font-size:12px;" onclick="handleShowReward()">赞赏支持</button>
+    <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap; gap:10px;">
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn-ctrl-md highlight" style="min-height:44px; padding:0 18px; font-size:14.5px; font-weight:800;" onclick="handleCheckUpdate()">检查更新</button>
+        <button class="btn-ctrl-md" style="min-height:44px; padding:0 16px; font-size:14.5px; font-weight:800;" onclick="handleForceDownloadToolbox()">强制重新下载</button>
+        <button class="btn-ctrl-md primary" style="min-height:44px; padding:0 18px; font-size:14.5px; font-weight:800;" onclick="handleShowReward()">赞赏作者</button>
       </div>
-      <button class="btn-icon primary" style="height:36px; padding:0 16px;" onclick="closeModal('aboutModal')">确定</button>
+      <button class="btn-ctrl-md" style="min-height:44px; padding:0 22px; font-size:14.5px; font-weight:800;" onclick="closeModal('aboutModal')">确定</button>
     </div>
   </div>
 </div>
@@ -2185,13 +2189,26 @@ body.light .btn-mini:active {
 
 <!-- 赞赏支持 Modal -->
 <div class="modal-overlay" id="rewardModal">
-  <div class="modal-card">
+  <div class="modal-card" style="width:520px; max-width:92vw; text-align:center; padding:24px 28px;">
     <div class="modal-header">
-      <div class="modal-title">赞赏支持作者</div>
+      <div class="modal-title" style="font-size:22px; font-weight:900;">赞赏支持作者</div>
       <button class="modal-close" onclick="closeModal('rewardModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
-    <img src="file:///android_res/drawable/img_reward_code.png" class="reward-img" alt="赞赏码" onerror="this.style.display='none'">
-    <div class="reward-tip">感谢你对吉利车机工具箱与车载生态的支持 (๑•̀ㅂ•́)و<br>专注纯净、流畅、原版的高品质车载体验</div>
+    <div style="margin:16px auto 12px; display:inline-block; padding:12px; background:#FFFFFF; border-radius:14px; border:2px solid var(--border); box-shadow:0 6px 20px rgba(0,0,0,0.25);">
+      <img src="file:///android_res/drawable/img_reward_code.png" class="reward-img" alt="赞赏码" style="width:210px; height:210px; display:block; border-radius:8px;" onerror="this.style.display='none'">
+    </div>
+    <div class="reward-tip" style="font-size:14px; color:var(--txt-dim); line-height:1.7;">
+      感谢你对吉利车机控制台的支持与认可 (๑•̀ㅂ•́)و<br>
+      <div style="display:inline-flex; align-items:center; gap:8px; margin-top:8px; padding:6px 18px; background:var(--btn-bg); border-radius:6px; border:1px solid var(--border); font-size:14.5px; font-weight:800; color:var(--txt-strong);">
+        <span>作者：迷失</span>
+        <span style="color:var(--border-strong);">|</span>
+        <span style="color:var(--accent2);">联系 QQ：180721484</span>
+      </div><br>
+      <div style="font-size:12.5px; color:var(--txt-dim); margin-top:6px;">专注纯净、流畅、原版的高品质车载体验</div>
+    </div>
+    <div class="modal-actions" style="justify-content:center; margin-top:14px;">
+      <button class="btn-ctrl-md primary" style="min-width:140px; min-height:46px; font-size:15.5px; font-weight:800;" onclick="closeModal('rewardModal')">关闭</button>
+    </div>
   </div>
 </div>
 
