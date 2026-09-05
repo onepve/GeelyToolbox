@@ -1093,9 +1093,13 @@ body.light .btn-mini:active {
       <span class="dot green" id="pillWhitelistDot"></span>
       <span id="pillWhitelistText">白名单: 已放行 1</span>
     </div>
-    <div class="pill" style="cursor:pointer;" onclick="handleOpenDialer()" title="点击查看动态暗码与工程模式">
+    <div class="pill" style="cursor:pointer;" onclick="handleShowDynamicCode()" title="点击查看动态暗码与工程模式">
       <span class="dot blue"></span>
-      <span id="topCodePill">暗码: #*190110</span>
+      <span id="codePlus10PillTxt">暗码(+10): 计算中</span>
+    </div>
+    <div class="pill" style="cursor:pointer;" onclick="handleShowDynamicCode()" title="点击查看动态暗码与工程模式">
+      <span class="dot blue"></span>
+      <span id="codePlus5PillTxt">暗码(+5): 计算中</span>
     </div>
     <div class="pill" style="cursor:pointer;" onclick="handleShowQrCode()" title="点击打开无线快传二维码">
       <span class="dot green" id="ipDot"></span>
@@ -1515,10 +1519,10 @@ body.light .btn-mini:active {
   </div>
 </div>
 
-<!-- 软件详细信息大窗口 Modal (大窗口显示、消除上下留白) -->
+<!-- 软件详细信息大窗口 Modal (大窗口显示、滚动隔离、按钮锁定单行严防错位) -->
 <div class="modal-overlay" id="appDetailModal">
-  <div class="modal-card" style="width:1080px; max-width:96vw; height:88vh; max-height:88vh; display:flex; flex-direction:column; justify-content:space-between; padding:20px 28px;">
-    <div>
+  <div class="modal-card" style="width:1080px; max-width:96vw; height:88vh; max-height:88vh; display:flex; flex-direction:column; justify-content:space-between; padding:20px 28px; overflow:hidden !important;">
+    <div style="flex-shrink:0;">
       <div class="modal-header">
         <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
           <div class="modal-title" style="font-size:22px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="appDetailTitle">软件详情</div>
@@ -1535,15 +1539,15 @@ body.light .btn-mini:active {
       </div>
     </div>
 
-    <!-- 详细说明内容大视口 (拉满纵向空间) -->
-    <div style="flex:1; min-height:300px; overflow-y:auto; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:18px 22px; margin-bottom:14px;">
+    <!-- 详细说明内容大视口 (内部独立纵向滚动，外层卡片绝不滚动) -->
+    <div style="flex:1; min-height:0; overflow-y:auto; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:18px 22px; margin-bottom:14px; box-sizing:border-box;">
       <div style="font-size:14px; font-weight:800; color:var(--txt-dim); margin-bottom:8px;">软件核心特性与安装说明</div>
       <div id="appDetailFullDesc" style="font-size:14.5px; line-height:1.8; color:var(--txt-strong); white-space:pre-wrap; word-break:break-all;"></div>
     </div>
 
-    <div class="modal-actions" style="justify-content:space-between; margin-top:2px;">
-      <button class="btn-ctrl-md" style="min-width:110px; min-height:48px; font-size:14px; padding:0 22px;" onclick="closeModal('appDetailModal')">关闭</button>
-      <div id="appDetailActionBtnContainer">
+    <div class="modal-actions" style="justify-content:space-between; align-items:center; min-height:52px; margin-top:2px; flex-shrink:0;">
+      <button class="btn-ctrl-md" style="min-width:110px; height:48px; max-height:48px; font-size:14px; padding:0 22px; display:flex; align-items:center; justify-content:center; box-sizing:border-box;" onclick="closeModal('appDetailModal')">关闭</button>
+      <div id="appDetailActionBtnContainer" style="display:flex; align-items:center; justify-content:flex-end; gap:10px; flex-shrink:0;">
         <!-- 动态渲染下载/安装按钮 -->
       </div>
     </div>
@@ -3838,21 +3842,21 @@ function updateDetailModalActions(appId) {
 
   var btnsHtml = '';
   if (app.status === 'downloading') {
-    btnsHtml = '<button class="btn-ctrl-md updating" style="min-width:180px; min-height:48px; font-size:15px; font-weight:900; padding:0 22px; cursor:default;">正在下载 ' + (app.progress || 0) + '% ' + (app.speed ? '(' + app.speed + ')' : '') + '</button>' +
-      '<button class="btn-ctrl-md" style="min-width:86px; min-height:48px; font-size:14px; font-weight:800; margin-left:8px;" onclick="handlePauseDownload(\'' + app.id + '\'); updateDetailModalActions(\'' + app.id + '\');">暂停</button>' +
-      '<button class="btn-ctrl-md danger" style="min-width:86px; min-height:48px; font-size:14px; font-weight:800; margin-left:8px;" onclick="handleCancelDownload(\'' + app.id + '\'); updateDetailModalActions(\'' + app.id + '\');">取消</button>';
+    btnsHtml = '<button class="btn-ctrl-md updating" style="min-width:180px; height:48px; max-height:48px; font-size:15px; font-weight:900; padding:0 22px; cursor:default; display:flex; align-items:center; justify-content:center; box-sizing:border-box;">正在下载 ' + (app.progress || 0) + '% ' + (app.speed ? '(' + app.speed + ')' : '') + '</button>' +
+      '<button class="btn-ctrl-md" style="min-width:86px; height:48px; max-height:48px; font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; box-sizing:border-box;" onclick="handlePauseDownload(\'' + app.id + '\'); updateDetailModalActions(\'' + app.id + '\');">暂停</button>' +
+      '<button class="btn-ctrl-md danger" style="min-width:86px; height:48px; max-height:48px; font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; box-sizing:border-box;" onclick="handleCancelDownload(\'' + app.id + '\'); updateDetailModalActions(\'' + app.id + '\');">取消</button>';
   } else if (app.status === 'paused') {
-    btnsHtml = '<button class="btn-ctrl-md primary" style="min-width:180px; min-height:48px; font-size:15px; font-weight:900; padding:0 22px;" onclick="handleResumeDownload(\'' + app.id + '\'); updateDetailModalActions(\'' + app.id + '\');">继续下载 (' + (app.progress || 0) + '%)</button>' +
-      '<button class="btn-ctrl-md danger" style="min-width:86px; min-height:48px; font-size:14px; font-weight:800; margin-left:8px;" onclick="handleCancelDownload(\'' + app.id + '\'); updateDetailModalActions(\'' + app.id + '\');">取消</button>';
+    btnsHtml = '<button class="btn-ctrl-md primary" style="min-width:180px; height:48px; max-height:48px; font-size:15px; font-weight:900; padding:0 22px; display:flex; align-items:center; justify-content:center; box-sizing:border-box;" onclick="handleResumeDownload(\'' + app.id + '\'); updateDetailModalActions(\'' + app.id + '\');">继续下载 (' + (app.progress || 0) + '%)</button>' +
+      '<button class="btn-ctrl-md danger" style="min-width:86px; height:48px; max-height:48px; font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; box-sizing:border-box;" onclick="handleCancelDownload(\'' + app.id + '\'); updateDetailModalActions(\'' + app.id + '\');">取消</button>';
   } else if (app.status === 'ready') {
     var isNav = (app.category === 'navigation');
     var mainTxt = (isExpertRabbitEnabled && isNav) ? '启动安装向导' : (hasSystemSettings ? '直接安装' : '引导安装');
-    btnsHtml = '<button class="btn-ctrl-md primary" style="min-width:160px; min-height:48px; font-size:15.5px; font-weight:900; padding:0 26px;" onclick="closeModal(\'appDetailModal\'); handleDownloadApp(\'' + app.id + '\', false);">' + mainTxt + '</button>' +
-      '<button class="btn-ctrl-md" style="min-width:130px; min-height:48px; font-size:14px; font-weight:800; margin-left:8px;" onclick="handleDownloadApp(\'' + app.id + '\', true); updateDetailModalActions(\'' + app.id + '\');">重新下载覆盖</button>';
+    btnsHtml = '<button class="btn-ctrl-md primary" style="min-width:160px; height:48px; max-height:48px; font-size:15.5px; font-weight:900; padding:0 26px; display:flex; align-items:center; justify-content:center; box-sizing:border-box;" onclick="closeModal(\'appDetailModal\'); handleDownloadApp(\'' + app.id + '\', false);">' + mainTxt + '</button>' +
+      '<button class="btn-ctrl-md" style="min-width:130px; height:48px; max-height:48px; font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; box-sizing:border-box;" onclick="handleDownloadApp(\'' + app.id + '\', true); updateDetailModalActions(\'' + app.id + '\');">重新下载覆盖</button>';
   } else if (app.status === 'error') {
-    btnsHtml = '<button class="btn-ctrl-md danger" style="min-width:160px; min-height:48px; font-size:15px; font-weight:900; padding:0 24px;" onclick="handleDownloadApp(\'' + app.id + '\', true); updateDetailModalActions(\'' + app.id + '\');">重试下载</button>';
+    btnsHtml = '<button class="btn-ctrl-md danger" style="min-width:160px; height:48px; max-height:48px; font-size:15px; font-weight:900; padding:0 24px; display:flex; align-items:center; justify-content:center; box-sizing:border-box;" onclick="handleDownloadApp(\'' + app.id + '\', true); updateDetailModalActions(\'' + app.id + '\');">重试下载</button>';
   } else {
-    btnsHtml = '<button class="btn-ctrl-md primary" style="min-width:180px; min-height:48px; font-size:15.5px; font-weight:900; padding:0 28px;" onclick="handleDownloadApp(\'' + app.id + '\', false); updateDetailModalActions(\'' + app.id + '\');">立即下载安装包</button>';
+    btnsHtml = '<button class="btn-ctrl-md primary" style="min-width:180px; height:48px; max-height:48px; font-size:15.5px; font-weight:900; padding:0 28px; display:flex; align-items:center; justify-content:center; box-sizing:border-box;" onclick="handleDownloadApp(\'' + app.id + '\', false); updateDetailModalActions(\'' + app.id + '\');">立即下载安装包</button>';
   }
   btnBox.innerHTML = btnsHtml;
 }
@@ -4244,10 +4248,14 @@ function handleShowDynamicCode() {
   var code5 = callBridge('getDynamicCodePlus5') || cachedDynamicCodePlus5;
   cachedDynamicCode = code;
   cachedDynamicCodePlus5 = code5;
-  document.getElementById('modalDynamicCode').innerText = code;
+  var mCode = document.getElementById('modalDynamicCode');
+  if (mCode) mCode.innerText = code;
   var el5 = document.getElementById('modalDynamicCodePlus5');
   if (el5) el5.innerText = code5;
-  document.getElementById('codePillTxt').innerText = '暗码: ' + code;
+  var p10 = document.getElementById('codePlus10PillTxt');
+  if (p10) p10.innerText = '暗码(+10): ' + code;
+  var p5 = document.getElementById('codePlus5PillTxt');
+  if (p5) p5.innerText = '暗码(+5): ' + code5;
   openModal('dynamicCodeModal');
 }
 
