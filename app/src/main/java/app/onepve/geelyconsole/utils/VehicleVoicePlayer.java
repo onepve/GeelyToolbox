@@ -29,6 +29,8 @@ public class VehicleVoicePlayer {
     private TextToSpeech tts;
     private boolean ttsReady = false;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private MediaPlayer currentMediaPlayer = null;
+    private final Object playerLock = new Object();
 
     private VehicleVoicePlayer(Context context) {
         this.context = context.getApplicationContext();
@@ -81,11 +83,41 @@ public class VehicleVoicePlayer {
     }
 
     /**
+     * 强行中断当前正在播放的音频或 TTS（抢占式打断机制）
+     */
+    public void stopCurrentVoice() {
+        synchronized (playerLock) {
+            if (currentMediaPlayer != null) {
+                try {
+                    if (currentMediaPlayer.isPlaying()) {
+                        currentMediaPlayer.stop();
+                    }
+                    currentMediaPlayer.release();
+                } catch (Exception ignored) {}
+                currentMediaPlayer = null;
+            }
+        }
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (tts != null && tts.isSpeaking()) {
+                        tts.stop();
+                    }
+                } catch (Exception ignored) {}
+            }
+        });
+        abandonAudioFocus();
+    }
+
+    /**
      * 播放语音（支持 用户自定义文件 优先，内置 Asset 优质音频次之，降级 TTS 播报）
      * @param voiceFileName 比如 "door_fl.mp3", "door_fr.mp3", "flameout.mp3"
      * @param fallbackText  降级文字，比如 "主驾车门打开，请注意后方来车"
      */
     public void play(String voiceFileName, final String fallbackText) {
+        // 先抢占中断前序未播完的语音（例如开门播到一半突然关门，立即切断开门语音）
+        stopCurrentVoice();
         // 1. 用户手动设置的自定义文件路径
         try {
             android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
@@ -168,6 +200,9 @@ public class VehicleVoicePlayer {
                     mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                         @Override
                         public void onCompletion(MediaPlayer mediaPlayer) {
+                            synchronized (playerLock) {
+                                if (currentMediaPlayer == mediaPlayer) currentMediaPlayer = null;
+                            }
                             abandonAudioFocus();
                             try { mediaPlayer.release(); } catch (Exception ignored) {}
                         }
@@ -175,11 +210,17 @@ public class VehicleVoicePlayer {
                     mp.setOnErrorListener(new MediaPlayer.OnErrorListener() {
                         @Override
                         public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
+                            synchronized (playerLock) {
+                                if (currentMediaPlayer == mediaPlayer) currentMediaPlayer = null;
+                            }
                             abandonAudioFocus();
                             try { mediaPlayer.release(); } catch (Exception ignored) {}
                             return true;
                         }
                     });
+                    synchronized (playerLock) {
+                        currentMediaPlayer = mp;
+                    }
                     mp.start();
                 } catch (Exception e) {
                     abandonAudioFocus();
@@ -207,6 +248,9 @@ public class VehicleVoicePlayer {
                     mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                         @Override
                         public void onCompletion(MediaPlayer mediaPlayer) {
+                            synchronized (playerLock) {
+                                if (currentMediaPlayer == mediaPlayer) currentMediaPlayer = null;
+                            }
                             abandonAudioFocus();
                             try {
                                 mediaPlayer.release();
@@ -216,6 +260,9 @@ public class VehicleVoicePlayer {
                     mp.setOnErrorListener(new MediaPlayer.OnErrorListener() {
                         @Override
                         public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
+                            synchronized (playerLock) {
+                                if (currentMediaPlayer == mediaPlayer) currentMediaPlayer = null;
+                            }
                             abandonAudioFocus();
                             try {
                                 mediaPlayer.release();
@@ -223,11 +270,17 @@ public class VehicleVoicePlayer {
                             return true;
                         }
                     });
+                    synchronized (playerLock) {
+                        currentMediaPlayer = mp;
+                    }
                     mp.start();
                 } catch (Exception e) {
                     abandonAudioFocus();
                     if (mp != null) {
                         try { mp.release(); } catch (Exception ignored) {}
+                    }
+                    synchronized (playerLock) {
+                        if (currentMediaPlayer == mp) currentMediaPlayer = null;
                     }
                 }
             }

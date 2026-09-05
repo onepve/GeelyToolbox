@@ -310,12 +310,12 @@ public class VehicleAutomationService extends Service {
         // 副驾开门与关门
         else if ("BCM_FrontRightDoorAjarStatus".equals(key)) {
             if (val == 1 && lastDoorFR != 1) {
-                if (enableDoorFr && (now - lastVoiceTimeFR > 4000)) {
+                if (enableDoorFr && (now - lastVoiceTimeFR > 1500)) {
                     lastVoiceTimeFR = now;
                     voicePlayer.play("door_fr.mp3", "欢迎乘车，请注意安全");
                 }
             } else if (val == 0 && lastDoorFR == 1) {
-                if (enableDoorFrClose && (now - lastVoiceTimeFR > 3000)) {
+                if (enableDoorFrClose && (now - lastVoiceTimeFR > 1000)) {
                     lastVoiceTimeFR = now;
                     voicePlayer.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
                 }

@@ -527,11 +527,11 @@ body.light .app-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.06);
   background: rgba(0, 0, 0, 0.65) !important;
 }
 .modal-card {
-  width: 720px; max-width: 95vw; max-height: 92vh; overflow-y: auto;
+  width: 1080px; max-width: 95vw; max-height: 92vh; overflow-y: auto;
   background: #0B1120 !important; /* 纯实色高对比，彻底杜绝透底叠影 */
   border: 2px solid rgba(255, 255, 255, 0.22);
   border-radius: 14px;
-  padding: 16px 20px;
+  padding: 18px 24px;
   box-shadow: 0 16px 64px rgba(0, 0, 0, 0.95);
   display: flex; flex-direction: column; gap: 10px;
   margin: auto;
@@ -669,7 +669,15 @@ body.light .changelog-item {
   font-size: 12.5px; color: var(--txt-dim); line-height: 1.55;
 }
 .modal-actions {
-  display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px;
+  display: flex; gap: 12px; justify-content: flex-end; margin-top: 6px;
+}
+.modal-actions button,
+.modal-actions .btn-ctrl-md,
+.modal-actions .btn-icon,
+.modal-actions .btn-mini {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  flex-shrink: 0 !important;
 }
 
 /* 冻结管理 item */
@@ -914,7 +922,7 @@ body.light .btn-mini:active {
 <header>
   <div class="brand">
     <div class="brand-title">吉利车机控制台</div>
-    <div class="brand-ver" id="appVer">v1.2.2</div>
+    <div class="brand-ver" id="appVer">v1.2.3</div>
   </div>
 
   <div class="top-pills">
@@ -1056,7 +1064,7 @@ body.light .btn-mini:active {
 
 <!-- 高德地图安装与注入引导 Modal -->
 <div class="modal-overlay" id="rabbitInstallModal">
-  <div class="modal-card" style="width:560px;">
+  <div class="modal-card" style="width:784px;">
     <div class="modal-header">
       <div class="modal-title" id="rabbitInstallModalTitle">高德地图安装指引</div>
       <button class="modal-close" onclick="closeModal('rabbitInstallModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1083,7 +1091,7 @@ body.light .btn-mini:active {
 
 <!-- 兔子时钟注入后首次重启智能就绪通知 Modal -->
 <div class="modal-overlay" id="rabbitPostRebootModal">
-  <div class="modal-card" style="width:560px;">
+  <div class="modal-card" style="width:784px;">
     <div class="modal-header">
       <div class="modal-title" id="rabbitPostRebootTitle">兔子时钟就绪 · 白名单已自动放行</div>
       <button class="modal-close" onclick="dismissPostRebootModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1110,7 +1118,7 @@ body.light .btn-mini:active {
 
 <!-- 多 APK 版本选择弹窗 Modal -->
 <div class="modal-overlay" id="selectAmapForAutoModal">
-  <div class="modal-card" style="width:560px;">
+  <div class="modal-card" style="width:784px;">
     <div class="modal-header">
       <div class="modal-title">选择要注入兔子时钟的安装包</div>
       <button class="modal-close" onclick="closeModal('selectAmapForAutoModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1130,7 +1138,7 @@ body.light .btn-mini:active {
 
 <!-- 兔子时钟半自动向导注入进度 Modal -->
 <div class="modal-overlay" id="autoPilotLoadingModal">
-  <div class="modal-card" style="width:520px; text-align:center; padding:28px 24px;">
+  <div class="modal-card" style="width:728px; text-align:center; padding:28px 24px;">
     <div class="spinner" style="margin:0 auto 16px; width:48px; height:48px; border-width:4px;"></div>
     <div style="font-size:18px; font-weight:900; color:var(--txt-strong); margin-bottom:8px;" id="autoPilotLoadingTitle">正在打包注入兔子时钟屏保...</div>
     <div style="font-size:13.5px; color:var(--txt-dim); line-height:1.6;" id="autoPilotLoadingDesc">
@@ -1141,7 +1149,7 @@ body.light .btn-mini:active {
 
 <!-- 无原生系统设置时的手动安装引导 Modal -->
 <div class="modal-overlay" id="manualInstallModal">
-  <div class="modal-card" style="width:560px;">
+  <div class="modal-card" style="width:784px;">
     <div class="modal-header">
       <div class="modal-title" id="manualInstallTitle">应用安装指引</div>
       <button class="modal-close" onclick="closeModal('manualInstallModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1167,7 +1175,7 @@ body.light .btn-mini:active {
 
 <!-- 已装地图管理 Modal -->
 <div class="modal-overlay" id="installedMapsModal">
-  <div class="modal-card" style="width:620px;">
+  <div class="modal-card" style="width:868px;">
     <div class="modal-header">
       <div class="modal-title">已装地图维护与管理</div>
       <button class="modal-close" onclick="closeModal('installedMapsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1187,7 +1195,7 @@ body.light .btn-mini:active {
 
 <!-- 启动检测 1: 非车机环境提示 Modal -->
 <div class="modal-overlay" id="carEnvCheckModal">
-  <div class="modal-card" style="width:540px;">
+  <div class="modal-card" style="width:756px;">
     <div class="modal-header">
       <div class="modal-title">运行环境检测提示</div>
     </div>
@@ -1206,7 +1214,7 @@ body.light .btn-mini:active {
 
 <!-- 启动检测 2: 应用商店冻结门禁 Modal -->
 <div class="modal-overlay" id="appstoreGuardModal">
-  <div class="modal-card" style="width:560px;">
+  <div class="modal-card" style="width:784px;">
     <div class="modal-header">
       <div class="modal-title">核心准备：冻结原厂应用商店</div>
     </div>
@@ -1230,7 +1238,7 @@ body.light .btn-mini:active {
 <!-- 关于工具箱 Modal -->
 <!-- 退出确认 Modal -->
 <div class="modal-overlay" id="exitAppModal">
-  <div class="modal-card" style="width:500px;">
+  <div class="modal-card" style="width:700px;">
     <div class="modal-header">
       <div class="modal-title">退出车机控制台</div>
       <button class="modal-close" onclick="closeModal('exitAppModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1249,7 +1257,7 @@ body.light .btn-mini:active {
 </div>
 
 <div class="modal-overlay" id="aboutModal">
-  <div class="modal-card" style="width:540px;">
+  <div class="modal-card" style="width:756px;">
     <div class="modal-header">
       <div class="modal-title">关于吉利车机控制台</div>
       <button class="modal-close" onclick="closeModal('aboutModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1257,7 +1265,7 @@ body.light .btn-mini:active {
     <div class="about-box">
       <div class="about-item">
         <span style="color:var(--txt-dim);">当前软件版本</span>
-        <span style="font-weight:800; color:var(--accent);" id="aboutVersionText">v1.2.2 (7022)</span>
+        <span style="font-weight:800; color:var(--accent);" id="aboutVersionText">v1.2.3 (7023)</span>
       </div>
       <div class="about-item">
         <span style="color:var(--txt-dim);">支持车机芯片</span>
@@ -1295,7 +1303,7 @@ body.light .btn-mini:active {
 
 <!-- 工具箱检查更新车载精致弹窗 -->
 <div class="modal-overlay" id="updateModal">
-  <div class="modal-card" style="width:600px; max-width:94vw;">
+  <div class="modal-card" style="width:840px; max-width:94vw;">
     <div class="modal-header">
       <div class="modal-title">发现吉利工具箱新版本</div>
       <button class="modal-close" onclick="closeModal('updateModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1335,7 +1343,7 @@ body.light .btn-mini:active {
 
 <!-- 主题皮肤选择 & 实时预览 Modal -->
 <div class="modal-overlay" id="skinModal">
-  <div class="modal-card" style="width:640px;">
+  <div class="modal-card" style="width:896px;">
     <div class="modal-header">
       <div class="modal-title">主题皮肤选择 & 实时预览</div>
       <button class="modal-close" onclick="closeModal('skinModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1354,7 +1362,7 @@ body.light .btn-mini:active {
 
 <!-- 动态暗码 & 工程模式 Modal -->
 <div class="modal-overlay" id="dynamicCodeModal">
-  <div class="modal-card" style="width:580px;">
+  <div class="modal-card" style="width:812px;">
     <div class="modal-header">
       <div class="modal-title">今日车机动态暗码 & 工程模式</div>
       <button class="modal-close" onclick="closeModal('dynamicCodeModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1392,7 +1400,7 @@ body.light .btn-mini:active {
 
 <!-- 下载目录存储清理选择 Modal -->
 <div class="modal-overlay" id="cleanDialogModal">
-  <div class="modal-card" style="width:560px;">
+  <div class="modal-card" style="width:784px;">
     <div class="modal-header">
       <div class="modal-title">下载目录存储清理</div>
       <button class="modal-close" onclick="closeModal('cleanDialogModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1426,7 +1434,7 @@ body.light .btn-mini:active {
 
 <!-- 车机 ADB 核心组件与全量应用管理 Modal -->
 <div class="modal-overlay" id="freezeModal">
-  <div class="modal-card" style="width:640px;">
+  <div class="modal-card" style="width:896px;">
     <div class="modal-header">
       <div style="display:flex; align-items:center; gap:8px;">
         <div class="modal-title">车机 ADB 核心组件与应用管理</div>
@@ -1495,7 +1503,7 @@ body.light .btn-mini:active {
 
 <!-- 车机 ADB 自定义终端独立 Modal -->
 <div class="modal-overlay" id="adbTerminalModal">
-  <div class="modal-card" style="width:700px;">
+  <div class="modal-card" style="width:979px;">
     <div class="modal-header">
       <div style="display:flex; align-items:center; gap:8px;">
         <div class="modal-title">车机 ADB 自定义终端</div>
@@ -1541,7 +1549,7 @@ body.light .btn-mini:active {
 
 <!-- 车机所有应用全量高级管理 Modal -->
 <div class="modal-overlay" id="allAppsModal">
-  <div class="modal-card" style="width:700px;">
+  <div class="modal-card" style="width:979px;">
     <div class="modal-header">
       <div class="modal-title">车机全量应用高级管理</div>
       <button class="modal-close" onclick="closeModal('allAppsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1578,38 +1586,38 @@ body.light .btn-mini:active {
 
 <!-- 通用操作二次防误触确认 Modal -->
 <div class="modal-overlay" id="universalConfirmModal">
-  <div class="modal-card" style="width:540px; max-width:94vw;">
+  <div class="modal-card" style="width:1120px; max-width:94vw;">
     <div class="modal-header">
       <div class="modal-title" id="universalConfirmTitle">操作意图核准</div>
       <button class="modal-close" onclick="closeModal('universalConfirmModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div id="universalConfirmDesc" class="modal-info-box" style="font-size:13.5px; color:var(--txt-strong); line-height:1.65; margin-bottom:16px;">
     </div>
-    <div class="modal-actions" style="justify-content:flex-end; gap:12px;">
-      <button class="btn-ctrl-md" style="min-width:100px;" onclick="closeModal('universalConfirmModal')">取消</button>
-      <button class="btn-ctrl-md" id="universalConfirmOkBtn" style="min-width:130px; font-weight:800;" onclick="proceedUniversalConfirm()">确认执行</button>
+    <div class="modal-actions" style="justify-content:flex-end; gap:16px;">
+      <button class="btn-ctrl-md" style="min-width:120px;" onclick="closeModal('universalConfirmModal')">取消</button>
+      <button class="btn-ctrl-md" id="universalConfirmOkBtn" style="min-width:160px; font-weight:800;" onclick="proceedUniversalConfirm()">确认执行</button>
     </div>
   </div>
 </div>
 
 <!-- 高危操作三次递进式安全校验确认 Modal -->
 <div class="modal-overlay" id="tripleConfirmModal">
-  <div class="modal-card" style="width:500px;">
+  <div class="modal-card" style="width:1092px; max-width:94vw;">
     <div class="confirm-box">
       <div class="confirm-step" id="confirmStepLabel">STEP 1 / 3 · 操作意图核准</div>
       <div class="confirm-title" id="confirmTitle">确认执行操作？</div>
       <div class="confirm-desc" id="confirmDesc">操作描述内容</div>
     </div>
-    <div class="modal-actions" style="justify-content:space-between; margin-top:6px;">
-      <button class="btn-icon" style="height:36px; padding:0 14px;" onclick="cancelTripleConfirm()">取消操作</button>
-      <button class="btn-icon" id="confirmNextBtn" style="height:36px; padding:0 18px;" onclick="proceedTripleConfirm()">我已清楚，下一步 -></button>
+    <div class="modal-actions" style="justify-content:space-between; margin-top:8px;">
+      <button class="btn-icon" style="height:42px; padding:0 20px; font-size:14px; font-weight:800;" onclick="cancelTripleConfirm()">取消操作</button>
+      <button class="btn-icon" id="confirmNextBtn" style="height:42px; padding:0 26px; font-size:14px; font-weight:800;" onclick="proceedTripleConfirm()">我已清楚，下一步 -></button>
     </div>
   </div>
 </div>
 
 <!-- 手机无线快传 (超大二维码·扫码秒连) Modal -->
 <div class="modal-overlay" id="qrModal">
-  <div class="modal-card" style="width:520px; text-align:center;">
+  <div class="modal-card" style="width:728px; text-align:center;">
     <div class="modal-header">
       <div class="modal-title">手机无线快传 (扫码直连·免输网址)</div>
       <button class="modal-close" onclick="closeModal('qrModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1633,7 +1641,7 @@ body.light .btn-mini:active {
 
 <!-- 车机守护与系统设置 Modal -->
 <div class="modal-overlay" id="settingsModal">
-  <div class="modal-card" style="width:580px;">
+  <div class="modal-card" style="width:812px;">
     <div class="modal-header">
       <div class="modal-title">车机守护与系统设置</div>
       <button class="modal-close" onclick="closeModal('settingsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1649,18 +1657,25 @@ body.light .btn-mini:active {
       </div>
 
       <!-- 2. 全局悬浮胶囊 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
-        <div>
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">全局悬浮小胶囊</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingFloatingHint">在桌面与任意应用常驻小胶囊，随时唤回控制台</div>
+      <div class="about-item" style="display:flex; flex-direction:column; gap:8px; padding:10px 14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">全局悬浮小胶囊</div>
+            <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingFloatingHint">在桌面与任意应用常驻小胶囊，随时唤回控制台</div>
+          </div>
+          <button class="btn-ctrl-md" id="btnSettingFloating" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleToggleFloatingWindow()">设置</button>
         </div>
-        <button class="btn-ctrl-md" id="btnSettingFloating" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleToggleFloatingWindow()">设置</button>
+        <div id="floatingDisplayModeRow" style="display:flex; align-items:center; gap:8px; padding-top:6px; border-top:1px dashed var(--border);">
+          <span style="font-size:12px; color:var(--txt-dim); font-weight:600;">胶囊显示内容：</span>
+          <button class="btn-ctrl-md" id="btnFloatModeName" style="padding:4px 12px; min-height:30px; font-size:12px; font-weight:800;" onclick="handleSelectFloatingMode('name')">吉利工具箱 (默认)</button>
+          <button class="btn-ctrl-md" id="btnFloatModeCode" style="padding:4px 12px; min-height:30px; font-size:12px; font-weight:800;" onclick="handleSelectFloatingMode('code')">动态暗码 (+10/+5)</button>
+        </div>
       </div>
 
-      <!-- 3. 座舱联动与智能语音 (替代 TSK) -->
+      <!-- 3. 座舱联动与智能语音 -->
       <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
         <div>
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">座舱联动与智能语音 (替代 TSK)</div>
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">座舱联动与智能语音</div>
           <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingVehicleAutoHint">四门迎宾播报、转向灯360全景、大灯高德夜间联动与熄火告别</div>
         </div>
         <button class="btn-ctrl-md highlight" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleOpenVehicleAutoModal()">进入设置</button>
@@ -1711,7 +1726,7 @@ body.light .btn-mini:active {
 
 <!-- 车机深度工具箱二级 Modal -->
 <div class="modal-overlay" id="deepToolsModal">
-  <div class="modal-card" style="width:640px;">
+  <div class="modal-card" style="width:896px;">
     <div class="modal-header">
       <div class="modal-title">车机深度工具箱</div>
       <button class="modal-close" onclick="closeModal('deepToolsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1754,10 +1769,10 @@ body.light .btn-mini:active {
         <div style="font-size:11.5px; color:var(--txt-dim);">查看车机全部 100+ 应用，支持按需禁用与数据清理</div>
       </div>
 
-      <!-- 工具卡片 5: 座舱联动与智能语音 (替代 TSK) -->
-      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px; grid-column: span 2;" onclick="closeModal('deepToolsModal'); handleOpenVehicleAutoModal();">
+      <!-- 3. 座舱联动与智能语音 -->
+      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px;" onclick="closeModal('settingsModal'); handleOpenVehicleAutoModal();">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">座舱联动与智能语音 (替代 TSK)</div>
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">座舱联动与智能语音</div>
           <span class="btn-status-pill blue">原生自动化</span>
         </div>
         <div style="font-size:11.5px; color:var(--txt-dim);">原生监听 CAN 信号，提供四门迎宾播报、转向灯联动 360 (车速≤30km/h 保护)、大灯高德夜间联动与熄火告别</div>
@@ -1780,13 +1795,13 @@ body.light .btn-mini:active {
 
 <!-- 座舱联动与智能语音 Modal -->
 <div class="modal-overlay" id="vehicleAutoModal">
-  <div class="modal-card" style="width:680px; max-width:94vw;">
+  <div class="modal-card" style="width:951px; max-width:94vw;">
     <div class="modal-header">
       <div class="modal-title">座舱联动与智能语音</div>
       <button class="modal-close" onclick="closeModal('vehicleAutoModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="font-size:12px; color:var(--txt-dim); margin-bottom:12px;">
-      基于车机底层 CAN 信号原生联动，彻底替代第三方 Tasker/TSK。所有功能默认关闭，每一项均支持独立开启、关闭与音频自定义。
+      基于车机底层 CAN 信号原生联动。所有功能默认关闭，每一项均支持独立开启、关闭与音频自定义。
     </div>
     <div class="about-list" style="margin-bottom:14px; max-height:58vh; overflow-y:auto;">
       <!-- 硬件与屏幕联动分组 -->
@@ -1900,7 +1915,7 @@ body.light .btn-mini:active {
 
 <!-- 工具箱运行操作日志查看 Modal -->
 <div class="modal-overlay" id="logModal">
-  <div class="modal-card" style="width:720px; max-width:92vw;">
+  <div class="modal-card" style="width:1007px; max-width:92vw;">
     <div class="modal-header">
       <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
         <span>工具箱运行操作日志</span>
@@ -4076,10 +4091,36 @@ function handleToggleFloatingWindow() {
   });
 }
 
+var currentFloatingDisplayMode = 'name';
+
+function handleSelectFloatingMode(mode) {
+  currentFloatingDisplayMode = mode;
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.setFloatingDisplayMode === 'function') {
+    window.ToolboxBridge.setFloatingDisplayMode(mode);
+  }
+  updateFloatingModeUi(mode);
+}
+
+function updateFloatingModeUi(mode) {
+  currentFloatingDisplayMode = mode || 'name';
+  var btnName = document.getElementById('btnFloatModeName');
+  var btnCode = document.getElementById('btnFloatModeCode');
+  if (btnName && btnCode) {
+    if (mode === 'code') {
+      btnCode.className = 'btn-ctrl-md highlight';
+      btnName.className = 'btn-ctrl-md';
+    } else {
+      btnName.className = 'btn-ctrl-md highlight';
+      btnCode.className = 'btn-ctrl-md';
+    }
+  }
+}
+
 function updateFloatingWindowUi(isOn) {
   isFloatingWindowOn = isOn;
   var btn = document.getElementById('btnSettingFloating');
   var hint = document.getElementById('settingFloatingHint');
+  var modeRow = document.getElementById('floatingDisplayModeRow');
   if (btn) {
     if (isOn) {
       btn.className = 'btn-ctrl-md highlight';
@@ -4092,12 +4133,16 @@ function updateFloatingWindowUi(isOn) {
   if (hint) {
     hint.innerText = isOn ? '在桌面与任意应用常驻小胶囊，随时唤回控制台' : '已关闭悬浮小胶囊，不在桌面显示';
   }
+  if (modeRow) {
+    modeRow.style.display = isOn ? 'flex' : 'none';
+  }
 }
 
 function syncSettingsModalUi() {
   if (cachedDeviceInfo) {
     if (cachedDeviceInfo.autostart !== undefined) updateAutostartUi(cachedDeviceInfo.autostart);
     if (cachedDeviceInfo.floating_enabled !== undefined) updateFloatingWindowUi(cachedDeviceInfo.floating_enabled);
+    if (cachedDeviceInfo.floating_display_mode !== undefined) updateFloatingModeUi(cachedDeviceInfo.floating_display_mode);
   }
 }
 
@@ -4373,6 +4418,12 @@ window.updateDeviceInfo = function(infoJson) {
     }
     if (info.autostart !== undefined) {
       updateAutostartUi(info.autostart);
+    }
+    if (info.floating_enabled !== undefined) {
+      updateFloatingWindowUi(info.floating_enabled);
+    }
+    if (info.floating_display_mode !== undefined) {
+      updateFloatingModeUi(info.floating_display_mode);
     }
     if (info.rabbit_safe_mode !== undefined) {
       updateRabbitSafeModeUi(info.rabbit_safe_mode);

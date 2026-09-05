@@ -281,7 +281,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
                     isWhitelistEnabled = SystemUtils.isApkVerifyWhitelistEnabled();
                     obj.put("whitelist", isWhitelistEnabled);
-                    obj.put("version", "1.2.2");
+                    obj.put("version", "1.2.3");
                     boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) || 
                                            (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.xcmedia") == SystemUtils.APP_STATE_DISABLED);
                     boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
@@ -292,6 +292,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                     obj.put("autostart", prefs.getBoolean("autostart_enabled", false));
                     obj.put("floating_enabled", prefs.getBoolean("floating_enabled", false));
+                    obj.put("floating_display_mode", prefs.getString("floating_display_mode", "name"));
                     obj.put("rabbit_safe_mode", prefs.getBoolean("rabbit_safe_mode_enabled", true));
                     obj.put("expert_rabbit_enabled", prefs.getBoolean("expert_rabbit_theme_enabled", false));
                     obj.put("has_system_settings", SystemUtils.isPackageInstalled(MainActivity.this, "com.android.settings"));
@@ -926,6 +927,27 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         pushDeviceInfoToWeb();
                     } catch (Exception e) {
                         showToast("设置失败: " + e.getMessage());
+                    }
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
+        public boolean setFloatingDisplayMode(final String mode) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        prefs.edit().putString("floating_display_mode", mode).apply();
+                        if (FloatingWindowService.isRunning) {
+                            FloatingWindowService.ensureServiceStarted(MainActivity.this);
+                        }
+                        showToast("悬浮胶囊显示内容已切换");
+                        pushDeviceInfoToWeb();
+                    } catch (Exception e) {
+                        showToast("切换失败: " + e.getMessage());
                     }
                 }
             });

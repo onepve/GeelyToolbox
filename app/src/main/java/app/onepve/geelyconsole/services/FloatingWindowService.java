@@ -199,11 +199,20 @@ public class FloatingWindowService extends Service {
 
     private void updatePillContent() {
         if (tvIcon == null || tvText == null || tvStatus == null) return;
-        String code10 = SystemUtils.calculateDynamicCode();
-        String code5 = SystemUtils.calculateDynamicCodePlus5();
-        tvIcon.setText("🔑");
-        tvText.setText("暗码(+10): " + code10 + "  |  暗码(+5): " + code5);
-        tvStatus.setText("");
+        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        String displayMode = prefs.getString("floating_display_mode", "name"); // 默认 "name" 为吉利工具箱，"code" 为动态暗码
+
+        if ("code".equals(displayMode)) {
+            String code10 = SystemUtils.calculateDynamicCode();
+            String code5 = SystemUtils.calculateDynamicCodePlus5();
+            tvIcon.setText("🔑");
+            tvText.setText("暗码(+10): " + code10 + "  |  暗码(+5): " + code5);
+            tvStatus.setText("");
+        } else {
+            tvIcon.setText("🔧");
+            tvText.setText("吉利工具箱");
+            tvStatus.setText("");
+        }
     }
 
     private void showPill() {
