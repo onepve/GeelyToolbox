@@ -99,7 +99,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         initWebView();
         checkAndRequestStoragePermission();
-        SystemUtils.applyPlaceholderLock();
         AppLogger.i("应用启动", "吉利工具箱界面启动完成");
         // 启动时自动探测并开启白名单，确保打开应用即处于放行状态
         new Thread(new Runnable() {
@@ -281,7 +280,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
                     isWhitelistEnabled = SystemUtils.isApkVerifyWhitelistEnabled();
                     obj.put("whitelist", isWhitelistEnabled);
-                    obj.put("version", "1.2.3");
+                    obj.put("version", "1.2.4");
                     boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) || 
                                            (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.xcmedia") == SystemUtils.APP_STATE_DISABLED);
                     boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
@@ -1754,14 +1753,28 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("flameout_voice", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
 
                 obj.put("voice_door_fl", prefs.getBoolean("voice_enable_door_fl", false));
+                obj.put("voice_door_fl_close", prefs.getBoolean("voice_enable_door_fl_close", false));
                 obj.put("voice_door_fr", prefs.getBoolean("voice_enable_door_fr", false));
                 obj.put("voice_door_fr_close", prefs.getBoolean("voice_enable_door_fr_close", false));
+                obj.put("voice_door_rl", prefs.getBoolean("voice_enable_door_rl", false));
+                obj.put("voice_door_rl_close", prefs.getBoolean("voice_enable_door_rl_close", false));
+                obj.put("voice_door_rr", prefs.getBoolean("voice_enable_door_rr", false));
+                obj.put("voice_door_rr_close", prefs.getBoolean("voice_enable_door_rr_close", false));
                 obj.put("voice_door_rear", prefs.getBoolean("voice_enable_door_rear", false));
+                obj.put("voice_trunk_open", prefs.getBoolean("voice_enable_trunk_open", false));
+                obj.put("voice_trunk_close", prefs.getBoolean("voice_enable_trunk_close", false));
 
                 obj.put("custom_door_fl", !prefs.getString("custom_voice_door_fl.mp3", "").isEmpty());
+                obj.put("custom_door_fl_close", !prefs.getString("custom_voice_door_fl_close.mp3", "").isEmpty());
                 obj.put("custom_door_fr", !prefs.getString("custom_voice_door_fr.mp3", "").isEmpty());
                 obj.put("custom_door_fr_close", !prefs.getString("custom_voice_door_fr_close.mp3", "").isEmpty());
+                obj.put("custom_door_rl", !prefs.getString("custom_voice_door_rl.mp3", "").isEmpty());
+                obj.put("custom_door_rl_close", !prefs.getString("custom_voice_door_rl_close.mp3", "").isEmpty());
+                obj.put("custom_door_rr", !prefs.getString("custom_voice_door_rr.mp3", "").isEmpty());
+                obj.put("custom_door_rr_close", !prefs.getString("custom_voice_door_rr_close.mp3", "").isEmpty());
                 obj.put("custom_door_rear", !prefs.getString("custom_voice_door_rl.mp3", "").isEmpty());
+                obj.put("custom_trunk_open", !prefs.getString("custom_voice_trunk_open.mp3", "").isEmpty());
+                obj.put("custom_trunk_close", !prefs.getString("custom_voice_trunk_close.mp3", "").isEmpty());
                 obj.put("custom_flameout", !prefs.getString("custom_voice_flameout.mp3", "").isEmpty());
 
                 return obj.toString();
@@ -1832,12 +1845,28 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     VehicleVoicePlayer player = VehicleVoicePlayer.getInstance(MainActivity.this);
-                    if ("door".equals(type)) {
+                    if ("door".equals(type) || "door_fl".equals(type)) {
                         player.play("door_fl.mp3", "主驾车门已打开，请注意后方来车");
+                    } else if ("door_fl_close".equals(type)) {
+                        player.play("door_fl_close.mp3", "主驾车门已关好");
                     } else if ("door_fr".equals(type)) {
                         player.play("door_fr.mp3", "副驾车门已打开，请注意安全");
+                    } else if ("door_fr_close".equals(type)) {
+                        player.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
+                    } else if ("door_rl".equals(type)) {
+                        player.play("door_rl.mp3", "左后车门已打开，请注意车外环境");
+                    } else if ("door_rl_close".equals(type)) {
+                        player.play("door_rl_close.mp3", "左后车门已关好");
+                    } else if ("door_rr".equals(type)) {
+                        player.play("door_rr.mp3", "右后车门已打开，请注意车外环境");
+                    } else if ("door_rr_close".equals(type)) {
+                        player.play("door_rr_close.mp3", "右后车门已关好");
                     } else if ("door_rear".equals(type)) {
                         player.play("door_rl.mp3", "后车门已打开，请注意车外环境");
+                    } else if ("trunk_open".equals(type)) {
+                        player.play("trunk_open.mp3", "后备箱已打开");
+                    } else if ("trunk_close".equals(type)) {
+                        player.play("trunk_close.mp3", "后备箱已关闭");
                     } else if ("flameout".equals(type)) {
                         player.play("flameout.mp3", "车辆已熄火，请带好随身物品");
                     } else if ("seatbelt".equals(type)) {

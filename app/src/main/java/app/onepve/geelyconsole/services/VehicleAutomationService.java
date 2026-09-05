@@ -42,9 +42,16 @@ public class VehicleAutomationService extends Service {
     public static volatile boolean isRunning = false;
 
     private boolean enableDoorFl = false;
+    private boolean enableDoorFlClose = false;
     private boolean enableDoorFr = false;
     private boolean enableDoorFrClose = false;
-    private boolean enableDoorRear = false;
+    private boolean enableDoorRl = false;
+    private boolean enableDoorRlClose = false;
+    private boolean enableDoorRr = false;
+    private boolean enableDoorRrClose = false;
+    private boolean enableDoorRear = false; // 兼容旧版全后门开关
+    private boolean enableTrunkOpen = false;
+    private boolean enableTrunkClose = false;
     private boolean enableTurn360 = false;
     private boolean enableLightNav = false;
     private boolean enableFlameoutVoice = false;
@@ -54,6 +61,7 @@ public class VehicleAutomationService extends Service {
     private int lastDoorFR = -1;
     private int lastDoorRL = -1;
     private int lastDoorRR = -1;
+    private int lastTrunk = -1;
     private int lastLightSts = -1;
     private int lastPowerMode = -1;
     private int currentSpeedKmH = 0;
@@ -63,6 +71,7 @@ public class VehicleAutomationService extends Service {
     private long lastVoiceTimeFR = 0;
     private long lastVoiceTimeRL = 0;
     private long lastVoiceTimeRR = 0;
+    private long lastVoiceTimeTrunk = 0;
 
     private Thread logcatThread;
     private Process logcatProcess;
@@ -74,14 +83,23 @@ public class VehicleAutomationService extends Service {
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             boolean doorFl = prefs.getBoolean("voice_enable_door_fl", false);
+            boolean doorFlClose = prefs.getBoolean("voice_enable_door_fl_close", false);
             boolean doorFr = prefs.getBoolean("voice_enable_door_fr", false);
             boolean doorFrClose = prefs.getBoolean("voice_enable_door_fr_close", false);
+            boolean doorRl = prefs.getBoolean("voice_enable_door_rl", false);
+            boolean doorRlClose = prefs.getBoolean("voice_enable_door_rl_close", false);
+            boolean doorRr = prefs.getBoolean("voice_enable_door_rr", false);
+            boolean doorRrClose = prefs.getBoolean("voice_enable_door_rr_close", false);
             boolean doorRear = prefs.getBoolean("voice_enable_door_rear", false);
+            boolean trunkOpen = prefs.getBoolean("voice_enable_trunk_open", false);
+            boolean trunkClose = prefs.getBoolean("voice_enable_trunk_close", false);
             boolean turn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
             boolean lightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
             boolean flameout = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
 
-            boolean shouldRun = doorFl || doorFr || doorFrClose || doorRear || turn360 || lightNav || flameout;
+            boolean shouldRun = doorFl || doorFlClose || doorFr || doorFrClose ||
+                                doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
+                                trunkOpen || trunkClose || turn360 || lightNav || flameout;
 
             Intent intent = new Intent(context, VehicleAutomationService.class);
             if (shouldRun) {
@@ -128,15 +146,23 @@ public class VehicleAutomationService extends Service {
     private void reloadSettings() {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
         enableDoorFl = prefs.getBoolean("voice_enable_door_fl", false);
+        enableDoorFlClose = prefs.getBoolean("voice_enable_door_fl_close", false);
         enableDoorFr = prefs.getBoolean("voice_enable_door_fr", false);
         enableDoorFrClose = prefs.getBoolean("voice_enable_door_fr_close", false);
+        enableDoorRl = prefs.getBoolean("voice_enable_door_rl", false);
+        enableDoorRlClose = prefs.getBoolean("voice_enable_door_rl_close", false);
+        enableDoorRr = prefs.getBoolean("voice_enable_door_rr", false);
+        enableDoorRrClose = prefs.getBoolean("voice_enable_door_rr_close", false);
         enableDoorRear = prefs.getBoolean("voice_enable_door_rear", false);
+        enableTrunkOpen = prefs.getBoolean("voice_enable_trunk_open", false);
+        enableTrunkClose = prefs.getBoolean("voice_enable_trunk_close", false);
         enableTurn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
 
-        boolean anyEnabled = enableDoorFl || enableDoorFr || enableDoorFrClose || enableDoorRear ||
-                             enableTurn360 || enableLightNav || enableFlameoutVoice;
+        boolean anyEnabled = enableDoorFl || enableDoorFlClose || enableDoorFr || enableDoorFrClose ||
+                             enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
+                             enableTrunkOpen || enableTrunkClose || enableTurn360 || enableLightNav || enableFlameoutVoice;
 
         if (!anyEnabled) {
             stopSelf();
@@ -194,6 +220,8 @@ public class VehicleAutomationService extends Service {
             java.util.regex.Pattern.compile("key\\s*=\\s*([^,\\s]+).*?data\\s*=\\s*(-?\\d+)");
     private static final java.util.regex.Pattern DOOR_DIRECT_PATTERN =
             java.util.regex.Pattern.compile("fl\\s*=\\s*(\\d+).*?fr\\s*=\\s*(\\d+).*?rl\\s*=\\s*(\\d+).*?rr\\s*=\\s*(\\d+)");
+    private static final java.util.regex.Pattern SERIAL_DOOR_PATTERN =
+            java.util.regex.Pattern.compile("91\\s+02\\s+01\\s+[0-9a-fA-F]{2}\\s+[0-9a-fA-F]{2}\\s+[0-9a-fA-F]{2}\\s+([0-9a-fA-F]{2})\\s+([0-9a-fA-F]{2})");
 
     private void startLogcatReader() {
         if (logcatThread != null && logcatThread.isAlive()) return;
@@ -208,8 +236,8 @@ public class VehicleAutomationService extends Service {
                             AdbClient.execute(VehicleAutomationService.this, "pm grant " + getPackageName() + " android.permission.READ_LOGS");
                         } catch (Exception ignored) {}
 
-                        // 过滤 VehicleDataBuilder、车身 AVM 信号 (ecarx_avm_SocketCommand) 与车速标签，同时读取 main 与 system 缓冲区
-                        ProcessBuilder pb = new ProcessBuilder("logcat", "-b", "main", "-b", "system", "-v", "brief", "-s", "VehicleDataBuilder:D", "ecarx_avm_SocketCommand:W", "e:D");
+                        // 过滤 VehicleDataBuilder、车身 AVM 信号 (ecarx_avm_SocketCommand)、底层串口数据 (SerialControl_v2_0) 与车速标签
+                        ProcessBuilder pb = new ProcessBuilder("logcat", "-b", "main", "-b", "system", "-v", "brief", "-s", "VehicleDataBuilder:D", "ecarx_avm_SocketCommand:W", "SerialControl_v2_0:W", "e:D");
                         pb.redirectErrorStream(true);
                         logcatProcess = pb.start();
 
@@ -279,7 +307,24 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 3. 解析 CAN 数据: parseCanData: key = ..., data = ... (支持灵活正则匹配)
+        // 3. 解析底层 MCU 串口车身报文: 91 02 01 ... byte6 / byte7 包含四门与后备箱状态
+        if (line.contains("91 02 01")) {
+            try {
+                java.util.regex.Matcher sm = SERIAL_DOOR_PATTERN.matcher(line);
+                if (sm.find()) {
+                    int b6 = Integer.parseInt(sm.group(1).trim(), 16);
+                    int b7 = Integer.parseInt(sm.group(2).trim(), 16);
+                    // 提取后备箱 (bit0 of byte7 或 b6/b7 特征位)
+                    // 当 b7 低4位变化或者有门/尾箱触发时识别
+                    int trunkVal = ((b7 & 0x01) == 0) ? 1 : 0; // 0x51 时为门开，尾箱通常挂载在辅助控制位
+                    // 若有明确 trunk 状态变更则分发
+                    // handleCanSignal("BCM_TrunkAjarStatus", trunkVal);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        // 4. 解析 CAN 数据: parseCanData: key = ..., data = ... (支持灵活正则匹配)
         if (!line.contains("parseCanData")) return;
 
         try {
@@ -296,13 +341,18 @@ public class VehicleAutomationService extends Service {
     private void handleCanSignal(String key, int val) {
         long now = System.currentTimeMillis();
 
-        // 1. 四门上下车迎宾与安全播报（支持每门每项独立开关控制）
-        // 主驾开门
+        // 1. 四门及后备箱上下车迎宾与安全播报（支持每门开关独立控制与开门未完关门抢占式打断）
+        // 主驾开门与关门
         if ("BCM_FrontLeftDoorAjarStatus".equals(key)) {
-            if (enableDoorFl && val == 1 && lastDoorFL != 1) {
-                if (now - lastVoiceTimeFL > 4000) {
+            if (val == 1 && lastDoorFL != 1) {
+                if (enableDoorFl && (now - lastVoiceTimeFL > 1500)) {
                     lastVoiceTimeFL = now;
                     voicePlayer.play("door_fl.mp3", "主驾车门打开，请注意后方来车");
+                }
+            } else if (val == 0 && lastDoorFL == 1) {
+                if (enableDoorFlClose && (now - lastVoiceTimeFL > 1000)) {
+                    lastVoiceTimeFL = now;
+                    voicePlayer.play("door_fl_close.mp3", "主驾车门已关好");
                 }
             }
             lastDoorFL = val;
@@ -322,25 +372,50 @@ public class VehicleAutomationService extends Service {
             }
             lastDoorFR = val;
         }
-        // 左后门开门
+        // 左后门开门与关门
         else if ("BCM_RearLeftDoorAjarStatus".equals(key)) {
-            if (enableDoorRear && val == 1 && lastDoorRL != 1) {
-                if (now - lastVoiceTimeRL > 4000) {
+            if (val == 1 && lastDoorRL != 1) {
+                if ((enableDoorRl || enableDoorRear) && (now - lastVoiceTimeRL > 1500)) {
                     lastVoiceTimeRL = now;
                     voicePlayer.play("door_rl.mp3", "左后门打开，请注意车外环境");
+                }
+            } else if (val == 0 && lastDoorRL == 1) {
+                if (enableDoorRlClose && (now - lastVoiceTimeRL > 1000)) {
+                    lastVoiceTimeRL = now;
+                    voicePlayer.play("door_rl_close.mp3", "左后车门已关好");
                 }
             }
             lastDoorRL = val;
         }
-        // 右后门开门
+        // 右后门开门与关门
         else if ("BCM_RearRightDoorAjarStatus".equals(key)) {
-            if (enableDoorRear && val == 1 && lastDoorRR != 1) {
-                if (now - lastVoiceTimeRR > 4000) {
+            if (val == 1 && lastDoorRR != 1) {
+                if ((enableDoorRr || enableDoorRear) && (now - lastVoiceTimeRR > 1500)) {
                     lastVoiceTimeRR = now;
                     voicePlayer.play("door_rr.mp3", "右后门打开，请注意车外环境");
                 }
+            } else if (val == 0 && lastDoorRR == 1) {
+                if (enableDoorRrClose && (now - lastVoiceTimeRR > 1000)) {
+                    lastVoiceTimeRR = now;
+                    voicePlayer.play("door_rr_close.mp3", "右后车门已关好");
+                }
             }
             lastDoorRR = val;
+        }
+        // 后备箱打开与关闭
+        else if ("BCM_TrunkAjarStatus".equals(key) || "BCM_TailgateAjarStatus".equals(key)) {
+            if (val == 1 && lastTrunk != 1) {
+                if (enableTrunkOpen && (now - lastVoiceTimeTrunk > 1500)) {
+                    lastVoiceTimeTrunk = now;
+                    voicePlayer.play("trunk_open.mp3", "后备箱已打开");
+                }
+            } else if (val == 0 && lastTrunk == 1) {
+                if (enableTrunkClose && (now - lastVoiceTimeTrunk > 1000)) {
+                    lastVoiceTimeTrunk = now;
+                    voicePlayer.play("trunk_close.mp3", "后备箱已关闭");
+                }
+            }
+            lastTrunk = val;
         }
 
         // 2. 转向灯联动 360 全景影像 (严格车速过滤)

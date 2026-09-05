@@ -922,7 +922,7 @@ body.light .btn-mini:active {
 <header>
   <div class="brand">
     <div class="brand-title">吉利车机控制台</div>
-    <div class="brand-ver" id="appVer">v1.2.3</div>
+    <div class="brand-ver" id="appVer">v1.2.4</div>
   </div>
 
   <div class="top-pills">
@@ -938,6 +938,10 @@ body.light .btn-mini:active {
       <span class="dot green" id="pillAppstoreDot"></span>
       <span id="pillAppstore">商店: 探测中</span>
     </div>
+    <div class="pill" style="cursor:pointer;" onclick="handleToggleWhitelist()" title="点击切换白名单放行状态">
+      <span class="dot green" id="pillWhitelistDot"></span>
+      <span id="pillWhitelistText">白名单: 已放行 1</span>
+    </div>
     <div class="pill" onclick="handleShowQrCode()">
       <span class="dot green" id="ipDot"></span>
       <span id="ipTxt">IP: 探测中</span>
@@ -945,8 +949,9 @@ body.light .btn-mini:active {
   </div>
 
   <div class="top-actions">
+    <button class="btn-icon highlight" onclick="handleOpenDeepToolsModal()">ADB 工具</button>
     <button class="btn-icon" onclick="handleToggleTheme()">日夜模式</button>
-    <button class="btn-icon highlight" onclick="handleShowQrCode()">无线快传</button>
+    <button class="btn-icon" onclick="handleShowQrCode()">无线快传</button>
     <button class="btn-icon" onclick="handleOpenSettingsModal()">设置</button>
     <button class="btn-icon" style="color:#EF4444; border-color:rgba(239,68,68,0.35);" onclick="handlePromptExit()">退出</button>
   </div>
@@ -971,7 +976,7 @@ body.light .btn-mini:active {
         </div>
       </div>
       <div style="display:flex; flex-direction:column; gap:8px;">
-        <button class="btn-ctrl-lg" style="min-height:64px; font-size:19px; font-weight:900;" onclick="handleStartAutoPilot(null)">一键卡兔子向导 (保姆级半自动)</button>
+        <button class="btn-ctrl-lg" id="btnRabbitAutoPilot" style="min-height:64px; font-size:19px; font-weight:900; display:none;" onclick="handleStartAutoPilot(null)">一键卡兔子向导 (保姆级半自动)</button>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
           <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" onclick="handleOpenThemeManager()">
             <span style="font-size:16px; font-weight:900;">打开车机主题</span>
@@ -994,29 +999,18 @@ body.light .btn-mini:active {
       </div>
     </div>
 
-    <!-- 2. 常用系统快捷通道大卡片 (装软件黄金三剑客 + 深度工具箱抽屉) -->
+    <!-- 2. 常用系统快捷通道大卡片 -->
     <div class="card shortcut-card">
       <div class="card-header">
         <div class="card-title">常用系统快捷通道</div>
         <div style="font-size:11.5px; color:var(--txt-dim); font-weight:700;">点击均提供二次防误触确认</div>
       </div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:12px 6px; min-height:76px;" onclick="handleOpenFileManager()">
-          <span style="font-weight:900; font-size:14.5px;">原生文件管理</span>
-          <span class="btn-status-pill blue" style="font-size:11.5px;">直接安装APK</span>
-        </button>
-        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:12px 6px; min-height:76px;" onclick="handleOpenTaskManagerAction()">
-          <span style="font-weight:900; font-size:14.5px;">多任务管理</span>
-          <span class="btn-status-pill purple" style="font-size:11.5px;">切换后台应用</span>
-        </button>
-        <button class="btn-ctrl-md" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:12px 6px; min-height:76px;" onclick="handleToggleWhitelist()">
-          <span style="font-weight:900; font-size:14.5px;">白名单放行</span>
-          <span class="btn-status-pill green" id="pillWhitelist" style="font-size:11.5px;">已放行</span>
+      <div style="display:flex; gap: 8px;">
+        <button class="btn-ctrl-md" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px 16px; min-height:64px;" onclick="handleOpenFileManager()">
+          <span style="font-weight:900; font-size:16px;">打开原生文件管理</span>
+          <span class="btn-status-pill blue" style="font-size:12px;">直接安装APK</span>
         </button>
       </div>
-      <button class="btn-ctrl-md" style="width:100%; min-height:50px; font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="handleOpenDeepToolsModal()">
-        <span>打开车机深度工具箱 (ADB / 动态暗码 / 清理 / 全量组件)</span>
-      </button>
     </div>
 
     <!-- 3. 卡兔子极简安装 SOP 指引大卡片 -->
@@ -1147,28 +1141,26 @@ body.light .btn-mini:active {
   </div>
 </div>
 
-<!-- 无原生系统设置时的手动安装引导 Modal -->
+<!-- 无原生系统设置时的安装引导 Modal -->
 <div class="modal-overlay" id="manualInstallModal">
-  <div class="modal-card" style="width:784px;">
+  <div class="modal-card" style="width:840px;">
     <div class="modal-header">
-      <div class="modal-title" id="manualInstallTitle">应用安装指引</div>
+      <div class="modal-title" id="manualInstallTitle">原生系统安装引导</div>
       <button class="modal-close" onclick="closeModal('manualInstallModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div class="modal-info-box" style="background:rgba(234, 179, 8, 0.08); border-color:rgba(234, 179, 8, 0.35);">
-      <div style="font-size:13.5px; font-weight:800; color:var(--txt-strong); margin-bottom:4px;" id="manualInstallAppHeader">安装包已下载就绪</div>
-      <div style="font-size:12.5px; color:var(--txt-dim); line-height:1.6;" id="manualInstallAppDesc">
-        检测到当前车机未安装【原生系统设置】组件。<br>
-        在缺少系统设置时车机限制直接调起安装界面，请通过以下两种方式手动安装：
+      <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong); margin-bottom:6px;" id="manualInstallAppHeader">安装包已下载就绪</div>
+      <div style="font-size:13px; color:var(--txt-dim); line-height:1.65;" id="manualInstallAppDesc">
+        检测到当前车机尚未安装【原生系统设置】组件，车机限制控制台直接调起系统安装器。<br><br>
+        • <b>特别提醒</b>：本商城提供的原生系统设置基于<b>吉利缤越 COOL (E02/Android 9)</b> 实测提取；<br>
+        • <b>车型适配</b>：如果是缤越 COOL 车主，推荐点击下方【尝试安装原生系统设置】，安装后即可永久享受在商城中【直接安装】所有软件；<br>
+        • <b>其他车型</b>：请自行通过 U 盘或快传先将适配你车型的原生系统设置安装好，或者直接点击【打开原生文件管理】手动安装当前软件。
       </div>
     </div>
-    <div style="font-size:12.5px; color:var(--txt-dim); margin-bottom:14px; line-height:1.6;">
-      • <b>方式 1 (推荐)</b>：点击【打开任务】调起多任务管理，切换至正在运行的文件管理完成安装；<br>
-      • <b>方式 2</b>：点击【打开文件管理】前往机身 Download 目录直接点击安装包。
-    </div>
-    <div class="modal-actions" style="display:flex; flex-direction:column; gap:8px;">
-      <button class="btn-ctrl-md highlight" style="height:44px; font-size:14.5px; font-weight:900;" onclick="handleOpenTaskManagerAction()">打开任务 (任务管理器)</button>
-      <button class="btn-ctrl-md" style="height:42px; font-size:14px; font-weight:800;" onclick="handleOpenFileMgrAction()">打开原生文件管理</button>
-      <button class="btn-ctrl-md" style="height:36px; font-size:13px; color:var(--txt-dim); margin-top:2px;" onclick="closeModal('manualInstallModal')">稍后安装</button>
+    <div class="modal-actions" style="display:flex; flex-direction:column; gap:10px;">
+      <button class="btn-ctrl-md highlight" id="btnInstallNativeSettingsPrompt" style="height:46px; font-size:14.5px; font-weight:900;" onclick="handleInstallNativeSettingsFromModal()">尝试安装原生系统设置 (缤越COOL实测)</button>
+      <button class="btn-ctrl-md" style="height:44px; font-size:14px; font-weight:800;" onclick="handleOpenFileMgrAction()">打开原生文件管理 (手动点击安装)</button>
+      <button class="btn-ctrl-md" style="height:36px; font-size:13px; color:var(--txt-dim); margin-top:2px;" onclick="closeModal('manualInstallModal')">稍后再说</button>
     </div>
   </div>
 </div>
@@ -1265,7 +1257,7 @@ body.light .btn-mini:active {
     <div class="about-box">
       <div class="about-item">
         <span style="color:var(--txt-dim);">当前软件版本</span>
-        <span style="font-weight:800; color:var(--accent);" id="aboutVersionText">v1.2.3 (7023)</span>
+        <span style="font-weight:800; color:var(--accent);" id="aboutVersionText">v1.2.4 (7024)</span>
       </div>
       <div class="about-item">
         <span style="color:var(--txt-dim);">支持车机芯片</span>
@@ -1831,74 +1823,99 @@ body.light .btn-mini:active {
         <span style="font-size:11.5px; font-weight:normal; color:var(--txt-dim);">内置高品质甜美原声，可一键替换</span>
       </div>
 
-      <!-- 1. 主驾开门 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; flex-wrap:wrap; gap:8px;">
+      <!-- 1. 主驾开门与关门 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; flex-wrap:wrap; gap:8px;">
         <div style="flex:1; min-width:210px;">
-          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">1. 主驾开门防开门杀播报</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">主驾车门打开瞬间播报（“主驾车门已打开，请注意后方来车”）</div>
+          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">1. 主驾车门 (开门防杀 / 关门播报)</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">开门提醒防来车，关门播报关好（开门未播完关门自动抢占打断）</div>
           <div style="font-size:11.5px; color:var(--txt-dim); margin-top:3px;" id="labelCustom_door_fl">当前：内置默认原声</div>
         </div>
-        <div style="display:flex; gap:6px; align-items:center;">
-          <button class="btn-ctrl-md" id="btnVoice_door_fl" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fl')">已关闭</button>
-          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door')">试听</button>
-          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_fl.mp3')">更换音频</button>
-          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleResetCustomVoice('door_fl.mp3')">重置</button>
+        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-ctrl-md" id="btnVoice_door_fl" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fl')">开门: 关</button>
+          <button class="btn-ctrl-md" id="btnVoice_door_fl_close" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fl_close')">关门: 关</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fl')">试听开</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fl_close')">试听关</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_fl.mp3')">换开门</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_fl_close.mp3')">换关门</button>
         </div>
       </div>
 
-      <!-- 2. 副驾开门迎宾 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; flex-wrap:wrap; gap:8px;">
+      <!-- 2. 副驾开门与关门 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; flex-wrap:wrap; gap:8px;">
         <div style="flex:1; min-width:210px;">
-          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">2. 副驾上车迎宾播报</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">副驾车门打开时温馨迎宾播报（“副驾车门已打开，请注意安全”）</div>
+          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">2. 副驾车门 (开门迎宾 / 关门安全带)</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">副驾开门上车温馨迎宾，关门提醒系好安全带</div>
           <div style="font-size:11.5px; color:var(--txt-dim); margin-top:3px;" id="labelCustom_door_fr">当前：内置默认原声</div>
         </div>
-        <div style="display:flex; gap:6px; align-items:center;">
-          <button class="btn-ctrl-md" id="btnVoice_door_fr" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fr')">已关闭</button>
-          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fr')">试听</button>
-          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_fr.mp3')">更换音频</button>
-          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleResetCustomVoice('door_fr.mp3')">重置</button>
+        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-ctrl-md" id="btnVoice_door_fr" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fr')">开门: 关</button>
+          <button class="btn-ctrl-md" id="btnVoice_door_fr_close" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fr_close')">关门: 关</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fr')">试听开</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fr_close')">试听关</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_fr.mp3')">换开门</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_fr_close.mp3')">换关门</button>
         </div>
       </div>
 
-      <!-- 3. 副驾关门系安全带提醒 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; flex-wrap:wrap; gap:8px;">
+      <!-- 3. 左后车门开门与关门 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; flex-wrap:wrap; gap:8px;">
         <div style="flex:1; min-width:210px;">
-          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">3. 副驾关门系安全带提醒</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">副驾关门就坐后播报提醒（“副驾已就坐，请系好安全带”）</div>
-          <div style="font-size:11.5px; color:var(--txt-dim); margin-top:3px;" id="labelCustom_door_fr_close">当前：内置默认原声</div>
+          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">3. 左后车门 (开门警示 / 关门播报)</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">左后门打开提醒注意车外环境，关门播报关好</div>
+          <div style="font-size:11.5px; color:var(--txt-dim); margin-top:3px;" id="labelCustom_door_rl">当前：内置默认原声</div>
         </div>
-        <div style="display:flex; gap:6px; align-items:center;">
-          <button class="btn-ctrl-md" id="btnVoice_door_fr_close" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fr_close')">已关闭</button>
-          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('seatbelt')">试听</button>
-          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_fr_close.mp3')">更换音频</button>
-          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleResetCustomVoice('door_fr_close.mp3')">重置</button>
+        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-ctrl-md" id="btnVoice_door_rl" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_rl')">开门: 关</button>
+          <button class="btn-ctrl-md" id="btnVoice_door_rl_close" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_rl_close')">关门: 关</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rl')">试听开</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rl_close')">试听关</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_rl.mp3')">换开门</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_rl_close.mp3')">换关门</button>
         </div>
       </div>
 
-      <!-- 4. 后排开门安全警示 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; flex-wrap:wrap; gap:8px;">
+      <!-- 4. 右后车门开门与关门 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; flex-wrap:wrap; gap:8px;">
         <div style="flex:1; min-width:210px;">
-          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">4. 后排车门开启安全警示</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">后排左/右车门打开时播报，提醒乘客注意车外来车与环境</div>
-          <div style="font-size:11.5px; color:var(--txt-dim); margin-top:3px;" id="labelCustom_door_rear">当前：内置默认原声</div>
+          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">4. 右后车门 (开门警示 / 关门播报)</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">右后门打开提醒注意车外环境，关门播报关好</div>
+          <div style="font-size:11.5px; color:var(--txt-dim); margin-top:3px;" id="labelCustom_door_rr">当前：内置默认原声</div>
         </div>
-        <div style="display:flex; gap:6px; align-items:center;">
-          <button class="btn-ctrl-md" id="btnVoice_door_rear" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_rear')">已关闭</button>
-          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rear')">试听</button>
-          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_rl.mp3')">更换音频</button>
-          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleResetCustomVoice('door_rl.mp3')">重置</button>
+        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-ctrl-md" id="btnVoice_door_rr" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_rr')">开门: 关</button>
+          <button class="btn-ctrl-md" id="btnVoice_door_rr_close" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_rr_close')">关门: 关</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rr')">试听开</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rr_close')">试听关</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_rr.mp3')">换开门</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('door_rr_close.mp3')">换关门</button>
         </div>
       </div>
 
-      <!-- 5. 车辆熄火告别 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; flex-wrap:wrap; gap:8px;">
+      <!-- 5. 后备箱打开与关闭 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; flex-wrap:wrap; gap:8px;">
         <div style="flex:1; min-width:210px;">
-          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">5. 车辆熄火告别提醒</div>
+          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">5. 后备箱门 (打开提醒 / 关闭播报)</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">尾门开启与关闭时播报提醒，防止遗忘关好尾门</div>
+          <div style="font-size:11.5px; color:var(--txt-dim); margin-top:3px;" id="labelCustom_trunk">当前：内置默认原声</div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-ctrl-md" id="btnVoice_trunk_open" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_trunk_open')">打开: 关</button>
+          <button class="btn-ctrl-md" id="btnVoice_trunk_close" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_trunk_close')">关闭: 关</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('trunk_open')">试听开</button>
+          <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('trunk_close')">试听关</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('trunk_open.mp3')">换开门</button>
+          <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('trunk_close.mp3')">换关门</button>
+        </div>
+      </div>
+
+      <!-- 6. 车辆熄火告别 -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; flex-wrap:wrap; gap:8px;">
+        <div style="flex:1; min-width:210px;">
+          <div style="font-size:14px; font-weight:800; color:var(--txt-strong);">6. 车辆熄火告别提醒</div>
           <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">按下熄火按键瞬间播报（“车辆已熄火，请带好随身物品”）</div>
           <div style="font-size:11.5px; color:var(--txt-dim); margin-top:3px;" id="labelCustom_flameout">当前：内置默认原声</div>
         </div>
-        <div style="display:flex; gap:6px; align-items:center;">
+        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
           <button class="btn-ctrl-md" id="btnVoice_flameout" style="min-height:34px; min-width:76px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('vehicle_flameout_voice_enabled')">已关闭</button>
           <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('flameout')">试听</button>
           <button class="btn-ctrl-md highlight" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleSelectCustomVoice('flameout.mp3')">更换音频</button>
@@ -2367,7 +2384,12 @@ function renderApps() {
       actionHtml = '<button class="btn-dl updating" onclick="handleDownloadApp(\'' + app.id + '\', true)">升级下载</button>';
     } else if (app.status === 'ready') {
       var isNav = (app.category === 'navigation');
-      var mainTxt = isNav ? '安装向导' : (hasSystemSettings ? '直接安装' : '手动安装');
+      var mainTxt;
+      if (isExpertRabbitEnabled && isNav) {
+        mainTxt = '安装向导';
+      } else {
+        mainTxt = hasSystemSettings ? '直接安装' : '引导安装';
+      }
       actionHtml = '<button class="btn-dl done" onclick="handleDownloadApp(\'' + app.id + '\', false)">' + mainTxt + '</button>' +
         '<button class="btn-redl" title="重新下载覆盖" onclick="handleDownloadApp(\'' + app.id + '\', true)">重下</button>';
     } else {
@@ -3414,14 +3436,18 @@ function updateExpertRabbitThemeUi(enabled) {
   isExpertRabbitEnabled = (enabled === true);
   var btn = document.getElementById('btnSettingExpertRabbit');
   var hint = document.getElementById('settingExpertRabbitHint');
+  var btnAutoPilot = document.getElementById('btnRabbitAutoPilot');
   if (btn) {
     btn.innerText = isExpertRabbitEnabled ? '已开启 (专家模式)' : '已关闭 (安全锁定)';
     btn.className = isExpertRabbitEnabled ? 'btn-ctrl-md danger' : 'btn-ctrl-md';
   }
+  if (btnAutoPilot) {
+    btnAutoPilot.style.display = isExpertRabbitEnabled ? 'block' : 'none';
+  }
   if (hint) {
     hint.innerHTML = isExpertRabbitEnabled ?
-      '<span style="color:#EF4444; font-weight:800;">⚠️ 专家模式已激活：已解除地图限制，允许任意应用尝试时钟伪装（变砖风险自负）</span>' :
-      '默认关闭。锁定仅允许高德、百度等车载地图软件卡时钟伪装，防止非兼容软件导致车机开机死锁或变砖';
+      '<span style="color:#EF4444; font-weight:800;">⚠️ 专家模式已激活：已解锁【一键卡兔子向导】与任意应用时钟伪装（变砖风险自负）</span>' :
+      '默认关闭。锁定常规系统直装，隐藏【一键卡兔子向导】以防误触变砖。若需极客测试可开启';
   }
 }
 
@@ -3458,6 +3484,17 @@ function handleOpenTaskManagerAction() {
 function handleOpenFileMgrAction() {
   closeModal('manualInstallModal');
   callBridge('openFileManager');
+}
+
+function handleInstallNativeSettingsFromModal() {
+  closeModal('manualInstallModal');
+  var settingsApp = CLOUD_APPS.find(function(a) { return a.pkg === 'com.android.settings'; });
+  if (settingsApp) {
+    handleDownloadApp(settingsApp.id, false);
+  } else {
+    showToast('正在调取原生系统设置安装包...');
+    callBridge('downloadApp', 'geely_native_settings', 'https://dl.onepve.com/GeelyToolbox/CarSettings_Android9_Geely_E02.apk', 'CarSettings_Android9_Geely_E02.apk');
+  }
 }
 
 
@@ -3548,7 +3585,7 @@ function handleDownloadApp(id, isRedownload) {
 
 function _doDownloadApp(app, isRedownload) {
   if (app.status === 'ready' && !isRedownload) {
-    if (app.category === 'navigation') {
+    if (isExpertRabbitEnabled && app.category === 'navigation') {
       openRabbitInstallGuideModal(app);
     } else if (hasSystemSettings) {
       showToast('正在调起系统安装器: ' + app.name);
@@ -3982,15 +4019,22 @@ function refreshVehicleAutoUI() {
   updateAutoBtn('btnAutoTurn360', vehicleAutoSettings.turn_360);
   updateAutoBtn('btnAutoLightNav', vehicleAutoSettings.light_nav);
   updateAutoBtn('btnVoice_door_fl', vehicleAutoSettings.voice_door_fl);
+  updateAutoBtn('btnVoice_door_fl_close', vehicleAutoSettings.voice_door_fl_close);
   updateAutoBtn('btnVoice_door_fr', vehicleAutoSettings.voice_door_fr);
   updateAutoBtn('btnVoice_door_fr_close', vehicleAutoSettings.voice_door_fr_close);
-  updateAutoBtn('btnVoice_door_rear', vehicleAutoSettings.voice_door_rear);
+  updateAutoBtn('btnVoice_door_rl', vehicleAutoSettings.voice_door_rl);
+  updateAutoBtn('btnVoice_door_rl_close', vehicleAutoSettings.voice_door_rl_close);
+  updateAutoBtn('btnVoice_door_rr', vehicleAutoSettings.voice_door_rr);
+  updateAutoBtn('btnVoice_door_rr_close', vehicleAutoSettings.voice_door_rr_close);
+  updateAutoBtn('btnVoice_trunk_open', vehicleAutoSettings.voice_trunk_open);
+  updateAutoBtn('btnVoice_trunk_close', vehicleAutoSettings.voice_trunk_close);
   updateAutoBtn('btnVoice_flameout', vehicleAutoSettings.flameout_voice);
 
   updateCustomVoiceLabel('labelCustom_door_fl', vehicleAutoSettings.custom_door_fl);
   updateCustomVoiceLabel('labelCustom_door_fr', vehicleAutoSettings.custom_door_fr);
-  updateCustomVoiceLabel('labelCustom_door_fr_close', vehicleAutoSettings.custom_door_fr_close);
-  updateCustomVoiceLabel('labelCustom_door_rear', vehicleAutoSettings.custom_door_rear);
+  updateCustomVoiceLabel('labelCustom_door_rl', vehicleAutoSettings.custom_door_rl);
+  updateCustomVoiceLabel('labelCustom_door_rr', vehicleAutoSettings.custom_door_rr);
+  updateCustomVoiceLabel('labelCustom_trunk', vehicleAutoSettings.custom_trunk_open || vehicleAutoSettings.custom_trunk_close);
   updateCustomVoiceLabel('labelCustom_flameout', vehicleAutoSettings.custom_flameout);
 }
 
@@ -4023,11 +4067,18 @@ function handleResetCustomVoice(key) {
 function updateAutoBtn(id, enabled) {
   var el = document.getElementById(id);
   if (!el) return;
+  if (id.endsWith('_close')) {
+    el.innerText = enabled ? '关门: 开' : '关门: 关';
+  } else if (id.endsWith('_open')) {
+    el.innerText = enabled ? '打开: 开' : '打开: 关';
+  } else if (id.startsWith('btnVoice_door_')) {
+    el.innerText = enabled ? '开门: 开' : '开门: 关';
+  } else {
+    el.innerText = enabled ? '已开启' : '已关闭';
+  }
   if (enabled) {
-    el.innerText = '已开启';
     el.className = 'btn-ctrl-md highlight';
   } else {
-    el.innerText = '已关闭';
     el.className = 'btn-ctrl-md';
   }
 }
@@ -4039,9 +4090,16 @@ function handleToggleVehicleAuto(key) {
   else if (key === 'vehicle_light_nav_enabled') { targetField = 'light_nav'; btnId = 'btnAutoLightNav'; }
   else if (key === 'vehicle_flameout_voice_enabled') { targetField = 'flameout_voice'; btnId = 'btnVoice_flameout'; }
   else if (key === 'voice_enable_door_fl') { targetField = 'voice_door_fl'; btnId = 'btnVoice_door_fl'; }
+  else if (key === 'voice_enable_door_fl_close') { targetField = 'voice_door_fl_close'; btnId = 'btnVoice_door_fl_close'; }
   else if (key === 'voice_enable_door_fr') { targetField = 'voice_door_fr'; btnId = 'btnVoice_door_fr'; }
   else if (key === 'voice_enable_door_fr_close') { targetField = 'voice_door_fr_close'; btnId = 'btnVoice_door_fr_close'; }
+  else if (key === 'voice_enable_door_rl') { targetField = 'voice_door_rl'; btnId = 'btnVoice_door_rl'; }
+  else if (key === 'voice_enable_door_rl_close') { targetField = 'voice_door_rl_close'; btnId = 'btnVoice_door_rl_close'; }
+  else if (key === 'voice_enable_door_rr') { targetField = 'voice_door_rr'; btnId = 'btnVoice_door_rr'; }
+  else if (key === 'voice_enable_door_rr_close') { targetField = 'voice_door_rr_close'; btnId = 'btnVoice_door_rr_close'; }
   else if (key === 'voice_enable_door_rear') { targetField = 'voice_door_rear'; btnId = 'btnVoice_door_rear'; }
+  else if (key === 'voice_enable_trunk_open') { targetField = 'voice_trunk_open'; btnId = 'btnVoice_trunk_open'; }
+  else if (key === 'voice_enable_trunk_close') { targetField = 'voice_trunk_close'; btnId = 'btnVoice_trunk_close'; }
 
   var nextState = !vehicleAutoSettings[targetField];
   vehicleAutoSettings[targetField] = nextState;
@@ -4386,16 +4444,10 @@ window.updateDeviceInfo = function(infoJson) {
     }
     if (info.whitelist !== undefined) {
       cachedDeviceInfo.whitelist = info.whitelist;
-      var pillW = document.getElementById('pillWhitelist');
-      if (pillW) {
-        if (info.whitelist) {
-          pillW.className = 'btn-status-pill green';
-          pillW.innerText = '已放行 1';
-        } else {
-          pillW.className = 'btn-status-pill amber';
-          pillW.innerText = '未放行 0';
-        }
-      }
+      var dotW = document.getElementById('pillWhitelistDot');
+      var txtW = document.getElementById('pillWhitelistText');
+      if (dotW) dotW.className = info.whitelist ? 'dot green' : 'dot amber';
+      if (txtW) txtW.innerText = info.whitelist ? '白名单: 已放行 1' : '白名单: 未放行 0';
     }
     if (info.appstore_frozen !== undefined) {
       cachedDeviceInfo.appstore_frozen = info.appstore_frozen;
