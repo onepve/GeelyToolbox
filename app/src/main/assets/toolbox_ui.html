@@ -556,20 +556,20 @@ body.light .app-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.06);
 
 .app-item {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px; border-radius: var(--skin-radius-sm);
-  background: var(--card); border: 1px solid var(--border);
-  transition: all 0.15s; flex-shrink: 0; min-height: 96px;
+  padding: 16px 20px; border-radius: 12px;
+  background: var(--card); border: 1.5px solid var(--border);
+  transition: all 0.15s; flex-shrink: 0; min-height: 112px;
 }
 .app-info {
-  display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;
+  display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1;
 }
 
 /* 纯文字极简应用类型徽标 */
 .app-type-badge {
-  width: 46px; height: 46px; border-radius: 9px;
+  width: 50px; height: 50px; border-radius: 10px;
   border: 1.5px solid var(--border-strong);
   display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 900;
+  font-size: 15px; font-weight: 900;
   flex-shrink: 0; text-align: center; line-height: 1;
 }
 .app-type-badge.nav { background: rgba(0, 174, 185, 0.18); color: var(--accent); border-color: rgba(0, 174, 185, 0.35); }
@@ -581,26 +581,26 @@ body.light .app-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.06);
   min-width: 0; flex: 1;
 }
 .app-name-row {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 3px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;
 }
 .app-name {
-  font-size: 19px; font-weight: 900; color: var(--txt-strong);
-  line-height: 1.3;
+  font-size: 20px; font-weight: 900; color: var(--txt-strong);
+  line-height: 1.35;
 }
 .app-badge {
-  font-size: 12.5px; padding: 3px 8px; border-radius: 5px;
+  font-size: 13px; padding: 3px 9px; border-radius: 5px;
   background: rgba(0, 174, 185, 0.18); color: var(--accent);
   border: 1px solid rgba(0, 174, 185, 0.35); white-space: nowrap; font-weight: 800;
 }
 .app-desc-marquee-box {
   width: 100%;
-  margin-top: 4px;
+  margin-top: 5px;
 }
 .app-desc {
-  font-size: 13.5px;
+  font-size: 15px;
   color: var(--txt-dim);
   font-weight: 600;
-  line-height: 1.55;
+  line-height: 1.65;
   white-space: normal;
   word-break: break-word;
   display: -webkit-box;
@@ -614,11 +614,11 @@ body.light .app-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.06);
   display: flex; align-items: center; gap: 6px; margin-left: 10px; flex-shrink: 0;
 }
 .btn-dl {
-  height: 56px; min-width: 120px; padding: 0 20px; border-radius: 10px;
+  height: 60px; min-width: 130px; padding: 0 22px; border-radius: 11px;
   background: var(--btn-bg);
   border: 1.5px solid var(--border-strong);
   color: var(--txt-strong);
-  font-size: 17px; font-weight: 900;
+  font-size: 18px; font-weight: 900;
   cursor: pointer; transition: all 0.15s;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   display: inline-flex; align-items: center; justify-content: center;
@@ -683,11 +683,11 @@ body.light .modal-card {
   border-color: rgba(0, 0, 0, 0.18);
 }
 .app-meta-tags {
-  display: flex; align-items: center; gap: 6px; margin: 3px 0; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 8px; margin: 6px 0 7px 0; flex-wrap: wrap;
 }
 .app-meta-tag {
-  font-size: 11.5px; font-weight: 700; color: var(--txt-dim);
-  background: var(--btn-bg); padding: 1px 6px; border-radius: 4px;
+  font-size: 13.5px; font-weight: 800; color: var(--txt-dim);
+  background: var(--btn-bg); padding: 3px 9px; border-radius: 5px;
   border: 1px solid var(--border);
 }
 .app-meta-tag.done {
@@ -787,10 +787,10 @@ body.light .changelog-item {
 }
 .changelog-text {
   flex: 1;
-  font-size: 13px;
+  font-size: 15.5px;
   color: var(--txt-strong);
-  line-height: 1.55;
-  font-weight: 600;
+  line-height: 1.65;
+  font-weight: 700;
 }
 
 /* 动态暗码大卡片 */
@@ -1420,7 +1420,7 @@ body.light .btn-mini:active {
 </div>
 
 <div class="modal-overlay" id="aboutModal">
-  <div class="modal-card" style="width:756px;">
+  <div class="modal-card" style="width:880px; max-width:94vw; padding:22px 28px;">
     <div class="modal-header">
       <div class="modal-title">关于吉利车机控制台</div>
       <button class="modal-close" onclick="closeModal('aboutModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1458,9 +1458,9 @@ body.light .btn-mini:active {
   </div>
 </div>
 
-<!-- 工具箱检查更新车载精致弹窗 -->
+<!-- 工具箱检查更新车载精致弹窗 (字号放大、大屏适配) -->
 <div class="modal-overlay" id="updateModal">
-  <div class="modal-card" style="width:840px; max-width:94vw;">
+  <div class="modal-card" style="width:980px; max-width:96vw; padding:22px 28px;">
     <div class="modal-header">
       <div class="modal-title" id="modalUpgradeTitle">发现吉利工具箱新版本</div>
       <button class="modal-close" onclick="closeModal('updateModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1837,86 +1837,90 @@ body.light .btn-mini:active {
   </div>
 </div>
 
-<!-- 车机守护与系统设置 Modal (紧凑化消除上下留白，单行展示胶囊设置) -->
+<!-- 车机守护与系统设置 Modal (大窗口、字号放大、赞赏支持置于关于与更新旁) -->
 <div class="modal-overlay" id="settingsModal">
-  <div class="modal-card" style="width:960px; max-height:86vh; padding:20px 28px; justify-content:space-between;">
+  <div class="modal-card" style="width:1040px; max-width:96vw; max-height:88vh; padding:22px 30px; justify-content:space-between;">
     <div class="modal-header">
-      <div class="modal-title" style="font-size:22px; font-weight:900;">车机守护与系统设置</div>
+      <div class="modal-title" style="font-size:23px; font-weight:900;">车机守护与系统设置</div>
       <button class="modal-close" onclick="closeModal('settingsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
-    <div class="about-list" style="display:flex; flex-direction:column; gap:6px; margin:6px 0;">
+    <div class="about-list" style="display:flex; flex-direction:column; gap:8px; margin:8px 0;">
       <!-- 1. 开机自启 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:7px 14px; gap:12px;">
-        <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong); white-space:nowrap;">车机开机自启动</div>
-          <div style="font-size:12px; color:var(--txt-dim); white-space:nowrap;" id="settingAutostartHint">开机自动在后台启动工具箱并放行白名单权限</div>
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:9px 16px; gap:12px;">
+        <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
+          <div style="font-weight:900; font-size:16px; color:var(--txt-strong); white-space:nowrap;">车机开机自启动</div>
+          <div style="font-size:13.5px; color:var(--txt-dim); white-space:nowrap;" id="settingAutostartHint">开机自动在后台启动工具箱并放行白名单权限</div>
         </div>
-        <button class="btn-ctrl-md" id="btnSettingAutostart" style="padding:6px 16px; min-height:36px; min-width:92px; font-size:13px; font-weight:800;" onclick="handleToggleAutostart()">设置</button>
+        <button class="btn-ctrl-md" id="btnSettingAutostart" style="padding:6px 18px; min-height:40px; min-width:96px; font-size:14.5px; font-weight:800;" onclick="handleToggleAutostart()">设置</button>
       </div>
 
       <!-- 2. 全局悬浮胶囊 (单行排布，绝不折行，真色彩激活态) -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:7px 14px; gap:12px;">
-        <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong); white-space:nowrap;">全局悬浮小胶囊</div>
-          <div style="font-size:12px; color:var(--txt-dim); white-space:nowrap;" id="settingFloatingHint">常驻桌面与任意应用，随时唤回控制台</div>
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:9px 16px; gap:12px;">
+        <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
+          <div style="font-weight:900; font-size:16px; color:var(--txt-strong); white-space:nowrap;">全局悬浮小胶囊</div>
+          <div style="font-size:13.5px; color:var(--txt-dim); white-space:nowrap;" id="settingFloatingHint">常驻桌面与任意应用，随时唤回控制台</div>
         </div>
         <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
           <div id="floatingDisplayModeRow" class="setting-segmented-group">
-            <button class="setting-segmented-btn active" id="btnFloatModeName" onclick="handleSelectFloatingMode('name')">吉利工具箱 (默认)</button>
-            <button class="setting-segmented-btn" id="btnFloatModeCode" onclick="handleSelectFloatingMode('code')">动态暗码 (+10/+5)</button>
+            <button class="setting-segmented-btn active" id="btnFloatModeName" style="font-size:13.5px; padding:6px 14px;" onclick="handleSelectFloatingMode('name')">吉利工具箱 (默认)</button>
+            <button class="setting-segmented-btn" id="btnFloatModeCode" style="font-size:13.5px; padding:6px 14px;" onclick="handleSelectFloatingMode('code')">动态暗码 (+10/+5)</button>
           </div>
-          <button class="btn-ctrl-md" id="btnSettingFloating" style="padding:6px 16px; min-height:36px; min-width:92px; font-size:13px; font-weight:800;" onclick="handleToggleFloatingWindow()">设置</button>
+          <button class="btn-ctrl-md" id="btnSettingFloating" style="padding:6px 18px; min-height:40px; min-width:96px; font-size:14.5px; font-weight:800;" onclick="handleToggleFloatingWindow()">设置</button>
         </div>
       </div>
 
       <!-- 3. 座舱联动与智能语音 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:9px 16px;">
         <div>
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">座舱联动与智能语音</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingVehicleAutoHint">四门迎宾播报、转向灯360全景、大灯高德夜间联动与熄火告别</div>
+          <div style="font-weight:900; font-size:16px; color:var(--txt-strong);">座舱联动与智能语音</div>
+          <div style="font-size:13.5px; color:var(--txt-dim); margin-top:3px;" id="settingVehicleAutoHint">四门迎宾播报、转向灯360全景、大灯高德夜间联动与熄火告别</div>
         </div>
-        <button class="btn-ctrl-md highlight" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleOpenVehicleAutoModal()">进入设置</button>
+        <button class="btn-ctrl-md highlight" style="padding:6px 18px; min-height:40px; min-width:104px; font-size:14.5px; font-weight:800;" onclick="handleOpenVehicleAutoModal()">进入设置</button>
       </div>
 
       <!-- 3. 无线快传常驻 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:9px 16px;">
         <div>
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">手机无线快传服务 (8888 端口)</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;">工具箱启动即在后台监听，同局域网手机随时扫码直连</div>
+          <div style="font-weight:900; font-size:16px; color:var(--txt-strong);">手机无线快传服务 (8888 端口)</div>
+          <div style="font-size:13.5px; color:var(--txt-dim); margin-top:3px;">工具箱启动即在后台监听，同局域网手机随时扫码直连</div>
         </div>
-        <span class="btn-status-pill green" style="font-size:12px; padding:4px 10px;">后台常驻</span>
+        <span class="btn-status-pill green" style="font-size:13px; padding:5px 12px;">后台常驻</span>
       </div>
 
       <!-- 4. 允许任意应用卡主题 (专家模式) -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:9px 16px;">
         <div>
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">允许任意应用卡主题 (专家模式)</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingExpertRabbitHint">默认关闭。锁定仅允许高德、百度等车载地图软件卡时钟伪装，防止非兼容软件导致车机开机死锁或变砖</div>
+          <div style="font-weight:900; font-size:16px; color:var(--txt-strong);">允许任意应用卡主题 (专家模式)</div>
+          <div style="font-size:13.5px; color:var(--txt-dim); margin-top:3px;" id="settingExpertRabbitHint">默认关闭。锁定仅允许高德、百度等车载地图软件卡时钟伪装，防止非兼容软件导致车机开机死锁或变砖</div>
         </div>
-        <button class="btn-ctrl-md" id="btnSettingExpertRabbit" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleToggleExpertRabbitTheme()">已关闭 (安全)</button>
+        <button class="btn-ctrl-md" id="btnSettingExpertRabbit" style="padding:6px 18px; min-height:40px; min-width:104px; font-size:14.5px; font-weight:800;" onclick="handleToggleExpertRabbitTheme()">已关闭 (安全)</button>
       </div>
 
       <!-- 5. 主题皮肤与护眼配色 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:9px 16px;">
         <div>
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">主题皮肤与护眼配色</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;">精选 8 套车载座舱护眼色彩体系（极光青、暖阳金、竹翠绿等）</div>
+          <div style="font-weight:900; font-size:16px; color:var(--txt-strong);">主题皮肤与护眼配色</div>
+          <div style="font-size:13.5px; color:var(--txt-dim); margin-top:3px;">精选 8 套车载座舱护眼色彩体系（极光青、暖阳金、竹翠绿等）</div>
         </div>
-        <button class="btn-ctrl-md" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="closeModal('settingsModal'); handleOpenSkinModal();">切换皮肤</button>
+        <button class="btn-ctrl-md" style="padding:6px 18px; min-height:40px; min-width:104px; font-size:14.5px; font-weight:800;" onclick="closeModal('settingsModal'); handleOpenSkinModal();">切换皮肤</button>
       </div>
 
       <!-- 6. 工具箱运行操作日志 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:9px 16px;">
         <div>
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">工具箱运行操作日志</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingLogHint">保存于 /sdcard/Download/geely_toolbox.log (自动滚动轮转防膨胀)</div>
+          <div style="font-weight:900; font-size:16px; color:var(--txt-strong);">工具箱运行操作日志</div>
+          <div style="font-size:13.5px; color:var(--txt-dim); margin-top:3px;" id="settingLogHint">保存于 /sdcard/Download/geely_toolbox.log (自动滚动轮转防膨胀)</div>
         </div>
-        <button class="btn-ctrl-md highlight" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="closeModal('settingsModal'); handleOpenLogModal();">查看日志</button>
+        <button class="btn-ctrl-md highlight" style="padding:6px 18px; min-height:40px; min-width:104px; font-size:14.5px; font-weight:800;" onclick="closeModal('settingsModal'); handleOpenLogModal();">查看日志</button>
       </div>
     </div>
-    <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-top:8px;">
-      <button class="btn-ctrl-md" style="min-width:120px; height:42px; font-size:14px; font-weight:800;" onclick="closeModal('settingsModal'); handleShowAbout();">关于与更新</button>
-      <button class="btn-ctrl-md primary" style="min-width:120px; height:42px; font-size:14px; font-weight:800;" onclick="closeModal('settingsModal')">完成</button>
+    <!-- 底部操作栏：赞赏支持移到关于与更新旁边 -->
+    <div class="modal-actions" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-top:10px;">
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn-ctrl-md" style="min-width:130px; height:46px; font-size:15px; font-weight:800;" onclick="closeModal('settingsModal'); handleShowAbout();">关于与更新</button>
+        <button class="btn-ctrl-md highlight" style="min-width:110px; height:46px; font-size:15px; font-weight:800;" onclick="handleShowReward();">赞赏支持</button>
+      </div>
+      <button class="btn-ctrl-md primary" style="min-width:130px; height:46px; font-size:15px; font-weight:800;" onclick="closeModal('settingsModal')">完成</button>
     </div>
   </div>
 </div>
@@ -1983,9 +1987,9 @@ body.light .btn-mini:active {
   </div>
 </div>
 
-<!-- 自定义语音播报文字 (TTS) Modal -->
+<!-- 自定义语音播报文字 (TTS) Modal (拉大并放大文字，车机舒适操作) -->
 <div class="modal-overlay" id="customVoiceTextModal">
-  <div class="modal-card" style="width:720px; max-width:92vw; padding:22px 28px;">
+  <div class="modal-card" style="width:860px; max-width:94vw; padding:24px 32px;">
     <div class="modal-header">
       <div class="modal-title" style="font-size:20px; font-weight:900;">自定义播报文字 (TTS 朗读)</div>
       <button class="modal-close" onclick="closeModal('customVoiceTextModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
