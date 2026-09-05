@@ -619,8 +619,36 @@ public class SystemUtils {
         }
     }
 
+    /**
+     * 获取工具箱专属置顶下载目录：/sdcard/Download/!车机应用/
+     * 采用 ASCII 优先符号 '!' 命名，确保在任何文件管理器中均 100% 绝对置顶（排在第 1 位），
+     * 彻底解决系统自动生成的繁杂空文件夹导致车友每次费力狂滑屏幕找安装包的痛点。
+     */
+    public static File getAppDownloadDir() {
+        File dir = new File(Environment.getExternalStorageDirectory(), "Download/!车机应用");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        return dir;
+    }
+
     public static boolean openDocumentsUI(Context context) {
-        // Strategy 1: Action VIEW_DOWNLOADS
+        try {
+            getAppDownloadDir().mkdirs();
+        } catch (Exception ignored) {}
+
+        // Strategy 0: Direct view dedicated !车机应用 folder in DocumentsUI
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(Uri.parse("content://com.android.externalstorage.documents/document/primary:Download%2F%21%E8%BD%A6%E6%9C%BA%E5%BA%94%E7%94%A8"), "vnd.android.document/directory");
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            context.startActivity(intent);
+            return true;
+        } catch (Exception ignored) {
+        }
+
+        // Strategy 1: Action VIEW_DOWNLOADS (内置 !车机应用 文件夹稳居首行第1位)
         try {
             Intent intent = new Intent("android.intent.action.VIEW_DOWNLOADS");
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

@@ -528,7 +528,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     try {
-                        File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
+                        File downloadDir = SystemUtils.getAppDownloadDir();
                         if (!downloadDir.exists()) {
                             downloadDir.mkdirs();
                         }
@@ -575,7 +575,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     File targetFile = null;
                     if (filename != null && !filename.trim().isEmpty()) {
-                        File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
+                        File downloadDir = SystemUtils.getAppDownloadDir();
                         File f = new File(downloadDir, filename.trim());
                         if (f.exists() && f.length() > 0) {
                             targetFile = f;
@@ -670,7 +670,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         @Override
                         public void run() {
                             try {
-                                File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
+                                File downloadDir = SystemUtils.getAppDownloadDir();
                                 File apkFile = new File(downloadDir, filename);
                                 if (!apkFile.exists() || apkFile.length() == 0) {
                                     mainHandler.post(new Runnable() {
@@ -1321,7 +1321,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         @Override
                         public void run() {
                             try {
-                                File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
+                                File downloadDir = SystemUtils.getAppDownloadDir();
                                 int cleaned = 0;
                                 if (downloadDir.exists() && downloadDir.isDirectory()) {
                                     File[] files = downloadDir.listFiles();
@@ -1355,7 +1355,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     try {
-                        File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
+                        File downloadDir = SystemUtils.getAppDownloadDir();
                         int count = 0;
                         if (downloadDir.exists() && downloadDir.isDirectory()) {
                             File[] files = downloadDir.listFiles();
@@ -1438,7 +1438,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             try {
                 org.json.JSONArray arr = new org.json.JSONArray(jsonArrayStr);
                 JSONObject result = new JSONObject();
-                File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
+                File downloadDir = SystemUtils.getAppDownloadDir();
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject item = arr.getJSONObject(i);
                     String id = item.optString("id");
@@ -1656,7 +1656,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
+                    File downloadDir = SystemUtils.getAppDownloadDir();
                     final File apkFile = new File(downloadDir, filename);
                     if (!apkFile.exists() || apkFile.length() == 0) {
                         Toast.makeText(context, "文件不存在，请先下载: " + filename, Toast.LENGTH_SHORT).show();

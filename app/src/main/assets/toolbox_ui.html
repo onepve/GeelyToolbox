@@ -556,9 +556,9 @@ body.light .app-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.06);
 
 .app-item {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 20px; border-radius: 12px;
+  padding: 16px 22px; border-radius: 12px;
   background: var(--card); border: 1.5px solid var(--border);
-  transition: all 0.15s; flex-shrink: 0; min-height: 112px;
+  transition: all 0.15s; flex-shrink: 0; min-height: 84px;
 }
 .app-info {
   display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1;
@@ -954,19 +954,22 @@ body.light .changelog-item {
   color: #10B981; border-color: rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.12);
 }
 
-/* 三次校验确认弹窗 */
+/* 三次校验确认弹窗 (全宽拉大、字号放大、告别上下留白) */
 .confirm-box {
-  background: rgba(239, 68, 68, 0.12); border: 1.5px solid rgba(239, 68, 68, 0.4);
-  border-radius: var(--skin-radius-sm); padding: 12px; text-align: center;
+  background: rgba(239, 68, 68, 0.08); border: 2px solid rgba(239, 68, 68, 0.45);
+  border-radius: 14px; padding: 24px 30px; text-align: center;
+}
+body.light .confirm-box {
+  background: #FFF5F5; border: 2px solid #FCA5A5;
 }
 .confirm-step {
-  font-size: 11px; font-weight: 800; color: var(--accent); letter-spacing: 1px; margin-bottom: 3px;
+  font-size: 15px; font-weight: 900; color: var(--accent); letter-spacing: 1.5px; margin-bottom: 8px;
 }
 .confirm-title {
-  font-size: 15px; font-weight: 800; color: #EF4444; margin-bottom: 5px;
+  font-size: 24px; font-weight: 900; color: #EF4444; margin-bottom: 14px; line-height: 1.35;
 }
 .confirm-desc {
-  font-size: 12.5px; color: var(--txt-strong); line-height: 1.5; text-align: left;
+  font-size: 16px; color: var(--txt-strong); line-height: 1.8; text-align: left;
 }
 
 /* 关于卡片 */
@@ -1086,30 +1089,22 @@ body.light .btn-mini:active {
   </div>
 
   <div class="top-pills">
-    <div class="pill" style="cursor:pointer;" onclick="handleOpenDialer()" title="点击调起车机拨号盘">
-      <span class="dot blue"></span>
-      <span id="codePlus10PillTxt">暗码(+10): 计算中</span>
-    </div>
-    <div class="pill" style="cursor:pointer;" onclick="handleOpenDialer()" title="点击调起车机拨号盘">
-      <span class="dot blue"></span>
-      <span id="codePlus5PillTxt">暗码(+5): 计算中</span>
-    </div>
-    <div class="pill" style="cursor:pointer;" onclick="handleToggleFreezeAppStore()" title="点击切换原厂商店冻结状态">
-      <span class="dot green" id="pillAppstoreDot"></span>
-      <span id="pillAppstore">商店: 探测中</span>
-    </div>
     <div class="pill" style="cursor:pointer;" onclick="handleToggleWhitelist()" title="点击切换白名单放行状态">
       <span class="dot green" id="pillWhitelistDot"></span>
       <span id="pillWhitelistText">白名单: 已放行 1</span>
     </div>
-    <div class="pill" onclick="handleShowQrCode()">
+    <div class="pill" style="cursor:pointer;" onclick="handleOpenDialer()" title="点击查看动态暗码与工程模式">
+      <span class="dot blue"></span>
+      <span id="topCodePill">暗码: #*190110</span>
+    </div>
+    <div class="pill" style="cursor:pointer;" onclick="handleShowQrCode()" title="点击打开无线快传二维码">
       <span class="dot green" id="ipDot"></span>
-      <span id="ipTxt">IP: 探测中</span>
+      <span id="ipTxt">快传 IP: 探测中</span>
     </div>
   </div>
 
   <div class="top-actions">
-    <button class="btn-icon highlight" onclick="handleOpenDeepToolsModal()">ADB 工具</button>
+    <button class="btn-icon highlight" onclick="handleOpenFreezeManager()">ADB 工具</button>
     <button class="btn-icon" onclick="handleToggleTheme()">日夜模式</button>
     <button class="btn-icon" onclick="handleShowQrCode()">无线快传</button>
     <button class="btn-icon" onclick="handleOpenSettingsModal()">设置</button>
@@ -1629,7 +1624,7 @@ body.light .btn-mini:active {
 
 <!-- 车机 ADB 核心组件与全量应用管理 Modal -->
 <div class="modal-overlay" id="freezeModal">
-  <div class="modal-card" style="width:896px;">
+  <div class="modal-card" style="width:1040px; max-width:96vw; max-height:88vh; padding:22px 30px;">
     <div class="modal-header">
       <div style="display:flex; align-items:center; gap:8px;">
         <div class="modal-title">车机 ADB 核心组件与应用管理</div>
@@ -1676,6 +1671,15 @@ body.light .btn-mini:active {
         <div class="ota-url-val" id="logcatPathText">/sdcard/Download/car_full.log</div>
         <div style="font-size:10.5px; color:var(--txt-dim); margin-top:2px;">提示：可通过手机【无线快传】或【原生文件管理】导出该日志文件进行故障排查与分析。</div>
       </div>
+    </div>
+
+    <!-- 存储清理入口卡片 -->
+    <div style="background:rgba(255, 255, 255, 0.04); border:1.5px solid var(--border); border-radius:var(--skin-radius-sm); padding:10px 14px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onclick="handleOpenCleanDialog()">
+      <div>
+        <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong);">下载目录与大文件清理</div>
+        <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">扫描并清空 Download 目录下的 0 字节空目录、历史 APK 安装包与临时文件</div>
+      </div>
+      <button class="btn-ctrl-md" style="height:36px; padding:0 16px; font-size:13px; font-weight:800;">清理存储 -></button>
     </div>
 
     <!-- 自定义 ADB 终端与手机远程推送大卡片 -->
@@ -1801,17 +1805,17 @@ body.light .btn-mini:active {
   </div>
 </div>
 
-<!-- 高危操作三次递进式安全校验确认 Modal -->
+<!-- 高危操作三次递进式安全校验确认 Modal (拉宽至1160px、拉高至540px、字号加大、空间饱满) -->
 <div class="modal-overlay" id="tripleConfirmModal">
-  <div class="modal-card" style="width:1092px; max-width:94vw;">
-    <div class="confirm-box">
-      <div class="confirm-step" id="confirmStepLabel">STEP 1 / 3 · 操作意图核准</div>
-      <div class="confirm-title" id="confirmTitle">确认执行操作？</div>
-      <div class="confirm-desc" id="confirmDesc">操作描述内容</div>
+  <div class="modal-card" style="width:1160px; max-width:96vw; min-height:540px; max-height:92vh; display:flex; flex-direction:column; justify-content:space-between; padding:28px 36px;">
+    <div class="confirm-box" style="flex:1; display:flex; flex-direction:column; justify-content:center; padding:24px 32px; margin:8px 0 18px;">
+      <div class="confirm-step" id="confirmStepLabel" style="font-size:15px; font-weight:900; letter-spacing:1.5px; margin-bottom:8px;">STEP 1 / 3 · 操作意图核准</div>
+      <div class="confirm-title" id="confirmTitle" style="font-size:24px; font-weight:900; margin-bottom:14px;">确认执行操作？</div>
+      <div class="confirm-desc" id="confirmDesc" style="font-size:16px; line-height:1.8;">操作描述内容</div>
     </div>
     <div class="modal-actions" style="justify-content:space-between; margin-top:8px;">
-      <button class="btn-icon" style="height:42px; padding:0 20px; font-size:14px; font-weight:800;" onclick="cancelTripleConfirm()">取消操作</button>
-      <button class="btn-icon" id="confirmNextBtn" style="height:42px; padding:0 26px; font-size:14px; font-weight:800;" onclick="proceedTripleConfirm()">我已清楚，下一步 -></button>
+      <button class="btn-ctrl-md" style="min-width:140px; height:52px; font-size:16px; font-weight:800; padding:0 24px;" onclick="cancelTripleConfirm()">取消操作</button>
+      <button class="btn-ctrl-md danger" id="confirmNextBtn" style="min-width:320px; height:52px; font-size:16.5px; font-weight:900; padding:0 30px;" onclick="proceedTripleConfirm()">我已清楚，下一步 -></button>
     </div>
   </div>
 </div>
@@ -1881,14 +1885,7 @@ body.light .btn-mini:active {
         <button class="btn-ctrl-md highlight" style="padding:6px 18px; min-height:40px; min-width:104px; font-size:14.5px; font-weight:800;" onclick="handleOpenVehicleAutoModal()">进入设置</button>
       </div>
 
-      <!-- 3. 无线快传常驻 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:9px 16px;">
-        <div>
-          <div style="font-weight:900; font-size:16px; color:var(--txt-strong);">手机无线快传服务 (8888 端口)</div>
-          <div style="font-size:13.5px; color:var(--txt-dim); margin-top:3px;">工具箱启动即在后台监听，同局域网手机随时扫码直连</div>
-        </div>
-        <span class="btn-status-pill green" style="font-size:13px; padding:5px 12px;">后台常驻</span>
-      </div>
+
 
       <!-- 4. 允许任意应用卡主题 (专家模式) -->
       <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:9px 16px;">
@@ -1917,68 +1914,6 @@ body.light .btn-mini:active {
         <button class="btn-ctrl-md highlight" style="min-width:110px; height:46px; font-size:15px; font-weight:800;" onclick="handleShowReward();">赞赏支持</button>
       </div>
       <button class="btn-ctrl-md primary" style="min-width:130px; height:46px; font-size:15px; font-weight:800;" onclick="closeModal('settingsModal')">完成</button>
-    </div>
-  </div>
-</div>
-
-<!-- 车机深度工具箱二级 Modal -->
-<div class="modal-overlay" id="deepToolsModal">
-  <div class="modal-card" style="width:896px;">
-    <div class="modal-header">
-      <div class="modal-title">车机深度工具箱</div>
-      <button class="modal-close" onclick="closeModal('deepToolsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-    </div>
-    <div style="font-size:12px; color:var(--txt-dim); margin-bottom:12px;">包含 ADB 系统组件冻结、座舱联动与深度存储清理等高级功能。</div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
-      <!-- 工具卡片 1: 车机 ADB -->
-      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px;" onclick="closeModal('deepToolsModal'); handleOpenFreezeManager();">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">车机 ADB 终端 & 冻结</div>
-          <span class="btn-status-pill blue" id="deepPillAppstore">核心管理</span>
-        </div>
-        <div style="font-size:11.5px; color:var(--txt-dim);">执行 ADB 命令行与原厂商店、OTA 系统组件冻结</div>
-      </div>
-
-
-
-      <!-- 工具卡片 3: 下载目录清理 -->
-      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px;" onclick="closeModal('deepToolsModal'); handleOpenCleanDialog();">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">下载目录与大文件清理</div>
-          <span class="btn-status-pill gray">空间释放</span>
-        </div>
-        <div style="font-size:11.5px; color:var(--txt-dim);">彻底清空 Download 临时缓存与历史 APK 安装包</div>
-      </div>
-
-      <!-- 工具卡片 4: 全量应用管理 -->
-      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px;" onclick="closeModal('deepToolsModal'); handleOpenAllAppsModal();">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">全量应用与组件管理</div>
-          <span class="btn-status-pill gray">系统组件</span>
-        </div>
-        <div style="font-size:11.5px; color:var(--txt-dim);">查看车机全部 100+ 应用，支持按需禁用与数据清理</div>
-      </div>
-
-      <!-- 3. 座舱联动与智能语音 -->
-      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px;" onclick="closeModal('settingsModal'); handleOpenVehicleAutoModal();">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">座舱联动与智能语音</div>
-          <span class="btn-status-pill blue">原生自动化</span>
-        </div>
-        <div style="font-size:11.5px; color:var(--txt-dim);">原生监听 CAN 信号，提供四门迎宾播报、转向灯联动 360 (车速≤30km/h 保护)、大灯高德夜间联动与熄火告别</div>
-      </div>
-
-      <!-- 工具卡片 6: 运行操作日志 -->
-      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px; grid-column: span 2;" onclick="closeModal('deepToolsModal'); handleOpenLogModal();">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">工具箱运行操作日志</div>
-          <span class="btn-status-pill green" id="deepPillLogSize">实时记录中</span>
-        </div>
-        <div style="font-size:11.5px; color:var(--txt-dim);">详细记录每步操作时间、成功状态及参数，自动轮转保存于机身 Download/geely_toolbox.log</div>
-      </div>
-    </div>
-    <div class="modal-actions" style="justify-content:flex-end;">
-      <button class="btn-ctrl-md" style="min-width:100px;" onclick="closeModal('deepToolsModal')">关闭</button>
     </div>
   </div>
 </div>
@@ -2695,7 +2630,6 @@ function renderApps() {
             '<div style="flex-shrink:0;">' + statusPillHtml + '</div>' +
           '</div>' +
           metaTagsHtml +
-          '<div class="app-desc-marquee-box"><div class="app-desc" title="' + app.desc + '">' + app.desc + '</div></div>' +
           progressBarHtml +
         '</div>' +
       '</div>' +
@@ -2708,41 +2642,9 @@ function renderApps() {
 
 // 智能计算并激活应用简介平滑跑马灯
 function initAppDescMarquees() {
-  setTimeout(function() {
-    var boxes = document.querySelectorAll('.app-desc-marquee-box');
-    boxes.forEach(function(box) {
-      var desc = box.querySelector('.app-desc');
-      if (!desc) return;
-      
-      // 1. 先尝试以两行自然折行排版测试边界
-      desc.classList.remove('is-marquee', 'animate-marquee');
-      desc.classList.add('is-wrapped');
-      desc.style.transform = '';
-      
-      // 2. 智能探测：若内容超过两行边框高度，则启动跑马灯；若未超出边框，则保持自动换行
-      var isOverflowing = (desc.scrollHeight > desc.clientHeight + 2);
-      
-      if (isOverflowing) {
-        desc.classList.remove('is-wrapped');
-        desc.classList.add('is-marquee');
-        var overflowDist = desc.scrollWidth - box.clientWidth;
-        if (overflowDist > 6) {
-          var duration = Math.max(6, Math.round(overflowDist / 20));
-          desc.style.setProperty('--scroll-dist', '-' + (overflowDist + 18) + 'px');
-          desc.style.animationDuration = duration + 's';
-          desc.classList.add('animate-marquee');
-        }
-      } else {
-        desc.classList.remove('is-marquee', 'animate-marquee');
-        desc.classList.add('is-wrapped');
-      }
-    });
-  }, 80);
+  // 卡片保持纯净高档，长文本描述全量收敛至二级详情大窗口
 }
 
-window.addEventListener('resize', initAppDescMarquees);
-
-// 同步实际本地下载目录文件状态
 function syncLocalAppStatuses() {
   try {
     if (window.ToolboxBridge && typeof window.ToolboxBridge.checkLocalAppStatuses === 'function') {
@@ -4215,6 +4117,7 @@ window.showToolboxUpdateModal = function(data, isForce) {
   var btnLater = document.getElementById('btnUpdateLater');
   if (isForce) {
     if (btnLater) btnLater.style.display = 'none';
+    if (btn) btn.style.display = 'none'; // 强制重新下载已有进度条，彻底隐藏多余不可点击按键
     if (pBox) pBox.style.display = 'block';
     var status = document.getElementById('toolboxSelfProgressStatus');
     if (status) status.innerText = '正在连接云端重新下载... (0%)';
@@ -4222,10 +4125,6 @@ window.showToolboxUpdateModal = function(data, isForce) {
     if (bar) bar.style.width = '0%';
     var speed = document.getElementById('toolboxSelfProgressSpeed');
     if (speed) speed.innerText = '正在连接...';
-    if (btn) {
-      btn.disabled = true;
-      btn.innerText = '正在重新下载中...';
-    }
   } else {
     if (btnLater) btnLater.style.display = 'inline-block';
     if (pBox) pBox.style.display = 'none';

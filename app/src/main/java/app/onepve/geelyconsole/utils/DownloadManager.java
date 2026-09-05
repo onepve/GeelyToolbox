@@ -67,10 +67,7 @@ public class DownloadManager {
             public void run() {
                 File tempFile = null;
                 try {
-                    File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
-                    if (!downloadDir.exists()) {
-                        downloadDir.mkdirs();
-                    }
+                    File downloadDir = SystemUtils.getAppDownloadDir();
 
                     String fileName = customFileName;
                     if (fileName == null || fileName.isEmpty()) {
