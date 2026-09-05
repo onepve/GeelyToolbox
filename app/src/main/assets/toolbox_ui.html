@@ -1600,22 +1600,22 @@ body.light .btn-mini:active {
       <button class="modal-close" onclick="closeModal('cleanDialogModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="font-size:12px; color:var(--txt-dim); margin-bottom:2px;">
-      目标目录：<code>/sdcard/Download/</code> (存放快传与商城下载包)
+      目标目录：<code>/sdcard/Download/00_车机应用/</code> 及 Download 根目录系统残留
     </div>
     <div style="display:flex; flex-direction:column; gap:8px;">
       <!-- 选项一：仅清理空目录 -->
       <div class="clean-opt-card">
         <div class="clean-opt-info">
           <div class="clean-opt-title">仅清理零字节无效空目录 (安全推荐)</div>
-          <div class="clean-opt-desc">扫描并删除残留的 0 字节空文件夹，绝不删除任何已下载的 APK 安装包或文件。</div>
+          <div class="clean-opt-desc">深度扫描并清空 Download 根目录及 00_车机应用 下的无效残留空文件夹，绝不删除任何安装包。</div>
         </div>
         <button class="btn-mini unfreeze" style="height:32px; padding:0 12px;" onclick="executeCleanEmptyFolders()">仅清理空目录</button>
       </div>
       <!-- 选项二：清空全部文件 -->
       <div class="clean-opt-card">
         <div class="clean-opt-info">
-          <div class="clean-opt-title" style="color:#EF4444;">清空下载目录下全部文件 (高危/释放空间)</div>
-          <div class="clean-opt-desc">一键删除下载目录下所有 APK 安装包与历史缓存文件，快速释放车机机身存储。</div>
+          <div class="clean-opt-title" style="color:#EF4444;">清空 00_车机应用 下全部文件 (高危/释放空间)</div>
+          <div class="clean-opt-desc">一键清空 00_车机应用 专属目录内所有已下载的 APK 安装包与临时文件，快速释放车机机身存储。</div>
         </div>
         <button class="btn-mini danger" style="height:32px; padding:0 12px;" onclick="requestCleanAllDownloads()">清空全部文件</button>
       </div>
@@ -2153,16 +2153,8 @@ body.light .btn-mini:active {
 
 <script>
 // ==================== 数据状态与交互 ====================
-var SKINS_DATA = [
-  { id: 'default', name: '极简科技', desc: '经典钛金蓝 · 清爽纯净', colors: ['#0284C7', '#00AEB9', '#38BDF8'] },
-  { id: 'forest', name: '竹翠森林 (护眼推荐)', desc: '柔和竹翠绿 · 缓解视觉疲劳', colors: ['#10B981', '#059669', '#34D399'] },
-  { id: 'amber', name: '暖阳琥珀 (夜行推荐)', desc: '温润琥珀金 · 夜间不刺眼', colors: ['#D97706', '#F59E0B', '#FBBF24'] },
-  { id: 'aurora', name: '极光曜青', desc: '灵动极光青 · 科技座舱', colors: ['#00AEB9', '#0284C7', '#2DD4BF'] },
-  { id: 'amethyst', name: '紫晶夜色', desc: '优雅柔美 · 低饱和淡紫', colors: ['#8B5CF6', '#A855F7', '#C084FC'] },
-  { id: 'pink', name: '落樱粉黛', desc: '甜美可爱 · 清新落樱', colors: ['#E11D48', '#FB7185', '#FDA4AF'] },
-  { id: 'slate', name: '墨韵石灰', desc: '低调沉稳 · 高级板岩灰', colors: ['#64748B', '#475569', '#94A3B8'] },
-  { id: 'cyber', name: '赛博霓虹', desc: '高科赛博 · 动感极客座舱', colors: ['#00F0FF', '#FF0055', '#FFE600'] }
-];
+// 主题配色已收敛为车规级日夜高反差双模
+var SKINS_DATA = [];
 var currentSkin = 'default';
 var currentCategory = 'all';
 var cachedDynamicCode = '#*190110';
@@ -2800,8 +2792,8 @@ function executeCleanEmptyFolders() {
   closeModal('cleanDialogModal');
   showUniversalConfirm({
     title: '确认清理下载目录空文件夹？',
-    desc: '<b>操作说明</b>：自动扫描并安全删除 <code>/sdcard/Download/</code> 目录下的空子文件夹与零字节临时碎片。<br><br>' +
-          '• <b>安全性说明</b>：<b>100% 绝对安全</b>，绝对不会删除任何已下载的 APK 安装包、音乐或配置数据。<br><br>' +
+    desc: '<b>操作说明</b>：自动扫描并安全删除 <code>/sdcard/Download/00_车机应用/</code> 与 <code>Download/</code> 根目录下的系统残留空文件夹与零字节临时碎片。<br><br>' +
+          '• <b>安全性说明</b>：<b>100% 绝对安全</b>，绝不触碰任何已下载的 APK 安装包、音乐或配置数据。<br><br>' +
           '是否确认立即清理？',
     btnText: '确认清理',
     isDanger: false,
@@ -2813,7 +2805,7 @@ function executeCleanEmptyFolders() {
 
 function requestCleanAllDownloads() {
   closeModal('cleanDialogModal');
-  requestAppAction('/sdcard/Download/*', '下载目录全部文件与安装包', 'cleanAllDownloads', false);
+  requestAppAction('/sdcard/Download/00_车机应用/*', '00_车机应用专属目录全部文件与安装包', 'cleanAllDownloads', false);
 }
 
 // ==================== 三次递进式安全校验逻辑 ====================
@@ -3221,51 +3213,8 @@ function applyDayNightMode(isNight) {
   }
 }
 
-function renderSkinCards() {
-  var container = document.getElementById('skinCardsContainer');
-  if (!container) return;
-  var html = '';
-  SKINS_DATA.forEach(function(s) {
-    var isActive = (s.id === currentSkin);
-    var borderStyle = isActive ? 'border: 2px solid var(--accent); background: rgba(2, 132, 199, 0.18); box-shadow: 0 0 12px rgba(2, 132, 199, 0.35);' : 'border: 1px solid var(--border); background: var(--card);';
-    var activeBadge = isActive ? '<span style="font-size:11px; font-weight:800; color:var(--accent); background:var(--btn-bg); padding:2px 6px; border-radius:4px; border:1px solid var(--border);">[ 使用中]</span>' : '';
-
-    var dots = '<div style="display:flex; gap:5px; align-items:center;">' +
-      s.colors.map(function(c) { return '<span style="display:inline-block; width:13px; height:13px; border-radius:50%; background:' + c + '; box-shadow: 0 1px 4px rgba(0,0,0,0.35);"></span>'; }).join('') +
-      '</div>';
-
-    html += '<div onclick="selectSkin(\'' + s.id + '\')" style="padding:10px 12px; border-radius:var(--skin-radius-sm); cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:all 0.15s; ' + borderStyle + '">' +
-      '<div style="display:flex; align-items:center; justify-content:space-between;">' +
-        '<div style="font-size:13.5px; font-weight:800; color:var(--txt-strong);">' + s.name + '</div>' +
-        dots +
-      '</div>' +
-      '<div style="display:flex; align-items:center; justify-content:space-between; margin-top:2px;">' +
-        '<div style="font-size:11.5px; color:var(--txt-dim);">' + s.desc + '</div>' +
-        activeBadge +
-      '</div>' +
-    '</div>';
-  });
-  container.innerHTML = html;
-}
-
-function selectSkin(skinId) {
-  SKINS_DATA.forEach(function(s) {
-    document.body.classList.remove('skin-' + s.id);
-  });
-  currentSkin = skinId;
-  if (skinId !== 'default') {
-    document.body.classList.add('skin-' + skinId);
-  }
-  renderSkinCards();
-  var found = SKINS_DATA.find(function(s) { return s.id === skinId; });
-  var name = found ? found.name : skinId;
-  showToast('已切换至【' + name + '】主题 (๑•̀ㅂ•́)و');
-}
-
-function handleOpenSkinModal() {
-  renderSkinCards();
-  openModal('skinModal');
-}
+// 皮肤弹窗与8套鸡肋配色已废除，专注车规级日夜双模
+function handleOpenSkinModal() { handleToggleTheme(); }
 
 
 
@@ -3590,6 +3539,26 @@ function _doStartAutoPilotInternal(filename) {
       }
     }
   });
+}
+
+var _selectedNavApp = null;
+function openRabbitInstallGuideModal(app) {
+  _selectedNavApp = app;
+  var titleEl = document.getElementById('rabbitInstallModalTitle');
+  var nameEl = document.getElementById('rabbitInstallAppName');
+  if (titleEl) titleEl.innerText = (app.name || '高德地图') + ' 安装指引';
+  if (nameEl) nameEl.innerText = app.name || '高德地图';
+  openModal('rabbitInstallModal');
+}
+
+function showAutoPilotLoading(filename) {
+  var title = document.getElementById('autoPilotLoadingTitle');
+  if (title) title.innerText = '正在打包注入兔子时钟屏保...';
+  openModal('autoPilotLoadingModal');
+}
+
+function hideAutoPilotLoading() {
+  closeModal('autoPilotLoadingModal');
 }
 
 function handleRabbitAutoPilotInstall() {
@@ -4297,7 +4266,7 @@ function handleOpenSettingsModal() {
 }
 
 function handleOpenDeepToolsModal() {
-  openModal('deepToolsModal');
+  handleOpenFreezeManager();
 }
 
 function handleOpenLogModal() {

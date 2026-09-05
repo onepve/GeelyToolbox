@@ -1321,24 +1321,39 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         @Override
                         public void run() {
                             try {
-                                File downloadDir = SystemUtils.getAppDownloadDir();
+                                File dedicatedDir = SystemUtils.getAppDownloadDir();
+                                File rootDownloadDir = new File(android.os.Environment.getExternalStorageDirectory(), "Download");
                                 int cleaned = 0;
-                                if (downloadDir.exists() && downloadDir.isDirectory()) {
-                                    File[] files = downloadDir.listFiles();
+
+                                // 1. 扫描清理 00_车机应用 目录内部的 0 字节空子文件夹
+                                if (dedicatedDir.exists() && dedicatedDir.isDirectory()) {
+                                    File[] files = dedicatedDir.listFiles();
                                     if (files != null) {
                                         for (File f : files) {
                                             if (f.isDirectory() && f.list() != null && f.list().length == 0) {
-                                                f.delete();
-                                                cleaned++;
+                                                if (f.delete()) cleaned++;
                                             }
                                         }
                                     }
                                 }
+
+                                // 2. 扫描清理 /sdcard/Download/ 根目录下的残留空文件夹（严禁误删 00_车机应用）
+                                if (rootDownloadDir.exists() && rootDownloadDir.isDirectory()) {
+                                    File[] files = rootDownloadDir.listFiles();
+                                    if (files != null) {
+                                        for (File f : files) {
+                                            if (f.isDirectory() && !"00_车机应用".equals(f.getName()) && f.list() != null && f.list().length == 0) {
+                                                if (f.delete()) cleaned++;
+                                            }
+                                        }
+                                    }
+                                }
+
                                 final int count = cleaned;
                                 mainHandler.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        Toast.makeText(context, "已清理 " + count + " 个无效空文件夹", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(context, "已清理 " + count + " 个系统残留空文件夹 (含 00_车机应用 与 Download 根目录)", Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             } catch (Exception ignored) {
@@ -1371,7 +1386,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         mainHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                Toast.makeText(context, "已清空下载目录全部文件 (已删除 " + finalCount + " 个文件)", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(context, "已清空 00_车机应用 专属目录全部文件 (已删除 " + finalCount + " 个文件)", Toast.LENGTH_SHORT).show();
                             }
                         });
                     } catch (Exception e) {
@@ -1523,7 +1538,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                             }
                                         }
                                     } else {
-                                        Toast.makeText(context, "下载完成: " + savedFile.getName() + "\n已保存在 Download 目录", Toast.LENGTH_LONG).show();
+                                        Toast.makeText(context, "下载完成: " + savedFile.getName() + "\n已保存在 00_车机应用 专属目录", Toast.LENGTH_LONG).show();
                                     }
                                 }
                             });
