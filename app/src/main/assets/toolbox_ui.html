@@ -4781,43 +4781,47 @@ window.applyCloudAppsJson = function(jsonStr) {
   try {
     var data = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
     if (data && data.apps && data.apps.length > 0) {
+      // 记录已有的本地下载与安装进度状态
+      var statusMap = {};
+      CLOUD_APPS.forEach(function(a) {
+        statusMap[a.id] = {
+          status: a.status,
+          progress: a.progress,
+          speed: a.speed,
+          downloadTime: a.downloadTime
+        };
+      });
+
+      // 100% 以云端 apps.json 真实列表、顺序与内容作为单一真实源重构 CLOUD_APPS
+      var newApps = [];
       data.apps.forEach(function(remoteApp) {
         var cat = (remoteApp.category === 'tools' || remoteApp.category === 'tool') ? 'tool' : (remoteApp.category || 'tool');
         var bCls = cat === 'navigation' ? 'nav' : (cat === 'music' ? 'music' : (cat === 'tool' ? 'tool' : 'setting'));
         var bTxt = cat === 'navigation' ? '导航' : (cat === 'music' ? '音乐' : (remoteApp.id.indexOf('firmware') !== -1 ? '固件' : (remoteApp.id.indexOf('carmedia') !== -1 || remoteApp.id.indexOf('helper') !== -1 ? '方控' : (remoteApp.id.indexOf('settings') !== -1 ? '设置' : '工具'))));
 
-        var local = CLOUD_APPS.find(function(a) { return a.id === remoteApp.id; });
-        if (local) {
-          local.name = remoteApp.name || local.name;
-          local.size = remoteApp.size || local.size;
-          local.desc = remoteApp.description || local.desc;
-          local.url = remoteApp.download_url || local.url;
-          local.badge = remoteApp.badge || local.badge;
-          local.filename = remoteApp.filename || local.filename;
-          local.category = cat;
-          local.badgeClass = bCls;
-          local.badgeText = bTxt;
-          local.updated_at = remoteApp.compile_date || remoteApp.updated_at || local.updated_at;
-        } else {
-          CLOUD_APPS.push({
-            id: remoteApp.id,
-            category: cat,
-            badgeClass: bCls,
-            badgeText: bTxt,
-            name: remoteApp.name,
-            badge: remoteApp.badge || '官方云端',
-            size: remoteApp.size,
-            filename: remoteApp.filename,
-            package_name: remoteApp.package_name,
-            desc: remoteApp.description,
-            updated_at: remoteApp.compile_date || remoteApp.updated_at || '',
-            status: 'download',
-            progress: 0,
-            speed: '',
-            url: remoteApp.download_url
-          });
-        }
+        var prev = statusMap[remoteApp.id] || {};
+        newApps.push({
+          id: remoteApp.id,
+          category: cat,
+          badgeClass: bCls,
+          badgeText: bTxt,
+          name: remoteApp.name,
+          badge: remoteApp.badge || '官方云端',
+          size: remoteApp.size,
+          filename: remoteApp.filename,
+          package_name: remoteApp.package_name,
+          desc: remoteApp.description || '',
+          updated_at: remoteApp.compile_date || remoteApp.updated_at || '',
+          compile_date: remoteApp.compile_date || '',
+          status: prev.status || 'download',
+          progress: prev.progress || 0,
+          speed: prev.speed || '',
+          downloadTime: prev.downloadTime || '',
+          url: remoteApp.download_url
+        });
       });
+
+      CLOUD_APPS = newApps;
       syncLocalAppStatuses();
       renderApps();
     }

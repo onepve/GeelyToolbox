@@ -79,6 +79,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
     private WebView webView;
     private WebServer webServer;
+    private ToolboxBridge bridge;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean isWhitelistEnabled = false;
 
@@ -179,11 +180,20 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 pushDeviceInfoToWeb();
+                mainHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (bridge != null) {
+                            bridge.refreshCloudAppsInternal(true);
+                        }
+                    }
+                }, 1000);
             }
         });
 
         webView.setWebChromeClient(new WebChromeClient());
-        webView.addJavascriptInterface(new ToolboxBridge(this), "ToolboxBridge");
+        bridge = new ToolboxBridge(this);
+        webView.addJavascriptInterface(bridge, "ToolboxBridge");
         webView.loadUrl("file:///android_asset/toolbox_ui.html");
     }
 
@@ -1559,6 +1569,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void refreshCloudApps() {
+            refreshCloudAppsInternal(false);
+        }
+
+        public void refreshCloudAppsInternal(final boolean silent) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -1582,7 +1596,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                     if (webView != null) {
                                         webView.evaluateJavascript("if(window.applyCloudAppsJson) window.applyCloudAppsJson(" + JSONObject.quote(jsonContent) + "); if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(true, 'ok');", null);
                                     }
-                                    Toast.makeText(context, "车载软件列表已刷新至最新 (๑•̀ㅂ•́)و", Toast.LENGTH_SHORT).show();
+                                    if (!silent) {
+                                        Toast.makeText(context, "车载软件列表已刷新至最新 (๑•̀ㅂ•́)و", Toast.LENGTH_SHORT).show();
+                                    }
                                 }
                             });
                         } else {
@@ -1592,7 +1608,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                     if (webView != null) {
                                         webView.evaluateJavascript("if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(false, 'HTTP " + respCode + "');", null);
                                     }
-                                    Toast.makeText(context, "无法连接云端软件源", Toast.LENGTH_SHORT).show();
+                                    if (!silent) {
+                                        Toast.makeText(context, "无法连接云端软件源", Toast.LENGTH_SHORT).show();
+                                    }
                                 }
                             });
                         }
@@ -1601,9 +1619,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             @Override
                             public void run() {
                                 if (webView != null) {
-                                    webView.evaluateJavascript("if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(false, '" + e.getMessage().replace("'", "\\'") + "');", null);
+                                    webView.evaluateJavascript("if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(false, '" + e.getMessage().replace("'", "\'") + "');", null);
                                 }
-                                Toast.makeText(context, "刷新云端软件失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                if (!silent) {
+                                    Toast.makeText(context, "刷新云端软件失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
                             }
                         });
                     }
