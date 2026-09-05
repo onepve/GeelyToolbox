@@ -280,7 +280,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
                     isWhitelistEnabled = SystemUtils.isApkVerifyWhitelistEnabled();
                     obj.put("whitelist", isWhitelistEnabled);
-                    obj.put("version", "1.2.4");
+                    obj.put("version", "1.2.5");
                     boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) || 
                                            (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.xcmedia") == SystemUtils.APP_STATE_DISABLED);
                     boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);

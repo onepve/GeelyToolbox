@@ -237,7 +237,8 @@ public class VehicleAutomationService extends Service {
                         } catch (Exception ignored) {}
 
                         // 过滤 VehicleDataBuilder、车身 AVM 信号 (ecarx_avm_SocketCommand)、底层串口数据 (SerialControl_v2_0) 与车速标签
-                        ProcessBuilder pb = new ProcessBuilder("logcat", "-b", "main", "-b", "system", "-v", "brief", "-s", "VehicleDataBuilder:D", "ecarx_avm_SocketCommand:W", "SerialControl_v2_0:W", "e:D");
+                        // -T 1 强制仅从当前最新时刻开始实时监听，坚决不回放环形缓冲区历史旧日志，彻底消除冷启动误报
+                        ProcessBuilder pb = new ProcessBuilder("logcat", "-T", "1", "-b", "main", "-b", "system", "-v", "brief", "-s", "VehicleDataBuilder:D", "ecarx_avm_SocketCommand:W", "SerialControl_v2_0:W", "e:D");
                         pb.redirectErrorStream(true);
                         logcatProcess = pb.start();
 
@@ -344,7 +345,11 @@ public class VehicleAutomationService extends Service {
         // 1. 四门及后备箱上下车迎宾与安全播报（支持每门开关独立控制与开门未完关门抢占式打断）
         // 主驾开门与关门
         if ("BCM_FrontLeftDoorAjarStatus".equals(key)) {
-            if (val == 1 && lastDoorFL != 1) {
+            if (lastDoorFL == -1) {
+                lastDoorFL = val; // 启动首包仅记录基准，坚决不播报
+                return;
+            }
+            if (val == 1 && lastDoorFL == 0) {
                 if (enableDoorFl && (now - lastVoiceTimeFL > 1500)) {
                     lastVoiceTimeFL = now;
                     voicePlayer.play("door_fl.mp3", "主驾车门打开，请注意后方来车");
@@ -359,7 +364,11 @@ public class VehicleAutomationService extends Service {
         }
         // 副驾开门与关门
         else if ("BCM_FrontRightDoorAjarStatus".equals(key)) {
-            if (val == 1 && lastDoorFR != 1) {
+            if (lastDoorFR == -1) {
+                lastDoorFR = val; // 启动首包仅记录基准，坚决不播报
+                return;
+            }
+            if (val == 1 && lastDoorFR == 0) {
                 if (enableDoorFr && (now - lastVoiceTimeFR > 1500)) {
                     lastVoiceTimeFR = now;
                     voicePlayer.play("door_fr.mp3", "欢迎乘车，请注意安全");
@@ -374,7 +383,11 @@ public class VehicleAutomationService extends Service {
         }
         // 左后门开门与关门
         else if ("BCM_RearLeftDoorAjarStatus".equals(key)) {
-            if (val == 1 && lastDoorRL != 1) {
+            if (lastDoorRL == -1) {
+                lastDoorRL = val; // 启动首包仅记录基准，坚决不播报
+                return;
+            }
+            if (val == 1 && lastDoorRL == 0) {
                 if ((enableDoorRl || enableDoorRear) && (now - lastVoiceTimeRL > 1500)) {
                     lastVoiceTimeRL = now;
                     voicePlayer.play("door_rl.mp3", "左后门打开，请注意车外环境");
@@ -389,7 +402,11 @@ public class VehicleAutomationService extends Service {
         }
         // 右后门开门与关门
         else if ("BCM_RearRightDoorAjarStatus".equals(key)) {
-            if (val == 1 && lastDoorRR != 1) {
+            if (lastDoorRR == -1) {
+                lastDoorRR = val; // 启动首包仅记录基准，坚决不播报
+                return;
+            }
+            if (val == 1 && lastDoorRR == 0) {
                 if ((enableDoorRr || enableDoorRear) && (now - lastVoiceTimeRR > 1500)) {
                     lastVoiceTimeRR = now;
                     voicePlayer.play("door_rr.mp3", "右后门打开，请注意车外环境");
@@ -404,7 +421,11 @@ public class VehicleAutomationService extends Service {
         }
         // 后备箱打开与关闭
         else if ("BCM_TrunkAjarStatus".equals(key) || "BCM_TailgateAjarStatus".equals(key)) {
-            if (val == 1 && lastTrunk != 1) {
+            if (lastTrunk == -1) {
+                lastTrunk = val; // 启动首包仅记录基准，坚决不播报
+                return;
+            }
+            if (val == 1 && lastTrunk == 0) {
                 if (enableTrunkOpen && (now - lastVoiceTimeTrunk > 1500)) {
                     lastVoiceTimeTrunk = now;
                     voicePlayer.play("trunk_open.mp3", "后备箱已打开");
@@ -438,11 +459,15 @@ public class VehicleAutomationService extends Service {
 
         // 3. 大灯联动高德日夜模式
         if (enableLightNav && "BCM_PositionLightSts".equals(key)) {
-            if (val == 1 && lastLightSts != 1) {
+            if (lastLightSts == -1) {
+                lastLightSts = val;
+                return;
+            }
+            if (val == 1 && lastLightSts == 0) {
                 // 开启大灯 -> 高德切换黑夜模式 (2)
                 sendAmapDayNightMode(2);
                 lastLightSts = 1;
-            } else if (val == 0 && lastLightSts != 0) {
+            } else if (val == 0 && lastLightSts == 1) {
                 // 关闭大灯 -> 高德恢复自动/日间模式 (0)
                 sendAmapDayNightMode(0);
                 lastLightSts = 0;
