@@ -259,7 +259,7 @@ body:not(.expert-rabbit-active) .right-col {
 }
 body:not(.expert-rabbit-active) .app-list {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr)) !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 10px !important;
 }
 
@@ -1502,6 +1502,41 @@ body.light .btn-mini:active {
   </div>
 </div>
 
+<!-- 软件详细信息大窗口 Modal (大窗口显示、消除上下留白) -->
+<div class="modal-overlay" id="appDetailModal">
+  <div class="modal-card" style="width:1080px; max-width:96vw; height:88vh; max-height:88vh; display:flex; flex-direction:column; justify-content:space-between; padding:20px 28px;">
+    <div>
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+          <div class="modal-title" style="font-size:22px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="appDetailTitle">软件详情</div>
+          <span class="app-badge" id="appDetailBadge" style="font-size:12px; padding:3px 10px; flex-shrink:0;">标签</span>
+        </div>
+        <button class="modal-close" onclick="closeModal('appDetailModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+
+      <div class="app-meta-tags" style="margin:10px 0 12px; gap:8px;">
+        <span class="app-meta-tag size-tag" style="font-size:13px; padding:3px 10px;" id="appDetailSize">大小: 0 MB</span>
+        <span class="app-meta-tag build-tag" style="font-size:13px; padding:3px 10px;" id="appDetailDate">编译时间: 2026-08-31</span>
+        <span class="app-meta-tag" style="font-size:13px; padding:3px 10px; color:var(--accent);" id="appDetailPkg">包名: com.xxx</span>
+        <span class="app-meta-tag" style="font-size:13px; padding:3px 10px;" id="appDetailArch">架构: 64位 (arm64-v8a)</span>
+      </div>
+    </div>
+
+    <!-- 详细说明内容大视口 (拉满纵向空间) -->
+    <div style="flex:1; min-height:300px; overflow-y:auto; background:rgba(0,0,0,0.18); border:1.5px solid var(--border); border-radius:10px; padding:18px 22px; margin-bottom:14px;">
+      <div style="font-size:13px; font-weight:800; color:var(--txt-dim); margin-bottom:8px;">软件详细特性与说明</div>
+      <div id="appDetailFullDesc" style="font-size:14.5px; line-height:1.8; color:var(--txt-strong); white-space:pre-wrap; word-break:break-all;"></div>
+    </div>
+
+    <div class="modal-actions" style="justify-content:space-between; margin-top:2px;">
+      <button class="btn-ctrl-md" style="min-width:110px; min-height:48px; font-size:14px; padding:0 22px;" onclick="closeModal('appDetailModal')">关闭</button>
+      <div id="appDetailActionBtnContainer">
+        <!-- 动态渲染下载/安装按钮 -->
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 主题皮肤选择 & 实时预览 Modal -->
 <div class="modal-overlay" id="skinModal">
   <div class="modal-card" style="width:896px;">
@@ -2551,6 +2586,42 @@ var CLOUD_APPS = [
     "progress": 0,
     "speed": "",
     "url": "https://dl.onepve.com/GeelyToolbox/CarSettings_Android9_Geely_E02.apk"
+  },
+  {
+    "id": "ka_music_300",
+    "category": "music",
+    "badgeClass": "music",
+    "badgeText": "音乐",
+    "name": "KA Music 3.0.0 (iOS 26液态玻璃·车机横屏大字/悬浮黑胶版)",
+    "badge": "iOS26液态玻璃/车机大字",
+    "size": "28.53 MB",
+    "filename": "KAMusic_3.0.0.apk",
+    "package_name": "com.hoilai.mm.music",
+    "desc": "【KA Music 3.0.0 旗舰版·iOS 26 液态玻璃微质感】全面升级 GPU 高斯折射液态玻璃与悬浮黑胶圆形唱片底栏，专车横屏大字体适配，支持全网音乐高保真无损解析、网易云/QQ 歌单链接无缝导入与云盘同步。纯原生 64 位极速流畅，放行白名单后【直接安装】即可。",
+    "updated_at": "2026-09-05",
+    "compile_date": "2026-08-31",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/KAMusic_3.0.0.apk"
+  },
+  {
+    "id": "md3_music_542",
+    "category": "music",
+    "badgeClass": "music",
+    "badgeText": "音乐",
+    "name": "MD3Music 5.4.2 (酷狗概念版·Material You/内嵌Rust服务)",
+    "badge": "Material Design 3/Rust内核",
+    "size": "35.23 MB",
+    "filename": "MD3Music_5.4.2.apk",
+    "package_name": "com.md3music.md3music",
+    "desc": "【MD3Music 5.4.2 最新版·酷狗概念三方播放器】采用 Material Design 3 现代动效规范，内置嵌入式 Rust 本地高性能 API 服务（无需外接服务端），支持手机与车机大屏自适应排版、动态黑胶封面取色、蝰蛇与社区音效库、外部歌单导入与原生词幕联动。放行白名单后【直接安装】即可。",
+    "updated_at": "2026-09-05",
+    "compile_date": "2026-08-31",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/MD3Music_5.4.2.apk"
   }
 ];
 
@@ -2597,7 +2668,7 @@ function renderApps() {
       (app.downloadTime ? '<span class="app-meta-tag done">已下载: ' + app.downloadTime + '</span>' : '') +
       '</div>';
 
-    html += '<div class="app-item">' +
+    html += '<div class="app-item" style="cursor:pointer;" onclick="handleShowAppDetail(\'' + app.id + '\')">' +
       '<div class="app-info">' +
         '<div class="app-meta">' +
           '<div class="app-name-row">' +
@@ -2608,7 +2679,7 @@ function renderApps() {
           '<div class="app-desc-marquee-box"><div class="app-desc" title="' + app.desc + '">' + app.desc + '</div></div>' +
         '</div>' +
       '</div>' +
-      '<div class="app-action">' +
+      '<div class="app-action" onclick="event.stopPropagation();">' +
         actionHtml +
       '</div>' +
     '</div>';
@@ -3818,6 +3889,38 @@ function handlePostRebootOpenFolder() {
 function handlePostRebootGoAdb() {
   dismissPostRebootModal();
   handleOpenFreezeManager();
+}
+
+function handleShowAppDetail(appId) {
+  var app = CLOUD_APPS.find(function(a) { return a.id === appId; });
+  if (!app) return;
+  var titleEl = document.getElementById('appDetailTitle');
+  var badgeEl = document.getElementById('appDetailBadge');
+  var sizeEl = document.getElementById('appDetailSize');
+  var dateEl = document.getElementById('appDetailDate');
+  var pkgEl = document.getElementById('appDetailPkg');
+  var archEl = document.getElementById('appDetailArch');
+  var descEl = document.getElementById('appDetailFullDesc');
+  var btnBox = document.getElementById('appDetailActionBtnContainer');
+
+  if (titleEl) titleEl.innerText = app.name;
+  if (badgeEl) badgeEl.innerText = app.badge || '官方精选';
+  if (sizeEl) sizeEl.innerText = '体积: ' + (app.size || '未知');
+  if (dateEl) dateEl.innerText = '编译: ' + (app.compile_date || app.updated_at || '最新');
+  if (pkgEl) pkgEl.innerText = '包名: ' + (app.package_name || app.pkg || '未知');
+  if (archEl) archEl.innerText = '架构: ' + (app.architecture || 'arm64-v8a');
+  if (descEl) descEl.innerText = app.desc || '暂无详细描述';
+
+  if (btnBox) {
+    var btnText = '立即下载';
+    if (app.status === 'ready') {
+      btnText = (hasSystemSettings ? '直接安装' : '引导安装');
+    } else if (app.status === 'downloading') {
+      btnText = '正在下载 (' + (app.progress || 0) + '%)';
+    }
+    btnBox.innerHTML = '<button class="btn-ctrl-md primary" style="min-width:160px; min-height:48px; font-size:15px; font-weight:800; padding:0 24px;" onclick="closeModal(\'appDetailModal\'); handleDownloadApp(\'' + app.id + '\', false);">' + btnText + '</button>';
+  }
+  openModal('appDetailModal');
 }
 
 function handleDownloadApp(id, isRedownload) {
