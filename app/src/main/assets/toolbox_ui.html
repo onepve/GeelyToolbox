@@ -1275,7 +1275,7 @@ body.light .btn-mini:active {
 <div class="modal-overlay" id="selectAmapForAutoModal">
   <div class="modal-card" style="width:784px;">
     <div class="modal-header">
-      <div class="modal-title">选择要注入兔子时钟的安装包</div>
+      <div class="modal-title">选择要伪装注入的导航安装包</div>
       <button class="modal-close" onclick="closeModal('selectAmapForAutoModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="font-size:13px; color:var(--txt-dim); margin-bottom:12px;">
@@ -1306,7 +1306,7 @@ body.light .btn-mini:active {
 <div class="modal-overlay" id="manualInstallModal">
   <div class="modal-card" style="width:840px;">
     <div class="modal-header">
-      <div class="modal-title" id="manualInstallTitle">原生系统安装引导</div>
+      <div class="modal-title" id="manualInstallTitle">原生系统安装器引导 (免Root直装)</div>
       <button class="modal-close" onclick="closeModal('manualInstallModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div class="modal-info-box" style="background:rgba(234, 179, 8, 0.08); border-color:rgba(234, 179, 8, 0.35);">
@@ -1445,7 +1445,7 @@ body.light .btn-mini:active {
 
     </div>
     <div style="font-size:12px; color:var(--txt-dim); line-height:1.5;">
-      本工具箱专注于吉利车系原厂大屏深度适配，提供无损高德覆盖升级、原厂白名单开机自启、ADB 核心组件冻结、OTA 直链抓取及车载精选生态分发。
+      专为吉利车系大屏深度适配打造，提供无损高德升级、系统白名单自启守护、原厂组件冻结、座舱智能语音联动与车载生态分发。
     </div>
     <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
       <div style="display:flex; gap:8px; align-items:center;">
@@ -1520,7 +1520,7 @@ body.light .btn-mini:active {
 
     <!-- 详细说明内容大视口 (拉满纵向空间) -->
     <div style="flex:1; min-height:300px; overflow-y:auto; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:18px 22px; margin-bottom:14px;">
-      <div style="font-size:13px; font-weight:800; color:var(--txt-dim); margin-bottom:8px;">软件详细特性与说明</div>
+      <div style="font-size:14px; font-weight:800; color:var(--txt-dim); margin-bottom:8px;">软件核心特性与安装说明</div>
       <div id="appDetailFullDesc" style="font-size:14.5px; line-height:1.8; color:var(--txt-strong); white-space:pre-wrap; word-break:break-all;"></div>
     </div>
 
@@ -1598,7 +1598,7 @@ body.light .btn-mini:active {
       <button class="modal-close" onclick="closeModal('cleanDialogModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="font-size:12px; color:var(--txt-dim); margin-bottom:2px;">
-      目标目录：<code>/sdcard/Download/</code>
+      目标目录：<code>/sdcard/Download/</code> (存放快传与商城下载包)
     </div>
     <div style="display:flex; flex-direction:column; gap:8px;">
       <!-- 选项一：仅清理空目录 -->
@@ -1637,7 +1637,7 @@ body.light .btn-mini:active {
       <button class="modal-close" onclick="closeModal('freezeModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); border-radius:8px; padding:6px 10px; font-size:11.5px; color:#FBBF24; line-height:1.45;">
-      <b>原厂推荐建议</b>：优先冻结【吉利应用商店】，可彻底杜绝每次关机重启后白名单被重置为 0，实现<b>永久免重置安装第三方 APK</b>！
+      <b>原厂安全建议</b>：优先冻结【吉利应用商店】，彻底杜绝重启后白名单被重置为 0，永久畅享安装第三方 APK！
     </div>
     
     <div style="display:flex; flex-direction:column; gap:6px;" id="freezeListContainer">
@@ -1849,7 +1849,7 @@ body.light .btn-mini:active {
       <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:9px 16px; gap:12px;">
         <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
           <div style="font-weight:900; font-size:16px; color:var(--txt-strong); white-space:nowrap;">车机开机自启动</div>
-          <div style="font-size:13.5px; color:var(--txt-dim); white-space:nowrap;" id="settingAutostartHint">开机自动在后台启动工具箱并放行白名单权限</div>
+          <div style="font-size:13.5px; color:var(--txt-dim); white-space:nowrap;" id="settingAutostartHint">车机开机后台自动启动工具箱并放行安装白名单</div>
         </div>
         <button class="btn-ctrl-md" id="btnSettingAutostart" style="padding:6px 18px; min-height:40px; min-width:96px; font-size:14.5px; font-weight:800;" onclick="handleToggleAutostart()">设置</button>
       </div>
@@ -1858,7 +1858,7 @@ body.light .btn-mini:active {
       <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:9px 16px; gap:12px;">
         <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
           <div style="font-weight:900; font-size:16px; color:var(--txt-strong); white-space:nowrap;">全局悬浮小胶囊</div>
-          <div style="font-size:13.5px; color:var(--txt-dim); white-space:nowrap;" id="settingFloatingHint">常驻桌面与任意应用，随时唤回控制台</div>
+          <div style="font-size:13.5px; color:var(--txt-dim); white-space:nowrap;" id="settingFloatingHint">悬浮胶囊常驻桌面与任意应用，随时一键唤回控制台</div>
         </div>
         <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
           <div id="floatingDisplayModeRow" class="setting-segmented-group">
@@ -1873,7 +1873,7 @@ body.light .btn-mini:active {
       <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:9px 16px;">
         <div>
           <div style="font-weight:900; font-size:16px; color:var(--txt-strong);">座舱联动与智能语音</div>
-          <div style="font-size:13.5px; color:var(--txt-dim); margin-top:3px;" id="settingVehicleAutoHint">四门迎宾播报、转向灯360全景、大灯高德夜间联动与熄火告别</div>
+          <div style="font-size:13.5px; color:var(--txt-dim); margin-top:3px;" id="settingVehicleAutoHint">四门防开门杀播报、转向灯360盲区、大灯夜间联动与熄火告别</div>
         </div>
         <button class="btn-ctrl-md highlight" style="padding:6px 18px; min-height:40px; min-width:104px; font-size:14.5px; font-weight:800;" onclick="handleOpenVehicleAutoModal()">进入设置</button>
       </div>
@@ -1893,7 +1893,7 @@ body.light .btn-mini:active {
           <div style="font-weight:900; font-size:16px; color:var(--txt-strong);">允许任意应用卡主题 (专家模式)</div>
           <div style="font-size:13.5px; color:var(--txt-dim); margin-top:3px;" id="settingExpertRabbitHint">默认关闭。锁定仅允许高德、百度等车载地图软件卡时钟伪装，防止非兼容软件导致车机开机死锁或变砖</div>
         </div>
-        <button class="btn-ctrl-md" id="btnSettingExpertRabbit" style="padding:6px 18px; min-height:40px; min-width:104px; font-size:14.5px; font-weight:800;" onclick="handleToggleExpertRabbitTheme()">已关闭 (安全)</button>
+        <button class="btn-ctrl-md" id="btnSettingExpertRabbit" style="padding:6px 18px; min-height:40px; min-width:104px; font-size:14.5px; font-weight:800;" onclick="handleToggleExpertRabbitTheme()">已关闭 (安全锁定)</button>
       </div>
 
       <!-- 5. 主题皮肤与护眼配色 -->
@@ -4614,7 +4614,7 @@ function updateFloatingWindowUi(isOn) {
     }
   }
   if (hint) {
-    hint.innerText = isOn ? '常驻桌面与任意应用，随时唤回控制台' : '已关闭悬浮小胶囊，不在桌面显示';
+    hint.innerText = isOn ? '悬浮胶囊常驻桌面与任意应用，随时一键唤回控制台' : '已关闭悬浮小胶囊，不在桌面显示';
   }
   if (modeRow) {
     modeRow.style.display = isOn ? 'inline-flex' : 'none';
