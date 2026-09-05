@@ -281,7 +281,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
                     isWhitelistEnabled = SystemUtils.isApkVerifyWhitelistEnabled();
                     obj.put("whitelist", isWhitelistEnabled);
-                    obj.put("version", "1.2.1");
+                    obj.put("version", "1.2.2");
                     boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) || 
                                            (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.xcmedia") == SystemUtils.APP_STATE_DISABLED);
                     boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
@@ -1057,6 +1057,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void checkUpdate() {
+            checkUpdateInternal(false);
+        }
+
+        @JavascriptInterface
+        public void checkUpdateSilently() {
+            checkUpdateInternal(true);
+        }
+
+        private void checkUpdateInternal(final boolean silent) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -1088,12 +1097,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                         // 唤起车载精致 H5 更新弹窗
                                         String script = "if(window.showToolboxUpdateModal){window.showToolboxUpdateModal(" + json.toString() + ");}";
                                         webView.evaluateJavascript(script, null);
-                                    } else {
+                                    } else if (!silent) {
                                         showToast("当前已是最新版本 v" + remoteVer + " (๑•̀ㅂ•́)و");
                                     }
                                 }
                             });
-                        } else {
+                        } else if (!silent) {
                             mainHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
@@ -1102,12 +1111,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             });
                         }
                     } catch (Exception e) {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                showToast("检查更新失败: " + e.getMessage());
-                            }
-                        });
+                        if (!silent) {
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    showToast("检查更新失败: " + e.getMessage());
+                                }
+                            });
+                        }
                     }
                 }
             }).start();

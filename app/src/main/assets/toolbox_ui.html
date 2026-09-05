@@ -914,7 +914,7 @@ body.light .btn-mini:active {
 <header>
   <div class="brand">
     <div class="brand-title">吉利车机控制台</div>
-    <div class="brand-ver" id="appVer">v1.2.1</div>
+    <div class="brand-ver" id="appVer">v1.2.2</div>
   </div>
 
   <div class="top-pills">
@@ -1257,7 +1257,7 @@ body.light .btn-mini:active {
     <div class="about-box">
       <div class="about-item">
         <span style="color:var(--txt-dim);">当前软件版本</span>
-        <span style="font-weight:800; color:var(--accent);" id="aboutVersionText">v1.2.1 (7021)</span>
+        <span style="font-weight:800; color:var(--accent);" id="aboutVersionText">v1.2.2 (7022)</span>
       </div>
       <div class="about-item">
         <span style="color:var(--txt-dim);">支持车机芯片</span>
@@ -3685,11 +3685,13 @@ window.showToolboxUpdateModal = function(data) {
   var clEl = document.getElementById('modalUpgradeChangelog');
   if (clEl) {
     var rawLog = (data.changelog || '优化系统性能与座舱交互体验。').trim();
-    var lines = rawLog.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+    // 兼容真实换行与 JSON 字符串中未转义的字面量 \\n
+    var normalizedLog = rawLog.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    var lines = normalizedLog.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
     var html = '';
     if (lines.length > 0) {
       lines.forEach(function(line, idx) {
-        var cleanLine = line.replace(/^[0-9]+[\.、\s]+/, '').trim();
+        var cleanLine = line.replace(/^[0-9]+[\\.、\\s]+/, '').trim();
         html += '<div class="changelog-item">' +
           '<span class="changelog-num">' + (idx + 1) + '</span>' +
           '<div class="changelog-text">' + cleanLine + '</div>' +
@@ -4486,6 +4488,13 @@ function proceedToStep3Whitelist() {
     window.ToolboxBridge.setApkVerifyWhitelist(true);
   }
   showToast('白名单权限已就绪，欢迎使用吉利控制台');
+
+  // 三步门禁安全通过后，静默检查工具箱最新版本更新
+  setTimeout(function() {
+    if (window.ToolboxBridge && typeof window.ToolboxBridge.checkUpdateSilently === 'function') {
+      window.ToolboxBridge.checkUpdateSilently();
+    }
+  }, 1500);
 }
 
 // 初始化启动时立即检测系统日夜模式与本地已下载文件状态
