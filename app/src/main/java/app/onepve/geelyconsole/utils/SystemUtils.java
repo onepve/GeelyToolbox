@@ -758,6 +758,36 @@ public class SystemUtils {
         return false;
     }
 
+    public static boolean openSystemUpdate(Context context) {
+        String[] updatePkgs = new String[]{
+            "com.android.car.systemupdater",
+            "ecarx.upgrade",
+            "com.ecarx.eas.otaservice",
+            "com.desaysv.mcuupdate.mcuupdat"
+        };
+        for (String pkg : updatePkgs) {
+            try {
+                Intent intent = context.getPackageManager().getLaunchIntentForPackage(pkg);
+                if (intent != null) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(intent);
+                    return true;
+                }
+            } catch (Exception ignored) {}
+        }
+        try {
+            Intent intent = new Intent("android.settings.SYSTEM_UPDATE_SETTINGS");
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            return true;
+        } catch (Exception ignored) {}
+        try {
+            executeShell("am start -a android.settings.SYSTEM_UPDATE_SETTINGS || am start -n com.android.car.systemupdater/.SystemUpdaterActivity || am start -n ecarx.upgrade/.MainActivity");
+            return true;
+        } catch (Exception ignored) {}
+        return false;
+    }
+
     public static OtaExtractResult extractOtaUrl() {
         OtaExtractResult result = new OtaExtractResult();
 

@@ -1062,6 +1062,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public boolean openSystemUpdate() {
+            return SystemUtils.openSystemUpdate(MainActivity.this);
+        }
+
+        @JavascriptInterface
         public String extractOta() {
             try {
                 SystemUtils.OtaExtractResult res = SystemUtils.extractOtaUrl();

@@ -188,6 +188,108 @@ main {
   box-sizing: border-box;
 }
 
+/* 设置项分段单选与真色彩激活状态 */
+.setting-segmented-group {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  gap: 3px;
+}
+body.light .setting-segmented-group {
+  background: #E2E8F0 !important;
+  border-color: #CBD5E1 !important;
+}
+.setting-segmented-btn {
+  padding: 4px 14px !important;
+  font-size: 12.5px !important;
+  font-weight: 800 !important;
+  border-radius: 6px !important;
+  border: none !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  color: var(--txt-dim) !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+}
+.setting-segmented-btn.active {
+  background: #0284C7 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.4) !important;
+}
+body.light .setting-segmented-btn.active {
+  background: #0284C7 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3) !important;
+}
+
+/* 统一开关按钮的真色彩高亮（已开启亮绿，未开启幽灵灰边框） */
+.btn-toggle-active {
+  background: #10B981 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #059669 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35) !important;
+}
+body.light .btn-toggle-active {
+  background: #10B981 !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid #059669 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25) !important;
+}
+
+/* 默认模式：未开启主题注入（安全模式）时，隐藏时钟卡片与保姆指引，软件商店全宽拉满，顶部常驻快捷运维条 */
+body:not(.expert-rabbit-active) main {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+body:not(.expert-rabbit-active) .left-col {
+  display: none !important;
+}
+body:not(.expert-rabbit-active) .system-quick-bar {
+  display: grid !important;
+}
+body:not(.expert-rabbit-active) .right-col {
+  width: 100% !important;
+  flex: 1 !important;
+  height: calc(100% - 72px) !important;
+  max-height: none !important;
+}
+body:not(.expert-rabbit-active) .app-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr)) !important;
+  gap: 10px !important;
+}
+
+/* 专家模式：开启主题注入后，展开经典左右分栏 */
+body.expert-rabbit-active main {
+  display: grid !important;
+  grid-template-columns: 44% 56% !important;
+}
+body.expert-rabbit-active .left-col {
+  display: flex !important;
+}
+body.expert-rabbit-active .system-quick-bar {
+  display: none !important;
+}
+body.expert-rabbit-active .right-col {
+  width: auto !important;
+}
+body.expert-rabbit-active .app-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.system-quick-bar {
+  display: none;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 /* 左侧栏：大卡片垂直弹性自适应，绝不超出屏幕 */
 .left-col {
   display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0;
@@ -959,7 +1061,27 @@ body.light .btn-mini:active {
 
 <!-- 主体自适应分栏 -->
 <main>
-  <!-- 左侧控制区 -->
+  <!-- 默认模式：顶部横向系统快捷通道（4等分网格） -->
+  <div class="system-quick-bar" id="systemQuickBar">
+    <button class="btn-ctrl-md" style="min-height:56px; padding:10px 16px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="handleOpenFileManager()">
+      <span style="font-weight:900; font-size:15.5px;">打开原生文件管理</span>
+      <span class="btn-status-pill blue" style="font-size:12px;">直接安装APK</span>
+    </button>
+    <button class="btn-ctrl-md" style="min-height:56px; padding:10px 16px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="handleOpenInstalledMapsModal()">
+      <span style="font-weight:900; font-size:15.5px;">已装地图管理</span>
+      <span class="btn-status-pill gray" style="font-size:12px;">卸载/清理</span>
+    </button>
+    <button class="btn-ctrl-md" id="btnSoftRebootBar" style="min-height:56px; padding:10px 16px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="handleSoftReboot()">
+      <span style="font-weight:900; font-size:15.5px;">一键软重启 (5秒)</span>
+      <span class="btn-status-pill green" style="font-size:12px;">重载服务</span>
+    </button>
+    <button class="btn-ctrl-md" id="btnHardRebootBar" style="min-height:56px; padding:10px 16px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="handleHardReboot()">
+      <span style="font-weight:900; font-size:15.5px;">完整硬重启</span>
+      <span class="btn-status-pill red" style="font-size:12px;">硬件冷启</span>
+    </button>
+  </div>
+
+  <!-- 左侧控制区 (仅开启主题注入专家模式时展示) -->
   <div class="left-col">
     <!-- 1. 兔子时钟伪装注入大卡片 -->
     <div class="card rabbit-card">
@@ -982,9 +1104,9 @@ body.light .btn-mini:active {
             <span style="font-size:16px; font-weight:900;">打开车机主题</span>
             <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">原厂主题应用中心</span>
           </button>
-          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" onclick="handleClearAmapData()">
-            <span style="font-size:16px; font-weight:900;">清除高德数据</span>
-            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">解决闪退/重置配置</span>
+          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" onclick="handleOpenInstalledMapsModal()">
+            <span style="font-size:16px; font-weight:900;">已装地图管理</span>
+            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">快速卸载/清除数据</span>
           </button>
           <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" id="btnSoftReboot" onclick="handleSoftReboot()">
             <span style="font-size:16px; font-weight:900;">一键软重启 (5秒)</span>
@@ -995,7 +1117,6 @@ body.light .btn-mini:active {
             <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">整车硬件冷启动</span>
           </button>
         </div>
-        <button class="btn-ctrl-lg" style="min-height:48px; font-size:14.5px; font-weight:800;" onclick="handleOpenInstalledMapsModal()">已装地图管理 (快速卸载/清除数据)</button>
       </div>
     </div>
 
@@ -1187,42 +1308,42 @@ body.light .btn-mini:active {
 
 <!-- 启动检测 1: 非车机环境提示 Modal -->
 <div class="modal-overlay" id="carEnvCheckModal">
-  <div class="modal-card" style="width:756px;">
+  <div class="modal-card" style="width:860px; min-height:350px; padding:28px 32px; justify-content:space-between;">
     <div class="modal-header">
-      <div class="modal-title">运行环境检测提示</div>
+      <div class="modal-title" style="font-size:22px; font-weight:900;">运行环境检测提示</div>
     </div>
-    <div class="modal-info-box" style="background:rgba(59, 130, 246, 0.08); border-color:rgba(59, 130, 246, 0.35);">
-      <div style="font-size:14px; font-weight:800; color:var(--txt-strong); margin-bottom:4px;" id="carEnvDetectedModel">检测到当前设备并非吉利车机</div>
-      <div style="font-size:12.5px; color:var(--txt-dim); line-height:1.6;">
+    <div class="modal-info-box" style="background:rgba(59, 130, 246, 0.08); border:1.5px solid rgba(59, 130, 246, 0.35); border-radius:12px; padding:20px 24px; margin:16px 0;">
+      <div style="font-size:18px; font-weight:900; color:var(--txt-strong); margin-bottom:8px;" id="carEnvDetectedModel">检测到当前设备并非吉利车机</div>
+      <div style="font-size:15px; color:var(--txt-dim); line-height:1.75;">
         当前可能运行在电脑模拟器或手机测试环境中。<br>
         车载 CAN 总线联动、兔子时钟屏保伪装及系统白名单等底层特性仅在吉利实车上完全生效，模拟器中将仅作交互演示。
       </div>
     </div>
-    <div class="modal-actions" style="justify-content:flex-end;">
-      <button class="btn-ctrl-md primary" style="min-width:140px; font-weight:800;" onclick="proceedToStep2AppStoreGuard()">我知道了，继续体验</button>
+    <div class="modal-actions" style="justify-content:flex-end; margin-top:12px;">
+      <button class="btn-ctrl-md primary" style="min-width:240px; min-height:58px; font-size:17.5px; font-weight:900; padding:0 32px;" onclick="proceedToStep2AppStoreGuard()">我知道了，继续体验</button>
     </div>
   </div>
 </div>
 
 <!-- 启动检测 2: 应用商店冻结门禁 Modal -->
 <div class="modal-overlay" id="appstoreGuardModal">
-  <div class="modal-card" style="width:784px;">
+  <div class="modal-card" style="width:880px; min-height:430px; padding:28px 32px; justify-content:space-between;">
     <div class="modal-header">
-      <div class="modal-title">核心准备：冻结原厂应用商店</div>
+      <div class="modal-title" style="font-size:22px; font-weight:900;">核心准备：冻结原厂应用商店</div>
     </div>
-    <div class="modal-info-box" style="background:rgba(239, 68, 68, 0.08); border-color:rgba(239, 68, 68, 0.35);">
-      <div style="font-size:14px; font-weight:800; color:#EF4444; margin-bottom:4px;" id="appstoreGuardHeader">⚠️ 检测到吉利原厂应用商店正在运行！</div>
-      <div style="font-size:12.5px; color:var(--txt-dim); line-height:1.6;" id="appstoreGuardBody">
+    <div class="modal-info-box" style="background:rgba(239, 68, 68, 0.08); border:1.5px solid rgba(239, 68, 68, 0.35); border-radius:12px; padding:20px 24px; margin:16px 0;">
+      <div style="font-size:18px; font-weight:900; color:#EF4444; margin-bottom:8px;" id="appstoreGuardHeader">⚠️ 检测到吉利原厂应用商店正在运行！</div>
+      <div style="font-size:15px; color:var(--txt-dim); line-height:1.75;" id="appstoreGuardBody">
         原厂商店在后台会不断自动重置车机系统白名单，导致白名单无法生效、第三方软件无法安装。<br>
         必须先将其冻结才能锁死白名单并正常安装软件！
       </div>
     </div>
-    <div style="font-size:12px; color:var(--txt-dim); margin-bottom:14px; line-height:1.5;" id="appstoreGuardTip">
+    <div style="font-size:14px; color:var(--txt-dim); margin-bottom:18px; line-height:1.6;" id="appstoreGuardTip">
       冻结应用商店是车友圈公认的零风险安全操作（不影响车辆任何硬件功能，可随时在控制台一键解冻）。
     </div>
-    <div class="modal-actions" style="justify-content:space-between;">
-      <button class="btn-ctrl-md" style="min-width:100px; color:var(--txt-dim);" onclick="skipAppstoreGuard()">跳过冻结</button>
-      <button class="btn-ctrl-md highlight" id="btnGuardFreezeAppstore" style="min-width:180px; font-weight:900;" onclick="executeGuardFreezeAppstore()">一键冻结商店 (推荐)</button>
+    <div class="modal-actions" style="justify-content:space-between; margin-top:12px;">
+      <button class="btn-ctrl-md" style="min-width:150px; min-height:58px; font-size:16.5px; font-weight:700; padding:0 24px; color:var(--txt-dim);" onclick="skipAppstoreGuard()">跳过冻结</button>
+      <button class="btn-ctrl-md highlight" id="btnGuardFreezeAppstore" style="min-width:260px; min-height:58px; font-size:17.5px; font-weight:900; padding:0 32px;" onclick="executeGuardFreezeAppstore()">一键冻结商店 (推荐)</button>
     </div>
   </div>
 </div>
@@ -1447,11 +1568,17 @@ body.light .btn-mini:active {
     <!-- 提取原厂 OTA 升级直链模块 -->
     <div class="ota-box">
       <div class="ota-title">
-        <span>抓取原厂 OTA 固件升级下载直链</span>
-        <button class="btn-mini highlight" onclick="handleExtractOta()">立即扫描提取</button>
+        <span style="font-weight:900; font-size:14px;">抓取原厂 OTA 固件升级下载直链</span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-mini" style="height:32px; padding:0 14px; font-size:12.5px; font-weight:800; background:rgba(255,255,255,0.14); border:1px solid var(--border-strong);" onclick="handleLaunchSystemUpdate()">运行升级检查</button>
+          <button class="btn-mini highlight" style="height:32px; padding:0 14px; font-size:12.5px; font-weight:800;" onclick="handleExtractOta()">立即扫描提取</button>
+        </div>
       </div>
-      <div id="otaResultBox" style="display:none; margin-top:4px;">
-        <div style="font-size:11px; color:var(--txt-dim);" id="otaSourceTip">从系统实时升级日志中捕获到最新固件：</div>
+      <div style="font-size:11.5px; color:var(--txt-dim); margin-top:4px;">
+        使用指引：先点击【运行升级检查】让车机发起固件查询，再返回点击【立即扫描提取】捕获固件直链。
+      </div>
+      <div id="otaResultBox" style="display:none; margin-top:6px;">
+        <div style="font-size:11.5px; color:var(--txt-dim);" id="otaSourceTip">从系统实时升级日志中捕获到最新固件：</div>
         <div class="ota-url-val" id="otaUrlText">https://...</div>
       </div>
     </div>
@@ -1495,7 +1622,7 @@ body.light .btn-mini:active {
 
 <!-- 车机 ADB 自定义终端独立 Modal -->
 <div class="modal-overlay" id="adbTerminalModal">
-  <div class="modal-card" style="width:979px;">
+  <div class="modal-card" style="width:1120px; max-width:96vw; height:92vh; max-height:92vh; display:flex; flex-direction:column; justify-content:space-between; padding:18px 24px;">
     <div class="modal-header">
       <div style="display:flex; align-items:center; gap:8px;">
         <div class="modal-title">车机 ADB 自定义终端</div>
@@ -1507,19 +1634,19 @@ body.light .btn-mini:active {
     </div>
 
     <!-- 命令输入栏 -->
-    <div style="display:flex; gap:6px;">
+    <div style="display:flex; gap:6px; margin:6px 0;">
       <input type="text" id="customAdbInput" class="search-input" placeholder="输入 Shell / ADB 指令 (支持手机快传网页直接推送)..." onkeydown="if(event.key==='Enter') executeCustomCommand()">
-      <button class="btn-icon primary" style="height:34px; padding:0 14px; font-size:13px; font-weight:800;" onclick="executeCustomCommand()">执行命令</button>
-      <button class="btn-icon" style="height:34px; padding:0 12px; font-size:12px;" onclick="saveTerminalLogToFile()">保存日志</button>
-      <button class="btn-icon" style="height:34px; padding:0 10px; font-size:12px;" onclick="clearTerminalOutput()">清空输出</button>
+      <button class="btn-icon primary" style="height:36px; padding:0 16px; font-size:13.5px; font-weight:800;" onclick="executeCustomCommand()">执行命令</button>
+      <button class="btn-icon" style="height:36px; padding:0 12px; font-size:12.5px;" onclick="saveTerminalLogToFile()">保存日志</button>
+      <button class="btn-icon" style="height:36px; padding:0 12px; font-size:12.5px;" onclick="clearTerminalOutput()">清空输出</button>
     </div>
 
     <!-- 手机快传实时直连信息与快捷命令 -->
-    <div id="terminalNetBox" class="modal-info-box" style="padding:10px 12px; margin-bottom:10px;">
-      <div id="terminalNetStatusMsg" style="font-size:12px; font-weight:700; color:var(--accent-soft); line-height:1.45; margin-bottom:6px;">
+    <div id="terminalNetBox" class="modal-info-box" style="padding:10px 14px; margin-bottom:8px;">
+      <div id="terminalNetStatusMsg" style="font-size:12.5px; font-weight:700; color:var(--accent-soft); line-height:1.45; margin-bottom:6px;">
         手机快传直连: 正在获取网络状态...
       </div>
-      <div style="display:flex; gap:4px; flex-wrap:wrap;">
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
         <button class="filter-tab" onclick="setTerminalCmd('pm list packages -3')">第三方包名</button>
         <button class="filter-tab" onclick="setTerminalCmd('getprop ro.build.version.release')">系统版本</button>
         <button class="filter-tab" onclick="setTerminalCmd('getprop sys.jsbd.apk_verify')">白名单状态</button>
@@ -1529,12 +1656,12 @@ body.light .btn-mini:active {
       </div>
     </div>
 
-    <!-- 终端输出视口 -->
-    <pre id="terminalOutputBox" style="background:#090C12; border:1.5px solid rgba(255,255,255,0.15); border-radius:8px; padding:8px 12px; font-family:monospace; font-size:12px; color:#10B981; max-height:220px; min-height:140px; overflow-y:auto; white-space:pre-wrap; word-break:break-all; line-height:1.5;">[ADB 终端已初始化] 欢迎使用吉利车机 ADB 终端 (๑•̀ㅂ•́)و&#10;请输入指令或从手机快传推送命令后点击【执行命令】...</pre>
+    <!-- 终端输出视口：拉满剩余纵向空间 -->
+    <pre id="terminalOutputBox" style="flex:1; min-height:300px; background:#090C12; border:1.5px solid rgba(255,255,255,0.15); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:13px; color:#10B981; overflow-y:auto; white-space:pre-wrap; word-break:break-all; line-height:1.55; margin-bottom:8px;">[ADB 终端已初始化] 欢迎使用吉利车机 ADB 终端 (๑•̀ㅂ•́)و&#10;请输入指令或从手机快传推送命令后点击【执行命令】...</pre>
 
-    <div class="modal-actions" style="justify-content:space-between;">
-      <button class="btn-icon" style="height:36px; padding:0 14px;" onclick="switchToFreezeModal()">返回 ADB 管理</button>
-      <button class="btn-icon primary" style="height:36px; padding:0 18px;" onclick="closeModal('adbTerminalModal')">完成</button>
+    <div class="modal-actions" style="justify-content:space-between; margin-top:2px;">
+      <button class="btn-icon" style="height:38px; padding:0 16px; font-size:13px;" onclick="switchToFreezeModal()">返回 ADB 管理</button>
+      <button class="btn-icon primary" style="height:38px; padding:0 22px; font-size:13px; font-weight:800;" onclick="closeModal('adbTerminalModal')">完成</button>
     </div>
   </div>
 </div>
@@ -1631,36 +1758,35 @@ body.light .btn-mini:active {
   </div>
 </div>
 
-<!-- 车机守护与系统设置 Modal -->
+<!-- 车机守护与系统设置 Modal (紧凑化消除上下留白，单行展示胶囊设置) -->
 <div class="modal-overlay" id="settingsModal">
-  <div class="modal-card" style="width:812px;">
+  <div class="modal-card" style="width:960px; max-height:86vh; padding:20px 28px; justify-content:space-between;">
     <div class="modal-header">
-      <div class="modal-title">车机守护与系统设置</div>
+      <div class="modal-title" style="font-size:22px; font-weight:900;">车机守护与系统设置</div>
       <button class="modal-close" onclick="closeModal('settingsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
-    <div class="about-list" style="margin-bottom:10px;">
+    <div class="about-list" style="display:flex; flex-direction:column; gap:6px; margin:6px 0;">
       <!-- 1. 开机自启 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
-        <div>
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">车机开机自启动</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingAutostartHint">开机自动在后台启动工具箱并放行白名单权限</div>
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:7px 14px; gap:12px;">
+        <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong); white-space:nowrap;">车机开机自启动</div>
+          <div style="font-size:12px; color:var(--txt-dim); white-space:nowrap;" id="settingAutostartHint">开机自动在后台启动工具箱并放行白名单权限</div>
         </div>
-        <button class="btn-ctrl-md" id="btnSettingAutostart" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleToggleAutostart()">设置</button>
+        <button class="btn-ctrl-md" id="btnSettingAutostart" style="padding:6px 16px; min-height:36px; min-width:92px; font-size:13px; font-weight:800;" onclick="handleToggleAutostart()">设置</button>
       </div>
 
-      <!-- 2. 全局悬浮胶囊 -->
-      <div class="about-item" style="display:flex; flex-direction:column; gap:8px; padding:10px 14px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">全局悬浮小胶囊</div>
-            <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingFloatingHint">在桌面与任意应用常驻小胶囊，随时唤回控制台</div>
-          </div>
-          <button class="btn-ctrl-md" id="btnSettingFloating" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleToggleFloatingWindow()">设置</button>
+      <!-- 2. 全局悬浮胶囊 (单行排布，绝不折行，真色彩激活态) -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:7px 14px; gap:12px;">
+        <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+          <div style="font-weight:800; font-size:14px; color:var(--txt-strong); white-space:nowrap;">全局悬浮小胶囊</div>
+          <div style="font-size:12px; color:var(--txt-dim); white-space:nowrap;" id="settingFloatingHint">常驻桌面与任意应用，随时唤回控制台</div>
         </div>
-        <div id="floatingDisplayModeRow" style="display:flex; align-items:center; gap:8px; padding-top:6px; border-top:1px dashed var(--border);">
-          <span style="font-size:12px; color:var(--txt-dim); font-weight:600;">胶囊显示内容：</span>
-          <button class="btn-ctrl-md" id="btnFloatModeName" style="padding:4px 12px; min-height:30px; font-size:12px; font-weight:800;" onclick="handleSelectFloatingMode('name')">吉利工具箱 (默认)</button>
-          <button class="btn-ctrl-md" id="btnFloatModeCode" style="padding:4px 12px; min-height:30px; font-size:12px; font-weight:800;" onclick="handleSelectFloatingMode('code')">动态暗码 (+10/+5)</button>
+        <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+          <div id="floatingDisplayModeRow" class="setting-segmented-group">
+            <button class="setting-segmented-btn active" id="btnFloatModeName" onclick="handleSelectFloatingMode('name')">吉利工具箱 (默认)</button>
+            <button class="setting-segmented-btn" id="btnFloatModeCode" onclick="handleSelectFloatingMode('code')">动态暗码 (+10/+5)</button>
+          </div>
+          <button class="btn-ctrl-md" id="btnSettingFloating" style="padding:6px 16px; min-height:36px; min-width:92px; font-size:13px; font-weight:800;" onclick="handleToggleFloatingWindow()">设置</button>
         </div>
       </div>
 
@@ -1723,7 +1849,7 @@ body.light .btn-mini:active {
       <div class="modal-title">车机深度工具箱</div>
       <button class="modal-close" onclick="closeModal('deepToolsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
-    <div style="font-size:12px; color:var(--txt-dim); margin-bottom:12px;">包含 ADB 系统组件冻结、工程暗码与深度存储清理等高级功能。</div>
+    <div style="font-size:12px; color:var(--txt-dim); margin-bottom:12px;">包含 ADB 系统组件冻结、座舱联动与深度存储清理等高级功能。</div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
       <!-- 工具卡片 1: 车机 ADB -->
       <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px;" onclick="closeModal('deepToolsModal'); handleOpenFreezeManager();">
@@ -1734,14 +1860,7 @@ body.light .btn-mini:active {
         <div style="font-size:11.5px; color:var(--txt-dim);">执行 ADB 命令行与原厂商店、OTA 系统组件冻结</div>
       </div>
 
-      <!-- 工具卡片 2: 工程暗码 -->
-      <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px;" onclick="closeModal('deepToolsModal'); handleShowDynamicCode();">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">工程模式动态暗码</div>
-          <span class="btn-status-pill blue">拨号直达</span>
-        </div>
-        <div style="font-size:11.5px; color:var(--txt-dim);">计算主流+5 / 变体+10 双轨工程模式动态密码</div>
-      </div>
+
 
       <!-- 工具卡片 3: 下载目录清理 -->
       <div class="about-item" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; padding:12px 14px;" onclick="closeModal('deepToolsModal'); handleOpenCleanDialog();">
@@ -3398,7 +3517,7 @@ function updateAutostartUi(enabled) {
     var btn = document.getElementById(id);
     if (btn) {
       btn.innerText = isAutostartOn ? '已开启' : '未开启';
-      btn.className = isAutostartOn ? (id === 'btnToggleAutostart' ? 'btn-mini highlight' : 'btn-ctrl-md highlight') : (id === 'btnToggleAutostart' ? 'btn-mini' : 'btn-ctrl-md');
+      btn.className = isAutostartOn ? (id === 'btnToggleAutostart' ? 'btn-mini highlight' : 'btn-ctrl-md btn-toggle-active') : (id === 'btnToggleAutostart' ? 'btn-mini' : 'btn-ctrl-md');
     }
   });
   ['autostartStatusHint', 'settingAutostartHint'].forEach(function(id) {
@@ -3434,6 +3553,11 @@ function handleToggleExpertRabbitTheme() {
 
 function updateExpertRabbitThemeUi(enabled) {
   isExpertRabbitEnabled = (enabled === true);
+  if (isExpertRabbitEnabled) {
+    document.body.classList.add('expert-rabbit-active');
+  } else {
+    document.body.classList.remove('expert-rabbit-active');
+  }
   var btn = document.getElementById('btnSettingExpertRabbit');
   var hint = document.getElementById('settingExpertRabbitHint');
   var btnAutoPilot = document.getElementById('btnRabbitAutoPilot');
@@ -3446,9 +3570,17 @@ function updateExpertRabbitThemeUi(enabled) {
   }
   if (hint) {
     hint.innerHTML = isExpertRabbitEnabled ?
-      '<span style="color:#EF4444; font-weight:800;">⚠️ 专家模式已激活：已解锁【一键卡兔子向导】与任意应用时钟伪装（变砖风险自负）</span>' :
-      '默认关闭。锁定常规系统直装，隐藏【一键卡兔子向导】以防误触变砖。若需极客测试可开启';
+      '<span style="color:#EF4444; font-weight:800;">⚠️ 专家模式已激活：已解锁【一键卡兔子向导】与时钟注入流程（变砖风险自负）</span>' :
+      '默认关闭。锁定常规系统直装，隐藏时钟伪装与注入向导以防误触变砖。若需极客测试可开启';
   }
+}
+
+function handleLaunchSystemUpdate() {
+  showToast('正在调起原厂系统升级检查...');
+  var res = callBridge('openSystemUpdate');
+  setTimeout(function() {
+    showToast('请在系统升级界面点击【检查更新】，然后再返回点击【立即扫描提取】！');
+  }, 1200);
 }
 
 // 兼容旧调用别名
@@ -4165,11 +4297,11 @@ function updateFloatingModeUi(mode) {
   var btnCode = document.getElementById('btnFloatModeCode');
   if (btnName && btnCode) {
     if (mode === 'code') {
-      btnCode.className = 'btn-ctrl-md highlight';
-      btnName.className = 'btn-ctrl-md';
+      btnCode.className = 'setting-segmented-btn active';
+      btnName.className = 'setting-segmented-btn';
     } else {
-      btnName.className = 'btn-ctrl-md highlight';
-      btnCode.className = 'btn-ctrl-md';
+      btnName.className = 'setting-segmented-btn active';
+      btnCode.className = 'setting-segmented-btn';
     }
   }
 }
@@ -4181,18 +4313,18 @@ function updateFloatingWindowUi(isOn) {
   var modeRow = document.getElementById('floatingDisplayModeRow');
   if (btn) {
     if (isOn) {
-      btn.className = 'btn-ctrl-md highlight';
-      btn.innerText = ' 已开启';
+      btn.className = 'btn-ctrl-md btn-toggle-active';
+      btn.innerText = '已开启';
     } else {
       btn.className = 'btn-ctrl-md';
       btn.innerText = '未开启';
     }
   }
   if (hint) {
-    hint.innerText = isOn ? '在桌面与任意应用常驻小胶囊，随时唤回控制台' : '已关闭悬浮小胶囊，不在桌面显示';
+    hint.innerText = isOn ? '常驻桌面与任意应用，随时唤回控制台' : '已关闭悬浮小胶囊，不在桌面显示';
   }
   if (modeRow) {
-    modeRow.style.display = isOn ? 'flex' : 'none';
+    modeRow.style.display = isOn ? 'inline-flex' : 'none';
   }
 }
 
