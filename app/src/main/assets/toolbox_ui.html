@@ -556,20 +556,20 @@ body.light .app-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.06);
 
 .app-item {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px; border-radius: var(--skin-radius-sm);
+  padding: 14px 18px; border-radius: var(--skin-radius-sm);
   background: var(--card); border: 1px solid var(--border);
-  transition: all 0.15s; flex-shrink: 0; min-height: 84px;
+  transition: all 0.15s; flex-shrink: 0; min-height: 96px;
 }
 .app-info {
-  display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;
+  display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;
 }
 
 /* 纯文字极简应用类型徽标 */
 .app-type-badge {
-  width: 44px; height: 44px; border-radius: 9px;
+  width: 46px; height: 46px; border-radius: 9px;
   border: 1.5px solid var(--border-strong);
   display: flex; align-items: center; justify-content: center;
-  font-size: 13.5px; font-weight: 900;
+  font-size: 14px; font-weight: 900;
   flex-shrink: 0; text-align: center; line-height: 1;
 }
 .app-type-badge.nav { background: rgba(0, 174, 185, 0.18); color: var(--accent); border-color: rgba(0, 174, 185, 0.35); }
@@ -581,37 +581,33 @@ body.light .app-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.06);
   min-width: 0; flex: 1;
 }
 .app-name-row {
-  display: flex; align-items: center; gap: 6px; margin-bottom: 3px;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 3px; flex-wrap: wrap;
 }
 .app-name {
-  font-size: 20px; font-weight: 900; color: var(--txt-strong);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 19px; font-weight: 900; color: var(--txt-strong);
+  line-height: 1.3;
 }
 .app-badge {
-  font-size: 13px; padding: 3px 8px; border-radius: 5px;
+  font-size: 12.5px; padding: 3px 8px; border-radius: 5px;
   background: rgba(0, 174, 185, 0.18); color: var(--accent);
   border: 1px solid rgba(0, 174, 185, 0.35); white-space: nowrap; font-weight: 800;
 }
 .app-desc-marquee-box {
   width: 100%;
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  position: relative;
-  mask-image: linear-gradient(to right, black calc(100% - 20px), transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, black calc(100% - 20px), transparent 100%);
+  margin-top: 4px;
 }
 .app-desc {
-  font-size: 14.5px; color: var(--txt-dim); font-weight: 700;
-  white-space: nowrap; display: inline-block;
-  will-change: transform;
-}
-.app-desc.animate-marquee {
-  animation: app-desc-marquee-slide linear infinite alternate;
-}
-@keyframes app-desc-marquee-slide {
-  0%, 15% { transform: translateX(0); }
-  85%, 100% { transform: translateX(var(--scroll-dist, -60px)); }
+  font-size: 13.5px;
+  color: var(--txt-dim);
+  font-weight: 600;
+  line-height: 1.55;
+  white-space: normal;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .app-action {
@@ -2680,22 +2676,7 @@ function renderApps() {
 
 // 智能计算并激活应用简介平滑跑马灯
 function initAppDescMarquees() {
-  setTimeout(function() {
-    var boxes = document.querySelectorAll('.app-desc-marquee-box');
-    boxes.forEach(function(box) {
-      var desc = box.querySelector('.app-desc');
-      if (!desc) return;
-      var overflowDist = desc.scrollWidth - box.clientWidth;
-      if (overflowDist > 6) {
-        var duration = Math.max(5, Math.round(overflowDist / 18));
-        desc.style.setProperty('--scroll-dist', '-' + (overflowDist + 14) + 'px');
-        desc.style.animationDuration = duration + 's';
-        desc.classList.add('animate-marquee');
-      } else {
-        desc.classList.remove('animate-marquee');
-      }
-    });
-  }, 60);
+  // 描述文本已采用多行自适应折行排版（-webkit-line-clamp: 2），无需跑马灯动画
 }
 
 window.addEventListener('resize', initAppDescMarquees);
@@ -4073,16 +4054,15 @@ function handleCheckUpdate() {
 
 function handleForceDownloadToolbox() {
   closeModal('aboutModal');
-  showToast('正在调起最新安装包下载...');
   showToolboxUpdateModal({
     version: '1.2.5',
     version_code: 7025,
     download_url: 'https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.2.5',
-    changelog: '【强制重新下载】吉利工具箱最新正式版安装包 (v1.2.5)\n1. 启动门禁与系统设置弹窗高度自适应加宽\n2. 全局悬浮胶囊单行展示与高对比真色彩激活态\n3. 默认全宽车载精选软件商城与4等分系统快捷条\n4. 车载 ADB 自定义终端 92vh 铺满屏幕与 OTA 升级检查联动\n5. 全车座舱智能语音重制为甜美小爱音色 (44.1kHz)'
+    changelog: '【强制重新下载】吉利工具箱最新正式版安装包 (v1.2.5)\n1. 车载精选商城采用 2 列网格排版，描述文字自然折行自适应\n2. 软件卡片点击展开详情大窗口，彻底消除灰色背景色块\n3. 彻底下架旧版方控与多媒体桥接，保留 CarMedia 成熟方控\n4. 上架 KA Music 3.0.0 (iOS 26液态玻璃) 与 MD3Music 5.4.2 酷狗 Rust 内核版\n5. 全车座舱智能语音重制为甜美小爱音色，支持自定义 TTS 文本输入'
   }, true);
-  setTimeout(function() {
-    handleStartSelfUpdate();
-  }, 400);
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.startToolboxSelfUpdate === 'function') {
+    window.ToolboxBridge.startToolboxSelfUpdate('https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.2.5', '1.2.5');
+  }
 }
 
 var currentUpdateData = null;
@@ -4117,11 +4097,25 @@ window.showToolboxUpdateModal = function(data, isForce) {
     clEl.innerHTML = html;
   }
   var pBox = document.getElementById('toolboxSelfProgressBox');
-  if (pBox) pBox.style.display = 'none';
   var btn = document.getElementById('btnStartSelfUpdate');
-  if (btn) {
-    btn.disabled = false;
-    btn.innerText = '立即更新 (安全直装)';
+  if (isForce) {
+    if (pBox) pBox.style.display = 'block';
+    var status = document.getElementById('toolboxSelfProgressStatus');
+    if (status) status.innerText = '正在连接云端重新下载... (0%)';
+    var bar = document.getElementById('toolboxSelfProgressBar');
+    if (bar) bar.style.width = '0%';
+    var speed = document.getElementById('toolboxSelfProgressSpeed');
+    if (speed) speed.innerText = '正在连接...';
+    if (btn) {
+      btn.disabled = true;
+      btn.innerText = '正在重新下载中...';
+    }
+  } else {
+    if (pBox) pBox.style.display = 'none';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = '立即更新 (安全直装)';
+    }
   }
   openModal('updateModal');
 };
