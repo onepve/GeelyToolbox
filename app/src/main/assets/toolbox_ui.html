@@ -2307,7 +2307,7 @@ var CLOUD_APPS = [
     "size": "286.7 MB",
     "filename": "AutoMap_E02_DeadReckoning_FlyScreen_v9.apk",
     "package_name": "com.autonavi.amapauto",
-    "desc": "【高德 8.5 内核·吉利 E02 专车定制版】作者 QQ: 513677649，纯 64 位原生编译，支持陀螺仪地库惯导、开机冷启动三指滑屏秒飞液晶仪表盘。安装完成后请务必手动软重启一次车机赋予系统权限即可稳定秒开不闪。。",
+    "desc": "【高德 8.5 内核·吉利 E02 专车定制版】作者：༺ༀ东༒皇ༀ༻ | 联系QQ：513677649 | QQ群：917274937。纯 64 位原生编译，支持陀螺仪地库惯导、开机冷启动三指滑屏秒飞液晶仪表盘。未经第三方浮层修改，原汁原味。安装完成后建议手动软重启一次车机赋予完整系统权限即可稳定秒开不闪。",
     "updated_at": "2026-08-27",
     "status": "download",
     "progress": 0,
@@ -2479,7 +2479,7 @@ var CLOUD_APPS = [
     "size": "749 KB",
     "filename": "CarMedia_1.3.3.apk",
     "package_name": "com.ecarx.carmedia",
-    "desc": "【米小江出品·官方最新修复版】吉利车机专属方控媒体中心：修复连切歌与按键映射，开机自启、方向盘物理按键切歌/播放暂停/自定义应用联动",
+    "desc": "【米小江出品·官方最新修复版】作者：米小江 | QQ群：917274937。吉利车机专属方控媒体中心：修复连切歌与按键映射，开机自启、方向盘物理按键切歌/播放暂停/自定义应用联动。",
     "updated_at": "2026-08-30",
     "status": "download",
     "progress": 0,
@@ -2496,7 +2496,7 @@ var CLOUD_APPS = [
     "size": "4.76 MB",
     "filename": "LyricsCompanion_20260822.apk",
     "package_name": "com.zuoqirun.lyricscompanion",
-    "desc": "【车载全能悬浮歌词伴侣】适配吉利车机与各类主流音乐 App，支持蓝牙音频歌词抓取、状态栏/悬浮窗逐字歌词展示、自定义字体与双模配色，支持车机开机自启与蓝牙自动连接。",
+    "desc": "【车载全能悬浮歌词伴侣】车友交流QQ群：1049772727。适配吉利车机与各类主流音乐 App，支持蓝牙音频歌词抓取、状态栏/悬浮窗逐字歌词展示、自定义字体与双模配色，支持车机开机自启与蓝牙自动连接。开启白名单后直接安装。",
     "updated_at": "2026-08-22",
     "status": "download",
     "progress": 0,
@@ -2530,7 +2530,7 @@ var CLOUD_APPS = [
     "size": "547 KB",
     "filename": "JiaTu_3.17_WheelLight.apk",
     "package_name": "com.amapcruise.display",
-    "desc": "【高德巡航辅助·支持下轮灯联动】专为车机高德地图设计的轻量级巡航助手，体积仅 547KB 极简流畅，支持下轮灯状态读取、到达灯色预测、悬浮车速/限速预警与电子眼红绿灯播报。开启白名单后直接安装。",
+    "desc": "【高德巡航辅助·支持下轮灯联动】作者：泉歆泉伊 | 联系QQ：571967931 | QQ群：1106923186。专为车机高德地图设计的轻量级巡航助手，体积仅 547KB 极简流畅，支持下轮灯状态读取、到达灯色预测、悬浮车速/限速预警与电子眼红绿灯播报。开启白名单后直接安装。",
     "updated_at": "2026-09-04",
     "status": "download",
     "progress": 0,
@@ -3668,6 +3668,7 @@ function updateAutostartUi(enabled) {
 }
 
 var isExpertRabbitEnabled = false;
+var hasSystemSettings = false;
 
 function handleToggleExpertRabbitTheme() {
   if (!isExpertRabbitEnabled) {
@@ -3923,8 +3924,13 @@ function _doDownloadApp(app, isRedownload) {
   app.progress = 0;
   app.speed = '';
   renderApps();
+  if (currentDetailAppId === app.id) {
+    updateDetailModalActions(app.id);
+  }
 
-  callBridge('downloadApp', app.id, app.url, app.filename);
+  var targetUrl = app.url || app.download_url;
+  var targetBytes = app.bytes || 0;
+  callBridge('downloadApp', app.id, targetUrl, app.filename, targetBytes);
 }
 
 function handlePauseDownload(id) {
@@ -3942,7 +3948,12 @@ function handleResumeDownload(id) {
   if (app) {
     app.status = 'downloading';
     renderApps();
-    callBridge('downloadApp', app.id, app.url, app.filename);
+    if (currentDetailAppId === app.id) {
+      updateDetailModalActions(app.id);
+    }
+    var targetUrl = app.url || app.download_url;
+    var targetBytes = app.bytes || 0;
+    callBridge('downloadApp', app.id, targetUrl, app.filename, targetBytes);
   }
 }
 
@@ -4663,7 +4674,7 @@ function handleShowReward() {
   openModal('rewardModal');
 }
 
-// 供 Java 端下载与云端列表实时回调
+// 供 Java 端下载与云端列表实时回调 (主列表与二级详情窗口双向即时联动)
 window.updateDownloadProgress = function(appId, progress, speedStr) {
   var app = CLOUD_APPS.find(function(a) { return a.id === appId; });
   if (app) {
@@ -4671,6 +4682,9 @@ window.updateDownloadProgress = function(appId, progress, speedStr) {
     app.progress = progress;
     app.speed = speedStr;
     renderApps();
+    if (currentDetailAppId === appId) {
+      updateDetailModalActions(appId);
+    }
   }
 };
 
@@ -4681,6 +4695,9 @@ window.updateDownloadSuccess = function(appId, filename) {
     app.progress = 100;
     app.speed = '';
     renderApps();
+    if (currentDetailAppId === appId) {
+      updateDetailModalActions(appId);
+    }
     showToast('下载完成: ' + filename);
   }
 };
@@ -4692,6 +4709,9 @@ window.updateDownloadError = function(appId, errorMsg) {
     app.progress = 0;
     app.speed = '';
     renderApps();
+    if (currentDetailAppId === appId) {
+      updateDetailModalActions(appId);
+    }
     showToast('下载失败: ' + errorMsg);
   }
 };
@@ -4701,6 +4721,9 @@ window.updateDownloadPaused = function(appId) {
   if (app) {
     app.status = 'paused';
     renderApps();
+    if (currentDetailAppId === appId) {
+      updateDetailModalActions(appId);
+    }
   }
 };
 
@@ -4711,6 +4734,9 @@ window.updateDownloadCancelled = function(appId) {
     app.progress = 0;
     app.speed = '';
     renderApps();
+    if (currentDetailAppId === appId) {
+      updateDetailModalActions(appId);
+    }
   }
 };
 

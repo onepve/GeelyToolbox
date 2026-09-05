@@ -32,16 +32,18 @@ public class DownloadManager {
         public final String id;
         public final String url;
         public final String filename;
+        public final long expectedBytes;
         public volatile boolean isCancelled = false;
         public volatile boolean isPaused = false;
         public HttpURLConnection conn;
         public InputStream is;
         public FileOutputStream fos;
 
-        public DownloadTask(String id, String url, String filename) {
+        public DownloadTask(String id, String url, String filename, long expectedBytes) {
             this.id = id;
             this.url = url;
             this.filename = filename;
+            this.expectedBytes = expectedBytes;
         }
     }
 
@@ -50,16 +52,20 @@ public class DownloadManager {
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public static void startDownload(final String fileUrl, final String customFileName, final DownloadListener listener) {
-        startDownload(customFileName, fileUrl, customFileName, listener);
+        startDownload(customFileName, fileUrl, customFileName, 0, listener);
     }
 
     public static void startDownload(final String taskId, final String fileUrl, final String customFileName, final DownloadListener listener) {
+        startDownload(taskId, fileUrl, customFileName, 0, listener);
+    }
+
+    public static void startDownload(final String taskId, final String fileUrl, final String customFileName, final long expectedBytes, final DownloadListener listener) {
         final String id = (taskId != null && !taskId.isEmpty()) ? taskId : customFileName;
 
         // Cancel previous task with same ID if running
         cancelDownload(id);
 
-        final DownloadTask task = new DownloadTask(id, fileUrl, customFileName);
+        final DownloadTask task = new DownloadTask(id, fileUrl, customFileName, expectedBytes);
         activeTasks.put(id, task);
 
         executor.execute(new Runnable() {
@@ -103,6 +109,7 @@ public class DownloadManager {
                     conn.setReadTimeout(30000);
                     conn.setUseCaches(false);
                     conn.setDefaultUseCaches(false);
+                    conn.setRequestProperty("Accept-Encoding", "identity"); // 严禁透明 gzip，确保 Content-Length 100% 真实返回
                     conn.setRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
                     conn.setRequestProperty("Pragma", "no-cache");
                     conn.setRequestProperty("Expires", "0");
@@ -116,6 +123,17 @@ public class DownloadManager {
                     }
 
                     long totalBytes = conn.getContentLengthLong();
+                    if (totalBytes <= 0) {
+                        try {
+                            String clStr = conn.getHeaderField("Content-Length");
+                            if (clStr != null && !clStr.isEmpty()) {
+                                totalBytes = Long.parseLong(clStr.trim());
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                    if (totalBytes <= 0 && task.expectedBytes > 0) {
+                        totalBytes = task.expectedBytes;
+                    }
                     InputStream is = conn.getInputStream();
                     task.is = is;
                     FileOutputStream fos = new FileOutputStream(tempFile);

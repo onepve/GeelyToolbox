@@ -1481,11 +1481,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void downloadApp(final String appId, final String downloadUrl, final String filename) {
+            downloadApp(appId, downloadUrl, filename, 0);
+        }
+
+        @JavascriptInterface
+        public void downloadApp(final String appId, final String downloadUrl, final String filename, final long expectedBytes) {
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     Toast.makeText(context, "开始下载: " + (filename != null ? filename : appId), Toast.LENGTH_SHORT).show();
-                    DownloadManager.startDownload(appId, downloadUrl, filename, new DownloadManager.DownloadListener() {
+                    DownloadManager.startDownload(appId, downloadUrl, filename, expectedBytes, new DownloadManager.DownloadListener() {
                         @Override
                         public void onProgress(String id, final int progress, long downloadedBytes, long totalBytes, final String speedStr) {
                             mainHandler.post(new Runnable() {
