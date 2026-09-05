@@ -451,28 +451,48 @@ public class AutoPilotManager {
 
         List<File> list = new ArrayList<>();
         try {
-            File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
-            if (downloadDir.exists() && downloadDir.isDirectory()) {
-                File[] files = downloadDir.listFiles(new FileFilter() {
-                    @Override
-                    public boolean accept(File file) {
-                        if (!file.isFile()) return false;
-                        String name = file.getName().toLowerCase();
-                        return name.endsWith(".apk");
+            File dedicatedDir = SystemUtils.getAppDownloadDir();
+            File legacySpecialDir = new File(Environment.getExternalStorageDirectory(), "Download/!车机应用");
+            File legacyDir = new File(Environment.getExternalStorageDirectory(), "Download");
+
+            if (legacySpecialDir.exists() && legacySpecialDir.isDirectory()) {
+                File[] oldFiles = legacySpecialDir.listFiles();
+                if (oldFiles != null) {
+                    for (File of : oldFiles) {
+                        File target = new File(dedicatedDir, of.getName());
+                        of.renameTo(target);
                     }
-                });
-                if (files != null) {
-                    for (File f : files) {
-                        if (f.length() > 500 * 1024) { // > 500KB
-                            if (!expertMode && !app.onepve.geelyconsole.MainActivity.isNavigationApp(null, f.getName())) {
-                                continue;
+                }
+            }
+
+            FileFilter apkFilter = new FileFilter() {
+                @Override
+                public boolean accept(File file) {
+                    if (!file.isFile()) return false;
+                    String name = file.getName().toLowerCase();
+                    return name.endsWith(".apk");
+                }
+            };
+
+            java.util.Set<String> addedNames = new java.util.HashSet<>();
+            File[] dirsToScan = new File[] { dedicatedDir, legacyDir };
+            for (File d : dirsToScan) {
+                if (d.exists() && d.isDirectory()) {
+                    File[] files = d.listFiles(apkFilter);
+                    if (files != null) {
+                        for (File f : files) {
+                            if (f.length() > 500 * 1024 && !addedNames.contains(f.getName())) {
+                                if (!expertMode && !app.onepve.geelyconsole.MainActivity.isNavigationApp(null, f.getName())) {
+                                    continue;
+                                }
+                                list.add(f);
+                                addedNames.add(f.getName());
                             }
-                            list.add(f);
                         }
                     }
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
         return list;
     }
 

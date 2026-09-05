@@ -548,7 +548,7 @@ public class WebServer {
                 "    <div class=\"container\">\n" +
                 "        <div class=\"header\">\n" +
                 "            <div class=\"title\">吉利车机无线快传</div>\n" +
-                "            <div class=\"subtitle\">免车机打字 · 极速直传至 /sdcard/Download/!车机应用/</div>\n" +
+                "            <div class=\"subtitle\">免车机打字 · 极速直传至 /sdcard/Download/00_车机应用/</div>\n" +
                 "        </div>\n" +
                 "        <div class=\"card\">\n" +
                 "            <div class=\"card-title\"><span>🚀 推送下载链接到车机</span><span class=\"status-badge\" id=\"car-status\">车机在线</span></div>\n" +
@@ -581,7 +581,7 @@ public class WebServer {
                 "        </div>\n" +
                 "        <div class=\"card\">\n" +
                 "            <div class=\"card-title\"><span>📥 车机文件反向导出到手机</span><button class=\"btn btn-secondary\" style=\"width:auto; padding:4px 10px; font-size:12px; margin-top:0;\" onclick=\"loadCarFiles()\">🔄 刷新列表</button></div>\n" +
-                "            <div style=\"font-size: 12px; color: #64748b; margin-bottom: 8px;\">点击即可将车机 /sdcard/Download/!车机应用/ 下的日志与 APK 下回到手机：</div>\n" +
+                "            <div style=\"font-size: 12px; color: #64748b; margin-bottom: 8px;\">点击即可将车机 /sdcard/Download/00_车机应用/ 下的日志与 APK 下回到手机：</div>\n" +
                 "            <div id=\"car-files-box\" style=\"max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;\">\n" +
                 "                <div style=\"text-align: center; color: #94a3b8; font-size: 12px; padding: 16px;\">正在加载车机文件列表...</div>\n" +
                 "            </div>\n" +
@@ -677,7 +677,7 @@ public class WebServer {
                 "                } catch(e) {}\n" +
                 "                pFill.style.width = Math.round(((i + 1) / totalChunks) * 100) + '%';\n" +
                 "            }\n" +
-                "            pStatus.innerText = '✅ 传输完成！已保存至车机 /sdcard/Download/!车机应用/' + resolvedName;\n" +
+                "            pStatus.innerText = '✅ 传输完成！已保存至车机 /sdcard/Download/00_车机应用/' + resolvedName;\n" +
                 "        }\n" +
                 "        async function sendAction(act) {\n" +
                 "            try {\n" +
