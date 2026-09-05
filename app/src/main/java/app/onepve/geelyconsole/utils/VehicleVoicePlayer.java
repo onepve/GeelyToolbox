@@ -118,6 +118,16 @@ public class VehicleVoicePlayer {
     public void play(String voiceFileName, final String fallbackText) {
         // 先抢占中断前序未播完的语音（例如开门播到一半突然关门，立即切断开门语音）
         stopCurrentVoice();
+        // 0. 用户自定义 TTS 播报文字优先
+        try {
+            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            String customText = prefs.getString("custom_text_" + voiceFileName, "");
+            if (customText != null && !customText.trim().isEmpty()) {
+                speakText(customText.trim());
+                return;
+            }
+        } catch (Exception ignored) {}
+
         // 1. 用户手动设置的自定义文件路径
         try {
             android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);

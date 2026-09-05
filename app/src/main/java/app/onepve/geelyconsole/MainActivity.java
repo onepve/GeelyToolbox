@@ -1884,6 +1884,34 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public void setCustomVoiceText(String voiceKey, String text) {
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            if (text == null || text.trim().isEmpty()) {
+                prefs.edit().remove("custom_text_" + voiceKey).apply();
+            } else {
+                prefs.edit().putString("custom_text_" + voiceKey, text.trim()).apply();
+            }
+        }
+
+        @JavascriptInterface
+        public String getCustomVoiceText(String voiceKey) {
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            return prefs.getString("custom_text_" + voiceKey, "");
+        }
+
+        @JavascriptInterface
+        public void testSpeakCustomText(final String text) {
+            if (text != null && !text.trim().isEmpty()) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        VehicleVoicePlayer.getInstance(MainActivity.this).speakText(text.trim());
+                    }
+                });
+            }
+        }
+
+        @JavascriptInterface
         public void openTtsSettings() {
             mainHandler.post(new Runnable() {
                 @Override
