@@ -192,6 +192,8 @@ public class VehicleAutomationService extends Service {
 
     private static final java.util.regex.Pattern CAN_PATTERN =
             java.util.regex.Pattern.compile("key\\s*=\\s*([^,\\s]+).*?data\\s*=\\s*(-?\\d+)");
+    private static final java.util.regex.Pattern DOOR_DIRECT_PATTERN =
+            java.util.regex.Pattern.compile("fl\\s*=\\s*(\\d+).*?fr\\s*=\\s*(\\d+).*?rl\\s*=\\s*(\\d+).*?rr\\s*=\\s*(\\d+)");
 
     private void startLogcatReader() {
         if (logcatThread != null && logcatThread.isAlive()) return;
@@ -206,8 +208,8 @@ public class VehicleAutomationService extends Service {
                             AdbClient.execute(VehicleAutomationService.this, "pm grant " + getPackageName() + " android.permission.READ_LOGS");
                         } catch (Exception ignored) {}
 
-                        // 过滤 VehicleDataBuilder 与车速 e 标签，同时读取 main 与 system 缓冲区
-                        ProcessBuilder pb = new ProcessBuilder("logcat", "-b", "main", "-b", "system", "-v", "brief", "-s", "VehicleDataBuilder:D", "e:D");
+                        // 过滤 VehicleDataBuilder、车身 AVM 信号 (ecarx_avm_SocketCommand) 与车速标签，同时读取 main 与 system 缓冲区
+                        ProcessBuilder pb = new ProcessBuilder("logcat", "-b", "main", "-b", "system", "-v", "brief", "-s", "VehicleDataBuilder:D", "ecarx_avm_SocketCommand:W", "e:D");
                         pb.redirectErrorStream(true);
                         logcatProcess = pb.start();
 
@@ -258,7 +260,26 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // 2. 解析 CAN 数据: parseCanData: key = ..., data = ... (支持灵活正则匹配)
+        // 2. 解析直出式四门信号: fl = 0, fr = 1, rl = 0, rr = 0 (吉利车身 AVM 控制总线)
+        if (line.contains("fl =") && line.contains("fr =")) {
+            try {
+                java.util.regex.Matcher dm = DOOR_DIRECT_PATTERN.matcher(line);
+                if (dm.find()) {
+                    int fl = Integer.parseInt(dm.group(1).trim());
+                    int fr = Integer.parseInt(dm.group(2).trim());
+                    int rl = Integer.parseInt(dm.group(3).trim());
+                    int rr = Integer.parseInt(dm.group(4).trim());
+                    handleCanSignal("BCM_FrontLeftDoorAjarStatus", fl);
+                    handleCanSignal("BCM_FrontRightDoorAjarStatus", fr);
+                    handleCanSignal("BCM_RearLeftDoorAjarStatus", rl);
+                    handleCanSignal("BCM_RearRightDoorAjarStatus", rr);
+                    return;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        // 3. 解析 CAN 数据: parseCanData: key = ..., data = ... (支持灵活正则匹配)
         if (!line.contains("parseCanData")) return;
 
         try {

@@ -1,4 +1,4 @@
-# 吉利车机控制台 (GeelyToolbox v1.2.0)
+# 吉利车机控制台 (GeelyToolbox v1.2.1)
 
 专为搭载 **亿咖通 E02 / IHU516** 芯片的吉利汽车（缤越 COOL、缤瑞 COOL、博越、豪越、帝豪等 Android 9 SWOS 车机）量身打造的**新一代车载智能座舱控制台**。
 

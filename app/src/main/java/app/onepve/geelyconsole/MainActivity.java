@@ -281,7 +281,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
                     isWhitelistEnabled = SystemUtils.isApkVerifyWhitelistEnabled();
                     obj.put("whitelist", isWhitelistEnabled);
-                    obj.put("version", "1.2.0");
+                    obj.put("version", "1.2.1");
                     boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) || 
                                            (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.xcmedia") == SystemUtils.APP_STATE_DISABLED);
                     boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
@@ -1849,6 +1849,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public boolean isAppstoreFrozen() {
             return SystemUtils.getAppDetailedState(context, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED;
+        }
+
+        @JavascriptInterface
+        public boolean isPackageFrozen(String pkg) {
+            if (pkg == null || pkg.isEmpty()) return false;
+            return SystemUtils.getAppDetailedState(context, pkg) == SystemUtils.APP_STATE_DISABLED;
         }
 
         @JavascriptInterface

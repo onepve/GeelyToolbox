@@ -509,22 +509,22 @@ body.light .app-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.06);
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(12px);
   display: none; align-items: center; justify-content: center;
-  z-index: 100;
+  z-index: 1000;
 }
 .modal-overlay.open {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
 }
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  display: none; align-items: center; justify-content: center;
-  z-index: 1000;
+/* 二级确认、三次校验与加载弹窗置于最高层级，防止被设置页遮挡并避免叠黑 */
+#universalConfirmModal,
+#tripleConfirmModal,
+#autoPilotLoadingModal,
+#manualInstallModal,
+#dynamicCodeModal,
+#cleanDialogModal {
+  z-index: 2000 !important;
+  background: rgba(0, 0, 0, 0.65) !important;
 }
 .modal-card {
   width: 720px; max-width: 95vw; max-height: 92vh; overflow-y: auto;
@@ -914,7 +914,7 @@ body.light .btn-mini:active {
 <header>
   <div class="brand">
     <div class="brand-title">吉利车机控制台</div>
-    <div class="brand-ver" id="appVer">v1.2.0</div>
+    <div class="brand-ver" id="appVer">v1.2.1</div>
   </div>
 
   <div class="top-pills">
@@ -1257,7 +1257,7 @@ body.light .btn-mini:active {
     <div class="about-box">
       <div class="about-item">
         <span style="color:var(--txt-dim);">当前软件版本</span>
-        <span style="font-weight:800; color:var(--accent);" id="aboutVersionText">v1.2.0 (7020)</span>
+        <span style="font-weight:800; color:var(--accent);" id="aboutVersionText">v1.2.1 (7021)</span>
       </div>
       <div class="about-item">
         <span style="color:var(--txt-dim);">支持车机芯片</span>
@@ -2442,6 +2442,18 @@ function syncLocalAppStatuses() {
 function renderAdbFreezeList() {
   var container = document.getElementById('freezeListContainer');
   if (!container) return;
+
+  // 动态向底层查询最新真实冻结状态，杜绝界面与系统脱节
+  if (window.ToolboxBridge) {
+    ADB_CORE_COMPONENTS.forEach(function(item) {
+      if (item.pkg === 'com.ecarx.appstore' && typeof window.ToolboxBridge.isAppstoreFrozen === 'function') {
+        item.frozen = window.ToolboxBridge.isAppstoreFrozen();
+      } else if (typeof window.ToolboxBridge.isPackageFrozen === 'function') {
+        item.frozen = window.ToolboxBridge.isPackageFrozen(item.pkg);
+      }
+    });
+  }
+
   var html = '';
   ADB_CORE_COMPONENTS.forEach(function(item) {
     var badgeClass = item.frozen ? 'dot blue' : 'dot green';
