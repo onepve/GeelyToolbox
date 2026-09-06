@@ -5688,10 +5688,6 @@ function proceedToStep3Whitelist() {
   renderAdbFreezeList();
   renderAllAppsList();
 })();
-</script>
-</body>
-</html>
-
 
 function handleShowVehicleHealthModal() {
   updateVehicleHealthUI(false);
@@ -5707,37 +5703,57 @@ function updateVehicleHealthUI(isManualRefresh) {
     var d = JSON.parse(raw || '{}');
     var volt = d.battery_volt || 12.5;
     var voltStr = volt.toFixed(1);
-    var voltStatus = d.battery_status || '健康';
+    var voltStatus = d.battery_status || '健康充沛';
     var genStatus = d.generator_status || '纯电瓶供电 (耗电中)';
     var isCharging = !!d.is_charging;
 
-    // 1. 更新顶栏微胶囊
+    // 1. 更新顶栏微胶囊 (车规三阶预警: >=11.8V 绿色, 11.5~11.8V 橙色, <11.5V 红色)
     var pillTxt = document.getElementById('txtVehicleHealth');
     var pillDot = document.getElementById('dotVehicleHealth');
     if (pillTxt) {
       if (isCharging) {
         pillTxt.innerText = '电瓶: ' + voltStr + 'V (充能中)';
         if (pillDot) pillDot.className = 'dot green';
-      } else if (volt < 11.8) {
-        pillTxt.innerText = '电瓶: ' + voltStr + 'V (亏电预警)';
+      } else if (volt < 11.5) {
+        pillTxt.innerText = '电瓶: ' + voltStr + 'V (重度亏电)';
         if (pillDot) pillDot.className = 'dot red';
+      } else if (volt < 11.8) {
+        pillTxt.innerText = '电瓶: ' + voltStr + 'V (低电警戒)';
+        if (pillDot) pillDot.className = 'dot orange';
       } else {
-        pillTxt.innerText = '电瓶: ' + voltStr + 'V (健康) · 耗电中';
+        pillTxt.innerText = '电瓶: ' + voltStr + 'V (健康充沛)';
         if (pillDot) pillDot.className = 'dot green';
       }
     }
 
     // 2. 更新 Modal 内部卡片
     var voltBig = document.getElementById('vhBatteryVoltBig');
-    if (voltBig) voltBig.innerText = voltStr;
+    if (voltBig) {
+      voltBig.innerText = voltStr;
+      if (!isCharging && volt < 11.5) {
+        voltBig.style.color = '#EF4444';
+      } else if (!isCharging && volt < 11.8) {
+        voltBig.style.color = '#F59E0B';
+      } else {
+        voltBig.style.color = 'var(--txt-strong)';
+      }
+    }
 
     var batBadge = document.getElementById('vhBatteryBadge');
     if (batBadge) {
       batBadge.innerText = voltStatus;
-      if (d.battery_class === 'red') {
+      if (d.battery_class === 'red' || volt < 11.5) {
         batBadge.className = 'btn-status-pill red';
+        batBadge.innerText = '重度亏电 (面临趴窝)';
+      } else if (d.battery_class === 'amber' || volt < 11.8) {
+        batBadge.className = 'btn-status-pill orange';
+        batBadge.innerText = '低电警戒 (建议启动)';
+      } else if (isCharging) {
+        batBadge.className = 'btn-status-pill green';
+        batBadge.innerText = '发电机充能中';
       } else {
         batBadge.className = 'btn-status-pill green';
+        batBadge.innerText = '健康充沛 (40%~100%)';
       }
     }
 
@@ -5782,3 +5798,7 @@ function updateVehicleHealthUI(isManualRefresh) {
     console.error('updateVehicleHealthUI error:', e);
   }
 }
+
+</script>
+</body>
+</html>

@@ -2203,14 +2203,17 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
                 String batteryStatus;
                 String batteryClass;
-                if (volt < 11.8) {
-                    batteryStatus = "亏电预警";
+                if (volt < 11.5) {
+                    batteryStatus = "重度亏电";
                     batteryClass = "red";
+                } else if (volt < 11.8) {
+                    batteryStatus = "低电警戒";
+                    batteryClass = "amber";
                 } else if (volt >= 13.5) {
                     batteryStatus = "充能中";
                     batteryClass = "green";
                 } else {
-                    batteryStatus = "健康";
+                    batteryStatus = "健康充沛";
                     batteryClass = "green";
                 }
                 obj.put("battery_status", batteryStatus);
