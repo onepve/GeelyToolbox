@@ -1913,7 +1913,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("tts_gear_p", !prefs.getString("custom_text_gear_p.mp3", "").isEmpty());
                 obj.put("tts_gear_n", !prefs.getString("custom_text_gear_n.mp3", "").isEmpty());
                 obj.put("current_voice_theme_id", prefs.getString("current_voice_theme_id", "default"));
-                obj.put("current_voice_theme_name", prefs.getString("current_voice_theme_name", "官方内置·甜美萌妹 (系统默认)"));
+                obj.put("current_voice_theme_name", prefs.getString("current_voice_theme_name", "官方内置·温婉知性 (微软晓晓)"));
                 obj.put("voice_playback_speed", (double) prefs.getFloat("voice_playback_speed", 1.0f));
                 obj.put("voice_audio_channel", prefs.getString("voice_audio_channel", "nav"));
 
@@ -2144,10 +2144,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             }
                         }
                         editor.putString("current_voice_theme_id", "default");
-                        editor.putString("current_voice_theme_name", "官方内置·甜美萌妹 (系统默认)");
+                        editor.putString("current_voice_theme_name", "官方内置·温婉知性 (微软晓晓)");
                         editor.apply();
 
-                        Toast.makeText(MainActivity.this, "已恢复为官方内置默认萌妹语音", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "已恢复为出厂内置温婉知性语音", Toast.LENGTH_SHORT).show();
                         if (webView != null) {
                             webView.loadUrl("javascript:if(window.refreshVehicleAutoUI) refreshVehicleAutoUI(); if(window.renderApps) renderApps();");
                         }

@@ -2072,11 +2072,11 @@ body.light .btn-mini:active {
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; width:100%;">
           <div style="display:flex; align-items:center; gap:10px;">
             <span style="font-size:14px; color:var(--txt-dim); font-weight:700;">当前生效主题:</span>
-            <span class="btn-status-pill green" id="lblCurrentVoiceTheme" style="font-size:13.5px; padding:4px 14px; font-weight:900;">官方内置·甜美萌妹 (系统默认)</span>
+            <span class="btn-status-pill green" id="lblCurrentVoiceTheme" style="font-size:13.5px; padding:4px 14px; font-weight:900;">官方内置·温婉知性 (微软晓晓)</span>
           </div>
           <div style="display:flex; gap:10px;">
             <button class="btn-ctrl-md highlight" style="min-height:38px; padding:0 18px; font-size:13.5px; font-weight:800;" onclick="handleGoToVoiceStore()">去商城挑选语音主题</button>
-            <button class="btn-ctrl-md" style="min-height:38px; padding:0 18px; font-size:13.5px; font-weight:800;" onclick="handleResetVoiceTheme()">恢复内置萌妹原声</button>
+            <button class="btn-ctrl-md" style="min-height:38px; padding:0 18px; font-size:13.5px; font-weight:800;" onclick="handleResetVoiceTheme()">恢复出厂知性原声</button>
           </div>
         </div>
 
@@ -2701,6 +2701,23 @@ var CLOUD_APPS = [
     "progress": 0,
     "speed": "",
     "url": "https://dl.onepve.com/GeelyToolbox/JiaTu_3.17_WheelLight.apk"
+  },
+  {
+    "id": "xiaoai_tts_engine",
+    "category": "tool",
+    "badgeClass": "tool",
+    "badgeText": "TTS引擎",
+    "name": "系统语音引擎 (小爱TTS·专车专用)",
+    "badge": "TTS语音引擎/专车适配",
+    "size": "29.97 MB",
+    "filename": "XiaoAi_TTS_Engine_1.5.1.apk",
+    "package_name": "com.xiaomi.mibrain.speech",
+    "desc": "【系统级TTS发音人引擎·吉利E02专车版】专为吉利车机 Android 9 适配。安装后可为工具箱解锁【改文字 TTS】（打字自定义开门/关门台词）原生实时发音能力。在座舱联动中直接提供专属设置入口，彻底杜绝安装第三方系统设置导致的卡标变砖隐患。开启白名单后直接安装。",
+    "updated_at": "2026-09-06",
+    "status": "download",
+    "progress": 0,
+    "speed": "",
+    "url": "https://dl.onepve.com/GeelyToolbox/XiaoAi_TTS_Engine_1.5.1.apk"
   }
 ];
 
@@ -2708,7 +2725,7 @@ var CLOUD_APPS = [
 var STORE_GROUPS = [
   { title: '核心专车地图', appIds: ['amap_e02_dr_ae86', 'amap_e02_dr_v9', 'amap75_flyscreen', 'amap95_trafficlight'] },
   { title: '精选车载音乐', appIds: ['ka_music_300', 'md3_music_542', 'qqmusic25', 'qqmusic21', 'netease62', 'netease32', 'qishuimusic', 'carmedia', 'lyrics_companion'] },
-  { title: '核心系统与座舱硬件工具', appIds: ['geely_native_settings', 'jiatu_317'] }
+  { title: '核心系统与座舱硬件工具', appIds: ['geely_native_settings', 'jiatu_317', 'xiaoai_tts_engine'] }
 ];
 var STORE_GROUP_OF = {};
 STORE_GROUPS.forEach(function(g) {
@@ -4651,7 +4668,7 @@ function refreshVehicleAutoUI() {
   updateAudioChannelButtons(vehicleAutoSettings.voice_audio_channel || 'nav');
   var themeLbl = document.getElementById('lblCurrentVoiceTheme');
   if (themeLbl) {
-    var curName = vehicleAutoSettings.current_voice_theme_name || '官方内置·甜美萌妹 (系统默认)';
+    var curName = vehicleAutoSettings.current_voice_theme_name || '官方内置·温婉知性 (微软晓晓)';
     var curId = vehicleAutoSettings.current_voice_theme_id || 'default';
     themeLbl.innerText = curName;
     if (curId === 'default') {
@@ -4686,8 +4703,8 @@ function updateVoicePillElement(elId, prefix, voiceKey) {
   }
   var isCustomAudio = !!vehicleAutoSettings['custom_' + voiceKey];
   var curId = vehicleAutoSettings.current_voice_theme_id || 'default';
-  var curName = vehicleAutoSettings.current_voice_theme_name || '官方内置·甜美萌妹';
-  var shortName = (curId === 'default') ? '内置萌妹' : (curName.includes('知性') ? '优雅知性' : '主题包');
+  var curName = vehicleAutoSettings.current_voice_theme_name || '官方内置·温婉知性 (微软晓晓)';
+  var shortName = (curId === 'default') ? '出厂知性' : (curName.includes('知性') ? '优雅知性' : '主题包');
 
   if (ttsText && ttsText.trim().length > 0) {
     el.className = 'app-status-pill updating';
@@ -4702,7 +4719,7 @@ function updateVoicePillElement(elId, prefix, voiceKey) {
   } else {
     el.className = 'app-status-pill';
     el.style.cssText = 'font-size:11px; padding:2px 8px; border-radius:4px; font-weight:700; background:var(--btn-bg); color:var(--txt-dim); border:1px solid var(--border); white-space:nowrap;';
-    el.innerText = prefix + ': 内置萌妹';
+    el.innerText = prefix + ': 出厂知性';
   }
 }
 
@@ -4781,8 +4798,8 @@ function handleApplyVoiceTheme(filename) {
 
 function handleResetVoiceTheme() {
   showUniversalConfirm({
-    title: '恢复官方内置默认萌妹语音？',
-    desc: '<b>操作说明</b>：将清空当前所有外部语音包与自定义音频，完全回退为工具箱 APK 出厂内置的小爱温润原声。<br><br>确认恢复默认？',
+    title: '恢复官方内置温婉知性语音？',
+    desc: '<b>操作说明</b>：将清空当前所有外部语音包与自定义音频，完全回退为控制台 APK 出厂内置的微软晓晓温婉知性原声。<br><br>确认恢复默认？',
     btnText: '恢复内置默认',
     isDanger: false,
     onConfirm: function() {
