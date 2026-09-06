@@ -1053,13 +1053,14 @@ body.light .confirm-box {
 
 /* ==================== 顶部常驻通知 Banner ==================== */
 .toast-banner {
-  position: fixed; top: 52px; left: 50%; transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.95); border: 1.5px solid var(--accent);
-  padding: 7px 16px; border-radius: var(--skin-pill);
-  color: #fff; font-size: 13px; font-weight: 700;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.65);
+  position: fixed; top: 32px; left: 50%; transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.96); border: 2px solid var(--accent);
+  padding: 10px 24px; border-radius: var(--skin-pill);
+  color: #fff; font-size: 15px; font-weight: 800;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.85);
   display: none; align-items: center; justify-content: center;
-  z-index: 99; backdrop-filter: blur(8px);
+  z-index: 99999 !important; backdrop-filter: blur(12px);
+  pointer-events: none;
 }
 .toast-banner.show { display: flex; }
 
@@ -1146,7 +1147,7 @@ body.light .btn-mini:active {
 <header>
   <div class="brand">
     <div class="brand-title">吉利车机控制台</div>
-    <div class="brand-ver" id="appVer">v1.2.9</div>
+    <div class="brand-ver" id="appVer">v1.3.0</div>
   </div>
 
   <div class="top-pills">
@@ -1512,7 +1513,7 @@ body.light .btn-mini:active {
     <div class="about-box" style="margin:14px 0 12px;">
       <div class="about-item" style="padding:10px 14px;">
         <span style="color:var(--txt-dim); font-size:15px;">当前软件版本</span>
-        <span style="font-weight:900; font-size:15px; color:var(--accent);" id="aboutVersionText">v1.2.9 (7029)</span>
+        <span style="font-weight:900; font-size:15px; color:var(--accent);" id="aboutVersionText">v1.3.0 (7030)</span>
       </div>
       <div class="about-item" style="padding:10px 14px;">
         <span style="color:var(--txt-dim); font-size:15px;">支持车机芯片</span>
@@ -4297,27 +4298,28 @@ function handleCheckUpdate() {
 function handleForceDownloadToolbox() {
   closeModal('aboutModal');
   showToolboxUpdateModal({
-    version: '1.2.9',
-    version_code: 7029,
-    download_url: 'https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.2.9',
-    changelog: '【强制重新下载】吉利工具箱最新正式版安装包 (v1.2.5)\n1. 车载精选商城采用 2 列网格排版，描述文字自然折行自适应\n2. 软件卡片点击展开详情大窗口，彻底消除灰色背景色块\n3. 彻底下架旧版方控与多媒体桥接，保留 CarMedia 成熟方控\n4. 上架 KA Music 3.0.0 (iOS 26液态玻璃) 与 MD3Music 5.4.2 酷狗 Rust 内核版\n5. 全车座舱智能语音重制为甜美小爱音色，支持自定义 TTS 文本输入'
+    version: '1.3.0',
+    version_code: 7030,
+    download_url: 'https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.3.0',
+    changelog: '【强制重新下载】吉利工具箱最新正式版安装包 (v1.3.0)\n1. 缤越 COOL 真实底盘电动尾门协议 100% 破译接入\n2. 挂挡安全提醒 (D/R/P/N 挡位播报) 原生实装\n3. 专属置顶自愈目录与系统全量日志统一收敛至 00_车机应用\n4. 提示 Banner 与弹窗 z-index 层级优化提升至最高'
   }, true);
   if (window.ToolboxBridge && typeof window.ToolboxBridge.startToolboxSelfUpdate === 'function') {
-    window.ToolboxBridge.startToolboxSelfUpdate('https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.2.9', '1.2.8');
+    window.ToolboxBridge.startToolboxSelfUpdate('https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.3.0', '1.2.9');
   }
 }
 
 var currentUpdateData = null;
 window.showToolboxUpdateModal = function(data, isForce) {
+  closeModal('aboutModal');
   currentUpdateData = data;
-  var currentVer = (document.getElementById('appVer') ? document.getElementById('appVer').innerText : 'v1.2.8');
-  var targetVer = 'v' + (data.version || '1.2.9');
+  var currentVer = (document.getElementById('appVer') ? document.getElementById('appVer').innerText : 'v1.3.0');
+  var targetVer = 'v' + (data.version || '1.3.0');
   var titleEl = document.getElementById('modalUpgradeTitle');
   if (titleEl) {
     titleEl.innerText = isForce ? '吉利工具箱安装包 (强制重下)' : '发现吉利工具箱新版本';
   }
   var badgeEl = document.getElementById('modalUpgradeVersionBadge');
-  if (badgeEl) badgeEl.innerText = isForce ? (targetVer + ' (强制重新下载最新完整包)') : (currentVer + ' -> ' + targetVer + ' (code ' + (data.version_code || '7029') + ')');
+  if (badgeEl) badgeEl.innerText = isForce ? (targetVer + ' (强制重新下载最新完整包)') : (currentVer + ' -> ' + targetVer + ' (code ' + (data.version_code || '7030') + ')');
   var clEl = document.getElementById('modalUpgradeChangelog');
   if (clEl) {
     var rawLog = (data.changelog || '优化系统性能与座舱交互体验。').trim();

@@ -307,7 +307,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
                     isWhitelistEnabled = SystemUtils.isApkVerifyWhitelistEnabled();
                     obj.put("whitelist", isWhitelistEnabled);
-                    obj.put("version", "1.2.9");
+                    obj.put("version", "1.3.0");
                     boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) || 
                                            (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.xcmedia") == SystemUtils.APP_STATE_DISABLED);
                     boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
@@ -1173,6 +1173,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                         webView.evaluateJavascript(script, null);
                                     } else if (!silent) {
                                         showToast("当前已是最新版本 v" + remoteVer + " (๑•̀ㅂ•́)و");
+                                        webView.evaluateJavascript("if(window.showToast){window.showToast('当前已是最新版本 v" + remoteVer + " (๑•̀ㅂ•́)و');}", null);
                                     }
                                 }
                             });
@@ -1181,15 +1182,18 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                 @Override
                                 public void run() {
                                     showToast("无法连接更新服务器，请检查车机网络");
+                                    webView.evaluateJavascript("if(window.showToast){window.showToast('无法连接更新服务器，请检查车机网络');}", null);
                                 }
                             });
                         }
                     } catch (Exception e) {
                         if (!silent) {
+                            final String err = e.getMessage();
                             mainHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    showToast("检查更新失败: " + e.getMessage());
+                                    showToast("检查更新失败: " + err);
+                                    webView.evaluateJavascript("if(window.showToast){window.showToast('检查更新失败');}", null);
                                 }
                             });
                         }
