@@ -589,7 +589,7 @@ public class WebServer {
                 "        <div class=\"card\">\n" +
                 "            <div class=\"card-title\"><span>⚡ 车机远程快捷指令</span></div>\n" +
                 "            <button class=\"btn btn-secondary\" onclick=\"sendAction('open_files')\">📁 调起车机原生文件管理</button>\n" +
-                "            <button class=\"btn btn-secondary\" onclick=\"sendAction('soft_reboot')\">⚡ 软重启车机</button>\n" +
+                "            <button class=\"btn btn-danger\" onclick=\"sendAction('hard_reboot')\">⚡ 一键重启车机</button>\n" +
                 "        </div>\n" +
                 "        <div class=\"tip-box\">\n" +
                 "            🛡️ 安全提示：传输完成后，请在车机端打开原生文件管理直接点击安装，严禁使用 ADB 直装破坏空调界面。\n" +

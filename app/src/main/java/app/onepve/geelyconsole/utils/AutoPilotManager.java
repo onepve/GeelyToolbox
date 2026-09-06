@@ -28,7 +28,7 @@ import java.util.List;
 
 /**
  * 兔子时钟半自动向导管理器 (Co-Pilot HUD)
- * 负责后台打包伪装注入、前台半自动悬浮向导挂起与软重启触发。
+ * 负责后台打包伪装注入、前台半自动悬浮向导挂起与重启车机触发。
  * 全程 100% 纯文字与 0 Emoji，支持无死锁常驻悬浮向导。
  */
 public class AutoPilotManager {
@@ -294,7 +294,7 @@ public class AutoPilotManager {
                     textBox.addView(tvTitle);
 
                     TextView tvDesc = new TextView(context);
-                    tvDesc.setText("说明：车机提示“应用成功”或“应用失败”均已生效！应用后请点击右侧【立即软重启】");
+                    tvDesc.setText("说明：车机提示“应用成功”或“应用失败”均已生效！应用后请点击右侧【立即重启】");
                     tvDesc.setTextSize(15);
                     tvDesc.setTextColor(Color.parseColor("#38BDF8"));
                     tvDesc.setTypeface(Typeface.DEFAULT_BOLD);
@@ -310,7 +310,7 @@ public class AutoPilotManager {
 
                     // 1. Soft Reboot (Primary Action Button)
                     Button btnSoft = new Button(context);
-                    btnSoft.setText("我已应用，立即软重启");
+                    btnSoft.setText("我已应用，立即重启车机");
                     btnSoft.setTextSize(17);
                     btnSoft.setTextColor(Color.WHITE);
                     btnSoft.setTypeface(Typeface.DEFAULT_BOLD);
@@ -325,8 +325,8 @@ public class AutoPilotManager {
                         public void onClick(View v) {
                             hideHudOverlay();
                             isRunning = false;
-                            Toast.makeText(context, "正在执行 5秒极速软重启...", Toast.LENGTH_SHORT).show();
-                            SystemUtils.executePrivileged(context, "setprop ctl.restart zygote");
+                            Toast.makeText(context, "正在执行一键重启车机...", Toast.LENGTH_SHORT).show();
+                            SystemUtils.executePrivileged(context, "reboot || svc power reboot");
                         }
                     });
                     LinearLayout.LayoutParams softLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp2px(context, 56));

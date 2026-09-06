@@ -52,10 +52,13 @@ public class VehicleAutomationService extends Service {
     private boolean enableDoorRear = false; // 兼容旧版全后门开关
     private boolean enableTrunkOpen = false;
     private boolean enableTrunkClose = false;
-    private boolean enableGearVoice = false;
+    private boolean enableGearD = false;
+    private boolean enableGearR = false;
+    private boolean enableGearP = false;
+    private boolean enableGearN = false;
+    private boolean enableDriveMode = false;
     private boolean enableTurn360 = false;
     private boolean enableLightNav = false;
-
 
     // 状态记录与防抖变量
     private int lastDoorFL = -1;
@@ -64,6 +67,7 @@ public class VehicleAutomationService extends Service {
     private int lastDoorRR = -1;
     private int lastTrunk = -1;
     private int lastGearPosition = -1;
+    private int lastDriveMode = -1;
     private int lastLightSts = -1;
     private int lastPowerMode = -1;
     private int currentSpeedKmH = 0;
@@ -95,12 +99,16 @@ public class VehicleAutomationService extends Service {
             boolean doorRear = prefs.getBoolean("voice_enable_door_rear", false);
             boolean trunkOpen = prefs.getBoolean("voice_enable_trunk_open", false);
             boolean trunkClose = prefs.getBoolean("voice_enable_trunk_close", false);
-            boolean gearVoice = prefs.getBoolean("voice_enable_gear", false);
+            boolean gearD = prefs.getBoolean("voice_enable_gear_d", prefs.getBoolean("voice_enable_gear", false));
+            boolean gearR = prefs.getBoolean("voice_enable_gear_r", prefs.getBoolean("voice_enable_gear", false));
+            boolean gearP = prefs.getBoolean("voice_enable_gear_p", prefs.getBoolean("voice_enable_gear", false));
+            boolean gearN = prefs.getBoolean("voice_enable_gear_n", prefs.getBoolean("voice_enable_gear", false));
+            boolean driveMode = prefs.getBoolean("voice_enable_drive_mode", false);
             boolean turn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
             boolean lightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
             boolean shouldRun = doorFl || doorFlClose || doorFr || doorFrClose ||
                                 doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
-                                trunkOpen || trunkClose || gearVoice || turn360 || lightNav;
+                                trunkOpen || trunkClose || gearD || gearR || gearP || gearN || driveMode || turn360 || lightNav;
 
             Intent intent = new Intent(context, VehicleAutomationService.class);
             if (shouldRun) {
@@ -157,14 +165,18 @@ public class VehicleAutomationService extends Service {
         enableDoorRear = prefs.getBoolean("voice_enable_door_rear", false);
         enableTrunkOpen = prefs.getBoolean("voice_enable_trunk_open", false);
         enableTrunkClose = prefs.getBoolean("voice_enable_trunk_close", false);
-        enableGearVoice = prefs.getBoolean("voice_enable_gear", false);
+        enableGearD = prefs.getBoolean("voice_enable_gear_d", prefs.getBoolean("voice_enable_gear", false));
+        enableGearR = prefs.getBoolean("voice_enable_gear_r", prefs.getBoolean("voice_enable_gear", false));
+        enableGearP = prefs.getBoolean("voice_enable_gear_p", prefs.getBoolean("voice_enable_gear", false));
+        enableGearN = prefs.getBoolean("voice_enable_gear_n", prefs.getBoolean("voice_enable_gear", false));
+        enableDriveMode = prefs.getBoolean("voice_enable_drive_mode", false);
         enableTurn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
 
-
         boolean anyEnabled = enableDoorFl || enableDoorFlClose || enableDoorFr || enableDoorFrClose ||
                              enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
-                             enableTrunkOpen || enableTrunkClose || enableTurn360 || enableLightNav;
+                             enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN ||
+                             enableDriveMode || enableTurn360 || enableLightNav;
 
         if (!anyEnabled) {
             stopSelf();
@@ -334,6 +346,36 @@ public class VehicleAutomationService extends Service {
             }
         }
 
+        // 6. 解析驾驶模式切换信号 (ComfortModule, MCULog, NegativeOneScreen)
+        if (line.contains("DM_FUNC_DRIVE_MODE_SELECT value=") || line.contains("MCU Report SwitchMode:") || line.contains("driveModeValue = 5704911")) {
+            int modeVal = -1;
+            if (line.contains("DM_FUNC_DRIVE_MODE_SELECT value=")) {
+                int idx = line.indexOf("DM_FUNC_DRIVE_MODE_SELECT value=");
+                try {
+                    char c = line.charAt(idx + 32);
+                    modeVal = Character.getNumericValue(c);
+                } catch (Exception ignored) {}
+            } else if (line.contains("driveModeValue = 5704911")) {
+                if (line.contains("570491138")) modeVal = 1; // 舒适
+                else if (line.contains("570491139")) modeVal = 2; // 运动
+                else if (line.contains("570491137")) modeVal = 3; // 经济
+                else if (line.contains("570491158")) modeVal = 6; // 智能
+            } else if (line.contains("MCU Report SwitchMode:")) {
+                int idx = line.indexOf("MCU Report SwitchMode:");
+                try {
+                    char c = line.charAt(idx + 22);
+                    int sm = Character.getNumericValue(c);
+                    if (sm == 1) modeVal = 1; // 舒适
+                    else if (sm == 0) modeVal = 2; // 运动
+                    else if (sm == 3) modeVal = 3; // 经济
+                } catch (Exception ignored) {}
+            }
+            if (modeVal > 0) {
+                handleCanSignal("BCM_DriveMode", modeVal);
+                return;
+            }
+        }
+
         // 4. 解析 CAN 数据: parseCanData: key = ..., data = ... (支持灵活正则匹配)
         if (!line.contains("parseCanData")) return;
 
@@ -359,13 +401,11 @@ public class VehicleAutomationService extends Service {
                 return;
             }
             if (val == 1 && lastDoorFL == 0) {
-                if (enableDoorFl && (now - lastVoiceTimeFL > 1500)) {
-                    lastVoiceTimeFL = now;
+                if (enableDoorFl) {
                     voicePlayer.play("door_fl.mp3", "主驾车门打开，请注意后方来车");
                 }
             } else if (val == 0 && lastDoorFL == 1) {
-                if (enableDoorFlClose && (now - lastVoiceTimeFL > 1000)) {
-                    lastVoiceTimeFL = now;
+                if (enableDoorFlClose) {
                     voicePlayer.play("door_fl_close.mp3", "主驾车门已关好");
                 }
             }
@@ -378,13 +418,11 @@ public class VehicleAutomationService extends Service {
                 return;
             }
             if (val == 1 && lastDoorFR == 0) {
-                if (enableDoorFr && (now - lastVoiceTimeFR > 1500)) {
-                    lastVoiceTimeFR = now;
+                if (enableDoorFr) {
                     voicePlayer.play("door_fr.mp3", "欢迎乘车，请注意安全");
                 }
             } else if (val == 0 && lastDoorFR == 1) {
-                if (enableDoorFrClose && (now - lastVoiceTimeFR > 1000)) {
-                    lastVoiceTimeFR = now;
+                if (enableDoorFrClose) {
                     voicePlayer.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
                 }
             }
@@ -397,13 +435,11 @@ public class VehicleAutomationService extends Service {
                 return;
             }
             if (val == 1 && lastDoorRL == 0) {
-                if ((enableDoorRl || enableDoorRear) && (now - lastVoiceTimeRL > 1500)) {
-                    lastVoiceTimeRL = now;
+                if (enableDoorRl || enableDoorRear) {
                     voicePlayer.play("door_rl.mp3", "左后门打开，请注意车外环境");
                 }
             } else if (val == 0 && lastDoorRL == 1) {
-                if (enableDoorRlClose && (now - lastVoiceTimeRL > 1000)) {
-                    lastVoiceTimeRL = now;
+                if (enableDoorRlClose) {
                     voicePlayer.play("door_rl_close.mp3", "左后车门已关好");
                 }
             }
@@ -416,62 +452,89 @@ public class VehicleAutomationService extends Service {
                 return;
             }
             if (val == 1 && lastDoorRR == 0) {
-                if ((enableDoorRr || enableDoorRear) && (now - lastVoiceTimeRR > 1500)) {
-                    lastVoiceTimeRR = now;
+                if (enableDoorRr || enableDoorRear) {
                     voicePlayer.play("door_rr.mp3", "右后门打开，请注意车外环境");
                 }
             } else if (val == 0 && lastDoorRR == 1) {
-                if (enableDoorRrClose && (now - lastVoiceTimeRR > 1000)) {
-                    lastVoiceTimeRR = now;
+                if (enableDoorRrClose) {
                     voicePlayer.play("door_rr_close.mp3", "右后车门已关好");
                 }
             }
             lastDoorRR = val;
         }
-        // 后备箱打开与关闭
+        // 后备箱打开与关闭 (抢占式即时打断)
         else if ("BCM_TrunkAjarStatus".equals(key) || "BCM_TailgateAjarStatus".equals(key)) {
             if (lastTrunk == -1) {
                 lastTrunk = val; // 启动首包仅记录基准，坚决不播报
                 return;
             }
             if (val == 1 && lastTrunk == 0) {
-                if (enableTrunkOpen && (now - lastVoiceTimeTrunk > 1500)) {
-                    lastVoiceTimeTrunk = now;
+                if (enableTrunkOpen) {
                     voicePlayer.play("trunk_open.mp3", "后备箱已打开");
                 }
             } else if (val == 0 && lastTrunk == 1) {
-                if (enableTrunkClose && (now - lastVoiceTimeTrunk > 1000)) {
-                    lastVoiceTimeTrunk = now;
+                if (enableTrunkClose) {
                     voicePlayer.play("trunk_close.mp3", "后备箱已关闭");
                 }
             }
             lastTrunk = val;
         }
-        // 挂挡安全播报 (D/R/P/N 挡位切换)
+        // 挂挡安全播报 (D/R/P/N 挡位切换，无排队零延迟即时抢占打断)
         else if ("TCU_GearPosition".equals(key)) {
             if (lastGearPosition == -1) {
                 lastGearPosition = val; // 启动首包仅记录基准，坚决不盲目播报
                 return;
             }
             if (lastGearPosition != val) {
-                if (enableGearVoice && (now - lastVoiceTimeGear > 1200)) {
-                    lastVoiceTimeGear = now;
-                    switch (val) {
-                        case 2: // D 挡
+                switch (val) {
+                    case 2: // D 挡
+                        if (enableGearD) {
                             voicePlayer.play("gear_d.mp3", "前进挡");
-                            break;
-                        case 3: // N 挡
+                        }
+                        break;
+                    case 3: // N 挡
+                        if (enableGearN) {
                             voicePlayer.play("gear_n.mp3", "空挡");
-                            break;
-                        case 4: // R 挡
+                        }
+                        break;
+                    case 4: // R 挡
+                        if (enableGearR) {
                             voicePlayer.play("gear_r.mp3", "注意倒车");
-                            break;
-                        case 5: // P 挡
+                        }
+                        break;
+                    case 5: // P 挡
+                        if (enableGearP) {
                             voicePlayer.play("gear_p.mp3", "已挂入驻车挡");
+                        }
+                        break;
+                }
+                lastGearPosition = val;
+            }
+        }
+        // 驾驶模式切换播报 (舒适 / 运动 / 经济 / 智能，快速切换即时抢占打断)
+        else if ("BCM_DriveMode".equals(key)) {
+            if (lastDriveMode == -1) {
+                lastDriveMode = val; // 启动首包仅记录基准
+                return;
+            }
+            if (lastDriveMode != val) {
+                if (enableDriveMode) {
+                    switch (val) {
+                        case 1: // 舒适模式
+                            voicePlayer.play("mode_comfort.mp3", "舒适模式");
+                            break;
+                        case 2: // 运动模式
+                            voicePlayer.play("mode_sport.mp3", "运动模式");
+                            break;
+                        case 3: // 经济模式
+                            voicePlayer.play("mode_eco.mp3", "经济模式");
+                            break;
+                        case 6: // 智能模式
+                            voicePlayer.play("mode_smart.mp3", "智能模式");
                             break;
                     }
                 }
-                lastGearPosition = val;
+                lastDriveMode = val;
             }
         }
 

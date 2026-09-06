@@ -1191,13 +1191,9 @@ body.light .btn-mini:active {
       <span style="font-weight:900; font-size:15.5px;">已装应用与地图</span>
       <span class="btn-status-pill gray" style="font-size:12px;">卸载/清理</span>
     </button>
-    <button class="btn-ctrl-md" id="btnSoftRebootBar" style="min-height:56px; padding:10px 16px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="handleSoftReboot()">
-      <span style="font-weight:900; font-size:15.5px;">一键软重启 (5秒)</span>
-      <span class="btn-status-pill green" style="font-size:12px;">重载服务</span>
-    </button>
     <button class="btn-ctrl-md" id="btnHardRebootBar" style="min-height:56px; padding:10px 16px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="handleHardReboot()">
-      <span style="font-weight:900; font-size:15.5px;">完整硬重启</span>
-      <span class="btn-status-pill red" style="font-size:12px;">硬件冷启</span>
+      <span style="font-weight:900; font-size:15.5px;">一键重启车机</span>
+      <span class="btn-status-pill red" style="font-size:12px;">整机冷启动</span>
     </button>
   </div>
 
@@ -1228,13 +1224,9 @@ body.light .btn-mini:active {
             <span style="font-size:16px; font-weight:900;">已装应用与地图</span>
             <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">快速卸载/清除数据</span>
           </button>
-          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" id="btnSoftReboot" onclick="handleSoftReboot()">
-            <span style="font-size:16px; font-weight:900;">一键软重启 (5秒)</span>
-            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">快速重载系统服务</span>
-          </button>
-          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" id="btnHardReboot" onclick="handleHardReboot()">
-            <span style="font-size:16px; font-weight:900;">完整硬重启</span>
-            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">整车硬件冷启动</span>
+          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px; grid-column: span 2;" id="btnHardReboot" onclick="handleHardReboot()">
+            <span style="font-size:16px; font-weight:900;">一键重启车机</span>
+            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">整车硬件完整冷启动 (生效白名单与系统服务)</span>
           </button>
         </div>
       </div>
@@ -1267,7 +1259,7 @@ body.light .btn-mini:active {
       </div>
       <div class="guide-step-item">
         <span class="step-num">步骤 3</span>
-        <span>点【一键软重启车机】 开机打开工具箱<b>白名单自动放行</b>  直接安装或进 Download 目录安装！</span>
+        <span>点【一键重启车机】 开机打开工具箱<b>白名单自动放行</b>  直接安装或进 Download 目录安装！</span>
       </div>
     </div>
   </div>
@@ -1308,11 +1300,11 @@ body.light .btn-mini:active {
     <div class="modal-info-box">
       <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong); margin-bottom:4px;" id="rabbitInstallAppName">高德地图 8.5</div>
       <div style="font-size:12.5px; color:var(--txt-dim); line-height:1.6;">
-        吉利原厂高德具备系统签名保护，需先通过保姆级半自动向导伪装打包并应用兔子时钟，软重启后即可完成无损覆盖安装。
+        吉利原厂高德具备系统签名保护，需先通过保姆级半自动向导伪装打包并应用兔子时钟，重启后即可完成无损覆盖安装。
       </div>
     </div>
     <div style="font-size:12.5px; color:var(--txt-dim); margin-bottom:14px; line-height:1.6;">
-      标准安装流程：启动向导 -> 主题应用兔子时钟 -> 一键软重启 -> 开机秒弹安装器完成覆盖。
+      标准安装流程：启动向导 -> 主题应用兔子时钟 -> 一键重启车机 -> 开机秒弹安装器完成覆盖。
     </div>
     <div class="modal-actions" style="display:flex; flex-direction:column; gap:8px;">
       <button class="btn-ctrl-md" style="height:44px; font-size:14.5px; font-weight:900;" onclick="handleRabbitAutoPilotInstall()">一键卡兔子向导 (保姆级半自动)</button>
@@ -1330,12 +1322,12 @@ body.light .btn-mini:active {
   <div class="modal-card" style="width:784px;">
     <div class="modal-header">
       <div class="modal-title" id="rabbitPostRebootTitle">兔子时钟就绪 · 白名单已自动放行</div>
-      <button class="modal-close" onclick="dismissPostRebootModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      <button class="modal-close" onclick="dismissPostRebootModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18"></line></svg></button>
     </div>
     <div class="modal-info-box" style="background:rgba(16, 185, 129, 0.08); border-color:rgba(16, 185, 129, 0.35);">
       <div style="font-size:13.5px; font-weight:800; color:var(--success); margin-bottom:4px;" id="rabbitPostRebootHeader">白名单权限已自动开启 · 伪装与锁已自愈清除</div>
       <div style="font-size:12.5px; color:var(--txt-dim); line-height:1.6;" id="rabbitPostRebootBody">
-        检测到车机刚刚完成软重启！白名单已自动放行，且伪装大包与防覆写锁已在开机瞬间自动清空自愈（已释放 280MB 存储，车机处于官方安全状态）。
+        检测到车机刚刚完成重启！白名单已自动放行，且伪装大包与防覆写锁已在开机瞬间自动清空自愈（已释放 280MB 存储，车机处于官方安全状态）。
       </div>
     </div>
     <div style="font-size:12px; color:var(--txt-dim); margin-bottom:14px; line-height:1.5;" id="rabbitPostRebootTip">
@@ -1754,13 +1746,13 @@ body.light .btn-mini:active {
     <!-- 抓取车机全量系统日志 logcat 模块 -->
     <div class="ota-box" style="background:rgba(2, 132, 199, 0.08); border-color:rgba(2, 132, 199, 0.3);">
       <div class="ota-title" style="color:var(--accent-soft);">
-        <span>采集车机全量系统日志 (logcat)</span>
-        <button class="btn-mini highlight" id="btnDumpLogcat" onclick="handleDumpLogcat()">立即抓取保存</button>
+        <span>采集车机系统运行日志 (自动压缩 ZIP)</span>
+        <button class="btn-mini highlight" id="btnDumpLogcat" onclick="handleDumpLogcat()">立即抓取打包</button>
       </div>
       <div id="logcatResultBox" style="display:none; margin-top:4px;">
-        <div style="font-size:11px; color:var(--txt-dim);" id="logcatStatusTip">日志采集完成，已保存至车机下载目录：</div>
-        <div class="ota-url-val" id="logcatPathText">/sdcard/Download/car_full.log</div>
-        <div style="font-size:10.5px; color:var(--txt-dim); margin-top:2px;">提示：可通过手机【无线快传】或【原生文件管理】导出该日志文件进行故障排查与分析。</div>
+        <div style="font-size:11px; color:var(--txt-dim);" id="logcatStatusTip">日志采集完成，已自动压缩保存至：</div>
+        <div class="ota-url-val" id="logcatPathText">/sdcard/Download/car_full.zip</div>
+        <div style="font-size:10.5px; color:var(--txt-dim); margin-top:2px;">提示：已自动压缩为 ZIP 包节省车机存储，可通过手机【无线快传】或【原生文件管理】导出。</div>
       </div>
     </div>
 
@@ -1978,10 +1970,10 @@ body.light .btn-mini:active {
 
 
 
-      <!-- 4. 允许任意应用卡主题 (专家模式) -->
+      <!-- 4. 卡主题安装功能 (专家模式) -->
       <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:9px 16px;">
         <div>
-          <div style="font-weight:900; font-size:16px; color:var(--txt-strong);">允许任意应用卡主题 (专家模式)</div>
+          <div style="font-weight:900; font-size:16px; color:var(--txt-strong);">卡主题安装功能 (专家模式)</div>
           <div style="font-size:13.5px; color:var(--txt-dim); margin-top:3px;" id="settingExpertRabbitHint">默认关闭。锁定仅允许高德、百度等车载地图软件卡时钟伪装，防止非兼容软件导致车机开机死锁或变砖</div>
         </div>
         <button class="btn-ctrl-md" id="btnSettingExpertRabbit" style="padding:6px 18px; min-height:40px; min-width:104px; font-size:14.5px; font-weight:800;" onclick="handleToggleExpertRabbitTheme()">已关闭 (安全锁定)</button>
@@ -2124,13 +2116,13 @@ body.light .btn-mini:active {
           <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
             <button class="btn-ctrl-md" id="btnVoice_door_fl" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fl')">开门: 关</button>
             <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('door_fl.mp3', '1. 主驾开门防杀')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fl')">试听</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fl')">试听开门</button>
           </div>
           <!-- 关门分组：关门状态 + 自定义 + 试听 -->
           <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
             <button class="btn-ctrl-md" id="btnVoice_door_fl_close" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fl_close')">关门: 关</button>
             <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('door_fl_close.mp3', '1. 主驾车门关好')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fl_close')">试听</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fl_close')">试听关门</button>
           </div>
         </div>
       </div>
@@ -2150,13 +2142,13 @@ body.light .btn-mini:active {
           <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
             <button class="btn-ctrl-md" id="btnVoice_door_fr" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fr')">开门: 关</button>
             <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('door_fr.mp3', '2. 副驾开门迎宾')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fr')">试听</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fr')">试听开门</button>
           </div>
           <!-- 关门分组：关门状态 + 自定义 + 试听 -->
           <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
             <button class="btn-ctrl-md" id="btnVoice_door_fr_close" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_fr_close')">关门: 关</button>
             <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('door_fr_close.mp3', '2. 副驾关门系带')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fr_close')">试听</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_fr_close')">试听关门</button>
           </div>
         </div>
       </div>
@@ -2176,13 +2168,13 @@ body.light .btn-mini:active {
           <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
             <button class="btn-ctrl-md" id="btnVoice_door_rl" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_rl')">开门: 关</button>
             <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('door_rl.mp3', '3. 左后开门警示')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rl')">试听</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rl')">试听开门</button>
           </div>
           <!-- 关门分组：关门状态 + 自定义 + 试听 -->
           <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
             <button class="btn-ctrl-md" id="btnVoice_door_rl_close" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_rl_close')">关门: 关</button>
             <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('door_rl_close.mp3', '3. 左后关门播报')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rl_close')">试听</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rl_close')">试听关门</button>
           </div>
         </div>
       </div>
@@ -2202,13 +2194,13 @@ body.light .btn-mini:active {
           <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
             <button class="btn-ctrl-md" id="btnVoice_door_rr" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_rr')">开门: 关</button>
             <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('door_rr.mp3', '4. 右后开门警示')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rr')">试听</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rr')">试听开门</button>
           </div>
           <!-- 关门分组：关门状态 + 自定义 + 试听 -->
           <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
             <button class="btn-ctrl-md" id="btnVoice_door_rr_close" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_door_rr_close')">关门: 关</button>
             <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('door_rr_close.mp3', '4. 右后关门播报')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rr_close')">试听</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('door_rr_close')">试听关门</button>
           </div>
         </div>
       </div>
@@ -2228,33 +2220,88 @@ body.light .btn-mini:active {
           <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
             <button class="btn-ctrl-md" id="btnVoice_trunk_open" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_trunk_open')">开门: 关</button>
             <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('trunk_open.mp3', '5. 后备箱打开')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('trunk_open')">试听</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('trunk_open')">试听开门</button>
           </div>
           <!-- 关闭分组：关闭状态 + 自定义 + 试听 -->
           <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
             <button class="btn-ctrl-md" id="btnVoice_trunk_close" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_trunk_close')">关门: 关</button>
             <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('trunk_close.mp3', '5. 后备箱关闭')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('trunk_close')">试听</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('trunk_close')">试听关门</button>
           </div>
         </div>
       </div>
 
-      <!-- 6. 车辆挂挡播报 (前进 / 倒挡 / 驻车) -->
+      <!-- 6. 前进挡与倒车挡 (D挡起步 / R挡倒车) -->
       <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; gap:12px;">
         <div style="flex:1; min-width:240px;">
-          <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong);">6. 车辆挂挡提醒 (D / R / P / N 挡位播报)</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">实时感知挡位切换，倒挡提示注意倒车，起步提示前进挡</div>
+          <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong);">6. 前进挡与倒车挡 (D挡起步 / R挡倒车)</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">换挡即时打断零排队；D挡起步播报，R挡倒车警示</div>
           <div style="display:flex; align-items:center; gap:8px; margin-top:5px;">
-            <span id="pillVoice_gear"></span>
+            <span id="pillVoice_gear_d"></span>
+            <span id="pillVoice_gear_r"></span>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
+          <!-- D 挡 -->
+          <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
+            <button class="btn-ctrl-md" id="btnVoice_gear_d" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_gear_d')">D挡: 关</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('gear_d.mp3', '6. 挂入前进挡 (D挡)')">自定义</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('gear_d')">试听D挡</button>
+          </div>
+          <!-- R 挡 -->
+          <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
+            <button class="btn-ctrl-md" id="btnVoice_gear_r" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_gear_r')">R挡: 关</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('gear_r.mp3', '6. 挂入倒车挡 (R挡)')">自定义</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('gear_r')">试听倒车</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. 驻车挡与空挡 (P挡驻车 / N挡空挡) -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; gap:12px;">
+        <div style="flex:1; min-width:240px;">
+          <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong);">7. 驻车挡与空挡 (P挡驻车 / N挡空挡)</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">挂入P挡提示已驻车，挂入N挡提示空挡</div>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:5px;">
+            <span id="pillVoice_gear_p"></span>
+            <span id="pillVoice_gear_n"></span>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
+          <!-- P 挡 -->
+          <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
+            <button class="btn-ctrl-md" id="btnVoice_gear_p" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_gear_p')">P挡: 关</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('gear_p.mp3', '7. 挂入驻车挡 (P挡)')">自定义</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('gear_p')">试听P挡</button>
+          </div>
+          <!-- N 挡 -->
+          <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
+            <button class="btn-ctrl-md" id="btnVoice_gear_n" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_gear_n')">N挡: 关</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('gear_n.mp3', '7. 挂入空挡 (N挡)')">自定义</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('gear_n')">试听N挡</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. 驾驶模式播报 (舒适 / 经济 / 运动 / 智能) -->
+      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; gap:12px;">
+        <div style="flex:1; min-width:240px;">
+          <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong);">8. 驾驶模式播报 (舒适 / 经济 / 运动 / 智能)</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">切换模式实时播报，快速旋钮或大屏切换即时抢占打断</div>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:5px; flex-wrap:wrap;">
+            <span id="pillVoice_mode_comfort"></span>
+            <span id="pillVoice_mode_sport"></span>
+            <span id="pillVoice_mode_eco"></span>
+            <span id="pillVoice_mode_smart"></span>
           </div>
         </div>
         <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
           <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
-            <button class="btn-ctrl-md" id="btnVoice_gear" style="min-height:34px; min-width:84px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_gear')">挂挡: 关</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('gear_r.mp3', '6. 挂入倒挡 (R挡)')">改倒挡</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('gear_d.mp3', '6. 挂入前进挡 (D挡)')">改D挡</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('gear_r')">试听倒挡</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('gear_d')">试听D挡</button>
+            <button class="btn-ctrl-md" id="btnVoice_drive_mode" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_drive_mode')">模式: 关</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('mode_comfort')">试听舒适</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('mode_sport')">试听运动</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('mode_eco')">试听经济</button>
+            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('mode_smart')">试听智能</button>
           </div>
         </div>
       </div>
@@ -2467,17 +2514,17 @@ var CLOUD_APPS = [
     "category": "navigation",
     "badgeClass": "nav",
     "badgeText": "导航",
-    "name": "高德地图 8.5 (吉利E02专车定制版·地库惯导/三指飞屏v9版)",
-    "badge": "专车定制/三指飞屏/惯导",
-    "size": "286.7 MB",
-    "filename": "AutoMap_E02_DeadReckoning_FlyScreen_v9.apk",
+    "name": "高德地图 8.5 (86改·Flyme地图/可信锚点/地库惯导/三指飞屏最新版)",
+    "badge": "86改/Flyme地图/最新版",
+    "size": "274.92 MB",
+    "filename": "AutoMap_E02_DeadReckoning_FlyScreen_AE86.apk",
     "package_name": "com.autonavi.amapauto",
-    "desc": "【高德 8.5 内核·吉利 E02 专车定制版】作者：༺ༀ东༒皇ༀ༻ | 联系QQ：513677649 | QQ群：917274937。纯 64 位原生编译，支持陀螺仪地库惯导、开机冷启动三指滑屏秒飞液晶仪表盘。未经第三方浮层修改，原汁原味。安装完成后建议手动软重启一次车机赋予完整系统权限即可稳定秒开不闪。<br><br><span style='display:inline-block; padding:8px 12px; background:rgba(234,88,12,0.12); border:1.5px solid #ea580c; border-radius:8px; color:#ea580c; font-weight:800;'>⚠️【缤越 COOL / 非星瑞车型避坑必看】：安装后请务必进入高德设置，将【惯性导航】开关关闭！该包内置惯导参数仅匹配吉利星瑞；缤越等车型开启后会导致定位疯狂漂移与路线偏移，关闭惯导后走原生 GPS 即可 100% 稳定流畅！</span>",
-    "updated_at": "2026-08-27",
+    "desc": "【高德 8.5 内核·86 改 Flyme 地图·冷启动惯导与飞屏旗舰】纯 64 位原生编译（体积瘦身优化至 274.92MB），深度重构 EAS 5007 可信视觉锚点状态机与融合定位流（Fused LocInfoA），针对吉利 E02 冷启动首帧渲染、首帧定位接管与地库陀螺仪惯导进行底层攻坚，彻底解决冷启动漂移与浮层撕裂闪屏，完美支持三指滑屏秒飞液晶仪表盘。<br><br><span style='display:inline-block; padding:8px 12px; background:rgba(234,88,12,0.12); border:1.5px solid #ea580c; border-radius:8px; color:#ea580c; font-weight:800;'>⚠️【缤越 COOL / 非星瑞车型避坑必看】：安装后请务必进入高德设置，将【惯性导航】开关关闭！该包内置惯导参数仅匹配吉利星瑞；缤越等车型开启后会导致定位疯狂漂移与路线偏移，关闭惯导后走原生 GPS 即可 100% 稳定流畅！</span>",
+    "updated_at": "2026-09-04",
     "status": "download",
     "progress": 0,
     "speed": "",
-    "url": "https://dl.onepve.com/GeelyToolbox/AutoMap_E02_DeadReckoning_FlyScreen_v9.apk"
+    "url": "https://dl.onepve.com/GeelyToolbox/AutoMap_E02_DeadReckoning_FlyScreen_AE86.apk"
   },
   {
     "id": "amap75_flyscreen",
@@ -3080,7 +3127,7 @@ function showConfirmStep(step) {
   if (currentConfirmAction.action === 'enableExpertRabbit') {
     if (step === 1) {
       stepLabel.innerText = 'STEP 1 / 3 · 专家模式意图核准';
-      title.innerText = '申请开启【允许任意应用卡主题 (专家模式)】？';
+      title.innerText = '申请开启【卡主题安装功能 (专家模式)】？';
       desc.innerHTML = '<b>操作说明</b>：默认状态下，控制台锁定<b>仅允许高德、百度等地图导航类软件</b>卡时钟主题伪装安装。<br><br>' +
         '• <b>开启效果</b>：开启专家模式后，将解除地图软件限制，允许你挑选任意第三方 APK 伪装打包写入时钟；<br>' +
         '• <b>特别提醒</b>：时钟屏保进程（xscreensaver）属于车机底层关键常驻组件，非导航软件极易与屏保服务冲突发生异常。普通车主强烈建议保持关闭！';
@@ -3160,7 +3207,7 @@ function executeConfirmedAction(pkg, name, action) {
     isExpertRabbitEnabled = true;
     callBridge('setExpertRabbitThemeEnabled', true);
     updateExpertRabbitThemeUi(true);
-    showToast('已开启专家模式：允许任意应用卡主题 (风险自负)');
+    showToast('已开启专家模式：卡主题安装功能 (风险自负)');
     return;
   }
   if (action === 'freeze') {
@@ -3489,7 +3536,7 @@ function handleOpenThemeManager() {
   showUniversalConfirm({
     title: '确认调起吉利原厂【主题中心】？',
     desc: '<b>操作说明</b>：直接打开车机系统原厂自带的「主题中心」应用界面。<br><br>' +
-          '• <b>主要用途</b>：在完成兔子伪装注入后，需进入主题中心找到并应用『兔子时钟』屏保主题；应用后返回控制台执行【一键软重启】即可。<br><br>' +
+          '• <b>主要用途</b>：在完成兔子伪装注入后，需进入主题中心找到并应用『兔子时钟』屏保主题；应用后返回控制台执行【一键重启车机】即可。<br><br>' +
           '是否确认立即打开？',
     btnText: '打开主题',
     isDanger: false,
@@ -3535,19 +3582,7 @@ function showRebootingOverlay(type, title, msg) {
 }
 
 function handleSoftReboot() {
-  if (isRebooting) return;
-  showUniversalConfirm({
-    title: '准备执行【一键软重启车机】？',
-    desc: '<b>操作效果</b>：仅快速重载 Android 虚拟机与系统服务 (5~8秒)，无需整车断电。<br><br>• 重启瞬间自动放行白名单权限并清除伪装时钟；<br>• 是否确认立即软重启？',
-    btnText: '确认软重启',
-    isDanger: false,
-    onConfirm: function() {
-      if (isRebooting) return;
-      isRebooting = true;
-      showRebootingOverlay('soft', '车机正在执行【一键软重启】，请稍候...', '正在快速重载 Android 系统服务与白名单，底层指令已发送，屏幕即将关闭并重新加载，无需重复点击。');
-      callBridge('softReboot');
-    }
-  });
+  handleHardReboot();
 }
 
 function handleRestoreOfficialTheme() {
@@ -3746,7 +3781,7 @@ function _doStartAutoPilotInternal(filename) {
           '  1. 自动将选中的安装包打包伪装并写入『兔子时钟』屏保主题；<br>' +
           '  2. 屏幕顶部挂起保姆级向导横条，并自动唤起车机【主题中心】；<br>' +
           '  3. 请在主题中心点击【屏保时钟】-> 选【兔子时钟】并点【应用】；<br>' +
-          '  4. 点击顶栏横条上的【我已应用，立即软重启】，开机秒弹覆盖安装。<br><br>' +
+          '  4. 点击顶栏横条上的【我已应用，立即重启】，开机秒弹覆盖安装。<br><br>' +
           '• <b>安全提示</b>：全程不破坏车机官方底层系统，中途可随时在横条上点击【退出向导】。<br><br>' +
           '是否确认立即开始注入向导？',
     btnText: '开始注入向导',
@@ -3980,7 +4015,7 @@ function handleRabbitReInject() {
     title: '确认【仅重新注入伪装主题】？',
     desc: '<b>操作说明</b>：仅将【' + appName + '】打包伪装写入车机『兔子时钟』屏保主题，<b>不启动向导流程、不自动跳转主题</b>。<br><br>' +
           '• <b>适用场景</b>：适合熟悉操作的老车主纯手动安装，或向导中途意外中断时快速重写伪装包；<br>' +
-          '• <b>后续操作</b>：注入完成后，需自行在主页点击【打开车机主题】应用兔子时钟，再点击【一键软重启】完成覆盖。',
+          '• <b>后续操作</b>：注入完成后，需自行在主页点击【打开车机主题】应用兔子时钟，再点击【一键重启车机】完成覆盖。',
     btnText: '确认注入',
     isDanger: false,
     onConfirm: function() {
@@ -4260,10 +4295,10 @@ window.onCloudAppsRefreshComplete = function(success, message) {
 function handleDumpLogcat() {
   showUniversalConfirm({
     title: '抓取车机系统 Logcat 运行日志？',
-    desc: '<b>操作说明</b>：后台抓取车机最近的系统运行日志并导出保存至 <code>/sdcard/Download/car_full.log</code>。<br><br>' +
-          '• <b>适用场景</b>：用于排查应用崩溃、闪退或底层硬件异常。<br><br>' +
-          '确认立即抓取？',
-    btnText: '抓取保存',
+    desc: '<b>操作说明</b>：后台抓取车机系统运行日志并自动压缩保存至 <code>/sdcard/Download/car_full.zip</code>。<br><br>' +
+          '• <b>自动压缩</b>：自动压成 ZIP 包，体积减少 85% 以上，极大节省车机内部存储空间。<br><br>' +
+          '确认立即抓取并打包？',
+    btnText: '抓取打包',
     isDanger: false,
     onConfirm: function() {
       _executeDumpLogcat();
@@ -4275,15 +4310,15 @@ function _executeDumpLogcat() {
   var btn = document.getElementById('btnDumpLogcat');
   if (btn) {
     btn.disabled = true;
-    btn.innerText = '抓取中...';
+    btn.innerText = '抓取打包中...';
   }
-  showToast('正在采集车机系统 logcat 日志...');
+  showToast('正在采集并压缩车机日志...');
 
   setTimeout(function() {
     var resJson = callBridge('dumpSystemLogcat');
     if (btn) {
       btn.disabled = false;
-      btn.innerText = '立即抓取保存';
+      btn.innerText = '立即抓取打包';
     }
     var box = document.getElementById('logcatResultBox');
     var tip = document.getElementById('logcatStatusTip');
@@ -4291,16 +4326,16 @@ function _executeDumpLogcat() {
     try {
       var res = JSON.parse(resJson);
       if (res && res.success) {
-        if (tip) tip.innerText = '全量日志采集完成 (' + (res.sizeStr || '') + ')，已保存至：';
-        if (pathTxt) pathTxt.innerText = res.path || '/sdcard/Download/car_full.log';
+        if (tip) tip.innerText = '日志打包完成 (' + (res.sizeStr || '') + ')，已保存至：';
+        if (pathTxt) pathTxt.innerText = res.path || '/sdcard/Download/car_full.zip';
         if (box) box.style.display = 'block';
-        showToast('系统日志已成功保存至 ' + res.path);
+        showToast('日志已成功压缩保存至 ' + (res.path || 'Download/car_full.zip'));
       } else {
         if (tip) tip.innerText = '采集失败: ' + ((res && res.message) ? res.message : '请检查存储权限');
         if (box) box.style.display = 'block';
       }
     } catch(e) {
-      if (tip) tip.innerText = '日志已保存至 /sdcard/Download/car_full.log';
+      if (tip) tip.innerText = '日志已打包保存至 /sdcard/Download/car_full.zip';
       if (box) box.style.display = 'block';
       showToast('日志抓取完成');
     }
@@ -4500,7 +4535,7 @@ function handleToggleFreezeAppStore() {
     '• <b>第 1 步</b>：安全冻结原厂【吉利应用商店】(com.ecarx.appstore)；<br>' +
     '• <b>第 2 步</b>：彻底清空其全部缓存与残留数据库 (pm clear)；<br>' +
     '• <b>第 3 步</b>：注入放行白名单属性 (sys.jsbd.apk_verify = 1)；<br>' +
-    '• <b>第 4 步</b>：提示执行 5 秒软重启，重载系统服务使白名单永久锁定！<br><br>' +
+    '• <b>第 4 步</b>：提示执行重启，重载系统服务使白名单永久锁定！<br><br>' +
     '是否确认立即执行安全冻结？';
   showUniversalConfirm({
     title: '准备执行【' + actName + '】？',
@@ -4525,12 +4560,12 @@ window.showAppstoreFreezeRebootPrompt = function() {
           '• <b>第 1 步（已完成）</b>：已冻结原厂应用商店 (com.ecarx.appstore)；<br>' +
           '• <b>第 2 步（已完成）</b>：已彻底清除其全部缓存与残留数据 (pm clear)；<br>' +
           '• <b>第 3 步（已完成）</b>：已注入白名单属性 (sys.jsbd.apk_verify = 1)；<br><br>' +
-          '<span style="color:var(--accent2); font-weight:900;">⚠️ 关键步骤：必须软重启一次车机重载系统服务，注入的白名单命令才真正生效！</span><br><br>' +
-          '是否立即执行 5 秒快速软重启？',
-    btnText: '立即软重启车机 (5秒)',
+          '<span style="color:var(--accent2); font-weight:900;">⚠️ 关键步骤：必须重启一次车机重载系统服务，注入的白名单命令才真正生效！</span><br><br>' +
+          '是否立即执行重启车机？',
+    btnText: '立即重启车机',
     isDanger: false,
     onConfirm: function() {
-      handleSoftReboot();
+      handleHardReboot();
     }
   });
 };
@@ -4563,14 +4598,14 @@ function handleOpenDialer() {
 function handleHardReboot() {
   if (isRebooting) return;
   showUniversalConfirm({
-    title: '确认执行【完整硬重启 (冷启动)】？',
-    desc: '<b>操作说明</b>：将彻底切断并重新初始化整车车机 Linux 内核、MCU 与硬件电源（整机冷启动，耗时约 25~35 秒）。<br><br>• 适用于车机驱动卡死、网络异常或深度故障排查；<br>• 是否确认立即执行完整硬重启？',
-    btnText: '确认硬重启',
+    title: '确认执行【一键重启车机】？',
+    desc: '<b>操作说明</b>：将彻底重新初始化整车车机系统（整机冷启动，耗时约 20~25 秒）。<br><br>• 适用于生效白名单权限、驱动或深度故障排查；<br>• 是否确认立即重启车机？',
+    btnText: '确认重启',
     isDanger: false,
     onConfirm: function() {
       if (isRebooting) return;
       isRebooting = true;
-      showRebootingOverlay('hard', '车机正在执行【完整硬重启】，请稍候...', '整车硬件与 Linux 内核正在深度冷启动重载，系统即将断电并重新通电，无需重复点击。');
+      showRebootingOverlay('hard', '车机正在执行【一键重启】，请稍候...', '整车硬件与系统正在完整冷启动重载，屏幕即将关闭并重新通电开机，无需重复点击。');
       callBridge('hardReboot');
     }
   });
@@ -4689,6 +4724,11 @@ function refreshVehicleAutoUI() {
   updateAutoBtn('btnVoice_door_rr_close', vehicleAutoSettings.voice_door_rr_close);
   updateAutoBtn('btnVoice_trunk_open', vehicleAutoSettings.voice_trunk_open);
   updateAutoBtn('btnVoice_trunk_close', vehicleAutoSettings.voice_trunk_close);
+  updateAutoBtn('btnVoice_gear_d', vehicleAutoSettings.voice_gear_d);
+  updateAutoBtn('btnVoice_gear_r', vehicleAutoSettings.voice_gear_r);
+  updateAutoBtn('btnVoice_gear_p', vehicleAutoSettings.voice_gear_p);
+  updateAutoBtn('btnVoice_gear_n', vehicleAutoSettings.voice_gear_n);
+  updateAutoBtn('btnVoice_drive_mode', vehicleAutoSettings.voice_drive_mode);
   updateAutoBtn('btnVoice_gear', vehicleAutoSettings.voice_gear);
 
   refreshVoiceLabels();
@@ -4847,7 +4887,17 @@ function handleResetCustomVoice(key) {
 function updateAutoBtn(id, enabled) {
   var el = document.getElementById(id);
   if (!el) return;
-  if (id === 'btnVoice_gear') {
+  if (id === 'btnVoice_gear_d') {
+    el.innerText = enabled ? 'D挡: 开' : 'D挡: 关';
+  } else if (id === 'btnVoice_gear_r') {
+    el.innerText = enabled ? 'R挡: 开' : 'R挡: 关';
+  } else if (id === 'btnVoice_gear_p') {
+    el.innerText = enabled ? 'P挡: 开' : 'P挡: 关';
+  } else if (id === 'btnVoice_gear_n') {
+    el.innerText = enabled ? 'N挡: 开' : 'N挡: 关';
+  } else if (id === 'btnVoice_drive_mode') {
+    el.innerText = enabled ? '模式: 开' : '模式: 关';
+  } else if (id === 'btnVoice_gear') {
     el.innerText = enabled ? '挂挡: 开' : '挂挡: 关';
   } else if (id.endsWith('_close')) {
     el.innerText = enabled ? '关门: 开' : '关门: 关';
@@ -4880,6 +4930,11 @@ function handleToggleVehicleAuto(key) {
   else if (key === 'voice_enable_door_rear') { targetField = 'voice_door_rear'; btnId = 'btnVoice_door_rear'; }
   else if (key === 'voice_enable_trunk_open') { targetField = 'voice_trunk_open'; btnId = 'btnVoice_trunk_open'; }
   else if (key === 'voice_enable_trunk_close') { targetField = 'voice_trunk_close'; btnId = 'btnVoice_trunk_close'; }
+  else if (key === 'voice_enable_gear_d') { targetField = 'voice_gear_d'; btnId = 'btnVoice_gear_d'; }
+  else if (key === 'voice_enable_gear_r') { targetField = 'voice_gear_r'; btnId = 'btnVoice_gear_r'; }
+  else if (key === 'voice_enable_gear_p') { targetField = 'voice_gear_p'; btnId = 'btnVoice_gear_p'; }
+  else if (key === 'voice_enable_gear_n') { targetField = 'voice_gear_n'; btnId = 'btnVoice_gear_n'; }
+  else if (key === 'voice_enable_drive_mode') { targetField = 'voice_drive_mode'; btnId = 'btnVoice_drive_mode'; }
   else if (key === 'voice_enable_gear') { targetField = 'voice_gear'; btnId = 'btnVoice_gear'; }
 
   var nextState = !vehicleAutoSettings[targetField];
@@ -4960,7 +5015,14 @@ function refreshVoiceLabels() {
   updateVoicePillElement('pillVoice_door_rr_close', '关门', 'door_rr_close');
   updateVoicePillElement('pillVoice_trunk_open', '开门', 'trunk_open');
   updateVoicePillElement('pillVoice_trunk_close', '关门', 'trunk_close');
-  updateVoicePillElement('pillVoice_gear', '挂挡', 'gear_r');
+  updateVoicePillElement('pillVoice_gear_d', 'D挡', 'gear_d');
+  updateVoicePillElement('pillVoice_gear_r', 'R挡', 'gear_r');
+  updateVoicePillElement('pillVoice_gear_p', 'P挡', 'gear_p');
+  updateVoicePillElement('pillVoice_gear_n', 'N挡', 'gear_n');
+  updateVoicePillElement('pillVoice_mode_comfort', '舒适', 'mode_comfort');
+  updateVoicePillElement('pillVoice_mode_sport', '运动', 'mode_sport');
+  updateVoicePillElement('pillVoice_mode_eco', '经济', 'mode_eco');
+  updateVoicePillElement('pillVoice_mode_smart', '智能', 'mode_smart');
 }
 
 function handleTestVoice(type) {
@@ -5165,7 +5227,7 @@ window.onAutoPilotSuccess = function(apkName) {
     desc: '<b>目标安装包</b>：<code>' + (apkName || '已选应用') + '</code><br><br>' +
           '• <b>控制台已在屏幕顶部挂起向导横条，并已自动唤起车机【主题中心】</b>；<br>' +
           '• <b>请在主题中心点击</b>：【屏保时钟】-> 选【兔子时钟】并点【应用】；<br>' +
-          '• 应用完成后点击顶栏横条上的【我已应用，立即软重启】，开机即可自动弹出覆盖安装！<br><br>' +
+          '• 应用完成后点击顶栏横条上的【我已应用，立即重启】，开机即可自动弹出覆盖安装！<br><br>' +
           '<span style="color:var(--txt-dim); font-size:12px;">注：若在模拟器或无原厂主题中心的测试环境下，点击【打开原生文件管理】即可直接测试安装。</span>',
     btnText: '我已清楚，前往操作',
     isDanger: false,
@@ -5393,12 +5455,12 @@ window.updateDeviceInfo = function(infoJson) {
       if (rb.appstoreDisabled) {
         if (titleEl) titleEl.innerText = '兔子时钟就绪 · 白名单已自动放行';
         if (headerEl) headerEl.innerHTML = '<span style="color:var(--success);">白名单权限已自动开启 · 伪装已清除自愈</span>';
-        if (bodyEl) bodyEl.innerText = '检测到车机刚完成软重启！白名单已自动放行，且伪装大包与防覆写锁已在开机瞬间清空自愈（释放 280MB 存储，车机恢复原生纯净安全状态）。可以直接安装高德地图：';
+        if (bodyEl) bodyEl.innerText = '检测到车机刚完成重启！白名单已自动放行，且伪装大包与防覆写锁已在开机瞬间清空自愈（释放 280MB 存储，车机恢复原生纯净安全状态）。可以直接安装高德地图：';
         if (adbBtn) adbBtn.style.display = 'none';
       } else {
         if (titleEl) titleEl.innerText = '兔子时钟就绪 · 白名单已自动放行';
         if (headerEl) headerEl.innerHTML = '<span style="color:var(--warning);"> 白名单已放行 · ️ 商店未冻结 (伪装已清除)</span>';
-        if (bodyEl) bodyEl.innerText = '检测到车机刚完成软重启！白名单已为你自动开启，伪装大包与锁文件已自动清除自愈。\n\n️ 温馨提示：检测到原厂应用商店尚未冻结，下次熄火开机可能会重置白名单。建议在【车机 ADB】中一键冻结原厂商店！';
+        if (bodyEl) bodyEl.innerText = '检测到车机刚完成重启！白名单已为你自动开启，伪装大包与锁文件已自动清除自愈。\n\n️ 温馨提示：检测到原厂应用商店尚未冻结，下次熄火开机可能会重置白名单。建议在【车机 ADB】中一键冻结原厂商店！';
         if (adbBtn) adbBtn.style.display = 'block';
       }
       setTimeout(function() {

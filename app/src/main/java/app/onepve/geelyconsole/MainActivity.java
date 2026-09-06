@@ -307,7 +307,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
                     isWhitelistEnabled = SystemUtils.isApkVerifyWhitelistEnabled();
                     obj.put("whitelist", isWhitelistEnabled);
-                    obj.put("version", "1.3.0");
+                    String appVer = "1.3.2";
+                    try {
+                        appVer = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+                    } catch (Exception ignored) {}
+                    obj.put("version", appVer != null ? appVer : "1.3.2");
                     boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) || 
                                            (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.xcmedia") == SystemUtils.APP_STATE_DISABLED);
                     boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
@@ -452,7 +456,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                 if (webView != null) {
                                     webView.evaluateJavascript("showUniversalConfirm({" +
                                             "title: '兔子时钟伪装注入成功！'," +
-                                            "desc: '已成功将所选安装包伪装打包至『兔子时钟』屏保主题！<br><br>• <b>第一步</b>：前往车机主题中心应用『兔子时钟』屏保；<br>• <b>第二步</b>：一键软重启车机，开机后直接覆盖安装。'," +
+                                            "desc: '已成功将所选安装包伪装打包至『兔子时钟』屏保主题！<br><br>• <b>第一步</b>：前往车机主题中心应用『兔子时钟』屏保；<br>• <b>第二步</b>：一键重启车机，开机后直接覆盖安装。'," +
                                             "btnText: '前往车机主题'," +
                                             "onConfirm: function() { callBridge('openRabbitThemeSetting'); }" +
                                             "});", null);
@@ -476,17 +480,24 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }).start();
     }
 
-    public void softReboot() {
-        Toast.makeText(this, "正在软重启车机系统...", Toast.LENGTH_SHORT).show();
-        new Thread(new Runnable() {
+    public void hardReboot() {
+        mainHandler.post(new Runnable() {
             @Override
             public void run() {
-                try {
-                    AdbClient.execute(MainActivity.this, "setprop ctl.restart zygote");
-                } catch (Exception ignored) {
-                }
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, "正在执行车机完整硬件冷重启 (20~25秒)...", Toast.LENGTH_SHORT).show();
+                        AppLogger.action("系统电源", "触发完整硬件冷重启 (reboot)", true, "整车冷启动");
+                        SystemUtils.executePrivileged(MainActivity.this, "reboot || svc power reboot");
+                    }
+                }).start();
             }
-        }).start();
+        });
+    }
+
+    public void softReboot() {
+        hardReboot();
     }
 
     // WebServer Callbacks
@@ -746,7 +757,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                             if (webView != null) {
                                                 webView.evaluateJavascript("showUniversalConfirm({" +
                                                         "title: '兔子时钟主题注入成功！'," +
-                                                        "desc: '已成功将【" + filename + "】伪装打包至『兔子时钟』屏保主题！<br><br>• <b>第一步</b>：点击【前往车机主题】应用『兔子时钟』屏保；<br>• <b>第二步</b>：点击【一键软重启车机】，开机后白名单自动放行即可覆盖安装。'," +
+                                                        "desc: '已成功将【" + filename + "】伪装打包至『兔子时钟』屏保主题！<br><br>• <b>第一步</b>：点击【前往车机主题】应用『兔子时钟』屏保；<br>• <b>第二步</b>：点击【一键重启车机】，开机后白名单自动放行即可覆盖安装。'," +
                                                         "btnText: '前往车机主题'," +
                                                         "onConfirm: function() { callBridge('openRabbitThemeSetting'); }" +
                                                         "});", null);
@@ -923,19 +934,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void hardReboot() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            showToast("正在执行车机完整硬件冷重启 (25~30秒)...");
-                            AppLogger.action("系统电源", "触发完整硬件冷重启 (reboot)", true, "整车冷启动");
-                            SystemUtils.executePrivileged(context, "reboot || svc power reboot");
-                        }
-                    }).start();
-                }
-            });
+            MainActivity.this.hardReboot();
         }
 
         @JavascriptInterface
@@ -1280,7 +1279,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                 // 2. 注入放行白名单属性
                                 SystemUtils.enableApkVerifyWhitelist(MainActivity.this);
                                 isWhitelistEnabled = true;
-                                AppLogger.i("应用商店", "已安全冻结、清空缓存并注入白名单属性，提示软重启生效");
+                                AppLogger.i("应用商店", "已安全冻结、清空缓存并注入白名单属性，提示重启生效");
                             } else {
                                 AppLogger.i("应用商店", "已解冻恢复原厂应用商店");
                             }
@@ -1881,6 +1880,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_trunk_open", prefs.getBoolean("voice_enable_trunk_open", false));
                 obj.put("voice_trunk_close", prefs.getBoolean("voice_enable_trunk_close", false));
                 obj.put("voice_gear", prefs.getBoolean("voice_enable_gear", false));
+                obj.put("voice_gear_d", prefs.getBoolean("voice_enable_gear_d", prefs.getBoolean("voice_enable_gear", false)));
+                obj.put("voice_gear_r", prefs.getBoolean("voice_enable_gear_r", prefs.getBoolean("voice_enable_gear", false)));
+                obj.put("voice_gear_p", prefs.getBoolean("voice_enable_gear_p", prefs.getBoolean("voice_enable_gear", false)));
+                obj.put("voice_gear_n", prefs.getBoolean("voice_enable_gear_n", prefs.getBoolean("voice_enable_gear", false)));
+                obj.put("voice_drive_mode", prefs.getBoolean("voice_enable_drive_mode", false));
 
                 obj.put("custom_door_fl", !prefs.getString("custom_voice_door_fl.mp3", "").isEmpty());
                 obj.put("custom_door_fl_close", !prefs.getString("custom_voice_door_fl_close.mp3", "").isEmpty());
@@ -1897,6 +1901,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("custom_gear_r", !prefs.getString("custom_voice_gear_r.mp3", "").isEmpty());
                 obj.put("custom_gear_p", !prefs.getString("custom_voice_gear_p.mp3", "").isEmpty());
                 obj.put("custom_gear_n", !prefs.getString("custom_voice_gear_n.mp3", "").isEmpty());
+                obj.put("custom_mode_comfort", !prefs.getString("custom_voice_mode_comfort.mp3", "").isEmpty());
+                obj.put("custom_mode_eco", !prefs.getString("custom_voice_mode_eco.mp3", "").isEmpty());
+                obj.put("custom_mode_sport", !prefs.getString("custom_voice_mode_sport.mp3", "").isEmpty());
+                obj.put("custom_mode_smart", !prefs.getString("custom_voice_mode_smart.mp3", "").isEmpty());
 
                 obj.put("tts_door_fl", !prefs.getString("custom_text_door_fl.mp3", "").isEmpty());
                 obj.put("tts_door_fl_close", !prefs.getString("custom_text_door_fl_close.mp3", "").isEmpty());
@@ -1912,6 +1920,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("tts_gear_r", !prefs.getString("custom_text_gear_r.mp3", "").isEmpty());
                 obj.put("tts_gear_p", !prefs.getString("custom_text_gear_p.mp3", "").isEmpty());
                 obj.put("tts_gear_n", !prefs.getString("custom_text_gear_n.mp3", "").isEmpty());
+                obj.put("tts_mode_comfort", !prefs.getString("custom_text_mode_comfort.mp3", "").isEmpty());
+                obj.put("tts_mode_eco", !prefs.getString("custom_text_mode_eco.mp3", "").isEmpty());
+                obj.put("tts_mode_sport", !prefs.getString("custom_text_mode_sport.mp3", "").isEmpty());
+                obj.put("tts_mode_smart", !prefs.getString("custom_text_mode_smart.mp3", "").isEmpty());
                 obj.put("current_voice_theme_id", prefs.getString("current_voice_theme_id", "default"));
                 obj.put("current_voice_theme_name", prefs.getString("current_voice_theme_name", "官方内置·温婉知性 (微软晓晓)"));
                 obj.put("voice_playback_speed", (double) prefs.getFloat("voice_playback_speed", 1.0f));
@@ -2230,6 +2242,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         player.play("gear_p.mp3", "已挂入驻车挡");
                     } else if ("gear_n".equals(type)) {
                         player.play("gear_n.mp3", "空挡");
+                    } else if ("mode_comfort".equals(type)) {
+                        player.play("mode_comfort.mp3", "舒适模式");
+                    } else if ("mode_eco".equals(type)) {
+                        player.play("mode_eco.mp3", "经济模式");
+                    } else if ("mode_sport".equals(type)) {
+                        player.play("mode_sport.mp3", "运动模式");
+                    } else if ("mode_smart".equals(type)) {
+                        player.play("mode_smart.mp3", "智能模式");
                     } else if ("seatbelt".equals(type)) {
                         player.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
                     } else {

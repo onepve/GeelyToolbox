@@ -53,6 +53,7 @@ public class VehicleVoicePlayer {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private MediaPlayer currentMediaPlayer = null;
     private final Object playerLock = new Object();
+    private final java.util.concurrent.atomic.AtomicInteger playSessionId = new java.util.concurrent.atomic.AtomicInteger(0);
 
     private VehicleVoicePlayer(Context context) {
         this.context = context.getApplicationContext();
@@ -108,6 +109,7 @@ public class VehicleVoicePlayer {
      * 强行中断当前正在播放的音频或 TTS（抢占式打断机制）
      */
     public void stopCurrentVoice() {
+        playSessionId.incrementAndGet();
         synchronized (playerLock) {
             if (currentMediaPlayer != null) {
                 try {
@@ -194,9 +196,11 @@ public class VehicleVoicePlayer {
             return false;
         }
 
+        final int sessionId = playSessionId.incrementAndGet();
         new Thread(new Runnable() {
             @Override
             public void run() {
+                if (playSessionId.get() != sessionId) return;
                 MediaPlayer mp = null;
                 try {
                     requestAudioFocus();
@@ -236,6 +240,11 @@ public class VehicleVoicePlayer {
                     }
 
                     mp.prepare();
+                    if (playSessionId.get() != sessionId) {
+                        try { mp.release(); } catch (Exception ignored) {}
+                        abandonAudioFocus();
+                        return;
+                    }
                     mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                         @Override
                         public void onCompletion(MediaPlayer mediaPlayer) {
@@ -284,9 +293,11 @@ public class VehicleVoicePlayer {
     }
 
     private void playAudioFile(final File file) {
+        final int sessionId = playSessionId.incrementAndGet();
         new Thread(new Runnable() {
             @Override
             public void run() {
+                if (playSessionId.get() != sessionId) return;
                 MediaPlayer mp = null;
                 try {
                     requestAudioFocus();
@@ -298,6 +309,11 @@ public class VehicleVoicePlayer {
                     }
                     mp.setDataSource(file.getAbsolutePath());
                     mp.prepare();
+                    if (playSessionId.get() != sessionId) {
+                        try { mp.release(); } catch (Exception ignored) {}
+                        abandonAudioFocus();
+                        return;
+                    }
                     mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                         @Override
                         public void onCompletion(MediaPlayer mediaPlayer) {

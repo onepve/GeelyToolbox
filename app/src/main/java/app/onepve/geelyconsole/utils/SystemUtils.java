@@ -569,8 +569,8 @@ public class SystemUtils {
     }
 
     public static void softReboot(Context ctx) {
-        AppLogger.action("系统电源", "触发一键软重启 (ctl.restart zygote)", true, "预计 5 秒重载框架");
-        executePrivileged(ctx, "setprop ctl.restart zygote || pkill -f system_server || am restart");
+        AppLogger.action("系统电源", "触发一键重启车机 (reboot)", true, "整车完整冷启动");
+        executePrivileged(ctx, "reboot || svc power reboot");
     }
 
     /** 清除应用数据（pm clear） */
@@ -928,6 +928,35 @@ public class SystemUtils {
         return result;
     }
 
+    public static boolean zipSingleFile(File srcFile, File destZip) {
+        if (srcFile == null || !srcFile.exists()) return false;
+        java.util.zip.ZipOutputStream zos = null;
+        java.io.FileInputStream fis = null;
+        try {
+            zos = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(destZip));
+            java.util.zip.ZipEntry zipEntry = new java.util.zip.ZipEntry(srcFile.getName());
+            zos.putNextEntry(zipEntry);
+            fis = new java.io.FileInputStream(srcFile);
+            byte[] buffer = new byte[64 * 1024];
+            int length;
+            while ((length = fis.read(buffer)) >= 0) {
+                zos.write(buffer, 0, length);
+            }
+            zos.closeEntry();
+            return true;
+        } catch (Exception e) {
+            Log.e("SystemUtils", "zipSingleFile error: " + e.getMessage());
+            return false;
+        } finally {
+            if (fis != null) {
+                try { fis.close(); } catch (Exception ignored) {}
+            }
+            if (zos != null) {
+                try { zos.close(); } catch (Exception ignored) {}
+            }
+        }
+    }
+
     public static JSONObject dumpFullSystemLogcat(Context context) {
         JSONObject result = new JSONObject();
         try {
@@ -943,12 +972,25 @@ public class SystemUtils {
             executeShell(cmd);
 
             if (logFile.exists() && logFile.length() > 0) {
-                result.put("success", true);
-                result.put("path", logFile.getAbsolutePath());
-                double mb = logFile.length() / (1024.0 * 1024.0);
-                String sizeStr = (mb >= 1.0) ? String.format(java.util.Locale.CHINA, "%.2f MB", mb) : (logFile.length() / 1024 + " KB");
-                result.put("sizeStr", sizeStr);
-                result.put("message", "日志采集成功，已保存至 Download 目录");
+                File zipFile = new File(downloadDir, "car_full.zip");
+                if (zipFile.exists()) zipFile.delete();
+                boolean zipped = zipSingleFile(logFile, zipFile);
+                if (zipped && zipFile.exists() && zipFile.length() > 0) {
+                    logFile.delete(); // 立即清场大文本日志，极大节省车机内部存储
+                    result.put("success", true);
+                    result.put("path", zipFile.getAbsolutePath());
+                    double mb = zipFile.length() / (1024.0 * 1024.0);
+                    String sizeStr = (mb >= 1.0) ? String.format(java.util.Locale.CHINA, "%.2f MB", mb) : (zipFile.length() / 1024 + " KB");
+                    result.put("sizeStr", sizeStr);
+                    result.put("message", "日志采集并压缩成功，已保存至 Download/car_full.zip");
+                } else {
+                    result.put("success", true);
+                    result.put("path", logFile.getAbsolutePath());
+                    double mb = logFile.length() / (1024.0 * 1024.0);
+                    String sizeStr = (mb >= 1.0) ? String.format(java.util.Locale.CHINA, "%.2f MB", mb) : (logFile.length() / 1024 + " KB");
+                    result.put("sizeStr", sizeStr);
+                    result.put("message", "日志采集成功，已保存至 Download 目录");
+                }
             } else {
                 result.put("success", false);
                 result.put("message", "未能生成日志文件，请检查车机存储权限");
