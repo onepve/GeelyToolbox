@@ -129,7 +129,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             }
         });
 
-        // 0. 启动时确保专属目录 /sdcard/Download/00_车机应用/ 与 语音主题包/ 创建就绪
+        // 0. 启动时确保系统 Download 目录与 语音主题包/ 创建就绪并自愈历史文件
         try {
             SystemUtils.ensureAppDirectories(this);
         } catch (Exception ignored) {}
@@ -887,7 +887,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("size", AppLogger.getLogFileSizeStr());
                 return obj.toString();
             } catch (Exception e) {
-                return "{\"path\":\"/sdcard/Download/00_车机应用/geely_toolbox.log\",\"size\":\"0 KB\"}";
+                return "{\"path\":\"/sdcard/Download/geely_toolbox.log\",\"size\":\"0 KB\"}";
             }
         }
 
@@ -1381,28 +1381,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         @Override
                         public void run() {
                             try {
-                                File dedicatedDir = SystemUtils.getAppDownloadDir();
-                                File rootDownloadDir = new File(android.os.Environment.getExternalStorageDirectory(), "Download");
+                                File rootDownloadDir = SystemUtils.getAppDownloadDir();
                                 int cleaned = 0;
 
-                                // 1. 扫描清理 00_车机应用 目录内部的 0 字节空子文件夹
-                                if (dedicatedDir.exists() && dedicatedDir.isDirectory()) {
-                                    File[] files = dedicatedDir.listFiles();
-                                    if (files != null) {
-                                        for (File f : files) {
-                                            if (f.isDirectory() && f.list() != null && f.list().length == 0) {
-                                                if (f.delete()) cleaned++;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // 2. 扫描清理 /sdcard/Download/ 根目录下的残留空文件夹（严禁误删 00_车机应用）
+                                // 扫描清理 /sdcard/Download/ 根目录下的残留空文件夹（保留语音主题包目录）
                                 if (rootDownloadDir.exists() && rootDownloadDir.isDirectory()) {
                                     File[] files = rootDownloadDir.listFiles();
                                     if (files != null) {
                                         for (File f : files) {
-                                            if (f.isDirectory() && !"00_车机应用".equals(f.getName()) && f.list() != null && f.list().length == 0) {
+                                            if (f.isDirectory() && !"语音主题包".equals(f.getName()) && !"00_车机应用".equals(f.getName()) && f.list() != null && f.list().length == 0) {
                                                 if (f.delete()) cleaned++;
                                             }
                                         }
@@ -1413,7 +1400,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                 mainHandler.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        Toast.makeText(context, "已清理 " + count + " 个系统残留空文件夹 (含 00_车机应用 与 Download 根目录)", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(context, "已清理 " + count + " 个系统残留空文件夹 (位于 Download 目录)", Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             } catch (Exception ignored) {
@@ -1436,8 +1423,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             File[] files = downloadDir.listFiles();
                             if (files != null) {
                                 for (File f : files) {
-                                    if (f.isFile() && f.delete()) {
-                                        count++;
+                                    // 仅删除 APK 安装包与临时碎片文件，绝不误删其他文档和文件夹
+                                    if (f.isFile()) {
+                                        String name = f.getName().toLowerCase();
+                                        if (name.endsWith(".apk") || name.endsWith(".tmp") || name.endsWith(".log")) {
+                                            if (f.delete()) count++;
+                                        }
                                     }
                                 }
                             }
@@ -1446,14 +1437,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         mainHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                Toast.makeText(context, "已清空 00_车机应用 专属目录全部文件 (已删除 " + finalCount + " 个文件)", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(context, "已清空 Download 目录下 APK 安装包与临时文件 (共删除 " + finalCount + " 个文件)", Toast.LENGTH_SHORT).show();
                             }
                         });
                     } catch (Exception e) {
                         mainHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                Toast.makeText(context, "清空失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(context, "清理失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
@@ -1600,7 +1591,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                             }
                                         }
                                     } else {
-                                        Toast.makeText(context, "下载完成: " + savedFile.getName() + "\n已保存在 00_车机应用 专属目录", Toast.LENGTH_LONG).show();
+                                        Toast.makeText(context, "下载完成: " + savedFile.getName() + "\n已保存在 Download 目录", Toast.LENGTH_LONG).show();
                                     }
                                 }
                             });
@@ -1994,9 +1985,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     try {
+                        File baseDir0 = new File(Environment.getExternalStorageDirectory(), "Download/语音主题包");
                         File baseDir1 = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用/语音主题包");
-                        File baseDir2 = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用");
-                        File zipFile = new File(baseDir1, zipFilename);
+                        File baseDir2 = new File(Environment.getExternalStorageDirectory(), "Download");
+                        File zipFile = new File(baseDir0, zipFilename);
+                        if (!zipFile.exists()) {
+                            zipFile = new File(baseDir1, zipFilename);
+                        }
                         if (!zipFile.exists()) {
                             zipFile = new File(baseDir2, zipFilename);
                         }

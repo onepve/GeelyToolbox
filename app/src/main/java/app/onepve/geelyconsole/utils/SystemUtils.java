@@ -620,12 +620,12 @@ public class SystemUtils {
     }
 
     /**
-     * 获取工具箱专属置顶下载目录：/sdcard/Download/00_车机应用/
-     * 采用 ASCII 优先符号 '!' 命名，确保在任何文件管理器中均 100% 绝对置顶（排在第 1 位），
-     * 彻底解决系统自动生成的繁杂空文件夹导致车友每次费力狂滑屏幕找安装包的痛点。
+     * 获取工具箱下载目录：/sdcard/Download/
+     * 保持系统原生 Download 目录，与 Android DocumentsUI 官方标准最稳契合，
+     * 根治深层子目录导致的各类定制车机文件管理闪退与找不到路径问题。
      */
     public static File getAppDownloadDir() {
-        File dir = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用");
+        File dir = new File(Environment.getExternalStorageDirectory(), "Download");
         if (!dir.exists()) {
             dir.mkdirs();
         }
@@ -633,11 +633,6 @@ public class SystemUtils {
         if (!voiceDir.exists()) {
             voiceDir.mkdirs();
         }
-        try {
-            if (!dir.exists() || !voiceDir.exists()) {
-                executePrivileged(null, "mkdir -p /sdcard/Download/00_车机应用/语音主题包 && chmod -R 777 /sdcard/Download/00_车机应用");
-            }
-        } catch (Exception ignored) {}
         return dir;
     }
 
@@ -645,10 +640,35 @@ public class SystemUtils {
         try {
             File dir = getAppDownloadDir();
             File voiceDir = new File(dir, "语音主题包");
-            executePrivileged(context, "mkdir -p /sdcard/Download/00_车机应用/语音主题包 && chmod -R 777 /sdcard/Download/00_车机应用");
+            if (!dir.exists()) dir.mkdirs();
+            if (!voiceDir.exists()) voiceDir.mkdirs();
+            executePrivileged(context, "mkdir -p /sdcard/Download/语音主题包 && chmod -R 777 /sdcard/Download");
+
+            // 自动平滑迁移历史旧目录 00_车机应用/ 下的文件到 Download/，老版本无缝过渡
+            try {
+                File oldDedicatedDir = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用");
+                if (oldDedicatedDir.exists() && oldDedicatedDir.isDirectory()) {
+                    File[] oldFiles = oldDedicatedDir.listFiles();
+                    if (oldFiles != null) {
+                        for (File of : oldFiles) {
+                            if (of.isDirectory() && "语音主题包".equals(of.getName())) {
+                                File[] vfs = of.listFiles();
+                                if (vfs != null) {
+                                    for (File vf : vfs) {
+                                        vf.renameTo(new File(voiceDir, vf.getName()));
+                                    }
+                                }
+                            } else {
+                                of.renameTo(new File(dir, of.getName()));
+                            }
+                        }
+                    }
+                    oldDedicatedDir.delete();
+                }
+            } catch (Exception ignored) {}
+
             if (context != null) {
                 android.media.MediaScannerConnection.scanFile(context, new String[]{
-                        "/sdcard/Download",
                         dir.getAbsolutePath(),
                         voiceDir.getAbsolutePath()
                 }, null, null);
@@ -658,19 +678,8 @@ public class SystemUtils {
 
     public static boolean openDocumentsUI(Context context) {
         ensureAppDirectories(context);
-        File dir = getAppDownloadDir();
 
-        // Strategy 0: 优先使用原生 DocumentsUI 深度定位直达 00_车机应用 专属目录
-        try {
-            Intent directIntent = new Intent(Intent.ACTION_VIEW);
-            directIntent.setDataAndType(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADownload%2F00_%E8%BD%A6%E6%9C%BA%E5%BA%94%E7%94%A8"), "vnd.android.document/directory");
-            directIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(directIntent);
-            return true;
-        } catch (Exception ignored) {
-        }
-
-        // Strategy 1: 标准原生 Action VIEW_DOWNLOADS (原生系统下载目录，00_车机应用绝对置顶排在第1位)
+        // Strategy 1: 标准原生 Action VIEW_DOWNLOADS (原生系统下载目录，官方标准最稳入口，绝不闪退)
         try {
             Intent intent = new Intent("android.intent.action.VIEW_DOWNLOADS");
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -926,7 +935,7 @@ public class SystemUtils {
                 logFile.delete();
             }
 
-            // 执行带有时间戳的 logcat 转储指令并重定向至 00_车机应用 专属目录
+            // 执行带有时间戳的 logcat 转储指令并重定向至 Download 目录
             String cmd = "logcat -d -v time > " + logFile.getAbsolutePath();
             executeShell(cmd);
 
@@ -936,7 +945,7 @@ public class SystemUtils {
                 double mb = logFile.length() / (1024.0 * 1024.0);
                 String sizeStr = (mb >= 1.0) ? String.format(java.util.Locale.CHINA, "%.2f MB", mb) : (logFile.length() / 1024 + " KB");
                 result.put("sizeStr", sizeStr);
-                result.put("message", "日志采集成功，已保存至 00_车机应用 专属目录");
+                result.put("message", "日志采集成功，已保存至 Download 目录");
             } else {
                 result.put("success", false);
                 result.put("message", "未能生成日志文件，请检查车机存储权限");

@@ -452,8 +452,20 @@ public class AutoPilotManager {
         List<File> list = new ArrayList<>();
         try {
             File dedicatedDir = SystemUtils.getAppDownloadDir();
+            File legacyDedicatedDir = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用");
             File legacySpecialDir = new File(Environment.getExternalStorageDirectory(), "Download/!车机应用");
             File legacyDir = new File(Environment.getExternalStorageDirectory(), "Download");
+
+            if (legacyDedicatedDir.exists() && legacyDedicatedDir.isDirectory()) {
+                File[] oldFiles = legacyDedicatedDir.listFiles();
+                if (oldFiles != null) {
+                    for (File of : oldFiles) {
+                        File target = new File(dedicatedDir, of.getName());
+                        of.renameTo(target);
+                    }
+                }
+                legacyDedicatedDir.delete();
+            }
 
             if (legacySpecialDir.exists() && legacySpecialDir.isDirectory()) {
                 File[] oldFiles = legacySpecialDir.listFiles();
