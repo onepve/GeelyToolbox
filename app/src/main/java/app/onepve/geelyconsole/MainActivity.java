@@ -620,14 +620,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
 
                     File targetFile = null;
-                    File dedicatedDir = SystemUtils.getAppDownloadDir();
-                    File f = new File(dedicatedDir, filename.trim());
+                    File downloadDir = SystemUtils.getAppDownloadDir();
+                    File f = new File(downloadDir, filename.trim());
                     if (f.exists() && f.length() > 0) {
                         targetFile = f;
                     } else {
-                        File fLegacy = new File(Environment.getExternalStorageDirectory(), "Download/" + filename.trim());
-                        if (fLegacy.exists() && fLegacy.length() > 0) {
-                            targetFile = fLegacy;
+                        File fOld = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用/" + filename.trim());
+                        if (fOld.exists() && fOld.length() > 0) {
+                            targetFile = fOld;
                         }
                     }
 
@@ -1389,7 +1389,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                     File[] files = rootDownloadDir.listFiles();
                                     if (files != null) {
                                         for (File f : files) {
-                                            if (f.isDirectory() && !"语音主题包".equals(f.getName()) && !"00_车机应用".equals(f.getName()) && f.list() != null && f.list().length == 0) {
+                                            if (f.isDirectory() && !"语音主题包".equals(f.getName()) && f.list() != null && f.list().length == 0) {
                                                 if (f.delete()) cleaned++;
                                             }
                                         }
@@ -1521,6 +1521,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             size = f.length();
                             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.CHINA);
                             downloadTime = sdf.format(new java.util.Date(f.lastModified()));
+                        } else {
+                            File fOld = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用/" + filename);
+                            if (fOld.exists() && fOld.length() > 0) {
+                                exists = true;
+                                size = fOld.length();
+                                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.CHINA);
+                                downloadTime = sdf.format(new java.util.Date(fOld.lastModified()));
+                            }
                         }
                     }
 
@@ -1730,7 +1738,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     File downloadDir = SystemUtils.getAppDownloadDir();
-                    final File apkFile = new File(downloadDir, filename);
+                    File targetApk = new File(downloadDir, filename);
+                    if (!targetApk.exists() || targetApk.length() == 0) {
+                        File oldApk = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用/" + filename);
+                        if (oldApk.exists() && oldApk.length() > 0) {
+                            targetApk = oldApk;
+                        }
+                    }
+                    final File apkFile = targetApk;
                     if (!apkFile.exists() || apkFile.length() == 0) {
                         Toast.makeText(context, "文件不存在，请先下载: " + filename, Toast.LENGTH_SHORT).show();
                         return;

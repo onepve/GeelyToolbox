@@ -658,12 +658,15 @@ public class SystemUtils {
                                         vf.renameTo(new File(voiceDir, vf.getName()));
                                     }
                                 }
+                                of.delete();
                             } else {
                                 of.renameTo(new File(dir, of.getName()));
                             }
                         }
                     }
-                    oldDedicatedDir.delete();
+                    if (!oldDedicatedDir.delete()) {
+                        executePrivileged(context, "rm -rf /sdcard/Download/00_车机应用");
+                    }
                 }
             } catch (Exception ignored) {}
 

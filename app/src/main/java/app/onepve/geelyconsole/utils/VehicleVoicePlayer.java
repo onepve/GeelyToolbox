@@ -163,10 +163,13 @@ public class VehicleVoicePlayer {
             }
         } catch (Exception ignored) {}
 
-        // 2. 外部储存固定放置目录 (/sdcard/GeelyToolbox/voice/ 或 /sdcard/Music/)
-        File customFile1 = new File("/sdcard/GeelyToolbox/voice/" + voiceFileName);
+        // 2. 外部储存固定放置目录 (优先 /sdcard/Download/语音主题包/、/sdcard/Download/ 或 /sdcard/Music/)
+        File customFile0 = new File(SystemUtils.getAppDownloadDir(), "语音主题包/" + voiceFileName);
+        File customFile1 = new File(SystemUtils.getAppDownloadDir(), voiceFileName);
         File customFile2 = new File("/sdcard/Music/" + voiceFileName);
-        File targetFile = customFile1.exists() ? customFile1 : (customFile2.exists() ? customFile2 : null);
+        File targetFile = (customFile0.exists() && customFile0.length() > 0) ? customFile0 :
+                          ((customFile1.exists() && customFile1.length() > 0) ? customFile1 :
+                          ((customFile2.exists() && customFile2.length() > 0) ? customFile2 : null));
 
         if (targetFile != null && targetFile.length() > 0) {
             playAudioFile(targetFile);
