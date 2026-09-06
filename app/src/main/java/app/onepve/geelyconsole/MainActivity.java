@@ -1885,6 +1885,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_gear_p", prefs.getBoolean("voice_enable_gear_p", prefs.getBoolean("voice_enable_gear", false)));
                 obj.put("voice_gear_n", prefs.getBoolean("voice_enable_gear_n", prefs.getBoolean("voice_enable_gear", false)));
                 obj.put("voice_drive_mode", prefs.getBoolean("voice_enable_drive_mode", false));
+                obj.put("voice_mode_comfort", prefs.getBoolean("voice_enable_mode_comfort", prefs.getBoolean("voice_enable_drive_mode", false)));
+                obj.put("voice_mode_sport", prefs.getBoolean("voice_enable_mode_sport", prefs.getBoolean("voice_enable_drive_mode", false)));
+                obj.put("voice_mode_eco", prefs.getBoolean("voice_enable_mode_eco", prefs.getBoolean("voice_enable_drive_mode", false)));
+                obj.put("voice_mode_smart", prefs.getBoolean("voice_enable_mode_smart", prefs.getBoolean("voice_enable_drive_mode", false)));
 
                 obj.put("custom_door_fl", !prefs.getString("custom_voice_door_fl.mp3", "").isEmpty());
                 obj.put("custom_door_fl_close", !prefs.getString("custom_voice_door_fl_close.mp3", "").isEmpty());
@@ -2186,6 +2190,36 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     } catch (Exception ignored) {}
                 }
             });
+        }
+
+        @JavascriptInterface
+        public String getVehicleModelName() {
+            android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            String manual = prefs.getString("selected_vehicle_model", "cool");
+            if ("xingrui".equals(manual)) return "吉利星瑞 (FS11 · CMA架构)";
+            if ("general".equals(manual)) return "吉利博越L/银河 (通用吉利协议)";
+            return "吉利缤越 COOL (SX11-A3 · 亿咖通 E02)";
+        }
+
+        @JavascriptInterface
+        public String getSelectedVehicleModel() {
+            android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            return prefs.getString("selected_vehicle_model", "cool");
+        }
+
+        @JavascriptInterface
+        public boolean setVehicleModel(final String modelKey) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                    prefs.edit().putString("selected_vehicle_model", modelKey).apply();
+                    VehicleAutomationService.syncState(MainActivity.this);
+                    AppLogger.i("车型适配", "切换车型协议: " + modelKey);
+                    showToast("已切换适配车型协议");
+                }
+            });
+            return true;
         }
 
         @JavascriptInterface

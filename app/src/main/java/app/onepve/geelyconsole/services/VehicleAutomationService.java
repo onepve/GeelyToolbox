@@ -57,6 +57,11 @@ public class VehicleAutomationService extends Service {
     private boolean enableGearP = false;
     private boolean enableGearN = false;
     private boolean enableDriveMode = false;
+    private boolean enableModeComfort = false;
+    private boolean enableModeSport = false;
+    private boolean enableModeEco = false;
+    private boolean enableModeSmart = false;
+    private String selectedVehicleModel = "cool";
     private boolean enableTurn360 = false;
     private boolean enableLightNav = false;
 
@@ -104,11 +109,16 @@ public class VehicleAutomationService extends Service {
             boolean gearP = prefs.getBoolean("voice_enable_gear_p", prefs.getBoolean("voice_enable_gear", false));
             boolean gearN = prefs.getBoolean("voice_enable_gear_n", prefs.getBoolean("voice_enable_gear", false));
             boolean driveMode = prefs.getBoolean("voice_enable_drive_mode", false);
+            boolean modeComfort = prefs.getBoolean("voice_enable_mode_comfort", driveMode);
+            boolean modeSport = prefs.getBoolean("voice_enable_mode_sport", driveMode);
+            boolean modeEco = prefs.getBoolean("voice_enable_mode_eco", driveMode);
+            boolean modeSmart = prefs.getBoolean("voice_enable_mode_smart", driveMode);
             boolean turn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
             boolean lightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
             boolean shouldRun = doorFl || doorFlClose || doorFr || doorFrClose ||
                                 doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
-                                trunkOpen || trunkClose || gearD || gearR || gearP || gearN || driveMode || turn360 || lightNav;
+                                trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
+                                modeComfort || modeSport || modeEco || modeSmart || driveMode || turn360 || lightNav;
 
             Intent intent = new Intent(context, VehicleAutomationService.class);
             if (shouldRun) {
@@ -170,13 +180,18 @@ public class VehicleAutomationService extends Service {
         enableGearP = prefs.getBoolean("voice_enable_gear_p", prefs.getBoolean("voice_enable_gear", false));
         enableGearN = prefs.getBoolean("voice_enable_gear_n", prefs.getBoolean("voice_enable_gear", false));
         enableDriveMode = prefs.getBoolean("voice_enable_drive_mode", false);
+        enableModeComfort = prefs.getBoolean("voice_enable_mode_comfort", enableDriveMode);
+        enableModeSport = prefs.getBoolean("voice_enable_mode_sport", enableDriveMode);
+        enableModeEco = prefs.getBoolean("voice_enable_mode_eco", enableDriveMode);
+        enableModeSmart = prefs.getBoolean("voice_enable_mode_smart", enableDriveMode);
+        selectedVehicleModel = prefs.getString("selected_vehicle_model", "cool");
         enableTurn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
 
         boolean anyEnabled = enableDoorFl || enableDoorFlClose || enableDoorFr || enableDoorFrClose ||
                              enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
                              enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN ||
-                             enableDriveMode || enableTurn360 || enableLightNav;
+                             enableModeComfort || enableModeSport || enableModeEco || enableModeSmart || enableDriveMode || enableTurn360 || enableLightNav;
 
         if (!anyEnabled) {
             stopSelf();
@@ -226,7 +241,7 @@ public class VehicleAutomationService extends Service {
 
                         // 过滤 VehicleDataBuilder、车身 AVM 信号 (ecarx_avm_SocketCommand)、底层串口数据 (SerialControl_v2_0) 与 ECU/MCU 档位/车速标签
                         // -T 1 强制仅从当前最新时刻开始实时监听，坚决不回放环形缓冲区历史旧日志，彻底消除冷启动误报
-                        ProcessBuilder pb = new ProcessBuilder("logcat", "-T", "1", "-b", "main", "-b", "system", "-v", "brief", "-s", "VehicleDataBuilder:D", "ecarx_avm_SocketCommand:W", "SerialControl_v2_0:W", "e:D", "ECARX@ECP:D", "ecarx_avm_state:D");
+                        ProcessBuilder pb = new ProcessBuilder("logcat", "-T", "1", "-b", "main", "-b", "system", "-v", "brief");
                         pb.redirectErrorStream(true);
                         logcatProcess = pb.start();
 
@@ -346,8 +361,13 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 6. 解析驾驶模式切换信号 (ComfortModule, MCULog, NegativeOneScreen)
-        if (line.contains("DM_FUNC_DRIVE_MODE_SELECT value=") || line.contains("MCU Report SwitchMode:") || line.contains("driveModeValue = 5704911")) {
+        // 6. 解析驾驶模式切换信号 (涵盖 ComfortModule, MCULog, NegativeOneScreen, CarSettingService, HiCar)
+        if (line.contains("DM_FUNC_DRIVE_MODE_SELECT value=") || 
+            line.contains("SwitchMode:") || 
+            line.contains("driveModeValue = 5704911") ||
+            line.contains("driveMode: 5704911") ||
+            line.contains("onDrivingModeChanged:")) {
+            
             int modeVal = -1;
             if (line.contains("DM_FUNC_DRIVE_MODE_SELECT value=")) {
                 int idx = line.indexOf("DM_FUNC_DRIVE_MODE_SELECT value=");
@@ -355,19 +375,32 @@ public class VehicleAutomationService extends Service {
                     char c = line.charAt(idx + 32);
                     modeVal = Character.getNumericValue(c);
                 } catch (Exception ignored) {}
-            } else if (line.contains("driveModeValue = 5704911")) {
-                if (line.contains("570491138")) modeVal = 1; // 舒适
-                else if (line.contains("570491139")) modeVal = 2; // 运动
-                else if (line.contains("570491137")) modeVal = 3; // 经济
-                else if (line.contains("570491158")) modeVal = 6; // 智能
-            } else if (line.contains("MCU Report SwitchMode:")) {
-                int idx = line.indexOf("MCU Report SwitchMode:");
+            } else if (line.contains("SwitchMode:")) {
+                int idx = line.indexOf("SwitchMode:");
                 try {
-                    char c = line.charAt(idx + 22);
+                    char c = line.charAt(idx + 11);
                     int sm = Character.getNumericValue(c);
                     if (sm == 1) modeVal = 1; // 舒适
                     else if (sm == 0) modeVal = 2; // 运动
                     else if (sm == 3) modeVal = 3; // 经济
+                } catch (Exception ignored) {}
+            } else if (line.contains("570491138")) {
+                modeVal = 1; // 舒适
+            } else if (line.contains("570491139")) {
+                modeVal = 2; // 运动
+            } else if (line.contains("570491137")) {
+                modeVal = 3; // 经济
+            } else if (line.contains("570491158")) {
+                modeVal = 6; // 智能
+            } else if (line.contains("onDrivingModeChanged:")) {
+                int idx = line.indexOf("onDrivingModeChanged:");
+                try {
+                    char c = line.charAt(idx + 21);
+                    int hc = Character.getNumericValue(c);
+                    if (hc == 1) modeVal = 1; // 舒适
+                    else if (hc == 2) modeVal = 2; // 运动
+                    else if (hc == 3) modeVal = 3; // 经济
+                    else if (hc == 4) modeVal = 6; // 智能
                 } catch (Exception ignored) {}
             }
             if (modeVal > 0) {
@@ -511,28 +544,40 @@ public class VehicleAutomationService extends Service {
                 lastGearPosition = val;
             }
         }
-        // 驾驶模式切换播报 (舒适 / 运动 / 经济 / 智能，快速切换即时抢占打断)
+        // 驾驶模式切换播报 (舒适 / 运动 / 经济 / 智能，四模式独立开关控制与即时打断)
         else if ("BCM_DriveMode".equals(key)) {
             if (lastDriveMode == -1) {
-                lastDriveMode = val; // 启动首包仅记录基准
+                lastDriveMode = val; // 启动首包记录初始模式基准
+                AppLogger.i("座舱模式", "初始化当前驾驶模式: code=" + val);
                 return;
             }
             if (lastDriveMode != val) {
-                if (enableDriveMode) {
-                    switch (val) {
-                        case 1: // 舒适模式
+                AppLogger.i("座舱模式", "底盘模式跃变: " + lastDriveMode + " -> " + val);
+                switch (val) {
+                    case 1: // 舒适模式
+                        if (enableModeComfort || enableDriveMode) {
+                            AppLogger.i("座舱模式", "触发播报: mode_comfort.mp3 (舒适模式)");
                             voicePlayer.play("mode_comfort.mp3", "舒适模式");
-                            break;
-                        case 2: // 运动模式
+                        }
+                        break;
+                    case 2: // 运动模式
+                        if (enableModeSport || enableDriveMode) {
+                            AppLogger.i("座舱模式", "触发播报: mode_sport.mp3 (运动模式)");
                             voicePlayer.play("mode_sport.mp3", "运动模式");
-                            break;
-                        case 3: // 经济模式
+                        }
+                        break;
+                    case 3: // 经济模式
+                        if (enableModeEco || enableDriveMode) {
+                            AppLogger.i("座舱模式", "触发播报: mode_eco.mp3 (经济模式)");
                             voicePlayer.play("mode_eco.mp3", "经济模式");
-                            break;
-                        case 6: // 智能模式
+                        }
+                        break;
+                    case 6: // 智能模式
+                        if (enableModeSmart || enableDriveMode) {
+                            AppLogger.i("座舱模式", "触发播报: mode_smart.mp3 (智能模式)");
                             voicePlayer.play("mode_smart.mp3", "智能模式");
-                            break;
-                    }
+                        }
+                        break;
                 }
                 lastDriveMode = val;
             }
