@@ -2193,6 +2193,51 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public String getVehicleHealthInfo() {
+            JSONObject obj = new JSONObject();
+            try {
+                int rawVolt = VehicleAutomationService.currentBatteryVoltRaw;
+                double volt = (rawVolt > 0) ? (rawVolt / 10.0) : 12.5;
+                obj.put("battery_volt", volt);
+                obj.put("battery_raw", rawVolt);
+
+                String batteryStatus;
+                String batteryClass;
+                if (volt < 11.8) {
+                    batteryStatus = "亏电预警";
+                    batteryClass = "red";
+                } else if (volt >= 13.5) {
+                    batteryStatus = "充能中";
+                    batteryClass = "green";
+                } else {
+                    batteryStatus = "健康";
+                    batteryClass = "green";
+                }
+                obj.put("battery_status", batteryStatus);
+                obj.put("battery_class", batteryClass);
+
+                int engine = VehicleAutomationService.currentEngineState;
+                boolean isCharging = (volt >= 13.4 || engine > 0);
+                obj.put("generator_status", isCharging ? "发电机运转 (充能中)" : "纯电瓶供电 (耗电中)");
+                obj.put("generator_class", isCharging ? "green" : "blue");
+                obj.put("is_charging", isCharging);
+
+                int pmIn = VehicleAutomationService.currentPm25In;
+                int pmOut = VehicleAutomationService.currentPm25Out;
+                boolean hasPm25 = (pmIn >= 0 || pmOut >= 0);
+                obj.put("has_pm25", hasPm25);
+                obj.put("pm25_in", pmIn >= 0 ? pmIn : 0);
+                obj.put("pm25_out", pmOut >= 0 ? pmOut : 0);
+
+                obj.put("model_name", getVehicleModelName());
+                obj.put("selected_model", getSelectedVehicleModel());
+            } catch (Exception e) {
+                AppLogger.e("车辆健康", "getVehicleHealthInfo error: " + e.getMessage());
+            }
+            return obj.toString();
+        }
+
+        @JavascriptInterface
         public String getVehicleModelName() {
             android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             String manual = prefs.getString("selected_vehicle_model", "auto");

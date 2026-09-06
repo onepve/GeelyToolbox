@@ -37,6 +37,11 @@ public class VehicleAutomationService extends Service {
     private static final int NOTIF_ID = 1002;
 
     public static volatile boolean isRunning = false;
+    // 车辆实时健康与传感器参数 (自适应供电与健康看板)
+    public static volatile int currentBatteryVoltRaw = -1; // x10, e.g. 125 = 12.5V
+    public static volatile int currentEngineState = -1;     // 0=熄火, 1/3=点火运转
+    public static volatile int currentPm25In = -1;
+    public static volatile int currentPm25Out = -1;
 
     private boolean enableDoorFl = false;
     private boolean enableDoorFlClose = false;
@@ -131,6 +136,29 @@ public class VehicleAutomationService extends Service {
         reloadSettings();
         startLogcatReader();
         AppLogger.i("座舱自动化", "座舱自动化常驻服务启动成功 (车型协议: " + selectedVehicleModel + ")");
+        // 初始化预读最近一次蓄电池电压，避免冷启动等待上报
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String logSample = SystemUtils.executeShell("logcat -d -b main -s ecarx_core_server -t 60");
+                    if (logSample != null && logSample.contains("mModelBatteryVolt =")) {
+                        int idx = logSample.lastIndexOf("mModelBatteryVolt =");
+                        String sub = logSample.substring(idx + 19).trim();
+                        StringBuilder num = new StringBuilder();
+                        for (int i = 0; i < sub.length(); i++) {
+                            char c = sub.charAt(i);
+                            if (Character.isDigit(c)) num.append(c);
+                            else if (num.length() > 0) break;
+                        }
+                        if (num.length() > 0) {
+                            currentBatteryVoltRaw = Integer.parseInt(num.toString());
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+        }).start();
+
     }
 
     @Override
@@ -278,6 +306,62 @@ public class VehicleAutomationService extends Service {
                 } catch (Exception ignored) {
                 }
             }
+            return;
+        }
+
+        // 1.1 解析蓄电池实时电压 (vehicledata----callbacks---mModelBatteryVolt = 125)
+        if (line.contains("mModelBatteryVolt =")) {
+            int idx = line.indexOf("mModelBatteryVolt =");
+            try {
+                String sub = line.substring(idx + 19).trim();
+                StringBuilder num = new StringBuilder();
+                for (int i = 0; i < sub.length(); i++) {
+                    char c = sub.charAt(i);
+                    if (Character.isDigit(c)) num.append(c);
+                    else if (num.length() > 0) break;
+                }
+                if (num.length() > 0) {
+                    currentBatteryVoltRaw = Integer.parseInt(num.toString());
+                }
+            } catch (Exception ignored) {}
+            return;
+        }
+
+        // 1.2 解析发动机状态 (vehicledata----callback-mModelEngine = 0/1/3)
+        if (line.contains("mModelEngine =")) {
+            int idx = line.indexOf("mModelEngine =");
+            try {
+                String sub = line.substring(idx + 14).trim();
+                StringBuilder num = new StringBuilder();
+                for (int i = 0; i < sub.length(); i++) {
+                    char c = sub.charAt(i);
+                    if (Character.isDigit(c)) num.append(c);
+                    else if (num.length() > 0) break;
+                }
+                if (num.length() > 0) {
+                    currentEngineState = Integer.parseInt(num.toString());
+                }
+            } catch (Exception ignored) {}
+            return;
+        }
+
+        // 1.3 解析车内外 PM2.5 传感器
+        if (line.contains("PM25INDEN") && line.contains("return funValue(")) {
+            int idx = line.indexOf("return funValue(");
+            try {
+                String hex = line.substring(idx + 16).trim().split("[^0-9a-fA-FxX]")[0];
+                if (hex.startsWith("0x") || hex.startsWith("0X")) hex = hex.substring(2);
+                currentPm25In = Integer.parseInt(hex, 16);
+            } catch (Exception ignored) {}
+            return;
+        }
+        if (line.contains("PM25OUTDEN") && line.contains("return funValue(")) {
+            int idx = line.indexOf("return funValue(");
+            try {
+                String hex = line.substring(idx + 16).trim().split("[^0-9a-fA-FxX]")[0];
+                if (hex.startsWith("0x") || hex.startsWith("0X")) hex = hex.substring(2);
+                currentPm25Out = Integer.parseInt(hex, 16);
+            } catch (Exception ignored) {}
             return;
         }
 

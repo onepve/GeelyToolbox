@@ -1151,6 +1151,10 @@ body.light .btn-mini:active {
   </div>
 
   <div class="top-pills">
+    <div class="pill" id="pillVehicleHealth" style="cursor:pointer;" onclick="handleShowVehicleHealthModal()" title="点击查看车辆电池与供电健康看板">
+      <span class="dot green" id="dotVehicleHealth"></span>
+      <span id="txtVehicleHealth">电瓶: 12.5V (健康)</span>
+    </div>
     <div class="pill" style="cursor:pointer;" onclick="handleToggleWhitelist()" title="点击切换白名单放行状态">
       <span class="dot green" id="pillWhitelistDot"></span>
       <span id="pillWhitelistText">白名单: 已放行 1</span>
@@ -2278,6 +2282,94 @@ body.light .btn-mini:active {
         <span class="pill" id="ttsEngineStatusBadge" style="font-size:12px; font-weight:800; padding:6px 14px; background:rgba(14,165,233,0.12); color:var(--accent); border:1px solid rgba(14,165,233,0.3);">语音引擎: 专车专用就绪</span>
       </div>
       <button class="btn-ctrl-md primary" style="min-width:120px;" onclick="closeModal('vehicleAutoModal')">完成</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 整车供电与传感器健康看板 Modal (自适应) -->
+<div class="modal-overlay" id="vehicleHealthModal">
+  <div class="modal-card" style="width:880px; max-width:94vw; padding:22px 28px;">
+    <div class="modal-header">
+      <div class="modal-title" style="display:flex; align-items:center; gap:10px;">
+        <span>整车供电与传感器健康看板</span>
+        <span class="pill" style="font-size:11px; padding:2px 8px;" id="vhModalProtoPill">专车协议自适应</span>
+      </div>
+      <button class="modal-close" onclick="closeModal('vehicleHealthModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+
+    <!-- 4 大指标卡片网格 -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:10px; margin-bottom:12px;">
+      <!-- 卡片 1: 12V 蓄电池电压 -->
+      <div style="background:rgba(0,0,0,0.02); border:1px solid var(--border); border-radius:12px; padding:16px 20px; display:flex; flex-direction:column; justify-content:space-between;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:13.5px; font-weight:800; color:var(--txt-dim);">12V 蓄电池电压</span>
+          <span class="btn-status-pill green" id="vhBatteryBadge" style="font-size:12px;">健康充沛</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:6px; margin:10px 0 6px;">
+          <span style="font-size:36px; font-weight:900; color:var(--txt-strong); line-height:1;" id="vhBatteryVoltBig">12.5</span>
+          <span style="font-size:16px; font-weight:800; color:var(--txt-dim);">V</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--txt-dim); line-height:1.4;">
+          熄火常态: 12.2V~12.8V · 点火充电: 13.5V~14.5V · 低于11.8V请尽快启动防亏电
+        </div>
+      </div>
+
+      <!-- 卡片 2: 发电机供电状态 -->
+      <div style="background:rgba(0,0,0,0.02); border:1px solid var(--border); border-radius:12px; padding:16px 20px; display:flex; flex-direction:column; justify-content:space-between;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:13.5px; font-weight:800; color:var(--txt-dim);">供电来源 / 发电机</span>
+          <span class="btn-status-pill blue" id="vhGeneratorBadge" style="font-size:12px;">耗电感知</span>
+        </div>
+        <div style="font-size:22px; font-weight:900; color:var(--txt-strong); margin:16px 0 10px;" id="vhGeneratorBig">
+          纯电瓶供电 (耗电中)
+        </div>
+        <div style="font-size:11.5px; color:var(--txt-dim); line-height:1.4;" id="vhGeneratorSub">
+          发动机未运转，当前由 12V 蓄电池单向供电，请留意耗电避免亏电
+        </div>
+      </div>
+
+      <!-- 卡片 3: 车内外 PM2.5 空气质量 (自适应) -->
+      <div id="vhCardPm25" style="background:rgba(0,0,0,0.02); border:1px solid var(--border); border-radius:12px; padding:16px 20px; display:flex; flex-direction:column; justify-content:space-between;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:13.5px; font-weight:800; color:var(--txt-dim);">座舱与车外 PM2.5 空气质量</span>
+          <span class="btn-status-pill green" id="vhPm25Badge" style="font-size:12px;">滤芯优良</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:16px; margin:12px 0 8px;">
+          <div>
+            <span style="font-size:12px; color:var(--txt-dim);">车外环境: </span>
+            <span style="font-size:22px; font-weight:900; color:var(--txt-strong);" id="vhPm25Out">--</span>
+            <span style="font-size:11px; color:var(--txt-dim);"> ug/m³</span>
+          </div>
+          <div>
+            <span style="font-size:12px; color:var(--txt-dim);">座舱车内: </span>
+            <span style="font-size:22px; font-weight:900; color:#10B981;" id="vhPm25In">--</span>
+            <span style="font-size:11px; color:var(--txt-dim);"> ug/m³</span>
+          </div>
+        </div>
+        <div style="font-size:11.5px; color:var(--txt-dim); line-height:1.4;">
+          数据实时源自原厂车载空调空气传感器与主动净化模块
+        </div>
+      </div>
+
+      <!-- 卡片 4: 专车专用通信协议 -->
+      <div style="background:rgba(0,0,0,0.02); border:1px solid var(--border); border-radius:12px; padding:16px 20px; display:flex; flex-direction:column; justify-content:space-between;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:13.5px; font-weight:800; color:var(--txt-dim);">当前底层协议架构</span>
+          <span class="btn-status-pill green" style="font-size:12px;">专车专架</span>
+        </div>
+        <div style="font-size:17.5px; font-weight:900; color:var(--txt-strong); margin:14px 0 8px;" id="vhModelNameBig">
+          吉利缤越 COOL (2022款 · 1.5TD 激擎版)
+        </div>
+        <div style="font-size:11.5px; color:var(--txt-dim); line-height:1.4;">
+          通信端口: /dev/ecp_uart_1 (SerialControl_v2_0) · 硬件直连 0 延迟
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="justify-content:space-between; align-items:center;">
+      <button class="btn-ctrl-md highlight" style="font-size:13px; font-weight:800; padding:6px 20px;" onclick="updateVehicleHealthUI(true)">刷新数据</button>
+      <button class="btn-ctrl-md primary" style="min-width:120px;" onclick="closeModal('vehicleHealthModal')">完成</button>
     </div>
   </div>
 </div>
@@ -4693,6 +4785,8 @@ function refreshVehicleAutoUI() {
   updateAutoBtn('btnVoice_trunk_close', vehicleAutoSettings.voice_trunk_close);
 
   updateVehicleModelUI();
+  updateVehicleHealthUI(false);
+  setInterval(function() { updateVehicleHealthUI(false); }, 5000);
   refreshVoiceLabels();
 }
 
@@ -4971,6 +5065,8 @@ function handleSelectVehicleModel(modelKey) {
     window.ToolboxBridge.setVehicleModel(modelKey);
   }
   updateVehicleModelUI();
+  updateVehicleHealthUI(false);
+  setInterval(function() { updateVehicleHealthUI(false); }, 5000);
 }
 
 function handleOpenTtsSettings() {
@@ -5595,3 +5691,94 @@ function proceedToStep3Whitelist() {
 </script>
 </body>
 </html>
+
+
+function handleShowVehicleHealthModal() {
+  updateVehicleHealthUI(false);
+  openModal('vehicleHealthModal');
+}
+
+function updateVehicleHealthUI(isManualRefresh) {
+  if (!window.ToolboxBridge || typeof window.ToolboxBridge.getVehicleHealthInfo !== 'function') {
+    return;
+  }
+  try {
+    var raw = window.ToolboxBridge.getVehicleHealthInfo();
+    var d = JSON.parse(raw || '{}');
+    var volt = d.battery_volt || 12.5;
+    var voltStr = volt.toFixed(1);
+    var voltStatus = d.battery_status || '健康';
+    var genStatus = d.generator_status || '纯电瓶供电 (耗电中)';
+    var isCharging = !!d.is_charging;
+
+    // 1. 更新顶栏微胶囊
+    var pillTxt = document.getElementById('txtVehicleHealth');
+    var pillDot = document.getElementById('dotVehicleHealth');
+    if (pillTxt) {
+      if (isCharging) {
+        pillTxt.innerText = '电瓶: ' + voltStr + 'V (充能中)';
+        if (pillDot) pillDot.className = 'dot green';
+      } else if (volt < 11.8) {
+        pillTxt.innerText = '电瓶: ' + voltStr + 'V (亏电预警)';
+        if (pillDot) pillDot.className = 'dot red';
+      } else {
+        pillTxt.innerText = '电瓶: ' + voltStr + 'V (健康) · 耗电中';
+        if (pillDot) pillDot.className = 'dot green';
+      }
+    }
+
+    // 2. 更新 Modal 内部卡片
+    var voltBig = document.getElementById('vhBatteryVoltBig');
+    if (voltBig) voltBig.innerText = voltStr;
+
+    var batBadge = document.getElementById('vhBatteryBadge');
+    if (batBadge) {
+      batBadge.innerText = voltStatus;
+      if (d.battery_class === 'red') {
+        batBadge.className = 'btn-status-pill red';
+      } else {
+        batBadge.className = 'btn-status-pill green';
+      }
+    }
+
+    var genBig = document.getElementById('vhGeneratorBig');
+    if (genBig) genBig.innerText = genStatus;
+
+    var genBadge = document.getElementById('vhGeneratorBadge');
+    if (genBadge) {
+      genBadge.innerText = isCharging ? '发电机工作' : '电瓶耗电中';
+      genBadge.className = isCharging ? 'btn-status-pill green' : 'btn-status-pill blue';
+    }
+
+    var genSub = document.getElementById('vhGeneratorSub');
+    if (genSub) {
+      genSub.innerText = isCharging ?
+        '发动机已启动，发电机正在向 12V 蓄电池大电流充电' :
+        '发动机未运转，当前由 12V 蓄电池单向供电，请留意电量防亏电';
+    }
+
+    // 3. PM2.5 自适应展示
+    var cardPm25 = document.getElementById('vhCardPm25');
+    if (cardPm25) {
+      if (d.has_pm25) {
+        cardPm25.style.display = 'flex';
+        var pIn = document.getElementById('vhPm25In');
+        var pOut = document.getElementById('vhPm25Out');
+        if (pIn) pIn.innerText = d.pm25_in;
+        if (pOut) pOut.innerText = d.pm25_out;
+      } else {
+        cardPm25.style.display = 'none';
+      }
+    }
+
+    // 4. 车型协议名称
+    var mBig = document.getElementById('vhModelNameBig');
+    if (mBig) mBig.innerText = d.model_name || '吉利缤越 COOL (2022款 · 1.5TD 激擎版)';
+
+    if (isManualRefresh) {
+      showToast('车辆实时参数已刷新');
+    }
+  } catch(e) {
+    console.error('updateVehicleHealthUI error:', e);
+  }
+}
