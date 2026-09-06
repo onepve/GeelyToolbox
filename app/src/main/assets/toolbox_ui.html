@@ -1568,9 +1568,8 @@ body.light .btn-mini:active {
       </div>
     </div>
 
-    <div class="modal-actions" style="justify-content:flex-end; gap:14px; margin-top:10px;">
-      <button class="btn-ctrl-md" id="btnUpdateLater" style="min-width:140px; height:54px; font-size:16px; font-weight:800;" onclick="closeModal('updateModal')">稍后再说</button>
-      <button class="btn-ctrl-md highlight" id="btnStartSelfUpdate" style="min-width:260px; height:54px; font-size:17.5px; font-weight:900; background:var(--accent) !important; color:#0F172A !important; border:none !important;" onclick="handleStartSelfUpdate()">立即更新 (安全直装)</button>
+    <div class="modal-actions" style="justify-content:center; gap:14px; margin-top:10px;">
+      <button class="btn-ctrl-md highlight" id="btnStartSelfUpdate" style="min-width:320px; height:54px; font-size:18px; font-weight:900; background:var(--accent) !important; color:#0F172A !important; border:none !important;" onclick="handleStartSelfUpdate()">立即更新 (安全直装)</button>
     </div>
   </div>
 </div>
@@ -2231,128 +2230,54 @@ body.light .btn-mini:active {
         </div>
       </div>
 
-      <!-- 6. 前进挡与倒车挡 (D挡起步 / R挡倒车) -->
+            <!-- 6. 转向灯联动 360 全景影像 (带低速安全阈值) -->
       <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; gap:12px;">
         <div style="flex:1; min-width:240px;">
-          <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong);">6. 前进挡与倒车挡 (D挡起步 / R挡倒车)</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">换挡即时打断零排队；D挡起步播报，R挡倒车警示</div>
+          <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong);">6. 转向灯联动 360 全景影像</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">打转向灯低速 (≤30km/h) 自动弹出 360 盲区影像；高速变道不弹窗遮挡导航</div>
           <div style="display:flex; align-items:center; gap:8px; margin-top:5px;">
-            <span id="pillVoice_gear_d"></span>
-            <span id="pillVoice_gear_r"></span>
+            <span id="pillVoice_turn_360"></span>
           </div>
         </div>
         <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
-          <!-- D 挡 -->
-          <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
-            <button class="btn-ctrl-md" id="btnVoice_gear_d" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_gear_d')">D挡: 关</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('gear_d.mp3', '6. 挂入前进挡 (D挡)')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('gear_d')">试听D挡</button>
-          </div>
-          <!-- R 挡 -->
-          <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
-            <button class="btn-ctrl-md" id="btnVoice_gear_r" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_gear_r')">R挡: 关</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('gear_r.mp3', '6. 挂入倒车挡 (R挡)')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('gear_r')">试听倒车</button>
-          </div>
+          <button class="btn-ctrl-md" id="btnVoice_turn_360" style="min-height:34px; min-width:90px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('vehicle_turn_360_enabled')">联动: 关</button>
         </div>
       </div>
 
-      <!-- 7. 驻车挡与空挡 (P挡驻车 / N挡空挡) -->
+      <!-- 7. 大灯联动高德日夜模式 -->
       <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; gap:12px;">
         <div style="flex:1; min-width:240px;">
-          <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong);">7. 驻车挡与空挡 (P挡驻车 / N挡空挡)</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">挂入P挡提示已驻车，挂入N挡提示空挡</div>
+          <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong);">7. 大灯联动高德日夜模式</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">进隧道或天黑开大灯，高德自动切黑夜深色；关大灯自动切白天浅色</div>
           <div style="display:flex; align-items:center; gap:8px; margin-top:5px;">
-            <span id="pillVoice_gear_p"></span>
-            <span id="pillVoice_gear_n"></span>
+            <span id="pillVoice_light_nav"></span>
           </div>
         </div>
         <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
-          <!-- P 挡 -->
-          <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
-            <button class="btn-ctrl-md" id="btnVoice_gear_p" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_gear_p')">P挡: 关</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('gear_p.mp3', '7. 挂入驻车挡 (P挡)')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('gear_p')">试听P挡</button>
-          </div>
-          <!-- N 挡 -->
-          <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
-            <button class="btn-ctrl-md" id="btnVoice_gear_n" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_gear_n')">N挡: 关</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('gear_n.mp3', '7. 挂入空挡 (N挡)')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('gear_n')">试听N挡</button>
-          </div>
+          <button class="btn-ctrl-md" id="btnVoice_light_nav" style="min-height:34px; min-width:90px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('vehicle_light_nav_enabled')">联动: 关</button>
         </div>
       </div>
 
-      <!-- 8. 舒适模式与运动模式 (舒适巡航 / 运动激擎) -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; gap:12px;">
-        <div style="flex:1; min-width:240px;">
-          <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong);">8. 舒适模式与运动模式 (舒适巡航 / 运动激擎)</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">旋钮或大屏切换模式实时播报，快切即时打断零延迟</div>
-          <div style="display:flex; align-items:center; gap:8px; margin-top:5px;">
-            <span id="pillVoice_mode_comfort"></span>
-            <span id="pillVoice_mode_sport"></span>
-          </div>
-        </div>
-        <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
-          <!-- 舒适模式 -->
-          <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
-            <button class="btn-ctrl-md" id="btnVoice_mode_comfort" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_mode_comfort')">舒适: 关</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('mode_comfort.mp3', '8. 舒适模式')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('mode_comfort')">试听舒适</button>
-          </div>
-          <!-- 运动模式 -->
-          <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
-            <button class="btn-ctrl-md" id="btnVoice_mode_sport" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_mode_sport')">运动: 关</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('mode_sport.mp3', '8. 运动模式')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('mode_sport')">试听运动</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 9. 经济模式与智能模式 (经济省油 / 智能自适应) -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; gap:12px;">
-        <div style="flex:1; min-width:240px;">
-          <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong);">9. 经济模式与智能模式 (经济省油 / 智能自适应)</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">切换到节能ECO或自适应SMART模式时专属发声提醒</div>
-          <div style="display:flex; align-items:center; gap:8px; margin-top:5px;">
-            <span id="pillVoice_mode_eco"></span>
-            <span id="pillVoice_mode_smart"></span>
-          </div>
-        </div>
-        <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
-          <!-- 经济模式 -->
-          <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
-            <button class="btn-ctrl-md" id="btnVoice_mode_eco" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_mode_eco')">经济: 关</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('mode_eco.mp3', '9. 经济模式')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('mode_eco')">试听经济</button>
-          </div>
-          <!-- 智能模式 -->
-          <div style="display:flex; gap:5px; align-items:center; background:rgba(0,0,0,0.02); padding:3px 6px; border-radius:8px; border:1px solid var(--border);">
-            <button class="btn-ctrl-md" id="btnVoice_mode_smart" style="min-height:34px; min-width:74px; font-size:12.5px; font-weight:800;" onclick="handleToggleVehicleAuto('voice_enable_mode_smart')">智能: 关</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleEditCustomVoiceText('mode_smart.mp3', '9. 智能模式')">自定义</button>
-            <button class="btn-ctrl-md" style="padding:4px 10px; min-height:34px; font-size:12px;" onclick="handleTestVoice('mode_smart')">试听智能</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 10. 车型协议自适应联动 -->
+      <!-- 8. 车型协议专车专架与自适应联动 -->
       <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; gap:12px; background:rgba(0,0,0,0.02); border:1px dashed var(--border);">
         <div style="flex:1; min-width:240px;">
-          <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong);">当前适配车型协议</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;" id="vehicleModelDesc">自动检测中...</div>
+          <div style="font-size:14.5px; font-weight:800; color:var(--txt-strong);">当前适配车型协议 (专车专架)</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;" id="vehicleModelDesc">自适应检测中...</div>
         </div>
         <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
-          <button class="btn-ctrl-md highlight" id="btnModel_cool" style="padding:4px 12px; min-height:34px; font-size:12px; font-weight:800;" onclick="handleSelectVehicleModel('cool')">缤越 COOL (默认)</button>
+          <button class="btn-ctrl-md highlight" id="btnModel_auto" style="padding:4px 12px; min-height:34px; font-size:12px; font-weight:800;" onclick="handleSelectVehicleModel('auto')">自适应检测 (默认)</button>
+          <button class="btn-ctrl-md" id="btnModel_cool" style="padding:4px 12px; min-height:34px; font-size:12px; font-weight:800;" onclick="handleSelectVehicleModel('cool')">缤越 COOL 激擎版</button>
           <button class="btn-ctrl-md" id="btnModel_xingrui" style="padding:4px 12px; min-height:34px; font-size:12px; font-weight:800;" onclick="handleSelectVehicleModel('xingrui')">吉利星瑞</button>
           <button class="btn-ctrl-md" id="btnModel_general" style="padding:4px 12px; min-height:34px; font-size:12px; font-weight:800;" onclick="handleSelectVehicleModel('general')">通用吉利协议</button>
         </div>
       </div>
 
-
     </div>
-    <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
-      <button class="btn-ctrl-md highlight" style="font-size:13px; font-weight:800; padding:6px 18px;" onclick="handleOpenTtsSettings()">车机 TTS 语音引擎设置</button>
-      <button class="btn-ctrl-md primary" style="min-width:100px;" onclick="closeModal('vehicleAutoModal')">完成</button>
+    <div class="modal-actions" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="pill" id="ttsEngineStatusBadge" style="font-size:12px; font-weight:800; padding:6px 14px; background:rgba(14,165,233,0.12); color:var(--accent); border:1px solid rgba(14,165,233,0.3);">语音引擎: 专车专用就绪</span>
+      </div>
+      <button class="btn-ctrl-md primary" style="min-width:120px;" onclick="closeModal('vehicleAutoModal')">完成</button>
     </div>
   </div>
 </div>
@@ -4766,16 +4691,6 @@ function refreshVehicleAutoUI() {
   updateAutoBtn('btnVoice_door_rr_close', vehicleAutoSettings.voice_door_rr_close);
   updateAutoBtn('btnVoice_trunk_open', vehicleAutoSettings.voice_trunk_open);
   updateAutoBtn('btnVoice_trunk_close', vehicleAutoSettings.voice_trunk_close);
-  updateAutoBtn('btnVoice_gear_d', vehicleAutoSettings.voice_gear_d);
-  updateAutoBtn('btnVoice_gear_r', vehicleAutoSettings.voice_gear_r);
-  updateAutoBtn('btnVoice_gear_p', vehicleAutoSettings.voice_gear_p);
-  updateAutoBtn('btnVoice_gear_n', vehicleAutoSettings.voice_gear_n);
-  updateAutoBtn('btnVoice_mode_comfort', vehicleAutoSettings.voice_mode_comfort);
-  updateAutoBtn('btnVoice_mode_sport', vehicleAutoSettings.voice_mode_sport);
-  updateAutoBtn('btnVoice_mode_eco', vehicleAutoSettings.voice_mode_eco);
-  updateAutoBtn('btnVoice_mode_smart', vehicleAutoSettings.voice_mode_smart);
-  updateAutoBtn('btnVoice_drive_mode', vehicleAutoSettings.voice_drive_mode);
-  updateAutoBtn('btnVoice_gear', vehicleAutoSettings.voice_gear);
 
   updateVehicleModelUI();
   refreshVoiceLabels();
@@ -5010,11 +4925,11 @@ function handleToggleVehicleAuto(key) {
 
 function updateVehicleModelUI() {
   var modelDescEl = document.getElementById('vehicleModelDesc');
-  var curModel = 'cool';
-  var curName = '吉利缤越 COOL (SX11-A3 · 亿咖通 E02)';
+  var curModel = 'auto';
+  var curName = '自适应锁定: 吉利缤越 COOL (2022款 · 1.5TD 激擎版)';
   if (window.ToolboxBridge) {
     if (typeof window.ToolboxBridge.getSelectedVehicleModel === 'function') {
-      curModel = window.ToolboxBridge.getSelectedVehicleModel() || 'cool';
+      curModel = window.ToolboxBridge.getSelectedVehicleModel() || 'auto';
     }
     if (typeof window.ToolboxBridge.getVehicleModelName === 'function') {
       curName = window.ToolboxBridge.getVehicleModelName() || curName;
@@ -5023,7 +4938,7 @@ function updateVehicleModelUI() {
   if (modelDescEl) {
     modelDescEl.innerText = '当前生效协议：' + curName;
   }
-  ['cool', 'xingrui', 'general'].forEach(function(m) {
+  ['auto', 'cool', 'xingrui', 'general'].forEach(function(m) {
     var b = document.getElementById('btnModel_' + m);
     if (b) {
       if (m === curModel) {
@@ -5033,6 +4948,22 @@ function updateVehicleModelUI() {
       }
     }
   });
+
+  var ttsBadge = document.getElementById('ttsEngineStatusBadge');
+  if (ttsBadge && window.ToolboxBridge && typeof window.ToolboxBridge.isXiaoAiTtsInstalled === 'function') {
+    var isXiaoai = window.ToolboxBridge.isXiaoAiTtsInstalled();
+    if (isXiaoai) {
+      ttsBadge.innerText = '语音引擎: 小爱TTS (专车专用) · 运行中';
+      ttsBadge.style.background = 'rgba(16,185,129,0.15)';
+      ttsBadge.style.color = '#10B981';
+      ttsBadge.style.borderColor = 'rgba(16,185,129,0.3)';
+    } else {
+      ttsBadge.innerText = '语音引擎: 系统原生默认引擎';
+      ttsBadge.style.background = 'rgba(14,165,233,0.12)';
+      ttsBadge.style.color = 'var(--accent)';
+      ttsBadge.style.borderColor = 'rgba(14,165,233,0.3)';
+    }
+  }
 }
 
 function handleSelectVehicleModel(modelKey) {

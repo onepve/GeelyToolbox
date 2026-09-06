@@ -2195,16 +2195,21 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public String getVehicleModelName() {
             android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            String manual = prefs.getString("selected_vehicle_model", "cool");
+            String manual = prefs.getString("selected_vehicle_model", "auto");
+            if ("cool".equals(manual)) return "吉利缤越 COOL (2022款 · 1.5TD 激擎版)";
             if ("xingrui".equals(manual)) return "吉利星瑞 (FS11 · CMA架构)";
-            if ("general".equals(manual)) return "吉利博越L/银河 (通用吉利协议)";
-            return "吉利缤越 COOL (SX11-A3 · 亿咖通 E02)";
+            if ("general".equals(manual)) return "通用吉利车型 (已安全降级)";
+            // auto
+            String detected = VehicleAutomationService.detectVehicleModel();
+            if ("cool".equals(detected)) return "自适应锁定: 吉利缤越 COOL (2022款 · 1.5TD 激擎版)";
+            if ("xingrui".equals(detected)) return "自适应锁定: 吉利星瑞 (FS11 · CMA架构)";
+            return "自适应锁定: 通用吉利车型 (已安全降级)";
         }
 
         @JavascriptInterface
         public String getSelectedVehicleModel() {
             android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            return prefs.getString("selected_vehicle_model", "cool");
+            return prefs.getString("selected_vehicle_model", "auto");
         }
 
         @JavascriptInterface
@@ -2326,24 +2331,21 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        Intent xiaoaiIntent = new Intent();
-                        xiaoaiIntent.setClassName("com.xiaomi.mibrain.speech", "com.xiaomi.mibrain.speech.tts.TtsSettingsActivity");
-                        xiaoaiIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(xiaoaiIntent);
-                        return;
-                    } catch (Exception ignored) {
-                    }
-
-                    try {
-                        Intent sysTts = new Intent("com.android.settings.TTS_SETTINGS");
-                        sysTts.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(sysTts);
-                    } catch (Exception e) {
-                        Toast.makeText(context, "未找到语音引擎设置界面", Toast.LENGTH_SHORT).show();
+                    boolean xiaoaiInstalled = SystemUtils.isPackageInstalled(context, "com.xiaomi.mibrain.speech");
+                    if (xiaoaiInstalled) {
+                        SystemUtils.executeShell("settings put secure tts_default_synth com.xiaomi.mibrain.speech && settings put secure tts_enabled_plugins com.xiaomi.mibrain.speech");
+                        Toast.makeText(context, "小爱TTS引擎已自动激活为默认语音！", Toast.LENGTH_SHORT).show();
+                        AppLogger.i("语音引擎", "小爱TTS引擎底层自动激活成功");
+                    } else {
+                        Toast.makeText(context, "未安装小爱TTS引擎，可从商城下载", Toast.LENGTH_SHORT).show();
                     }
                 }
             });
+        }
+
+        @JavascriptInterface
+        public boolean isXiaoAiTtsInstalled() {
+            return SystemUtils.isPackageInstalled(context, "com.xiaomi.mibrain.speech");
         }
 
         @JavascriptInterface
