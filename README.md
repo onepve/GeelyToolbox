@@ -6,6 +6,17 @@
 
 ---
 
+## 项目信息与官方图文教程
+
+- **GitHub 开源仓库**：[onepve/GeelyToolbox](https://github.com/onepve/GeelyToolbox)
+- **官方保姆级图文教程**：[吉利控制台 (GeelyToolbox) 从零初始化与座舱实战全指南](https://onepve.com/geely-toolbox-guide/)
+- **最新正式版本**：`v1.3.2` (versionCode `7032`)
+- **官方直装下载直链**：[GeelyToolbox.apk (v1.3.2)](https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.3.2)
+- **版本元数据接口**：[version.json](https://dl.onepve.com/GeelyToolbox/version.json)
+- **配套软件源接口**：[apps.json](https://dl.onepve.com/GeelyToolbox/apps.json)
+
+---
+
 ## 软件实测预览
 
 ### 1. 座舱主控台全景首屏 · 日间亮色模式（1920×720 · 跟随系统）
@@ -138,6 +149,7 @@
 ## 交流反馈与公益声明
 
 - **纯免费公益声明**：本控制台为吉利车友圈纯免费公益软件，**没有任何商业收费项目**；觉得软件好用的车友可通过内置赞赏码自愿赞赏支持作者持续迭代；
+- **官方保姆级图文教程**：[吉利控制台 (GeelyToolbox) 从零初始化与座舱实战全指南](https://onepve.com/geely-toolbox-guide/)
 - **车友交流 QQ 群**：`564654011`
 
 ---
