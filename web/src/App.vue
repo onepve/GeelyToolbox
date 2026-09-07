@@ -28,6 +28,7 @@
     <CustomVoiceTextModal />
     <ConfirmModal />
     <RabbitInstallModal />
+    <UpdateModal />
 
     <!-- 极简 Toast 提示 -->
     <transition name="fade">
@@ -61,6 +62,7 @@ import AppDetailModal from './components/modals/AppDetailModal.vue';
 import CustomVoiceTextModal from './components/modals/CustomVoiceTextModal.vue';
 import ConfirmModal from './components/modals/ConfirmModal.vue';
 import RabbitInstallModal from './components/modals/RabbitInstallModal.vue';
+import UpdateModal from './components/modals/UpdateModal.vue';
 
 import { store, bridge } from './store';
 

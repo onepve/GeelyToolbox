@@ -105,6 +105,27 @@
       </button>
     </div>
 
+    <!-- 5. 自动检测更新与版本升级管理 -->
+    <div class="bg-car-item border border-car-border rounded-3xl p-6 flex items-center justify-between gap-6 shadow-sm">
+      <div class="flex flex-col gap-1.5">
+        <span class="text-[22px] font-black text-car-text">开机与前台自动检测更新</span>
+        <span class="text-[16px] text-car-sub font-bold">
+          开启后，有新版本时将自动弹出更新提示卡片；关闭后彻底静默，仅限手动点击下方【检查版本更新】升级
+        </span>
+      </div>
+      <button 
+        @click="toggleAutoCheckUpdate"
+        :class="[
+          'min-h-[72px] px-6 rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all min-w-[200px] shadow-sm whitespace-nowrap flex items-center justify-center',
+          autoCheckUpdateEnabled
+            ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-md' 
+            : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+        ]"
+      >
+        {{ autoCheckUpdateEnabled ? '已开启 (推荐)' : '已关闭 (彻底静默)' }}
+      </button>
+    </div>
+
     <!-- 底部操作按钮 (车规大触控 66px) -->
     <template #footer>
       <div class="flex items-center justify-between w-full">
@@ -128,9 +149,23 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, showToast } from '../../store';
+
+const autoCheckUpdateEnabled = ref(localStorage.getItem('geely_auto_check_update') !== 'false');
+
+function toggleAutoCheckUpdate() {
+  autoCheckUpdateEnabled.value = !autoCheckUpdateEnabled.value;
+  localStorage.setItem('geely_auto_check_update', String(autoCheckUpdateEnabled.value));
+  if (autoCheckUpdateEnabled.value) {
+    // 恢复自动更新时，同时清空之前标记的“不再提醒版本号”，让最新版本能够重新被检测
+    localStorage.removeItem('geely_ignored_update_version');
+    showToast('已恢复自动检测更新，后续新版本将正常提醒');
+  } else {
+    showToast('已关闭自动检测更新，前台将不再主动弹窗');
+  }
+}
 
 const batteryStatus = computed(() => {
   const volt = (store.deviceInfo.battery_volt || 126) / 10;

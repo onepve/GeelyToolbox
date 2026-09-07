@@ -3,7 +3,7 @@
     <!-- 品牌与版本 -->
     <div class="flex items-center gap-2.5">
       <span class="text-[20px] font-black text-car-text tracking-wide">吉利智驾</span>
-      <span class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-text font-extrabold border border-car-border">v{{ store.deviceInfo.version || '1.3.9' }}</span>
+      <span class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-text font-extrabold border border-car-border">v{{ store.deviceInfo.version || '1.4.0' }}</span>
     </div>
 
     <!-- 中部状态指示器 -->
