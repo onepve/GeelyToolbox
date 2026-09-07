@@ -60,8 +60,41 @@ export const store = reactive({
 
   // 云端应用与下载
   apps: [],
-  downloadProgress: {}
+  downloadProgress: {},
+
+  // 7 大二级弹窗管理
+  modals: {
+    settings: false,
+    deepTools: false,
+    qrCode: false,
+    dialer: false,
+    appDetail: null,
+    customVoiceText: null,
+    confirm: null,
+    update: false,
+    reward: false
+  },
+  
+  // 系统设置持久态
+  settings: {
+    autostart: false,
+    floating_pill: false,
+    floating_mode: 'title', // 'title' | 'code'
+    expert_rabbit: false
+  }
 });
+
+export function openModal(modalName, payload = null) {
+  if (modalName in store.modals) {
+    store.modals[modalName] = payload !== null ? payload : true;
+  }
+}
+
+export function closeModal(modalName) {
+  if (modalName in store.modals) {
+    store.modals[modalName] = typeof store.modals[modalName] === 'boolean' ? false : null;
+  }
+}
 
 export function showToast(msg) {
   store.toast.msg = msg;

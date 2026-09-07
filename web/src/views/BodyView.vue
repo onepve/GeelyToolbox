@@ -61,12 +61,20 @@
               @click="toggleSetting('voice_enable_door_fl_close')"
             />
           </div>
-          <button 
-            @click="testVoice('door_fl')"
-            class="min-h-[44px] bg-car-card border border-car-border rounded-lg text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light"
-          >
-            试听开门语音
-          </button>
+          <div class="grid grid-cols-2 gap-2">
+            <button 
+              @click="testVoice('door_fl')"
+              class="min-h-[44px] bg-car-card border border-car-border rounded-lg text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light"
+            >
+              试听开门语音
+            </button>
+            <button 
+              @click="openCustomVoice('door_fl', '主驾车门')"
+              class="min-h-[44px] bg-car-card border border-car-border text-car-sub hover:text-car-text font-black text-[15px] rounded-lg cursor-pointer hover:border-car-border-light"
+            >
+              自定义台词
+            </button>
+          </div>
         </div>
 
         <!-- 副驾 FR -->
@@ -86,12 +94,20 @@
               @click="toggleSetting('voice_enable_door_fr_close')"
             />
           </div>
-          <button 
-            @click="testVoice('door_fr')"
-            class="min-h-[44px] bg-car-card border border-car-border rounded-lg text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light"
-          >
-            试听开门语音
-          </button>
+          <div class="grid grid-cols-2 gap-2">
+            <button 
+              @click="testVoice('door_fr')"
+              class="min-h-[44px] bg-car-card border border-car-border rounded-lg text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light"
+            >
+              试听开门语音
+            </button>
+            <button 
+              @click="openCustomVoice('door_fr', '副驾车门')"
+              class="min-h-[44px] bg-car-card border border-car-border text-car-sub hover:text-car-text font-black text-[15px] rounded-lg cursor-pointer hover:border-car-border-light"
+            >
+              自定义台词
+            </button>
+          </div>
         </div>
 
         <!-- 左后 RL -->
@@ -204,7 +220,7 @@
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
-import { store, bridge, showToast } from '../store';
+import { store, bridge, openModal, showToast } from '../store';
 
 function toggleSetting(key) {
   const next = !store.vehicleAuto[key];
@@ -215,5 +231,13 @@ function toggleSetting(key) {
 
 function testVoice(type) {
   bridge.call('testVehicleVoice', type);
+}
+
+function openCustomVoice(key, title) {
+  openModal('customVoiceText', {
+    key,
+    title,
+    text: store.vehicleAuto[`custom_voice_text_${key}`] || ''
+  });
 }
 </script>

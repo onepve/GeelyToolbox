@@ -46,7 +46,7 @@
 
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
-import { bridge, showToast } from '../store';
+import { bridge, openModal, showToast } from '../store';
 
 function openFileManager() {
   bridge.call('openFileManager');
@@ -54,12 +54,10 @@ function openFileManager() {
 }
 
 function showQrCode() {
-  bridge.call('getQrCodeUrl');
-  showToast('正在展示快传二维码...');
+  openModal('qrCode');
 }
 
 function openDialer() {
-  bridge.call('openDialer');
-  showToast('正在调起车机拨号盘...');
+  openModal('dialer');
 }
 </script>

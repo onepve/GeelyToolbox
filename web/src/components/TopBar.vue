@@ -57,18 +57,17 @@
 
 <script setup>
 import { computed } from 'vue';
-import { store, bridge, showToast } from '../store';
+import { store, bridge, openModal, showToast } from '../store';
 
 const statusPills = computed(() => [
-  { text: `暗码(+10): ${store.dynamicCode}`, onClick: () => bridge.call('openDialer') },
+  { text: `暗码(+10): ${store.dynamicCode}`, onClick: () => openModal('dialer') },
   { text: `商店: ${store.deviceInfo.appstore_frozen ? '已冻结' : '未冻结'}`, onClick: () => bridge.call('toggleAppstoreFreeze') },
   { text: `白名单: ${store.deviceInfo.whitelist ? '已放行 1' : '未放行 0'}`, onClick: () => bridge.call('toggleWhitelist') },
-  { text: `IP: ${store.deviceInfo.car_ip}`, onClick: () => bridge.call('getQrCodeUrl') }
+  { text: `IP: ${store.deviceInfo.car_ip}`, onClick: () => openModal('qrCode') }
 ]);
 
 function openDeepTools() {
-  bridge.call('openDeepToolsModal');
-  showToast('正在打开 ADB 工具...');
+  openModal('deepTools');
 }
 
 function toggleTheme() {
@@ -84,13 +83,11 @@ function toggleTheme() {
 }
 
 function openFastShare() {
-  bridge.call('getQrCodeUrl');
-  showToast('正在打开无线快传...');
+  openModal('qrCode');
 }
 
 function openSettings() {
-  bridge.call('openSettingsModal');
-  showToast('正在打开系统设置...');
+  openModal('settings');
 }
 
 function exitApp() {

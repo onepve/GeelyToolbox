@@ -33,7 +33,8 @@
       <div 
         v-for="app in filteredApps" 
         :key="app.id"
-        class="bg-car-card border border-car-border rounded-2xl p-5 flex flex-col justify-between gap-4"
+        @click="openModal('appDetail', app)"
+        class="bg-car-card border border-car-border rounded-2xl p-5 flex flex-col justify-between gap-4 cursor-pointer hover:border-car-border-light transition-all"
       >
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center justify-between">
@@ -44,7 +45,7 @@
         </div>
 
         <button 
-          @click="handleDownload(app)"
+          @click.stop="handleDownload(app)"
           class="min-h-[58px] bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent-light shadow-md ring-2 ring-car-accent/15"
         >
           {{ app.statusText || '立即下载安装' }}
@@ -56,7 +57,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { store, bridge, showToast } from '../store';
+import { store, bridge, openModal, showToast } from '../store';
 
 const currentCategory = ref('all');
 const categories = [

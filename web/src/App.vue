@@ -19,6 +19,15 @@
       </section>
     </main>
 
+    <!-- 7 大 M3 车规级二级模态弹窗 -->
+    <SettingsModal />
+    <DeepToolsModal />
+    <QrCodeModal />
+    <DialerModal />
+    <AppDetailModal />
+    <CustomVoiceTextModal />
+    <ConfirmModal />
+
     <!-- 极简 Toast 提示 -->
     <transition name="fade">
       <div 
@@ -41,6 +50,16 @@ import AudioView from './views/AudioView.vue';
 import StoreView from './views/StoreView.vue';
 import InstallView from './views/InstallView.vue';
 import SystemView from './views/SystemView.vue';
+
+// 7 大 M3 二级模态弹窗组件
+import SettingsModal from './components/modals/SettingsModal.vue';
+import DeepToolsModal from './components/modals/DeepToolsModal.vue';
+import QrCodeModal from './components/modals/QrCodeModal.vue';
+import DialerModal from './components/modals/DialerModal.vue';
+import AppDetailModal from './components/modals/AppDetailModal.vue';
+import CustomVoiceTextModal from './components/modals/CustomVoiceTextModal.vue';
+import ConfirmModal from './components/modals/ConfirmModal.vue';
+
 import { store, bridge } from './store';
 
 onMounted(() => {

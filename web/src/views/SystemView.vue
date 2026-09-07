@@ -65,16 +65,32 @@
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
-import { store, bridge, showToast } from '../store';
+import { store, bridge, openModal, showToast } from '../store';
 
 function softReboot() {
-  bridge.call('softReboot');
-  showToast('正在执行软重启...');
+  openModal('confirm', {
+    title: '一键软重启车机 (5秒)',
+    desc: '即将重载 Android 系统服务与白名单进程，不重启整机 Linux 内核与整车电源，耗时约 5~8 秒。',
+    tip: '适用场景：卡兔子时钟伪装后激活白名单、消除临时系统界面卡顿。',
+    isDanger: false,
+    onConfirm: () => {
+      bridge.call('softReboot');
+      showToast('已下发软重启指令，请稍候...');
+    }
+  });
 }
 
 function hardReboot() {
-  bridge.call('hardReboot');
-  showToast('正在执行整车硬件冷重启...');
+  openModal('confirm', {
+    title: '整车完整硬件冷重启 (reboot)',
+    desc: '即将对整车中控硬件执行完全掉电冷启动 (reboot)，耗时约 25~35 秒。',
+    tip: '高危提示：正在行车时请勿执行整车冷重启！',
+    isDanger: true,
+    onConfirm: () => {
+      bridge.call('hardReboot');
+      showToast('已下发整车冷重启指令，中控即将断电重启...');
+    }
+  });
 }
 
 function toggleAppstoreFreeze() {
