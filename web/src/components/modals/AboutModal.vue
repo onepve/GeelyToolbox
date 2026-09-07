@@ -14,7 +14,6 @@
           <span 
             @click="handleVersionClick"
             class="text-[14px] px-3 py-1 rounded-full bg-car-card text-car-text font-black border border-car-border cursor-pointer hover:border-car-border-light transition-all shadow-sm select-none"
-            title="连续点击 5 次解锁内测特权身份"
           >
             v{{ displayVersion }}
           </span>
@@ -40,21 +39,20 @@
         </div>
       </div>
 
-      <!-- 内测特权卡片 (未解锁时提示彩蛋，已解锁时直出双轨切换) -->
-      <div class="p-5 rounded-2xl bg-car-card border border-car-border flex flex-col space-y-3">
+      <!-- 内测特权卡片 (默认彻底隐藏，点满5次静默解锁后才展示) -->
+      <div v-if="isTester" class="p-5 rounded-2xl bg-car-card border border-car-border flex flex-col space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex flex-col">
             <span class="text-[16.5px] font-black text-car-text flex items-center">
               <span class="mr-2">👑</span> 开发者与内测特权身份
             </span>
             <span class="text-[13.5px] text-car-sub font-bold mt-0.5">
-              {{ isTester ? '已激活内测特权：支持在测试通道 (Beta) 与正式通道 (Release) 之间自由切换' : '点击上方版本号 5 次即可解锁内测特权通道' }}
+              已激活内测特权：支持在测试通道 (Beta) 与正式通道 (Release) 之间自由切换
             </span>
           </div>
 
           <!-- 通道切换大按钮 -->
           <button 
-            v-if="isTester"
             @click="toggleBetaChannel"
             :class="[
               'h-[52px] px-5 rounded-xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm flex items-center',
@@ -68,7 +66,7 @@
         </div>
 
         <!-- 测试通道说明与独立检查按钮 -->
-        <div v-if="isTester && useBetaChannel" class="pt-3 border-t border-car-border/60 flex items-center justify-between">
+        <div v-if="useBetaChannel" class="pt-3 border-t border-car-border/60 flex items-center justify-between">
           <span class="text-[13.5px] text-amber-300 font-bold">
             当前处于测试通道：将优先接收前沿功能实验固件包与内测修复。
           </span>
@@ -164,14 +162,13 @@ function handleVersionClick() {
   lastVersionClickTime = now;
   versionClickCount++;
 
-  if (versionClickCount < 5) {
-    showToast(`再连续点击 ${5 - versionClickCount} 次解锁内测特权身份`);
-  } else if (versionClickCount === 5) {
+  if (versionClickCount >= 5) {
+    versionClickCount = 0;
     isTester.value = true;
     localStorage.setItem('geely_tester_unlocked', 'true');
     useBetaChannel.value = true;
     localStorage.setItem('geely_use_beta_channel', 'true');
-    showToast('👑 恭喜解锁内测特权！已自动切换至【测试通道 (Beta)】');
+    showToast('👑 恭喜解锁内测特权！已自动开启测试通道');
   }
 }
 

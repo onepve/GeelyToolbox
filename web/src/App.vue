@@ -34,6 +34,7 @@
     <UpdateModal />
     <LogModal />
     <VoiceItemSettingsModal />
+    <OtaCaptureModal />
 
     <!-- 极简 Toast 提示 -->
     <transition name="fade">
@@ -73,6 +74,7 @@ import RabbitInstallModal from './components/modals/RabbitInstallModal.vue';
 import UpdateModal from './components/modals/UpdateModal.vue';
 import LogModal from './components/modals/LogModal.vue';
 import VoiceItemSettingsModal from './components/modals/VoiceItemSettingsModal.vue';
+import OtaCaptureModal from './components/modals/OtaCaptureModal.vue';
 
 import { store, bridge } from './store';
 

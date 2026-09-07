@@ -77,7 +77,13 @@
     <div class="flex flex-col">
       <div class="flex items-center justify-between mb-3">
         <span class="text-[21px] font-black text-car-text">ADB 交互控制台</span>
-        <div class="flex">
+        <div class="flex items-center">
+          <button 
+            @click="openOtaCapture"
+            class="min-h-[50px] px-5 mr-3 rounded-xl bg-amber-500/15 border-2 border-amber-500/50 text-amber-400 hover:border-amber-400 font-black text-[15.5px] cursor-pointer shadow-sm flex items-center shrink-0"
+          >
+            抓 OTA 地址
+          </button>
           <button 
             @click="clearOutput"
             class="min-h-[50px] px-6 mr-3 rounded-xl bg-car-item border border-car-border text-car-sub hover:text-car-text font-bold text-[16px] cursor-pointer hover:border-car-border-light"
@@ -131,7 +137,11 @@
 <script setup>
 import { ref } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
-import { store, bridge, closeModal, showToast } from '../../store';
+import { store, bridge, closeModal, openModal, showToast } from '../../store';
+
+function openOtaCapture() {
+  openModal('otaCapture');
+}
 
 const inputCmd = ref('');
 const outputText = ref('[ADB Client 127.0.0.1:5555 就绪 · 输入指令并回车执行]\n$ ');

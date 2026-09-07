@@ -1153,6 +1153,30 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public boolean openSystemUpgrade() {
+            return SystemUtils.openSystemUpgrade(context);
+        }
+
+        @JavascriptInterface
+        public boolean copyToClipboard(final String text) {
+            if (text == null) return false;
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                        if (cm != null) {
+                            ClipData clip = ClipData.newPlainText("GeelyToolbox", text);
+                            cm.setPrimaryClip(clip);
+                            Toast.makeText(context, "已复制到剪贴板", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception ignored) {}
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
         public String getDeviceUid() {
             try {
                 String androidId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
