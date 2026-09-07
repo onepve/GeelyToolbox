@@ -1154,7 +1154,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public boolean openSystemUpgrade() {
-            return SystemUtils.openSystemUpgrade(context);
+            return SystemUtils.openSystemUpdate(context);
         }
 
         @JavascriptInterface
