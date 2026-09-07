@@ -304,8 +304,8 @@ public class VehicleAutomationService extends Service {
                         // 3. ECARX@ECP (MCU 物理挡位报文 GearPosition)
                         // 4. InputManager / CAR.INPUT (方向盘按键报文)
                         // -T 1 强制仅从当前最新开始实时监听，绝不回放旧日志
-                        ProcessBuilder pb = new ProcessBuilder("logcat", "-T", "1", "-b", "main", "-b", "system", "-v", "brief",
-                                "-s", "VehicleDataBuilder:D", "SerialControl_v2_0:W", "ECARX@ECP:D", "InputManager:V", "CAR.INPUT:V", "e:D");
+                        ProcessBuilder pb = new ProcessBuilder("logcat", "-T", "1", "-b", "all", "-v", "brief",
+                                "-s", "VehicleDataBuilder:D", "SerialControl_v2_0:W", "ECARX@ECP:D", "InputManager:V", "CAR.INPUT:V", "ecarx_core:D", "ecarx_core_server:D", "e:D");
                         pb.redirectErrorStream(true);
                         logcatProcess = pb.start();
 

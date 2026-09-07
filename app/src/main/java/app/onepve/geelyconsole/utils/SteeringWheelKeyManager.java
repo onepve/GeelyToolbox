@@ -120,7 +120,7 @@ public class SteeringWheelKeyManager {
             if (m2.find()) {
                 try {
                     int code = Integer.parseInt(m2.group(1));
-                    if (code == KEY_OK) return code;
+                    if (code == KEY_OK || code == 85 || code == 66) return KEY_OK;
                 } catch (Exception ignored) {}
             }
         }
@@ -235,12 +235,15 @@ public class SteeringWheelKeyManager {
     private void open360Camera() {
         try {
             Intent intent = context.getPackageManager().getLaunchIntentForPackage("ecarx.camera.calibration");
-            if (intent != null) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-                context.startActivity(intent);
+            if (intent == null) {
+                intent = new Intent(Intent.ACTION_MAIN);
+                intent.setComponent(new ComponentName("ecarx.camera.calibration", "ecarx.camera.calibration.MainActivity"));
             }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+            context.startActivity(intent);
+            AppLogger.i("方控动作", "已下发指令成功唤起 360 全景环视");
         } catch (Exception e) {
-            Log.w(TAG, "Failed to launch 360: " + e.getMessage());
+            AppLogger.w("方控动作", "唤起 360 失败: " + e.getMessage());
         }
     }
 
