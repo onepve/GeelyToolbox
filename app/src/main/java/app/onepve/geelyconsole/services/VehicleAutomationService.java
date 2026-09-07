@@ -139,7 +139,7 @@ public class VehicleAutomationService extends Service {
                                 doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
                                 trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
                                 modeSmart || modeComfort || modeEco || modeSport || turn360 ||
-                                lightNav || flameout || btRouter || usbMedia || wheelEnabled;
+                                lightNav || flameout || wheelEnabled;
 
             Intent intent = new Intent(context, VehicleAutomationService.class);
             if (shouldRun) {

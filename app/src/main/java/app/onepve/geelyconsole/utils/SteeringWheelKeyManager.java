@@ -148,7 +148,7 @@ public class SteeringWheelKeyManager {
         AppLogger.i("方控总线", "捕获物理按键: [" + keyName + " (Code:" + keyCode + ")] · 当前接管模式: " + mode);
 
         if (MODE_FACTORY_DEFAULT.equals(mode)) {
-            AppLogger.d("方控总线", "处于[恢复原厂默认]模式，完全放行按键事件给车机原厂总线");
+            AppLogger.i("方控总线", "处于[恢复原厂默认]模式，完全放行按键事件给车机原厂总线");
             return;
         }
 
@@ -175,7 +175,7 @@ public class SteeringWheelKeyManager {
                 AppLogger.i("方控总线", "米小江优先模式 -> 触发[菱形自定义键] -> 执行动作: " + customAction);
                 executeAction(customAction);
             } else {
-                AppLogger.d("方控总线", "米小江优先模式 -> 放行按键给米小江CarMedia: " + keyName);
+                AppLogger.i("方控总线", "米小江优先模式 -> 放行按键给米小江CarMedia: " + keyName);
             }
             // 304/305/348 主动放行给米小江，工具箱绝不争抢
             return;
