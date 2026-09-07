@@ -486,6 +486,57 @@
         </div>
       </div>
     </FeatureCard>
+
+    <!-- 6. 全局桌面迷你悬浮胶囊 -->
+    <FeatureCard 
+      title="6. 全局桌面迷你悬浮胶囊 (实时状态与动态暗码)"
+      desc="在车机桌面或其他应用上层常驻迷你流光胶囊，支持手指自由拖拽吸附，实时显示软件状态或今日动态工程暗码。"
+    >
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
+          <div class="mb-3">
+            <div class="text-[19px] font-black text-car-text">悬浮微胶囊总开关</div>
+            <div class="text-[15px] text-car-sub mt-1 font-bold">开启后在全屏最上层常驻微型胶囊</div>
+          </div>
+          <MatrixButton 
+            :title="store.deviceInfo.floating_enabled ? '已开启悬浮胶囊' : '已关闭悬浮胶囊'"
+            :active="store.deviceInfo.floating_enabled"
+            @click="toggleFloatingWindow"
+          />
+        </div>
+
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
+          <div class="mb-3">
+            <div class="text-[19px] font-black text-car-text">胶囊内容显示模式</div>
+            <div class="text-[15px] text-car-sub mt-1 font-bold">切换胶囊内展示的文字信息</div>
+          </div>
+          <div class="flex space-x-2">
+            <button 
+              @click="setFloatingMode('name')"
+              :class="[
+                'flex-1 min-h-[58px] rounded-xl font-black text-[16px] border-2 cursor-pointer transition-all shadow-sm',
+                store.deviceInfo.floating_display_mode !== 'code' 
+                  ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
+                  : 'bg-car-card border-car-border text-car-sub'
+              ]"
+            >
+              显示应用名
+            </button>
+            <button 
+              @click="setFloatingMode('code')"
+              :class="[
+                'flex-1 min-h-[58px] rounded-xl font-black text-[16px] border-2 cursor-pointer transition-all shadow-sm',
+                store.deviceInfo.floating_display_mode === 'code' 
+                  ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
+                  : 'bg-car-card border-car-border text-car-sub'
+              ]"
+            >
+              显示动态暗码
+            </button>
+          </div>
+        </div>
+      </div>
+    </FeatureCard>
   </div>
 </template>
 
@@ -511,7 +562,7 @@ const currentModelSpec = computed(() => {
 function selectCarModel(id) {
   selectedModelId.value = id;
   localStorage.setItem('geely_vehicle_model', id);
-  bridge.call('setVehicleAutomationSetting', 'vehicle_target_model', id);
+  bridge.call('setVehicleAutomationStringSetting', 'vehicle_target_model', id);
   showToast(`已切换至【${currentModelSpec.value.name}】专车适配协议`);
 }
 
@@ -532,5 +583,16 @@ function openCustomVoice(key, title, soundFile) {
     title,
     soundFile: soundFile || (key + '.mp3')
   });
+}
+
+function toggleFloatingWindow() {
+  const next = !store.deviceInfo.floating_enabled;
+  store.deviceInfo.floating_enabled = next;
+  bridge.call('toggleFloatingWindow', next);
+}
+
+function setFloatingMode(mode) {
+  store.deviceInfo.floating_display_mode = mode;
+  bridge.call('setFloatingDisplayMode', mode);
 }
 </script>

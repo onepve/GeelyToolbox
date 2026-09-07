@@ -43,6 +43,7 @@ public class VehicleAutomationService extends Service {
     private static final int NOTIF_ID = 1002;
 
     public static volatile boolean isRunning = false;
+    public static volatile float latestBatteryVoltage = 0.0f;
 
     // 功能开关
     private boolean enableDoorFl = false;
@@ -439,6 +440,31 @@ public class VehicleAutomationService extends Service {
                     String key = m.group(1).trim();
                     int val = Integer.parseInt(m.group(2).trim());
                     handleCanSignal(key, val);
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 6. 解析 12V 蓄电池物理电压报文 (ecarx_core_server: vehicledata----callbacks---mModelBatteryVolt = 125)
+        if (line.contains("mModelBatteryVolt =") || line.contains("BatteryVolt")) {
+            try {
+                int idx = line.indexOf("mModelBatteryVolt =");
+                if (idx == -1) idx = line.indexOf("BatteryVolt =");
+                if (idx != -1) {
+                    String sub = line.substring(idx + (line.contains("mModelBatteryVolt =") ? 19 : 13)).trim();
+                    StringBuilder num = new StringBuilder();
+                    for (int i = 0; i < sub.length(); i++) {
+                        char c = sub.charAt(i);
+                        if (Character.isDigit(c)) num.append(c);
+                        else if (num.length() > 0) break;
+                    }
+                    if (num.length() > 0) {
+                        int rawVolt = Integer.parseInt(num.toString());
+                        // rawVolt e.g. 125 = 12.5V, 138 = 13.8V
+                        float volt = (rawVolt > 80 && rawVolt < 250) ? (rawVolt / 10.0f) : (rawVolt / 100.0f);
+                        latestBatteryVoltage = volt;
+                        SharedPreferences sp = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        sp.edit().putFloat("vehicle_real_battery_volt", volt).commit();
+                    }
                 }
             } catch (Exception ignored) {}
         }

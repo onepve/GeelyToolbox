@@ -410,7 +410,7 @@ public class FloatingWindowService extends Service {
 
                                 // 实时持久化坐标，下次启动/退出后依然在原位
                                 android.content.SharedPreferences sp = getSharedPreferences("floating_pill_prefs", Context.MODE_PRIVATE);
-                                sp.edit().putInt("pill_x", pillX).putInt("pill_y", pillY).apply();
+                                sp.edit().putInt("pill_x", pillX).putInt("pill_y", pillY).commit();
                             } catch (Exception ignored) {
                             }
                         }

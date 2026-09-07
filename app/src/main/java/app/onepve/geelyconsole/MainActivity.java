@@ -545,18 +545,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("floating_enabled", prefs.getBoolean("floating_enabled", false));
                 obj.put("floating_display_mode", prefs.getString("floating_display_mode", "name"));
                 obj.put("expert_rabbit_enabled", prefs.getBoolean("expert_rabbit_theme_enabled", false));
-                int batteryVolt = 126;
-                try {
-                    android.content.Intent batIntent = registerReceiver(null, new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED));
-                    if (batIntent != null) {
-                        int v = batIntent.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, -1);
-                        if (v > 0) {
-                            if (v > 1000) v = v / 100;
-                            batteryVolt = v;
-                        }
-                    }
-                } catch (Exception ignored) {}
-                obj.put("battery_volt", batteryVolt);
+                float batteryVolt = VehicleAutomationService.latestBatteryVoltage;
+                if (batteryVolt <= 0.0f) {
+                    batteryVolt = prefs.getFloat("vehicle_real_battery_volt", 0.0f);
+                }
+                obj.put("real_battery_volt", batteryVolt > 0 ? (double)batteryVolt : 0.0);
+                obj.put("battery_volt", batteryVolt > 0 ? (int)(batteryVolt * 10) : 0);
                 return obj.toString();
             } catch (Exception e) {
                 return "{}";
@@ -861,7 +855,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public boolean setAutostartEnabled(boolean enabled) {
             android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            prefs.edit().putBoolean("autostart_enabled", enabled).apply();
+            prefs.edit().putBoolean("autostart_enabled", enabled).commit();
             pushDeviceInfoToWeb();
             return enabled;
         }
@@ -875,13 +869,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     prefs.edit()
                             .putBoolean("autostart_enabled", savedPref)
                             .putBoolean("temp_autostart_for_rabbit", false)
-                            .apply();
+                            .commit();
                     pushDeviceInfoToWeb();
                 }
             } catch (Exception ignored) {}
             try {
                 android.content.SharedPreferences rPrefs = context.getSharedPreferences("rabbit_theme_prefs", Context.MODE_PRIVATE);
-                rPrefs.edit().putBoolean("pending_install_after_reboot", false).apply();
+                rPrefs.edit().putBoolean("pending_install_after_reboot", false).commit();
             } catch (Exception ignored) {}
         }
 
@@ -988,7 +982,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putBoolean("floating_enabled", enable).apply();
+                        prefs.edit().putBoolean("floating_enabled", enable).commit();
                         if (enable) {
                             FloatingWindowService.ensureServiceStarted(MainActivity.this);
                             showToast(" 全局悬浮小胶囊已开启 (๑•̀ㅂ•́)و");
@@ -1016,7 +1010,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putString("floating_display_mode", mode).apply();
+                        prefs.edit().putString("floating_display_mode", mode).commit();
                         if (FloatingWindowService.isRunning) {
                             FloatingWindowService.ensureServiceStarted(MainActivity.this);
                         }
@@ -1956,7 +1950,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putString(key, value).apply();
+                        prefs.edit().putString(key, value).commit();
                         VehicleAutomationService.syncState(MainActivity.this);
                         AppLogger.i("方控设置", "更新字符设置: " + key + " -> " + value);
                     } catch (Exception e) {
@@ -1974,7 +1968,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putBoolean(key, enabled).apply();
+                        prefs.edit().putBoolean(key, enabled).commit();
                         VehicleAutomationService.syncState(MainActivity.this);
                         AppLogger.i("座舱自动化", "更新设置项: " + key + " -> " + enabled);
                     } catch (Exception e) {

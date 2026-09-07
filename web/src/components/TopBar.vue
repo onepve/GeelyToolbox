@@ -8,7 +8,7 @@
       <!-- 测试版专有高亮微胶囊 (正式版自动隐藏，纯净美观) -->
       <span 
         v-if="isBeta"
-        @click="openSettings"
+        @click="openAbout"
         class="ml-2 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[11px] font-black tracking-wider shadow-sm flex items-center cursor-pointer hover:bg-amber-500/30 transition-all"
         title="当前运行为测试通道版本 (Beta)"
       >
@@ -56,12 +56,12 @@
         </svg>
       </button>
 
-      <!-- 设置按键 -->
+      <!-- 关于按键 -->
       <button 
-        @click="openSettings"
+        @click="openAbout"
         class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light transition-all shadow-sm"
       >
-        设置
+        关于
       </button>
 
       <!-- 退出按键 -->
@@ -90,26 +90,41 @@ const isBeta = computed(() => {
 });
 
 const statusPills = computed(() => {
-  const volt = store.batteryVoltage ? store.batteryVoltage.toFixed(1) : (store.deviceInfo.battery_volt ? (store.deviceInfo.battery_volt / 10).toFixed(1) : '12.6');
-  const isCharging = store.deviceInfo.is_charging || (parseFloat(volt) >= 13.4);
-  let batteryStatus = '健康充沛';
-  let dotColor = 'bg-emerald-500 shadow-[0_0_6px_#10B981]';
-  if (isCharging) {
-    batteryStatus = '充能中';
+  let v = null;
+  if (store.batteryVoltage && store.batteryVoltage > 0) {
+    v = store.batteryVoltage;
+  } else if (store.deviceInfo.real_battery_volt && store.deviceInfo.real_battery_volt > 0) {
+    v = store.deviceInfo.real_battery_volt;
+  } else if (store.deviceInfo.battery_volt && store.deviceInfo.battery_volt > 0) {
+    v = store.deviceInfo.battery_volt / 10.0;
+  }
+
+  let batteryText = '电瓶: 采集中...';
+  let dotColor = 'bg-amber-500 shadow-[0_0_6px_#F59E0B] animate-pulse';
+
+  if (v && v > 0) {
+    const voltStr = v.toFixed(1);
+    const isCharging = v >= 13.4;
+    let batteryStatus = '健康充沛';
     dotColor = 'bg-emerald-500 shadow-[0_0_6px_#10B981]';
-  } else if (parseFloat(volt) < 11.5) {
-    batteryStatus = '重度亏电';
-    dotColor = 'bg-rose-500 shadow-[0_0_6px_#EF4444] animate-pulse';
-  } else if (parseFloat(volt) < 11.8) {
-    batteryStatus = '低电警戒';
-    dotColor = 'bg-amber-500 shadow-[0_0_6px_#F59E0B]';
+    if (isCharging) {
+      batteryStatus = '充能中';
+      dotColor = 'bg-emerald-500 shadow-[0_0_6px_#10B981] animate-pulse';
+    } else if (v < 11.5) {
+      batteryStatus = '重度亏电';
+      dotColor = 'bg-rose-500 shadow-[0_0_6px_#EF4444] animate-pulse';
+    } else if (v < 11.8) {
+      batteryStatus = '低电警戒';
+      dotColor = 'bg-amber-500 shadow-[0_0_6px_#F59E0B]';
+    }
+    batteryText = `电瓶: ${voltStr}V (${batteryStatus})`;
   }
 
   return [
     { 
-      text: `电瓶: ${volt}V (${batteryStatus})`, 
+      text: batteryText, 
       dotClass: dotColor,
-      onClick: () => openModal('settings') 
+      onClick: () => openModal('battery') 
     },
     { 
       text: `暗码(+10): ${store.dynamicCode}`, 
@@ -167,8 +182,8 @@ function toggleTheme() {
   showToast(store.isNight ? '已切换为夜间护眼模式' : '已切换为日间高对比模式');
 }
 
-function openSettings() {
-  openModal('settings');
+function openAbout() {
+  openModal('about');
 }
 
 function exitApp() {

@@ -97,17 +97,33 @@
         </button>
       </FeatureCard>
 
-      <!-- 6. 系统底层维护与避坑指引 (说明卡片) -->
+      <!-- 6. 中枢点火自启与后台守护 -->
       <FeatureCard 
-        title="6. 底层维护规范与避坑指引"
-        desc="座舱底层维护铁律与核心原理说明"
+        title="6. 中枢点火开机自启"
+        desc="车机通电点火后自动自启中枢服务，门控与方控即刻生效，无需手动打开应用。"
       >
-        <div class="bg-car-item border border-car-border rounded-xl p-4 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5">
-          <div>• <b>冷重启原理</b>：彻底断电重启 MCU 与 Framework，彻底杜绝开门播报延迟与系统卡顿；</div>
-          <div>• <b>白名单锁定</b>：商店冻结是高德地图防被卸载的关键，日常行车请务必保持冻结状态；</div>
-          <div>• <b>ADB 安全边界</b>：深度终端已做系统核心保护，严禁自行卸载系统 Framework 组件。</div>
-        </div>
+        <button 
+          @click="toggleAutostart"
+          :class="[
+            'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center',
+            store.deviceInfo.autostart 
+              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
+              : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+          ]"
+        >
+          <span>{{ store.deviceInfo.autostart ? '自启状态: 已开启自启 (推荐)' : '自启状态: 已关闭自启 (点击开启)' }}</span>
+        </button>
       </FeatureCard>
+    </div>
+
+    <!-- 底部运维与避坑指引 -->
+    <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
+      <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
+        <span class="mr-2">💡</span> 座舱底层维护铁律与核心原理说明：
+      </div>
+      <div>• <b>冷重启原理</b>：彻底断电重启 MCU 与 Framework，彻底杜绝开门播报延迟与系统卡顿；</div>
+      <div>• <b>白名单锁定</b>：商店冻结是高德地图防被卸载的关键，日常行车请务必保持冻结状态；</div>
+      <div>• <b>ADB 安全边界</b>：深度终端已做系统核心保护，严禁自行卸载系统 Framework 核心组件。</div>
     </div>
   </div>
 </template>
@@ -186,5 +202,12 @@ function confirmToggleWhitelist() {
       showToast(next ? '正在开启第三方白名单...' : '正在关闭第三方白名单...');
     }
   });
+}
+
+function toggleAutostart() {
+  const next = !store.deviceInfo.autostart;
+  store.deviceInfo.autostart = next;
+  bridge.call('setAutostartEnabled', next);
+  showToast(next ? '已开启中枢点火开机自启' : '已关闭中枢点火开机自启');
 }
 </script>

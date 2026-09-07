@@ -65,6 +65,8 @@ export const store = reactive({
   // 7 大二级弹窗管理
   modals: {
     settings: false,
+    about: false,
+    battery: false,
     deepTools: false,
     qrCode: false,
     dialer: false,

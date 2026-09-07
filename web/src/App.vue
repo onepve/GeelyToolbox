@@ -21,6 +21,9 @@
 
     <!-- 7 大 M3 车规级二级模态弹窗 -->
     <SettingsModal />
+    <AboutModal />
+    <BatteryModal />
+    <RewardModal />
     <DeepToolsModal />
     <QrCodeModal />
     <DialerModal />
@@ -57,6 +60,9 @@ import SystemView from './views/SystemView.vue';
 
 // 7 大 M3 二级模态弹窗组件
 import SettingsModal from './components/modals/SettingsModal.vue';
+import AboutModal from './components/modals/AboutModal.vue';
+import BatteryModal from './components/modals/BatteryModal.vue';
+import RewardModal from './components/modals/RewardModal.vue';
 import DeepToolsModal from './components/modals/DeepToolsModal.vue';
 import QrCodeModal from './components/modals/QrCodeModal.vue';
 import DialerModal from './components/modals/DialerModal.vue';
