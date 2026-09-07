@@ -145,7 +145,7 @@ let lastVersionClickTime = 0;
 const displayVersion = computed(() => store.deviceInfo.version || '1.4.1');
 const isBeta = computed(() => {
   const ver = (store.deviceInfo.version || '').toLowerCase();
-  return ver.includes('beta') || store.deviceInfo.is_beta === true || useBetaChannel.value;
+  return ver.includes('beta');
 });
 
 try {

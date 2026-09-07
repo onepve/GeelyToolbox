@@ -539,7 +539,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("multimedia_frozen", isMediaFrozen);
                 obj.put("appstore_frozen", isAppstoreFrozen);
                 android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                boolean isBeta = ver.toLowerCase().contains("beta") || prefs.getBoolean("is_beta_channel_active", false);
+                boolean isBeta = ver.toLowerCase().contains("beta");
                 obj.put("is_beta", isBeta);
                 obj.put("autostart", prefs.getBoolean("autostart_enabled", false));
                 obj.put("floating_enabled", prefs.getBoolean("floating_enabled", false));

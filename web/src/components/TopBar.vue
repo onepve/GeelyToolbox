@@ -85,8 +85,7 @@ const displayVersion = computed(() => {
 
 const isBeta = computed(() => {
   const ver = (store.deviceInfo.version || '').toLowerCase();
-  const storedTrack = localStorage.getItem('geely_use_beta_channel') === 'true';
-  return ver.includes('beta') || store.deviceInfo.is_beta === true || storedTrack;
+  return ver.includes('beta');
 });
 
 const statusPills = computed(() => {
