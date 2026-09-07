@@ -49,6 +49,14 @@ jobs:
       - name: Run CI Health Checks (Links, JSBridge, DOM Handlers)
         run: python3 scripts/ci_health_check.py
 
+      - name: Inject Beta Version Suffix for Beta Tag
+        if: startsWith(github.ref, 'refs/tags/beta-')
+        run: |
+          TAG_VER="${GITHUB_REF#refs/tags/beta-v}"
+          echo "Injecting Beta version name: ${TAG_VER}-beta"
+          sed -i 's/versionName "[^"]*"/versionName "'"${TAG_VER}-beta"'"/' app/build.gradle
+          grep 'versionName' app/build.gradle
+
       - name: Build Release APK (Verification)
         run: ./gradlew assembleRelease --stacktrace
 

@@ -528,7 +528,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("dynamicCode", SystemUtils.calculateDynamicCode());
                 obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
                 obj.put("whitelist", SystemUtils.isApkVerifyWhitelistEnabled());
-                String ver = "1.3.8";
+                String ver = "1.4.1";
                 try {
                     ver = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
                 } catch (Exception ignored) {}
@@ -539,6 +539,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("multimedia_frozen", isMediaFrozen);
                 obj.put("appstore_frozen", isAppstoreFrozen);
                 android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                boolean isBeta = ver.toLowerCase().contains("beta") || prefs.getBoolean("is_beta_channel_active", false);
+                obj.put("is_beta", isBeta);
                 obj.put("autostart", prefs.getBoolean("autostart_enabled", false));
                 obj.put("floating_enabled", prefs.getBoolean("floating_enabled", false));
                 obj.put("floating_display_mode", prefs.getString("floating_display_mode", "name"));

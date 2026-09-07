@@ -3,7 +3,18 @@
     <!-- 品牌与版本 -->
     <div class="flex items-center">
       <span class="text-[20px] font-black text-car-text tracking-wide mr-2.5">吉利智驾</span>
-      <span class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-text font-extrabold border border-car-border">v{{ store.deviceInfo.version || '1.4.2' }}</span>
+      <span class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-text font-extrabold border border-car-border">v{{ displayVersion }}</span>
+
+      <!-- 测试版专有高亮微胶囊 (正式版自动隐藏，纯净美观) -->
+      <span 
+        v-if="isBeta"
+        @click="openSettings"
+        class="ml-2 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[11px] font-black tracking-wider shadow-sm flex items-center cursor-pointer hover:bg-amber-500/30 transition-all"
+        title="当前运行为测试通道版本 (Beta)"
+      >
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5 animate-pulse"></span>
+        BETA
+      </span>
     </div>
 
     <!-- 中部状态指示器 (微胶囊流) -->
@@ -67,6 +78,16 @@
 <script setup>
 import { computed } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
+
+const displayVersion = computed(() => {
+  return store.deviceInfo.version || '1.4.1';
+});
+
+const isBeta = computed(() => {
+  const ver = (store.deviceInfo.version || '').toLowerCase();
+  const storedTrack = localStorage.getItem('geely_use_beta_channel') === 'true';
+  return ver.includes('beta') || store.deviceInfo.is_beta === true || storedTrack;
+});
 
 const statusPills = computed(() => {
   const volt = store.batteryVoltage ? store.batteryVoltage.toFixed(1) : (store.deviceInfo.battery_volt ? (store.deviceInfo.battery_volt / 10).toFixed(1) : '12.6');
