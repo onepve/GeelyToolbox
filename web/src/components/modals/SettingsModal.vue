@@ -137,7 +137,7 @@
               class="text-[13px] px-3 py-1 rounded-full bg-car-card border border-car-border text-car-accent font-extrabold cursor-pointer hover:border-car-accent select-none"
               title="连续点击 5 次可解锁测试人员专属特权身份"
             >
-              v{{ store.deviceInfo.version || '1.4.0' }}
+              v{{ store.deviceInfo.version || '1.4.1' }}
             </span>
             <span v-if="isTester" class="text-[12px] px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500 text-rose-400 font-black">
               👑 内测特权身份
