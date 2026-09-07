@@ -58,6 +58,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
+import { CLOUD_APPS } from '../data/apps';
 
 const currentCategory = ref('all');
 const categories = [
@@ -67,53 +68,22 @@ const categories = [
   { id: 'tools', name: '车机工具' }
 ];
 
-const mockApps = [
-  {
-    id: 'amap_ae86',
-    category: 'navigation',
-    name: '高德地图 8.5 (86改·Flyme地图/地库惯导)',
-    size: '274.9 MB',
-    desc: '纯 64 位原生编译，重构 EAS 5007 可信视觉锚点状态机，地库陀螺仪惯导，三指滑屏秒飞仪表盘。',
-    filename: 'AutoMap_E02_DeadReckoning_FlyScreen_AE86.apk'
-  },
-  {
-    id: 'xiaoai_tts',
-    category: 'tools',
-    name: '系统语音引擎 (小爱TTS·专车专用)',
-    size: '29.96 MB',
-    desc: '集成小米小爱语音合成引擎，解锁控制台座舱智能联动【改文字 TTS】实时朗读与音色自定义。',
-    filename: 'XiaoAi_TTS_Engine_1.5.1.apk'
-  },
-  {
-    id: 'carmedia',
-    category: 'music',
-    name: 'CarMedia 车机媒体 1.3.3 (稳定推荐版)',
-    size: '15.4 MB',
-    desc: '米小江出品，吉利车机专属方控媒体中心：方向盘物理按键切歌/播放暂停/自定义应用联动。',
-    filename: 'CarMedia_1.3.3.apk'
-  },
-  {
-    id: 'qqmusic_hd',
-    category: 'music',
-    name: 'QQ音乐车载版 2.5.3.1 (HD)',
-    size: '34.2 MB',
-    desc: '腾讯官方原版车机客户端，完美适配横屏宽屏车机，无弹窗纯净体验。',
-    filename: 'QQMusic_2.5.3.1_HD.apk'
-  }
-];
+const allApps = computed(() => {
+  return store.apps.length > 0 ? store.apps : CLOUD_APPS;
+});
 
 const filteredApps = computed(() => {
-  if (currentCategory.value === 'all') return mockApps;
-  return mockApps.filter(a => a.category === currentCategory.value);
+  if (currentCategory.value === 'all') return allApps.value;
+  return allApps.value.filter(a => a.category === currentCategory.value);
 });
 
 function refreshApps() {
-  bridge.call('getApps');
-  showToast('正在刷新应用列表...');
+  bridge.call('refreshCloudApps');
+  showToast('正在从云端拉取最新应用清单...');
 }
 
 function handleDownload(app) {
-  bridge.call('downloadApp', app.id, app.filename);
-  showToast('开始下载: ' + app.name);
+  bridge.call('downloadApp', app.id, app.url, app.filename);
+  showToast('已下发下载任务: ' + app.name);
 }
 </script>

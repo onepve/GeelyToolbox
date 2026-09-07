@@ -88,11 +88,42 @@ onMounted(() => {
     }
   } catch (e) {}
 
+  // 挂载 Java 状态与下载推送监听
+  window.updateDeviceInfo = (jsonStr) => {
+    try {
+      const data = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+      if (data.ip) store.deviceInfo.car_ip = data.ip;
+      if (data.dynamicCode) store.dynamicCode = data.dynamicCode;
+      if (data.dynamicCodePlus5) store.dynamicCodePlus5 = data.dynamicCodePlus5;
+      if (typeof data.whitelist === 'boolean') store.deviceInfo.whitelist = data.whitelist;
+      if (typeof data.version === 'string') store.deviceInfo.version = data.version;
+      if (typeof data.appstore_frozen === 'boolean') store.deviceInfo.appstore_frozen = data.appstore_frozen;
+      if (typeof data.multimedia_frozen === 'boolean') store.deviceInfo.multimedia_frozen = data.multimedia_frozen;
+      if (data.battery_volt) store.deviceInfo.battery_volt = data.battery_volt;
+      if (typeof data.autostart === 'boolean') store.settings.autostart = data.autostart;
+      if (typeof data.floating_enabled === 'boolean') store.settings.floating_pill = data.floating_enabled;
+      if (data.floating_display_mode) store.settings.floating_mode = data.floating_display_mode === 'code' ? 'code' : 'title';
+      if (typeof data.expert_rabbit_enabled === 'boolean') store.settings.expert_rabbit = data.expert_rabbit_enabled;
+    } catch (e) {}
+  };
+
+  window.applyCloudAppsJson = (jsonStr) => {
+    try {
+      const data = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+      if (data && Array.isArray(data.apps)) {
+        store.apps = data.apps;
+      }
+    } catch (e) {}
+  };
+
+  window.updateDownloadProgress = (appId, percent, speed) => {
+    store.downloadProgress[appId] = { percent, speed };
+  };
+
   try {
     const rawDev = bridge.call('getDeviceInfo');
     if (rawDev) {
-      const parsed = JSON.parse(rawDev);
-      Object.assign(store.deviceInfo, parsed);
+      window.updateDeviceInfo(rawDev);
     }
   } catch (e) {}
 });

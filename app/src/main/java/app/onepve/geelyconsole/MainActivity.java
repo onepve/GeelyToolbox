@@ -280,7 +280,23 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
                     isWhitelistEnabled = SystemUtils.isApkVerifyWhitelistEnabled();
                     obj.put("whitelist", isWhitelistEnabled);
-                    obj.put("version", "1.2.5");
+                    String currentVer = "1.3.8";
+                    try {
+                        currentVer = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+                    } catch (Exception ignored) {}
+                    obj.put("version", currentVer);
+                    int batteryVolt = 126;
+                    try {
+                        android.content.Intent batIntent = registerReceiver(null, new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED));
+                        if (batIntent != null) {
+                            int v = batIntent.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, -1);
+                            if (v > 0) {
+                                if (v > 1000) v = v / 100;
+                                batteryVolt = v;
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                    obj.put("battery_volt", batteryVolt);
                     boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) || 
                                            (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.xcmedia") == SystemUtils.APP_STATE_DISABLED);
                     boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
@@ -495,6 +511,48 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         public ToolboxBridge(Context context) {
             this.context = context;
+        }
+
+        @JavascriptInterface
+        public String getDeviceInfo() {
+            try {
+                SystemUtils.NetStatus net = SystemUtils.getNetworkStatus();
+                JSONObject obj = new JSONObject();
+                obj.put("ip", net.ip);
+                obj.put("dynamicCode", SystemUtils.calculateDynamicCode());
+                obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
+                obj.put("whitelist", SystemUtils.isApkVerifyWhitelistEnabled());
+                String ver = "1.3.8";
+                try {
+                    ver = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+                } catch (Exception ignored) {}
+                obj.put("version", ver);
+                boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) || 
+                                       (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.xcmedia") == SystemUtils.APP_STATE_DISABLED);
+                boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
+                obj.put("multimedia_frozen", isMediaFrozen);
+                obj.put("appstore_frozen", isAppstoreFrozen);
+                android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                obj.put("autostart", prefs.getBoolean("autostart_enabled", false));
+                obj.put("floating_enabled", prefs.getBoolean("floating_enabled", false));
+                obj.put("floating_display_mode", prefs.getString("floating_display_mode", "name"));
+                obj.put("expert_rabbit_enabled", prefs.getBoolean("expert_rabbit_theme_enabled", false));
+                int batteryVolt = 126;
+                try {
+                    android.content.Intent batIntent = registerReceiver(null, new android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED));
+                    if (batIntent != null) {
+                        int v = batIntent.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, -1);
+                        if (v > 0) {
+                            if (v > 1000) v = v / 100;
+                            batteryVolt = v;
+                        }
+                    }
+                } catch (Exception ignored) {}
+                obj.put("battery_volt", batteryVolt);
+                return obj.toString();
+            } catch (Exception e) {
+                return "{}";
+            }
         }
 
         @JavascriptInterface
