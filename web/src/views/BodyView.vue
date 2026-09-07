@@ -38,10 +38,10 @@
       </div>
     </div>
 
-    <!-- 1. 挡位安全播报 (P / R / N / D / S 全档位齐备) -->
+    <!-- 1. 挡位安全播报 (前进档、倒车档、驻车档 P、空档 四大标准档位) -->
     <FeatureCard 
-      title="1. 挡位安全播报 (前进挡 D / 倒车挡 R / 驻车挡 P / 空挡 N / 运动挡 S)"
-      desc="全档位均支持【通用原厂合成音】与【自定义 TTS 台词输入】。内置【有人感知状态机】：开机与蓝牙靠近默认 P 挡绝对静默，换出激活，换回归零。"
+      title="1. 挡位安全播报 (前进档 D / 倒车档 R / 驻车档 P / 空档 N)"
+      desc="四大标准挡位均已生成专属高品质晓晓知性语音，并支持【自定义台词】。内置【有人感知状态机】：开机与蓝牙靠近默认 P 挡绝对静默，换出激活，换回归零。"
     >
       <div class="grid grid-cols-2 gap-4">
         <!-- 前进挡 D -->
@@ -149,40 +149,34 @@
           </div>
         </div>
 
-        <!-- 空挡 N 与 运动挡 S -->
+        <!-- 空挡 N -->
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
           <div class="flex flex-col mb-3">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-[20px] font-black text-car-text">空挡 (N) 与 运动挡 (S)</span>
-              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-sub font-bold">特殊挡位</span>
+              <span class="text-[20px] font-black text-car-text">空挡 (N 挡)</span>
+              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-sub font-bold">临时切空</span>
             </div>
-            <span class="text-[14.5px] text-car-sub font-bold">洗车/拖车空挡提醒与激情运动挡播报</span>
+            <span class="text-[14.5px] text-car-sub font-bold">等待红绿灯或洗车拖车空挡提醒</span>
           </div>
 
-          <div class="grid grid-cols-2 gap-2.5 mb-3">
+          <div class="mb-3">
             <MatrixButton 
-              title="空挡 (N)"
-              :subtitle="store.vehicleAuto.voice_enable_gear_n ? '已开启' : '已关闭'"
+              title="空挡播报"
+              :subtitle="store.vehicleAuto.voice_enable_gear_n ? '已开启 · 空挡' : '已关闭'"
               :active="store.vehicleAuto.voice_enable_gear_n"
               @click="toggleSetting('voice_enable_gear_n')"
-            />
-            <MatrixButton 
-              title="运动挡 (S)"
-              :subtitle="store.vehicleAuto.voice_enable_gear_s ? '已开启' : '已关闭'"
-              :active="store.vehicleAuto.voice_enable_gear_s"
-              @click="toggleSetting('voice_enable_gear_s')"
             />
           </div>
 
           <div class="flex space-x-3">
             <button 
-              @click="testVoice('gear_s')"
+              @click="testVoice('gear_n')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              试听 S 挡语音
+              试听语音
             </button>
             <button 
-              @click="openCustomVoice('gear_s', '运动挡 S')"
+              @click="openCustomVoice('gear_n', '空挡 N')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
               自定义台词
@@ -192,9 +186,117 @@
       </div>
     </FeatureCard>
 
-    <!-- 2. 四门迎宾与关门提醒 -->
+    <!-- 2. 功能模式切换播报 (智能模式 / 舒适模式 / 经济模式 / 运动模式) -->
     <FeatureCard 
-      title="2. 四门迎宾与关门提醒 (状态翻转机 · 关门立断)"
+      title="2. 功能模式切换播报 (智能模式 / 舒适模式 / 经济模式 / 运动模式)"
+      desc="全车 4 大功能模式均已配置专属晓晓温婉知性原声。内置【模式有人感知状态机】：默认智能模式静默，手动切出其他模式激活，切回智能模式播报后置 0 归位，杜绝蓝牙钥匙靠近唤醒误报！"
+    >
+      <div class="grid grid-cols-2 gap-4">
+        <!-- 智能模式 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
+          <div class="flex flex-col mb-3">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[20px] font-black text-car-text">智能模式 (Smart)</span>
+              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent font-bold">默认省心</span>
+            </div>
+            <span class="text-[14.5px] text-car-sub font-bold">吉利默认智能模式，切回播报一次后状态机归零静默</span>
+          </div>
+          <div class="flex space-x-3">
+            <button 
+              @click="testVoice('mode_smart')"
+              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+            >
+              试听智能模式
+            </button>
+            <button 
+              @click="openCustomVoice('mode_smart', '智能模式')"
+              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
+            >
+              自定义台词
+            </button>
+          </div>
+        </div>
+
+        <!-- 舒适模式 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
+          <div class="flex flex-col mb-3">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[20px] font-black text-car-text">舒适模式 (Comfort)</span>
+              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 font-bold">平顺温润</span>
+            </div>
+            <span class="text-[14.5px] text-car-sub font-bold">适合日常城市通勤，换挡平顺温润</span>
+          </div>
+          <div class="flex space-x-3">
+            <button 
+              @click="testVoice('mode_comfort')"
+              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+            >
+              试听舒适模式
+            </button>
+            <button 
+              @click="openCustomVoice('mode_comfort', '舒适模式')"
+              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
+            >
+              自定义台词
+            </button>
+          </div>
+        </div>
+
+        <!-- 经济模式 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
+          <div class="flex flex-col mb-3">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[20px] font-black text-car-text">经济模式 (Eco)</span>
+              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-blue-400 font-bold">低碳节能</span>
+            </div>
+            <span class="text-[14.5px] text-car-sub font-bold">极致节油，长途巡航舒适惬意</span>
+          </div>
+          <div class="flex space-x-3">
+            <button 
+              @click="testVoice('mode_eco')"
+              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+            >
+              试听经济模式
+            </button>
+            <button 
+              @click="openCustomVoice('mode_eco', '经济模式')"
+              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
+            >
+              自定义台词
+            </button>
+          </div>
+        </div>
+
+        <!-- 运动模式 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
+          <div class="flex flex-col mb-3">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[20px] font-black text-car-text">运动模式 (Sport)</span>
+              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-rose-500 font-bold">动力充沛</span>
+            </div>
+            <span class="text-[14.5px] text-car-sub font-bold">油门激进，动力输出充沛激擎</span>
+          </div>
+          <div class="flex space-x-3">
+            <button 
+              @click="testVoice('mode_sport')"
+              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+            >
+              试听运动模式
+            </button>
+            <button 
+              @click="openCustomVoice('mode_sport', '运动模式')"
+              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
+            >
+              自定义台词
+            </button>
+          </div>
+        </div>
+      </div>
+    </FeatureCard>
+
+    <!-- 3. 四门迎宾与关门提醒 -->
+    <FeatureCard 
+      title="3. 四门迎宾与关门提醒 (状态翻转机 · 关门立断)"
       desc="100% 锁定吉利真实 MCU 串口物理报文 (91 02 01 b6)，彻底废除时间防抖锁。开门播报未完突然关门时，毫秒级打断开门语音并无缝切入“车门已关好”。"
     >
       <div class="grid grid-cols-2 gap-4">
@@ -332,9 +434,9 @@
       </div>
     </FeatureCard>
 
-    <!-- 3. 电动尾门与转向灯 -->
+    <!-- 4. 电动尾门与转向灯 -->
     <FeatureCard 
-      title="3. 电动尾门、转向灯 360 与大灯日夜联动"
+      title="4. 电动尾门、转向灯 360 与大灯日夜联动"
       desc="原厂电动尾门物理串口破译闭环；转向灯联动 360 全景内置车速 ≤30km/h 保护；大灯联动高德日夜模式。"
     >
       <div class="grid grid-cols-3 gap-4">
