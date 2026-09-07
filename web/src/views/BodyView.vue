@@ -41,7 +41,7 @@
     <!-- 1. 挡位安全播报 (前进档、倒车档、驻车档 P、空档 四大标准档位) -->
     <FeatureCard 
       title="1. 挡位安全播报 (前进档 D / 倒车档 R / 驻车档 P / 空档 N)"
-      desc="四大标准挡位均已生成专属高品质晓晓知性语音，并支持【自定义台词】。内置【有人感知状态机】：开机与蓝牙靠近默认 P 挡绝对静默，换出激活，换回归零。"
+      desc="四大标准挡位均已生成专属高品质晓晓知性语音，并支持【⚙️ 声效设置】。内置【有人感知状态机】：开机与蓝牙靠近默认 P 挡绝对静默，换出激活，换回归零。"
     >
       <div class="grid grid-cols-2 gap-4">
         <!-- 前进挡 D -->
@@ -71,10 +71,10 @@
               试听语音
             </button>
             <button 
-              @click="openCustomVoice('gear_d', '前进挡 D')"
+              @click="openCustomVoice('gear_d', '前进挡 D', 'gear_d.mp3')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              自定义台词
+              ⚙️ 声效设置
             </button>
           </div>
         </div>
@@ -109,7 +109,7 @@
               @click="openCustomVoice('gear_r', '倒车挡 R')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              自定义台词
+              ⚙️ 声效设置
             </button>
           </div>
         </div>
@@ -144,7 +144,7 @@
               @click="openCustomVoice('gear_p', '驻车挡 P')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              自定义台词
+              ⚙️ 声效设置
             </button>
           </div>
         </div>
@@ -179,7 +179,7 @@
               @click="openCustomVoice('gear_n', '空挡 N')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              自定义台词
+              ⚙️ 声效设置
             </button>
           </div>
         </div>
@@ -212,7 +212,7 @@
               @click="openCustomVoice('mode_smart', '智能模式')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              自定义台词
+              ⚙️ 声效设置
             </button>
           </div>
         </div>
@@ -237,7 +237,7 @@
               @click="openCustomVoice('mode_comfort', '舒适模式')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              自定义台词
+              ⚙️ 声效设置
             </button>
           </div>
         </div>
@@ -262,7 +262,7 @@
               @click="openCustomVoice('mode_eco', '经济模式')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              自定义台词
+              ⚙️ 声效设置
             </button>
           </div>
         </div>
@@ -287,7 +287,7 @@
               @click="openCustomVoice('mode_sport', '运动模式')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              自定义台词
+              ⚙️ 声效设置
             </button>
           </div>
         </div>
@@ -328,7 +328,7 @@
               @click="openCustomVoice('door_fl', '主驾车门')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              自定义台词
+              ⚙️ 声效设置
             </button>
           </div>
         </div>
@@ -361,7 +361,7 @@
               @click="openCustomVoice('door_fr', '副驾车门')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              自定义台词
+              ⚙️ 声效设置
             </button>
           </div>
         </div>
@@ -394,7 +394,7 @@
               @click="openCustomVoice('door_rl', '左后车门')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              自定义台词
+              ⚙️ 声效设置
             </button>
           </div>
         </div>
@@ -427,7 +427,7 @@
               @click="openCustomVoice('door_rr', '右后车门')"
               class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              自定义台词
+              ⚙️ 声效设置
             </button>
           </div>
         </div>
@@ -526,11 +526,11 @@ function testVoice(type) {
   bridge.call('testVehicleVoice', type);
 }
 
-function openCustomVoice(key, title) {
-  openModal('customVoiceText', {
+function openCustomVoice(key, title, soundFile) {
+  openModal('voiceItemSettings', {
     key,
     title,
-    text: store.vehicleAuto[`custom_voice_text_${key}`] || ''
+    soundFile: soundFile || (key + '.mp3')
   });
 }
 </script>

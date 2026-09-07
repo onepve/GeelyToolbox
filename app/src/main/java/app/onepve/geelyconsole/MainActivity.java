@@ -1989,7 +1989,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     try {
-                        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                         prefs.edit().putInt("voice_volume_offset", offset).commit();
                         showToast("播报音量补偿已设为: " + (offset >= 0 ? "+" + offset : offset) + " 格");
                     } catch (Exception ignored) {}
@@ -2000,7 +2000,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public int getVoiceVolumeOffset() {
             try {
-                SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                 return prefs.getInt("voice_volume_offset", 0);
             } catch (Exception e) {
                 return 0;
