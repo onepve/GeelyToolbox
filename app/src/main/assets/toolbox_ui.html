@@ -240,7 +240,7 @@ body.light .btn-toggle-active {
 }
 
 /* 默认模式：未开启主题注入（安全模式）时，隐藏时钟卡片与保姆指引，软件商店全宽拉满，顶部常驻快捷运维条 */
-body:not(.expert-rabbit-active) main {
+body:not(.expert-rabbit-active) main:not(.cockpit-container) {
   display: flex !important;
   flex-direction: column !important;
   gap: 8px !important;
@@ -264,7 +264,7 @@ body:not(.expert-rabbit-active) .app-list {
 }
 
 /* 专家模式：开启主题注入后，展开经典左右分栏 */
-body.expert-rabbit-active main {
+body.expert-rabbit-active main:not(.cockpit-container) {
   display: grid !important;
   grid-template-columns: 44% 56% !important;
 }
@@ -1011,6 +1011,184 @@ body.light .btn-mini:active {
   transform: scale(0.97) !important;
 }
 
+
+/* ==================== 车规级宽屏中枢布局 (大字号·大触控·充实饱满·防误触) ==================== */
+.cockpit-container {
+  display: flex !important;
+  height: calc(100vh - 66px) !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  background: var(--bg) !important;
+}
+
+.cockpit-sidebar {
+  width: 310px !important;
+  flex-shrink: 0 !important;
+  background: var(--card-bg) !important;
+  border-right: 1.5px solid var(--border) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 20px 14px !important;
+  gap: 12px !important;
+  overflow-y: auto !important;
+}
+
+.cockpit-nav-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 18px 20px !important;
+  min-height: 72px !important;
+  border-radius: 14px !important;
+  cursor: pointer !important;
+  background: var(--item-bg) !important;
+  border: 2px solid transparent !important;
+  color: var(--txt-strong) !important;
+  font-weight: 900 !important;
+  font-size: 19px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  user-select: none !important;
+}
+
+.cockpit-nav-item:hover {
+  background: var(--item-hover) !important;
+}
+
+.cockpit-nav-item.active {
+  background: var(--accent-light) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  font-weight: 900 !important;
+  box-shadow: 0 4px 18px rgba(0, 174, 185, 0.22) !important;
+}
+
+.cockpit-nav-badge {
+  font-size: 13.5px !important;
+  padding: 4px 10px !important;
+  border-radius: 8px !important;
+  background: var(--border) !important;
+  color: var(--txt-dim) !important;
+  font-weight: 800 !important;
+}
+
+.cockpit-nav-item.active .cockpit-nav-badge {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+}
+
+.cockpit-main-content {
+  flex: 1 !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  padding: 20px 32px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+}
+
+.cockpit-page {
+  display: none !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  width: 100% !important;
+  animation: fadeIn 0.25s ease-out !important;
+}
+
+.cockpit-page.active {
+  display: flex !important;
+}
+
+/* 专属功能大卡片 */
+.feature-large-card {
+  background: var(--card-bg) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 16px !important;
+  padding: 22px 28px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04) !important;
+}
+
+.feature-card-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  gap: 16px !important;
+}
+
+.feature-card-title {
+  font-size: 24px !important; /* 标题大字号 24px */
+  font-weight: 900 !important;
+  color: var(--txt-strong) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.feature-card-desc {
+  font-size: 18px !important; /* 说明文字放大至 18px，清晰醒目 */
+  color: var(--txt) !important;
+  line-height: 1.6 !important;
+  margin-top: 8px !important;
+  font-weight: 700 !important;
+}
+
+/* 按钮矩阵网格 */
+.button-matrix-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.matrix-btn {
+  min-height: 106px !important;
+  padding: 12px 14px !important;
+  border-radius: 16px !important;
+  border: 2.5px solid var(--border) !important;
+  background: var(--item-bg) !important;
+  color: var(--txt-strong) !important;
+  font-size: 23px !important; /* 主字号 23px 特粗 */
+  font-weight: 900 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  user-select: none !important;
+  text-align: center !important;
+}
+
+.matrix-btn:hover {
+  background: var(--item-hover) !important;
+  border-color: var(--accent) !important;
+}
+
+.matrix-btn.active {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  box-shadow: 0 6px 22px rgba(0, 174, 185, 0.42) !important;
+}
+
+.matrix-btn.active span {
+  color: #ffffff !important;
+}
+
+.matrix-btn.active .matrix-btn-sub {
+  color: rgba(255, 255, 255, 0.96) !important;
+}
+
+.matrix-btn-sub {
+  font-size: 17.5px !important;
+  color: var(--txt-dim) !important;
+  font-weight: 800 !important;
+  line-height: 1.4 !important;
+}
+
 </style>
 </head>
 <body>
@@ -1023,7 +1201,7 @@ body.light .btn-mini:active {
 <!-- 顶栏 -->
 <header>
   <div class="brand">
-    <div class="brand-title">吉利车机控制台</div>
+    <div class="brand-title">吉利智能座舱中枢</div>
     <div class="brand-ver" id="appVer">v1.3.8</div>
   </div>
 
@@ -1060,122 +1238,384 @@ body.light .btn-mini:active {
 </header>
 
 <!-- 主体自适应分栏 -->
-<main>
-  <!-- 默认模式：顶部横向系统快捷通道（4等分网格） -->
-  <div class="system-quick-bar" id="systemQuickBar">
-    <button class="btn-ctrl-md" style="min-height:56px; padding:10px 16px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="handleOpenFileManager()">
-      <span style="font-weight:900; font-size:15.5px;">打开原生文件管理</span>
-      <span class="btn-status-pill blue" style="font-size:12px;">直接安装APK</span>
-    </button>
-    <button class="btn-ctrl-md" style="min-height:56px; padding:10px 16px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="handleOpenInstalledMapsModal()">
-      <span style="font-weight:900; font-size:15.5px;">已装地图管理</span>
-      <span class="btn-status-pill gray" style="font-size:12px;">卸载/清理</span>
-    </button>
-    <button class="btn-ctrl-md" id="btnSoftRebootBar" style="min-height:56px; padding:10px 16px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="handleSoftReboot()">
-      <span style="font-weight:900; font-size:15.5px;">一键软重启 (5秒)</span>
-      <span class="btn-status-pill green" style="font-size:12px;">重载服务</span>
-    </button>
-    <button class="btn-ctrl-md" id="btnHardRebootBar" style="min-height:56px; padding:10px 16px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="handleHardReboot()">
-      <span style="font-weight:900; font-size:15.5px;">完整硬重启</span>
-      <span class="btn-status-pill red" style="font-size:12px;">硬件冷启</span>
-    </button>
-  </div>
+<!-- 主体：车规级宽屏中枢 (左侧垂直导航 + 右侧独立专属大专区) -->
+<main class="cockpit-container">
+  <!-- 左侧车规大触控导航栏 -->
+  <aside class="cockpit-sidebar" id="cockpitSidebar">
+    <div class="cockpit-nav-item active" onclick="switchCockpitNav('navWheel')" id="navItem_navWheel">
+      <span>方向盘与方控</span>
+      <span class="cockpit-nav-badge">核心改装</span>
+    </div>
+    <div class="cockpit-nav-item" onclick="switchCockpitNav('navBody')" id="navItem_navBody">
+      <span>车身智能联动</span>
+      <span class="cockpit-nav-badge">门控/挡位</span>
+    </div>
+    <div class="cockpit-nav-item" onclick="switchCockpitNav('navAudio')" id="navItem_navAudio">
+      <span>车载音频与USB</span>
+      <span class="cockpit-nav-badge">蓝牙免点</span>
+    </div>
+    <div class="cockpit-nav-item" onclick="switchCockpitNav('navStore')" id="navItem_navStore">
+      <span>精选软件中心</span>
+      <span class="cockpit-nav-badge">专车高德</span>
+    </div>
+    <div class="cockpit-nav-item" onclick="switchCockpitNav('navInstall')" id="navItem_navInstall">
+      <span>特权安装互联</span>
+      <span class="cockpit-nav-badge">原生文件</span>
+    </div>
+    <div class="cockpit-nav-item" onclick="switchCockpitNav('navSystem')" id="navItem_navSystem">
+      <span>系统底层维护</span>
+      <span class="cockpit-nav-badge">ADB/重启</span>
+    </div>
+  </aside>
 
-  <!-- 左侧控制区 (仅开启主题注入专家模式时展示) -->
-  <div class="left-col">
-    <!-- 1. 兔子时钟伪装注入大卡片 -->
-    <div class="card rabbit-card">
-      <div class="card-header">
-        <div class="card-title">兔子时钟伪装注入 (导航专车版覆盖方案)</div>
-      </div>
-      <div class="rabbit-box">
-        <div>
-          <div class="rabbit-status-title" id="rabbitPkg">已伪装: com.autonavi.amapauto</div>
-          <div class="rabbit-status-desc" id="rabbitDetail">大小: 286.7 MB · 防覆写占位已锁定 · 伪装时间: 读取中</div>
+  <!-- 右侧专属大舞台内容区 -->
+  <section class="cockpit-main-content" id="cockpitMainContent">
+
+    <!-- ==================== 专区 1: 方向盘与方控 (默认高亮展示) ==================== -->
+    <div class="cockpit-page active" id="page_navWheel">
+      <!-- 卡片 1: 方控接管模式 (三选一平铺大矩阵) -->
+      <div class="feature-large-card">
+        <div class="feature-card-header">
+          <div>
+            <div class="feature-card-title">1. 方向盘方控接管模式 (兼容米小江)</div>
+            <div class="feature-card-desc">彻底屏蔽原厂收音机伴听抢占广播，支持米小江优先协同或控制台全量自定义。选中的模式直接高亮激活。</div>
+          </div>
         </div>
-        <div class="pill" style="padding: 2px 7px; font-size: 10.5px;">
-          <span class="dot green" id="rabbitStatusDot"></span> <span id="rabbitStatusText">就绪</span>
+        <div class="button-matrix-grid" style="grid-template-columns: repeat(3, 1fr);">
+          <button class="matrix-btn active" id="btnMatrixWheel_carmedia" onclick="handleSetWheelModeMatrix('carmedia_first')">
+            <span>米小江方控优先 (推荐)</span>
+            <span class="matrix-btn-sub">放行切歌与Mode键，工具箱补充静音键改360</span>
+          </button>
+          <button class="matrix-btn" id="btnMatrixWheel_toolbox" onclick="handleSetWheelModeMatrix('toolbox_alone')">
+            <span>控制台独立接管</span>
+            <span class="matrix-btn-sub">工具箱接管切歌与所有按键自定义分发</span>
+          </button>
+          <button class="matrix-btn" id="btnMatrixWheel_factory" onclick="handleSetWheelModeMatrix('factory_default')">
+            <span>恢复原厂默认</span>
+            <span class="matrix-btn-sub">解禁原厂组件，完全不拦截任何按键</span>
+          </button>
         </div>
       </div>
-      <div style="display:flex; flex-direction:column; gap:8px;">
-        <button class="btn-ctrl-lg" id="btnRabbitAutoPilot" style="min-height:64px; font-size:19px; font-weight:900; display:none;" onclick="handleStartAutoPilot(null)">一键卡兔子向导 (保姆级半自动)</button>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" onclick="handleOpenThemeManager()">
-            <span style="font-size:16px; font-weight:900;">打开车机主题</span>
-            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">原厂主题应用中心</span>
+
+      <!-- 卡片 2: Mode 键短按映射 (平铺直选大矩阵) -->
+      <div class="feature-large-card">
+        <div class="feature-card-header">
+          <div>
+            <div class="feature-card-title">2. 方向盘 Mode 键短按映射 (编号 6)</div>
+            <div class="feature-card-desc">原车用于切换伴听/收音机。按下瞬间直接拉起目标功能，4 个选项平铺直选，选中的直接高亮。</div>
+          </div>
+        </div>
+        <div class="button-matrix-grid">
+          <button class="matrix-btn active" id="btnMatrixMode_open_360" onclick="handleSelectModeAction('open_360')">
+            <span>打开 360 全景</span>
+            <span class="matrix-btn-sub">一键秒开车身环视</span>
           </button>
-          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" onclick="handleOpenInstalledMapsModal()">
-            <span style="font-size:16px; font-weight:900;">已装地图管理</span>
-            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">快速卸载/清除数据</span>
+          <button class="matrix-btn" id="btnMatrixMode_open_navi" onclick="handleSelectModeAction('open_navi')">
+            <span>打开高德地图</span>
+            <span class="matrix-btn-sub">一键秒切车载导航</span>
           </button>
-          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" id="btnSoftReboot" onclick="handleSoftReboot()">
-            <span style="font-size:16px; font-weight:900;">一键软重启 (5秒)</span>
-            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">快速重载系统服务</span>
+          <button class="matrix-btn" id="btnMatrixMode_play_pause" onclick="handleSelectModeAction('play_pause')">
+            <span>播放 / 暂停音乐</span>
+            <span class="matrix-btn-sub">控制第三方播放器</span>
           </button>
-          <button class="btn-ctrl-lg" style="min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px;" id="btnHardReboot" onclick="handleHardReboot()">
-            <span style="font-size:16px; font-weight:900;">完整硬重启</span>
-            <span style="font-size:12px; color:var(--txt-dim); font-weight:700;">整车硬件冷启动</span>
+          <button class="matrix-btn" id="btnMatrixMode_default" onclick="handleSelectModeAction('default')">
+            <span>保持原厂默认</span>
+            <span class="matrix-btn-sub">走原车音源切换</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 卡片 3: 独立静音键短按映射 (平铺直选大矩阵) -->
+      <div class="feature-large-card">
+        <div class="feature-card-header">
+          <div>
+            <div class="feature-card-title">3. 方向盘独立静音键短按映射 (编号 3)</div>
+            <div class="feature-card-desc">短按本键执行自定义动作；<b>特别说明：长按本键 10 秒以上依然是整车硬件看门狗冷重启救砖，不受任何影响！</b></div>
+          </div>
+        </div>
+        <div class="button-matrix-grid">
+          <button class="matrix-btn active" id="btnMatrixMute_open_360" onclick="handleSelectMuteAction('open_360')">
+            <span>短按打开 360 全景</span>
+            <span class="matrix-btn-sub">一键秒调环视盲区</span>
+          </button>
+          <button class="matrix-btn" id="btnMatrixMute_open_navi" onclick="handleSelectMuteAction('open_navi')">
+            <span>打开高德地图</span>
+            <span class="matrix-btn-sub">一键秒切车载导航</span>
+          </button>
+          <button class="matrix-btn" id="btnMatrixMute_play_pause" onclick="handleSelectMuteAction('play_pause')">
+            <span>播放 / 暂停音乐</span>
+            <span class="matrix-btn-sub">控制第三方播放器</span>
+          </button>
+          <button class="matrix-btn" id="btnMatrixMute_mute_toggle" onclick="handleSelectMuteAction('mute_toggle')">
+            <span>保持原厂静音</span>
+            <span class="matrix-btn-sub">系统音频静音/恢复</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 卡片 4: 音量滚轮向下按压 Click (编号 2) -->
+      <div class="feature-large-card">
+        <div class="feature-card-header">
+          <div>
+            <div class="feature-card-title">4. 音量滚轮垂直按压 Click 映射 (编号 2)</div>
+            <div class="feature-card-desc">上下滚动保持原厂线性音量调节（行车安全第一）；垂直向下按压可自由重定向功能。</div>
+          </div>
+        </div>
+        <div class="button-matrix-grid">
+          <button class="matrix-btn active" id="btnMatrixOk_default" onclick="handleSelectOkAction('default')">
+            <span>原厂默认 (确认/暂停)</span>
+            <span class="matrix-btn-sub">保持原生多媒体操作</span>
+          </button>
+          <button class="matrix-btn" id="btnMatrixOk_open_360" onclick="handleSelectOkAction('open_360')">
+            <span>按压打开 360 全景</span>
+            <span class="matrix-btn-sub">中轴滚轮秒开全景</span>
+          </button>
+          <button class="matrix-btn" id="btnMatrixOk_play_pause" onclick="handleSelectOkAction('play_pause')">
+            <span>播放 / 暂停音乐</span>
+            <span class="matrix-btn-sub">控制第三方音乐</span>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- 2. 常用系统快捷通道大卡片 -->
-    <div class="card shortcut-card">
-      <div class="card-header">
-        <div class="card-title">常用系统快捷通道</div>
-        <div style="font-size:11.5px; color:var(--txt-dim); font-weight:700;">点击均提供二次防误触确认</div>
+    <!-- ==================== 专区 2: 车身智能联动 (物理状态机重构) ==================== -->
+    <div class="cockpit-page" id="page_navBody">
+      <!-- 卡片 1: 挡位安全提醒 (D/R 挡) -->
+      <div class="feature-large-card">
+        <div class="feature-card-header">
+          <div>
+            <div class="feature-card-title">1. 挡位安全播报 (前进挡 D / 倒车挡 R)</div>
+            <div class="feature-card-desc">踩刹车挂入前进挡温馨启程，挂入倒车挡安全警示；<b>车辆熄火离车后硬件强制处于 P 挡，蓝牙钥匙靠近点亮车机绝对静默零误报</b>。</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <button class="matrix-btn" id="btnPageVoice_gear_d" style="min-width:200px; flex:1;" onclick="handleToggleVehicleAuto('voice_enable_gear_d')">
+            <span>前进挡 (D 挡): 已开启</span>
+            <span class="matrix-btn-sub">“已挂入前进挡，系好安全带，祝你一路平安”</span>
+          </button>
+          <button class="matrix-btn" id="btnPageVoice_gear_r" style="min-width:200px; flex:1;" onclick="handleToggleVehicleAuto('voice_enable_gear_r')">
+            <span>倒车挡 (R 挡): 已开启</span>
+            <span class="matrix-btn-sub">“已挂入倒车挡，请注意观察后方安全”</span>
+          </button>
+          <button class="btn-ctrl-md" style="min-height:52px; padding:0 20px;" onclick="handleTestVoice('gear_d')">试听 D 挡</button>
+          <button class="btn-ctrl-md" style="min-height:52px; padding:0 20px;" onclick="handleTestVoice('gear_r')">试听 R 挡</button>
+        </div>
       </div>
-      <div style="display:flex; gap: 8px;">
-        <button class="btn-ctrl-md" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px 16px; min-height:64px;" onclick="handleOpenFileManager()">
-          <span style="font-weight:900; font-size:16px;">打开原生文件管理</span>
-          <span class="btn-status-pill blue" style="font-size:12px;">直接安装APK</span>
+
+      <!-- 卡片 2: 四门状态翻转机与迎宾 -->
+      <div class="feature-large-card">
+        <div class="feature-card-header">
+          <div>
+            <div class="feature-card-title">2. 四门迎宾与关门提醒 (状态翻转机 · 关门立断)</div>
+            <div class="feature-card-desc">100% 锁定吉利真实 MCU 串口物理报文 (91 02 01 b6)，彻底废除时间防抖锁。开门播报未完突然关门时，毫秒级打断开门语音并无缝切入“车门已关好”。</div>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
+          <div style="background:var(--item-bg); border:1px solid var(--border); border-radius:10px; padding:14px;">
+            <div style="font-weight:900; font-size:15px; margin-bottom:8px;">主驾车门 (FL)</div>
+            <div style="display:flex; gap:8px;">
+              <button class="matrix-btn" id="btnPageVoice_door_fl" style="flex:1;" onclick="handleToggleVehicleAuto('voice_enable_door_fl')">开门: 开</button>
+              <button class="matrix-btn" id="btnPageVoice_door_fl_close" style="flex:1;" onclick="handleToggleVehicleAuto('voice_enable_door_fl_close')">关门: 开</button>
+              <button class="btn-ctrl-md" style="min-height:52px; padding:0 12px;" onclick="handleTestVoice('door_fl')">试听</button>
+            </div>
+          </div>
+          <div style="background:var(--item-bg); border:1px solid var(--border); border-radius:10px; padding:14px;">
+            <div style="font-weight:900; font-size:15px; margin-bottom:8px;">副驾车门 (FR)</div>
+            <div style="display:flex; gap:8px;">
+              <button class="matrix-btn" id="btnPageVoice_door_fr" style="flex:1;" onclick="handleToggleVehicleAuto('voice_enable_door_fr')">开门: 关</button>
+              <button class="matrix-btn" id="btnPageVoice_door_fr_close" style="flex:1;" onclick="handleToggleVehicleAuto('voice_enable_door_fr_close')">关门: 关</button>
+              <button class="btn-ctrl-md" style="min-height:52px; padding:0 12px;" onclick="handleTestVoice('door_fr')">试听</button>
+            </div>
+          </div>
+          <div style="background:var(--item-bg); border:1px solid var(--border); border-radius:10px; padding:14px;">
+            <div style="font-weight:900; font-size:15px; margin-bottom:8px;">左后车门 (RL)</div>
+            <div style="display:flex; gap:8px;">
+              <button class="matrix-btn" id="btnPageVoice_door_rl" style="flex:1;" onclick="handleToggleVehicleAuto('voice_enable_door_rl')">开门: 关</button>
+              <button class="matrix-btn" id="btnPageVoice_door_rl_close" style="flex:1;" onclick="handleToggleVehicleAuto('voice_enable_door_rl_close')">关门: 关</button>
+              <button class="btn-ctrl-md" style="min-height:52px; padding:0 12px;" onclick="handleTestVoice('door_rl')">试听</button>
+            </div>
+          </div>
+          <div style="background:var(--item-bg); border:1px solid var(--border); border-radius:10px; padding:14px;">
+            <div style="font-weight:900; font-size:15px; margin-bottom:8px;">右后车门 (RR)</div>
+            <div style="display:flex; gap:8px;">
+              <button class="matrix-btn" id="btnPageVoice_door_rr" style="flex:1;" onclick="handleToggleVehicleAuto('voice_enable_door_rr')">开门: 关</button>
+              <button class="matrix-btn" id="btnPageVoice_door_rr_close" style="flex:1;" onclick="handleToggleVehicleAuto('voice_enable_door_rr_close')">关门: 关</button>
+              <button class="btn-ctrl-md" style="min-height:52px; padding:0 12px;" onclick="handleTestVoice('door_rr')">试听</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 3: 电动尾门与转向灯/大灯联动 -->
+      <div class="feature-large-card">
+        <div class="feature-card-header">
+          <div>
+            <div class="feature-card-title">3. 电动尾门、转向灯 360 与大灯联动</div>
+            <div class="feature-card-desc">原厂电动尾门物理串口破译闭环；转向灯联动 360 全景内置车速 ≤30km/h 保护；大灯联动高德日夜模式。</div>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
+          <div style="background:var(--item-bg); border:1px solid var(--border); border-radius:10px; padding:14px;">
+            <div style="font-weight:900; font-size:15px; margin-bottom:8px;">原厂电动尾门 (b7)</div>
+            <div style="display:flex; gap:6px;">
+              <button class="matrix-btn" id="btnPageVoice_trunk_open" style="flex:1;" onclick="handleToggleVehicleAuto('voice_enable_trunk_open')">开: 关</button>
+              <button class="matrix-btn" id="btnPageVoice_trunk_close" style="flex:1;" onclick="handleToggleVehicleAuto('voice_enable_trunk_close')">关: 关</button>
+            </div>
+          </div>
+          <div style="background:var(--item-bg); border:1px solid var(--border); border-radius:10px; padding:14px;">
+            <div style="font-weight:900; font-size:15px; margin-bottom:8px;">转向灯联动 360 (≤30km/h)</div>
+            <button class="matrix-btn" id="btnPageAutoTurn360" style="width:100%;" onclick="handleToggleVehicleAuto('vehicle_turn_360_enabled')">已关闭</button>
+          </div>
+          <div style="background:var(--item-bg); border:1px solid var(--border); border-radius:10px; padding:14px;">
+            <div style="font-weight:900; font-size:15px; margin-bottom:8px;">大灯联动高德日夜模式</div>
+            <button class="matrix-btn" id="btnPageAutoLightNav" style="width:100%;" onclick="handleToggleVehicleAuto('vehicle_light_nav_enabled')">已关闭</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 专区 3: 车载音频与 USB 外设 ==================== -->
+    <div class="cockpit-page" id="page_navAudio">
+      <!-- 卡片 1: 蓝牙音频无感自动出声 -->
+      <div class="feature-large-card">
+        <div class="feature-card-header">
+          <div>
+            <div class="feature-card-title">1. 蓝牙音频无感自动出声 (告别手动点原厂多媒体)</div>
+            <div class="feature-card-desc">手机连接车载蓝牙后点播放，控制台中枢自动申请 STREAM_MUSIC 音频焦点并压制原厂静音机制，全车音响秒出声！</div>
+          </div>
+          <button class="matrix-btn active" id="btnPageBtAudioAuto" style="min-width:140px; min-height:52px;" onclick="handleToggleVehicleAuto('bt_audio_auto_route')">已开启 (推荐)</button>
+        </div>
+      </div>
+
+      <!-- 卡片 2: USB 闪存盘插拔管理 (轻量提醒 + 搜歌独立开关) -->
+      <div class="feature-large-card">
+        <div class="feature-card-header">
+          <div>
+            <div class="feature-card-title">2. USB 闪存盘插拔与音频识别 (供实车测试)</div>
+            <div class="feature-card-desc">遵循克制与隐私原则：默认仅轻声播报 U 盘接入；曲目全盘扫描做成独立开关，默认关闭，绝不强行越权搜歌。</div>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div style="background:var(--item-bg); border:1px solid var(--border); border-radius:10px; padding:16px;">
+            <div style="font-weight:900; font-size:15px; margin-bottom:4px;">U 盘插入轻声提醒</div>
+            <div style="font-size:12px; color:var(--txt-dim); margin-bottom:12px;">插入 U 盘瞬间触发温婉语音：“检测到外部U盘接入”</div>
+            <button class="matrix-btn active" id="btnPageUsbDetect" style="width:100%;" onclick="handleToggleVehicleAuto('usb_media_auto_detect')">已开启 (默认)</button>
+          </div>
+          <div style="background:var(--item-bg); border:1px solid var(--border); border-radius:10px; padding:16px;">
+            <div style="font-weight:900; font-size:15px; margin-bottom:4px;">自动全盘扫描歌曲文件</div>
+            <div style="font-size:12px; color:var(--txt-dim); margin-bottom:12px;">异步深度遍历扫描 U 盘内的 MP3/FLAC 音乐文件（实验性）</div>
+            <button class="matrix-btn" id="btnPageUsbScanSongs" style="width:100%;" onclick="handleToggleVehicleAuto('usb_media_auto_scan_songs')">已关闭 (默认)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 3: 小爱 TTS 语音引擎直通 -->
+      <div class="feature-large-card">
+        <div class="feature-card-header">
+          <div>
+            <div class="feature-card-title">3. 系统语音引擎与小爱 TTS 直通</div>
+            <div class="feature-card-desc">已上架《系统语音引擎 (小爱TTS·专车专用)》，支持进入小爱设置界面微调语速、音调或下载离线个性语音包。</div>
+          </div>
+          <button class="btn-ctrl-md highlight" style="min-height:52px; padding:0 24px; font-weight:800;" onclick="handleOpenTtsSettings()">进入小爱设置</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 专区 4: 精选车载软件中心 (移植既有商城流) ==================== -->
+    <div class="cockpit-page" id="page_navStore">
+      <div class="feature-large-card" style="padding:16px 20px;">
+        <div class="disclaimer-banner" style="margin-bottom:12px;">
+          <span><b>【实测机型声明】</b>以下软件仅在「吉利缤越COOL 2022 (亿咖通 E02 / IHU516G / Android 9)」实测通过，其他车型请自行评估后安装。</span>
+        </div>
+        <div class="tab-bar">
+          <div class="card-title">车载精选软件中心</div>
+          <div class="tab-group">
+            <button class="tab-item active" onclick="switchCategory('all')">全部</button>
+            <button class="tab-item" onclick="switchCategory('navigation')">车载导航</button>
+            <button class="tab-item" onclick="switchCategory('music')">音乐应用</button>
+            <button class="tab-item" onclick="switchCategory('tool')">车机工具</button>
+            <button class="tab-item" id="btnRefreshApps" style="font-weight:800;" onclick="handleRefreshCloudApps()">刷新</button>
+            <button class="tab-item" style="color:var(--txt-dim); border:1px solid var(--border);" onclick="handleOpenCleanDialog()">清理</button>
+          </div>
+        </div>
+        <div class="app-list" id="appListContainer" style="margin-top:12px;">
+          <!-- 动态应用卡片流 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 专区 5: 特权安装与快传互联 ==================== -->
+    <div class="cockpit-page" id="page_navInstall">
+      <div class="feature-large-card">
+        <div class="feature-card-header">
+          <div>
+            <div class="feature-card-title">1. 车载特权安装通道 (防白屏唯二正解)</div>
+            <div class="feature-card-desc">严禁直接 ADB 命令行 pm install 安装！请通过甲壳虫推送到车机 /sdcard/Download/ 目录后，点击下方大按钮打开车机自带原生文件管理特权安装。</div>
+          </div>
+        </div>
+        <button class="btn-ctrl-lg" style="min-height:76px; font-size:18px; font-weight:900; width:100%; display:flex; align-items:center; justify-content:center; gap:12px;" onclick="handleOpenFileManager()">
+          <span>打开车机自带原生文件管理</span>
+          <span class="btn-status-pill blue" style="font-size:13px;">进入 Download 目录直接安装</span>
         </button>
       </div>
-    </div>
 
-    <!-- 3. 卡兔子极简安装 SOP 指引大卡片 -->
-    <div class="guide-card-full">
-      <div class="guide-header"> 高德无损升级·保姆级指引 (按上方大按钮 123 顺序)：</div>
-      <div class="guide-step-item">
-        <span class="step-num">步骤 1</span>
-        <span>右侧下载高德  点上方【选择 APK 注入】(或直接点卡片【一键注入】)；</span>
-      </div>
-      <div class="guide-step-item">
-        <span class="step-num">步骤 2</span>
-        <span>点【打开车机主题】 屏保时钟  应用『兔子时钟』(<b>不管提示成功失败均已注入生效</b>)；</span>
-      </div>
-      <div class="guide-step-item">
-        <span class="step-num">步骤 3</span>
-        <span>点【一键软重启车机】 开机打开工具箱<b>白名单自动放行</b>  直接安装或进 Download 目录安装！</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- 右侧精选软件中心 -->
-  <div class="right-col card">
-    <!-- 官方实测机型声明 Banner -->
-    <div class="disclaimer-banner">
-      <span><b>【实测机型声明】</b>以下软件仅在「吉利缤越COOL 2022 (亿咖通 E02 / IHU516G / Android 9)」实测通过，其他车型不做兼容保证，请自行评估后安装。</span>
-    </div>
-
-    <div class="tab-bar">
-      <div class="card-title">车载精选软件中心</div>
-      <div class="tab-group">
-        <button class="tab-item active" onclick="switchCategory('all')">全部</button>
-        <button class="tab-item" onclick="switchCategory('navigation')">车载导航</button>
-        <button class="tab-item" onclick="switchCategory('music')">音乐应用</button>
-        <button class="tab-item" onclick="switchCategory('tool')">车机工具</button>
-        <button class="tab-item" id="btnRefreshApps" style="font-weight:800;" onclick="handleRefreshCloudApps()">刷新</button>
-        <button class="tab-item" style="color:var(--txt-dim); border:1px solid var(--border);" onclick="handleOpenCleanDialog()">清理</button>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+        <div class="feature-large-card">
+          <div class="feature-card-title">2. 手机无线快传 (8888 端口)</div>
+          <div class="feature-card-desc">控制台中枢常驻局域网 HTTP 传输服务，手机无需插线，扫码秒开极速推包。</div>
+          <button class="btn-ctrl-md highlight" style="min-height:56px; font-weight:900; font-size:15px;" onclick="handleShowQrCode()">展示无线快传二维码</button>
+        </div>
+        <div class="feature-large-card">
+          <div class="feature-card-title">3. 今日动态工程暗码 (+10 / +5)</div>
+          <div class="feature-card-desc">进入工程模式开启 WiFi ADB，屏幕左上角直读 IP 填入甲壳虫秒配对。</div>
+          <button class="btn-ctrl-md" style="min-height:56px; font-weight:900; font-size:15px;" onclick="handleOpenDialer()">调起车机电话拨号盘</button>
+        </div>
       </div>
     </div>
 
-    <div class="app-list" id="appListContainer">
-      <!-- 动态应用卡片流 -->
+    <!-- ==================== 专区 6: 系统底层维护 (重启/冻结/白名单/日志) ==================== -->
+    <div class="cockpit-page" id="page_navSystem">
+      <div class="feature-large-card">
+        <div class="feature-card-header">
+          <div>
+            <div class="feature-card-title">1. 车身安全重启控制台</div>
+            <div class="feature-card-desc">软重启用于快速重载车机系统服务（5秒生效）；完整硬重启用于整车硬件冷启动重置底层。</div>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <button class="matrix-btn" style="min-height:68px; border-color:rgba(16,185,129,0.35);" onclick="handleSoftReboot()">
+            <span style="color:#10B981; font-size:17px;">一键软重启 (5秒)</span>
+            <span class="matrix-btn-sub">重启 Zygote 服务层，白名单立即锁死生效</span>
+          </button>
+          <button class="matrix-btn" style="min-height:68px; border-color:rgba(239,68,68,0.35);" onclick="handleHardReboot()">
+            <span style="color:#EF4444; font-size:17px;">完整硬件冷重启 (reboot)</span>
+            <span class="matrix-btn-sub">整机底层掉电冷启，100% 硬件重载</span>
+          </button>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
+        <div class="feature-large-card">
+          <div class="feature-card-title">2. 商店核心冻结</div>
+          <div class="feature-card-desc">停用原厂商店防止覆盖白名单。</div>
+          <button class="matrix-btn" id="btnPageStoreFreeze" style="width:100%; min-height:52px;" onclick="handleToggleFreezeAppStore()">切换商店冻结</button>
+        </div>
+        <div class="feature-large-card">
+          <div class="feature-card-title">3. 安装白名单属性</div>
+          <div class="feature-card-desc">注入 sys.jsbd.apk_verify=1。</div>
+          <button class="matrix-btn" id="btnPageWhitelist" style="width:100%; min-height:52px;" onclick="handleToggleWhitelist()">放行白名单</button>
+        </div>
+        <div class="feature-large-card">
+          <div class="feature-card-title">4. 中枢运行日志</div>
+          <div class="feature-card-desc">存储于 Download 目录自动滚动。</div>
+          <button class="btn-ctrl-md highlight" style="width:100%; min-height:52px; font-weight:800;" onclick="handleOpenLogModal()">查看运行日志</button>
+        </div>
+      </div>
     </div>
-  </div>
+
+  </section>
 </main>
+
 
 <!-- 高德地图安装与注入引导 Modal -->
 <div class="modal-overlay" id="rabbitInstallModal">
@@ -1450,25 +1890,6 @@ body.light .btn-mini:active {
     <div class="modal-actions" style="justify-content:flex-end; gap:10px; margin-top:6px;">
       <button class="btn-ctrl-md" style="min-width:100px;" onclick="closeModal('updateModal')">稍后再说</button>
       <button class="btn-ctrl-md highlight" id="btnStartSelfUpdate" style="min-width:160px; font-weight:800;" onclick="handleStartSelfUpdate()">立即更新 (安全直装)</button>
-    </div>
-  </div>
-</div>
-
-<!-- 主题皮肤选择 & 实时预览 Modal -->
-<div class="modal-overlay" id="skinModal">
-  <div class="modal-card" style="width:896px;">
-    <div class="modal-header">
-      <div class="modal-title">主题皮肤选择 & 实时预览</div>
-      <button class="modal-close" onclick="closeModal('skinModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-    </div>
-    <div style="font-size:12px; color:var(--txt-dim); margin-bottom:2px;">
-      点击任意主题即可立即全屏实时预览色彩效果，自动保存车机偏好设置：
-    </div>
-    <div id="skinCardsContainer" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; max-height:280px; overflow-y:auto; padding-right:2px;">
-      <!-- 动态渲染 8 套皮肤卡片 -->
-    </div>
-    <div class="modal-actions" style="margin-top:8px;">
-      <button class="btn-icon primary" style="height:36px; padding:0 20px;" onclick="closeModal('skinModal')">确定</button>
     </div>
   </div>
 </div>
@@ -1809,22 +2230,6 @@ body.light .btn-mini:active {
       </div>
 
       <!-- 4. 允许任意应用卡主题 (专家模式) -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
-        <div>
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">允许任意应用卡主题 (专家模式)</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;" id="settingExpertRabbitHint">默认关闭。锁定仅允许高德、百度等车载地图软件卡时钟伪装，防止非兼容软件导致车机开机死锁或变砖</div>
-        </div>
-        <button class="btn-ctrl-md" id="btnSettingExpertRabbit" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="handleToggleExpertRabbitTheme()">已关闭 (安全)</button>
-      </div>
-
-      <!-- 5. 主题皮肤与护眼配色 -->
-      <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
-        <div>
-          <div style="font-weight:800; font-size:14px; color:var(--txt-strong);">主题皮肤与护眼配色</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:3px;">精选 8 套车载座舱护眼色彩体系（极光青、暖阳金、竹翠绿等）</div>
-        </div>
-        <button class="btn-ctrl-md" style="padding:6px 16px; min-height:36px; min-width:96px; font-size:13px; font-weight:800;" onclick="closeModal('settingsModal'); handleOpenSkinModal();">切换皮肤</button>
-      </div>
 
       <!-- 6. 工具箱运行操作日志 -->
       <div class="about-item" style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px;">
@@ -2155,6 +2560,40 @@ body.light .btn-mini:active {
 </div>
 
 <script>
+// ==================== 车规级微触控声效反馈 (Web Audio API 原生驱动) ====================
+var audioCtx = null;
+function playTouchFeedback() {
+  try {
+    if (!audioCtx) {
+      var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) audioCtx = new AudioContextClass();
+    }
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = 'sine';
+    // 车规级轻微清脆的机械微触感 "嗒" 声 (850Hz -> 180Hz 极速衰减 25ms)
+    osc.frequency.setValueAtTime(850, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(180, audioCtx.currentTime + 0.025);
+    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.025);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.028);
+  } catch (e) {}
+}
+
+document.addEventListener('click', function(e) {
+  var target = e.target;
+  if (target.closest && (target.closest('.matrix-btn') || target.closest('.cockpit-nav-item') || target.closest('.btn-ctrl-md') || target.closest('.btn-ctrl-lg'))) {
+    playTouchFeedback();
+  }
+}, true);
+
 // ==================== 数据状态与交互 ====================
 var SKINS_DATA = [
   { id: 'default', name: '极简科技', desc: '经典钛金蓝 · 清爽纯净', colors: ['#0284C7', '#00AEB9', '#38BDF8'] },
@@ -4210,6 +4649,30 @@ function refreshVehicleAutoUI() {
       vehicleAutoSettings = Object.assign({}, vehicleAutoSettings, s);
     } catch(e) {}
   }
+  updateWheelModeMatrixUI(vehicleAutoSettings.wheel_control_mode || 'carmedia_first');
+  updateModeActionMatrixUI(vehicleAutoSettings.wheel_action_mode || 'open_360');
+  updateMuteActionMatrixUI(vehicleAutoSettings.wheel_action_mute || 'open_360');
+  updateOkActionMatrixUI(vehicleAutoSettings.wheel_action_ok || 'default');
+
+  // 同步主页面专区大按钮状态
+  updateAutoBtn('btnPageAutoTurn360', vehicleAutoSettings.turn_360);
+  updateAutoBtn('btnPageAutoLightNav', vehicleAutoSettings.light_nav);
+  updateAutoBtn('btnPageVoice_door_fl', vehicleAutoSettings.voice_door_fl);
+  updateAutoBtn('btnPageVoice_door_fl_close', vehicleAutoSettings.voice_door_fl_close);
+  updateAutoBtn('btnPageVoice_door_fr', vehicleAutoSettings.voice_door_fr);
+  updateAutoBtn('btnPageVoice_door_fr_close', vehicleAutoSettings.voice_door_fr_close);
+  updateAutoBtn('btnPageVoice_door_rl', vehicleAutoSettings.voice_door_rl);
+  updateAutoBtn('btnPageVoice_door_rl_close', vehicleAutoSettings.voice_door_rl_close);
+  updateAutoBtn('btnPageVoice_door_rr', vehicleAutoSettings.voice_door_rr);
+  updateAutoBtn('btnPageVoice_door_rr_close', vehicleAutoSettings.voice_door_rr_close);
+  updateAutoBtn('btnPageVoice_trunk_open', vehicleAutoSettings.voice_trunk_open);
+  updateAutoBtn('btnPageVoice_trunk_close', vehicleAutoSettings.voice_trunk_close);
+  updateAutoBtn('btnPageVoice_gear_d', vehicleAutoSettings.voice_gear_d);
+  updateAutoBtn('btnPageVoice_gear_r', vehicleAutoSettings.voice_gear_r);
+  updateAutoBtn('btnPageBtAudioAuto', vehicleAutoSettings.bt_audio_auto_route);
+  updateAutoBtn('btnPageUsbDetect', vehicleAutoSettings.usb_media_auto_detect);
+  updateAutoBtn('btnPageUsbScanSongs', vehicleAutoSettings.usb_media_auto_scan_songs);
+
   updateAutoBtn('btnAutoTurn360', vehicleAutoSettings.turn_360);
   updateAutoBtn('btnAutoLightNav', vehicleAutoSettings.light_nav);
   updateAutoBtn('btnVoice_door_fl', vehicleAutoSettings.voice_door_fl);
@@ -4321,7 +4784,25 @@ function handleResetCustomVoice(key) {
 function updateAutoBtn(id, enabled) {
   var el = document.getElementById(id);
   if (!el) return;
-  if (id.endsWith('_close')) {
+  if (id.startsWith('btnPageVoice_door_')) {
+    if (id.endsWith('_close')) {
+      el.innerText = enabled ? '关门: 开' : '关门: 关';
+    } else {
+      el.innerText = enabled ? '开门: 开' : '开门: 关';
+    }
+  } else if (id.startsWith('btnPageVoice_trunk_')) {
+    el.innerText = id.endsWith('_open') ? (enabled ? '开: 开' : '开: 关') : (enabled ? '关: 开' : '关: 关');
+  } else if (id === 'btnPageVoice_gear_d') {
+    el.innerHTML = '<span>前进挡 (D 挡): ' + (enabled ? '已开启' : '已关闭') + '</span><span class="matrix-btn-sub">“已挂入前进挡，系好安全带，祝你一路平安”</span>';
+  } else if (id === 'btnPageVoice_gear_r') {
+    el.innerHTML = '<span>倒车挡 (R 挡): ' + (enabled ? '已开启' : '已关闭') + '</span><span class="matrix-btn-sub">“已挂入倒车挡，请注意观察后方安全”</span>';
+  } else if (id === 'btnPageBtAudioAuto') {
+    el.innerText = enabled ? '已开启 (推荐)' : '已关闭';
+  } else if (id === 'btnPageUsbDetect') {
+    el.innerText = enabled ? '已开启 (默认)' : '已关闭';
+  } else if (id === 'btnPageUsbScanSongs') {
+    el.innerText = enabled ? '已开启' : '已关闭 (默认)';
+  } else if (id.endsWith('_close')) {
     el.innerText = enabled ? '关门: 开' : '关门: 关';
   } else if (id.endsWith('_open')) {
     el.innerText = enabled ? '打开: 开' : '打开: 关';
@@ -4358,6 +4839,7 @@ function handleToggleVehicleAuto(key) {
   else if (key === 'voice_enable_gear_r') { targetField = 'voice_gear_r'; btnId = 'btnVoice_gear_r'; }
   else if (key === 'bt_audio_auto_route') { targetField = 'bt_audio_auto_route'; btnId = 'btnBtAudioAuto'; }
   else if (key === 'usb_media_auto_detect') { targetField = 'usb_media_auto_detect'; btnId = 'btnUsbMediaAuto'; }
+  else if (key === 'usb_media_auto_scan_songs') { targetField = 'usb_media_auto_scan_songs'; btnId = 'btnPageUsbScanSongs'; }
 
   var nextState = !vehicleAutoSettings[targetField];
   vehicleAutoSettings[targetField] = nextState;
@@ -4875,6 +5357,91 @@ function proceedToStep3Whitelist() {
   renderAdbFreezeList();
   renderAllAppsList();
 })();
+
+// ==================== 车规中枢专区切换与平铺直选大矩阵交互 ====================
+var currentCockpitNav = 'navWheel';
+
+function switchCockpitNav(navId) {
+  currentCockpitNav = navId;
+  document.querySelectorAll('.cockpit-nav-item').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  var targetNavItem = document.getElementById('navItem_' + navId);
+  if (targetNavItem) targetNavItem.classList.add('active');
+
+  document.querySelectorAll('.cockpit-page').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  var targetPage = document.getElementById('page_' + navId);
+  if (targetPage) targetPage.classList.add('active');
+}
+
+function handleSetWheelModeMatrix(mode) {
+  vehicleAutoSettings.wheel_control_mode = mode;
+  updateWheelModeMatrixUI(mode);
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.setWheelControlStringSetting === 'function') {
+    window.ToolboxBridge.setWheelControlStringSetting('wheel_control_mode', mode);
+  }
+  showToast('方控接管模式已切换: ' + (mode === 'carmedia_first' ? '米小江优先' : (mode === 'toolbox_alone' ? '控制台接管' : '恢复原厂')));
+}
+
+function updateWheelModeMatrixUI(mode) {
+  var bCar = document.getElementById('btnMatrixWheel_carmedia');
+  var bTool = document.getElementById('btnMatrixWheel_toolbox');
+  var bFact = document.getElementById('btnMatrixWheel_factory');
+  if (bCar) bCar.className = (mode === 'carmedia_first') ? 'matrix-btn active' : 'matrix-btn';
+  if (bTool) bTool.className = (mode === 'toolbox_alone') ? 'matrix-btn active' : 'matrix-btn';
+  if (bFact) bFact.className = (mode === 'factory_default') ? 'matrix-btn active' : 'matrix-btn';
+}
+
+function handleSelectModeAction(act) {
+  vehicleAutoSettings.wheel_action_mode = act;
+  updateModeActionMatrixUI(act);
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.setWheelControlStringSetting === 'function') {
+    window.ToolboxBridge.setWheelControlStringSetting('wheel_action_mode', act);
+  }
+  showToast('Mode 键已映射');
+}
+
+function updateModeActionMatrixUI(act) {
+  ['open_360', 'open_navi', 'play_pause', 'default'].forEach(function(k) {
+    var el = document.getElementById('btnMatrixMode_' + k);
+    if (el) el.className = (act === k) ? 'matrix-btn active' : 'matrix-btn';
+  });
+}
+
+function handleSelectMuteAction(act) {
+  vehicleAutoSettings.wheel_action_mute = act;
+  updateMuteActionMatrixUI(act);
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.setWheelControlStringSetting === 'function') {
+    window.ToolboxBridge.setWheelControlStringSetting('wheel_action_mute', act);
+  }
+  showToast('静音短按已映射');
+}
+
+function updateMuteActionMatrixUI(act) {
+  ['open_360', 'open_navi', 'play_pause', 'mute_toggle'].forEach(function(k) {
+    var el = document.getElementById('btnMatrixMute_' + k);
+    if (el) el.className = (act === k) ? 'matrix-btn active' : 'matrix-btn';
+  });
+}
+
+function handleSelectOkAction(act) {
+  vehicleAutoSettings.wheel_action_ok = act;
+  updateOkActionMatrixUI(act);
+  if (window.ToolboxBridge && typeof window.ToolboxBridge.setWheelControlStringSetting === 'function') {
+    window.ToolboxBridge.setWheelControlStringSetting('wheel_action_ok', act);
+  }
+  showToast('滚轮按压已映射');
+}
+
+function updateOkActionMatrixUI(act) {
+  ['default', 'open_360', 'play_pause'].forEach(function(k) {
+    var el = document.getElementById('btnMatrixOk_' + k);
+    if (el) el.className = (act === k) ? 'matrix-btn active' : 'matrix-btn';
+  });
+}
+
 </script>
 </body>
 </html>

@@ -1771,7 +1771,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_gear_d", prefs.getBoolean("voice_enable_gear_d", true));
                 obj.put("voice_gear_r", prefs.getBoolean("voice_enable_gear_r", true));
                 obj.put("bt_audio_auto_route", prefs.getBoolean("bt_audio_auto_route", true));
-                obj.put("usb_media_auto_detect", prefs.getBoolean("usb_media_auto_detect", false));
+                obj.put("usb_media_auto_detect", prefs.getBoolean("usb_media_auto_detect", true));
+                obj.put("usb_media_auto_scan_songs", prefs.getBoolean("usb_media_auto_scan_songs", false));
                 obj.put("wheel_control_mode", prefs.getString("wheel_control_mode", "carmedia_first"));
                 obj.put("wheel_action_mute", prefs.getString("wheel_action_mute", "open_360"));
                 obj.put("wheel_action_mode", prefs.getString("wheel_action_mode", "open_360"));

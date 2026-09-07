@@ -89,6 +89,14 @@ public class UsbMediaManager {
             voicePlayer.speakText("检测到外部U盘接入");
         }
 
+        // 检查是否开启“自动扫描U盘歌曲”开关（默认关闭，保持克制，不越权打扰）
+        boolean autoScan = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                .getBoolean("usb_media_auto_scan_songs", false);
+        if (!autoScan) {
+            Log.i(TAG, "U盘自动扫描歌曲开关处于关闭状态，跳过后台文件检索");
+            return;
+        }
+
         // 异步遍历检索音频文件
         new Thread(new Runnable() {
             @Override
