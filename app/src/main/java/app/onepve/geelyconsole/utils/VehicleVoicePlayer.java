@@ -28,7 +28,7 @@ import java.util.Locale;
  */
 public class VehicleVoicePlayer {
 
-    public static AudioAttributes getVoiceAudioAttributes(Context context) {
+    public static AudioAttributes getVoiceAudioAttributes(Context context, String voiceType) {
         String channel = "music";
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
@@ -38,7 +38,11 @@ public class VehicleVoicePlayer {
         AudioAttributes.Builder builder = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH);
 
-        if ("nav".equals(channel)) {
+        // 倒车挡 (R 挡) 核心保护：车机进入倒车挡时硬件 DSP 会强制将媒体流 (STREAM_MUSIC) 静音或衰减 80%
+        // 故倒车播报必须优先走独立防衰减的安全导航引导通道 (USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+        boolean isReverse = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse") || voiceType.contains("倒车")));
+
+        if (isReverse || "nav".equals(channel)) {
             builder.setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE);
         } else if ("notification".equals(channel)) {
             builder.setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT);
@@ -47,6 +51,10 @@ public class VehicleVoicePlayer {
             builder.setUsage(AudioAttributes.USAGE_MEDIA);
         }
         return builder.build();
+    }
+
+    public static AudioAttributes getVoiceAudioAttributes(Context context) {
+        return getVoiceAudioAttributes(context, null);
     }
 
     private static final String TAG = "VehicleVoicePlayer";
@@ -64,26 +72,48 @@ public class VehicleVoicePlayer {
     private int restoreVolumeAfterPlay = -1;
     private int originalStreamType = AudioManager.STREAM_MUSIC;
 
-    private synchronized void applyVolumeOffsetBeforePlay() {
+    private synchronized void applyVolumeOffsetBeforePlay(String voiceType) {
         if (audioManager == null) return;
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             int offset = prefs.getInt("voice_volume_offset", 0);
-            if (offset != 0) {
-                int stream = AudioManager.STREAM_MUSIC;
-                int currentVol = audioManager.getStreamVolume(stream);
-                int maxVol = audioManager.getStreamMaxVolume(stream);
-                int targetVol = Math.max(0, Math.min(maxVol, currentVol + offset));
-                if (targetVol != currentVol && restoreVolumeAfterPlay < 0) {
-                    restoreVolumeAfterPlay = currentVol;
-                    originalStreamType = stream;
-                    audioManager.setStreamVolume(stream, targetVol, 0);
-                    Log.i(TAG, "Applied voice volume offset: " + offset + " (vol: " + currentVol + " -> " + targetVol + ")");
+
+            boolean isReverse = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse") || voiceType.contains("倒车")));
+
+            // 倒车挡防衰减智能补偿：若处于倒车状态，由于车机系统自动压制背景音量，额外增加 +4 格动态补偿
+            if (isReverse) {
+                offset += 4;
+            }
+
+            int stream = (isReverse || "nav".equals(prefs.getString("voice_audio_channel", "music")))
+                    ? AudioManager.STREAM_NOTIFICATION
+                    : AudioManager.STREAM_MUSIC;
+
+            int currentVol = audioManager.getStreamVolume(stream);
+            int maxVol = audioManager.getStreamMaxVolume(stream);
+            int targetVol = Math.max(0, Math.min(maxVol, currentVol + offset));
+
+            // 倒车挡若当前音量过低，强制保障至少 65% 的清晰播报音量
+            if (isReverse) {
+                int floorVol = (int) (maxVol * 0.65f);
+                if (targetVol < floorVol) {
+                    targetVol = floorVol;
                 }
+            }
+
+            if (targetVol != currentVol && restoreVolumeAfterPlay < 0) {
+                restoreVolumeAfterPlay = currentVol;
+                originalStreamType = stream;
+                audioManager.setStreamVolume(stream, targetVol, 0);
+                Log.i(TAG, "Applied voice volume offset: " + offset + " (vol: " + currentVol + " -> " + targetVol + ", stream: " + stream + ")");
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to apply volume offset: " + e.getMessage());
         }
+    }
+
+    private synchronized void applyVolumeOffsetBeforePlay() {
+        applyVolumeOffsetBeforePlay(null);
     }
 
     private synchronized void restoreVolumeAfterPlay() {
@@ -222,7 +252,7 @@ public class VehicleVoicePlayer {
             }
             if (customText != null && !customText.trim().isEmpty()) {
                 Log.i(TAG, "Playing custom TTS text: " + customText);
-                speakText(customText.trim());
+                speakText(customText.trim(), voiceFileName);
                 return;
             }
         } catch (Exception ignored) {}
@@ -235,7 +265,7 @@ public class VehicleVoicePlayer {
                 File customPrefFile = new File(customPath);
                 if (customPrefFile.exists() && customPrefFile.length() > 0) {
                     Log.i(TAG, "Playing custom user audio file: " + customPath);
-                    playAudioFile(customPrefFile);
+                    playAudioFile(customPrefFile, voiceFileName);
                     return;
                 }
             }
@@ -251,7 +281,7 @@ public class VehicleVoicePlayer {
 
         if (targetFile != null && targetFile.length() > 0) {
             Log.i(TAG, "Playing external audio file: " + targetFile.getAbsolutePath());
-            playAudioFile(targetFile);
+            playAudioFile(targetFile, voiceFileName);
             return;
         }
 
@@ -259,13 +289,13 @@ public class VehicleVoicePlayer {
         File localAssetFile = getLocalAssetFile(voiceFileName);
         if (localAssetFile != null && localAssetFile.exists() && localAssetFile.length() > 0) {
             Log.i(TAG, "Playing local asset audio: " + localAssetFile.getAbsolutePath());
-            playAudioFile(localAssetFile);
+            playAudioFile(localAssetFile, voiceFileName);
             return;
         }
 
         // 4. 兜底调用系统 TTS
         Log.i(TAG, "Fallback speaking TTS: " + fallbackText);
-        speakText(fallbackText);
+        speakText(fallbackText, voiceFileName);
     }
 
     private File getLocalAssetFile(String voiceFileName) {
@@ -295,7 +325,7 @@ public class VehicleVoicePlayer {
         return null;
     }
 
-    private void playAudioFile(final File file) {
+    private void playAudioFile(final File file, final String voiceType) {
         final int sessionId = playSessionId.incrementAndGet();
         new Thread(new Runnable() {
             @Override
@@ -303,18 +333,21 @@ public class VehicleVoicePlayer {
                 if (playSessionId.get() != sessionId) return;
                 MediaPlayer mp = null;
                 try {
-                    requestAudioFocus();
+                    requestAudioFocus(voiceType);
+                    applyVolumeOffsetBeforePlay(voiceType);
                     mp = new MediaPlayer();
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        mp.setAudioAttributes(getVoiceAudioAttributes(context));
+                        mp.setAudioAttributes(getVoiceAudioAttributes(context, voiceType));
                     } else {
-                        mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                        boolean isRev = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse")));
+                        mp.setAudioStreamType(isRev ? AudioManager.STREAM_NOTIFICATION : AudioManager.STREAM_MUSIC);
                     }
                     mp.setDataSource(file.getAbsolutePath());
                     mp.prepare();
                     if (playSessionId.get() != sessionId) {
                         try { mp.release(); } catch (Exception ignored) {}
                         abandonAudioFocus();
+                        restoreVolumeAfterPlay();
                         return;
                     }
                     mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
@@ -353,7 +386,6 @@ public class VehicleVoicePlayer {
                             mp.setPlaybackParams(params);
                         }
                     } catch (Exception ignored) {}
-                    applyVolumeOffsetBeforePlay();
                     mp.start();
                     Log.i(TAG, "MediaPlayer started successfully for " + file.getName());
                 } catch (Exception e) {
@@ -371,13 +403,17 @@ public class VehicleVoicePlayer {
         }).start();
     }
 
+    private void playAudioFile(final File file) {
+        playAudioFile(file, null);
+    }
+
     public void playCustomFile(final String path) {
         if (path == null || path.trim().isEmpty()) return;
         try {
             File f = new File(path.trim());
             if (f.exists() && f.length() > 0) {
                 Log.i(TAG, "Playing explicit custom audio file: " + f.getAbsolutePath());
-                playAudioFile(f);
+                playAudioFile(f, f.getName());
             } else {
                 speakText("指定自定义音频文件不存在");
             }
@@ -386,19 +422,22 @@ public class VehicleVoicePlayer {
         }
     }
 
-    public void speakText(final String text) {
+    public void speakText(final String text, final String voiceType) {
         if (text == null || text.trim().isEmpty()) return;
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
                 try {
-                    requestAudioFocus();
-                    applyVolumeOffsetBeforePlay();
+                    requestAudioFocus(voiceType);
+                    applyVolumeOffsetBeforePlay(voiceType);
                     if (tts != null && ttsReady) {
                         try {
                             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                             float speed = prefs.getFloat("voice_playback_speed", 1.0f);
                             tts.setSpeechRate(speed);
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                tts.setAudioAttributes(getVoiceAudioAttributes(context, voiceType));
+                            }
                         } catch (Exception ignored) {}
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                             tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "voice_" + System.currentTimeMillis());
@@ -424,20 +463,30 @@ public class VehicleVoicePlayer {
         });
     }
 
-    private void requestAudioFocus() {
+    public void speakText(final String text) {
+        speakText(text, null);
+    }
+
+    private void requestAudioFocus(String voiceType) {
         if (audioManager == null) return;
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                AudioAttributes attrs = getVoiceAudioAttributes(context);
+                AudioAttributes attrs = getVoiceAudioAttributes(context, voiceType);
                 AudioFocusRequest req = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
                         .setAudioAttributes(attrs)
                         .build();
                 audioManager.requestAudioFocus(req);
                 activeFocusRequest = req;
             } else {
-                audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+                boolean isRev = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse")));
+                int stream = isRev ? AudioManager.STREAM_NOTIFICATION : AudioManager.STREAM_MUSIC;
+                audioManager.requestAudioFocus(null, stream, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
             }
         } catch (Exception ignored) {}
+    }
+
+    private void requestAudioFocus() {
+        requestAudioFocus(null);
     }
 
     private void abandonAudioFocus() {
