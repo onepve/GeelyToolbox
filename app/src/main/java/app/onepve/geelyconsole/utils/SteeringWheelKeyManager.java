@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -55,6 +57,7 @@ public class SteeringWheelKeyManager {
 
     private final Context context;
     private final SharedPreferences prefs;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private long lastTriggerTime = 0;
     private int lastTriggerKey = -1;
 
