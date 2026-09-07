@@ -1,7 +1,7 @@
 <template>
   <ModalWrapper 
     :show="store.modals.about" 
-    title="吉利智驾 · 关于与内测特权" 
+    title="吉利智驾 · 关于" 
     :badge="isBeta ? 'BETA 测试版' : '正式版'"
     maxWidthClass="max-w-[820px]"
     @close="closeModal('about')"

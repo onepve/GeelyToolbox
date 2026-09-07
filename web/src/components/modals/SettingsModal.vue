@@ -225,8 +225,6 @@ function handleVersionClick() {
     localStorage.setItem('geely_tester_unlocked', 'true');
     versionClickCount = 0;
     showToast('🎉 已激活开发者与内测特权身份！');
-  } else if (versionClickCount >= 2) {
-    showToast(`再点击 ${5 - versionClickCount} 次解锁内测特权通道`);
   }
 }
 
