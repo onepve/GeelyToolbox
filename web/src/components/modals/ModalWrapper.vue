@@ -2,7 +2,8 @@
   <transition name="modal-fade">
     <div 
       v-if="show" 
-      class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/75 backdrop-blur-sm select-none"
+      class="fixed top-0 left-0 w-screen h-screen z-50 flex items-center justify-center p-6 select-none"
+      style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: var(--modal-backdrop, rgba(11, 15, 25, 0.70));"
       @click.self="handleBackdropClick"
     >
       <div 
@@ -15,8 +16,8 @@
       >
         <!-- 弹窗标题栏 (车规加高 80px) -->
         <div class="h-[80px] px-8 border-b border-car-border flex items-center justify-between shrink-0 bg-car-card">
-          <div class="text-[25px] font-black text-car-text tracking-wide flex items-center gap-3.5">
-            <span>{{ title }}</span>
+          <div class="text-[25px] font-black text-car-text tracking-wide flex items-center">
+            <span class="mr-3.5">{{ title }}</span>
             <span v-if="badge" class="text-[13.5px] px-3 py-1 rounded-full border border-car-border bg-car-item text-car-sub font-black">
               {{ badge }}
             </span>
@@ -29,13 +30,13 @@
           </button>
         </div>
 
-        <!-- 弹窗主体内容 (独立平滑滚动，内容与按钮大大大) -->
-        <div class="flex-1 overflow-y-auto p-8 flex flex-col gap-6">
+        <!-- 弹窗主体内容 (独立平滑滚动，采用 space-y-6 实体隔离彻底杜绝 Android 9 gap 塌陷) -->
+        <div class="flex-1 overflow-y-auto p-8 space-y-6">
           <slot />
         </div>
 
         <!-- 底部可选操作栏 (车规加高 84px) -->
-        <div v-if="$slots.footer" class="px-8 py-5 border-t border-car-border bg-car-card shrink-0 flex items-center justify-end gap-4">
+        <div v-if="$slots.footer" class="px-8 py-5 border-t border-car-border bg-car-card shrink-0 flex items-center justify-end space-x-4">
           <slot name="footer" />
         </div>
       </div>

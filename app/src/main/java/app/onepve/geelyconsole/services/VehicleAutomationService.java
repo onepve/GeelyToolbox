@@ -58,6 +58,9 @@ public class VehicleAutomationService extends Service {
     private boolean enableTrunkClose = false;
     private boolean enableGearD = false;
     private boolean enableGearR = false;
+    private boolean enableGearP = false;
+    private boolean enableGearN = false;
+    private boolean enableGearS = false;
     private boolean enableTurn360 = false;
     private boolean enableLightNav = false;
     private boolean enableFlameoutVoice = false;
@@ -213,6 +216,9 @@ public class VehicleAutomationService extends Service {
         enableTrunkClose = prefs.getBoolean("voice_enable_trunk_close", false);
         enableGearD = prefs.getBoolean("voice_enable_gear_d", true);
         enableGearR = prefs.getBoolean("voice_enable_gear_r", true);
+        enableGearP = prefs.getBoolean("voice_enable_gear_p", false);
+        enableGearN = prefs.getBoolean("voice_enable_gear_n", false);
+        enableGearS = prefs.getBoolean("voice_enable_gear_s", true);
         enableTurn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
@@ -578,19 +584,26 @@ public class VehicleAutomationService extends Service {
             }
             // 挂入 N 挡 (3)
             else if (gear == 3) {
-                if (now - lastTriggerGear > 1500) {
+                if (enableGearN && (now - lastTriggerGear > 1500)) {
                     lastTriggerGear = now;
-                    voicePlayer.play("gear_n.mp3", "空挡");
+                    voicePlayer.play("gear_n.mp3", "已挂入空挡");
+                }
+            }
+            // 挂入 S 挡 (6 或 7)
+            else if (gear == 6 || gear == 7) {
+                if (enableGearS && (now - lastTriggerGear > 1500)) {
+                    lastTriggerGear = now;
+                    voicePlayer.play("gear_s.mp3", "已挂入运动挡，动力充沛");
                 }
             }
             // 挂回 P 挡 (5): 播报一次驻车挡，随即立刻将状态机置 0 归位！
             else if (gear == 5) {
-                if (now - lastTriggerGear > 1500) {
+                if (enableGearP && (now - lastTriggerGear > 1500)) {
                     lastTriggerGear = now;
                     voicePlayer.play("gear_p.mp3", "已挂入驻车挡");
                 }
                 isGearVoiceArmed = 0; // 归零！后续再次进入休眠或蓝牙心跳时绝对静默
-                Log.i(TAG, "已挂入P挡并播报完成，状态机归零 (isGearVoiceArmed=0)");
+                Log.i(TAG, "已挂入P挡，状态机归零 (isGearVoiceArmed=0)");
             }
         } else {
             Log.d(TAG, "未激活态(isGearVoiceArmed=0)，跳过挡位播报，防止蓝牙唤醒误报");

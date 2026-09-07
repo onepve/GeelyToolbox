@@ -6,7 +6,7 @@
     maxWidthClass="max-w-[860px]"
     @close="closeModal('customVoiceText')"
   >
-    <div class="flex flex-col gap-6">
+    <div class="flex flex-col space-y-6">
       <div class="text-[17.5px] text-car-sub font-extrabold leading-relaxed">
         请输入你希望车机在触发该动作时朗读的自定义文本，点击试听可实时调用小爱 TTS 引擎预览合成声线。
       </div>
@@ -20,16 +20,16 @@
       ></textarea>
 
       <!-- 操作与试听大按钮行 (66px) -->
-      <div class="grid grid-cols-2 gap-4">
+      <div class="flex space-x-4">
         <button 
           @click="resetToDefault"
-          class="min-h-[66px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[18.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+          class="flex-1 min-h-[66px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[18.5px] cursor-pointer hover:border-car-border-light shadow-sm"
         >
           恢复出厂默认 (晓晓知性原声)
         </button>
         <button 
           @click="testTtsVoice"
-          class="min-h-[66px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-text font-black text-[18.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+          class="flex-1 min-h-[66px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-text font-black text-[18.5px] cursor-pointer hover:border-car-border-light shadow-sm"
         >
           试听当前文字 TTS
         </button>

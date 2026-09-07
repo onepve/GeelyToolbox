@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 方向盘方控接管模式 -->
+    <!-- 1. 方向盘方控接管模式 -->
     <FeatureCard 
       title="1. 方向盘方控接管模式 (兼容米小江)"
       desc="彻底屏蔽原厂收音机伴听抢占广播，支持米小江优先协同或控制台全量自定义。"
@@ -27,7 +27,7 @@
       </div>
     </FeatureCard>
 
-    <!-- 卡片 2: Mode 键短按映射 -->
+    <!-- 2. Mode 键短按映射 -->
     <FeatureCard 
       title="2. 方向盘 Mode 键短按映射 (编号 6)"
       desc="原车用于切换伴听/收音机。按下瞬间直接拉起目标功能，4 个选项平铺直选，选中的直接高亮。"
@@ -60,10 +60,10 @@
       </div>
     </FeatureCard>
 
-    <!-- 卡片 3: 独立静音键短按映射 -->
+    <!-- 3. 独立静音键短按映射 (编号 3) -->
     <FeatureCard 
       title="3. 方向盘独立静音键短按映射 (编号 3)"
-      desc="短按本键执行自定义动作；特别说明：长按本键 10 秒以上依然是整车硬件看门狗冷重启救砖，不受任何影响！"
+      desc="短按本键执行自定义动作（系统已内置防静音干扰补偿）；长按本键 10 秒依然是整车硬件看门狗冷重启救砖，不受任何影响！"
     >
       <div class="grid grid-cols-4 gap-3.5">
         <MatrixButton 
@@ -92,33 +92,6 @@
         />
       </div>
     </FeatureCard>
-
-    <!-- 卡片 4: 音量滚轮按压 -->
-    <FeatureCard 
-      title="4. 音量滚轮垂直按压 Click 映射 (编号 2)"
-      desc="音量滚轮往下按压为静音键，支持自定义联动或保持原车静音。"
-    >
-      <div class="grid grid-cols-3 gap-3.5">
-        <MatrixButton 
-          title="一键打开 360 全景"
-          subtitle="滚轮按压秒调环视"
-          :active="store.vehicleAuto.wheel_action_knob === 'open_360'"
-          @click="setKnobAction('open_360')"
-        />
-        <MatrixButton 
-          title="切换播放 / 暂停"
-          subtitle="滚轮按压控制音乐"
-          :active="store.vehicleAuto.wheel_action_knob === 'play_pause'"
-          @click="setKnobAction('play_pause')"
-        />
-        <MatrixButton 
-          title="保持系统静音 (默认)"
-          subtitle="原厂按压静音"
-          :active="store.vehicleAuto.wheel_action_knob === 'default'"
-          @click="setKnobAction('default')"
-        />
-      </div>
-    </FeatureCard>
   </div>
 </template>
 
@@ -143,11 +116,5 @@ function setMuteAction(act) {
   store.vehicleAuto.wheel_action_mute = act;
   bridge.call('setWheelControlStringSetting', 'wheel_action_mute', act);
   showToast('静音短按已映射');
-}
-
-function setOkAction(act) {
-  store.vehicleAuto.wheel_action_ok = act;
-  bridge.call('setWheelControlStringSetting', 'wheel_action_ok', act);
-  showToast('滚轮按压已映射');
 }
 </script>

@@ -145,7 +145,14 @@ public class VehicleVoicePlayer {
         // 0. 用户自定义 TTS 播报文字优先
         try {
             android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            String rawName = voiceFileName.endsWith(".mp3") ? voiceFileName.substring(0, voiceFileName.length() - 4) : voiceFileName;
             String customText = prefs.getString("custom_text_" + voiceFileName, "");
+            if (customText == null || customText.trim().isEmpty()) {
+                customText = prefs.getString("custom_voice_text_" + rawName, "");
+            }
+            if (customText == null || customText.trim().isEmpty()) {
+                customText = prefs.getString("custom_voice_text_" + voiceFileName, "");
+            }
             if (customText != null && !customText.trim().isEmpty()) {
                 speakText(customText.trim());
                 return;

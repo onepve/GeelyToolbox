@@ -150,6 +150,9 @@ public class SteeringWheelKeyManager {
                 // 静音键短按
                 String muteAction = prefs.getString("wheel_action_mute", ACTION_OPEN_360);
                 executeAction(muteAction);
+                if (!ACTION_DEFAULT.equals(muteAction) && !ACTION_MUTE_TOGGLE.equals(muteAction)) {
+                    cancelNativeMute();
+                }
             } else if (keyCode == KEY_OK) {
                 // 滚轮下按
                 String okAction = prefs.getString("wheel_action_ok", ACTION_DEFAULT);
@@ -173,6 +176,9 @@ public class SteeringWheelKeyManager {
                 // 静音键短按
                 String muteAction = prefs.getString("wheel_action_mute", ACTION_OPEN_360);
                 executeAction(muteAction);
+                if (!ACTION_DEFAULT.equals(muteAction) && !ACTION_MUTE_TOGGLE.equals(muteAction)) {
+                    cancelNativeMute();
+                }
             } else if (keyCode == KEY_OK) {
                 // 滚轮下按
                 String okAction = prefs.getString("wheel_action_ok", ACTION_PLAY_PAUSE);
@@ -207,6 +213,20 @@ public class SteeringWheelKeyManager {
                 toggleMute();
                 break;
         }
+    }
+
+    private void cancelNativeMute() {
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                    if (am != null) {
+                        am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
+                    }
+                } catch (Exception ignored) {}
+            }
+        }, 150);
     }
 
     private void open360Camera() {

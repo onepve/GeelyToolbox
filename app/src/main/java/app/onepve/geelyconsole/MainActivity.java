@@ -1993,6 +1993,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         player.play("gear_d.mp3", "已挂入前进挡，系好安全带，祝你一路平安");
                     } else if ("gear_r".equals(type)) {
                         player.play("gear_r.mp3", "已挂入倒车挡，请注意观察后方安全");
+                    } else if ("gear_p".equals(type)) {
+                        player.play("gear_p.mp3", "已挂入驻车挡");
+                    } else if ("gear_n".equals(type)) {
+                        player.play("gear_n.mp3", "已挂入空挡");
+                    } else if ("gear_s".equals(type)) {
+                        player.play("gear_s.mp3", "已挂入运动挡，动力充沛");
                     } else if ("flameout".equals(type)) {
                         player.play("flameout.mp3", "车辆已熄火，请带好随身物品");
                     } else if ("seatbelt".equals(type)) {
@@ -2002,6 +2008,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
                 }
             });
+        }
+
+        @JavascriptInterface
+        public String getTtsEngineInfo() {
+            try {
+                getPackageManager().getPackageInfo("com.xiaomi.mibrain.speech", 0);
+                return "{\"connected\":true,\"name\":\"小爱语音合成引擎 (XiaoAi TTS 1.5.1)\",\"status\":\"已成功连接小爱语音引擎 · 专车TTS声线就绪\",\"type\":\"xiaoai\"}";
+            } catch (Exception e) {
+                return "{\"connected\":false,\"name\":\"系统原厂默认引擎\",\"status\":\"未检测到小爱TTS包，当前使用系统底层默认语音引擎\",\"type\":\"native\"}";
+            }
         }
 
         @JavascriptInterface

@@ -6,11 +6,11 @@
     maxWidthClass="max-w-[820px]"
     @close="closeModal('dialer')"
   >
-    <div class="flex flex-col gap-5">
+    <div class="flex flex-col space-y-5">
       <!-- 核心双轨暗码展示 -->
-      <div class="grid grid-cols-2 gap-4">
+      <div class="flex space-x-4">
         <!-- 主算法 (+10) 缤越COOL首选 -->
-        <div class="bg-car-item border-2 border-car-accent rounded-2xl p-5 flex flex-col gap-2 ring-2 ring-car-accent/20">
+        <div class="flex-1 bg-car-item border-2 border-car-accent rounded-2xl p-5 flex flex-col space-y-2 ring-2 ring-car-accent/20">
           <div class="flex items-center justify-between">
             <span class="text-[17px] font-black text-car-text">主算法 (+10 模式)</span>
             <span class="text-[12px] px-2 py-0.5 rounded bg-car-card text-car-accent font-extrabold border border-car-accent">
@@ -24,7 +24,7 @@
         </div>
 
         <!-- 备用算法 (+5) 早期GKUI -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col gap-2">
+        <div class="flex-1 bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-2">
           <div class="flex items-center justify-between">
             <span class="text-[17px] font-black text-car-text">备用算法 (+5 模式)</span>
             <span class="text-[12px] px-2 py-0.5 rounded bg-car-card text-car-sub font-extrabold border border-car-border">

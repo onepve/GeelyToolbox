@@ -1,52 +1,90 @@
 <template>
-  <div class="flex flex-col space-y-6">
-    <!-- 原生文件管理特权安装 -->
+  <div class="flex flex-col space-y-5">
+    <!-- 1. 原生文件管理特权安装通道 (核心通道) -->
     <FeatureCard 
-      title="1. 车载特权安装通道 (防白屏唯二正解)"
-      desc="严禁直接 ADB 命令行 pm install 安装！请通过甲壳虫推送到车机 /sdcard/Download/ 目录后，点击下方大按钮打开车机自带原生文件管理特权安装。"
+      title="1. 车载原生文件管理 (特权安装正解通道)"
+      desc="严禁直接通过 ADB 命令行 pm install 强行静默安装，底层安全策略会导致应用无法运行或白屏！"
     >
-      <button 
-        @click="openFileManager"
-        class="w-full min-h-[80px] bg-car-item border-2 border-car-accent rounded-2xl p-4 flex items-center justify-center gap-4 text-car-text font-black text-[22px] cursor-pointer hover:border-car-accent shadow-lg ring-2 ring-car-accent/20"
-      >
-        <span>打开车机自带原生文件管理</span>
-        <span class="bg-car-card border border-car-accent text-car-accent text-[14px] px-3 py-1 rounded-md font-extrabold">进入 Download 目录直接安装</span>
-      </button>
+      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
+        <div class="flex-1 pr-6 flex flex-col">
+          <div class="text-[18px] font-black text-car-text mb-2">
+            标准无损安装路线：
+          </div>
+          <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-3">
+            手机通过无线快传或甲壳虫将 APK 推送至车机 <code class="px-2 py-0.5 rounded bg-car-card text-car-accent font-mono">/sdcard/Download/</code> 目录，点击右侧按钮进入原生文件管理器，直接点击 APK 即可调用系统原生特权打包器无损直装。
+          </div>
+          <div class="flex items-center text-[13.5px] text-emerald-400 font-extrabold">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 shadow-[0_0_8px_#10B981]"></span>
+            <span>已接入 Android 9 原生 PackageInstaller 特权证书白名单</span>
+          </div>
+        </div>
+
+        <button 
+          @click="openFileManager"
+          class="min-w-[240px] min-h-[76px] px-6 bg-car-card border-2 border-car-accent rounded-2xl flex flex-col items-center justify-center text-car-text font-black cursor-pointer hover:border-car-accent ring-2 ring-car-accent/25 shadow-lg shrink-0 transition-all"
+        >
+          <span class="text-[20px]">打开原生文件管理</span>
+          <span class="text-[13px] text-car-accent mt-0.5 font-extrabold">进入 Download 目录</span>
+        </button>
+      </div>
     </FeatureCard>
 
-    <div class="grid grid-cols-2 gap-4">
-      <!-- 手机无线快传 (8888 端口) -->
-      <FeatureCard 
-        title="2. 手机无线快传 (8888 端口)"
-        desc="控制台中枢常驻局域网 HTTP 传输服务，手机无需插线，扫码秒开极速推包。"
-      >
+    <!-- 2. 手机无线快传 (8888 端口) -->
+    <FeatureCard 
+      title="2. 手机局域网无线快传 (免插线极速推包)"
+      desc="无需繁琐插拔 U 盘或携带电脑，通过车机内置 HTTP 文件快传服务直接秒传安装包。"
+    >
+      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
+        <div class="flex-1 pr-6 flex flex-col">
+          <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-2">
+            只要手机与车机处于同一 Wi-Fi 或车机热点下，扫码即可秒开网页，将手机下载的高德地图、音乐等 APK 秒传至车机 Download 目录。
+          </div>
+          <div class="flex items-center text-[14px] text-car-sub font-mono font-bold">
+            <span class="px-2.5 py-0.5 rounded bg-car-card border border-car-border mr-3 text-car-text">HTTP 服务端口: 8888</span>
+            <span>当前局域网 IP: {{ store.deviceInfo.car_ip || '未连接热点' }}</span>
+          </div>
+        </div>
+
         <button 
           @click="showQrCode"
-          class="w-full min-h-[72px] bg-car-item border border-car-border text-car-text font-black text-[20px] rounded-xl cursor-pointer hover:border-car-border-light"
+          class="min-w-[220px] min-h-[72px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[19px] rounded-2xl cursor-pointer hover:border-car-border-light shrink-0 shadow-sm transition-all"
         >
-          展示无线快传二维码
+          打开无线快传二维码
         </button>
-      </FeatureCard>
+      </div>
+    </FeatureCard>
 
-      <!-- 今日动态工程暗码 -->
-      <FeatureCard 
-        title="3. 今日动态工程暗码 (+10 / +5)"
-        desc="进入工程模式开启 WiFi ADB，屏幕左上角直读 IP 填入甲壳虫秒配对。"
-      >
+    <!-- 3. 今日动态工程暗码 (+10 / +5) -->
+    <FeatureCard 
+      title="3. 今日动态工程暗码与 ADB 开启"
+      desc="每日按时间对时生成的专车动态工程模式暗码，用于打开车机底层无线 ADB 调试与系统特权。"
+    >
+      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
+        <div class="flex-1 pr-6 flex flex-col">
+          <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-2">
+            吉利车机工程密码每天根据时间动态计算。点击右侧打开车机原生电话拨号盘，手动在键盘输入今日暗码即可秒进工程菜单开启 ADB。
+          </div>
+          <div class="flex items-center text-[14px] font-bold">
+            <span class="text-car-sub mr-2">今日标准暗码:</span>
+            <span class="font-mono text-[17px] text-car-accent font-black mr-4">{{ store.dynamicCode }}</span>
+            <span class="text-[13px] text-car-sub font-normal">(早期固件备用: {{ store.dynamicCodePlus5 }})</span>
+          </div>
+        </div>
+
         <button 
           @click="openDialer"
-          class="w-full min-h-[72px] bg-car-item border border-car-border text-car-text font-black text-[20px] rounded-xl cursor-pointer hover:border-car-border-light"
+          class="min-w-[220px] min-h-[72px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[19px] rounded-2xl cursor-pointer hover:border-car-border-light shrink-0 shadow-sm transition-all"
         >
-          调起车机电话拨号盘
+          查看暗码 & 打开电话
         </button>
-      </FeatureCard>
-    </div>
+      </div>
+    </FeatureCard>
   </div>
 </template>
 
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
-import { bridge, openModal, showToast } from '../store';
+import { store, bridge, openModal, showToast } from '../store';
 
 function openFileManager() {
   bridge.call('openFileManager');

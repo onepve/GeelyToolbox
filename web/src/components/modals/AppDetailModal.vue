@@ -6,19 +6,19 @@
     maxWidthClass="max-w-[1040px]"
     @close="closeModal('appDetail')"
   >
-    <div v-if="app" class="flex flex-col gap-5">
+    <div v-if="app" class="flex flex-col space-y-5">
       <!-- 基础元数据徽标栏 -->
-      <div class="flex items-center flex-wrap gap-2.5">
-        <span class="text-[13.5px] px-3 py-1 rounded-md bg-car-item border border-car-border text-car-text font-mono font-bold">
+      <div class="flex items-center flex-wrap">
+        <span class="text-[13.5px] px-3 py-1 rounded-md bg-car-item border border-car-border text-car-text font-mono font-bold mr-2.5 mb-2.5">
           包名: {{ app.package_name }}
         </span>
-        <span class="text-[13.5px] px-3 py-1 rounded-md bg-car-item border border-car-border text-car-text font-bold">
+        <span class="text-[13.5px] px-3 py-1 rounded-md bg-car-item border border-car-border text-car-text font-bold mr-2.5 mb-2.5">
           体积: {{ app.size }}
         </span>
-        <span class="text-[13.5px] px-3 py-1 rounded-md bg-car-item border border-car-border text-car-text font-bold">
+        <span class="text-[13.5px] px-3 py-1 rounded-md bg-car-item border border-car-border text-car-text font-bold mr-2.5 mb-2.5">
           架构: arm64-v8a (纯64位)
         </span>
-        <span class="text-[13.5px] px-3 py-1 rounded-md bg-car-item border border-car-border text-car-text font-bold">
+        <span class="text-[13.5px] px-3 py-1 rounded-md bg-car-item border border-car-border text-car-text font-bold mr-2.5 mb-2.5">
           编译发布: {{ app.updated_at }}
         </span>
       </div>
@@ -32,13 +32,13 @@
       </div>
 
       <!-- 详细特性说明卡片 -->
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col gap-2">
+      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-2">
         <span class="text-[18px] font-black text-car-text">功能特性与适配说明</span>
         <p class="text-[16.5px] text-car-sub font-semibold leading-relaxed whitespace-pre-wrap">{{ app.desc }}</p>
       </div>
 
       <!-- 动态全宽下载进度条 (下载中动态展开) -->
-      <div v-if="downloadProgress[app.id]" class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col gap-2">
+      <div v-if="downloadProgress[app.id]" class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col space-y-2">
         <div class="flex items-center justify-between text-[15px] font-bold text-car-text">
           <span>正在极速下载中 ({{ downloadProgress[app.id].speed || '3.5 MB/s' }})...</span>
           <span>{{ downloadProgress[app.id].percent || 0 }}%</span>
@@ -54,14 +54,14 @@
 
     <!-- 底部 66px 巨型车规大触控操作栏 -->
     <template #footer>
-      <div class="flex items-center justify-between gap-4 w-full">
+      <div class="flex items-center justify-between w-full">
         <!-- 专家模式卡主题通道按键 -->
         <button 
           v-if="store.settings.expert_rabbit"
           @click="openRabbitGuide"
-          class="h-[60px] px-6 bg-amber-500/15 border-2 border-amber-500/50 rounded-2xl text-amber-300 font-black text-[17.5px] cursor-pointer hover:bg-amber-500/25 ring-2 ring-amber-500/20 shadow-md flex items-center gap-2"
+          class="h-[60px] px-6 bg-amber-500/15 border-2 border-amber-500/50 rounded-2xl text-amber-300 font-black text-[17.5px] cursor-pointer hover:bg-amber-500/25 ring-2 ring-amber-500/20 shadow-md flex items-center"
         >
-          <span>⚡</span>
+          <span class="mr-2">⚡</span>
           <span>专家模式: 卡主题安装向导</span>
         </button>
         <div v-else></div>

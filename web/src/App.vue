@@ -149,6 +149,7 @@ onMounted(() => {
   --text-main: #FFFFFF;
   --text-sub: #94A3B8;
   --accent-gold: #F59E0B;
+  --modal-backdrop: rgba(11, 15, 25, 0.72);
 }
 
 html.light, body.light {
@@ -165,6 +166,7 @@ html.light, body.light {
   --accent-gold-bg: #FEF3C7;   /* 日间暖金底座 */
   --accent-gold-text: #78350F; /* 日间超深金棕墨字，WCAG AAA 顶级对比度 */
   --accent-gold-sub: #92400E;  /* 日间深金棕副字 */
+  --modal-backdrop: rgba(15, 23, 42, 0.40);
 }
 
 body {

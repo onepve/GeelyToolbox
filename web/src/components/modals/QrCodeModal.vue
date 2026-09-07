@@ -6,29 +6,29 @@
     maxWidthClass="max-w-[760px]"
     @close="closeModal('qrCode')"
   >
-    <div class="flex flex-col items-center text-center gap-4 py-2">
+    <div class="flex flex-col items-center text-center py-2">
       <!-- 网络状态胶囊 -->
       <div 
         :class="[
-          'px-4 py-1.5 rounded-full font-bold text-[15px]',
+          'px-5 py-2 rounded-full font-black text-[16px] mb-5 shadow-sm',
           isWifiConnected 
-            ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30' 
-            : 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
+            ? 'bg-emerald-500/15 text-emerald-500 border-2 border-emerald-500/40' 
+            : 'bg-amber-500/15 text-amber-500 border-2 border-amber-500/40'
         ]"
       >
         {{ isWifiConnected ? `局域网已连接: ${store.deviceInfo.car_ip}` : '提示: 请让手机与车机处于同一热点/Wi-Fi' }}
       </div>
 
       <!-- 二维码展示区 (220x220 纯白高对比) -->
-      <div class="p-4 bg-white rounded-3xl shadow-xl border-4 border-car-border flex flex-col items-center justify-center">
+      <div class="p-5 bg-white rounded-3xl shadow-xl border-4 border-car-border flex flex-col items-center justify-center mb-5">
         <canvas id="qrCodeCanvas" width="200" height="200" class="rounded-xl"></canvas>
-        <span class="text-black font-mono font-black text-[15px] mt-2 select-all">
+        <span class="text-black font-mono font-black text-[16px] mt-3 select-all">
           {{ serverUrl }}
         </span>
       </div>
 
       <!-- 操作步骤指引 (向右箭头单行流) -->
-      <div class="text-[16px] text-car-sub font-bold">
+      <div class="text-[17px] text-car-sub font-bold">
         手机连接同一 Wi-Fi ➔ 微信/相机扫一扫 ➔ 极速推包到车机 Download 目录
       </div>
     </div>

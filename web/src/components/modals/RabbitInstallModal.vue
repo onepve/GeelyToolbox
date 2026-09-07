@@ -9,8 +9,8 @@
     <div v-if="targetApp" class="flex flex-col space-y-5">
       <!-- 提示卡片 -->
       <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 flex flex-col space-y-2">
-        <div class="text-[19px] font-black text-amber-400 flex items-center gap-2">
-          <span>⚠️</span>
+        <div class="text-[19px] font-black text-amber-400 flex items-center">
+          <span class="mr-2">⚠️</span>
           <span>系统签名伪装与覆盖原理</span>
         </div>
         <p class="text-[15.5px] text-amber-200/90 leading-relaxed font-bold">
@@ -33,10 +33,10 @@
       </div>
 
       <!-- 操作选择大矩阵 (84px 黄金大磁贴) -->
-      <div class="grid grid-cols-2 gap-4 pt-2">
+      <div class="flex space-x-4 pt-2">
         <button 
           @click="startAutoPilot"
-          class="min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-accent flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-accent shadow-lg ring-2 ring-car-accent/20"
+          class="flex-1 min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-accent flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-accent shadow-lg ring-2 ring-car-accent/20"
         >
           <span class="text-[20px] font-black text-car-text">一键卡兔子向导 (半自动)</span>
           <span class="text-[14.5px] font-bold text-car-sub mt-1">自动打包注入屏保并唤起主题中心</span>
@@ -44,7 +44,7 @@
 
         <button 
           @click="reInjectDirectly"
-          class="min-h-[84px] p-4 rounded-2xl bg-car-item border border-car-border flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-border-light shadow-sm"
+          class="flex-1 min-h-[84px] p-4 rounded-2xl bg-car-item border border-car-border flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-border-light shadow-sm"
         >
           <span class="text-[20px] font-black text-car-text">仅重新注入伪装主题</span>
           <span class="text-[14.5px] font-bold text-car-sub mt-1">不唤起向导，仅重写底层兔子屏保包</span>

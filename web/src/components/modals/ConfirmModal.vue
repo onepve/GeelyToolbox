@@ -6,7 +6,7 @@
     maxWidthClass="max-w-[760px]"
     @close="closeModal('confirm')"
   >
-    <div v-if="confirmData" class="flex flex-col gap-5 py-2">
+    <div v-if="confirmData" class="flex flex-col py-2 space-y-5">
       <div 
         v-if="confirmData.isDanger"
         class="bg-rose-500/15 border-2 border-rose-500/40 rounded-2xl p-5 text-rose-500 text-[18px] font-black"
@@ -24,7 +24,7 @@
     </div>
 
     <template #footer>
-      <div class="flex items-center justify-end gap-4 w-full">
+      <div class="flex items-center justify-end space-x-4 w-full">
         <button 
           @click="closeModal('confirm')"
           class="min-h-[68px] px-10 rounded-2xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[20px] cursor-pointer hover:border-car-border-light shadow-sm"
