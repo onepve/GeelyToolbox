@@ -54,7 +54,18 @@
 
     <!-- 底部 66px 巨型车规大触控操作栏 -->
     <template #footer>
-      <div class="flex items-center justify-end gap-4 w-full">
+      <div class="flex items-center justify-between gap-4 w-full">
+        <!-- 专家模式卡主题通道按键 -->
+        <button 
+          v-if="store.settings.expert_rabbit"
+          @click="openRabbitGuide"
+          class="h-[60px] px-6 bg-amber-500/15 border-2 border-amber-500/50 rounded-2xl text-amber-300 font-black text-[17.5px] cursor-pointer hover:bg-amber-500/25 ring-2 ring-amber-500/20 shadow-md flex items-center gap-2"
+        >
+          <span>⚡</span>
+          <span>专家模式: 卡主题安装向导</span>
+        </button>
+        <div v-else></div>
+
         <button 
           @click="handleInstallAction"
           class="min-h-[66px] px-10 bg-car-item border-2 border-car-accent rounded-2xl text-car-text font-black text-[21px] cursor-pointer hover:border-car-accent shadow-lg ring-2 ring-car-accent/20"
@@ -83,5 +94,12 @@ function handleInstallAction() {
   if (!app.value) return;
   bridge.call('downloadApp', app.value.id, app.value.url, app.value.filename);
   showToast(`已下发任务: ${app.value.name}`);
+}
+
+function openRabbitGuide() {
+  if (!app.value) return;
+  const currentApp = app.value;
+  closeModal('appDetail');
+  store.modals.rabbitInstall = currentApp;
 }
 </script>

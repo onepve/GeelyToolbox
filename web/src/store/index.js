@@ -69,6 +69,7 @@ export const store = reactive({
     qrCode: false,
     dialer: false,
     appDetail: null,
+    rabbitInstall: null,
     customVoiceText: null,
     confirm: null,
     update: false,
