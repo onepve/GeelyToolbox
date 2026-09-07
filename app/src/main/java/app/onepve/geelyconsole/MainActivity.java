@@ -79,7 +79,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
     private WebView webView;
     private WebServer webServer;
-    private ToolboxBridge bridge;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean isWhitelistEnabled = false;
 
@@ -128,11 +127,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
             }
         });
-
-        // 0. 启动时确保系统 Download 目录与 语音主题包/ 创建就绪并自愈历史文件
-        try {
-            SystemUtils.ensureAppDirectories(this);
-        } catch (Exception ignored) {}
 
         // 1. 默认常驻启动后台无线快传 WebServer (8888 端口，开机即秒连)
         try {
@@ -185,20 +179,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 pushDeviceInfoToWeb();
-                mainHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (bridge != null) {
-                            bridge.refreshCloudAppsInternal(true);
-                        }
-                    }
-                }, 1000);
             }
         });
 
         webView.setWebChromeClient(new WebChromeClient());
-        bridge = new ToolboxBridge(this);
-        webView.addJavascriptInterface(bridge, "ToolboxBridge");
+        webView.addJavascriptInterface(new ToolboxBridge(this), "ToolboxBridge");
         webView.loadUrl("file:///android_asset/toolbox_ui.html");
     }
 
@@ -277,19 +262,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         Manifest.permission.WRITE_EXTERNAL_STORAGE,
                         Manifest.permission.READ_EXTERNAL_STORAGE
                 }, REQ_CODE_STORAGE);
-            } else {
-                SystemUtils.ensureAppDirectories(this);
             }
-        } else {
-            SystemUtils.ensureAppDirectories(this);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQ_CODE_STORAGE) {
-            SystemUtils.ensureAppDirectories(this);
         }
     }
 
@@ -307,11 +280,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
                     isWhitelistEnabled = SystemUtils.isApkVerifyWhitelistEnabled();
                     obj.put("whitelist", isWhitelistEnabled);
-                    String appVer = "1.3.2";
-                    try {
-                        appVer = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
-                    } catch (Exception ignored) {}
-                    obj.put("version", appVer != null ? appVer : "1.3.2");
+                    obj.put("version", "1.2.5");
                     boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) || 
                                            (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.xcmedia") == SystemUtils.APP_STATE_DISABLED);
                     boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
@@ -456,7 +425,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                 if (webView != null) {
                                     webView.evaluateJavascript("showUniversalConfirm({" +
                                             "title: '兔子时钟伪装注入成功！'," +
-                                            "desc: '已成功将所选安装包伪装打包至『兔子时钟』屏保主题！<br><br>• <b>第一步</b>：前往车机主题中心应用『兔子时钟』屏保；<br>• <b>第二步</b>：一键重启车机，开机后直接覆盖安装。'," +
+                                            "desc: '已成功将所选安装包伪装打包至『兔子时钟』屏保主题！<br><br>• <b>第一步</b>：前往车机主题中心应用『兔子时钟』屏保；<br>• <b>第二步</b>：一键软重启车机，开机后直接覆盖安装。'," +
                                             "btnText: '前往车机主题'," +
                                             "onConfirm: function() { callBridge('openRabbitThemeSetting'); }" +
                                             "});", null);
@@ -480,24 +449,17 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }).start();
     }
 
-    public void hardReboot() {
-        mainHandler.post(new Runnable() {
+    public void softReboot() {
+        Toast.makeText(this, "正在软重启车机系统...", Toast.LENGTH_SHORT).show();
+        new Thread(new Runnable() {
             @Override
             public void run() {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(MainActivity.this, "正在执行车机完整硬件冷重启 (20~25秒)...", Toast.LENGTH_SHORT).show();
-                        AppLogger.action("系统电源", "触发完整硬件冷重启 (reboot)", true, "整车冷启动");
-                        SystemUtils.executePrivileged(MainActivity.this, "reboot || svc power reboot");
-                    }
-                }).start();
+                try {
+                    AdbClient.execute(MainActivity.this, "setprop ctl.restart zygote");
+                } catch (Exception ignored) {
+                }
             }
-        });
-    }
-
-    public void softReboot() {
-        hardReboot();
+        }).start();
     }
 
     // WebServer Callbacks
@@ -556,7 +518,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     try {
-                        File downloadDir = SystemUtils.getAppDownloadDir();
+                        File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
                         if (!downloadDir.exists()) {
                             downloadDir.mkdirs();
                         }
@@ -597,58 +559,51 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public void promptSelectAutoPilotApk() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    List<File> apks = AutoPilotManager.scanDownloadedApks(MainActivity.this);
-                    try {
-                        JSONArray arr = new JSONArray();
-                        for (File apk : apks) {
-                            JSONObject item = new JSONObject();
-                            item.put("filename", apk.getName());
-                            item.put("path", apk.getAbsolutePath());
-                            item.put("sizeStr", String.format(java.util.Locale.CHINA, "%.1f MB", apk.length() / (1024.0 * 1024.0)));
-                            arr.put(item);
-                        }
-                        String script = "if(window.showAutoPilotApkSelector){window.showAutoPilotApkSelector(" + arr.toString() + ");}else if(window.showAmapAutoPilotSelector){window.showAmapAutoPilotSelector(" + arr.toString() + ");}";
-                        if (webView != null) {
-                            webView.evaluateJavascript(script, null);
-                        }
-                    } catch (Exception ignored) {}
-                }
-            });
-        }
-
-        @JavascriptInterface
         public void startAutoPilotInject(final String filename) {
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    if (filename == null || filename.trim().isEmpty()) {
-                        promptSelectAutoPilotApk();
-                        return;
-                    }
-
                     File targetFile = null;
-                    File downloadDir = SystemUtils.getAppDownloadDir();
-                    File f = new File(downloadDir, filename.trim());
-                    if (f.exists() && f.length() > 0) {
-                        targetFile = f;
-                    } else {
-                        File fOld = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用/" + filename.trim());
-                        if (fOld.exists() && fOld.length() > 0) {
-                            targetFile = fOld;
+                    if (filename != null && !filename.trim().isEmpty()) {
+                        File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
+                        File f = new File(downloadDir, filename.trim());
+                        if (f.exists() && f.length() > 0) {
+                            targetFile = f;
                         }
                     }
 
                     if (targetFile == null) {
-                        if (webView != null) {
-                            webView.evaluateJavascript("if(window.hideAutoPilotLoading){window.hideAutoPilotLoading();}", null);
+                        List<File> apks = AutoPilotManager.scanDownloadedApks(MainActivity.this);
+                        if (apks.isEmpty()) {
+                            if (webView != null) {
+                                webView.evaluateJavascript("if(window.hideAutoPilotLoading){window.hideAutoPilotLoading();}", null);
+                            }
+                            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                            boolean expert = prefs.getBoolean("expert_rabbit_theme_enabled", false);
+                            String msg = expert ? "未在 Download 目录检测到 APK 安装包，请先在软件中心下载或通过无线快传传输！"
+                                                : "未在 Download 目录检测到地图导航类 APK，请先在软件商城下载高德/百度地图！";
+                            Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+                            return;
+                        } else if (apks.size() == 1) {
+                            targetFile = apks.get(0);
+                        } else {
+                            if (webView != null) {
+                                webView.evaluateJavascript("if(window.hideAutoPilotLoading){window.hideAutoPilotLoading();}", null);
+                            }
+                            try {
+                                JSONArray arr = new JSONArray();
+                                for (File apk : apks) {
+                                    JSONObject item = new JSONObject();
+                                    item.put("filename", apk.getName());
+                                    item.put("path", apk.getAbsolutePath());
+                                    item.put("sizeStr", String.format(java.util.Locale.CHINA, "%.1f MB", apk.length() / (1024.0 * 1024.0)));
+                                    arr.put(item);
+                                }
+                                String script = "if(window.showAutoPilotApkSelector){window.showAutoPilotApkSelector(" + arr.toString() + ");}else if(window.showAmapAutoPilotSelector){window.showAmapAutoPilotSelector(" + arr.toString() + ");}";
+                                webView.evaluateJavascript(script, null);
+                            } catch (Exception ignored) {}
+                            return;
                         }
-                        Toast.makeText(context, "未找到指定的安装包: " + filename + "，请重新选择", Toast.LENGTH_LONG).show();
-                        promptSelectAutoPilotApk();
-                        return;
                     }
 
                     final File finalTarget = targetFile;
@@ -705,7 +660,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         @Override
                         public void run() {
                             try {
-                                File downloadDir = SystemUtils.getAppDownloadDir();
+                                File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
                                 File apkFile = new File(downloadDir, filename);
                                 if (!apkFile.exists() || apkFile.length() == 0) {
                                     mainHandler.post(new Runnable() {
@@ -757,7 +712,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                             if (webView != null) {
                                                 webView.evaluateJavascript("showUniversalConfirm({" +
                                                         "title: '兔子时钟主题注入成功！'," +
-                                                        "desc: '已成功将【" + filename + "】伪装打包至『兔子时钟』屏保主题！<br><br>• <b>第一步</b>：点击【前往车机主题】应用『兔子时钟』屏保；<br>• <b>第二步</b>：点击【一键重启车机】，开机后白名单自动放行即可覆盖安装。'," +
+                                                        "desc: '已成功将【" + filename + "】伪装打包至『兔子时钟』屏保主题！<br><br>• <b>第一步</b>：点击【前往车机主题】应用『兔子时钟』屏保；<br>• <b>第二步</b>：点击【一键软重启车机】，开机后白名单自动放行即可覆盖安装。'," +
                                                         "btnText: '前往车机主题'," +
                                                         "onConfirm: function() { callBridge('openRabbitThemeSetting'); }" +
                                                         "});", null);
@@ -934,7 +889,19 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void hardReboot() {
-            MainActivity.this.hardReboot();
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            showToast("正在执行车机完整硬件冷重启 (25~30秒)...");
+                            AppLogger.action("系统电源", "触发完整硬件冷重启 (reboot)", true, "整车冷启动");
+                            SystemUtils.executePrivileged(context, "reboot || svc power reboot");
+                        }
+                    }).start();
+                }
+            });
         }
 
         @JavascriptInterface
@@ -1011,26 +978,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     SystemUtils.setPackageEnabled(context, pkg, !freeze);
-                    if ("com.ecarx.appstore".equals(pkg) && freeze) {
-                        SystemUtils.executePrivileged(context, "pm clear com.ecarx.appstore");
-                        SystemUtils.enableApkVerifyWhitelist(context);
-                        isWhitelistEnabled = true;
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (webView != null) {
-                                    webView.loadUrl("javascript:if(window.showAppstoreFreezeRebootPrompt) showAppstoreFreezeRebootPrompt();");
-                                }
-                            }
-                        });
-                    } else {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(context, (freeze ? "已安全冻结: " : "已解冻恢复: ") + pkg, Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(context, (freeze ? "已安全冻结: " : "已解冻恢复: ") + pkg, Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
             }).start();
         }
@@ -1172,7 +1125,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                         webView.evaluateJavascript(script, null);
                                     } else if (!silent) {
                                         showToast("当前已是最新版本 v" + remoteVer + " (๑•̀ㅂ•́)و");
-                                        webView.evaluateJavascript("if(window.showToast){window.showToast('当前已是最新版本 v" + remoteVer + " (๑•̀ㅂ•́)و');}", null);
                                     }
                                 }
                             });
@@ -1181,18 +1133,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                 @Override
                                 public void run() {
                                     showToast("无法连接更新服务器，请检查车机网络");
-                                    webView.evaluateJavascript("if(window.showToast){window.showToast('无法连接更新服务器，请检查车机网络');}", null);
                                 }
                             });
                         }
                     } catch (Exception e) {
                         if (!silent) {
-                            final String err = e.getMessage();
                             mainHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    showToast("检查更新失败: " + err);
-                                    webView.evaluateJavascript("if(window.showToast){window.showToast('检查更新失败');}", null);
+                                    showToast("检查更新失败: " + e.getMessage());
                                 }
                             });
                         }
@@ -1231,13 +1180,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                 public void run() {
                                     String script = "if(window.updateToolboxSelfDone){window.updateToolboxSelfDone();}";
                                     webView.evaluateJavascript(script, null);
-                                    boolean launched = SystemUtils.installApkViaProvider(MainActivity.this, savedFile);
-                                    if (!launched) {
-                                        Toast.makeText(MainActivity.this, "未检测到系统安装器，已自动为你打开文件管理，请点击安装包完成升级！", Toast.LENGTH_LONG).show();
-                                        SystemUtils.openDocumentsUI(MainActivity.this);
-                                    } else {
-                                        Toast.makeText(MainActivity.this, "工具箱新版本下载完成，正在调起系统安装器...", Toast.LENGTH_SHORT).show();
-                                    }
+                                    showToast("工具箱新版本下载完成，正在通过安全通道调起安装...");
+                                    SystemUtils.installApkViaProvider(MainActivity.this, savedFile);
                                 }
                             });
                         }
@@ -1274,30 +1218,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         public void run() {
                             SystemUtils.OpResult res = SystemUtils.setPackageEnabled(MainActivity.this, "com.ecarx.appstore", !freeze);
                             if (freeze) {
-                                // 1. 清空应用商店缓存与残留数据
-                                SystemUtils.executePrivileged(MainActivity.this, "pm clear com.ecarx.appstore");
-                                // 2. 注入放行白名单属性
-                                SystemUtils.enableApkVerifyWhitelist(MainActivity.this);
-                                isWhitelistEnabled = true;
-                                AppLogger.i("应用商店", "已安全冻结、清空缓存并注入白名单属性，提示重启生效");
+                                showToast("已成功冻结吉利应用商店，白名单永久锁定！(๑•̀ㅂ•́)و");
                             } else {
-                                AppLogger.i("应用商店", "已解冻恢复原厂应用商店");
+                                showToast("已解冻恢复吉利应用商店");
                             }
                             SystemUtils.clearAppsCache();
                             pushDeviceInfoToWeb();
-
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (freeze) {
-                                        if (webView != null) {
-                                            webView.loadUrl("javascript:if(window.showAppstoreFreezeRebootPrompt) showAppstoreFreezeRebootPrompt();");
-                                        }
-                                    } else {
-                                        showToast("已解冻恢复吉利应用商店");
-                                    }
-                                }
-                            });
                         }
                     }).start();
                 }
@@ -1380,26 +1306,24 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         @Override
                         public void run() {
                             try {
-                                File rootDownloadDir = SystemUtils.getAppDownloadDir();
+                                File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
                                 int cleaned = 0;
-
-                                // 扫描清理 /sdcard/Download/ 根目录下的残留空文件夹（保留语音主题包目录）
-                                if (rootDownloadDir.exists() && rootDownloadDir.isDirectory()) {
-                                    File[] files = rootDownloadDir.listFiles();
+                                if (downloadDir.exists() && downloadDir.isDirectory()) {
+                                    File[] files = downloadDir.listFiles();
                                     if (files != null) {
                                         for (File f : files) {
-                                            if (f.isDirectory() && !"语音主题包".equals(f.getName()) && f.list() != null && f.list().length == 0) {
-                                                if (f.delete()) cleaned++;
+                                            if (f.isDirectory() && f.list() != null && f.list().length == 0) {
+                                                f.delete();
+                                                cleaned++;
                                             }
                                         }
                                     }
                                 }
-
                                 final int count = cleaned;
                                 mainHandler.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        Toast.makeText(context, "已清理 " + count + " 个系统残留空文件夹 (位于 Download 目录)", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(context, "已清理 " + count + " 个无效空文件夹", Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             } catch (Exception ignored) {
@@ -1416,18 +1340,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     try {
-                        File downloadDir = SystemUtils.getAppDownloadDir();
+                        File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
                         int count = 0;
                         if (downloadDir.exists() && downloadDir.isDirectory()) {
                             File[] files = downloadDir.listFiles();
                             if (files != null) {
                                 for (File f : files) {
-                                    // 仅删除 APK 安装包与临时碎片文件，绝不误删其他文档和文件夹
-                                    if (f.isFile()) {
-                                        String name = f.getName().toLowerCase();
-                                        if (name.endsWith(".apk") || name.endsWith(".tmp") || name.endsWith(".log")) {
-                                            if (f.delete()) count++;
-                                        }
+                                    if (f.isFile() && f.delete()) {
+                                        count++;
                                     }
                                 }
                             }
@@ -1436,14 +1356,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         mainHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                Toast.makeText(context, "已清空 Download 目录下 APK 安装包与临时文件 (共删除 " + finalCount + " 个文件)", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(context, "已清空下载目录全部文件 (已删除 " + finalCount + " 个文件)", Toast.LENGTH_SHORT).show();
                             }
                         });
                     } catch (Exception e) {
                         mainHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                Toast.makeText(context, "清理失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(context, "清空失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
@@ -1503,7 +1423,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             try {
                 org.json.JSONArray arr = new org.json.JSONArray(jsonArrayStr);
                 JSONObject result = new JSONObject();
-                File downloadDir = SystemUtils.getAppDownloadDir();
+                File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
                 for (int i = 0; i < arr.length(); i++) {
                     JSONObject item = arr.getJSONObject(i);
                     String id = item.optString("id");
@@ -1520,14 +1440,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             size = f.length();
                             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.CHINA);
                             downloadTime = sdf.format(new java.util.Date(f.lastModified()));
-                        } else {
-                            File fOld = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用/" + filename);
-                            if (fOld.exists() && fOld.length() > 0) {
-                                exists = true;
-                                size = fOld.length();
-                                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.CHINA);
-                                downloadTime = sdf.format(new java.util.Date(fOld.lastModified()));
-                            }
                         }
                     }
 
@@ -1554,16 +1466,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void downloadApp(final String appId, final String downloadUrl, final String filename) {
-            downloadApp(appId, downloadUrl, filename, 0);
-        }
-
-        @JavascriptInterface
-        public void downloadApp(final String appId, final String downloadUrl, final String filename, final long expectedBytes) {
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     Toast.makeText(context, "开始下载: " + (filename != null ? filename : appId), Toast.LENGTH_SHORT).show();
-                    DownloadManager.startDownload(appId, downloadUrl, filename, expectedBytes, new DownloadManager.DownloadListener() {
+                    DownloadManager.startDownload(appId, downloadUrl, filename, new DownloadManager.DownloadListener() {
                         @Override
                         public void onProgress(String id, final int progress, long downloadedBytes, long totalBytes, final String speedStr) {
                             mainHandler.post(new Runnable() {
@@ -1584,9 +1491,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                     if (webView != null) {
                                         webView.evaluateJavascript("if(window.updateDownloadSuccess) window.updateDownloadSuccess('" + appId + "', '" + savedFile.getName() + "');", null);
                                     }
-                                    if (id.startsWith("theme_") || savedFile.getName().endsWith(".zip")) {
-                                        Toast.makeText(context, "语音主题包下载就绪！\n点击【一键应用】即可立即生效", Toast.LENGTH_LONG).show();
-                                    } else if (!id.startsWith("amap") && !id.contains("firmware") && !id.contains("rescue")) {
+                                    if (!id.startsWith("amap") && !id.contains("firmware") && !id.contains("rescue")) {
                                         boolean hasSettings = SystemUtils.isPackageInstalled(MainActivity.this, "com.android.settings");
                                         if (hasSettings) {
                                             Toast.makeText(context, "下载完成，正在调起系统安装器...", Toast.LENGTH_SHORT).show();
@@ -1654,10 +1559,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void refreshCloudApps() {
-            refreshCloudAppsInternal(false);
-        }
-
-        public void refreshCloudAppsInternal(final boolean silent) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -1681,9 +1582,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                     if (webView != null) {
                                         webView.evaluateJavascript("if(window.applyCloudAppsJson) window.applyCloudAppsJson(" + JSONObject.quote(jsonContent) + "); if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(true, 'ok');", null);
                                     }
-                                    if (!silent) {
-                                        Toast.makeText(context, "车载软件列表已刷新至最新 (๑•̀ㅂ•́)و", Toast.LENGTH_SHORT).show();
-                                    }
+                                    Toast.makeText(context, "车载软件列表已刷新至最新 (๑•̀ㅂ•́)و", Toast.LENGTH_SHORT).show();
                                 }
                             });
                         } else {
@@ -1693,9 +1592,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                     if (webView != null) {
                                         webView.evaluateJavascript("if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(false, 'HTTP " + respCode + "');", null);
                                     }
-                                    if (!silent) {
-                                        Toast.makeText(context, "无法连接云端软件源", Toast.LENGTH_SHORT).show();
-                                    }
+                                    Toast.makeText(context, "无法连接云端软件源", Toast.LENGTH_SHORT).show();
                                 }
                             });
                         }
@@ -1704,11 +1601,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             @Override
                             public void run() {
                                 if (webView != null) {
-                                    webView.evaluateJavascript("if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(false, '" + e.getMessage().replace("'", "\'") + "');", null);
+                                    webView.evaluateJavascript("if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(false, '" + e.getMessage().replace("'", "\\'") + "');", null);
                                 }
-                                if (!silent) {
-                                    Toast.makeText(context, "刷新云端软件失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                }
+                                Toast.makeText(context, "刷新云端软件失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
@@ -1736,15 +1631,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    File downloadDir = SystemUtils.getAppDownloadDir();
-                    File targetApk = new File(downloadDir, filename);
-                    if (!targetApk.exists() || targetApk.length() == 0) {
-                        File oldApk = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用/" + filename);
-                        if (oldApk.exists() && oldApk.length() > 0) {
-                            targetApk = oldApk;
-                        }
-                    }
-                    final File apkFile = targetApk;
+                    File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
+                    final File apkFile = new File(downloadDir, filename);
                     if (!apkFile.exists() || apkFile.length() == 0) {
                         Toast.makeText(context, "文件不存在，请先下载: " + filename, Toast.LENGTH_SHORT).show();
                         return;
@@ -1867,7 +1755,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 org.json.JSONObject obj = new org.json.JSONObject();
                 obj.put("turn_360", prefs.getBoolean("vehicle_turn_360_enabled", false));
                 obj.put("light_nav", prefs.getBoolean("vehicle_light_nav_enabled", false));
-                
+                obj.put("flameout_voice", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
+
                 obj.put("voice_door_fl", prefs.getBoolean("voice_enable_door_fl", false));
                 obj.put("voice_door_fl_close", prefs.getBoolean("voice_enable_door_fl_close", false));
                 obj.put("voice_door_fr", prefs.getBoolean("voice_enable_door_fr", false));
@@ -1879,16 +1768,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_door_rear", prefs.getBoolean("voice_enable_door_rear", false));
                 obj.put("voice_trunk_open", prefs.getBoolean("voice_enable_trunk_open", false));
                 obj.put("voice_trunk_close", prefs.getBoolean("voice_enable_trunk_close", false));
-                obj.put("voice_gear", prefs.getBoolean("voice_enable_gear", false));
-                obj.put("voice_gear_d", prefs.getBoolean("voice_enable_gear_d", prefs.getBoolean("voice_enable_gear", false)));
-                obj.put("voice_gear_r", prefs.getBoolean("voice_enable_gear_r", prefs.getBoolean("voice_enable_gear", false)));
-                obj.put("voice_gear_p", prefs.getBoolean("voice_enable_gear_p", prefs.getBoolean("voice_enable_gear", false)));
-                obj.put("voice_gear_n", prefs.getBoolean("voice_enable_gear_n", prefs.getBoolean("voice_enable_gear", false)));
-                obj.put("voice_drive_mode", prefs.getBoolean("voice_enable_drive_mode", false));
-                obj.put("voice_mode_comfort", prefs.getBoolean("voice_enable_mode_comfort", prefs.getBoolean("voice_enable_drive_mode", false)));
-                obj.put("voice_mode_sport", prefs.getBoolean("voice_enable_mode_sport", prefs.getBoolean("voice_enable_drive_mode", false)));
-                obj.put("voice_mode_eco", prefs.getBoolean("voice_enable_mode_eco", prefs.getBoolean("voice_enable_drive_mode", false)));
-                obj.put("voice_mode_smart", prefs.getBoolean("voice_enable_mode_smart", prefs.getBoolean("voice_enable_drive_mode", false)));
+                obj.put("voice_gear_d", prefs.getBoolean("voice_enable_gear_d", true));
+                obj.put("voice_gear_r", prefs.getBoolean("voice_enable_gear_r", true));
+                obj.put("bt_audio_auto_route", prefs.getBoolean("bt_audio_auto_route", true));
+                obj.put("usb_media_auto_detect", prefs.getBoolean("usb_media_auto_detect", false));
+                obj.put("wheel_control_mode", prefs.getString("wheel_control_mode", "carmedia_first"));
+                obj.put("wheel_action_mute", prefs.getString("wheel_action_mute", "open_360"));
+                obj.put("wheel_action_mode", prefs.getString("wheel_action_mode", "open_360"));
+                obj.put("wheel_action_ok", prefs.getString("wheel_action_ok", "default"));
 
                 obj.put("custom_door_fl", !prefs.getString("custom_voice_door_fl.mp3", "").isEmpty());
                 obj.put("custom_door_fl_close", !prefs.getString("custom_voice_door_fl_close.mp3", "").isEmpty());
@@ -1903,35 +1790,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("custom_trunk_close", !prefs.getString("custom_voice_trunk_close.mp3", "").isEmpty());
                 obj.put("custom_gear_d", !prefs.getString("custom_voice_gear_d.mp3", "").isEmpty());
                 obj.put("custom_gear_r", !prefs.getString("custom_voice_gear_r.mp3", "").isEmpty());
-                obj.put("custom_gear_p", !prefs.getString("custom_voice_gear_p.mp3", "").isEmpty());
-                obj.put("custom_gear_n", !prefs.getString("custom_voice_gear_n.mp3", "").isEmpty());
-                obj.put("custom_mode_comfort", !prefs.getString("custom_voice_mode_comfort.mp3", "").isEmpty());
-                obj.put("custom_mode_eco", !prefs.getString("custom_voice_mode_eco.mp3", "").isEmpty());
-                obj.put("custom_mode_sport", !prefs.getString("custom_voice_mode_sport.mp3", "").isEmpty());
-                obj.put("custom_mode_smart", !prefs.getString("custom_voice_mode_smart.mp3", "").isEmpty());
-
-                obj.put("tts_door_fl", !prefs.getString("custom_text_door_fl.mp3", "").isEmpty());
-                obj.put("tts_door_fl_close", !prefs.getString("custom_text_door_fl_close.mp3", "").isEmpty());
-                obj.put("tts_door_fr", !prefs.getString("custom_text_door_fr.mp3", "").isEmpty());
-                obj.put("tts_door_fr_close", !prefs.getString("custom_text_door_fr_close.mp3", "").isEmpty());
-                obj.put("tts_door_rl", !prefs.getString("custom_text_door_rl.mp3", "").isEmpty());
-                obj.put("tts_door_rl_close", !prefs.getString("custom_text_door_rl_close.mp3", "").isEmpty());
-                obj.put("tts_door_rr", !prefs.getString("custom_text_door_rr.mp3", "").isEmpty());
-                obj.put("tts_door_rr_close", !prefs.getString("custom_text_door_rr_close.mp3", "").isEmpty());
-                obj.put("tts_trunk_open", !prefs.getString("custom_text_trunk_open.mp3", "").isEmpty());
-                obj.put("tts_trunk_close", !prefs.getString("custom_text_trunk_close.mp3", "").isEmpty());
-                obj.put("tts_gear_d", !prefs.getString("custom_text_gear_d.mp3", "").isEmpty());
-                obj.put("tts_gear_r", !prefs.getString("custom_text_gear_r.mp3", "").isEmpty());
-                obj.put("tts_gear_p", !prefs.getString("custom_text_gear_p.mp3", "").isEmpty());
-                obj.put("tts_gear_n", !prefs.getString("custom_text_gear_n.mp3", "").isEmpty());
-                obj.put("tts_mode_comfort", !prefs.getString("custom_text_mode_comfort.mp3", "").isEmpty());
-                obj.put("tts_mode_eco", !prefs.getString("custom_text_mode_eco.mp3", "").isEmpty());
-                obj.put("tts_mode_sport", !prefs.getString("custom_text_mode_sport.mp3", "").isEmpty());
-                obj.put("tts_mode_smart", !prefs.getString("custom_text_mode_smart.mp3", "").isEmpty());
-                obj.put("current_voice_theme_id", prefs.getString("current_voice_theme_id", "default"));
-                obj.put("current_voice_theme_name", prefs.getString("current_voice_theme_name", "官方内置·温婉知性 (微软晓晓)"));
-                obj.put("voice_playback_speed", (double) prefs.getFloat("voice_playback_speed", 1.0f));
-                obj.put("voice_audio_channel", prefs.getString("voice_audio_channel", "nav"));
+                obj.put("custom_flameout", !prefs.getString("custom_voice_flameout.mp3", "").isEmpty());
 
                 return obj.toString();
             } catch (Exception e) {
@@ -1957,221 +1816,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             });
         }
 
-        private android.media.MediaPlayer previewPlayer = null;
-
-        @JavascriptInterface
-        public void playVoicePreviewUrl(final String audioUrl) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        if (previewPlayer != null) {
-                            previewPlayer.stop();
-                            previewPlayer.release();
-                            previewPlayer = null;
-                        }
-                        previewPlayer = new android.media.MediaPlayer();
-                        previewPlayer.setAudioStreamType(android.media.AudioManager.STREAM_MUSIC);
-                        previewPlayer.setDataSource(audioUrl);
-                        previewPlayer.setOnPreparedListener(new android.media.MediaPlayer.OnPreparedListener() {
-                            @Override
-                            public void onPrepared(android.media.MediaPlayer mp) {
-                                mp.start();
-                            }
-                        });
-                        previewPlayer.setOnCompletionListener(new android.media.MediaPlayer.OnCompletionListener() {
-                            @Override
-                            public void onCompletion(android.media.MediaPlayer mp) {
-                                mp.release();
-                                previewPlayer = null;
-                            }
-                        });
-                        previewPlayer.prepareAsync();
-                    } catch (Exception e) {
-                        Toast.makeText(MainActivity.this, "播放试听失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public void stopVoicePreview() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        if (previewPlayer != null) {
-                            previewPlayer.stop();
-                            previewPlayer.release();
-                            previewPlayer = null;
-                        }
-                    } catch (Exception ignored) {}
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public void applyVoiceTheme(final String zipFilename) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        File baseDir0 = new File(Environment.getExternalStorageDirectory(), "Download/语音主题包");
-                        File baseDir1 = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用/语音主题包");
-                        File baseDir2 = new File(Environment.getExternalStorageDirectory(), "Download");
-                        File zipFile = new File(baseDir0, zipFilename);
-                        if (!zipFile.exists()) {
-                            zipFile = new File(baseDir1, zipFilename);
-                        }
-                        if (!zipFile.exists()) {
-                            zipFile = new File(baseDir2, zipFilename);
-                        }
-                        if (!zipFile.exists()) {
-                            zipFile = new File(zipFilename);
-                        }
-                        if (!zipFile.exists()) {
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(MainActivity.this, "未找到语音包文件: " + zipFilename, Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                            return;
-                        }
-
-                        File voiceDir = new File(getFilesDir(), "custom_voices");
-                        if (!voiceDir.exists()) voiceDir.mkdirs();
-
-                        java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(new java.io.FileInputStream(zipFile));
-                        java.util.zip.ZipEntry entry;
-                        byte[] buffer = new byte[16384];
-                        String themeName = zipFilename.replace(".zip", "");
-                        String themeId = "theme_custom";
-
-                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        android.content.SharedPreferences.Editor editor = prefs.edit();
-
-                        while ((entry = zis.getNextEntry()) != null) {
-                            String entryName = entry.getName();
-                            if (entry.isDirectory()) continue;
-                            String simpleName = new File(entryName).getName();
-                            File target = new File(voiceDir, simpleName);
-                            java.io.FileOutputStream fos = new java.io.FileOutputStream(target);
-                            int len;
-                            while ((len = zis.read(buffer)) > 0) {
-                                fos.write(buffer, 0, len);
-                            }
-                            fos.close();
-                            zis.closeEntry();
-
-                            if (simpleName.endsWith(".mp3")) {
-                                editor.putString("custom_voice_" + simpleName, target.getAbsolutePath());
-                            } else if (simpleName.equals("theme.json")) {
-                                try {
-                                    String jsonStr = new String(java.nio.file.Files.readAllBytes(target.toPath()), "UTF-8");
-                                    org.json.JSONObject to = new org.json.JSONObject(jsonStr);
-                                    if (to.has("name")) themeName = to.getString("name");
-                                    if (to.has("theme_id")) themeId = to.getString("theme_id");
-                                } catch (Exception ignored) {}
-                            }
-                        }
-                        zis.close();
-
-                        editor.putString("current_voice_theme_id", themeId);
-                        editor.putString("current_voice_theme_name", themeName);
-                        editor.apply();
-
-                        final String finalThemeName = themeName;
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(MainActivity.this, "【" + finalThemeName + "】已成功生效！", Toast.LENGTH_LONG).show();
-                                if (webView != null) {
-                                    webView.loadUrl("javascript:if(window.refreshVehicleAutoUI) refreshVehicleAutoUI(); if(window.renderApps) renderApps();");
-                                }
-                            }
-                        });
-                    } catch (final Exception e) {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(MainActivity.this, "应用语音包失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                            }
-                        });
-                    }
-                }
-            }).start();
-        }
-
-        @JavascriptInterface
-        public void setVoiceAudioChannel(final String channel) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putString("voice_audio_channel", channel).apply();
-                        String label = "nav".equals(channel) ? "导航引导通道 (独立音量·压低音乐)" : ("notification".equals(channel) ? "系统提示音通道" : "媒体音乐通道");
-                        Toast.makeText(MainActivity.this, "音频输出通道: " + label, Toast.LENGTH_SHORT).show();
-                        if (webView != null) {
-                            webView.loadUrl("javascript:if(window.refreshVehicleAutoUI) refreshVehicleAutoUI();");
-                        }
-                    } catch (Exception ignored) {}
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public void setVoiceSpeed(final float speed) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putFloat("voice_playback_speed", speed).apply();
-                        Toast.makeText(MainActivity.this, "播报语速已调整为 " + speed + "x", Toast.LENGTH_SHORT).show();
-                        if (webView != null) {
-                            webView.loadUrl("javascript:if(window.refreshVehicleAutoUI) refreshVehicleAutoUI();");
-                        }
-                    } catch (Exception ignored) {}
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public void resetVoiceTheme() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        File voiceDir = new File(getFilesDir(), "custom_voices");
-                        if (voiceDir.exists() && voiceDir.isDirectory()) {
-                            File[] files = voiceDir.listFiles();
-                            if (files != null) {
-                                for (File f : files) f.delete();
-                            }
-                        }
-                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        android.content.SharedPreferences.Editor editor = prefs.edit();
-                        java.util.Map<String, ?> all = prefs.getAll();
-                        for (String k : all.keySet()) {
-                            if (k.startsWith("custom_voice_")) {
-                                editor.remove(k);
-                            }
-                        }
-                        editor.putString("current_voice_theme_id", "default");
-                        editor.putString("current_voice_theme_name", "官方内置·温婉知性 (微软晓晓)");
-                        editor.apply();
-
-                        Toast.makeText(MainActivity.this, "已恢复为出厂内置温婉知性语音", Toast.LENGTH_SHORT).show();
-                        if (webView != null) {
-                            webView.loadUrl("javascript:if(window.refreshVehicleAutoUI) refreshVehicleAutoUI(); if(window.renderApps) renderApps();");
-                        }
-                    } catch (Exception ignored) {}
-                }
-            });
-        }
-
         @JavascriptInterface
         public void resetCustomVoice(final String voiceKey) {
             mainHandler.post(new Runnable() {
@@ -2193,83 +1837,18 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public String getVehicleHealthInfo() {
-            JSONObject obj = new JSONObject();
-            try {
-                int rawVolt = VehicleAutomationService.currentBatteryVoltRaw;
-                double volt = (rawVolt > 0) ? (rawVolt / 10.0) : 12.5;
-                obj.put("battery_volt", volt);
-                obj.put("battery_raw", rawVolt);
-
-                String batteryStatus;
-                String batteryClass;
-                if (volt < 11.5) {
-                    batteryStatus = "重度亏电";
-                    batteryClass = "red";
-                } else if (volt < 11.8) {
-                    batteryStatus = "低电警戒";
-                    batteryClass = "amber";
-                } else if (volt >= 13.5) {
-                    batteryStatus = "充能中";
-                    batteryClass = "green";
-                } else {
-                    batteryStatus = "健康充沛";
-                    batteryClass = "green";
-                }
-                obj.put("battery_status", batteryStatus);
-                obj.put("battery_class", batteryClass);
-
-                int engine = VehicleAutomationService.currentEngineState;
-                boolean isCharging = (volt >= 13.4 || engine > 0);
-                obj.put("generator_status", isCharging ? "发电机运转 (充能中)" : "纯电瓶供电 (耗电中)");
-                obj.put("generator_class", isCharging ? "green" : "blue");
-                obj.put("is_charging", isCharging);
-
-                int pmIn = VehicleAutomationService.currentPm25In;
-                int pmOut = VehicleAutomationService.currentPm25Out;
-                boolean hasPm25 = (pmIn >= 0 || pmOut >= 0);
-                obj.put("has_pm25", hasPm25);
-                obj.put("pm25_in", pmIn >= 0 ? pmIn : 0);
-                obj.put("pm25_out", pmOut >= 0 ? pmOut : 0);
-
-                obj.put("model_name", getVehicleModelName());
-                obj.put("selected_model", getSelectedVehicleModel());
-            } catch (Exception e) {
-                AppLogger.e("车辆健康", "getVehicleHealthInfo error: " + e.getMessage());
-            }
-            return obj.toString();
-        }
-
-        @JavascriptInterface
-        public String getVehicleModelName() {
-            android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            String manual = prefs.getString("selected_vehicle_model", "auto");
-            if ("cool".equals(manual)) return "吉利缤越 COOL (2022款 · 1.5TD 激擎版)";
-            if ("xingrui".equals(manual)) return "吉利星瑞 (FS11 · CMA架构)";
-            if ("general".equals(manual)) return "通用吉利车型 (已安全降级)";
-            // auto
-            String detected = VehicleAutomationService.detectVehicleModel();
-            if ("cool".equals(detected)) return "自适应锁定: 吉利缤越 COOL (2022款 · 1.5TD 激擎版)";
-            if ("xingrui".equals(detected)) return "自适应锁定: 吉利星瑞 (FS11 · CMA架构)";
-            return "自适应锁定: 通用吉利车型 (已安全降级)";
-        }
-
-        @JavascriptInterface
-        public String getSelectedVehicleModel() {
-            android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            return prefs.getString("selected_vehicle_model", "auto");
-        }
-
-        @JavascriptInterface
-        public boolean setVehicleModel(final String modelKey) {
+        public boolean setWheelControlStringSetting(final String key, final String value) {
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                    prefs.edit().putString("selected_vehicle_model", modelKey).apply();
-                    VehicleAutomationService.syncState(MainActivity.this);
-                    AppLogger.i("车型适配", "切换车型协议: " + modelKey);
-                    showToast("已切换适配车型协议");
+                    try {
+                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        prefs.edit().putString(key, value).apply();
+                        VehicleAutomationService.syncState(MainActivity.this);
+                        AppLogger.i("方控设置", "更新字符设置: " + key + " -> " + value);
+                    } catch (Exception e) {
+                        AppLogger.e("方控设置", "更新失败: " + e.getMessage());
+                    }
                 }
             });
             return true;
@@ -2322,21 +1901,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     } else if ("trunk_close".equals(type)) {
                         player.play("trunk_close.mp3", "后备箱已关闭");
                     } else if ("gear_d".equals(type)) {
-                        player.play("gear_d.mp3", "前进挡");
+                        player.play("gear_d.mp3", "已挂入前进挡，系好安全带，祝你一路平安");
                     } else if ("gear_r".equals(type)) {
-                        player.play("gear_r.mp3", "注意倒车");
-                    } else if ("gear_p".equals(type)) {
-                        player.play("gear_p.mp3", "已挂入驻车挡");
-                    } else if ("gear_n".equals(type)) {
-                        player.play("gear_n.mp3", "空挡");
-                    } else if ("mode_comfort".equals(type)) {
-                        player.play("mode_comfort.mp3", "舒适模式");
-                    } else if ("mode_eco".equals(type)) {
-                        player.play("mode_eco.mp3", "经济模式");
-                    } else if ("mode_sport".equals(type)) {
-                        player.play("mode_sport.mp3", "运动模式");
-                    } else if ("mode_smart".equals(type)) {
-                        player.play("mode_smart.mp3", "智能模式");
+                        player.play("gear_r.mp3", "已挂入倒车挡，请注意观察后方安全");
+                    } else if ("flameout".equals(type)) {
+                        player.play("flameout.mp3", "车辆已熄火，请带好随身物品");
                     } else if ("seatbelt".equals(type)) {
                         player.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
                     } else {
@@ -2347,53 +1916,28 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public void setCustomVoiceText(String voiceKey, String text) {
-            android.content.SharedPreferences prefs = MainActivity.this.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            if (text == null || text.trim().isEmpty()) {
-                prefs.edit().remove("custom_text_" + voiceKey).apply();
-            } else {
-                prefs.edit().putString("custom_text_" + voiceKey, text.trim()).apply();
-            }
-        }
-
-        @JavascriptInterface
-        public String getCustomVoiceText(String voiceKey) {
-            android.content.SharedPreferences prefs = MainActivity.this.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            return prefs.getString("custom_text_" + voiceKey, "");
-        }
-
-        @JavascriptInterface
-        public void testSpeakCustomText(final String text) {
-            if (text != null && !text.trim().isEmpty()) {
-                mainHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        VehicleVoicePlayer.getInstance(MainActivity.this).speakText(text.trim());
-                    }
-                });
-            }
-        }
-
-        @JavascriptInterface
         public void openTtsSettings() {
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    boolean xiaoaiInstalled = SystemUtils.isPackageInstalled(context, "com.xiaomi.mibrain.speech");
-                    if (xiaoaiInstalled) {
-                        SystemUtils.executeShell("settings put secure tts_default_synth com.xiaomi.mibrain.speech && settings put secure tts_enabled_plugins com.xiaomi.mibrain.speech");
-                        Toast.makeText(context, "小爱TTS引擎已自动激活为默认语音！", Toast.LENGTH_SHORT).show();
-                        AppLogger.i("语音引擎", "小爱TTS引擎底层自动激活成功");
-                    } else {
-                        Toast.makeText(context, "未安装小爱TTS引擎，可从商城下载", Toast.LENGTH_SHORT).show();
+                    try {
+                        Intent xiaoaiIntent = new Intent();
+                        xiaoaiIntent.setClassName("com.xiaomi.mibrain.speech", "com.xiaomi.mibrain.speech.tts.TtsSettingsActivity");
+                        xiaoaiIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(xiaoaiIntent);
+                        return;
+                    } catch (Exception ignored) {
+                    }
+
+                    try {
+                        Intent sysTts = new Intent("com.android.settings.TTS_SETTINGS");
+                        sysTts.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(sysTts);
+                    } catch (Exception e) {
+                        Toast.makeText(context, "未找到语音引擎设置界面", Toast.LENGTH_SHORT).show();
                     }
                 }
             });
-        }
-
-        @JavascriptInterface
-        public boolean isXiaoAiTtsInstalled() {
-            return SystemUtils.isPackageInstalled(context, "com.xiaomi.mibrain.speech");
         }
 
         @JavascriptInterface
