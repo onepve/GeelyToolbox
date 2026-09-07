@@ -203,12 +203,14 @@ jobs:
               git push origin --delete "$tag" 2>/dev/null || true
             fi
           done
-            env:
+        env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            # 每次运行无论成功失败，自动清理旧缓存、历史旧构建产物与所有历史 CI 运行记录，防止存储超量
+      # 每次运行无论成功失败，自动清理旧缓存、历史旧构建产物与所有历史 CI 运行记录，防止存储超量
       - name: Auto Cleanup Old CI Runs, Caches & Artifacts
         if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
           echo "1. Cleaning up repository action caches..."
@@ -232,5 +234,3 @@ jobs:
               gh run delete "$run_id" -R "${{ github.repository }}" 2>/dev/null || true
             fi
           done
-            env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

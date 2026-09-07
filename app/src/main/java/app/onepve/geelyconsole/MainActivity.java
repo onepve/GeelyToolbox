@@ -1142,7 +1142,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public String getDeviceUid() {
             try {
-                String androidId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+                String androidId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
                 if (androidId != null && !androidId.isEmpty()) {
                     return androidId.toUpperCase(Locale.ROOT);
                 }
