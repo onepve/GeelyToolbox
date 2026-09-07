@@ -1,7 +1,7 @@
 <template>
-  <ModalWrapper 
-    :show="store.modals.log" 
-    title="吉利智驾 · 中枢运行与守护日志" 
+  <ModalWrapper
+    :show="store.modals.log"
+    title="吉利智驾 · 运行与守护日志"
     badge="自动轮转"
     maxWidthClass="max-w-[1080px]"
     @close="closeModal('log')"
@@ -105,7 +105,7 @@ function clearLogs() {
     onConfirm: () => {
       bridge.call('clearRunLog');
       logContent.value = '[日志已清空]';
-      showToast('中枢运行日志已清空');
+      showToast('运行与守护日志已清空');
     }
   });
 }

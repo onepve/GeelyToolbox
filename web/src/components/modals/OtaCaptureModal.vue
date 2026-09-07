@@ -21,12 +21,12 @@
           </div>
         </div>
 
-        <!-- 详细操作指引卡片 -->
-        <div class="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 flex flex-col space-y-2">
-          <span class="text-[15.5px] font-black flex items-center">
+        <!-- 详细操作指引卡片 (支持日间黑字/夜间白字高对比度) -->
+        <div class="p-5 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-2.5 shadow-sm">
+          <span class="text-[16px] font-black text-car-accent flex items-center">
             <span class="mr-1.5">💡</span> 标准操作流程向导：
           </span>
-          <div class="text-[14px] font-bold leading-relaxed space-y-1 pl-1 text-slate-200">
+          <div class="text-[14.5px] font-bold leading-relaxed space-y-1.5 pl-1 text-car-text">
             <div>1. 点击下方<b>【打开系统升级】</b>进入车机原厂设置界面，点击一次<b>【检查更新】</b>；</div>
             <div>2. 待车机完成联网检索后，返回吉利智驾并点击<b>【已确认运行过 · 立即抓取】</b>；</div>
             <div>3. 软件将自动检索系统日志缓冲区与 OTA 缓存，秒级提取官方完整升级包下载直链。</div>

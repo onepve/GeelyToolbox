@@ -27,7 +27,7 @@
         </div>
 
         <span class="text-[14.5px] text-car-sub font-bold">
-          专为吉利汽车 亿咖通 E02 / IHU516 (缤越 COOL / 缤瑞 / 博越) 深度定制的座舱中枢
+          专为吉利汽车 亿咖通 E02 / IHU516 (缤越 COOL / 缤瑞 / 博越) 深度定制的座舱系统
         </span>
 
         <!-- 车机硬件唯一识别码 (UID) -->
@@ -109,6 +109,12 @@
         </button>
 
         <div class="flex items-center space-x-3">
+          <button 
+            @click="forceDownloadCurrent"
+            class="min-h-[60px] px-6 bg-car-item border-2 border-car-border rounded-xl text-car-sub hover:text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+          >
+            强制重新下载
+          </button>
           <button 
             @click="checkUpdate"
             class="min-h-[60px] px-8 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[18.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md"
@@ -193,6 +199,13 @@ function checkUpdate() {
     } else {
       bridge.call('checkUpdate');
     }
+  } catch (e) {}
+}
+
+function forceDownloadCurrent() {
+  showToast('正在获取云端完整安装包...');
+  try {
+    bridge.call('forceCheckUpdate', useBetaChannel.value);
   } catch (e) {}
 }
 

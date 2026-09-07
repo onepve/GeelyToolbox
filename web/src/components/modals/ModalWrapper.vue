@@ -2,7 +2,7 @@
   <transition name="modal-fade">
     <div 
       v-if="show" 
-      class="fixed top-0 left-0 w-screen h-screen z-50 flex items-center justify-center p-6 select-none"
+      :class="['fixed top-0 left-0 w-screen h-screen flex items-center justify-center p-6 select-none', zIndexClass || 'z-50']"
       style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: var(--modal-backdrop, rgba(11, 15, 25, 0.70));"
       @click.self="handleBackdropClick"
     >
@@ -53,6 +53,7 @@ const props = defineProps({
   badge: String,
   maxWidthClass: String,
   maxHeightClass: String,
+  zIndexClass: String,
   closeOnBackdrop: {
     type: Boolean,
     default: true

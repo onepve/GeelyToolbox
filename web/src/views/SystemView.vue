@@ -67,20 +67,20 @@
               : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
           ]"
         >
-          <span>{{ store.deviceInfo.whitelist ? '白名单: 已放行 (安全)' : '白名单: 未放行 (点击开启)' }}</span>
+          <span>{{ store.deviceInfo.whitelist ? '白名单: 已放行' : '白名单: 未放行 (点击开启)' }}</span>
         </button>
       </FeatureCard>
 
-      <!-- 4. 中枢运行与安全审计日志 -->
+      <!-- 4. 运行与安全审计日志 -->
       <FeatureCard 
-        title="4. 中枢运行日志查看"
-        desc="实时抓取开门、挡位与方控守护日志，支持清空与导出。"
+        title="4. 运行与守护日志"
+        desc="实时记录开门、挡位与方控触发记录，支持清空与导出。"
       >
         <button 
           @click="openLogModal"
           class="w-full min-h-[72px] rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
         >
-          <span>查看中枢运行日志</span>
+          <span>查看运行与守护日志</span>
         </button>
       </FeatureCard>
 
@@ -102,10 +102,10 @@
         </button>
       </FeatureCard>
 
-      <!-- 6. 中枢点火自启与后台守护 -->
+      <!-- 6. 车辆启动自动运行 -->
       <FeatureCard 
-        title="6. 中枢点火开机自启"
-        desc="车机通电点火后自动自启中枢服务，门控与方控即刻生效。"
+        title="6. 车辆启动自动运行"
+        desc="车机通电开机后自动自启后台服务，门控与方控即刻生效。"
       >
         <button 
           @click="toggleAutostart"
@@ -213,6 +213,6 @@ function toggleAutostart() {
   const next = !store.deviceInfo.autostart;
   store.deviceInfo.autostart = next;
   bridge.call('setAutostartEnabled', next);
-  showToast(next ? '已开启中枢点火开机自启' : '已关闭中枢点火开机自启');
+  showToast(next ? '已开启车辆启动自动运行' : '已关闭车辆启动自动运行');
 }
 </script>

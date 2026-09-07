@@ -73,6 +73,32 @@ def main():
             "sha256": sha256,
             "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v={version_name}",
             "changelog": (
+                "1. 界面术语通俗化重构：彻底移除'中枢'等晦涩词汇，改用'车辆启动自动运行'、'运行与守护日志'\n"
+                "2. 弹窗层级与视图全场景自愈：清空日志确认弹窗 z-index 提权至最高层(z-9999)彻底根除遮挡，白天模式 OTA 抓取向导升级为清澈深墨黑高对比度\n"
+                "3. 关于弹窗新增【强制重新下载】：支持同版本下直接强制从云端覆盖重下，白名单按钮彻底剔除 0、1 与多余括号\n"
+                "4. 方向盘方控自适应接管：首次启动自动检测米小江(CarMedia)，已安装默认米小江优先，未安装默认控制台接管\n"
+                "5. 按键映射支持自定义打开第三方应用：编号2(滚轮按压)、编号3(静音短按)、编号6(Mode键)均支持自由绑定已安装第三方软件\n"
+                "6. 彻底移除 USB 与蓝牙冗余模块：全面交给米小江接管，后台彻底释放 I/O 资源，界面回归纯净克制"
+            ),
+            "release_date": today
+        }
+        with open("/tmp/version-beta.json", "w", encoding="utf-8") as f:
+            json.dump(meta, f, ensure_ascii=False, indent=2)
+        print(">> /tmp/version-beta.json generated.")
+    else:
+        meta = {
+            "version": version_name,
+            "version_code": version_code,
+            "is_beta": False,
+            "min_sdk": 28,
+            "target_sdk": 28,
+            "package_name": "app.onepve.geelyconsole",
+            "size": size_mb,
+            "bytes": bytes_len,
+            "md5": md5,
+            "sha256": sha256,
+            "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v={version_name}",
+            "changelog": (
                 "1. 方向盘方控自适应接管：首次启动自动检测米小江(CarMedia)，已安装默认米小江优先，未安装默认控制台接管\n"
                 "2. 按键映射支持自定义打开第三方应用：编号2(滚轮按压)、编号3(静音短按)、编号6(Mode键)均支持自由绑定已安装第三方软件\n"
                 "3. 按键默认值精简与规则优化：编号2与编号3默认保持原厂不动，编号3移除无效的音量暂停项，编号6按米小江安装自适应默认项\n"

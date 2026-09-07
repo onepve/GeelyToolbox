@@ -1,10 +1,11 @@
 <template>
-  <ModalWrapper 
-    :show="!!store.modals.confirm" 
-    :title="confirmData?.title || '操作确认'" 
-    :badge="confirmData?.isDanger ? '高危注意' : '二次确认'"
-    maxWidthClass="max-w-[760px]"
-    @close="closeModal('confirm')"
+  <ModalWrapper
+    :show="!!store.modals.confirm"
+    :title="confirmData?.title || '操作确认'"
+    :badge="confirmData?.isDanger ? '高危操作' : '安全确认'"
+    maxWidthClass="max-w-[700px]"
+    zIndexClass="z-[9999]"
+    @close="handleCancel"
   >
     <div v-if="confirmData" class="flex flex-col py-2 space-y-5">
       <div 
@@ -57,6 +58,13 @@ const confirmData = computed(() => store.modals.confirm);
 function handleConfirm() {
   if (confirmData.value && typeof confirmData.value.onConfirm === 'function') {
     confirmData.value.onConfirm();
+  }
+  closeModal('confirm');
+}
+
+function handleCancel() {
+  if (confirmData.value && typeof confirmData.value.onCancel === 'function') {
+    confirmData.value.onCancel();
   }
   closeModal('confirm');
 }

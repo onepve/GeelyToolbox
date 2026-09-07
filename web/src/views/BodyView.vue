@@ -5,7 +5,7 @@
       <div class="flex items-center justify-between pb-4 mb-4 border-b border-car-border/60">
         <div class="flex items-center">
           <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10B981] mr-3"></span>
-          <span class="text-[21px] font-black text-car-text">专车协议与车型适配中枢</span>
+          <span class="text-[21px] font-black text-car-text">专车协议与车型适配</span>
         </div>
         <!-- 核心流光高亮微胶囊 -->
         <div class="px-4 py-1.5 rounded-full bg-car-accent-bg border border-car-accent/50 flex items-center shadow-sm">

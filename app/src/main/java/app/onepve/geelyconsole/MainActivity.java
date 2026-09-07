@@ -1192,30 +1192,44 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public void forceCheckUpdate(final boolean isBetaChannel) {
+            checkUpdateInternal(false, isBetaChannel, true);
+        }
+
+        @JavascriptInterface
+        public void forceCheckUpdate() {
+            checkUpdateInternal(false, false, true);
+        }
+
+        @JavascriptInterface
         public void checkBetaUpdate() {
-            checkUpdateInternal(false, true);
+            checkUpdateInternal(false, true, false);
         }
 
         @JavascriptInterface
         public void checkBetaUpdateSilently() {
-            checkUpdateInternal(true, true);
+            checkUpdateInternal(true, true, false);
         }
 
         @JavascriptInterface
         public void checkUpdate() {
-            checkUpdateInternal(false, false);
+            checkUpdateInternal(false, false, false);
         }
 
         @JavascriptInterface
         public void checkUpdateSilently() {
-            checkUpdateInternal(true, false);
+            checkUpdateInternal(true, false, false);
         }
 
         private void checkUpdateInternal(final boolean silent) {
-            checkUpdateInternal(silent, false);
+            checkUpdateInternal(silent, false, false);
         }
 
         private void checkUpdateInternal(final boolean silent, final boolean isBetaChannel) {
+            checkUpdateInternal(silent, isBetaChannel, false);
+        }
+
+        private void checkUpdateInternal(final boolean silent, final boolean isBetaChannel, final boolean forceShow) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -1247,8 +1261,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             mainHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    if (hasNew) {
-                                        // 唤起车载精致 H5 更新弹窗
+                                    if (hasNew || forceShow) {
+                                        // 唤起车载精致 H5 更新弹窗 (强制模式下即使同版本也弹窗供重新下载)
                                         String script = "if(window.showToolboxUpdateModal){window.showToolboxUpdateModal(" + json.toString() + ");}";
                                         webView.evaluateJavascript(script, null);
                                     } else if (!silent) {
