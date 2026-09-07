@@ -7,10 +7,10 @@
     >
       <button 
         @click="openFileManager"
-        class="w-full min-h-[80px] bg-car-accent-bg border-2 border-car-accent rounded-2xl p-4 flex items-center justify-center gap-4 text-car-accent-text font-black text-[22px] cursor-pointer hover:opacity-90 shadow-lg shadow-amber-950/20 ring-2 ring-car-accent/20"
+        class="w-full min-h-[80px] bg-car-item border-2 border-car-accent rounded-2xl p-4 flex items-center justify-center gap-4 text-car-text font-black text-[22px] cursor-pointer hover:border-car-accent shadow-lg ring-2 ring-car-accent/20"
       >
         <span>打开车机自带原生文件管理</span>
-        <span class="bg-car-accent text-black text-[14px] px-3 py-1 rounded-md font-extrabold">进入 Download 目录直接安装</span>
+        <span class="bg-car-card border border-car-accent text-car-accent text-[14px] px-3 py-1 rounded-md font-extrabold">进入 Download 目录直接安装</span>
       </button>
     </FeatureCard>
 

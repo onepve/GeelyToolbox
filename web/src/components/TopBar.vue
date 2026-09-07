@@ -29,7 +29,7 @@
       </button>
       <button 
         @click="toggleTheme"
-        class="h-[44px] px-4 rounded-xl bg-car-accent-bg border border-car-accent text-car-accent-text font-black text-[15.5px] cursor-pointer hover:opacity-90 transition-all"
+        class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light transition-all"
       >
         日夜模式
       </button>

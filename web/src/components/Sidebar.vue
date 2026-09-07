@@ -7,7 +7,7 @@
       :class="[
         'flex items-center justify-between px-5 min-h-[72px] rounded-2xl border-2 transition-all cursor-pointer font-black text-[19px]',
         store.currentNav === item.id 
-          ? 'bg-car-accent-bg border-car-accent text-car-accent-text shadow-md ring-2 ring-car-accent/20' 
+          ? 'bg-car-item border-car-accent text-car-text shadow-md ring-2 ring-car-accent/30' 
           : 'bg-car-item border-transparent text-car-sub hover:bg-car-hover hover:text-car-text'
       ]"
     >
@@ -15,7 +15,7 @@
       <span 
         :class="[
           'text-[13px] px-2.5 py-1 rounded-lg font-extrabold',
-          store.currentNav === item.id ? 'bg-car-accent text-black font-black' : 'bg-car-card border border-car-border text-car-sub'
+          store.currentNav === item.id ? 'border border-car-accent text-car-accent font-black bg-car-card' : 'bg-car-card border border-car-border text-car-sub'
         ]"
       >
         {{ item.badge }}

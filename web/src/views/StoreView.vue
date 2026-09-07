@@ -14,7 +14,7 @@
           @click="currentCategory = cat.id"
           :class="[
             'px-5 py-2.5 rounded-xl font-extrabold text-[16px] cursor-pointer transition-all',
-            currentCategory === cat.id ? 'bg-car-accent-bg border-2 border-car-accent text-car-accent-text font-black' : 'bg-car-item text-car-sub border border-car-border hover:border-car-border-light'
+            currentCategory === cat.id ? 'bg-car-item border-2 border-car-accent text-car-text font-black ring-2 ring-car-accent/20' : 'bg-car-item text-car-sub border border-car-border hover:border-car-border-light'
           ]"
         >
           {{ cat.name }}
@@ -45,7 +45,7 @@
 
         <button 
           @click="handleDownload(app)"
-          class="min-h-[58px] bg-car-accent-bg border-2 border-car-accent rounded-xl text-car-accent-text font-black text-[18px] cursor-pointer hover:opacity-90 shadow-md shadow-amber-950/20"
+          class="min-h-[58px] bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent-light shadow-md ring-2 ring-car-accent/15"
         >
           {{ app.statusText || '立即下载安装' }}
         </button>

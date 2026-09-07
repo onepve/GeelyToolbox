@@ -58,7 +58,7 @@
       <div class="flex items-center justify-end">
         <button 
           @click="openTtsSettings"
-          class="min-h-[64px] px-8 bg-car-accent-bg border-2 border-car-accent text-car-accent-text font-black text-[20px] rounded-xl cursor-pointer hover:opacity-90 shadow-md shadow-amber-950/20"
+          class="min-h-[64px] px-8 bg-car-item border-2 border-car-accent text-car-text font-black text-[20px] rounded-xl cursor-pointer hover:border-car-accent shadow-md ring-2 ring-car-accent/20"
         >
           进入小爱设置
         </button>
