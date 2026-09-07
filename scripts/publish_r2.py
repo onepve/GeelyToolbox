@@ -21,12 +21,24 @@ def main():
 
     md5, sha256, bytes_len, size_mb = get_apk_meta(apk_path)
     tag_name = os.environ.get("TAG_NAME", "")
-    version_name = os.environ.get("VERSION_NAME", "1.4.0")
-    version_code = int(os.environ.get("VERSION_CODE", "7040"))
+    version_name = os.environ.get("VERSION_NAME", "1.4.2")
+    version_code = int(os.environ.get("VERSION_CODE", "7042"))
     today = date.today().isoformat()
 
+    # 如果有精准的 tag_name，以 Tag 中的版本为最高优先级！
+    if tag_name:
+        clean_tag = tag_name.replace("beta-v", "").replace("v", "").strip()
+        if clean_tag:
+            version_name = clean_tag
+            parts = clean_tag.split(".")
+            if len(parts) >= 3:
+                try:
+                    version_code = 7000 + int(parts[1]) * 10 + int(parts[2])
+                except Exception:
+                    pass
+
     is_beta = tag_name.startswith("beta-")
-    print(f">> Executing publish metadata: tag={tag_name}, is_beta={is_beta}, ver={version_name}")
+    print(f">> Executing publish metadata: tag={tag_name}, is_beta={is_beta}, ver={version_name}, code={version_code}")
 
     if is_beta:
         meta = {
