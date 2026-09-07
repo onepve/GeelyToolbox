@@ -19,33 +19,39 @@
       </div>
 
       <!-- 图解内容展示区 -->
-      <div v-if="showDiagram" class="mt-4 pt-4 border-t border-car-border/60 flex flex-col md:flex-row items-center gap-6">
+      <div v-if="showDiagram" class="mt-4 pt-4 border-t border-car-border/60 flex items-start space-x-6">
         <!-- 原厂方向盘按键高清图示 -->
-        <div class="p-3 bg-white rounded-2xl shadow-md border-2 border-car-border max-w-[340px] shrink-0">
-          <img :src="wheelGuideImg" alt="吉利缤越 COOL 方向盘多媒体按键说明图 SX-0017" class="w-full h-auto rounded-xl object-contain" />
+        <div class="p-3 bg-white rounded-2xl shadow-md border-2 border-car-border w-[320px] min-w-[320px] max-w-[320px] shrink-0">
+          <img :src="wheelGuideImg" alt="吉利缤越 COOL 方向盘多媒体按键说明图 SX-0017" class="w-full h-auto rounded-xl object-contain block" />
         </div>
 
-        <!-- 按键编号与原厂定义清单 -->
-        <div class="flex-1 grid grid-cols-2 gap-3 text-[14.5px] font-bold text-car-sub">
-          <div class="p-2.5 rounded-xl bg-car-card border border-car-border">
-            <span class="text-car-text font-black mr-1.5">① 主页键:</span> 返回车机中控主页
+        <!-- 按键编号与原厂定义清单 (使用 space-y 与 space-x 实体隔离带，彻底杜绝低版本内核 gap 塌陷错位) -->
+        <div class="flex-1 flex flex-col space-y-2.5 text-[14.5px] font-bold text-car-sub">
+          <div class="flex space-x-3">
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border">
+              <span class="text-car-text font-black mr-1.5">① 主页键:</span> 返回车机中控主页
+            </div>
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border">
+              <span class="text-car-accent font-black mr-1.5">② 音量调节键:</span> 调节音量 / 垂直下压
+            </div>
           </div>
-          <div class="p-2.5 rounded-xl bg-car-card border border-car-border">
-            <span class="text-car-accent font-black mr-1.5">② 音量调节键:</span> 调节音量 / 垂直下压
+          <div class="flex space-x-3">
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border">
+              <span class="text-car-accent font-black mr-1.5">③ 静音键:</span> 开关静音 (长按10s硬件冷重启)
+            </div>
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border">
+              <span class="text-car-text font-black mr-1.5">④ 向右选择键:</span> 下一个文件 / 下一曲
+            </div>
           </div>
-          <div class="p-2.5 rounded-xl bg-car-card border border-car-border">
-            <span class="text-car-accent font-black mr-1.5">③ 静音键:</span> 开关静音 (长按10s硬件冷重启)
+          <div class="flex space-x-3">
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border">
+              <span class="text-car-text font-black mr-1.5">⑤ 模式切换键:</span> 切换主机与组合仪表控制权
+            </div>
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border">
+              <span class="text-car-accent font-black mr-1.5">⑥ MODE键:</span> 音源切换 / 自定义映射
+            </div>
           </div>
-          <div class="p-2.5 rounded-xl bg-car-card border border-car-border">
-            <span class="text-car-text font-black mr-1.5">④ 向右选择键:</span> 下一个文件 / 下一曲
-          </div>
-          <div class="p-2.5 rounded-xl bg-car-card border border-car-border">
-            <span class="text-car-text font-black mr-1.5">⑤ 模式切换键:</span> 切换主机与组合仪表控制权
-          </div>
-          <div class="p-2.5 rounded-xl bg-car-card border border-car-border">
-            <span class="text-car-accent font-black mr-1.5">⑥ MODE键:</span> 音源切换 / 自定义映射
-          </div>
-          <div class="p-2.5 rounded-xl bg-car-card border border-car-border col-span-2">
+          <div class="w-full p-3 rounded-xl bg-car-card border border-car-border">
             <span class="text-car-text font-black mr-1.5">⑦ 向左选择键:</span> 上一个文件 / 上一曲
           </div>
         </div>

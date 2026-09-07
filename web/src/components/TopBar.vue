@@ -80,7 +80,7 @@ import { computed } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
 
 const displayVersion = computed(() => {
-  return store.deviceInfo.version || '1.4.1';
+  return store.deviceInfo.version || '1.4.3';
 });
 
 const isBeta = computed(() => {
