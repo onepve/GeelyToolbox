@@ -6,6 +6,7 @@ on:
       - main
     tags:
       - 'v*'
+      - 'beta-v*'
   workflow_dispatch:
 
 permissions:
@@ -56,9 +57,9 @@ jobs:
           mkdir -p output
           cp app/build/outputs/apk/release/app-release.apk output/GeelyConsole.apk
 
-# APK 直接通过 R2 和 GitHub Release 分发，免占用 Actions Artifact 存储配额
+            # APK 直接通过 R2 和 GitHub Release 分发，免占用 Actions Artifact 存储配额
 
-      # 🌟 仅在推送正式版本 Tag (v*) 时才执行 R2 覆盖同步与发布，普通 push 仅作 CI 编译校验
+            # 🌟 分流推送：正式版 Tag (v*) 更新正式版，测试版 Tag (beta-v*) 仅更新测试通道
       - name: Push APK & Metadata to R2 on Tag
         if: startsWith(github.ref, 'refs/tags/')
         run: |
@@ -74,7 +75,7 @@ jobs:
           SHA256=$(sha256sum output/GeelyConsole.apk | cut -d' ' -f1)
           SIZE=$(stat -c%s output/GeelyConsole.apk)
           # 版本号从 build.gradle 提取
-          VERSION_NAME=$(grep -oP 'versionName "\K[^"]+' app/build.gradle)
+          VERSION_NAME=$(grep -oP 'versionName \"\K[^\"]+' app/build.gradle)
           VERSION_CODE=$(grep -oP 'versionCode \K[0-9]+' app/build.gradle)
           SIZE_MB=$(python3 -c "print(f'{$SIZE/1048576:.1f} MB')")
           echo "→ v$VERSION_NAME (code $VERSION_CODE) md5=$MD5 size=$SIZE_MB"
@@ -85,55 +86,88 @@ jobs:
           export AWS_DEFAULT_REGION=auto
           BUCKET="s3://downloads/GeelyToolbox/"
 
-          # 1. 上传 APK（直接覆盖 GeelyToolbox.apk，本体通过 GitHub Git 历史版本回退）
-          aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyToolbox.apk" \
-            --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
 
-          # 2. 更新 version.json
-          cat > /tmp/version.json <<'EOF'
-          {
-            "version": "__VER__",
-            "version_code": __CODE__,
+          export VER="$VERSION_NAME" CODE="$VERSION_CODE" MD5X="$MD5" SHAX="$SHA256" BYTESX="$SIZE" SIZEMB="$SIZE_MB" TODAY="$(date +%F)"
+          if [[ "$TAG_NAME" == beta-* ]]; then
+            echo "⚡ 正在执行【测试通道】发布 (beta)..."
+            aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyPilot-beta.apk" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+
+            python3 - <<'PYBETA'
+            import json, os
+            data = {
+            "version": os.environ["VER"] + "-beta",
+            "version_code": int(os.environ["CODE"]),
+            "is_beta": True,
             "min_sdk": 28,
             "target_sdk": 28,
             "package_name": "app.onepve.geelyconsole",
-            "size": "__SIZE_MB__",
-            "bytes": __BYTES__,
-            "md5": "__MD5__",
-            "sha256": "__SHA__",
-            "download_url": "https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=__VER__",
-            "changelog": "1. 新增【不再提醒】版本更新静默控制：更新弹窗提供不再提醒按钮，设置中提供【开机与前台自动检测更新】开关与恢复检测\\n2. 落地【有人感知状态机】：默认P挡与智能模式静默，手动换出P挡/切出智能模式置1激活全量播报，换回P挡/智能模式播报一次后置0归位，彻底消除蓝牙靠近与开机唤醒误报连报\\n3. 彻底根治布局错位：移除 flex gap，采用 18px 显式实体 margin-bottom 与 line-height 约束，真车 160DPI 零重叠零遮挡\\n4. 顶栏实装 PPanel 同款 12V 蓄电池电压流光微胶囊 (>=11.8V绿/11.5~11.8V橙/<11.5V红)，直出电压与健康状态\\n5. 实装【专家模式】卡主题安装向导独立组件 (RabbitInstallModal.vue)，向导流程闭环\\n6. 优化车规触控比例：按键高度收敛为 80px 黄金大磁贴，紧凑饱满单行防折字\\n7. 精简应用商城列表：彻底移除外部卡片多余的“立即下载”按钮，收敛至详情大弹窗内\\n8. 拔除冗余软重启按钮，收敛单一权威【整车完整硬件冷重启 (reboot)】\\n9. 修复 U 盘插入自动识别监听默认关闭 Bug，双轨支持标准媒体挂载与物理 USB 设备接入播报",
-            "release_date": "$(date +%F)"
-          }
-          EOF
-          sed -i "s/__VER__/$VERSION_NAME/g; s/__CODE__/$VERSION_CODE/g; s/__SIZE_MB__/$SIZE_MB/g; s/__BYTES__/$SIZE/g; s/__MD5__/$MD5/g; s/__SHA__/$SHA256/g" /tmp/version.json
-          aws s3 cp /tmp/version.json "${BUCKET}version.json" \
-            --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+            "size": os.environ["SIZEMB"],
+            "bytes": int(os.environ["BYTESX"]),
+            "md5": os.environ["MD5X"],
+            "sha256": os.environ["SHAX"],
+            "download_url": "https://dl.onepve.com/GeelyToolbox/GeelyPilot-beta.apk?v=" + os.environ["VER"],
+            "changelog": "【测试通道优先体验】\n1. 自动同步内测修复与前沿特性实验\n2. 仅面向已激活测试身份的车友推送，正式车友不受任何影响",
+            "release_date": os.environ["TODAY"]
+            }
+            with open("/tmp/version-beta.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+            PYBETA
+            aws s3 cp /tmp/version-beta.json "${BUCKET}version-beta.json" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
 
-          # 3. 更新 apps.json toolbox 字段（拉线上 → 改 → 传回）
-          curl -s "https://dl.onepve.com/GeelyToolbox/apps.json?t=$(date +%s)" -o /tmp/apps.json
-          export VER="$VERSION_NAME" CODE="$VERSION_CODE" MD5X="$MD5" SHAX="$SHA256" BYTESX="$SIZE" SIZEMB="$SIZE_MB" TODAY="$(date +%F)"
-          python3 - <<'PYEOF'
-          import json, os
-          with open('/tmp/apps.json', encoding='utf-8') as f:
-              data = json.load(f)
-          data['version'] = os.environ['VER']
-          data['updated_at'] = os.environ['TODAY']
-          tb = data.get('toolbox', {})
-          tb.update({
-              'version': os.environ['VER'], 'version_code': int(os.environ['CODE']),
-              'md5': os.environ['MD5X'], 'sha256': os.environ['SHAX'], 'bytes': int(os.environ['BYTESX']),
-              'size': os.environ['SIZEMB'],
-              'download_url': 'https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=' + os.environ['VER'],
-          })
-          data['toolbox'] = tb
-          with open('/tmp/apps.json', 'w', encoding='utf-8') as f:
-              json.dump(data, f, ensure_ascii=False, indent=4)
-          PYEOF
-          aws s3 cp /tmp/apps.json "${BUCKET}apps.json" \
-            --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+          else
+            echo "🚀 正在执行【正式通道】发布 (Release)..."
+            aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyToolbox.apk" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
 
-          echo "✅ R2 同步完成: v$VERSION_NAME (code $VERSION_CODE) md5=$MD5"
+            python3 - <<'PYREL'
+            import json, os
+            data = {
+            "version": os.environ["VER"],
+            "version_code": int(os.environ["CODE"]),
+            "is_beta": False,
+            "min_sdk": 28,
+            "target_sdk": 28,
+            "package_name": "app.onepve.geelyconsole",
+            "size": os.environ["SIZEMB"],
+            "bytes": int(os.environ["BYTESX"]),
+            "md5": os.environ["MD5X"],
+            "sha256": os.environ["SHAX"],
+            "download_url": "https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=" + os.environ["VER"],
+            "changelog": "1. 落地【双轨发布体系】：全面支持【测试通道 (Beta)】与【正式通道 (Release)】，设置关于中支持连击 5 次版本号解锁内测特权，查看车机硬件唯一识别码 (UID)，随心切换双轨通道\n2. 新增【不再提醒】版本更新静默控制：更新弹窗提供不再提醒按钮，设置中提供【开机与前台自动检测更新】开关与恢复检测\n3. 落地【有人感知状态机】：默认P挡与智能模式静默，手动换出P挡/切出智能模式置1激活全量播报，换回P挡/智能模式播报一次后置0归位，彻底消除蓝牙靠近与开机唤醒误报连报\n4. 彻底根治布局错位：移除 flex gap，采用 18px 显式实体 margin-bottom 与 line-height 约束，真车 160DPI 零重叠零遮挡\n5. 顶栏实装 PPanel 同款 12V 蓄电池电压流光微胶囊 (>=11.8V绿/11.5~11.8V橙/<11.5V红)，直出电压与健康状态\n6. 实装【专家模式】卡主题安装向导独立组件 (RabbitInstallModal.vue)，向导流程闭环\n7. 优化车规触控比例：按键高度收敛为 80px 黄金大磁贴，紧凑饱满单行防折字\n8. 精简应用商城列表：彻底移除外部卡片多余的“立即下载”按钮，收敛至详情大弹窗内\n9. 拔除冗余软重启按钮，收敛单一权威【整车完整硬件冷重启 (reboot)】\n10. 修复 U 盘插入自动识别监听默认关闭 Bug，双轨支持标准媒体挂载与物理 USB 设备接入播报",
+            "release_date": os.environ["TODAY"]
+            }
+            with open("/tmp/version.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+            PYREL
+            aws s3 cp /tmp/version.json "${BUCKET}version.json" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+
+            # 3. 更新 apps.json toolbox 字段
+            curl -s "https://dl.onepve.com/GeelyToolbox/apps.json?t=$(date +%s)" -o /tmp/apps.json
+            export VER="$VERSION_NAME" CODE="$VERSION_CODE" MD5X="$MD5" SHAX="$SHA256" BYTESX="$SIZE" SIZEMB="$SIZE_MB" TODAY="$(date +%F)"
+            python3 - <<'PYEOF'
+            import json, os
+            with open('/tmp/apps.json', encoding='utf-8') as f:
+            data = json.load(f)
+            data['version'] = os.environ['VER']
+            data['updated_at'] = os.environ['TODAY']
+            tb = data.get('toolbox', {})
+            tb.update({
+            'version': os.environ['VER'], 'version_code': int(os.environ['CODE']),
+            'md5': os.environ['MD5X'], 'sha256': os.environ['SHAX'], 'bytes': int(os.environ['BYTESX']),
+            'size': os.environ['SIZEMB'],
+            'download_url': 'https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=' + os.environ['VER'],
+            })
+            data['toolbox'] = tb
+            with open('/tmp/apps.json', 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+            PYEOF
+            aws s3 cp /tmp/apps.json "${BUCKET}apps.json" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+          fi
 
       - name: Publish Official Release on Tag
         if: startsWith(github.ref, 'refs/tags/')
@@ -169,10 +203,10 @@ jobs:
               git push origin --delete "$tag" 2>/dev/null || true
             fi
           done
-        env:
+            env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 每次运行无论成功失败，自动清理旧缓存、历史旧构建产物与所有历史 CI 运行记录，防止存储超量
+            # 每次运行无论成功失败，自动清理旧缓存、历史旧构建产物与所有历史 CI 运行记录，防止存储超量
       - name: Auto Cleanup Old CI Runs, Caches & Artifacts
         if: always()
         run: |
@@ -198,5 +232,5 @@ jobs:
               gh run delete "$run_id" -R "${{ github.repository }}" 2>/dev/null || true
             fi
           done
-        env:
+            env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

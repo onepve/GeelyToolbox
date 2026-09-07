@@ -1140,21 +1140,49 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public String getDeviceUid() {
+            try {
+                String androidId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+                if (androidId != null && !androidId.isEmpty()) {
+                    return androidId.toUpperCase(Locale.ROOT);
+                }
+            } catch (Exception ignored) {}
+            return "UNKNOWN_DEVICE";
+        }
+
+        @JavascriptInterface
+        public void checkBetaUpdate() {
+            checkUpdateInternal(false, true);
+        }
+
+        @JavascriptInterface
+        public void checkBetaUpdateSilently() {
+            checkUpdateInternal(true, true);
+        }
+
+        @JavascriptInterface
         public void checkUpdate() {
-            checkUpdateInternal(false);
+            checkUpdateInternal(false, false);
         }
 
         @JavascriptInterface
         public void checkUpdateSilently() {
-            checkUpdateInternal(true);
+            checkUpdateInternal(true, false);
         }
 
         private void checkUpdateInternal(final boolean silent) {
+            checkUpdateInternal(silent, false);
+        }
+
+        private void checkUpdateInternal(final boolean silent, final boolean isBetaChannel) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        java.net.URL url = new java.net.URL("https://dl.onepve.com/GeelyToolbox/version.json?t=" + System.currentTimeMillis());
+                        String endpoint = isBetaChannel 
+                                ? "https://dl.onepve.com/GeelyToolbox/version-beta.json?t=" + System.currentTimeMillis()
+                                : "https://dl.onepve.com/GeelyToolbox/version.json?t=" + System.currentTimeMillis();
+                        java.net.URL url = new java.net.URL(endpoint);
                         java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                         conn.setConnectTimeout(6000);
                         conn.setReadTimeout(6000);
@@ -1165,6 +1193,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             while ((line = reader.readLine()) != null) sb.append(line);
                             reader.close();
                             final JSONObject json = new JSONObject(sb.toString());
+                            json.put("is_beta", isBetaChannel);
                             final String remoteVer = json.optString("version", "1.0.0");
                             final int remoteCode = json.optInt("version_code", 7000);
 
@@ -1182,7 +1211,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                         String script = "if(window.showToolboxUpdateModal){window.showToolboxUpdateModal(" + json.toString() + ");}";
                                         webView.evaluateJavascript(script, null);
                                     } else if (!silent) {
-                                        showToast("当前已是最新版本 v" + remoteVer + " (๑•̀ㅂ•́)و");
+                                        String channelName = isBetaChannel ? "测试通道" : "正式通道";
+                                        showToast(channelName + "当前已是最新版本 v" + remoteVer + " (๑•̀ㅂ•́)و");
                                     }
                                 }
                             });

@@ -139,13 +139,13 @@ onMounted(() => {
 @tailwind utilities;
 
 :root {
-  /* 默认夜间豪华车规深色模式 (Frosted Glass Dark · M3 微透质感) */
-  --bg-main: #090C12;
-  --bg-card: rgba(21, 26, 38, 0.72);
-  --bg-item: rgba(32, 39, 56, 0.6);
-  --bg-item-hover: rgba(45, 55, 78, 0.85);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-light: rgba(255, 255, 255, 0.18);
+  /* 默认夜间豪华车规深色模式 (实体卡片高对比架构，彻底杜绝隐形错位感) */
+  --bg-main: #0B0F19;
+  --bg-card: #151C2C;          /* 提升卡片不透明实体度，轮廓分明 */
+  --bg-item: #1E273C;          /* 按钮底座与卡片底座形成层次分明对比 */
+  --bg-item-hover: #28334E;
+  --border-color: rgba(255, 255, 255, 0.16); /* 精致清晰的实体边框 */
+  --border-light: rgba(255, 255, 255, 0.28);
   --text-main: #FFFFFF;
   --text-sub: #94A3B8;
   --accent-gold: #F59E0B;
