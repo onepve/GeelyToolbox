@@ -1,63 +1,8 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 1. 蓝牙音频无感自动出声 -->
+    <!-- 1. 系统语音引擎与小爱 TTS 直通 (拔除死按键，状态直显与试听) -->
     <FeatureCard 
-      title="1. 蓝牙音频无感自动出声 (测试中)"
-      desc="手机连接车载蓝牙后点播放，控制台中枢自动申请音频焦点并防原厂静音（方控与通道联动测试中，暂时无法使用）。"
-    >
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between opacity-60">
-        <div class="flex-1 pr-6 flex flex-col">
-          <div class="flex items-center space-x-3 mb-1">
-            <div class="text-[18px] font-black text-car-text">蓝牙播放自动唤醒通道</div>
-            <span class="px-2 py-0.5 text-[12px] font-bold rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">测试中，暂时无法使用</span>
-          </div>
-          <div class="text-[15px] text-car-sub font-bold">
-            状态：默认不选择 (待方控协议对齐后开放)
-          </div>
-        </div>
-        <div class="px-5 py-3 rounded-xl bg-slate-800/60 border border-slate-700/50 text-slate-400 font-bold text-[15px] cursor-not-allowed select-none">
-          测试中，暂时无法使用
-        </div>
-      </div>
-    </FeatureCard>
-
-    <!-- 2. USB 闪存盘插拔与音频识别 -->
-    <FeatureCard 
-      title="2. USB 闪存盘插拔与音频识别 (测试中)"
-      desc="双轨监听物理 USB 接入与文件系统挂载；遵循克制防打扰铁律（方控与通道联动测试中，暂时无法使用）。"
-    >
-      <div class="grid grid-cols-2 gap-4 opacity-60">
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div class="mb-3">
-            <div class="flex items-center space-x-2 mb-1">
-              <div class="text-[19px] font-black text-car-text">U 盘插入轻声提醒</div>
-              <span class="px-2 py-0.5 text-[11px] font-bold rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">测试中</span>
-            </div>
-            <div class="text-[15px] text-car-sub font-bold">插入 U 盘瞬间触发温婉语音提醒（测试中，暂时无法使用）</div>
-          </div>
-          <div class="w-full py-3 rounded-xl bg-slate-800/60 border border-slate-700/50 text-slate-400 font-bold text-[15px] text-center cursor-not-allowed select-none">
-            测试中，暂时无法使用
-          </div>
-        </div>
-
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div class="mb-3">
-            <div class="flex items-center space-x-2 mb-1">
-              <div class="text-[19px] font-black text-car-text">自动全盘扫描歌曲文件</div>
-              <span class="px-2 py-0.5 text-[11px] font-bold rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">测试中</span>
-            </div>
-            <div class="text-[15px] text-car-sub font-bold">异步深度遍历扫描音乐文件（测试中，暂时无法使用）</div>
-          </div>
-          <div class="w-full py-3 rounded-xl bg-slate-800/60 border border-slate-700/50 text-slate-400 font-bold text-[15px] text-center cursor-not-allowed select-none">
-            测试中，暂时无法使用
-          </div>
-        </div>
-      </div>
-    </FeatureCard>
-
-    <!-- 3. 系统语音引擎与小爱 TTS 直通 (拔除死按键，状态直显与试听) -->
-    <FeatureCard 
-      title="3. 系统语音引擎与小爱 TTS 直通状态"
+      title="1. 系统语音引擎与小爱 TTS 直通状态"
       desc="系统已直接通过后台 IPC 直连语音合成引擎。因吉利原厂车机精简删除了系统设置中的 TTS 菜单，此处直接常驻显示真实引擎连接状态。"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
@@ -107,9 +52,9 @@
       </div>
     </FeatureCard>
 
-    <!-- 4. 播报音量相对增益补偿滑条 (解决听歌低音量时听不清开门/换挡) -->
+    <!-- 2. 播报音量相对增益补偿滑条 (解决听歌低音量时听不清开门/换挡) -->
     <FeatureCard 
-      title="4. 播报音量动态增益补偿 (听歌低音量时自动增补)"
+      title="2. 播报音量动态增益补偿 (听歌低音量时自动增补)"
       desc="听歌时媒体音量调低容易听不清开门与换挡提醒。设置增益后，播报瞬间自动在当前音量上动态叠加补偿，播完秒级恢复原音量！"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-6 flex flex-col space-y-4 shadow-sm">
@@ -139,7 +84,7 @@
             <span>-10 (极轻)</span>
             <span>-5</span>
             <span class="text-car-text font-black">0 (默认跟随)</span>
-            <span class="text-car-accent font-black">+5 (推荐加重)</span>
+            <span class="text-car-accent font-black">+5 (加重补偿)</span>
             <span>+10 (开窗防漏)</span>
             <span>+15 (高音满血)</span>
           </div>
@@ -167,7 +112,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import FeatureCard from '../components/FeatureCard.vue';
-import MatrixButton from '../components/MatrixButton.vue';
 import { store, bridge, showToast } from '../store';
 
 const ttsInfo = ref({
@@ -200,13 +144,6 @@ onMounted(() => {
     }
   } catch (e) {}
 });
-
-function toggleSetting(key) {
-  const next = !store.vehicleAuto[key];
-  store.vehicleAuto[key] = next;
-  bridge.call('setVehicleAutomationSetting', key, next);
-  showToast('设置已更新: ' + (next ? '已开启' : '已关闭'));
-}
 
 function testTtsEngine() {
   bridge.call('testVehicleVoice', 'custom');

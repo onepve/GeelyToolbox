@@ -92,6 +92,10 @@ public class SteeringWheelKeyManager {
     }
 
     public String getWheelMode() {
+        if (!prefs.contains("wheel_control_mode")) {
+            boolean hasCarMedia = SystemUtils.isPackageInstalled(context, "com.ecarx.carmedia");
+            return hasCarMedia ? MODE_CARMEDIA_FIRST : MODE_TOOLBOX_ALONE;
+        }
         return prefs.getString("wheel_control_mode", MODE_CARMEDIA_FIRST);
     }
 
@@ -140,8 +144,11 @@ public class SteeringWheelKeyManager {
         lastTriggerTime = now;
 
         String mode = getWheelMode();
+        String keyName = getKeyName(keyCode);
+        AppLogger.i("方控总线", "捕获物理按键: [" + keyName + " (Code:" + keyCode + ")] · 当前接管模式: " + mode);
+
         if (MODE_FACTORY_DEFAULT.equals(mode)) {
-            // 原厂模式，完全不拦截
+            AppLogger.d("方控总线", "处于[恢复原厂默认]模式，完全放行按键事件给车机原厂总线");
             return;
         }
 
@@ -151,7 +158,8 @@ public class SteeringWheelKeyManager {
         if (MODE_CARMEDIA_FIRST.equals(mode)) {
             if (keyCode == KEY_MUTE) {
                 // 静音键短按
-                String muteAction = prefs.getString("wheel_action_mute", ACTION_OPEN_360);
+                String muteAction = prefs.getString("wheel_action_mute", "default");
+                AppLogger.i("方控总线", "米小江优先模式 -> 触发[静音键短按] -> 执行动作: " + muteAction);
                 executeAction(muteAction);
                 if (!ACTION_DEFAULT.equals(muteAction) && !ACTION_MUTE_TOGGLE.equals(muteAction)) {
                     cancelNativeMute();
@@ -159,11 +167,15 @@ public class SteeringWheelKeyManager {
             } else if (keyCode == KEY_OK) {
                 // 滚轮下按
                 String okAction = prefs.getString("wheel_action_ok", ACTION_DEFAULT);
+                AppLogger.i("方控总线", "米小江优先模式 -> 触发[滚轮垂直下按] -> 执行动作: " + okAction);
                 executeAction(okAction);
             } else if (keyCode == KEY_CUSTOM) {
                 // 自定义菱形键
                 String customAction = prefs.getString("wheel_action_custom", ACTION_DEFAULT);
+                AppLogger.i("方控总线", "米小江优先模式 -> 触发[菱形自定义键] -> 执行动作: " + customAction);
                 executeAction(customAction);
+            } else {
+                AppLogger.d("方控总线", "米小江优先模式 -> 放行按键给米小江CarMedia: " + keyName);
             }
             // 304/305/348 主动放行给米小江，工具箱绝不争抢
             return;
@@ -174,34 +186,57 @@ public class SteeringWheelKeyManager {
             if (keyCode == KEY_WMODE) {
                 // Mode 键
                 String modeAction = prefs.getString("wheel_action_mode", ACTION_OPEN_360);
+                AppLogger.i("方控总线", "控制台接管模式 -> 触发[Mode键短按] -> 执行动作: " + modeAction);
                 executeAction(modeAction);
             } else if (keyCode == KEY_MUTE) {
                 // 静音键短按
-                String muteAction = prefs.getString("wheel_action_mute", ACTION_OPEN_360);
+                String muteAction = prefs.getString("wheel_action_mute", "default");
+                AppLogger.i("方控总线", "控制台接管模式 -> 触发[静音键短按] -> 执行动作: " + muteAction);
                 executeAction(muteAction);
                 if (!ACTION_DEFAULT.equals(muteAction) && !ACTION_MUTE_TOGGLE.equals(muteAction)) {
                     cancelNativeMute();
                 }
             } else if (keyCode == KEY_OK) {
                 // 滚轮下按
-                String okAction = prefs.getString("wheel_action_ok", ACTION_PLAY_PAUSE);
+                String okAction = prefs.getString("wheel_action_ok", ACTION_DEFAULT);
+                AppLogger.i("方控总线", "控制台接管模式 -> 触发[滚轮垂直下按] -> 执行动作: " + okAction);
                 executeAction(okAction);
             } else if (keyCode == KEY_PREV) {
                 // 上一曲 (模拟切歌)
+                AppLogger.i("方控总线", "控制台接管模式 -> 模拟发送上一曲广播");
                 sendMediaKeyEvent(android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS);
             } else if (keyCode == KEY_NEXT) {
                 // 下一曲 (模拟切歌)
+                AppLogger.i("方控总线", "控制台接管模式 -> 模拟发送下一曲广播");
                 sendMediaKeyEvent(android.view.KeyEvent.KEYCODE_MEDIA_NEXT);
             } else if (keyCode == KEY_CUSTOM) {
-                String customAction = prefs.getString("wheel_action_custom", ACTION_OPEN_360);
+                String customAction = prefs.getString("wheel_action_custom", ACTION_DEFAULT);
+                AppLogger.i("方控总线", "控制台接管模式 -> 触发[菱形自定义键] -> 执行动作: " + customAction);
                 executeAction(customAction);
             }
+        }
+    }
+
+    private String getKeyName(int keyCode) {
+        switch (keyCode) {
+            case KEY_MUTE: return "3号键·静音短按";
+            case KEY_PREV: return "7号键·上一曲";
+            case KEY_NEXT: return "4号键·下一曲";
+            case KEY_OK: return "2号键·滚轮垂直按压";
+            case KEY_WMODE: return "6号键·Mode音源切换";
+            case KEY_CUSTOM: return "1号键·菱形自定义";
+            default: return "未定义按键(" + keyCode + ")";
         }
     }
 
     private void executeAction(String action) {
         if (action == null || ACTION_DEFAULT.equals(action)) return;
         Log.i(TAG, "Executing wheel action: " + action);
+        if (action.startsWith("app:")) {
+            String pkg = action.substring(4).trim();
+            launchCustomApp(pkg);
+            return;
+        }
         switch (action) {
             case ACTION_OPEN_360:
                 open360Camera();
@@ -215,6 +250,22 @@ public class SteeringWheelKeyManager {
             case ACTION_MUTE_TOGGLE:
                 toggleMute();
                 break;
+        }
+    }
+
+    private void launchCustomApp(String pkg) {
+        if (pkg == null || pkg.isEmpty()) return;
+        try {
+            Intent intent = context.getPackageManager().getLaunchIntentForPackage(pkg);
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                context.startActivity(intent);
+                AppLogger.i("方控动作", "已成功调起自定义应用: " + pkg);
+            } else {
+                AppLogger.w("方控动作", "未找到应用启动入口: " + pkg);
+            }
+        } catch (Exception e) {
+            AppLogger.e("方控动作", "调起自定义应用失败: " + e.getMessage());
         }
     }
 

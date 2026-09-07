@@ -571,7 +571,7 @@
             <div class="text-[15px] text-car-sub mt-1 font-bold">开启后在全屏最上层常驻微型胶囊</div>
           </div>
           <MatrixButton 
-            :title="store.deviceInfo.floating_enabled ? '已开启悬浮胶囊' : '已关闭悬浮胶囊'"
+            :title="store.deviceInfo.floating_enabled ? '开关已开' : '开关已关'"
             :active="store.deviceInfo.floating_enabled"
             @click="toggleFloatingWindow"
           />

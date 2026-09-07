@@ -24,10 +24,8 @@ import java.util.regex.Pattern;
 
 import app.onepve.geelyconsole.R;
 import app.onepve.geelyconsole.utils.AdbClient;
-import app.onepve.geelyconsole.utils.BluetoothAudioRouter;
 import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
 import app.onepve.geelyconsole.utils.SystemUtils;
-import app.onepve.geelyconsole.utils.UsbMediaManager;
 import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
 
 /**
@@ -71,8 +69,6 @@ public class VehicleAutomationService extends Service {
     private boolean enableTurn360 = false;
     private boolean enableLightNav = false;
     private boolean enableFlameoutVoice = false;
-    private boolean enableBluetoothRouter = false;
-    private boolean enableUsbMedia = false;
 
     // 驾驶模式标准解耦枚举 (100% 根绝底层各协议数值冲突)
     public static final int MODE_COMFORT = 1; // 舒适模式
@@ -108,8 +104,6 @@ public class VehicleAutomationService extends Service {
     private VehicleVoicePlayer voicePlayer;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private SteeringWheelKeyManager wheelKeyManager;
-    private BluetoothAudioRouter btAudioRouter;
-    private UsbMediaManager usbMediaManager;
     private BroadcastReceiver powerReceiver;
 
     public static void syncState(Context context) {
@@ -118,15 +112,15 @@ public class VehicleAutomationService extends Service {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             boolean doorFl = prefs.getBoolean("voice_enable_door_fl", true);
             boolean doorFlClose = prefs.getBoolean("voice_enable_door_fl_close", true);
-            boolean doorFr = prefs.getBoolean("voice_enable_door_fr", false);
-            boolean doorFrClose = prefs.getBoolean("voice_enable_door_fr_close", false);
-            boolean doorRl = prefs.getBoolean("voice_enable_door_rl", false);
-            boolean doorRlClose = prefs.getBoolean("voice_enable_door_rl_close", false);
-            boolean doorRr = prefs.getBoolean("voice_enable_door_rr", false);
-            boolean doorRrClose = prefs.getBoolean("voice_enable_door_rr_close", false);
-            boolean doorRear = prefs.getBoolean("voice_enable_door_rear", false);
-            boolean trunkOpen = prefs.getBoolean("voice_enable_trunk_open", false);
-            boolean trunkClose = prefs.getBoolean("voice_enable_trunk_close", false);
+            boolean doorFr = prefs.getBoolean("voice_enable_door_fr", true);
+            boolean doorFrClose = prefs.getBoolean("voice_enable_door_fr_close", true);
+            boolean doorRl = prefs.getBoolean("voice_enable_door_rl", true);
+            boolean doorRlClose = prefs.getBoolean("voice_enable_door_rl_close", true);
+            boolean doorRr = prefs.getBoolean("voice_enable_door_rr", true);
+            boolean doorRrClose = prefs.getBoolean("voice_enable_door_rr_close", true);
+            boolean doorRear = prefs.getBoolean("voice_enable_door_rear", true);
+            boolean trunkOpen = prefs.getBoolean("voice_enable_trunk_open", true);
+            boolean trunkClose = prefs.getBoolean("voice_enable_trunk_close", true);
             boolean gearD = prefs.getBoolean("voice_enable_gear_d", true);
             boolean gearR = prefs.getBoolean("voice_enable_gear_r", true);
             boolean gearP = prefs.getBoolean("voice_enable_gear_p", true);
@@ -138,8 +132,6 @@ public class VehicleAutomationService extends Service {
             boolean turn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
             boolean lightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
             boolean flameout = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
-            boolean btRouter = prefs.getBoolean("bt_audio_auto_route", false);
-            boolean usbMedia = prefs.getBoolean("usb_media_auto_detect", false);
             String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
             boolean wheelEnabled = !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
 
@@ -178,9 +170,6 @@ public class VehicleAutomationService extends Service {
         isRunning = true;
         voicePlayer = VehicleVoicePlayer.getInstance(this);
         wheelKeyManager = new SteeringWheelKeyManager(this);
-        btAudioRouter = new BluetoothAudioRouter(this);
-        usbMediaManager = new UsbMediaManager(this);
-
         createNotificationChannel();
         Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ?
                 new Notification.Builder(this, CHANNEL_ID) : new Notification.Builder(this);
@@ -193,12 +182,6 @@ public class VehicleAutomationService extends Service {
 
         reloadPreferences();
         wheelKeyManager.syncMediaKeyReceiverState();
-        if (enableBluetoothRouter) {
-            btAudioRouter.start();
-        }
-        if (enableUsbMedia) {
-            usbMediaManager.start();
-        }
 
         registerPowerStateReceiver();
         startLogcatReader();
@@ -209,16 +192,6 @@ public class VehicleAutomationService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         reloadPreferences();
         wheelKeyManager.syncMediaKeyReceiverState();
-        if (enableBluetoothRouter) {
-            btAudioRouter.start();
-        } else {
-            btAudioRouter.stop();
-        }
-        if (enableUsbMedia) {
-            usbMediaManager.start();
-        } else {
-            usbMediaManager.stop();
-        }
         return START_STICKY;
     }
 
@@ -226,15 +199,15 @@ public class VehicleAutomationService extends Service {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
         enableDoorFl = prefs.getBoolean("voice_enable_door_fl", true);
         enableDoorFlClose = prefs.getBoolean("voice_enable_door_fl_close", true);
-        enableDoorFr = prefs.getBoolean("voice_enable_door_fr", false);
-        enableDoorFrClose = prefs.getBoolean("voice_enable_door_fr_close", false);
-        enableDoorRl = prefs.getBoolean("voice_enable_door_rl", false);
-        enableDoorRlClose = prefs.getBoolean("voice_enable_door_rl_close", false);
-        enableDoorRr = prefs.getBoolean("voice_enable_door_rr", false);
-        enableDoorRrClose = prefs.getBoolean("voice_enable_door_rr_close", false);
-        enableDoorRear = prefs.getBoolean("voice_enable_door_rear", false);
-        enableTrunkOpen = prefs.getBoolean("voice_enable_trunk_open", false);
-        enableTrunkClose = prefs.getBoolean("voice_enable_trunk_close", false);
+        enableDoorFr = prefs.getBoolean("voice_enable_door_fr", true);
+        enableDoorFrClose = prefs.getBoolean("voice_enable_door_fr_close", true);
+        enableDoorRl = prefs.getBoolean("voice_enable_door_rl", true);
+        enableDoorRlClose = prefs.getBoolean("voice_enable_door_rl_close", true);
+        enableDoorRr = prefs.getBoolean("voice_enable_door_rr", true);
+        enableDoorRrClose = prefs.getBoolean("voice_enable_door_rr_close", true);
+        enableDoorRear = prefs.getBoolean("voice_enable_door_rear", true);
+        enableTrunkOpen = prefs.getBoolean("voice_enable_trunk_open", true);
+        enableTrunkClose = prefs.getBoolean("voice_enable_trunk_close", true);
         enableGearD = prefs.getBoolean("voice_enable_gear_d", true);
         enableGearR = prefs.getBoolean("voice_enable_gear_r", true);
         enableGearP = prefs.getBoolean("voice_enable_gear_p", true);
@@ -247,8 +220,6 @@ public class VehicleAutomationService extends Service {
         enableTurn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
-        enableBluetoothRouter = prefs.getBoolean("bt_audio_auto_route", false);
-        enableUsbMedia = prefs.getBoolean("usb_media_auto_detect", false);
 
         String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
         boolean wheelEnabled = !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
@@ -257,7 +228,7 @@ public class VehicleAutomationService extends Service {
                              enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
                              enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN ||
                              enableModeSmart || enableModeComfort || enableModeEco || enableModeSport ||
-                             enableTurn360 || enableLightNav || enableFlameoutVoice || enableBluetoothRouter || enableUsbMedia || wheelEnabled;
+                             enableTurn360 || enableLightNav || enableFlameoutVoice || wheelEnabled;
 
         if (!anyEnabled) {
             stopSelf();
@@ -849,12 +820,6 @@ public class VehicleAutomationService extends Service {
                 unregisterReceiver(powerReceiver);
             } catch (Exception ignored) {}
             powerReceiver = null;
-        }
-        if (btAudioRouter != null) {
-            btAudioRouter.stop();
-        }
-        if (usbMediaManager != null) {
-            usbMediaManager.stop();
         }
         if (logcatProcess != null) {
             try {

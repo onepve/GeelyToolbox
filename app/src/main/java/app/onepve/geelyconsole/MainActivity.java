@@ -1889,18 +1889,18 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("vehicle_light_nav_enabled", prefs.getBoolean("vehicle_light_nav_enabled", false));
                 obj.put("vehicle_flameout_voice_enabled", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
 
-                // 四门与尾门迎宾与关门 (默认主驾开启，其余按需开启)
+                // 四门与尾门迎宾与关门 (默认全开)
                 obj.put("voice_enable_door_fl", prefs.getBoolean("voice_enable_door_fl", true));
                 obj.put("voice_enable_door_fl_close", prefs.getBoolean("voice_enable_door_fl_close", true));
-                obj.put("voice_enable_door_fr", prefs.getBoolean("voice_enable_door_fr", false));
-                obj.put("voice_enable_door_fr_close", prefs.getBoolean("voice_enable_door_fr_close", false));
-                obj.put("voice_enable_door_rl", prefs.getBoolean("voice_enable_door_rl", false));
-                obj.put("voice_enable_door_rl_close", prefs.getBoolean("voice_enable_door_rl_close", false));
-                obj.put("voice_enable_door_rr", prefs.getBoolean("voice_enable_door_rr", false));
-                obj.put("voice_enable_door_rr_close", prefs.getBoolean("voice_enable_door_rr_close", false));
-                obj.put("voice_enable_door_rear", prefs.getBoolean("voice_enable_door_rear", false));
-                obj.put("voice_enable_trunk_open", prefs.getBoolean("voice_enable_trunk_open", false));
-                obj.put("voice_enable_trunk_close", prefs.getBoolean("voice_enable_trunk_close", false));
+                obj.put("voice_enable_door_fr", prefs.getBoolean("voice_enable_door_fr", true));
+                obj.put("voice_enable_door_fr_close", prefs.getBoolean("voice_enable_door_fr_close", true));
+                obj.put("voice_enable_door_rl", prefs.getBoolean("voice_enable_door_rl", true));
+                obj.put("voice_enable_door_rl_close", prefs.getBoolean("voice_enable_door_rl_close", true));
+                obj.put("voice_enable_door_rr", prefs.getBoolean("voice_enable_door_rr", true));
+                obj.put("voice_enable_door_rr_close", prefs.getBoolean("voice_enable_door_rr_close", true));
+                obj.put("voice_enable_door_rear", prefs.getBoolean("voice_enable_door_rear", true));
+                obj.put("voice_enable_trunk_open", prefs.getBoolean("voice_enable_trunk_open", true));
+                obj.put("voice_enable_trunk_close", prefs.getBoolean("voice_enable_trunk_close", true));
 
                 // 4 大挡位播报 (D/R/P/N 默认均开启)
                 obj.put("voice_enable_gear_d", prefs.getBoolean("voice_enable_gear_d", true));
@@ -1914,14 +1914,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_enable_mode_eco", prefs.getBoolean("voice_enable_mode_eco", true));
                 obj.put("voice_enable_mode_sport", prefs.getBoolean("voice_enable_mode_sport", true));
 
-                // 蓝牙、U盘与方控 (默认不选择，避免在测功能与车机冲突)
-                obj.put("bt_audio_auto_route", prefs.getBoolean("bt_audio_auto_route", false));
-                obj.put("usb_media_auto_detect", prefs.getBoolean("usb_media_auto_detect", false));
-                obj.put("usb_media_auto_scan_songs", prefs.getBoolean("usb_media_auto_scan_songs", false));
-                obj.put("wheel_control_mode", prefs.getString("wheel_control_mode", "carmedia_first"));
-                obj.put("wheel_action_mute", prefs.getString("wheel_action_mute", "open_360"));
-                obj.put("wheel_action_mode", prefs.getString("wheel_action_mode", "open_360"));
+                // 默认值自适应：未设置时根据米小江是否安装智能选定
+                boolean hasCarMedia = SystemUtils.isPackageInstalled(MainActivity.this, "com.ecarx.carmedia");
+                String defaultWheelMode = hasCarMedia ? "carmedia_first" : "toolbox_alone";
+                String defaultModeAction = hasCarMedia ? "default" : "open_360";
+
+                obj.put("wheel_control_mode", prefs.getString("wheel_control_mode", defaultWheelMode));
+                obj.put("wheel_action_mute", prefs.getString("wheel_action_mute", "default"));
+                obj.put("wheel_action_mode", prefs.getString("wheel_action_mode", defaultModeAction));
                 obj.put("wheel_action_ok", prefs.getString("wheel_action_ok", "default"));
+                obj.put("has_carmedia_installed", hasCarMedia);
 
                 // 兼容历史老 Key 别名
                 obj.put("turn_360", prefs.getBoolean("vehicle_turn_360_enabled", false));
@@ -2231,6 +2233,45 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         public boolean isPackageFrozen(String pkg) {
             if (pkg == null || pkg.isEmpty()) return false;
             return SystemUtils.getAppDetailedState(context, pkg) == SystemUtils.APP_STATE_DISABLED;
+        }
+
+        @JavascriptInterface
+        public String getInstalledLaunchableApps() {
+            JSONArray arr = new JSONArray();
+            try {
+                PackageManager pm = context.getPackageManager();
+                Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+                mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+                List<ResolveInfo> activities = pm.queryIntentActivities(mainIntent, 0);
+                Set<String> seenPkgs = new HashSet<>();
+                if (activities != null) {
+                    for (ResolveInfo ri : activities) {
+                        if (ri.activityInfo == null || ri.activityInfo.packageName == null) continue;
+                        String pkg = ri.activityInfo.packageName;
+                        if (seenPkgs.contains(pkg)) continue;
+                        seenPkgs.add(pkg);
+                        
+                        // 过滤掉当前工具箱本体
+                        if (context.getPackageName().equals(pkg)) continue;
+
+                        JSONObject item = new JSONObject();
+                        item.put("pkg", pkg);
+                        String label = ri.loadLabel(pm) != null ? ri.loadLabel(pm).toString() : pkg;
+                        item.put("name", label);
+                        try {
+                            PackageInfo pi = pm.getPackageInfo(pkg, 0);
+                            item.put("version", pi.versionName != null ? pi.versionName : "");
+                            boolean isSys = (pi.applicationInfo != null && (pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0);
+                            item.put("isSystem", isSys);
+                        } catch (Exception ignored) {
+                            item.put("version", "");
+                            item.put("isSystem", false);
+                        }
+                        arr.put(item);
+                    }
+                }
+            } catch (Exception ignored) {}
+            return arr.toString();
         }
 
         @JavascriptInterface

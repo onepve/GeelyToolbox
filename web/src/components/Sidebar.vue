@@ -31,7 +31,7 @@ import { playTouchFeedback } from '../utils/sound';
 const navItems = [
   { id: 'wheel', name: '方向盘与方控', badge: '核心改装' },
   { id: 'body', name: '车身智能联动', badge: '门控/挡位' },
-  { id: 'audio', name: '车载音频与USB', badge: '蓝牙免点' },
+  { id: 'audio', name: '车载音频与TTS', badge: '语音增强' },
   { id: 'store', name: '精选软件中心', badge: '专车高德' },
   { id: 'install', name: '特权安装互联', badge: '原生文件' },
   { id: 'system', name: '系统底层维护', badge: 'ADB/重启' }

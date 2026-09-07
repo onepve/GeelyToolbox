@@ -79,12 +79,58 @@
         </button>
       </div>
     </FeatureCard>
+
+    <!-- 4. 专家模式与卡主题伪装注入 -->
+    <FeatureCard 
+      title="4. 专家级伪装与卡主题注入 (专家模式)"
+      desc="解除主题防护白名单限制，支持直接将任意第三方应用伪装注入为桌面兔子时钟屏保卡片。"
+    >
+      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
+        <div class="flex-1 pr-6 flex flex-col">
+          <div class="flex items-center space-x-3 mb-1">
+            <span class="text-[18px] font-black text-car-text">伪装屏保注入特权</span>
+            <span 
+              :class="[
+                'px-2.5 py-0.5 text-[12px] font-bold rounded-full border',
+                store.settings.expert_rabbit 
+                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/40' 
+                  : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+              ]"
+            >
+              {{ store.settings.expert_rabbit ? '专家模式已激活 (已解除限制)' : '安全保护已锁定' }}
+            </span>
+          </div>
+          <div class="text-[15px] text-car-sub font-bold">
+            {{ store.settings.expert_rabbit ? '已解除地图白名单限制，精选软件中心与本地应用详情均可直接调起卡主题注入向导' : '默认仅限车载地图导航使用，点击右侧可解锁专家模式体验完整高级功能' }}
+          </div>
+        </div>
+
+        <button 
+          @click="toggleExpertMode"
+          :class="[
+            'min-w-[220px] min-h-[72px] px-6 rounded-2xl border-2 font-black text-[19px] cursor-pointer transition-all shrink-0 shadow-sm',
+            store.settings.expert_rabbit 
+              ? 'bg-rose-500/20 border-rose-500 text-rose-300 ring-2 ring-rose-500/20' 
+              : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
+          ]"
+        >
+          {{ store.settings.expert_rabbit ? '锁定安全保护' : '解锁专家模式' }}
+        </button>
+      </div>
+    </FeatureCard>
   </div>
 </template>
 
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
 import { store, bridge, openModal, showToast } from '../store';
+
+function toggleExpertMode() {
+  const next = !store.settings.expert_rabbit;
+  store.settings.expert_rabbit = next;
+  bridge.call('setSetting', 'expert_rabbit', next);
+  showToast(next ? '⚡ 专家模式已激活 (已解除卡主题限制)' : '已恢复安全锁定状态');
+}
 
 function openFileManager() {
   bridge.call('openFileManager');

@@ -73,6 +73,32 @@ def main():
             "sha256": sha256,
             "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v={version_name}",
             "changelog": (
+                "1. 方向盘方控自适应接管：首次启动自动检测米小江(CarMedia)，已安装默认米小江优先，未安装默认控制台接管\n"
+                "2. 按键映射支持自定义打开第三方应用：编号2(滚轮按压)、编号3(静音短按)、编号6(Mode键)均支持自由绑定已安装第三方软件\n"
+                "3. 按键默认值精简与规则优化：编号2与编号3默认保持原厂不动，编号3移除无效的音量暂停项，编号6按米小江安装自适应默认项\n"
+                "4. 彻底移除 USB 与蓝牙冗余模块：全面交给米小江接管，后台彻底释放 I/O 资源，界面回归纯净克制\n"
+                "5. 驾驶模式切换语音错位彻底修复：重构底盘多层协议与 9 位权威常量枚举解耦，彻底拔除运动模式误报智能模式的协议冲突\n"
+                "6. 倒车挡 (R 挡) 播报避障防衰减重构：强行提权安全引导通道 (NAVIGATION_GUIDANCE)，追加 +4 级动态增益与 65% 音量兜底"
+            ),
+            "release_date": today
+        }
+        with open("/tmp/version-beta.json", "w", encoding="utf-8") as f:
+            json.dump(meta, f, ensure_ascii=False, indent=2)
+        print(">> /tmp/version-beta.json generated.")
+    else:
+        meta = {
+            "version": version_name,
+            "version_code": version_code,
+            "is_beta": False,
+            "min_sdk": 28,
+            "target_sdk": 28,
+            "package_name": "app.onepve.geelyconsole",
+            "size": size_mb,
+            "bytes": bytes_len,
+            "md5": md5,
+            "sha256": sha256,
+            "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v={version_name}",
+            "changelog": (
                 "1. 驾驶模式切换语音错位彻底修复：重构底盘多层协议与 9 位权威常量枚举解耦，彻底拔除运动模式误报智能模式的协议冲突\n"
                 "2. 倒车挡 (R 挡) 播报避障防衰减重构：强行提权安全引导通道 (NAVIGATION_GUIDANCE)，追加 +4 级动态增益与 65% 音量兜底，雷达压制下依然清晰响亮\n"
                 "3. 挡位切换跨挡节流优化：移除 1.5s 跨挡死等拦截，针对 R 挡加入 150ms 避让延时，避开车机 AVM 倒车影像初始静音瞬态\n"

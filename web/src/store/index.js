@@ -49,19 +49,16 @@ export const store = reactive({
     voice_enable_mode_sport: true,
     voice_enable_door_fl: true,
     voice_enable_door_fl_close: true,
-    voice_enable_door_fr: false,
-    voice_enable_door_fr_close: false,
-    voice_enable_door_rl: false,
-    voice_enable_door_rl_close: false,
-    voice_enable_door_rr: false,
-    voice_enable_door_rr_close: false,
-    voice_enable_trunk_open: false,
-    voice_enable_trunk_close: false,
+    voice_enable_door_fr: true,
+    voice_enable_door_fr_close: true,
+    voice_enable_door_rl: true,
+    voice_enable_door_rl_close: true,
+    voice_enable_door_rr: true,
+    voice_enable_door_rr_close: true,
+    voice_enable_trunk_open: true,
+    voice_enable_trunk_close: true,
     vehicle_turn_360_enabled: false,
-    vehicle_light_nav_enabled: false,
-    bt_audio_auto_route: false,
-    usb_media_auto_detect: false,
-    usb_media_auto_scan_songs: false
+    vehicle_light_nav_enabled: false
   },
 
   // 云端应用与下载
@@ -84,7 +81,8 @@ export const store = reactive({
     reward: false,
     log: false,
     voiceItemSettings: null,
-    otaCapture: false
+    otaCapture: false,
+    appSelect: null
   },
   
   // 系统设置持久态

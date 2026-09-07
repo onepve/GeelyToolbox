@@ -34,7 +34,7 @@
       >
         <button 
           @click="confirmHardReboot"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-rose-500/50 bg-car-item text-rose-400 hover:text-rose-300 font-black text-[18.5px] cursor-pointer hover:border-rose-400 transition-all shadow-sm flex items-center justify-center"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-rose-500/50 bg-car-item text-rose-400 hover:text-rose-300 font-black text-[18px] cursor-pointer hover:border-rose-400 transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
         >
           <span>完整硬件冷重启 (reboot)</span>
         </button>
@@ -43,11 +43,11 @@
       <!-- 2. 车机深度工具箱 & ADB 控制台 (从顶栏移至此处) -->
       <FeatureCard 
         title="2. 车机深度工具箱 & ADB"
-        desc="内置本地 ADB Client 2000 端口，提供命令行交互、日志采集与组件管理。"
+        desc="内置本地 ADB Client 2000 端口，提供命令行交互与固件抓取。"
       >
         <button 
           @click="openDeepTools"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[18.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center justify-center"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center justify-center whitespace-nowrap"
         >
           <span>打开 ADB 交互控制台</span>
         </button>
@@ -56,29 +56,29 @@
       <!-- 3. 安装白名单属性放行 -->
       <FeatureCard 
         title="3. 第三方 APK 放行白名单"
-        desc="注入 sys.jsbd.apk_verify=1 属性，解除系统级安装包校验限制。"
+        desc="注入 apk_verify=1 属性，解除系统级安装包校验限制。"
       >
         <button 
           @click="confirmToggleWhitelist"
           :class="[
-            'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center',
+            'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
             store.deviceInfo.whitelist 
               ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
               : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
           ]"
         >
-          <span>{{ store.deviceInfo.whitelist ? '白名单: 已放行 1 (安全)' : '白名单: 未放行 0 (点击开启)' }}</span>
+          <span>{{ store.deviceInfo.whitelist ? '白名单: 已放行 (安全)' : '白名单: 未放行 (点击开启)' }}</span>
         </button>
       </FeatureCard>
 
       <!-- 4. 中枢运行与安全审计日志 -->
       <FeatureCard 
         title="4. 中枢运行日志查看"
-        desc="实时抓取开门、挡位、方控与 U 盘守护日志，支持清空与导出。"
+        desc="实时抓取开门、挡位与方控守护日志，支持清空与导出。"
       >
         <button 
           @click="openLogModal"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[18.5px] cursor-pointer hover:border-car-border-light transition-all shadow-sm flex items-center justify-center"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
         >
           <span>查看中枢运行日志</span>
         </button>
@@ -87,36 +87,36 @@
       <!-- 5. 应用商店管理 (带二次校验) -->
       <FeatureCard 
         title="5. 应用商店状态管理"
-        desc="防止原厂商店后台静默卸载。如需恢复官方应用商店，可在此安全解冻。"
+        desc="防止原厂商店后台静默卸载应用。如需使用商店可在此解冻。"
       >
         <button 
           @click="confirmToggleAppstore"
           :class="[
-            'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center',
+            'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
             store.deviceInfo.appstore_frozen 
               ? 'bg-car-item border-emerald-500/50 text-emerald-400' 
               : 'bg-rose-500/15 border-rose-500 text-rose-500'
           ]"
         >
-          <span>{{ store.deviceInfo.appstore_frozen ? '商店: 已冻结安全 (点击解冻)' : '商店: 未冻结 (点击安全冻结)' }}</span>
+          <span>{{ store.deviceInfo.appstore_frozen ? '商店: 已冻结 (安全防删)' : '商店: 未冻结 (点击安全冻结)' }}</span>
         </button>
       </FeatureCard>
 
       <!-- 6. 中枢点火自启与后台守护 -->
       <FeatureCard 
         title="6. 中枢点火开机自启"
-        desc="车机通电点火后自动自启中枢服务，门控与方控即刻生效，无需手动打开应用。"
+        desc="车机通电点火后自动自启中枢服务，门控与方控即刻生效。"
       >
         <button 
           @click="toggleAutostart"
           :class="[
-            'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center',
+            'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
             store.deviceInfo.autostart 
               ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
               : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
           ]"
         >
-          <span>{{ store.deviceInfo.autostart ? '自启状态: 已开启自启 (推荐)' : '自启状态: 已关闭自启 (点击开启)' }}</span>
+          <span>{{ store.deviceInfo.autostart ? '自启状态: 已开启自启' : '自启状态: 已关闭自启' }}</span>
         </button>
       </FeatureCard>
     </div>

@@ -65,7 +65,7 @@
     >
       <div class="grid grid-cols-3 gap-3.5">
         <MatrixButton 
-          title="米小江方控优先 (推荐)"
+          title="米小江方控优先"
           subtitle="放行切歌与Mode键，工具箱补充静音与滚轮下按"
           :active="store.vehicleAuto.wheel_control_mode === 'carmedia_first'"
           @click="setWheelMode('carmedia_first')"
@@ -90,7 +90,7 @@
       title="2. 方向盘音量调节键按压映射 (编号 2 滚轮按压)"
       desc="中央音量滚轮除了上下拨动调节音量外，垂直向下按压可触发自定义动作。默认保持原厂不动。"
     >
-      <div class="grid grid-cols-4 gap-3.5">
+      <div class="grid grid-cols-5 gap-3.5">
         <MatrixButton 
           title="保持原厂不动"
           subtitle="原厂默认不动作"
@@ -114,6 +114,12 @@
           subtitle="媒体暂停或继续播放"
           :active="store.vehicleAuto.wheel_action_ok === 'play_pause'"
           @click="setOkAction('play_pause')"
+        />
+        <MatrixButton 
+          :title="isCustomApp(store.vehicleAuto.wheel_action_ok) ? (getCustomAppName('ok') || '自定义应用') : '自定义打开应用'"
+          :subtitle="isCustomApp(store.vehicleAuto.wheel_action_ok) ? '点击可重新更换应用' : '自由挑选车机第三方应用'"
+          :active="isCustomApp(store.vehicleAuto.wheel_action_ok)"
+          @click="openAppSelectModal('ok')"
         />
       </div>
     </FeatureCard>
@@ -143,10 +149,10 @@
           @click="setMuteAction('open_navi')"
         />
         <MatrixButton 
-          title="音量暂停 / 播放"
-          subtitle="媒体暂停或继续播放"
-          :active="store.vehicleAuto.wheel_action_mute === 'play_pause'"
-          @click="setMuteAction('play_pause')"
+          :title="isCustomApp(store.vehicleAuto.wheel_action_mute) ? (getCustomAppName('mute') || '自定义应用') : '自定义打开应用'"
+          :subtitle="isCustomApp(store.vehicleAuto.wheel_action_mute) ? '点击可重新更换应用' : '自由挑选车机第三方应用'"
+          :active="isCustomApp(store.vehicleAuto.wheel_action_mute)"
+          @click="openAppSelectModal('mute')"
         />
       </div>
     </FeatureCard>
@@ -154,9 +160,9 @@
     <!-- 4. Mode 键短按映射 (编号 6) -->
     <FeatureCard 
       title="4. 方向盘 Mode 键短按映射 (编号 6)"
-      desc="原车用于切换伴听/收音机。按下瞬间直接拉起目标功能，4 个选项平铺直选，选中的直接高亮。"
+      desc="原车用于切换伴听/收音机。按下瞬间直接拉起目标功能，平铺直选，选中的直接高亮。"
     >
-      <div class="grid grid-cols-4 gap-3.5">
+      <div class="grid grid-cols-5 gap-3.5">
         <MatrixButton 
           title="保持原厂不动"
           subtitle="走原车音源切换"
@@ -181,6 +187,12 @@
           :active="store.vehicleAuto.wheel_action_mode === 'play_pause'"
           @click="setModeAction('play_pause')"
         />
+        <MatrixButton 
+          :title="isCustomApp(store.vehicleAuto.wheel_action_mode) ? (getCustomAppName('mode') || '自定义应用') : '自定义打开应用'"
+          :subtitle="isCustomApp(store.vehicleAuto.wheel_action_mode) ? '点击可重新更换应用' : '自由挑选车机第三方应用'"
+          :active="isCustomApp(store.vehicleAuto.wheel_action_mode)"
+          @click="openAppSelectModal('mode')"
+        />
       </div>
     </FeatureCard>
   </div>
@@ -190,10 +202,22 @@
 import { ref } from 'vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
-import { store, bridge, showToast } from '../store';
+import { store, bridge, showToast, openModal } from '../store';
 import wheelGuideImg from '../assets/steering_wheel_guide.webp';
 
 const showDiagram = ref(true);
+
+function isCustomApp(actionVal) {
+  return typeof actionVal === 'string' && actionVal.startsWith('app:');
+}
+
+function getCustomAppName(target) {
+  return localStorage.getItem(`wheel_action_${target}_app_name`) || '';
+}
+
+function openAppSelectModal(target) {
+  openModal('appSelect', { keyTarget: target });
+}
 
 function setWheelMode(mode) {
   store.vehicleAuto.wheel_control_mode = mode;
