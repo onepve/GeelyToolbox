@@ -1,5 +1,5 @@
 <template>
-  <header class="h-[64px] min-h-[64px] bg-car-card border-b border-car-border px-5 flex items-center justify-between z-20 select-none transition-colors">
+  <header class="h-[64px] min-h-[64px] bg-car-card border-b border-car-border px-5 flex items-center justify-between z-20 select-none backdrop-blur-xl transition-colors">
     <!-- 品牌与版本 -->
     <div class="flex items-center gap-2.5">
       <span class="text-[20px] font-black text-car-text tracking-wide">吉利智能座舱中枢</span>

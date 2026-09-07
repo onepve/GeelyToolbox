@@ -104,19 +104,16 @@ onMounted(() => {
 @tailwind utilities;
 
 :root {
-  /* 默认夜间深色模式 (Night) */
-  --bg-main: #12141A;
-  --bg-card: #1C1F26;
-  --bg-item: #262A33;
-  --bg-item-hover: #323742;
-  --border-color: rgba(255, 255, 255, 0.1);
-  --border-light: rgba(255, 255, 255, 0.2);
+  /* 默认夜间豪华车规深色模式 (Frosted Glass Dark · M3 微透质感) */
+  --bg-main: #090C12;
+  --bg-card: rgba(21, 26, 38, 0.72);
+  --bg-item: rgba(32, 39, 56, 0.6);
+  --bg-item-hover: rgba(45, 55, 78, 0.85);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.18);
   --text-main: #FFFFFF;
   --text-sub: #94A3B8;
   --accent-gold: #F59E0B;
-  --accent-gold-bg: #2A2315;
-  --accent-gold-text: #FEF3C7;
-  --accent-gold-sub: #FCD34D;
 }
 
 html.light, body.light {
@@ -133,6 +130,14 @@ html.light, body.light {
   --accent-gold-bg: #FEF3C7;   /* 日间暖金底座 */
   --accent-gold-text: #78350F; /* 日间超深金棕墨字，WCAG AAA 顶级对比度 */
   --accent-gold-sub: #92400E;  /* 日间深金棕副字 */
+}
+
+body {
+  background: radial-gradient(circle at 18% 12%, #182438 0%, #0A0D15 55%, #05070B 100%) no-repeat fixed !important;
+}
+
+html.light body, body.light {
+  background: #E2E8F0 !important;
 }
 
 .fade-enter-active,
