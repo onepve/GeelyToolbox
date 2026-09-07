@@ -72,6 +72,7 @@ import ConfirmModal from './components/modals/ConfirmModal.vue';
 import RabbitInstallModal from './components/modals/RabbitInstallModal.vue';
 import UpdateModal from './components/modals/UpdateModal.vue';
 import LogModal from './components/modals/LogModal.vue';
+import VoiceItemSettingsModal from './components/modals/VoiceItemSettingsModal.vue';
 
 import { store, bridge } from './store';
 

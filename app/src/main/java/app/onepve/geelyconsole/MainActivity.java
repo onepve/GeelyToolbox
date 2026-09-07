@@ -1859,12 +1859,52 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             try {
                 android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                 org.json.JSONObject obj = new org.json.JSONObject();
+                
+                // 360 与车灯联动
+                obj.put("vehicle_turn_360_enabled", prefs.getBoolean("vehicle_turn_360_enabled", false));
+                obj.put("vehicle_light_nav_enabled", prefs.getBoolean("vehicle_light_nav_enabled", false));
+                obj.put("vehicle_flameout_voice_enabled", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
+
+                // 四门与尾门迎宾与关门 (默认主驾开启，其余按需开启)
+                obj.put("voice_enable_door_fl", prefs.getBoolean("voice_enable_door_fl", true));
+                obj.put("voice_enable_door_fl_close", prefs.getBoolean("voice_enable_door_fl_close", true));
+                obj.put("voice_enable_door_fr", prefs.getBoolean("voice_enable_door_fr", false));
+                obj.put("voice_enable_door_fr_close", prefs.getBoolean("voice_enable_door_fr_close", false));
+                obj.put("voice_enable_door_rl", prefs.getBoolean("voice_enable_door_rl", false));
+                obj.put("voice_enable_door_rl_close", prefs.getBoolean("voice_enable_door_rl_close", false));
+                obj.put("voice_enable_door_rr", prefs.getBoolean("voice_enable_door_rr", false));
+                obj.put("voice_enable_door_rr_close", prefs.getBoolean("voice_enable_door_rr_close", false));
+                obj.put("voice_enable_door_rear", prefs.getBoolean("voice_enable_door_rear", false));
+                obj.put("voice_enable_trunk_open", prefs.getBoolean("voice_enable_trunk_open", false));
+                obj.put("voice_enable_trunk_close", prefs.getBoolean("voice_enable_trunk_close", false));
+
+                // 4 大挡位播报 (D/R/P/N 默认均开启)
+                obj.put("voice_enable_gear_d", prefs.getBoolean("voice_enable_gear_d", true));
+                obj.put("voice_enable_gear_r", prefs.getBoolean("voice_enable_gear_r", true));
+                obj.put("voice_enable_gear_p", prefs.getBoolean("voice_enable_gear_p", true));
+                obj.put("voice_enable_gear_n", prefs.getBoolean("voice_enable_gear_n", true));
+
+                // 4 大功能模式播报 (智能/舒适/经济/运动 默认均开启)
+                obj.put("voice_enable_mode_smart", prefs.getBoolean("voice_enable_mode_smart", true));
+                obj.put("voice_enable_mode_comfort", prefs.getBoolean("voice_enable_mode_comfort", true));
+                obj.put("voice_enable_mode_eco", prefs.getBoolean("voice_enable_mode_eco", true));
+                obj.put("voice_enable_mode_sport", prefs.getBoolean("voice_enable_mode_sport", true));
+
+                // 蓝牙、U盘与方控
+                obj.put("bt_audio_auto_route", prefs.getBoolean("bt_audio_auto_route", true));
+                obj.put("usb_media_auto_detect", prefs.getBoolean("usb_media_auto_detect", true));
+                obj.put("usb_media_auto_scan_songs", prefs.getBoolean("usb_media_auto_scan_songs", false));
+                obj.put("wheel_control_mode", prefs.getString("wheel_control_mode", "carmedia_first"));
+                obj.put("wheel_action_mute", prefs.getString("wheel_action_mute", "open_360"));
+                obj.put("wheel_action_mode", prefs.getString("wheel_action_mode", "open_360"));
+                obj.put("wheel_action_ok", prefs.getString("wheel_action_ok", "default"));
+
+                // 兼容历史老 Key 别名
                 obj.put("turn_360", prefs.getBoolean("vehicle_turn_360_enabled", false));
                 obj.put("light_nav", prefs.getBoolean("vehicle_light_nav_enabled", false));
                 obj.put("flameout_voice", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
-
-                obj.put("voice_door_fl", prefs.getBoolean("voice_enable_door_fl", false));
-                obj.put("voice_door_fl_close", prefs.getBoolean("voice_enable_door_fl_close", false));
+                obj.put("voice_door_fl", prefs.getBoolean("voice_enable_door_fl", true));
+                obj.put("voice_door_fl_close", prefs.getBoolean("voice_enable_door_fl_close", true));
                 obj.put("voice_door_fr", prefs.getBoolean("voice_enable_door_fr", false));
                 obj.put("voice_door_fr_close", prefs.getBoolean("voice_enable_door_fr_close", false));
                 obj.put("voice_door_rl", prefs.getBoolean("voice_enable_door_rl", false));
@@ -1876,13 +1916,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_trunk_close", prefs.getBoolean("voice_enable_trunk_close", false));
                 obj.put("voice_gear_d", prefs.getBoolean("voice_enable_gear_d", true));
                 obj.put("voice_gear_r", prefs.getBoolean("voice_enable_gear_r", true));
-                obj.put("bt_audio_auto_route", prefs.getBoolean("bt_audio_auto_route", true));
-                obj.put("usb_media_auto_detect", prefs.getBoolean("usb_media_auto_detect", true));
-                obj.put("usb_media_auto_scan_songs", prefs.getBoolean("usb_media_auto_scan_songs", false));
-                obj.put("wheel_control_mode", prefs.getString("wheel_control_mode", "carmedia_first"));
-                obj.put("wheel_action_mute", prefs.getString("wheel_action_mute", "open_360"));
-                obj.put("wheel_action_mode", prefs.getString("wheel_action_mode", "open_360"));
-                obj.put("wheel_action_ok", prefs.getString("wheel_action_ok", "default"));
 
                 obj.put("custom_door_fl", !prefs.getString("custom_voice_door_fl.mp3", "").isEmpty());
                 obj.put("custom_door_fl_close", !prefs.getString("custom_voice_door_fl_close.mp3", "").isEmpty());
@@ -1977,6 +2010,71 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
             });
             return true;
+        }
+
+        @JavascriptInterface
+        public boolean setVehicleAutomationStringSetting(final String key, final String value) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        prefs.edit().putString(key, value).commit();
+                        VehicleAutomationService.syncState(MainActivity.this);
+                        AppLogger.i("座舱自动化", "更新字符串设置项: " + key + " -> " + value);
+                    } catch (Exception e) {
+                        AppLogger.e("座舱自动化", "更新字符串设置失败: " + e.getMessage());
+                    }
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
+        public boolean setSetting(final String key, final String value) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
+                            prefs.edit().putBoolean(key, Boolean.parseBoolean(value)).commit();
+                        } else {
+                            prefs.edit().putString(key, value).commit();
+                        }
+                        if ("autostart".equals(key)) {
+                            setAutostartEnabled(Boolean.parseBoolean(value));
+                        } else if ("floating_pill".equals(key)) {
+                            toggleFloatingWindow(Boolean.parseBoolean(value));
+                        } else if ("floating_mode".equals(key)) {
+                            setFloatingDisplayMode(value);
+                        } else if ("expert_rabbit".equals(key)) {
+                            setExpertRabbitThemeEnabled(Boolean.parseBoolean(value));
+                        }
+                    } catch (Exception ignored) {}
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
+        public void testVehicleVoiceText(final String text) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    VehicleVoicePlayer.getInstance(MainActivity.this).speakText(text);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void playCustomAudioPath(final String filePath) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    VehicleVoicePlayer.getInstance(MainActivity.this).playCustomFile(filePath);
+                }
+            });
         }
 
         @JavascriptInterface

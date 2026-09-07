@@ -3,81 +3,84 @@
     :show="!!store.modals.voiceItemSettings" 
     :title="`${targetItem?.title || '声效'} · 专车声效个性化设置`" 
     badge="声效配置"
-    maxWidthClass="max-w-[880px]"
+    maxWidthClass="max-w-[1020px]"
     @close="closeModal('voiceItemSettings')"
   >
-    <div v-if="targetItem" class="flex flex-col space-y-5">
+    <div v-if="targetItem" class="flex flex-col space-y-4">
       <!-- 当前生效音源状态大卡片 -->
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+      <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
         <div class="flex items-center">
           <span class="w-3 h-3 rounded-full bg-car-accent mr-3 shadow-[0_0_8px_var(--accent-gold)]"></span>
           <div class="flex flex-col">
-            <span class="text-[18px] font-black text-car-text">当前播报音源：{{ activeVoiceTypeLabel }}</span>
-            <span class="text-[14.5px] text-car-sub font-bold mt-0.5">{{ activeVoiceDesc }}</span>
+            <span class="text-[17.5px] font-black text-car-text">当前生效音源：{{ activeVoiceTypeLabel }}</span>
+            <span class="text-[14px] text-car-sub font-bold mt-0.5">{{ activeVoiceDesc }}</span>
           </div>
         </div>
 
         <button 
           @click="testCurrentAudio"
-          class="min-h-[54px] px-6 bg-car-card border-2 border-car-accent text-car-text font-black text-[16.5px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md shrink-0"
+          class="min-h-[50px] px-6 bg-car-card border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md shrink-0"
         >
           试听生效语音
         </button>
       </div>
 
-      <!-- 1. 自定义 TTS 朗读台词 -->
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-3 shadow-sm">
-        <div class="flex items-center justify-between">
-          <div class="text-[18px] font-black text-car-text">1. 自定义 TTS 朗读台词 (小爱语音合成)</div>
-          <span class="text-[13px] text-car-sub font-bold">留空则不使用自定义文本</span>
+      <!-- 左右两栏并排 (车规宽屏 1920x720 黄金自适应排版，全要素同屏直出不翻页) -->
+      <div class="flex space-x-4">
+        <!-- 1. 自定义 TTS 朗读台词 -->
+        <div class="flex-1 bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="text-[17px] font-black text-car-text">1. 自定义台词 (小爱语音合成)</div>
+            <span class="text-[12.5px] text-car-sub font-bold">留空不使用</span>
+          </div>
+          <textarea 
+            v-model="customText"
+            rows="2"
+            placeholder="例如: 已挂入前进挡，系好安全带出发啦！"
+            class="w-full bg-[#0A0D12] border-2 border-car-border rounded-xl p-3 text-car-text text-[16px] font-black outline-none focus:border-car-accent resize-none leading-relaxed shadow-inner"
+          ></textarea>
+          <div class="flex space-x-2.5">
+            <button 
+              @click="testTtsText"
+              class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+            >
+              试听文字 TTS
+            </button>
+            <button 
+              @click="saveCustomText"
+              class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-accent font-black text-[15.5px] cursor-pointer hover:border-car-accent shadow-sm"
+            >
+              保存台词
+            </button>
+          </div>
         </div>
-        <textarea 
-          v-model="customText"
-          rows="2"
-          placeholder="例如: 已挂入前进挡，系好安全带出发啦！"
-          class="w-full bg-[#0A0D12] border-2 border-car-border rounded-xl p-4 text-car-text text-[18px] font-black outline-none focus:border-car-accent resize-none leading-relaxed shadow-inner"
-        ></textarea>
-        <div class="flex space-x-3">
-          <button 
-            @click="testTtsText"
-            class="flex-1 min-h-[54px] px-6 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[16.5px] cursor-pointer hover:border-car-border-light shadow-sm"
-          >
-            试听此文字 TTS
-          </button>
-          <button 
-            @click="saveCustomText"
-            class="flex-1 min-h-[54px] px-6 rounded-xl bg-car-card border-2 border-car-border text-car-accent font-black text-[16.5px] cursor-pointer hover:border-car-accent shadow-sm"
-          >
-            保存此台词
-          </button>
-        </div>
-      </div>
 
-      <!-- 2. 自定义本地音频文件 (MP3/WAV) -->
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-3 shadow-sm">
-        <div class="flex items-center justify-between">
-          <div class="text-[18px] font-black text-car-text">2. 自定义本地音频文件 (MP3 / WAV)</div>
-          <span class="text-[13px] text-car-sub font-bold">优先读取 /sdcard/Music/ 或指定路径</span>
-        </div>
-        <input 
-          v-model="customFilePath"
-          type="text"
-          placeholder="例如: /sdcard/Music/gear_d.mp3 或 /sdcard/Download/语音主题包/gear_d.mp3"
-          class="w-full h-[58px] bg-[#0A0D12] border-2 border-car-border rounded-xl px-4 text-emerald-400 font-mono text-[16px] outline-none focus:border-car-accent shadow-inner"
-        />
-        <div class="flex space-x-3">
-          <button 
-            @click="testAudioFile"
-            class="flex-1 min-h-[54px] px-6 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[16.5px] cursor-pointer hover:border-car-border-light shadow-sm"
-          >
-            试听此音频文件
-          </button>
-          <button 
-            @click="saveAudioFilePath"
-            class="flex-1 min-h-[54px] px-6 rounded-xl bg-car-card border-2 border-car-border text-car-accent font-black text-[16.5px] cursor-pointer hover:border-car-accent shadow-sm"
-          >
-            绑定此文件路径
-          </button>
+        <!-- 2. 自定义本地音频文件 (MP3/WAV) -->
+        <div class="flex-1 bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="text-[17px] font-black text-car-text">2. 自定义本地音频 (MP3/WAV)</div>
+            <span class="text-[12.5px] text-car-sub font-bold">/sdcard/Music/</span>
+          </div>
+          <input 
+            v-model="customFilePath"
+            type="text"
+            placeholder="例如: /sdcard/Music/gear_d.mp3"
+            class="w-full h-[54px] bg-[#0A0D12] border-2 border-car-border rounded-xl px-3 text-emerald-400 font-mono text-[14.5px] outline-none focus:border-car-accent shadow-inner"
+          />
+          <div class="flex space-x-2.5">
+            <button 
+              @click="testAudioFile"
+              class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+            >
+              试听音频文件
+            </button>
+            <button 
+              @click="saveAudioFilePath"
+              class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-accent font-black text-[15.5px] cursor-pointer hover:border-car-accent shadow-sm"
+            >
+              绑定文件
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -371,6 +371,21 @@ public class VehicleVoicePlayer {
         }).start();
     }
 
+    public void playCustomFile(final String path) {
+        if (path == null || path.trim().isEmpty()) return;
+        try {
+            File f = new File(path.trim());
+            if (f.exists() && f.length() > 0) {
+                Log.i(TAG, "Playing explicit custom audio file: " + f.getAbsolutePath());
+                playAudioFile(f);
+            } else {
+                speakText("指定自定义音频文件不存在");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "playCustomFile error: " + e.getMessage());
+        }
+    }
+
     public void speakText(final String text) {
         if (text == null || text.trim().isEmpty()) return;
         mainHandler.post(new Runnable() {

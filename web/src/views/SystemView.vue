@@ -3,18 +3,23 @@
     <!-- 仅在应用商店未冻结时展示的警示横幅 (已冻结时自动隐藏，保持界面清爽) -->
     <div 
       v-if="!store.deviceInfo.appstore_frozen" 
-      class="bg-amber-500/15 border-2 border-amber-500/50 rounded-2xl p-5 flex items-center justify-between shadow-md"
+      class="bg-car-item border-2 border-amber-500/80 rounded-2xl p-5 flex items-center justify-between shadow-lg ring-1 ring-amber-500/30 relative overflow-hidden"
     >
-      <div class="flex items-center">
-        <span class="text-[24px] mr-3">⚠️</span>
-        <div class="flex flex-col">
-          <span class="text-[18px] font-black text-amber-400">检测到吉利应用商店处于未冻结状态</span>
-          <span class="text-[15px] text-amber-200/90 font-bold mt-0.5">原厂商店后台可能覆盖白名单策略并静默卸载高德地图等第三方软件，强烈建议立即冻结！</span>
+      <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/60 flex items-center justify-center text-[24px] shrink-0">
+          ⚠️
+        </div>
+        <div class="flex flex-col space-y-1">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[19px] font-black text-car-text tracking-wide">检测到吉利应用商店处于未冻结状态</span>
+            <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500 text-amber-400 text-[12.5px] font-black">建议处置</span>
+          </div>
+          <span class="text-[15px] text-car-text/90 font-bold leading-normal">原厂商店后台可能覆盖白名单策略并静默卸载高德地图等第三方软件，强烈建议立即冻结！</span>
         </div>
       </div>
       <button 
         @click="confirmFreezeStore"
-        class="min-h-[58px] px-8 bg-amber-500 border-2 border-amber-400 text-black font-black text-[18px] rounded-xl cursor-pointer hover:bg-amber-400 shadow-md transition-all shrink-0"
+        class="min-h-[58px] px-8 bg-amber-500/20 border-2 border-amber-500 text-car-text font-black text-[18px] rounded-xl cursor-pointer hover:bg-amber-500/30 hover:border-amber-400 ring-2 ring-amber-500/20 shadow-md transition-all shrink-0 ml-4"
       >
         一键安全冻结
       </button>

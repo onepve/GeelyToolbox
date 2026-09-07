@@ -37,6 +37,7 @@
 
 <script setup>
 import { computed, watch, nextTick } from 'vue';
+import QRCode from 'qrcode';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, closeModal } from '../../store';
 
@@ -46,41 +47,27 @@ const isWifiConnected = computed(() => {
   return ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.');
 });
 
-// 监听弹窗打开时绘制轻量离线二维码占位/Canvas
+// 监听弹窗打开时渲染真实标准 QR Code 二维码 (手机相机/微信秒扫)
 watch(() => store.modals.qrCode, (show) => {
   if (show) {
     nextTick(() => {
-      drawSimpleQr();
+      renderQrCode();
     });
   }
 });
 
-function drawSimpleQr() {
+function renderQrCode() {
   const canvas = document.getElementById('qrCodeCanvas');
   if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, 200, 200);
-  
-  // 简易车规高对比图案
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(16, 16, 50, 50);
-  ctx.clearRect(26, 26, 30, 30);
-  ctx.fillRect(34, 34, 14, 14);
-
-  ctx.fillRect(134, 16, 50, 50);
-  ctx.clearRect(144, 26, 30, 30);
-  ctx.fillRect(152, 34, 14, 14);
-
-  ctx.fillRect(16, 134, 50, 50);
-  ctx.clearRect(26, 144, 30, 30);
-  ctx.fillRect(34, 152, 14, 14);
-
-  // 内部微网格点阵
-  for (let x = 75; x <= 125; x += 10) {
-    for (let y = 75; y <= 125; y += 10) {
-      if ((x + y) % 20 === 0) ctx.fillRect(x, y, 8, 8);
+  QRCode.toCanvas(canvas, serverUrl.value, {
+    width: 200,
+    margin: 1,
+    color: {
+      dark: '#000000',
+      light: '#FFFFFF'
     }
-  }
+  }, (error) => {
+    if (error) console.error('QR code generation error:', error);
+  });
 }
 </script>

@@ -62,6 +62,10 @@ public class VehicleAutomationService extends Service {
     private boolean enableGearP = false;
     private boolean enableGearN = false;
     private boolean enableGearS = false;
+    private boolean enableModeSmart = true;
+    private boolean enableModeComfort = true;
+    private boolean enableModeEco = true;
+    private boolean enableModeSport = true;
     private boolean enableTurn360 = false;
     private boolean enableLightNav = false;
     private boolean enableFlameoutVoice = false;
@@ -103,8 +107,8 @@ public class VehicleAutomationService extends Service {
         if (context == null) return;
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            boolean doorFl = prefs.getBoolean("voice_enable_door_fl", false);
-            boolean doorFlClose = prefs.getBoolean("voice_enable_door_fl_close", false);
+            boolean doorFl = prefs.getBoolean("voice_enable_door_fl", true);
+            boolean doorFlClose = prefs.getBoolean("voice_enable_door_fl_close", true);
             boolean doorFr = prefs.getBoolean("voice_enable_door_fr", false);
             boolean doorFrClose = prefs.getBoolean("voice_enable_door_fr_close", false);
             boolean doorRl = prefs.getBoolean("voice_enable_door_rl", false);
@@ -116,6 +120,12 @@ public class VehicleAutomationService extends Service {
             boolean trunkClose = prefs.getBoolean("voice_enable_trunk_close", false);
             boolean gearD = prefs.getBoolean("voice_enable_gear_d", true);
             boolean gearR = prefs.getBoolean("voice_enable_gear_r", true);
+            boolean gearP = prefs.getBoolean("voice_enable_gear_p", true);
+            boolean gearN = prefs.getBoolean("voice_enable_gear_n", true);
+            boolean modeSmart = prefs.getBoolean("voice_enable_mode_smart", true);
+            boolean modeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
+            boolean modeEco = prefs.getBoolean("voice_enable_mode_eco", true);
+            boolean modeSport = prefs.getBoolean("voice_enable_mode_sport", true);
             boolean turn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
             boolean lightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
             boolean flameout = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
@@ -126,7 +136,8 @@ public class VehicleAutomationService extends Service {
 
             boolean shouldRun = doorFl || doorFlClose || doorFr || doorFrClose ||
                                 doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
-                                trunkOpen || trunkClose || gearD || gearR || turn360 ||
+                                trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
+                                modeSmart || modeComfort || modeEco || modeSport || turn360 ||
                                 lightNav || flameout || btRouter || usbMedia || wheelEnabled;
 
             Intent intent = new Intent(context, VehicleAutomationService.class);
@@ -204,8 +215,8 @@ public class VehicleAutomationService extends Service {
 
     private void reloadPreferences() {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-        enableDoorFl = prefs.getBoolean("voice_enable_door_fl", false);
-        enableDoorFlClose = prefs.getBoolean("voice_enable_door_fl_close", false);
+        enableDoorFl = prefs.getBoolean("voice_enable_door_fl", true);
+        enableDoorFlClose = prefs.getBoolean("voice_enable_door_fl_close", true);
         enableDoorFr = prefs.getBoolean("voice_enable_door_fr", false);
         enableDoorFrClose = prefs.getBoolean("voice_enable_door_fr_close", false);
         enableDoorRl = prefs.getBoolean("voice_enable_door_rl", false);
@@ -217,9 +228,13 @@ public class VehicleAutomationService extends Service {
         enableTrunkClose = prefs.getBoolean("voice_enable_trunk_close", false);
         enableGearD = prefs.getBoolean("voice_enable_gear_d", true);
         enableGearR = prefs.getBoolean("voice_enable_gear_r", true);
-        enableGearP = prefs.getBoolean("voice_enable_gear_p", false);
-        enableGearN = prefs.getBoolean("voice_enable_gear_n", false);
+        enableGearP = prefs.getBoolean("voice_enable_gear_p", true);
+        enableGearN = prefs.getBoolean("voice_enable_gear_n", true);
         enableGearS = prefs.getBoolean("voice_enable_gear_s", true);
+        enableModeSmart = prefs.getBoolean("voice_enable_mode_smart", true);
+        enableModeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
+        enableModeEco = prefs.getBoolean("voice_enable_mode_eco", true);
+        enableModeSport = prefs.getBoolean("voice_enable_mode_sport", true);
         enableTurn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
@@ -231,8 +246,9 @@ public class VehicleAutomationService extends Service {
 
         boolean anyEnabled = enableDoorFl || enableDoorFlClose || enableDoorFr || enableDoorFrClose ||
                              enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
-                             enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableTurn360 ||
-                             enableLightNav || enableFlameoutVoice || enableBluetoothRouter || enableUsbMedia || wheelEnabled;
+                             enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN ||
+                             enableModeSmart || enableModeComfort || enableModeEco || enableModeSport ||
+                             enableTurn360 || enableLightNav || enableFlameoutVoice || enableBluetoothRouter || enableUsbMedia || wheelEnabled;
 
         if (!anyEnabled) {
             stopSelf();
@@ -665,17 +681,25 @@ public class VehicleAutomationService extends Service {
         if (isDriveModeVoiceArmed == 1) {
             switch (mode) {
                 case 1:
-                    voicePlayer.play("mode_comfort.mp3", "舒适模式");
+                    if (enableModeComfort) {
+                        voicePlayer.play("mode_comfort.mp3", "舒适模式");
+                    }
                     break;
                 case 2:
-                    voicePlayer.play("mode_sport.mp3", "运动模式");
+                    if (enableModeSport) {
+                        voicePlayer.play("mode_sport.mp3", "运动模式");
+                    }
                     break;
                 case 3:
-                    voicePlayer.play("mode_eco.mp3", "经济模式");
+                    if (enableModeEco) {
+                        voicePlayer.play("mode_eco.mp3", "经济模式");
+                    }
                     break;
                 case 6:
                     // 切回智能模式 (6): 播报一次，随后立即将状态机置 0 归位！
-                    voicePlayer.play("mode_smart.mp3", "智能模式");
+                    if (enableModeSmart) {
+                        voicePlayer.play("mode_smart.mp3", "智能模式");
+                    }
                     isDriveModeVoiceArmed = 0; // 归零！熄火或休眠开机自动恢复智能模式时绝对静默
                     Log.i(TAG, "已切换为智能模式并播报完成，状态机归零 (isDriveModeVoiceArmed=0)");
                     break;

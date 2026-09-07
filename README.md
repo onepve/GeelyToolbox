@@ -8,8 +8,8 @@
 
 - **官方保姆级图文教程**：[吉利智驾 (GeelyPilot) 从零初始化与座舱实战全指南](https://onepve.com/geely-toolbox-guide/)
 - **GitHub 开源仓库**：[onepve/GeelyToolbox](https://github.com/onepve/GeelyToolbox)
-- **最新正式版本**：`v1.4.3` (versionCode `7043`)
-- **官方直装下载直链**：[GeelyToolbox.apk (v1.4.3)](https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.4.3)
+- **最新正式版本**：`v1.4.4` (versionCode `7044`)
+- **官方直装下载直链**：[GeelyToolbox.apk (v1.4.4)](https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.4.4)
 - **版本元数据接口**：[version.json](https://dl.onepve.com/GeelyToolbox/version.json)
 - **配套软件源接口**：[apps.json](https://dl.onepve.com/GeelyToolbox/apps.json)
 - **全栈设计系统规范**：[OnePve Design (PPanel 极简美学规范)](https://onepve.com/geely-toolbox-guide/)

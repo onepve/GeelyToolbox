@@ -201,6 +201,16 @@
             </div>
             <span class="text-[14.5px] text-car-sub font-bold">吉利默认智能模式，切回播报一次后状态机归零静默</span>
           </div>
+
+          <div class="mb-3">
+            <MatrixButton 
+              title="智能模式播报"
+              :subtitle="store.vehicleAuto.voice_enable_mode_smart ? '已开启 · 智能省心' : '已关闭'"
+              :active="store.vehicleAuto.voice_enable_mode_smart"
+              @click="toggleSetting('voice_enable_mode_smart')"
+            />
+          </div>
+
           <div class="flex space-x-3">
             <button 
               @click="testVoice('mode_smart')"
@@ -226,6 +236,16 @@
             </div>
             <span class="text-[14.5px] text-car-sub font-bold">适合日常城市通勤，换挡平顺温润</span>
           </div>
+
+          <div class="mb-3">
+            <MatrixButton 
+              title="舒适模式播报"
+              :subtitle="store.vehicleAuto.voice_enable_mode_comfort ? '已开启 · 平顺温润' : '已关闭'"
+              :active="store.vehicleAuto.voice_enable_mode_comfort"
+              @click="toggleSetting('voice_enable_mode_comfort')"
+            />
+          </div>
+
           <div class="flex space-x-3">
             <button 
               @click="testVoice('mode_comfort')"
@@ -251,6 +271,16 @@
             </div>
             <span class="text-[14.5px] text-car-sub font-bold">极致节油，长途巡航舒适惬意</span>
           </div>
+
+          <div class="mb-3">
+            <MatrixButton 
+              title="经济模式播报"
+              :subtitle="store.vehicleAuto.voice_enable_mode_eco ? '已开启 · 低碳节能' : '已关闭'"
+              :active="store.vehicleAuto.voice_enable_mode_eco"
+              @click="toggleSetting('voice_enable_mode_eco')"
+            />
+          </div>
+
           <div class="flex space-x-3">
             <button 
               @click="testVoice('mode_eco')"
@@ -276,6 +306,16 @@
             </div>
             <span class="text-[14.5px] text-car-sub font-bold">油门激进，动力输出充沛激擎</span>
           </div>
+
+          <div class="mb-3">
+            <MatrixButton 
+              title="运动模式播报"
+              :subtitle="store.vehicleAuto.voice_enable_mode_sport ? '已开启 · 动力充沛' : '已关闭'"
+              :active="store.vehicleAuto.voice_enable_mode_sport"
+              @click="toggleSetting('voice_enable_mode_sport')"
+            />
+          </div>
+
           <div class="flex space-x-3">
             <button 
               @click="testVoice('mode_sport')"
