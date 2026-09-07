@@ -15,13 +15,13 @@
           />
           <button 
             @click="testVoice('gear_d')"
-            class="min-h-[48px] bg-car-item border border-car-border rounded-xl text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light"
+            class="min-h-[66px] bg-car-item border-2 border-car-border rounded-2xl text-car-text font-black text-[19px] cursor-pointer hover:border-car-border-light shadow-sm"
           >
             试听 D 挡播报
           </button>
         </div>
 
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2.5">
           <MatrixButton 
             title="倒车挡 (R 挡)"
             :subtitle="store.vehicleAuto.voice_enable_gear_r ? '已开启 · 注意观察后方' : '已关闭'"
@@ -30,7 +30,7 @@
           />
           <button 
             @click="testVoice('gear_r')"
-            class="min-h-[48px] bg-car-item border border-car-border rounded-xl text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light"
+            class="min-h-[66px] bg-car-item border-2 border-car-border rounded-2xl text-car-text font-black text-[19px] cursor-pointer hover:border-car-border-light shadow-sm"
           >
             试听 R 挡播报
           </button>
@@ -61,16 +61,16 @@
               @click="toggleSetting('voice_enable_door_fl_close')"
             />
           </div>
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-2 gap-2.5">
             <button 
               @click="testVoice('door_fl')"
-              class="min-h-[44px] bg-car-card border border-car-border rounded-lg text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light"
+              class="min-h-[62px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17.5px] cursor-pointer hover:border-car-border-light shadow-sm"
             >
               试听开门语音
             </button>
             <button 
               @click="openCustomVoice('door_fl', '主驾车门')"
-              class="min-h-[44px] bg-car-card border border-car-border text-car-sub hover:text-car-text font-black text-[15px] rounded-lg cursor-pointer hover:border-car-border-light"
+              class="min-h-[62px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17.5px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
               自定义台词
             </button>
@@ -78,8 +78,8 @@
         </div>
 
         <!-- 副驾 FR -->
-        <div class="bg-car-item border border-car-border rounded-xl p-4 flex flex-col gap-3">
-          <div class="text-[19px] font-black text-car-text">副驾车门 (FR)</div>
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col gap-3.5 shadow-sm">
+          <div class="text-[20px] font-black text-car-text">副驾车门 (FR)</div>
           <div class="grid grid-cols-2 gap-2">
             <MatrixButton 
               title="开门迎宾"
@@ -94,16 +94,16 @@
               @click="toggleSetting('voice_enable_door_fr_close')"
             />
           </div>
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-2 gap-2.5">
             <button 
               @click="testVoice('door_fr')"
-              class="min-h-[44px] bg-car-card border border-car-border rounded-lg text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light"
+              class="min-h-[62px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17.5px] cursor-pointer hover:border-car-border-light shadow-sm"
             >
               试听开门语音
             </button>
             <button 
               @click="openCustomVoice('door_fr', '副驾车门')"
-              class="min-h-[44px] bg-car-card border border-car-border text-car-sub hover:text-car-text font-black text-[15px] rounded-lg cursor-pointer hover:border-car-border-light"
+              class="min-h-[62px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17.5px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
             >
               自定义台词
             </button>

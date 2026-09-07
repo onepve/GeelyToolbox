@@ -3,33 +3,33 @@
     :show="!!store.modals.customVoiceText" 
     :title="`自定义语音台词: ${targetInfo?.title || '车身联动'}`" 
     badge="小爱TTS"
-    maxWidthClass="max-w-[820px]"
+    maxWidthClass="max-w-[860px]"
     @close="closeModal('customVoiceText')"
   >
-    <div class="flex flex-col gap-5">
-      <div class="text-[16px] text-car-sub font-bold">
-        请输入你希望车机在触发该动作时朗读的自定义文本，点击试听可实时预览小爱 TTS 合成音色。
+    <div class="flex flex-col gap-6">
+      <div class="text-[17.5px] text-car-sub font-extrabold leading-relaxed">
+        请输入你希望车机在触发该动作时朗读的自定义文本，点击试听可实时调用小爱 TTS 引擎预览合成声线。
       </div>
 
-      <!-- 文本输入框 -->
+      <!-- 文本输入框 (大字号 20px) -->
       <textarea 
         v-model="customText"
         rows="4"
         placeholder="例如: 老公欢迎回家，系好安全带准备出发啦！"
-        class="w-full bg-car-item border-2 border-car-border rounded-2xl p-4 text-car-text text-[18px] font-bold outline-none focus:border-car-accent resize-none leading-relaxed"
+        class="w-full bg-car-item border-2 border-car-border rounded-2xl p-5 text-car-text text-[20px] font-black outline-none focus:border-car-accent resize-none leading-relaxed shadow-inner"
       ></textarea>
 
-      <!-- 操作与试听按钮行 -->
-      <div class="flex items-center justify-between">
+      <!-- 操作与试听大按钮行 (66px) -->
+      <div class="grid grid-cols-2 gap-4">
         <button 
           @click="resetToDefault"
-          class="h-[50px] px-6 rounded-xl bg-car-item border border-car-border text-car-sub hover:text-car-text font-black text-[16px] cursor-pointer"
+          class="min-h-[66px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[18.5px] cursor-pointer hover:border-car-border-light shadow-sm"
         >
           恢复出厂默认 (晓晓知性原声)
         </button>
         <button 
           @click="testTtsVoice"
-          class="h-[50px] px-6 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light"
+          class="min-h-[66px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-text font-black text-[18.5px] cursor-pointer hover:border-car-border-light shadow-sm"
         >
           试听当前文字 TTS
         </button>
@@ -40,7 +40,7 @@
       <div class="flex justify-end w-full">
         <button 
           @click="saveCustomVoice"
-          class="min-h-[58px] px-8 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent shadow-md ring-2 ring-car-accent/20"
+          class="min-h-[72px] px-12 bg-car-item border-2 border-car-accent rounded-2xl text-car-text font-black text-[21px] cursor-pointer hover:border-car-accent shadow-md ring-2 ring-car-accent/20"
         >
           保存台词并立即生效
         </button>
