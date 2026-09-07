@@ -13,32 +13,38 @@ import android.speech.tts.TextToSpeech;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.Locale;
 
 /**
  * 车辆语音播报器（支持本地短音频与系统 TTS 引擎）
- * 1. 优先读取 /sdcard/GeelyToolbox/voice/ 或 /sdcard/Music/ 下的自定义音频 (MP3/WAV)
- * 2. 音频不存在时，自动调用系统原生 TextToSpeech (可对接小爱同学语音包)
- * 3. 播放时申请瞬态音频焦点（AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK），自动压低音乐音量，播完秒恢复
+ * 1. 优先读取用户自定义台词 TTS
+ * 2. 其次读取自定义音频文件路径 (MP3/WAV)
+ * 3. 其次读取外部放置目录 (/sdcard/Download/语音主题包/ 或 /sdcard/Music/)
+ * 4. 其次读取内置资产 assets/audio/xxx.mp3，解压至内部私有目录播放 (防FD关闭异常)
+ * 5. 最后兜底调用系统原生 TextToSpeech (对接小爱同学)
+ * 6. 默认走车规媒体通道 (STREAM_MUSIC / USAGE_MEDIA)，确保车载功放 100% 出声
  */
 public class VehicleVoicePlayer {
+
     public static AudioAttributes getVoiceAudioAttributes(Context context) {
-        String channel = "nav";
+        String channel = "music";
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            channel = prefs.getString("voice_audio_channel", "nav");
+            channel = prefs.getString("voice_audio_channel", "music");
         } catch (Exception ignored) {}
 
         AudioAttributes.Builder builder = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH);
 
-        if ("notification".equals(channel)) {
-            builder.setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT);
-        } else if ("music".equals(channel)) {
-            builder.setUsage(AudioAttributes.USAGE_MEDIA);
-        } else {
-            // 默认: "nav" 导航与安全提示通道 (独立音量，吉利原车专属独立通道，自动压低音乐)
+        if ("nav".equals(channel)) {
             builder.setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE);
+        } else if ("notification".equals(channel)) {
+            builder.setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT);
+        } else {
+            // 默认走媒体主通道，保证车机主功放喇叭 100% 放出温润声音，永不静音！
+            builder.setUsage(AudioAttributes.USAGE_MEDIA);
         }
         return builder.build();
     }
@@ -54,11 +60,49 @@ public class VehicleVoicePlayer {
     private MediaPlayer currentMediaPlayer = null;
     private final Object playerLock = new Object();
     private final java.util.concurrent.atomic.AtomicInteger playSessionId = new java.util.concurrent.atomic.AtomicInteger(0);
+    private Object activeFocusRequest = null;
+    private int restoreVolumeAfterPlay = -1;
+    private int originalStreamType = AudioManager.STREAM_MUSIC;
+
+    private synchronized void applyVolumeOffsetBeforePlay() {
+        if (audioManager == null) return;
+        try {
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            int offset = prefs.getInt("voice_volume_offset", 0);
+            if (offset != 0) {
+                int stream = AudioManager.STREAM_MUSIC;
+                int currentVol = audioManager.getStreamVolume(stream);
+                int maxVol = audioManager.getStreamMaxVolume(stream);
+                int targetVol = Math.max(0, Math.min(maxVol, currentVol + offset));
+                if (targetVol != currentVol && restoreVolumeAfterPlay < 0) {
+                    restoreVolumeAfterPlay = currentVol;
+                    originalStreamType = stream;
+                    audioManager.setStreamVolume(stream, targetVol, 0);
+                    Log.i(TAG, "Applied voice volume offset: " + offset + " (vol: " + currentVol + " -> " + targetVol + ")");
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to apply volume offset: " + e.getMessage());
+        }
+    }
+
+    private synchronized void restoreVolumeAfterPlay() {
+        if (audioManager == null || restoreVolumeAfterPlay < 0) return;
+        try {
+            audioManager.setStreamVolume(originalStreamType, restoreVolumeAfterPlay, 0);
+            Log.i(TAG, "Restored vehicle volume to original: " + restoreVolumeAfterPlay);
+        } catch (Exception ignored) {
+        } finally {
+            restoreVolumeAfterPlay = -1;
+        }
+    }
 
     private VehicleVoicePlayer(Context context) {
         this.context = context.getApplicationContext();
         this.audioManager = (AudioManager) this.context.getSystemService(Context.AUDIO_SERVICE);
         initTts();
+        // 预热将内置音频解压到私有目录，确保极速秒播
+        extractAssetsAsync();
     }
 
     public static synchronized VehicleVoicePlayer getInstance(Context context) {
@@ -66,6 +110,36 @@ public class VehicleVoicePlayer {
             instance = new VehicleVoicePlayer(context);
         }
         return instance;
+    }
+
+    private void extractAssetsAsync() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    File voiceDir = new File(context.getFilesDir(), "voices");
+                    if (!voiceDir.exists()) voiceDir.mkdirs();
+                    String[] list = context.getAssets().list("audio");
+                    if (list != null) {
+                        for (String f : list) {
+                            File dest = new File(voiceDir, f);
+                            if (!dest.exists() || dest.length() == 0) {
+                                try (InputStream in = context.getAssets().open("audio/" + f);
+                                     FileOutputStream out = new FileOutputStream(dest)) {
+                                    byte[] buf = new byte[16 * 1024];
+                                    int len;
+                                    while ((len = in.read(buf)) > 0) {
+                                        out.write(buf, 0, len);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to pre-extract assets: " + e.getMessage());
+                }
+            }
+        }).start();
     }
 
     private void initTts() {
@@ -77,8 +151,7 @@ public class VehicleVoicePlayer {
                     try {
                         context.getPackageManager().getPackageInfo("com.xiaomi.mibrain.speech", 0);
                         targetEngine = "com.xiaomi.mibrain.speech";
-                    } catch (Exception ignored) {
-                    }
+                    } catch (Exception ignored) {}
 
                     TextToSpeech.OnInitListener listener = new TextToSpeech.OnInitListener() {
                         @Override
@@ -87,7 +160,8 @@ public class VehicleVoicePlayer {
                                 int res = tts.setLanguage(Locale.CHINESE);
                                 if (res != TextToSpeech.LANG_MISSING_DATA && res != TextToSpeech.LANG_NOT_SUPPORTED) {
                                     ttsReady = true;
-                                    tts.setSpeechRate(1.1f);
+                                    tts.setSpeechRate(1.05f);
+                                    Log.i(TAG, "TextToSpeech init ready!");
                                 }
                             }
                         }
@@ -105,9 +179,6 @@ public class VehicleVoicePlayer {
         });
     }
 
-    /**
-     * 强行中断当前正在播放的音频或 TTS（抢占式打断机制）
-     */
     public void stopCurrentVoice() {
         playSessionId.incrementAndGet();
         synchronized (playerLock) {
@@ -132,19 +203,15 @@ public class VehicleVoicePlayer {
             }
         });
         abandonAudioFocus();
+        restoreVolumeAfterPlay();
     }
 
-    /**
-     * 播放语音（支持 用户自定义文件 优先，内置 Asset 优质音频次之，降级 TTS 播报）
-     * @param voiceFileName 比如 "door_fl.mp3", "door_fr.mp3", "flameout.mp3"
-     * @param fallbackText  降级文字，比如 "主驾车门打开，请注意后方来车"
-     */
     public void play(String voiceFileName, final String fallbackText) {
-        // 先抢占中断前序未播完的语音（例如开门播到一半突然关门，立即切断开门语音）
         stopCurrentVoice();
-        // 0. 用户自定义 TTS 播报文字优先
+
+        // 0. 用户自定义台词优先
         try {
-            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             String rawName = voiceFileName.endsWith(".mp3") ? voiceFileName.substring(0, voiceFileName.length() - 4) : voiceFileName;
             String customText = prefs.getString("custom_text_" + voiceFileName, "");
             if (customText == null || customText.trim().isEmpty()) {
@@ -154,25 +221,27 @@ public class VehicleVoicePlayer {
                 customText = prefs.getString("custom_voice_text_" + voiceFileName, "");
             }
             if (customText != null && !customText.trim().isEmpty()) {
+                Log.i(TAG, "Playing custom TTS text: " + customText);
                 speakText(customText.trim());
                 return;
             }
         } catch (Exception ignored) {}
 
-        // 1. 用户手动设置的自定义文件路径
+        // 1. 用户指定自定义音频文件路径
         try {
-            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             String customPath = prefs.getString("custom_voice_" + voiceFileName, "");
             if (customPath != null && !customPath.isEmpty()) {
                 File customPrefFile = new File(customPath);
                 if (customPrefFile.exists() && customPrefFile.length() > 0) {
+                    Log.i(TAG, "Playing custom user audio file: " + customPath);
                     playAudioFile(customPrefFile);
                     return;
                 }
             }
         } catch (Exception ignored) {}
 
-        // 2. 外部储存固定放置目录 (优先 /sdcard/Download/语音主题包/、/sdcard/Download/ 或 /sdcard/Music/)
+        // 2. 外部储存目录 (/sdcard/Download/语音主题包/ 或 /sdcard/Music/)
         File customFile0 = new File(SystemUtils.getAppDownloadDir(), "语音主题包/" + voiceFileName);
         File customFile1 = new File(SystemUtils.getAppDownloadDir(), voiceFileName);
         File customFile2 = new File("/sdcard/Music/" + voiceFileName);
@@ -181,122 +250,49 @@ public class VehicleVoicePlayer {
                           ((customFile2.exists() && customFile2.length() > 0) ? customFile2 : null));
 
         if (targetFile != null && targetFile.length() > 0) {
+            Log.i(TAG, "Playing external audio file: " + targetFile.getAbsolutePath());
             playAudioFile(targetFile);
             return;
         }
 
-        // 3. 工具箱内置优质音频资产 (assets/audio/xxx.mp3)
-        if (playAssetAudio("audio/" + voiceFileName)) {
+        // 3. 内置音频资产播放（解压至应用专有目录播放，100% 免疫 FD 异常）
+        File localAssetFile = getLocalAssetFile(voiceFileName);
+        if (localAssetFile != null && localAssetFile.exists() && localAssetFile.length() > 0) {
+            Log.i(TAG, "Playing local asset audio: " + localAssetFile.getAbsolutePath());
+            playAudioFile(localAssetFile);
             return;
         }
 
-        // 4. 最后兜底：系统 TTS 朗读
+        // 4. 兜底调用系统 TTS
+        Log.i(TAG, "Fallback speaking TTS: " + fallbackText);
         speakText(fallbackText);
     }
 
-    private boolean playAssetAudio(final String assetPath) {
+    private File getLocalAssetFile(String voiceFileName) {
         try {
-            java.io.InputStream testIn = context.getAssets().open(assetPath);
-            testIn.close();
-        } catch (Exception e) {
-            Log.d(TAG, "Asset not found: " + assetPath);
-            return false;
-        }
+            File voiceDir = new File(context.getFilesDir(), "voices");
+            if (!voiceDir.exists()) voiceDir.mkdirs();
+            File target = new File(voiceDir, voiceFileName);
+            if (target.exists() && target.length() > 0) {
+                return target;
+            }
 
-        final int sessionId = playSessionId.incrementAndGet();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if (playSessionId.get() != sessionId) return;
-                MediaPlayer mp = null;
-                try {
-                    requestAudioFocus();
-                    mp = new MediaPlayer();
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        mp.setAudioAttributes(getVoiceAudioAttributes(context));
-                    } else {
-                        mp.setAudioStreamType(AudioManager.STREAM_NOTIFICATION);
-                    }
-
-                    boolean fdLoaded = false;
-                    try {
-                        android.content.res.AssetFileDescriptor afd = context.getAssets().openFd(assetPath);
-                        if (afd != null) {
-                            mp.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
-                            afd.close();
-                            fdLoaded = true;
-                        }
-                    } catch (Exception ignored) {}
-
-                    if (!fdLoaded) {
-                        File cacheDir = new File(context.getCacheDir(), "voice_cache");
-                        if (!cacheDir.exists()) cacheDir.mkdirs();
-                        String safeName = assetPath.replace('/', '_');
-                        File tempFile = new File(cacheDir, safeName);
-                        if (!tempFile.exists() || tempFile.length() == 0) {
-                            try (java.io.InputStream in = context.getAssets().open(assetPath);
-                                 java.io.FileOutputStream out = new java.io.FileOutputStream(tempFile)) {
-                                byte[] buf = new byte[32 * 1024];
-                                int len;
-                                while ((len = in.read(buf)) > 0) {
-                                    out.write(buf, 0, len);
-                                }
-                            }
-                        }
-                        mp.setDataSource(tempFile.getAbsolutePath());
-                    }
-
-                    mp.prepare();
-                    if (playSessionId.get() != sessionId) {
-                        try { mp.release(); } catch (Exception ignored) {}
-                        abandonAudioFocus();
-                        return;
-                    }
-                    mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                        @Override
-                        public void onCompletion(MediaPlayer mediaPlayer) {
-                            synchronized (playerLock) {
-                                if (currentMediaPlayer == mediaPlayer) currentMediaPlayer = null;
-                            }
-                            abandonAudioFocus();
-                            try { mediaPlayer.release(); } catch (Exception ignored) {}
-                        }
-                    });
-                    mp.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                        @Override
-                        public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
-                            synchronized (playerLock) {
-                                if (currentMediaPlayer == mediaPlayer) currentMediaPlayer = null;
-                            }
-                            abandonAudioFocus();
-                            try { mediaPlayer.release(); } catch (Exception ignored) {}
-                            return true;
-                        }
-                    });
-                    synchronized (playerLock) {
-                        currentMediaPlayer = mp;
-                    }
-                    try {
-                        android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        float speed = prefs.getFloat("voice_playback_speed", 1.0f);
-                        if (speed != 1.0f && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                            android.media.PlaybackParams params = mp.getPlaybackParams();
-                            params.setSpeed(speed);
-                            params.setPitch(1.0f);
-                            mp.setPlaybackParams(params);
-                        }
-                    } catch (Exception ignored) {}
-                    mp.start();
-                } catch (Exception e) {
-                    abandonAudioFocus();
-                    if (mp != null) {
-                        try { mp.release(); } catch (Exception ignored) {}
-                    }
-                    Log.e(TAG, "playAssetAudio error: " + e.getMessage());
+            // 同步从 assets 提取
+            try (InputStream in = context.getAssets().open("audio/" + voiceFileName);
+                 FileOutputStream out = new FileOutputStream(target)) {
+                byte[] buf = new byte[16 * 1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
                 }
             }
-        }).start();
-        return true;
+            if (target.exists() && target.length() > 0) {
+                return target;
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "Asset " + voiceFileName + " not in assets folder: " + e.getMessage());
+        }
+        return null;
     }
 
     private void playAudioFile(final File file) {
@@ -312,7 +308,7 @@ public class VehicleVoicePlayer {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         mp.setAudioAttributes(getVoiceAudioAttributes(context));
                     } else {
-                        mp.setAudioStreamType(AudioManager.STREAM_NOTIFICATION);
+                        mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
                     }
                     mp.setDataSource(file.getAbsolutePath());
                     mp.prepare();
@@ -328,9 +324,8 @@ public class VehicleVoicePlayer {
                                 if (currentMediaPlayer == mediaPlayer) currentMediaPlayer = null;
                             }
                             abandonAudioFocus();
-                            try {
-                                mediaPlayer.release();
-                            } catch (Exception ignored) {}
+                            restoreVolumeAfterPlay();
+                            try { mediaPlayer.release(); } catch (Exception ignored) {}
                         }
                     });
                     mp.setOnErrorListener(new MediaPlayer.OnErrorListener() {
@@ -340,9 +335,8 @@ public class VehicleVoicePlayer {
                                 if (currentMediaPlayer == mediaPlayer) currentMediaPlayer = null;
                             }
                             abandonAudioFocus();
-                            try {
-                                mediaPlayer.release();
-                            } catch (Exception ignored) {}
+                            restoreVolumeAfterPlay();
+                            try { mediaPlayer.release(); } catch (Exception ignored) {}
                             return true;
                         }
                     });
@@ -350,18 +344,22 @@ public class VehicleVoicePlayer {
                         currentMediaPlayer = mp;
                     }
                     try {
-                        android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                         float speed = prefs.getFloat("voice_playback_speed", 1.0f);
-                        if (speed != 1.0f && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                        if (speed != 1.0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                             android.media.PlaybackParams params = mp.getPlaybackParams();
                             params.setSpeed(speed);
                             params.setPitch(1.0f);
                             mp.setPlaybackParams(params);
                         }
                     } catch (Exception ignored) {}
+                    applyVolumeOffsetBeforePlay();
                     mp.start();
+                    Log.i(TAG, "MediaPlayer started successfully for " + file.getName());
                 } catch (Exception e) {
+                    Log.e(TAG, "playAudioFile failed: " + e.getMessage(), e);
                     abandonAudioFocus();
+                    restoreVolumeAfterPlay();
                     if (mp != null) {
                         try { mp.release(); } catch (Exception ignored) {}
                     }
@@ -380,27 +378,32 @@ public class VehicleVoicePlayer {
             public void run() {
                 try {
                     requestAudioFocus();
+                    applyVolumeOffsetBeforePlay();
                     if (tts != null && ttsReady) {
                         try {
-                            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                             float speed = prefs.getFloat("voice_playback_speed", 1.0f);
                             tts.setSpeechRate(speed);
                         } catch (Exception ignored) {}
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "vehicle_tts");
+                            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "voice_" + System.currentTimeMillis());
                         } else {
                             tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
                         }
+                    } else {
+                        Log.w(TAG, "TTS engine not ready, queuing speech or retrying");
                     }
-                    // 2.5秒后自动释放音频焦点恢复音乐
                     mainHandler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
                             abandonAudioFocus();
+                            restoreVolumeAfterPlay();
                         }
-                    }, 2500);
-                } catch (Exception ignored) {
+                    }, 3000);
+                } catch (Exception e) {
+                    Log.w(TAG, "speakText error: " + e.getMessage());
                     abandonAudioFocus();
+                    restoreVolumeAfterPlay();
                 }
             }
         });
@@ -415,6 +418,7 @@ public class VehicleVoicePlayer {
                         .setAudioAttributes(attrs)
                         .build();
                 audioManager.requestAudioFocus(req);
+                activeFocusRequest = req;
             } else {
                 audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
             }
@@ -424,7 +428,12 @@ public class VehicleVoicePlayer {
     private void abandonAudioFocus() {
         if (audioManager == null) return;
         try {
-            audioManager.abandonAudioFocus(null);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && activeFocusRequest instanceof AudioFocusRequest) {
+                audioManager.abandonAudioFocusRequest((AudioFocusRequest) activeFocusRequest);
+                activeFocusRequest = null;
+            } else {
+                audioManager.abandonAudioFocus(null);
+            }
         } catch (Exception ignored) {}
     }
 }

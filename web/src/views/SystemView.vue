@@ -1,56 +1,112 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 车身安全重启控制台 -->
-    <FeatureCard 
-      title="1. 整车安全重启控制台"
-      desc="完整硬件冷重启用于整车硬件与 Android 核心底层彻底重置，白名单与底层服务立即生效。"
+    <!-- 仅在应用商店未冻结时展示的警示横幅 (已冻结时自动隐藏，保持界面清爽) -->
+    <div 
+      v-if="!store.deviceInfo.appstore_frozen" 
+      class="bg-amber-500/15 border-2 border-amber-500/50 rounded-2xl p-5 flex items-center justify-between shadow-md"
     >
-      <div class="w-full">
-        <MatrixButton 
-          title="完整硬件冷重启 (reboot)"
-          subtitle="整机底层掉电冷启，100% 硬件重载生效"
-          class="border-rose-500/40 text-rose-400"
-          @click="hardReboot"
-        />
+      <div class="flex items-center">
+        <span class="text-[24px] mr-3">⚠️</span>
+        <div class="flex flex-col">
+          <span class="text-[18px] font-black text-amber-400">检测到吉利应用商店处于未冻结状态</span>
+          <span class="text-[15px] text-amber-200/90 font-bold mt-0.5">原厂商店后台可能覆盖白名单策略并静默卸载高德地图等第三方软件，强烈建议立即冻结！</span>
+        </div>
       </div>
-    </FeatureCard>
+      <button 
+        @click="confirmFreezeStore"
+        class="min-h-[58px] px-8 bg-amber-500 border-2 border-amber-400 text-black font-black text-[18px] rounded-xl cursor-pointer hover:bg-amber-400 shadow-md transition-all shrink-0"
+      >
+        一键安全冻结
+      </button>
+    </div>
 
+    <!-- 系统底层维护 6 大核心功能矩阵 (3 列自适应车规排版) -->
     <div class="grid grid-cols-3 gap-4">
-      <!-- 商店核心冻结 -->
+      <!-- 1. 整车硬件冷重启控制台 (紧凑饱满) -->
       <FeatureCard 
-        title="2. 商店核心冻结"
-        desc="停用原厂商店防止覆盖白名单"
+        title="1. 整车硬件冷重启"
+        desc="彻底掉电重置车机 MCU 与安卓核心，白名单与底层服务立即生效。"
       >
-        <MatrixButton 
-          :title="store.deviceInfo.appstore_frozen ? '商店: 已冻结 (安全)' : '商店: 未冻结 (警告)'"
-          :active="store.deviceInfo.appstore_frozen"
-          @click="toggleAppstoreFreeze"
-        />
+        <button 
+          @click="confirmHardReboot"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-rose-500/50 bg-car-item text-rose-400 hover:text-rose-300 font-black text-[18.5px] cursor-pointer hover:border-rose-400 transition-all shadow-sm flex items-center justify-center"
+        >
+          <span>完整硬件冷重启 (reboot)</span>
+        </button>
       </FeatureCard>
 
-      <!-- 安装白名单属性 -->
+      <!-- 2. 车机深度工具箱 & ADB 控制台 (从顶栏移至此处) -->
       <FeatureCard 
-        title="3. 安装白名单属性"
-        desc="注入 sys.jsbd.apk_verify=1"
+        title="2. 车机深度工具箱 & ADB"
+        desc="内置本地 ADB Client 2000 端口，提供命令行交互、日志采集与组件管理。"
       >
-        <MatrixButton 
-          :title="store.deviceInfo.whitelist ? '白名单: 已放行 1' : '白名单: 未放行 0'"
-          :active="store.deviceInfo.whitelist"
-          @click="toggleWhitelist"
-        />
+        <button 
+          @click="openDeepTools"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[18.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center justify-center"
+        >
+          <span>打开 ADB 交互控制台</span>
+        </button>
       </FeatureCard>
 
-      <!-- 中枢运行日志 -->
+      <!-- 3. 安装白名单属性放行 -->
       <FeatureCard 
-        title="4. 中枢运行日志"
-        desc="存储于 Download 目录自动轮转"
+        title="3. 第三方 APK 放行白名单"
+        desc="注入 sys.jsbd.apk_verify=1 属性，解除系统级安装包校验限制。"
+      >
+        <button 
+          @click="confirmToggleWhitelist"
+          :class="[
+            'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center',
+            store.deviceInfo.whitelist 
+              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
+              : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+          ]"
+        >
+          <span>{{ store.deviceInfo.whitelist ? '白名单: 已放行 1 (安全)' : '白名单: 未放行 0 (点击开启)' }}</span>
+        </button>
+      </FeatureCard>
+
+      <!-- 4. 中枢运行与安全审计日志 -->
+      <FeatureCard 
+        title="4. 中枢运行日志查看"
+        desc="实时抓取开门、挡位、方控与 U 盘守护日志，支持清空与导出。"
       >
         <button 
           @click="openLogModal"
-          class="w-full min-h-[84px] bg-car-item border border-car-border text-car-text font-black text-[19px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[18.5px] cursor-pointer hover:border-car-border-light transition-all shadow-sm flex items-center justify-center"
         >
-          查看运行日志
+          <span>查看中枢运行日志</span>
         </button>
+      </FeatureCard>
+
+      <!-- 5. 应用商店管理 (带二次校验) -->
+      <FeatureCard 
+        title="5. 应用商店状态管理"
+        desc="防止原厂商店后台静默卸载。如需恢复官方应用商店，可在此安全解冻。"
+      >
+        <button 
+          @click="confirmToggleAppstore"
+          :class="[
+            'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center',
+            store.deviceInfo.appstore_frozen 
+              ? 'bg-car-item border-emerald-500/50 text-emerald-400' 
+              : 'bg-rose-500/15 border-rose-500 text-rose-500'
+          ]"
+        >
+          <span>{{ store.deviceInfo.appstore_frozen ? '商店: 已冻结安全 (点击解冻)' : '商店: 未冻结 (点击安全冻结)' }}</span>
+        </button>
+      </FeatureCard>
+
+      <!-- 6. 系统底层维护与避坑指引 (说明卡片) -->
+      <FeatureCard 
+        title="6. 底层维护规范与避坑指引"
+        desc="座舱底层维护铁律与核心原理说明"
+      >
+        <div class="bg-car-item border border-car-border rounded-xl p-4 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5">
+          <div>• <b>冷重启原理</b>：彻底断电重启 MCU 与 Framework，彻底杜绝开门播报延迟与系统卡顿；</div>
+          <div>• <b>白名单锁定</b>：商店冻结是高德地图防被卸载的关键，日常行车请务必保持冻结状态；</div>
+          <div>• <b>ADB 安全边界</b>：深度终端已做系统核心保护，严禁自行卸载系统 Framework 组件。</div>
+        </div>
       </FeatureCard>
     </div>
   </div>
@@ -58,16 +114,15 @@
 
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
-import MatrixButton from '../components/MatrixButton.vue';
 import { store, bridge, openModal, showToast } from '../store';
 
-function hardReboot() {
+function confirmHardReboot() {
   openModal('confirm', {
     title: '整车完整硬件冷重启 (reboot)',
-    desc: '即将对整车中控硬件执行完全掉电冷启动 (reboot)，耗时约 25~35 秒。白名单与系统框架将彻底生效。',
-    tip: '高危提示：正在行车时请勿执行整车冷重启！',
+    desc: '即将对整车中控硬件执行完全掉电冷启动 (reboot)，耗时约 25~35 秒。白名单、音频通道与系统框架将彻底刷新生效。',
+    tip: '【安全警示】严禁在行车行驶过程中执行整车冷重启操作！请确保车辆已安全停稳。',
     isDanger: true,
-    confirmText: '确认立即重启',
+    confirmText: '确认立即掉电重启',
     onConfirm: () => {
       bridge.call('hardReboot');
       showToast('已下发整车冷重启指令，中控即将断电重启...');
@@ -75,18 +130,61 @@ function hardReboot() {
   });
 }
 
-function toggleAppstoreFreeze() {
-  bridge.call('toggleAppstoreFreeze');
-  showToast('正在切换商店冻结状态...');
-}
-
-function toggleWhitelist() {
-  bridge.call('toggleWhitelist');
-  showToast('正在切换白名单状态...');
+function openDeepTools() {
+  openModal('deepTools');
 }
 
 function openLogModal() {
-  bridge.call('getLogContent');
-  showToast('正在加载运行日志...');
+  store.modals.log = true;
+}
+
+function confirmFreezeStore() {
+  openModal('confirm', {
+    title: '冻结吉利应用商店',
+    desc: '冻结吉利原厂应用商店后，将永久锁定第三方软件安装白名单，彻底防止高德地图等应用被后台静默卸载。',
+    tip: '提示：后续可随时在此处解冻恢复。',
+    isDanger: false,
+    onConfirm: () => {
+      bridge.call('toggleFreezeAppStore', true);
+      showToast('正在执行应用商店安全冻结...');
+    }
+  });
+}
+
+function confirmToggleAppstore() {
+  const isFrozen = store.deviceInfo.appstore_frozen;
+  if (isFrozen) {
+    // 当前已冻结，解冻需要二次警告确认
+    openModal('confirm', {
+      title: '解冻恢复吉利应用商店',
+      desc: '解冻吉利应用商店后，原厂商店可能会在后台执行扫描并静默卸载高德地图 8.5 等第三方应用。是否确认解冻？',
+      tip: '【警告】解冻仅建议在需要从官方商店安装官方应用时临时使用，安装完毕建议立即重新冻结。',
+      isDanger: true,
+      confirmText: '确认解冻',
+      onConfirm: () => {
+        bridge.call('toggleFreezeAppStore', false);
+        showToast('正在解冻恢复吉利应用商店...');
+      }
+    });
+  } else {
+    // 当前未冻结，引导冻结
+    confirmFreezeStore();
+  }
+}
+
+function confirmToggleWhitelist() {
+  const next = !store.deviceInfo.whitelist;
+  openModal('confirm', {
+    title: next ? '开启第三方 APK 放行白名单' : '关闭第三方 APK 放行白名单',
+    desc: next 
+      ? '即将注入 sys.jsbd.apk_verify=1 属性，解除车机原生 PackageInstaller 的签名校验限制，允许自由安装第三方软件。'
+      : '关闭白名单后，安装第三方 APK 将恢复系统原生限制并可能报解析包失败。',
+    tip: '建议始终保持开启状态。',
+    isDanger: !next,
+    onConfirm: () => {
+      bridge.call('toggleWhitelist');
+      showToast(next ? '正在开启第三方白名单...' : '正在关闭第三方白名单...');
+    }
+  });
 }
 </script>

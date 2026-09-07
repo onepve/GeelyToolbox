@@ -106,6 +106,61 @@
         </div>
       </div>
     </FeatureCard>
+
+    <!-- 4. 播报音量相对增益补偿滑条 (解决听歌低音量时听不清开门/换挡) -->
+    <FeatureCard 
+      title="4. 播报音量动态增益补偿 (听歌低音量时自动增补)"
+      desc="听歌时媒体音量调低容易听不清开门与换挡提醒。设置增益后，播报瞬间自动在当前音量上动态叠加补偿，播完秒级恢复原音量！"
+    >
+      <div class="bg-car-item border border-car-border rounded-2xl p-6 flex flex-col space-y-4 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div class="flex items-baseline">
+            <span class="text-[20px] font-black text-car-text mr-3">动态音量补偿：</span>
+            <span class="text-[34px] font-black text-car-accent font-mono">{{ volumeOffset >= 0 ? '+' + volumeOffset : volumeOffset }}</span>
+            <span class="text-[16px] text-car-sub font-bold ml-1">格</span>
+          </div>
+          <span class="text-[15px] font-bold text-car-sub">
+            {{ volumeOffset === 0 ? '跟随当前媒体音量 (不增不减)' : (volumeOffset > 0 ? `播报时临时提升 ${volumeOffset} 格，播完秒恢复` : `播报时临时降低 ${Math.abs(volumeOffset)} 格`) }}
+          </span>
+        </div>
+
+        <!-- 刻度长滑条 -->
+        <div class="flex flex-col space-y-2">
+          <input 
+            type="range" 
+            min="-10" 
+            max="15" 
+            step="1" 
+            v-model.number="volumeOffset" 
+            @change="saveVolumeOffset"
+            class="w-full h-3 bg-car-card rounded-lg appearance-none cursor-pointer accent-amber-500"
+          />
+          <div class="flex justify-between text-[13px] text-car-sub font-mono font-bold px-1">
+            <span>-10 (极轻)</span>
+            <span>-5</span>
+            <span class="text-car-text font-black">0 (默认跟随)</span>
+            <span class="text-car-accent font-black">+5 (推荐加重)</span>
+            <span>+10 (开窗防漏)</span>
+            <span>+15 (高音满血)</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end space-x-3 pt-2">
+          <button 
+            @click="resetVolumeOffset"
+            class="h-[52px] px-6 bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
+          >
+            重置归零 (+0)
+          </button>
+          <button 
+            @click="testVolumeOffset"
+            class="h-[52px] px-8 bg-car-card border-2 border-car-accent text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-accent shadow-md ring-2 ring-car-accent/20"
+          >
+            试听当前音量增益
+          </button>
+        </div>
+      </div>
+    </FeatureCard>
   </div>
 </template>
 
@@ -121,6 +176,8 @@ const ttsInfo = ref({
   status: '已成功连接小爱语音引擎 · 专车TTS声线就绪'
 });
 
+const volumeOffset = ref(0);
+
 onMounted(() => {
   try {
     const raw = bridge.call('getTtsEngineInfo');
@@ -135,6 +192,13 @@ onMounted(() => {
       status: '已成功直连小爱语音引擎 · 专车TTS声线就绪'
     };
   }
+
+  try {
+    const off = bridge.call('getVoiceVolumeOffset');
+    if (typeof off === 'number') {
+      volumeOffset.value = off;
+    }
+  } catch (e) {}
 });
 
 function toggleSetting(key) {
@@ -152,5 +216,21 @@ function testTtsEngine() {
 function openStoreToDownload() {
   store.currentNav = 'store';
   showToast('已跳转至精选软件中心');
+}
+
+function saveVolumeOffset() {
+  bridge.call('setVoiceVolumeOffset', volumeOffset.value);
+}
+
+function resetVolumeOffset() {
+  volumeOffset.value = 0;
+  saveVolumeOffset();
+  showToast('播报音量补偿已重置归零 (+0)');
+}
+
+function testVolumeOffset() {
+  saveVolumeOffset();
+  bridge.call('testVehicleVoice', 'gear_d');
+  showToast(`正在按 ${volumeOffset.value >= 0 ? '+' + volumeOffset.value : volumeOffset.value} 格补偿试听播报...`);
 }
 </script>

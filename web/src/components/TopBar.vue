@@ -1,53 +1,62 @@
 <template>
-  <header class="h-[64px] min-h-[64px] bg-car-card border-b border-car-border px-5 flex items-center justify-between z-20 select-none backdrop-blur-xl transition-colors">
+  <header class="h-[64px] min-h-[64px] bg-car-card border-b border-car-border px-5 flex items-center justify-between z-20 select-none transition-colors">
     <!-- 品牌与版本 -->
-    <div class="flex items-center gap-2.5">
-      <span class="text-[20px] font-black text-car-text tracking-wide">吉利智驾</span>
-      <span class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-text font-extrabold border border-car-border">v{{ store.deviceInfo.version || '1.4.1' }}</span>
+    <div class="flex items-center">
+      <span class="text-[20px] font-black text-car-text tracking-wide mr-2.5">吉利智驾</span>
+      <span class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-text font-extrabold border border-car-border">v{{ store.deviceInfo.version || '1.4.2' }}</span>
     </div>
 
-    <!-- 中部状态指示器 -->
-    <div class="flex items-center gap-2">
+    <!-- 中部状态指示器 (微胶囊流) -->
+    <div class="flex items-center space-x-2">
       <div 
         v-for="pill in statusPills" 
         :key="pill.text"
         @click="pill.onClick"
-        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-car-item border border-car-border text-[13.5px] font-extrabold text-car-text cursor-pointer hover:border-car-border-light transition-all"
+        class="inline-flex items-center px-3 py-1.5 rounded-full bg-car-item border border-car-border text-[13.5px] font-extrabold text-car-text cursor-pointer hover:border-car-border-light transition-all shadow-sm"
       >
-        <span :class="['w-2.5 h-2.5 rounded-full', pill.dotClass || 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]']"></span>
+        <span :class="['w-2.5 h-2.5 rounded-full mr-2', pill.dotClass || 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]']"></span>
         <span>{{ pill.text }}</span>
       </div>
     </div>
 
-    <!-- 右侧全局操作 -->
-    <div class="flex items-center gap-2">
-      <button 
-        @click="openDeepTools"
-        class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light transition-all"
-      >
-        ADB 工具
-      </button>
+    <!-- 右侧全局操作 (精简纯净：日夜图标切换 + 设置 + 退出) -->
+    <div class="flex items-center space-x-2.5">
+      <!-- 日夜模式图标切换按钮 (太阳/月亮纯 SVG 图标，告别生硬文字) -->
       <button 
         @click="toggleTheme"
-        class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light transition-all"
+        :title="store.isNight ? '当前为夜间模式，点击切换为日间高对比' : '当前为日间模式，点击切换为夜间护眼'"
+        class="h-[44px] w-[52px] rounded-xl bg-car-item border border-car-border flex items-center justify-center cursor-pointer hover:border-car-border-light transition-all shadow-sm"
       >
-        日夜模式
+        <!-- 夜间深色：展示精致金月亮 -->
+        <svg v-if="store.isNight" class="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <!-- 日间浅色：展示温暖金太阳 -->
+        <svg v-else class="w-5 h-5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5" fill="currentColor" class="text-amber-500"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
       </button>
-      <button 
-        @click="openFastShare"
-        class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light transition-all"
-      >
-        无线快传
-      </button>
+
+      <!-- 设置按键 -->
       <button 
         @click="openSettings"
-        class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light transition-all"
+        class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light transition-all shadow-sm"
       >
         设置
       </button>
+
+      <!-- 退出按键 -->
       <button 
         @click="exitApp"
-        class="h-[44px] px-4 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-500 font-black text-[15.5px] cursor-pointer hover:bg-rose-500/25 transition-all"
+        class="h-[44px] px-4 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-500 font-black text-[15.5px] cursor-pointer hover:bg-rose-500/25 transition-all shadow-sm"
       >
         退出
       </button>
@@ -60,7 +69,7 @@ import { computed } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
 
 const statusPills = computed(() => {
-  const volt = store.deviceInfo.battery_volt ? (store.deviceInfo.battery_volt / 10).toFixed(1) : '12.6';
+  const volt = store.batteryVoltage ? store.batteryVoltage.toFixed(1) : (store.deviceInfo.battery_volt ? (store.deviceInfo.battery_volt / 10).toFixed(1) : '12.6');
   const isCharging = store.deviceInfo.is_charging || (parseFloat(volt) >= 13.4);
   let batteryStatus = '健康充沛';
   let dotColor = 'bg-emerald-500 shadow-[0_0_6px_#10B981]';
@@ -89,23 +98,40 @@ const statusPills = computed(() => {
     { 
       text: `商店: ${store.deviceInfo.appstore_frozen ? '已冻结' : '未冻结'}`, 
       dotClass: store.deviceInfo.appstore_frozen ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-rose-500 shadow-[0_0_6px_#EF4444]',
-      onClick: () => bridge.call('toggleAppstoreFreeze') 
+      onClick: () => handleStoreCapsuleClick() 
     },
     { 
-      text: `白名单: ${store.deviceInfo.whitelist ? '已放行 1' : '未放行 0'}`, 
+      text: `白名单: ${store.deviceInfo.whitelist ? '已放行' : '未放行'}`, 
       dotClass: store.deviceInfo.whitelist ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-rose-500 shadow-[0_0_6px_#EF4444]',
-      onClick: () => bridge.call('toggleWhitelist') 
+      onClick: () => handleWhitelistCapsuleClick() 
     },
     { 
-      text: `IP: ${store.deviceInfo.car_ip}`, 
+      text: `IP: ${store.deviceInfo.car_ip || '127.0.0.1'}`, 
       dotClass: 'bg-sky-500 shadow-[0_0_6px_#0EA5E9]',
       onClick: () => openModal('qrCode') 
     }
   ];
 });
 
-function openDeepTools() {
-  openModal('deepTools');
+function handleStoreCapsuleClick() {
+  if (store.deviceInfo.appstore_frozen) {
+    showToast('吉利应用商店当前处于安全冻结状态，白名单已锁定 (๑•̀ㅂ•́)و');
+  } else {
+    openModal('confirm', {
+      title: '一键冻结吉利应用商店',
+      desc: '冻结吉利原厂应用商店后，可永久锁定第三方软件白名单，彻底防止高德地图等应用被后台静默卸载。是否立即执行？',
+      isDanger: false,
+      tip: '提示：后续可随时在系统维护中解冻恢复。',
+      onConfirm: () => {
+        bridge.call('toggleFreezeAppStore', true);
+        showToast('正在执行应用商店安全冻结...');
+      }
+    });
+  }
+}
+
+function handleWhitelistCapsuleClick() {
+  showToast(store.deviceInfo.whitelist ? '第三方 APK 验证白名单已成功放行' : '白名单未放行，建议保持放行');
 }
 
 function toggleTheme() {
@@ -117,11 +143,7 @@ function toggleTheme() {
     document.documentElement.classList.remove('light');
     document.body.classList.remove('light');
   }
-  showToast(store.isNight ? '已切换为夜间深色模式' : '已切换为日间亮色模式');
-}
-
-function openFastShare() {
-  openModal('qrCode');
+  showToast(store.isNight ? '已切换为夜间护眼模式' : '已切换为日间高对比模式');
 }
 
 function openSettings() {
@@ -129,6 +151,6 @@ function openSettings() {
 }
 
 function exitApp() {
-  bridge.call('minimizeApp');
+  bridge.call('exitApp');
 }
 </script>

@@ -73,7 +73,9 @@ export const store = reactive({
     customVoiceText: null,
     confirm: null,
     update: false,
-    reward: false
+    reward: false,
+    log: false,
+    voiceItemSettings: null
   },
   
   // 系统设置持久态

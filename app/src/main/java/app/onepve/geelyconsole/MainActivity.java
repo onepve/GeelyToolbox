@@ -100,13 +100,19 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         initWebView();
         checkAndRequestStoragePermission();
         AppLogger.i("应用启动", "吉利工具箱界面启动完成");
-        // 启动时自动探测并开启白名单，确保打开应用即处于放行状态
+        // 启动时自动探测并开启白名单，若为真车环境且商店未冻结则自动执行安全冻结保护
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     if (!SystemUtils.isApkVerifyWhitelistEnabled()) {
                         SystemUtils.enableApkVerifyWhitelist(MainActivity.this);
+                    }
+                    if (isCarDevice(MainActivity.this)) {
+                        boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
+                        if (!isAppstoreFrozen && SystemUtils.isPackageInstalled(MainActivity.this, "com.ecarx.appstore")) {
+                            SystemUtils.setPackageEnabled(MainActivity.this, "com.ecarx.appstore", false);
+                        }
                     }
                 } catch (Exception ignored) {
                 }
@@ -896,6 +902,17 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public String getRecentLogs(int lines) {
             return AppLogger.readRecentLogs(lines <= 0 ? 300 : lines);
+        }
+
+        @JavascriptInterface
+        public String getLogContent() {
+            return getRecentLogs(300);
+        }
+
+        @JavascriptInterface
+        public boolean toggleAppstoreFreeze() {
+            boolean currentFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
+            return toggleFreezeAppStore(!currentFrozen);
         }
 
         @JavascriptInterface
@@ -1820,7 +1837,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             startService(floatIntent);
                         }
                     } catch (Exception ignored) {}
-                    finishAndRemoveTask();
+                    try {
+                        finishAffinity();
+                    } catch (Exception ignored) {}
+                    try {
+                        android.os.Process.killProcess(android.os.Process.myPid());
+                    } catch (Exception ignored) {}
                     System.exit(0);
                 }
             });
@@ -1959,6 +1981,30 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
             });
             return true;
+        }
+
+        @JavascriptInterface
+        public void setVoiceVolumeOffset(final int offset) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        prefs.edit().putInt("voice_volume_offset", offset).commit();
+                        showToast("播报音量补偿已设为: " + (offset >= 0 ? "+" + offset : offset) + " 格");
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public int getVoiceVolumeOffset() {
+            try {
+                SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                return prefs.getInt("voice_volume_offset", 0);
+            } catch (Exception e) {
+                return 0;
+            }
         }
 
         @JavascriptInterface
