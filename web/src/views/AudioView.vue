@@ -15,7 +15,7 @@
           </div>
         </div>
         <MatrixButton 
-          :title="store.vehicleAuto.bt_audio_auto_route ? '已开启 (推荐)' : '已关闭'"
+          :title="store.vehicleAuto.bt_audio_auto_route ? '开关已开' : '开关已关'"
           :active="store.vehicleAuto.bt_audio_auto_route"
           class="min-w-[180px]"
           @click="toggleSetting('bt_audio_auto_route')"
@@ -35,7 +35,7 @@
             <div class="text-[15px] text-car-sub font-bold">插入 U 盘瞬间触发温婉语音：“检测到外部U盘接入”</div>
           </div>
           <MatrixButton 
-            :title="store.vehicleAuto.usb_media_auto_detect ? '已开启 (默认)' : '已关闭'"
+            :title="store.vehicleAuto.usb_media_auto_detect ? '开关已开' : '开关已关'"
             :active="store.vehicleAuto.usb_media_auto_detect"
             @click="toggleSetting('usb_media_auto_detect')"
           />
@@ -47,7 +47,7 @@
             <div class="text-[15px] text-car-sub font-bold">异步深度遍历扫描 U 盘内的 MP3/FLAC 音乐文件（独立子开关）</div>
           </div>
           <MatrixButton 
-            :title="store.vehicleAuto.usb_media_auto_scan_songs ? '已开启' : '已关闭 (默认)'"
+            :title="store.vehicleAuto.usb_media_auto_scan_songs ? '开关已开' : '开关已关'"
             :active="store.vehicleAuto.usb_media_auto_scan_songs"
             @click="toggleSetting('usb_media_auto_scan_songs')"
           />

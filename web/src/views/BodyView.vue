@@ -41,146 +41,162 @@
     <!-- 1. 挡位安全播报 (前进档、倒车档、驻车档 P、空档 四大标准档位) -->
     <FeatureCard 
       title="1. 挡位安全播报 (前进档 D / 倒车档 R / 驻车档 P / 空档 N)"
-      desc="四大标准挡位均已生成专属高品质晓晓知性语音，并支持【⚙️ 声效设置】。内置【有人感知状态机】：开机与蓝牙靠近默认 P 挡绝对静默，换出激活，换回归零。"
+      desc="四大标准挡位均已生成专属高品质晓晓知性语音，并支持【声效设置】。内置【有人感知状态机】：开机与蓝牙靠近默认 P 挡绝对静默，换出激活，换回归零。"
     >
       <div class="grid grid-cols-2 gap-4">
         <!-- 前进挡 D -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div class="flex flex-col mb-3">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[20px] font-black text-car-text">前进挡 (D 挡)</span>
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex flex-col justify-center pr-6 flex-1">
+            <div class="flex items-center space-x-3 mb-1.5">
+              <span class="text-[22px] font-black text-car-text tracking-wide">前进挡 (D 挡)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent font-bold">启程安全</span>
             </div>
-            <span class="text-[14.5px] text-car-sub font-bold">踩刹车挂入前进挡温馨启程</span>
+            <span class="text-[15px] text-car-sub font-bold leading-relaxed">踩刹车挂入前进挡温馨启程播报</span>
           </div>
 
-          <div class="mb-3">
-            <MatrixButton 
-              title="前进挡播报"
-              :subtitle="store.vehicleAuto.voice_enable_gear_d ? '已开启 · 祝你一路平安' : '已关闭'"
-              :active="store.vehicleAuto.voice_enable_gear_d"
+          <div class="flex space-x-3 shrink-0 items-center">
+            <button 
               @click="toggleSetting('voice_enable_gear_d')"
-            />
-          </div>
-
-          <div class="flex space-x-3">
-            <button 
-              @click="testVoice('gear_d')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+              :class="[
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                store.vehicleAuto.voice_enable_gear_d 
+                  ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
             >
-              试听语音
+              {{ store.vehicleAuto.voice_enable_gear_d ? '开关已开' : '开关已关' }}
             </button>
-            <button 
-              @click="openCustomVoice('gear_d', '前进挡 D', 'gear_d.mp3')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
-            >
-              ⚙️ 声效设置
-            </button>
+            <div class="flex flex-col space-y-2.5 w-[130px]">
+              <button 
+                @click="testVoice('gear_d')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                试听语音
+              </button>
+              <button 
+                @click="openCustomVoice('gear_d', '前进挡 D', 'gear_d.mp3')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-sub hover:text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                声效设置
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- 倒车挡 R -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div class="flex flex-col mb-3">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[20px] font-black text-car-text">倒车挡 (R 挡)</span>
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex flex-col justify-center pr-6 flex-1">
+            <div class="flex items-center space-x-3 mb-1.5">
+              <span class="text-[22px] font-black text-car-text tracking-wide">倒车挡 (R 挡)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-amber-400 font-bold">后方警示</span>
             </div>
-            <span class="text-[14.5px] text-car-sub font-bold">挂入倒车挡触发后方安全观察警示</span>
+            <span class="text-[15px] text-car-sub font-bold leading-relaxed">挂入倒车挡触发后方安全观察警示</span>
           </div>
 
-          <div class="mb-3">
-            <MatrixButton 
-              title="倒车挡播报"
-              :subtitle="store.vehicleAuto.voice_enable_gear_r ? '已开启 · 注意观察后方' : '已关闭'"
-              :active="store.vehicleAuto.voice_enable_gear_r"
+          <div class="flex space-x-3 shrink-0 items-center">
+            <button 
               @click="toggleSetting('voice_enable_gear_r')"
-            />
-          </div>
-
-          <div class="flex space-x-3">
-            <button 
-              @click="testVoice('gear_r')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+              :class="[
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                store.vehicleAuto.voice_enable_gear_r 
+                  ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
             >
-              试听语音
+              {{ store.vehicleAuto.voice_enable_gear_r ? '开关已开' : '开关已关' }}
             </button>
-            <button 
-              @click="openCustomVoice('gear_r', '倒车挡 R')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
-            >
-              ⚙️ 声效设置
-            </button>
+            <div class="flex flex-col space-y-2.5 w-[130px]">
+              <button 
+                @click="testVoice('gear_r')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                试听语音
+              </button>
+              <button 
+                @click="openCustomVoice('gear_r', '倒车挡 R')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-sub hover:text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                声效设置
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- 驻车挡 P -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div class="flex flex-col mb-3">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[20px] font-black text-car-text">驻车挡 (P 挡)</span>
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex flex-col justify-center pr-6 flex-1">
+            <div class="flex items-center space-x-3 mb-1.5">
+              <span class="text-[22px] font-black text-car-text tracking-wide">驻车挡 (P 挡)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 font-bold">停泊就绪</span>
             </div>
-            <span class="text-[14.5px] text-car-sub font-bold">挂回 P 挡播报一次并立即归零状态机</span>
+            <span class="text-[15px] text-car-sub font-bold leading-relaxed">挂回 P 挡播报一次并立即归零状态机</span>
           </div>
 
-          <div class="mb-3">
-            <MatrixButton 
-              title="驻车挡播报"
-              :subtitle="store.vehicleAuto.voice_enable_gear_p ? '已开启 · 已挂入驻车挡' : '已关闭'"
-              :active="store.vehicleAuto.voice_enable_gear_p"
+          <div class="flex space-x-3 shrink-0 items-center">
+            <button 
               @click="toggleSetting('voice_enable_gear_p')"
-            />
-          </div>
-
-          <div class="flex space-x-3">
-            <button 
-              @click="testVoice('gear_p')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+              :class="[
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                store.vehicleAuto.voice_enable_gear_p 
+                  ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
             >
-              试听语音
+              {{ store.vehicleAuto.voice_enable_gear_p ? '开关已开' : '开关已关' }}
             </button>
-            <button 
-              @click="openCustomVoice('gear_p', '驻车挡 P')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
-            >
-              ⚙️ 声效设置
-            </button>
+            <div class="flex flex-col space-y-2.5 w-[130px]">
+              <button 
+                @click="testVoice('gear_p')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                试听语音
+              </button>
+              <button 
+                @click="openCustomVoice('gear_p', '驻车挡 P')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-sub hover:text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                声效设置
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- 空挡 N -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div class="flex flex-col mb-3">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[20px] font-black text-car-text">空挡 (N 挡)</span>
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex flex-col justify-center pr-6 flex-1">
+            <div class="flex items-center space-x-3 mb-1.5">
+              <span class="text-[22px] font-black text-car-text tracking-wide">空挡 (N 挡)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-sub font-bold">临时切空</span>
             </div>
-            <span class="text-[14.5px] text-car-sub font-bold">等待红绿灯或洗车拖车空挡提醒</span>
+            <span class="text-[15px] text-car-sub font-bold leading-relaxed">等待红绿灯或洗车拖车空挡提醒</span>
           </div>
 
-          <div class="mb-3">
-            <MatrixButton 
-              title="空挡播报"
-              :subtitle="store.vehicleAuto.voice_enable_gear_n ? '已开启 · 空挡' : '已关闭'"
-              :active="store.vehicleAuto.voice_enable_gear_n"
+          <div class="flex space-x-3 shrink-0 items-center">
+            <button 
               @click="toggleSetting('voice_enable_gear_n')"
-            />
-          </div>
-
-          <div class="flex space-x-3">
-            <button 
-              @click="testVoice('gear_n')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+              :class="[
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                store.vehicleAuto.voice_enable_gear_n 
+                  ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
             >
-              试听语音
+              {{ store.vehicleAuto.voice_enable_gear_n ? '开关已开' : '开关已关' }}
             </button>
-            <button 
-              @click="openCustomVoice('gear_n', '空挡 N')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
-            >
-              ⚙️ 声效设置
-            </button>
+            <div class="flex flex-col space-y-2.5 w-[130px]">
+              <button 
+                @click="testVoice('gear_n')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                试听语音
+              </button>
+              <button 
+                @click="openCustomVoice('gear_n', '空挡 N')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-sub hover:text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                声效设置
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -193,142 +209,158 @@
     >
       <div class="grid grid-cols-2 gap-4">
         <!-- 智能模式 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div class="flex flex-col mb-3">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[20px] font-black text-car-text">智能模式 (Smart)</span>
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex flex-col justify-center pr-6 flex-1">
+            <div class="flex items-center space-x-3 mb-1.5">
+              <span class="text-[22px] font-black text-car-text tracking-wide">智能模式 (Smart)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent font-bold">默认省心</span>
             </div>
-            <span class="text-[14.5px] text-car-sub font-bold">吉利默认智能模式，切回播报一次后状态机归零静默</span>
+            <span class="text-[15px] text-car-sub font-bold leading-relaxed">吉利默认智能模式，切回播报一次后归零静默</span>
           </div>
 
-          <div class="mb-3">
-            <MatrixButton 
-              title="智能模式播报"
-              :subtitle="store.vehicleAuto.voice_enable_mode_smart ? '已开启 · 智能省心' : '已关闭'"
-              :active="store.vehicleAuto.voice_enable_mode_smart"
+          <div class="flex space-x-3 shrink-0 items-center">
+            <button 
               @click="toggleSetting('voice_enable_mode_smart')"
-            />
-          </div>
-
-          <div class="flex space-x-3">
-            <button 
-              @click="testVoice('mode_smart')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+              :class="[
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                store.vehicleAuto.voice_enable_mode_smart 
+                  ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
             >
-              试听智能模式
+              {{ store.vehicleAuto.voice_enable_mode_smart ? '开关已开' : '开关已关' }}
             </button>
-            <button 
-              @click="openCustomVoice('mode_smart', '智能模式')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
-            >
-              ⚙️ 声效设置
-            </button>
+            <div class="flex flex-col space-y-2.5 w-[130px]">
+              <button 
+                @click="testVoice('mode_smart')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                试听模式
+              </button>
+              <button 
+                @click="openCustomVoice('mode_smart', '智能模式')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-sub hover:text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                声效设置
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- 舒适模式 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div class="flex flex-col mb-3">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[20px] font-black text-car-text">舒适模式 (Comfort)</span>
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex flex-col justify-center pr-6 flex-1">
+            <div class="flex items-center space-x-3 mb-1.5">
+              <span class="text-[22px] font-black text-car-text tracking-wide">舒适模式 (Comfort)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 font-bold">平顺温润</span>
             </div>
-            <span class="text-[14.5px] text-car-sub font-bold">适合日常城市通勤，换挡平顺温润</span>
+            <span class="text-[15px] text-car-sub font-bold leading-relaxed">适合日常城市通勤，换挡平顺温润</span>
           </div>
 
-          <div class="mb-3">
-            <MatrixButton 
-              title="舒适模式播报"
-              :subtitle="store.vehicleAuto.voice_enable_mode_comfort ? '已开启 · 平顺温润' : '已关闭'"
-              :active="store.vehicleAuto.voice_enable_mode_comfort"
+          <div class="flex space-x-3 shrink-0 items-center">
+            <button 
               @click="toggleSetting('voice_enable_mode_comfort')"
-            />
-          </div>
-
-          <div class="flex space-x-3">
-            <button 
-              @click="testVoice('mode_comfort')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+              :class="[
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                store.vehicleAuto.voice_enable_mode_comfort 
+                  ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
             >
-              试听舒适模式
+              {{ store.vehicleAuto.voice_enable_mode_comfort ? '开关已开' : '开关已关' }}
             </button>
-            <button 
-              @click="openCustomVoice('mode_comfort', '舒适模式')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
-            >
-              ⚙️ 声效设置
-            </button>
+            <div class="flex flex-col space-y-2.5 w-[130px]">
+              <button 
+                @click="testVoice('mode_comfort')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                试听模式
+              </button>
+              <button 
+                @click="openCustomVoice('mode_comfort', '舒适模式')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-sub hover:text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                声效设置
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- 经济模式 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div class="flex flex-col mb-3">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[20px] font-black text-car-text">经济模式 (Eco)</span>
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex flex-col justify-center pr-6 flex-1">
+            <div class="flex items-center space-x-3 mb-1.5">
+              <span class="text-[22px] font-black text-car-text tracking-wide">经济模式 (Eco)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-blue-400 font-bold">低碳节能</span>
             </div>
-            <span class="text-[14.5px] text-car-sub font-bold">极致节油，长途巡航舒适惬意</span>
+            <span class="text-[15px] text-car-sub font-bold leading-relaxed">极致节油，长途巡航舒适惬意</span>
           </div>
 
-          <div class="mb-3">
-            <MatrixButton 
-              title="经济模式播报"
-              :subtitle="store.vehicleAuto.voice_enable_mode_eco ? '已开启 · 低碳节能' : '已关闭'"
-              :active="store.vehicleAuto.voice_enable_mode_eco"
+          <div class="flex space-x-3 shrink-0 items-center">
+            <button 
               @click="toggleSetting('voice_enable_mode_eco')"
-            />
-          </div>
-
-          <div class="flex space-x-3">
-            <button 
-              @click="testVoice('mode_eco')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+              :class="[
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                store.vehicleAuto.voice_enable_mode_eco 
+                  ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
             >
-              试听经济模式
+              {{ store.vehicleAuto.voice_enable_mode_eco ? '开关已开' : '开关已关' }}
             </button>
-            <button 
-              @click="openCustomVoice('mode_eco', '经济模式')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
-            >
-              ⚙️ 声效设置
-            </button>
+            <div class="flex flex-col space-y-2.5 w-[130px]">
+              <button 
+                @click="testVoice('mode_eco')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                试听模式
+              </button>
+              <button 
+                @click="openCustomVoice('mode_eco', '经济模式')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-sub hover:text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                声效设置
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- 运动模式 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div class="flex flex-col mb-3">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[20px] font-black text-car-text">运动模式 (Sport)</span>
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex flex-col justify-center pr-6 flex-1">
+            <div class="flex items-center space-x-3 mb-1.5">
+              <span class="text-[22px] font-black text-car-text tracking-wide">运动模式 (Sport)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-rose-500 font-bold">动力充沛</span>
             </div>
-            <span class="text-[14.5px] text-car-sub font-bold">油门激进，动力输出充沛激擎</span>
+            <span class="text-[15px] text-car-sub font-bold leading-relaxed">油门激进，动力输出充沛激擎</span>
           </div>
 
-          <div class="mb-3">
-            <MatrixButton 
-              title="运动模式播报"
-              :subtitle="store.vehicleAuto.voice_enable_mode_sport ? '已开启 · 动力充沛' : '已关闭'"
-              :active="store.vehicleAuto.voice_enable_mode_sport"
+          <div class="flex space-x-3 shrink-0 items-center">
+            <button 
               @click="toggleSetting('voice_enable_mode_sport')"
-            />
-          </div>
-
-          <div class="flex space-x-3">
-            <button 
-              @click="testVoice('mode_sport')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+              :class="[
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                store.vehicleAuto.voice_enable_mode_sport 
+                  ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
             >
-              试听运动模式
+              {{ store.vehicleAuto.voice_enable_mode_sport ? '开关已开' : '开关已关' }}
             </button>
-            <button 
-              @click="openCustomVoice('mode_sport', '运动模式')"
-              class="flex-1 min-h-[58px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
-            >
-              ⚙️ 声效设置
-            </button>
+            <div class="flex flex-col space-y-2.5 w-[130px]">
+              <button 
+                @click="testVoice('mode_sport')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                试听模式
+              </button>
+              <button 
+                @click="openCustomVoice('mode_sport', '运动模式')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-sub hover:text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                声效设置
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -346,13 +378,13 @@
           <div class="grid grid-cols-2 gap-2.5 mb-3">
             <MatrixButton 
               title="开门防杀"
-              :subtitle="store.vehicleAuto.voice_enable_door_fl ? '已开启' : '已关闭'"
+              :subtitle="store.vehicleAuto.voice_enable_door_fl ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_fl"
               @click="toggleSetting('voice_enable_door_fl')"
             />
             <MatrixButton 
               title="关门播报"
-              :subtitle="store.vehicleAuto.voice_enable_door_fl_close ? '已开启' : '已关闭'"
+              :subtitle="store.vehicleAuto.voice_enable_door_fl_close ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_fl_close"
               @click="toggleSetting('voice_enable_door_fl_close')"
             />
@@ -379,13 +411,13 @@
           <div class="grid grid-cols-2 gap-2.5 mb-3">
             <MatrixButton 
               title="开门迎宾"
-              :subtitle="store.vehicleAuto.voice_enable_door_fr ? '已开启' : '已关闭'"
+              :subtitle="store.vehicleAuto.voice_enable_door_fr ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_fr"
               @click="toggleSetting('voice_enable_door_fr')"
             />
             <MatrixButton 
               title="关门系安全带"
-              :subtitle="store.vehicleAuto.voice_enable_door_fr_close ? '已开启' : '已关闭'"
+              :subtitle="store.vehicleAuto.voice_enable_door_fr_close ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_fr_close"
               @click="toggleSetting('voice_enable_door_fr_close')"
             />
@@ -412,13 +444,13 @@
           <div class="grid grid-cols-2 gap-2.5 mb-3">
             <MatrixButton 
               title="开门提醒"
-              :subtitle="store.vehicleAuto.voice_enable_door_rl ? '已开启' : '已关闭'"
+              :subtitle="store.vehicleAuto.voice_enable_door_rl ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_rl"
               @click="toggleSetting('voice_enable_door_rl')"
             />
             <MatrixButton 
               title="关门已关好"
-              :subtitle="store.vehicleAuto.voice_enable_door_rl_close ? '已开启' : '已关闭'"
+              :subtitle="store.vehicleAuto.voice_enable_door_rl_close ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_rl_close"
               @click="toggleSetting('voice_enable_door_rl_close')"
             />
@@ -445,13 +477,13 @@
           <div class="grid grid-cols-2 gap-2.5 mb-3">
             <MatrixButton 
               title="开门提醒"
-              :subtitle="store.vehicleAuto.voice_enable_door_rr ? '已开启' : '已关闭'"
+              :subtitle="store.vehicleAuto.voice_enable_door_rr ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_rr"
               @click="toggleSetting('voice_enable_door_rr')"
             />
             <MatrixButton 
               title="关门已关好"
-              :subtitle="store.vehicleAuto.voice_enable_door_rr_close ? '已开启' : '已关闭'"
+              :subtitle="store.vehicleAuto.voice_enable_door_rr_close ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_rr_close"
               @click="toggleSetting('voice_enable_door_rr_close')"
             />
@@ -488,13 +520,13 @@
           <div class="grid grid-cols-2 gap-2.5">
             <MatrixButton 
               title="开门播报"
-              :subtitle="store.vehicleAuto.voice_enable_trunk_open ? '已开' : '已关'"
+              :subtitle="store.vehicleAuto.voice_enable_trunk_open ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_trunk_open"
               @click="toggleSetting('voice_enable_trunk_open')"
             />
             <MatrixButton 
               title="关门已关"
-              :subtitle="store.vehicleAuto.voice_enable_trunk_close ? '已开' : '已关'"
+              :subtitle="store.vehicleAuto.voice_enable_trunk_close ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_trunk_close"
               @click="toggleSetting('voice_enable_trunk_close')"
             />
@@ -507,7 +539,7 @@
             <div class="text-[15px] text-car-sub mt-1 font-bold">车速 ≤30km/h 允许唤醒盲区</div>
           </div>
           <MatrixButton 
-            :title="store.vehicleAuto.vehicle_turn_360_enabled ? '已开启 (安全限速)' : '已关闭'"
+            :title="store.vehicleAuto.vehicle_turn_360_enabled ? '开关已开' : '开关已关'"
             :active="store.vehicleAuto.vehicle_turn_360_enabled"
             @click="toggleSetting('vehicle_turn_360_enabled')"
           />
@@ -519,7 +551,7 @@
             <div class="text-[15px] text-car-sub mt-1 font-bold">隧道与黑夜自动切换防刺眼</div>
           </div>
           <MatrixButton 
-            :title="store.vehicleAuto.vehicle_light_nav_enabled ? '已开启' : '已关闭'"
+            :title="store.vehicleAuto.vehicle_light_nav_enabled ? '开关已开' : '开关已关'"
             :active="store.vehicleAuto.vehicle_light_nav_enabled"
             @click="toggleSetting('vehicle_light_nav_enabled')"
           />
