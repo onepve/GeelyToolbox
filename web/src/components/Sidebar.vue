@@ -7,7 +7,7 @@
       :class="[
         'flex items-center justify-between px-5 min-h-[72px] rounded-2xl border-2 transition-all cursor-pointer font-black text-[19px]',
         store.currentNav === item.id 
-          ? 'bg-white/10 border-white text-white shadow-md' 
+          ? 'bg-amber-500/10 border-[#F59E0B] text-[#FEF3C7] shadow-md' 
           : 'bg-[#262A33] border-transparent text-white/80 hover:bg-[#323742]'
       ]"
     >
@@ -15,7 +15,7 @@
       <span 
         :class="[
           'text-[13px] px-2.5 py-1 rounded-lg font-extrabold',
-          store.currentNav === item.id ? 'bg-white text-black' : 'bg-white/10 text-[#94A3B8]'
+          store.currentNav === item.id ? 'bg-[#F59E0B] text-black font-black' : 'bg-white/10 text-[#94A3B8]'
         ]"
       >
         {{ item.badge }}

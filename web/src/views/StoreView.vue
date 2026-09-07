@@ -14,7 +14,7 @@
           @click="currentCategory = cat.id"
           :class="[
             'px-5 py-2.5 rounded-xl font-extrabold text-[16px] cursor-pointer transition-all',
-            currentCategory === cat.id ? 'bg-white text-black font-black' : 'bg-[#262A33] text-white border border-white/10'
+            currentCategory === cat.id ? 'bg-[#2A2315] border-2 border-[#F59E0B] text-[#FEF3C7] font-black' : 'bg-[#262A33] text-white/80 border border-white/10 hover:border-white/20'
           ]"
         >
           {{ cat.name }}
@@ -45,7 +45,7 @@
 
         <button 
           @click="handleDownload(app)"
-          class="min-h-[58px] bg-white border-2 border-white rounded-xl text-black font-black text-[18px] cursor-pointer hover:bg-white/90"
+          class="min-h-[58px] bg-[#2A2315] border-2 border-[#F59E0B] rounded-xl text-[#FEF3C7] font-black text-[18px] cursor-pointer hover:bg-[#382E1C] shadow-md shadow-amber-950/40"
         >
           {{ app.statusText || '立即下载安装' }}
         </button>

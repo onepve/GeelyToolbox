@@ -23,7 +23,7 @@
     <transition name="fade">
       <div 
         v-if="store.toast.show" 
-        class="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-white text-black px-6 py-2.5 rounded-full font-black text-[16px] shadow-2xl border border-white/20"
+        class="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-[#1C1F26] text-[#FEF3C7] border border-[#F59E0B]/60 px-6 py-2.5 rounded-full font-black text-[16.5px] shadow-2xl shadow-black/90 ring-2 ring-amber-400/20"
       >
         {{ store.toast.msg }}
       </div>
