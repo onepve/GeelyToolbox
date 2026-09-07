@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen w-screen flex flex-col bg-[#12141A] text-white font-sans overflow-hidden select-none">
+  <div class="h-screen w-screen flex flex-col bg-car-bg text-car-text font-sans overflow-hidden select-none transition-colors duration-200">
     <!-- 顶部状态栏 -->
     <TopBar />
 
@@ -23,7 +23,7 @@
     <transition name="fade">
       <div 
         v-if="store.toast.show" 
-        class="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-[#1C1F26] text-[#FEF3C7] border border-[#F59E0B]/60 px-6 py-2.5 rounded-full font-black text-[16.5px] shadow-2xl shadow-black/90 ring-2 ring-amber-400/20"
+        class="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-car-card text-car-accent-text border border-car-accent/60 px-6 py-2.5 rounded-full font-black text-[16.5px] shadow-2xl shadow-black/80 ring-2 ring-car-accent/20"
       >
         {{ store.toast.msg }}
       </div>
@@ -44,6 +44,22 @@ import SystemView from './views/SystemView.vue';
 import { store, bridge } from './store';
 
 onMounted(() => {
+  // 检查系统日夜模式
+  try {
+    const isNight = bridge.call('isNightMode');
+    if (typeof isNight === 'boolean') {
+      store.isNight = isNight;
+    }
+  } catch (e) {}
+
+  if (!store.isNight) {
+    document.documentElement.classList.add('light');
+    document.body.classList.add('light');
+  } else {
+    document.documentElement.classList.remove('light');
+    document.body.classList.remove('light');
+  }
+
   // 从 Java 原生拉取初始配置
   try {
     const rawAuto = bridge.call('getVehicleAutomationSettings');
@@ -68,6 +84,38 @@ onMounted(() => {
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* 默认夜间深色模式 (Night) */
+  --bg-main: #12141A;
+  --bg-card: #1C1F26;
+  --bg-item: #262A33;
+  --bg-item-hover: #323742;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-light: rgba(255, 255, 255, 0.2);
+  --text-main: #FFFFFF;
+  --text-sub: #94A3B8;
+  --accent-gold: #F59E0B;
+  --accent-gold-bg: #2A2315;
+  --accent-gold-text: #FEF3C7;
+  --accent-gold-sub: #FCD34D;
+}
+
+html.light, body.light {
+  /* 日间高对比抗眩光亮色模式 (Daylight) */
+  --bg-main: #E2E8F0;          /* 柔和浅冷灰底，车规抗过曝，绝非刺眼纯白 */
+  --bg-card: #FFFFFF;          /* 纯白卡片，立体鲜明 */
+  --bg-item: #F1F5F9;          /* 次级按键底 */
+  --bg-item-hover: #E2E8F0;
+  --border-color: #CBD5E1;     /* 清晰车规边框 */
+  --border-light: #94A3B8;
+  --text-main: #0F172A;        /* 强制深墨黑字，强对比抗强光 */
+  --text-sub: #475569;         /* 稳重板岩灰 */
+  --accent-gold: #D97706;      /* 日间暖阳金/琥珀橙（更深沉抗反光） */
+  --accent-gold-bg: #FEF3C7;   /* 日间暖金底座 */
+  --accent-gold-text: #78350F; /* 日间超深金棕墨字，WCAG AAA 顶级对比度 */
+  --accent-gold-sub: #92400E;  /* 日间深金棕副字 */
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease, transform 0.2s ease;
@@ -85,7 +133,7 @@ onMounted(() => {
   height: 6px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--border-color);
   border-radius: 4px;
 }
 </style>

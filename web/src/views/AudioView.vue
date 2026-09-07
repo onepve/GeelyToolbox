@@ -6,7 +6,7 @@
       desc="手机连接车载蓝牙后点播放，控制台中枢自动申请 STREAM_MUSIC 音频焦点并压制原厂静音机制，全车音响秒出声！"
     >
       <div class="flex items-center justify-between">
-        <div class="text-[17px] text-[#94A3B8] font-bold">
+        <div class="text-[17px] text-car-sub font-bold">
           状态：{{ store.vehicleAuto.bt_audio_auto_route ? '已开启 (手机放歌自动出声)' : '已关闭' }}
         </div>
         <MatrixButton 
@@ -24,10 +24,10 @@
       desc="遵循克制与隐私原则：默认仅轻声播报 U 盘接入；曲目全盘扫描做成独立开关，默认关闭，绝不强行越权搜歌。"
     >
       <div class="grid grid-cols-2 gap-4">
-        <div class="bg-[#262A33] border border-white/10 rounded-xl p-4 flex flex-col justify-between gap-3">
+        <div class="bg-car-item border border-car-border rounded-xl p-4 flex flex-col justify-between gap-3">
           <div>
-            <div class="text-[19px] font-black text-white">U 盘插入轻声提醒</div>
-            <div class="text-[15px] text-[#94A3B8] mt-1 font-bold">插入 U 盘瞬间触发温婉语音：“检测到外部U盘接入”</div>
+            <div class="text-[19px] font-black text-car-text">U 盘插入轻声提醒</div>
+            <div class="text-[15px] text-car-sub mt-1 font-bold">插入 U 盘瞬间触发温婉语音：“检测到外部U盘接入”</div>
           </div>
           <MatrixButton 
             :title="store.vehicleAuto.usb_media_auto_detect ? '已开启 (默认)' : '已关闭'"
@@ -36,10 +36,10 @@
           />
         </div>
 
-        <div class="bg-[#262A33] border border-white/10 rounded-xl p-4 flex flex-col justify-between gap-3">
+        <div class="bg-car-item border border-car-border rounded-xl p-4 flex flex-col justify-between gap-3">
           <div>
-            <div class="text-[19px] font-black text-white">自动全盘扫描歌曲文件</div>
-            <div class="text-[15px] text-[#94A3B8] mt-1 font-bold">异步深度遍历扫描 U 盘内的 MP3/FLAC 音乐文件（实验性）</div>
+            <div class="text-[19px] font-black text-car-text">自动全盘扫描歌曲文件</div>
+            <div class="text-[15px] text-car-sub mt-1 font-bold">异步深度遍历扫描 U 盘内的 MP3/FLAC 音乐文件（实验性）</div>
           </div>
           <MatrixButton 
             :title="store.vehicleAuto.usb_media_auto_scan_songs ? '已开启' : '已关闭 (默认)'"
@@ -58,7 +58,7 @@
       <div class="flex items-center justify-end">
         <button 
           @click="openTtsSettings"
-          class="min-h-[64px] px-8 bg-[#2A2315] border-2 border-[#F59E0B] text-[#FEF3C7] font-black text-[20px] rounded-xl cursor-pointer hover:bg-[#382E1C] shadow-md shadow-amber-950/50"
+          class="min-h-[64px] px-8 bg-car-accent-bg border-2 border-car-accent text-car-accent-text font-black text-[20px] rounded-xl cursor-pointer hover:opacity-90 shadow-md shadow-amber-950/20"
         >
           进入小爱设置
         </button>

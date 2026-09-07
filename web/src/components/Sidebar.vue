@@ -1,5 +1,5 @@
 <template>
-  <aside class="w-[300px] shrink-0 bg-[#1C1F26] border-r border-white/10 flex flex-col p-4 gap-3 select-none">
+  <aside class="w-[300px] shrink-0 bg-car-card border-r border-car-border flex flex-col p-4 gap-3 select-none transition-colors">
     <div 
       v-for="item in navItems" 
       :key="item.id"
@@ -7,15 +7,15 @@
       :class="[
         'flex items-center justify-between px-5 min-h-[72px] rounded-2xl border-2 transition-all cursor-pointer font-black text-[19px]',
         store.currentNav === item.id 
-          ? 'bg-amber-500/10 border-[#F59E0B] text-[#FEF3C7] shadow-md' 
-          : 'bg-[#262A33] border-transparent text-white/80 hover:bg-[#323742]'
+          ? 'bg-car-accent-bg border-car-accent text-car-accent-text shadow-md ring-2 ring-car-accent/20' 
+          : 'bg-car-item border-transparent text-car-sub hover:bg-car-hover hover:text-car-text'
       ]"
     >
       <span>{{ item.name }}</span>
       <span 
         :class="[
           'text-[13px] px-2.5 py-1 rounded-lg font-extrabold',
-          store.currentNav === item.id ? 'bg-[#F59E0B] text-black font-black' : 'bg-white/10 text-[#94A3B8]'
+          store.currentNav === item.id ? 'bg-car-accent text-black font-black' : 'bg-car-card border border-car-border text-car-sub'
         ]"
       >
         {{ item.badge }}

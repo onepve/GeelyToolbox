@@ -53,7 +53,7 @@
       >
         <button 
           @click="openLogModal"
-          class="w-full min-h-[106px] bg-[#262A33] border border-white/10 text-white font-black text-[20px] rounded-2xl cursor-pointer hover:border-white/30"
+          class="w-full min-h-[106px] bg-car-item border border-car-border text-car-text font-black text-[20px] rounded-2xl cursor-pointer hover:border-car-border-light"
         >
           查看运行日志
         </button>

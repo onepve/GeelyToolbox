@@ -7,10 +7,10 @@
     >
       <button 
         @click="openFileManager"
-        class="w-full min-h-[80px] bg-[#2A2315] border-2 border-[#F59E0B] rounded-2xl p-4 flex items-center justify-center gap-4 text-[#FEF3C7] font-black text-[22px] cursor-pointer hover:bg-[#382E1C] shadow-lg shadow-amber-950/60 ring-2 ring-amber-400/20"
+        class="w-full min-h-[80px] bg-car-accent-bg border-2 border-car-accent rounded-2xl p-4 flex items-center justify-center gap-4 text-car-accent-text font-black text-[22px] cursor-pointer hover:opacity-90 shadow-lg shadow-amber-950/20 ring-2 ring-car-accent/20"
       >
         <span>打开车机自带原生文件管理</span>
-        <span class="bg-[#F59E0B] text-black text-[14px] px-3 py-1 rounded-md font-extrabold">进入 Download 目录直接安装</span>
+        <span class="bg-car-accent text-black text-[14px] px-3 py-1 rounded-md font-extrabold">进入 Download 目录直接安装</span>
       </button>
     </FeatureCard>
 
@@ -22,7 +22,7 @@
       >
         <button 
           @click="showQrCode"
-          class="w-full min-h-[72px] bg-[#262A33] border border-white/10 text-white font-black text-[20px] rounded-xl cursor-pointer hover:border-white/30"
+          class="w-full min-h-[72px] bg-car-item border border-car-border text-car-text font-black text-[20px] rounded-xl cursor-pointer hover:border-car-border-light"
         >
           展示无线快传二维码
         </button>
@@ -35,7 +35,7 @@
       >
         <button 
           @click="openDialer"
-          class="w-full min-h-[72px] bg-[#262A33] border border-white/10 text-white font-black text-[20px] rounded-xl cursor-pointer hover:border-white/30"
+          class="w-full min-h-[72px] bg-car-item border border-car-border text-car-text font-black text-[20px] rounded-xl cursor-pointer hover:border-car-border-light"
         >
           调起车机电话拨号盘
         </button>

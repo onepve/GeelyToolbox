@@ -6,7 +6,7 @@
 
     <!-- 分类过滤与刷新 -->
     <div class="flex items-center justify-between">
-      <div class="text-[22px] font-black text-white">精选车机应用列表</div>
+      <div class="text-[22px] font-black text-car-text">精选车机应用列表</div>
       <div class="flex gap-2">
         <button 
           v-for="cat in categories" 
@@ -14,14 +14,14 @@
           @click="currentCategory = cat.id"
           :class="[
             'px-5 py-2.5 rounded-xl font-extrabold text-[16px] cursor-pointer transition-all',
-            currentCategory === cat.id ? 'bg-[#2A2315] border-2 border-[#F59E0B] text-[#FEF3C7] font-black' : 'bg-[#262A33] text-white/80 border border-white/10 hover:border-white/20'
+            currentCategory === cat.id ? 'bg-car-accent-bg border-2 border-car-accent text-car-accent-text font-black' : 'bg-car-item text-car-sub border border-car-border hover:border-car-border-light'
           ]"
         >
           {{ cat.name }}
         </button>
         <button 
           @click="refreshApps"
-          class="px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white font-extrabold text-[16px] cursor-pointer hover:bg-white/20"
+          class="px-5 py-2.5 rounded-xl bg-white/10 border border-car-border text-car-text font-extrabold text-[16px] cursor-pointer hover:bg-white/20"
         >
           刷新
         </button>
@@ -33,19 +33,19 @@
       <div 
         v-for="app in filteredApps" 
         :key="app.id"
-        class="bg-[#1C1F26] border border-white/10 rounded-2xl p-5 flex flex-col justify-between gap-4"
+        class="bg-car-card border border-car-border rounded-2xl p-5 flex flex-col justify-between gap-4"
       >
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center justify-between">
-            <span class="text-[20px] font-black text-white">{{ app.name }}</span>
-            <span class="text-[13px] bg-white/10 px-2.5 py-1 rounded text-[#94A3B8] font-bold">{{ app.size }}</span>
+            <span class="text-[20px] font-black text-car-text">{{ app.name }}</span>
+            <span class="text-[13px] bg-white/10 px-2.5 py-1 rounded text-car-sub font-bold">{{ app.size }}</span>
           </div>
-          <p class="text-[15.5px] text-[#94A3B8] font-semibold leading-relaxed">{{ app.desc }}</p>
+          <p class="text-[15.5px] text-car-sub font-semibold leading-relaxed">{{ app.desc }}</p>
         </div>
 
         <button 
           @click="handleDownload(app)"
-          class="min-h-[58px] bg-[#2A2315] border-2 border-[#F59E0B] rounded-xl text-[#FEF3C7] font-black text-[18px] cursor-pointer hover:bg-[#382E1C] shadow-md shadow-amber-950/40"
+          class="min-h-[58px] bg-car-accent-bg border-2 border-car-accent rounded-xl text-car-accent-text font-black text-[18px] cursor-pointer hover:opacity-90 shadow-md shadow-amber-950/20"
         >
           {{ app.statusText || '立即下载安装' }}
         </button>

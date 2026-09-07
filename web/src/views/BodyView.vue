@@ -15,7 +15,7 @@
           />
           <button 
             @click="testVoice('gear_d')"
-            class="min-h-[48px] bg-[#262A33] border border-white/10 rounded-xl text-white font-black text-[16px] cursor-pointer hover:border-white/30"
+            class="min-h-[48px] bg-car-item border border-car-border rounded-xl text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light"
           >
             试听 D 挡播报
           </button>
@@ -30,7 +30,7 @@
           />
           <button 
             @click="testVoice('gear_r')"
-            class="min-h-[48px] bg-[#262A33] border border-white/10 rounded-xl text-white font-black text-[16px] cursor-pointer hover:border-white/30"
+            class="min-h-[48px] bg-car-item border border-car-border rounded-xl text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light"
           >
             试听 R 挡播报
           </button>
@@ -45,8 +45,8 @@
     >
       <div class="grid grid-cols-2 gap-4">
         <!-- 主驾 FL -->
-        <div class="bg-[#262A33] border border-white/10 rounded-xl p-4 flex flex-col gap-3">
-          <div class="text-[19px] font-black text-white">主驾车门 (FL)</div>
+        <div class="bg-car-item border border-car-border rounded-xl p-4 flex flex-col gap-3">
+          <div class="text-[19px] font-black text-car-text">主驾车门 (FL)</div>
           <div class="grid grid-cols-2 gap-2">
             <MatrixButton 
               title="开门防杀"
@@ -63,15 +63,15 @@
           </div>
           <button 
             @click="testVoice('door_fl')"
-            class="min-h-[44px] bg-[#1C1F26] border border-white/10 rounded-lg text-white font-black text-[15px] cursor-pointer hover:border-white/30"
+            class="min-h-[44px] bg-car-card border border-car-border rounded-lg text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light"
           >
             试听开门语音
           </button>
         </div>
 
         <!-- 副驾 FR -->
-        <div class="bg-[#262A33] border border-white/10 rounded-xl p-4 flex flex-col gap-3">
-          <div class="text-[19px] font-black text-white">副驾车门 (FR)</div>
+        <div class="bg-car-item border border-car-border rounded-xl p-4 flex flex-col gap-3">
+          <div class="text-[19px] font-black text-car-text">副驾车门 (FR)</div>
           <div class="grid grid-cols-2 gap-2">
             <MatrixButton 
               title="开门迎宾"
@@ -88,15 +88,15 @@
           </div>
           <button 
             @click="testVoice('door_fr')"
-            class="min-h-[44px] bg-[#1C1F26] border border-white/10 rounded-lg text-white font-black text-[15px] cursor-pointer hover:border-white/30"
+            class="min-h-[44px] bg-car-card border border-car-border rounded-lg text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light"
           >
             试听开门语音
           </button>
         </div>
 
         <!-- 左后 RL -->
-        <div class="bg-[#262A33] border border-white/10 rounded-xl p-4 flex flex-col gap-3">
-          <div class="text-[19px] font-black text-white">左后车门 (RL)</div>
+        <div class="bg-car-item border border-car-border rounded-xl p-4 flex flex-col gap-3">
+          <div class="text-[19px] font-black text-car-text">左后车门 (RL)</div>
           <div class="grid grid-cols-2 gap-2">
             <MatrixButton 
               title="开门提醒"
@@ -113,15 +113,15 @@
           </div>
           <button 
             @click="testVoice('door_rl')"
-            class="min-h-[44px] bg-[#1C1F26] border border-white/10 rounded-lg text-white font-black text-[15px] cursor-pointer hover:border-white/30"
+            class="min-h-[44px] bg-car-card border border-car-border rounded-lg text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light"
           >
             试听开门语音
           </button>
         </div>
 
         <!-- 右后 RR -->
-        <div class="bg-[#262A33] border border-white/10 rounded-xl p-4 flex flex-col gap-3">
-          <div class="text-[19px] font-black text-white">右后车门 (RR)</div>
+        <div class="bg-car-item border border-car-border rounded-xl p-4 flex flex-col gap-3">
+          <div class="text-[19px] font-black text-car-text">右后车门 (RR)</div>
           <div class="grid grid-cols-2 gap-2">
             <MatrixButton 
               title="开门提醒"
@@ -138,7 +138,7 @@
           </div>
           <button 
             @click="testVoice('door_rr')"
-            class="min-h-[44px] bg-[#1C1F26] border border-white/10 rounded-lg text-white font-black text-[15px] cursor-pointer hover:border-white/30"
+            class="min-h-[44px] bg-car-card border border-car-border rounded-lg text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light"
           >
             试听开门语音
           </button>
@@ -152,10 +152,10 @@
       desc="原厂电动尾门物理串口破译闭环；转向灯联动 360 全景内置车速 ≤30km/h 保护；大灯联动高德日夜模式。"
     >
       <div class="grid grid-cols-3 gap-4">
-        <div class="bg-[#262A33] border border-white/10 rounded-xl p-4 flex flex-col justify-between gap-3">
+        <div class="bg-car-item border border-car-border rounded-xl p-4 flex flex-col justify-between gap-3">
           <div>
-            <div class="text-[19px] font-black text-white">原厂电动尾门 (b7)</div>
-            <div class="text-[15px] text-[#94A3B8] mt-1 font-bold">升起开门提醒与闭合锁止播报</div>
+            <div class="text-[19px] font-black text-car-text">原厂电动尾门 (b7)</div>
+            <div class="text-[15px] text-car-sub mt-1 font-bold">升起开门提醒与闭合锁止播报</div>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <MatrixButton 
@@ -173,10 +173,10 @@
           </div>
         </div>
 
-        <div class="bg-[#262A33] border border-white/10 rounded-xl p-4 flex flex-col justify-between gap-3">
+        <div class="bg-car-item border border-car-border rounded-xl p-4 flex flex-col justify-between gap-3">
           <div>
-            <div class="text-[19px] font-black text-white">转向灯联动 360 全景</div>
-            <div class="text-[15px] text-[#94A3B8] mt-1 font-bold">车速 ≤30km/h 允许唤醒盲区</div>
+            <div class="text-[19px] font-black text-car-text">转向灯联动 360 全景</div>
+            <div class="text-[15px] text-car-sub mt-1 font-bold">车速 ≤30km/h 允许唤醒盲区</div>
           </div>
           <MatrixButton 
             :title="store.vehicleAuto.vehicle_turn_360_enabled ? '已开启 (安全限速)' : '已关闭'"
@@ -185,10 +185,10 @@
           />
         </div>
 
-        <div class="bg-[#262A33] border border-white/10 rounded-xl p-4 flex flex-col justify-between gap-3">
+        <div class="bg-car-item border border-car-border rounded-xl p-4 flex flex-col justify-between gap-3">
           <div>
-            <div class="text-[19px] font-black text-white">大灯联动高德日夜模式</div>
-            <div class="text-[15px] text-[#94A3B8] mt-1 font-bold">隧道与黑夜自动切换防刺眼</div>
+            <div class="text-[19px] font-black text-car-text">大灯联动高德日夜模式</div>
+            <div class="text-[15px] text-car-sub mt-1 font-bold">隧道与黑夜自动切换防刺眼</div>
           </div>
           <MatrixButton 
             :title="store.vehicleAuto.vehicle_light_nav_enabled ? '已开启' : '已关闭'"

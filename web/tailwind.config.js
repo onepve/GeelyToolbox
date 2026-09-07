@@ -8,15 +8,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        hyper: {
-          bg: '#12141A',
-          card: '#1C1F26',
-          item: '#262A33',
-          hover: '#323742',
-          border: 'rgba(255, 255, 255, 0.08)',
-          txt: '#FFFFFF',
-          dim: '#94A3B8'
-        }
+        'car-bg': 'var(--bg-main)',
+        'car-card': 'var(--bg-card)',
+        'car-item': 'var(--bg-item)',
+        'car-hover': 'var(--bg-item-hover)',
+        'car-border': 'var(--border-color)',
+        'car-border-light': 'var(--border-light)',
+        'car-text': 'var(--text-main)',
+        'car-sub': 'var(--text-sub)',
+        'car-accent': 'var(--accent-gold)',
+        'car-accent-bg': 'var(--accent-gold-bg)',
+        'car-accent-text': 'var(--accent-gold-text)',
+        'car-accent-sub': 'var(--accent-gold-sub)',
       }
     },
   },
