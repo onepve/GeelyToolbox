@@ -2,7 +2,7 @@
   <header class="h-[64px] min-h-[64px] bg-car-card border-b border-car-border px-5 flex items-center justify-between z-20 select-none backdrop-blur-xl transition-colors">
     <!-- 品牌与版本 -->
     <div class="flex items-center gap-2.5">
-      <span class="text-[20px] font-black text-car-text tracking-wide">吉利智能座舱中枢</span>
+      <span class="text-[20px] font-black text-car-text tracking-wide">吉利智驾</span>
       <span class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-text font-extrabold border border-car-border">v{{ store.deviceInfo.version || '1.3.8' }}</span>
     </div>
 

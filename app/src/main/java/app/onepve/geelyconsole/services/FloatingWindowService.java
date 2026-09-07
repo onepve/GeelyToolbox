@@ -200,7 +200,7 @@ public class FloatingWindowService extends Service {
     private void updatePillContent() {
         if (tvIcon == null || tvText == null || tvStatus == null) return;
         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-        String displayMode = prefs.getString("floating_display_mode", "name"); // 默认 "name" 为吉利工具箱，"code" 为动态暗码
+        String displayMode = prefs.getString("floating_display_mode", "name"); // 默认 "name" 为吉利智驾，"code" 为动态暗码
 
         if ("code".equals(displayMode)) {
             String code10 = SystemUtils.calculateDynamicCode();
@@ -210,7 +210,7 @@ public class FloatingWindowService extends Service {
             tvStatus.setText("");
         } else {
             tvIcon.setText("🔧");
-            tvText.setText("吉利工具箱");
+            tvText.setText("吉利智驾");
             tvStatus.setText("");
         }
     }
@@ -332,7 +332,7 @@ public class FloatingWindowService extends Service {
         layoutPillContainer.addView(tvIcon);
 
         tvText = new TextView(this);
-        tvText.setText("吉利工具箱");
+        tvText.setText("吉利智驾");
         tvText.setTextSize(13);
         tvText.getPaint().setFakeBoldText(true);
         layoutPillContainer.addView(tvText);

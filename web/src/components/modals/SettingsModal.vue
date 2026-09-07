@@ -70,7 +70,7 @@
               : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
           ]"
         >
-          显示名称模式 (吉利控制台)
+          显示名称模式 (吉利智驾)
         </button>
         <button 
           @click="setFloatingMode('code')"

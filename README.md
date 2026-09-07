@@ -1,4 +1,4 @@
-# 吉利智能座舱中枢 (GeelyCockpit)
+# 吉利智驾 (GeelyPilot)
 
 专为搭载 **亿咖通 E02 / IHU516** 芯片的吉利汽车（缤越 COOL、缤瑞 COOL、博越、豪越、帝豪等 Android 9 SWOS 车机系统）量身打造的**新一代全能车载智能座舱控制中枢**。
 
