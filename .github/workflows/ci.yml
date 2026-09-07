@@ -33,6 +33,18 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Setup Node.js & Build Vite Web Assets
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install pnpm & Build Frontend
+        run: |
+          npm install -g pnpm
+          cd web
+          pnpm install --no-frozen-lockfile --dangerously-allow-all-builds
+          pnpm build
+          cd ..
+
       - name: Run CI Health Checks (Links, JSBridge, DOM Handlers)
         run: python3 scripts/ci_health_check.py
 
