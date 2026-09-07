@@ -1914,9 +1914,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_enable_mode_eco", prefs.getBoolean("voice_enable_mode_eco", true));
                 obj.put("voice_enable_mode_sport", prefs.getBoolean("voice_enable_mode_sport", true));
 
-                // 蓝牙、U盘与方控
-                obj.put("bt_audio_auto_route", prefs.getBoolean("bt_audio_auto_route", true));
-                obj.put("usb_media_auto_detect", prefs.getBoolean("usb_media_auto_detect", true));
+                // 蓝牙、U盘与方控 (默认不选择，避免在测功能与车机冲突)
+                obj.put("bt_audio_auto_route", prefs.getBoolean("bt_audio_auto_route", false));
+                obj.put("usb_media_auto_detect", prefs.getBoolean("usb_media_auto_detect", false));
                 obj.put("usb_media_auto_scan_songs", prefs.getBoolean("usb_media_auto_scan_songs", false));
                 obj.put("wheel_control_mode", prefs.getString("wheel_control_mode", "carmedia_first"));
                 obj.put("wheel_action_mute", prefs.getString("wheel_action_mute", "open_360"));

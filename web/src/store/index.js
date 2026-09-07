@@ -59,8 +59,8 @@ export const store = reactive({
     voice_enable_trunk_close: false,
     vehicle_turn_360_enabled: false,
     vehicle_light_nav_enabled: false,
-    bt_audio_auto_route: true,
-    usb_media_auto_detect: true,
+    bt_audio_auto_route: false,
+    usb_media_auto_detect: false,
     usb_media_auto_scan_songs: false
   },
 

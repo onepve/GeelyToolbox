@@ -12,7 +12,9 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -104,6 +106,7 @@ public class VehicleAutomationService extends Service {
     private Thread logcatThread;
     private Process logcatProcess;
     private VehicleVoicePlayer voicePlayer;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private SteeringWheelKeyManager wheelKeyManager;
     private BluetoothAudioRouter btAudioRouter;
     private UsbMediaManager usbMediaManager;
@@ -135,8 +138,8 @@ public class VehicleAutomationService extends Service {
             boolean turn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
             boolean lightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
             boolean flameout = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
-            boolean btRouter = prefs.getBoolean("bt_audio_auto_route", true);
-            boolean usbMedia = prefs.getBoolean("usb_media_auto_detect", true);
+            boolean btRouter = prefs.getBoolean("bt_audio_auto_route", false);
+            boolean usbMedia = prefs.getBoolean("usb_media_auto_detect", false);
             String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
             boolean wheelEnabled = !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
 
@@ -244,8 +247,8 @@ public class VehicleAutomationService extends Service {
         enableTurn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
-        enableBluetoothRouter = prefs.getBoolean("bt_audio_auto_route", true);
-        enableUsbMedia = prefs.getBoolean("usb_media_auto_detect", true);
+        enableBluetoothRouter = prefs.getBoolean("bt_audio_auto_route", false);
+        enableUsbMedia = prefs.getBoolean("usb_media_auto_detect", false);
 
         String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
         boolean wheelEnabled = !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
