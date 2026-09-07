@@ -70,15 +70,10 @@ jobs:
             unzip -qo /tmp/awscliv2.zip -d /tmp/awscli
             /tmp/awscli/aws/install --update
           fi
-          # 计算哈希与大小
-          MD5=$(md5sum output/GeelyConsole.apk | cut -d' ' -f1)
-          SHA256=$(sha256sum output/GeelyConsole.apk | cut -d' ' -f1)
-          SIZE=$(stat -c%s output/GeelyConsole.apk)
-          # 版本号从 build.gradle 提取
-          VERSION_NAME=$(grep -oP 'versionName \"\K[^\"]+' app/build.gradle)
-          VERSION_CODE=$(grep -oP 'versionCode \K[0-9]+' app/build.gradle)
-          SIZE_MB=$(python3 -c "print(f'{$SIZE/1048576:.1f} MB')")
-          echo "→ v$VERSION_NAME (code $VERSION_CODE) md5=$MD5 size=$SIZE_MB"
+
+          export VERSION_NAME=$(grep -oP 'versionName "\K[^"]+' app/build.gradle)
+          export VERSION_CODE=$(grep -oP 'versionCode \K[0-9]+' app/build.gradle)
+          export TAG_NAME="${GITHUB_REF#refs/tags/}"
 
           # 配置 aws cli 访问 R2
           export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
@@ -86,87 +81,30 @@ jobs:
           export AWS_DEFAULT_REGION=auto
           BUCKET="s3://downloads/GeelyToolbox/"
 
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          # 如果是正式版发布，预先拉取线上 apps.json 供脚本更新
+          if [[ "$TAG_NAME" != beta-* ]]; then
+            curl -s "https://dl.onepve.com/GeelyToolbox/apps.json?t=$(date +%s)" -o /tmp/apps.json || true
+          fi
 
-          export VER="$VERSION_NAME" CODE="$VERSION_CODE" MD5X="$MD5" SHAX="$SHA256" BYTESX="$SIZE" SIZEMB="$SIZE_MB" TODAY="$(date +%F)"
+          # 统一由独立 Python 脚本生成规范元数据，彻底避免 shell heredoc 缩进问题
+          python3 scripts/publish_r2.py
+
           if [[ "$TAG_NAME" == beta-* ]]; then
-            echo "⚡ 正在执行【测试通道】发布 (beta)..."
+            echo "⚡ 正在同步【测试通道】至 R2..."
             aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyPilot-beta.apk" \
               --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
-
-            python3 - <<'PYBETA'
-            import json, os
-            data = {
-            "version": os.environ["VER"] + "-beta",
-            "version_code": int(os.environ["CODE"]),
-            "is_beta": True,
-            "min_sdk": 28,
-            "target_sdk": 28,
-            "package_name": "app.onepve.geelyconsole",
-            "size": os.environ["SIZEMB"],
-            "bytes": int(os.environ["BYTESX"]),
-            "md5": os.environ["MD5X"],
-            "sha256": os.environ["SHAX"],
-            "download_url": "https://dl.onepve.com/GeelyToolbox/GeelyPilot-beta.apk?v=" + os.environ["VER"],
-            "changelog": "【测试通道优先体验】\n1. 自动同步内测修复与前沿特性实验\n2. 仅面向已激活测试身份的车友推送，正式车友不受任何影响",
-            "release_date": os.environ["TODAY"]
-            }
-            with open("/tmp/version-beta.json", "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-            PYBETA
             aws s3 cp /tmp/version-beta.json "${BUCKET}version-beta.json" \
               --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
-
           else
-            echo "🚀 正在执行【正式通道】发布 (Release)..."
+            echo "🚀 正在同步【正式通道】至 R2..."
             aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyToolbox.apk" \
               --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
-
-            python3 - <<'PYREL'
-            import json, os
-            data = {
-            "version": os.environ["VER"],
-            "version_code": int(os.environ["CODE"]),
-            "is_beta": False,
-            "min_sdk": 28,
-            "target_sdk": 28,
-            "package_name": "app.onepve.geelyconsole",
-            "size": os.environ["SIZEMB"],
-            "bytes": int(os.environ["BYTESX"]),
-            "md5": os.environ["MD5X"],
-            "sha256": os.environ["SHAX"],
-            "download_url": "https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=" + os.environ["VER"],
-            "changelog": "1. 落地【双轨发布体系】：全面支持【测试通道 (Beta)】与【正式通道 (Release)】，设置关于中支持连击 5 次版本号解锁内测特权，查看车机硬件唯一识别码 (UID)，随心切换双轨通道\n2. 新增【不再提醒】版本更新静默控制：更新弹窗提供不再提醒按钮，设置中提供【开机与前台自动检测更新】开关与恢复检测\n3. 落地【有人感知状态机】：默认P挡与智能模式静默，手动换出P挡/切出智能模式置1激活全量播报，换回P挡/智能模式播报一次后置0归位，彻底消除蓝牙靠近与开机唤醒误报连报\n4. 彻底根治布局错位：移除 flex gap，采用 18px 显式实体 margin-bottom 与 line-height 约束，真车 160DPI 零重叠零遮挡\n5. 顶栏实装 PPanel 同款 12V 蓄电池电压流光微胶囊 (>=11.8V绿/11.5~11.8V橙/<11.5V红)，直出电压与健康状态\n6. 实装【专家模式】卡主题安装向导独立组件 (RabbitInstallModal.vue)，向导流程闭环\n7. 优化车规触控比例：按键高度收敛为 80px 黄金大磁贴，紧凑饱满单行防折字\n8. 精简应用商城列表：彻底移除外部卡片多余的“立即下载”按钮，收敛至详情大弹窗内\n9. 拔除冗余软重启按钮，收敛单一权威【整车完整硬件冷重启 (reboot)】\n10. 修复 U 盘插入自动识别监听默认关闭 Bug，双轨支持标准媒体挂载与物理 USB 设备接入播报",
-            "release_date": os.environ["TODAY"]
-            }
-            with open("/tmp/version.json", "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-            PYREL
             aws s3 cp /tmp/version.json "${BUCKET}version.json" \
               --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
-
-            # 3. 更新 apps.json toolbox 字段
-            curl -s "https://dl.onepve.com/GeelyToolbox/apps.json?t=$(date +%s)" -o /tmp/apps.json
-            export VER="$VERSION_NAME" CODE="$VERSION_CODE" MD5X="$MD5" SHAX="$SHA256" BYTESX="$SIZE" SIZEMB="$SIZE_MB" TODAY="$(date +%F)"
-            python3 - <<'PYEOF'
-            import json, os
-            with open('/tmp/apps.json', encoding='utf-8') as f:
-            data = json.load(f)
-            data['version'] = os.environ['VER']
-            data['updated_at'] = os.environ['TODAY']
-            tb = data.get('toolbox', {})
-            tb.update({
-            'version': os.environ['VER'], 'version_code': int(os.environ['CODE']),
-            'md5': os.environ['MD5X'], 'sha256': os.environ['SHAX'], 'bytes': int(os.environ['BYTESX']),
-            'size': os.environ['SIZEMB'],
-            'download_url': 'https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=' + os.environ['VER'],
-            })
-            data['toolbox'] = tb
-            with open('/tmp/apps.json', 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-            PYEOF
-            aws s3 cp /tmp/apps.json "${BUCKET}apps.json" \
-              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+            if [ -f /tmp/apps.json ]; then
+              aws s3 cp /tmp/apps.json "${BUCKET}apps.json" \
+                --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+            fi
           fi
 
       - name: Publish Official Release on Tag
