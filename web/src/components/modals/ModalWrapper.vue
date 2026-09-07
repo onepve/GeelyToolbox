@@ -2,12 +2,13 @@
   <transition name="modal-fade">
     <div 
       v-if="show" 
-      class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md select-none"
+      class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/75 backdrop-blur-sm select-none"
       @click.self="handleBackdropClick"
     >
       <div 
         :class="[
-          'bg-car-card border border-car-border rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-200 w-full',
+          'bg-car-card rounded-3xl overflow-hidden flex flex-col transition-all duration-200 w-full shadow-2xl',
+          'border border-car-border/80',
           maxWidthClass || 'max-w-[1000px]',
           maxHeightClass || 'max-h-[90vh]'
         ]"

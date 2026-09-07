@@ -62,8 +62,16 @@ public class UsbMediaManager {
             filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
             filter.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
             filter.addAction(Intent.ACTION_MEDIA_EJECT);
+            filter.addAction("android.hardware.usb.action.USB_DEVICE_ATTACHED");
+            filter.addAction("android.hardware.usb.action.USB_DEVICE_DETACHED");
             filter.addDataScheme("file");
             context.registerReceiver(usbReceiver, filter);
+
+            // 补充无 dataScheme 的 USB 设备物理插拔监听（针对部分 Android 9 车机挂载广播不带 file scheme 场景）
+            IntentFilter usbFilter = new IntentFilter();
+            usbFilter.addAction("android.hardware.usb.action.USB_DEVICE_ATTACHED");
+            usbFilter.addAction("android.hardware.usb.action.USB_DEVICE_DETACHED");
+            context.registerReceiver(usbReceiver, usbFilter);
             isRegistered = true;
             Log.i(TAG, "UsbMediaManager registered successfully");
         } catch (Exception e) {

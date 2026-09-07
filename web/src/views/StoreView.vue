@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col gap-5">
+  <div class="flex flex-col space-y-6">
     <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-[16px] text-amber-200 font-bold">
       <b>【实测机型声明】</b>以下软件仅在「吉利缤越COOL 2022 (亿咖通 E02 / IHU516G / Android 9)」实测通过，其他车型请自行评估后安装。
     </div>
@@ -34,22 +34,20 @@
         v-for="app in filteredApps" 
         :key="app.id"
         @click="openModal('appDetail', app)"
-        class="bg-car-card border border-car-border rounded-2xl p-5 flex flex-col justify-between gap-4 cursor-pointer hover:border-car-border-light transition-all"
+        class="bg-car-card border border-car-border rounded-2xl p-6 flex flex-col justify-between cursor-pointer hover:border-car-border-light transition-all shadow-md group"
       >
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between">
-            <span class="text-[20px] font-black text-car-text">{{ app.name }}</span>
-            <span class="text-[13px] bg-white/10 px-2.5 py-1 rounded text-car-sub font-bold">{{ app.size }}</span>
+            <span class="text-[21px] font-black text-car-text group-hover:text-car-accent transition-colors">{{ app.name }}</span>
+            <span class="text-[13px] bg-car-item border border-car-border px-3 py-1 rounded-md text-car-sub font-mono font-bold">{{ app.size }}</span>
           </div>
-          <p class="text-[15.5px] text-car-sub font-semibold leading-relaxed">{{ app.desc }}</p>
+          <p class="text-[16px] text-car-sub font-medium leading-relaxed mt-1">{{ app.desc }}</p>
         </div>
 
-        <button 
-          @click.stop="handleDownload(app)"
-          class="min-h-[58px] bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent-light shadow-md ring-2 ring-car-accent/15"
-        >
-          {{ app.statusText || '立即下载安装' }}
-        </button>
+        <div class="flex items-center justify-between pt-4 mt-3 border-t border-car-border/60">
+          <span class="text-[14px] text-car-sub/80 font-bold">点击查看详细信息与避坑指南</span>
+          <span class="text-[14px] text-car-accent font-black group-hover:translate-x-1 transition-transform">查看详情 →</span>
+        </div>
       </div>
     </div>
   </div>

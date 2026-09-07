@@ -113,7 +113,7 @@ public class VehicleAutomationService extends Service {
             boolean lightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
             boolean flameout = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
             boolean btRouter = prefs.getBoolean("bt_audio_auto_route", true);
-            boolean usbMedia = prefs.getBoolean("usb_media_auto_detect", false);
+            boolean usbMedia = prefs.getBoolean("usb_media_auto_detect", true);
             String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
             boolean wheelEnabled = !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
 
@@ -214,7 +214,7 @@ public class VehicleAutomationService extends Service {
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
         enableBluetoothRouter = prefs.getBoolean("bt_audio_auto_route", true);
-        enableUsbMedia = prefs.getBoolean("usb_media_auto_detect", false);
+        enableUsbMedia = prefs.getBoolean("usb_media_auto_detect", true);
 
         String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
         boolean wheelEnabled = !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);

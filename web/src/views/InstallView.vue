@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col gap-5">
+  <div class="flex flex-col space-y-6">
     <!-- 原生文件管理特权安装 -->
     <FeatureCard 
       title="1. 车载特权安装通道 (防白屏唯二正解)"

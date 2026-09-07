@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col gap-5">
+  <div class="flex flex-col space-y-6">
     <!-- 挡位安全播报 -->
     <FeatureCard 
       title="1. 挡位安全播报 (前进挡 D / 倒车挡 R)"

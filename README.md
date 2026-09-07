@@ -8,8 +8,8 @@
 
 - **官方保姆级图文教程**：[吉利控制台 (GeelyToolbox) 从零初始化与座舱实战全指南](https://onepve.com/geely-toolbox-guide/)
 - **GitHub 开源仓库**：[onepve/GeelyToolbox](https://github.com/onepve/GeelyToolbox)
-- **最新正式版本**：`v1.3.8` (versionCode `7038`)
-- **官方直装下载直链**：[GeelyToolbox.apk (v1.3.8)](https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.3.8)
+- **最新正式版本**：`v1.3.9` (versionCode `7039`)
+- **官方直装下载直链**：[GeelyToolbox.apk (v1.3.9)](https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.3.9)
 - **版本元数据接口**：[version.json](https://dl.onepve.com/GeelyToolbox/version.json)
 - **配套软件源接口**：[apps.json](https://dl.onepve.com/GeelyToolbox/apps.json)
 - **车规 HMI 设计规范**：[geely-cockpit-hmi-m3-design-spec.md](https://onepve.com/geely-toolbox-guide/)

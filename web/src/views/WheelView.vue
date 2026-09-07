@@ -1,9 +1,9 @@
 <template>
-  <div class="flex flex-col gap-5">
-    <!-- 卡片 1: 方控接管模式 -->
+  <div class="flex flex-col space-y-6">
+    <!-- 方向盘方控接管模式 -->
     <FeatureCard 
       title="1. 方向盘方控接管模式 (兼容米小江)"
-      desc="彻底屏蔽原厂收音机伴听抢占广播，支持米小江优先协同或控制台全量自定义。选中的模式直接高亮激活。"
+      desc="彻底屏蔽原厂收音机伴听抢占广播，支持米小江优先协同或控制台全量自定义。"
     >
       <div class="grid grid-cols-3 gap-3.5">
         <MatrixButton 
@@ -87,35 +87,35 @@
         <MatrixButton 
           title="保持原厂静音"
           subtitle="系统音频静音/恢复"
-          :active="store.vehicleAuto.wheel_action_mute === 'mute_toggle'"
-          @click="setMuteAction('mute_toggle')"
+          :active="store.vehicleAuto.wheel_action_mute === 'default'"
+          @click="setMuteAction('default')"
         />
       </div>
     </FeatureCard>
 
-    <!-- 卡片 4: 滚轮垂直按压 Click 映射 -->
+    <!-- 卡片 4: 音量滚轮按压 -->
     <FeatureCard 
       title="4. 音量滚轮垂直按压 Click 映射 (编号 2)"
-      desc="上下滚动保持原厂线性音量调节（行车安全第一）；垂直向下按压可自由重定向功能。"
+      desc="音量滚轮往下按压为静音键，支持自定义联动或保持原车静音。"
     >
       <div class="grid grid-cols-3 gap-3.5">
         <MatrixButton 
-          title="原厂默认 (确认/暂停)"
-          subtitle="保持原生多媒体操作"
-          :active="store.vehicleAuto.wheel_action_ok === 'default'"
-          @click="setOkAction('default')"
+          title="一键打开 360 全景"
+          subtitle="滚轮按压秒调环视"
+          :active="store.vehicleAuto.wheel_action_knob === 'open_360'"
+          @click="setKnobAction('open_360')"
         />
         <MatrixButton 
-          title="按压打开 360"
-          subtitle="中轴滚轮秒开全景"
-          :active="store.vehicleAuto.wheel_action_ok === 'open_360'"
-          @click="setOkAction('open_360')"
+          title="切换播放 / 暂停"
+          subtitle="滚轮按压控制音乐"
+          :active="store.vehicleAuto.wheel_action_knob === 'play_pause'"
+          @click="setKnobAction('play_pause')"
         />
         <MatrixButton 
-          title="播放 / 暂停音乐"
-          subtitle="控制第三方音乐"
-          :active="store.vehicleAuto.wheel_action_ok === 'play_pause'"
-          @click="setOkAction('play_pause')"
+          title="保持系统静音 (默认)"
+          subtitle="原厂按压静音"
+          :active="store.vehicleAuto.wheel_action_knob === 'default'"
+          @click="setKnobAction('default')"
         />
       </div>
     </FeatureCard>

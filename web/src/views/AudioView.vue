@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col gap-5">
+  <div class="flex flex-col space-y-6">
     <!-- 蓝牙音频自动接管 -->
     <FeatureCard 
       title="1. 蓝牙音频无感自动出声 (告别手动点原厂多媒体)"
