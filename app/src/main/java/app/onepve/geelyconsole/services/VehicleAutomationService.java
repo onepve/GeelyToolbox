@@ -71,6 +71,9 @@ public class VehicleAutomationService extends Service {
     private int lastDoorRR = -1;
     private int lastTrunk = -1;
     private int lastGearPos = -1;
+    private int isGearVoiceArmed = 0; // 0=未激活(P挡初始/静默), 1=已手动换出P挡(有人操控，激活播报)
+    private int lastDriveMode = -1;
+    private int isDriveModeVoiceArmed = 0; // 0=未激活(智能模式初始/静默), 1=已手动切出智能模式(有人操控，激活播报)
     private int lastLightSts = -1;
     private int lastPowerMode = -1;
     private int currentSpeedKmH = 0;
@@ -392,6 +395,36 @@ public class VehicleAutomationService extends Service {
             } catch (Exception ignored) {}
         }
 
+        // 4.1 解析驾驶模式切换信号 (ComfortModule, MCULog, NegativeOneScreen)
+        if (line.contains("DM_FUNC_DRIVE_MODE_SELECT value=") || line.contains("MCU Report SwitchMode:") || line.contains("driveModeValue = 5704911")) {
+            int modeVal = -1;
+            if (line.contains("DM_FUNC_DRIVE_MODE_SELECT value=")) {
+                int idx = line.indexOf("DM_FUNC_DRIVE_MODE_SELECT value=");
+                try {
+                    char c = line.charAt(idx + 32);
+                    modeVal = Character.getNumericValue(c);
+                } catch (Exception ignored) {}
+            } else if (line.contains("driveModeValue = 5704911")) {
+                if (line.contains("570491138")) modeVal = 1; // 舒适
+                else if (line.contains("570491139")) modeVal = 2; // 运动
+                else if (line.contains("570491137")) modeVal = 3; // 经济
+                else if (line.contains("570491158")) modeVal = 6; // 智能
+            } else if (line.contains("MCU Report SwitchMode:")) {
+                int idx = line.indexOf("MCU Report SwitchMode:");
+                try {
+                    char c = line.charAt(idx + 22);
+                    int sm = Character.getNumericValue(c);
+                    if (sm == 1) modeVal = 1; // 舒适
+                    else if (sm == 0) modeVal = 2; // 运动
+                    else if (sm == 3) modeVal = 3; // 经济
+                } catch (Exception ignored) {}
+            }
+            if (modeVal > 0) {
+                handleDriveModeSignal(modeVal);
+                return;
+            }
+        }
+
         // 5. 解析 CAN 数据: parseCanData
         if (line.contains("parseCanData")) {
             try {
@@ -504,33 +537,115 @@ public class VehicleAutomationService extends Service {
     }
 
     /**
-     * 处理挡位状态 (仅播报 D 前进挡 与 R 倒车挡，P 挡与 N 挡静默，天然免疫蓝牙靠近误播)
+     * 处理挡位状态 (智能有人感知状态机：默认P挡静默，手动换出P挡后变量置1激活全量播报，换回P挡播报后置0归位)
      */
     private void handleGearSignal(int gear) {
         long now = System.currentTimeMillis();
         if (lastGearPos == -1) {
             lastGearPos = gear; // 初始校准不播
+            // 若开机默认处于 P 挡 (5)，保持 isGearVoiceArmed = 0 绝对静默
+            if (gear != 5) {
+                isGearVoiceArmed = 1;
+            }
             return;
         }
         if (gear == lastGearPos) return;
 
-        Log.i(TAG, "Gear changed: " + lastGearPos + " -> " + gear);
+        Log.i(TAG, "Gear changed: " + lastGearPos + " -> " + gear + ", isGearVoiceArmed=" + isGearVoiceArmed);
 
-        // 挂入 D 挡 (2)
-        if (gear == 2) {
-            if (enableGearD && (now - lastTriggerGear > 2000)) {
-                lastTriggerGear = now;
-                voicePlayer.play("gear_d.mp3", "已挂入前进挡，系好安全带，祝你一路平安");
-            }
+        // 核心状态机逻辑:
+        // 1. 从 P 挡 (5) 换出到其他任意挡位 (D=2, N=3, R=4) -> 证实车内有人主动操作，状态机置 1 激活！
+        if (lastGearPos == 5 && gear != 5) {
+            isGearVoiceArmed = 1;
+            Log.i(TAG, "车主手动换出P挡，挡位语音已激活 (isGearVoiceArmed=1)");
         }
-        // 挂入 R 挡 (4)
-        else if (gear == 4) {
-            if (enableGearR && (now - lastTriggerGear > 2000)) {
-                lastTriggerGear = now;
-                voicePlayer.play("gear_r.mp3", "已挂入倒车挡，请注意观察后方安全");
+
+        // 2. 在激活状态下 (isGearVoiceArmed == 1)，按需正常播报各个挡位语音
+        if (isGearVoiceArmed == 1) {
+            // 挂入 D 挡 (2)
+            if (gear == 2) {
+                if (enableGearD && (now - lastTriggerGear > 1500)) {
+                    lastTriggerGear = now;
+                    voicePlayer.play("gear_d.mp3", "已挂入前进挡，系好安全带，祝你一路平安");
+                }
             }
+            // 挂入 R 挡 (4)
+            else if (gear == 4) {
+                if (enableGearR && (now - lastTriggerGear > 1500)) {
+                    lastTriggerGear = now;
+                    voicePlayer.play("gear_r.mp3", "已挂入倒车挡，请注意观察后方安全");
+                }
+            }
+            // 挂入 N 挡 (3)
+            else if (gear == 3) {
+                if (now - lastTriggerGear > 1500) {
+                    lastTriggerGear = now;
+                    voicePlayer.play("gear_n.mp3", "空挡");
+                }
+            }
+            // 挂回 P 挡 (5): 播报一次驻车挡，随即立刻将状态机置 0 归位！
+            else if (gear == 5) {
+                if (now - lastTriggerGear > 1500) {
+                    lastTriggerGear = now;
+                    voicePlayer.play("gear_p.mp3", "已挂入驻车挡");
+                }
+                isGearVoiceArmed = 0; // 归零！后续再次进入休眠或蓝牙心跳时绝对静默
+                Log.i(TAG, "已挂入P挡并播报完成，状态机归零 (isGearVoiceArmed=0)");
+            }
+        } else {
+            Log.d(TAG, "未激活态(isGearVoiceArmed=0)，跳过挡位播报，防止蓝牙唤醒误报");
         }
+
         lastGearPos = gear;
+    }
+
+    /**
+     * 处理驾驶模式切换状态 (智能有人感知状态机：默认智能模式静默，手动切出智能模式后激活全量播报，切回智能模式播报后置0归位)
+     * 模式值: 1=舒适模式, 2=运动模式, 3=经济模式, 6=智能模式 (吉利缤越COOL原厂标定)
+     */
+    private void handleDriveModeSignal(int mode) {
+        if (lastDriveMode == -1) {
+            lastDriveMode = mode; // 启动首包仅记录基准，坚决不播报
+            if (mode != 6) { // 若开机不是默认智能模式，则激活
+                isDriveModeVoiceArmed = 1;
+            }
+            return;
+        }
+        if (mode == lastDriveMode) return;
+
+        Log.i(TAG, "DriveMode changed: " + lastDriveMode + " -> " + mode + ", isDriveModeVoiceArmed=" + isDriveModeVoiceArmed);
+
+        // 核心状态机逻辑:
+        // 1. 从 智能模式 (6) 切换到其他任意模式 (舒适=1, 运动=2, 经济=3) -> 证实车主主动按键切换，激活状态机！
+        if (lastDriveMode == 6 && mode != 6) {
+            isDriveModeVoiceArmed = 1;
+            Log.i(TAG, "车主手动切出智能模式，驾驶模式语音已激活 (isDriveModeVoiceArmed=1)");
+        }
+
+        // 2. 在激活状态下 (isDriveModeVoiceArmed == 1)，按需播报
+        if (isDriveModeVoiceArmed == 1) {
+            switch (mode) {
+                case 1:
+                    voicePlayer.play("mode_comfort.mp3", "舒适模式");
+                    break;
+                case 2:
+                    voicePlayer.play("mode_sport.mp3", "运动模式");
+                    break;
+                case 3:
+                    voicePlayer.play("mode_eco.mp3", "经济模式");
+                    break;
+                case 6:
+                    // 切回智能模式 (6): 播报一次，随后立即将状态机置 0 归位！
+                    voicePlayer.play("mode_smart.mp3", "智能模式");
+                    isDriveModeVoiceArmed = 0; // 归零！熄火或休眠开机自动恢复智能模式时绝对静默
+                    Log.i(TAG, "已切换为智能模式并播报完成，状态机归零 (isDriveModeVoiceArmed=0)");
+                    break;
+            }
+        } else {
+            Log.d(TAG, "未激活态(isDriveModeVoiceArmed=0)，跳过驾驶模式播报，防止唤醒误报");
+        }
+
+        lastDriveMode = mode;
     }
 
     private void handleCanSignal(String key, int val) {
