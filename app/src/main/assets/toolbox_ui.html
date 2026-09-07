@@ -76,32 +76,39 @@ body.light {
   background: linear-gradient(160deg, #F4F7FB 0%, #EEF1F6 45%, #E6EBF4 100%);
 }
 
-/* ==================== 8 套精选护眼与柔和主题皮肤 ==================== */
-body.skin-default {
-  --accent: #0284C7; --accent2: #00AEB9; --accent-soft: #38BDF8;
+/* ==================== 小米澎湃座舱 (HyperOS Cockpit) 原生质感色彩系统 ==================== */
+:root {
+  /* 夜间深色模式 (纯粹黑白高对比：黑底 #12141A + 微光卡片 #1C1F26 + 纯白高亮激活 #FFFFFF 黑字，杜绝刺眼亮蓝) */
+  --bg: #12141A;
+  --card-bg: #1C1F26;
+  --item-bg: #262A33;
+  --item-hover: #323742;
+  --border: rgba(255, 255, 255, 0.08);
+  --txt-strong: #FFFFFF;
+  --txt: #E2E8F0;
+  --txt-dim: #94A3B8;
+  --accent: #FFFFFF; /* 纯白高亮激活，夜间绝不刺眼 */
+  --accent-light: rgba(255, 255, 255, 0.12);
+  --btn-active-bg: #FFFFFF;
+  --btn-active-txt: #000000;
+  --btn-active-sub: rgba(0, 0, 0, 0.75);
 }
-body.skin-forest {
-  --accent: #10B981; --accent2: #059669; --accent-soft: #34D399;
-}
-body.skin-amber {
-  --accent: #D97706; --accent2: #F59E0B; --accent-soft: #FBBF24;
-}
-body.skin-aurora {
-  --accent: #00AEB9; --accent2: #0284C7; --accent-soft: #2DD4BF;
-}
-body.skin-amethyst {
-  --accent: #8B5CF6; --accent2: #A855F7; --accent-soft: #C084FC;
-}
-body.skin-pink {
-  --accent: #E11D48; --accent2: #FB7185; --accent-soft: #FDA4AF;
-}
-body.skin-slate {
-  --accent: #64748B; --accent2: #475569; --accent-soft: #94A3B8;
-}
-body.skin-cyber {
-  --bg: #090A10; --bg2: #121420;
-  --accent: #00F0FF; --accent2: #FF0055; --accent-soft: #FFE600;
-  --border: rgba(0, 240, 255, 0.28); --border-strong: rgba(0, 240, 255, 0.50);
+
+/* 日间亮色模式 (黑白极简：浅灰底 #F0F2F5 + 纯白卡片 #FFFFFF + 纯黑高亮激活 #000000 白字) */
+body.light {
+  --bg: #F0F2F5;
+  --card-bg: #FFFFFF;
+  --item-bg: #F8FAFC;
+  --item-hover: #EDF2F7;
+  --border: rgba(0, 0, 0, 0.08);
+  --txt-strong: #0F172A;
+  --txt: #1E293B;
+  --txt-dim: #64748B;
+  --accent: #0F172A; /* 纯黑高亮激活 */
+  --accent-light: rgba(15, 23, 42, 0.08);
+  --btn-active-bg: #0F172A;
+  --btn-active-txt: #FFFFFF;
+  --btn-active-sub: rgba(255, 255, 255, 0.85);
 }
 
 /* ==================== 顶栏 Header ==================== */
@@ -131,7 +138,7 @@ header {
 }
 .brand-ver {
   font-size: 12px; padding: 2px 7px; border-radius: 6px;
-  background: var(--btn-bg); color: var(--accent); border: 1px solid var(--border);
+  background: var(--btn-bg); color: var(--txt-strong); border: 1px solid var(--border);
   font-weight: 800; white-space: nowrap;
 }
 
@@ -150,17 +157,13 @@ header {
   width: 9px; height: 9px; border-radius: 50%;
   background: var(--txt-dim); flex-shrink: 0;
 }
-.dot.green {
-  background: var(--success);
-  box-shadow: 0 0 8px var(--success);
+.dot.green, .dot.blue {
+  background: #FFFFFF;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
 }
 .dot.red {
   background: var(--danger);
   box-shadow: 0 0 8px var(--danger);
-}
-.dot.blue {
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
 }
 
 .top-actions {
@@ -1055,11 +1058,11 @@ body.light .btn-mini:active {
 }
 
 .cockpit-nav-item.active {
-  background: var(--accent-light) !important;
-  border-color: var(--accent) !important;
-  color: var(--accent) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: #FFFFFF !important;
+  color: #FFFFFF !important;
   font-weight: 900 !important;
-  box-shadow: 0 4px 18px rgba(0, 174, 185, 0.22) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3) !important;
 }
 
 .cockpit-nav-badge {
@@ -1072,8 +1075,8 @@ body.light .btn-mini:active {
 }
 
 .cockpit-nav-item.active .cockpit-nav-badge {
-  background: var(--accent) !important;
-  color: #ffffff !important;
+  background: #FFFFFF !important;
+  color: #000000 !important;
 }
 
 .cockpit-main-content {
@@ -1167,19 +1170,19 @@ body.light .btn-mini:active {
 }
 
 .matrix-btn.active {
-  background: var(--accent) !important;
-  border-color: var(--accent) !important;
-  color: #ffffff !important;
+  background: var(--btn-active-bg) !important;
+  border-color: var(--btn-active-bg) !important;
+  color: var(--btn-active-txt) !important;
   font-weight: 900 !important;
-  box-shadow: 0 6px 22px rgba(0, 174, 185, 0.42) !important;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.4) !important;
 }
 
 .matrix-btn.active span {
-  color: #ffffff !important;
+  color: var(--btn-active-txt) !important;
 }
 
 .matrix-btn.active .matrix-btn-sub {
-  color: rgba(255, 255, 255, 0.96) !important;
+  color: var(--btn-active-sub) !important;
 }
 
 .matrix-btn-sub {
@@ -5347,8 +5350,8 @@ function proceedToStep3Whitelist() {
       var isNight = window.ToolboxBridge.isNightMode();
       applyDayNightMode(isNight);
     } else {
-      // 默认日间亮色模式
-      applyDayNightMode(false);
+      // 默认车规夜间深色模式 (符合高端座舱黑底标准)
+      applyDayNightMode(true);
     }
   } catch(e) {}
   syncRabbitThemeInfo();
