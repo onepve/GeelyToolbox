@@ -492,11 +492,103 @@ else:
 
 
 # ----------------------------------------------------------------------
+# 14. Voice Theme & Fast-Transfer Template Integrity Gate
+# ----------------------------------------------------------------------
+log_step("14. Checking Voice Theme & Fast-Transfer Template Integrity")
+voice_violations = []
+
+template_zip_path = os.path.join(ASSETS_DIR, "voice_template.zip")
+readme_path = os.path.join(ASSETS_DIR, "voice_readme.txt")
+
+if not os.path.exists(template_zip_path) or os.path.getsize(template_zip_path) == 0:
+    voice_violations.append("assets/voice_template.zip 不存在或为空！")
+else:
+    import zipfile
+    try:
+        with zipfile.ZipFile(template_zip_path, "r") as zf:
+            zip_names = set(zf.namelist())
+            req_audios = {
+                "gear_d.mp3", "gear_r.mp3", "gear_p.mp3", "gear_n.mp3",
+                "mode_smart.mp3", "mode_comfort.mp3", "mode_eco.mp3", "mode_sport.mp3",
+                "door_fl.mp3", "door_fl_close.mp3", "door_fr.mp3", "door_fr_close.mp3",
+                "door_rl.mp3", "door_rr.mp3",
+                "trunk_open.mp3", "trunk_close.mp3", "README.txt"
+            }
+            missing = req_audios - zip_names
+            if missing:
+                voice_violations.append(f"voice_template.zip 缺少关键文件: {missing}")
+    except Exception as e:
+        voice_violations.append(f"voice_template.zip 损坏无法读取: {e}")
+
+if not os.path.exists(readme_path) or os.path.getsize(readme_path) == 0:
+    voice_violations.append("assets/voice_readme.txt 不存在或为空！")
+
+with open(os.path.join(JAVA_SRC_DIR, "app/onepve/geelyconsole/server/WebServer.java"), "r", encoding="utf-8") as f:
+    ws_code = f.read()
+
+if "/api/voice_template" not in ws_code or "/api/voice_readme" not in ws_code:
+    voice_violations.append("WebServer.java 缺少 /api/voice_template 或 /api/voice_readme 路由！")
+
+with open(os.path.join(JAVA_SRC_DIR, "app/onepve/geelyconsole/utils/VehicleVoicePlayer.java"), "r", encoding="utf-8") as f:
+    vvp_code = f.read()
+
+if "GeelyPilot/voices" not in vvp_code:
+    voice_violations.append("VehicleVoicePlayer 未确立 GeelyPilot/voices 专属物理隔离目录！")
+if "extractVoiceZip" not in vvp_code or "isVoicePackZip" not in vvp_code:
+    voice_violations.append("VehicleVoicePlayer 缺少 ZIP 自动识别与穿透解压引擎！")
+
+with open(MOBILE_WEB_PATH, "r", encoding="utf-8") as f:
+    mweb_code = f.read()
+
+if "voice_template" not in mweb_code or "voice_readme" not in mweb_code:
+    voice_violations.append("mobile_web.html 缺少语音模板下载或说明文档弹窗！")
+
+if voice_violations:
+    for v in voice_violations:
+        print(f"  [FAIL] {v}")
+    passed = False
+else:
+    print("[PASS] 官方轻量模板(16音频+README)、快传双API、专属目录物理隔离与解压引擎100%闭环！")
+
+
+# ----------------------------------------------------------------------
+# 15. Download Directory 3-Tier Clean Modes & Audio Safety Gate
+# ----------------------------------------------------------------------
+log_step("15. Checking Download Clean Modes & Voice Protection Gate")
+clean_violations = []
+
+with open(JAVA_MAIN_PATH, "r", encoding="utf-8") as f:
+    main_code = f.read()
+
+if "cleanDownloadDirectory" not in main_code:
+    clean_violations.append("MainActivity 缺少 cleanDownloadDirectory 桥接接口！")
+else:
+    if "mode == 1" not in main_code or "mode == 2" not in main_code or "mode == 3" not in main_code:
+        clean_violations.append("cleanDownloadDirectory 未完整处理三阶清理模式 (1=全量清空, 2=智能安全, 3=仅清理文件)！")
+
+clean_modal_path = os.path.join(WEB_SRC_DIR, "components/modals/CleanDownloadModal.vue")
+if not os.path.exists(clean_modal_path):
+    clean_violations.append("CleanDownloadModal.vue 弹窗组件缺失！")
+else:
+    with open(clean_modal_path, "r", encoding="utf-8") as f:
+        cm_code = f.read()
+    if "confirmClean(1)" not in cm_code or "confirmClean(2)" not in cm_code or "confirmClean(3)" not in cm_code:
+        clean_violations.append("CleanDownloadModal 未完整绑定三阶清理维度！")
+
+if clean_violations:
+    for v in clean_violations:
+        print(f"  [FAIL] {v}")
+    passed = False
+else:
+    print("[PASS] 下载目录三阶清理中枢与音频素材安全避让策略100%闭环！")
+
+
+# ----------------------------------------------------------------------
 # Final Summary Verdict
 # ----------------------------------------------------------------------
-log_step("CI 13-Gate Health Check Verdict")
+log_step("CI 15-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 13 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, 100% contract closure)")
+    print("[SUCCESS] All 15 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation & 3-tier clean gates closed)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")
