@@ -199,6 +199,17 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         webView.loadUrl("file:///android_asset/toolbox_ui.html");
     }
 
+    public void callJs(final String script) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (webView != null) {
+                    webView.evaluateJavascript(script, null);
+                }
+            }
+        });
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
