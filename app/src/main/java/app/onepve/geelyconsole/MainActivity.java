@@ -204,6 +204,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         currentActivity = new WeakReference<>(this);
         hideSystemUI();
         mainHandler.post(statusTicker);
+
+        // 前台自适应：当控制台处于前台大屏展示时，隐藏悬浮小胶囊，彻底杜绝悬浮窗遮挡顶栏
+        try {
+            Intent hidePill = new Intent(this, FloatingWindowService.class);
+            hidePill.setAction(FloatingWindowService.ACTION_HIDE);
+            startService(hidePill);
+        } catch (Exception ignored) {}
     }
 
     @Override
@@ -232,6 +239,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         super.onPause();
         isForeground = false;
         mainHandler.removeCallbacks(statusTicker);
+
+        // 后台自适应：切到桌面或其他车载应用时，按用户设置恢复展示悬浮小胶囊
+        try {
+            android.content.SharedPreferences sp = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            if (sp.getBoolean("floating_enabled", false)) {
+                Intent showPill = new Intent(this, FloatingWindowService.class);
+                showPill.setAction(FloatingWindowService.ACTION_SHOW);
+                startService(showPill);
+            }
+        } catch (Exception ignored) {}
     }
 
     @Override
@@ -563,8 +580,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("floating_display_mode", prefs.getString("floating_display_mode", "name"));
                 obj.put("expert_rabbit_enabled", prefs.getBoolean("expert_rabbit_theme_enabled", false));
                 float batteryVolt = VehicleAutomationService.latestBatteryVoltage;
-                if (batteryVolt <= 0.0f) {
+                if (batteryVolt < 9.0f || batteryVolt > 16.5f) {
                     batteryVolt = prefs.getFloat("vehicle_real_battery_volt", 0.0f);
+                }
+                if (batteryVolt < 9.0f || batteryVolt > 16.5f) {
+                    batteryVolt = 0.0f;
                 }
                 obj.put("real_battery_volt", batteryVolt > 0 ? (double)batteryVolt : 0.0);
                 obj.put("battery_volt", batteryVolt > 0 ? (int)(batteryVolt * 10) : 0);

@@ -87,7 +87,7 @@
       <!-- 5. 应用商店管理 (带二次校验) -->
       <FeatureCard 
         title="5. 应用商店状态管理"
-        desc="防止原厂商店后台静默卸载应用。如需使用商店可在此解冻。"
+        desc="防止原厂商店后台静默卸载第三方应用，需要时可在此安全解冻。"
       >
         <button 
           @click="confirmToggleAppstore"

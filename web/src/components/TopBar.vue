@@ -101,7 +101,8 @@ const statusPills = computed(() => {
   let batteryText = '电瓶: 采集中...';
   let dotColor = 'bg-amber-500 shadow-[0_0_6px_#F59E0B] animate-pulse';
 
-  if (v && v > 0) {
+  // 车规 12V 蓄电池有效区间校验 (严格限制在 9.0V ~ 16.5V，低于 9V 坚决视为未就绪，杜绝 4.2V 等假数据污染)
+  if (v && v >= 9.0 && v <= 16.5) {
     const voltStr = v.toFixed(1);
     const isCharging = v >= 13.4;
     let batteryStatus = '健康充沛';

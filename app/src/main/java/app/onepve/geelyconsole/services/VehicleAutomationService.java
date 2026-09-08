@@ -530,12 +530,11 @@ public class VehicleAutomationService extends Service {
         }
 
         // 6. 解析 12V 蓄电池物理电压报文 (ecarx_core_server: vehicledata----callbacks---mModelBatteryVolt = 125)
-        if (line.contains("mModelBatteryVolt =") || line.contains("BatteryVolt")) {
+        if (line.contains("mModelBatteryVolt =")) {
             try {
                 int idx = line.indexOf("mModelBatteryVolt =");
-                if (idx == -1) idx = line.indexOf("BatteryVolt =");
                 if (idx != -1) {
-                    String sub = line.substring(idx + (line.contains("mModelBatteryVolt =") ? 19 : 13)).trim();
+                    String sub = line.substring(idx + 19).trim();
                     StringBuilder num = new StringBuilder();
                     for (int i = 0; i < sub.length(); i++) {
                         char c = sub.charAt(i);
@@ -544,11 +543,24 @@ public class VehicleAutomationService extends Service {
                     }
                     if (num.length() > 0) {
                         int rawVolt = Integer.parseInt(num.toString());
-                        // rawVolt e.g. 125 = 12.5V, 138 = 13.8V
-                        float volt = (rawVolt > 80 && rawVolt < 250) ? (rawVolt / 10.0f) : (rawVolt / 100.0f);
-                        latestBatteryVoltage = volt;
-                        SharedPreferences sp = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        sp.edit().putFloat("vehicle_real_battery_volt", volt).commit();
+                        // 12V 蓄电池车规真实数值判定 (有效区间 9.0V ~ 16.5V):
+                        // ecarx_core_server 原始为十进制 10 倍 (如 124 -> 12.4V, 136 -> 13.6V)
+                        // 若为毫伏级 (如 12400mV -> 12.4V)
+                        float volt = -1.0f;
+                        if (rawVolt >= 90 && rawVolt <= 165) {
+                            volt = rawVolt / 10.0f;
+                        } else if (rawVolt >= 900 && rawVolt <= 1650) {
+                            volt = rawVolt / 100.0f;
+                        } else if (rawVolt >= 9000 && rawVolt <= 16500) {
+                            volt = rawVolt / 1000.0f;
+                        }
+
+                        // 只有在 9.0V ~ 16.5V 车规安全范围内才更新并物理落地，坚决杜绝 4.2V 等假信号污染
+                        if (volt >= 9.0f && volt <= 16.5f) {
+                            latestBatteryVoltage = volt;
+                            SharedPreferences sp = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                            sp.edit().putFloat("vehicle_real_battery_volt", volt).commit();
+                        }
                     }
                 }
             } catch (Exception ignored) {}
