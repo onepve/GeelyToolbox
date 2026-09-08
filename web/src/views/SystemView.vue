@@ -102,10 +102,10 @@
         </button>
       </FeatureCard>
 
-      <!-- 6. 车辆启动自动运行 -->
+      <!-- 6. 工具箱开机自启与桌面胶囊 -->
       <FeatureCard 
-        title="6. 车辆启动自动运行"
-        desc="车辆点火开机自动于后台运行联动守护，支持开机自启桌面悬浮胶囊。"
+        title="6. 工具箱开机自启与桌面胶囊"
+        desc="控制开机后是否在后台静默运行工具箱并常驻桌面悬浮胶囊。独立生效，不影响语音与方控。"
       >
         <button 
           @click="toggleAutostart"
@@ -116,7 +116,7 @@
               : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
           ]"
         >
-          <span>{{ store.deviceInfo.autostart ? '自启状态: 已开启自启' : '自启状态: 已关闭自启' }}</span>
+          <span>{{ store.deviceInfo.autostart ? '桌面胶囊自启: 已开启' : '桌面胶囊自启: 已关闭 (开机不弹)' }}</span>
         </button>
       </FeatureCard>
     </div>
@@ -128,6 +128,7 @@
       </div>
       <div>• <b>冷重启原理</b>：彻底断电重启 MCU 与 Framework，彻底杜绝开门播报延迟与系统卡顿；</div>
       <div>• <b>应用商店与白名单</b>：原厂应用商店运行会破坏白名单策略导致第三方软件无法安装，必须保持冻结锁定；</div>
+      <div>• <b>三权分立架构</b>：桌面胶囊自启、车身语音总开关、方控接管总开关各自独立生效，互不影响与捆绑；</div>
       <div>• <b>ADB 安全边界</b>：深度终端已做系统核心保护，严禁自行卸载系统 Framework 核心组件。</div>
     </div>
   </div>

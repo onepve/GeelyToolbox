@@ -237,6 +237,16 @@ public class VehicleVoicePlayer {
     }
 
     public void play(String voiceFileName, final String fallbackText) {
+        // 核心优先判定：座舱车身语音播报总开关 (voice_master_switch)
+        try {
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            boolean masterSwitch = prefs.getBoolean("voice_master_switch", true);
+            if (!masterSwitch) {
+                Log.i(TAG, "Voice master switch is OFF, dropping audio: " + voiceFileName);
+                return;
+            }
+        } catch (Exception ignored) {}
+
         stopCurrentVoice();
 
         // 0. 用户自定义台词优先
@@ -424,6 +434,16 @@ public class VehicleVoicePlayer {
 
     public void speakText(final String text, final String voiceType) {
         if (text == null || text.trim().isEmpty()) return;
+        // 核心优先判定：座舱车身语音播报总开关 (voice_master_switch)
+        try {
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            boolean masterSwitch = prefs.getBoolean("voice_master_switch", true);
+            if (!masterSwitch) {
+                Log.i(TAG, "Voice master switch is OFF, dropping TTS speak: " + text);
+                return;
+            }
+        } catch (Exception ignored) {}
+
         mainHandler.post(new Runnable() {
             @Override
             public void run() {

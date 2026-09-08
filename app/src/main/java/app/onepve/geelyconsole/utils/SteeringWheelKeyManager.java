@@ -70,6 +70,18 @@ public class SteeringWheelKeyManager {
      * 同步并应用原厂 MediaKeyReceiver 拦截状态
      */
     public void syncMediaKeyReceiverState() {
+        boolean masterSwitch = prefs.getBoolean("wheel_master_switch", true);
+        if (!masterSwitch) {
+            // 方控总开关已关闭：彻底解禁原厂 MediaKeyReceiver，完全不拦截！
+            try {
+                PackageManager pm = context.getPackageManager();
+                ComponentName comp = new ComponentName("ecarx.xsf.mediacenter", "ecarx.xsf.mediacenter.MediaKeyReceiver");
+                pm.setComponentEnabledSetting(comp, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+                Log.i(TAG, "Wheel master switch is OFF, MediaKeyReceiver restored to ENABLED");
+            } catch (Exception ignored) {}
+            return;
+        }
+
         String mode = getWheelMode();
         boolean shouldBlock = !MODE_FACTORY_DEFAULT.equals(mode);
         try {
@@ -104,6 +116,9 @@ public class SteeringWheelKeyManager {
      * @return 触发的键码，0 为未匹配
      */
     public int parseKeyFromLine(String line) {
+        if (!prefs.getBoolean("wheel_master_switch", true)) {
+            return 0; // 方控总开关已关闭，坚决不匹配任何按键
+        }
         if (line == null || line.isEmpty()) return 0;
         
         // 1. 标准物理按键 (press)
@@ -135,6 +150,12 @@ public class SteeringWheelKeyManager {
      * 分发并执行按键逻辑
      */
     public void handleWheelKey(int keyCode) {
+        boolean masterSwitch = prefs.getBoolean("wheel_master_switch", true);
+        if (!masterSwitch) {
+            Log.i(TAG, "Wheel master switch is OFF, ignoring wheel key: " + keyCode);
+            return;
+        }
+
         long now = System.currentTimeMillis();
         // 350ms 防抖，防止连点
         if (keyCode == lastTriggerKey && (now - lastTriggerTime < 350)) {

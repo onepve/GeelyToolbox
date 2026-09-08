@@ -51,7 +51,20 @@ public class BootReceiver extends BroadcastReceiver {
             return;
         }
 
-        // 场景 B：开机/点火广播 —— 立即在后台静默清除伪装大包与防覆写锁，恢复官方原版时钟与系统自愈机制
+        // 场景 B：QQ音乐同款 —— 蓝牙钥匙靠近/连接唤醒或点亮屏幕唤醒 (解决车机STR浅休眠开门无声/不灵敏)
+        if ("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED".equals(action) ||
+            "android.bluetooth.adapter.action.STATE_CHANGED".equals(action) ||
+            Intent.ACTION_USER_PRESENT.equals(action) ||
+            Intent.ACTION_SCREEN_ON.equals(action)) {
+            Log.i(TAG, "Wakeup broadcast received: " + action + " -> checking and ensuring VehicleAutomationService alive");
+            try {
+                // 仅唤醒底盘监听守护服务（内部自检语音总开关与方控总开关，开机胶囊完全不受干扰）
+                VehicleAutomationService.syncState(context);
+            } catch (Exception ignored) {}
+            return;
+        }
+
+        // 场景 C：开机/点火广播 —— 立即在后台静默清除伪装大包与防覆写锁，恢复官方原版时钟与系统自愈机制
         AppLogger.i("开机守护", "收到系统点火/开机广播: " + action);
         try {
             ThemePatcher.restoreDisguiseAndLockSilently(context);

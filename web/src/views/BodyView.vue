@@ -38,6 +38,34 @@
       </div>
     </div>
 
+    <!-- 核心：座舱车身语音播报总开关 (全车语音发声总闸门) -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between">
+      <div class="flex flex-col space-y-1 pr-4">
+        <div class="flex items-center space-x-3">
+          <span :class="['w-3.5 h-3.5 rounded-full shadow-md', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-rose-500 shadow-[0_0_10px_#F43F5E]']"></span>
+          <span class="text-[21px] font-black text-car-text tracking-wide">座舱车身语音播报总开关 (全车总闸)</span>
+          <span :class="['px-3 py-0.5 text-[13px] font-black rounded-full border', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40' : 'bg-rose-500/15 text-rose-400 border-rose-500/40']">
+            {{ store.vehicleAuto.voice_master_switch ? '全车正常播报' : '全车一键静音中' }}
+          </span>
+        </div>
+        <span class="text-[15px] text-car-sub font-bold leading-relaxed">
+          优先判定：一键控制全车车门、尾门、前进/倒车挡位与驾驶模式发声。独立生效，不受工具箱开机自启影响。
+        </span>
+      </div>
+
+      <button
+        @click="toggleVoiceMasterSwitch"
+        :class="[
+          'w-[220px] min-h-[76px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-md flex items-center justify-center shrink-0 whitespace-nowrap',
+          store.vehicleAuto.voice_master_switch
+            ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/25'
+            : 'bg-rose-500/15 border-rose-500 text-rose-400 hover:bg-rose-500/25'
+        ]"
+      >
+        <span>{{ store.vehicleAuto.voice_master_switch ? '语音总闸: 已开启' : '语音总闸: 已关闭 (静音)' }}</span>
+      </button>
+    </div>
+
     <!-- 实时车门物理信号探针 (方便实车调试，直观反映底层电平跃变) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 shadow-xl">
       <div class="flex items-center justify-between pb-3 mb-3 border-b border-car-border/60">
@@ -855,6 +883,13 @@ function toggleSetting(key) {
   store.vehicleAuto[key] = next;
   bridge.call('setVehicleAutomationSetting', key, next);
   showToast('设置已更新: ' + (next ? '已开启' : '已关闭'));
+}
+
+function toggleVoiceMasterSwitch() {
+  const next = !store.vehicleAuto.voice_master_switch;
+  store.vehicleAuto.voice_master_switch = next;
+  bridge.call('setVehicleAutomationSetting', 'voice_master_switch', next);
+  showToast(next ? '座舱车身语音总开关: 已开启 (正常播报)' : '座舱车身语音总开关: 已关闭 (全车静音)');
 }
 
 function testVoice(type) {

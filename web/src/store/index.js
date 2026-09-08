@@ -42,6 +42,8 @@ export const store = reactive({
 
   // 座舱联动设置
   vehicleAuto: {
+    voice_master_switch: true, // 座舱车身语音总开关 (全车总闸，优先判定)
+    wheel_master_switch: true, // 方向盘方控接管总开关 (独立生效，放行米小江)
     voice_audio_channel: 'music', // 'music' | 'nav' | 'notification'
     wheel_control_mode: 'carmedia_first',
     wheel_action_mute: 'open_360',

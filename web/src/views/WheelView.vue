@@ -58,6 +58,34 @@
       </div>
     </div>
 
+    <!-- 核心：方向盘按键方控接管总开关 -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between">
+      <div class="flex flex-col space-y-1 pr-4">
+        <div class="flex items-center space-x-3">
+          <span :class="['w-3.5 h-3.5 rounded-full shadow-md', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-rose-500 shadow-[0_0_10px_#F43F5E]']"></span>
+          <span class="text-[21px] font-black text-car-text tracking-wide">方向盘按键方控接管总开关</span>
+          <span :class="['px-3 py-0.5 text-[13px] font-black rounded-full border', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40' : 'bg-rose-500/15 text-rose-400 border-rose-500/40']">
+            {{ store.vehicleAuto.wheel_master_switch ? '方控接管已启用' : '方控已彻底放行 (不干涉)' }}
+          </span>
+        </div>
+        <span class="text-[15px] text-car-sub font-bold leading-relaxed">
+          独立控制是否接管滚轮下按、静音键与Mode键。如开启米小江且完全不想让工具箱参与方控，可直接关闭此项。独立生效。
+        </span>
+      </div>
+
+      <button
+        @click="toggleWheelMasterSwitch"
+        :class="[
+          'w-[220px] min-h-[76px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-md flex items-center justify-center shrink-0 whitespace-nowrap',
+          store.vehicleAuto.wheel_master_switch
+            ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/25'
+            : 'bg-rose-500/15 border-rose-500 text-rose-400 hover:bg-rose-500/25'
+        ]"
+      >
+        <span>{{ store.vehicleAuto.wheel_master_switch ? '方控接管: 已开启' : '方控接管: 已关闭 (放行)' }}</span>
+      </button>
+    </div>
+
     <!-- 1. 方向盘方控接管模式 -->
     <FeatureCard 
       title="1. 方向盘方控接管模式 (兼容米小江)"
@@ -217,6 +245,13 @@ function getCustomAppName(target) {
 
 function openAppSelectModal(target) {
   openModal('appSelect', { keyTarget: target });
+}
+
+function toggleWheelMasterSwitch() {
+  const next = !store.vehicleAuto.wheel_master_switch;
+  store.vehicleAuto.wheel_master_switch = next;
+  bridge.call('setVehicleAutomationSetting', 'wheel_master_switch', next);
+  showToast(next ? '方控接管总开关: 已开启 (接管分发)' : '方控接管总开关: 已关闭 (彻底放行)');
 }
 
 function setWheelMode(mode) {

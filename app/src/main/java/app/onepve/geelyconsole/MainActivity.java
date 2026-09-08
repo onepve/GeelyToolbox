@@ -40,6 +40,7 @@ import app.onepve.geelyconsole.utils.FloatingWindowManager;
 import app.onepve.geelyconsole.utils.SystemUtils;
 import app.onepve.geelyconsole.utils.ThemePatcher;
 import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
+import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -1955,6 +1956,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                 org.json.JSONObject obj = new org.json.JSONObject();
                 
+                // 核心三大物理独立总开关：语音总开关、方控接管总开关 (自启动由 deviceInfo.autostart 独立管控)
+                obj.put("voice_master_switch", prefs.getBoolean("voice_master_switch", true));
+                obj.put("wheel_master_switch", prefs.getBoolean("wheel_master_switch", true));
+
                 // 360 与车灯联动
                 obj.put("vehicle_turn_360_enabled", prefs.getBoolean("vehicle_turn_360_enabled", false));
                 obj.put("vehicle_light_nav_enabled", prefs.getBoolean("vehicle_light_nav_enabled", false));
@@ -2103,6 +2108,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                         prefs.edit().putBoolean(key, enabled).commit();
                         VehicleAutomationService.syncState(MainActivity.this);
+                        if ("wheel_master_switch".equals(key)) {
+                            new SteeringWheelKeyManager(MainActivity.this).syncMediaKeyReceiverState();
+                        }
                         AppLogger.i("座舱自动化", "更新设置项: " + key + " -> " + enabled);
                     } catch (Exception e) {
                         AppLogger.e("座舱自动化", "更新设置失败: " + e.getMessage());
