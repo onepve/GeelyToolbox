@@ -259,13 +259,16 @@
             <button 
               @click="toggleSetting('voice_enable_gear_d')"
               :class="[
-                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center select-none cursor-pointer shadow-md',
                 store.vehicleAuto.voice_enable_gear_d 
                   ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
                   : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
               ]"
             >
-              {{ store.vehicleAuto.voice_enable_gear_d ? '开关已开' : '开关已关' }}
+              <span class="text-[19.5px] font-black text-car-text tracking-wide mb-1">D挡播报</span>
+              <span :class="['text-[14px] font-bold', store.vehicleAuto.voice_enable_gear_d ? 'text-car-accent' : 'text-car-sub']">
+                {{ store.vehicleAuto.voice_enable_gear_d ? '已开启' : '已关闭' }}
+              </span>
             </button>
             <div class="flex flex-col space-y-2.5 w-[130px]">
               <button 
@@ -298,13 +301,16 @@
             <button 
               @click="toggleSetting('voice_enable_gear_r')"
               :class="[
-                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center select-none cursor-pointer shadow-md',
                 store.vehicleAuto.voice_enable_gear_r 
                   ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
                   : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
               ]"
             >
-              {{ store.vehicleAuto.voice_enable_gear_r ? '开关已开' : '开关已关' }}
+              <span class="text-[19.5px] font-black text-car-text tracking-wide mb-1">R挡播报</span>
+              <span :class="['text-[14px] font-bold', store.vehicleAuto.voice_enable_gear_r ? 'text-car-accent' : 'text-car-sub']">
+                {{ store.vehicleAuto.voice_enable_gear_r ? '已开启' : '已关闭' }}
+              </span>
             </button>
             <div class="flex flex-col space-y-2.5 w-[130px]">
               <button 
@@ -337,13 +343,16 @@
             <button 
               @click="toggleSetting('voice_enable_gear_p')"
               :class="[
-                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center select-none cursor-pointer shadow-md',
                 store.vehicleAuto.voice_enable_gear_p 
                   ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
                   : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
               ]"
             >
-              {{ store.vehicleAuto.voice_enable_gear_p ? '开关已开' : '开关已关' }}
+              <span class="text-[19.5px] font-black text-car-text tracking-wide mb-1">P挡播报</span>
+              <span :class="['text-[14px] font-bold', store.vehicleAuto.voice_enable_gear_p ? 'text-car-accent' : 'text-car-sub']">
+                {{ store.vehicleAuto.voice_enable_gear_p ? '已开启' : '已关闭' }}
+              </span>
             </button>
             <div class="flex flex-col space-y-2.5 w-[130px]">
               <button 
@@ -376,13 +385,16 @@
             <button 
               @click="toggleSetting('voice_enable_gear_n')"
               :class="[
-                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center select-none cursor-pointer shadow-md',
                 store.vehicleAuto.voice_enable_gear_n 
                   ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
                   : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
               ]"
             >
-              {{ store.vehicleAuto.voice_enable_gear_n ? '开关已开' : '开关已关' }}
+              <span class="text-[19.5px] font-black text-car-text tracking-wide mb-1">N挡播报</span>
+              <span :class="['text-[14px] font-bold', store.vehicleAuto.voice_enable_gear_n ? 'text-car-accent' : 'text-car-sub']">
+                {{ store.vehicleAuto.voice_enable_gear_n ? '已开启' : '已关闭' }}
+              </span>
             </button>
             <div class="flex flex-col space-y-2.5 w-[130px]">
               <button 
@@ -423,13 +435,16 @@
             <button 
               @click="toggleSetting('voice_enable_mode_smart')"
               :class="[
-                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center select-none cursor-pointer shadow-md',
                 store.vehicleAuto.voice_enable_mode_smart 
                   ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
                   : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
               ]"
             >
-              {{ store.vehicleAuto.voice_enable_mode_smart ? '开关已开' : '开关已关' }}
+              <span class="text-[19.5px] font-black text-car-text tracking-wide mb-1">智能播报</span>
+              <span :class="['text-[14px] font-bold', store.vehicleAuto.voice_enable_mode_smart ? 'text-car-accent' : 'text-car-sub']">
+                {{ store.vehicleAuto.voice_enable_mode_smart ? '已开启' : '已关闭' }}
+              </span>
             </button>
             <div class="flex flex-col space-y-2.5 w-[130px]">
               <button 
@@ -462,13 +477,16 @@
             <button 
               @click="toggleSetting('voice_enable_mode_comfort')"
               :class="[
-                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center select-none cursor-pointer shadow-md',
                 store.vehicleAuto.voice_enable_mode_comfort 
                   ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
                   : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
               ]"
             >
-              {{ store.vehicleAuto.voice_enable_mode_comfort ? '开关已开' : '开关已关' }}
+              <span class="text-[19.5px] font-black text-car-text tracking-wide mb-1">舒适播报</span>
+              <span :class="['text-[14px] font-bold', store.vehicleAuto.voice_enable_mode_comfort ? 'text-car-accent' : 'text-car-sub']">
+                {{ store.vehicleAuto.voice_enable_mode_comfort ? '已开启' : '已关闭' }}
+              </span>
             </button>
             <div class="flex flex-col space-y-2.5 w-[130px]">
               <button 
@@ -501,13 +519,16 @@
             <button 
               @click="toggleSetting('voice_enable_mode_eco')"
               :class="[
-                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center select-none cursor-pointer shadow-md',
                 store.vehicleAuto.voice_enable_mode_eco 
                   ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
                   : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
               ]"
             >
-              {{ store.vehicleAuto.voice_enable_mode_eco ? '开关已开' : '开关已关' }}
+              <span class="text-[19.5px] font-black text-car-text tracking-wide mb-1">经济播报</span>
+              <span :class="['text-[14px] font-bold', store.vehicleAuto.voice_enable_mode_eco ? 'text-car-accent' : 'text-car-sub']">
+                {{ store.vehicleAuto.voice_enable_mode_eco ? '已开启' : '已关闭' }}
+              </span>
             </button>
             <div class="flex flex-col space-y-2.5 w-[130px]">
               <button 
@@ -540,13 +561,16 @@
             <button 
               @click="toggleSetting('voice_enable_mode_sport')"
               :class="[
-                'w-[124px] h-[120px] rounded-2xl border-2 font-black text-[20px] transition-all flex items-center justify-center select-none cursor-pointer shadow-md',
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center select-none cursor-pointer shadow-md',
                 store.vehicleAuto.voice_enable_mode_sport 
                   ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
                   : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
               ]"
             >
-              {{ store.vehicleAuto.voice_enable_mode_sport ? '开关已开' : '开关已关' }}
+              <span class="text-[19.5px] font-black text-car-text tracking-wide mb-1">运动播报</span>
+              <span :class="['text-[14px] font-bold', store.vehicleAuto.voice_enable_mode_sport ? 'text-car-accent' : 'text-car-sub']">
+                {{ store.vehicleAuto.voice_enable_mode_sport ? '已开启' : '已关闭' }}
+              </span>
             </button>
             <div class="flex flex-col space-y-2.5 w-[130px]">
               <button 
@@ -578,14 +602,14 @@
           <div class="text-[20px] font-black text-car-text mb-3">主驾车门 (FL)</div>
           <div class="grid grid-cols-2 gap-2.5 mb-3">
             <MatrixButton 
-              title="开门开关"
-              :subtitle="store.vehicleAuto.voice_enable_door_fl ? '开关已开' : '开关已关'"
+              title="开门播报"
+              :subtitle="store.vehicleAuto.voice_enable_door_fl ? '已开启' : '已关闭'"
               :active="store.vehicleAuto.voice_enable_door_fl"
               @click="toggleSetting('voice_enable_door_fl')"
             />
             <MatrixButton 
-              title="关门开关"
-              :subtitle="store.vehicleAuto.voice_enable_door_fl_close ? '开关已开' : '开关已关'"
+              title="关门播报"
+              :subtitle="store.vehicleAuto.voice_enable_door_fl_close ? '已开启' : '已关闭'"
               :active="store.vehicleAuto.voice_enable_door_fl_close"
               @click="toggleSetting('voice_enable_door_fl_close')"
             />
@@ -611,14 +635,14 @@
           <div class="text-[20px] font-black text-car-text mb-3">副驾车门 (FR)</div>
           <div class="grid grid-cols-2 gap-2.5 mb-3">
             <MatrixButton 
-              title="开门开关"
-              :subtitle="store.vehicleAuto.voice_enable_door_fr ? '开关已开' : '开关已关'"
+              title="开门播报"
+              :subtitle="store.vehicleAuto.voice_enable_door_fr ? '已开启' : '已关闭'"
               :active="store.vehicleAuto.voice_enable_door_fr"
               @click="toggleSetting('voice_enable_door_fr')"
             />
             <MatrixButton 
-              title="关门开关"
-              :subtitle="store.vehicleAuto.voice_enable_door_fr_close ? '开关已开' : '开关已关'"
+              title="关门播报"
+              :subtitle="store.vehicleAuto.voice_enable_door_fr_close ? '已开启' : '已关闭'"
               :active="store.vehicleAuto.voice_enable_door_fr_close"
               @click="toggleSetting('voice_enable_door_fr_close')"
             />
@@ -644,14 +668,14 @@
           <div class="text-[20px] font-black text-car-text mb-3">左后车门 (RL)</div>
           <div class="grid grid-cols-2 gap-2.5 mb-3">
             <MatrixButton 
-              title="开门开关"
-              :subtitle="store.vehicleAuto.voice_enable_door_rl ? '开关已开' : '开关已关'"
+              title="开门播报"
+              :subtitle="store.vehicleAuto.voice_enable_door_rl ? '已开启' : '已关闭'"
               :active="store.vehicleAuto.voice_enable_door_rl"
               @click="toggleSetting('voice_enable_door_rl')"
             />
             <MatrixButton 
-              title="关门开关"
-              :subtitle="store.vehicleAuto.voice_enable_door_rl_close ? '开关已开' : '开关已关'"
+              title="关门播报"
+              :subtitle="store.vehicleAuto.voice_enable_door_rl_close ? '已开启' : '已关闭'"
               :active="store.vehicleAuto.voice_enable_door_rl_close"
               @click="toggleSetting('voice_enable_door_rl_close')"
             />
@@ -677,14 +701,14 @@
           <div class="text-[20px] font-black text-car-text mb-3">右后车门 (RR)</div>
           <div class="grid grid-cols-2 gap-2.5 mb-3">
             <MatrixButton 
-              title="开门开关"
-              :subtitle="store.vehicleAuto.voice_enable_door_rr ? '开关已开' : '开关已关'"
+              title="开门播报"
+              :subtitle="store.vehicleAuto.voice_enable_door_rr ? '已开启' : '已关闭'"
               :active="store.vehicleAuto.voice_enable_door_rr"
               @click="toggleSetting('voice_enable_door_rr')"
             />
             <MatrixButton 
-              title="关门开关"
-              :subtitle="store.vehicleAuto.voice_enable_door_rr_close ? '开关已开' : '开关已关'"
+              title="关门播报"
+              :subtitle="store.vehicleAuto.voice_enable_door_rr_close ? '已开启' : '已关闭'"
               :active="store.vehicleAuto.voice_enable_door_rr_close"
               @click="toggleSetting('voice_enable_door_rr_close')"
             />
@@ -720,14 +744,14 @@
           </div>
           <div class="grid grid-cols-2 gap-2.5">
             <MatrixButton 
-              title="开门开关"
-              :subtitle="store.vehicleAuto.voice_enable_trunk_open ? '开关已开' : '开关已关'"
+              title="开门播报"
+              :subtitle="store.vehicleAuto.voice_enable_trunk_open ? '已开启' : '已关闭'"
               :active="store.vehicleAuto.voice_enable_trunk_open"
               @click="toggleSetting('voice_enable_trunk_open')"
             />
             <MatrixButton 
-              title="关门开关"
-              :subtitle="store.vehicleAuto.voice_enable_trunk_close ? '开关已开' : '开关已关'"
+              title="关门播报"
+              :subtitle="store.vehicleAuto.voice_enable_trunk_close ? '已开启' : '已关闭'"
               :active="store.vehicleAuto.voice_enable_trunk_close"
               @click="toggleSetting('voice_enable_trunk_close')"
             />
@@ -740,7 +764,7 @@
             <div class="text-[15px] text-car-sub mt-1 font-bold">车速 ≤30km/h 允许唤醒盲区</div>
           </div>
           <MatrixButton 
-            :title="store.vehicleAuto.vehicle_turn_360_enabled ? '开关已开' : '开关已关'"
+            :title="store.vehicleAuto.vehicle_turn_360_enabled ? '已开启' : '已关闭'"
             :active="store.vehicleAuto.vehicle_turn_360_enabled"
             @click="toggleSetting('vehicle_turn_360_enabled')"
           />
@@ -752,7 +776,7 @@
             <div class="text-[15px] text-car-sub mt-1 font-bold">隧道与黑夜自动切换防刺眼</div>
           </div>
           <MatrixButton 
-            :title="store.vehicleAuto.vehicle_light_nav_enabled ? '开关已开' : '开关已关'"
+            :title="store.vehicleAuto.vehicle_light_nav_enabled ? '已开启' : '已关闭'"
             :active="store.vehicleAuto.vehicle_light_nav_enabled"
             @click="toggleSetting('vehicle_light_nav_enabled')"
           />
@@ -772,7 +796,7 @@
             <div class="text-[15px] text-car-sub mt-1 font-bold">开启后在全屏最上层常驻微型胶囊</div>
           </div>
           <MatrixButton 
-            :title="store.deviceInfo.floating_enabled ? '开关已开' : '开关已关'"
+            :title="store.deviceInfo.floating_enabled ? '已开启' : '已关闭'"
             :active="store.deviceInfo.floating_enabled"
             @click="toggleFloatingWindow"
           />
