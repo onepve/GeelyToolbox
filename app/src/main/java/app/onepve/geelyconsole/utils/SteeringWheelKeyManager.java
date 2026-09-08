@@ -44,6 +44,8 @@ public class SteeringWheelKeyManager {
 
     // 键码定义 (SX-0017)
     public static final int KEY_MUTE = 300;     // 键 3: 静音键短按
+    public static final int KEY_VOL_DOWN = 301; // 键 2: 滚轮向下拨动 (音量减)
+    public static final int KEY_VOL_UP = 302;   // 键 2: 滚轮向上拨动 (音量加)
     public static final int KEY_PREV = 304;     // 键 7: 上一曲
     public static final int KEY_NEXT = 305;     // 键 4: 下一曲
     public static final int KEY_OK = 306;       // 键 2: 滚轮下按确认
@@ -244,12 +246,14 @@ public class SteeringWheelKeyManager {
     private String getKeyName(int keyCode) {
         switch (keyCode) {
             case KEY_MUTE: return "3号键·静音短按";
+            case KEY_VOL_DOWN: return "2号键·音量减/滚轮下拨";
+            case KEY_VOL_UP: return "2号键·音量加/滚轮上拨";
             case KEY_PREV: return "7号键·上一曲";
             case KEY_NEXT: return "4号键·下一曲";
             case KEY_OK: return "2号键·滚轮垂直按压";
             case KEY_WMODE: return "6号键·Mode音源切换";
             case KEY_CUSTOM: return "1号键·菱形自定义";
-            default: return "未定义按键(" + keyCode + ")";
+            default: return "按键(Code:" + keyCode + ")";
         }
     }
 
@@ -309,7 +313,7 @@ public class SteeringWheelKeyManager {
 
     private void open360Camera() {
         try {
-            suppressOriginalMultimedia();
+            // 1. 0 毫秒立即启动 360 全景环视，秒级抢占前台！坚决不先阻塞执行 ADB！
             Intent intent = context.getPackageManager().getLaunchIntentForPackage("ecarx.camera.calibration");
             if (intent == null) {
                 intent = new Intent(Intent.ACTION_MAIN);
@@ -317,30 +321,42 @@ public class SteeringWheelKeyManager {
             }
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
             context.startActivity(intent);
-            AppLogger.i("方控动作", "已下发指令成功唤起 360 全景环视");
+            AppLogger.i("方控动作", "已下发指令秒级唤起 360 全景环视");
 
-            mainHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    suppressOriginalMultimedia();
-                }
-            }, 300);
+            // 2. 异步压制原厂伴听多媒体，坚决不阻塞 360 启动！
+            suppressOriginalMultimedia();
         } catch (Exception e) {
             AppLogger.w("方控动作", "唤起 360 失败: " + e.getMessage());
         }
     }
 
     public void suppressOriginalMultimedia() {
-        try {
-            android.app.ActivityManager am = (android.app.ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-            if (am != null) {
-                java.lang.reflect.Method m = android.app.ActivityManager.class.getMethod("forceStopPackage", String.class);
-                m.invoke(am, "com.ecarx.multimedia");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // A. 反射 forceStopPackage 瞬发压制 (0ms，系统级快速终止)
+                try {
+                    android.app.ActivityManager am = (android.app.ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+                    if (am != null) {
+                        java.lang.reflect.Method m = android.app.ActivityManager.class.getMethod("forceStopPackage", String.class);
+                        m.invoke(am, "com.ecarx.multimedia");
+                        m.invoke(am, "com.ecarx.xcmedia");
+                    }
+                } catch (Throwable ignored) {}
+
+                // B. 发送广播让多媒体停止
+                try {
+                    Intent pauseIntent = new Intent("ecarx.intent.action.STOP");
+                    pauseIntent.setPackage("com.ecarx.multimedia");
+                    context.sendBroadcast(pauseIntent);
+                } catch (Throwable ignored) {}
+
+                // C. 异步执行 ADB 强杀 (后台执行，零阻塞)
+                try {
+                    AdbClient.execute(context, "am force-stop com.ecarx.multimedia; am force-stop com.ecarx.xcmedia");
+                } catch (Throwable ignored) {}
             }
-        } catch (Throwable ignored) {}
-        try {
-            AdbClient.execute(context, "am force-stop com.ecarx.multimedia");
-        } catch (Throwable ignored) {}
+        }).start();
     }
 
     private void openAmapNavi() {

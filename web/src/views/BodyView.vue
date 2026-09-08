@@ -39,7 +39,7 @@
     </div>
 
     <!-- 核心：座舱车身语音播报总开关 (全车语音发声总闸门) -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between">
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between mb-6">
       <div class="flex-1 min-w-0 flex flex-col space-y-1 pr-4">
         <div class="flex items-center space-x-3">
           <span :class="['w-3.5 h-3.5 rounded-full shadow-md', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-rose-500 shadow-[0_0_10px_#F43F5E]']"></span>

@@ -59,7 +59,7 @@
     </div>
 
     <!-- 核心：方向盘按键方控接管总开关 -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between">
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between mb-5">
       <div class="flex-1 min-w-0 flex flex-col space-y-1 pr-4">
         <div class="flex items-center space-x-3">
           <span :class="['w-3.5 h-3.5 rounded-full shadow-md', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-rose-500 shadow-[0_0_10px_#F43F5E]']"></span>
@@ -91,7 +91,7 @@
       title="1. 方向盘方控接管模式 (兼容米小江)"
       desc="彻底屏蔽原厂收音机伴听抢占广播，支持米小江优先协同或控制台全量自定义。"
     >
-      <div class="grid grid-cols-3 gap-3.5">
+      <div class="grid grid-cols-3 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
         <MatrixButton 
           title="米小江方控优先"
           subtitle="放行切歌与Mode键，工具箱补充静音与滚轮下按"
@@ -118,7 +118,7 @@
       title="2. 方向盘音量调节键按压映射 (编号 2 滚轮按压)"
       desc="中央音量滚轮除了上下拨动调节音量外，垂直向下按压可触发自定义动作。默认保持原厂不动。"
     >
-      <div class="grid grid-cols-5 gap-3.5">
+      <div class="grid grid-cols-5 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
         <MatrixButton 
           title="保持原厂不动"
           subtitle="原厂默认不动作"
@@ -157,7 +157,7 @@
       title="3. 方向盘独立静音键短按映射 (编号 3)"
       desc="短按本键执行自定义动作（系统已内置防静音干扰补偿）；长按本键 10 秒依然是整车硬件看门狗冷重启救砖，不受任何影响！"
     >
-      <div class="grid grid-cols-4 gap-3.5">
+      <div class="grid grid-cols-4 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
         <MatrixButton 
           title="保持原厂不动"
           subtitle="系统原厂静音/恢复"
@@ -190,7 +190,7 @@
       title="4. 方向盘 Mode 键短按映射 (编号 6)"
       desc="原车用于切换伴听/收音机。按下瞬间直接拉起目标功能，平铺直选，选中的直接高亮。"
     >
-      <div class="grid grid-cols-5 gap-3.5">
+      <div class="grid grid-cols-5 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
         <MatrixButton 
           title="保持原厂不动"
           subtitle="走原车音源切换"
