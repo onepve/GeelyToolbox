@@ -14,7 +14,7 @@
             <span class="text-[19px] font-black text-car-text tracking-wide">检测到吉利应用商店处于未冻结状态</span>
             <span class="px-3 py-1 rounded-full bg-rose-500 text-white text-[13px] font-black shadow-sm">建议处置</span>
           </div>
-          <span class="text-[15px] text-car-text font-bold leading-normal">原厂商店后台可能覆盖白名单策略并静默卸载高德地图等第三方软件，强烈建议立即冻结！</span>
+          <span class="text-[15px] text-car-text font-bold leading-normal">原厂商店运行会破坏白名单策略，直接导致第三方软件无法安装，强烈建议立即冻结锁定！</span>
         </div>
       </div>
       <button 
@@ -43,7 +43,7 @@
       <!-- 2. 车机深度工具箱 & ADB 控制台 (从顶栏移至此处) -->
       <FeatureCard 
         title="2. 车机深度工具箱 & ADB"
-        desc="内置本地 ADB Client 2000 端口，提供命令行交互与固件抓取。"
+        desc="内置本地 ADB Client 2000 端口，提供命令行交互与系统维护。"
       >
         <button 
           @click="openDeepTools"
@@ -56,7 +56,7 @@
       <!-- 3. 安装白名单属性放行 -->
       <FeatureCard 
         title="3. 第三方 APK 放行白名单"
-        desc="注入 apk_verify=1 属性，解除系统级安装包校验限制。"
+        desc="注入 sys.jsbd.apk_verify=1 属性，解除系统级安装包签名校验限制。"
       >
         <button 
           @click="confirmToggleWhitelist"
@@ -74,7 +74,7 @@
       <!-- 4. 运行与安全审计日志 -->
       <FeatureCard 
         title="4. 运行与守护日志"
-        desc="实时记录开门、挡位与方控触发记录，支持清空与导出。"
+        desc="实时采集车门、挡位与方控信号记录，支持独立清空与离线导出。"
       >
         <button 
           @click="openLogModal"
@@ -87,7 +87,7 @@
       <!-- 5. 应用商店管理 (带二次校验) -->
       <FeatureCard 
         title="5. 应用商店状态管理"
-        desc="防止原厂商店后台静默卸载第三方应用，需要时可在此安全解冻。"
+        desc="未冻结会破坏白名单导致无法安装第三方软件，必须冻结进行锁定。"
       >
         <button 
           @click="confirmToggleAppstore"
@@ -98,14 +98,14 @@
               : 'bg-rose-500/15 border-rose-500 text-rose-500'
           ]"
         >
-          <span>{{ store.deviceInfo.appstore_frozen ? '商店: 已冻结 (安全防删)' : '商店: 未冻结 (点击安全冻结)' }}</span>
+          <span>{{ store.deviceInfo.appstore_frozen ? '商店: 已冻结 (锁定白名单)' : '商店: 未冻结 (点击安全冻结)' }}</span>
         </button>
       </FeatureCard>
 
       <!-- 6. 车辆启动自动运行 -->
       <FeatureCard 
         title="6. 车辆启动自动运行"
-        desc="车机通电开机后自动自启后台服务，门控与方控即刻生效。"
+        desc="车辆点火开机自动于后台运行联动守护，支持开机自启桌面悬浮胶囊。"
       >
         <button 
           @click="toggleAutostart"
@@ -127,7 +127,7 @@
         <span class="mr-2">💡</span> 座舱底层维护铁律与核心原理说明：
       </div>
       <div>• <b>冷重启原理</b>：彻底断电重启 MCU 与 Framework，彻底杜绝开门播报延迟与系统卡顿；</div>
-      <div>• <b>白名单锁定</b>：商店冻结是高德地图防被卸载的关键，日常行车请务必保持冻结状态；</div>
+      <div>• <b>应用商店与白名单</b>：原厂应用商店运行会破坏白名单策略导致第三方软件无法安装，必须保持冻结锁定；</div>
       <div>• <b>ADB 安全边界</b>：深度终端已做系统核心保护，严禁自行卸载系统 Framework 核心组件。</div>
     </div>
   </div>
@@ -161,9 +161,9 @@ function openLogModal() {
 
 function confirmFreezeStore() {
   openModal('confirm', {
-    title: '冻结吉利应用商店',
-    desc: '冻结吉利原厂应用商店后，将永久锁定第三方软件安装白名单，彻底防止高德地图等应用被后台静默卸载。',
-    tip: '提示：后续可随时在此处解冻恢复。',
+    title: '冻结吉利应用商店 (锁定白名单)',
+    desc: '冻结吉利原厂应用商店后，将永久锁定第三方软件安装白名单，确保第三方应用能够顺利安装并正常运行。',
+    tip: '【强烈建议】请始终保持应用商店冻结状态。后续需要时可随时在此解冻恢复。',
     isDanger: false,
     onConfirm: () => {
       bridge.call('toggleFreezeAppStore', true);
@@ -178,8 +178,8 @@ function confirmToggleAppstore() {
     // 当前已冻结，解冻需要二次警告确认
     openModal('confirm', {
       title: '解冻恢复吉利应用商店',
-      desc: '解冻吉利应用商店后，原厂商店可能会在后台执行扫描并静默卸载高德地图 8.5 等第三方应用。是否确认解冻？',
-      tip: '【警告】解冻仅建议在需要从官方商店安装官方应用时临时使用，安装完毕建议立即重新冻结。',
+      desc: '解冻原厂应用商店后，商店将破坏系统白名单策略，直接导致第三方软件无法安装，且已有软件可能被后台静默拦截。是否确认解冻？',
+      tip: '【高危警告】解冻后将直接影响白名单导致无法安装第三方软件！仅在急需使用官方商店时临时开启。',
       isDanger: true,
       confirmText: '确认解冻',
       onConfirm: () => {
