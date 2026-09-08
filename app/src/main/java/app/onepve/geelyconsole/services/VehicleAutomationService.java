@@ -25,8 +25,12 @@ import java.util.regex.Pattern;
 import app.onepve.geelyconsole.R;
 import app.onepve.geelyconsole.utils.AdbClient;
 import app.onepve.geelyconsole.utils.AppLogger;
+import app.onepve.geelyconsole.utils.DoorStateManager;
+import app.onepve.geelyconsole.utils.DriveModeManager;
+import app.onepve.geelyconsole.utils.GearStateMachine;
 import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
 import app.onepve.geelyconsole.utils.SystemUtils;
+import app.onepve.geelyconsole.utils.TrunkStateManager;
 import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
 
 /**
