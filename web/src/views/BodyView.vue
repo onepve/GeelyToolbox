@@ -578,13 +578,13 @@
           <div class="text-[20px] font-black text-car-text mb-3">主驾车门 (FL)</div>
           <div class="grid grid-cols-2 gap-2.5 mb-3">
             <MatrixButton 
-              title="开门防杀"
+              title="开门开关"
               :subtitle="store.vehicleAuto.voice_enable_door_fl ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_fl"
               @click="toggleSetting('voice_enable_door_fl')"
             />
             <MatrixButton 
-              title="关门播报"
+              title="关门开关"
               :subtitle="store.vehicleAuto.voice_enable_door_fl_close ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_fl_close"
               @click="toggleSetting('voice_enable_door_fl_close')"
@@ -611,13 +611,13 @@
           <div class="text-[20px] font-black text-car-text mb-3">副驾车门 (FR)</div>
           <div class="grid grid-cols-2 gap-2.5 mb-3">
             <MatrixButton 
-              title="开门迎宾"
+              title="开门开关"
               :subtitle="store.vehicleAuto.voice_enable_door_fr ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_fr"
               @click="toggleSetting('voice_enable_door_fr')"
             />
             <MatrixButton 
-              title="关门系安全带"
+              title="关门开关"
               :subtitle="store.vehicleAuto.voice_enable_door_fr_close ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_fr_close"
               @click="toggleSetting('voice_enable_door_fr_close')"
@@ -644,13 +644,13 @@
           <div class="text-[20px] font-black text-car-text mb-3">左后车门 (RL)</div>
           <div class="grid grid-cols-2 gap-2.5 mb-3">
             <MatrixButton 
-              title="开门提醒"
+              title="开门开关"
               :subtitle="store.vehicleAuto.voice_enable_door_rl ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_rl"
               @click="toggleSetting('voice_enable_door_rl')"
             />
             <MatrixButton 
-              title="关门已关好"
+              title="关门开关"
               :subtitle="store.vehicleAuto.voice_enable_door_rl_close ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_rl_close"
               @click="toggleSetting('voice_enable_door_rl_close')"
@@ -677,13 +677,13 @@
           <div class="text-[20px] font-black text-car-text mb-3">右后车门 (RR)</div>
           <div class="grid grid-cols-2 gap-2.5 mb-3">
             <MatrixButton 
-              title="开门提醒"
+              title="开门开关"
               :subtitle="store.vehicleAuto.voice_enable_door_rr ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_rr"
               @click="toggleSetting('voice_enable_door_rr')"
             />
             <MatrixButton 
-              title="关门已关好"
+              title="关门开关"
               :subtitle="store.vehicleAuto.voice_enable_door_rr_close ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_door_rr_close"
               @click="toggleSetting('voice_enable_door_rr_close')"
@@ -720,13 +720,13 @@
           </div>
           <div class="grid grid-cols-2 gap-2.5">
             <MatrixButton 
-              title="开门播报"
+              title="开门开关"
               :subtitle="store.vehicleAuto.voice_enable_trunk_open ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_trunk_open"
               @click="toggleSetting('voice_enable_trunk_open')"
             />
             <MatrixButton 
-              title="关门已关"
+              title="关门开关"
               :subtitle="store.vehicleAuto.voice_enable_trunk_close ? '开关已开' : '开关已关'"
               :active="store.vehicleAuto.voice_enable_trunk_close"
               @click="toggleSetting('voice_enable_trunk_close')"

@@ -39,8 +39,8 @@
         </div>
       </div>
 
-      <!-- 内测特权卡片 (默认彻底隐藏，点满5次静默解锁后才展示) -->
-      <div v-if="isTester" class="p-5 rounded-2xl bg-car-card border border-car-border flex flex-col space-y-3">
+      <!-- 内测特权卡片 (仅在测试通道激活时展示，切回正式通道自动隐藏) -->
+      <div v-if="isTester && useBetaChannel" class="p-5 rounded-2xl bg-car-card border border-car-border flex flex-col space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex flex-col">
             <span class="text-[16.5px] font-black text-car-text flex items-center">
@@ -179,9 +179,17 @@ function handleVersionClick() {
 }
 
 function toggleBetaChannel() {
-  useBetaChannel.value = !useBetaChannel.value;
-  localStorage.setItem('geely_use_beta_channel', String(useBetaChannel.value));
-  showToast(useBetaChannel.value ? '已切换至【测试通道 (Beta)】' : '已恢复为【正式通道 (Release)】');
+  if (useBetaChannel.value) {
+    useBetaChannel.value = false;
+    isTester.value = false;
+    localStorage.setItem('geely_use_beta_channel', 'false');
+    localStorage.setItem('geely_tester_unlocked', 'false');
+    showToast('已恢复为【正式通道 (Release)】，特权身份已锁定隐藏');
+  } else {
+    useBetaChannel.value = true;
+    localStorage.setItem('geely_use_beta_channel', 'true');
+    showToast('已切换至【测试通道 (Beta)】');
+  }
 }
 
 function checkBetaUpdateManually() {

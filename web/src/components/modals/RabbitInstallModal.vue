@@ -8,19 +8,19 @@
   >
     <div v-if="targetApp" class="flex flex-col space-y-5">
       <!-- 提示卡片 -->
-      <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 flex flex-col space-y-2">
-        <div class="text-[19px] font-black text-amber-400 flex items-center">
-          <span class="mr-2">⚠️</span>
-          <span>系统签名伪装与覆盖原理</span>
+      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-2 shadow-sm">
+        <div class="text-[19px] font-black text-car-text flex items-center">
+          <span class="mr-2 text-car-accent">⚠️</span>
+          <span>半自动系统签名伪装与覆盖原理</span>
         </div>
-        <p class="text-[15.5px] text-amber-200/90 leading-relaxed font-bold">
+        <p class="text-[15.5px] text-car-text font-bold leading-relaxed">
           吉利原厂自带应用（如高德地图）具备车机系统级签名保护。在【专家模式】下，系统将自动把目标 APK 深度伪装打包注入进车机『兔子时钟』屏保主题包中，应用时钟后重启车机，即可突破签名限制完成无损覆盖安装。
         </p>
       </div>
 
       <!-- 标准流程向导卡片 -->
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-3">
-        <div class="text-[17px] font-black text-car-text">标准卡主题操作流程：</div>
+      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-3 shadow-sm">
+        <div class="text-[17px] font-black text-car-text">半自动保姆式操作流程：</div>
         <div class="flex items-center space-x-2 text-[15px] font-bold text-car-sub overflow-x-auto py-1">
           <span class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-text">1. 启动向导</span>
           <span>➔</span>
@@ -89,8 +89,20 @@ const targetApp = computed(() => {
   return null;
 });
 
+function checkIsMapApp(app) {
+  if (!app) return false;
+  const name = (app.name || '').toLowerCase();
+  const filename = (app.filename || '').toLowerCase();
+  const pkg = (app.package_name || '').toLowerCase();
+  return name.includes('高德') || name.includes('地图') || filename.startsWith('AutoMap') || pkg.includes('autonavi');
+}
+
 function startAutoPilot() {
   if (!targetApp.value) return;
+  if (!checkIsMapApp(targetApp.value)) {
+    showToast('安全保护：卡主题功能仅限高德地图底包专用，非地图已禁止！');
+    return;
+  }
   closeModal('rabbitInstall');
   showToast(`正在注入兔子时钟屏保: ${targetApp.value.name}...`);
   bridge.call('startAutoPilotInject', targetApp.value.filename || null);
@@ -98,6 +110,10 @@ function startAutoPilot() {
 
 function reInjectDirectly() {
   if (!targetApp.value) return;
+  if (!checkIsMapApp(targetApp.value)) {
+    showToast('安全保护：卡主题功能仅限高德地图底包专用，非地图已禁止！');
+    return;
+  }
   closeModal('rabbitInstall');
   showToast(`正在重写伪装主题: ${targetApp.value.name}...`);
   bridge.call('injectApkDirectly', targetApp.value.filename || null);

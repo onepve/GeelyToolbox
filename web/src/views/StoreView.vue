@@ -45,9 +45,13 @@
         class="bg-car-card border-2 border-car-border rounded-2xl p-6 flex flex-col justify-between cursor-pointer hover:border-car-border-light transition-all shadow-md group"
       >
         <div class="flex flex-col space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-[21px] font-black text-car-text group-hover:text-car-accent transition-colors">{{ app.name }}</span>
-            <span class="text-[13px] bg-car-item border border-car-border px-3 py-1 rounded-md text-car-sub font-mono font-bold">{{ app.size }}</span>
+          <div class="flex items-center justify-between space-x-3 mb-1">
+            <span class="text-[20px] font-black text-car-text group-hover:text-car-accent transition-colors flex-1 min-w-0 truncate" :title="app.name">
+              {{ app.name }}
+            </span>
+            <span class="text-[13px] bg-car-item border border-car-border px-3 py-1 rounded-md text-car-sub font-mono font-bold shrink-0 whitespace-nowrap">
+              {{ app.size }}
+            </span>
           </div>
           <p class="text-[16px] text-car-sub font-medium leading-relaxed pt-1">{{ app.desc }}</p>
         </div>

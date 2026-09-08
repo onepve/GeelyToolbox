@@ -122,35 +122,26 @@
       <div v-if="store.settings.expert_rabbit" class="mt-4 pt-4 border-t border-car-border/60 flex flex-col space-y-3">
         <div class="flex items-center space-x-2">
           <span class="text-[17px] font-black text-rose-400">⚡ 专家模式专属卡主题注入工具：</span>
-          <span class="text-[13.5px] text-car-sub font-bold">突破签名限制，免电脑直接将高德或音乐伪装注入为桌面时钟屏保</span>
+          <span class="text-[13.5px] text-car-sub font-bold">突破系统签名保护，半自动保姆式将高德或音乐伪装注入为桌面时钟屏保</span>
         </div>
 
-        <div class="grid grid-cols-3 gap-3.5">
-          <!-- 1. 全自动免电脑卡屏保注入 -->
-          <button 
-            @click="openAutoPilotDirectly"
-            class="min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-accent flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all"
-          >
-            <span class="text-[18.5px] font-black text-car-text">⚡ 全自动免电脑注入</span>
-            <span class="text-[13.5px] font-bold text-car-sub mt-1">自动检测并注入兔子屏保</span>
-          </button>
-
-          <!-- 2. 半自动/卡主题安装向导 -->
+        <div class="grid grid-cols-2 gap-4">
+          <!-- 1. 半自动保姆式卡主题安装向导 -->
           <button 
             @click="openRabbitGuideModal"
-            class="min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+            class="min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-accent flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all"
           >
-            <span class="text-[18.5px] font-black text-car-text">🛠️ 半自动/重写伪装主题</span>
-            <span class="text-[13.5px] font-bold text-car-sub mt-1">向导弹窗与手动重写覆盖</span>
+            <span class="text-[19px] font-black text-car-text">🛠️ 半自动保姆式卡主题向导</span>
+            <span class="text-[13.5px] font-bold text-car-sub mt-1">分步向导弹窗引导注入与重启覆盖</span>
           </button>
 
-          <!-- 3. 原生文件管理 -->
+          <!-- 2. 原生文件管理 -->
           <button 
             @click="openFileManager"
             class="min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
           >
-            <span class="text-[18.5px] font-black text-car-text">📁 调起原生文件管理</span>
-            <span class="text-[13.5px] font-bold text-car-sub mt-1">浏览车机 Download 目录</span>
+            <span class="text-[19px] font-black text-car-text">📁 调起原生文件管理</span>
+            <span class="text-[13.5px] font-bold text-car-sub mt-1">直接浏览车机 Download 目录与安装包</span>
           </button>
         </div>
       </div>
@@ -189,7 +180,7 @@ function confirmUnlockExpert() {
           // 第 3 次确认：最终特权授权
           openModal('confirm', {
             title: '【最终授权】正式激活专家模式 (第 3/3 次确认)',
-            desc: '确认正式激活专家模式？激活后，下方将立即解锁【⚡ 全自动免电脑卡屏保注入】与【🛠️ 半自动/直接重写伪装主题】两大高阶工具。',
+            desc: '确认正式激活专家模式？激活后，下方将立即解锁【🛠️ 半自动保姆式卡主题向导】与【📁 调起原生文件管理】两大高阶工具。',
             tip: '【提示】后续可随时在此处一键恢复安全锁定。',
             isDanger: true,
             confirmText: '确认最终激活',

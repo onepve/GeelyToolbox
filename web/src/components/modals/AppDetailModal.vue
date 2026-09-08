@@ -55,9 +55,9 @@
     <!-- 底部 66px 巨型车规大触控操作栏 -->
     <template #footer>
       <div class="flex items-center justify-between w-full">
-        <!-- 专家模式卡主题通道按键 -->
+        <!-- 专家模式卡主题通道按键 (严密安全限制：仅限高德地图底包，非地图坚决禁止卡主题) -->
         <button 
-          v-if="store.settings.expert_rabbit"
+          v-if="store.settings.expert_rabbit && isMapApp"
           @click="openRabbitGuide"
           class="h-[60px] px-6 bg-amber-500/15 border-2 border-amber-500/50 rounded-2xl text-amber-300 font-black text-[17.5px] cursor-pointer hover:bg-amber-500/25 ring-2 ring-amber-500/20 shadow-md flex items-center"
         >
@@ -85,6 +85,16 @@ import { store, bridge, closeModal, showToast } from '../../store';
 const app = computed(() => store.modals.appDetail);
 const downloadProgress = computed(() => store.downloadProgress);
 
+const isMapApp = computed(() => {
+  if (!app.value) return false;
+  const id = (app.value.id || '').toLowerCase();
+  const pkg = (app.value.package_name || '').toLowerCase();
+  const name = (app.value.name || '').toLowerCase();
+  const category = (app.value.category || '').toLowerCase();
+  const filename = (app.value.filename || '').toLowerCase();
+  return category === 'navigation' || pkg.includes('autonavi') || filename.startsWith('automap') || name.includes('高德') || name.includes('地图');
+});
+
 const actionButtonText = computed(() => {
   if (!app.value) return '立即下载安装';
   return app.value.statusText || '立即下载安装';
@@ -97,7 +107,10 @@ function handleInstallAction() {
 }
 
 function openRabbitGuide() {
-  if (!app.value) return;
+  if (!app.value || !isMapApp.value) {
+    showToast('安全保护：非地图类应用严禁使用卡主题方式！');
+    return;
+  }
   const currentApp = app.value;
   closeModal('appDetail');
   store.modals.rabbitInstall = currentApp;
