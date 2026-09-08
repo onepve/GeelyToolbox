@@ -40,7 +40,7 @@
 
     <!-- 核心：座舱车身语音播报总开关 (全车语音发声总闸门) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between">
-      <div class="flex flex-col space-y-1 pr-4">
+      <div class="flex-1 min-w-0 flex flex-col space-y-1 pr-4">
         <div class="flex items-center space-x-3">
           <span :class="['w-3.5 h-3.5 rounded-full shadow-md', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-rose-500 shadow-[0_0_10px_#F43F5E]']"></span>
           <span class="text-[21px] font-black text-car-text tracking-wide">座舱车身语音播报总开关 (全车总闸)</span>
@@ -239,7 +239,7 @@
       <div class="grid grid-cols-2 gap-4">
         <!-- 前进挡 D -->
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
-          <div class="flex flex-col justify-center pr-6 flex-1">
+          <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
             <div class="flex items-center space-x-3 mb-1.5">
               <span class="text-[22px] font-black text-car-text tracking-wide">前进挡 (D 挡)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent font-bold">启程安全</span>
@@ -278,7 +278,7 @@
 
         <!-- 倒车挡 R -->
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
-          <div class="flex flex-col justify-center pr-6 flex-1">
+          <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
             <div class="flex items-center space-x-3 mb-1.5">
               <span class="text-[22px] font-black text-car-text tracking-wide">倒车挡 (R 挡)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-amber-400 font-bold">后方警示</span>
@@ -317,7 +317,7 @@
 
         <!-- 驻车挡 P -->
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
-          <div class="flex flex-col justify-center pr-6 flex-1">
+          <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
             <div class="flex items-center space-x-3 mb-1.5">
               <span class="text-[22px] font-black text-car-text tracking-wide">驻车挡 (P 挡)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 font-bold">停泊就绪</span>
@@ -356,7 +356,7 @@
 
         <!-- 空挡 N -->
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
-          <div class="flex flex-col justify-center pr-6 flex-1">
+          <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
             <div class="flex items-center space-x-3 mb-1.5">
               <span class="text-[22px] font-black text-car-text tracking-wide">空挡 (N 挡)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-sub font-bold">临时切空</span>
@@ -403,7 +403,7 @@
       <div class="grid grid-cols-2 gap-4">
         <!-- 智能模式 -->
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
-          <div class="flex flex-col justify-center pr-6 flex-1">
+          <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
             <div class="flex items-center space-x-3 mb-1.5">
               <span class="text-[22px] font-black text-car-text tracking-wide">智能模式 (Smart)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent font-bold">默认省心</span>
@@ -442,7 +442,7 @@
 
         <!-- 舒适模式 -->
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
-          <div class="flex flex-col justify-center pr-6 flex-1">
+          <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
             <div class="flex items-center space-x-3 mb-1.5">
               <span class="text-[22px] font-black text-car-text tracking-wide">舒适模式 (Comfort)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 font-bold">平顺温润</span>
@@ -481,7 +481,7 @@
 
         <!-- 经济模式 -->
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
-          <div class="flex flex-col justify-center pr-6 flex-1">
+          <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
             <div class="flex items-center space-x-3 mb-1.5">
               <span class="text-[22px] font-black text-car-text tracking-wide">经济模式 (Eco)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-blue-400 font-bold">低碳节能</span>
@@ -520,7 +520,7 @@
 
         <!-- 运动模式 -->
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
-          <div class="flex flex-col justify-center pr-6 flex-1">
+          <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
             <div class="flex items-center space-x-3 mb-1.5">
               <span class="text-[22px] font-black text-car-text tracking-wide">运动模式 (Sport)</span>
               <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-rose-500 font-bold">动力充沛</span>

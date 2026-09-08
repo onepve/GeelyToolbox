@@ -6,7 +6,7 @@
       desc="严禁直接通过 ADB 命令行 pm install 强行静默安装，底层安全策略会导致应用无法运行或白屏！"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
-        <div class="flex-1 pr-6 flex flex-col">
+        <div class="flex-1 min-w-0 pr-6 flex flex-col">
           <div class="text-[18px] font-black text-car-text mb-2">
             标准无损安装路线：
           </div>
@@ -35,7 +35,7 @@
       desc="无需繁琐插拔 U 盘或携带电脑，通过车机内置 HTTP 文件快传服务直接秒传安装包。"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
-        <div class="flex-1 pr-6 flex flex-col">
+        <div class="flex-1 min-w-0 pr-6 flex flex-col">
           <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-2">
             只要手机与车机处于同一 Wi-Fi 或车机热点下，扫码即可秒开网页，将手机下载的高德地图、音乐等 APK 秒传至车机 Download 目录。
           </div>
@@ -60,7 +60,7 @@
       desc="每日按时间对时生成的专车动态工程模式暗码，用于打开车机底层无线 ADB 调试与系统特权。"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
-        <div class="flex-1 pr-6 flex flex-col">
+        <div class="flex-1 min-w-0 pr-6 flex flex-col">
           <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-2">
             吉利车机工程密码每天根据时间动态计算。点击右侧打开车机原生电话拨号盘，手动在键盘输入今日暗码即可秒进工程菜单开启 ADB。
           </div>
@@ -86,7 +86,7 @@
       desc="解除主题防护白名单限制，支持直接将任意第三方应用伪装注入为桌面兔子时钟屏保卡片。"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
-        <div class="flex-1 pr-6 flex flex-col">
+        <div class="flex-1 min-w-0 pr-6 flex flex-col">
           <div class="flex items-center space-x-3 mb-1">
             <span class="text-[18px] font-black text-car-text">伪装屏保注入特权</span>
             <span 

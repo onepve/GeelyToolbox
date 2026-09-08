@@ -6,7 +6,7 @@
       desc="系统已直接通过后台 IPC 直连语音合成引擎。因吉利原厂车机精简删除了系统设置中的 TTS 菜单，此处直接常驻显示真实引擎连接状态。"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
-        <div class="flex-1 pr-6 flex flex-col">
+        <div class="flex-1 min-w-0 pr-6 flex flex-col">
           <div class="flex items-center mb-2">
             <span 
               :class="[

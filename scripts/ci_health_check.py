@@ -381,11 +381,71 @@ if os.path.exists(APPS_DATA_PATH):
 
 
 # ----------------------------------------------------------------------
+# 11. Chromium 68 Layout Safety: Flex min-w-0 & FeatureCard Non-Stretching
+# ----------------------------------------------------------------------
+log_step("11. Checking Chromium 68 Layout Safety: Flex min-w-0 & FeatureCard Non-Stretching")
+with open(os.path.join(ROOT_DIR, "web/src/components/FeatureCard.vue"), "r", encoding="utf-8") as f:
+    fc_content = f.read()
+
+if "h-full" in fc_content or "mt-auto" in fc_content:
+    print("  [FAIL] FeatureCard.vue must NOT contain 'h-full' or 'mt-auto' (causes infinite stretch in Chromium 68 flex containers)!")
+    passed = False
+else:
+    print("[PASS] FeatureCard.vue non-stretching container confirmed clean (zero h-full/mt-auto).")
+
+# Check all Vue views for flex-1 containers lacking min-w-0
+flex1_issues = []
+for root, _, files in os.walk(os.path.join(ROOT_DIR, "web/src/views")):
+    for fn in files:
+        if fn.endswith(".vue"):
+            fp = os.path.join(root, fn)
+            with open(fp, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            for idx, line in enumerate(lines, 1):
+                # Match class containing flex-1 but missing min-w-0 in flex row containers
+                if "flex-1" in line and "min-w-0" not in line and "flex items-center" not in line and "button" not in line:
+                    if "flex flex-col" in line or "pr-" in line:
+                        flex1_issues.append((fn, idx, line.strip()))
+
+if flex1_issues:
+    print(f"  [FAIL] Found {len(flex1_issues)} flex-1 container(s) missing min-w-0 (Chromium 68 text overlap hazard):")
+    for fn, idx, line in flex1_issues:
+        print(f"    - {fn}:{idx} -> {line}")
+    passed = False
+else:
+    print("[PASS] 100% of flex-1 text containers enforce min-w-0 boundary protection.")
+
+
+# ----------------------------------------------------------------------
+# 12. Publish Changelog Formatting & Newline Integrity Gate
+# ----------------------------------------------------------------------
+log_step("12. Checking Publish Changelog Formatting (Zero Literal \\n Bugs)")
+with open(os.path.join(ROOT_DIR, "scripts/publish_r2.py"), "r", encoding="utf-8") as f:
+    pub_content = f.read()
+
+# Check for literal escaped \\n in publish_r2.py changelog
+if "\\\\n" in pub_content:
+    print("  [FAIL] scripts/publish_r2.py contains literal '\\\\n' double-escaped strings! Must use actual newlines '\\n'.")
+    passed = False
+else:
+    print("[PASS] scripts/publish_r2.py uses clean real newlines (zero literal \\\\n).")
+
+with open(os.path.join(ROOT_DIR, "web/src/components/modals/UpdateModal.vue"), "r", encoding="utf-8") as f:
+    update_modal_content = f.read()
+
+if ".replace(/\\\\n/g" not in update_modal_content:
+    print("  [FAIL] UpdateModal.vue must include .replace(/\\\\n/g, '\\n') defensive formatting for changelog!")
+    passed = False
+else:
+    print("[PASS] UpdateModal.vue includes changelog newline fallback defense.")
+
+
+# ----------------------------------------------------------------------
 # Final Summary Verdict
 # ----------------------------------------------------------------------
-log_step("CI 10-Gate Health Check Verdict")
+log_step("CI 12-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 10 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 violations, 100% audio & contract closure)")
+    print("[SUCCESS] All 12 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% contract closure)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")

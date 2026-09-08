@@ -26,7 +26,7 @@
         </div>
 
         <!-- 按键编号与原厂定义清单 (使用 space-y 与 space-x 实体隔离带，彻底杜绝低版本内核 gap 塌陷错位) -->
-        <div class="flex-1 flex flex-col space-y-2.5 text-[14.5px] font-bold text-car-sub">
+        <div class="flex-1 min-w-0 flex flex-col space-y-2.5 text-[14.5px] font-bold text-car-sub">
           <div class="flex space-x-3">
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border">
               <span class="text-car-text font-black mr-1.5">① 主页键:</span> 返回车机中控主页
@@ -60,7 +60,7 @@
 
     <!-- 核心：方向盘按键方控接管总开关 -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between">
-      <div class="flex flex-col space-y-1 pr-4">
+      <div class="flex-1 min-w-0 flex flex-col space-y-1 pr-4">
         <div class="flex items-center space-x-3">
           <span :class="['w-3.5 h-3.5 rounded-full shadow-md', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-rose-500 shadow-[0_0_10px_#F43F5E]']"></span>
           <span class="text-[21px] font-black text-car-text tracking-wide">方向盘按键方控接管总开关</span>

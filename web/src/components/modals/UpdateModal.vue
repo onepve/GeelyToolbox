@@ -50,7 +50,7 @@
       <!-- 更新日志卡片 -->
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-2 shadow-sm">
         <div class="text-[17px] font-black text-car-text">更新内容：</div>
-        <pre class="text-[15px] font-semibold text-car-sub leading-relaxed whitespace-pre-wrap font-sans">{{ updateInfo.changelog || '全能座舱体验升级与稳定性优化。' }}</pre>
+        <pre class="text-[15px] font-semibold text-car-sub leading-relaxed whitespace-pre-wrap font-sans">{{ (updateInfo.changelog || '全能座舱体验升级与稳定性优化。').replace(/\\n/g, '\n') }}</pre>
       </div>
 
       <!-- 提示 -->
