@@ -573,6 +573,10 @@ public class SystemUtils {
         executePrivileged(ctx, "reboot || svc power reboot");
     }
 
+    public static void executeReboot(Context ctx) {
+        softReboot(ctx);
+    }
+
     /** 清除应用数据（pm clear） */
     public static OpResult clearAppData(Context ctx, String pkg) {
         OpResult result;
