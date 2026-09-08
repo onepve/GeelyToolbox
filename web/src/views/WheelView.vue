@@ -1,5 +1,33 @@
 <template>
   <div class="flex flex-col space-y-6">
+    <!-- 核心：方向盘按键方控接管总开关 - 提权置顶首屏 -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between mb-4">
+      <div class="flex-1 min-w-0 flex flex-col space-y-1 pr-4">
+        <div class="flex items-center space-x-3">
+          <span :class="['w-3.5 h-3.5 rounded-full shadow-md', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-rose-500 shadow-[0_0_10px_#F43F5E]']"></span>
+          <span class="text-[21px] font-black text-car-text tracking-wide">方向盘按键方控接管总开关</span>
+          <span :class="['px-3 py-0.5 text-[13px] font-black rounded-full border', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40' : 'bg-rose-500/15 text-rose-400 border-rose-500/40']">
+            {{ store.vehicleAuto.wheel_master_switch ? '方控接管已启用' : '方控已彻底放行 (不干涉)' }}
+          </span>
+        </div>
+        <span class="text-[15px] text-car-sub font-bold leading-relaxed">
+          独立控制是否接管滚轮下按、静音键与Mode键。如开启米小江且完全不想让工具箱参与方控，可直接关闭此项。独立生效。
+        </span>
+      </div>
+
+      <button
+        @click="toggleWheelMasterSwitch"
+        :class="[
+          'w-[220px] min-h-[76px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-md flex items-center justify-center shrink-0 whitespace-nowrap',
+          store.vehicleAuto.wheel_master_switch
+            ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/25'
+            : 'bg-rose-500/15 border-rose-500 text-rose-400 hover:bg-rose-500/25'
+        ]"
+      >
+        <span>{{ store.vehicleAuto.wheel_master_switch ? '方控接管: 已开启' : '方控接管: 已关闭 (放行)' }}</span>
+      </button>
+    </div>
+
     <!-- 车型图解与协议指示区 (缤越 COOL / SX-0017 原厂按键分布) -->
     <div class="bg-car-item border border-car-border rounded-2xl p-5 shadow-sm">
       <div class="flex items-center justify-between mb-4">
@@ -40,12 +68,12 @@
               <span class="text-car-accent font-black mr-1.5">③ 静音键:</span> 开关静音 (长按10s硬件冷重启)
             </div>
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border">
-              <span class="text-car-text font-black mr-1.5">④ 向右选择键:</span> 下一个文件 / 下一曲
+              <span class="text-car-accent font-black mr-1.5">④ 向右选择键:</span> 下一个文件 / 下一曲
             </div>
           </div>
           <div class="flex space-x-3">
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border">
-              <span class="text-car-text font-black mr-1.5">⑤ 模式切换键:</span> 切换主机与组合仪表控制权
+              <span class="text-car-text font-black mr-1.5">⑤ 模式切换键:</span> 驾驶模式切换 (原厂未配置)
             </div>
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border">
               <span class="text-car-accent font-black mr-1.5">⑥ MODE键:</span> 音源切换 / 自定义映射
@@ -56,34 +84,6 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- 核心：方向盘按键方控接管总开关 -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between mb-5">
-      <div class="flex-1 min-w-0 flex flex-col space-y-1 pr-4">
-        <div class="flex items-center space-x-3">
-          <span :class="['w-3.5 h-3.5 rounded-full shadow-md', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-rose-500 shadow-[0_0_10px_#F43F5E]']"></span>
-          <span class="text-[21px] font-black text-car-text tracking-wide">方向盘按键方控接管总开关</span>
-          <span :class="['px-3 py-0.5 text-[13px] font-black rounded-full border', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40' : 'bg-rose-500/15 text-rose-400 border-rose-500/40']">
-            {{ store.vehicleAuto.wheel_master_switch ? '方控接管已启用' : '方控已彻底放行 (不干涉)' }}
-          </span>
-        </div>
-        <span class="text-[15px] text-car-sub font-bold leading-relaxed">
-          独立控制是否接管滚轮下按、静音键与Mode键。如开启米小江且完全不想让工具箱参与方控，可直接关闭此项。独立生效。
-        </span>
-      </div>
-
-      <button
-        @click="toggleWheelMasterSwitch"
-        :class="[
-          'w-[220px] min-h-[76px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-md flex items-center justify-center shrink-0 whitespace-nowrap',
-          store.vehicleAuto.wheel_master_switch
-            ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/25'
-            : 'bg-rose-500/15 border-rose-500 text-rose-400 hover:bg-rose-500/25'
-        ]"
-      >
-        <span>{{ store.vehicleAuto.wheel_master_switch ? '方控接管: 已开启' : '方控接管: 已关闭 (放行)' }}</span>
-      </button>
     </div>
 
     <!-- 1. 方向盘方控接管模式 -->

@@ -351,8 +351,9 @@ public class VehicleAutomationService extends Service {
                         // 4. InputManager / CAR.INPUT (方向盘按键报文)
                         // 5. ecarx_core_server (mModelLFDoor 门控信号)
                         // 放宽串口与系统标签日志级别至 :V，彻底杜绝车门报文被丢弃
-                        ProcessBuilder pb = new ProcessBuilder("logcat", "-T", "1", "-b", "all", "-v", "brief",
-                                "-s", "VehicleDataBuilder:V", "SerialControl_v2_0:V", "VehicleEmulator_v2_0:V", "ECARX@ECP:V", "MCULog:V", "CarSettingLogs:V", "ECP_B_DriveMode:V", "InputManager:V", "CAR.INPUT:V", "ecarx_core:V", "ecarx_core_server:V", "e:V");
+                        // 不在命令行中限制 -s 标签（避免因为底层模块标签变动或漏掉标签导致整包被丢弃）
+                        // 直接全量监听，由我们在 parseLogLine 中进行高效关键字判定！
+                        ProcessBuilder pb = new ProcessBuilder("logcat", "-T", "1", "-b", "all", "-v", "brief");
                         pb.redirectErrorStream(true);
                         logcatProcess = pb.start();
                         AppLogger.i("底层服务", "Logcat 实时监听守护线程已建立就绪");
