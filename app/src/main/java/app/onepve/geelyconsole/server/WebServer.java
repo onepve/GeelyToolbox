@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import app.onepve.geelyconsole.utils.DownloadManager;
 import app.onepve.geelyconsole.utils.SystemUtils;
@@ -35,6 +36,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class WebServer {
+
+    private static final String TAG = "GeelyWebServer";
 
     public interface WebServerCallback {
         void onUrlPushed(String url, String fileName);
