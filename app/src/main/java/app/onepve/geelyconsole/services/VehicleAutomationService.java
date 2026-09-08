@@ -1,0 +1,750 @@
+package app.onepve.geelyconsole.services;
+
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
+import android.util.Log;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import app.onepve.geelyconsole.R;
+import app.onepve.geelyconsole.utils.AdbClient;
+import app.onepve.geelyconsole.utils.AppLogger;
+import app.onepve.geelyconsole.utils.DoorStateManager;
+import app.onepve.geelyconsole.utils.DriveModeManager;
+import app.onepve.geelyconsole.utils.GearStateMachine;
+import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
+import app.onepve.geelyconsole.utils.SystemUtils;
+import app.onepve.geelyconsole.utils.TrunkStateManager;
+import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
+
+/**
+ * 吉利座舱自动化与智能联动常驻守护服务（替代第三方 TSK / Tasker）
+ * 1. 物理状态翻转机：四门及尾门纯物理边沿状态触发，彻底废弃时间防抖锁，开门未完关门毫秒打断
+ * 2. MCU 物理报文锁定：SerialControl_v2_0: 91 02 01 b6(四门) 与 b7(尾门)，阻断 AVM 伪信号
+ * 3. 挡位安全播报：MCULog:GearPosition (2=D 前进挡, 4=R 倒车挡)，天然避开 P 挡蓝牙靠近点亮零误报
+ * 4. 方向盘方控拦截：Mode键/静音短按转360，集成米小江方控兼容模式单选
+ * 5. 蓝牙音频自动接管：监听 A2DP 连接与推流，免点原厂多媒体直接出声
+ */
+public class VehicleAutomationService extends Service {
+
+    private static final String TAG = "VehicleAutomationService";
+    private static final String CHANNEL_ID = "geely_toolbox_daemon";
+    private static final int NOTIF_ID = 1002;
+
+    public static volatile boolean isRunning = false;
+    public static volatile float latestBatteryVoltage = 0.0f;
+    public static volatile boolean voiceMasterSwitch = true;
+    public static volatile boolean wheelMasterSwitch = true;
+
+    // 功能开关
+    private boolean enableDoorFl = false;
+    private boolean enableDoorFlClose = false;
+    private boolean enableDoorFr = false;
+    private boolean enableDoorFrClose = false;
+    private boolean enableDoorRl = false;
+    private boolean enableDoorRlClose = false;
+    private boolean enableDoorRr = false;
+    private boolean enableDoorRrClose = false;
+    private boolean enableDoorRear = false;
+    private boolean enableTrunkOpen = false;
+    private boolean enableTrunkClose = false;
+    private boolean enableGearD = false;
+    private boolean enableGearR = false;
+    private boolean enableGearP = false;
+    private boolean enableGearN = false;
+    private boolean enableGearS = false;
+    private boolean enableModeSmart = true;
+    private boolean enableModeComfort = true;
+    private boolean enableModeEco = true;
+    private boolean enableModeSport = true;
+    private boolean enableTurn360 = false;
+    private boolean enableLightNav = false;
+    private boolean enableFlameoutVoice = false;
+
+    // 驾驶模式标准解耦枚举 (100% 根绝底层各协议数值冲突)
+    public static final int MODE_COMFORT = 1; // 舒适模式
+    public static final int MODE_SPORT   = 2; // 运动模式
+    public static final int MODE_ECO     = 3; // 经济模式
+    public static final int MODE_SMART   = 4; // 智能模式
+
+    // 状态记录变量 (初始化为 -1，首包仅校准基准绝不误播)
+    public static volatile int currentDoorFL = -1;
+    public static volatile int currentDoorFR = -1;
+    public static volatile int currentDoorRL = -1;
+    public static volatile int currentDoorRR = -1;
+    public static volatile int currentTrunk = -1;
+
+    public static volatile int lastGearPos = -1;
+    public static volatile int lastDriveMode = -1;
+    private int lastLightSts = -1;
+    private int lastPowerMode = -1;
+    private int currentSpeedKmH = 0;
+    private boolean is360OpenedByTurn = false;
+
+    // 同状态接触微抖动过滤 (毫秒)
+    private long lastTriggerFL = 0;
+    private long lastTriggerFR = 0;
+    private long lastTriggerRL = 0;
+    private long lastTriggerRR = 0;
+    private long lastTriggerTrunk = 0;
+    private long lastTriggerGear = 0;
+
+    private Thread logcatThread;
+    private Process logcatProcess;
+    private VehicleVoicePlayer voicePlayer;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private SteeringWheelKeyManager wheelKeyManager;
+    private BroadcastReceiver powerReceiver;
+
+    // 四大独立解耦状态管理器
+    private DoorStateManager doorStateManager;
+    private TrunkStateManager trunkStateManager;
+    private GearStateMachine gearStateMachine;
+    private DriveModeManager driveModeManager;
+
+    public static void syncState(Context context) {
+        if (context == null) return;
+        try {
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            boolean voiceMaster = prefs.getBoolean("voice_master_switch", true);
+            boolean wheelMaster = prefs.getBoolean("wheel_master_switch", true);
+            voiceMasterSwitch = voiceMaster;
+            wheelMasterSwitch = wheelMaster;
+
+            boolean doorFl = prefs.getBoolean("voice_enable_door_fl", true);
+            boolean doorFlClose = prefs.getBoolean("voice_enable_door_fl_close", true);
+            boolean doorFr = prefs.getBoolean("voice_enable_door_fr", true);
+            boolean doorFrClose = prefs.getBoolean("voice_enable_door_fr_close", true);
+            boolean doorRl = prefs.getBoolean("voice_enable_door_rl", true);
+            boolean doorRlClose = prefs.getBoolean("voice_enable_door_rl_close", true);
+            boolean doorRr = prefs.getBoolean("voice_enable_door_rr", true);
+            boolean doorRrClose = prefs.getBoolean("voice_enable_door_rr_close", true);
+            boolean doorRear = prefs.getBoolean("voice_enable_door_rear", true);
+            boolean trunkOpen = prefs.getBoolean("voice_enable_trunk_open", true);
+            boolean trunkClose = prefs.getBoolean("voice_enable_trunk_close", true);
+            boolean gearD = prefs.getBoolean("voice_enable_gear_d", true);
+            boolean gearR = prefs.getBoolean("voice_enable_gear_r", true);
+            boolean gearP = prefs.getBoolean("voice_enable_gear_p", true);
+            boolean gearN = prefs.getBoolean("voice_enable_gear_n", true);
+            boolean modeSmart = prefs.getBoolean("voice_enable_mode_smart", true);
+            boolean modeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
+            boolean modeEco = prefs.getBoolean("voice_enable_mode_eco", true);
+            boolean modeSport = prefs.getBoolean("voice_enable_mode_sport", true);
+            boolean turn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
+            boolean lightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
+            boolean flameout = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
+            String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
+            boolean wheelEnabled = wheelMaster && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
+
+            boolean anyVoiceEnabled = voiceMaster && (doorFl || doorFlClose || doorFr || doorFrClose ||
+                                doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
+                                trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
+                                modeSmart || modeComfort || modeEco || modeSport || turn360 ||
+                                lightNav || flameout);
+
+            boolean shouldRun = anyVoiceEnabled || wheelEnabled;
+
+            Intent intent = new Intent(context, VehicleAutomationService.class);
+            if (shouldRun) {
+                SystemUtils.grantOverlayPermissionViaShell(context);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent);
+                } else {
+                    context.startService(intent);
+                }
+            } else {
+                if (isRunning) {
+                    context.stopService(intent);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to sync VehicleAutomationService state: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        isRunning = true;
+        voicePlayer = VehicleVoicePlayer.getInstance(this);
+        wheelKeyManager = new SteeringWheelKeyManager(this);
+
+        // 初始化四大独立状态机
+        doorStateManager = new DoorStateManager(this, voicePlayer);
+        doorStateManager.setListener((fl, fr, rl, rr) -> {
+            currentDoorFL = fl;
+            currentDoorFR = fr;
+            currentDoorRL = rl;
+            currentDoorRR = rr;
+        });
+
+        trunkStateManager = new TrunkStateManager(this, voicePlayer);
+        trunkStateManager.setListener(trunk -> {
+            currentTrunk = trunk;
+        });
+
+        gearStateMachine = new GearStateMachine(this, voicePlayer);
+        gearStateMachine.setListener(gear -> {
+            lastGearPos = gear;
+        });
+
+        driveModeManager = new DriveModeManager(this, voicePlayer);
+        driveModeManager.setListener(mode -> {
+            lastDriveMode = mode;
+        });
+
+        createNotificationChannel();
+        Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ?
+                new Notification.Builder(this, CHANNEL_ID) : new Notification.Builder(this);
+        Notification notification = builder
+                .setContentTitle("吉利控制台 · 智能座舱联动中")
+                .setContentText("原生监听物理信号与方控分发，保障全车安全与便捷")
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .build();
+        startForeground(NOTIF_ID, notification);
+
+        reloadPreferences();
+        wheelKeyManager.syncMediaKeyReceiverState();
+
+        registerPowerStateReceiver();
+        startLogcatReader();
+        AppLogger.i("座舱服务", "车辆启动自动运行守护服务已启动 -> 开启底层门控、挡位与方控全量监听");
+        Log.i(TAG, "VehicleAutomationService started successfully");
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        reloadPreferences();
+        wheelKeyManager.syncMediaKeyReceiverState();
+        return START_STICKY;
+    }
+
+    private void reloadPreferences() {
+        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        voiceMasterSwitch = prefs.getBoolean("voice_master_switch", true);
+        wheelMasterSwitch = prefs.getBoolean("wheel_master_switch", true);
+
+        enableDoorFl = prefs.getBoolean("voice_enable_door_fl", true);
+        enableDoorFlClose = prefs.getBoolean("voice_enable_door_fl_close", true);
+        enableDoorFr = prefs.getBoolean("voice_enable_door_fr", true);
+        enableDoorFrClose = prefs.getBoolean("voice_enable_door_fr_close", true);
+        enableDoorRl = prefs.getBoolean("voice_enable_door_rl", true);
+        enableDoorRlClose = prefs.getBoolean("voice_enable_door_rl_close", true);
+        enableDoorRr = prefs.getBoolean("voice_enable_door_rr", true);
+        enableDoorRrClose = prefs.getBoolean("voice_enable_door_rr_close", true);
+        enableDoorRear = prefs.getBoolean("voice_enable_door_rear", true);
+        enableTrunkOpen = prefs.getBoolean("voice_enable_trunk_open", true);
+        enableTrunkClose = prefs.getBoolean("voice_enable_trunk_close", true);
+        enableGearD = prefs.getBoolean("voice_enable_gear_d", true);
+        enableGearR = prefs.getBoolean("voice_enable_gear_r", true);
+        enableGearP = prefs.getBoolean("voice_enable_gear_p", true);
+        enableGearN = prefs.getBoolean("voice_enable_gear_n", true);
+        enableGearS = prefs.getBoolean("voice_enable_gear_s", true);
+        enableModeSmart = prefs.getBoolean("voice_enable_mode_smart", true);
+        enableModeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
+        enableModeEco = prefs.getBoolean("voice_enable_mode_eco", true);
+        enableModeSport = prefs.getBoolean("voice_enable_mode_sport", true);
+        enableTurn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
+        enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
+        enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
+
+        String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
+        boolean wheelEnabled = wheelMasterSwitch && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
+
+        boolean anyVoiceEnabled = voiceMasterSwitch && (enableDoorFl || enableDoorFlClose || enableDoorFr || enableDoorFrClose ||
+                             enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
+                             enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN || enableGearS ||
+                             enableModeSmart || enableModeComfort || enableModeEco || enableModeSport ||
+                             enableTurn360 || enableLightNav || enableFlameoutVoice);
+
+        boolean anyEnabled = anyVoiceEnabled || wheelEnabled;
+
+        if (!anyEnabled) {
+            stopSelf();
+        }
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "座舱后台常驻服务",
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            channel.setDescription("用于常驻监听车身物理信号、方控与蓝牙音频路由");
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private void registerPowerStateReceiver() {
+        if (powerReceiver != null) return;
+        powerReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (Intent.ACTION_SHUTDOWN.equals(action) ||
+                        "android.intent.action.QUICKBOOT_POWEROFF".equals(action) ||
+                        "com.ecarx.intent.action.ECARX_SHUTDOWN".equals(action)) {
+                    if (enableFlameoutVoice && voicePlayer != null) {
+                        voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品");
+                    }
+                }
+            }
+        };
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_SHUTDOWN);
+        filter.addAction("android.intent.action.QUICKBOOT_POWEROFF");
+        filter.addAction("com.ecarx.intent.action.ECARX_SHUTDOWN");
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+        try {
+            registerReceiver(powerReceiver, filter);
+        } catch (Exception ignored) {}
+    }
+
+    // 正则表达式
+    private static final Pattern CAN_PATTERN =
+            Pattern.compile("key\\s*=\\s*([^,\\s]+).*?data\\s*=\\s*(-?\\d+)");
+    private static final Pattern SERIAL_DOOR_PATTERN =
+            Pattern.compile("91\\s+02\\s+01(?:\\s+[0-9a-fA-F]{1,2}){3}\\s+([0-9a-fA-F]{1,2})\\s+([0-9a-fA-F]{1,2})");
+
+    private void startLogcatReader() {
+        if (logcatThread != null && logcatThread.isAlive()) return;
+
+        logcatThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (isRunning) {
+                    try {
+                        try {
+                            AdbClient.execute(VehicleAutomationService.this, "pm grant " + getPackageName() + " android.permission.READ_LOGS");
+                        } catch (Exception ignored) {}
+
+                        // 核心日志通道: 
+                        // 1. VehicleDataBuilder (CAN 信号)
+                        // 2. SerialControl_v2_0 & VehicleEmulator_v2_0 (MCU 物理串口报文 91 02 01)
+                        // 3. ECARX@ECP & MCULog (MCU 物理挡位 GearPosition 与门控 FL_DOOR_STS)
+                        // 4. InputManager / CAR.INPUT (方向盘按键报文)
+                        // 5. ecarx_core_server (mModelLFDoor 门控信号)
+                        // 放宽串口与系统标签日志级别至 :V，彻底杜绝车门报文被丢弃
+                        // 不在命令行中限制 -s 标签（避免因为底层模块标签变动或漏掉标签导致整包被丢弃）
+                        // 直接全量监听，由我们在 parseLogLine 中进行高效关键字判定！
+                        ProcessBuilder pb = new ProcessBuilder("logcat", "-T", "1", "-b", "all", "-v", "brief");
+                        pb.redirectErrorStream(true);
+                        logcatProcess = pb.start();
+                        AppLogger.i("底层服务", "Logcat 实时监听守护线程已建立就绪");
+
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(logcatProcess.getInputStream()), 1024);
+                        String line;
+                        while (isRunning && (line = reader.readLine()) != null) {
+                            parseLogLine(line);
+                        }
+                    } catch (Exception e) {
+                        Log.w(TAG, "Logcat stream interrupted: " + e.getMessage());
+                    }
+
+                    if (isRunning) {
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException ignored) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }, "VehicleLogcatReader");
+        logcatThread.start();
+    }
+
+    private void parseLogLine(String line) {
+        if (line == null || line.isEmpty()) return;
+
+        // 1. 解析方向盘按键
+        if (wheelKeyManager != null) {
+            int wheelKey = wheelKeyManager.parseKeyFromLine(line);
+            if (wheelKey > 0) {
+                wheelKeyManager.handleWheelKey(wheelKey);
+                return;
+            }
+        }
+
+        // 2. 解析车辆实时车速
+        if (line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")) {
+            int idx = line.indexOf("speed ==");
+            if (idx == -1) idx = line.indexOf("speed=");
+            if (idx != -1) {
+                try {
+                    String sub = line.substring(idx + (line.contains("speed ==") ? 8 : 6)).trim();
+                    StringBuilder num = new StringBuilder();
+                    for (int i = 0; i < sub.length(); i++) {
+                        char c = sub.charAt(i);
+                        if (Character.isDigit(c)) num.append(c);
+                        else if (num.length() > 0) break;
+                    }
+                    if (num.length() > 0) {
+                        currentSpeedKmH = Integer.parseInt(num.toString());
+                    }
+                } catch (Exception ignored) {}
+            }
+            return;
+        }
+
+        // 3. 解析车辆挡位报文: MCULog:GearPosition: x (2=D, 3=N, 4=R, 5=P) 或 VehId=Vehicle_Gear value=0x0x
+        if (line.contains("GearPosition:") || line.contains("VehId=Vehicle_Gear value=0x")) {
+            int gearVal = -1;
+            int idx = line.indexOf("GearPosition:");
+            if (idx != -1) {
+                try {
+                    String sub = line.substring(idx + 13).trim();
+                    gearVal = Integer.parseInt(sub.substring(0, 1));
+                } catch (Exception ignored) {}
+            } else {
+                int gidx = line.indexOf("VehId=Vehicle_Gear value=0x");
+                if (gidx != -1) {
+                    try {
+                        String hex = line.substring(gidx + 27, gidx + 29).trim();
+                        gearVal = Integer.parseInt(hex, 16);
+                    } catch (Exception ignored) {}
+                }
+            }
+            if (gearVal > 0) {
+                handleGearSignal(gearVal);
+                return;
+            }
+        }
+
+        // 4.1 解析底层 MCU 串口车身报文: 91 02 01 ... b6(四门) 与 b7(尾门) (最权威物理硬件通道！)
+        if (line.contains("91 02 01") || (line.contains("91") && line.contains("02 01")) || (line.contains("mcu->mpu") && line.contains("91"))) {
+            try {
+                Matcher sm = SERIAL_DOOR_PATTERN.matcher(line);
+                if (sm.find()) {
+                    int b6 = Integer.parseInt(sm.group(1).trim(), 16);
+                    int b7 = Integer.parseInt(sm.group(2).trim(), 16);
+
+                    // b6 解析四门:
+                    // bit0-1: FL主驾 (00b=开, 01b=关)
+                    // bit2-3: FR副驾 (00b=开, 01b=关)
+                    // bit4-5: RL左后 (00b=开, 01b=关)
+                    // bit6-7: RR右后 (00b=开, 01b=关)
+                    int fl = ((b6 & 0x03) == 0x00) ? 1 : 0;
+                    int fr = (((b6 >> 2) & 0x03) == 0x00) ? 1 : 0;
+                    int rl = (((b6 >> 4) & 0x03) == 0x00) ? 1 : 0;
+                    int rr = (((b6 >> 6) & 0x03) == 0x00) ? 1 : 0;
+
+                    // 分发给四门独立状态机
+                    if (doorStateManager != null) {
+                        doorStateManager.updateDoors(fl, fr, rl, rr, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
+                    }
+
+                    // b7 解析尾门: bit0=0 开, bit0=1 关
+                    int trunk = ((b7 & 0x01) == 0) ? 1 : 0;
+
+                    // 分发给电动尾门独立状态机
+                    if (trunkStateManager != null) {
+                        trunkStateManager.updateTrunk(trunk, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
+                    }
+                    return;
+                }
+            } catch (Exception e) {
+                AppLogger.w("车身门控", "解析串口车门报文异常: " + e.getMessage());
+            }
+        }
+
+        // 4.2 解析原厂 MCU/CAN 独立单门状态容灾 (MCULog:FL_DOOR_STS Open / Close 等)
+        if (line.contains("_DOOR_STS") && (line.contains("MCULog") || line.contains("ECARX@ECP"))) {
+            boolean isOpen = line.contains("Open") || line.contains(":1") || line.contains("=1");
+            int val = isOpen ? 1 : 0;
+            SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+
+            if (line.contains("TRUNK_DOOR_STS") || line.contains("TAILGATE_DOOR_STS") || line.contains("BACK_DOOR_STS")) {
+                if (trunkStateManager != null) {
+                    trunkStateManager.updateTrunk(val, voiceMasterSwitch, prefs);
+                }
+            } else if (doorStateManager != null) {
+                int curFL = doorStateManager.getFL();
+                int curFR = doorStateManager.getFR();
+                int curRL = doorStateManager.getRL();
+                int curRR = doorStateManager.getRR();
+
+                if (line.contains("FL_DOOR_STS")) curFL = val;
+                else if (line.contains("FR_DOOR_STS")) curFR = val;
+                else if (line.contains("RL_DOOR_STS")) curRL = val;
+                else if (line.contains("RR_DOOR_STS")) curRR = val;
+
+                doorStateManager.updateDoors(curFL, curFR, curRL, curRR, voiceMasterSwitch, prefs);
+            }
+            return;
+        }
+
+        // 4.3 解析原厂 core_server 单门状态容灾 (vehicledata----callbacks---mModelLFDoor = 1/0)
+        if (line.contains("vehicledata----callbacks---mModel") && line.contains("Door =")) {
+            SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            if (doorStateManager != null) {
+                int curFL = doorStateManager.getFL();
+                int curFR = doorStateManager.getFR();
+                int curRL = doorStateManager.getRL();
+                int curRR = doorStateManager.getRR();
+
+                if (line.contains("mModelLFDoor =")) curFL = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
+                else if (line.contains("mModelRFDoor =")) curFR = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
+                else if (line.contains("mModelLRDoor =")) curRL = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
+                else if (line.contains("mModelRRDoor =")) curRR = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
+
+                doorStateManager.updateDoors(curFL, curFR, curRL, curRR, voiceMasterSwitch, prefs);
+            }
+            return;
+        }
+
+        // 4.1 解析驾驶模式切换信号 (涵盖 AdaptAPI 9位常量、ComfortModule、MCULog 及 CarSettingLogs)
+        int modeVal = -1;
+
+        // 优先 1: AdaptAPI 9位全局权威常量 (100% 准确、零歧义)
+        if (line.contains("570491138")) {
+            modeVal = MODE_COMFORT; // 舒适模式 (DRIVE_MODE_SELECTION_COMFORT = 570491138)
+        } else if (line.contains("570491139")) {
+            modeVal = MODE_SPORT;   // 运动模式 (DRIVE_MODE_SELECTION_DYNAMIC = 570491139)
+        } else if (line.contains("570491137")) {
+            modeVal = MODE_ECO;     // 经济模式 (DRIVE_MODE_SELECTION_ECO = 570491137)
+        } else if (line.contains("570491158")) {
+            modeVal = MODE_SMART;   // 智能模式 (DRIVE_MODE_SELECTION_ADAPTIVE = 570491158)
+        }
+        // 优先 2: ComfortModule 上报 (DM_FUNC_DRIVE_MODE_SELECT value=X)
+        else if (line.contains("DM_FUNC_DRIVE_MODE_SELECT")) {
+            try {
+                Matcher m = Pattern.compile("DM_FUNC_DRIVE_MODE_SELECT[\\s:]+value[=:\\s]+(\\d+)").matcher(line);
+                if (m.find()) {
+                    int val = Integer.parseInt(m.group(1));
+                    if (val == 1) modeVal = MODE_COMFORT;
+                    else if (val == 2) modeVal = MODE_SPORT;
+                    else if (val == 3) modeVal = MODE_ECO;
+                    else if (val == 6) modeVal = MODE_SMART;
+                }
+            } catch (Exception ignored) {}
+        }
+        // 优先 3: MCU 底盘按键上报 (MCU Report SwitchMode: X)
+        // 吉利缤越 COOL SX11-A3 实体按键映射真实对应:
+        // 0 -> 经济模式 (MODE_ECO)
+        // 1 -> 舒适模式 (MODE_COMFORT)
+        // 2 -> 运动模式 (MODE_SPORT)
+        // 6 -> 智能模式 (MODE_SMART)
+        else if (line.contains("SwitchMode:")) {
+            try {
+                Matcher m = Pattern.compile("SwitchMode:\\s*(\\d+)").matcher(line);
+                if (m.find()) {
+                    int sm = Integer.parseInt(m.group(1));
+                    if (sm == 1) modeVal = MODE_COMFORT;
+                    else if (sm == 0) modeVal = MODE_ECO;
+                    else if (sm == 2) modeVal = MODE_SPORT;
+                    else if (sm == 6) modeVal = MODE_SMART;
+                }
+            } catch (Exception ignored) {}
+        }
+        // 优先 4: MCU TargetMode 与 CarConfig DirveMode
+        else if (line.contains("TargetMode:") || line.contains("DirveMode =")) {
+            try {
+                Matcher m = Pattern.compile("(?:TargetMode:|DirveMode\\s*=)\\s*(\\d+)").matcher(line);
+                if (m.find()) {
+                    int tm = Integer.parseInt(m.group(1));
+                    if (tm == 1 || tm == 3) modeVal = MODE_COMFORT;
+                    else if (tm == 2 || tm == 0) modeVal = MODE_ECO;
+                    else if (tm == 6) modeVal = MODE_SMART;
+                    else if (tm == 4 || tm == 5) modeVal = MODE_SPORT;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        if (modeVal > 0) {
+            handleDriveModeSignal(modeVal);
+            return;
+        }
+
+        // 5. 解析 CAN 数据: parseCanData
+        if (line.contains("parseCanData")) {
+            try {
+                Matcher m = CAN_PATTERN.matcher(line);
+                if (m.find()) {
+                    String key = m.group(1).trim();
+                    int val = Integer.parseInt(m.group(2).trim());
+                    handleCanSignal(key, val);
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 6. 解析 12V 蓄电池物理电压报文 (ecarx_core_server: vehicledata----callbacks---mModelBatteryVolt = 125)
+        if (line.contains("mModelBatteryVolt =")) {
+            try {
+                int idx = line.indexOf("mModelBatteryVolt =");
+                if (idx != -1) {
+                    String sub = line.substring(idx + 19).trim();
+                    StringBuilder num = new StringBuilder();
+                    for (int i = 0; i < sub.length(); i++) {
+                        char c = sub.charAt(i);
+                        if (Character.isDigit(c)) num.append(c);
+                        else if (num.length() > 0) break;
+                    }
+                    if (num.length() > 0) {
+                        int rawVolt = Integer.parseInt(num.toString());
+                        // 12V 蓄电池车规真实数值判定 (有效区间 9.0V ~ 16.5V):
+                        // ecarx_core_server 原始为十进制 10 倍 (如 124 -> 12.4V, 136 -> 13.6V)
+                        // 若为毫伏级 (如 12400mV -> 12.4V)
+                        float volt = -1.0f;
+                        if (rawVolt >= 90 && rawVolt <= 165) {
+                            volt = rawVolt / 10.0f;
+                        } else if (rawVolt >= 900 && rawVolt <= 1650) {
+                            volt = rawVolt / 100.0f;
+                        } else if (rawVolt >= 9000 && rawVolt <= 16500) {
+                            volt = rawVolt / 1000.0f;
+                        }
+
+                        // 只有在 9.0V ~ 16.5V 车规安全范围内才更新并物理落地，坚决杜绝 4.2V 等假信号污染
+                        if (volt >= 9.0f && volt <= 16.5f) {
+                            latestBatteryVoltage = volt;
+                            SharedPreferences sp = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                            sp.edit().putFloat("vehicle_real_battery_volt", volt).commit();
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void handleGearSignal(final int gear) {
+        if (gearStateMachine != null) {
+            gearStateMachine.updateGear(gear, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
+        }
+    }
+
+    /**
+     * 处理驾驶模式切换状态 (智能有人感知状态机：默认智能模式静默，手动切出智能模式后激活全量播报，切回智能模式播报后置0归位)
+     * 模式枚举: MODE_COMFORT=1, MODE_SPORT=2, MODE_ECO=3, MODE_SMART=4 (全局解耦，零错位)
+     */
+    private void handleDriveModeSignal(int mode) {
+        if (driveModeManager != null) {
+            driveModeManager.updateDriveMode(mode, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
+        }
+    }
+
+    private void handleCanSignal(String key, int val) {
+        // 转向灯联动 360 全景影像 (严格车速过滤 <=30km/h)
+        if (enableTurn360 && "TCM_Req_TurnIndicationAct".equals(key)) {
+            if (val == 1 || val == 2) { // 1 左转, 2 右转
+                if (currentSpeedKmH <= 30) {
+                    open360Camera();
+                    is360OpenedByTurn = true;
+                } else {
+                    Log.d(TAG, "车速 " + currentSpeedKmH + " > 30km/h，已自动静默抑制 360 唤起以保护导航画面");
+                }
+            } else if (val == 0) { // 转向灯回正复位
+                if (is360OpenedByTurn) {
+                    close360Camera();
+                    is360OpenedByTurn = false;
+                }
+            }
+        }
+
+        // 大灯联动高德日夜模式
+        if (enableLightNav && "BCM_PositionLightSts".equals(key)) {
+            if (lastLightSts == -1) {
+                lastLightSts = val;
+                return;
+            }
+            if (val == 1 && lastLightSts == 0) {
+                sendAmapDayNightMode(2); // 黑夜模式
+                lastLightSts = 1;
+            } else if (val == 0 && lastLightSts == 1) {
+                sendAmapDayNightMode(0); // 日间模式
+                lastLightSts = 0;
+            }
+        }
+
+        // 电源模式/熄火检测
+        if (enableFlameoutVoice && "PEPS_PowerMode".equals(key)) {
+            if (val == 0 && lastPowerMode > 0) {
+                voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品");
+            }
+            lastPowerMode = val;
+        }
+    }
+
+    private void open360Camera() {
+        try {
+            Intent intent = getPackageManager().getLaunchIntentForPackage("ecarx.camera.calibration");
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                startActivity(intent);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to launch 360: " + e.getMessage());
+        }
+    }
+
+    private void close360Camera() {
+        try {
+            Intent closeIntent = new Intent("ecarx.intent.broadcast.action.ECARX_VR_APP_CLOSE");
+            closeIntent.setData(Uri.parse("ecarx://vr.com/360全景"));
+            closeIntent.setPackage("ecarx.camera.calibration");
+            sendBroadcast(closeIntent);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to close 360: " + e.getMessage());
+        }
+    }
+
+    private void sendAmapDayNightMode(int mode) {
+        try {
+            Intent intent = new Intent("AUTONAVI_STANDARD_BROADCAST_RECV");
+            intent.putExtra("KEY_TYPE", 10048);
+            intent.putExtra("EXTRA_DAY_NIGHT_MODE", mode);
+            intent.setComponent(new ComponentName("com.autonavi.amapauto", "com.autonavi.amapauto.adapter.internal.AmapAutoBroadcastReceiver"));
+            sendBroadcast(intent);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to send Amap broadcast: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        isRunning = false;
+        if (powerReceiver != null) {
+            try {
+                unregisterReceiver(powerReceiver);
+            } catch (Exception ignored) {}
+            powerReceiver = null;
+        }
+        if (logcatProcess != null) {
+            try {
+                logcatProcess.destroy();
+            } catch (Exception ignored) {}
+            logcatProcess = null;
+        }
+        if (logcatThread != null) {
+            logcatThread.interrupt();
+            logcatThread = null;
+        }
+        Log.i(TAG, "VehicleAutomationService stopped");
+    }
+}
