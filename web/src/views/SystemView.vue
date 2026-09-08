@@ -12,9 +12,9 @@
         <div class="flex flex-col space-y-1">
           <div class="flex items-center space-x-2.5">
             <span class="text-[19px] font-black text-car-text tracking-wide">检测到吉利应用商店处于未冻结状态</span>
-            <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500 text-amber-400 text-[12.5px] font-black">建议处置</span>
+            <span class="px-3 py-1 rounded-full bg-rose-500 text-white text-[13px] font-black shadow-sm">建议处置</span>
           </div>
-          <span class="text-[15px] text-car-text/90 font-bold leading-normal">原厂商店后台可能覆盖白名单策略并静默卸载高德地图等第三方软件，强烈建议立即冻结！</span>
+          <span class="text-[15px] text-car-text font-bold leading-normal">原厂商店后台可能覆盖白名单策略并静默卸载高德地图等第三方软件，强烈建议立即冻结！</span>
         </div>
       </div>
       <button 

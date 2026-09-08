@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import app.onepve.geelyconsole.R;
 import app.onepve.geelyconsole.utils.AdbClient;
+import app.onepve.geelyconsole.utils.AppLogger;
 import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
 import app.onepve.geelyconsole.utils.SystemUtils;
 import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
@@ -185,6 +186,7 @@ public class VehicleAutomationService extends Service {
 
         registerPowerStateReceiver();
         startLogcatReader();
+        AppLogger.i("座舱服务", "车辆启动自动运行守护服务已启动 -> 开启底层门控、挡位与方控全量监听");
         Log.i(TAG, "VehicleAutomationService started successfully");
     }
 
@@ -280,7 +282,7 @@ public class VehicleAutomationService extends Service {
     private static final Pattern CAN_PATTERN =
             Pattern.compile("key\\s*=\\s*([^,\\s]+).*?data\\s*=\\s*(-?\\d+)");
     private static final Pattern SERIAL_DOOR_PATTERN =
-            Pattern.compile("91\\s+02\\s+01\\s+[0-9a-fA-F]{2}\\s+[0-9a-fA-F]{2}\\s+[0-9a-fA-F]{2}\\s+([0-9a-fA-F]{2})\\s+([0-9a-fA-F]{2})");
+            Pattern.compile("91\\s+02\\s+01(?:\\s+[0-9a-fA-F]{1,2}){3}\\s+([0-9a-fA-F]{1,2})\\s+([0-9a-fA-F]{1,2})");
 
     private void startLogcatReader() {
         if (logcatThread != null && logcatThread.isAlive()) return;
@@ -296,14 +298,16 @@ public class VehicleAutomationService extends Service {
 
                         // 核心日志通道: 
                         // 1. VehicleDataBuilder (CAN 信号)
-                        // 2. SerialControl_v2_0 (MCU 物理串口报文 91 02 01)
-                        // 3. ECARX@ECP (MCU 物理挡位报文 GearPosition)
+                        // 2. SerialControl_v2_0 & VehicleEmulator_v2_0 (MCU 物理串口报文 91 02 01)
+                        // 3. ECARX@ECP & MCULog (MCU 物理挡位 GearPosition 与门控 FL_DOOR_STS)
                         // 4. InputManager / CAR.INPUT (方向盘按键报文)
-                        // -T 1 强制仅从当前最新开始实时监听，绝不回放旧日志
+                        // 5. ecarx_core_server (mModelLFDoor 门控信号)
+                        // 放宽串口与系统标签日志级别至 :V，彻底杜绝车门报文被丢弃
                         ProcessBuilder pb = new ProcessBuilder("logcat", "-T", "1", "-b", "all", "-v", "brief",
-                                "-s", "VehicleDataBuilder:D", "SerialControl_v2_0:W", "ECARX@ECP:D", "InputManager:V", "CAR.INPUT:V", "ecarx_core:D", "ecarx_core_server:D", "e:D");
+                                "-s", "VehicleDataBuilder:V", "SerialControl_v2_0:V", "VehicleEmulator_v2_0:V", "ECARX@ECP:V", "MCULog:V", "CarSettingLogs:V", "ECP_B_DriveMode:V", "InputManager:V", "CAR.INPUT:V", "ecarx_core:V", "ecarx_core_server:V", "e:V");
                         pb.redirectErrorStream(true);
                         logcatProcess = pb.start();
+                        AppLogger.i("底层服务", "Logcat 实时监听守护线程已建立就绪");
 
                         BufferedReader reader = new BufferedReader(new InputStreamReader(logcatProcess.getInputStream()), 1024);
                         String line;
@@ -384,8 +388,45 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 4. 解析底层 MCU 串口车身报文: 91 02 01 ... b6(四门) 与 b7(尾门)
-        if (line.contains("91 02 01")) {
+        // 4. 解析原厂 MCU/CAN 车门状态 (MCULog:FL_DOOR_STS Open / Close 等)
+        if (line.contains("_DOOR_STS") && (line.contains("MCULog") || line.contains("ECARX@ECP"))) {
+            boolean isOpen = line.contains("Open") || line.contains(":1") || line.contains("=1");
+            int val = isOpen ? 1 : 0;
+            int fl = (lastDoorFL == -1) ? 0 : lastDoorFL;
+            int fr = (lastDoorFR == -1) ? 0 : lastDoorFR;
+            int rl = (lastDoorRL == -1) ? 0 : lastDoorRL;
+            int rr = (lastDoorRR == -1) ? 0 : lastDoorRR;
+            int trunk = (lastTrunk == -1) ? 0 : lastTrunk;
+
+            if (line.contains("FL_DOOR_STS")) fl = val;
+            else if (line.contains("FR_DOOR_STS")) fr = val;
+            else if (line.contains("RL_DOOR_STS")) rl = val;
+            else if (line.contains("RR_DOOR_STS")) rr = val;
+            else if (line.contains("TRUNK_DOOR_STS") || line.contains("TAILGATE_DOOR_STS") || line.contains("BACK_DOOR_STS")) trunk = val;
+
+            handleDoorPhysicalState(fl, fr, rl, rr, trunk);
+            return;
+        }
+
+        // 4.0 解析原厂 core_server 门控状态 (vehicledata----callbacks---mModelLFDoor = 1/0)
+        if (line.contains("vehicledata----callbacks---mModel") && line.contains("Door =")) {
+            int fl = (lastDoorFL == -1) ? 0 : lastDoorFL;
+            int fr = (lastDoorFR == -1) ? 0 : lastDoorFR;
+            int rl = (lastDoorRL == -1) ? 0 : lastDoorRL;
+            int rr = (lastDoorRR == -1) ? 0 : lastDoorRR;
+            int trunk = (lastTrunk == -1) ? 0 : lastTrunk;
+
+            if (line.contains("mModelLFDoor =")) fl = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
+            else if (line.contains("mModelRFDoor =")) fr = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
+            else if (line.contains("mModelLRDoor =")) rl = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
+            else if (line.contains("mModelRRDoor =")) rr = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
+
+            handleDoorPhysicalState(fl, fr, rl, rr, trunk);
+            return;
+        }
+
+        // 4.1 解析底层 MCU 串口车身报文: 91 02 01 ... b6(四门) 与 b7(尾门)
+        if (line.contains("91 02 01") || (line.contains("91") && line.contains("02 01")) || (line.contains("mcu->mpu") && line.contains("91"))) {
             try {
                 Matcher sm = SERIAL_DOOR_PATTERN.matcher(line);
                 if (sm.find()) {
@@ -408,7 +449,9 @@ public class VehicleAutomationService extends Service {
                     handleDoorPhysicalState(fl, fr, rl, rr, trunk);
                     return;
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                AppLogger.w("车身门控", "解析串口车门报文异常: " + e.getMessage());
+            }
         }
 
         // 4.1 解析驾驶模式切换信号 (涵盖 AdaptAPI 9位常量、ComfortModule、MCULog 及 CarSettingLogs)
@@ -516,13 +559,16 @@ public class VehicleAutomationService extends Service {
         // 1. 主驾车门
         if (lastDoorFL == -1) {
             lastDoorFL = fl;
+            AppLogger.i("车身门控", "基准校准: 主驾门物理状态=" + (fl == 1 ? "开" : "关"));
         } else if (fl != lastDoorFL) {
             if (fl == 1) { // 关 -> 开
+                AppLogger.i("车身门控", "捕获物理状态跃变: 主驾车门打开 -> enableDoorFl=" + enableDoorFl);
                 if (enableDoorFl && (now - lastTriggerFL > 300)) {
                     lastTriggerFL = now;
                     voicePlayer.play("door_fl.mp3", "主驾车门打开，请注意后方来车");
                 }
             } else { // 开 -> 关 (立即打断开门语音并播报已关好)
+                AppLogger.i("车身门控", "捕获物理状态跃变: 主驾车门已关好 -> enableDoorFlClose=" + enableDoorFlClose);
                 if (enableDoorFlClose && (now - lastTriggerFL > 300)) {
                     lastTriggerFL = now;
                     voicePlayer.play("door_fl_close.mp3", "主驾车门已关好");
@@ -534,13 +580,16 @@ public class VehicleAutomationService extends Service {
         // 2. 副驾车门
         if (lastDoorFR == -1) {
             lastDoorFR = fr;
+            AppLogger.i("车身门控", "基准校准: 副驾门物理状态=" + (fr == 1 ? "开" : "关"));
         } else if (fr != lastDoorFR) {
             if (fr == 1) { // 关 -> 开
+                AppLogger.i("车身门控", "捕获物理状态跃变: 副驾车门打开 -> enableDoorFr=" + enableDoorFr);
                 if (enableDoorFr && (now - lastTriggerFR > 300)) {
                     lastTriggerFR = now;
                     voicePlayer.play("door_fr.mp3", "欢迎乘车，请注意安全");
                 }
             } else { // 开 -> 关
+                AppLogger.i("车身门控", "捕获物理状态跃变: 副驾车门已关好 -> enableDoorFrClose=" + enableDoorFrClose);
                 if (enableDoorFrClose && (now - lastTriggerFR > 300)) {
                     lastTriggerFR = now;
                     voicePlayer.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
@@ -554,11 +603,13 @@ public class VehicleAutomationService extends Service {
             lastDoorRL = rl;
         } else if (rl != lastDoorRL) {
             if (rl == 1) {
+                AppLogger.i("车身门控", "捕获物理状态跃变: 左后门打开");
                 if ((enableDoorRl || enableDoorRear) && (now - lastTriggerRL > 300)) {
                     lastTriggerRL = now;
                     voicePlayer.play("door_rl.mp3", "左后门打开，请注意车外环境");
                 }
             } else {
+                AppLogger.i("车身门控", "捕获物理状态跃变: 左后门已关好");
                 if (enableDoorRlClose && (now - lastTriggerRL > 300)) {
                     lastTriggerRL = now;
                     voicePlayer.play("door_rl_close.mp3", "左后车门已关好");
@@ -572,11 +623,13 @@ public class VehicleAutomationService extends Service {
             lastDoorRR = rr;
         } else if (rr != lastDoorRR) {
             if (rr == 1) {
+                AppLogger.i("车身门控", "捕获物理状态跃变: 右后门打开");
                 if ((enableDoorRr || enableDoorRear) && (now - lastTriggerRR > 300)) {
                     lastTriggerRR = now;
                     voicePlayer.play("door_rr.mp3", "右后门打开，请注意上下车安全");
                 }
             } else {
+                AppLogger.i("车身门控", "捕获物理状态跃变: 右后门已关好");
                 if (enableDoorRrClose && (now - lastTriggerRR > 300)) {
                     lastTriggerRR = now;
                     voicePlayer.play("door_rr_close.mp3", "右后车门已关好");
@@ -590,11 +643,13 @@ public class VehicleAutomationService extends Service {
             lastTrunk = trunk;
         } else if (trunk != lastTrunk) {
             if (trunk == 1) {
+                AppLogger.i("车身门控", "捕获物理状态跃变: 后备箱打开");
                 if (enableTrunkOpen && (now - lastTriggerTrunk > 300)) {
                     lastTriggerTrunk = now;
                     voicePlayer.play("trunk_open.mp3", "后备箱已打开");
                 }
             } else {
+                AppLogger.i("车身门控", "捕获物理状态跃变: 后备箱关闭");
                 if (enableTrunkClose && (now - lastTriggerTrunk > 300)) {
                     lastTriggerTrunk = now;
                     voicePlayer.play("trunk_close.mp3", "后备箱已关闭");

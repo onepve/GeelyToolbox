@@ -187,6 +187,9 @@ public class SteeringWheelKeyManager {
                 // Mode 键
                 String modeAction = prefs.getString("wheel_action_mode", ACTION_OPEN_360);
                 AppLogger.i("方控总线", "控制台接管模式 -> 触发[Mode键短按] -> 执行动作: " + modeAction);
+                if (!ACTION_DEFAULT.equals(modeAction)) {
+                    suppressOriginalMultimedia();
+                }
                 executeAction(modeAction);
             } else if (keyCode == KEY_MUTE) {
                 // 静音键短按
@@ -285,6 +288,7 @@ public class SteeringWheelKeyManager {
 
     private void open360Camera() {
         try {
+            suppressOriginalMultimedia();
             Intent intent = context.getPackageManager().getLaunchIntentForPackage("ecarx.camera.calibration");
             if (intent == null) {
                 intent = new Intent(Intent.ACTION_MAIN);
@@ -293,9 +297,29 @@ public class SteeringWheelKeyManager {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
             context.startActivity(intent);
             AppLogger.i("方控动作", "已下发指令成功唤起 360 全景环视");
+
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    suppressOriginalMultimedia();
+                }
+            }, 300);
         } catch (Exception e) {
             AppLogger.w("方控动作", "唤起 360 失败: " + e.getMessage());
         }
+    }
+
+    public void suppressOriginalMultimedia() {
+        try {
+            android.app.ActivityManager am = (android.app.ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            if (am != null) {
+                java.lang.reflect.Method m = android.app.ActivityManager.class.getMethod("forceStopPackage", String.class);
+                m.invoke(am, "com.ecarx.multimedia");
+            }
+        } catch (Throwable ignored) {}
+        try {
+            AdbClient.execute(context, "am force-stop com.ecarx.multimedia");
+        } catch (Throwable ignored) {}
     }
 
     private void openAmapNavi() {

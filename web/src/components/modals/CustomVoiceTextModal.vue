@@ -13,10 +13,10 @@
 
       <!-- 文本输入框 (大字号 20px) -->
       <textarea 
-        v-model="customText"
-        rows="4"
+        v-model="customText" 
+        rows="4" 
         placeholder="例如: 老公欢迎回家，系好安全带准备出发啦！"
-        class="w-full bg-car-item border-2 border-car-border rounded-2xl p-5 text-car-text text-[20px] font-black outline-none focus:border-car-accent resize-none leading-relaxed shadow-inner"
+        class="w-full bg-car-card border-2 border-car-border rounded-2xl p-5 text-car-text text-[20px] font-black outline-none focus:border-car-accent resize-none leading-relaxed shadow-inner placeholder-car-sub"
       ></textarea>
 
       <!-- 操作与试听大按钮行 (66px) -->

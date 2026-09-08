@@ -17,7 +17,7 @@
           </div>
         </div>
 
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-3 shrink-0">
           <button 
             @click="fetchLogs"
             class="h-[52px] px-6 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all"
@@ -26,7 +26,7 @@
           </button>
           <button 
             @click="clearLogs"
-            class="h-[52px] px-6 rounded-xl bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+            class="h-[52px] px-6 rounded-xl bg-red-500/10 border-2 border-red-500/30 text-red-400 hover:text-red-300 font-black text-[16px] cursor-pointer hover:border-red-500/60 shadow-sm transition-all"
           >
             清空日志
           </button>
@@ -42,12 +42,23 @@
 
     <template #footer>
       <div class="flex items-center justify-between w-full">
-        <span class="text-[14px] text-car-sub font-bold">
-          提示：守护服务自动监控车门、挡位、方控与 U 盘事件，所有状态切换均在此留下安全审计日志。
-        </span>
+        <div class="flex items-center space-x-3 shrink-0">
+          <button 
+            @click="clearLogs"
+            class="h-[52px] px-6 rounded-xl bg-red-500/15 border-2 border-red-500/40 text-red-400 hover:text-red-300 font-black text-[16px] cursor-pointer hover:border-red-500/80 shadow-sm transition-all"
+          >
+            清空全部日志
+          </button>
+          <button 
+            @click="fetchLogs"
+            class="h-[52px] px-6 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+          >
+            刷新
+          </button>
+        </div>
         <button 
           @click="closeModal('log')"
-          class="h-[56px] px-8 bg-car-item border-2 border-car-border text-car-text font-black text-[18px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
+          class="h-[52px] px-8 bg-car-item border-2 border-car-border text-car-text font-black text-[17px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
         >
           关闭
         </button>

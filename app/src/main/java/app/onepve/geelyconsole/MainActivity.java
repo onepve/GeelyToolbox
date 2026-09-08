@@ -501,7 +501,20 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         });
     }
     @Override
-    public void onActionRequested(String action) {}
+    public void onActionRequested(final String action) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if ("open_files".equals(action)) {
+                    SystemUtils.openFileManager(MainActivity.this);
+                    Toast.makeText(MainActivity.this, "已通过手机端远程打开车机文件管理", Toast.LENGTH_SHORT).show();
+                } else if ("hard_reboot".equals(action)) {
+                    Toast.makeText(MainActivity.this, "收到手机端远程重启指令，正在执行...", Toast.LENGTH_SHORT).show();
+                    SystemUtils.executeReboot(MainActivity.this);
+                }
+            }
+        });
+    }
     @Override
     public void onAdbCommandPushed(final String command) {
         mainHandler.post(new Runnable() {

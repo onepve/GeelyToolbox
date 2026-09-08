@@ -33,20 +33,20 @@
             <div class="text-[17px] font-black text-car-text">1. 自定义台词 (小爱语音合成)</div>
             <span class="text-[12.5px] text-car-sub font-bold">留空不使用</span>
           </div>
-          <textarea 
+          <textarea
             v-model="customText"
             rows="2"
             placeholder="例如: 已挂入前进挡，系好安全带出发啦！"
-            class="w-full bg-[#0A0D12] border-2 border-car-border rounded-xl p-3 text-car-text text-[16px] font-black outline-none focus:border-car-accent resize-none leading-relaxed shadow-inner"
+            class="w-full bg-car-card border-2 border-car-border rounded-xl p-3 text-car-text text-[16px] font-black outline-none focus:border-car-accent resize-none leading-relaxed shadow-inner placeholder-car-sub"
           ></textarea>
           <div class="flex space-x-2.5">
-            <button 
+            <button
               @click="testTtsText"
               class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
             >
-              试听文字 TTS
+              试听台词
             </button>
-            <button 
+            <button
               @click="saveCustomText"
               class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-accent font-black text-[15.5px] cursor-pointer hover:border-car-accent shadow-sm"
             >
@@ -55,17 +55,17 @@
           </div>
         </div>
 
-        <!-- 2. 自定义本地音频文件 (MP3/WAV) -->
+        <!-- 2. 自定义本地音频文件 -->
         <div class="flex-1 bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm space-y-3">
           <div class="flex items-center justify-between">
             <div class="text-[17px] font-black text-car-text">2. 自定义本地音频 (MP3/WAV)</div>
             <span class="text-[12.5px] text-car-sub font-bold">/sdcard/Music/</span>
           </div>
-          <input 
+          <input
             v-model="customFilePath"
             type="text"
             placeholder="例如: /sdcard/Music/gear_d.mp3"
-            class="w-full h-[54px] bg-[#0A0D12] border-2 border-car-border rounded-xl px-3 text-emerald-400 font-mono text-[14.5px] outline-none focus:border-car-accent shadow-inner"
+            class="w-full h-[54px] bg-car-card border-2 border-car-border rounded-xl px-3 text-car-text font-mono text-[14.5px] outline-none focus:border-car-accent shadow-inner placeholder-car-sub"
           />
           <div class="flex space-x-2.5">
             <button 

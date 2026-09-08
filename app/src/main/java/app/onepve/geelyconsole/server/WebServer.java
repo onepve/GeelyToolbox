@@ -154,6 +154,10 @@ public class WebServer {
                         handleApiAction(in, contentLength, out);
                     } else if ("/api/push_cmd".equals(path) && "POST".equalsIgnoreCase(method)) {
                         handleApiPushCmd(in, contentLength, out);
+                    } else if ("/api/get_tts".equals(path)) {
+                        handleApiGetTts(out);
+                    } else if ("/api/save_tts".equals(path) && "POST".equalsIgnoreCase(method)) {
+                        handleApiSaveTts(in, contentLength, out);
                     } else {
                         handleWebPage(out);
                     }
@@ -426,6 +430,50 @@ public class WebServer {
         sendJsonResponse(out, resp);
     }
 
+    private void handleApiGetTts(OutputStream out) throws IOException {
+        android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        JSONObject root = new JSONObject();
+        String[] keys = {
+            "door_fl", "door_fl_close", "door_fr", "door_fr_close",
+            "door_rl", "door_rl_close", "door_rr", "door_rr_close",
+            "trunk_open", "trunk_close",
+            "gear_d", "gear_r", "gear_p", "gear_n",
+            "mode_smart", "mode_comfort", "mode_eco", "mode_sport",
+            "flameout"
+        };
+        try {
+            for (String k : keys) {
+                String val = prefs.getString("custom_voice_text_" + k, "");
+                if (val.isEmpty()) {
+                    val = prefs.getString("custom_text_" + k + ".mp3", "");
+                }
+                root.put(k, val);
+            }
+        } catch (Exception ignored) {}
+        sendJsonResponse(out, root.toString());
+    }
+
+    private void handleApiSaveTts(InputStream in, int length, OutputStream out) throws IOException {
+        byte[] body = readExactBytes(in, length);
+        String bodyStr = new String(body, StandardCharsets.UTF_8);
+        try {
+            JSONObject json = new JSONObject(bodyStr);
+            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            android.content.SharedPreferences.Editor editor = prefs.edit();
+            java.util.Iterator<String> it = json.keys();
+            while (it.hasNext()) {
+                String k = it.next();
+                String text = json.optString(k, "").trim();
+                editor.putString("custom_voice_text_" + k, text);
+                editor.putString("custom_text_" + k + ".mp3", text);
+            }
+            editor.commit();
+            sendJsonResponse(out, "{\"success\":true,\"message\":\"台词已成功保存并实时同步至车机！\"}");
+        } catch (Exception e) {
+            sendJsonResponse(out, "{\"success\":false,\"message\":\"解析失败: " + e.getMessage() + "\"}");
+        }
+    }
+
     private void handleApiAction(InputStream in, int length, OutputStream out) throws IOException {
         byte[] body = readExactBytes(in, length);
         String bodyStr = new String(body, StandardCharsets.UTF_8);
@@ -580,6 +628,23 @@ public class WebServer {
                 "            </div>\n" +
                 "        </div>\n" +
                 "        <div class=\"card\">\n" +
+                "            <div class=\"card-title\"><span>🗣️ 手机远程编辑车身播报台词</span><button class=\"btn btn-secondary\" style=\"width:auto; padding:4px 10px; font-size:12px; margin-top:0;\" onclick=\"loadTtsSettings()\">🔄 刷新</button></div>\n" +
+                "            <div style=\"font-size: 12px; color: #64748b; margin-bottom: 8px;\">在手机上打字更便捷，输入后保存将直接同步并生效至车机系统：</div>\n" +
+                "            <div style=\"display:grid; grid-template-columns: 1fr; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 4px;\">\n" +
+                "                <div><label style=\"font-size:12px; font-weight:bold; color:#334155;\">🚗 前进挡(D挡)播报台词：</label><input id=\"tts-gear_d\" class=\"input-box\" style=\"margin-top:2px; font-size:13px;\" placeholder=\"默认: 已挂入前进挡，系好安全带，祝你一路平安\"></div>\n" +
+                "                <div><label style=\"font-size:12px; font-weight:bold; color:#334155;\">🔙 倒车挡(R挡)播报台词：</label><input id=\"tts-gear_r\" class=\"input-box\" style=\"margin-top:2px; font-size:13px;\" placeholder=\"默认: 已挂入倒车挡，请注意观察后方安全\"></div>\n" +
+                "                <div><label style=\"font-size:12px; font-weight:bold; color:#334155;\">🅿️ 驻车挡(P挡)播报台词：</label><input id=\"tts-gear_p\" class=\"input-box\" style=\"margin-top:2px; font-size:13px;\" placeholder=\"默认: 已挂入驻车挡\"></div>\n" +
+                "                <div><label style=\"font-size:12px; font-weight:bold; color:#334155;\">🚪 主驾开门播报台词：</label><input id=\"tts-door_fl\" class=\"input-box\" style=\"margin-top:2px; font-size:13px;\" placeholder=\"默认: 主驾车门打开，请注意后方来车\"></div>\n" +
+                "                <div><label style=\"font-size:12px; font-weight:bold; color:#334155;\">🚪 主驾关门播报台词：</label><input id=\"tts-door_fl_close\" class=\"input-box\" style=\"margin-top:2px; font-size:13px;\" placeholder=\"默认: 主驾车门已关好\"></div>\n" +
+                "                <div><label style=\"font-size:12px; font-weight:bold; color:#334155;\">🚪 副驾开门播报台词：</label><input id=\"tts-door_fr\" class=\"input-box\" style=\"margin-top:2px; font-size:13px;\" placeholder=\"默认: 欢迎乘车，请注意安全\"></div>\n" +
+                "                <div><label style=\"font-size:12px; font-weight:bold; color:#334155;\">🚪 副驾关门播报台词：</label><input id=\"tts-door_fr_close\" class=\"input-box\" style=\"margin-top:2px; font-size:13px;\" placeholder=\"默认: 副驾已就坐，请系好安全带\"></div>\n" +
+                "                <div><label style=\"font-size:12px; font-weight:bold; color:#334155;\">📦 后备箱打开台词：</label><input id=\"tts-trunk_open\" class=\"input-box\" style=\"margin-top:2px; font-size:13px;\" placeholder=\"默认: 后备箱已打开\"></div>\n" +
+                "                <div><label style=\"font-size:12px; font-weight:bold; color:#334155;\">📦 后备箱关闭台词：</label><input id=\"tts-trunk_close\" class=\"input-box\" style=\"margin-top:2px; font-size:13px;\" placeholder=\"默认: 后备箱已关闭\"></div>\n" +
+                "                <div><label style=\"font-size:12px; font-weight:bold; color:#334155;\">🔑 车辆熄火提醒台词：</label><input id=\"tts-flameout\" class=\"input-box\" style=\"margin-top:2px; font-size:13px;\" placeholder=\"默认: 车辆已熄火，请带好随身物品\"></div>\n" +
+                "            </div>\n" +
+                "            <button class=\"btn btn-primary\" style=\"margin-top:12px;\" onclick=\"saveTtsSettings()\">💾 保存台词并推送至车机</button>\n" +
+                "        </div>\n" +
+                "        <div class=\"card\">\n" +
                 "            <div class=\"card-title\"><span>📥 车机文件反向导出到手机</span><button class=\"btn btn-secondary\" style=\"width:auto; padding:4px 10px; font-size:12px; margin-top:0;\" onclick=\"loadCarFiles()\">🔄 刷新列表</button></div>\n" +
                 "            <div style=\"font-size: 12px; color: #64748b; margin-bottom: 8px;\">点击即可将车机 /sdcard/Download/ 下的日志与 APK 下回到手机：</div>\n" +
                 "            <div id=\"car-files-box\" style=\"max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;\">\n" +
@@ -596,6 +661,30 @@ public class WebServer {
                 "        </div>\n" +
                 "    </div>\n" +
                 "    <script>\n" +
+                "        const ttsKeys = ['gear_d', 'gear_r', 'gear_p', 'door_fl', 'door_fl_close', 'door_fr', 'door_fr_close', 'trunk_open', 'trunk_close', 'flameout'];\n" +
+                "        async function loadTtsSettings() {\n" +
+                "            try {\n" +
+                "                const res = await fetch('/api/get_tts');\n" +
+                "                const data = await res.json();\n" +
+                "                ttsKeys.forEach(k => {\n" +
+                "                    const el = document.getElementById('tts-' + k);\n" +
+                "                    if (el && data[k] !== undefined) el.value = data[k];\n" +
+                "                });\n" +
+                "            } catch(e) {}\n" +
+                "        }\n" +
+                "        loadTtsSettings();\n" +
+                "        async function saveTtsSettings() {\n" +
+                "            const payload = {};\n" +
+                "            ttsKeys.forEach(k => {\n" +
+                "                const el = document.getElementById('tts-' + k);\n" +
+                "                if (el) payload[k] = el.value.trim();\n" +
+                "            });\n" +
+                "            try {\n" +
+                "                const res = await fetch('/api/save_tts', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });\n" +
+                "                const data = await res.json();\n" +
+                "                alert(data.message || '台词已成功保存！');\n" +
+                "            } catch(e) { alert('保存失败: ' + e.message); }\n" +
+                "        }\n" +
                 "        async function loadCarFiles() {\n" +
                 "            const box = document.getElementById('car-files-box');\n" +
                 "            box.innerHTML = '<div style=\"text-align: center; color: #94a3b8; font-size: 12px; padding: 16px;\">正在加载车机文件列表...</div>';\n" +

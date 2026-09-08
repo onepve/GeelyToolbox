@@ -160,7 +160,7 @@ onMounted(() => {
   --bg-item-hover: #28334E;
   --border-color: rgba(255, 255, 255, 0.16); /* 精致清晰的实体边框 */
   --border-light: rgba(255, 255, 255, 0.28);
-  --text-main: #FFFFFF;
+  --text-main: #E2E8F0;        /* 柔和温润高级白，降低夜间刺眼过曝度，防视觉疲劳 */
   --text-sub: #94A3B8;
   --accent-gold: #F59E0B;
   --modal-backdrop: rgba(11, 15, 25, 0.72);

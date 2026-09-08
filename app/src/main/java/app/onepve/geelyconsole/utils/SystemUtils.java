@@ -679,8 +679,11 @@ public class SystemUtils {
         } catch (Exception ignored) {}
     }
 
+    public static boolean openFileManager(Context context) {
+        return openDocumentsUI(context);
+    }
+
     public static boolean openDocumentsUI(Context context) {
-        ensureAppDirectories(context);
 
         // Strategy 1: 标准原生 Action VIEW_DOWNLOADS (原生系统下载目录，官方标准最稳入口，绝不闪退)
         try {
