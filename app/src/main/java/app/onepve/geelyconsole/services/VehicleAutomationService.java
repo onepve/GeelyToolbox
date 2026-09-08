@@ -86,15 +86,8 @@ public class VehicleAutomationService extends Service {
     public static volatile int currentDoorRR = -1;
     public static volatile int currentTrunk = -1;
 
-    private int lastDoorFL = -1;
-    private int lastDoorFR = -1;
-    private int lastDoorRL = -1;
-    private int lastDoorRR = -1;
-    private int lastTrunk = -1;
-    private int lastGearPos = -1;
-    private int isGearVoiceArmed = 0; // 0=未激活(P挡初始/静默), 1=已手动换出P挡(有人操控，激活播报)
-    private int lastDriveMode = -1;
-    private int isDriveModeVoiceArmed = 0; // 0=未激活(智能模式初始/静默), 1=已手动切出智能模式(有人操控，激活播报)
+    public static volatile int lastGearPos = -1;
+    public static volatile int lastDriveMode = -1;
     private int lastLightSts = -1;
     private int lastPowerMode = -1;
     private int currentSpeedKmH = 0;
@@ -114,6 +107,12 @@ public class VehicleAutomationService extends Service {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private SteeringWheelKeyManager wheelKeyManager;
     private BroadcastReceiver powerReceiver;
+
+    // 四大独立解耦状态管理器
+    private DoorStateManager doorStateManager;
+    private TrunkStateManager trunkStateManager;
+    private GearStateMachine gearStateMachine;
+    private DriveModeManager driveModeManager;
 
     public static void syncState(Context context) {
         if (context == null) return;
@@ -186,6 +185,31 @@ public class VehicleAutomationService extends Service {
         isRunning = true;
         voicePlayer = VehicleVoicePlayer.getInstance(this);
         wheelKeyManager = new SteeringWheelKeyManager(this);
+
+        // 初始化四大独立状态机
+        doorStateManager = new DoorStateManager(this, voicePlayer);
+        doorStateManager.setListener((fl, fr, rl, rr) -> {
+            currentDoorFL = fl;
+            currentDoorFR = fr;
+            currentDoorRL = rl;
+            currentDoorRR = rr;
+        });
+
+        trunkStateManager = new TrunkStateManager(this, voicePlayer);
+        trunkStateManager.setListener(trunk -> {
+            currentTrunk = trunk;
+        });
+
+        gearStateMachine = new GearStateMachine(this, voicePlayer);
+        gearStateMachine.setListener(gear -> {
+            lastGearPos = gear;
+        });
+
+        driveModeManager = new DriveModeManager(this, voicePlayer);
+        driveModeManager.setListener(mode -> {
+            lastDriveMode = mode;
+        });
+
         createNotificationChannel();
         Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ?
                 new Notification.Builder(this, CHANNEL_ID) : new Notification.Builder(this);
@@ -408,44 +432,7 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 4. 解析原厂 MCU/CAN 车门状态 (MCULog:FL_DOOR_STS Open / Close 等)
-        if (line.contains("_DOOR_STS") && (line.contains("MCULog") || line.contains("ECARX@ECP"))) {
-            boolean isOpen = line.contains("Open") || line.contains(":1") || line.contains("=1");
-            int val = isOpen ? 1 : 0;
-            int fl = (lastDoorFL == -1) ? 0 : lastDoorFL;
-            int fr = (lastDoorFR == -1) ? 0 : lastDoorFR;
-            int rl = (lastDoorRL == -1) ? 0 : lastDoorRL;
-            int rr = (lastDoorRR == -1) ? 0 : lastDoorRR;
-            int trunk = (lastTrunk == -1) ? 0 : lastTrunk;
-
-            if (line.contains("FL_DOOR_STS")) fl = val;
-            else if (line.contains("FR_DOOR_STS")) fr = val;
-            else if (line.contains("RL_DOOR_STS")) rl = val;
-            else if (line.contains("RR_DOOR_STS")) rr = val;
-            else if (line.contains("TRUNK_DOOR_STS") || line.contains("TAILGATE_DOOR_STS") || line.contains("BACK_DOOR_STS")) trunk = val;
-
-            handleDoorPhysicalState(fl, fr, rl, rr, trunk);
-            return;
-        }
-
-        // 4.0 解析原厂 core_server 门控状态 (vehicledata----callbacks---mModelLFDoor = 1/0)
-        if (line.contains("vehicledata----callbacks---mModel") && line.contains("Door =")) {
-            int fl = (lastDoorFL == -1) ? 0 : lastDoorFL;
-            int fr = (lastDoorFR == -1) ? 0 : lastDoorFR;
-            int rl = (lastDoorRL == -1) ? 0 : lastDoorRL;
-            int rr = (lastDoorRR == -1) ? 0 : lastDoorRR;
-            int trunk = (lastTrunk == -1) ? 0 : lastTrunk;
-
-            if (line.contains("mModelLFDoor =")) fl = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
-            else if (line.contains("mModelRFDoor =")) fr = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
-            else if (line.contains("mModelLRDoor =")) rl = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
-            else if (line.contains("mModelRRDoor =")) rr = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
-
-            handleDoorPhysicalState(fl, fr, rl, rr, trunk);
-            return;
-        }
-
-        // 4.1 解析底层 MCU 串口车身报文: 91 02 01 ... b6(四门) 与 b7(尾门)
+        // 4.1 解析底层 MCU 串口车身报文: 91 02 01 ... b6(四门) 与 b7(尾门) (最权威物理硬件通道！)
         if (line.contains("91 02 01") || (line.contains("91") && line.contains("02 01")) || (line.contains("mcu->mpu") && line.contains("91"))) {
             try {
                 Matcher sm = SERIAL_DOOR_PATTERN.matcher(line);
@@ -463,15 +450,68 @@ public class VehicleAutomationService extends Service {
                     int rl = (((b6 >> 4) & 0x03) == 0x00) ? 1 : 0;
                     int rr = (((b6 >> 6) & 0x03) == 0x00) ? 1 : 0;
 
+                    // 分发给四门独立状态机
+                    if (doorStateManager != null) {
+                        doorStateManager.updateDoors(fl, fr, rl, rr, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
+                    }
+
                     // b7 解析尾门: bit0=0 开, bit0=1 关
                     int trunk = ((b7 & 0x01) == 0) ? 1 : 0;
 
-                    handleDoorPhysicalState(fl, fr, rl, rr, trunk);
+                    // 分发给电动尾门独立状态机
+                    if (trunkStateManager != null) {
+                        trunkStateManager.updateTrunk(trunk, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
+                    }
                     return;
                 }
             } catch (Exception e) {
                 AppLogger.w("车身门控", "解析串口车门报文异常: " + e.getMessage());
             }
+        }
+
+        // 4.2 解析原厂 MCU/CAN 独立单门状态容灾 (MCULog:FL_DOOR_STS Open / Close 等)
+        if (line.contains("_DOOR_STS") && (line.contains("MCULog") || line.contains("ECARX@ECP"))) {
+            boolean isOpen = line.contains("Open") || line.contains(":1") || line.contains("=1");
+            int val = isOpen ? 1 : 0;
+            SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+
+            if (line.contains("TRUNK_DOOR_STS") || line.contains("TAILGATE_DOOR_STS") || line.contains("BACK_DOOR_STS")) {
+                if (trunkStateManager != null) {
+                    trunkStateManager.updateTrunk(val, voiceMasterSwitch, prefs);
+                }
+            } else if (doorStateManager != null) {
+                int curFL = doorStateManager.getFL();
+                int curFR = doorStateManager.getFR();
+                int curRL = doorStateManager.getRL();
+                int curRR = doorStateManager.getRR();
+
+                if (line.contains("FL_DOOR_STS")) curFL = val;
+                else if (line.contains("FR_DOOR_STS")) curFR = val;
+                else if (line.contains("RL_DOOR_STS")) curRL = val;
+                else if (line.contains("RR_DOOR_STS")) curRR = val;
+
+                doorStateManager.updateDoors(curFL, curFR, curRL, curRR, voiceMasterSwitch, prefs);
+            }
+            return;
+        }
+
+        // 4.3 解析原厂 core_server 单门状态容灾 (vehicledata----callbacks---mModelLFDoor = 1/0)
+        if (line.contains("vehicledata----callbacks---mModel") && line.contains("Door =")) {
+            SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            if (doorStateManager != null) {
+                int curFL = doorStateManager.getFL();
+                int curFR = doorStateManager.getFR();
+                int curRL = doorStateManager.getRL();
+                int curRR = doorStateManager.getRR();
+
+                if (line.contains("mModelLFDoor =")) curFL = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
+                else if (line.contains("mModelRFDoor =")) curFR = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
+                else if (line.contains("mModelLRDoor =")) curRL = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
+                else if (line.contains("mModelRRDoor =")) curRR = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
+
+                doorStateManager.updateDoors(curFL, curFR, curRL, curRR, voiceMasterSwitch, prefs);
+            }
+            return;
         }
 
         // 4.1 解析驾驶模式切换信号 (涵盖 AdaptAPI 9位常量、ComfortModule、MCULog 及 CarSettingLogs)
@@ -581,228 +621,10 @@ public class VehicleAutomationService extends Service {
         }
     }
 
-    /**
-     * 纯物理状态翻转机（State Flip Engine）
-     * 彻底废除跨状态时间锁，开门即开，关门毫秒级打断并关好
-     */
-    private void handleDoorPhysicalState(int fl, int fr, int rl, int rr, int trunk) {
-        long now = System.currentTimeMillis();
-        currentDoorFL = fl;
-        currentDoorFR = fr;
-        currentDoorRL = rl;
-        currentDoorRR = rr;
-        currentTrunk = trunk;
-
-        // 1. 主驾车门
-        if (lastDoorFL == -1) {
-            lastDoorFL = fl;
-            AppLogger.i("车身门控", "基准校准: 主驾门物理状态=" + (fl == 1 ? "开" : "关"));
-        } else if (fl != lastDoorFL) {
-            if (fl == 1) { // 关 -> 开
-                AppLogger.i("车身门控", "捕获物理状态跃变: 主驾车门打开 -> enableDoorFl=" + enableDoorFl + ", voiceMaster=" + voiceMasterSwitch);
-                if (voiceMasterSwitch && enableDoorFl && (now - lastTriggerFL > 300)) {
-                    lastTriggerFL = now;
-                    // 120ms 车规功放上电避让缓冲 (QQ音乐同款，防首字吞字)
-                    mainHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (voiceMasterSwitch && currentDoorFL == 1 && voicePlayer != null) {
-                                voicePlayer.play("door_fl.mp3", "主驾车门打开，请注意后方来车");
-                            }
-                        }
-                    }, 120);
-                }
-            } else { // 开 -> 关 (立即打断开门语音并播报已关好)
-                AppLogger.i("车身门控", "捕获物理状态跃变: 主驾车门已关好 -> enableDoorFlClose=" + enableDoorFlClose + ", voiceMaster=" + voiceMasterSwitch);
-                if (voiceMasterSwitch && enableDoorFlClose && (now - lastTriggerFL > 300)) {
-                    lastTriggerFL = now;
-                    voicePlayer.play("door_fl_close.mp3", "主驾车门已关好");
-                }
-            }
-            lastDoorFL = fl;
-        }
-
-        // 2. 副驾车门
-        if (lastDoorFR == -1) {
-            lastDoorFR = fr;
-            AppLogger.i("车身门控", "基准校准: 副驾门物理状态=" + (fr == 1 ? "开" : "关"));
-        } else if (fr != lastDoorFR) {
-            if (fr == 1) { // 关 -> 开
-                AppLogger.i("车身门控", "捕获物理状态跃变: 副驾车门打开 -> enableDoorFr=" + enableDoorFr + ", voiceMaster=" + voiceMasterSwitch);
-                if (voiceMasterSwitch && enableDoorFr && (now - lastTriggerFR > 300)) {
-                    lastTriggerFR = now;
-                    mainHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (voiceMasterSwitch && currentDoorFR == 1 && voicePlayer != null) {
-                                voicePlayer.play("door_fr.mp3", "欢迎乘车，请注意安全");
-                            }
-                        }
-                    }, 120);
-                }
-            } else { // 开 -> 关
-                AppLogger.i("车身门控", "捕获物理状态跃变: 副驾车门已关好 -> enableDoorFrClose=" + enableDoorFrClose + ", voiceMaster=" + voiceMasterSwitch);
-                if (voiceMasterSwitch && enableDoorFrClose && (now - lastTriggerFR > 300)) {
-                    lastTriggerFR = now;
-                    voicePlayer.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
-                }
-            }
-            lastDoorFR = fr;
-        }
-
-        // 3. 左后车门
-        if (lastDoorRL == -1) {
-            lastDoorRL = rl;
-        } else if (rl != lastDoorRL) {
-            if (rl == 1) {
-                AppLogger.i("车身门控", "捕获物理状态跃变: 左后门打开");
-                if (voiceMasterSwitch && (enableDoorRl || enableDoorRear) && (now - lastTriggerRL > 300)) {
-                    lastTriggerRL = now;
-                    mainHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (voiceMasterSwitch && currentDoorRL == 1 && voicePlayer != null) {
-                                voicePlayer.play("door_rl.mp3", "左后门打开，请注意车外环境");
-                            }
-                        }
-                    }, 120);
-                }
-            } else {
-                AppLogger.i("车身门控", "捕获物理状态跃变: 左后门已关好");
-                if (voiceMasterSwitch && enableDoorRlClose && (now - lastTriggerRL > 300)) {
-                    lastTriggerRL = now;
-                    voicePlayer.play("door_rl_close.mp3", "左后车门已关好");
-                }
-            }
-            lastDoorRL = rl;
-        }
-
-        // 4. 右后车门
-        if (lastDoorRR == -1) {
-            lastDoorRR = rr;
-        } else if (rr != lastDoorRR) {
-            if (rr == 1) {
-                AppLogger.i("车身门控", "捕获物理状态跃变: 右后门打开");
-                if (voiceMasterSwitch && (enableDoorRr || enableDoorRear) && (now - lastTriggerRR > 300)) {
-                    lastTriggerRR = now;
-                    mainHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (voiceMasterSwitch && currentDoorRR == 1 && voicePlayer != null) {
-                                voicePlayer.play("door_rr.mp3", "右后门打开，请注意上下车安全");
-                            }
-                        }
-                    }, 120);
-                }
-            } else {
-                AppLogger.i("车身门控", "捕获物理状态跃变: 右后门已关好");
-                if (voiceMasterSwitch && enableDoorRrClose && (now - lastTriggerRR > 300)) {
-                    lastTriggerRR = now;
-                    voicePlayer.play("door_rr_close.mp3", "右后车门已关好");
-                }
-            }
-            lastDoorRR = rr;
-        }
-
-        // 5. 电动尾门
-        if (lastTrunk == -1) {
-            lastTrunk = trunk;
-        } else if (trunk != lastTrunk) {
-            if (trunk == 1) {
-                AppLogger.i("车身门控", "捕获物理状态跃变: 后备箱打开");
-                if (voiceMasterSwitch && enableTrunkOpen && (now - lastTriggerTrunk > 300)) {
-                    lastTriggerTrunk = now;
-                    mainHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (voiceMasterSwitch && currentTrunk == 1 && voicePlayer != null) {
-                                voicePlayer.play("trunk_open.mp3", "后备箱已打开");
-                            }
-                        }
-                    }, 120);
-                }
-            } else {
-                AppLogger.i("车身门控", "捕获物理状态跃变: 后备箱关闭");
-                if (voiceMasterSwitch && enableTrunkClose && (now - lastTriggerTrunk > 300)) {
-                    lastTriggerTrunk = now;
-                    voicePlayer.play("trunk_close.mp3", "后备箱已关闭");
-                }
-            }
-            lastTrunk = trunk;
-        }
-    }
-
-    /**
-     * 处理挡位状态 (智能有人感知状态机：默认P挡静默，手动换出P挡后变量置1激活全量播报，换回P挡播报后置0归位)
-     */
     private void handleGearSignal(final int gear) {
-        if (lastGearPos == -1) {
-            lastGearPos = gear; // 启动首包仅记录基准，坚决不盲目播报
-            // 若开机不是处于停泊 P 挡 (5)，则说明车辆已处于行车态，提前激活
-            if (gear != 5) {
-                isGearVoiceArmed = 1;
-            }
-            return;
+        if (gearStateMachine != null) {
+            gearStateMachine.updateGear(gear, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
         }
-
-        // 挡位未发生跃变，跳过
-        if (gear == lastGearPos) return;
-
-        Log.i(TAG, "Gear changed: " + lastGearPos + " -> " + gear + ", isGearVoiceArmed=" + isGearVoiceArmed);
-
-        // 核心状态机逻辑:
-        // 1. 从 P 挡 (5) 换出到其他任意挡位 (D=2, N=3, R=4, S=6/7) -> 证实车内有人主动操作，状态机置 1 激活！
-        if (lastGearPos == 5 && gear != 5) {
-            isGearVoiceArmed = 1;
-            Log.i(TAG, "车主手动换出P挡，挡位语音已激活 (isGearVoiceArmed=1)");
-        }
-
-        // 2. 在激活状态下 (isGearVoiceArmed == 1 且 voiceMasterSwitch 开启)，按需正常播报各个挡位语音 (彻底移除跨挡1.5s死等拦截)
-        if (voiceMasterSwitch && isGearVoiceArmed == 1) {
-            // 挂入 D 挡 (2)
-            if (gear == 2) {
-                if (enableGearD) {
-                    voicePlayer.play("gear_d.mp3", "已挂入前进挡，系好安全带，祝你一路平安");
-                }
-            }
-            // 挂入 R 挡 (4) - 倒车挡专属优化: 延时 150ms 避开 AVM 倒车影像与倒车雷达的初始系统静音瞬态
-            else if (gear == 4) {
-                if (enableGearR) {
-                    mainHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (lastGearPos == 4) {
-                                voicePlayer.play("gear_r.mp3", "已挂入倒车挡，请注意观察后方安全");
-                            }
-                        }
-                    }, 150);
-                }
-            }
-            // 挂入 N 挡 (3)
-            else if (gear == 3) {
-                if (enableGearN) {
-                    voicePlayer.play("gear_n.mp3", "已挂入空挡");
-                }
-            }
-            // 挂入 S 挡 (6 或 7)
-            else if (gear == 6 || gear == 7) {
-                if (enableGearS) {
-                    voicePlayer.play("gear_s.mp3", "已挂入运动挡，动力充沛");
-                }
-            }
-            // 挂回 P 挡 (5): 播报一次驻车挡，随后立刻将状态机置 0 归位！
-            else if (gear == 5) {
-                if (enableGearP) {
-                    voicePlayer.play("gear_p.mp3", "已挂入驻车挡");
-                }
-                isGearVoiceArmed = 0; // 归零！后续再次进入休眠或蓝牙心跳时绝对静默
-                Log.i(TAG, "已挂入P挡，状态机归零 (isGearVoiceArmed=0)");
-            }
-        } else {
-            Log.d(TAG, "未激活态(isGearVoiceArmed=0)，跳过挡位播报，防止蓝牙唤醒误报");
-        }
-
-        lastGearPos = gear;
     }
 
     /**
@@ -810,56 +632,9 @@ public class VehicleAutomationService extends Service {
      * 模式枚举: MODE_COMFORT=1, MODE_SPORT=2, MODE_ECO=3, MODE_SMART=4 (全局解耦，零错位)
      */
     private void handleDriveModeSignal(int mode) {
-        if (lastDriveMode == -1) {
-            lastDriveMode = mode; // 启动首包仅记录基准，坚决不播报
-            if (mode != MODE_SMART) { // 若开机不是默认智能模式，则激活
-                isDriveModeVoiceArmed = 1;
-            }
-            return;
+        if (driveModeManager != null) {
+            driveModeManager.updateDriveMode(mode, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
         }
-        if (mode == lastDriveMode) return;
-
-        Log.i(TAG, "DriveMode changed: " + lastDriveMode + " -> " + mode + ", isDriveModeVoiceArmed=" + isDriveModeVoiceArmed);
-
-        // 核心状态机逻辑:
-        // 1. 从 智能模式 (MODE_SMART) 切换到其他任意模式 -> 证实车主主动按键切换，激活状态机！
-        if (lastDriveMode == MODE_SMART && mode != MODE_SMART) {
-            isDriveModeVoiceArmed = 1;
-            Log.i(TAG, "车主手动切出智能模式，驾驶模式语音已激活 (isDriveModeVoiceArmed=1)");
-        }
-
-        // 2. 在激活状态下 (isDriveModeVoiceArmed == 1 且 voiceMasterSwitch 开启)，按需播报各个模式
-        if (voiceMasterSwitch && isDriveModeVoiceArmed == 1) {
-            switch (mode) {
-                case MODE_COMFORT:
-                    if (enableModeComfort) {
-                        voicePlayer.play("mode_comfort.mp3", "舒适模式");
-                    }
-                    break;
-                case MODE_SPORT:
-                    if (enableModeSport) {
-                        voicePlayer.play("mode_sport.mp3", "运动模式");
-                    }
-                    break;
-                case MODE_ECO:
-                    if (enableModeEco) {
-                        voicePlayer.play("mode_eco.mp3", "经济模式");
-                    }
-                    break;
-                case MODE_SMART:
-                    // 切回智能模式: 播报一次，随后立即将状态机置 0 归位！
-                    if (enableModeSmart) {
-                        voicePlayer.play("mode_smart.mp3", "智能模式");
-                    }
-                    isDriveModeVoiceArmed = 0; // 归零！熄火或休眠开机自动恢复智能模式时绝对静默
-                    Log.i(TAG, "已切换为智能模式并播报完成，状态机归零 (isDriveModeVoiceArmed=0)");
-                    break;
-            }
-        } else {
-            Log.d(TAG, "未激活态(isDriveModeVoiceArmed=0)，跳过驾驶模式播报，防止唤醒误报");
-        }
-
-        lastDriveMode = mode;
     }
 
     private void handleCanSignal(String key, int val) {
