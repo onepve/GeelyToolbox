@@ -65,9 +65,11 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, showToast } from '../../store';
+
+let voltTimer = null;
 
 const batteryStatus = computed(() => {
   let v = null;
@@ -79,11 +81,12 @@ const batteryStatus = computed(() => {
     v = store.deviceInfo.battery_volt / 10.0;
   }
 
-  if (!v || v <= 0) {
+  // 车规安全区间校验：必须在 9.0V ~ 16.5V 范围内，低于 9V 坚决视为未就绪，彻底杜绝 4.2V 假报警
+  if (!v || v < 9.0 || v > 16.5) {
     return {
       hasVolt: false,
       voltStr: '--',
-      text: '传感器检测中',
+      text: '传感器采集中...',
       desc: '正在监听车身 CAN 总线物理电压报文，请稍候...',
       badgeClass: 'bg-car-item border border-car-border text-car-sub',
       dotClass: 'bg-amber-400 animate-pulse'
@@ -132,17 +135,33 @@ const batteryStatus = computed(() => {
   }
 });
 
-function refreshVolt() {
+function fetchVoltSilently() {
   try {
     const raw = bridge.call('getDeviceInfo');
     if (raw) {
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
       Object.assign(store.deviceInfo, parsed);
-      if (parsed.real_battery_volt && parsed.real_battery_volt > 0) {
+      if (parsed.real_battery_volt && parsed.real_battery_volt >= 9.0 && parsed.real_battery_volt <= 16.5) {
         store.batteryVoltage = parsed.real_battery_volt;
       }
     }
   } catch (e) {}
+}
+
+function refreshVolt() {
+  fetchVoltSilently();
   showToast('已刷新蓄电池电压检测');
 }
+
+onMounted(() => {
+  fetchVoltSilently();
+  voltTimer = setInterval(fetchVoltSilently, 2000); // 打开弹窗期间每 2 秒自适应实时刷新
+});
+
+onUnmounted(() => {
+  if (voltTimer) {
+    clearInterval(voltTimer);
+    voltTimer = null;
+  }
+});
 </script>

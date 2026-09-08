@@ -27,7 +27,7 @@ export const store = reactive({
     whitelist: true,
     multimedia_frozen: false,
     appstore_frozen: false,
-    battery_volt: 126,
+    battery_volt: 0,
     car_ip: '127.0.0.1'
   },
   doors: {

@@ -4,17 +4,6 @@
     <div class="flex items-center">
       <span class="text-[20px] font-black text-car-text tracking-wide mr-2.5">吉利智驾</span>
       <span class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-text font-extrabold border border-car-border">v{{ displayVersion }}</span>
-
-      <!-- 测试版专有高亮微胶囊 (正式版自动隐藏，纯净美观) -->
-      <span 
-        v-if="isBeta"
-        @click="openAbout"
-        class="ml-2 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[11px] font-black tracking-wider shadow-sm flex items-center cursor-pointer hover:bg-amber-500/30 transition-all"
-        title="当前运行为测试通道版本 (Beta)"
-      >
-        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5 animate-pulse"></span>
-        BETA
-      </span>
     </div>
 
     <!-- 中部状态指示器 (微胶囊流) -->
@@ -76,8 +65,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
+
+let topBarTimer = null;
 
 const displayVersion = computed(() => {
   return store.deviceInfo.version || '1.4.4';
@@ -137,16 +128,36 @@ const statusPills = computed(() => {
       onClick: () => handleStoreCapsuleClick() 
     },
     { 
-      text: `白名单: ${store.deviceInfo.whitelist ? '已放行' : '未放行'}`, 
-      dotClass: store.deviceInfo.whitelist ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-rose-500 shadow-[0_0_6px_#EF4444]',
-      onClick: () => handleWhitelistCapsuleClick() 
-    },
-    { 
       text: `IP: ${store.deviceInfo.car_ip || '127.0.0.1'}`, 
       dotClass: 'bg-sky-500 shadow-[0_0_6px_#0EA5E9]',
       onClick: () => openModal('qrCode') 
     }
   ];
+});
+
+function autoPollDeviceInfo() {
+  try {
+    const raw = bridge.call('getDeviceInfo');
+    if (raw) {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      Object.assign(store.deviceInfo, parsed);
+      if (parsed.real_battery_volt && parsed.real_battery_volt >= 9.0 && parsed.real_battery_volt <= 16.5) {
+        store.batteryVoltage = parsed.real_battery_volt;
+      }
+    }
+  } catch (e) {}
+}
+
+onMounted(() => {
+  autoPollDeviceInfo();
+  topBarTimer = setInterval(autoPollDeviceInfo, 2500); // 2.5 秒自适应心跳，电瓶与IP变化秒级同步
+});
+
+onUnmounted(() => {
+  if (topBarTimer) {
+    clearInterval(topBarTimer);
+    topBarTimer = null;
+  }
 });
 
 function handleStoreCapsuleClick() {
@@ -164,10 +175,6 @@ function handleStoreCapsuleClick() {
       }
     });
   }
-}
-
-function handleWhitelistCapsuleClick() {
-  showToast(store.deviceInfo.whitelist ? '第三方 APK 验证白名单已成功放行' : '白名单未放行，建议保持放行');
 }
 
 function toggleTheme() {

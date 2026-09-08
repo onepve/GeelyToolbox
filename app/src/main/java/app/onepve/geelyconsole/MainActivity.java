@@ -202,11 +202,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     protected void onResume() {
         super.onResume();
         isForeground = true;
+        FloatingWindowService.isMainActivityInForeground = true;
         currentActivity = new WeakReference<>(this);
         hideSystemUI();
         mainHandler.post(statusTicker);
 
-        // 前台自适应：当控制台处于前台大屏展示时，隐藏悬浮小胶囊，彻底杜绝悬浮窗遮挡顶栏
+        // 前台自适应：当控制台处于前台大屏展示时，隐藏悬浮小胶囊，彻底杜绝悬浮窗遮挡顶栏与页面内闪烁
         try {
             Intent hidePill = new Intent(this, FloatingWindowService.class);
             hidePill.setAction(FloatingWindowService.ACTION_HIDE);
@@ -238,11 +239,18 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     @Override
     protected void onPause() {
         super.onPause();
-        isForeground = false;
+        // 关键修复：坚决禁止在 onPause 中恢复悬浮胶囊！
+        // 在应用内部切换页面、打开弹窗或输入焦点变化时均会触发 onPause，在此处恢复胶囊会导致胶囊疯狂闪现！
         mainHandler.removeCallbacks(statusTicker);
+    }
 
-        // 后台自适应：切到桌面或其他车载应用时，按用户设置恢复展示悬浮小胶囊
+    @Override
+    protected void onStop() {
+        super.onStop();
+        isForeground = false;
+        FloatingWindowService.isMainActivityInForeground = false;
         try {
+            // 真正退到桌面或其他外部车载应用（onStop）时，才按用户设置挂载恢复悬浮小胶囊
             android.content.SharedPreferences sp = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             if (sp.getBoolean("floating_enabled", false)) {
                 Intent showPill = new Intent(this, FloatingWindowService.class);
@@ -250,19 +258,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 startService(showPill);
             }
         } catch (Exception ignored) {}
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        try {
-            // 切到桌面或后台时，如果开启了悬浮胶囊，强力确保胶囊可见挂载
-            android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            if (prefs.getBoolean("floating_enabled", false)) {
-                FloatingWindowService.ensureServiceStarted(this);
-            }
-        } catch (Exception ignored) {
-        }
     }
 
     @Override
@@ -586,6 +581,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
                 if (batteryVolt < 9.0f || batteryVolt > 16.5f) {
                     batteryVolt = 0.0f;
+                    try {
+                        prefs.edit().putFloat("vehicle_real_battery_volt", 0.0f).commit();
+                    } catch (Exception ignored) {}
                 }
                 obj.put("real_battery_volt", batteryVolt > 0 ? (double)batteryVolt : 0.0);
                 obj.put("battery_volt", batteryVolt > 0 ? (int)(batteryVolt * 10) : 0);

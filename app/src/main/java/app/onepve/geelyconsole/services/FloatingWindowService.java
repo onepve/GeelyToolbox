@@ -48,6 +48,7 @@ public class FloatingWindowService extends Service {
     public static final String EXTRA_CODE = "extra_code";
 
     public static boolean isRunning = false;
+    public static volatile boolean isMainActivityInForeground = false;
 
     private WindowManager wm;
     private View pillView;
@@ -216,6 +217,11 @@ public class FloatingWindowService extends Service {
     }
 
     private void showPill() {
+        if (isMainActivityInForeground) {
+            Log.i(TAG, "MainActivity is in foreground, suppressing floating pill.");
+            hidePill();
+            return;
+        }
         if (visible && pillView != null && pillView.isAttachedToWindow()) {
             updatePillContent();
             applyThemeColors();
