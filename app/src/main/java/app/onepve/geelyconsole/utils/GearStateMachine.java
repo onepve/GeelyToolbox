@@ -67,25 +67,21 @@ public class GearStateMachine {
             isGearVoiceArmed = 1;
         }
 
-        // 2. 播报判定
-        if (voiceMasterSwitch && isGearVoiceArmed == 1) {
-            boolean enableD = prefs.getBoolean("enable_gear_d", true);
-            boolean enableR = prefs.getBoolean("enable_gear_r", true);
-            boolean enableN = prefs.getBoolean("enable_gear_n", true);
-            boolean enableS = prefs.getBoolean("enable_gear_s", true);
-            boolean enableP = prefs.getBoolean("enable_gear_p", true);
+        // 2. 播报判定 (默认全开启，即使开机处于初始态也按需激活)
+        if (voiceMasterSwitch) {
+            boolean enableD = prefs.getBoolean("voice_enable_gear_d", true) && prefs.getBoolean("enable_gear_d", true);
+            boolean enableR = prefs.getBoolean("voice_enable_gear_r", true) && prefs.getBoolean("enable_gear_r", true);
+            boolean enableN = prefs.getBoolean("voice_enable_gear_n", true) && prefs.getBoolean("enable_gear_n", true);
+            boolean enableS = prefs.getBoolean("voice_enable_gear_s", true) && prefs.getBoolean("enable_gear_s", true);
+            boolean enableP = prefs.getBoolean("voice_enable_gear_p", true) && prefs.getBoolean("enable_gear_p", true);
 
             if (gear == 2) { // D 挡
                 if (enableD && voicePlayer != null) {
                     voicePlayer.play("gear_d.mp3", "已挂入前进挡，系好安全带，祝你一路平安");
                 }
-            } else if (gear == 4) { // R 挡 (避让 AVM 倒车影像与雷达瞬态 150ms)
-                if (enableR) {
-                    mainHandler.postDelayed(() -> {
-                        if (lastGearPos == 4 && voicePlayer != null) {
-                            voicePlayer.play("gear_r.mp3", "已挂入倒车挡，请注意观察后方安全");
-                        }
-                    }, 150);
+            } else if (gear == 4) { // R 挡 (直接播报抗衰减倒车语音)
+                if (enableR && voicePlayer != null) {
+                    voicePlayer.play("gear_r.mp3", "已挂入倒车挡，请注意观察后方安全");
                 }
             } else if (gear == 3) { // N 挡
                 if (enableN && voicePlayer != null) {

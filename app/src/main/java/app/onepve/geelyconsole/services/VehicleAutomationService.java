@@ -546,27 +546,33 @@ public class VehicleAutomationService extends Service {
             } catch (Exception ignored) {}
         }
         // 优先 3: MCU 底盘按键上报 (MCU Report SwitchMode: X)
+        // 吉利缤越 COOL SX11-A3 实体按键映射真实对应:
+        // 0 -> 经济模式 (MODE_ECO)
+        // 1 -> 舒适模式 (MODE_COMFORT)
+        // 2 -> 运动模式 (MODE_SPORT)
+        // 6 -> 智能模式 (MODE_SMART)
         else if (line.contains("SwitchMode:")) {
             try {
                 Matcher m = Pattern.compile("SwitchMode:\\s*(\\d+)").matcher(line);
                 if (m.find()) {
                     int sm = Integer.parseInt(m.group(1));
                     if (sm == 1) modeVal = MODE_COMFORT;
-                    else if (sm == 0) modeVal = MODE_SPORT;
-                    else if (sm == 3) modeVal = MODE_ECO;
-                    else if (sm == 2 || sm == 6) modeVal = MODE_SMART;
+                    else if (sm == 0) modeVal = MODE_ECO;
+                    else if (sm == 2) modeVal = MODE_SPORT;
+                    else if (sm == 6) modeVal = MODE_SMART;
                 }
             } catch (Exception ignored) {}
         }
-        // 优先 4: MCU TargetMode 与 CarConfig DirveMode (注意: 在此层 6 对应 SPORT 运动模式!)
+        // 优先 4: MCU TargetMode 与 CarConfig DirveMode
         else if (line.contains("TargetMode:") || line.contains("DirveMode =")) {
             try {
                 Matcher m = Pattern.compile("(?:TargetMode:|DirveMode\\s*=)\\s*(\\d+)").matcher(line);
                 if (m.find()) {
                     int tm = Integer.parseInt(m.group(1));
                     if (tm == 1 || tm == 3) modeVal = MODE_COMFORT;
-                    else if (tm == 2) modeVal = MODE_ECO;
-                    else if (tm == 6) modeVal = MODE_SPORT; // 核心！在 MCU/DirveMode 层 6 为运动模式！
+                    else if (tm == 2 || tm == 0) modeVal = MODE_ECO;
+                    else if (tm == 6) modeVal = MODE_SMART;
+                    else if (tm == 4 || tm == 5) modeVal = MODE_SPORT;
                 }
             } catch (Exception ignored) {}
         }

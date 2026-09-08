@@ -28,68 +28,31 @@
       </button>
     </div>
 
-    <!-- 专车机型协议与流光微胶囊选择器 (支持多机型展示与切换，默认自动感知高亮) -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl">
-      <div class="flex items-center justify-between pb-4 mb-4 border-b border-car-border/60">
-        <div class="flex items-center">
-          <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10B981] mr-3"></span>
-          <span class="text-[21px] font-black text-car-text">专车协议与车型适配</span>
-        </div>
-        <!-- 核心流光高亮微胶囊 -->
-        <div class="px-4 py-1.5 rounded-full bg-car-accent-bg border border-car-accent/50 flex items-center shadow-sm">
-          <span class="text-[14.5px] text-car-accent-text font-black">
-            👑 {{ currentModelSpec.name }} 指定专用协议 (已自动适配)
-          </span>
-        </div>
-      </div>
-
-      <!-- 可选机型微胶囊流 -->
-      <div class="flex flex-wrap items-center">
-        <button 
-          v-for="model in supportedModels"
-          :key="model.id"
-          @click="selectCarModel(model.id)"
-          :class="[
-            'px-5 py-2.5 rounded-2xl font-black text-[15.5px] cursor-pointer transition-all mr-3 mb-2 flex items-center',
-            selectedModelId === model.id 
-              ? 'bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25 shadow-md' 
-              : 'bg-car-item border border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
-          ]"
-        >
-          <span v-if="selectedModelId === model.id" class="w-2 h-2 rounded-full bg-car-accent mr-2 shadow-[0_0_6px_var(--accent-gold)]"></span>
-          <span>{{ model.label }}</span>
-          <span v-if="model.isPrimary" class="ml-2 text-[12px] px-2 py-0.5 rounded bg-car-accent/20 text-car-accent border border-car-accent/40 font-extrabold">指定专用</span>
-        </button>
-      </div>
-      <div class="text-[14px] text-car-sub/90 font-bold mt-2">
-        说明：系统基于亿咖通 E02 (IHU516G) 底层 CAN/MCU 总线自动嗅探识别。支持不同吉利车机协议平滑切换。
-      </div>
-    </div>
-
-    <!-- 实时车门物理信号探针 (方便实车调试，直观反映底层电平跃变) -->
+    <!-- 实时车身物理信号探针 (四门、尾门、挡位、模式 全量直观反映底层电平跃变) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 shadow-xl">
       <div class="flex items-center justify-between pb-3 mb-3 border-b border-car-border/60">
         <div class="flex items-center space-x-2.5">
           <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10B981]"></span>
-          <span class="text-[18.5px] font-black text-car-text">车身门控信号实时探针 (实车调试专用)</span>
+          <span class="text-[18.5px] font-black text-car-text">车身全域物理信号实时探针 (实车调试专用)</span>
         </div>
         <span class="text-[13.5px] text-car-sub font-bold">
-          底层 MCU 串口 91 02 01 与 CAN 广播全量双向监听，开门毫秒级点亮
+          底层 MCU 串口 91 02 01、TCU 换挡与驾驶模式广播全量监听，动作毫秒级点亮
         </span>
       </div>
 
-      <div class="grid grid-cols-5 gap-3">
+      <!-- 第一排：四门与电动尾门 -->
+      <div class="grid grid-cols-5 gap-3 mb-3">
         <!-- 主驾门 -->
         <div 
           :class="[
-            'p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
+            'p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
             doorStatus.fl === 1 
               ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
               : 'bg-car-item border-car-border text-car-sub'
           ]"
         >
-          <span class="text-[13.5px] font-bold">主驾车门 (FL)</span>
-          <span class="text-[17px] font-black mt-1">
+          <span class="text-[13px] font-bold">主驾车门 (FL)</span>
+          <span class="text-[16px] font-black mt-1">
             {{ doorStatus.fl === 1 ? '● 物理打开' : (doorStatus.fl === 0 ? '○ 已关好' : '采集中...') }}
           </span>
         </div>
@@ -97,14 +60,14 @@
         <!-- 副驾门 -->
         <div 
           :class="[
-            'p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
+            'p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
             doorStatus.fr === 1 
               ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
               : 'bg-car-item border-car-border text-car-sub'
           ]"
         >
-          <span class="text-[13.5px] font-bold">副驾车门 (FR)</span>
-          <span class="text-[17px] font-black mt-1">
+          <span class="text-[13px] font-bold">副驾车门 (FR)</span>
+          <span class="text-[16px] font-black mt-1">
             {{ doorStatus.fr === 1 ? '● 物理打开' : (doorStatus.fr === 0 ? '○ 已关好' : '采集中...') }}
           </span>
         </div>
@@ -112,14 +75,14 @@
         <!-- 左后门 -->
         <div 
           :class="[
-            'p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
+            'p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
             doorStatus.rl === 1 
               ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
               : 'bg-car-item border-car-border text-car-sub'
           ]"
         >
-          <span class="text-[13.5px] font-bold">左后车门 (RL)</span>
-          <span class="text-[17px] font-black mt-1">
+          <span class="text-[13px] font-bold">左后车门 (RL)</span>
+          <span class="text-[16px] font-black mt-1">
             {{ doorStatus.rl === 1 ? '● 物理打开' : (doorStatus.rl === 0 ? '○ 已关好' : '采集中...') }}
           </span>
         </div>
@@ -127,14 +90,14 @@
         <!-- 右后门 -->
         <div 
           :class="[
-            'p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
+            'p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
             doorStatus.rr === 1 
               ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
               : 'bg-car-item border-car-border text-car-sub'
           ]"
         >
-          <span class="text-[13.5px] font-bold">右后车门 (RR)</span>
-          <span class="text-[17px] font-black mt-1">
+          <span class="text-[13px] font-bold">右后车门 (RR)</span>
+          <span class="text-[16px] font-black mt-1">
             {{ doorStatus.rr === 1 ? '● 物理打开' : (doorStatus.rr === 0 ? '○ 已关好' : '采集中...') }}
           </span>
         </div>
@@ -142,15 +105,58 @@
         <!-- 电动尾门 -->
         <div 
           :class="[
-            'p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
+            'p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
             doorStatus.trunk === 1 
               ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
               : 'bg-car-item border-car-border text-car-sub'
           ]"
         >
-          <span class="text-[13.5px] font-bold">电动尾门 (Trunk)</span>
-          <span class="text-[17px] font-black mt-1">
+          <span class="text-[13px] font-bold">电动尾门 (Trunk)</span>
+          <span class="text-[16px] font-black mt-1">
             {{ doorStatus.trunk === 1 ? '● 物理打开' : (doorStatus.trunk === 0 ? '○ 已关好' : '采集中...') }}
+          </span>
+        </div>
+      </div>
+
+      <!-- 第二排：实时挡位与驾驶模式探针 -->
+      <div class="grid grid-cols-2 gap-3">
+        <!-- 实时挡位 -->
+        <div 
+          :class="[
+            'p-3.5 rounded-2xl border-2 flex items-center justify-between px-5 transition-all',
+            doorStatus.gear > 0 
+              ? 'bg-car-item border-car-accent ring-2 ring-car-accent/20' 
+              : 'bg-car-item border-car-border'
+          ]"
+        >
+          <div class="flex flex-col">
+            <span class="text-[13.5px] font-bold text-car-sub">实时挡位状态 (Gear)</span>
+            <span class="text-[18px] font-black text-car-text mt-0.5">
+              {{ formatGearName(doorStatus.gear) }}
+            </span>
+          </div>
+          <span class="px-3.5 py-1 rounded-full text-[13.5px] font-black bg-car-card border border-car-border text-car-accent">
+            {{ doorStatus.gear === 4 ? 'R 挡 (倒车状态)' : (doorStatus.gear === 2 ? 'D 挡 (前进状态)' : (doorStatus.gear === 5 ? 'P 挡 (驻车停泊)' : '实时监听中')) }}
+          </span>
+        </div>
+
+        <!-- 实时驾驶模式 -->
+        <div 
+          :class="[
+            'p-3.5 rounded-2xl border-2 flex items-center justify-between px-5 transition-all',
+            doorStatus.mode > 0 
+              ? 'bg-car-item border-car-accent ring-2 ring-car-accent/20' 
+              : 'bg-car-item border-car-border'
+          ]"
+        >
+          <div class="flex flex-col">
+            <span class="text-[13.5px] font-bold text-car-sub">实时驾驶模式 (DriveMode)</span>
+            <span class="text-[18px] font-black text-car-text mt-0.5">
+              {{ formatModeName(doorStatus.mode) }}
+            </span>
+          </div>
+          <span class="px-3.5 py-1 rounded-full text-[13.5px] font-black bg-car-card border border-car-border text-car-accent">
+            AdaptAPI 9位常量直通
           </span>
         </div>
       </div>
@@ -812,8 +818,30 @@ import MatrixButton from '../components/MatrixButton.vue';
 import { store, bridge, openModal, showToast } from '../store';
 
 const selectedModelId = ref(localStorage.getItem('geely_vehicle_model') || 'binyue_cool');
-const doorStatus = ref({ fl: -1, fr: -1, rl: -1, rr: -1, trunk: -1 });
+const doorStatus = ref({ fl: -1, fr: -1, rl: -1, rr: -1, trunk: -1, gear: -1, mode: -1 });
 let doorPollTimer = null;
+
+function formatGearName(gear) {
+  switch (gear) {
+    case 2: return 'D 挡 (前进挡)';
+    case 3: return 'N 挡 (空挡)';
+    case 4: return 'R 挡 (倒车挡)';
+    case 5: return 'P 挡 (驻车挡)';
+    case 6:
+    case 7: return 'S 挡 (运动挡)';
+    default: return '采集中...';
+  }
+}
+
+function formatModeName(mode) {
+  switch (mode) {
+    case 1: return '舒适模式 (Comfort)';
+    case 2: return '运动模式 (Sport)';
+    case 3: return '经济模式 (Eco)';
+    case 4: return '智能模式 (Smart)';
+    default: return '采集中...';
+  }
+}
 
 function fetchDoorStatus() {
   try {
@@ -826,7 +854,9 @@ function fetchDoorStatus() {
           fr: Number(data.fr ?? -1),
           rl: Number(data.rl ?? -1),
           rr: Number(data.rr ?? -1),
-          trunk: Number(data.trunk ?? -1)
+          trunk: Number(data.trunk ?? -1),
+          gear: Number(data.gear ?? -1),
+          mode: Number(data.mode ?? -1)
         };
       }
     }

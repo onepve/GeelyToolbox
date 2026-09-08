@@ -607,6 +607,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("rl", VehicleAutomationService.currentDoorRL);
                 obj.put("rr", VehicleAutomationService.currentDoorRR);
                 obj.put("trunk", VehicleAutomationService.currentTrunk);
+                obj.put("gear", VehicleAutomationService.lastGearPos);
+                obj.put("mode", VehicleAutomationService.lastDriveMode);
                 return obj.toString();
             } catch (Exception e) {
                 return "{}";

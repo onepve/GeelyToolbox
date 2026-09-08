@@ -83,8 +83,8 @@ public class DoorStateManager {
         // 1. 主驾门 FL
         if (fl != -1 && fl != currentFL) {
             changed = true;
-            boolean enableOpen = prefs.getBoolean("enable_door_fl", true);
-            boolean enableClose = prefs.getBoolean("enable_door_fl_close", true);
+            boolean enableOpen = prefs.getBoolean("voice_enable_door_fl", true) && prefs.getBoolean("enable_door_fl", true);
+            boolean enableClose = prefs.getBoolean("voice_enable_door_fl_close", true) && prefs.getBoolean("enable_door_fl_close", true);
             if (fl == 1) {
                 AppLogger.i("四门门控", "主驾门打开 -> voiceMaster=" + voiceMasterSwitch + ", enableOpen=" + enableOpen);
                 if (voiceMasterSwitch && enableOpen && (now - lastTriggerFL > 300)) {
@@ -110,8 +110,8 @@ public class DoorStateManager {
         // 2. 副驾门 FR
         if (fr != -1 && fr != currentFR) {
             changed = true;
-            boolean enableOpen = prefs.getBoolean("enable_door_fr", true);
-            boolean enableClose = prefs.getBoolean("enable_door_fr_close", true);
+            boolean enableOpen = prefs.getBoolean("voice_enable_door_fr", true) && prefs.getBoolean("enable_door_fr", true);
+            boolean enableClose = prefs.getBoolean("voice_enable_door_fr_close", true) && prefs.getBoolean("enable_door_fr_close", true);
             if (fr == 1) {
                 AppLogger.i("四门门控", "副驾门打开 -> voiceMaster=" + voiceMasterSwitch + ", enableOpen=" + enableOpen);
                 if (voiceMasterSwitch && enableOpen && (now - lastTriggerFR > 300)) {
@@ -137,8 +137,8 @@ public class DoorStateManager {
         // 3. 左后门 RL
         if (rl != -1 && rl != currentRL) {
             changed = true;
-            boolean enableOpen = prefs.getBoolean("enable_door_rl", true) || prefs.getBoolean("enable_door_rear", true);
-            boolean enableClose = prefs.getBoolean("enable_door_rl_close", true);
+            boolean enableOpen = (prefs.getBoolean("voice_enable_door_rl", true) && prefs.getBoolean("enable_door_rl", true)) || prefs.getBoolean("voice_enable_door_rear", true);
+            boolean enableClose = prefs.getBoolean("voice_enable_door_rl_close", true) && prefs.getBoolean("enable_door_rl_close", true);
             if (rl == 1) {
                 AppLogger.i("四门门控", "左后门打开 -> voiceMaster=" + voiceMasterSwitch + ", enableOpen=" + enableOpen);
                 if (voiceMasterSwitch && enableOpen && (now - lastTriggerRL > 300)) {
@@ -164,8 +164,8 @@ public class DoorStateManager {
         // 4. 右后门 RR
         if (rr != -1 && rr != currentRR) {
             changed = true;
-            boolean enableOpen = prefs.getBoolean("enable_door_rr", true) || prefs.getBoolean("enable_door_rear", true);
-            boolean enableClose = prefs.getBoolean("enable_door_rr_close", true);
+            boolean enableOpen = (prefs.getBoolean("voice_enable_door_rr", true) && prefs.getBoolean("enable_door_rr", true)) || prefs.getBoolean("voice_enable_door_rear", true);
+            boolean enableClose = prefs.getBoolean("voice_enable_door_rr_close", true) && prefs.getBoolean("enable_door_rr_close", true);
             if (rr == 1) {
                 AppLogger.i("四门门控", "右后门打开 -> voiceMaster=" + voiceMasterSwitch + ", enableOpen=" + enableOpen);
                 if (voiceMasterSwitch && enableOpen && (now - lastTriggerRR > 300)) {
