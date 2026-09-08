@@ -146,7 +146,7 @@ const deviceUid = ref('读取中...');
 let versionClickCount = 0;
 let lastVersionClickTime = 0;
 
-const displayVersion = computed(() => store.deviceInfo.version || '1.6.0');
+const displayVersion = computed(() => store.deviceInfo.version || '1.6.1');
 const isBeta = computed(() => {
   const ver = (store.deviceInfo.version || '').toLowerCase();
   return ver.includes('beta');

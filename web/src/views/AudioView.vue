@@ -106,13 +106,147 @@
         </div>
       </div>
     </FeatureCard>
+
+    <!-- 3. 座舱专属语音主题包与自定义音效 (一键整套换装 · 物理隔离) -->
+    <FeatureCard 
+      title="3. 座舱专属语音主题包 (一键整套换装 · 物理隔离)"
+      desc="支持导入车规级 ZIP 语音包。所有语音主题物理隔离保存在 /sdcard/GeelyPilot/voices/ 专属目录中，清空下载目录绝不受任何影响！"
+    >
+      <div class="flex flex-col space-y-4">
+        <!-- 状态与快捷操作顶栏 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex items-center space-x-3.5">
+            <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)]"></span>
+            <div class="flex flex-col">
+              <div class="flex items-center space-x-2">
+                <span class="text-[18px] font-black text-car-text">当前整套音效：</span>
+                <span class="text-[18px] font-black text-car-accent">{{ activeThemeName ? activeThemeName : '出厂官方原声 (晓晓温婉知性)' }}</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-[12px] font-black">
+                  {{ activeThemeName ? '自定义主题' : '系统默认' }}
+                </span>
+              </div>
+              <span class="text-[14px] text-car-sub font-bold mt-1">
+                {{ activeThemeName ? `专属目录: /sdcard/GeelyPilot/voices/${activeThemeName}/` : '吉利智驾出厂原声 · 未包含项自动补齐兜底' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3 shrink-0">
+            <button 
+              @click="openModal('voiceThemeImport')"
+              class="min-h-[56px] px-6 bg-car-card border-2 border-car-accent text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center space-x-2"
+            >
+              <span>📂 导入语音包 (.zip)</span>
+            </button>
+            <button 
+              @click="loadVoiceThemes"
+              class="min-h-[56px] px-5 bg-car-card border-2 border-car-border text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+            >
+              🔄 刷新
+            </button>
+          </div>
+        </div>
+
+        <!-- 主题包列表卡片流 -->
+        <div class="flex flex-col space-y-3">
+          <!-- 默认出厂主题卡片 -->
+          <div class="bg-car-item border-2 border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+            <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-[19px] font-black text-car-text">👑 出厂官方原声 (晓晓温婉知性)</span>
+                <span class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[12px] font-black">系统内置</span>
+                <span v-if="!activeThemeName" class="px-2.5 py-0.5 rounded-md bg-car-accent/15 border border-car-accent/40 text-car-accent text-[12px] font-black">正在生效</span>
+              </div>
+              <span class="text-[14.5px] text-car-sub font-bold">
+                吉利座舱温婉知性原声，端庄舒缓温润。零音频丢失，全场景兜底保障。
+              </span>
+            </div>
+
+            <div class="flex items-center space-x-3 shrink-0">
+              <button 
+                @click="testThemeVoice('')"
+                class="h-[52px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[16px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all"
+              >
+                ▶️ 试听样音
+              </button>
+              <button 
+                v-if="activeThemeName"
+                @click="applyVoiceTheme('')"
+                class="h-[52px] px-6 bg-car-card border-2 border-car-accent text-car-accent font-black text-[16px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md transition-all"
+              >
+                恢复此原声
+              </button>
+              <button 
+                v-else
+                disabled
+                class="h-[52px] px-6 bg-car-card border-2 border-car-border text-car-sub font-black text-[16px] rounded-xl opacity-60 cursor-default"
+              >
+                ✓ 正在生效
+              </button>
+            </div>
+          </div>
+
+          <!-- 用户导入的各语音主题包 -->
+          <div 
+            v-for="theme in voiceThemes" 
+            :key="theme.id"
+            class="bg-car-item border-2 rounded-2xl p-5 flex items-center justify-between shadow-sm transition-all"
+            :class="activeThemeName === theme.name ? 'border-car-accent ring-2 ring-car-accent/20' : 'border-car-border'"
+          >
+            <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-[19px] font-black text-car-text truncate">{{ theme.name }}</span>
+                <span class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-border text-car-accent text-[12px] font-black shrink-0">
+                  包含 {{ theme.count }} 个音频
+                </span>
+                <span v-if="activeThemeName === theme.name" class="px-2.5 py-0.5 rounded-md bg-car-accent/15 border border-car-accent/40 text-car-accent text-[12px] font-black shrink-0">
+                  ✓ 正在整套生效
+                </span>
+              </div>
+              <span class="text-[14.5px] text-car-sub font-mono font-bold truncate">
+                目录: {{ theme.path }}
+              </span>
+            </div>
+
+            <div class="flex items-center space-x-3 shrink-0">
+              <button 
+                @click="testThemeVoice(theme.name)"
+                class="h-[52px] px-5 bg-car-card border-2 border-car-border text-car-text font-black text-[16px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all"
+              >
+                ▶️ 试听样音
+              </button>
+              <button 
+                v-if="activeThemeName !== theme.name"
+                @click="applyVoiceTheme(theme.name)"
+                class="h-[52px] px-6 bg-car-card border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md transition-all"
+              >
+                整套启用
+              </button>
+              <button 
+                v-else
+                disabled
+                class="h-[52px] px-6 bg-car-card border-2 border-car-accent text-car-accent font-black text-[16px] rounded-xl cursor-default opacity-80"
+              >
+                ✓ 正在生效
+              </button>
+              <button 
+                @click="confirmDeleteTheme(theme.name)"
+                class="h-[52px] px-4 bg-car-card border-2 border-car-border text-rose-400 hover:text-rose-300 hover:border-rose-400/50 font-black text-[15px] rounded-xl cursor-pointer shadow-sm transition-all"
+              >
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </FeatureCard>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import FeatureCard from '../components/FeatureCard.vue';
-import { store, bridge, showToast } from '../store';
+import { store, bridge, openModal, showToast } from '../store';
 
 const ttsInfo = ref({
   connected: true,
@@ -121,6 +255,47 @@ const ttsInfo = ref({
 });
 
 const volumeOffset = ref(0);
+const voiceThemes = ref([]);
+const activeThemeName = ref('');
+
+function loadVoiceThemes() {
+  try {
+    const raw = bridge.call('getVoiceThemesJson');
+    if (raw) {
+      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      activeThemeName.value = data.activeTheme || '';
+      voiceThemes.value = data.themes || [];
+    }
+  } catch (e) {
+    voiceThemes.value = [];
+  }
+}
+
+function applyVoiceTheme(themeName) {
+  bridge.call('setActiveVoiceTheme', themeName);
+  activeThemeName.value = themeName;
+  loadVoiceThemes();
+}
+
+function testThemeVoice(themeName) {
+  if (!themeName) {
+    bridge.call('testVehicleVoice', 'gear_d');
+  } else {
+    bridge.call('playCustomAudioPath', `/sdcard/GeelyPilot/voices/${themeName}/gear_d.mp3`);
+  }
+}
+
+function confirmDeleteTheme(themeName) {
+  openModal('confirm', {
+    title: `删除语音包【${themeName}】`,
+    message: `确定要彻底删除该语音包吗？\n删除后将释放其占用的存储空间，若正在生效将自动恢复为出厂晓晓原声。`,
+    isDanger: true,
+    onConfirm: () => {
+      bridge.call('deleteVoiceTheme', themeName);
+      loadVoiceThemes();
+    }
+  });
+}
 
 onMounted(() => {
   try {
@@ -143,6 +318,9 @@ onMounted(() => {
       volumeOffset.value = off;
     }
   } catch (e) {}
+
+  loadVoiceThemes();
+  window.refreshVoiceThemes = loadVoiceThemes;
 });
 
 function testTtsEngine() {

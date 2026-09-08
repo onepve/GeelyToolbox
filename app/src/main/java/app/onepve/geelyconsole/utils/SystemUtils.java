@@ -630,6 +630,13 @@ public class SystemUtils {
      * 保持系统原生 Download 目录，与 Android DocumentsUI 官方标准最稳契合，
      * 根治深层子目录导致的各类定制车机文件管理闪退与找不到路径问题。
      */
+    public static String formatFileSize(long bytes) {
+        if (bytes <= 0) return "0 B";
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return String.format(Locale.CHINA, "%.1f KB", bytes / 1024.0);
+        return String.format(Locale.CHINA, "%.2f MB", bytes / (1024.0 * 1024.0));
+    }
+
     public static File getAppDownloadDir() {
         File dir = new File(Environment.getExternalStorageDirectory(), "Download");
         if (!dir.exists()) {

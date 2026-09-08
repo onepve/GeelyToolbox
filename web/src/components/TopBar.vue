@@ -71,7 +71,7 @@ import { store, bridge, openModal, showToast } from '../store';
 let topBarTimer = null;
 
 const displayVersion = computed(() => {
-  return store.deviceInfo.version || '1.6.0';
+  return store.deviceInfo.version || '1.6.1';
 });
 
 const isBeta = computed(() => {

@@ -506,11 +506,43 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     @Override
     public void onUrlPushed(String url, String fileName) {}
     @Override
-    public void onFileUploaded(File file) {
+    public void onFileUploaded(final File file) {
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(MainActivity.this, "收到手机快传文件: " + file.getName(), Toast.LENGTH_LONG).show();
+                if (file.getName().toLowerCase().endsWith(".zip")) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (VehicleVoicePlayer.isVoicePackZip(file)) {
+                                String fName = file.getName();
+                                int dot = fName.lastIndexOf('.');
+                                final String themeName = (dot > 0) ? fName.substring(0, dot) : fName;
+                                final int count = VehicleVoicePlayer.extractVoiceZip(file, themeName);
+                                mainHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (count > 0) {
+                                            Toast.makeText(MainActivity.this, "🎉 成功导入语音包【" + themeName + "】(" + count + "个音频)，已就绪！", Toast.LENGTH_LONG).show();
+                                            callJs("if(window.refreshVoiceThemes) window.refreshVoiceThemes();");
+                                        } else {
+                                            Toast.makeText(MainActivity.this, "收到快传文件: " + file.getName(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                });
+                            } else {
+                                mainHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(MainActivity.this, "收到手机快传文件: " + file.getName(), Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                            }
+                        }
+                    }).start();
+                } else {
+                    Toast.makeText(MainActivity.this, "收到手机快传文件: " + file.getName(), Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
@@ -2331,6 +2363,105 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 return prefs.getInt("voice_volume_offset", 0);
             } catch (Exception e) {
                 return 0;
+            }
+        }
+
+        @JavascriptInterface
+        public String getVoiceThemesJson() {
+            return VehicleVoicePlayer.listInstalledThemesJson(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public boolean setActiveVoiceTheme(final String themeName) {
+            boolean success = VehicleVoicePlayer.setActiveTheme(MainActivity.this, themeName);
+            if (success) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (themeName != null && !themeName.trim().isEmpty()) {
+                            showToast("已整套启用语音包【" + themeName + "】");
+                            VehicleVoicePlayer.getInstance(MainActivity.this).play("gear_d.mp3", "已启用语音主题 " + themeName);
+                        } else {
+                            showToast("已恢复出厂默认 (晓晓温婉知性原声)");
+                            VehicleVoicePlayer.getInstance(MainActivity.this).play("gear_d.mp3", "已恢复出厂默认语音");
+                        }
+                    }
+                });
+            }
+            return success;
+        }
+
+        @JavascriptInterface
+        public boolean deleteVoiceTheme(final String themeName) {
+            boolean success = VehicleVoicePlayer.deleteTheme(MainActivity.this, themeName);
+            if (success) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        showToast("已删除语音包【" + themeName + "】");
+                    }
+                });
+            }
+            return success;
+        }
+
+        @JavascriptInterface
+        public void importVoiceZipFromDownload(final String fileName) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    File downloadDir = SystemUtils.getAppDownloadDir();
+                    File zipFile = new File(downloadDir, fileName);
+                    if (!zipFile.exists()) {
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                showToast("未找到压缩包: " + fileName);
+                            }
+                        });
+                        return;
+                    }
+                    String fName = zipFile.getName();
+                    int dot = fName.lastIndexOf('.');
+                    final String themeName = (dot > 0) ? fName.substring(0, dot) : fName;
+                    final int count = VehicleVoicePlayer.extractVoiceZip(zipFile, themeName);
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (count > 0) {
+                                showToast("成功导入语音包【" + themeName + "】共 " + count + " 个音频！");
+                                callJs("if(window.refreshVoiceThemes) window.refreshVoiceThemes();");
+                            } else {
+                                showToast("解压失败或未找到有效音频文件");
+                            }
+                        }
+                    });
+                }
+            }).start();
+        }
+
+        @JavascriptInterface
+        public String scanVoiceZipsInDownload() {
+            try {
+                File downloadDir = SystemUtils.getAppDownloadDir();
+                File[] files = downloadDir.listFiles();
+                JSONArray arr = new JSONArray();
+                if (files != null) {
+                    for (File f : files) {
+                        if (f.isFile() && f.getName().toLowerCase().endsWith(".zip")) {
+                            if (VehicleVoicePlayer.isVoicePackZip(f)) {
+                                JSONObject obj = new JSONObject();
+                                obj.put("name", f.getName());
+                                obj.put("size", SystemUtils.formatFileSize(f.length()));
+                                obj.put("time", new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date(f.lastModified())));
+                                arr.put(obj);
+                            }
+                        }
+                    }
+                }
+                return arr.toString();
+            } catch (Exception e) {
+                return "[]";
             }
         }
 

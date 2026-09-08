@@ -33,12 +33,38 @@
             <div class="text-[17px] font-black text-car-text">1. 自定义台词 (小爱语音合成)</div>
             <span class="text-[12.5px] text-car-sub font-bold">留空不使用</span>
           </div>
-          <textarea
+          <input
             v-model="customText"
-            rows="2"
+            type="text"
             placeholder="例如: 已挂入前进挡，系好安全带出发啦！"
-            class="w-full bg-car-card border-2 border-car-border rounded-xl p-3 text-car-text text-[16px] font-black outline-none focus:border-car-accent resize-none leading-relaxed shadow-inner placeholder-car-sub"
-          ></textarea>
+            class="w-full h-[54px] bg-car-card border-2 border-car-border rounded-xl px-3 text-car-text text-[15px] font-black outline-none focus:border-car-accent shadow-inner placeholder-car-sub"
+          />
+
+          <!-- 快捷台词套用 -->
+          <div class="flex flex-col space-y-1.5">
+            <span class="text-[13px] text-car-sub font-bold">快捷范例台词：</span>
+            <div class="flex flex-wrap space-x-2">
+              <button
+                @click="customText = '已挂入前进挡，祝你一路顺风'"
+                class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-text text-[13px] font-bold hover:border-car-accent cursor-pointer mb-1 shadow-sm transition-all"
+              >
+                一路顺风
+              </button>
+              <button
+                @click="customText = '已完成就绪，注意安全行车'"
+                class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-text text-[13px] font-bold hover:border-car-accent cursor-pointer mb-1 shadow-sm transition-all"
+              >
+                安全行车
+              </button>
+              <button
+                @click="customText = ''"
+                class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-rose-400 hover:text-rose-300 text-[13px] font-bold hover:border-rose-400/60 cursor-pointer mb-1 shadow-sm transition-all"
+              >
+                清空台词
+              </button>
+            </div>
+          </div>
+
           <div class="flex space-x-2.5">
             <button
               @click="testTtsText"
@@ -65,8 +91,24 @@
             v-model="customFilePath"
             type="text"
             placeholder="例如: /sdcard/Music/gear_d.mp3"
-            class="w-full h-[54px] bg-car-card border-2 border-car-border rounded-xl px-3 text-car-text font-mono text-[14.5px] outline-none focus:border-car-accent shadow-inner placeholder-car-sub"
+            class="w-full h-[54px] bg-car-card border-2 border-car-border rounded-xl px-3 text-car-text font-mono text-[14px] outline-none focus:border-car-accent shadow-inner placeholder-car-sub"
           />
+
+          <!-- 快速从已安装语音包中点选混搭 -->
+          <div v-if="installedThemes.length > 0" class="flex flex-col space-y-1.5">
+            <span class="text-[13px] text-car-sub font-bold">快速从已导入语音包选取此音效：</span>
+            <div class="flex flex-wrap space-x-2">
+              <button
+                v-for="t in installedThemes"
+                :key="t.name"
+                @click="selectThemeSound(t.name)"
+                class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-text text-[13px] font-bold hover:border-car-accent cursor-pointer mb-1 shadow-sm transition-all"
+              >
+                {{ t.name }}
+              </button>
+            </div>
+          </div>
+
           <div class="flex space-x-2.5">
             <button 
               @click="testAudioFile"
@@ -112,11 +154,32 @@ import { store, bridge, closeModal, showToast } from '../../store';
 const targetItem = computed(() => store.modals.voiceItemSettings);
 const customText = ref('');
 const customFilePath = ref('');
+const installedThemes = ref([]);
+
+function loadInstalledThemes() {
+  try {
+    const raw = bridge.call('getVoiceThemesJson');
+    if (raw) {
+      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      installedThemes.value = data.themes || [];
+    }
+  } catch (e) {
+    installedThemes.value = [];
+  }
+}
+
+function selectThemeSound(themeName) {
+  if (!targetItem.value) return;
+  const fileName = targetItem.value.soundFile || (targetItem.value.key + '.mp3');
+  customFilePath.value = `/sdcard/GeelyPilot/voices/${themeName}/${fileName}`;
+  showToast(`已快捷填入【${themeName}】的 ${fileName}`);
+}
 
 watch(() => store.modals.voiceItemSettings, (item) => {
   if (item && item.key) {
     customText.value = localStorage.getItem(`geely_voice_text_${item.key}`) || '';
     customFilePath.value = localStorage.getItem(`geely_voice_file_${item.key}`) || '';
+    loadInstalledThemes();
   } else {
     customText.value = '';
     customFilePath.value = '';

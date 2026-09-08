@@ -14,9 +14,15 @@ import android.speech.tts.TextToSpeech;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.Locale;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * 车辆语音播报器（支持本地短音频与系统 TTS 引擎）
@@ -537,5 +543,181 @@ public class VehicleVoicePlayer {
                 audioManager.abandonAudioFocus(null);
             }
         } catch (Exception ignored) {}
+    }
+
+    public static File getVoicesRootDir() {
+        File dir = new File(Environment.getExternalStorageDirectory(), "GeelyPilot/voices");
+        if (!dir.exists()) {
+            try { dir.mkdirs(); } catch (Exception ignored) {}
+        }
+        return dir;
+    }
+
+    public static boolean isVoicePackZip(File zipFile) {
+        if (zipFile == null || !zipFile.exists() || !zipFile.getName().toLowerCase().endsWith(".zip")) {
+            return false;
+        }
+        ZipInputStream zis = null;
+        try {
+            zis = new ZipInputStream(new FileInputStream(zipFile));
+            ZipEntry entry;
+            int audioCount = 0;
+            boolean hasReadme = false;
+            while ((entry = zis.getNextEntry()) != null) {
+                String name = entry.getName().toLowerCase();
+                if (name.endsWith(".mp3") || name.endsWith(".wav")) {
+                    audioCount++;
+                    if (name.contains("gear_") || name.contains("door_") || name.contains("mode_") || name.contains("trunk_")) {
+                        zis.close();
+                        return true;
+                    }
+                } else if (name.endsWith("readme.txt") || name.endsWith("manifest.json")) {
+                    hasReadme = true;
+                }
+                zis.closeEntry();
+            }
+            return (audioCount >= 2) || (audioCount >= 1 && hasReadme);
+        } catch (Exception ignored) {
+            return false;
+        } finally {
+            if (zis != null) {
+                try { zis.close(); } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    public static int extractVoiceZip(File zipFile, String themeName) {
+        if (zipFile == null || !zipFile.exists()) return -1;
+        if (themeName == null || themeName.trim().isEmpty()) {
+            String fName = zipFile.getName();
+            int dot = fName.lastIndexOf('.');
+            themeName = (dot > 0) ? fName.substring(0, dot) : fName;
+        }
+        File targetDir = new File(getVoicesRootDir(), themeName.trim());
+        if (!targetDir.exists()) {
+            targetDir.mkdirs();
+        }
+
+        ZipInputStream zis = null;
+        int count = 0;
+        try {
+            zis = new ZipInputStream(new FileInputStream(zipFile));
+            ZipEntry entry;
+            byte[] buffer = new byte[8192];
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.isDirectory()) {
+                    zis.closeEntry();
+                    continue;
+                }
+                String fullPath = entry.getName();
+                String fileName = new File(fullPath).getName();
+                String lower = fileName.toLowerCase();
+                if (lower.endsWith(".mp3") || lower.endsWith(".wav") || lower.endsWith(".txt") || lower.endsWith(".json") || lower.endsWith(".png") || lower.endsWith(".jpg")) {
+                    File outFile = new File(targetDir, fileName);
+                    FileOutputStream fos = new FileOutputStream(outFile);
+                    int len;
+                    while ((len = zis.read(buffer)) > 0) {
+                        fos.write(buffer, 0, len);
+                    }
+                    fos.close();
+                    if (lower.endsWith(".mp3") || lower.endsWith(".wav")) {
+                        count++;
+                    }
+                }
+                zis.closeEntry();
+            }
+            return count;
+        } catch (Exception e) {
+            Log.e(TAG, "extractVoiceZip error: " + e.getMessage());
+            return -1;
+        } finally {
+            if (zis != null) {
+                try { zis.close(); } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    public static String listInstalledThemesJson(Context context) {
+        try {
+            File root = getVoicesRootDir();
+            File[] files = root.listFiles();
+            JSONObject result = new JSONObject();
+            SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            String active = sp.getString("active_voice_theme", "");
+            result.put("activeTheme", active);
+
+            JSONArray list = new JSONArray();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isDirectory() && !f.getName().startsWith(".")) {
+                        JSONObject t = new JSONObject();
+                        t.put("id", f.getName());
+                        t.put("name", f.getName());
+                        t.put("path", f.getAbsolutePath());
+                        File[] audios = f.listFiles();
+                        int audioCount = 0;
+                        boolean hasPreview = false;
+                        JSONArray audioNames = new JSONArray();
+                        if (audios != null) {
+                            for (File af : audios) {
+                                String n = af.getName().toLowerCase();
+                                if (n.endsWith(".mp3") || n.endsWith(".wav")) {
+                                    audioCount++;
+                                    audioNames.put(af.getName());
+                                    if (n.equals("preview" + ".mp3") || n.equals("sample" + ".mp3")) {
+                                        hasPreview = true;
+                                    }
+                                }
+                            }
+                        }
+                        t.put("count", audioCount);
+                        t.put("hasPreview", hasPreview);
+                        t.put("audioFiles", audioNames);
+                        list.put(t);
+                    }
+                }
+            }
+            result.put("themes", list);
+            return result.toString();
+        } catch (Exception e) {
+            return "{\"activeTheme\":\"\",\"themes\":[]}";
+        }
+    }
+
+    public static boolean setActiveTheme(Context context, String themeName) {
+        try {
+            SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            return sp.edit().putString("active_voice_theme", themeName == null ? "" : themeName.trim()).commit();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static boolean deleteTheme(Context context, String themeName) {
+        if (themeName == null || themeName.trim().isEmpty()) return false;
+        try {
+            SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            String active = sp.getString("active_voice_theme", "");
+            if (themeName.trim().equals(active)) {
+                sp.edit().putString("active_voice_theme", "").commit();
+            }
+            File dir = new File(getVoicesRootDir(), themeName.trim());
+            return deleteRecursive(dir);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static boolean deleteRecursive(File f) {
+        if (f == null || !f.exists()) return false;
+        if (f.isDirectory()) {
+            File[] subs = f.listFiles();
+            if (subs != null) {
+                for (File s : subs) {
+                    deleteRecursive(s);
+                }
+            }
+        }
+        return f.delete();
     }
 }

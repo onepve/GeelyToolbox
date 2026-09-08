@@ -37,6 +37,7 @@
     <OtaCaptureModal />
     <AppSelectModal />
     <CleanDownloadModal />
+    <VoiceThemeImportModal />
 
     <!-- 极简 Toast 提示 -->
     <transition name="fade">
@@ -90,6 +91,7 @@ import VoiceItemSettingsModal from './components/modals/VoiceItemSettingsModal.v
 import OtaCaptureModal from './components/modals/OtaCaptureModal.vue';
 import AppSelectModal from './components/modals/AppSelectModal.vue';
 import CleanDownloadModal from './components/modals/CleanDownloadModal.vue';
+import VoiceThemeImportModal from './components/modals/VoiceThemeImportModal.vue';
 
 import { store, bridge } from './store';
 

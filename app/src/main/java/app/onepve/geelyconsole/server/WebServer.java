@@ -161,6 +161,10 @@ public class WebServer {
                         handleApiGetTts(out);
                     } else if ("/api/save_tts".equals(path) && "POST".equalsIgnoreCase(method)) {
                         handleApiSaveTts(in, contentLength, out);
+                    } else if ("/api/voice_template".equals(path) && "GET".equalsIgnoreCase(method)) {
+                        handleApiVoiceTemplate(out);
+                    } else if ("/api/voice_readme".equals(path) && "GET".equalsIgnoreCase(method)) {
+                        handleApiVoiceReadme(out);
                     } else {
                         handleWebPage(out);
                     }
@@ -474,6 +478,53 @@ public class WebServer {
             sendJsonResponse(out, "{\"success\":true,\"message\":\"台词已成功保存并实时同步至车机！\"}");
         } catch (Exception e) {
             sendJsonResponse(out, "{\"success\":false,\"message\":\"解析失败: " + e.getMessage() + "\"}");
+        }
+    }
+
+    private void handleApiVoiceTemplate(OutputStream out) throws IOException {
+        try {
+            InputStream in = context.getAssets().open("voice_template.zip");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) != -1) {
+                baos.write(buf, 0, n);
+            }
+            in.close();
+            byte[] bytes = baos.toByteArray();
+            String header = "HTTP/1.1 200 OK\r\n" +
+                    "Content-Type: application/zip\r\n" +
+                    "Content-Disposition: attachment; filename=\"voice_template.zip\"\r\n" +
+                    "Content-Length: " + bytes.length + "\r\n" +
+                    "Access-Control-Allow-Origin: *\r\n" +
+                    "Connection: close\r\n\r\n";
+            out.write(header.getBytes(StandardCharsets.UTF_8));
+            out.write(bytes);
+        } catch (Exception e) {
+            sendJsonResponse(out, "{\"error\":\"" + e.getMessage() + "\"}");
+        }
+    }
+
+    private void handleApiVoiceReadme(OutputStream out) throws IOException {
+        try {
+            InputStream in = context.getAssets().open("voice_readme.txt");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = in.read(buf)) != -1) {
+                baos.write(buf, 0, n);
+            }
+            in.close();
+            byte[] bytes = baos.toByteArray();
+            String header = "HTTP/1.1 200 OK\r\n" +
+                    "Content-Type: text/plain; charset=UTF-8\r\n" +
+                    "Content-Length: " + bytes.length + "\r\n" +
+                    "Access-Control-Allow-Origin: *\r\n" +
+                    "Connection: close\r\n\r\n";
+            out.write(header.getBytes(StandardCharsets.UTF_8));
+            out.write(bytes);
+        } catch (Exception e) {
+            sendJsonResponse(out, "{\"error\":\"" + e.getMessage() + "\"}");
         }
     }
 
