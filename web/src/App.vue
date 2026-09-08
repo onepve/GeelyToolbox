@@ -9,7 +9,7 @@
       <Sidebar />
 
       <!-- 右侧专属大舞台 -->
-      <section class="flex-1 h-full overflow-y-auto p-6 flex flex-col gap-6">
+      <section class="flex-1 h-full overflow-y-auto p-6 flex flex-col space-y-6">
         <WheelView v-if="store.currentNav === 'wheel'" />
         <BodyView v-else-if="store.currentNav === 'body'" />
         <AudioView v-else-if="store.currentNav === 'audio'" />

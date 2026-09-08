@@ -31,6 +31,8 @@ import java.util.regex.Pattern;
 
 public class SystemUtils {
 
+    private static final String TAG = "SystemUtils";
+
     public static class MemInfo {
         public long totalBytes;
         public long usedBytes;

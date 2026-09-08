@@ -1,5 +1,5 @@
 <template>
-  <aside class="w-[300px] shrink-0 bg-car-card border-r border-car-border flex flex-col p-4 gap-3 select-none backdrop-blur-xl transition-colors">
+  <aside class="w-[300px] shrink-0 bg-car-card border-r border-car-border flex flex-col p-4 space-y-3 select-none backdrop-blur-xl transition-colors">
     <div 
       v-for="item in navItems" 
       :key="item.id"
