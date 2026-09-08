@@ -38,6 +38,171 @@
       </div>
     </div>
 
+    <!-- 实时车门物理信号探针 (方便实车调试，直观反映底层电平跃变) -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 shadow-xl">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-car-border/60">
+        <div class="flex items-center space-x-2.5">
+          <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10B981]"></span>
+          <span class="text-[18.5px] font-black text-car-text">车身门控信号实时探针 (实车调试专用)</span>
+        </div>
+        <span class="text-[13.5px] text-car-sub font-bold">
+          底层 MCU 串口 91 02 01 与 CAN 广播全量双向监听，开门毫秒级点亮
+        </span>
+      </div>
+
+      <div class="grid grid-cols-5 gap-3">
+        <!-- 主驾门 -->
+        <div 
+          :class="[
+            'p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
+            doorStatus.fl === 1 
+              ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
+              : 'bg-car-item border-car-border text-car-sub'
+          ]"
+        >
+          <span class="text-[13.5px] font-bold">主驾车门 (FL)</span>
+          <span class="text-[17px] font-black mt-1">
+            {{ doorStatus.fl === 1 ? '● 物理打开' : (doorStatus.fl === 0 ? '○ 已关好' : '采集中...') }}
+          </span>
+        </div>
+
+        <!-- 副驾门 -->
+        <div 
+          :class="[
+            'p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
+            doorStatus.fr === 1 
+              ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
+              : 'bg-car-item border-car-border text-car-sub'
+          ]"
+        >
+          <span class="text-[13.5px] font-bold">副驾车门 (FR)</span>
+          <span class="text-[17px] font-black mt-1">
+            {{ doorStatus.fr === 1 ? '● 物理打开' : (doorStatus.fr === 0 ? '○ 已关好' : '采集中...') }}
+          </span>
+        </div>
+
+        <!-- 左后门 -->
+        <div 
+          :class="[
+            'p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
+            doorStatus.rl === 1 
+              ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
+              : 'bg-car-item border-car-border text-car-sub'
+          ]"
+        >
+          <span class="text-[13.5px] font-bold">左后车门 (RL)</span>
+          <span class="text-[17px] font-black mt-1">
+            {{ doorStatus.rl === 1 ? '● 物理打开' : (doorStatus.rl === 0 ? '○ 已关好' : '采集中...') }}
+          </span>
+        </div>
+
+        <!-- 右后门 -->
+        <div 
+          :class="[
+            'p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
+            doorStatus.rr === 1 
+              ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
+              : 'bg-car-item border-car-border text-car-sub'
+          ]"
+        >
+          <span class="text-[13.5px] font-bold">右后车门 (RR)</span>
+          <span class="text-[17px] font-black mt-1">
+            {{ doorStatus.rr === 1 ? '● 物理打开' : (doorStatus.rr === 0 ? '○ 已关好' : '采集中...') }}
+          </span>
+        </div>
+
+        <!-- 电动尾门 -->
+        <div 
+          :class="[
+            'p-3.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
+            doorStatus.trunk === 1 
+              ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
+              : 'bg-car-item border-car-border text-car-sub'
+          ]"
+        >
+          <span class="text-[13.5px] font-bold">电动尾门 (Trunk)</span>
+          <span class="text-[17px] font-black mt-1">
+            {{ doorStatus.trunk === 1 ? '● 物理打开' : (doorStatus.trunk === 0 ? '○ 已关好' : '采集中...') }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 语音播报音频输出通道与混音抗衰减配置 -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 shadow-xl">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-car-border/60">
+        <div class="flex items-center space-x-2.5">
+          <span class="text-[20px]">🔊</span>
+          <span class="text-[18.5px] font-black text-car-text">语音播报音频输出通道 (声道配置)</span>
+        </div>
+        <button
+          @click="testCurrentChannelVoice"
+          class="h-[44px] px-5 rounded-xl border-2 border-car-accent bg-car-item text-car-text font-black text-[15px] cursor-pointer hover:border-car-accent shadow-sm flex items-center shrink-0"
+        >
+          <span>试听当前通道</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3">
+        <!-- 通道 1: 媒体主声道 -->
+        <button 
+          @click="setAudioChannel('music')"
+          :class="[
+            'p-4 rounded-2xl border-2 text-left flex flex-col justify-between cursor-pointer transition-all shadow-sm',
+            currentAudioChannel === 'music'
+              ? 'bg-car-item border-car-accent ring-2 ring-car-accent/25 shadow-md'
+              : 'bg-car-item border-car-border hover:border-car-border-light'
+          ]"
+        >
+          <div class="flex items-center justify-between w-full">
+            <span class="text-[17px] font-black text-car-text">媒体主声道 (推荐)</span>
+            <span v-if="currentAudioChannel === 'music'" class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>
+          </div>
+          <span class="text-[13.5px] text-car-sub font-bold mt-2 leading-relaxed">
+            走媒体主功放扬声器，听歌时自动将音乐降音 60% 进行温润混音，播完后平滑恢复
+          </span>
+        </button>
+
+        <!-- 通道 2: 导航引导声道 -->
+        <button 
+          @click="setAudioChannel('nav')"
+          :class="[
+            'p-4 rounded-2xl border-2 text-left flex flex-col justify-between cursor-pointer transition-all shadow-sm',
+            currentAudioChannel === 'nav'
+              ? 'bg-car-item border-car-accent ring-2 ring-car-accent/25 shadow-md'
+              : 'bg-car-item border-car-border hover:border-car-border-light'
+          ]"
+        >
+          <div class="flex items-center justify-between w-full">
+            <span class="text-[17px] font-black text-car-text">导航引导声道</span>
+            <span v-if="currentAudioChannel === 'nav'" class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>
+          </div>
+          <span class="text-[13.5px] text-car-sub font-bold mt-2 leading-relaxed">
+            与高德地图同级 DSP 混音，抗车身衰减能力最强，即使遇到系统降音也能清晰发声
+          </span>
+        </button>
+
+        <!-- 通道 3: 系统通知声道 -->
+        <button 
+          @click="setAudioChannel('notification')"
+          :class="[
+            'p-4 rounded-2xl border-2 text-left flex flex-col justify-between cursor-pointer transition-all shadow-sm',
+            currentAudioChannel === 'notification'
+              ? 'bg-car-item border-car-accent ring-2 ring-car-accent/25 shadow-md'
+              : 'bg-car-item border-car-border hover:border-car-border-light'
+          ]"
+        >
+          <div class="flex items-center justify-between w-full">
+            <span class="text-[17px] font-black text-car-text">系统通知声道</span>
+            <span v-if="currentAudioChannel === 'notification'" class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>
+          </div>
+          <span class="text-[13.5px] text-car-sub font-bold mt-2 leading-relaxed">
+            走车载系统事件通知流，与车机原厂系统提示音同级，适合纯待机不播放音乐场景
+          </span>
+        </button>
+      </div>
+    </div>
+
     <!-- 1. 挡位安全播报 (前进档、倒车档、驻车档 P、空档 四大标准档位) -->
     <FeatureCard 
       title="1. 挡位安全播报 (前进档 D / 倒车档 R / 驻车档 P / 空档 N)"
@@ -613,12 +778,59 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
 import { store, bridge, openModal, showToast } from '../store';
 
 const selectedModelId = ref(localStorage.getItem('geely_vehicle_model') || 'binyue_cool');
+const doorStatus = ref({ fl: -1, fr: -1, rl: -1, rr: -1, trunk: -1 });
+let doorPollTimer = null;
+
+function fetchDoorStatus() {
+  try {
+    const raw = bridge.call('getDoorStatus');
+    if (raw) {
+      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (data && typeof data === 'object') {
+        doorStatus.value = {
+          fl: Number(data.fl ?? -1),
+          fr: Number(data.fr ?? -1),
+          rl: Number(data.rl ?? -1),
+          rr: Number(data.rr ?? -1),
+          trunk: Number(data.trunk ?? -1)
+        };
+      }
+    }
+  } catch (e) {}
+}
+
+const currentAudioChannel = computed(() => store.vehicleAuto.voice_audio_channel || 'music');
+
+function setAudioChannel(channel) {
+  store.vehicleAuto.voice_audio_channel = channel;
+  bridge.call('setVehicleAutomationStringSetting', 'voice_audio_channel', channel);
+  const labels = {
+    music: '媒体主声道 (听歌自动压音混音)',
+    nav: '导航引导声道 (抗衰减强力混音)',
+    notification: '系统通知声道 (事件提示音)'
+  };
+  showToast('已切换至: ' + (labels[channel] || channel));
+}
+
+function testCurrentChannelVoice() {
+  bridge.call('testVehicleVoice', 'door_fl');
+  showToast('正在通过当前选择声道试听播报...');
+}
+
+onMounted(() => {
+  fetchDoorStatus();
+  doorPollTimer = setInterval(fetchDoorStatus, 800);
+});
+
+onUnmounted(() => {
+  if (doorPollTimer) clearInterval(doorPollTimer);
+});
 
 const supportedModels = [
   { id: 'binyue_cool', label: '吉利缤越 COOL (E02 / IHU516G)', name: '吉利缤越 COOL', isPrimary: true },

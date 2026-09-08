@@ -568,6 +568,26 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
                 obj.put("real_battery_volt", batteryVolt > 0 ? (double)batteryVolt : 0.0);
                 obj.put("battery_volt", batteryVolt > 0 ? (int)(batteryVolt * 10) : 0);
+                obj.put("door_fl", VehicleAutomationService.currentDoorFL);
+                obj.put("door_fr", VehicleAutomationService.currentDoorFR);
+                obj.put("door_rl", VehicleAutomationService.currentDoorRL);
+                obj.put("door_rr", VehicleAutomationService.currentDoorRR);
+                obj.put("door_trunk", VehicleAutomationService.currentTrunk);
+                return obj.toString();
+            } catch (Exception e) {
+                return "{}";
+            }
+        }
+
+        @JavascriptInterface
+        public String getDoorStatus() {
+            try {
+                JSONObject obj = new JSONObject();
+                obj.put("fl", VehicleAutomationService.currentDoorFL);
+                obj.put("fr", VehicleAutomationService.currentDoorFR);
+                obj.put("rl", VehicleAutomationService.currentDoorRL);
+                obj.put("rr", VehicleAutomationService.currentDoorRR);
+                obj.put("trunk", VehicleAutomationService.currentTrunk);
                 return obj.toString();
             } catch (Exception e) {
                 return "{}";
@@ -1919,6 +1939,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("vehicle_turn_360_enabled", prefs.getBoolean("vehicle_turn_360_enabled", false));
                 obj.put("vehicle_light_nav_enabled", prefs.getBoolean("vehicle_light_nav_enabled", false));
                 obj.put("vehicle_flameout_voice_enabled", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
+
+                // 播报音频输出通道 (music | nav | notification)
+                obj.put("voice_audio_channel", prefs.getString("voice_audio_channel", "music"));
 
                 // 四门与尾门迎宾与关门 (默认全开)
                 obj.put("voice_enable_door_fl", prefs.getBoolean("voice_enable_door_fl", true));

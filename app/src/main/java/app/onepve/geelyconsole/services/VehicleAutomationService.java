@@ -78,6 +78,12 @@ public class VehicleAutomationService extends Service {
     public static final int MODE_SMART   = 4; // 智能模式
 
     // 状态记录变量 (初始化为 -1，首包仅校准基准绝不误播)
+    public static volatile int currentDoorFL = -1;
+    public static volatile int currentDoorFR = -1;
+    public static volatile int currentDoorRL = -1;
+    public static volatile int currentDoorRR = -1;
+    public static volatile int currentTrunk = -1;
+
     private int lastDoorFL = -1;
     private int lastDoorFR = -1;
     private int lastDoorRL = -1;
@@ -555,6 +561,11 @@ public class VehicleAutomationService extends Service {
      */
     private void handleDoorPhysicalState(int fl, int fr, int rl, int rr, int trunk) {
         long now = System.currentTimeMillis();
+        currentDoorFL = fl;
+        currentDoorFR = fr;
+        currentDoorRL = rl;
+        currentDoorRR = rr;
+        currentTrunk = trunk;
 
         // 1. 主驾车门
         if (lastDoorFL == -1) {

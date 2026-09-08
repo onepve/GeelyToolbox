@@ -30,11 +30,19 @@ export const store = reactive({
     battery_volt: 126,
     car_ip: '127.0.0.1'
   },
+  doors: {
+    fl: -1,
+    fr: -1,
+    rl: -1,
+    rr: -1,
+    trunk: -1
+  },
   dynamicCode: '#*190110',
   dynamicCodePlus5: '#*140110',
 
   // 座舱联动设置
   vehicleAuto: {
+    voice_audio_channel: 'music', // 'music' | 'nav' | 'notification'
     wheel_control_mode: 'carmedia_first',
     wheel_action_mute: 'open_360',
     wheel_action_mode: 'open_360',

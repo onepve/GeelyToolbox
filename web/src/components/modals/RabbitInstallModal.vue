@@ -76,7 +76,18 @@ import { computed } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, showToast } from '../../store';
 
-const targetApp = computed(() => store.modals.rabbitInstall);
+const targetApp = computed(() => {
+  if (store.modals.rabbitInstall && typeof store.modals.rabbitInstall === 'object') {
+    return store.modals.rabbitInstall;
+  }
+  if (store.modals.rabbitInstall) {
+    return {
+      name: '高德地图车机版 (默认)',
+      filename: 'AutoMap_9.5.13_FullFeatures_TrafficLight.apk'
+    };
+  }
+  return null;
+});
 
 function startAutoPilot() {
   if (!targetApp.value) return;

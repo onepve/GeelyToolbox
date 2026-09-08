@@ -106,7 +106,7 @@
         </div>
 
         <button 
-          @click="toggleExpertMode"
+          @click="confirmUnlockExpert"
           :class="[
             'min-w-[220px] min-h-[72px] px-6 rounded-2xl border-2 font-black text-[19px] cursor-pointer transition-all shrink-0 shadow-sm',
             store.settings.expert_rabbit 
@@ -117,6 +117,43 @@
           {{ store.settings.expert_rabbit ? '锁定安全保护' : '解锁专家模式' }}
         </button>
       </div>
+
+      <!-- 专家模式专属工具栏 (激活后平铺直出) -->
+      <div v-if="store.settings.expert_rabbit" class="mt-4 pt-4 border-t border-car-border/60 flex flex-col space-y-3">
+        <div class="flex items-center space-x-2">
+          <span class="text-[17px] font-black text-rose-400">⚡ 专家模式专属卡主题注入工具：</span>
+          <span class="text-[13.5px] text-car-sub font-bold">突破签名限制，免电脑直接将高德或音乐伪装注入为桌面时钟屏保</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3.5">
+          <!-- 1. 全自动免电脑卡屏保注入 -->
+          <button 
+            @click="openAutoPilotDirectly"
+            class="min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-accent flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all"
+          >
+            <span class="text-[18.5px] font-black text-car-text">⚡ 全自动免电脑注入</span>
+            <span class="text-[13.5px] font-bold text-car-sub mt-1">自动检测并注入兔子屏保</span>
+          </button>
+
+          <!-- 2. 半自动/卡主题安装向导 -->
+          <button 
+            @click="openRabbitGuideModal"
+            class="min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+          >
+            <span class="text-[18.5px] font-black text-car-text">🛠️ 半自动/重写伪装主题</span>
+            <span class="text-[13.5px] font-bold text-car-sub mt-1">向导弹窗与手动重写覆盖</span>
+          </button>
+
+          <!-- 3. 原生文件管理 -->
+          <button 
+            @click="openFileManager"
+            class="min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+          >
+            <span class="text-[18.5px] font-black text-car-text">📁 调起原生文件管理</span>
+            <span class="text-[13.5px] font-bold text-car-sub mt-1">浏览车机 Download 目录</span>
+          </button>
+        </div>
+      </div>
     </FeatureCard>
   </div>
 </template>
@@ -125,11 +162,68 @@
 import FeatureCard from '../components/FeatureCard.vue';
 import { store, bridge, openModal, showToast } from '../store';
 
-function toggleExpertMode() {
-  const next = !store.settings.expert_rabbit;
-  store.settings.expert_rabbit = next;
-  bridge.call('setSetting', 'expert_rabbit', next);
-  showToast(next ? '⚡ 专家模式已激活 (已解除卡主题限制)' : '已恢复安全锁定状态');
+function confirmUnlockExpert() {
+  if (store.settings.expert_rabbit) {
+    store.settings.expert_rabbit = false;
+    bridge.call('setSetting', 'expert_rabbit', false);
+    showToast('已恢复安全锁定防护');
+    return;
+  }
+
+  // 第 1 次确认：高危警告
+  openModal('confirm', {
+    title: '【高危警告】解锁专家模式 (第 1/3 次确认)',
+    desc: '【专家模式】解除系统原生安全边界，开放直接向车机底层屏保主题注入任意第三方应用的高级权限。非玩车专业人员误操作可能导致屏保黑屏或组件冲突。是否确认继续？',
+    tip: '【安全建议】普通车友使用自带白名单与精选安装即可满足全部日常需求。',
+    isDanger: true,
+    confirmText: '我已知晓风险，下一步',
+    onConfirm: () => {
+      // 第 2 次确认：技术原理与行车安全
+      openModal('confirm', {
+        title: '【安全确认】卡主题屏保注入规范 (第 2/3 次确认)',
+        desc: '卡主题注入通过重写原厂兔子时钟屏保包名（com.ecarx.screensaver）实现无损系统级提权。在执行主题注入或整车重启前，请务必保证车辆安全停稳并挂入 P 挡。严禁在行驶途中操作！',
+        tip: '【操作铁律】严禁在行车行驶过程中执行注入或冷重启！',
+        isDanger: true,
+        confirmText: '确认环境安全，下一步',
+        onConfirm: () => {
+          // 第 3 次确认：最终特权授权
+          openModal('confirm', {
+            title: '【最终授权】正式激活专家模式 (第 3/3 次确认)',
+            desc: '确认正式激活专家模式？激活后，下方将立即解锁【⚡ 全自动免电脑卡屏保注入】与【🛠️ 半自动/直接重写伪装主题】两大高阶工具。',
+            tip: '【提示】后续可随时在此处一键恢复安全锁定。',
+            isDanger: true,
+            confirmText: '确认最终激活',
+            onConfirm: () => {
+              store.settings.expert_rabbit = true;
+              bridge.call('setSetting', 'expert_rabbit', true);
+              showToast('⚡ 专家模式已成功激活！高级注入工具箱已解锁');
+            }
+          });
+        }
+      });
+    }
+  });
+}
+
+function openAutoPilotDirectly() {
+  openModal('confirm', {
+    title: '全自动免电脑卡屏保注入',
+    desc: '系统将自动扫描车机 Download 目录中的高德地图安装包，深度伪装重写进兔子时钟屏保，并自动拉起主题中心引导应用。注入完成后请执行整车冷重启。',
+    tip: '请确保车辆已安全停稳且电瓶电量充足。',
+    isDanger: false,
+    confirmText: '开始全自动注入',
+    onConfirm: () => {
+      showToast('正在启动免电脑卡屏保全自动注入...');
+      bridge.call('startAutoPilotInject', 'AutoMap_9.5.13_FullFeatures_TrafficLight.apk');
+    }
+  });
+}
+
+function openRabbitGuideModal() {
+  store.modals.rabbitInstall = {
+    name: '高德地图车机版 (默认推荐)',
+    filename: 'AutoMap_9.5.13_FullFeatures_TrafficLight.apk'
+  };
 }
 
 function openFileManager() {
