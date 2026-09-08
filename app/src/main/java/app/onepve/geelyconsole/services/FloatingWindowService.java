@@ -201,13 +201,27 @@ public class FloatingWindowService extends Service {
     private void updatePillContent() {
         if (tvIcon == null || tvText == null || tvStatus == null) return;
         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-        String displayMode = prefs.getString("floating_display_mode", "name"); // 默认 "name" 为吉利智驾，"code" 为动态暗码
+        String displayMode = prefs.getString("floating_display_mode", "name"); // 默认 "name" 为吉利智驾，"code" 为动态暗码，"battery" 为电瓶电压
 
         if ("code".equals(displayMode)) {
             String code10 = SystemUtils.calculateDynamicCode();
             String code5 = SystemUtils.calculateDynamicCodePlus5();
             tvIcon.setText("🔑");
             tvText.setText("暗码(+10): " + code10 + "  |  暗码(+5): " + code5);
+            tvStatus.setText("");
+        } else if ("battery".equals(displayMode)) {
+            float v = VehicleAutomationService.latestBatteryVoltage;
+            if (v < 9.0f || v > 16.5f) {
+                v = prefs.getFloat("vehicle_real_battery_volt", 0.0f);
+            }
+            tvIcon.setText("⚡");
+            if (v >= 9.0f && v <= 16.5f) {
+                String voltStr = String.format(java.util.Locale.US, "%.1fV", v);
+                String status = (v >= 13.4f) ? "充能中" : (v < 11.5f ? "重度亏电" : (v < 11.8f ? "低电警戒" : "健康充沛"));
+                tvText.setText("电瓶: " + voltStr + " (" + status + ")");
+            } else {
+                tvText.setText("电瓶: 采集中...");
+            }
             tvStatus.setText("");
         } else {
             tvIcon.setText("🔧");

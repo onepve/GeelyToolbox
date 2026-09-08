@@ -23,6 +23,7 @@
             </span>
           </div>
           <button 
+            v-if="showCloseButton !== false"
             @click="close"
             class="h-[56px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-all shadow-sm"
           >
@@ -54,6 +55,10 @@ const props = defineProps({
   maxWidthClass: String,
   maxHeightClass: String,
   zIndexClass: String,
+  showCloseButton: {
+    type: Boolean,
+    default: true
+  },
   closeOnBackdrop: {
     type: Boolean,
     default: true

@@ -4,6 +4,7 @@
     title="吉利智驾 · 运行与守护日志"
     badge="自动轮转"
     maxWidthClass="max-w-[1080px]"
+    :showCloseButton="false"
     @close="closeModal('log')"
   >
     <div class="flex flex-col space-y-4">
@@ -41,21 +42,7 @@
     </div>
 
     <template #footer>
-      <div class="flex items-center justify-between w-full">
-        <div class="flex items-center space-x-3 shrink-0">
-          <button 
-            @click="clearLogs"
-            class="h-[52px] px-6 rounded-xl bg-red-500/15 border-2 border-red-500/40 text-red-400 hover:text-red-300 font-black text-[16px] cursor-pointer hover:border-red-500/80 shadow-sm transition-all"
-          >
-            清空全部日志
-          </button>
-          <button 
-            @click="fetchLogs"
-            class="h-[52px] px-6 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all"
-          >
-            刷新
-          </button>
-        </div>
+      <div class="flex items-center justify-end w-full">
         <button 
           @click="closeModal('log')"
           class="h-[52px] px-8 bg-car-item border-2 border-car-border text-car-text font-black text-[17px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
