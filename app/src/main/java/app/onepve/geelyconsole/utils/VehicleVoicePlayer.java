@@ -281,13 +281,30 @@ public class VehicleVoicePlayer {
             }
         } catch (Exception ignored) {}
 
-        // 2. 外部储存目录 (/sdcard/Download/语音主题包/ 或 /sdcard/Music/)
+        // 2. 外部独立专属座舱语音目录优先 (/sdcard/GeelyPilot/voices/ 物理隔离，永不受 Download 清空影响)
+        File pilotVoicesDir = new File(Environment.getExternalStorageDirectory(), "GeelyPilot/voices");
+        if (!pilotVoicesDir.exists()) {
+            try { pilotVoicesDir.mkdirs(); } catch (Exception ignored) {}
+        }
+        File customFilePilot = new File(pilotVoicesDir, voiceFileName);
+        String activeTheme = "";
+        try {
+            SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            activeTheme = sp.getString("active_voice_theme", "");
+        } catch (Exception ignored) {}
+        File customFileThemeAudio = (!activeTheme.isEmpty()) ? new File(pilotVoicesDir, activeTheme + "/audio/" + voiceFileName) : null;
+        File customFileTheme = (!activeTheme.isEmpty()) ? new File(pilotVoicesDir, activeTheme + "/" + voiceFileName) : null;
+
         File customFile0 = new File(SystemUtils.getAppDownloadDir(), "语音主题包/" + voiceFileName);
         File customFile1 = new File(SystemUtils.getAppDownloadDir(), voiceFileName);
         File customFile2 = new File("/sdcard/Music/" + voiceFileName);
-        File targetFile = (customFile0.exists() && customFile0.length() > 0) ? customFile0 :
+
+        File targetFile = (customFileThemeAudio != null && customFileThemeAudio.exists() && customFileThemeAudio.length() > 0) ? customFileThemeAudio :
+                          ((customFileTheme != null && customFileTheme.exists() && customFileTheme.length() > 0) ? customFileTheme :
+                          ((customFilePilot.exists() && customFilePilot.length() > 0) ? customFilePilot :
+                          ((customFile0.exists() && customFile0.length() > 0) ? customFile0 :
                           ((customFile1.exists() && customFile1.length() > 0) ? customFile1 :
-                          ((customFile2.exists() && customFile2.length() > 0) ? customFile2 : null));
+                          ((customFile2.exists() && customFile2.length() > 0) ? customFile2 : null)))));
 
         if (targetFile != null && targetFile.length() > 0) {
             Log.i(TAG, "Playing external audio file: " + targetFile.getAbsolutePath());

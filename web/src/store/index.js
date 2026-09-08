@@ -92,7 +92,8 @@ export const store = reactive({
     log: false,
     voiceItemSettings: null,
     otaCapture: false,
-    appSelect: null
+    appSelect: null,
+    cleanDownload: false
   },
   
   // 系统设置持久态

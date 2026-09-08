@@ -8,8 +8,8 @@
       <!-- 左侧大导航 -->
       <Sidebar />
 
-      <!-- 右侧专属大舞台 -->
-      <section class="flex-1 h-full overflow-y-auto p-6 flex flex-col space-y-6">
+      <!-- 右侧专属大舞台 (切换功能时自动回顶) -->
+      <section ref="mainContent" class="flex-1 h-full overflow-y-auto p-6 flex flex-col space-y-6">
         <WheelView v-if="store.currentNav === 'wheel'" />
         <BodyView v-else-if="store.currentNav === 'body'" />
         <AudioView v-else-if="store.currentNav === 'audio'" />
@@ -36,6 +36,7 @@
     <VoiceItemSettingsModal />
     <OtaCaptureModal />
     <AppSelectModal />
+    <CleanDownloadModal />
 
     <!-- 极简 Toast 提示 -->
     <transition name="fade">
@@ -50,7 +51,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { ref, watch, nextTick, onMounted } from 'vue';
 import TopBar from './components/TopBar.vue';
 import Sidebar from './components/Sidebar.vue';
 import WheelView from './views/WheelView.vue';
@@ -59,6 +60,17 @@ import AudioView from './views/AudioView.vue';
 import StoreView from './views/StoreView.vue';
 import InstallView from './views/InstallView.vue';
 import SystemView from './views/SystemView.vue';
+
+const mainContent = ref(null);
+
+// 切换左侧功能导航时，右侧主舞台无条件强制自动回顶，彻底消除翻页位置继承
+watch(() => store.currentNav, () => {
+  nextTick(() => {
+    if (mainContent.value) {
+      mainContent.value.scrollTop = 0;
+    }
+  });
+});
 
 // 7 大 M3 二级模态弹窗组件
 import SettingsModal from './components/modals/SettingsModal.vue';
@@ -77,6 +89,7 @@ import LogModal from './components/modals/LogModal.vue';
 import VoiceItemSettingsModal from './components/modals/VoiceItemSettingsModal.vue';
 import OtaCaptureModal from './components/modals/OtaCaptureModal.vue';
 import AppSelectModal from './components/modals/AppSelectModal.vue';
+import CleanDownloadModal from './components/modals/CleanDownloadModal.vue';
 
 import { store, bridge } from './store';
 

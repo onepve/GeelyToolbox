@@ -18,6 +18,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
@@ -1449,6 +1450,130 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
                 }
             });
+        }
+
+        @JavascriptInterface
+        public String getDownloadDirStats() {
+            try {
+                File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                if (downloadDir == null || !downloadDir.exists()) {
+                    return "{\"count\":0,\"size_mb\":\"0.00\",\"path\":\"/sdcard/Download/\"}";
+                }
+                File[] files = downloadDir.listFiles();
+                int count = 0;
+                long totalBytes = 0;
+                if (files != null) {
+                    for (File f : files) {
+                        count++;
+                        if (f.isFile()) {
+                            totalBytes += f.length();
+                        } else if (f.isDirectory()) {
+                            totalBytes += getDirSizeBytes(f);
+                        }
+                    }
+                }
+                double mb = (double) totalBytes / (1024 * 1024);
+                return String.format(Locale.US, "{\"count\":%d,\"size_mb\":\"%.2f\",\"path\":\"/sdcard/Download/\"}", count, mb);
+            } catch (Exception e) {
+                return "{\"count\":0,\"size_mb\":\"0.00\",\"path\":\"/sdcard/Download/\"}";
+            }
+        }
+
+        private long getDirSizeBytes(File dir) {
+            long size = 0;
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isFile()) size += f.length();
+                    else if (f.isDirectory()) size += getDirSizeBytes(f);
+                }
+            }
+            return size;
+        }
+
+        @JavascriptInterface
+        public void cleanDownloadDirectory(final int mode) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                        if (downloadDir == null || !downloadDir.exists()) {
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(context, "下载目录为空，无需清理", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                            return;
+                        }
+
+                        int deletedFiles = 0;
+                        long freedBytes = 0;
+                        File[] list = downloadDir.listFiles();
+                        if (list != null) {
+                            for (File file : list) {
+                                if (mode == 1) {
+                                    // 模式 1：彻底全量清空
+                                    freedBytes += (file.isFile() ? file.length() : getDirSizeBytes(file));
+                                    if (deleteRecursiveInternal(file)) deletedFiles++;
+                                } else if (mode == 2) {
+                                    // 模式 2：智能安全清理 (避开非空目录与音频素材)
+                                    if (file.isDirectory()) {
+                                        File[] sub = file.listFiles();
+                                        if (sub == null || sub.length == 0) {
+                                            if (file.delete()) deletedFiles++;
+                                        } else {
+                                            String lower = file.getName().toLowerCase();
+                                            if (lower.contains("voice") || lower.contains("audio") || lower.contains("sound")) {
+                                                continue; // 保护
+                                            }
+                                            for (File sf : sub) {
+                                                if (sf.isFile() && (sf.getName().endsWith(".apk") || sf.getName().endsWith(".zip") || sf.getName().endsWith(".tmp"))) {
+                                                    freedBytes += sf.length();
+                                                    if (sf.delete()) deletedFiles++;
+                                                }
+                                            }
+                                        }
+                                    } else if (file.isFile()) {
+                                        freedBytes += file.length();
+                                        if (file.delete()) deletedFiles++;
+                                    }
+                                } else if (mode == 3) {
+                                    // 模式 3：仅清理散落普通文件 (保留全部文件夹)
+                                    if (file.isFile()) {
+                                        freedBytes += file.length();
+                                        if (file.delete()) deletedFiles++;
+                                    }
+                                }
+                            }
+                        }
+
+                        final int finalDeleted = deletedFiles;
+                        final double freedMb = (double) freedBytes / (1024 * 1024);
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(context, String.format(Locale.CHINA, "清理完成！共清除 %d 项，释放 %.1f MB 存储空间", finalDeleted, freedMb), Toast.LENGTH_LONG).show();
+                            }
+                        });
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to clean download directory: " + e.getMessage());
+                    }
+                }
+            }).start();
+        }
+
+        private boolean deleteRecursiveInternal(File fileOrDirectory) {
+            if (fileOrDirectory.isDirectory()) {
+                File[] children = fileOrDirectory.listFiles();
+                if (children != null) {
+                    for (File child : children) {
+                        deleteRecursiveInternal(child);
+                    }
+                }
+            }
+            return fileOrDirectory.delete();
         }
 
         @JavascriptInterface
