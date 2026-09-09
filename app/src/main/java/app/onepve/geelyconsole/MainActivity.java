@@ -87,6 +87,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     private WebServer webServer;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean isWhitelistEnabled = false;
+    private Runnable pendingShowPillRunnable = null;
 
     private final Runnable statusTicker = new Runnable() {
         @Override
@@ -232,6 +233,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         hideSystemUI();
         mainHandler.post(statusTicker);
 
+        // 取消任何待弹出的悬浮窗延迟任务
+        if (pendingShowPillRunnable != null) {
+            mainHandler.removeCallbacks(pendingShowPillRunnable);
+            pendingShowPillRunnable = null;
+        }
+
         // 前台自适应：当控制台处于前台大屏展示时，隐藏悬浮小胶囊，彻底杜绝悬浮窗遮挡顶栏与页面内闪烁
         try {
             Intent hidePill = new Intent(this, FloatingWindowService.class);
@@ -274,15 +281,31 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         super.onStop();
         isForeground = false;
         FloatingWindowService.isMainActivityInForeground = false;
-        try {
-            // 真正退到桌面或其他外部车载应用（onStop）时，才按用户设置挂载恢复悬浮小胶囊
-            android.content.SharedPreferences sp = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            if (sp.getBoolean("floating_enabled", false)) {
-                Intent showPill = new Intent(this, FloatingWindowService.class);
-                showPill.setAction(FloatingWindowService.ACTION_SHOW);
-                startService(showPill);
+        
+        // 核心防干扰门禁：绝不在 onStop 瞬间立即挂载悬浮窗！
+        // 当用户在车机最左侧呼出原厂菜单时，MainActivity 会短暂触发 onStop。
+        // 若立即 addView，顶层 Overlay 窗口会打断原厂系统抽屉导致菜单被顶掉退回为返回键！
+        // 增加 1200ms 防抖延时：只有真正退回桌面或切换到外部全屏 App 稳定后，才平滑唤起悬浮胶囊！
+        if (pendingShowPillRunnable != null) {
+            mainHandler.removeCallbacks(pendingShowPillRunnable);
+        }
+        pendingShowPillRunnable = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (!isForeground) {
+                        android.content.SharedPreferences sp = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        if (sp.getBoolean("floating_enabled", false)) {
+                            Intent showPill = new Intent(MainActivity.this, FloatingWindowService.class);
+                            showPill.setAction(FloatingWindowService.ACTION_SHOW);
+                            startService(showPill);
+                            AppLogger.i("悬浮胶囊", "已稳定处于外部桌面或第三方应用，平滑挂载悬浮小胶囊");
+                        }
+                    }
+                } catch (Exception ignored) {}
             }
-        } catch (Exception ignored) {}
+        };
+        mainHandler.postDelayed(pendingShowPillRunnable, 1200);
     }
 
     @Override
