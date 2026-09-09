@@ -640,6 +640,25 @@ with open(MOBILE_WEB_PATH, "r", encoding="utf-8") as f:
 if 'style="display:flex; gap:8px;' in mweb_code and "voice_template" in mweb_code:
     reg_violations.append("mobile_web.html 语音制作中枢仍在使用单行双按钮布局，窄屏将溢出！")
 
+# 16.5 检查专家模式三步确认倒计时契约 (防看都不看盲点解锁) 与状态胶囊高对比
+install_view_path = os.path.join(WEB_SRC_DIR, "views/InstallView.vue")
+with open(install_view_path, "r", encoding="utf-8") as f:
+    iv_code = f.read()
+# 三步确认必须分别带 10s / 5s / 5s 倒计时
+if "countdown: 10," not in iv_code:
+    reg_violations.append("InstallView 专家模式第1步(风险告知)确认缺少 10s 倒计时！")
+if iv_code.count("countdown: 5,") < 2:
+    reg_violations.append("InstallView 专家模式第2/3步确认缺少 5s 倒计时！")
+# 状态胶囊必须高对比实底深墨黑字 (夜间不可隐形)
+if "text-[#0F172A] border-amber-300" not in iv_code:
+    reg_violations.append("InstallView 专家模式【已激活】胶囊丢失高对比样式 (需 bg-amber-400 + 深墨黑字)！")
+
+confirm_modal_path = os.path.join(WEB_SRC_DIR, "components/modals/ConfirmModal.vue")
+with open(confirm_modal_path, "r", encoding="utf-8") as f:
+    cm_code = f.read()
+if "countdownLeft" not in cm_code or "请仔细阅读" not in cm_code:
+    reg_violations.append("ConfirmModal.vue 缺少高危确认倒计时逻辑 (countdownLeft / 请仔细阅读)！")
+
 if reg_violations:
     for v in reg_violations:
         print(f"  [FAIL] {v}")

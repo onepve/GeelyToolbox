@@ -91,10 +91,10 @@
             <span class="text-[18px] font-black text-car-text">伪装屏保注入特权</span>
             <span 
               :class="[
-                'px-2.5 py-0.5 text-[12px] font-bold rounded-full border',
+                'px-3 py-0.5 text-[13px] font-black rounded-full border',
                 store.settings.expert_rabbit 
-                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
-                  : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                  ? 'bg-amber-400 text-[#0F172A] border-amber-300 shadow-sm' 
+                  : 'bg-emerald-400 text-[#0F172A] border-emerald-300 shadow-sm'
               ]"
             >
               {{ store.settings.expert_rabbit ? '专家模式已激活 (已解除限制)' : '安全保护已锁定' }}
@@ -161,28 +161,31 @@ function confirmUnlockExpert() {
     return;
   }
 
-  // 第 1 次确认：高危警告
+  // 第 1 次确认：高危警告 (10s 倒计时防盲点)
   openModal('confirm', {
     title: '【高危警告】解锁专家模式 (第 1/3 次确认)',
     desc: '【专家模式】解除系统原生安全边界，开放直接向车机底层屏保主题注入任意第三方应用的高级权限。非玩车专业人员误操作可能导致屏保黑屏或组件冲突。是否确认继续？',
     tip: '【安全建议】普通车友使用自带白名单与精选安装即可满足全部日常需求。',
     isDanger: true,
+    countdown: 10,
     confirmText: '我已知晓风险，下一步',
     onConfirm: () => {
-      // 第 2 次确认：技术原理与行车安全
+      // 第 2 次确认：技术原理与行车安全 (5s 倒计时)
       openModal('confirm', {
         title: '【安全确认】卡主题屏保注入规范 (第 2/3 次确认)',
         desc: '卡主题注入通过重写原厂兔子时钟屏保包名（com.ecarx.screensaver）实现无损系统级提权。在执行主题注入或整车重启前，请务必保证车辆安全停稳并挂入 P 挡。严禁在行驶途中操作！',
         tip: '【操作铁律】严禁在行车行驶过程中执行注入或冷重启！',
         isDanger: true,
+        countdown: 5,
         confirmText: '确认环境安全，下一步',
         onConfirm: () => {
-          // 第 3 次确认：最终特权授权
+          // 第 3 次确认：最终特权授权 (5s 倒计时)
           openModal('confirm', {
             title: '【最终授权】正式激活专家模式 (第 3/3 次确认)',
             desc: '确认正式激活专家模式？激活后，下方将立即解锁【🛠️ 半自动保姆式卡主题向导】与【📁 调起原生文件管理】两大高阶工具。',
             tip: '【提示】后续可随时在此处一键恢复安全锁定。',
             isDanger: true,
+            countdown: 5,
             confirmText: '确认最终激活',
             onConfirm: () => {
               store.settings.expert_rabbit = true;

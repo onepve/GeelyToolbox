@@ -34,14 +34,17 @@
         </button>
         <button 
           @click="handleConfirm"
+          :disabled="countdownLeft > 0"
           :class="[
-            'min-h-[68px] px-12 rounded-2xl font-black text-[21px] cursor-pointer transition-all shadow-md',
-            confirmData?.isDanger 
-              ? 'bg-rose-500/20 border-2 border-rose-500 text-rose-500 hover:bg-rose-500/30' 
-              : 'bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25'
+            'min-h-[68px] px-12 rounded-2xl font-black text-[21px] transition-all shadow-md',
+            countdownLeft > 0
+              ? 'bg-car-item border-2 border-car-border text-car-sub opacity-60 cursor-not-allowed'
+              : (confirmData?.isDanger 
+                  ? 'bg-rose-500/20 border-2 border-rose-500 text-rose-500 hover:bg-rose-500/30 cursor-pointer'
+                  : 'bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25 cursor-pointer')
           ]"
         >
-          确认执行
+          {{ countdownLeft > 0 ? `⏳ 请仔细阅读 (${countdownLeft}s)` : (confirmData?.confirmText || '确认执行') }}
         </button>
       </div>
     </template>
@@ -49,13 +52,43 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch, onUnmounted } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, closeModal } from '../../store';
 
 const confirmData = computed(() => store.modals.confirm);
 
+// ---- 高危确认倒计时 (countdown>0 时确认键禁用置灰直至归零，防看都不看盲点) ----
+const countdownLeft = ref(0);
+let countdownTimer = null;
+
+function stopCountdown() {
+  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+  countdownLeft.value = 0;
+}
+
+function startCountdown() {
+  stopCountdown();
+  const secs = confirmData.value?.countdown || 0;
+  if (secs > 0) {
+    countdownLeft.value = secs;
+    countdownTimer = setInterval(() => {
+      countdownLeft.value -= 1;
+      if (countdownLeft.value <= 0) stopCountdown();
+    }, 1000);
+  }
+}
+
+// 每次弹窗内容(重新)打开都重置倒计时；关闭即清理
+watch(() => store.modals.confirm, (nv) => {
+  if (nv) startCountdown(); else stopCountdown();
+}, { immediate: true });
+
+onUnmounted(stopCountdown);
+
 function handleConfirm() {
+  // 倒计时未归零时按钮已禁用，此处双重保险
+  if (countdownLeft.value > 0) return;
   const cb = confirmData.value?.onConfirm;
   // 关键顺序：必须先关闭当前弹窗再执行回调！
   // 否则嵌套确认（onConfirm 内再次 openModal('confirm')）会立刻被随后的 closeModal 误杀，
