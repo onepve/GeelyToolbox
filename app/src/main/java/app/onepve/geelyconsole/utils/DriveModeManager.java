@@ -50,15 +50,22 @@ public class DriveModeManager {
 
     public int getDriveMode() { return lastDriveMode == -1 ? MODE_SMART : lastDriveMode; }
 
+    /**
+     * 车辆熄火/断电/休眠复位：驾驶模式状态机重置归零，下一次点火绝对静默
+     */
+    public synchronized void resetState() {
+        lastDriveMode = -1;
+        isDriveModeVoiceArmed = 0;
+        AppLogger.i("驾驶模式", "熄火休眠: 驾驶模式状态机重置归零 (armed=0, lastMode=-1)");
+    }
+
     public synchronized void updateDriveMode(int mode, boolean voiceMasterSwitch, SharedPreferences prefs) {
         if (mode <= 0) return;
 
         if (lastDriveMode == -1) {
             lastDriveMode = mode;
-            AppLogger.i("驾驶模式", "基准初始化: 当前模式=" + getModeName(mode));
-            if (mode != MODE_SMART) {
-                isDriveModeVoiceArmed = 1;
-            }
+            isDriveModeVoiceArmed = 0; // 严格铁律：基准初始化 100% 保持休眠态 (armed=0)，绝不主动发声
+            AppLogger.i("驾驶模式", "基准初始化: 当前模式=" + getModeName(mode) + ", armed=0 (静默休眠)");
             if (listener != null) {
                 listener.onDriveModeChanged(lastDriveMode);
             }
@@ -98,8 +105,10 @@ public class DriveModeManager {
                     }
                     break;
                 case MODE_SMART:
-                    if (enableSmart && voicePlayer != null) {
-                        voicePlayer.play("mode_smart.mp3", "智能模式");
+                    if (isDriveModeVoiceArmed == 1) {
+                        if (enableSmart && voicePlayer != null) {
+                            voicePlayer.play("mode_smart.mp3", "智能模式");
+                        }
                     }
                     isDriveModeVoiceArmed = 0; // 归零！进入静默态
                     break;

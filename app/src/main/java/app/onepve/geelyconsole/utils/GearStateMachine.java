@@ -28,6 +28,30 @@ public class GearStateMachine {
     private int lastGearPos = -1;
     private int isGearVoiceArmed = 0; // 0=P挡静默休眠态, 1=车主激活态
 
+    public static int normalizeGear(int rawGear) {
+        switch (rawGear) {
+            case 2:
+            case 17: // 0x11 ECARX Vehicle_Gear D挡
+                return 2;
+            case 3:
+            case 18: // 0x12 ECARX Vehicle_Gear N挡
+                return 3;
+            case 4:
+            case 19: // 0x13 ECARX Vehicle_Gear R挡
+                return 4;
+            case 5:
+            case 20: // 0x14 ECARX Vehicle_Gear P挡
+                return 5;
+            case 6:
+            case 7:
+            case 21: // 0x15 ECARX Vehicle_Gear S/M挡
+            case 22: // 0x16 ECARX Vehicle_Gear S/B挡
+                return 6;
+            default:
+                return rawGear;
+        }
+    }
+
     public GearStateMachine(Context context, VehicleVoicePlayer voicePlayer) {
         this.context = context.getApplicationContext();
         this.voicePlayer = voicePlayer;
@@ -43,15 +67,23 @@ public class GearStateMachine {
 
     public int getGear() { return lastGearPos == -1 ? 5 : lastGearPos; }
 
-    public synchronized void updateGear(int gear, boolean voiceMasterSwitch, SharedPreferences prefs) {
-        if (gear <= 0) return;
+    /**
+     * 车辆熄火/断电/休眠复位：状态机重置归零，下一次点火绝对静默
+     */
+    public synchronized void resetState() {
+        lastGearPos = -1;
+        isGearVoiceArmed = 0;
+        AppLogger.i("换挡状态", "熄火休眠: 换挡状态机重置归零 (armed=0, lastGear=-1)");
+    }
+
+    public synchronized void updateGear(int rawGear, boolean voiceMasterSwitch, SharedPreferences prefs) {
+        if (rawGear <= 0) return;
+        final int gear = normalizeGear(rawGear);
 
         if (lastGearPos == -1) {
             lastGearPos = gear;
-            AppLogger.i("换挡状态", "基准初始化: 当前挡位=" + getGearName(gear));
-            if (gear != 5) {
-                isGearVoiceArmed = 1;
-            }
+            isGearVoiceArmed = 0; // 严格铁律：开机基准初始化 100% 保持休眠态 (armed=0)，绝不主动发声
+            AppLogger.i("换挡状态", "基准初始化: 当前挡位=" + getGearName(gear) + ", armed=0 (静默休眠)");
             if (listener != null) {
                 listener.onGearChanged(lastGearPos);
             }
@@ -92,8 +124,11 @@ public class GearStateMachine {
                     voicePlayer.play("gear_s.mp3", "已挂入运动挡，动力充沛");
                 }
             } else if (gear == 5) { // P 挡
-                if (enableP && voicePlayer != null) {
-                    voicePlayer.play("gear_p.mp3", "已挂入驻车挡");
+                // 必须在车主主动换出过 P 挡（isGearVoiceArmed == 1）后挂回 P 挡才播报，杜绝开机/熄火点火伪跳变误报
+                if (isGearVoiceArmed == 1) {
+                    if (enableP && voicePlayer != null) {
+                        voicePlayer.play("gear_p.mp3", "已挂入驻车挡");
+                    }
                 }
                 isGearVoiceArmed = 0; // 归零！进入休眠态
             }
@@ -106,7 +141,7 @@ public class GearStateMachine {
     }
 
     private String getGearName(int gear) {
-        switch (gear) {
+        switch (normalizeGear(gear)) {
             case 2: return "D挡(前进)";
             case 3: return "N挡(空挡)";
             case 4: return "R挡(倒车)";

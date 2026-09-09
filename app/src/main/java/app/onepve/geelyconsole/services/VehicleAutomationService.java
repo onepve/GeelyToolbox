@@ -308,8 +308,11 @@ public class VehicleAutomationService extends Service {
                 String action = intent.getAction();
                 if (Intent.ACTION_SHUTDOWN.equals(action) ||
                         "android.intent.action.QUICKBOOT_POWEROFF".equals(action) ||
-                        "com.ecarx.intent.action.ECARX_SHUTDOWN".equals(action)) {
-                    if (enableFlameoutVoice && voicePlayer != null) {
+                        "com.ecarx.intent.action.ECARX_SHUTDOWN".equals(action) ||
+                        Intent.ACTION_SCREEN_OFF.equals(action)) {
+                    if (gearStateMachine != null) gearStateMachine.resetState();
+                    if (driveModeManager != null) driveModeManager.resetState();
+                    if (enableFlameoutVoice && voicePlayer != null && !Intent.ACTION_SCREEN_OFF.equals(action)) {
                         voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品");
                     }
                 }
@@ -427,7 +430,19 @@ public class VehicleAutomationService extends Service {
                 if (gidx != -1) {
                     try {
                         String hex = line.substring(gidx + 27, gidx + 29).trim();
-                        gearVal = Integer.parseInt(hex, 16);
+                        int rawHex = Integer.parseInt(hex, 16);
+                        // 吉利/ECARX Vehicle_Gear 权威报文映射:
+                        // 0x14 (20) -> P挡 (5)
+                        // 0x13 (19) -> R挡 (4)
+                        // 0x12 (18) -> N挡 (3)
+                        // 0x11 (17) -> D挡 (2)
+                        // 0x15 (21) / 0x16 (22) -> S挡 (6)
+                        if (rawHex == 0x14) gearVal = 5;
+                        else if (rawHex == 0x13) gearVal = 4;
+                        else if (rawHex == 0x12) gearVal = 3;
+                        else if (rawHex == 0x11) gearVal = 2;
+                        else if (rawHex == 0x15 || rawHex == 0x16) gearVal = 6;
+                        else gearVal = rawHex;
                     } catch (Exception ignored) {}
                 }
             }
@@ -682,9 +697,14 @@ public class VehicleAutomationService extends Service {
         }
 
         // 电源模式/熄火检测
-        if (enableFlameoutVoice && "PEPS_PowerMode".equals(key)) {
-            if (val == 0 && lastPowerMode > 0) {
-                voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品");
+        if ("PEPS_PowerMode".equals(key)) {
+            if (val == 0) {
+                // 车辆熄火/下电 -> 状态机强制归零，杜绝下次点火误报
+                if (gearStateMachine != null) gearStateMachine.resetState();
+                if (driveModeManager != null) driveModeManager.resetState();
+                if (enableFlameoutVoice && lastPowerMode > 0 && voicePlayer != null) {
+                    voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品");
+                }
             }
             lastPowerMode = val;
         }
