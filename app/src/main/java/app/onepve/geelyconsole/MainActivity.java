@@ -1137,6 +1137,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public void togglePackageFreeze(final String pkg) {
+            if (pkg == null || pkg.isEmpty()) return;
+            boolean isFrozen = SystemUtils.getAppDetailedState(context, pkg) == SystemUtils.APP_STATE_DISABLED;
+            togglePackageFreeze(pkg, !isFrozen);
+        }
+
+        @JavascriptInterface
         public void togglePackageFreeze(final String pkg, final boolean freeze) {
             if (freeze && isProtectedCriticalPackage(pkg)) {
                 mainHandler.post(new Runnable() {

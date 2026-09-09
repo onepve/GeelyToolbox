@@ -72,37 +72,51 @@ public class SteeringWheelKeyManager {
      * 同步并应用原厂 MediaKeyReceiver 拦截状态
      */
     public void syncMediaKeyReceiverState() {
-        boolean masterSwitch = prefs.getBoolean("wheel_master_switch", true);
-        if (!masterSwitch) {
-            // 方控总开关已关闭：彻底解禁原厂 MediaKeyReceiver，完全不拦截！
-            try {
-                PackageManager pm = context.getPackageManager();
-                ComponentName comp = new ComponentName("ecarx.xsf.mediacenter", "ecarx.xsf.mediacenter.MediaKeyReceiver");
-                pm.setComponentEnabledSetting(comp, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
-                Log.i(TAG, "Wheel master switch is OFF, MediaKeyReceiver restored to ENABLED");
-            } catch (Exception ignored) {}
-            return;
-        }
-
-        String mode = getWheelMode();
-        boolean shouldBlock = !MODE_FACTORY_DEFAULT.equals(mode);
-        try {
-            PackageManager pm = context.getPackageManager();
-            ComponentName comp = new ComponentName("ecarx.xsf.mediacenter", "ecarx.xsf.mediacenter.MediaKeyReceiver");
-            int newState = shouldBlock ? PackageManager.COMPONENT_ENABLED_STATE_DISABLED : PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
-            pm.setComponentEnabledSetting(comp, newState, PackageManager.DONT_KILL_APP);
-            Log.i(TAG, "MediaKeyReceiver enabled setting set to: " + (shouldBlock ? "DISABLED" : "ENABLED"));
-        } catch (Exception e) {
-            // 尝试通过 Shell 强制执行
-            try {
-                if (shouldBlock) {
-                    AdbClient.execute(context, "pm disable-user --user 0 ecarx.xsf.mediacenter/ecarx.xsf.mediacenter.MediaKeyReceiver");
-                } else {
-                    AdbClient.execute(context, "pm enable ecarx.xsf.mediacenter/ecarx.xsf.mediacenter.MediaKeyReceiver");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean masterSwitch = prefs.getBoolean("wheel_master_switch", true);
+                if (!masterSwitch) {
+                    // 方控总开关已关闭：彻底解禁原厂 MediaKeyReceiver，完全不拦截！
+                    try {
+                        PackageManager pm = context.getPackageManager();
+                        ComponentName comp = new ComponentName("ecarx.xsf.mediacenter", "ecarx.xsf.mediacenter.MediaKeyReceiver");
+                        pm.setComponentEnabledSetting(comp, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+                    } catch (Exception ignored) {}
+                    try {
+                        AdbClient.execute(context, "pm enable ecarx.xsf.mediacenter/ecarx.xsf.mediacenter.MediaKeyReceiver");
+                        AdbClient.execute(context, "pm enable com.ecarx.multimedia");
+                    } catch (Exception ignored) {}
+                    Log.i(TAG, "Wheel master switch is OFF, MediaKeyReceiver & multimedia restored to ENABLED");
+                    return;
                 }
-            } catch (Exception ignored) {}
-            Log.w(TAG, "MediaKeyReceiver toggle fallback via shell: " + e.getMessage());
-        }
+
+                String mode = getWheelMode();
+                boolean shouldBlock = !MODE_FACTORY_DEFAULT.equals(mode);
+                try {
+                    PackageManager pm = context.getPackageManager();
+                    ComponentName comp = new ComponentName("ecarx.xsf.mediacenter", "ecarx.xsf.mediacenter.MediaKeyReceiver");
+                    int newState = shouldBlock ? PackageManager.COMPONENT_ENABLED_STATE_DISABLED : PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
+                    pm.setComponentEnabledSetting(comp, newState, PackageManager.DONT_KILL_APP);
+                } catch (Exception ignored) {}
+
+                // 学习 CarMedia 核心拦截机理：通过 ADB 停用原厂多媒体广播接收器并冻结原厂多媒体
+                try {
+                    if (shouldBlock) {
+                        AdbClient.execute(context, "pm disable-user --user 0 ecarx.xsf.mediacenter/ecarx.xsf.mediacenter.MediaKeyReceiver");
+                        AdbClient.execute(context, "pm disable-user --user 0 com.ecarx.multimedia");
+                        AdbClient.execute(context, "am force-stop com.ecarx.multimedia; am force-stop ecarx.xsf.mediacenter");
+                        Log.i(TAG, "Successfully disabled MediaKeyReceiver and com.ecarx.multimedia via ADB");
+                    } else {
+                        AdbClient.execute(context, "pm enable ecarx.xsf.mediacenter/ecarx.xsf.mediacenter.MediaKeyReceiver");
+                        AdbClient.execute(context, "pm enable com.ecarx.multimedia");
+                        Log.i(TAG, "Successfully re-enabled MediaKeyReceiver and com.ecarx.multimedia via ADB");
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "syncMediaKeyReceiverState via ADB failed: " + e.getMessage());
+                }
+            }
+        }).start();
     }
 
     public String getWheelMode() {
@@ -177,9 +191,18 @@ public class SteeringWheelKeyManager {
 
         Log.i(TAG, "Handling wheel key: " + keyCode + " under mode: " + mode);
 
-        // 1. 米小江优先模式 (放行 304, 305, 348 给米小江处理，工具箱仅处理按键 3 静音 与 按键 2 滚轮按压)
+        // 1. 米小江优先模式 (放行 304, 305 给米小江切歌，但若工具箱配置了 Mode 键或静音键，工具箱优先执行自定义动作并压制原厂)
         if (MODE_CARMEDIA_FIRST.equals(mode)) {
-            if (keyCode == KEY_MUTE) {
+            if (keyCode == KEY_WMODE) {
+                // Mode 键 (6号键)
+                String modeAction = prefs.getString("wheel_action_mode", ACTION_OPEN_360);
+                if (!ACTION_DEFAULT.equals(modeAction)) {
+                    AppLogger.i("方控总线", "米小江优先模式 -> 触发[6号键·Mode短按] -> 执行自定义动作: " + modeAction);
+                    suppressOriginalMultimedia();
+                    executeAction(modeAction);
+                    return;
+                }
+            } else if (keyCode == KEY_MUTE) {
                 // 静音键短按
                 String muteAction = prefs.getString("wheel_action_mute", "default");
                 AppLogger.i("方控总线", "米小江优先模式 -> 触发[静音键短按] -> 执行动作: " + muteAction);
@@ -187,20 +210,23 @@ public class SteeringWheelKeyManager {
                 if (!ACTION_DEFAULT.equals(muteAction) && !ACTION_MUTE_TOGGLE.equals(muteAction)) {
                     cancelNativeMute();
                 }
+                return;
             } else if (keyCode == KEY_OK) {
                 // 滚轮下按
                 String okAction = prefs.getString("wheel_action_ok", ACTION_DEFAULT);
                 AppLogger.i("方控总线", "米小江优先模式 -> 触发[滚轮垂直下按] -> 执行动作: " + okAction);
                 executeAction(okAction);
+                return;
             } else if (keyCode == KEY_CUSTOM) {
                 // 自定义菱形键
                 String customAction = prefs.getString("wheel_action_custom", ACTION_DEFAULT);
                 AppLogger.i("方控总线", "米小江优先模式 -> 触发[菱形自定义键] -> 执行动作: " + customAction);
                 executeAction(customAction);
+                return;
             } else {
                 AppLogger.i("方控总线", "米小江优先模式 -> 放行按键给米小江CarMedia: " + keyName);
             }
-            // 304/305/348 主动放行给米小江，工具箱绝不争抢
+            // 304/305 主动放行给米小江，工具箱绝不争抢
             return;
         }
 
@@ -340,7 +366,7 @@ public class SteeringWheelKeyManager {
                     if (am != null) {
                         java.lang.reflect.Method m = android.app.ActivityManager.class.getMethod("forceStopPackage", String.class);
                         m.invoke(am, "com.ecarx.multimedia");
-                        m.invoke(am, "com.ecarx.xcmedia");
+                        m.invoke(am, "ecarx.xsf.mediacenter");
                     }
                 } catch (Throwable ignored) {}
 
@@ -353,7 +379,7 @@ public class SteeringWheelKeyManager {
 
                 // C. 异步执行 ADB 强杀 (后台执行，零阻塞)
                 try {
-                    AdbClient.execute(context, "am force-stop com.ecarx.multimedia; am force-stop com.ecarx.xcmedia");
+                    AdbClient.execute(context, "am force-stop com.ecarx.multimedia; am force-stop ecarx.xsf.mediacenter");
                 } catch (Throwable ignored) {}
             }
         }).start();

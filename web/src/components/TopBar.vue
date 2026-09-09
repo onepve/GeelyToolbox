@@ -56,9 +56,9 @@
       <!-- 退出按键 -->
       <button 
         @click="exitApp"
-        class="h-[44px] px-4 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-500 font-black text-[15.5px] cursor-pointer hover:bg-rose-500/25 transition-all shadow-sm"
+        class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light hover:text-rose-400 transition-all shadow-sm flex items-center"
       >
-        退出
+        <span class="mr-1 text-[13px] opacity-70">✕</span> 退出
       </button>
     </div>
   </header>
@@ -124,7 +124,7 @@ const statusPills = computed(() => {
     },
     { 
       text: `商店: ${store.deviceInfo.appstore_frozen ? '已冻结' : '未冻结'}`, 
-      dotClass: store.deviceInfo.appstore_frozen ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-rose-500 shadow-[0_0_6px_#EF4444]',
+      dotClass: store.deviceInfo.appstore_frozen ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-amber-500 shadow-[0_0_6px_#F59E0B]',
       onClick: () => handleStoreCapsuleClick() 
     },
     { 

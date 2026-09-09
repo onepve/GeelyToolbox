@@ -58,7 +58,7 @@
               </button>
               <button
                 @click="customText = ''"
-                class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-rose-400 hover:text-rose-300 text-[13px] font-bold hover:border-rose-400/60 cursor-pointer mb-1 shadow-sm transition-all"
+                class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-text hover:border-car-border-light text-[13px] font-bold cursor-pointer mb-1 shadow-sm transition-all"
               >
                 清空台词
               </button>
@@ -131,9 +131,9 @@
       <div class="flex items-center justify-between w-full">
         <button 
           @click="resetToDefault"
-          class="h-[56px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-rose-400 hover:text-rose-300 font-black text-[17px] cursor-pointer hover:border-rose-400/50 shadow-sm transition-all"
+          class="h-[56px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-text hover:text-car-accent font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center"
         >
-          恢复出厂默认 (晓晓知性原声)
+          <span class="mr-1.5 opacity-80">🔄</span> 恢复出厂默认 (晓晓知性原声)
         </button>
         <button 
           @click="closeModal('voiceItemSettings')"

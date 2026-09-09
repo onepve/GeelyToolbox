@@ -33,13 +33,13 @@
           <button 
             @click="toggleFreeze('com.ecarx.appstore')"
             :class="[
-              'min-h-[66px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all',
-              store.deviceInfo.appstore_frozen 
-                ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/20' 
-                : 'bg-rose-500/15 border-2 border-rose-500 text-rose-500 ring-2 ring-rose-500/20'
+              'min-h-[66px] rounded-2xl border-2 font-black text-[17.5px] cursor-pointer transition-all',
+              packageStates['com.ecarx.appstore'] 
+                ? 'bg-car-card border-emerald-500/60 text-emerald-400' 
+                : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400'
             ]"
           >
-            {{ store.deviceInfo.appstore_frozen ? '已冻结 (白名单生效)' : '运行中 · 点击一键冻结' }}
+            {{ packageStates['com.ecarx.appstore'] ? '已安全冻结 (白名单锁定)' : '运行中 · 点击安全冻结' }}
           </button>
         </div>
 
@@ -51,9 +51,14 @@
           </div>
           <button 
             @click="toggleFreeze('ecarx.upgrade')"
-            class="min-h-[66px] rounded-2xl border-2 border-car-border bg-car-card text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light"
+            :class="[
+              'min-h-[66px] rounded-2xl border-2 font-black text-[17.5px] cursor-pointer transition-all',
+              packageStates['ecarx.upgrade'] 
+                ? 'bg-car-card border-emerald-500/60 text-emerald-400' 
+                : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
+            ]"
           >
-            冻结 / 解冻切换
+            {{ packageStates['ecarx.upgrade'] ? '已安全冻结 (OTA静默)' : '运行中 · 点击安全冻结' }}
           </button>
         </div>
 
@@ -61,13 +66,18 @@
         <div class="flex-1 bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
           <div class="flex flex-col mb-4">
             <span class="text-[19px] font-black text-car-text mb-1">原厂多媒体伴听</span>
-            <span class="text-[14px] text-car-sub font-mono">com.ecarx.xcmedia</span>
+            <span class="text-[14px] text-car-sub font-mono">com.ecarx.multimedia</span>
           </div>
           <button 
-            @click="toggleFreeze('com.ecarx.xcmedia')"
-            class="min-h-[66px] rounded-2xl border-2 border-car-border bg-car-card text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light"
+            @click="toggleFreeze('com.ecarx.multimedia')"
+            :class="[
+              'min-h-[66px] rounded-2xl border-2 font-black text-[17.5px] cursor-pointer transition-all',
+              packageStates['com.ecarx.multimedia'] 
+                ? 'bg-car-card border-emerald-500/60 text-emerald-400' 
+                : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400'
+            ]"
           >
-            冻结 / 解冻切换
+            {{ packageStates['com.ecarx.multimedia'] ? '已安全冻结 (方控免误弹)' : '运行中 · 点击安全冻结' }}
           </button>
         </div>
       </div>
@@ -135,9 +145,33 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, openModal, showToast } from '../../store';
+
+const packageStates = ref({
+  'com.ecarx.appstore': false,
+  'ecarx.upgrade': false,
+  'com.ecarx.multimedia': false
+});
+
+function refreshPackageStates() {
+  try {
+    packageStates.value['com.ecarx.appstore'] = !!bridge.call('isPackageFrozen', 'com.ecarx.appstore');
+    packageStates.value['ecarx.upgrade'] = !!bridge.call('isPackageFrozen', 'ecarx.upgrade');
+    packageStates.value['com.ecarx.multimedia'] = !!bridge.call('isPackageFrozen', 'com.ecarx.multimedia');
+  } catch (e) {}
+}
+
+watch(() => store.modals.deepTools, (show) => {
+  if (show) {
+    refreshPackageStates();
+  }
+});
+
+onMounted(() => {
+  refreshPackageStates();
+});
 
 function openOtaCapture() {
   openModal('otaCapture');
@@ -178,7 +212,10 @@ function saveLog() {
 
 function toggleFreeze(pkg) {
   bridge.call('togglePackageFreeze', pkg);
-  showToast('指令已下发，正在更新组件状态...');
+  showToast('正在下发 ADB 指令更新组件状态...');
+  setTimeout(() => {
+    refreshPackageStates();
+  }, 1200);
 }
 
 function dumpLogcat() {

@@ -54,9 +54,9 @@
           </button>
           <button 
             @click="clearLogs"
-            class="min-h-[50px] px-5 rounded-xl bg-rose-500/10 border-2 border-rose-500/30 text-rose-400 hover:text-rose-300 font-black text-[15.5px] cursor-pointer hover:border-rose-500/60 shadow-sm transition-all flex items-center"
+            class="min-h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-border hover:border-rose-500/40 text-car-text hover:text-rose-400 font-black text-[15.5px] cursor-pointer shadow-sm transition-all flex items-center"
           >
-            <span class="mr-1.5">🗑️</span> 清空
+            <span class="mr-1.5 opacity-80">🗑️</span> 清空
           </button>
         </div>
 

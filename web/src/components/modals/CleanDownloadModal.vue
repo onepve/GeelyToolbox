@@ -29,18 +29,18 @@
         <!-- 选项 1：彻底全量清空 -->
         <div 
           @click="confirmClean(1)"
-          class="bg-car-card border-2 border-car-border rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-rose-500/50 hover:bg-car-item transition-all shadow-sm group"
+          class="bg-car-card border-2 border-car-border rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-car-border-light hover:bg-car-item transition-all shadow-sm group"
         >
           <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
             <div class="flex items-center space-x-2.5">
-              <span class="text-[19px] font-black text-rose-400 group-hover:text-rose-300">🔥 彻底全量清空</span>
-              <span class="px-2.5 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-400 text-[12.5px] font-black">强力排障</span>
+              <span class="text-[19px] font-black text-car-text">🔥 彻底全量清空</span>
+              <span class="px-2.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[12.5px] font-black">强力排障</span>
             </div>
             <span class="text-[14.5px] text-car-sub font-bold leading-relaxed">
               强制清除 Download 目录下的全部文件与所有子文件夹。空间极度告急、历史残留过多时使用，彻底重置为崭新空目录。
             </span>
           </div>
-          <button class="h-[52px] px-6 bg-rose-500/15 border-2 border-rose-500/40 text-rose-400 font-black text-[16px] rounded-xl group-hover:bg-rose-500/25 shrink-0 transition-all pointer-events-none">
+          <button class="h-[52px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[16px] rounded-xl group-hover:border-car-border-light shrink-0 transition-all pointer-events-none">
             全量清空
           </button>
         </div>

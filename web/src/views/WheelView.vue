@@ -1,34 +1,39 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 核心：方向盘按键方控接管总开关 - 提权置顶首屏 (完整卡片闭合包裹) -->
-    <FeatureCard>
-      <template #header>
-        <div class="flex items-center justify-between w-full">
-          <div class="flex items-center space-x-3">
-            <span :class="['w-3.5 h-3.5 rounded-full shadow-md shrink-0', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-rose-500 shadow-[0_0_10px_#F43F5E]']"></span>
-            <span class="text-[21px] font-black text-car-text tracking-wide">方向盘按键方控接管总开关</span>
-          </div>
-          <span :class="['px-3.5 py-1 text-[13.5px] font-black rounded-full border shrink-0', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40' : 'bg-rose-500/15 text-rose-400 border-rose-500/40']">
+    <!-- 核心：方向盘按键方控接管总开关 - 提权置顶首屏 (左右分栏车规黄金磁贴) -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
+      <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
+        <div class="flex items-center space-x-3">
+          <span :class="['w-3.5 h-3.5 rounded-full shadow-md shrink-0', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-slate-400']"></span>
+          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">方向盘按键方控接管总开关</span>
+          <span :class="['px-3 py-0.5 text-[13px] font-black rounded-full border shrink-0', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40' : 'bg-car-item text-car-sub border-car-border']">
             {{ store.vehicleAuto.wheel_master_switch ? '方控接管已启用' : '方控已彻底放行 (不干涉)' }}
           </span>
         </div>
-      </template>
-      <template #desc>
-        独立控制是否接管滚轮下按、静音键与 Mode 键。如开启米小江且完全不想让工具箱参与方控，可直接关闭此项，彻底放行给原厂与米小江。
-      </template>
+        <div class="text-[14.5px] text-car-sub font-bold leading-normal">
+          接管方向盘滚轮下按、静音键与 Mode 键。关闭后彻底放行给原厂系统与米小江。
+        </div>
+      </div>
 
-      <button
-        @click="toggleWheelMasterSwitch"
-        :class="[
-          'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
-          store.vehicleAuto.wheel_master_switch
-            ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/25'
-            : 'bg-rose-500/15 border-rose-500 text-rose-400 hover:bg-rose-500/25'
-        ]"
-      >
-        <span>{{ store.vehicleAuto.wheel_master_switch ? '方控接管总开关: 已开启 (按键接管分发中)' : '方控接管总开关: 已关闭 (彻底放行不干涉)' }}</span>
-      </button>
-    </FeatureCard>
+      <div class="shrink-0 w-[230px]">
+        <button
+          @click="toggleWheelMasterSwitch"
+          :class="[
+            'w-full h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center',
+            store.vehicleAuto.wheel_master_switch
+              ? 'bg-car-item border-car-accent'
+              : 'bg-car-card border-car-border hover:border-car-border-light'
+          ]"
+        >
+          <span class="text-[18.5px] font-black text-car-text tracking-wide whitespace-nowrap">
+            {{ store.vehicleAuto.wheel_master_switch ? '方控接管已开启' : '方控接管已关闭' }}
+          </span>
+          <span :class="['text-[12.5px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.wheel_master_switch ? 'text-car-accent' : 'text-car-sub']">
+            {{ store.vehicleAuto.wheel_master_switch ? '点击切换为彻底放行' : '点击开启按键接管' }}
+          </span>
+        </button>
+      </div>
+    </div>
 
     <!-- 车型图解与协议指示区 (缤越 COOL / SX-0017 原厂按键分布) -->
     <div class="bg-car-item border border-car-border rounded-2xl p-5 shadow-sm">

@@ -29,15 +29,15 @@
         </button>
         <button 
           @click="refreshApps"
-          class="px-5 py-2.5 rounded-xl bg-car-card border border-car-border text-car-text font-extrabold text-[16px] cursor-pointer hover:border-car-border-light"
+          class="px-5 py-2.5 rounded-xl bg-car-card border border-car-border text-car-text font-extrabold text-[16px] cursor-pointer hover:border-car-border-light shadow-sm"
         >
           刷新
         </button>
         <button 
           @click="openModal('cleanDownload')"
-          class="px-5 py-2.5 rounded-xl bg-car-card border-2 border-rose-500/40 text-rose-400 hover:text-rose-300 font-extrabold text-[16px] cursor-pointer hover:border-rose-500/70 shadow-sm transition-all flex items-center"
+          class="px-5 py-2.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text font-extrabold text-[16px] cursor-pointer shadow-sm transition-all flex items-center"
         >
-          <span class="mr-1.5">🗑️</span>
+          <span class="mr-1.5 opacity-80">🧹</span>
           <span>清理下载目录</span>
         </button>
       </div>

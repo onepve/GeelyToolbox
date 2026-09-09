@@ -5,16 +5,16 @@
       v-if="!store.deviceInfo.appstore_frozen" 
       class="bg-car-item border-2 border-amber-500/80 rounded-2xl p-5 flex items-center justify-between shadow-lg ring-1 ring-amber-500/30 relative overflow-hidden"
     >
-      <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-4 flex-1 min-w-0">
         <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/60 flex items-center justify-center text-[24px] shrink-0">
           ⚠️
         </div>
-        <div class="flex flex-col space-y-1">
+        <div class="flex-1 min-w-0 flex flex-col space-y-1.5">
           <div class="flex items-center space-x-2.5">
-            <span class="text-[19px] font-black text-car-text tracking-wide">检测到吉利应用商店处于未冻结状态</span>
-            <span class="px-3 py-1 rounded-full bg-rose-500 text-white text-[13px] font-black shadow-sm">建议处置</span>
+            <span class="text-[19px] font-black text-car-text tracking-wide whitespace-nowrap">检测到吉利应用商店处于未冻结状态</span>
+            <span class="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[13px] font-black shrink-0">建议处置</span>
           </div>
-          <span class="text-[15px] text-car-text font-bold leading-normal">原厂商店运行会破坏白名单策略，直接导致第三方软件无法安装，强烈建议立即冻结锁定！</span>
+          <span class="text-[14.5px] text-car-sub font-bold leading-normal">原厂商店运行会破坏白名单策略，直接导致第三方软件无法安装，强烈建议立即冻结锁定！</span>
         </div>
       </div>
       <button 
@@ -34,7 +34,7 @@
       >
         <button 
           @click="confirmHardReboot"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-rose-500/50 bg-car-item text-rose-400 hover:text-rose-300 font-black text-[18px] cursor-pointer hover:border-rose-400 transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border hover:border-rose-500/60 bg-car-item text-car-text font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
         >
           <span>完整硬件冷重启 (reboot)</span>
         </button>
@@ -94,8 +94,8 @@
           :class="[
             'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
             store.deviceInfo.appstore_frozen 
-              ? 'bg-car-item border-emerald-500/50 text-emerald-400' 
-              : 'bg-rose-500/15 border-rose-500 text-rose-500'
+              ? 'bg-car-item border-emerald-500/60 text-car-text ring-2 ring-emerald-500/20' 
+              : 'bg-car-item border-amber-500/70 text-car-text ring-2 ring-amber-500/20'
           ]"
         >
           <span>{{ store.deviceInfo.appstore_frozen ? '商店: 已冻结 (锁定白名单)' : '商店: 未冻结 (点击安全冻结)' }}</span>

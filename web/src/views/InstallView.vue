@@ -93,7 +93,7 @@
               :class="[
                 'px-2.5 py-0.5 text-[12px] font-bold rounded-full border',
                 store.settings.expert_rabbit 
-                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/40' 
+                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
                   : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
               ]"
             >
@@ -110,7 +110,7 @@
           :class="[
             'min-w-[220px] min-h-[72px] px-6 rounded-2xl border-2 font-black text-[19px] cursor-pointer transition-all shrink-0 shadow-sm',
             store.settings.expert_rabbit 
-              ? 'bg-rose-500/20 border-rose-500 text-rose-300 ring-2 ring-rose-500/20' 
+              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
               : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
           ]"
         >
@@ -121,7 +121,7 @@
       <!-- 专家模式专属工具栏 (激活后平铺直出) -->
       <div v-if="store.settings.expert_rabbit" class="mt-4 pt-4 border-t border-car-border/60 flex flex-col space-y-3">
         <div class="flex items-center space-x-2">
-          <span class="text-[17px] font-black text-rose-400">⚡ 专家模式专属卡主题注入工具：</span>
+          <span class="text-[17px] font-black text-car-accent">⚡ 专家模式专属卡主题注入工具：</span>
           <span class="text-[13.5px] text-car-sub font-bold">突破系统签名保护，半自动保姆式将高德或音乐伪装注入为桌面时钟屏保</span>
         </div>
 

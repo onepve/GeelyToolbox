@@ -231,7 +231,7 @@
               </button>
               <button 
                 @click="confirmDeleteTheme(theme.name)"
-                class="h-[52px] px-4 bg-car-card border-2 border-car-border text-rose-400 hover:text-rose-300 hover:border-rose-400/50 font-black text-[15px] rounded-xl cursor-pointer shadow-sm transition-all"
+                class="h-[52px] px-4 bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text hover:text-rose-400 font-black text-[15px] rounded-xl cursor-pointer shadow-sm transition-all"
               >
                 🗑️
               </button>

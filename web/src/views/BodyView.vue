@@ -1,34 +1,39 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 核心：座舱车身语音播报总开关 (全车语音发声总闸门) - 提权置顶首屏 (完整卡片闭合包裹) -->
-    <FeatureCard>
-      <template #header>
-        <div class="flex items-center justify-between w-full">
-          <div class="flex items-center space-x-3">
-            <span :class="['w-3.5 h-3.5 rounded-full shadow-md shrink-0', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-rose-500 shadow-[0_0_10px_#F43F5E]']"></span>
-            <span class="text-[21px] font-black text-car-text tracking-wide">座舱车身语音播报总开关 (全车总闸)</span>
-          </div>
-          <span :class="['px-3.5 py-1 text-[13.5px] font-black rounded-full border shrink-0', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40' : 'bg-rose-500/15 text-rose-400 border-rose-500/40']">
+    <!-- 核心：座舱车身语音播报总开关 (全车语音发声总闸门) - 提权置顶首屏 (左右分栏车规黄金磁贴) -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
+      <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
+        <div class="flex items-center space-x-3">
+          <span :class="['w-3.5 h-3.5 rounded-full shadow-md shrink-0', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-slate-400']"></span>
+          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">座舱车身语音播报总开关 (全车总闸)</span>
+          <span :class="['px-3 py-0.5 text-[13px] font-black rounded-full border shrink-0', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40' : 'bg-car-item text-car-sub border-car-border']">
             {{ store.vehicleAuto.voice_master_switch ? '全车正常播报' : '全车一键静音中' }}
           </span>
         </div>
-      </template>
-      <template #desc>
-        优先判定：一键控制全车车门、尾门、前进/倒车挡位与驾驶模式发声。独立生效，不受工具箱开机自启影响。关闭后全车播报彻底物理静默。
-      </template>
+        <div class="text-[14.5px] text-car-sub font-bold leading-normal">
+          一键管控全车车门、挡位与驾驶模式语音播报。关闭后全车物理静音，独立生效。
+        </div>
+      </div>
 
-      <button
-        @click="toggleVoiceMasterSwitch"
-        :class="[
-          'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
-          store.vehicleAuto.voice_master_switch
-            ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/25'
-            : 'bg-rose-500/15 border-rose-500 text-rose-400 hover:bg-rose-500/25'
-        ]"
-      >
-        <span>{{ store.vehicleAuto.voice_master_switch ? '车身语音总闸: 已开启 (正常播报中)' : '车身语音总闸: 已关闭 (全车静音中)' }}</span>
-      </button>
-    </FeatureCard>
+      <div class="shrink-0 w-[230px]">
+        <button
+          @click="toggleVoiceMasterSwitch"
+          :class="[
+            'w-full h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center',
+            store.vehicleAuto.voice_master_switch
+              ? 'bg-car-item border-car-accent'
+              : 'bg-car-card border-car-border hover:border-car-border-light'
+          ]"
+        >
+          <span class="text-[18.5px] font-black text-car-text tracking-wide whitespace-nowrap">
+            {{ store.vehicleAuto.voice_master_switch ? '车身语音已开启' : '车身语音已关闭' }}
+          </span>
+          <span :class="['text-[12.5px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.voice_master_switch ? 'text-car-accent' : 'text-car-sub']">
+            {{ store.vehicleAuto.voice_master_switch ? '点击切换为全车静音' : '点击开启语音播报' }}
+          </span>
+        </button>
+      </div>
+    </div>
 
     <!-- 实时车身物理信号探针 (四门、尾门、挡位、模式 全量直观反映底层电平跃变) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 shadow-xl">
@@ -552,7 +557,7 @@
           <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
             <div class="flex items-center space-x-3 mb-1.5">
               <span class="text-[22px] font-black text-car-text tracking-wide">运动模式 (Sport)</span>
-              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-rose-500 font-bold">动力充沛</span>
+              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent font-bold">动力充沛</span>
             </div>
             <span class="text-[15px] text-car-sub font-bold leading-relaxed">油门激进，动力输出充沛激擎</span>
           </div>
