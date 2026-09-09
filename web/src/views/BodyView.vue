@@ -606,7 +606,7 @@
         <div class="flex flex-col">
           <span class="text-[18px] font-black text-car-text">车门语音播报模式</span>
           <span class="text-[14px] text-car-sub font-bold mt-0.5">
-            {{ store.vehicleAuto.voice_door_mode_universal !== false ? '当前为通用车门语音 (全车车门统一发声，干脆高级)' : '当前为独立分门语音 (可为各门单独定制专属台词与音效)' }}
+            {{ store.vehicleAuto.voice_door_mode_universal !== false ? '当前为通用智能车门语音 (内置上下车感知：登车关门提示就绪，离车开门提醒物品，行车开门危险报警)' : '当前为独立分门语音 (可为各门单独定制专属台词与音效)' }}
           </span>
         </div>
         <div class="flex space-x-2.5 shrink-0">
@@ -642,9 +642,9 @@
           <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
             <div class="flex items-center space-x-3 mb-1.5">
               <span class="text-[22px] font-black text-car-text tracking-wide">通用开门提醒</span>
-              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent font-bold">全车适用</span>
+              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent font-bold">场景自适应</span>
             </div>
-            <span class="text-[15px] text-car-sub font-bold leading-relaxed">任一车门开启时轻柔提示，行车中开启紧急报警</span>
+            <span class="text-[15px] text-car-sub font-bold leading-relaxed">登车开门提醒，停车下车温馨提醒带好物品，行车门开紧急报警</span>
           </div>
           <div class="flex space-x-3 shrink-0 items-center">
             <button 

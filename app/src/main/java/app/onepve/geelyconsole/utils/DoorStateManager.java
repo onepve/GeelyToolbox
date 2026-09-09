@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 
+import app.onepve.geelyconsole.services.VehicleAutomationService;
+
 /**
  * 四门物理门控独立状态机 (DoorStateManager)
  * 纯粹聚焦于四门硬件物理状态，与尾门、换挡、驾驶模式彻底物理隔离解耦！
@@ -42,6 +44,20 @@ public class DoorStateManager {
     private long lastTriggerRR = 0;
     private long lastTriggerUniversalOpen = 0;
     private long lastTriggerUniversalClose = 0;
+
+    // 上下车有人感知情景状态机 (0=车外待上车态, 1=车内已就坐/行车态)
+    public static final int OCCUPANT_OUTSIDE = 0;
+    public static final int OCCUPANT_INSIDE = 1;
+    private int occupantState = OCCUPANT_OUTSIDE;
+
+    public synchronized void resetState() {
+        occupantState = OCCUPANT_OUTSIDE;
+        AppLogger.i("四门门控", "状态复位: 上下车有人感知状态机重置为车外 (occupantState=OUTSIDE)");
+    }
+
+    public synchronized void setOccupantInside() {
+        occupantState = OCCUPANT_INSIDE;
+    }
 
     public DoorStateManager(Context context, VehicleVoicePlayer voicePlayer) {
         this.context = context.getApplicationContext();
@@ -88,26 +104,47 @@ public class DoorStateManager {
         boolean anyDoorClosed = (fl == 0 && currentFL == 1) || (fr == 0 && currentFR == 1) || (rl == 0 && currentRL == 1) || (rr == 0 && currentRR == 1);
 
         if (universalMode) {
-            // ================= 【模式 A: 通用智能车门语音 (默认首选)】 =================
+            // ================= 【模式 A: 通用智能车门语音 (上下车有人感知状态机)】 =================
             boolean enableUniversalOpen = prefs.getBoolean("voice_enable_door_universal_open", true);
             boolean enableUniversalClose = prefs.getBoolean("voice_enable_door_universal_close", true);
 
             if (anyDoorOpened) {
                 changed = true;
-                AppLogger.i("四门门控", "检测到车门打开 -> 通用模式 (voiceMaster=" + voiceMasterSwitch + ", enableOpen=" + enableUniversalOpen + ")");
                 if (voiceMasterSwitch && enableUniversalOpen && (now - lastTriggerUniversalOpen > 400)) {
                     lastTriggerUniversalOpen = now;
                     if (voicePlayer != null) {
-                        voicePlayer.play("door_open.mp3", "车门已打开");
+                        // 1. 行车中门开判定 (挂入前进挡、倒车挡或车速大于0)
+                        boolean isDriving = (VehicleAutomationService.lastGearPos == 2 || VehicleAutomationService.lastGearPos == 4 || VehicleAutomationService.currentSpeedKmH > 0);
+                        if (isDriving) {
+                            AppLogger.w("四门门控", "【危险警报】行车过程中车门打开！触发最高优先级紧急警报！");
+                            voicePlayer.play("door_open.mp3", "警告！车门未关好！");
+                        } else if (occupantState == OCCUPANT_INSIDE) {
+                            // 2. 之前已就坐/行驶，此时停车开门 -> 判定为【下车离车】！
+                            AppLogger.i("四门门控", "【下车感知】检测到停车开门 -> 判定为人员准备下车离去");
+                            voicePlayer.play("door_open.mp3", "请注意后方来车，带好随身物品");
+                            occupantState = OCCUPANT_OUTSIDE; // 状态翻转为离车！
+                        } else {
+                            // 3. 原本在车外，拉门准备登车 -> 判定为【上车开门】
+                            AppLogger.i("四门门控", "【上车感知】检测到拉门准备登车入座");
+                            voicePlayer.play("door_open.mp3", "车门已打开");
+                        }
                     }
                 }
             } else if (anyDoorClosed) {
                 changed = true;
-                AppLogger.i("四门门控", "检测到车门关好 -> 通用模式 (voiceMaster=" + voiceMasterSwitch + ", enableClose=" + enableUniversalClose + ")");
                 if (voiceMasterSwitch && enableUniversalClose && (now - lastTriggerUniversalClose > 400)) {
                     lastTriggerUniversalClose = now;
                     if (voicePlayer != null) {
-                        voicePlayer.play("door_close.mp3", "车门已关好");
+                        if (occupantState == OCCUPANT_OUTSIDE) {
+                            // 刚才从车外拉门进来，现在把门关上 -> 判定为【登车就坐完毕，关门准备出发】！
+                            AppLogger.i("四门门控", "【入座就绪】检测到登车后关好车门 -> 状态翻转为在车内 (INSIDE)");
+                            voicePlayer.play("door_close.mp3", "车门已关好");
+                            occupantState = OCCUPANT_INSIDE; // 状态翻转为已登车在车内！
+                        } else {
+                            // 日常车门关好
+                            AppLogger.i("四门门控", "车门已关好");
+                            voicePlayer.play("door_close.mp3", "车门已关好");
+                        }
                     }
                 }
             }

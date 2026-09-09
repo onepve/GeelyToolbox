@@ -94,7 +94,7 @@ public class VehicleAutomationService extends Service {
     public static volatile int lastDriveMode = -1;
     private int lastLightSts = -1;
     private int lastPowerMode = -1;
-    private int currentSpeedKmH = 0;
+    public static volatile int currentSpeedKmH = 0;
     private boolean is360OpenedByTurn = false;
 
     // 同状态接触微抖动过滤 (毫秒)
@@ -313,6 +313,7 @@ public class VehicleAutomationService extends Service {
                     lastPowerMode = 0; // 熄火/息屏强制锁定为 0
                     if (gearStateMachine != null) gearStateMachine.resetState();
                     if (driveModeManager != null) driveModeManager.resetState();
+                    if (doorStateManager != null) doorStateManager.resetState();
                     if (enableFlameoutVoice && voicePlayer != null && !Intent.ACTION_SCREEN_OFF.equals(action)) {
                         voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品");
                     }
@@ -730,6 +731,7 @@ public class VehicleAutomationService extends Service {
                 // 车辆熄火/下电 -> 状态机强制归零，杜绝下次点火误报
                 if (gearStateMachine != null) gearStateMachine.resetState();
                 if (driveModeManager != null) driveModeManager.resetState();
+                if (doorStateManager != null) doorStateManager.resetState();
                 if (enableFlameoutVoice && lastPowerMode > 0 && voicePlayer != null) {
                     voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品");
                 }
