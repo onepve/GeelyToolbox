@@ -139,8 +139,8 @@
             >
               v{{ store.deviceInfo.version || '1.4.0' }}
             </span>
-            <span v-if="isTester" class="text-[12px] px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500 text-rose-400 font-black">
-              👑 内测特权身份
+            <span v-if="isTester" class="text-[12px] px-2.5 py-0.5 rounded-full bg-car-item border border-car-border text-car-text font-black inline-flex items-center shadow-sm">
+              <span class="w-2 h-2 rounded-full mr-1.5 bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>👑 内测特权身份
             </span>
           </div>
           <span class="text-[15px] text-car-sub font-mono font-bold mt-2">

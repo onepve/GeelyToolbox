@@ -56,7 +56,8 @@
             <span class="text-[20px] font-black text-car-text group-hover:text-car-accent transition-colors flex-1 min-w-0 truncate" :title="app.name">
               {{ app.name }}
             </span>
-            <span v-if="store.downloadProgress[app.id]" :class="['text-[13px] border px-3 py-1 rounded-md font-bold shrink-0 whitespace-nowrap', store.downloadProgress[app.id].status === 'paused' ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' : (store.downloadProgress[app.id].status === 'completed' ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-accent/15 border-car-accent/40 text-car-accent animate-pulse')]">
+            <span v-if="store.downloadProgress[app.id]" class="text-[13px] border px-3 py-1 rounded-full bg-car-item border-car-border text-car-text font-bold shrink-0 whitespace-nowrap inline-flex items-center shadow-sm">
+              <span :class="['w-2 h-2 rounded-full mr-2', store.downloadProgress[app.id].status === 'paused' ? 'bg-amber-400 shadow-[0_0_6px_#F59E0B]' : (store.downloadProgress[app.id].status === 'completed' ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-sky-500 shadow-[0_0_6px_#0EA5E9] animate-pulse')]"></span>
               {{ store.downloadProgress[app.id].status === 'paused' ? '已暂停' : (store.downloadProgress[app.id].status === 'completed' ? '已下载' : `下载中 ${store.downloadProgress[app.id].percent || 0}%`) }}
             </span>
             <span v-else class="text-[13px] bg-car-item border border-car-border px-3 py-1 rounded-md text-car-sub font-mono font-bold shrink-0 whitespace-nowrap">

@@ -17,14 +17,8 @@
             <span class="text-[19px] font-black text-car-text">
               {{ ttsInfo.name }}
             </span>
-            <span 
-              :class="[
-                'ml-3 text-[12.5px] px-2.5 py-0.5 rounded-full font-black border',
-                ttsInfo.connected 
-                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' 
-                  : 'bg-amber-500/15 border-amber-500/40 text-amber-400'
-              ]"
-            >
+            <span class="ml-3 text-[12.5px] px-2.5 py-0.5 rounded-full font-black border bg-car-item border-car-border text-car-text inline-flex items-center shadow-sm">
+              <span :class="['w-2 h-2 rounded-full mr-1.5', ttsInfo.connected ? 'bg-sky-500 shadow-[0_0_6px_#0EA5E9]' : 'bg-slate-400']"></span>
               {{ ttsInfo.connected ? '已成功直连' : '默认引擎' }}
             </span>
           </div>
@@ -121,7 +115,8 @@
               <div class="flex items-center space-x-2">
                 <span class="text-[18px] font-black text-car-text">当前整套音效：</span>
                 <span class="text-[18px] font-black text-car-accent">{{ activeThemeName ? activeThemeName : '出厂官方原声 (晓晓温婉知性)' }}</span>
-                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-[12px] font-black">
+                <span class="px-2.5 py-0.5 rounded-full bg-car-item border border-car-border text-car-text text-[12px] font-black inline-flex items-center shadow-sm">
+                  <span class="w-2 h-2 rounded-full mr-1.5 bg-emerald-500 shadow-[0_0_6px_#10B981]"></span>
                   {{ activeThemeName ? '自定义主题' : '系统默认' }}
                 </span>
               </div>
@@ -155,7 +150,7 @@
               <div class="flex items-center space-x-2.5">
                 <span class="text-[19px] font-black text-car-text">👑 出厂官方原声 (晓晓温婉知性)</span>
                 <span class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[12px] font-black">系统内置</span>
-                <span v-if="!activeThemeName" class="px-2.5 py-0.5 rounded-md bg-car-accent/15 border border-car-accent/40 text-car-accent text-[12px] font-black">正在生效</span>
+                <span v-if="!activeThemeName" class="px-2.5 py-0.5 rounded-md bg-car-item border border-car-border text-car-text text-[12px] font-black inline-flex items-center shadow-sm"><span class="w-2 h-2 rounded-full mr-1.5 bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>正在生效</span>
               </div>
               <span class="text-[14.5px] text-car-sub font-bold">
                 吉利座舱温婉知性原声，端庄舒缓温润。零音频丢失，全场景兜底保障。
@@ -199,9 +194,7 @@
                 <span class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-border text-car-accent text-[12px] font-black shrink-0">
                   包含 {{ theme.count }} 个音频
                 </span>
-                <span v-if="activeThemeName === theme.name" class="px-2.5 py-0.5 rounded-md bg-car-accent/15 border border-car-accent/40 text-car-accent text-[12px] font-black shrink-0">
-                  ✓ 正在整套生效
-                </span>
+                <span v-if="activeThemeName === theme.name" class="px-2.5 py-0.5 rounded-md bg-car-item border border-car-border text-car-text text-[12px] font-black shrink-0 inline-flex items-center shadow-sm"><span class="w-2 h-2 rounded-full mr-1.5 bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>✓ 正在整套生效</span>
               </div>
               <span class="text-[14.5px] text-car-sub font-mono font-bold truncate">
                 目录: {{ theme.path }}

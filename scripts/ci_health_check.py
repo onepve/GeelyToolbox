@@ -649,9 +649,11 @@ if "countdown: 10," not in iv_code:
     reg_violations.append("InstallView 专家模式第1步(风险告知)确认缺少 10s 倒计时！")
 if iv_code.count("countdown: 5,") < 2:
     reg_violations.append("InstallView 专家模式第2/3步确认缺少 5s 倒计时！")
-# 状态胶囊必须高对比实底深墨黑字 (夜间不可隐形)
-if "text-[#0F172A] border-amber-300" not in iv_code:
-    reg_violations.append("InstallView 专家模式【已激活】胶囊丢失高对比样式 (需 bg-amber-400 + 深墨黑字)！")
+# 状态胶囊必须统一顶栏款高对比样式 (bg-car-item + border-car-border + text-car-text) 且带语义点，不得回退为实底彩底
+if "bg-car-item border-car-border text-car-text" not in iv_code:
+    reg_violations.append("InstallView 专家模式【已激活】胶囊丢失顶栏统一样式 (需 bg-car-item + border-car-border + text-car-text)！")
+if "bg-amber-400 text-[#0F172A]" in iv_code or "bg-emerald-400 text-[#0F172A]" in iv_code:
+    reg_violations.append("InstallView 专家模式胶囊回退为实底彩底旧样式 (应统一顶栏款 + 语义发光圆点)！")
 
 confirm_modal_path = os.path.join(WEB_SRC_DIR, "components/modals/ConfirmModal.vue")
 with open(confirm_modal_path, "r", encoding="utf-8") as f:

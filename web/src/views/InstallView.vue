@@ -89,14 +89,8 @@
         <div class="flex-1 min-w-0 pr-6 flex flex-col">
           <div class="flex items-center space-x-3 mb-1">
             <span class="text-[18px] font-black text-car-text">伪装屏保注入特权</span>
-            <span 
-              :class="[
-                'px-3 py-0.5 text-[13px] font-black rounded-full border',
-                store.settings.expert_rabbit 
-                  ? 'bg-amber-400 text-[#0F172A] border-amber-300 shadow-sm' 
-                  : 'bg-emerald-400 text-[#0F172A] border-emerald-300 shadow-sm'
-              ]"
-            >
+            <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shadow-sm">
+              <span :class="['w-2.5 h-2.5 rounded-full mr-2', store.settings.expert_rabbit ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-emerald-500 shadow-[0_0_6px_#10B981]']"></span>
               {{ store.settings.expert_rabbit ? '专家模式已激活 (已解除限制)' : '安全保护已锁定' }}
             </span>
           </div>

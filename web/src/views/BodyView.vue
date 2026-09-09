@@ -6,7 +6,8 @@
         <div class="flex items-center space-x-3">
           <span :class="['w-3.5 h-3.5 rounded-full shadow-md shrink-0', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-slate-400']"></span>
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">座舱车身语音播报总开关 (全车总闸)</span>
-          <span :class="['px-3 py-0.5 text-[13px] font-black rounded-full border shrink-0', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40' : 'bg-car-item text-car-sub border-car-border']">
+          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
+            <span :class="['w-2.5 h-2.5 rounded-full mr-2', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-slate-400']"></span>
             {{ store.vehicleAuto.voice_master_switch ? '全车正常播报' : '全车一键静音中' }}
           </span>
         </div>

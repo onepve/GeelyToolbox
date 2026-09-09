@@ -88,8 +88,8 @@ const batteryStatus = computed(() => {
       voltStr: '--',
       text: '传感器采集中...',
       desc: '正在监听车身 CAN 总线物理电压报文，请稍候...',
-      badgeClass: 'bg-car-item border border-car-border text-car-sub',
-      dotClass: 'bg-amber-400 animate-pulse'
+      badgeClass: 'bg-car-item border border-car-border text-car-text',
+      dotClass: 'bg-amber-400 animate-pulse shadow-[0_0_6px_#F59E0B]'
     };
   }
 
@@ -102,8 +102,8 @@ const batteryStatus = computed(() => {
       voltStr,
       text: '发电机充能中',
       desc: '发动机已启动，车载发电机正在为蓄电池持续回充',
-      badgeClass: 'bg-emerald-500/20 border-2 border-emerald-500/50 text-emerald-400',
-      dotClass: 'bg-emerald-400 animate-pulse'
+      badgeClass: 'bg-car-item border border-car-border text-car-text',
+      dotClass: 'bg-emerald-500 animate-pulse shadow-[0_0_6px_#10B981]'
     };
   } else if (v >= 11.8) {
     return {
@@ -111,8 +111,8 @@ const batteryStatus = computed(() => {
       voltStr,
       text: '健康充沛',
       desc: '12V 蓄电池状态健康，剩余电量充裕',
-      badgeClass: 'bg-emerald-500/15 border-2 border-emerald-500/40 text-emerald-400',
-      dotClass: 'bg-emerald-400'
+      badgeClass: 'bg-car-item border border-car-border text-car-text',
+      dotClass: 'bg-emerald-500 shadow-[0_0_6px_#10B981]'
     };
   } else if (v >= 11.5) {
     return {
@@ -120,8 +120,8 @@ const batteryStatus = computed(() => {
       voltStr,
       text: '低电警戒 (建议启动)',
       desc: '蓄电池电量偏低，建议尽快发动车辆充能',
-      badgeClass: 'bg-amber-500/20 border-2 border-amber-500/50 text-amber-400',
-      dotClass: 'bg-amber-400'
+      badgeClass: 'bg-car-item border border-car-border text-car-text',
+      dotClass: 'bg-amber-400 shadow-[0_0_6px_#F59E0B]'
     };
   } else {
     return {
@@ -129,8 +129,8 @@ const batteryStatus = computed(() => {
       voltStr,
       text: '严重亏电 (面临无法点火)',
       desc: '电瓶严重亏电！请立即关闭高功耗电器，准备启动充能',
-      badgeClass: 'bg-rose-500/20 border-2 border-rose-500/60 text-rose-400',
-      dotClass: 'bg-rose-500 animate-pulse'
+      badgeClass: 'bg-car-item border border-car-border text-car-text',
+      dotClass: 'bg-rose-500 animate-pulse shadow-[0_0_6px_#EF4444]'
     };
   }
 });
