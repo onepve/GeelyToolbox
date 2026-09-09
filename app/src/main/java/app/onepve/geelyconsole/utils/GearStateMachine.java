@@ -114,8 +114,8 @@ public class GearStateMachine {
 
                     AppLogger.i("换挡状态", "挡位确认跃变: " + getGearName(lastGearPos) + " -> " + getGearName(gear) + ", armed=" + isGearVoiceArmed);
 
-                    // 1. 从 P 挡换出 -> 激活状态机
-                    if (lastGearPos == 5 && gear != 5) {
+                    // 1. 从 P 挡换出 -> 激活状态机 (必须确认切入 D 挡前进或 R 挡倒车才武装，绝不被瞬态乱跳误武装)
+                    if (lastGearPos == 5 && (gear == 2 || gear == 4)) {
                         isGearVoiceArmed = 1;
                     }
 

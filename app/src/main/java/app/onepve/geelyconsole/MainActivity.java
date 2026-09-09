@@ -2184,6 +2184,22 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("wheel_action_ok", prefs.getString("wheel_action_ok", "default"));
                 obj.put("has_carmedia_installed", hasCarMedia);
 
+                // 方控多手势映射 (单击/双击/长按)
+                String[] gestureKeys = {"ok", "mute", "mode", "next", "prev", "custom"};
+                String[] gestures = {"single", "double", "long"};
+                for (String k : gestureKeys) {
+                    for (String g : gestures) {
+                        String pKey = "wheel_action_" + k + "_" + g;
+                        String def = "default";
+                        if ("single".equals(g)) {
+                            if ("mode".equals(k)) def = "open_360";
+                            else if ("next".equals(k)) def = "next_track";
+                            else if ("prev".equals(k)) def = "prev_track";
+                        }
+                        obj.put(pKey, prefs.getString(pKey, prefs.getString("wheel_action_" + k, def)));
+                    }
+                }
+
                 // 兼容历史老 Key 别名
                 obj.put("turn_360", prefs.getBoolean("vehicle_turn_360_enabled", false));
                 obj.put("light_nav", prefs.getBoolean("vehicle_light_nav_enabled", false));
@@ -2294,6 +2310,29 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         AppLogger.i("座舱自动化", "更新设置项: " + key + " -> " + enabled);
                     } catch (Exception e) {
                         AppLogger.e("座舱自动化", "更新设置失败: " + e.getMessage());
+                    }
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
+        public boolean setWheelGestureAction(final String key, final String gesture, final String action) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        String prefKey = "wheel_action_" + key + "_" + gesture;
+                        prefs.edit().putString(prefKey, action).commit();
+                        if ("single".equals(gesture)) {
+                            prefs.edit().putString("wheel_action_" + key, action).commit();
+                        }
+                        VehicleAutomationService.syncState(MainActivity.this);
+                        AppLogger.i("方控设置", "设置按键手势: " + key + " [" + gesture + "] -> " + action);
+                        pushDeviceInfoToWeb();
+                    } catch (Exception e) {
+                        AppLogger.e("方控设置", "设置手势失败: " + e.getMessage());
                     }
                 }
             });

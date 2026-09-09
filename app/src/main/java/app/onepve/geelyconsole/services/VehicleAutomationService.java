@@ -310,6 +310,7 @@ public class VehicleAutomationService extends Service {
                         "android.intent.action.QUICKBOOT_POWEROFF".equals(action) ||
                         "com.ecarx.intent.action.ECARX_SHUTDOWN".equals(action) ||
                         Intent.ACTION_SCREEN_OFF.equals(action)) {
+                    lastPowerMode = 0; // 熄火/息屏强制锁定为 0
                     if (gearStateMachine != null) gearStateMachine.resetState();
                     if (driveModeManager != null) driveModeManager.resetState();
                     if (enableFlameoutVoice && voicePlayer != null && !Intent.ACTION_SCREEN_OFF.equals(action)) {
@@ -647,7 +648,27 @@ public class VehicleAutomationService extends Service {
         }
     }
 
+    /**
+     * 判定整车是否处于真正点火启动/行车就绪状态
+     * 熄火下电或蓝牙唤醒浅待机时，发电机未转动，TCU处于休眠或诊断回环，坚决静默不发声
+     */
+    public boolean isEngineRunning() {
+        if (lastPowerMode == 0) return false;
+        // 若已采集到蓄电池电压且处于纯电瓶放电区间 (9.0V ~ 12.7V) 且零车速，说明发动机绝对未启动
+        if (latestBatteryVoltage >= 9.0f && latestBatteryVoltage < 12.8f && currentSpeedKmH == 0) {
+            return false;
+        }
+        return lastPowerMode >= 2 || latestBatteryVoltage >= 13.0f;
+    }
+
     private void handleGearSignal(final int gear) {
+        if (!isEngineRunning()) {
+            // 熄火断电/浅待机：TCU 信号处于心跳诊断期，强制重置状态机，绝对静音！
+            if (gearStateMachine != null) {
+                gearStateMachine.resetState();
+            }
+            return;
+        }
         if (gearStateMachine != null) {
             gearStateMachine.updateGear(gear, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
         }
@@ -658,6 +679,13 @@ public class VehicleAutomationService extends Service {
      * 模式枚举: MODE_COMFORT=1, MODE_SPORT=2, MODE_ECO=3, MODE_SMART=4 (全局解耦，零错位)
      */
     private void handleDriveModeSignal(int mode) {
+        if (!isEngineRunning()) {
+            // 熄火断电/浅待机：强制重置状态机，绝对静音！
+            if (driveModeManager != null) {
+                driveModeManager.resetState();
+            }
+            return;
+        }
         if (driveModeManager != null) {
             driveModeManager.updateDriveMode(mode, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
         }

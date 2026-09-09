@@ -87,12 +87,6 @@ public class VehicleVoicePlayer {
             int offset = prefs.getInt("voice_volume_offset", 0);
 
             boolean isReverse = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse") || voiceType.contains("倒车")));
-
-            // 倒车挡防衰减智能补偿：若处于倒车状态，由于车机系统自动压制背景音量，额外增加 +4 格动态补偿
-            if (isReverse) {
-                offset += 4;
-            }
-
             int stream = (isReverse || "nav".equals(prefs.getString("voice_audio_channel", "music")))
                     ? AudioManager.STREAM_NOTIFICATION
                     : AudioManager.STREAM_MUSIC;
@@ -101,12 +95,10 @@ public class VehicleVoicePlayer {
             int maxVol = audioManager.getStreamMaxVolume(stream);
             int targetVol = Math.max(0, Math.min(maxVol, currentVol + offset));
 
-            // 倒车挡若当前音量过低，强制保障至少 65% 的清晰播报音量
+            // 倒车挡防衰减智能补偿：自动分流至通知通道，并施加均衡电平 (40%~45%)，既清晰入耳又绝不炸耳
             if (isReverse) {
-                int floorVol = (int) (maxVol * 0.65f);
-                if (targetVol < floorVol) {
-                    targetVol = floorVol;
-                }
+                int balancedVol = (int) (maxVol * 0.45f);
+                targetVol = Math.max(1, balancedVol);
             }
 
             if (targetVol != currentVol && restoreVolumeAfterPlay < 0) {
@@ -491,19 +483,25 @@ public class VehicleVoicePlayer {
                     }
                     requestAudioFocus(voiceType);
                     applyVolumeOffsetBeforePlay(voiceType);
+                    SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                     if (tts != null && ttsReady) {
                         try {
-                            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                             float speed = prefs.getFloat("voice_playback_speed", 1.0f);
                             tts.setSpeechRate(speed);
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                                 tts.setAudioAttributes(getVoiceAudioAttributes(context, voiceType));
                             }
                         } catch (Exception ignored) {}
+                        boolean isRev = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse") || voiceType.contains("倒车")));
+                        int streamType = isRev ? AudioManager.STREAM_NOTIFICATION : ("nav".equals(prefs.getString("voice_audio_channel", "music")) ? AudioManager.STREAM_NOTIFICATION : AudioManager.STREAM_MUSIC);
+                        android.os.Bundle ttsParams = new android.os.Bundle();
+                        ttsParams.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, streamType);
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "voice_" + System.currentTimeMillis());
+                            tts.speak(text, TextToSpeech.QUEUE_FLUSH, ttsParams, "voice_" + System.currentTimeMillis());
                         } else {
-                            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+                            java.util.HashMap<String, String> map = new java.util.HashMap<>();
+                            map.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(streamType));
+                            tts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
                         }
                     } else {
                         Log.w(TAG, "TTS engine not ready, queuing speech or retrying");

@@ -63,13 +63,21 @@ public class DriveModeManager {
         if (mode <= 0) return;
 
         if (lastDriveMode == -1) {
-            lastDriveMode = mode;
-            isDriveModeVoiceArmed = 0; // 严格铁律：基准初始化 100% 保持休眠态 (armed=0)，绝不主动发声
-            AppLogger.i("驾驶模式", "基准初始化: 当前模式=" + getModeName(mode) + ", armed=0 (静默休眠)");
-            if (listener != null) {
-                listener.onDriveModeChanged(lastDriveMode);
+            if (mode == MODE_SMART) {
+                // 开机默认智能模式基准建立，静默休眠
+                lastDriveMode = mode;
+                isDriveModeVoiceArmed = 0;
+                AppLogger.i("驾驶模式", "开机默认基准初始化: 智能模式 (静默休眠)");
+                if (listener != null) {
+                    listener.onDriveModeChanged(lastDriveMode);
+                }
+                return;
+            } else {
+                // 车主点火后首次切出智能模式 -> 确认为有效切换并激活播报
+                lastDriveMode = MODE_SMART;
+                isDriveModeVoiceArmed = 1;
+                AppLogger.i("驾驶模式", "首次切出智能模式 -> 挂入 " + getModeName(mode));
             }
-            return;
         }
 
         if (mode == lastDriveMode) return;
