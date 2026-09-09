@@ -269,6 +269,9 @@ public class VehicleAutomationService extends Service {
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
 
+        String engineMode = prefs.getString("vehicle_monitor_engine_mode", "log_mcu");
+        AppLogger.i("座舱引擎", "底座车身数据监控引擎模式: " + ("native_hal".equals(engineMode) ? "原厂 HAL / CarService 直通 (实验测试通道)" : "MCU 串口底层报文流式监听 (成熟稳定)"));
+
         String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
         boolean wheelEnabled = wheelMasterSwitch && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
 
@@ -654,12 +657,13 @@ public class VehicleAutomationService extends Service {
      * 熄火下电或蓝牙唤醒浅待机时，发电机未转动，TCU处于休眠或诊断回环，坚决静默不发声
      */
     public boolean isEngineRunning() {
+        // 明确检测到熄火或下电
         if (lastPowerMode == 0) return false;
-        // 若已采集到蓄电池电压且处于纯电瓶放电区间 (9.0V ~ 12.7V) 且零车速，说明发动机绝对未启动
-        if (latestBatteryVoltage >= 9.0f && latestBatteryVoltage < 12.8f && currentSpeedKmH == 0) {
+        // 明确处于熄火/浅待机且纯电瓶放电区间 (9.0V ~ 12.7V) 且零车速
+        if (lastPowerMode <= 0 && latestBatteryVoltage >= 9.0f && latestBatteryVoltage < 12.8f && currentSpeedKmH == 0) {
             return false;
         }
-        return lastPowerMode >= 2 || latestBatteryVoltage >= 13.0f;
+        return true;
     }
 
     private void handleGearSignal(final int gear) {

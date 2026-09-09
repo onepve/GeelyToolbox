@@ -32,12 +32,13 @@ public class DriveModeManager {
     private VehicleVoicePlayer voicePlayer;
     private DriveModeListener listener;
 
-    private int lastDriveMode = -1;
+    private int lastDriveMode = MODE_SMART; // 缤越 COOL 点火出厂默认基准锁定智能模式
     private int isDriveModeVoiceArmed = 0; // 0=智能模式静默态, 1=车主激活态
 
     public DriveModeManager(Context context, VehicleVoicePlayer voicePlayer) {
         this.context = context.getApplicationContext();
         this.voicePlayer = voicePlayer;
+        AppLogger.i("驾驶模式", "驾驶模式状态机就绪: 默认确立智能模式基准 (armed=0 静默)");
     }
 
     public void setListener(DriveModeListener listener) {
@@ -48,39 +49,24 @@ public class DriveModeManager {
         this.voicePlayer = voicePlayer;
     }
 
-    public int getDriveMode() { return lastDriveMode == -1 ? MODE_SMART : lastDriveMode; }
+    public int getDriveMode() { return lastDriveMode; }
 
     /**
-     * 车辆熄火/断电/休眠复位：驾驶模式状态机重置归零，下一次点火绝对静默
+     * 车辆熄火/断电/休眠复位：驾驶模式状态机重置为默认智能模式基准，下一次点火绝对静默
      */
     public synchronized void resetState() {
-        lastDriveMode = -1;
+        lastDriveMode = MODE_SMART;
         isDriveModeVoiceArmed = 0;
-        AppLogger.i("驾驶模式", "熄火休眠: 驾驶模式状态机重置归零 (armed=0, lastMode=-1)");
+        AppLogger.i("驾驶模式", "熄火休眠复位: 重置归位默认智能模式基准 (armed=0)");
     }
 
     public synchronized void updateDriveMode(int mode, boolean voiceMasterSwitch, SharedPreferences prefs) {
         if (mode <= 0) return;
 
-        if (lastDriveMode == -1) {
-            if (mode == MODE_SMART) {
-                // 开机默认智能模式基准建立，静默休眠
-                lastDriveMode = mode;
-                isDriveModeVoiceArmed = 0;
-                AppLogger.i("驾驶模式", "开机默认基准初始化: 智能模式 (静默休眠)");
-                if (listener != null) {
-                    listener.onDriveModeChanged(lastDriveMode);
-                }
-                return;
-            } else {
-                // 车主点火后首次切出智能模式 -> 确认为有效切换并激活播报
-                lastDriveMode = MODE_SMART;
-                isDriveModeVoiceArmed = 1;
-                AppLogger.i("驾驶模式", "首次切出智能模式 -> 挂入 " + getModeName(mode));
-            }
+        if (mode == lastDriveMode) {
+            // 同模式信号重复接收，静默放行
+            return;
         }
-
-        if (mode == lastDriveMode) return;
 
         AppLogger.i("驾驶模式", "模式切换: " + getModeName(lastDriveMode) + " -> " + getModeName(mode) + ", armed=" + isDriveModeVoiceArmed);
 

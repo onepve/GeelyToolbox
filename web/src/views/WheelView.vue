@@ -95,14 +95,20 @@
 
     <!-- 1. 方向盘方控接管模式 -->
     <FeatureCard 
-      title="1. 方向盘方控接管模式"
-      desc="彻底屏蔽原厂收音机伴听抢占广播，支持控制台全量接管或恢复原厂。"
+      title="1. 方向盘方控接管模式 (兼容米小江)"
+      desc="彻底屏蔽原厂收音机伴听抢占广播，支持米小江优先协同或控制台全量独立接管。若两个软件都装，选米小江优先互不冲突。"
     >
-      <div class="grid grid-cols-2 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
+      <div class="grid grid-cols-3 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
+        <MatrixButton 
+          title="米小江方控优先"
+          subtitle="放行切歌与Mode键，工具箱补充静音与滚轮下按"
+          :active="store.vehicleAuto.wheel_control_mode === 'carmedia_first'"
+          @click="setWheelMode('carmedia_first')"
+        />
         <MatrixButton 
           title="控制台独立接管 (推荐)"
-          subtitle="全面接管滚轮、静音、Mode键与上一曲/下一曲切歌"
-          :active="store.vehicleAuto.wheel_control_mode !== 'factory_default'"
+          subtitle="工具箱接管切歌与所有按键多手势自定义"
+          :active="store.vehicleAuto.wheel_control_mode === 'toolbox_alone' || (!store.vehicleAuto.wheel_control_mode && store.vehicleAuto.wheel_control_mode !== 'factory_default')"
           @click="setWheelMode('toolbox_alone')"
         />
         <MatrixButton 
@@ -114,10 +120,50 @@
       </div>
     </FeatureCard>
 
-    <!-- 2. 音量调节键按压多手势映射 (编号 2) -->
+    <!-- 2. 方控按键长按判定时长 (自定义秒数) -->
     <FeatureCard 
-      title="2. 方向盘音量调节键按压映射 (编号 2 滚轮垂直下按)"
-      desc="中央音量滚轮除了上下拨动调节音量外，垂直下按支持【单击】、【双击】、【长按】三种手势分发独立动作。"
+      title="2. 方控按键长按判定触发时长 (自定义秒数)"
+      desc="自由设定方向盘所有按键长按触发的判定时长 (0.8s ~ 3.0s)。达到该时长立即执行长按动作；长按 10 秒依然是整车硬件看门狗冷重启救砖，互不冲突。"
+    >
+      <template #badge>
+        <span class="text-[15px] font-black text-car-accent px-3.5 py-1.5 bg-car-item rounded-xl border border-car-border">
+          当前判定: {{ longPressSec }} 秒 ({{ Math.round(longPressSec * 1000) }}ms)
+        </span>
+      </template>
+
+      <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center space-x-4 shadow-sm">
+        <span class="text-[14px] text-car-sub font-bold whitespace-nowrap">0.8 秒 (极速触发)</span>
+        <input 
+          type="range" 
+          min="0.8" 
+          max="3.0" 
+          step="0.1" 
+          v-model.number="longPressSec" 
+          @input="updateLongPressSec"
+          @change="updateLongPressSec"
+          class="flex-1 accent-car-accent h-2.5 bg-car-card rounded-lg cursor-pointer"
+        />
+        <span class="text-[14px] text-car-sub font-bold whitespace-nowrap">3.0 秒 (防误触)</span>
+        <div class="flex space-x-2 shrink-0">
+          <button 
+            v-for="preset in [0.8, 1.2, 1.5, 2.0]" 
+            :key="preset"
+            @click="setLongPressPreset(preset)"
+            :class="[
+              'px-3.5 py-2 text-[14px] font-black rounded-xl border transition-all cursor-pointer shadow-sm',
+              longPressSec === preset ? 'bg-car-card border-2 border-car-accent text-car-accent' : 'bg-car-card border border-car-border text-car-sub'
+            ]"
+          >
+            {{ preset }}s
+          </button>
+        </div>
+      </div>
+    </FeatureCard>
+
+    <!-- 3. 音量调节键按压多手势映射 (编号 2) -->
+    <FeatureCard 
+      title="3. 方向盘音量调节键按压映射 (编号 2 滚轮垂直下按)"
+      desc="中央音量滚轮除了上下拨动调节音量外，垂直下按支持【单击】、【双击】、【长按自定义秒数】三种手势分发独立动作。"
     >
       <!-- 手势切换器 -->
       <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
@@ -177,10 +223,10 @@
       </div>
     </FeatureCard>
 
-    <!-- 3. 独立静音键多手势映射 (编号 3) -->
+    <!-- 4. 独立静音键多手势映射 (编号 3) -->
     <FeatureCard 
-      title="3. 方向盘独立静音键映射 (编号 3)"
-      desc="短按本键执行自定义动作；长按 10 秒依然是整车硬件看门狗冷重启救砖，不受任何影响！"
+      title="4. 方向盘独立静音键映射 (编号 3)"
+      desc="支持【单击】、【双击】、【长按 1.5 秒】多手势；长按 10 秒依然是整车硬件看门狗冷重启救砖，互不冲突！"
     >
       <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
         <div class="flex items-center space-x-2">
@@ -239,9 +285,9 @@
       </div>
     </FeatureCard>
 
-    <!-- 4. Mode 键多手势映射 (编号 6) -->
+    <!-- 5. Mode 键多手势映射 (编号 6) -->
     <FeatureCard 
-      title="4. 方向盘 Mode 键映射 (编号 6)"
+      title="5. 方向盘 Mode 键映射 (编号 6)"
       desc="原车用于切换伴听/收音机。默认单击秒开 360 全景，同时支持双击与长按个性化定制。"
     >
       <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
@@ -301,9 +347,9 @@
       </div>
     </FeatureCard>
 
-    <!-- 5. 切歌键多手势映射 (编号 4 下一曲 / 编号 7 上一曲) -->
+    <!-- 6. 切歌键多手势映射 (编号 4 下一曲 / 编号 7 上一曲) -->
     <FeatureCard 
-      title="5. 方向盘切歌键映射 (编号 4 下一曲 / 编号 7 上一曲)"
+      title="6. 方向盘切歌键映射 (编号 4 下一曲 / 编号 7 上一曲)"
       desc="内置官方三重通道调度机制，完美兼容 QQ音乐车机版、网易云、酷狗。支持双击/长按扩展自定义。"
     >
       <div class="grid grid-cols-2 gap-4">
@@ -396,19 +442,41 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
 import { store, bridge, showToast, openModal } from '../store';
 import wheelGuideImg from '../assets/steering_wheel_guide.webp';
 
 const showDiagram = ref(true);
+const longPressSec = computed({
+  get: () => {
+    const ms = store.vehicleAuto.wheel_long_press_ms || 1500;
+    return parseFloat((ms / 1000).toFixed(1));
+  },
+  set: (val) => {
+    const ms = Math.round(val * 1000);
+    store.vehicleAuto.wheel_long_press_ms = ms;
+    bridge.call('setVehicleAutomationIntSetting', 'wheel_long_press_ms', ms);
+  }
+});
 
-const gestureList = [
+function updateLongPressSec() {
+  const ms = Math.round(longPressSec.value * 1000);
+  store.vehicleAuto.wheel_long_press_ms = ms;
+  bridge.call('setVehicleAutomationIntSetting', 'wheel_long_press_ms', ms);
+}
+
+function setLongPressPreset(sec) {
+  longPressSec.value = sec;
+  showToast(`长按判定时长已设定为: ${sec} 秒`);
+}
+
+const gestureList = computed(() => [
   { id: 'single', name: '单击 (Single)', shortName: '单击' },
   { id: 'double', name: '双击 (Double)', shortName: '双击' },
-  { id: 'long', name: '长按 (Long Press)', shortName: '长按' }
-];
+  { id: 'long', name: `长按 ${longPressSec.value}s (Long Press)`, shortName: `长按${longPressSec.value}s` }
+]);
 
 const activeGesture = reactive({
   ok: 'single',
@@ -477,6 +545,6 @@ function toggleWheelMasterSwitch() {
 function setWheelMode(mode) {
   store.vehicleAuto.wheel_control_mode = mode;
   bridge.call('setWheelControlStringSetting', 'wheel_control_mode', mode);
-  showToast('方控模式已切换: ' + (mode === 'toolbox_alone' ? '控制台接管' : '恢复原厂'));
+  showToast('方控模式已切换: ' + (mode === 'carmedia_first' ? '米小江优先' : (mode === 'toolbox_alone' ? '控制台独立接管' : '恢复原厂')));
 }
 </script>

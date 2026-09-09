@@ -39,6 +39,7 @@ public class SteeringWheelKeyManager {
     public static final String GESTURE_SINGLE = "single";
     public static final String GESTURE_DOUBLE = "double";
     public static final String GESTURE_LONG = "long";
+    public static final int LONG_PRESS_MS = 1500; // 长按判定门限明确锁定 1.5 秒 (远离 10 秒看门狗硬重启)
 
     // 接管模式
     public static final String MODE_CARMEDIA_FIRST = "carmedia_first"; // 米小江方控优先
@@ -83,9 +84,26 @@ public class SteeringWheelKeyManager {
     private final Map<Integer, Runnable> pendingClickTasks = new HashMap<>();
     private final Map<Integer, Runnable> pendingLongTasks = new HashMap<>();
 
+    // Automotive HAL 硬件直通监听器 (捕获 2号滚轮下按等非 logcat 硬件按键)
+    private final CarPropertyKeyMonitor carPropertyKeyMonitor;
+
     public SteeringWheelKeyManager(Context context) {
         this.context = context.getApplicationContext();
         this.prefs = this.context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        
+        // 启动 HAL 硬件按键监听器
+        this.carPropertyKeyMonitor = new CarPropertyKeyMonitor(this.context, new CarPropertyKeyMonitor.Listener() {
+            @Override
+            public void onKeyDown(int keyCode) {
+                handleKeyDown(keyCode);
+            }
+
+            @Override
+            public void onKeyUp(int keyCode) {
+                handleKeyUp(keyCode);
+            }
+        });
+        this.carPropertyKeyMonitor.start();
     }
 
     /**
@@ -232,16 +250,17 @@ public class SteeringWheelKeyManager {
 
         final String longAction = getGestureAction(keyCode, GESTURE_LONG);
         if (!ACTION_DEFAULT.equals(longAction)) {
+            final int lpMs = prefs.getInt("wheel_long_press_ms", LONG_PRESS_MS);
             Runnable lpTask = new Runnable() {
                 @Override
                 public void run() {
                     isLongPressed.put(keyCode, true);
-                    AppLogger.i("方控手势", getKeyName(keyCode) + " -> 触发【长按】: " + longAction);
+                    AppLogger.i("方控手势", getKeyName(keyCode) + " -> 触发【长按 " + (lpMs / 1000.0f) + "秒】: " + longAction);
                     executeAction(longAction);
                 }
             };
             pendingLongTasks.put(keyCode, lpTask);
-            mainHandler.postDelayed(lpTask, 500); // 500ms 触发长按
+            mainHandler.postDelayed(lpTask, lpMs); // 支持车主在设置中自由配置判定秒数
         }
     }
 

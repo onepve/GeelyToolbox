@@ -191,6 +191,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 pushDeviceInfoToWeb();
+                if (getIntent() != null && getIntent().hasExtra("eval_js")) {
+                    mainHandler.postDelayed(() -> callJs(getIntent().getStringExtra("eval_js")), 300);
+                }
             }
         });
 
@@ -208,6 +211,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
             }
         });
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        hideSystemUI();
+        if (intent != null && intent.hasExtra("eval_js")) {
+            callJs(intent.getStringExtra("eval_js"));
+        }
     }
 
     @Override
@@ -2233,6 +2246,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("custom_gear_r", !prefs.getString("custom_voice_gear_r.mp3", "").isEmpty());
                 obj.put("custom_flameout", !prefs.getString("custom_voice_flameout.mp3", "").isEmpty());
 
+                obj.put("reverse_volume_boost", prefs.getInt("reverse_volume_boost", 6));
+                obj.put("wheel_long_press_ms", prefs.getInt("wheel_long_press_ms", 1500));
+                obj.put("vehicle_monitor_engine_mode", prefs.getString("vehicle_monitor_engine_mode", "log_mcu"));
+
                 return obj.toString();
             } catch (Exception e) {
                 return "{}";
@@ -2289,6 +2306,24 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         AppLogger.i("方控设置", "更新字符设置: " + key + " -> " + value);
                     } catch (Exception e) {
                         AppLogger.e("方控设置", "更新失败: " + e.getMessage());
+                    }
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
+        public boolean setVehicleAutomationIntSetting(final String key, final int value) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        prefs.edit().putInt(key, value).commit();
+                        VehicleAutomationService.syncState(MainActivity.this);
+                        AppLogger.i("座舱自动化", "更新数值设置: " + key + " -> " + value);
+                    } catch (Exception e) {
+                        AppLogger.e("座舱自动化", "更新设置失败: " + e.getMessage());
                     }
                 }
             });
@@ -2533,7 +2568,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     VehicleVoicePlayer player = VehicleVoicePlayer.getInstance(MainActivity.this);
-                    if ("door".equals(type) || "door_fl".equals(type)) {
+                    if ("door_open".equals(type)) {
+                        player.play("door_open.mp3", "车门已打开");
+                    } else if ("door_close".equals(type)) {
+                        player.play("door_close.mp3", "车门已关好");
+                    } else if ("door".equals(type) || "door_fl".equals(type)) {
                         player.play("door_fl.mp3", "主驾车门已打开，请注意后方来车");
                     } else if ("door_fl_close".equals(type)) {
                         player.play("door_fl_close.mp3", "主驾车门已关好");

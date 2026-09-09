@@ -114,8 +114,8 @@ public class GearStateMachine {
 
                     AppLogger.i("换挡状态", "挡位确认跃变: " + getGearName(lastGearPos) + " -> " + getGearName(gear) + ", armed=" + isGearVoiceArmed);
 
-                    // 1. 从 P 挡换出 -> 激活状态机 (必须确认切入 D 挡前进或 R 挡倒车才武装，绝不被瞬态乱跳误武装)
-                    if (lastGearPos == 5 && (gear == 2 || gear == 4)) {
+                    // 1. 换出 P 挡进入行车挡 (D挡2, R挡4, S挡6/7 或从P切出)，立即武装状态机
+                    if (gear == 2 || gear == 4 || gear == 6 || gear == 7 || (lastGearPos == 5 && gear != 5)) {
                         isGearVoiceArmed = 1;
                     }
 
@@ -144,8 +144,8 @@ public class GearStateMachine {
                                 voicePlayer.play("gear_s.mp3", "已挂入运动挡");
                             }
                         } else if (gear == 5) { // P 挡
-                            // 必须在车主主动换出过 P 挡（isGearVoiceArmed == 1）后挂回 P 挡才播报，杜绝开机/熄火点火伪跳变误报
-                            if (isGearVoiceArmed == 1) {
+                            // 只要曾切出过 P 挡（isGearVoiceArmed == 1 或 prevGear != 5），挂回 P 挡即刻播报
+                            if (isGearVoiceArmed == 1 || prevGear != 5) {
                                 if (enableP && voicePlayer != null) {
                                     voicePlayer.play("gear_p.mp3", "已挂入驻车挡");
                                 }

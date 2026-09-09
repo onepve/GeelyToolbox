@@ -95,10 +95,11 @@ public class VehicleVoicePlayer {
             int maxVol = audioManager.getStreamMaxVolume(stream);
             int targetVol = Math.max(0, Math.min(maxVol, currentVol + offset));
 
-            // 倒车挡防衰减智能补偿：自动分流至通知通道，并施加均衡电平 (40%~45%)，既清晰入耳又绝不炸耳
+            // 倒车挡防衰减智能补偿：通知通道动态补偿 +N 格 (车主可在倒车声效弹窗自由调节，默认+6)
             if (isReverse) {
-                int balancedVol = (int) (maxVol * 0.45f);
-                targetVol = Math.max(1, balancedVol);
+                int boost = prefs.getInt("reverse_volume_boost", 6);
+                int boostedVol = Math.max((int) (maxVol * 0.80f), currentVol + boost);
+                targetVol = Math.max(1, Math.min(maxVol, boostedVol));
             }
 
             if (targetVol != currentVol && restoreVolumeAfterPlay < 0) {

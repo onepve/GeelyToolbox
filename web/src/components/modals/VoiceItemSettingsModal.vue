@@ -25,6 +25,42 @@
         </button>
       </div>
 
+      <!-- 倒车挡专属：防衰减音量补偿自由调节滑块 (置顶直出，避免翻页滚动) -->
+      <div v-if="targetItem?.key === 'gear_r'" class="bg-car-item border-2 border-car-accent/40 rounded-2xl p-4 flex flex-col space-y-2 shadow-md">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-sm"></span>
+            <span class="text-[17.5px] font-black text-car-text">倒车防衰减音量额外补偿 (通知声道)</span>
+          </div>
+          <span class="text-[15px] font-black text-car-accent px-3.5 py-1 bg-car-card rounded-xl border border-car-border">
+            当前补偿: +{{ reverseBoost }} 格 {{ reverseBoost === 6 ? '(出厂推荐)' : '' }}
+          </span>
+        </div>
+        <div class="text-[13.5px] text-car-sub font-bold leading-relaxed">
+          倒车时原厂倒车影像硬件会自动强行压低媒体音量，控制台已自动将倒车安全语音分流至通知通道。在此可自由设定叠加补偿 (+0 ~ +10 格)，支持边拖边试听。
+        </div>
+        <div class="flex items-center space-x-4 pt-1">
+          <span class="text-[13px] text-car-sub font-bold whitespace-nowrap">0 格 (无补偿)</span>
+          <input 
+            type="range" 
+            min="0" 
+            max="10" 
+            step="1" 
+            v-model.number="reverseBoost" 
+            @change="updateReverseBoost"
+            @input="updateReverseBoost"
+            class="flex-1 accent-car-accent h-2.5 bg-car-card rounded-lg cursor-pointer"
+          />
+          <span class="text-[13px] text-car-sub font-bold whitespace-nowrap">+10 格 (最大增益)</span>
+          <button 
+            @click="testCurrentAudio"
+            class="px-4 py-2 bg-car-card border-2 border-car-accent text-car-accent hover:text-car-text font-black text-[14.5px] rounded-xl cursor-pointer transition-all shrink-0 shadow-sm"
+          >
+            试听此音量
+          </button>
+        </div>
+      </div>
+
       <!-- 左右两栏并排 (车规宽屏 1920x720 黄金自适应排版，全要素同屏直出不翻页) -->
       <div class="flex space-x-4">
         <!-- 1. 自定义 TTS 朗读台词 -->
@@ -155,6 +191,12 @@ const targetItem = computed(() => store.modals.voiceItemSettings);
 const customText = ref('');
 const customFilePath = ref('');
 const installedThemes = ref([]);
+const reverseBoost = ref(6);
+
+function updateReverseBoost() {
+  store.vehicleAuto.reverse_volume_boost = reverseBoost.value;
+  bridge.call('setVehicleAutomationIntSetting', 'reverse_volume_boost', reverseBoost.value);
+}
 
 function loadInstalledThemes() {
   try {
@@ -179,6 +221,7 @@ watch(() => store.modals.voiceItemSettings, (item) => {
   if (item && item.key) {
     customText.value = localStorage.getItem(`geely_voice_text_${item.key}`) || '';
     customFilePath.value = localStorage.getItem(`geely_voice_file_${item.key}`) || '';
+    reverseBoost.value = store.vehicleAuto.reverse_volume_boost !== undefined ? Number(store.vehicleAuto.reverse_volume_boost) : 6;
     loadInstalledThemes();
   } else {
     customText.value = '';
