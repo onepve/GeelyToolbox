@@ -3,7 +3,7 @@
     :show="!!store.modals.confirm"
     :title="confirmData?.title || '操作确认'"
     :badge="confirmData?.isDanger ? '高危操作' : '安全确认'"
-    maxWidthClass="max-w-[700px]"
+    maxWidthClass="max-w-[860px]"
     zIndexClass="z-[9999]"
     @close="handleCancel"
   >
@@ -56,16 +56,17 @@ import { store, closeModal } from '../../store';
 const confirmData = computed(() => store.modals.confirm);
 
 function handleConfirm() {
-  if (confirmData.value && typeof confirmData.value.onConfirm === 'function') {
-    confirmData.value.onConfirm();
-  }
+  const cb = confirmData.value?.onConfirm;
+  // 关键顺序：必须先关闭当前弹窗再执行回调！
+  // 否则嵌套确认（onConfirm 内再次 openModal('confirm')）会立刻被随后的 closeModal 误杀，
+  // 表现为"点确认后第二步/第三步内容消失"。
   closeModal('confirm');
+  if (typeof cb === 'function') cb();
 }
 
 function handleCancel() {
-  if (confirmData.value && typeof confirmData.value.onCancel === 'function') {
-    confirmData.value.onCancel();
-  }
+  const cb = confirmData.value?.onCancel;
   closeModal('confirm');
+  if (typeof cb === 'function') cb();
 }
 </script>

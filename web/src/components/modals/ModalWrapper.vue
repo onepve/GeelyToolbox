@@ -14,21 +14,21 @@
           maxHeightClass || 'max-h-[90vh]'
         ]"
       >
-        <!-- 弹窗标题栏 (车规加高 80px) -->
-        <div class="h-[80px] px-8 border-b border-car-border flex items-center justify-between shrink-0 bg-car-card">
-          <div class="text-[25px] font-black text-car-text tracking-wide flex items-center">
-            <span class="mr-3.5">{{ title }}</span>
-            <span v-if="badge" class="text-[13.5px] px-3 py-1 rounded-full border border-car-border bg-car-item text-car-sub font-black">
+        <!-- 弹窗标题栏 (车规加高 80px：标题左区独占可自动换行完整显示，徽标+关闭按钮右区成组永不挤压错位) -->
+        <div class="min-h-[80px] px-8 py-4 border-b border-car-border flex items-center justify-between shrink-0 bg-car-card">
+          <div class="flex-1 min-w-0 text-[25px] font-black text-car-text tracking-wide leading-[1.3]">{{ title }}</div>
+          <div class="shrink-0 ml-5 flex items-center space-x-3">
+            <span v-if="badge" class="text-[13.5px] px-3 py-1.5 rounded-full border border-car-border bg-car-item text-car-sub font-black whitespace-nowrap">
               {{ badge }}
             </span>
+            <button 
+              v-if="showCloseButton !== false"
+              @click="close"
+              class="h-[56px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-all shadow-sm"
+            >
+              关闭
+            </button>
           </div>
-          <button 
-            v-if="showCloseButton !== false"
-            @click="close"
-            class="h-[56px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-all shadow-sm"
-          >
-            关闭
-          </button>
         </div>
 
         <!-- 弹窗主体内容 (独立平滑滚动，采用 space-y-6 实体隔离彻底杜绝 Android 9 gap 塌陷) -->

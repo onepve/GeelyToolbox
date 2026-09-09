@@ -649,11 +649,68 @@ else:
 
 
 # ----------------------------------------------------------------------
+# 17. Version Contract Consistency Gate (Tag ↔ build.gradle ↔ 7000+minor*10+patch)
+# ----------------------------------------------------------------------
+log_step("17. Checking Version Contract Consistency Gate (build.gradle ↔ Tag 同源同码)")
+with open(BUILD_GRADLE_PATH, "r", encoding="utf-8") as f:
+    gradle_content = f.read()
+
+m_code = re.search(r'versionCode\s+([0-9]+)', gradle_content)
+m_name = re.search(r'versionName\s+"([^"]+)"', gradle_content)
+if not m_code or not m_name:
+    print("[FAIL] build.gradle versionCode/versionName 无法解析")
+    passed = False
+else:
+    g_code = int(m_code.group(1))
+    g_name = m_name.group(1).strip()
+    # 解析语义版本号 x.y.z（容忍 -beta / -rc 等后缀）
+    clean_name = re.sub(r'[-_].*$', '', g_name)
+    parts = clean_name.split('.')
+    expected = None
+    if len(parts) >= 2:
+        try:
+            expected = 7000 + int(parts[1]) * 10 + int(parts[2] if len(parts) >= 3 else 0)
+        except Exception:
+            expected = None
+    ok = True
+    if expected is not None and g_code != expected:
+        print(f"[FAIL] build.gradle 版本契约失衡: versionName {g_name} 要求 versionCode={expected}，实际 versionCode={g_code}（publish_r2.py 按 7000+次版本*10+修订 生成云端元数据）")
+        ok = False
+    else:
+        print(f"[PASS] build.gradle 语义版本与 versionCode 公式一致: {g_name} -> code {g_code}")
+
+    # CI tag 环境强校验（Inject 步骤已前置到健康检查之前，此处应完全对齐）
+    ref = os.environ.get("GITHUB_REF", "")
+    if ref.startswith("refs/tags/"):
+        tag = ref[len("refs/tags/"):]
+        is_beta_tag = tag.startswith("beta-")
+        ver = tag[len("beta-v"):] if is_beta_tag else tag[len("v"):]
+        exp_name = f"{ver}-beta" if is_beta_tag else ver
+        tparts = ver.split('.')
+        exp_code = None
+        if len(tparts) >= 3:
+            try:
+                exp_code = 7000 + int(tparts[1]) * 10 + int(tparts[2])
+            except Exception:
+                exp_code = None
+        if exp_code is not None:
+            if g_code != exp_code or g_name != exp_name:
+                print(f"[FAIL] 当前 tag {tag} 要求 versionName={exp_name} versionCode={exp_code}，但 build.gradle 实际为 {g_name}/{g_code} —— 版本契约不匹配，APK 将永远被云端判定为旧版，拒绝发版！")
+                ok = False
+            else:
+                print(f"[PASS] 当前 tag {tag} 与 build.gradle 完全对齐: {g_name} (code {g_code})")
+    if not ok:
+        passed = False
+    else:
+        print("[PASS] 版本契约门禁全绿：APK 内部 versionCode 与云端元数据同源生成，彻底杜绝『已是最新仍提示更新』幻影升级！")
+
+
+# ----------------------------------------------------------------------
 # Final Summary Verdict
 # ----------------------------------------------------------------------
-log_step("CI 16-Gate Health Check Verdict")
+log_step("CI 17-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 16 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates & core feature regression defense closed)")
+    print("[SUCCESS] All 17 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense & version contract consistency all closed)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")

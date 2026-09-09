@@ -10,8 +10,8 @@
           ⚠️
         </div>
         <div class="flex-1 min-w-0 flex flex-col space-y-1.5">
-          <div class="flex items-center space-x-2.5">
-            <span class="text-[19px] font-black text-car-text tracking-wide whitespace-nowrap">检测到吉利应用商店处于未冻结状态</span>
+          <div class="flex items-center space-x-2.5 min-w-0">
+            <span class="text-[19px] font-black text-car-text tracking-wide">检测到吉利应用商店处于未冻结状态</span>
             <span class="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[13px] font-black shrink-0">建议处置</span>
           </div>
           <span class="text-[14.5px] text-car-sub font-bold leading-normal">原厂商店运行会破坏白名单策略，直接导致第三方软件无法安装，强烈建议立即冻结锁定！</span>
