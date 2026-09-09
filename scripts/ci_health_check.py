@@ -584,11 +584,76 @@ else:
 
 
 # ----------------------------------------------------------------------
+# 16. Checking Core Feature Regression & Critical Button Defense Gate
+# ----------------------------------------------------------------------
+log_step("16. Checking Core Feature Regression & Critical Button Defense Gate")
+reg_violations = []
+
+# 16.1 检查软件中心下载生命周期完整控制 (暂停/取消/重试/安装)
+app_detail_modal_path = os.path.join(WEB_SRC_DIR, "components/modals/AppDetailModal.vue")
+if not os.path.exists(app_detail_modal_path):
+    reg_violations.append("AppDetailModal.vue 组件缺失！")
+else:
+    with open(app_detail_modal_path, "r", encoding="utf-8") as f:
+        adm_code = f.read()
+    if "pauseDownload" not in adm_code:
+        reg_violations.append("软件中心 AppDetailModal 缺少【暂停下载】按钮或方法！")
+    if "cancelDownload" not in adm_code:
+        reg_violations.append("软件中心 AppDetailModal 缺少【取消下载】按钮或方法！")
+    if "resumeDownload" not in adm_code:
+        reg_violations.append("软件中心 AppDetailModal 缺少【继续下载】按钮或方法！")
+    if "installDownloadedApk" not in adm_code:
+        reg_violations.append("软件中心 AppDetailModal 缺少【立即安装应用】闭环按键！")
+
+with open(os.path.join(WEB_SRC_DIR, "App.vue"), "r", encoding="utf-8") as f:
+    app_vue_code = f.read()
+if "updateDownloadPaused" not in app_vue_code or "updateDownloadCancelled" not in app_vue_code or "updateDownloadSuccess" not in app_vue_code:
+    reg_violations.append("App.vue 缺少全局下载状态回调 (updateDownloadPaused / updateDownloadCancelled / updateDownloadSuccess)！")
+
+# 16.2 检查方控双轨引擎、长按滑块与米小江兼容
+wheel_view_path = os.path.join(WEB_SRC_DIR, "views/WheelView.vue")
+with open(wheel_view_path, "r", encoding="utf-8") as f:
+    wv_code = f.read()
+if "wheel_monitor_engine_mode" not in wv_code:
+    reg_violations.append("WheelView.vue 缺少方控按键监听双轨引擎切换卡片！")
+if "wheel_long_press_ms" not in wv_code or "longPressSec" not in wv_code:
+    reg_violations.append("WheelView.vue 缺少方控按键长按判定时长自由调节滑块！")
+if "carmedia_first" not in wv_code:
+    reg_violations.append("WheelView.vue 缺少米小江方控优先模式单选卡片！")
+
+# 16.3 检查车身双轨引擎与倒车音量滑块
+body_view_path = os.path.join(WEB_SRC_DIR, "views/BodyView.vue")
+with open(body_view_path, "r", encoding="utf-8") as f:
+    bv_code = f.read()
+if "vehicle_monitor_engine_mode" not in bv_code:
+    reg_violations.append("BodyView.vue 缺少车身数据底座监控双轨引擎大卡片！")
+
+voice_item_modal_path = os.path.join(WEB_SRC_DIR, "components/modals/VoiceItemSettingsModal.vue")
+with open(voice_item_modal_path, "r", encoding="utf-8") as f:
+    vism_code = f.read()
+if "reverse_volume_boost" not in vism_code or "reverseBoost" not in vism_code:
+    reg_violations.append("VoiceItemSettingsModal.vue 倒车设置缺少【倒车防衰减音量额外补偿】滑块！")
+
+# 16.4 检查手机快传避免单行双按钮溢出
+with open(MOBILE_WEB_PATH, "r", encoding="utf-8") as f:
+    mweb_code = f.read()
+if 'style="display:flex; gap:8px;' in mweb_code and "voice_template" in mweb_code:
+    reg_violations.append("mobile_web.html 语音制作中枢仍在使用单行双按钮布局，窄屏将溢出！")
+
+if reg_violations:
+    for v in reg_violations:
+        print(f"  [FAIL] {v}")
+    passed = False
+else:
+    print("[PASS] 核心业务功能防回退门禁全绿：下载控制链(暂停/取消/安装)、方控双轨引擎、长按滑块、倒车音量滑块100%存在且闭环！")
+
+
+# ----------------------------------------------------------------------
 # Final Summary Verdict
 # ----------------------------------------------------------------------
-log_step("CI 15-Gate Health Check Verdict")
+log_step("CI 16-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 15 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation & 3-tier clean gates closed)")
+    print("[SUCCESS] All 16 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates & core feature regression defense closed)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")

@@ -150,7 +150,27 @@ onMounted(() => {
   };
 
   window.updateDownloadProgress = (appId, percent, speed) => {
-    store.downloadProgress[appId] = { percent, speed };
+    store.downloadProgress[appId] = { status: 'downloading', percent, speed };
+  };
+
+  window.updateDownloadPaused = (appId) => {
+    if (store.downloadProgress[appId]) {
+      store.downloadProgress[appId].status = 'paused';
+    } else {
+      store.downloadProgress[appId] = { status: 'paused', percent: 0, speed: '0 KB/s' };
+    }
+  };
+
+  window.updateDownloadCancelled = (appId) => {
+    delete store.downloadProgress[appId];
+  };
+
+  window.updateDownloadSuccess = (appId, savedFileName) => {
+    store.downloadProgress[appId] = { status: 'completed', percent: 100, speed: '0 KB/s', savedFileName };
+  };
+
+  window.updateDownloadError = (appId, errorMsg) => {
+    store.downloadProgress[appId] = { status: 'error', errorMsg, percent: 0 };
   };
 
   try {

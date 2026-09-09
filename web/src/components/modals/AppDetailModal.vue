@@ -37,22 +37,34 @@
         <p class="text-[16.5px] text-car-sub font-semibold leading-relaxed whitespace-pre-wrap">{{ app.desc }}</p>
       </div>
 
-      <!-- 动态全宽下载进度条 (下载中动态展开) -->
-      <div v-if="downloadProgress[app.id]" class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col space-y-2">
+      <!-- 动态全宽下载进度条 (下载中/暂停/完成动态展开) -->
+      <div v-if="currentTask" class="bg-car-item border-2 border-car-accent/40 rounded-2xl p-4 flex flex-col space-y-2.5 shadow-md">
         <div class="flex items-center justify-between text-[15px] font-bold text-car-text">
-          <span>正在极速下载中 ({{ downloadProgress[app.id].speed || '3.5 MB/s' }})...</span>
-          <span>{{ downloadProgress[app.id].percent || 0 }}%</span>
+          <div class="flex items-center space-x-2">
+            <span :class="['w-2.5 h-2.5 rounded-full', currentTask.status === 'paused' ? 'bg-amber-400' : (currentTask.status === 'completed' ? 'bg-emerald-400' : 'bg-car-accent animate-pulse')]"></span>
+            <span>{{ taskStatusTitle }}</span>
+          </div>
+          <span class="font-mono text-car-accent font-black text-[16px]">{{ currentTask.percent || 0 }}%</span>
         </div>
         <div class="h-3 w-full bg-car-card rounded-full overflow-hidden border border-car-border">
           <div 
-            class="h-full bg-car-accent transition-all duration-200"
-            :style="{ width: (downloadProgress[app.id].percent || 0) + '%' }"
+            class="h-full transition-all duration-200"
+            :class="[currentTask.status === 'paused' ? 'bg-amber-400' : (currentTask.status === 'completed' ? 'bg-emerald-500' : 'bg-car-accent')]"
+            :style="{ width: (currentTask.percent || 0) + '%' }"
           ></div>
+        </div>
+        <div class="flex items-center justify-between pt-0.5">
+          <span class="text-[13.5px] text-car-sub font-bold">
+            {{ currentTask.status === 'completed' ? '✅ 安装包已下载就绪，可随时点击下方按钮进行安装' : (currentTask.status === 'paused' ? '⏸️ 当前下载已暂停，点击下方按钮可继续或取消' : `⚡ 正在高速下载中 (实时速度: ${currentTask.speed || '正在连接...'})`) }}
+          </span>
+          <span class="text-[13px] font-mono text-car-accent font-black">
+            {{ currentTask.status === 'completed' ? '100%' : `${currentTask.percent || 0}%` }}
+          </span>
         </div>
       </div>
     </div>
 
-    <!-- 底部 66px 巨型车规大触控操作栏 -->
+    <!-- 底部 66px 巨型车规大触控操作栏 (操作按钮全覆盖) -->
     <template #footer>
       <div class="flex items-center justify-between w-full">
         <!-- 专家模式卡主题通道按键 (严密安全限制：仅限高德地图底包，非地图坚决禁止卡主题) -->
@@ -66,12 +78,66 @@
         </button>
         <div v-else></div>
 
-        <button 
-          @click="handleInstallAction"
-          class="min-h-[66px] px-10 bg-car-item border-2 border-car-accent rounded-2xl text-car-text font-black text-[21px] cursor-pointer hover:border-car-accent shadow-lg ring-2 ring-car-accent/20"
-        >
-          {{ actionButtonText }}
-        </button>
+        <!-- 右侧核心操作按钮流 -->
+        <div class="flex items-center space-x-3">
+          <!-- 1. 正在下载中：提供大尺寸暂停与取消按钮 -->
+          <template v-if="currentTask?.status === 'downloading'">
+            <button 
+              @click="pauseDownload"
+              class="min-h-[66px] px-8 bg-car-item border-2 border-amber-500/60 text-amber-400 hover:border-amber-400 rounded-2xl font-black text-[19px] cursor-pointer shadow-md transition-all flex items-center"
+            >
+              <span class="mr-2">⏸️</span> 暂停下载
+            </button>
+            <button 
+              @click="cancelDownload"
+              class="min-h-[66px] px-8 bg-car-item border-2 border-rose-500/60 text-rose-400 hover:border-rose-400 rounded-2xl font-black text-[19px] cursor-pointer shadow-md transition-all flex items-center"
+            >
+              <span class="mr-2">🛑</span> 取消下载
+            </button>
+          </template>
+
+          <!-- 2. 暂停中：提供大尺寸继续与取消按钮 -->
+          <template v-else-if="currentTask?.status === 'paused'">
+            <button 
+              @click="resumeDownload"
+              class="min-h-[66px] px-8 bg-car-item border-2 border-car-accent text-car-text hover:border-car-accent rounded-2xl font-black text-[19px] cursor-pointer shadow-md ring-2 ring-car-accent/20 transition-all flex items-center"
+            >
+              <span class="mr-2">▶️</span> 继续下载
+            </button>
+            <button 
+              @click="cancelDownload"
+              class="min-h-[66px] px-8 bg-car-item border-2 border-rose-500/60 text-rose-400 hover:border-rose-400 rounded-2xl font-black text-[19px] cursor-pointer shadow-md transition-all flex items-center"
+            >
+              <span class="mr-2">🛑</span> 取消下载
+            </button>
+          </template>
+
+          <!-- 3. 下载完成：提供立即安装应用与重新下载按钮 -->
+          <template v-else-if="currentTask?.status === 'completed'">
+            <button 
+              @click="handleInstallDownloaded"
+              class="min-h-[66px] px-10 bg-car-item border-2 border-emerald-500 text-emerald-400 rounded-2xl font-black text-[20px] cursor-pointer hover:border-emerald-400 shadow-lg ring-2 ring-emerald-500/20 transition-all flex items-center"
+            >
+              <span class="mr-2">✅</span> 立即安装应用
+            </button>
+            <button 
+              @click="handleInstallAction"
+              class="min-h-[66px] px-6 bg-car-card border border-car-border text-car-sub hover:text-car-text rounded-2xl font-bold text-[16px] cursor-pointer shadow-sm transition-all"
+            >
+              🔄 重新下载
+            </button>
+          </template>
+
+          <!-- 4. 初始未下载：原有的立即下载安装 -->
+          <template v-else>
+            <button 
+              @click="handleInstallAction"
+              class="min-h-[66px] px-10 bg-car-item border-2 border-car-accent rounded-2xl text-car-text font-black text-[21px] cursor-pointer hover:border-car-accent shadow-lg ring-2 ring-car-accent/20 transition-all"
+            >
+              {{ actionButtonText }}
+            </button>
+          </template>
+        </div>
       </div>
     </template>
   </ModalWrapper>
@@ -83,7 +149,17 @@ import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, showToast } from '../../store';
 
 const app = computed(() => store.modals.appDetail);
-const downloadProgress = computed(() => store.downloadProgress);
+const currentTask = computed(() => {
+  if (!app.value) return null;
+  return store.downloadProgress[app.value.id] || null;
+});
+
+const taskStatusTitle = computed(() => {
+  if (!currentTask.value) return '';
+  if (currentTask.value.status === 'paused') return '下载已暂停';
+  if (currentTask.value.status === 'completed') return '下载完成 (100%)';
+  return `正在极速下载中 (${currentTask.value.speed || '正在连接'})...`;
+});
 
 const isMapApp = computed(() => {
   if (!app.value) return false;
@@ -103,7 +179,39 @@ const actionButtonText = computed(() => {
 function handleInstallAction() {
   if (!app.value) return;
   bridge.call('downloadApp', app.value.id, app.value.url, app.value.filename);
-  showToast(`已下发任务: ${app.value.name}`);
+  showToast(`已下发下载任务: ${app.value.name}`);
+}
+
+function pauseDownload() {
+  if (!app.value) return;
+  bridge.call('pauseDownload', app.value.id);
+  if (store.downloadProgress[app.value.id]) {
+    store.downloadProgress[app.value.id].status = 'paused';
+  }
+  showToast('已下发暂停指令');
+}
+
+function resumeDownload() {
+  if (!app.value) return;
+  bridge.call('downloadApp', app.value.id, app.value.url, app.value.filename);
+  if (store.downloadProgress[app.value.id]) {
+    store.downloadProgress[app.value.id].status = 'downloading';
+  }
+  showToast('正在继续下载...');
+}
+
+function cancelDownload() {
+  if (!app.value) return;
+  bridge.call('cancelDownload', app.value.id);
+  delete store.downloadProgress[app.value.id];
+  showToast('已取消下载任务');
+}
+
+function handleInstallDownloaded() {
+  if (!app.value) return;
+  const filename = currentTask.value?.savedFileName || app.value.filename;
+  bridge.call('installDownloadedApk', filename);
+  showToast(`正在调起系统安装: ${filename}`);
 }
 
 function openRabbitGuide() {
