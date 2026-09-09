@@ -27,6 +27,8 @@ public class GearStateMachine {
 
     private int lastGearPos = -1;
     private int isGearVoiceArmed = 0; // 0=P挡静默休眠态, 1=车主激活态
+    private Runnable pendingGearTask = null;
+    private static final long GEAR_DEBOUNCE_MS = 160; // 换挡防抖滤波窗口 (160ms 滤除快切瞬态，保证最终挡位干脆秒出)
 
     public static int normalizeGear(int rawGear) {
         switch (rawGear) {
@@ -71,12 +73,16 @@ public class GearStateMachine {
      * 车辆熄火/断电/休眠复位：状态机重置归零，下一次点火绝对静默
      */
     public synchronized void resetState() {
+        if (pendingGearTask != null) {
+            mainHandler.removeCallbacks(pendingGearTask);
+            pendingGearTask = null;
+        }
         lastGearPos = -1;
         isGearVoiceArmed = 0;
         AppLogger.i("换挡状态", "熄火休眠: 换挡状态机重置归零 (armed=0, lastGear=-1)");
     }
 
-    public synchronized void updateGear(int rawGear, boolean voiceMasterSwitch, SharedPreferences prefs) {
+    public synchronized void updateGear(int rawGear, final boolean voiceMasterSwitch, final SharedPreferences prefs) {
         if (rawGear <= 0) return;
         final int gear = normalizeGear(rawGear);
 
@@ -92,52 +98,72 @@ public class GearStateMachine {
 
         if (gear == lastGearPos) return;
 
-        AppLogger.i("换挡状态", "挡位跃变: " + getGearName(lastGearPos) + " -> " + getGearName(gear) + ", armed=" + isGearVoiceArmed);
-
-        // 1. 从 P 挡换出 -> 激活状态机
-        if (lastGearPos == 5 && gear != 5) {
-            isGearVoiceArmed = 1;
+        // 取消上一次正在防抖中的换挡任务 (滤除极速连切的中间过渡态，如快速从P划过N进入D)
+        if (pendingGearTask != null) {
+            mainHandler.removeCallbacks(pendingGearTask);
+            pendingGearTask = null;
         }
 
-        // 2. 播报判定 (默认全开启，即使开机处于初始态也按需激活)
-        if (voiceMasterSwitch) {
-            boolean enableD = prefs.getBoolean("voice_enable_gear_d", true) && prefs.getBoolean("enable_gear_d", true);
-            boolean enableR = prefs.getBoolean("voice_enable_gear_r", true) && prefs.getBoolean("enable_gear_r", true);
-            boolean enableN = prefs.getBoolean("voice_enable_gear_n", true) && prefs.getBoolean("enable_gear_n", true);
-            boolean enableS = prefs.getBoolean("voice_enable_gear_s", true) && prefs.getBoolean("enable_gear_s", true);
-            boolean enableP = prefs.getBoolean("voice_enable_gear_p", true) && prefs.getBoolean("enable_gear_p", true);
+        final int prevGear = lastGearPos;
+        pendingGearTask = new Runnable() {
+            @Override
+            public void run() {
+                synchronized (GearStateMachine.this) {
+                    pendingGearTask = null;
+                    if (gear == lastGearPos) return;
 
-            if (gear == 2) { // D 挡
-                if (enableD && voicePlayer != null) {
-                    voicePlayer.play("gear_d.mp3", "已挂入前进挡，系好安全带，祝你一路平安");
-                }
-            } else if (gear == 4) { // R 挡 (直接播报抗衰减倒车语音)
-                if (enableR && voicePlayer != null) {
-                    voicePlayer.play("gear_r.mp3", "已挂入倒车挡，请注意观察后方安全");
-                }
-            } else if (gear == 3) { // N 挡
-                if (enableN && voicePlayer != null) {
-                    voicePlayer.play("gear_n.mp3", "已挂入空挡");
-                }
-            } else if (gear == 6 || gear == 7) { // S 挡
-                if (enableS && voicePlayer != null) {
-                    voicePlayer.play("gear_s.mp3", "已挂入运动挡，动力充沛");
-                }
-            } else if (gear == 5) { // P 挡
-                // 必须在车主主动换出过 P 挡（isGearVoiceArmed == 1）后挂回 P 挡才播报，杜绝开机/熄火点火伪跳变误报
-                if (isGearVoiceArmed == 1) {
-                    if (enableP && voicePlayer != null) {
-                        voicePlayer.play("gear_p.mp3", "已挂入驻车挡");
+                    AppLogger.i("换挡状态", "挡位确认跃变: " + getGearName(lastGearPos) + " -> " + getGearName(gear) + ", armed=" + isGearVoiceArmed);
+
+                    // 1. 从 P 挡换出 -> 激活状态机
+                    if (lastGearPos == 5 && gear != 5) {
+                        isGearVoiceArmed = 1;
+                    }
+
+                    // 2. 播报判定 (干脆利落短句，强制瞬发打断旧语音)
+                    if (voiceMasterSwitch) {
+                        boolean enableD = prefs.getBoolean("voice_enable_gear_d", true) && prefs.getBoolean("enable_gear_d", true);
+                        boolean enableR = prefs.getBoolean("voice_enable_gear_r", true) && prefs.getBoolean("enable_gear_r", true);
+                        boolean enableN = prefs.getBoolean("voice_enable_gear_n", true) && prefs.getBoolean("enable_gear_n", true);
+                        boolean enableS = prefs.getBoolean("voice_enable_gear_s", true) && prefs.getBoolean("enable_gear_s", true);
+                        boolean enableP = prefs.getBoolean("voice_enable_gear_p", true) && prefs.getBoolean("enable_gear_p", true);
+
+                        if (gear == 2) { // D 挡
+                            if (enableD && voicePlayer != null) {
+                                voicePlayer.play("gear_d.mp3", "已挂入前进挡");
+                            }
+                        } else if (gear == 4) { // R 挡
+                            if (enableR && voicePlayer != null) {
+                                voicePlayer.play("gear_r.mp3", "已挂入倒车挡");
+                            }
+                        } else if (gear == 3) { // N 挡
+                            if (enableN && voicePlayer != null) {
+                                voicePlayer.play("gear_n.mp3", "已挂入空挡");
+                            }
+                        } else if (gear == 6 || gear == 7) { // S 挡
+                            if (enableS && voicePlayer != null) {
+                                voicePlayer.play("gear_s.mp3", "已挂入运动挡");
+                            }
+                        } else if (gear == 5) { // P 挡
+                            // 必须在车主主动换出过 P 挡（isGearVoiceArmed == 1）后挂回 P 挡才播报，杜绝开机/熄火点火伪跳变误报
+                            if (isGearVoiceArmed == 1) {
+                                if (enableP && voicePlayer != null) {
+                                    voicePlayer.play("gear_p.mp3", "已挂入驻车挡");
+                                }
+                            }
+                            isGearVoiceArmed = 0; // 归零！进入休眠态
+                        }
+                    }
+
+                    lastGearPos = gear;
+                    if (listener != null) {
+                        listener.onGearChanged(lastGearPos);
                     }
                 }
-                isGearVoiceArmed = 0; // 归零！进入休眠态
             }
-        }
+        };
 
-        lastGearPos = gear;
-        if (listener != null) {
-            listener.onGearChanged(lastGearPos);
-        }
+        // 立即投递 160ms 防抖确认
+        mainHandler.postDelayed(pendingGearTask, GEAR_DEBOUNCE_MS);
     }
 
     private String getGearName(int gear) {

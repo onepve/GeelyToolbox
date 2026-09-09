@@ -78,6 +78,7 @@ public class VehicleVoicePlayer {
     private Object activeFocusRequest = null;
     private int restoreVolumeAfterPlay = -1;
     private int originalStreamType = AudioManager.STREAM_MUSIC;
+    private Runnable focusReleaseRunnable = null;
 
     private synchronized void applyVolumeOffsetBeforePlay(String voiceType) {
         if (audioManager == null) return;
@@ -218,6 +219,10 @@ public class VehicleVoicePlayer {
 
     public void stopCurrentVoice() {
         playSessionId.incrementAndGet();
+        if (focusReleaseRunnable != null) {
+            mainHandler.removeCallbacks(focusReleaseRunnable);
+            focusReleaseRunnable = null;
+        }
         synchronized (playerLock) {
             if (currentMediaPlayer != null) {
                 try {
@@ -229,16 +234,24 @@ public class VehicleVoicePlayer {
                 currentMediaPlayer = null;
             }
         }
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (tts != null && tts.isSpeaking()) {
-                        tts.stop();
-                    }
-                } catch (Exception ignored) {}
-            }
-        });
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            try {
+                if (tts != null && tts.isSpeaking()) {
+                    tts.stop();
+                }
+            } catch (Exception ignored) {}
+        } else {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (tts != null && tts.isSpeaking()) {
+                            tts.stop();
+                        }
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
         abandonAudioFocus();
         restoreVolumeAfterPlay();
     }
@@ -472,6 +485,10 @@ public class VehicleVoicePlayer {
             @Override
             public void run() {
                 try {
+                    if (focusReleaseRunnable != null) {
+                        mainHandler.removeCallbacks(focusReleaseRunnable);
+                        focusReleaseRunnable = null;
+                    }
                     requestAudioFocus(voiceType);
                     applyVolumeOffsetBeforePlay(voiceType);
                     if (tts != null && ttsReady) {
@@ -491,13 +508,15 @@ public class VehicleVoicePlayer {
                     } else {
                         Log.w(TAG, "TTS engine not ready, queuing speech or retrying");
                     }
-                    mainHandler.postDelayed(new Runnable() {
+                    focusReleaseRunnable = new Runnable() {
                         @Override
                         public void run() {
                             abandonAudioFocus();
                             restoreVolumeAfterPlay();
+                            focusReleaseRunnable = null;
                         }
-                    }, 3000);
+                    };
+                    mainHandler.postDelayed(focusReleaseRunnable, 2200);
                 } catch (Exception e) {
                     Log.w(TAG, "speakText error: " + e.getMessage());
                     abandonAudioFocus();

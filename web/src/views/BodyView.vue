@@ -599,9 +599,129 @@
     <!-- 3. 四门迎宾与关门提醒 -->
     <FeatureCard 
       title="3. 四门迎宾与关门提醒 (状态翻转机 · 关门立断)"
-      desc="100% 锁定吉利真实 MCU 串口物理报文 (91 02 01 b6)，彻底废除时间防抖锁。开门播报未完突然关门时，毫秒级打断开门语音并无缝切入“车门已关好”。"
+      desc="100% 锁定吉利真实 MCU 串口物理报文 (91 02 01 b6)，支持【通用智能语音】与【独立分门自定义】双模式无缝切换。"
     >
-      <div class="grid grid-cols-2 gap-4">
+      <!-- 模式切换选择栏 (车规大胶囊) -->
+      <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-4 mb-4 shadow-sm">
+        <div class="flex flex-col">
+          <span class="text-[18px] font-black text-car-text">车门语音播报模式</span>
+          <span class="text-[14px] text-car-sub font-bold mt-0.5">
+            {{ store.vehicleAuto.voice_door_mode_universal !== false ? '当前为通用车门语音 (全车车门统一发声，干脆高级)' : '当前为独立分门语音 (可为各门单独定制专属台词与音效)' }}
+          </span>
+        </div>
+        <div class="flex space-x-2.5 shrink-0">
+          <button 
+            @click="setDoorMode(true)"
+            :class="[
+              'px-5 py-2.5 rounded-xl border-2 font-black text-[15px] transition-all cursor-pointer',
+              store.vehicleAuto.voice_door_mode_universal !== false 
+                ? 'bg-car-card border-car-accent text-car-text shadow-sm' 
+                : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+            ]"
+          >
+            通用智能语音 (推荐)
+          </button>
+          <button 
+            @click="setDoorMode(false)"
+            :class="[
+              'px-5 py-2.5 rounded-xl border-2 font-black text-[15px] transition-all cursor-pointer',
+              store.vehicleAuto.voice_door_mode_universal === false 
+                ? 'bg-car-card border-car-accent text-car-text shadow-sm' 
+                : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+            ]"
+          >
+            独立分门语音
+          </button>
+        </div>
+      </div>
+
+      <!-- 模式 1: 通用智能车门语音 (默认首选) -->
+      <div v-if="store.vehicleAuto.voice_door_mode_universal !== false" class="grid grid-cols-2 gap-4">
+        <!-- 通用车门打开 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
+            <div class="flex items-center space-x-3 mb-1.5">
+              <span class="text-[22px] font-black text-car-text tracking-wide">通用开门提醒</span>
+              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent font-bold">全车适用</span>
+            </div>
+            <span class="text-[15px] text-car-sub font-bold leading-relaxed">任一车门开启时轻柔提示，行车中开启紧急报警</span>
+          </div>
+          <div class="flex space-x-3 shrink-0 items-center">
+            <button 
+              @click="toggleSetting('voice_enable_door_universal_open')"
+              :class="[
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center select-none cursor-pointer shadow-md',
+                store.vehicleAuto.voice_enable_door_universal_open !== false 
+                  ? 'bg-car-card border-car-accent text-car-text shadow-amber-500/10' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
+            >
+              <span class="text-[19.5px] font-black text-car-text tracking-wide mb-1">开门播报</span>
+              <span :class="['text-[14px] font-bold', store.vehicleAuto.voice_enable_door_universal_open !== false ? 'text-car-accent' : 'text-car-sub']">
+                {{ store.vehicleAuto.voice_enable_door_universal_open !== false ? '已开启' : '已关闭' }}
+              </span>
+            </button>
+            <div class="flex flex-col space-y-2.5 w-[130px]">
+              <button 
+                @click="testVoice('door_open')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                试听语音
+              </button>
+              <button 
+                @click="openCustomVoice('door_open', '通用开门提醒', 'door_open.mp3')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-sub hover:text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                声效设置
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 通用车门关好 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
+            <div class="flex items-center space-x-3 mb-1.5">
+              <span class="text-[22px] font-black text-car-text tracking-wide">通用关门提醒</span>
+              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 font-bold">安全闭合</span>
+            </div>
+            <span class="text-[15px] text-car-sub font-bold leading-relaxed">车门闭合完毕干脆提示“车门已关好”，多门合并防抖</span>
+          </div>
+          <div class="flex space-x-3 shrink-0 items-center">
+            <button 
+              @click="toggleSetting('voice_enable_door_universal_close')"
+              :class="[
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center select-none cursor-pointer shadow-md',
+                store.vehicleAuto.voice_enable_door_universal_close !== false 
+                  ? 'bg-car-card border-car-accent text-car-text shadow-amber-500/10' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
+            >
+              <span class="text-[19.5px] font-black text-car-text tracking-wide mb-1">关门播报</span>
+              <span :class="['text-[14px] font-bold', store.vehicleAuto.voice_enable_door_universal_close !== false ? 'text-car-accent' : 'text-car-sub']">
+                {{ store.vehicleAuto.voice_enable_door_universal_close !== false ? '已开启' : '已关闭' }}
+              </span>
+            </button>
+            <div class="flex flex-col space-y-2.5 w-[130px]">
+              <button 
+                @click="testVoice('door_close')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                试听语音
+              </button>
+              <button 
+                @click="openCustomVoice('door_close', '通用关门提醒', 'door_close.mp3')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-sub hover:text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                声效设置
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 模式 2: 独立四门明细语音 (保留给车友自定义) -->
+      <div v-else class="grid grid-cols-2 gap-4">
         <!-- 主驾 FL -->
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
           <div class="text-[20px] font-black text-car-text mb-3">主驾车门 (FL)</div>
@@ -942,6 +1062,12 @@ const supportedModels = [
 const currentModelSpec = computed(() => {
   return supportedModels.find(m => m.id === selectedModelId.value) || supportedModels[0];
 });
+
+function setDoorMode(isUniversal) {
+  store.vehicleAuto.voice_door_mode_universal = isUniversal;
+  bridge.call('setVehicleAutomationSetting', 'voice_door_mode_universal', isUniversal);
+  showToast(isUniversal ? '已切换为: 通用智能车门语音 (推荐)' : '已切换为: 独立分门明细语音');
+}
 
 function selectCarModel(id) {
   selectedModelId.value = id;

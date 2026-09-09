@@ -85,9 +85,8 @@ public class SteeringWheelKeyManager {
                     } catch (Exception ignored) {}
                     try {
                         AdbClient.execute(context, "pm enable ecarx.xsf.mediacenter/ecarx.xsf.mediacenter.MediaKeyReceiver");
-                        AdbClient.execute(context, "pm enable com.ecarx.multimedia");
                     } catch (Exception ignored) {}
-                    Log.i(TAG, "Wheel master switch is OFF, MediaKeyReceiver & multimedia restored to ENABLED");
+                    Log.i(TAG, "Wheel master switch is OFF, MediaKeyReceiver restored to ENABLED");
                     return;
                 }
 
@@ -100,17 +99,14 @@ public class SteeringWheelKeyManager {
                     pm.setComponentEnabledSetting(comp, newState, PackageManager.DONT_KILL_APP);
                 } catch (Exception ignored) {}
 
-                // 学习 CarMedia 核心拦截机理：通过 ADB 停用原厂多媒体广播接收器并冻结原厂多媒体
+                // 遵循车规纯净解耦：仅停用广播接收器 MediaKeyReceiver，坚决不破坏/冻结整个多媒体应用包
                 try {
                     if (shouldBlock) {
                         AdbClient.execute(context, "pm disable-user --user 0 ecarx.xsf.mediacenter/ecarx.xsf.mediacenter.MediaKeyReceiver");
-                        AdbClient.execute(context, "pm disable-user --user 0 com.ecarx.multimedia");
-                        AdbClient.execute(context, "am force-stop com.ecarx.multimedia; am force-stop ecarx.xsf.mediacenter");
-                        Log.i(TAG, "Successfully disabled MediaKeyReceiver and com.ecarx.multimedia via ADB");
+                        Log.i(TAG, "Successfully disabled MediaKeyReceiver via ADB");
                     } else {
                         AdbClient.execute(context, "pm enable ecarx.xsf.mediacenter/ecarx.xsf.mediacenter.MediaKeyReceiver");
-                        AdbClient.execute(context, "pm enable com.ecarx.multimedia");
-                        Log.i(TAG, "Successfully re-enabled MediaKeyReceiver and com.ecarx.multimedia via ADB");
+                        Log.i(TAG, "Successfully re-enabled MediaKeyReceiver via ADB");
                     }
                 } catch (Exception e) {
                     Log.w(TAG, "syncMediaKeyReceiverState via ADB failed: " + e.getMessage());
@@ -143,7 +139,9 @@ public class SteeringWheelKeyManager {
             if (m.find()) {
                 if ("press".equalsIgnoreCase(m.group(2))) {
                     try {
-                        return Integer.parseInt(m.group(1));
+                        int code = Integer.parseInt(m.group(1));
+                        if (code == 45) return KEY_OK; // 缤越 COOL IHU516G 滚轮按压硬件码 45 映射为 KEY_OK
+                        return code;
                     } catch (Exception ignored) {}
                 }
             }
@@ -155,7 +153,7 @@ public class SteeringWheelKeyManager {
             if (m2.find()) {
                 try {
                     int code = Integer.parseInt(m2.group(1));
-                    if (code == KEY_OK || code == 85 || code == 66) return KEY_OK;
+                    if (code == KEY_OK || code == 45 || code == 85 || code == 66) return KEY_OK;
                 } catch (Exception ignored) {}
             }
         }

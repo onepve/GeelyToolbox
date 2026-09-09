@@ -61,16 +61,15 @@
         <receiver
             android:name=".receivers.BootReceiver"
             android:enabled="true"
-            android:exported="true">
+            android:exported="true"
+            android:directBootAware="true">
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="com.ecarx.intent.action.ECARX_BOOT_COMPLETED" />
-                <!-- QQ音乐同款：蓝牙钥匙靠近/连接唤醒与点亮屏幕唤醒 (解决车机STR休眠开门不灵敏) -->
-                <action android:name="android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED" />
-                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
-                <action android:name="android.intent.action.USER_PRESENT" />
-                <action android:name="android.intent.action.SCREEN_ON" />
+                <action android:name="com.ecarx.action.POWER_RESUME" />
+                <action android:name="com.ecarx.intent.action.POWER_RESUME" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
