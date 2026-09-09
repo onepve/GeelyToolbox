@@ -2,74 +2,92 @@
   <ModalWrapper
     :show="store.modals.log"
     title="吉利智驾 · 运行与守护日志"
-    badge="自动轮转"
+    :badge="autoScroll ? '● 实时轮转中 (1.5s)' : '⏸️ 自动滚动已暂停'"
     maxWidthClass="max-w-[1080px]"
     :showCloseButton="false"
     @close="closeModal('log')"
   >
-    <div class="flex flex-col space-y-4">
-      <!-- 顶部状态与工具栏 -->
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
-        <div class="flex items-center">
-          <span class="w-3 h-3 rounded-full bg-emerald-500 mr-3 shadow-[0_0_8px_#10B981]"></span>
-          <div class="flex flex-col">
-            <span class="text-[17px] font-black text-car-text">日志存储路径: {{ logInfo.path }}</span>
-            <span class="text-[14px] text-car-sub font-mono font-bold mt-0.5">当前文件体积: {{ logInfo.size }} · 自动保留最新 300 行</span>
-          </div>
+    <div class="flex flex-col space-y-3">
+      <!-- 顶部轻量信息条 (不占过多垂直空间，防遮挡) -->
+      <div class="bg-car-item border border-car-border rounded-xl px-4 py-2.5 flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-2.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10B981]"></span>
+          <span class="text-[14.5px] font-mono text-car-text font-bold">
+            {{ logInfo.path }}
+          </span>
         </div>
-
-        <div class="flex items-center space-x-3 shrink-0">
-          <button 
-            @click="fetchLogs"
-            class="h-[52px] px-6 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all"
-          >
-            刷新日志
-          </button>
-          <button 
-            @click="clearLogs"
-            class="h-[52px] px-6 rounded-xl bg-red-500/10 border-2 border-red-500/30 text-red-400 hover:text-red-300 font-black text-[16px] cursor-pointer hover:border-red-500/60 shadow-sm transition-all"
-          >
-            清空日志
-          </button>
+        <div class="flex items-center space-x-2 text-[13px] text-car-sub font-bold">
+          <span>体积: {{ logInfo.size }}</span>
+          <span>·</span>
+          <span class="text-emerald-400 font-mono">保留最新 300 行</span>
         </div>
       </div>
 
-      <!-- 核心日志控制台输出屏 -->
+      <!-- 核心日志控制台输出屏 (固定高度，独立平滑滚动) -->
       <pre 
         ref="logContainer"
-        class="min-h-[300px] max-h-[440px] overflow-y-auto bg-[#0A0D12] border-2 border-white/10 rounded-2xl p-5 font-mono text-[14.5px] text-emerald-400 leading-relaxed select-text whitespace-pre-wrap shadow-inner"
+        class="h-[370px] overflow-y-auto bg-[#0A0D12] border-2 border-white/10 rounded-2xl p-5 font-mono text-[14px] text-emerald-400 leading-relaxed select-text whitespace-pre-wrap shadow-inner"
       >{{ logContent || '暂无日志记录...' }}</pre>
     </div>
 
+    <!-- 底部固定常驻操作栏 (shrink-0 物理吸底，绝不随内容滚动丢失) -->
     <template #footer>
-      <div class="flex items-center justify-end w-full">
-        <button 
-          @click="closeModal('log')"
-          class="h-[52px] px-8 bg-car-item border-2 border-car-border text-car-text font-black text-[17px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
-        >
-          关闭
-        </button>
+      <div class="flex items-center justify-between w-full">
+        <div class="flex items-center space-x-3 shrink-0">
+          <button 
+            @click="toggleAutoScroll"
+            :class="[
+              'min-h-[50px] px-5 rounded-xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm flex items-center',
+              autoScroll 
+                ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/20' 
+                : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+            ]"
+          >
+            <span class="mr-1.5">{{ autoScroll ? '●' : '⏸️' }}</span>
+            {{ autoScroll ? '自动滚动: 开启' : '自动滚动: 暂停' }}
+          </button>
+          <button 
+            @click="manualRefresh"
+            class="min-h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center"
+          >
+            <span class="mr-1.5">🔄</span> 刷新日志
+          </button>
+          <button 
+            @click="clearLogs"
+            class="min-h-[50px] px-5 rounded-xl bg-rose-500/10 border-2 border-rose-500/30 text-rose-400 hover:text-rose-300 font-black text-[15.5px] cursor-pointer hover:border-rose-500/60 shadow-sm transition-all flex items-center"
+          >
+            <span class="mr-1.5">🗑️</span> 清空
+          </button>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <span class="text-[13px] text-car-sub font-mono font-bold hidden md:inline-block">
+            {{ autoScroll ? '1.5s 自动同步最新上报' : '轮转已暂停' }}
+          </span>
+          <button 
+            @click="closeModal('log')"
+            class="min-h-[50px] px-8 bg-car-item border-2 border-car-border text-car-text font-black text-[16.5px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
+          >
+            关闭
+          </button>
+        </div>
       </div>
     </template>
   </ModalWrapper>
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch, nextTick, onUnmounted } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, showToast, openModal } from '../../store';
 
 const logContent = ref('正在加载中枢运行日志...');
 const logInfo = ref({ path: '/sdcard/Download/geely_toolbox.log', size: '0 KB' });
 const logContainer = ref(null);
+const autoScroll = ref(true);
+let pollTimer = null;
 
-watch(() => store.modals.log, (show) => {
-  if (show) {
-    fetchLogs();
-  }
-});
-
-function fetchLogs() {
+function fetchLogs(isManual = false) {
   try {
     const rawInfo = bridge.call('getLogInfo');
     if (rawInfo) {
@@ -88,12 +106,60 @@ function fetchLogs() {
     logContent.value = '读取日志失败: ' + e;
   }
 
-  nextTick(() => {
-    if (logContainer.value) {
-      logContainer.value.scrollTop = logContainer.value.scrollHeight;
-    }
-  });
+  if (autoScroll.value || isManual) {
+    nextTick(() => {
+      if (logContainer.value) {
+        logContainer.value.scrollTop = logContainer.value.scrollHeight;
+      }
+    });
+  }
 }
+
+function startPolling() {
+  stopPolling();
+  fetchLogs();
+  pollTimer = setInterval(() => {
+    fetchLogs();
+  }, 1500);
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
+function manualRefresh() {
+  fetchLogs(true);
+  showToast('已刷新最新运行日志');
+}
+
+function toggleAutoScroll() {
+  autoScroll.value = !autoScroll.value;
+  if (autoScroll.value) {
+    nextTick(() => {
+      if (logContainer.value) {
+        logContainer.value.scrollTop = logContainer.value.scrollHeight;
+      }
+    });
+    showToast('自动滚底已开启');
+  } else {
+    showToast('自动滚底已暂停');
+  }
+}
+
+watch(() => store.modals.log, (show) => {
+  if (show) {
+    startPolling();
+  } else {
+    stopPolling();
+  }
+});
+
+onUnmounted(() => {
+  stopPolling();
+});
 
 function clearLogs() {
   openModal('confirm', {
