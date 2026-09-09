@@ -75,11 +75,11 @@
             <div style="font-size: 12px; color: #64748b; margin-bottom: 10px; line-height: 1.5;">
                 免电脑制作！手机扫码直接下载官方空模板与制作指南，替换为你的 MP3 音频后打包为 <b>.zip</b> 上传，车机自动解压部署到 <code>/sdcard/GeelyPilot/voices/</code> 专属目录！
             </div>
-            <div style="display:flex; gap:8px; margin-bottom: 8px;">
-                <a href="/api/voice_template" download="voice_template.zip" style="flex:1; text-decoration:none;">
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 8px;">
+                <a href="/api/voice_template" download="voice_template.zip" style="text-decoration:none; width:100%; display:block;">
                     <button class="btn btn-primary" style="background:#f59e0b; border-color:#d97706; margin-top:0; width:100%;">📥 下载官方语音模板 (ZIP)</button>
                 </a>
-                <button class="btn btn-secondary" style="flex:1; margin-top:0;" onclick="showVoiceReadme()">📖 查看制作说明 (README)</button>
+                <button class="btn btn-secondary" style="width:100%; margin-top:0;" onclick="showVoiceReadme()">📖 查看制作说明 (README)</button>
             </div>
             <div class="tip-box" style="margin-top:4px; font-size:11.5px;">
                 💡 <b>贴心提示</b>：语音包名字支持中文（如“我的专属语音.zip”），解压后会自动以压缩包名字命名。未包含的音频会自动以出厂晓晓原声兜底，绝不静音！

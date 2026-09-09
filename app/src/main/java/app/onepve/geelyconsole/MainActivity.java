@@ -2272,6 +2272,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("reverse_volume_boost", prefs.getInt("reverse_volume_boost", 6));
                 obj.put("wheel_long_press_ms", prefs.getInt("wheel_long_press_ms", 1500));
                 obj.put("vehicle_monitor_engine_mode", prefs.getString("vehicle_monitor_engine_mode", "log_mcu"));
+                obj.put("wheel_monitor_engine_mode", prefs.getString("wheel_monitor_engine_mode", "hybrid_dual"));
 
                 return obj.toString();
             } catch (Exception e) {

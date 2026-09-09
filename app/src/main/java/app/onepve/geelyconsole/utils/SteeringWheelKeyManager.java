@@ -199,6 +199,12 @@ public class SteeringWheelKeyManager {
         }
         if (line == null || line.isEmpty()) return 0;
 
+        // 检查方控监听引擎模式：若处于纯 HAL 直通模式，彻底忽略 logcat 报文
+        String engineMode = prefs.getString("wheel_monitor_engine_mode", "hybrid_dual");
+        if ("pure_hal".equals(engineMode)) {
+            return 0; // 纯 HAL 模式完全由 CarPropertyKeyMonitor 硬件直连分发
+        }
+
         // 1. 标准物理按键 (press / release)
         if (line.contains("reportKeyToAdaptApi")) {
             Matcher m = WHEEL_KEY_PATTERN.matcher(line);
