@@ -19,14 +19,19 @@
         <div class="flex items-center space-x-2 text-[13px] text-car-sub font-bold">
           <span>体积: {{ logInfo.size }}</span>
           <span>·</span>
-          <span class="text-emerald-400 font-mono">保留最新 300 行</span>
+          <span class="text-car-accent font-mono font-bold">保留最新 300 行</span>
         </div>
       </div>
 
-      <!-- 核心日志控制台输出屏 (固定高度，独立平滑滚动) -->
+      <!-- 核心日志控制台输出屏 (固定高度，独立平滑滚动，白天/黑夜双主题护眼自适应) -->
       <pre 
         ref="logContainer"
-        class="h-[370px] overflow-y-auto bg-[#0A0D12] border-2 border-white/10 rounded-2xl p-5 font-mono text-[14px] text-emerald-400 leading-relaxed select-text whitespace-pre-wrap shadow-inner"
+        class="h-[380px] overflow-y-auto rounded-2xl p-5 font-mono text-[14.5px] font-semibold leading-[1.75] select-text whitespace-pre-wrap shadow-inner transition-colors duration-200"
+        :class="[
+          store.isNight 
+            ? 'bg-[#0B101B] border-2 border-white/15 text-[#E2E8F0] shadow-black/80' 
+            : 'bg-[#F8FAFC] border-2 border-[#CBD5E1] text-[#0F172A] shadow-slate-200'
+        ]"
       >{{ logContent || '暂无日志记录...' }}</pre>
     </div>
 

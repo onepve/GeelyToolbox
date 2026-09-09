@@ -175,7 +175,7 @@
     <!-- 3. 方控按键长按判定时长 (自定义秒数) -->
     <FeatureCard 
       title="3. 方控按键长按判定触发时长 (自定义秒数)"
-      desc="自由设定方向盘所有按键长按触发的判定时长 (0.8s ~ 3.0s)。达到该时长立即执行长按动作；长按 10 秒依然是整车硬件看门狗冷重启救砖，互不冲突。"
+      desc="自由设定方向盘所有按键长按触发的判定时长 (0.8s ~ 6.0s)。达到该时长立即执行长按动作；长按 10 秒依然是整车硬件看门狗冷重启救砖，互不冲突。"
     >
       <template #badge>
         <span class="text-[15px] font-black text-car-accent px-3.5 py-1.5 bg-car-item rounded-xl border border-car-border">
@@ -188,21 +188,21 @@
         <input 
           type="range" 
           min="0.8" 
-          max="3.0" 
+          max="6.0" 
           step="0.1" 
           v-model.number="longPressSec" 
           @input="updateLongPressSec"
           @change="updateLongPressSec"
           class="flex-1 accent-car-accent h-2.5 bg-car-card rounded-lg cursor-pointer"
         />
-        <span class="text-[14px] text-car-sub font-bold whitespace-nowrap">3.0 秒 (防误触)</span>
+        <span class="text-[14px] text-car-sub font-bold whitespace-nowrap">6.0 秒 (防误触)</span>
         <div class="flex space-x-2 shrink-0">
           <button 
-            v-for="preset in [0.8, 1.2, 1.5, 2.0]" 
+            v-for="preset in [1.0, 1.5, 2.0, 3.0, 5.0]" 
             :key="preset"
             @click="setLongPressPreset(preset)"
             :class="[
-              'px-3.5 py-2 text-[14px] font-black rounded-xl border transition-all cursor-pointer shadow-sm',
+              'px-3 py-1.5 text-[13.5px] font-black rounded-xl border transition-all cursor-pointer shadow-sm',
               longPressSec === preset ? 'bg-car-card border-2 border-car-accent text-car-accent' : 'bg-car-card border border-car-border text-car-sub'
             ]"
           >
