@@ -1109,40 +1109,77 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         /**
-         * 车机内建屏保调用（无需 ADB）：
-         * 与下拉快捷开关「屏幕保护 / Screen saver」走同一条链路 ——
-         * SystemUI 的 Somnambulator（已导出）内部即调用 Sandman.startDreamByUserRequest() 触发原厂屏保。
-         * 主路径用公开 Intent 启动 Somnambulator；备路径反射 Sandman（隐藏 API，编译期不可直接引用）。
+         * 车机内建屏保调用（无需 ADB / root）——原厂固件逆推实证：
+         *
+         * 下拉快捷栏（QS / 负一屏）里的「屏保」磁贴 = ecarx.settings 的
+         * ecarx.settings.vehicle.setting.widget.ScreenSaverWidget
+         * （createAttr().setAction("SpecialScreenSaver")，名称资源 R.string.widget_screen_saver）；
+         * 其基类 BaseNegativeOneScreenWidget.onReceive() 命中 "SpecialScreenSaver" 后执行：
+         *     Intent i = new Intent("android.intent.action.SCREENSAVER");
+         *     i.addCategory("android.intent.category.SCREENSAVER");
+         *     i.setPackage("com.ecarx.screensaver");
+         *     context.startService(i);
+         * 目标为 com.ecarx.screensaver/.ScreensaverService（清单中 exported，带
+         * action/category = SCREENSAVER 的 intent-filter），即原厂屏保宿主。
+         * 本方法 1:1 复刻该链路。
          */
         @JavascriptInterface
         public String startScreenSaver() {
             StringBuilder sb = new StringBuilder();
 
-            // 1. 主路径：公开 Intent 启动 SystemUI 已导出的 Somnambulator（等同下拉框「屏幕保护」开关）
+            // 1. 主路径：原厂同款 —— startService 调起 com.ecarx.screensaver
             try {
-                Intent i = new Intent();
-                i.setComponent(new android.content.ComponentName("com.android.systemui", "com.android.systemui.Somnambulator"));
-                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-                context.startActivity(i);
-                AppLogger.action("车机屏保", "调用系统屏保 (Somnambulator 公开入口)", true, "com.android.systemui/.Somnambulator");
-                return "[OK] 已启动 com.android.systemui/.Somnambulator";
+                Intent i = new Intent("android.intent.action.SCREENSAVER");
+                i.addCategory("android.intent.category.SCREENSAVER");
+                i.setPackage("com.ecarx.screensaver");
+                context.startService(i);
+                AppLogger.action("车机屏保", "调起原厂屏保 (startService SCREENSAVER)", true, "com.ecarx.screensaver");
+                return "[OK] startService(SCREENSAVER) -> com.ecarx.screensaver";
             } catch (Throwable e) {
-                sb.append("[FAIL] Somnambulator: ").append(e.getClass().getSimpleName()).append(' ').append(e.getMessage()).append('\n');
-                AppLogger.action("车机屏保", "Somnambulator 调用失败", false, String.valueOf(e.getMessage()));
+                sb.append("[FAIL] startService: ").append(e.getClass().getSimpleName()).append(' ').append(e.getMessage()).append('\n');
+                AppLogger.action("车机屏保", "startService 调起屏保失败", false, String.valueOf(e.getMessage()));
             }
 
-            // 2. 备路径：反射调用隐藏 API Sandman.startDreamByUserRequest(Context)
+            // 2. 兜底：启动屏保应用主界面
             try {
-                Class<?> sandman = Class.forName("android.service.dreams.Sandman");
-                java.lang.reflect.Method m = sandman.getMethod("startDreamByUserRequest", android.content.Context.class);
-                m.invoke(null, context);
-                AppLogger.action("车机屏保", "调用系统屏保 (Sandman 反射)", true, "startDreamByUserRequest");
-                return sb.append("[OK] 反射 Sandman.startDreamByUserRequest 已触发").toString();
+                Intent i2 = new Intent();
+                i2.setComponent(new android.content.ComponentName("com.ecarx.screensaver", "com.ecarx.screensaver.MainActivity"));
+                i2.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(i2);
+                AppLogger.action("车机屏保", "调起屏保 (MainActivity)", true, "com.ecarx.screensaver/.MainActivity");
+                return sb.append("[OK] 已启动 com.ecarx.screensaver/.MainActivity").toString();
             } catch (Throwable e2) {
-                sb.append("[FAIL] Sandman 反射: ").append(e2.getClass().getSimpleName()).append(' ').append(e2.getMessage());
-                AppLogger.action("车机屏保", "Sandman 反射失败", false, String.valueOf(e2.getMessage()));
+                sb.append("[FAIL] MainActivity: ").append(e2.getClass().getSimpleName()).append(' ').append(e2.getMessage());
+                AppLogger.action("车机屏保", "屏保 MainActivity 调起失败", false, String.valueOf(e2.getMessage()));
             }
 
+            return sb.toString();
+        }
+
+        /**
+         * 退出车机屏保：原厂为 launcher 向 com.ecarx.screensaver 发送
+         * ecarx.intent.action.QUIT_SCREENSAVER_VIEW（同样以服务/广播形式投递）。
+         */
+        @JavascriptInterface
+        public String stopScreenSaver() {
+            StringBuilder sb = new StringBuilder();
+            try {
+                Intent i = new Intent("ecarx.intent.action.QUIT_SCREENSAVER_VIEW");
+                i.setPackage("com.ecarx.screensaver");
+                context.startService(i);
+                AppLogger.action("车机屏保", "退出原厂屏保 (startService QUIT_SCREENSAVER_VIEW)", true, "com.ecarx.screensaver");
+                return "[OK] startService(QUIT_SCREENSAVER_VIEW)";
+            } catch (Throwable e) {
+                sb.append("[FAIL] startService: ").append(e.getClass().getSimpleName()).append(' ').append(e.getMessage()).append('\n');
+            }
+            try {
+                Intent i2 = new Intent("ecarx.intent.action.QUIT_SCREENSAVER_VIEW");
+                i2.setPackage("com.ecarx.screensaver");
+                sendBroadcast(i2);
+                return sb.append("[OK] 已发送广播 QUIT_SCREENSAVER_VIEW").toString();
+            } catch (Throwable e2) {
+                sb.append("[FAIL] sendBroadcast: ").append(e2.getClass().getSimpleName()).append(' ').append(e2.getMessage());
+            }
             return sb.toString();
         }
 

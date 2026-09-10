@@ -209,10 +209,10 @@ const quickCmds = [
 
 // ⚠️ 临时调试：车机内建入口（原生 API，不走 ADB；测试完成后连同模板区块一起删除）
 const nativeProbes = [
-  { label: '① 启动车机屏保 (原生 API)', bridge: 'startScreenSaver' },
-  { label: '② 屏幕保护设置页', bridge: 'openScreenSaverSettings' },
-  { label: '③ 打开主题中心', bridge: 'openThemeManager' },
-  { label: '④ 枚举屏保/主题组件', bridge: 'probeScreenSaverComponents' }
+  { label: '① 调起原厂屏保 (下拉栏同款)', bridge: 'startScreenSaver' },
+  { label: '② 退出屏保', bridge: 'stopScreenSaver' },
+  { label: '③ 屏幕保护设置页', bridge: 'openScreenSaverSettings' },
+  { label: '④ 打开主题中心', bridge: 'openThemeManager' }
 ];
 
 function runNative(p) {
