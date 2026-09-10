@@ -47,6 +47,10 @@ public class CarGearHALMonitor {
     /** 电子手刹驻车状态 (BOOLEAN, 全局区) —— 仅作 P 挡旁证探针，不单独触发播报 */
     public static final int PROP_PARKING_BRAKE_ON = 0x1020000E; // 270532622
 
+    // ===== ECARX IHU516 原厂 Vendor 档位属性 (android.car.permission.CAR_VENDOR_EXTENSION) =====
+    /** 亿咖通 VDRIVEINFO 档位位置 (INT32) —— 缤越 COOL / IHU516G 原厂真实档位属性 */
+    public static final int PROP_ECARX_GEAR_POSITION = 678428909; // 0x287000ED, INFO_ID_VDRIVEINFO_GEAR_POSITION
+
     // ===== AOSP VehicleGear 位掩码常量 (Android 9 / API 28) =====
     private static final int GEAR_NEUTRAL = 0x0001;
     private static final int GEAR_REVERSE = 0x0002;
@@ -301,6 +305,7 @@ public class CarGearHALMonitor {
         List<Integer> candidates = new ArrayList<>();
         candidates.add(PROP_GEAR_SELECTION);
         candidates.add(PROP_CURRENT_GEAR);
+        candidates.add(PROP_ECARX_GEAR_POSITION); // 亿咖通原厂 Vendor 档位，有权限时优先
         // 3. 枚举命中的 gear/shift 属性一并注册（含亿咖通 vendor 档位位）
         for (Integer id : allIds) {
             if (id != null && !candidates.contains(id) && isGearLikeHint(id)) {
@@ -370,9 +375,9 @@ public class CarGearHALMonitor {
         return "OTHER(0x" + Integer.toHexString(g) + ")";
     }
 
-    /** 无名称信息时的兜底判定：仅对已知标准档位位返回 true */
+    /** 无名称信息时的兜底判定：对已知标准档位位及亿咖通 Vendor 档位位返回 true */
     private boolean isGearLikeHint(int id) {
-        return id == PROP_GEAR_SELECTION || id == PROP_CURRENT_GEAR;
+        return id == PROP_GEAR_SELECTION || id == PROP_CURRENT_GEAR || id == PROP_ECARX_GEAR_POSITION;
     }
 
     private boolean registerGearCallback(final int propertyId) {
@@ -468,6 +473,7 @@ public class CarGearHALMonitor {
         if (propertyId == PROP_GEAR_SELECTION) return "GEAR_SELECTION";
         if (propertyId == PROP_CURRENT_GEAR) return "CURRENT_GEAR";
         if (propertyId == PROP_PARKING_BRAKE_ON) return "PARKING_BRAKE_ON";
+        if (propertyId == PROP_ECARX_GEAR_POSITION) return "ECARX_GEAR_POSITION";
         return "VENDOR_0x" + Integer.toHexString(propertyId);
     }
 
