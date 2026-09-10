@@ -123,6 +123,141 @@
       </FeatureCard>
     </div>
 
+    <!-- 7. 闲置自动屏保：主页面闲置 N 秒后自动进入原厂屏保（原生 Service 调用，不依赖 ADB） -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-2xl">
+      <!-- 顶部黄金分栏：左详尽说明 + 右 230px 紧凑开关磁贴 -->
+      <div class="flex items-center justify-between">
+        <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
+          <div class="flex items-center space-x-3">
+            <span class="w-3.5 h-3.5 rounded-full shadow-md shrink-0 bg-car-accent"></span>
+            <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">7. 闲置自动屏保</span>
+            <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
+              <span class="w-2.5 h-2.5 rounded-full mr-2" :class="ssStatusDot"></span>{{ ssStatusText }}
+            </span>
+          </div>
+          <div class="text-[14.5px] text-car-sub font-bold leading-normal">
+            主页面（桌面）闲置达到设定时长后，自动进入原厂屏幕保护。导航、音乐、设置等界面闲置时不会打扰，行车途中同样不误触发。
+          </div>
+        </div>
+
+        <div class="shrink-0 w-[230px]">
+          <button
+            @click="toggleScreensaver"
+            :class="[
+              'w-full h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center',
+              ssEnabled
+                ? 'bg-car-item border-car-accent'
+                : 'bg-car-card border-car-border hover:border-car-border-light'
+            ]"
+          >
+            <span class="text-[18.5px] font-black text-car-text tracking-wide whitespace-nowrap">{{ ssEnabled ? '闲置屏保: 已开启' : '闲置屏保: 已关闭' }}</span>
+            <span class="text-[12.5px] font-bold mt-1 whitespace-nowrap" :class="ssEnabled ? 'text-car-accent' : 'text-car-sub'">{{ ssEnabled ? '点击关闭自动屏保' : '点击开启自动屏保' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 主页面识别权限（使用情况访问）授权状态 -->
+      <div class="mt-5 bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between">
+        <div class="flex flex-col space-y-1">
+          <div class="flex items-center space-x-2.5">
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" :class="ssUsageAccess ? 'bg-emerald-400' : 'bg-amber-400'"></span>
+            <span class="text-[16px] font-black text-car-text whitespace-nowrap">主页面识别权限（使用情况访问）</span>
+            <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-card border-car-border text-car-text whitespace-nowrap">{{ ssUsageAccess ? '已授权' : '未授权' }}</span>
+          </div>
+          <div class="text-[13.5px] text-car-sub font-bold leading-normal">
+            用于判断当前是否停留在主页面。授权一次永久有效，仅本机读取，不联网、不上传任何数据。
+          </div>
+        </div>
+        <button
+          @click="openUsageAccess"
+          :class="[
+            'shrink-0 min-h-[54px] px-5 rounded-2xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm whitespace-nowrap',
+            ssUsageAccess
+              ? 'bg-car-card border-car-border text-car-sub'
+              : 'bg-car-item border-car-accent text-car-text'
+          ]"
+        >
+          {{ ssUsageAccess ? '重新授权' : '去授权' }}
+        </button>
+      </div>
+
+      <!-- 闲置时长：滑块 + 预设磁贴 + 进度条 -->
+      <div class="mt-3 bg-car-item border border-car-border rounded-2xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-[16px] font-black text-car-text whitespace-nowrap">闲置时长</span>
+          <span class="text-[15px] font-black text-car-accent px-3.5 py-1.5 bg-car-card rounded-xl border border-car-border whitespace-nowrap">
+            当前设定: {{ ssSeconds }} 秒
+          </span>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <span class="text-[14px] text-car-sub font-bold whitespace-nowrap">{{ ssMinSeconds }} 秒 (更灵敏)</span>
+          <input
+            type="range"
+            :min="ssMinSeconds"
+            :max="ssMaxSeconds"
+            step="1"
+            v-model.number="ssSeconds"
+            @change="saveSeconds"
+            class="flex-1 accent-car-accent h-2.5 bg-car-card rounded-lg cursor-pointer"
+          />
+          <span class="text-[14px] text-car-sub font-bold whitespace-nowrap">{{ ssMaxSeconds }} 秒 (更从容)</span>
+          <div class="flex space-x-2 shrink-0">
+            <button
+              v-for="preset in ssPresets"
+              :key="preset"
+              @click="setSecondsPreset(preset)"
+              :class="[
+                'px-3 py-1.5 text-[13.5px] font-black rounded-xl border transition-all cursor-pointer whitespace-nowrap',
+                ssSeconds === preset
+                  ? 'bg-car-card border-car-accent text-car-text'
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
+            >
+              {{ preset }}秒
+            </button>
+          </div>
+        </div>
+
+        <!-- 进度条：与滑块实时联动 -->
+        <div class="mt-3.5 flex items-center space-x-3">
+          <div class="flex-1 h-2.5 rounded-full bg-car-card overflow-hidden">
+            <div class="h-full rounded-full bg-car-accent transition-all duration-200" :style="{ width: ssProgressPercent + '%' }"></div>
+          </div>
+          <span class="text-[13px] text-car-sub font-bold whitespace-nowrap">进度 {{ ssProgressPercent }}%</span>
+        </div>
+      </div>
+
+      <!-- 生效范围与验证 -->
+      <div class="mt-3 flex items-center justify-between">
+        <button
+          @click="toggleHomeOnly"
+          :class="[
+            'min-h-[54px] px-5 rounded-2xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm whitespace-nowrap',
+            ssHomeOnly
+              ? 'bg-car-item border-car-accent text-car-text'
+              : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+          ]"
+        >
+          {{ ssHomeOnly ? '仅在主页面生效: 已开启' : '仅在主页面生效: 已关闭 (任意界面)' }}
+        </button>
+
+        <button
+          @click="testScreensaver"
+          class="shrink-0 min-h-[54px] px-6 rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light transition-all shadow-sm whitespace-nowrap"
+        >
+          立即测试一次屏保
+        </button>
+      </div>
+
+      <!-- 实时诊断信息 -->
+      <div class="mt-3 bg-car-card border border-car-border rounded-2xl p-4 text-[13px] text-car-sub font-bold leading-relaxed space-y-1">
+        <div>运行通道：<span class="text-car-text">{{ ssChannel }}</span></div>
+        <div>当前闲置：<span class="text-car-text">{{ ssIdleDisplay }}</span>（每 3 秒自动检测一次）</div>
+        <div>前台判定：<span class="text-car-text">{{ ssForeground }}</span></div>
+      </div>
+    </div>
+
     <!-- 底部运维与避坑指引 -->
     <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
       <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
@@ -139,6 +274,7 @@
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
 import { store, bridge, openModal, showToast } from '../store';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 
 function confirmHardReboot() {
   openModal('confirm', {
@@ -218,4 +354,126 @@ function toggleAutostart() {
   bridge.call('setAutostartEnabled', next);
   showToast(next ? '已开启车辆启动自动运行' : '已关闭车辆启动自动运行');
 }
+
+// ==================== 7. 闲置自动屏保 ====================
+const ssEnabled = ref(false);
+const ssSeconds = ref(20);
+const ssMinSeconds = ref(10);
+const ssMaxSeconds = ref(30);
+const ssHomeOnly = ref(true);
+const ssUsageAccess = ref(false);
+const ssChannel = ref('未启动');
+const ssIdleMs = ref(-1);
+const ssForeground = ref('查询中');
+const ssPresets = [10, 15, 20, 30];
+let ssTimer = null;
+
+// 进度条：按当前设定值在最小~最大区间内的占比实时联动
+const ssProgressPercent = computed(() => {
+  const min = ssMinSeconds.value;
+  const max = ssMaxSeconds.value;
+  if (max <= min) return 0;
+  const v = Math.min(Math.max(ssSeconds.value, min), max);
+  return Math.round(((v - min) / (max - min)) * 100);
+});
+
+const ssStatusText = computed(() => {
+  if (!ssEnabled.value) return '已关闭';
+  if (!ssUsageAccess.value) return '待授权';
+  return '运行中';
+});
+
+const ssStatusDot = computed(() => {
+  if (!ssEnabled.value) return 'bg-car-sub';
+  if (!ssUsageAccess.value) return 'bg-amber-400';
+  return 'bg-emerald-400';
+});
+
+const ssIdleDisplay = computed(() => {
+  const v = ssIdleMs.value;
+  if (v === null || v === undefined || v < 0) return '读取中';
+  return (v / 1000).toFixed(1) + ' 秒';
+});
+
+function loadScreensaverConfig() {
+  try {
+    const raw = bridge.call('getScreensaverConfig');
+    if (!raw) return;
+    const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (typeof data.enabled === 'boolean') ssEnabled.value = data.enabled;
+    if (typeof data.seconds === 'number') ssSeconds.value = data.seconds;
+    if (typeof data.minSeconds === 'number') ssMinSeconds.value = data.minSeconds;
+    if (typeof data.maxSeconds === 'number') ssMaxSeconds.value = data.maxSeconds;
+    if (typeof data.home_only === 'boolean') ssHomeOnly.value = data.home_only;
+    if (typeof data.usage_access === 'boolean') ssUsageAccess.value = data.usage_access;
+    if (typeof data.channel === 'string') ssChannel.value = data.channel;
+    if (typeof data.idle_ms === 'number') ssIdleMs.value = data.idle_ms;
+    if (typeof data.foreground === 'string') ssForeground.value = data.foreground;
+  } catch (e) {}
+}
+
+function saveScreensaverConfig(patch) {
+  try {
+    bridge.call('setScreensaverConfig', JSON.stringify(patch));
+  } catch (e) {}
+}
+
+function toggleScreensaver() {
+  const next = !ssEnabled.value;
+  ssEnabled.value = next;
+  saveScreensaverConfig({ enabled: next });
+  if (next) {
+    if (!ssUsageAccess.value) {
+      showToast('已开启闲置屏保，请先授权「使用情况访问」才能识别主页面');
+    } else {
+      showToast('已开启闲置屏保：主页面闲置 ' + ssSeconds.value + ' 秒后自动进入屏保');
+    }
+  } else {
+    showToast('已关闭闲置自动屏保');
+  }
+  setTimeout(loadScreensaverConfig, 400);
+}
+
+function saveSeconds() {
+  const v = Math.min(Math.max(Math.round(ssSeconds.value), ssMinSeconds.value), ssMaxSeconds.value);
+  ssSeconds.value = v;
+  saveScreensaverConfig({ seconds: v });
+  showToast('闲置时长已设为 ' + v + ' 秒');
+}
+
+function setSecondsPreset(preset) {
+  ssSeconds.value = preset;
+  saveSeconds();
+}
+
+function toggleHomeOnly() {
+  const next = !ssHomeOnly.value;
+  ssHomeOnly.value = next;
+  saveScreensaverConfig({ home_only: next });
+  showToast(next ? '已限制为仅在主页面生效' : '已放开为任意界面生效');
+}
+
+function openUsageAccess() {
+  bridge.call('openUsageAccessSettings');
+  showToast('请在系统列表中勾选「吉利控制台」以授予使用情况访问权限');
+}
+
+function testScreensaver() {
+  const res = bridge.call('triggerScreenSaverNow');
+  showToast(res ? String(res) : '已下发屏保调用指令');
+  setTimeout(loadScreensaverConfig, 600);
+}
+
+onMounted(() => {
+  loadScreensaverConfig();
+  // 每 3 秒刷新一次运行状态与闲置读数（与 Java 侧检测同频）
+  ssTimer = setInterval(loadScreensaverConfig, 3000);
+});
+
+onUnmounted(() => {
+  if (ssTimer) {
+    clearInterval(ssTimer);
+    ssTimer = null;
+  }
+});
 </script>

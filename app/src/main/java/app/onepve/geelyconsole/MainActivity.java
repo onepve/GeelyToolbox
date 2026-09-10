@@ -38,6 +38,8 @@ import app.onepve.geelyconsole.utils.AutoPilotManager;
 import app.onepve.geelyconsole.utils.DialogHelper;
 import app.onepve.geelyconsole.utils.DownloadManager;
 import app.onepve.geelyconsole.utils.FloatingWindowManager;
+import app.onepve.geelyconsole.utils.ForegroundAppDetector;
+import app.onepve.geelyconsole.utils.IdleScreensaverManager;
 import app.onepve.geelyconsole.utils.SystemUtils;
 import app.onepve.geelyconsole.utils.ThemePatcher;
 import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
@@ -1234,6 +1236,98 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 sb.append("屏保服务查询失败: ").append(e.getMessage()).append('\n');
             }
             return sb.toString();
+        }
+
+        // ==================== 闲置自动屏保（主页面闲置 N 秒后自动进入原厂屏保） ====================
+
+        /**
+         * 读取闲置自动屏保配置与运行状态。
+         * 返回 JSON：enabled / seconds / minSeconds / maxSeconds / home_only /
+         *            usage_access / foreground / channel / idle_ms / service_running
+         */
+        @JavascriptInterface
+        public String getScreensaverConfig() {
+            try {
+                JSONObject obj = new JSONObject();
+                obj.put("enabled", IdleScreensaverManager.isEnabled(context));
+                obj.put("seconds", IdleScreensaverManager.getSeconds(context));
+                obj.put("minSeconds", IdleScreensaverManager.MIN_SECONDS);
+                obj.put("maxSeconds", IdleScreensaverManager.MAX_SECONDS);
+                obj.put("home_only", IdleScreensaverManager.isHomeOnly(context));
+                obj.put("usage_access", ForegroundAppDetector.isUsageAccessGranted(context));
+                obj.put("foreground", ForegroundAppDetector.describe(context));
+                obj.put("channel", IdleScreensaverManager.getChannelState());
+                obj.put("idle_ms", IdleScreensaverManager.getLastIdleMs());
+                obj.put("service_running", VehicleAutomationService.isRunning);
+                obj.put("screensaver_pkg", ForegroundAppDetector.PKG_SCREENSAVER);
+                return obj.toString();
+            } catch (Throwable e) {
+                return "{}";
+            }
+        }
+
+        /**
+         * 保存闲置自动屏保配置（支持局部更新，只传需要改的字段）。
+         * 入参 JSON 例：{"enabled":true} / {"seconds":25} / {"home_only":false}
+         */
+        @JavascriptInterface
+        public boolean setScreensaverConfig(String json) {
+            try {
+                JSONObject obj = new JSONObject(json == null ? "{}" : json);
+                Boolean enabled = obj.has("enabled") ? obj.getBoolean("enabled") : null;
+                Integer seconds = obj.has("seconds") ? obj.getInt("seconds") : null;
+                Boolean homeOnly = obj.has("home_only") ? obj.getBoolean("home_only") : null;
+
+                boolean ok = IdleScreensaverManager.saveConfig(context, enabled, seconds, homeOnly);
+
+                // 立即生效：同步拉起/停止常驻服务，并按其最新配置重启计时器
+                VehicleAutomationService.syncState(context);
+                if (enabled != null && !enabled) {
+                    IdleScreensaverManager.stop();
+                }
+                AppLogger.action("电源状态", "闲置自动屏保配置已保存", ok,
+                        "enabled=" + enabled + " seconds=" + seconds + " home_only=" + homeOnly);
+                return ok;
+            } catch (Throwable e) {
+                AppLogger.action("电源状态", "闲置自动屏保配置保存失败", false, String.valueOf(e.getMessage()));
+                return false;
+            }
+        }
+
+        /** 跳转系统「使用情况访问」授权页（主页面判定所需，授权一次永久有效） */
+        @JavascriptInterface
+        public void openUsageAccessSettings() {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ForegroundAppDetector.openUsageAccessSettings(context);
+                        AppLogger.action("电源状态", "跳转使用情况访问授权页", true, "ACTION_USAGE_ACCESS_SETTINGS");
+                    } catch (Throwable e) {
+                        AppLogger.action("电源状态", "跳转使用情况访问授权页失败", false, String.valueOf(e.getMessage()));
+                    }
+                }
+            });
+        }
+
+        /** 立即触发一次原厂屏保（供调试与验证使用），返回可读结果字符串 */
+        @JavascriptInterface
+        public String triggerScreenSaverNow() {
+            try {
+                return IdleScreensaverManager.triggerNow(context);
+            } catch (Throwable e) {
+                return "[FAIL] " + e.getClass().getSimpleName() + ": " + e.getMessage();
+            }
+        }
+
+        /** 查询当前前台应用与主页面判定结论（排查用） */
+        @JavascriptInterface
+        public String getForegroundInfo() {
+            try {
+                return ForegroundAppDetector.describe(context);
+            } catch (Throwable e) {
+                return "查询失败: " + e.getMessage();
+            }
         }
 
         @JavascriptInterface

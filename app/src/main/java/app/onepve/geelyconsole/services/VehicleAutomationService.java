@@ -29,6 +29,7 @@ import app.onepve.geelyconsole.utils.CarGearHALMonitor;
 import app.onepve.geelyconsole.utils.DoorStateManager;
 import app.onepve.geelyconsole.utils.DriveModeManager;
 import app.onepve.geelyconsole.utils.GearStateMachine;
+import app.onepve.geelyconsole.utils.IdleScreensaverManager;
 import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
 import app.onepve.geelyconsole.utils.SystemUtils;
 import app.onepve.geelyconsole.utils.TrunkStateManager;
@@ -167,7 +168,8 @@ public class VehicleAutomationService extends Service {
                                 modeSmart || modeComfort || modeEco || modeSport || turn360 ||
                                 lightNav || flameout);
 
-            boolean shouldRun = anyVoiceEnabled || wheelEnabled;
+            boolean shouldRun = anyVoiceEnabled || wheelEnabled
+                    || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
             Intent intent = new Intent(context, VehicleAutomationService.class);
             if (shouldRun) {
@@ -236,6 +238,13 @@ public class VehicleAutomationService extends Service {
         reloadPreferences();
         wheelKeyManager.syncMediaKeyReceiverState();
 
+        // 闲置自动屏保：跟随本常驻服务全程运行（无需打开工具箱界面，开机自启即生效）
+        try {
+            IdleScreensaverManager.start(this);
+        } catch (Throwable e) {
+            Log.w(TAG, "Failed to start IdleScreensaverManager: " + e.getMessage());
+        }
+
         registerPowerStateReceiver();
         startLogcatReader();
         registerEcarxKeyReceiver();
@@ -247,6 +256,12 @@ public class VehicleAutomationService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         reloadPreferences();
         wheelKeyManager.syncMediaKeyReceiverState();
+        // 每次服务被拉起/配置变更后，按最新配置重新装载闲置屏保计时器
+        try {
+            IdleScreensaverManager.restart(this);
+        } catch (Throwable e) {
+            Log.w(TAG, "Failed to restart IdleScreensaverManager: " + e.getMessage());
+        }
         return START_STICKY;
     }
 
@@ -1028,6 +1043,9 @@ public class VehicleAutomationService extends Service {
             } catch (Exception ignored) {}
             carGearHALMonitor = null;
         }
+        try {
+            IdleScreensaverManager.stop();
+        } catch (Throwable ignored) {}
         Log.i(TAG, "VehicleAutomationService stopped");
     }
 }

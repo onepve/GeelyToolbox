@@ -83,26 +83,6 @@
       </div>
     </div>
 
-    <!-- ⚠️ 临时调试区块：车机内建入口（测试完成后请删除整段） -->
-    <div class="mb-5 bg-car-item border-2 border-amber-500/60 rounded-2xl p-5 shadow-sm">
-      <div class="flex items-center justify-between mb-3">
-        <div class="flex flex-col">
-          <span class="text-[20px] font-black text-car-text">临时调试 · 车机内建入口</span>
-          <span class="text-[14px] text-car-sub font-bold mt-1">原生 API 直接调用（不走 ADB）。结果输出到下方终端。测试完成后移除本区块。</span>
-        </div>
-      </div>
-      <div class="flex flex-wrap">
-        <button
-          v-for="p in nativeProbes"
-          :key="p.label"
-          @click="runNative(p)"
-          class="min-h-[58px] px-5 mr-2.5 mb-2.5 rounded-xl bg-car-card border border-car-border text-car-text hover:border-car-border-light font-black text-[15.5px] cursor-pointer transition-all"
-        >
-          {{ p.label }}
-        </button>
-      </div>
-    </div>
-
     <!-- 独立终端控制台 (大触控输入 + 大按键) -->
     <div class="flex flex-col">
       <div class="flex items-center justify-between mb-3">
@@ -207,23 +187,6 @@ const quickCmds = [
   'logcat -d -v time | tail -n 20'
 ];
 
-// ⚠️ 临时调试：车机内建入口（原生 API，不走 ADB；测试完成后连同模板区块一起删除）
-const nativeProbes = [
-  { label: '① 调起原厂屏保 (下拉栏同款)', bridge: 'startScreenSaver' },
-  { label: '② 退出屏保', bridge: 'stopScreenSaver' },
-  { label: '③ 屏幕保护设置页', bridge: 'openScreenSaverSettings' },
-  { label: '④ 打开主题中心', bridge: 'openThemeManager' }
-];
-
-function runNative(p) {
-  outputText.value += `\n> 调用 ${p.bridge}()\n`;
-  try {
-    const res = bridge.call(p.bridge);
-    outputText.value += (res || '(已触发，无返回文本)') + '\n$ ';
-  } catch (e) {
-    outputText.value += `执行错误: ${e}\n$ `;
-  }
-}
 
 function execCmd() {
   if (!inputCmd.value.trim()) return;
