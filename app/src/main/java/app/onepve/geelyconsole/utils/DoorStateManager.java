@@ -74,21 +74,21 @@ public class DoorStateManager {
         isFRInside = false;
         isRLInside = false;
         isRRInside = false;
-        AppLogger.i("四门门控", "熄火休眠复位: 四门乘员感知状态机重置归位");
+        AppLogger.i("车门状态", "熄火休眠复位: 四门乘员感知状态机重置归位");
     }
 
     /** 车辆点火/上电/运行中：主驾一定在车内，避免"车门已打开"被误判为上车 */
     public synchronized void markDriverInside() {
         if (!isDriverInside) {
             isDriverInside = true;
-            AppLogger.i("四门门控", "点火/上电确认 -> 主驾已就坐基准建立");
+            AppLogger.i("车门状态", "点火/上电确认 -> 主驾已就坐基准建立");
         }
     }
 
     /** 冷启动/解锁唤醒：主驾可能即将登车，把主驾座椅先置为'车外'，这样开门会播报"车门已打开" */
     public synchronized void markDriverMayEnter() {
         isDriverInside = false;
-        AppLogger.i("四门门控", "冷启动/解锁 -> 主驾待登车基准建立");
+        AppLogger.i("车门状态", "冷启动/解锁 -> 主驾待登车基准建立");
     }
 
     /**
@@ -108,7 +108,7 @@ public class DoorStateManager {
             // 默认值保持 false，点火后 markDriverInside() 会立刻把主驾置为在车内。
             isDriverInside = false;
 
-            AppLogger.i("四门门控", "四门物理基准初始化: FL=" + currentFL + ", FR=" + currentFR + ", RL=" + currentRL + ", RR=" + currentRR + " (主驾就坐=" + isDriverInside + ")");
+            AppLogger.i("车门状态", "四门物理基准初始化: FL=" + currentFL + ", FR=" + currentFR + ", RL=" + currentRL + ", RR=" + currentRR + " (主驾就坐=" + isDriverInside + ")");
             if (listener != null) {
                 listener.onDoorStateChanged(currentFL, currentFR, currentRL, currentRR);
             }
@@ -172,7 +172,7 @@ public class DoorStateManager {
         long now = System.currentTimeMillis();
         Long last = lastVoiceTime.get(voiceKey);
         if (last != null && (now - last) < DOOR_VOICE_DEBOUNCE_MS) {
-            AppLogger.i("四门门控", "同门同动作 2s 内重复触发，已抑制: " + doorName + (newSts == 1 ? "开" : "关"));
+            AppLogger.i("车门状态", "同门同动作 2s 内重复触发，已抑制: " + doorName + (newSts == 1 ? "开" : "关"));
             return;
         }
         lastVoiceTime.put(voiceKey, now);
@@ -182,7 +182,7 @@ public class DoorStateManager {
 
         if (newSts == 1) { // ============ 【开门动作】 ============
             if (isDriving) {
-                AppLogger.w("四门门控", "【危险警报】行车中 " + doorName + "门 打开！触发最高优先级警报！");
+                AppLogger.w("车门状态", "【危险警报】行车中 " + doorName + "门 打开！触发最高优先级警报！");
                 if (voiceMasterSwitch && voicePlayer != null) {
                     voicePlayer.play("door_open.mp3", "警告！车门未关好！");
                 }
@@ -196,14 +196,14 @@ public class DoorStateManager {
 
                 if (isSeated) {
                     // 之前人在车内，停车推门 -> 判定为【准备下车离车】
-                    AppLogger.i("四门门控", "【下车感知】" + doorName + "门 打开 -> 人员准备下车离去");
+                    AppLogger.i("车门状态", "【下车感知】" + doorName + "门 打开 -> 人员准备下车离去");
                     if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
                         voicePlayer.play("door_open.mp3", "请注意后方来车，带好随身物品");
                     }
                     setSeatState(doorCode, false); // 状态翻转为离车/空座
                 } else {
                     // 原本在车外，拉门准备登车 -> 判定为【上车开门】
-                    AppLogger.i("四门门控", "【登车感知】" + doorName + "门 打开 -> 准备登车入座");
+                    AppLogger.i("车门状态", "【登车感知】" + doorName + "门 打开 -> 准备登车入座");
                     if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
                         voicePlayer.play("door_open.mp3", "车门已打开");
                     }
@@ -212,7 +212,7 @@ public class DoorStateManager {
                 // 独立分门模式 (车友自定义台词与音效)
                 String openKey = "voice_enable_door_" + doorCode.toLowerCase();
                 boolean enableOpen = prefs.getBoolean(openKey, true) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase(), true);
-                AppLogger.i("四门门控", "独立分门: " + doorName + "门 打开");
+                AppLogger.i("车门状态", "独立分门: " + doorName + "门 打开");
                 if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
                     String soundFile = "door_fl.mp3";
                     if ("FR".equals(doorCode)) soundFile = "door_fr.mp3";
@@ -229,13 +229,13 @@ public class DoorStateManager {
 
                 if (!isSeated) {
                     // 刚才从车外拉门进来，现在关好车门 -> 判定为【就坐就绪，准备出发】
-                    AppLogger.i("四门门控", "【就坐就绪】" + doorName + "门 关好 -> 乘员已在车内就位");
+                    AppLogger.i("车门状态", "【就坐就绪】" + doorName + "门 关好 -> 乘员已在车内就位");
                     if (voiceMasterSwitch && enableClose && voicePlayer != null) {
                         voicePlayer.play("door_close.mp3", "车门已关好");
                     }
                     setSeatState(doorCode, true); // 翻转为在座
                 } else {
-                    AppLogger.i("四门门控", doorName + "门 关好");
+                    AppLogger.i("车门状态", doorName + "门 关好");
                     if (voiceMasterSwitch && enableClose && voicePlayer != null) {
                         voicePlayer.play("door_close.mp3", "车门已关好");
                     }
@@ -244,7 +244,7 @@ public class DoorStateManager {
                 // 独立分门模式
                 String closeKey = "voice_enable_door_" + doorCode.toLowerCase() + "_close";
                 boolean enableClose = prefs.getBoolean(closeKey, true) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase() + "_close", true);
-                AppLogger.i("四门门控", "独立分门: " + doorName + "门 关好");
+                AppLogger.i("车门状态", "独立分门: " + doorName + "门 关好");
                 if (voiceMasterSwitch && enableClose && voicePlayer != null) {
                     String soundFile = "door_fl_close.mp3";
                     if ("FR".equals(doorCode)) soundFile = "door_fr_close.mp3";

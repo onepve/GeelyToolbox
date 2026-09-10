@@ -1047,7 +1047,7 @@ public class SystemUtils {
 
             // 2. 按关键词分类过滤
             wheelFile = filterLogByKeywords(logFile, new File(tempDir, "wheel.log"),
-                    "方控总线", "HAL_KEY", "HW_KEY_INPUT", "reportKeyToAdaptApi", "shouldCallback",
+                    "方控按键", "HAL_KEY", "HW_KEY_INPUT", "reportKeyToAdaptApi", "shouldCallback",
                     "ECARX_KEY", "方控按键", "方向盘", "steering", "SWC", "按键");
 
             doorFile = filterLogByKeywords(logFile, new File(tempDir, "door.log"),
@@ -1055,7 +1055,7 @@ public class SystemUtils {
                     "mModelLFDoor", "mModelRFDoor", "mModelLRDoor", "mModelRRDoor", "TRUNK", "尾门", "后备箱");
 
             gearFile = filterLogByKeywords(logFile, new File(tempDir, "gear.log"),
-                    "GearStateMachine", "HAL档位", "ECARX_GEAR_POSITION", "GEAR_SELECTION", "CURRENT_GEAR",
+                    "GearStateMachine", "挡位状态", "ECARX_GEAR_POSITION", "GEAR_SELECTION", "CURRENT_GEAR",
                     "换挡", "档位", "gear", "DRIVEINFO", "INFO_ID_VDRIVEINFO_GEAR_POSITION", "驾驶模式", "DriveMode");
 
             powerFile = filterLogByKeywords(logFile, new File(tempDir, "power.log"),
@@ -1064,7 +1064,7 @@ public class SystemUtils {
 
             appFile = filterLogByKeywords(logFile, new File(tempDir, "app.log"),
                     "GeelyToolbox", "VehicleAutomationService", "CarGearHALMonitor", "CarPropertyKeyMonitor",
-                    "VehicleVoicePlayer", "座舱引擎", "HAL探针", "去重");
+                    "VehicleVoicePlayer", "系统日志", "HAL探针", "去重");
 
             // 3. 生成统计摘要
             summaryFile = new File(tempDir, "summary.json");
@@ -1140,8 +1140,8 @@ public class SystemUtils {
             summary.put("appLines", countLines(app));
 
             JSONObject wheelStats = new JSONObject();
-            wheelStats.put("keyDown", countMatches(all, "方控总线", "Down") + countMatches(all, "reportKeyToAdaptApi", "press"));
-            wheelStats.put("keyUp", countMatches(all, "方控总线", "Up") + countMatches(all, "reportKeyToAdaptApi", "release"));
+            wheelStats.put("keyDown", countMatches(all, "方控按键", "Down") + countMatches(all, "reportKeyToAdaptApi", "press"));
+            wheelStats.put("keyUp", countMatches(all, "方控按键", "Up") + countMatches(all, "reportKeyToAdaptApi", "release"));
             wheelStats.put("dedup", countMatches(all, "重复触发", "去重"));
             summary.put("wheelStats", wheelStats);
 

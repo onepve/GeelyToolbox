@@ -79,7 +79,7 @@ public class GearStateMachine {
         }
         lastGearPos = -1;
         isGearVoiceArmed = 0;
-        AppLogger.i("换挡状态", "熄火休眠: 换挡状态机重置归零 (armed=0, lastGear=-1)");
+        AppLogger.i("挡位状态", "熄火休眠: 换挡状态机重置归零 (armed=0, lastGear=-1)");
     }
 
     public synchronized void updateGear(int rawGear, final boolean voiceMasterSwitch, final SharedPreferences prefs) {
@@ -89,7 +89,7 @@ public class GearStateMachine {
         if (lastGearPos == -1) {
             lastGearPos = gear;
             isGearVoiceArmed = 0; // 严格铁律：开机基准初始化 100% 保持休眠态 (armed=0)，绝不主动发声
-            AppLogger.i("换挡状态", "基准初始化: 当前挡位=" + getGearName(gear) + ", armed=0 (静默休眠)");
+            AppLogger.i("挡位状态", "基准初始化: 当前挡位=" + getGearName(gear) + ", armed=0 (静默休眠)");
             if (listener != null) {
                 listener.onGearChanged(lastGearPos);
             }
@@ -112,7 +112,7 @@ public class GearStateMachine {
                     pendingGearTask = null;
                     if (gear == lastGearPos) return;
 
-                    AppLogger.i("换挡状态", "挡位确认跃变: " + getGearName(lastGearPos) + " -> " + getGearName(gear) + ", armed=" + isGearVoiceArmed);
+                    AppLogger.i("挡位状态", "挡位确认跃变: " + getGearName(lastGearPos) + " -> " + getGearName(gear) + ", armed=" + isGearVoiceArmed);
 
                     // 1. 换出 P 挡进入行车挡 (D挡2, R挡4, S挡6/7 或从P切出)，立即武装状态机
                     if (gear == 2 || gear == 4 || gear == 6 || gear == 7 || (lastGearPos == 5 && gear != 5)) {

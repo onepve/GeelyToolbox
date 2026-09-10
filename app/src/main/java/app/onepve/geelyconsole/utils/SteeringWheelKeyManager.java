@@ -271,7 +271,7 @@ public class SteeringWheelKeyManager {
                 @Override
                 public void run() {
                     isLongPressed.put(keyCode, true);
-                    AppLogger.i("方控手势", getKeyName(keyCode) + " -> 触发【长按 " + (lpMs / 1000.0f) + "秒】: " + longAction);
+                    AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【长按 " + (lpMs / 1000.0f) + "秒】: " + longAction);
                     executeAction(longAction);
                 }
             };
@@ -292,7 +292,7 @@ public class SteeringWheelKeyManager {
         long now = System.currentTimeMillis();
         Long lastUp = lastKeyUpTime.get(keyCode);
         if (lastUp != null && (now - lastUp) < KEYUP_DEDUP_MS) {
-            AppLogger.i("方控总线", "按键 " + keyCode + " 80ms 内重复 Up，已去重");
+            AppLogger.i("方控按键", "按键 " + keyCode + " 80ms 内重复 Up，已去重");
             return;
         }
         lastKeyUpTime.put(keyCode, now);
@@ -310,7 +310,7 @@ public class SteeringWheelKeyManager {
 
         String mode = getWheelMode();
         if (MODE_FACTORY_DEFAULT.equals(mode)) {
-            AppLogger.i("方控总线", "处于[恢复原厂默认]模式，完全放行按键事件给车机原厂总线");
+            AppLogger.i("方控按键", "处于[恢复原厂默认]模式，完全放行按键事件给车机原厂总线");
             return;
         }
 
@@ -319,7 +319,7 @@ public class SteeringWheelKeyManager {
 
         // 极速 0ms 优化铁律：若未配置双击动作，坚决不等待 260ms，0 毫秒立即瞬发执行单击！
         if (ACTION_DEFAULT.equals(doubleAction)) {
-            AppLogger.i("方控手势", getKeyName(keyCode) + " -> 触发【单击】(0ms极速): " + singleAction);
+            AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【单击】(0ms极速): " + singleAction);
             executeAction(singleAction);
             return;
         }
@@ -341,10 +341,10 @@ public class SteeringWheelKeyManager {
                 pendingClickTasks.remove(keyCode);
 
                 if (finalCount == 1) {
-                    AppLogger.i("方控手势", getKeyName(keyCode) + " -> 触发【单击】: " + singleAction);
+                    AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【单击】: " + singleAction);
                     executeAction(singleAction);
                 } else if (finalCount >= 2) {
-                    AppLogger.i("方控手势", getKeyName(keyCode) + " -> 触发【双击】: " + doubleAction);
+                    AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【双击】: " + doubleAction);
                     executeAction(doubleAction);
                 }
             }
@@ -384,7 +384,7 @@ public class SteeringWheelKeyManager {
         long now = System.currentTimeMillis();
         Long last = lastActionTime.get(action);
         if (last != null && (now - last) < ACTION_DEDUP_MS) {
-            AppLogger.i("方控动作", "动作 " + action + " 120ms 内重复触发，已去重");
+            AppLogger.i("方控按键", "动作 " + action + " 120ms 内重复触发，已去重");
             return;
         }
         lastActionTime.put(action, now);
@@ -426,12 +426,12 @@ public class SteeringWheelKeyManager {
             if (intent != null) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
                 context.startActivity(intent);
-                AppLogger.i("方控动作", "已成功调起自定义应用: " + pkg);
+                AppLogger.i("方控按键", "已成功调起自定义应用: " + pkg);
             } else {
-                AppLogger.w("方控动作", "未找到应用启动入口: " + pkg);
+                AppLogger.w("方控按键", "未找到应用启动入口: " + pkg);
             }
         } catch (Exception e) {
-            AppLogger.e("方控动作", "调起自定义应用失败: " + e.getMessage());
+            AppLogger.e("方控按键", "调起自定义应用失败: " + e.getMessage());
         }
     }
 
@@ -458,11 +458,11 @@ public class SteeringWheelKeyManager {
             }
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
             context.startActivity(intent);
-            AppLogger.i("方控动作", "已下发指令秒级唤起 360 全景环视");
+            AppLogger.i("方控按键", "已下发指令秒级唤起 360 全景环视");
 
             suppressOriginalMultimedia();
         } catch (Exception e) {
-            AppLogger.w("方控动作", "唤起 360 失败: " + e.getMessage());
+            AppLogger.w("方控按键", "唤起 360 失败: " + e.getMessage());
         }
     }
 

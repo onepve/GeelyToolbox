@@ -55,7 +55,7 @@ public class TrunkStateManager {
 
         if (currentTrunk == -1) {
             currentTrunk = trunk;
-            AppLogger.i("电动尾门", "物理基准初始化: 尾门状态=" + (trunk == 1 ? "开" : "关"));
+            AppLogger.i("车门状态", "物理基准初始化: 尾门状态=" + (trunk == 1 ? "开" : "关"));
             if (listener != null) {
                 listener.onTrunkStateChanged(currentTrunk);
             }
@@ -67,7 +67,7 @@ public class TrunkStateManager {
             boolean enableClose = prefs.getBoolean("voice_enable_trunk_close", true) && prefs.getBoolean("enable_trunk_close", true);
 
             if (trunk == 1) {
-                AppLogger.i("电动尾门", "捕获物理跃变: 后备箱打开 -> voiceMaster=" + voiceMasterSwitch + ", enableOpen=" + enableOpen);
+                AppLogger.i("车门状态", "捕获物理跃变: 后备箱打开 -> voiceMaster=" + voiceMasterSwitch + ", enableOpen=" + enableOpen);
                 if (voiceMasterSwitch && enableOpen && (now - lastTriggerTrunk > 300)) {
                     lastTriggerTrunk = now;
                     mainHandler.postDelayed(() -> {
@@ -77,7 +77,7 @@ public class TrunkStateManager {
                     }, 120);
                 }
             } else {
-                AppLogger.i("电动尾门", "捕获物理跃变: 后备箱关闭 -> voiceMaster=" + voiceMasterSwitch + ", enableClose=" + enableClose);
+                AppLogger.i("车门状态", "捕获物理跃变: 后备箱关闭 -> voiceMaster=" + voiceMasterSwitch + ", enableClose=" + enableClose);
                 if (voiceMasterSwitch && enableClose && (now - lastTriggerTrunk > 300)) {
                     lastTriggerTrunk = now;
                     if (voicePlayer != null) {

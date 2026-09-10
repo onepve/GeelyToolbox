@@ -102,7 +102,7 @@ public class CarPropertyKeyMonitor {
                             if (running && !connected) {
                                 if (registerPropertyCallback()) {
                                     connected = true;
-                                    AppLogger.i("方控总线", "CarProperty 硬件键监听成功连接注册！");
+                                    AppLogger.i("方控按键", "CarProperty 硬件键监听成功连接注册！");
                                 }
                             }
                         }, 1500);
@@ -140,7 +140,7 @@ public class CarPropertyKeyMonitor {
                             connected = true;
                             handler.removeCallbacks(connectTimeoutRunnable);
                             if (registerPropertyCallback()) {
-                                AppLogger.i("方控总线", "CarProperty 硬件按键 HAL 注册成功 (HW_KEY_INPUT: 678428923)");
+                                AppLogger.i("方控按键", "CarProperty 硬件按键 HAL 注册成功 (HW_KEY_INPUT: 678428923)");
                             }
                         } else if ("onServiceDisconnected".equals(name)) {
                             Log.w(TAG, "CarService disconnected");
@@ -226,7 +226,7 @@ public class CarPropertyKeyMonitor {
                 default: keyCode = rawCode; break;
             }
 
-            AppLogger.i("方控总线", "CarProperty 收到硬件按键: rawCode=" + rawCode + " -> " + keyCode + ", action=" + (action == 0 ? "DOWN" : "UP"));
+            AppLogger.i("方控按键", "CarProperty 收到硬件按键: rawCode=" + rawCode + " -> " + keyCode + ", action=" + (action == 0 ? "DOWN" : "UP"));
 
             if (listener != null) {
                 if (action == 0) {

@@ -36,7 +36,7 @@ import java.util.Set;
 public class CarGearHALMonitor {
 
     private static final String TAG = "CarGearHALMonitor";
-    private static final String LOG_MODULE = "HAL档位";
+    private static final String LOG_MODULE = "挡位状态";
     private static final long CONNECT_TIMEOUT_MS = 6000;
 
     // ===== AOSP 标准车载属性位 (VehiclePropertyIds) =====

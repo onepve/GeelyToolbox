@@ -48,11 +48,13 @@ public class AppLogger {
     private static final java.util.List<String> KNOWN_MODULES = java.util.Arrays.asList(
             "方控按键", "车门状态", "挡位状态", "驾驶模式", "电源状态", "HAL探针", "系统日志");
     static {
+        // 默认开启：车辆基础状态必须可观测
+        DEFAULT_MODULE_STATES.put("电源状态", true);
+        DEFAULT_MODULE_STATES.put("挡位状态", true);
+        DEFAULT_MODULE_STATES.put("驾驶模式", true);
+        DEFAULT_MODULE_STATES.put("车门状态", true);
+        // 默认关闭：高频/调试类通道，按需开启避免日志风暴
         DEFAULT_MODULE_STATES.put("方控按键", false);
-        DEFAULT_MODULE_STATES.put("车门状态", false);
-        DEFAULT_MODULE_STATES.put("挡位状态", false);
-        DEFAULT_MODULE_STATES.put("驾驶模式", false);
-        DEFAULT_MODULE_STATES.put("电源状态", false);
         DEFAULT_MODULE_STATES.put("HAL探针", false);
         DEFAULT_MODULE_STATES.put("系统日志", false);
     }
