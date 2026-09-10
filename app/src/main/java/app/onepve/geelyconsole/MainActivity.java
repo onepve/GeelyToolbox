@@ -1435,12 +1435,21 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public void startToolboxSelfUpdate(final String downloadUrl, final String remoteVer) {
+        public void startToolboxSelfUpdate(final String downloadUrl, final String rawVer) {
+            // 归一化版本号：兼容新旧前端（旧版传 "GeelyPilot_1.7.7.apk"，新版传 "1.7.7"），
+            // 统一落盘为干净的 GeelyToolbox_v1.7.7.apk，避免出现 GeelyToolbox_vGeelyPilot_xxx.apk.apk 双重后缀
+            String ver = rawVer == null ? "" : rawVer.trim();
+            if (ver.startsWith("GeelyToolbox_v")) ver = ver.substring("GeelyToolbox_v".length());
+            if (ver.startsWith("GeelyPilot_")) ver = ver.substring("GeelyPilot_".length());
+            if (ver.toLowerCase().endsWith(".apk")) ver = ver.substring(0, ver.length() - 4);
+            ver = ver.trim();
+            if (ver.isEmpty()) ver = "latest";
+            final String apkFileName = "GeelyToolbox_v" + ver + ".apk";
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     showToast("开始下载工具箱新版本...");
-                    DownloadManager.startDownload("toolbox_update", downloadUrl, "GeelyToolbox_v" + remoteVer + ".apk", new DownloadManager.DownloadListener() {
+                    DownloadManager.startDownload("toolbox_update", downloadUrl, apkFileName, new DownloadManager.DownloadListener() {
                         private int lastReportedProgress = -1;
 
                         @Override

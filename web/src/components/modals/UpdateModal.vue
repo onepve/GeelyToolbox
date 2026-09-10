@@ -180,6 +180,6 @@ function startUpgrade() {
   downloadSpeed.value = '连接服务器...';
   downloadError.value = '';
   showToast('正在调起全速下载升级包...');
-  bridge.call('startToolboxSelfUpdate', updateInfo.value.download_url, `GeelyPilot_${updateInfo.value.version}.apk`);
+  bridge.call('startToolboxSelfUpdate', updateInfo.value.download_url, updateInfo.value.version);
 }
 </script>
