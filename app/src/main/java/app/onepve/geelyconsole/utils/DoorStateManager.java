@@ -68,13 +68,17 @@ public class DoorStateManager {
 
     /**
      * 熄火休眠/下电复位：重置所有车门乘员状态机
+     * ⚠️ 幂等静默：仅在状态真正发生变化时才写日志，严禁被 MCU 心跳无限刷屏。
      */
     public synchronized void resetState() {
+        boolean changed = (isDriverInside || isFRInside || isRLInside || isRRInside);
         isDriverInside = false;
         isFRInside = false;
         isRLInside = false;
         isRRInside = false;
-        AppLogger.i("车门状态", "熄火休眠复位: 四门乘员感知状态机重置归位");
+        if (changed) {
+            AppLogger.i("车门状态", "熄火休眠复位: 四门乘员感知状态机重置归位");
+        }
     }
 
     /** 车辆点火/上电/运行中：主驾一定在车内，避免"车门已打开"被误判为上车 */

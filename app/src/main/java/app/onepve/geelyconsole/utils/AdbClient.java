@@ -85,22 +85,47 @@ public class AdbClient {
         return isAdbPortOpen(null);
     }
 
+    /** ADB 端口探测结果缓存（15 秒 TTL）：热路径（常驻服务 3 秒轮询）绝不反复做 3 次 1 秒探测 */
+    private static volatile boolean probeCachedResult = false;
+    private static volatile long probeCachedAt = 0L;
+    private static final long PROBE_CACHE_TTL_MS = 15_000L;
+
+    /** 带缓存的端口探测（供 executePrivileged 等高频调用使用） */
+    public static boolean isAdbPortOpenCached() {
+        long now = System.currentTimeMillis();
+        if (probeCachedAt > 0 && (now - probeCachedAt) < PROBE_CACHE_TTL_MS) {
+            return probeCachedResult;
+        }
+        boolean r = isAdbPortOpen(null);
+        probeCachedResult = r;
+        probeCachedAt = now;
+        return r;
+    }
+
+    /** 立即失效探测缓存（ADB 授权状态变化后调用） */
+    public static void clearProbeCache() {
+        probeCachedAt = 0L;
+    }
+
     public static boolean isAdbPortOpen(Context context) {
         java.util.List<String> hosts = new java.util.ArrayList<>();
         hosts.add("127.0.0.1");
-        hosts.add("localhost");
         String carIp = SystemUtils.getCarIpAddress();
-        if (carIp != null && !carIp.trim().isEmpty() && !hosts.contains(carIp.trim())) {
+        if (carIp != null && !carIp.trim().isEmpty() && !"127.0.0.1".equals(carIp.trim())) {
             hosts.add(carIp.trim());
         }
 
         for (String host : hosts) {
             try (Socket socket = new Socket()) {
-                socket.connect(new InetSocketAddress(host, ADB_PORT), 1000);
+                socket.connect(new InetSocketAddress(host, ADB_PORT), 400);
+                probeCachedResult = true;
+                probeCachedAt = System.currentTimeMillis();
                 return true;
             } catch (Exception ignored) {
             }
         }
+        probeCachedResult = false;
+        probeCachedAt = System.currentTimeMillis();
         return false;
     }
 
@@ -150,9 +175,8 @@ public class AdbClient {
         try {
             java.util.List<String> hosts = new java.util.ArrayList<>();
             hosts.add("127.0.0.1");
-            hosts.add("localhost");
             String carIp = SystemUtils.getCarIpAddress();
-            if (carIp != null && !carIp.trim().isEmpty() && !hosts.contains(carIp.trim())) {
+            if (carIp != null && !carIp.trim().isEmpty() && !"127.0.0.1".equals(carIp.trim())) {
                 hosts.add(carIp.trim());
             }
 
@@ -162,7 +186,7 @@ public class AdbClient {
                     socket = new Socket();
                     socket.setTcpNoDelay(true);
                     socket.setSoTimeout(TIMEOUT_MS);
-                    socket.connect(new InetSocketAddress(host, ADB_PORT), 1500);
+                    socket.connect(new InetSocketAddress(host, ADB_PORT), 1200);
                     connectedHost = host;
                     break;
                 } catch (Exception e) {

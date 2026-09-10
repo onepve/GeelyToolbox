@@ -245,58 +245,6 @@
       </div>
     </div>
 
-    <!-- 车身数据监控底层引擎双轨切换 (报文监听 vs 原厂HAL直连测试) -->
-    <FeatureCard 
-      title="底座车身数据监控引擎 (双轨切换)"
-      desc="支持选择底层数据来源：经典成熟的 MCU 串口物理报文监听，或基于 AOSP 平台系统签名的 Automotive HAL 原生属性直通。"
-    >
-      <template #badge>
-        <span class="text-[14px] font-black text-car-accent px-3 py-1 bg-car-item rounded-xl border border-car-border">
-          当前模式: {{ (store.vehicleAuto.vehicle_monitor_engine_mode || 'log_mcu') === 'log_mcu' ? 'MCU 串口报文监听 (成熟稳定)' : '原厂 HAL 直通 (实验测试通道)' }}
-        </span>
-      </template>
-
-      <div class="grid grid-cols-2 gap-4">
-        <!-- 模式 1: MCU 串口底层报文监听 -->
-        <button
-          @click="setMonitorEngine('log_mcu')"
-          :class="[
-            'p-4 rounded-2xl border-2 text-left flex flex-col justify-between cursor-pointer transition-all shadow-sm',
-            (store.vehicleAuto.vehicle_monitor_engine_mode || 'log_mcu') === 'log_mcu'
-              ? 'bg-car-item border-car-accent ring-2 ring-car-accent/25 shadow-md'
-              : 'bg-car-item border-car-border hover:border-car-border-light'
-          ]"
-        >
-          <div class="flex items-center justify-between w-full">
-            <span class="text-[17.5px] font-black text-car-text">MCU 报文流式监听 (推荐·成熟稳定)</span>
-            <span v-if="(store.vehicleAuto.vehicle_monitor_engine_mode || 'log_mcu') === 'log_mcu'" class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>
-          </div>
-          <span class="text-[13.5px] text-car-sub font-bold mt-2 leading-relaxed">
-            实时捕获 MCU 硬件串口 (91 02 01) 与 AdaptAPI 权威常量，覆盖 4 挡位、4 驾驶模式、4 车门、尾门与灯光，经过长期实车检验极度稳定
-          </span>
-        </button>
-
-        <!-- 模式 2: 原厂 HAL 直连监控 -->
-        <button
-          @click="setMonitorEngine('native_hal')"
-          :class="[
-            'p-4 rounded-2xl border-2 text-left flex flex-col justify-between cursor-pointer transition-all shadow-sm',
-            store.vehicleAuto.vehicle_monitor_engine_mode === 'native_hal'
-              ? 'bg-car-item border-car-accent ring-2 ring-car-accent/25 shadow-md'
-              : 'bg-car-item border-car-border hover:border-car-border-light'
-          ]"
-        >
-          <div class="flex items-center justify-between w-full">
-            <span class="text-[17.5px] font-black text-car-text">原厂 HAL / CarService 直通 (实验通道)</span>
-            <span v-if="store.vehicleAuto.vehicle_monitor_engine_mode === 'native_hal'" class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>
-          </div>
-          <span class="text-[13.5px] text-car-sub font-bold mt-2 leading-relaxed">
-            依托 AOSP 平台系统签名特权，直接注册 CarPropertyManager 车载属性回调与原厂核心广播，零日志依赖，专供车友实验对比
-          </span>
-        </button>
-      </div>
-    </FeatureCard>
-
     <!-- 1. 挡位安全播报 (前进档、倒车档、驻车档 P、空档 四大标准档位) -->
     <FeatureCard 
       title="1. 挡位安全播报 (前进档 D / 倒车档 R / 驻车档 P / 空档 N)"
@@ -1091,12 +1039,6 @@ function setAudioChannel(channel) {
   showToast('已切换至: ' + (labels[channel] || channel));
 }
 
-function setMonitorEngine(engine) {
-  store.vehicleAuto.vehicle_monitor_engine_mode = engine;
-  bridge.call('setVehicleAutomationStringSetting', 'vehicle_monitor_engine_mode', engine);
-  const label = engine === 'log_mcu' ? 'MCU 串口报文流式监听 (成熟稳定)' : '原厂 HAL 直通监控 (测试通道)';
-  showToast('底座监控引擎已切换: ' + label);
-}
 
 function testCurrentChannelVoice() {
   bridge.call('testVehicleVoice', 'door_fl');

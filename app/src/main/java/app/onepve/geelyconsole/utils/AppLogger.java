@@ -139,6 +139,10 @@ public class AppLogger {
             if (last != null && (time - last) < LOG_DEDUP_MILLIS && !"ERROR".equals(level)) {
                 return;
             }
+            // 防去重表无限膨胀（含变量值的消息会不断产生新 key，长年运行会持续吃内存拖慢全机）
+            if (lastLogTime.size() > 500) {
+                lastLogTime.clear();
+            }
             lastLogTime.put(dedupKey, time);
         }
 

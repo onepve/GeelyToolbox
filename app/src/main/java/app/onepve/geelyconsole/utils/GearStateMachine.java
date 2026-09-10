@@ -71,15 +71,20 @@ public class GearStateMachine {
 
     /**
      * 车辆熄火/断电/休眠复位：状态机重置归零，下一次点火绝对静默
+     * ⚠️ 幂等静默铁律：本方法被 MCU 心跳周期性触发，仅在「状态真正发生变化」时才写一条日志，
+     * 严禁熄火后每个心跳都刷同一条 —— 否则守护日志会被单条消息无限刷屏（车主明确要求）。
      */
     public synchronized void resetState() {
         if (pendingGearTask != null) {
             mainHandler.removeCallbacks(pendingGearTask);
             pendingGearTask = null;
         }
+        boolean changed = (lastGearPos != -1 || isGearVoiceArmed != 0);
         lastGearPos = -1;
         isGearVoiceArmed = 0;
-        AppLogger.i("挡位状态", "熄火休眠: 换挡状态机重置归零 (armed=0, lastGear=-1)");
+        if (changed) {
+            AppLogger.i("挡位状态", "熄火休眠: 换挡状态机重置归零 (armed=0, lastGear=-1)");
+        }
     }
 
     public synchronized void updateGear(int rawGear, final boolean voiceMasterSwitch, final SharedPreferences prefs) {

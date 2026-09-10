@@ -84,36 +84,39 @@ public class SteeringWheelKeyManager {
     private final Map<Integer, Runnable> pendingClickTasks = new HashMap<>();
     private final Map<Integer, Runnable> pendingLongTasks = new HashMap<>();
 
-    // Automotive HAL 硬件直通监听器 (捕获 2号滚轮下按等非 logcat 硬件按键)
-    private final CarPropertyKeyMonitor carPropertyKeyMonitor;
-
     public SteeringWheelKeyManager(Context context) {
         this.context = context.getApplicationContext();
         this.prefs = this.context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        
-        // 启动 HAL 硬件按键监听器
-        this.carPropertyKeyMonitor = new CarPropertyKeyMonitor(this.context, new CarPropertyKeyMonitor.Listener() {
-            @Override
-            public void onKeyDown(int keyCode) {
-                handleKeyDown(keyCode);
-            }
 
-            @Override
-            public void onKeyUp(int keyCode) {
-                handleKeyUp(keyCode);
-            }
-        });
-        this.carPropertyKeyMonitor.start();
+        // 方控统一走原厂按键事件直连通道（logcat reportKeyToAdaptApi / shouldCallback）。
+        // 「编号2 音量滚轮垂直下按」是原厂「高德飞屏到仪表盘」功能键，工具箱不再注册任何
+        // CarProperty 硬件拦截通道去抢占它（原厂 HAL / CarService 直通实验通道已整体下线）。
+        refreshRuntimeCache();
+    }
+
+    // ================= 热路径运行态缓存（性能铁律） =================
+    // parseKeyFromLine 会被 logcat 全量监听的每一行调用，严禁每行都读 SharedPreferences。
+    private volatile boolean wheelMasterCached = true;
+    private volatile String wheelModeCached = MODE_CARMEDIA_FIRST;
+
+    /** 刷新热路径缓存（配置变更 / 服务启动时调用一次即可） */
+    public void refreshRuntimeCache() {
+        try {
+            wheelMasterCached = prefs.getBoolean("wheel_master_switch", true);
+            wheelModeCached = getWheelMode();
+        } catch (Throwable ignored) {
+        }
     }
 
     /**
      * 同步并应用原厂 MediaKeyReceiver 拦截状态
      */
     public void syncMediaKeyReceiverState() {
+        refreshRuntimeCache();
         new Thread(new Runnable() {
             @Override
             public void run() {
-                boolean masterSwitch = prefs.getBoolean("wheel_master_switch", true);
+                boolean masterSwitch = wheelMasterCached;
                 if (!masterSwitch) {
                     // 方控总开关已关闭：彻底解禁原厂 MediaKeyReceiver，完全不拦截！
                     try {
@@ -192,18 +195,13 @@ public class SteeringWheelKeyManager {
 
     /**
      * 在日志行中解析方向盘按键 (兼容 press 按下与 release 抬起事件，实现单击/双击/长按)
+     * 方控统一固定走本硬件事件直连通道（已下线「HAL 纯协议直连」双轨测试模式）
      */
     public int parseKeyFromLine(String line) {
-        if (!prefs.getBoolean("wheel_master_switch", true)) {
+        if (!wheelMasterCached) {
             return 0; // 方控总开关已关闭，坚决不匹配任何按键
         }
         if (line == null || line.isEmpty()) return 0;
-
-        // 检查方控监听引擎模式：若处于纯 HAL 直通模式，彻底忽略 logcat 报文
-        String engineMode = prefs.getString("wheel_monitor_engine_mode", "hybrid_dual");
-        if ("pure_hal".equals(engineMode)) {
-            return 0; // 纯 HAL 模式完全由 CarPropertyKeyMonitor 硬件直连分发
-        }
 
         // 1. 标准物理按键 (press / release)
         if (line.contains("reportKeyToAdaptApi")) {
@@ -252,7 +250,7 @@ public class SteeringWheelKeyManager {
     private static final long KEYDOWN_DEDUP_MS = 80;
 
     public void handleKeyDown(final int keyCode) {
-        if (!prefs.getBoolean("wheel_master_switch", true)) return;
+        if (!wheelMasterCached) return;
         long now = System.currentTimeMillis();
         Long lastDown = lastKeyDownTime.get(keyCode);
         if (lastDown != null && (now - lastDown) < KEYDOWN_DEDUP_MS) {
@@ -288,7 +286,7 @@ public class SteeringWheelKeyManager {
     private static final long KEYUP_DEDUP_MS = 80;
 
     public void handleKeyUp(final int keyCode) {
-        if (!prefs.getBoolean("wheel_master_switch", true)) return;
+        if (!wheelMasterCached) return;
         long now = System.currentTimeMillis();
         Long lastUp = lastKeyUpTime.get(keyCode);
         if (lastUp != null && (now - lastUp) < KEYUP_DEDUP_MS) {
@@ -308,8 +306,7 @@ public class SteeringWheelKeyManager {
             return;
         }
 
-        String mode = getWheelMode();
-        if (MODE_FACTORY_DEFAULT.equals(mode)) {
+        if (MODE_FACTORY_DEFAULT.equals(wheelModeCached)) {
             AppLogger.i("方控按键", "处于[恢复原厂默认]模式，完全放行按键事件给车机原厂总线");
             return;
         }

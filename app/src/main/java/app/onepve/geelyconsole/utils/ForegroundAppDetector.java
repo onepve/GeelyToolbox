@@ -53,7 +53,7 @@ public final class ForegroundAppDetector {
     /** 前台包名解析结果缓存，避免 3 秒轮询时重复做重操作 */
     private static volatile String lastForegroundPkg = null;
     private static volatile long lastForegroundAt = 0L;
-    private static final long FG_CACHE_TTL_MS = 1200L;
+    private static final long FG_CACHE_TTL_MS = 3000L;
 
     private static final Pattern RESUMED_PATTERN =
             Pattern.compile("(?:mResumedActivity|topResumedActivity|ResumedActivity)[^\\n]*?([a-zA-Z0-9_.]+)/(?:[a-zA-Z0-9_.$]+)");
@@ -117,27 +117,64 @@ public final class ForegroundAppDetector {
     // 二、使用情况访问授权状态
     // ------------------------------------------------------------------
 
-    /** 是否已授予「使用情况访问」权限（AppOps 方式判定，兼容 Android 9） */
+    /** 使用情况访问授权判定缓存（2 秒 TTL，避免 3 秒轮询反复走 binder） */
+    private static volatile Boolean usageAccessCached = null;
+    private static volatile long usageAccessCachedAt = 0L;
+    private static final long USAGE_ACCESS_TTL_MS = 2000L;
+
+    /** 是否已授予「使用情况访问」权限（AppOps 判定 + 真实查询兜底，兼容 Android 9 车机 ROM 记录不同步） */
     public static boolean isUsageAccessGranted(Context ctx) {
         if (ctx == null) return false;
+        long now = System.currentTimeMillis();
+        Boolean cached = usageAccessCached;
+        if (cached != null && (now - usageAccessCachedAt) < USAGE_ACCESS_TTL_MS) {
+            return cached;
+        }
+        boolean granted = checkUsageAccess(ctx);
+        usageAccessCached = granted;
+        usageAccessCachedAt = now;
+        return granted;
+    }
+
+    private static boolean checkUsageAccess(Context ctx) {
         try {
             AppOpsManager aom = (AppOpsManager) ctx.getSystemService(Context.APP_OPS_SERVICE);
-            if (aom == null) return false;
-            int mode;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                mode = aom.unsafeCheckOpNoThrow(
-                        AppOpsManager.OPSTR_GET_USAGE_STATS,
-                        Process.myUid(), ctx.getPackageName());
-            } else {
-                mode = aom.checkOpNoThrow(
-                        AppOpsManager.OPSTR_GET_USAGE_STATS,
-                        Process.myUid(), ctx.getPackageName());
+            if (aom != null) {
+                int mode;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    mode = aom.unsafeCheckOpNoThrow(
+                            AppOpsManager.OPSTR_GET_USAGE_STATS,
+                            Process.myUid(), ctx.getPackageName());
+                } else {
+                    mode = aom.checkOpNoThrow(
+                            AppOpsManager.OPSTR_GET_USAGE_STATS,
+                            Process.myUid(), ctx.getPackageName());
+                }
+                if (mode == AppOpsManager.MODE_ALLOWED) return true;
             }
-            return mode == AppOpsManager.MODE_ALLOWED;
         } catch (Throwable e) {
-            Log.w(TAG, "isUsageAccessGranted failed: " + e.getMessage());
-            return false;
+            Log.w(TAG, "checkOpNoThrow failed: " + e.getMessage());
         }
+        // 兜底：真拉一次使用统计，能读到任何数据即视为已授权
+        // （部分车机 ROM 的 AppOps 记录与设置页勾选不同步，会出现「设置里明明已授权、这边却判为未授权」的误判）
+        try {
+            UsageStatsManager usm = (UsageStatsManager) ctx.getSystemService(Context.USAGE_STATS_SERVICE);
+            if (usm != null) {
+                long now = System.currentTimeMillis();
+                List<UsageStats> stats = usm.queryUsageStats(
+                        UsageStatsManager.INTERVAL_DAILY, now - 6 * 3600 * 1000L, now);
+                if (stats != null) {
+                    for (UsageStats s : stats) {
+                        if (s != null && (s.getLastTimeUsed() > 0 || s.getTotalTimeInForeground() > 0)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        } catch (Throwable e) {
+            Log.w(TAG, "usage stats probe failed: " + e.getMessage());
+        }
+        return false;
     }
 
     /** 跳转系统「使用情况访问」授权页，供车主手动勾选本应用 */
@@ -244,11 +281,28 @@ public final class ForegroundAppDetector {
         }
     }
 
+    /** dumpsys 兜底熔断：连续读取失败即暂停 5 分钟，杜绝每次 3 秒轮询都白等 su/ADB 超时 */
+    private static volatile int dumpsysFailStreak = 0;
+    private static volatile long dumpsysPausedUntil = 0L;
+
     private static String queryByDumpsys(Context ctx) {
+        if (System.currentTimeMillis() < dumpsysPausedUntil) return null;
         try {
-            String out = SystemUtils.executePrivileged(ctx,
-                    "dumpsys activity activities | grep -E \"mResumedActivity|topResumedActivity\"");
-            return parseDumpsysActivity(out);
+            String out = SystemUtils.executeWithTimeout(ctx,
+                    "dumpsys activity activities | grep -E \"mResumedActivity|topResumedActivity\"", 1500L);
+            String pkg = parseDumpsysActivity(out);
+            if (TextUtils.isEmpty(pkg)) {
+                dumpsysFailStreak++;
+                if (dumpsysFailStreak >= 3) {
+                    dumpsysFailStreak = 0;
+                    dumpsysPausedUntil = System.currentTimeMillis() + 5 * 60 * 1000L;
+                    AppLogger.w("电源状态", "主页面判定：dumpsys 兜底通道读取失败，已自动暂停 5 分钟"
+                            + "（请为工具箱开启「使用情况访问」或 ADB 调试）");
+                }
+            } else {
+                dumpsysFailStreak = 0;
+            }
+            return pkg;
         } catch (Throwable e) {
             return null;
         }

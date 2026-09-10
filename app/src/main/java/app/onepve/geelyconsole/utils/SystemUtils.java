@@ -413,31 +413,78 @@ public class SystemUtils {
         return android.graphics.Color.parseColor("#E11D48");                    // 100% 警示红
     }
 
+    // ================= 高频状态查询缓存（车机性能铁律） =================
+    // 背景：主界面顶栏每 2.5s、座舱页每 3s 都会查询「白名单/多媒体/商店/其它应用」状态。
+    // 旧实现每次都 spawn 一次 `pm list packages -d <pkg>`（车机上一次 0.5~2 秒），
+    // 4~5 次串行即让 WebView JS 线程 / 主线程卡死数十秒 —— 这就是「打开工具箱要等好久才能点按钮」的真凶。
+    // 现改为：纯 PackageManager API 秒判 + 全量禁用集合后台预热缓存，热路径零进程开销。
+
+    /** 全量禁用包名集合缓存（仅由后台线程预热，热路径只读） */
+    private static volatile java.util.Set<String> disabledPkgsCache = null;
+    private static volatile long disabledPkgsCacheAt = 0L;
+    private static final long DISABLED_PKGS_TTL_MS = 60_000L;
+    private static volatile boolean disabledPkgsFetching = false;
+
+    /** 后台预热「全量禁用包名」缓存；绝不阻塞任何调用线程 */
+    public static void warmDisabledPackagesCache() {
+        boolean stale = disabledPkgsCache == null
+                || (System.currentTimeMillis() - disabledPkgsCacheAt) > DISABLED_PKGS_TTL_MS;
+        if (!stale || disabledPkgsFetching) return;
+        disabledPkgsFetching = true;
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    java.util.Set<String> set = new java.util.HashSet<>();
+                    String out = executeShell("pm list packages -d");
+                    if (out != null) {
+                        for (String line : out.split("\n")) {
+                            String s = line.trim();
+                            if (s.startsWith("package:")) set.add(s.substring(8).trim());
+                        }
+                    }
+                    disabledPkgsCache = set;
+                    disabledPkgsCacheAt = System.currentTimeMillis();
+                } catch (Throwable ignored) {
+                } finally {
+                    disabledPkgsFetching = false;
+                }
+            }
+        }, "SysDisabledPkgsWarm");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /**
+     * 单个应用的启用状态（性能铁律版：热路径 100% 零 shell）
+     * 1. PackageManager 纯 API 秒判（用户停用 / 系统停用 / applicationInfo.enabled=false）
+     * 2. 已缓存的全量禁用包名集合兜底（缓存缺失时只触发后台预热，本次直接返回，绝不阻塞）
+     */
     public static int getAppDetailedState(Context ctx, String pkg) {
+        if (ctx == null || pkg == null || pkg.isEmpty()) return APP_STATE_NOT_INSTALLED;
         try {
-            // 1. Check shell disabled packages list for definitive state
-            String disabledList = executeShell("pm list packages -d " + pkg);
-            if (disabledList != null && disabledList.contains("package:" + pkg)) {
+            PackageInfo pi;
+            try {
+                pi = ctx.getPackageManager().getPackageInfo(pkg, PackageManager.GET_UNINSTALLED_PACKAGES);
+            } catch (PackageManager.NameNotFoundException e) {
+                return APP_STATE_NOT_INSTALLED;
+            }
+            if (pi == null) return APP_STATE_NOT_INSTALLED;
+
+            int setting = ctx.getPackageManager().getApplicationEnabledSetting(pkg);
+            if (setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                    || setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
+                    || setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED) {
                 return APP_STATE_DISABLED;
             }
+            if (pi.applicationInfo != null && !pi.applicationInfo.enabled) return APP_STATE_DISABLED;
 
-            // 2. Check PackageManager
-            PackageInfo pi = ctx.getPackageManager().getPackageInfo(pkg, PackageManager.GET_UNINSTALLED_PACKAGES);
-            if (pi != null) {
-                int setting = ctx.getPackageManager().getApplicationEnabledSetting(pkg);
-                if (setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED ||
-                    setting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER) {
-                    return APP_STATE_DISABLED;
-                }
-                if (pi.applicationInfo != null && !pi.applicationInfo.enabled) {
-                    return APP_STATE_DISABLED;
-                }
-                return APP_STATE_ENABLED;
-            }
-            return APP_STATE_NOT_INSTALLED;
-        } catch (PackageManager.NameNotFoundException e) {
-            return APP_STATE_NOT_INSTALLED;
-        } catch (Exception e) {
+            java.util.Set<String> cached = disabledPkgsCache;
+            if (cached != null && cached.contains(pkg)) return APP_STATE_DISABLED;
+
+            warmDisabledPackagesCache();
+            return APP_STATE_ENABLED;
+        } catch (Throwable e) {
             return APP_STATE_NOT_INSTALLED;
         }
     }
@@ -499,8 +546,10 @@ public class SystemUtils {
 
     public static String executePrivileged(Context ctx, String cmd) {
         // 1. Try Localhost ADB TCP (uid 2000 shell privileged access)
+        // ⚠️ 用「带缓存」的端口探测：旧实现每次都要对 127.0.0.1/localhost/车机IP 各做一次 1 秒探测，
+        //    在 ADB 未开启的车机上等于每次调用先白等 3 秒 —— 常驻服务 3 秒一次轮询时直接卡死主链路。
         try {
-            if (AdbClient.isAdbPortOpen()) {
+            if (AdbClient.isAdbPortOpenCached()) {
                 AdbClient.AdbResult adbRes = AdbClient.execute(ctx, cmd);
                 if (adbRes != null && adbRes.success && adbRes.output != null) {
                     return adbRes.output;
@@ -509,24 +558,81 @@ public class SystemUtils {
         } catch (Exception ignored) {
         }
 
-        // 2. Try su (if root available)
-        try {
-            Process p = Runtime.getRuntime().exec(new String[]{"su", "-c", cmd});
-            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line).append("\n");
-            }
-            p.waitFor();
-            if (p.exitValue() == 0 || sb.length() > 0) {
-                return sb.toString().trim();
-            }
-        } catch (Exception ignored) {
+        // 2. Try su (if root available) —— 必须带硬超时：su 若弹出授权框或被 SELinux 拦停，
+        //    waitFor() 会永久挂死调用线程（曾导致闲置屏保计时线程与主线程一起假死）
+        String suOut = execProcess("su", "-c", cmd, 2500L);
+        if (suOut != null) {
+            return suOut.trim();
         }
 
         // 3. Normal shell execution fallback
         return executeShell(cmd);
+    }
+
+    /**
+     * 带硬超时的进程执行（返回 null 表示超时 / 失败，绝不阻塞调用线程超过 timeoutMs）
+     */
+    public static String execProcess(String arg0, String arg1, String arg2, long timeoutMs) {
+        final java.util.concurrent.atomic.AtomicReference<String> out = new java.util.concurrent.atomic.AtomicReference<>(null);
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    java.util.List<String> cmdList = new java.util.ArrayList<>();
+                    if (arg0 != null) cmdList.add(arg0);
+                    if (arg1 != null) cmdList.add(arg1);
+                    if (arg2 != null) cmdList.add(arg2);
+                    Process p = Runtime.getRuntime().exec(cmdList.toArray(new String[0]));
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()), 1024);
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line).append("\n");
+                        if (sb.length() > 65536) break;
+                    }
+                    if (!p.waitFor(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                        p.destroy();
+                        return;
+                    }
+                    if (p.exitValue() == 0 || sb.length() > 0) {
+                        out.set(sb.toString());
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+        }, "SysExecTimeout");
+        t.setDaemon(true);
+        t.start();
+        try {
+            t.join(timeoutMs + 200L);
+        } catch (InterruptedException ignored) {
+        }
+        return out.get();
+    }
+
+    /**
+     * 带硬超时的特权命令执行（专供常驻轮询线程使用，超时返回 ""）
+     * 用于 dumpsys 等可能因权限/ADB 未开启而长时间无响应的读取，确保轮询 tick 永不卡死。
+     */
+    public static String executeWithTimeout(Context ctx, String cmd, long timeoutMs) {
+        final java.util.concurrent.atomic.AtomicReference<String> out = new java.util.concurrent.atomic.AtomicReference<>("");
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String r = executePrivileged(ctx, cmd);
+                    if (r != null) out.set(r);
+                } catch (Throwable ignored) {
+                }
+            }
+        }, "SysPrivTimeout");
+        t.setDaemon(true);
+        t.start();
+        try {
+            t.join(timeoutMs);
+        } catch (InterruptedException ignored) {
+        }
+        return out.get();
     }
 
     public static String executeShell(String cmd) {
@@ -1063,7 +1169,7 @@ public class SystemUtils {
                     "AP_POWER_BOOTUP_REASON", "电源状态", "点火", "熄火", "上电", "下电", "battery");
 
             appFile = filterLogByKeywords(logFile, new File(tempDir, "app.log"),
-                    "GeelyToolbox", "VehicleAutomationService", "CarGearHALMonitor", "CarPropertyKeyMonitor",
+                    "GeelyToolbox", "VehicleAutomationService",
                     "VehicleVoicePlayer", "系统日志", "HAL探针", "去重");
 
             // 3. 生成统计摘要
@@ -1320,7 +1426,79 @@ public class SystemUtils {
         return false;
     }
 
+    /** 白名单属性缓存（车机性能铁律：顶栏每 2.5s 轮询，绝不每次都 spawn getprop 进程） */
+    private static volatile Boolean whitelistCache = null;
+    private static volatile long whitelistCacheAt = 0L;
+    private static final long WHITELIST_TTL_MS = 3000L;
+
+    /** 清除白名单缓存（放行/冻结白名单操作后立即调用，保证状态实时） */
+    public static void clearWhitelistCache() {
+        whitelistCache = null;
+        whitelistCacheAt = 0L;
+    }
+
     public static boolean isApkVerifyWhitelistEnabled() {
+        long now = System.currentTimeMillis();
+        Boolean cached = whitelistCache;
+        if (cached != null && (now - whitelistCacheAt) < WHITELIST_TTL_MS) {
+            return cached;
+        }
+        // 缓存过期时：先返回上一次结果并后台刷新，彻底杜绝 UI / JS 线程被 getprop 阻塞
+        if (cached != null) {
+            refreshWhitelistAsync();
+            return cached;
+        }
+        boolean ok = readApkVerifyProp();
+        whitelistCache = ok;
+        whitelistCacheAt = now;
+        return ok;
+    }
+
+    private static volatile boolean whitelistRefreshing = false;
+
+    /** 后台刷新白名单缓存（非阻塞） */
+    public static void refreshWhitelistAsync() {
+        if (whitelistRefreshing) return;
+        whitelistRefreshing = true;
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    boolean ok = readApkVerifyProp();
+                    whitelistCache = ok;
+                    whitelistCacheAt = System.currentTimeMillis();
+                } catch (Throwable ignored) {
+                } finally {
+                    whitelistRefreshing = false;
+                }
+            }
+        }, "SysWhitelistRefresh");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /** 读取 sys.jsbd.apk_verify：优先反射 SystemProperties（零进程），失败才回退 getprop */
+    private static boolean readApkVerifyProp() {
+        try {
+            Class<?> sp = Class.forName("android.os.SystemProperties");
+            try {
+                java.lang.reflect.Method m = sp.getMethod("get", String.class, String.class);
+                String v = (String) m.invoke(null, "sys.jsbd.apk_verify", "");
+                if (v != null && !v.trim().isEmpty()) {
+                    return "1".equals(v.trim());
+                }
+            } catch (Throwable ignored) {
+            }
+            try {
+                java.lang.reflect.Method m2 = sp.getMethod("get", String.class);
+                String v2 = (String) m2.invoke(null, "sys.jsbd.apk_verify");
+                if (v2 != null && !v2.trim().isEmpty()) {
+                    return "1".equals(v2.trim());
+                }
+            } catch (Throwable ignored) {
+            }
+        } catch (Throwable ignored) {
+        }
         try {
             String res = executeShell("getprop sys.jsbd.apk_verify");
             return res != null && res.trim().equals("1");
@@ -1333,6 +1511,7 @@ public class SystemUtils {
         boolean ok = false;
         try {
             executePrivileged(ctx, "setprop sys.jsbd.apk_verify 1 && setprop persist.sys.jsbd.apk_verify 1 && setprop sys.geely.apk_verify 1 && setprop persist.sys.geely.apk_verify 1");
+            clearWhitelistCache();
             ok = isApkVerifyWhitelistEnabled();
         } catch (Exception e) {
             ok = false;
@@ -1632,6 +1811,8 @@ public class SystemUtils {
     public static void clearAppsCache() {
         appsCache = null;
         appsCacheTime = 0;
+        disabledPkgsCache = null;
+        disabledPkgsCacheAt = 0L;
     }
 
     public static String getInstalledVersionName(Context context, String pkg) {

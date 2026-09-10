@@ -162,10 +162,15 @@ function fetchLogs(isManual = false) {
 
   try {
     const logs = bridge.call('getRecentLogs', 300);
+    let next = '';
     if (logs && logs.trim()) {
-      logContent.value = logs;
+      next = logs;
     } else {
-      logContent.value = '[系统启动 · 暂未产生异常日志]\n$ 服务正常常驻中...';
+      next = '[系统启动 · 暂未产生异常日志]\n$ 服务正常常驻中...';
+    }
+    // 性能铁律：日志尾部内容未变化时坚决不写回响应式数据，避免 1.5 秒一次无意义重排
+    if (next !== logContent.value) {
+      logContent.value = next;
     }
   } catch (e) {
     logContent.value = '读取日志失败: ' + e;

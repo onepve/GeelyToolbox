@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 import app.onepve.geelyconsole.R;
 import app.onepve.geelyconsole.utils.AdbClient;
 import app.onepve.geelyconsole.utils.AppLogger;
-import app.onepve.geelyconsole.utils.CarGearHALMonitor;
 import app.onepve.geelyconsole.utils.DoorStateManager;
 import app.onepve.geelyconsole.utils.DriveModeManager;
 import app.onepve.geelyconsole.utils.GearStateMachine;
@@ -108,7 +107,8 @@ public class VehicleAutomationService extends Service {
     private long lastTriggerRR = 0;
     private long lastTriggerTrunk = 0;
     private long lastTriggerGear = 0;
-    private long lastPowerStateLogTime = 0;
+    /** 电源聚合状态字符串（仅变化时才写日志，杜绝心跳刷屏） */
+    private String lastPowerStateAggregate = "";
 
     private Thread logcatThread;
     private Process logcatProcess;
@@ -117,10 +117,6 @@ public class VehicleAutomationService extends Service {
     private SteeringWheelKeyManager wheelKeyManager;
     private BroadcastReceiver powerReceiver;
     private BroadcastReceiver ecarxKeyReceiver;
-
-    // 底座车身数据监控引擎双轨切换 (log_mcu = MCU 串口报文监听 / native_hal = 原厂 HAL 直通)
-    private String monitorEngineMode = "log_mcu";
-    private CarGearHALMonitor carGearHALMonitor;
 
     // 四大独立解耦状态管理器
     private DoorStateManager doorStateManager;
@@ -248,6 +244,7 @@ public class VehicleAutomationService extends Service {
         registerPowerStateReceiver();
         startLogcatReader();
         registerEcarxKeyReceiver();
+        SystemUtils.warmDisabledPackagesCache();
         AppLogger.i("系统日志", "车辆启动自动运行守护服务已启动 -> 开启底层门控、挡位与方控全量监听");
         Log.i(TAG, "VehicleAutomationService started successfully");
     }
@@ -294,12 +291,6 @@ public class VehicleAutomationService extends Service {
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
 
-        String engineMode = prefs.getString("vehicle_monitor_engine_mode", "log_mcu");
-        boolean modeChanged = !engineMode.equals(monitorEngineMode);
-        monitorEngineMode = engineMode;
-        AppLogger.i("系统日志", "底座车身数据监控引擎模式: " + ("native_hal".equals(engineMode) ? "原厂 HAL / CarService 直通 (实验测试通道)" : "MCU 串口底层报文流式监听 (成熟稳定)"));
-        syncHALGearMonitor(modeChanged);
-
         // 若服务在行车中启动，立即建立主驾已就坐基准，避免车门语音误判为上车
         if (lastPowerMode > 0 && doorStateManager != null) {
             doorStateManager.markDriverInside();
@@ -322,42 +313,6 @@ public class VehicleAutomationService extends Service {
     }
 
     /**
-     * 原厂 HAL 档位直通监听同步
-     * 语音播报 HAL 协议实装入口：仅在「原厂 HAL / CarService 直通」模式下启动，
-     * 由 HAL 属性回调直接驱动换挡语音播报状态机；否则保持 MCU 串口报文通道。
-     */
-    private void syncHALGearMonitor(boolean modeChanged) {
-        boolean wantHal = "native_hal".equals(monitorEngineMode);
-        if (wantHal) {
-            if (carGearHALMonitor == null) {
-                carGearHALMonitor = new CarGearHALMonitor(this, new CarGearHALMonitor.Listener() {
-                    @Override
-                    public void onHalGear(int normalizedGear, String source) {
-                        AppLogger.i("挡位状态", "语音播报 HAL 档位来源: " + source + " -> 索引 " + normalizedGear);
-                        handleGearSignal(normalizedGear);
-                    }
-
-                    @Override
-                    public void onHalGearRaw(String source, int rawValue, int normalizedGear) {
-                        AppLogger.i("挡位状态", "原始报文 " + source + "=" + rawValue
-                                + " (0x" + Integer.toHexString(rawValue) + ")，识别索引=" + normalizedGear);
-                    }
-                });
-                carGearHALMonitor.start();
-            } else if (modeChanged) {
-                carGearHALMonitor.stop();
-                carGearHALMonitor.start();
-            }
-        } else {
-            if (carGearHALMonitor != null) {
-                carGearHALMonitor.stop();
-                carGearHALMonitor = null;
-                AppLogger.i("系统日志", "档位信号源已切回 MCU 串口底层报文通道");
-            }
-        }
-    }
-
-    /**
      * 注册亿咖通原厂方控广播监听 (ECARX_KEY_*)，作为 logcat/HAL 双通道的容灾备份。
      * 这些广播由 CarInputService / 多媒体框架在解析 HW_KEY_INPUT 后发出，
      * 对于电话、静音、切歌等键更稳定可靠。
@@ -375,24 +330,20 @@ public class VehicleAutomationService extends Service {
 
                 int mappedKey = -1;
                 switch (action) {
-                    case "ecarx.intent.action.ECARX_KEY_RCALL_EVENT":
-                        mappedKey = SteeringWheelKeyManager.KEY_OK; // 电话接听/挂断键 -> 先映射到 OK，由车主手势配置决定
-                        break;
                     case "ecarx.intent.action.ECARX_KEY_MUTE_EVENT":
                         mappedKey = SteeringWheelKeyManager.KEY_MUTE;
-                        break;
-                    case "ecarx.intent.action.ECARX_KEY_RMULTIFUNCTION_EVENT":
-                        mappedKey = SteeringWheelKeyManager.KEY_OK;
                         break;
                     case "ecarx.intent.action.ECARX_KEY_BLELEFTMOVE_EVENT":
                         mappedKey = SteeringWheelKeyManager.KEY_PREV;
                         break;
-                    case "ecarx.intent.action.ECARX_KEY_BLEPLAYPAUSE_EVENT":
-                        mappedKey = SteeringWheelKeyManager.KEY_OK;
-                        break;
                     case "ecarx.intent.action.ECARX_KEY_BLERIGHTMOVE_EVENT":
                         mappedKey = SteeringWheelKeyManager.KEY_NEXT;
                         break;
+                    // ⚠️ 以下事件刻意「不映射」：
+                    //  ECARX_KEY_RCALL_EVENT（电话键）、ECARX_KEY_RMULTIFUNCTION_EVENT、
+                    //  ECARX_KEY_BLEPLAYPAUSE_EVENT（蓝牙遥控播放键）
+                    // 它们此前被错误地塞成 KEY_OK，会误触发「编号2 滚轮下按」上配置的动作，
+                    // 从而抢占原厂「高德飞屏到仪表盘」功能。现一律放行给原厂总线，工具箱零接触。
                 }
                 if (mappedKey > 0 && wheelKeyManager != null) {
                     AppLogger.i("方控按键", "ECARX广播触发: " + action + " -> key=" + mappedKey);
@@ -583,13 +534,9 @@ public class VehicleAutomationService extends Service {
                 }
             }
             if (gearVal > 0) {
-                // 原厂 HAL 直通模式且已成功连上 CarService 时，档位以 HAL 属性回调为唯一权威源，
-                // 屏蔽 MCU 文本通道防止双通道重复触发换挡语音；HAL 未连通则自动回退 MCU 通道。
-                if (carGearHALMonitor != null && carGearHALMonitor.isConnected()) {
-                    AppLogger.i("挡位状态", "MCU 文本通道档位已屏蔽(HAL 直通中): " + gearVal);
-                } else {
-                    handleGearSignal(gearVal);
-                }
+                // MCU 串口报文（MCULog:GearPosition / VehId=Vehicle_Gear）是档位唯一权威源
+                // （原厂 HAL / CarService 直通实验通道已下线：该车机固件未授予平台签名，无法注册车辆属性回调）
+                handleGearSignal(gearVal);
                 return;
             }
         }
@@ -959,11 +906,11 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 电源状态变化频繁时每秒只写一次聚合日志，避免海量 MCU 心跳刷屏
-        long now = System.currentTimeMillis();
-        if (now - lastPowerStateLogTime > 1000) {
-            lastPowerStateLogTime = now;
-            AppLogger.i("电源状态", "key=" + lastKeyState + " engine=" + lastEngineState + " powerMode=" + lastPowerMode);
+        // 仅在「电源聚合状态真正发生变化」时写一条，彻底杜绝熄火后 MCU 心跳每秒刷同一条
+        String aggregate = "key=" + lastKeyState + " engine=" + lastEngineState + " powerMode=" + lastPowerMode;
+        if (!aggregate.equals(lastPowerStateAggregate)) {
+            lastPowerStateAggregate = aggregate;
+            AppLogger.i("电源状态", aggregate);
         }
     }
 
@@ -1036,12 +983,6 @@ public class VehicleAutomationService extends Service {
                 unregisterReceiver(ecarxKeyReceiver);
             } catch (Exception ignored) {}
             ecarxKeyReceiver = null;
-        }
-        if (carGearHALMonitor != null) {
-            try {
-                carGearHALMonitor.stop();
-            } catch (Exception ignored) {}
-            carGearHALMonitor = null;
         }
         try {
             IdleScreensaverManager.stop();

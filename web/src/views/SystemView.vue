@@ -254,7 +254,9 @@
       <div class="mt-3 bg-car-card border border-car-border rounded-2xl p-4 text-[13px] text-car-sub font-bold leading-relaxed space-y-1">
         <div>运行通道：<span class="text-car-text">{{ ssChannel }}</span></div>
         <div>当前闲置：<span class="text-car-text">{{ ssIdleDisplay }}</span>（每 3 秒自动检测一次）</div>
+        <div>系统原始读数：<span class="text-car-text">{{ ssIdleRaw || '—' }}</span></div>
         <div>前台判定：<span class="text-car-text">{{ ssForeground }}</span></div>
+        <div v-if="ssFailReason" class="text-amber-400">通道A提示：{{ ssFailReason }}</div>
       </div>
     </div>
 
@@ -364,6 +366,9 @@ const ssHomeOnly = ref(true);
 const ssUsageAccess = ref(false);
 const ssChannel = ref('未启动');
 const ssIdleMs = ref(-1);
+const ssIdleRaw = ref('');
+const ssFailReason = ref('');
+const ssChannelAReady = ref(false);
 const ssForeground = ref('查询中');
 const ssPresets = [10, 15, 20, 30];
 let ssTimer = null;
@@ -377,16 +382,23 @@ const ssProgressPercent = computed(() => {
   return Math.round(((v - min) / (max - min)) * 100);
 });
 
+const ssDegraded = computed(() => {
+  const c = String(ssChannel.value || '');
+  return c.indexOf('失败') >= 0 || c.indexOf('不可用') >= 0;
+});
+
 const ssStatusText = computed(() => {
   if (!ssEnabled.value) return '已关闭';
-  if (!ssUsageAccess.value) return '待授权';
-  return '运行中';
+  if (ssChannelAReady.value) return '运行中';
+  if (ssDegraded.value) return '已降级熄屏兜底';
+  return '启动中';
 });
 
 const ssStatusDot = computed(() => {
   if (!ssEnabled.value) return 'bg-car-sub';
-  if (!ssUsageAccess.value) return 'bg-amber-400';
-  return 'bg-emerald-400';
+  if (ssChannelAReady.value) return 'bg-emerald-400';
+  if (ssDegraded.value) return 'bg-rose-400';
+  return 'bg-amber-400';
 });
 
 const ssIdleDisplay = computed(() => {
@@ -408,6 +420,9 @@ function loadScreensaverConfig() {
     if (typeof data.usage_access === 'boolean') ssUsageAccess.value = data.usage_access;
     if (typeof data.channel === 'string') ssChannel.value = data.channel;
     if (typeof data.idle_ms === 'number') ssIdleMs.value = data.idle_ms;
+    if (typeof data.idle_raw === 'string') ssIdleRaw.value = data.idle_raw;
+    if (typeof data.fail_reason === 'string') ssFailReason.value = data.fail_reason;
+    if (typeof data.channel_a_ready === 'boolean') ssChannelAReady.value = data.channel_a_ready;
     if (typeof data.foreground === 'string') ssForeground.value = data.foreground;
   } catch (e) {}
 }

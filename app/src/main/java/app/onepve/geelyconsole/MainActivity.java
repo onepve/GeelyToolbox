@@ -115,6 +115,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             @Override
             public void run() {
                 try {
+                    // 预热「全量禁用包名」缓存（后台一次 pm list packages -d，之后热路径零 shell）
+                    SystemUtils.warmDisabledPackagesCache();
                     if (!SystemUtils.isApkVerifyWhitelistEnabled()) {
                         SystemUtils.enableApkVerifyWhitelist(MainActivity.this);
                     }
@@ -340,11 +342,20 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
     }
 
+    /** 顶栏设备信息推送线程（绝不在主线程做 getprop / 包状态查询，否则整机 UI 卡死数秒） */
+    private static final java.util.concurrent.ExecutorService DEVICE_INFO_EXECUTOR =
+            java.util.concurrent.Executors.newSingleThreadExecutor();
+    private volatile boolean deviceInfoPushing = false;
+
     public void pushDeviceInfoToWeb() {
         if (webView == null) return;
-        mainHandler.post(new Runnable() {
+        if (deviceInfoPushing) return; // 避免重复排队堆积
+        deviceInfoPushing = true;
+
+        DEVICE_INFO_EXECUTOR.execute(new Runnable() {
             @Override
             public void run() {
+                final String script;
                 try {
                     SystemUtils.NetStatus net = SystemUtils.getNetworkStatus();
                     JSONObject obj = new JSONObject();
@@ -388,10 +399,22 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("is_car_device", isCarDevice(MainActivity.this));
                     obj.put("logPath", AppLogger.getLogFilePath());
                     obj.put("logSize", AppLogger.getLogFileSizeStr());
-                    String script = "if(window.updateDeviceInfo){window.updateDeviceInfo('" + obj.toString() + "');}";
-                    webView.evaluateJavascript(script, null);
-                } catch (Exception ignored) {
+                    script = "if(window.updateDeviceInfo){window.updateDeviceInfo('" + obj.toString() + "');}";
+                } catch (Exception e) {
+                    deviceInfoPushing = false;
+                    return;
                 }
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        deviceInfoPushing = false;
+                        try {
+                            if (webView != null) {
+                                webView.evaluateJavascript(script, null);
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                });
             }
         });
     }
@@ -1258,6 +1281,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("foreground", ForegroundAppDetector.describe(context));
                 obj.put("channel", IdleScreensaverManager.getChannelState());
                 obj.put("idle_ms", IdleScreensaverManager.getLastIdleMs());
+                obj.put("channel_a_ready", IdleScreensaverManager.isChannelAReady());
+                obj.put("idle_raw", IdleScreensaverManager.getLastRawValue());
+                obj.put("fail_reason", IdleScreensaverManager.getLastFailReason());
                 obj.put("service_running", VehicleAutomationService.isRunning);
                 obj.put("screensaver_pkg", ForegroundAppDetector.PKG_SCREENSAVER);
                 return obj.toString();
@@ -2514,8 +2540,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
                 obj.put("reverse_volume_boost", prefs.getInt("reverse_volume_boost", 6));
                 obj.put("wheel_long_press_ms", prefs.getInt("wheel_long_press_ms", 1500));
-                obj.put("vehicle_monitor_engine_mode", prefs.getString("vehicle_monitor_engine_mode", "log_mcu"));
-                obj.put("wheel_monitor_engine_mode", prefs.getString("wheel_monitor_engine_mode", "hybrid_dual"));
 
                 return obj.toString();
             } catch (Exception e) {

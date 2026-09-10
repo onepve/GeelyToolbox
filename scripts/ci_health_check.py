@@ -610,23 +610,27 @@ with open(os.path.join(WEB_SRC_DIR, "App.vue"), "r", encoding="utf-8") as f:
 if "updateDownloadPaused" not in app_vue_code or "updateDownloadCancelled" not in app_vue_code or "updateDownloadSuccess" not in app_vue_code:
     reg_violations.append("App.vue 缺少全局下载状态回调 (updateDownloadPaused / updateDownloadCancelled / updateDownloadSuccess)！")
 
-# 16.2 检查方控双轨引擎、长按滑块与米小江兼容
+# 16.2 检查方控接管模式、长按滑块与米小江兼容
+# （「HAL 纯协议直连」双轨测试通道已按车主指令下线，方控统一固定走硬件事件直连链路，故不再校验该开关）
 wheel_view_path = os.path.join(WEB_SRC_DIR, "views/WheelView.vue")
 with open(wheel_view_path, "r", encoding="utf-8") as f:
     wv_code = f.read()
-if "wheel_monitor_engine_mode" not in wv_code:
-    reg_violations.append("WheelView.vue 缺少方控按键监听双轨引擎切换卡片！")
+if "wheel_monitor_engine_mode" in wv_code:
+    reg_violations.append("WheelView.vue 仍残留已下线的「方控 HAL 双轨测试」切换卡片！")
 if "wheel_long_press_ms" not in wv_code or "longPressSec" not in wv_code:
     reg_violations.append("WheelView.vue 缺少方控按键长按判定时长自由调节滑块！")
 if "carmedia_first" not in wv_code:
     reg_violations.append("WheelView.vue 缺少米小江方控优先模式单选卡片！")
 
-# 16.3 检查车身双轨引擎与倒车音量滑块
+# 16.3 检查车身监控引擎（HAL 实验通道已下线）与倒车音量滑块
+# （车身「原厂 HAL / CarService 直通」双轨实验通道已按车主指令下线：
+#   该车机固件未授予平台签名，CarService 无法连接，只会产出失败日志；
+#   档位统一以 MCU 串口报文为唯一权威源，故此处改为反向校验，防被误加回来）
 body_view_path = os.path.join(WEB_SRC_DIR, "views/BodyView.vue")
 with open(body_view_path, "r", encoding="utf-8") as f:
     bv_code = f.read()
-if "vehicle_monitor_engine_mode" not in bv_code:
-    reg_violations.append("BodyView.vue 缺少车身数据底座监控双轨引擎大卡片！")
+if "vehicle_monitor_engine_mode" in bv_code:
+    reg_violations.append("BodyView.vue 仍残留已下线的「车身 HAL 双轨实验」切换卡片！")
 
 voice_item_modal_path = os.path.join(WEB_SRC_DIR, "components/modals/VoiceItemSettingsModal.vue")
 with open(voice_item_modal_path, "r", encoding="utf-8") as f:

@@ -53,11 +53,15 @@ public class DriveModeManager {
 
     /**
      * 车辆熄火/断电/休眠复位：驾驶模式状态机重置为默认智能模式基准，下一次点火绝对静默
+     * ⚠️ 幂等静默：仅在状态真正发生变化时才写日志，严禁被 MCU 心跳无限刷屏。
      */
     public synchronized void resetState() {
+        boolean changed = (lastDriveMode != MODE_SMART || isDriveModeVoiceArmed != 0);
         lastDriveMode = MODE_SMART;
         isDriveModeVoiceArmed = 0;
-        AppLogger.i("驾驶模式", "熄火休眠复位: 重置归位默认智能模式基准 (armed=0)");
+        if (changed) {
+            AppLogger.i("驾驶模式", "熄火休眠复位: 重置归位默认智能模式基准 (armed=0)");
+        }
     }
 
     public synchronized void updateDriveMode(int mode, boolean voiceMasterSwitch, SharedPreferences prefs) {

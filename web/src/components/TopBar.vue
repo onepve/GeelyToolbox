@@ -150,7 +150,8 @@ function autoPollDeviceInfo() {
 
 onMounted(() => {
   autoPollDeviceInfo();
-  topBarTimer = setInterval(autoPollDeviceInfo, 2500); // 2.5 秒自适应心跳，电瓶与IP变化秒级同步
+  // 4 秒自适应心跳：Java 侧已对白名单/包状态做零 shell 缓存，轮询本身不再卡顿
+  topBarTimer = setInterval(autoPollDeviceInfo, 4000);
 });
 
 onUnmounted(() => {

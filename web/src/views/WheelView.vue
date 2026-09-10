@@ -121,61 +121,9 @@
       </div>
     </FeatureCard>
 
-    <!-- 2. 方控按键监听底层引擎 (双轨测试通道) -->
-    <FeatureCard 
-      title="2. 方控按键监听底层引擎 (双轨测试)"
-      desc="支持选择方控数据监听来源：推荐使用全键兼容的智能双轨融合，或基于 AOSP 平台系统签名的原厂 HAL 硬件协议直通。"
-    >
-      <template #badge>
-        <span class="text-[14px] font-black text-car-accent px-3 py-1 bg-car-item rounded-xl border border-car-border">
-          当前模式: {{ (store.vehicleAuto.wheel_monitor_engine_mode || 'hybrid_dual') === 'hybrid_dual' ? '智能双轨融合 (推荐·全键兼容)' : '原厂 HAL 纯协议直连 (实验测试)' }}
-        </span>
-      </template>
-
-      <div class="grid grid-cols-2 gap-4">
-        <!-- 模式 1: 智能双轨融合 -->
-        <button
-          @click="setWheelEngine('hybrid_dual')"
-          :class="[
-            'p-4 rounded-2xl border-2 text-left flex flex-col justify-between cursor-pointer transition-all shadow-sm',
-            (store.vehicleAuto.wheel_monitor_engine_mode || 'hybrid_dual') === 'hybrid_dual'
-              ? 'bg-car-item border-car-accent ring-2 ring-car-accent/25 shadow-md'
-              : 'bg-car-item border-car-border hover:border-car-border-light'
-          ]"
-        >
-          <div class="flex items-center justify-between w-full">
-            <span class="text-[17.5px] font-black text-car-text">智能双轨融合监听 (推荐·全键兼容)</span>
-            <span v-if="(store.vehicleAuto.wheel_monitor_engine_mode || 'hybrid_dual') === 'hybrid_dual'" class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>
-          </div>
-          <span class="text-[13.5px] text-car-sub font-bold mt-2 leading-relaxed">
-            CarProperty 硬件键直连 (捕获 2号滚轮垂直按压) + Brief 流式按键事件监听，100% 覆盖全部物理实体按键，支持多手势极速触发
-          </span>
-        </button>
-
-        <!-- 模式 2: 原厂 HAL 纯协议直连 -->
-        <button
-          @click="setWheelEngine('pure_hal')"
-          :class="[
-            'p-4 rounded-2xl border-2 text-left flex flex-col justify-between cursor-pointer transition-all shadow-sm',
-            store.vehicleAuto.wheel_monitor_engine_mode === 'pure_hal'
-              ? 'bg-car-item border-car-accent ring-2 ring-car-accent/25 shadow-md'
-              : 'bg-car-item border-car-border hover:border-car-border-light'
-          ]"
-        >
-          <div class="flex items-center justify-between w-full">
-            <span class="text-[17.5px] font-black text-car-text">原厂 HAL 纯协议直连 (实验通道)</span>
-            <span v-if="store.vehicleAuto.wheel_monitor_engine_mode === 'pure_hal'" class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>
-          </div>
-          <span class="text-[13.5px] text-car-sub font-bold mt-2 leading-relaxed">
-            依托 AOSP 平台系统签名特权，纯粹通过 CarPropertyManager 接收底层硬件抽象层回调，零日志管道依赖，专供车友实验对比
-          </span>
-        </button>
-      </div>
-    </FeatureCard>
-
     <!-- 3. 方控按键长按判定时长 (自定义秒数) -->
     <FeatureCard 
-      title="3. 方控按键长按判定触发时长 (自定义秒数)"
+      title="2. 方控按键长按判定触发时长 (自定义秒数)"
       desc="自由设定方向盘所有按键长按触发的判定时长 (0.8s ~ 6.0s)。达到该时长立即执行长按动作；长按 10 秒依然是整车硬件看门狗冷重启救砖，互不冲突。"
     >
       <template #badge>
@@ -215,8 +163,8 @@
 
     <!-- 4. 音量调节键按压多手势映射 (编号 2) -->
     <FeatureCard 
-      title="4. 方向盘音量调节键按压映射 (编号 2 滚轮垂直下按)"
-      desc="中央音量滚轮除了上下拨动调节音量外，垂直下按支持【单击】、【双击】、【长按自定义秒数】三种手势分发独立动作。"
+      title="3. 方向盘音量调节键按压映射 (编号 2 滚轮垂直下按)"
+      desc="⚠️ 编号 2 滚轮垂直下按是原厂功能键：打开高德时按下会把高德飞屏到仪表盘。把这里改成其它动作会抢占原厂飞屏，建议保持默认。"
     >
       <!-- 手势切换器 -->
       <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
@@ -244,8 +192,8 @@
 
       <div class="grid grid-cols-5 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
         <MatrixButton 
-          title="保持默认"
-          subtitle="原厂默认不动作"
+          title="保持默认 (推荐)"
+          subtitle="完整保留原厂飞屏到仪表盘"
           :active="getGestureAction('ok', activeGesture.ok) === 'default'"
           @click="setGestureAction('ok', activeGesture.ok, 'default')"
         />
@@ -278,7 +226,7 @@
 
     <!-- 5. 独立静音键多手势映射 (编号 3) -->
     <FeatureCard 
-      title="5. 方向盘独立静音键映射 (编号 3)"
+      title="4. 方向盘独立静音键映射 (编号 3)"
       desc="支持【单击】、【双击】、【长按 1.5 秒】多手势；长按 10 秒依然是整车硬件看门狗冷重启救砖，互不冲突！"
     >
       <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
@@ -340,7 +288,7 @@
 
     <!-- 6. Mode 键多手势映射 (编号 6) -->
     <FeatureCard 
-      title="6. 方向盘 Mode 键映射 (编号 6)"
+      title="5. 方向盘 Mode 键映射 (编号 6)"
       desc="原车用于切换伴听/收音机。默认单击秒开 360 全景，同时支持双击与长按个性化定制。"
     >
       <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
@@ -402,7 +350,7 @@
 
     <!-- 7. 切歌键多手势映射 (编号 4 下一曲 / 编号 7 上一曲) -->
     <FeatureCard 
-      title="7. 方向盘切歌键映射 (编号 4 下一曲 / 编号 7 上一曲)"
+      title="6. 方向盘切歌键映射 (编号 4 下一曲 / 编号 7 上一曲)"
       desc="内置官方三重通道调度机制，完美兼容 QQ音乐车机版、网易云、酷狗。支持双击/长按扩展自定义。"
     >
       <div class="grid grid-cols-2 gap-4">
@@ -608,10 +556,4 @@ function setWheelMode(mode) {
   showToast('方控模式已切换: ' + (mode === 'carmedia_first' ? '米小江优先' : (mode === 'toolbox_alone' ? '控制台独立接管' : '恢复原厂')));
 }
 
-function setWheelEngine(engine) {
-  store.vehicleAuto.wheel_monitor_engine_mode = engine;
-  bridge.call('setWheelControlStringSetting', 'wheel_monitor_engine_mode', engine);
-  const label = engine === 'hybrid_dual' ? '智能双轨融合监听 (全键兼容)' : '原厂 HAL 纯协议直连 (实验通道)';
-  showToast('方控监听引擎已切换: ' + label);
-}
 </script>
