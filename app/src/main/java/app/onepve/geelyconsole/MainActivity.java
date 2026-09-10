@@ -1108,6 +1108,97 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             });
         }
 
+        /**
+         * 车机内建屏保调用（无需 ADB）：
+         * 与下拉快捷开关「屏幕保护 / Screen saver」走同一条链路 ——
+         * SystemUI 的 Somnambulator（已导出）内部即调用 Sandman.startDreamByUserRequest() 触发原厂屏保。
+         * 主路径用公开 Intent 启动 Somnambulator；备路径反射 Sandman（隐藏 API，编译期不可直接引用）。
+         */
+        @JavascriptInterface
+        public String startScreenSaver() {
+            StringBuilder sb = new StringBuilder();
+
+            // 1. 主路径：公开 Intent 启动 SystemUI 已导出的 Somnambulator（等同下拉框「屏幕保护」开关）
+            try {
+                Intent i = new Intent();
+                i.setComponent(new android.content.ComponentName("com.android.systemui", "com.android.systemui.Somnambulator"));
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+                context.startActivity(i);
+                AppLogger.action("车机屏保", "调用系统屏保 (Somnambulator 公开入口)", true, "com.android.systemui/.Somnambulator");
+                return "[OK] 已启动 com.android.systemui/.Somnambulator";
+            } catch (Throwable e) {
+                sb.append("[FAIL] Somnambulator: ").append(e.getClass().getSimpleName()).append(' ').append(e.getMessage()).append('\n');
+                AppLogger.action("车机屏保", "Somnambulator 调用失败", false, String.valueOf(e.getMessage()));
+            }
+
+            // 2. 备路径：反射调用隐藏 API Sandman.startDreamByUserRequest(Context)
+            try {
+                Class<?> sandman = Class.forName("android.service.dreams.Sandman");
+                java.lang.reflect.Method m = sandman.getMethod("startDreamByUserRequest", android.content.Context.class);
+                m.invoke(null, context);
+                AppLogger.action("车机屏保", "调用系统屏保 (Sandman 反射)", true, "startDreamByUserRequest");
+                return sb.append("[OK] 反射 Sandman.startDreamByUserRequest 已触发").toString();
+            } catch (Throwable e2) {
+                sb.append("[FAIL] Sandman 反射: ").append(e2.getClass().getSimpleName()).append(' ').append(e2.getMessage());
+                AppLogger.action("车机屏保", "Sandman 反射失败", false, String.valueOf(e2.getMessage()));
+            }
+
+            return sb.toString();
+        }
+
+        /** 打开系统「屏幕保护」设置页（选择屏保程序），失败则回退主题中心 */
+        @JavascriptInterface
+        public String openScreenSaverSettings() {
+            try {
+                Intent i = new Intent("android.settings.DREAM_SETTINGS");
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(i);
+                AppLogger.action("车机屏保", "打开屏幕保护设置页", true, "android.settings.DREAM_SETTINGS");
+                return "[OK] 已打开屏幕保护设置页 (DREAM_SETTINGS)";
+            } catch (Throwable e) {
+                try {
+                    Intent i2 = new Intent();
+                    i2.setComponent(new android.content.ComponentName("com.ecarx.thememanager", "com.ecarx.thememanager.main.MainActivity"));
+                    i2.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(i2);
+                    return "[OK] DREAM_SETTINGS 不可用，已回退主题中心";
+                } catch (Throwable e2) {
+                    return "[FAIL] 均不可用: " + e2.getMessage();
+                }
+            }
+        }
+
+        /** 枚举车机内屏保/主题/时钟相关组件（供调试面板查看真实入口） */
+        @JavascriptInterface
+        public String probeScreenSaverComponents() {
+            StringBuilder sb = new StringBuilder();
+            String[] pkgs = {"com.ecarx.screensaver", "com.ecarx.thememanager", "com.ecarx.theme.service", "com.android.systemui"};
+            android.content.pm.PackageManager pm = getPackageManager();
+            for (String p : pkgs) {
+                try {
+                    android.content.pm.PackageInfo pi = pm.getPackageInfo(p, 0);
+                    sb.append(p).append("  v").append(pi.versionName).append('\n');
+                    Intent launch = pm.getLaunchIntentForPackage(p);
+                    sb.append("   launcher: ").append(launch != null ? launch.getComponent().flattenToShortString() : "(无启动入口)").append('\n');
+                } catch (Throwable e) {
+                    sb.append(p).append("  (未安装)\n");
+                }
+            }
+            // 屏保服务是否声明
+            try {
+                Intent dream = new Intent("android.intent.action.SCREENSAVER");
+                dream.addCategory("android.intent.category.SCREENSAVER");
+                java.util.List<android.content.pm.ResolveInfo> list = pm.queryIntentServices(dream, 0);
+                sb.append("屏保服务(DreamService): ").append(list.size()).append(" 个\n");
+                for (android.content.pm.ResolveInfo ri : list) {
+                    sb.append("   ").append(ri.serviceInfo.packageName).append('/').append(ri.serviceInfo.name).append('\n');
+                }
+            } catch (Throwable e) {
+                sb.append("屏保服务查询失败: ").append(e.getMessage()).append('\n');
+            }
+            return sb.toString();
+        }
+
         @JavascriptInterface
         public void hardReboot() {
             mainHandler.post(new Runnable() {
