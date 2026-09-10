@@ -163,12 +163,15 @@ const taskStatusTitle = computed(() => {
 
 const isMapApp = computed(() => {
   if (!app.value) return false;
-  const id = (app.value.id || '').toLowerCase();
+  // 权威来源：apps.json 的 need_theme_install 字段（云端控制，不再硬编码 category/包名/文件名）
+  if (typeof app.value.need_theme_install === 'boolean') {
+    return app.value.need_theme_install;
+  }
+  // 兜底：本地 CLOUD_APPS 无该字段时，回退到包名/文件名硬编码判断
   const pkg = (app.value.package_name || '').toLowerCase();
   const name = (app.value.name || '').toLowerCase();
-  const category = (app.value.category || '').toLowerCase();
   const filename = (app.value.filename || '').toLowerCase();
-  return category === 'navigation' || pkg.includes('autonavi') || filename.startsWith('automap') || name.includes('高德') || name.includes('地图');
+  return pkg.includes('autonavi') || filename.startsWith('automap') || name.includes('高德') || name.includes('地图');
 });
 
 const actionButtonText = computed(() => {
