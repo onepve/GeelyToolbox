@@ -944,6 +944,44 @@ public class SystemUtils {
         return result;
     }
 
+    /**
+     * 将多个文件打包为 zip
+     */
+    public static boolean zipFiles(List<File> srcFiles, File destZip) {
+        if (srcFiles == null || srcFiles.isEmpty()) return false;
+        java.util.zip.ZipOutputStream zos = null;
+        try {
+            zos = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(destZip));
+            byte[] buffer = new byte[64 * 1024];
+            for (File srcFile : srcFiles) {
+                if (srcFile == null || !srcFile.exists() || srcFile.length() == 0) continue;
+                java.io.FileInputStream fis = null;
+                try {
+                    java.util.zip.ZipEntry zipEntry = new java.util.zip.ZipEntry(srcFile.getName());
+                    zos.putNextEntry(zipEntry);
+                    fis = new java.io.FileInputStream(srcFile);
+                    int length;
+                    while ((length = fis.read(buffer)) >= 0) {
+                        zos.write(buffer, 0, length);
+                    }
+                    zos.closeEntry();
+                } finally {
+                    if (fis != null) {
+                        try { fis.close(); } catch (Exception ignored) {}
+                    }
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            Log.e("SystemUtils", "zipFiles error: " + e.getMessage());
+            return false;
+        } finally {
+            if (zos != null) {
+                try { zos.close(); } catch (Exception ignored) {}
+            }
+        }
+    }
+
     public static boolean zipSingleFile(File srcFile, File destZip) {
         if (srcFile == null || !srcFile.exists()) return false;
         java.util.zip.ZipOutputStream zos = null;
@@ -974,42 +1012,94 @@ public class SystemUtils {
     }
 
     public static JSONObject dumpFullSystemLogcat(Context context) {
+        return dumpProtocolVerifyLogcat(context);
+    }
+
+    /**
+     * 一键采集协议验证日志：分类抓取并打包方控/车门/档位/电源相关日志
+     */
+    public static JSONObject dumpProtocolVerifyLogcat(Context context) {
         JSONObject result = new JSONObject();
+        File logFile = null;
+        File wheelFile = null;
+        File doorFile = null;
+        File gearFile = null;
+        File powerFile = null;
+        File appFile = null;
+        File summaryFile = null;
         try {
             ensureAppDirectories(context);
             File downloadDir = getAppDownloadDir();
-            File logFile = new File(downloadDir, "car_full.log");
-            if (logFile.exists()) {
-                logFile.delete();
-            }
+            File tempDir = new File(downloadDir, "log_verify_" + System.currentTimeMillis());
+            if (!tempDir.exists()) tempDir.mkdirs();
 
-            // 执行带有时间戳的 logcat 转储指令并重定向至 Download 目录
-            String cmd = "logcat -d -v time > " + logFile.getAbsolutePath();
+            // 1. 抓取最近 60 秒 logcat
+            logFile = new File(tempDir, "all.log");
+            String cmd = "logcat -d -v time -t 60000 > " + logFile.getAbsolutePath();
             executeShell(cmd);
 
-            if (logFile.exists() && logFile.length() > 0) {
-                File zipFile = new File(downloadDir, "car_full.zip");
-                if (zipFile.exists()) zipFile.delete();
-                boolean zipped = zipSingleFile(logFile, zipFile);
-                if (zipped && zipFile.exists() && zipFile.length() > 0) {
-                    logFile.delete(); // 立即清场大文本日志，极大节省车机内部存储
-                    result.put("success", true);
-                    result.put("path", zipFile.getAbsolutePath());
-                    double mb = zipFile.length() / (1024.0 * 1024.0);
-                    String sizeStr = (mb >= 1.0) ? String.format(java.util.Locale.CHINA, "%.2f MB", mb) : (zipFile.length() / 1024 + " KB");
-                    result.put("sizeStr", sizeStr);
-                    result.put("message", "日志采集并压缩成功，已保存至 Download/car_full.zip");
-                } else {
-                    result.put("success", true);
-                    result.put("path", logFile.getAbsolutePath());
-                    double mb = logFile.length() / (1024.0 * 1024.0);
-                    String sizeStr = (mb >= 1.0) ? String.format(java.util.Locale.CHINA, "%.2f MB", mb) : (logFile.length() / 1024 + " KB");
-                    result.put("sizeStr", sizeStr);
-                    result.put("message", "日志采集成功，已保存至 Download 目录");
-                }
-            } else {
+            if (!logFile.exists() || logFile.length() == 0) {
                 result.put("success", false);
                 result.put("message", "未能生成日志文件，请检查车机存储权限");
+                deleteRecursive(tempDir);
+                return result;
+            }
+
+            // 2. 按关键词分类过滤
+            wheelFile = filterLogByKeywords(logFile, new File(tempDir, "wheel.log"),
+                    "方控总线", "HAL_KEY", "HW_KEY_INPUT", "reportKeyToAdaptApi", "shouldCallback",
+                    "ECARX_KEY", "方控按键", "方向盘", "steering", "SWC", "按键");
+
+            doorFile = filterLogByKeywords(logFile, new File(tempDir, "door.log"),
+                    "DoorStateManager", "车门", "车门已打开", "车门已关好", "FL_DOOR", "FR_DOOR", "RL_DOOR", "RR_DOOR",
+                    "mModelLFDoor", "mModelRFDoor", "mModelLRDoor", "mModelRRDoor", "TRUNK", "尾门", "后备箱");
+
+            gearFile = filterLogByKeywords(logFile, new File(tempDir, "gear.log"),
+                    "GearStateMachine", "HAL档位", "ECARX_GEAR_POSITION", "GEAR_SELECTION", "CURRENT_GEAR",
+                    "换挡", "档位", "gear", "DRIVEINFO", "INFO_ID_VDRIVEINFO_GEAR_POSITION", "驾驶模式", "DriveMode");
+
+            powerFile = filterLogByKeywords(logFile, new File(tempDir, "power.log"),
+                    "PEPS_PowerMode", "INFO_ID_VPOWERINFO", "KEY_STATE", "ENGINE_STATE",
+                    "AP_POWER_BOOTUP_REASON", "电源状态", "点火", "熄火", "上电", "下电", "battery");
+
+            appFile = filterLogByKeywords(logFile, new File(tempDir, "app.log"),
+                    "GeelyToolbox", "VehicleAutomationService", "CarGearHALMonitor", "CarPropertyKeyMonitor",
+                    "VehicleVoicePlayer", "座舱引擎", "HAL探针", "去重");
+
+            // 3. 生成统计摘要
+            summaryFile = new File(tempDir, "summary.json");
+            JSONObject summary = buildLogSummary(logFile, wheelFile, doorFile, gearFile, powerFile, appFile);
+            writeTextFile(summaryFile, summary.toString(2));
+
+            // 4. 打包
+            String timeStamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.CHINA).format(new java.util.Date());
+            File zipFile = new File(downloadDir, "GeelyToolbox_LogVerify_" + timeStamp + ".zip");
+            if (zipFile.exists()) zipFile.delete();
+
+            List<File> filesToZip = new ArrayList<>();
+            filesToZip.add(logFile);
+            if (wheelFile.exists() && wheelFile.length() > 0) filesToZip.add(wheelFile);
+            if (doorFile.exists() && doorFile.length() > 0) filesToZip.add(doorFile);
+            if (gearFile.exists() && gearFile.length() > 0) filesToZip.add(gearFile);
+            if (powerFile.exists() && powerFile.length() > 0) filesToZip.add(powerFile);
+            if (appFile.exists() && appFile.length() > 0) filesToZip.add(appFile);
+            if (summaryFile.exists() && summaryFile.length() > 0) filesToZip.add(summaryFile);
+
+            boolean zipped = zipFiles(filesToZip, zipFile);
+
+            // 5. 清理临时目录
+            deleteRecursive(tempDir);
+
+            if (zipped && zipFile.exists() && zipFile.length() > 0) {
+                result.put("success", true);
+                result.put("path", zipFile.getAbsolutePath());
+                double mb = zipFile.length() / (1024.0 * 1024.0);
+                String sizeStr = (mb >= 1.0) ? String.format(java.util.Locale.CHINA, "%.2f MB", mb) : (zipFile.length() / 1024 + " KB");
+                result.put("sizeStr", sizeStr);
+                result.put("message", "协议验证日志已采集并打包: " + zipFile.getName());
+            } else {
+                result.put("success", false);
+                result.put("message", "日志打包失败");
             }
         } catch (Exception e) {
             try {
@@ -1018,6 +1108,97 @@ public class SystemUtils {
             } catch (Exception ignored) {}
         }
         return result;
+    }
+
+    private static File filterLogByKeywords(File src, File dest, String... keywords) {
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(src));
+             java.io.FileWriter writer = new java.io.FileWriter(dest)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String lower = line.toLowerCase();
+                for (String kw : keywords) {
+                    if (kw != null && lower.contains(kw.toLowerCase())) {
+                        writer.write(line);
+                        writer.write("\n");
+                        break;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return dest;
+    }
+
+    private static JSONObject buildLogSummary(File all, File wheel, File door, File gear, File power, File app) {
+        JSONObject summary = new JSONObject();
+        try {
+            summary.put("timestamp", new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.CHINA).format(new java.util.Date()));
+            summary.put("allLines", countLines(all));
+            summary.put("wheelLines", countLines(wheel));
+            summary.put("doorLines", countLines(door));
+            summary.put("gearLines", countLines(gear));
+            summary.put("powerLines", countLines(power));
+            summary.put("appLines", countLines(app));
+
+            JSONObject wheelStats = new JSONObject();
+            wheelStats.put("keyDown", countMatches(all, "方控总线", "Down") + countMatches(all, "reportKeyToAdaptApi", "press"));
+            wheelStats.put("keyUp", countMatches(all, "方控总线", "Up") + countMatches(all, "reportKeyToAdaptApi", "release"));
+            wheelStats.put("dedup", countMatches(all, "重复触发", "去重"));
+            summary.put("wheelStats", wheelStats);
+
+            JSONObject doorStats = new JSONObject();
+            doorStats.put("opened", countMatches(all, "车门已打开") + countMatches(all, "车门已打开"));
+            doorStats.put("closed", countMatches(all, "车门已关好") + countMatches(all, "车门已关好"));
+            doorStats.put("warning", countMatches(all, "车门未关好"));
+            summary.put("doorStats", doorStats);
+        } catch (Exception ignored) {}
+        return summary;
+    }
+
+    private static int countLines(File file) {
+        if (file == null || !file.exists()) return 0;
+        int count = 0;
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(file))) {
+            while (reader.readLine() != null) count++;
+        } catch (Exception ignored) {}
+        return count;
+    }
+
+    private static int countMatches(File file, String... needles) {
+        if (file == null || !file.exists()) return 0;
+        int count = 0;
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String lower = line.toLowerCase();
+                boolean match = true;
+                for (String n : needles) {
+                    if (n != null && !lower.contains(n.toLowerCase())) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) count++;
+            }
+        } catch (Exception ignored) {}
+        return count;
+    }
+
+    private static void writeTextFile(File file, String text) {
+        try (java.io.FileWriter writer = new java.io.FileWriter(file)) {
+            writer.write(text);
+        } catch (Exception ignored) {}
+    }
+
+    private static void deleteRecursive(File fileOrDirectory) {
+        if (fileOrDirectory.isDirectory()) {
+            File[] children = fileOrDirectory.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    deleteRecursive(child);
+                }
+            }
+        }
+        fileOrDirectory.delete();
     }
 
     private static void collectFiles(File dir, List<File> list) {
