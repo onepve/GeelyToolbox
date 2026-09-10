@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import app.onepve.geelyconsole.R;
 import app.onepve.geelyconsole.utils.AdbClient;
 import app.onepve.geelyconsole.utils.AppLogger;
+import app.onepve.geelyconsole.utils.CarGearHALMonitor;
 import app.onepve.geelyconsole.utils.DoorStateManager;
 import app.onepve.geelyconsole.utils.DriveModeManager;
 import app.onepve.geelyconsole.utils.GearStateMachine;
@@ -111,6 +112,10 @@ public class VehicleAutomationService extends Service {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private SteeringWheelKeyManager wheelKeyManager;
     private BroadcastReceiver powerReceiver;
+
+    // 底座车身数据监控引擎双轨切换 (log_mcu = MCU 串口报文监听 / native_hal = 原厂 HAL 直通)
+    private String monitorEngineMode = "log_mcu";
+    private CarGearHALMonitor carGearHALMonitor;
 
     // 四大独立解耦状态管理器
     private DoorStateManager doorStateManager;
@@ -270,7 +275,10 @@ public class VehicleAutomationService extends Service {
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
 
         String engineMode = prefs.getString("vehicle_monitor_engine_mode", "log_mcu");
+        boolean modeChanged = !engineMode.equals(monitorEngineMode);
+        monitorEngineMode = engineMode;
         AppLogger.i("座舱引擎", "底座车身数据监控引擎模式: " + ("native_hal".equals(engineMode) ? "原厂 HAL / CarService 直通 (实验测试通道)" : "MCU 串口底层报文流式监听 (成熟稳定)"));
+        syncHALGearMonitor(modeChanged);
 
         String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
         boolean wheelEnabled = wheelMasterSwitch && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
@@ -285,6 +293,42 @@ public class VehicleAutomationService extends Service {
 
         if (!anyEnabled) {
             stopSelf();
+        }
+    }
+
+    /**
+     * 原厂 HAL 档位直通监听同步
+     * 语音播报 HAL 协议实装入口：仅在「原厂 HAL / CarService 直通」模式下启动，
+     * 由 HAL 属性回调直接驱动换挡语音播报状态机；否则保持 MCU 串口报文通道。
+     */
+    private void syncHALGearMonitor(boolean modeChanged) {
+        boolean wantHal = "native_hal".equals(monitorEngineMode);
+        if (wantHal) {
+            if (carGearHALMonitor == null) {
+                carGearHALMonitor = new CarGearHALMonitor(this, new CarGearHALMonitor.Listener() {
+                    @Override
+                    public void onHalGear(int normalizedGear, String source) {
+                        AppLogger.i("HAL档位", "语音播报 HAL 档位来源: " + source + " -> 索引 " + normalizedGear);
+                        handleGearSignal(normalizedGear);
+                    }
+
+                    @Override
+                    public void onHalGearRaw(String source, int rawValue, int normalizedGear) {
+                        AppLogger.i("HAL档位", "原始报文 " + source + "=" + rawValue
+                                + " (0x" + Integer.toHexString(rawValue) + ")，识别索引=" + normalizedGear);
+                    }
+                });
+                carGearHALMonitor.start();
+            } else if (modeChanged) {
+                carGearHALMonitor.stop();
+                carGearHALMonitor.start();
+            }
+        } else {
+            if (carGearHALMonitor != null) {
+                carGearHALMonitor.stop();
+                carGearHALMonitor = null;
+                AppLogger.i("座舱引擎", "档位信号源已切回 MCU 串口底层报文通道");
+            }
         }
     }
 
@@ -452,7 +496,13 @@ public class VehicleAutomationService extends Service {
                 }
             }
             if (gearVal > 0) {
-                handleGearSignal(gearVal);
+                // 原厂 HAL 直通模式且已成功连上 CarService 时，档位以 HAL 属性回调为唯一权威源，
+                // 屏蔽 MCU 文本通道防止双通道重复触发换挡语音；HAL 未连通则自动回退 MCU 通道。
+                if (carGearHALMonitor != null && carGearHALMonitor.isConnected()) {
+                    AppLogger.i("HAL档位", "MCU 文本通道档位已屏蔽(HAL 直通中): " + gearVal);
+                } else {
+                    handleGearSignal(gearVal);
+                }
                 return;
             }
         }
@@ -798,6 +848,12 @@ public class VehicleAutomationService extends Service {
         if (logcatThread != null) {
             logcatThread.interrupt();
             logcatThread = null;
+        }
+        if (carGearHALMonitor != null) {
+            try {
+                carGearHALMonitor.stop();
+            } catch (Exception ignored) {}
+            carGearHALMonitor = null;
         }
         Log.i(TAG, "VehicleAutomationService stopped");
     }
