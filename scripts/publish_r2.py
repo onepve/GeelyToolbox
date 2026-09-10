@@ -21,21 +21,37 @@ def main():
 
     md5, sha256, bytes_len, size_mb = get_apk_meta(apk_path)
     tag_name = os.environ.get("TAG_NAME", "")
-    version_name = os.environ.get("VERSION_NAME", "1.4.2")
-    version_code = int(os.environ.get("VERSION_CODE", "7042"))
+    env_version_name = os.environ.get("VERSION_NAME", "").strip()
+    env_version_code = os.environ.get("VERSION_CODE", "").strip()
+    version_name = env_version_name or "0.0.0"
+    version_code = int(env_version_code) if env_version_code.isdigit() else 0
     today = date.today().isoformat()
 
-    # 如果有精准的 tag_name，以 Tag 中的版本为最高优先级！
+    # 版本号唯一权威来源：Tag（与 .github/workflows/ci.yml 的注入公式 100% 同源）
+    # 公式：(主*10000 + 次*100 + 修订) * 100 + 序号
+    #   正式版：vX.Y.Z    → 序号固定 99（如 v1.7.8  → 1070899）
+    #   测试版：beta-vX.Y.Z.N → 序号 N=1~98（如 beta-v1.7.8.2 → 1070802）
+    # 该公式彻底消除旧公式 7000+次*10+修订 的撞码缺陷（1.7.10 与 1.8.0 曾同为 7080）
     if tag_name:
-        clean_tag = tag_name.replace("beta-v", "").replace("v", "").strip()
-        if clean_tag:
-            version_name = clean_tag
-            parts = clean_tag.split(".")
-            if len(parts) >= 3:
-                try:
-                    version_code = 7000 + int(parts[1]) * 10 + int(parts[2])
-                except Exception:
-                    pass
+        is_beta_tag = tag_name.startswith("beta-")
+        clean_tag = tag_name[len("beta-v"):] if is_beta_tag else tag_name.lstrip("v").strip()
+        parts = clean_tag.split(".")
+        if len(parts) >= 3:
+            try:
+                maj, mi, pa = int(parts[0]), int(parts[1]), int(parts[2])
+                rev = int(parts[3]) if (is_beta_tag and len(parts) >= 4) else (99 if not is_beta_tag else None)
+                if rev is not None:
+                    derived_code = (maj * 10000 + mi * 100 + pa) * 100 + rev
+                    derived_name = f"{maj}.{mi}.{pa}-beta.{rev}" if is_beta_tag else f"{maj}.{mi}.{pa}"
+                    # 与 CI 注入进 build.gradle 的值交叉校验，两者必须完全一致
+                    if env_version_code.isdigit() and int(env_version_code) != derived_code:
+                        print(f"!! [FAIL] 版本号契约失衡：CI 注入 versionCode={env_version_code}，"
+                              f"按 Tag {tag_name} 推导应为 {derived_code}。拒绝发布以杜绝幻影升级。")
+                        sys.exit(1)
+                    version_code = derived_code
+                    version_name = derived_name
+            except Exception as e:
+                print(f">> Warn: 版本号推导失败，回退使用环境变量值: {e}")
 
     is_beta = tag_name.startswith("beta-")
     print(f">> Executing publish metadata: tag={tag_name}, is_beta={is_beta}, ver={version_name}, code={version_code}")

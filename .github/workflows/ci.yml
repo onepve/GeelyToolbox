@@ -51,11 +51,31 @@ jobs:
         run: |
           TAG_RAW="${GITHUB_REF#refs/tags/}"
           IS_BETA=false
-          if [[ "$TAG_RAW" == beta-* ]]; then IS_BETA=true; TAG_VER="${TAG_RAW#beta-v}"; else TAG_VER="${TAG_RAW#v}"; fi
-          IFS='.' read -r MAJ MIN PATCH <<< "$TAG_VER"
-          VCODE=$((7000 + MIN*10 + PATCH))
-          if $IS_BETA; then VNAME="${TAG_VER}-beta"; else VNAME="${TAG_VER}"; fi
-          echo "Injecting tag-driven version: ${VNAME} (versionCode ${VCODE})"
+          REV=99
+          if [[ "$TAG_RAW" == beta-* ]]; then
+            IS_BETA=true
+            TAG_VER="${TAG_RAW#beta-v}"
+            # 测试版必须使用四段号 beta-vX.Y.Z.N（N = 1~98 测试序号），严禁与正式版同码
+            IFS='.' read -r MAJ MIN PATCH REVISION <<< "$TAG_VER"
+            if [[ -z "$REVISION" ]]; then
+              echo "!! [FAIL] 测试版 Tag 必须为四段号 beta-vX.Y.Z.N（如 beta-v1.7.8.1），当前: ${TAG_RAW}"; exit 1
+            fi
+            REV="$REVISION"
+            if (( REV < 1 || REV > 98 )); then
+              echo "!! [FAIL] 测试序号必须为 1~98（beta-vX.Y.Z.N），当前: ${REV}"; exit 1
+            fi
+            BASE_VER="${MAJ}.${MIN}.${PATCH}"
+            VNAME="${BASE_VER}-beta.${REV}"
+          else
+            TAG_VER="${TAG_RAW#v}"
+            IFS='.' read -r MAJ MIN PATCH <<< "$TAG_VER"
+            BASE_VER="${TAG_VER}"
+            VNAME="${TAG_VER}"
+          fi
+          # 新公式（消除 1.7.10 与 1.8.0 撞码）：(主*10000+次*100+修订)*100 + 序号
+          # 正式版序号固定 99，测试版序号 1~98 → 同版本测试号恒排在正式号之前
+          VCODE=$(( (MAJ*10000 + MIN*100 + PATCH) * 100 + REV ))
+          echo "Injecting tag-driven version: ${VNAME} (versionCode ${VCODE}, base ${BASE_VER}, rev ${REV})"
           sed -i "s/versionCode [0-9]*/versionCode ${VCODE}/" app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${VNAME}\"/" app/build.gradle
           grep -E 'version(Name|Code)' app/build.gradle

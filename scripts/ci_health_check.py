@@ -670,7 +670,7 @@ else:
 
 
 # ----------------------------------------------------------------------
-# 17. Version Contract Consistency Gate (Tag ↔ build.gradle ↔ 7000+minor*10+patch)
+# 17. Version Contract Consistency Gate (Tag ↔ build.gradle ↔ (maj*10000+minor*100+patch)*100+rev)
 # ----------------------------------------------------------------------
 log_step("17. Checking Version Contract Consistency Gate (build.gradle ↔ Tag 同源同码)")
 with open(BUILD_GRADLE_PATH, "r", encoding="utf-8") as f:
@@ -684,21 +684,39 @@ if not m_code or not m_name:
 else:
     g_code = int(m_code.group(1))
     g_name = m_name.group(1).strip()
-    # 解析语义版本号 x.y.z（容忍 -beta / -rc 等后缀）
-    clean_name = re.sub(r'[-_].*$', '', g_name)
-    parts = clean_name.split('.')
-    expected = None
-    if len(parts) >= 2:
-        try:
-            expected = 7000 + int(parts[1]) * 10 + int(parts[2] if len(parts) >= 3 else 0)
-        except Exception:
-            expected = None
+
+    # 统一版本契约公式（与 .github/workflows/ci.yml / publish_r2.py 三处同源）：
+    #   (主*10000 + 次*100 + 修订) * 100 + 序号
+    #   正式版 vX.Y.Z       → 序号 99（versionName 形如 "1.7.8"）
+    #   测试版 beta-vX.Y.Z.N → 序号 N=1~98（versionName 形如 "1.7.8-beta.2"）
+    def _calc_code(maj, mi, pa, rev):
+        return (maj * 10000 + mi * 100 + pa) * 100 + rev
+
+    def _parse_gradle_name(name):
+        """解析 build.gradle 的 versionName，返回 (code, 基准号, 是否测试版) 或 None。"""
+        m2 = re.match(r'^(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?$', name.strip())
+        if not m2:
+            return None
+        maj, mi, pa = int(m2.group(1)), int(m2.group(2)), int(m2.group(3))
+        if m2.group(4) is None:
+            return _calc_code(maj, mi, pa, 99), f"{maj}.{mi}.{pa}", False
+        return _calc_code(maj, mi, pa, int(m2.group(4))), f"{maj}.{mi}.{pa}", True
+
+    parsed = _parse_gradle_name(g_name)
     ok = True
-    if expected is not None and g_code != expected:
-        print(f"[FAIL] build.gradle 版本契约失衡: versionName {g_name} 要求 versionCode={expected}，实际 versionCode={g_code}（publish_r2.py 按 7000+次版本*10+修订 生成云端元数据）")
-        ok = False
+    if parsed is not None:
+        expected, base_ver, is_g_beta = parsed
+        if g_code != expected:
+            print(f"[FAIL] build.gradle 版本契约失衡: versionName {g_name} 要求 versionCode={expected}，实际 versionCode={g_code}（公式 (主*10000+次*100+修订)*100+序号，正式版序号 99 / 测试版 1~98）")
+            ok = False
+        elif is_g_beta and not 1 <= int(g_name.rsplit('.', 1)[-1]) <= 98:
+            print(f"[FAIL] build.gradle 测试版序号越界（必须 1~98）: {g_name}")
+            ok = False
+        else:
+            print(f"[PASS] build.gradle 语义版本与 versionCode 公式一致: {g_name} -> code {g_code}")
     else:
-        print(f"[PASS] build.gradle 语义版本与 versionCode 公式一致: {g_name} -> code {g_code}")
+        print(f"[FAIL] build.gradle versionName 格式非法: {g_name}（应为 X.Y.Z 或 X.Y.Z-beta.N）")
+        ok = False
 
     # CI tag 环境强校验（Inject 步骤已前置到健康检查之前，此处应完全对齐）
     ref = os.environ.get("GITHUB_REF", "")
@@ -706,20 +724,41 @@ else:
         tag = ref[len("refs/tags/"):]
         is_beta_tag = tag.startswith("beta-")
         ver = tag[len("beta-v"):] if is_beta_tag else tag[len("v"):]
-        exp_name = f"{ver}-beta" if is_beta_tag else ver
         tparts = ver.split('.')
         exp_code = None
-        if len(tparts) >= 3:
-            try:
-                exp_code = 7000 + int(tparts[1]) * 10 + int(tparts[2])
-            except Exception:
-                exp_code = None
-        if exp_code is not None:
+        exp_name = None
+        if is_beta_tag:
+            # 测试版必须四段号，序号 1~98 且恒小于同版本正式版的 99
+            if len(tparts) == 4:
+                try:
+                    tmaj, tmi, tpa, trev = (int(x) for x in tparts)
+                    if 1 <= trev <= 98:
+                        exp_code = _calc_code(tmaj, tmi, tpa, trev)
+                        exp_name = f"{tmaj}.{tmi}.{tpa}-beta.{trev}"
+                except Exception:
+                    exp_code = None
+            if exp_code is None:
+                print(f"[FAIL] 测试版 Tag 必须为四段号 beta-vX.Y.Z.N 且序号 1~98，当前: {tag}")
+                ok = False
+        else:
+            if len(tparts) == 3:
+                try:
+                    tmaj, tmi, tpa = (int(x) for x in tparts)
+                    exp_code = _calc_code(tmaj, tmi, tpa, 99)
+                    exp_name = f"{tmaj}.{tmi}.{tpa}"
+                except Exception:
+                    exp_code = None
+            if exp_code is None:
+                print(f"[FAIL] 正式版 Tag 必须为三段号 vX.Y.Z，当前: {tag}")
+                ok = False
+
+        if ok and exp_code is not None:
             if g_code != exp_code or g_name != exp_name:
                 print(f"[FAIL] 当前 tag {tag} 要求 versionName={exp_name} versionCode={exp_code}，但 build.gradle 实际为 {g_name}/{g_code} —— 版本契约不匹配，APK 将永远被云端判定为旧版，拒绝发版！")
                 ok = False
             else:
                 print(f"[PASS] 当前 tag {tag} 与 build.gradle 完全对齐: {g_name} (code {g_code})")
+
     if not ok:
         passed = False
     else:
