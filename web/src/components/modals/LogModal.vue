@@ -2,7 +2,7 @@
   <ModalWrapper
     :show="store.modals.log"
     title="吉利智驾 · 运行与守护日志"
-    :badge="autoScroll ? '● 实时轮转中 (1.5s)' : '⏸️ 自动滚动已暂停'"
+    :badge="autoScroll ? '● 实时轮转中 (1.5s)' : '○ 自动滚动已暂停'"
     maxWidthClass="max-w-[1080px]"
     :showCloseButton="false"
     @close="closeModal('log')"
@@ -26,16 +26,15 @@
       <!-- 模块日志开关：用户可独立控制高频模块写入，默认关闭以避免日志风暴卡死界面 -->
       <div class="bg-car-item border border-car-border rounded-xl p-3 shadow-sm">
         <div class="text-[13.5px] text-car-sub font-bold mb-2 flex items-center">
-          <span class="mr-1.5">🎛️</span>
           模块日志采集开关（默认关闭高频通道，按需开启）
         </div>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap -mb-2">
           <button
             v-for="item in moduleSwitches"
             :key="item.key"
             @click="toggleModule(item.key)"
             :class="[
-              'px-3 py-1.5 rounded-lg border-2 text-[13px] font-black cursor-pointer transition-all',
+              'mr-2 mb-2 px-3 py-1.5 rounded-lg border-2 text-[13px] font-black cursor-pointer transition-all',
               item.enabled
                 ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-400'
                 : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
@@ -71,20 +70,20 @@
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
-            <span class="mr-1.5">{{ autoScroll ? '●' : '⏸️' }}</span>
+            <span class="mr-1.5">{{ autoScroll ? '●' : '○' }}</span>
             {{ autoScroll ? '自动滚动: 开启' : '自动滚动: 暂停' }}
           </button>
           <button 
             @click="manualRefresh"
             class="min-h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center"
           >
-            <span class="mr-1.5">🔄</span> 刷新日志
+            刷新日志
           </button>
           <button 
             @click="clearLogs"
             class="min-h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-border hover:border-rose-500/40 text-car-text hover:text-rose-400 font-black text-[15.5px] cursor-pointer shadow-sm transition-all flex items-center"
           >
-            <span class="mr-1.5 opacity-80">🗑️</span> 清空
+            清空
           </button>
         </div>
 

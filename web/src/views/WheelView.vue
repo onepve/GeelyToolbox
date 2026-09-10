@@ -47,7 +47,7 @@
           </div>
         </div>
         <button 
-          @click="showDiagram = !showDiagram"
+          @click="toggleDiagram()"
           class="h-[44px] px-5 rounded-xl bg-car-card border border-car-border text-car-sub hover:text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light transition-all shadow-sm"
         >
           {{ showDiagram ? '收起图解' : '展开图解' }}
@@ -501,7 +501,14 @@ import MatrixButton from '../components/MatrixButton.vue';
 import { store, bridge, showToast, openModal } from '../store';
 import wheelGuideImg from '../assets/steering_wheel_guide.webp';
 
-const showDiagram = ref(true);
+// 原厂方控图解：默认折叠，并记忆上次的展开/折叠状态
+const DIAGRAM_KEY = 'wheel_diagram_expanded';
+const showDiagram = ref(localStorage.getItem(DIAGRAM_KEY) === 'true');
+
+function toggleDiagram() {
+  showDiagram.value = !showDiagram.value;
+  localStorage.setItem(DIAGRAM_KEY, String(showDiagram.value));
+}
 const longPressSec = computed({
   get: () => {
     const ms = store.vehicleAuto.wheel_long_press_ms || 1500;
