@@ -5,6 +5,9 @@ import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 
+import java.util.Map;
+import java.util.HashMap;
+
 import app.onepve.geelyconsole.services.VehicleAutomationService;
 
 /**
@@ -74,6 +77,20 @@ public class DoorStateManager {
         AppLogger.i("四门门控", "熄火休眠复位: 四门乘员感知状态机重置归位");
     }
 
+    /** 车辆点火/上电/运行中：主驾一定在车内，避免"车门已打开"被误判为上车 */
+    public synchronized void markDriverInside() {
+        if (!isDriverInside) {
+            isDriverInside = true;
+            AppLogger.i("四门门控", "点火/上电确认 -> 主驾已就坐基准建立");
+        }
+    }
+
+    /** 冷启动/解锁唤醒：主驾可能即将登车，把主驾座椅先置为'车外'，这样开门会播报"车门已打开" */
+    public synchronized void markDriverMayEnter() {
+        isDriverInside = false;
+        AppLogger.i("四门门控", "冷启动/解锁 -> 主驾待登车基准建立");
+    }
+
     /**
      * 更新四门物理状态 (由串口 b6 整体更新，或 MCULog 单门更新)
      */
@@ -87,8 +104,9 @@ public class DoorStateManager {
             currentRL = (rl >= 0) ? rl : 0;
             currentRR = (rr >= 0) ? rr : 0;
 
-            // 若开机时主驾门是关着的，说明车主已登车点火就绪；若主驾门开着，说明车主刚探身点火门尚未闭合
-            isDriverInside = (currentFL == 0);
+            // 乘员就坐状态不由车门初始位置决定，统一等待电源/点火状态机通知。
+            // 默认值保持 false，点火后 markDriverInside() 会立刻把主驾置为在车内。
+            isDriverInside = false;
 
             AppLogger.i("四门门控", "四门物理基准初始化: FL=" + currentFL + ", FR=" + currentFR + ", RL=" + currentRL + ", RR=" + currentRR + " (主驾就坐=" + isDriverInside + ")");
             if (listener != null) {
@@ -140,11 +158,24 @@ public class DoorStateManager {
     /**
      * 单门状态跃变处理 (0ms 瞬发响应，打断旧声音)
      */
+    // 同门同动作语音防抖 (2000ms)，防止多源报文串扰导致重复播报
+    private final Map<String, Long> lastVoiceTime = new HashMap<>();
+    private static final long DOOR_VOICE_DEBOUNCE_MS = 2000;
+
     private void handleDoorTransition(String doorCode, String doorName, int newSts, int oldSts, boolean universalMode, boolean voiceMasterSwitch, SharedPreferences prefs) {
         // 瞬间打断当前旧声音，实现干脆立断秒响应
         if (voicePlayer != null) {
             voicePlayer.stopCurrentVoice();
         }
+
+        String voiceKey = doorCode + "_" + newSts;
+        long now = System.currentTimeMillis();
+        Long last = lastVoiceTime.get(voiceKey);
+        if (last != null && (now - last) < DOOR_VOICE_DEBOUNCE_MS) {
+            AppLogger.i("四门门控", "同门同动作 2s 内重复触发，已抑制: " + doorName + (newSts == 1 ? "开" : "关"));
+            return;
+        }
+        lastVoiceTime.put(voiceKey, now);
 
         // 1. 行车中门开判定 (挂入前进挡、倒车挡或车速大于0) -> 最高优先级紧急报警
         boolean isDriving = (VehicleAutomationService.lastGearPos == 2 || VehicleAutomationService.lastGearPos == 4 || VehicleAutomationService.currentSpeedKmH > 0);

@@ -248,9 +248,19 @@ public class SteeringWheelKeyManager {
     /**
      * 按下事件：记录时间并启动 500ms 长按检测定时器
      */
+    private final Map<Integer, Long> lastKeyDownTime = new HashMap<>();
+    private static final long KEYDOWN_DEDUP_MS = 80;
+
     public void handleKeyDown(final int keyCode) {
         if (!prefs.getBoolean("wheel_master_switch", true)) return;
         long now = System.currentTimeMillis();
+        Long lastDown = lastKeyDownTime.get(keyCode);
+        if (lastDown != null && (now - lastDown) < KEYDOWN_DEDUP_MS) {
+            // 已处于按下态，仅更新时间戳，避免重复启动长按计时器
+            keyDownTimes.put(keyCode, now);
+            return;
+        }
+        lastKeyDownTime.put(keyCode, now);
         keyDownTimes.put(keyCode, now);
         isLongPressed.put(keyCode, false);
 
@@ -273,8 +283,20 @@ public class SteeringWheelKeyManager {
     /**
      * 抬起事件：取消长按，判定单击或多击 (0ms 极速响应优化)
      */
+    // 同一物理键 press/release 跨通道去重：避免 logcat + HAL + 广播导致的一次按键被算多次
+    private final Map<Integer, Long> lastKeyUpTime = new HashMap<>();
+    private static final long KEYUP_DEDUP_MS = 80;
+
     public void handleKeyUp(final int keyCode) {
         if (!prefs.getBoolean("wheel_master_switch", true)) return;
+        long now = System.currentTimeMillis();
+        Long lastUp = lastKeyUpTime.get(keyCode);
+        if (lastUp != null && (now - lastUp) < KEYUP_DEDUP_MS) {
+            AppLogger.i("方控总线", "按键 " + keyCode + " 80ms 内重复 Up，已去重");
+            return;
+        }
+        lastKeyUpTime.put(keyCode, now);
+
         Runnable lpTask = pendingLongTasks.remove(keyCode);
         if (lpTask != null) {
             mainHandler.removeCallbacks(lpTask);
@@ -353,8 +375,19 @@ public class SteeringWheelKeyManager {
         }
     }
 
+    // 同一动作跨通道去重窗口：HAL/logcat/广播可能在 80ms 内同时到达，只执行一次
+    private final Map<String, Long> lastActionTime = new HashMap<>();
+    private static final long ACTION_DEDUP_MS = 120;
+
     private void executeAction(String action) {
         if (action == null || ACTION_DEFAULT.equals(action)) return;
+        long now = System.currentTimeMillis();
+        Long last = lastActionTime.get(action);
+        if (last != null && (now - last) < ACTION_DEDUP_MS) {
+            AppLogger.i("方控动作", "动作 " + action + " 120ms 内重复触发，已去重");
+            return;
+        }
+        lastActionTime.put(action, now);
         Log.i(TAG, "Executing wheel action: " + action);
         if (action.startsWith("app:")) {
             String pkg = action.substring(4).trim();

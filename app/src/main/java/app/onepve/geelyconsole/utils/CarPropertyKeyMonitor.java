@@ -19,6 +19,8 @@ public class CarPropertyKeyMonitor {
     private static final String TAG = "CarPropertyKeyMonitor";
     private static final int HW_KEY_INPUT = 678428923;
     private static final long CONNECT_TIMEOUT_MS = 5000;
+    private static final int MAX_RETRIES = 3;
+    private int connectRetries = 0;
 
     private final Context context;
     private final Listener listener;
@@ -44,7 +46,13 @@ public class CarPropertyKeyMonitor {
         @Override
         public void run() {
             if (!connected && running) {
-                Log.w(TAG, "CarService connect timeout (5000ms), fallback to logcat only");
+                Log.w(TAG, "CarService connect timeout (5000ms), attempt=" + (connectRetries + 1));
+                if (connectRetries < MAX_RETRIES) {
+                    connectRetries++;
+                    connectCar();
+                } else {
+                    Log.w(TAG, "CarService connect failed after " + MAX_RETRIES + " retries, fallback to logcat only");
+                }
             }
         }
     };
@@ -128,6 +136,7 @@ public class CarPropertyKeyMonitor {
                         String name = method.getName();
                         if ("onServiceConnected".equals(name)) {
                             Log.i(TAG, "CarService connected (" + iface.getSimpleName() + ")");
+                            connectRetries = 0;
                             connected = true;
                             handler.removeCallbacks(connectTimeoutRunnable);
                             if (registerPropertyCallback()) {
@@ -136,6 +145,15 @@ public class CarPropertyKeyMonitor {
                         } else if ("onServiceDisconnected".equals(name)) {
                             Log.w(TAG, "CarService disconnected");
                             connected = false;
+                            if (running && connectRetries < MAX_RETRIES) {
+                                connectRetries++;
+                                handler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (running && !connected) connectCar();
+                                    }
+                                }, 3000);
+                            }
                         }
                         return null;
                     }
@@ -197,7 +215,16 @@ public class CarPropertyKeyMonitor {
             int rawCode = arr[1]; // 45=OK (滚轮下按), 306, etc.
 
             // 硬件码映射：45 映射为标准的 KEY_OK (306)
-            final int keyCode = (rawCode == 45) ? SteeringWheelKeyManager.KEY_OK : rawCode;
+            final int keyCode;
+            switch (rawCode) {
+                case 45: keyCode = SteeringWheelKeyManager.KEY_OK; break;
+                case 304: keyCode = SteeringWheelKeyManager.KEY_PREV; break;
+                case 305: keyCode = SteeringWheelKeyManager.KEY_NEXT; break;
+                case 306: keyCode = SteeringWheelKeyManager.KEY_OK; break;
+                case 348: keyCode = SteeringWheelKeyManager.KEY_WMODE; break;
+                case 349: keyCode = SteeringWheelKeyManager.KEY_CUSTOM; break;
+                default: keyCode = rawCode; break;
+            }
 
             AppLogger.i("方控总线", "CarProperty 收到硬件按键: rawCode=" + rawCode + " -> " + keyCode + ", action=" + (action == 0 ? "DOWN" : "UP"));
 

@@ -95,6 +95,8 @@ public class VehicleAutomationService extends Service {
     public static volatile int lastDriveMode = -1;
     private int lastLightSts = -1;
     private int lastPowerMode = -1;
+    private int lastKeyState = -1;
+    private int lastEngineState = -1;
     public static volatile int currentSpeedKmH = 0;
     private boolean is360OpenedByTurn = false;
 
@@ -112,6 +114,7 @@ public class VehicleAutomationService extends Service {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private SteeringWheelKeyManager wheelKeyManager;
     private BroadcastReceiver powerReceiver;
+    private BroadcastReceiver ecarxKeyReceiver;
 
     // 底座车身数据监控引擎双轨切换 (log_mcu = MCU 串口报文监听 / native_hal = 原厂 HAL 直通)
     private String monitorEngineMode = "log_mcu";
@@ -234,6 +237,7 @@ public class VehicleAutomationService extends Service {
 
         registerPowerStateReceiver();
         startLogcatReader();
+        registerEcarxKeyReceiver();
         AppLogger.i("座舱服务", "车辆启动自动运行守护服务已启动 -> 开启底层门控、挡位与方控全量监听");
         Log.i(TAG, "VehicleAutomationService started successfully");
     }
@@ -279,6 +283,11 @@ public class VehicleAutomationService extends Service {
         monitorEngineMode = engineMode;
         AppLogger.i("座舱引擎", "底座车身数据监控引擎模式: " + ("native_hal".equals(engineMode) ? "原厂 HAL / CarService 直通 (实验测试通道)" : "MCU 串口底层报文流式监听 (成熟稳定)"));
         syncHALGearMonitor(modeChanged);
+
+        // 若服务在行车中启动，立即建立主驾已就坐基准，避免车门语音误判为上车
+        if (lastPowerMode > 0 && doorStateManager != null) {
+            doorStateManager.markDriverInside();
+        }
 
         String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
         boolean wheelEnabled = wheelMasterSwitch && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
@@ -329,6 +338,65 @@ public class VehicleAutomationService extends Service {
                 carGearHALMonitor = null;
                 AppLogger.i("座舱引擎", "档位信号源已切回 MCU 串口底层报文通道");
             }
+        }
+    }
+
+    /**
+     * 注册亿咖通原厂方控广播监听 (ECARX_KEY_*)，作为 logcat/HAL 双通道的容灾备份。
+     * 这些广播由 CarInputService / 多媒体框架在解析 HW_KEY_INPUT 后发出，
+     * 对于电话、静音、切歌等键更稳定可靠。
+     */
+    private void registerEcarxKeyReceiver() {
+        if (ecarxKeyReceiver != null) return;
+        ecarxKeyReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent == null) return;
+                String action = intent.getAction();
+                if (action == null) return;
+                int actionType = intent.getIntExtra("ecarx.extra.ECARX_KEY_ACTION_TYPE", -1);
+                if (actionType != 0) return; // 当前只处理短按；长按由 HAL/logcat 手势层处理
+
+                int mappedKey = -1;
+                switch (action) {
+                    case "ecarx.intent.action.ECARX_KEY_RCALL_EVENT":
+                        mappedKey = SteeringWheelKeyManager.KEY_OK; // 电话接听/挂断键 -> 先映射到 OK，由车主手势配置决定
+                        break;
+                    case "ecarx.intent.action.ECARX_KEY_MUTE_EVENT":
+                        mappedKey = SteeringWheelKeyManager.KEY_MUTE;
+                        break;
+                    case "ecarx.intent.action.ECARX_KEY_RMULTIFUNCTION_EVENT":
+                        mappedKey = SteeringWheelKeyManager.KEY_OK;
+                        break;
+                    case "ecarx.intent.action.ECARX_KEY_BLELEFTMOVE_EVENT":
+                        mappedKey = SteeringWheelKeyManager.KEY_PREV;
+                        break;
+                    case "ecarx.intent.action.ECARX_KEY_BLEPLAYPAUSE_EVENT":
+                        mappedKey = SteeringWheelKeyManager.KEY_OK;
+                        break;
+                    case "ecarx.intent.action.ECARX_KEY_BLERIGHTMOVE_EVENT":
+                        mappedKey = SteeringWheelKeyManager.KEY_NEXT;
+                        break;
+                }
+                if (mappedKey > 0 && wheelKeyManager != null) {
+                    AppLogger.i("方控总线", "ECARX广播触发: " + action + " -> key=" + mappedKey);
+                    wheelKeyManager.handleKeyDown(mappedKey);
+                    wheelKeyManager.handleKeyUp(mappedKey);
+                }
+            }
+        };
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("ecarx.intent.action.ECARX_KEY_RCALL_EVENT");
+        filter.addAction("ecarx.intent.action.ECARX_KEY_MUTE_EVENT");
+        filter.addAction("ecarx.intent.action.ECARX_KEY_RMULTIFUNCTION_EVENT");
+        filter.addAction("ecarx.intent.action.ECARX_KEY_BLELEFTMOVE_EVENT");
+        filter.addAction("ecarx.intent.action.ECARX_KEY_BLEPLAYPAUSE_EVENT");
+        filter.addAction("ecarx.intent.action.ECARX_KEY_BLERIGHTMOVE_EVENT");
+        try {
+            registerReceiver(ecarxKeyReceiver, filter);
+            AppLogger.i("方控总线", "ECARX_KEY_* 广播监听器已注册");
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to register ECARX key receiver: " + e.getMessage());
         }
     }
 
@@ -436,10 +504,11 @@ public class VehicleAutomationService extends Service {
         if (line == null || line.isEmpty()) return;
 
         // 1. 解析方向盘按键
+        // parseKeyFromLine 内部已根据 press/release 调用 handleKeyDown/handleKeyUp，
+        // 这里只负责识别到按键后提前结束本行解析，避免继续被其它正则误匹配。
         if (wheelKeyManager != null) {
             int wheelKey = wheelKeyManager.parseKeyFromLine(line);
             if (wheelKey > 0) {
-                wheelKeyManager.handleWheelKey(wheelKey);
                 return;
             }
         }
@@ -652,6 +721,13 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
+        // 4.9 解析点火/电源状态 (PEPS_PowerMode / KEY_STATE / ENGINE_STATE / AP_POWER_BOOTUP_REASON)
+        int keyVal = parsePowerStateLine(line);
+        if (keyVal >= 0) {
+            handlePowerState(keyVal, line);
+            return;
+        }
+
         // 5. 解析 CAN 数据: parseCanData
         if (line.contains("parseCanData")) {
             try {
@@ -794,6 +870,89 @@ public class VehicleAutomationService extends Service {
         }
     }
 
+    /**
+     * 从 logcat 行解析电源/点火状态。
+     * 返回：-1 = 未匹配；0 = 关/熄火；1 = ACC；2 = ON；3 = 引擎运行；
+     *      100 + bootReason = AP_POWER_BOOTUP_REASON。
+     */
+    private int parsePowerStateLine(String line) {
+        if (line == null) return -1;
+        String l = line.toLowerCase();
+        try {
+            if (l.contains("peps_powermode")) {
+                Matcher m = Pattern.compile("peps_powermode[^0-9]*(\\d+)").matcher(l);
+                if (m.find()) return Integer.parseInt(m.group(1));
+            }
+            if (l.contains("info_id_vpowerinfo_key_state") || l.contains("key_state")) {
+                Matcher m = Pattern.compile("(?:info_id_vpowerinfo_key_state|key_state)[^0-9]*(\\d+)").matcher(l);
+                if (m.find()) return Integer.parseInt(m.group(1));
+            }
+            if (l.contains("info_id_vpowerinfo_engine_state") || l.contains("engine_state")) {
+                Matcher m = Pattern.compile("(?:info_id_vpowerinfo_engine_state|engine_state)[^0-9]*(\\d+)").matcher(l);
+                if (m.find()) return Integer.parseInt(m.group(1));
+            }
+            if (l.contains("ap_power_bootup_reason")) {
+                Matcher m = Pattern.compile("ap_power_bootup_reason[^0-9]*(\\d+)").matcher(l);
+                if (m.find()) return 100 + Integer.parseInt(m.group(1));
+            }
+        } catch (Exception ignored) {}
+        return -1;
+    }
+
+    private void handlePowerState(int val, String rawLine) {
+        if (val >= 100) {
+            int bootReason = val - 100;
+            AppLogger.i("电源状态", "AP 冷启动原因=" + bootReason + " | " + rawLine.trim());
+            if (bootReason == 0 || bootReason == 1) {
+                // 用户上电或解锁 -> 默认认为主驾将登车，座椅状态机准备
+                doorStateManager.markDriverMayEnter();
+            }
+            return;
+        }
+
+        // KEY_STATE: 0=关 1=ACC 2=ON
+        if (rawLine.toLowerCase().contains("key_state") || rawLine.toLowerCase().contains("info_id_vpowerinfo_key_state")) {
+            lastKeyState = val;
+            if (val == 2) {
+                lastPowerMode = 1; // ON 视为点火就绪
+                doorStateManager.markDriverInside();
+                AppLogger.i("电源状态", "钥匙 ON -> 主驾已就坐基准建立");
+            } else if (val == 0) {
+                lastPowerMode = 0;
+            }
+        }
+        // ENGINE_STATE: 0=停止 1=启动中 2=停止中 3=运行
+        if (rawLine.toLowerCase().contains("engine_state") || rawLine.toLowerCase().contains("info_id_vpowerinfo_engine_state")) {
+            lastEngineState = val;
+            if (val == 3) {
+                lastPowerMode = 1;
+                doorStateManager.markDriverInside();
+            } else if (val == 0) {
+                // 引擎停止不一定熄火，等待 PEPS_PowerMode=0 或 KEY_STATE=0
+            }
+        }
+        // PEPS_PowerMode
+        if (rawLine.toLowerCase().contains("peps_powermode")) {
+            lastPowerMode = val;
+            if (val > 0) {
+                doorStateManager.markDriverInside();
+            } else {
+                resetAllStateMachines(true);
+            }
+        }
+
+        AppLogger.i("电源状态", "key=" + lastKeyState + " engine=" + lastEngineState + " powerMode=" + lastPowerMode + " | " + rawLine.trim());
+    }
+
+    private void resetAllStateMachines(boolean flameout) {
+        if (gearStateMachine != null) gearStateMachine.resetState();
+        if (driveModeManager != null) driveModeManager.resetState();
+        if (doorStateManager != null) doorStateManager.resetState();
+        if (flameout && enableFlameoutVoice && voicePlayer != null) {
+            voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品");
+        }
+    }
+
     private void open360Camera() {
         try {
             Intent intent = getPackageManager().getLaunchIntentForPackage("ecarx.camera.calibration");
@@ -848,6 +1007,12 @@ public class VehicleAutomationService extends Service {
         if (logcatThread != null) {
             logcatThread.interrupt();
             logcatThread = null;
+        }
+        if (ecarxKeyReceiver != null) {
+            try {
+                unregisterReceiver(ecarxKeyReceiver);
+            } catch (Exception ignored) {}
+            ecarxKeyReceiver = null;
         }
         if (carGearHALMonitor != null) {
             try {
