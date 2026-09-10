@@ -101,6 +101,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         currentActivity = new WeakReference<>(this);
+        AppLogger.init(this);
         hideSystemUI();
         setContentView(R.layout.activity_main);
 
@@ -1064,6 +1065,17 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             } catch (Exception e) {
                 return "{\"path\":\"/sdcard/Download/geely_toolbox.log\",\"size\":\"0 KB\"}";
             }
+        }
+
+        @JavascriptInterface
+        public String getLogModuleSwitches() {
+            return AppLogger.getAllModuleSwitchesJson();
+        }
+
+        @JavascriptInterface
+        public boolean setLogModuleSwitch(String module, boolean enabled) {
+            AppLogger.setModuleEnabled(module, enabled);
+            return true;
         }
 
         @JavascriptInterface

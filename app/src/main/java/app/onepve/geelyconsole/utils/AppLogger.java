@@ -32,12 +32,59 @@ public class AppLogger {
 
     private static final String TAG = "GeelyToolbox_Logger";
     private static final String LOG_FILENAME = "geely_toolbox.log";
-    private static final long MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+    private static final long MAX_FILE_SIZE = 512 * 1024; // 512KB，防止日志界面读取卡死
     private static final int MAX_BACKUP_COUNT = 3;
     private static final long MAX_RETENTION_MILLIS = 7L * 24 * 60 * 60 * 1000; // 7 天
+    private static final long LOG_DEDUP_MILLIS = 1000; // 相同模块+消息 1s 内只写一次，抑制日志风暴
 
     private static final ExecutorService logExecutor = Executors.newSingleThreadExecutor();
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.CHINA);
+    private static final java.util.Map<String, Long> lastLogTime = new java.util.HashMap<>();
+
+    private static android.content.Context appContext = null;
+    private static final String PREFS_LOG_SWITCHES = "log_module_switches";
+    // 高频模块默认关闭文件写入，避免日志风暴导致界面卡死；关键/异常日志始终保留
+    private static final java.util.Map<String, Boolean> DEFAULT_MODULE_STATES = new java.util.HashMap<>();
+    private static final java.util.List<String> KNOWN_MODULES = java.util.Arrays.asList(
+            "方控按键", "车门状态", "挡位状态", "驾驶模式", "电源状态", "HAL探针", "系统日志");
+    static {
+        DEFAULT_MODULE_STATES.put("方控按键", false);
+        DEFAULT_MODULE_STATES.put("车门状态", false);
+        DEFAULT_MODULE_STATES.put("挡位状态", false);
+        DEFAULT_MODULE_STATES.put("驾驶模式", false);
+        DEFAULT_MODULE_STATES.put("电源状态", false);
+        DEFAULT_MODULE_STATES.put("HAL探针", false);
+        DEFAULT_MODULE_STATES.put("系统日志", false);
+    }
+
+    public static void init(android.content.Context ctx) {
+        if (ctx != null) appContext = ctx.getApplicationContext();
+    }
+
+    public static boolean isModuleEnabled(String module) {
+        if (appContext == null) return true; // 未初始化前保持兼容：默认允许写入
+        android.content.SharedPreferences prefs = appContext.getSharedPreferences(PREFS_LOG_SWITCHES, android.content.Context.MODE_PRIVATE);
+        Boolean def = DEFAULT_MODULE_STATES.get(module);
+        return prefs.getBoolean(module, def == null || def);
+    }
+
+    public static void setModuleEnabled(String module, boolean enabled) {
+        if (appContext == null) return;
+        android.content.SharedPreferences prefs = appContext.getSharedPreferences(PREFS_LOG_SWITCHES, android.content.Context.MODE_PRIVATE);
+        prefs.edit().putBoolean(module, enabled).apply();
+    }
+
+    public static String getAllModuleSwitchesJson() {
+        try {
+            org.json.JSONObject obj = new org.json.JSONObject();
+            for (String m : KNOWN_MODULES) {
+                obj.put(m, isModuleEnabled(m));
+            }
+            return obj.toString();
+        } catch (Exception e) {
+            return "{}";
+        }
+    }
 
     public static File getLogFile() {
         File downloadDir = SystemUtils.getAppDownloadDir();
@@ -79,16 +126,34 @@ public class AppLogger {
 
     private static void writeLog(final String level, final String module, final String message, final Throwable tr) {
         final long time = System.currentTimeMillis();
-        // 同时在系统 Logcat 输出
+
+        // 高频模块被用户关闭时：不再写文件，也不再输出 logcat（ERROR 始终保留）
+        final boolean fileEnabled = "ERROR".equals(level) || isModuleEnabled(module);
+
+        // 抑制日志风暴：同一模块+消息 1s 内只写一次（异常/ERROR 不受限）
+        String dedupKey = level + "|" + module + "|" + message;
+        synchronized (lastLogTime) {
+            Long last = lastLogTime.get(dedupKey);
+            if (last != null && (time - last) < LOG_DEDUP_MILLIS && !"ERROR".equals(level)) {
+                return;
+            }
+            lastLogTime.put(dedupKey, time);
+        }
+
+        // 同时在系统 Logcat 输出（高频模块关闭时仅保留 ERROR；守护线程已过滤本应用标签，避免回环）
         String logcatMsg = "[" + module + "] " + message;
         if ("ERROR".equals(level)) {
             if (tr != null) Log.e(TAG, logcatMsg, tr);
             else Log.e(TAG, logcatMsg);
-        } else if ("WARN".equals(level)) {
-            Log.w(TAG, logcatMsg);
-        } else {
-            Log.i(TAG, logcatMsg);
+        } else if (fileEnabled) {
+            if ("WARN".equals(level)) {
+                Log.w(TAG, logcatMsg);
+            } else {
+                Log.i(TAG, logcatMsg);
+            }
         }
+
+        if (!fileEnabled) return;
 
         logExecutor.execute(new Runnable() {
             @Override
@@ -176,10 +241,21 @@ public class AppLogger {
             return "暂无运行日志记录。";
         }
 
+        // 性能优化：先按字节从尾部读取一个窗口，避免每次读完整文件
         List<String> lines = new ArrayList<>();
         try {
-            FileInputStream fis = new FileInputStream(file);
-            BufferedReader br = new BufferedReader(new InputStreamReader(fis, "UTF-8"));
+            long fileLen = file.length();
+            int windowSize = (int) Math.min(fileLen, maxLines * 256L); // 预估每行 256 字节
+            long startPos = Math.max(0, fileLen - windowSize);
+
+            java.io.RandomAccessFile raf = new java.io.RandomAccessFile(file, "r");
+            raf.seek(startPos);
+            // 如果不在文件开头，丢弃第一行（可能不完整）
+            if (startPos > 0) {
+                raf.readLine();
+            }
+            BufferedReader br = new BufferedReader(new InputStreamReader(
+                    new java.io.FileInputStream(raf.getFD()), "UTF-8"));
             String line;
             while ((line = br.readLine()) != null) {
                 lines.add(line);
@@ -188,7 +264,7 @@ public class AppLogger {
                 }
             }
             br.close();
-            fis.close();
+            raf.close();
         } catch (Exception e) {
             return "读取日志失败: " + e.getMessage();
         }

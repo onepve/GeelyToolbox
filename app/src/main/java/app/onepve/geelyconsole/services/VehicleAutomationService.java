@@ -107,6 +107,7 @@ public class VehicleAutomationService extends Service {
     private long lastTriggerRR = 0;
     private long lastTriggerTrunk = 0;
     private long lastTriggerGear = 0;
+    private long lastPowerStateLogTime = 0;
 
     private Thread logcatThread;
     private Process logcatProcess;
@@ -502,6 +503,8 @@ public class VehicleAutomationService extends Service {
 
     private void parseLogLine(String line) {
         if (line == null || line.isEmpty()) return;
+        // 过滤本应用自身日志，避免 AppLogger 写 logcat 又被 logcat 守护线程读回形成风暴
+        if (line.contains("GeelyToolbox_Logger") || line.contains("GeelyConsole")) return;
 
         // 1. 解析方向盘按键
         // parseKeyFromLine 内部已根据 press/release 调用 handleKeyDown/handleKeyUp，
@@ -941,7 +944,12 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        AppLogger.i("电源状态", "key=" + lastKeyState + " engine=" + lastEngineState + " powerMode=" + lastPowerMode + " | " + rawLine.trim());
+        // 电源状态变化频繁时每秒只写一次聚合日志，避免海量 MCU 心跳刷屏
+        long now = System.currentTimeMillis();
+        if (now - lastPowerStateLogTime > 1000) {
+            lastPowerStateLogTime = now;
+            AppLogger.i("电源状态", "key=" + lastKeyState + " engine=" + lastEngineState + " powerMode=" + lastPowerMode);
+        }
     }
 
     private void resetAllStateMachines(boolean flameout) {

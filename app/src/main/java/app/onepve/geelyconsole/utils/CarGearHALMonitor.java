@@ -324,10 +324,8 @@ public class CarGearHALMonitor {
 
         probeSummary = String.format(Locale.US, "枚举 %d 项属性 / 命中档位属性 %d 项 / 成功注册 %d 项",
                 discoveredCount, hitNames.size(), okCount);
-        AppLogger.i("HAL探针", "HAL 属性探针完成 -> " + probeSummary);
-        if (!hitNames.isEmpty()) {
-            AppLogger.i("HAL探针", "命中档位相关属性: " + hitNames);
-        }
+        // 探针结果只输出一次摘要，避免每秒刷屏
+        AppLogger.i("HAL探针", "探针完成 共" + discoveredCount + "个属性 命中:" + hitNames + " 注册:" + okCount);
 
         // 4. 主动读取一次初始档位值，建立 HAL 基准
         for (Integer pid : registeredProps) {
@@ -442,8 +440,8 @@ public class CarGearHALMonitor {
 
             int rv = (Integer) raw;
             int norm = normalizeHalGear(rv, pid);
-            AppLogger.i(LOG_MODULE, "HAL 档位事件: " + sourceName(pid) + " 原始值=" + rv
-                    + " (0x" + Integer.toHexString(rv) + ") -> 识别=" + gearName(norm));
+            // 档位事件只在真正变化时由外部状态机记录，这里不再重复写日志
+            // AppLogger.i(LOG_MODULE, "HAL 档位事件: " + sourceName(pid) + "=" + rv + "->" + gearName(norm));
             dispatch(pid, rv, norm, false);
         } catch (Throwable t) {
             Log.w(TAG, "handlePropertyChange error: " + t.getMessage());

@@ -23,6 +23,29 @@
         </div>
       </div>
 
+      <!-- 模块日志开关：用户可独立控制高频模块写入，默认关闭以避免日志风暴卡死界面 -->
+      <div class="bg-car-item border border-car-border rounded-xl p-3 shadow-sm">
+        <div class="text-[13.5px] text-car-sub font-bold mb-2 flex items-center">
+          <span class="mr-1.5">🎛️</span>
+          模块日志采集开关（默认关闭高频通道，按需开启）
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="item in moduleSwitches"
+            :key="item.key"
+            @click="toggleModule(item.key)"
+            :class="[
+              'px-3 py-1.5 rounded-lg border-2 text-[13px] font-black cursor-pointer transition-all',
+              item.enabled
+                ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-400'
+                : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+            ]"
+          >
+            {{ item.enabled ? '●' : '○' }} {{ item.label }}
+          </button>
+        </div>
+      </div>
+
       <!-- 核心日志控制台输出屏 (固定高度，独立平滑滚动，白天/黑夜双主题护眼自适应) -->
       <pre 
         ref="logContainer"
@@ -92,6 +115,44 @@ const logContainer = ref(null);
 const autoScroll = ref(true);
 let pollTimer = null;
 
+const MODULE_LABELS = {
+  '方控按键': '方控按键',
+  '车门状态': '车门状态',
+  '挡位状态': '挡位状态',
+  '驾驶模式': '驾驶模式',
+  '电源状态': '电源状态',
+  'HAL探针': 'HAL探针',
+  '系统日志': '系统日志'
+};
+const moduleSwitches = ref([]);
+
+function loadModuleSwitches() {
+  try {
+    const raw = bridge.call('getLogModuleSwitches');
+    const obj = typeof raw === 'string' ? JSON.parse(raw) : (raw || {});
+    moduleSwitches.value = Object.keys(MODULE_LABELS).map(key => ({
+      key,
+      label: MODULE_LABELS[key],
+      enabled: !!obj[key]
+    }));
+  } catch (e) {
+    moduleSwitches.value = Object.keys(MODULE_LABELS).map(key => ({
+      key,
+      label: MODULE_LABELS[key],
+      enabled: false
+    }));
+  }
+}
+
+function toggleModule(key) {
+  const item = moduleSwitches.value.find(m => m.key === key);
+  if (!item) return;
+  item.enabled = !item.enabled;
+  bridge.call('setLogModuleSwitch', key, item.enabled);
+  showToast(`${item.label} 日志已${item.enabled ? '开启' : '关闭'}`);
+  fetchLogs(true);
+}
+
 function fetchLogs(isManual = false) {
   try {
     const rawInfo = bridge.call('getLogInfo');
@@ -122,6 +183,7 @@ function fetchLogs(isManual = false) {
 
 function startPolling() {
   stopPolling();
+  loadModuleSwitches();
   fetchLogs();
   pollTimer = setInterval(() => {
     fetchLogs();
