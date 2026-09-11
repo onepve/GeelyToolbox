@@ -80,6 +80,14 @@ public class VehicleVoicePlayer {
     private int originalStreamType = AudioManager.STREAM_MUSIC;
     private Runnable focusReleaseRunnable = null;
 
+    // ---- TTS 冷启动排队补播：点火后引擎未就绪时，缓存最新一条待播，就绪后自动补出（绝不丢首条语音）----
+    private volatile String pendingText = null;
+    private volatile String pendingVoiceType = null;
+    private volatile long pendingTextAt = 0L;
+    private static final long PENDING_TTL_MS = 8000L;      // 超出 8 秒的过期台词坚决丢弃，防串音
+    private volatile long lastInitAttemptAt = 0L;          // ensureTtsReady 重试节流时间戳
+    private static final long INIT_RETRY_INTERVAL_MS = 3000L; // 节流：最短 3 秒重试一次
+
     private synchronized void applyVolumeOffsetBeforePlay(String voiceType) {
         if (audioManager == null) return;
         try {
@@ -193,6 +201,8 @@ public class VehicleVoicePlayer {
                                     ttsReady = true;
                                     tts.setSpeechRate(1.05f);
                                     Log.i(TAG, "TextToSpeech init ready!");
+                                    // 引擎就绪瞬间，立即补播排队中的首条语音（点火即挂挡场景零丢失）
+                                    flushPendingSpeech();
                                 }
                             }
                         }
@@ -505,7 +515,13 @@ public class VehicleVoicePlayer {
                             tts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
                         }
                     } else {
-                        Log.w(TAG, "TTS engine not ready, queuing speech or retrying");
+                        // 冷启动兜底：TTS 未就绪时缓存最新一条待播台词（覆盖旧缓存），并触发一次重试预热。
+                        // 引擎 onInit 成功后会立即 flushPendingSpeech() 补出，绝不丢失点火后首条语音。
+                        pendingText = text;
+                        pendingVoiceType = voiceType;
+                        pendingTextAt = System.currentTimeMillis();
+                        ensureTtsReady();
+                        Log.w(TAG, "TTS not ready, buffered pending speech (retrying warmup): " + text);
                     }
                     focusReleaseRunnable = new Runnable() {
                         @Override
@@ -527,6 +543,60 @@ public class VehicleVoicePlayer {
 
     public void speakText(final String text) {
         speakText(text, null);
+    }
+
+    /**
+     * TTS 就绪后立即补播排队中的首条语音（点火即挂挡场景零丢失）。
+     * 由 onInit 成功回调调用，也在 ensureTtsReady 重试成功后调用。
+     */
+    private void flushPendingSpeech() {
+        final String text = pendingText;
+        final String voiceType = pendingVoiceType;
+        final long at = pendingTextAt;
+        if (text == null || text.trim().isEmpty()) return;
+        if (System.currentTimeMillis() - at > PENDING_TTL_MS) {
+            // 过期台词（超 8 秒）坚决丢弃，防止点火瞬间排队、半天后串音
+            pendingText = null;
+            pendingVoiceType = null;
+            return;
+        }
+        pendingText = null;
+        pendingVoiceType = null;
+        pendingTextAt = 0L;
+        if (tts == null || !ttsReady) return;
+        Log.i(TAG, "Flushing pending buffered speech: " + text);
+        speakText(text, voiceType);
+    }
+
+    /**
+     * TTS 引擎健康检查与重试预热（QQ 音乐解锁即预载同款）。
+     * 解锁/上电广播触发时应主动调用一次，若引擎未就绪则带节流重试 init，
+     * 确保点火后第一条语音无需等待引擎冷启动。
+     * 该方法必须运行在主线程（TextToSpeech 构造要求），内部已用 mainHandler 包裹。
+     */
+    public void ensureTtsReady() {
+        if (tts != null && ttsReady) return;
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (tts != null && ttsReady) return;
+                long now = System.currentTimeMillis();
+                // 节流：最短 3 秒重试一次，避免引擎起不来的车机上空转刷屏
+                if (now - lastInitAttemptAt < INIT_RETRY_INTERVAL_MS) return;
+                lastInitAttemptAt = now;
+                try {
+                    if (tts != null && !ttsReady) {
+                        // 已构造过但未就绪：释放旧实例重新绑定（车机早期小爱引擎未起时的兜底）
+                        try { tts.shutdown(); } catch (Throwable ignored) {}
+                        tts = null;
+                    }
+                    initTts();
+                    Log.i(TAG, "ensureTtsReady: TTS re-init triggered");
+                } catch (Exception e) {
+                    Log.w(TAG, "ensureTtsReady re-init failed: " + e.getMessage());
+                }
+            }
+        });
     }
 
     private void requestAudioFocus(String voiceType) {

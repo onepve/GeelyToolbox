@@ -246,4 +246,15 @@ html.light body, body.light {
   background: var(--border-color);
   border-radius: 4px;
 }
+
+/* 车规交互净化：车机 WebView 触摸点击后去除浏览器默认的虚线焦点框 (focus outline)，
+   杜绝按钮点击后残留一圈难看虚线。输入框已各自带 outline-none，此处统一兜底所有可聚焦元素。 */
+*:focus {
+  outline: none !important;
+}
+button:focus,
+button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
 </style>

@@ -186,7 +186,7 @@
         <div class="flex items-center justify-between mb-3">
           <span class="text-[16px] font-black text-car-text whitespace-nowrap">闲置时长</span>
           <span class="text-[15px] font-black text-car-accent px-3.5 py-1.5 bg-car-card rounded-xl border border-car-border whitespace-nowrap">
-            当前设定: {{ ssSeconds }} 秒
+            当前设定: {{ ssSecondsDisplay }}
           </span>
         </div>
 
@@ -198,25 +198,44 @@
             :max="ssMaxSeconds"
             step="1"
             v-model.number="ssSeconds"
+            :disabled="ssNever"
             @change="saveSeconds"
-            class="flex-1 accent-car-accent h-2.5 bg-car-card rounded-lg cursor-pointer"
+            class="flex-1 accent-car-accent h-2.5 bg-car-card rounded-lg cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           />
-          <span class="text-[14px] text-car-sub font-bold whitespace-nowrap">{{ ssMaxSeconds }} 秒 (更从容)</span>
+          <span class="text-[14px] text-car-sub font-bold whitespace-nowrap">{{ ssMaxSeconds }} 秒 (10分钟)</span>
           <div class="flex space-x-2 shrink-0">
             <button
               v-for="preset in ssPresets"
-              :key="preset"
-              @click="setSecondsPreset(preset)"
+              :key="preset.value"
+              @click="setSecondsPreset(preset.value)"
               :class="[
                 'px-3 py-1.5 text-[13.5px] font-black rounded-xl border transition-all cursor-pointer whitespace-nowrap',
-                ssSeconds === preset
+                ssSeconds === preset.value
                   ? 'bg-car-card border-car-accent text-car-text'
                   : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
               ]"
             >
-              {{ preset }}秒
+              {{ preset.label }}
             </button>
           </div>
+        </div>
+
+        <!-- 永不自动进入：哨兵值 -1，计时器照常巡检但绝不触发 -->
+        <div class="mt-3 flex items-center space-x-3">
+          <button
+            @click="toggleNever"
+            :class="[
+              'min-h-[50px] px-5 rounded-xl border-2 font-black text-[14.5px] cursor-pointer transition-all shadow-sm whitespace-nowrap',
+              ssNever
+                ? 'bg-car-item border-car-accent text-car-text'
+                : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+            ]"
+          >
+            {{ ssNever ? '永不自动进入: 已开启' : '永不自动进入' }}
+          </button>
+          <span class="text-[13px] text-car-sub font-bold leading-normal">
+            开启后屏保永不自动弹出；「立即测试一次屏保」仍可正常手动验证。
+          </span>
         </div>
 
         <!-- 进度条：与滑块实时联动 -->
@@ -359,9 +378,10 @@ function toggleAutostart() {
 
 // ==================== 7. 闲置自动屏保 ====================
 const ssEnabled = ref(false);
-const ssSeconds = ref(20);
-const ssMinSeconds = ref(10);
-const ssMaxSeconds = ref(30);
+const ssSeconds = ref(30);
+const ssMinSeconds = ref(3);
+const ssMaxSeconds = ref(600);
+const ssNever = ref(false);
 const ssHomeOnly = ref(true);
 const ssUsageAccess = ref(false);
 const ssChannel = ref('未启动');
@@ -370,11 +390,22 @@ const ssIdleRaw = ref('');
 const ssFailReason = ref('');
 const ssChannelAReady = ref(false);
 const ssForeground = ref('查询中');
-const ssPresets = [10, 15, 20, 30];
+const ssPresets = [
+  { value: 3, label: '3秒' },
+  { value: 10, label: '10秒' },
+  { value: 30, label: '30秒' },
+  { value: 60, label: '1分钟' },
+  { value: 300, label: '5分钟' },
+  { value: 600, label: '10分钟' },
+];
 let ssTimer = null;
 
-// 进度条：按当前设定值在最小~最大区间内的占比实时联动
+// 时长展示：永不时为汉字，否则为数字秒
+const ssSecondsDisplay = computed(() => ssNever.value ? '永不' : (ssSeconds.value + ' 秒'));
+
+// 永不档下进度条归零（哨兵值 -1 无「进度」语义）
 const ssProgressPercent = computed(() => {
+  if (ssNever.value) return 0;
   const min = ssMinSeconds.value;
   const max = ssMaxSeconds.value;
   if (max <= min) return 0;
@@ -413,7 +444,10 @@ function loadScreensaverConfig() {
     if (!raw) return;
     const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
     if (typeof data.enabled === 'boolean') ssEnabled.value = data.enabled;
-    if (typeof data.seconds === 'number') ssSeconds.value = data.seconds;
+    if (typeof data.seconds === 'number') {
+      ssSeconds.value = data.seconds;
+      ssNever.value = (data.seconds === -1);
+    }
     if (typeof data.minSeconds === 'number') ssMinSeconds.value = data.minSeconds;
     if (typeof data.maxSeconds === 'number') ssMaxSeconds.value = data.maxSeconds;
     if (typeof data.home_only === 'boolean') ssHomeOnly.value = data.home_only;
@@ -452,13 +486,29 @@ function toggleScreensaver() {
 function saveSeconds() {
   const v = Math.min(Math.max(Math.round(ssSeconds.value), ssMinSeconds.value), ssMaxSeconds.value);
   ssSeconds.value = v;
+  ssNever.value = false;
   saveScreensaverConfig({ seconds: v });
   showToast('闲置时长已设为 ' + v + ' 秒');
 }
 
-function setSecondsPreset(preset) {
-  ssSeconds.value = preset;
+function setSecondsPreset(value) {
+  ssSeconds.value = value;
   saveSeconds();
+}
+
+function toggleNever() {
+  const next = !ssNever.value;
+  ssNever.value = next;
+  if (next) {
+    ssSeconds.value = -1;
+    saveScreensaverConfig({ seconds: -1 });
+    showToast('已设为永不自动进入屏保');
+  } else {
+    // 从永不切回：恢复为默认 30 秒（安全兜底，避免 -1 残留）
+    ssSeconds.value = 30;
+    saveScreensaverConfig({ seconds: 30 });
+    showToast('已恢复自动屏保（30 秒）');
+  }
 }
 
 function toggleHomeOnly() {

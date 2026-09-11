@@ -388,17 +388,23 @@ public class VehicleAutomationService extends Service {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
-                if (Intent.ACTION_SHUTDOWN.equals(action) ||
+                boolean realPowerOff = Intent.ACTION_SHUTDOWN.equals(action) ||
                         "android.intent.action.QUICKBOOT_POWEROFF".equals(action) ||
-                        "com.ecarx.intent.action.ECARX_SHUTDOWN".equals(action) ||
-                        Intent.ACTION_SCREEN_OFF.equals(action)) {
-                    lastPowerMode = 0; // 熄火/息屏强制锁定为 0
+                        "com.ecarx.intent.action.ECARX_SHUTDOWN".equals(action);
+                boolean screenOff = Intent.ACTION_SCREEN_OFF.equals(action);
+
+                if (realPowerOff) {
+                    lastPowerMode = 0; // 真正熄火下电：强制锁定为 0
                     if (gearStateMachine != null) gearStateMachine.resetState();
                     if (driveModeManager != null) driveModeManager.resetState();
                     if (doorStateManager != null) doorStateManager.resetState();
-                    if (enableFlameoutVoice && voicePlayer != null && !Intent.ACTION_SCREEN_OFF.equals(action)) {
+                    if (enableFlameoutVoice && voicePlayer != null) {
                         voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品");
                     }
+                } else if (screenOff) {
+                    // 息屏 ≠ 熄火：车机息屏待机时发动机可能仍在运行（发电机充电电压仍 ≥13.2V）。
+                    // 此处坚决不碰 lastPowerMode，交由电压权威判定兜底，杜绝「息屏误判锁死后永久静音」。
+                    Log.i(TAG, "Screen off detected (not a real power-off), keep power mode unchanged");
                 }
             }
         };
@@ -748,12 +754,16 @@ public class VehicleAutomationService extends Service {
      * 熄火下电或蓝牙唤醒浅待机时，发电机未转动，TCU处于休眠或诊断回环，坚决静默不发声
      */
     public boolean isEngineRunning() {
-        // 明确检测到熄火或下电
+        // 真正熄火下电（SHUTDOWN / QUICKBOOT_POWEROFF / ECARX_SHUTDOWN 广播锁定）→ 绝对静音
         if (lastPowerMode == 0) return false;
-        // 明确处于熄火/浅待机且纯电瓶放电区间 (9.0V ~ 12.7V) 且零车速
-        if (lastPowerMode <= 0 && latestBatteryVoltage >= 9.0f && latestBatteryVoltage < 12.8f && currentSpeedKmH == 0) {
+        // 电压权威判定（发电机充电电压 vs 电瓶放电电压）：
+        //   发动机运行时发电机充电电压稳稳 ≥13.2V；纯电瓶放电/Lock/ACC 浅待机在 9.0~13.2V 区间。
+        // 这是最可靠的「发动机在不在转」信号，不再依赖 logcat 文本 + 息屏广播。
+        if (latestBatteryVoltage >= 13.2f) return true;
+        if (latestBatteryVoltage > 0f && latestBatteryVoltage < 13.2f && currentSpeedKmH == 0) {
             return false;
         }
+        // 电压未就绪（无报文）或车辆行驶中（车速非零）等无法电压裁决的场景：保持原「除明确熄火外默认放行」语义
         return true;
     }
 
@@ -871,6 +881,8 @@ public class VehicleAutomationService extends Service {
             if (bootReason == 0 || bootReason == 1) {
                 // 用户上电或解锁 -> 默认认为主驾将登车，座椅状态机准备
                 doorStateManager.markDriverMayEnter();
+                // QQ 音乐解锁即预载同款：解锁/上电瞬间提前预热 TTS，点火后首条语音秒出
+                if (voicePlayer != null) voicePlayer.ensureTtsReady();
             }
             return;
         }

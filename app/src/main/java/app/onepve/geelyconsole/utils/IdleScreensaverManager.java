@@ -59,9 +59,11 @@ public final class IdleScreensaverManager {
     public static final String KEY_SECONDS = "screensaver_idle_seconds";
     public static final String KEY_HOME_ONLY = "screensaver_home_only";
 
-    public static final int MIN_SECONDS = 10;
-    public static final int MAX_SECONDS = 30;
-    public static final int DEFAULT_SECONDS = 20;
+    public static final int MIN_SECONDS = 3;
+    public static final int MAX_SECONDS = 600;
+    public static final int DEFAULT_SECONDS = 30;
+    /** 永不自动进入屏保的哨兵值：seconds=-1 时计时器照常运行但永不触发（手动「立即测试」仍可用） */
+    public static final int NEVER_SECONDS = -1;
 
     // ---------------- 屏保链路常量 ----------------
     public static final String ACTION_SCREENSAVER = "android.intent.action.SCREENSAVER";
@@ -140,7 +142,9 @@ public final class IdleScreensaverManager {
             worker.postDelayed(tick, TICK_MS);
             registerScreenOffReceiver(appCtx);
             channelState = "运行中(通道A轮询)";
-            AppLogger.i(LOG_MODULE, "闲置自动屏保已启动：闲置 " + getSeconds(appCtx) + " 秒且"
+            int ss = getSeconds(appCtx);
+            String ssLabel = (ss == NEVER_SECONDS) ? "永不" : (ss + " 秒");
+            AppLogger.i(LOG_MODULE, "闲置自动屏保已启动：闲置 " + ssLabel + " 且"
                     + (isHomeOnly(appCtx) ? "位于主页面" : "任意界面") + "时自动进入原厂屏保");
         } catch (Throwable e) {
             running = false;
@@ -269,6 +273,12 @@ public final class IdleScreensaverManager {
         lastReadOkAt = System.currentTimeMillis();
 
         long threshold = getSeconds(ctx) * 1000L;
+
+        // 永不档：哨兵值 -1，计时器照常巡检但坚决不触发（手动「立即测试屏保」仍可正常使用）
+        if (getSeconds(ctx) == NEVER_SECONDS) {
+            channelState = "运行中(永不自动进入)";
+            return;
+        }
 
         // 1) 用户重新活动 -> 重新武装
         if (!armed) {
@@ -533,6 +543,7 @@ public final class IdleScreensaverManager {
     }
 
     public static int clampSeconds(int v) {
+        if (v == NEVER_SECONDS) return NEVER_SECONDS; // 永不：哨兵值完整放行
         if (v < MIN_SECONDS) return MIN_SECONDS;
         if (v > MAX_SECONDS) return MAX_SECONDS;
         return v;
