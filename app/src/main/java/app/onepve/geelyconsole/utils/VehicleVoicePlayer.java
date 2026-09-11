@@ -115,6 +115,7 @@ public class VehicleVoicePlayer {
                 originalStreamType = stream;
                 audioManager.setStreamVolume(stream, targetVol, 0);
                 Log.i(TAG, "Applied voice volume offset: " + offset + " (vol: " + currentVol + " -> " + targetVol + ", stream: " + stream + ")");
+                AppLogger.i("语音播报", "音量动态补偿生效: 当前=" + currentVol + " -> 目标=" + targetVol + " (" + (offset >= 0 ? "+" + offset : offset) + "格)");
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to apply volume offset: " + e.getMessage());
@@ -331,6 +332,7 @@ public class VehicleVoicePlayer {
 
         if (targetFile != null && targetFile.length() > 0) {
             Log.i(TAG, "Playing external audio file: " + targetFile.getAbsolutePath());
+            AppLogger.i("语音播报", "触发播放[主题音频]: " + targetFile.getName() + " (" + fallbackText + ")");
             playAudioFile(targetFile, voiceFileName);
             return;
         }
@@ -339,12 +341,14 @@ public class VehicleVoicePlayer {
         File localAssetFile = getLocalAssetFile(voiceFileName);
         if (localAssetFile != null && localAssetFile.exists() && localAssetFile.length() > 0) {
             Log.i(TAG, "Playing local asset audio: " + localAssetFile.getAbsolutePath());
+            AppLogger.i("语音播报", "触发播放[官方原声]: " + voiceFileName + " (" + fallbackText + ")");
             playAudioFile(localAssetFile, voiceFileName);
             return;
         }
 
         // 4. 兜底调用系统 TTS
         Log.i(TAG, "Fallback speaking TTS: " + fallbackText);
+        AppLogger.i("语音播报", "触发朗读[小爱TTS]: " + fallbackText);
         speakText(fallbackText, voiceFileName);
     }
 

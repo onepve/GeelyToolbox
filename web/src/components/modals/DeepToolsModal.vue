@@ -144,8 +144,11 @@
         </button>
       </div>
 
-      <!-- 终端输出屏 -->
-      <pre class="min-h-[220px] max-h-[300px] overflow-y-auto bg-[#0A0D12] border-2 border-white/10 rounded-2xl p-5 font-mono text-[15px] text-emerald-400 leading-relaxed select-text whitespace-pre-wrap">{{ outputText }}</pre>
+      <!-- 终端输出屏 (最新执行结果始终置顶在最上方第一行) -->
+      <pre 
+        ref="termContainer"
+        class="min-h-[220px] max-h-[300px] overflow-y-auto bg-[#0A0D12] border-2 border-white/10 rounded-2xl p-5 font-mono text-[15px] text-emerald-400 leading-relaxed select-text whitespace-pre-wrap shadow-inner"
+      >{{ outputText }}</pre>
     </div>
   </ModalWrapper>
 </template>
@@ -187,8 +190,10 @@ function openOtaCapture() {
   openModal('otaCapture');
 }
 
+const termContainer = ref(null);
 const inputCmd = ref('');
-const outputText = ref('[ADB Client 127.0.0.1:5555 就绪 · 输入指令并回车执行]\n$ ');
+const INITIAL_PROMPT = '[ADB Client 127.0.0.1:5555 就绪 · 最新输出置顶显示]\n$ ';
+const outputText = ref(INITIAL_PROMPT);
 
 const quickCmds = [
   'getprop ro.product.model',
@@ -197,23 +202,38 @@ const quickCmds = [
   'logcat -d -v time | tail -n 20'
 ];
 
-
 function execCmd() {
   if (!inputCmd.value.trim()) return;
   const cmd = inputCmd.value.trim();
-  outputText.value += `\n$ ${cmd}\n`;
   inputCmd.value = '';
-  
+
+  let out = '';
   try {
     const res = bridge.call('executeCustomAdbCommand', cmd);
-    outputText.value += (res || '(执行完成，无返回输出)') + '\n$ ';
+    out = (res || '(执行完成，无返回输出)');
   } catch (e) {
-    outputText.value += `执行错误: ${e}\n$ `;
+    out = `执行错误: ${e}`;
   }
+
+  const now = new Date();
+  const timeStr = now.toTimeString().split(' ')[0];
+  const newBlock = `$ ${cmd}   [${timeStr}]\n${out.trim()}\n────────────────────────────────────────────────────────────\n`;
+  
+  if (outputText.value === INITIAL_PROMPT) {
+    outputText.value = newBlock + INITIAL_PROMPT;
+  } else {
+    outputText.value = newBlock + outputText.value;
+  }
+
+  nextTick(() => {
+    if (termContainer.value) {
+      termContainer.value.scrollTop = 0; // 始终保持顶部查看最新输出
+    }
+  });
 }
 
 function clearOutput() {
-  outputText.value = '$ ';
+  outputText.value = INITIAL_PROMPT;
 }
 
 function saveLog() {

@@ -90,10 +90,10 @@ def main():
             "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyPilot.apk?v={version_name}",
             "changelog": (
                 "本次同步更新：\n"
-                "1. 换挡信号四大源全面接线闭环：实装原厂 360 环视核心状态机 onVehicleEventGear (state[GEAR_*]) 与 AVM 换挡事件直通\n"
-                "2. 根治十六进制报文解析截断：全面修复 SensorModule 底层属性 0x 前缀误截断 Bug，点火与挡位信号毫秒直通\n"
-                "3. 驾驶模式与倒车信号多轨融合：打通 AudioPolicyManager 硬件倒车与底盘模式多源联动，换挡模式即刻发声\n"
-                "4. 日志导出窗口扩展至 40,000 行：覆盖最近 2 分钟全量动作，彻底防止高频日志冲刷"
+                "1. 守护日志与终端双控倒序置顶：最新日志与指令返回结果始终高居最上方第一行，视口平稳舒适0晃眼\n"
+                "2. 模块采集开关优化：彻底下线死开关HAL探针与系统日志，新增实装【语音播报】开关(默认开启)，音频与TTS动作透明可查\n"
+                "3. 换挡信号四大源全面接线闭环：实装原厂360环视核心状态机(state[GEAR_*])直通与SensorModule十六进制解析\n"
+                "4. 日志导出窗口扩展至40,000行：覆盖最近2分钟全量操作，从容操作换挡切模式防日志冲刷"
             ),
             "release_date": today
         }

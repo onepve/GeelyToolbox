@@ -43,20 +43,19 @@ public class AppLogger {
 
     private static android.content.Context appContext = null;
     private static final String PREFS_LOG_SWITCHES = "log_module_switches";
-    // 高频模块默认关闭文件写入，避免日志风暴导致界面卡死；关键/异常日志始终保留
+    // 聚焦座舱核心状态，高频/调试通道按需开启避免日志风暴
     private static final java.util.Map<String, Boolean> DEFAULT_MODULE_STATES = new java.util.HashMap<>();
     private static final java.util.List<String> KNOWN_MODULES = java.util.Arrays.asList(
-            "方控按键", "车门状态", "挡位状态", "驾驶模式", "电源状态", "HAL探针", "系统日志");
+            "电源状态", "挡位状态", "驾驶模式", "车门状态", "语音播报", "方控按键");
     static {
-        // 默认开启：车辆基础状态必须可观测
+        // 默认开启：整车四大基础物理信号 + 语音播报动作必须可观测
         DEFAULT_MODULE_STATES.put("电源状态", true);
         DEFAULT_MODULE_STATES.put("挡位状态", true);
         DEFAULT_MODULE_STATES.put("驾驶模式", true);
         DEFAULT_MODULE_STATES.put("车门状态", true);
-        // 默认关闭：高频/调试类通道，按需开启避免日志风暴
+        DEFAULT_MODULE_STATES.put("语音播报", true);
+        // 默认关闭：方控按键高频物理流，排查按键时按需开启
         DEFAULT_MODULE_STATES.put("方控按键", false);
-        DEFAULT_MODULE_STATES.put("HAL探针", false);
-        DEFAULT_MODULE_STATES.put("系统日志", false);
     }
 
     public static void init(android.content.Context ctx) {

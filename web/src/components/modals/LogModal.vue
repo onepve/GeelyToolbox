@@ -2,7 +2,7 @@
   <ModalWrapper
     :show="store.modals.log"
     title="吉利智驾 · 运行与守护日志"
-    :badge="autoScroll ? '● 实时轮转中 (1.5s)' : '○ 自动滚动已暂停'"
+    :badge="autoScroll ? '● 最新置顶轮转 (1.5s)' : '○ 自动置顶已暂停'"
     maxWidthClass="max-w-[1080px]"
     :showCloseButton="false"
     @close="closeModal('log')"
@@ -19,7 +19,7 @@
         <div class="flex items-center space-x-2 text-[13px] text-car-sub font-bold">
           <span>体积: {{ logInfo.size }}</span>
           <span>·</span>
-          <span class="text-car-accent font-mono font-bold">保留最新 300 行</span>
+          <span class="text-car-accent font-mono font-bold">最新在上 · 保留 300 行</span>
         </div>
       </div>
 
@@ -71,7 +71,7 @@
             ]"
           >
             <span class="mr-1.5">{{ autoScroll ? '●' : '○' }}</span>
-            {{ autoScroll ? '自动滚动: 开启' : '自动滚动: 暂停' }}
+            {{ autoScroll ? '最新置顶: 开启' : '最新置顶: 暂停' }}
           </button>
           <button 
             @click="manualRefresh"
@@ -89,7 +89,7 @@
 
         <div class="flex items-center space-x-4">
           <span class="text-[13px] text-car-sub font-mono font-bold hidden md:inline-block">
-            {{ autoScroll ? '1.5s 自动同步最新上报' : '轮转已暂停' }}
+            {{ autoScroll ? '1.5s 自动置顶最新上报' : '轮转已暂停' }}
           </span>
           <button 
             @click="closeModal('log')"
@@ -115,13 +115,12 @@ const autoScroll = ref(true);
 let pollTimer = null;
 
 const MODULE_LABELS = {
-  '方控按键': '方控按键',
-  '车门状态': '车门状态',
+  '电源状态': '电源状态',
   '挡位状态': '挡位状态',
   '驾驶模式': '驾驶模式',
-  '电源状态': '电源状态',
-  'HAL探针': 'HAL探针',
-  '系统日志': '系统日志'
+  '车门状态': '车门状态',
+  '语音播报': '语音播报',
+  '方控按键': '方控按键'
 };
 const moduleSwitches = ref([]);
 
@@ -164,11 +163,14 @@ function fetchLogs(isManual = false) {
     const logs = bridge.call('getRecentLogs', 300);
     let next = '';
     if (logs && logs.trim()) {
-      next = logs;
+      // 倒序排列：最新产生的日志行始终置顶显示在最上方第一行
+      const lines = logs.trim().split('\n');
+      lines.reverse();
+      next = lines.join('\n');
     } else {
       next = '[系统启动 · 暂未产生异常日志]\n$ 服务正常常驻中...';
     }
-    // 性能铁律：日志尾部内容未变化时坚决不写回响应式数据，避免 1.5 秒一次无意义重排
+    // 性能铁律：日志内容未变化时坚决不写回响应式数据，避免 1.5 秒一次无意义重排
     if (next !== logContent.value) {
       logContent.value = next;
     }
@@ -179,7 +181,7 @@ function fetchLogs(isManual = false) {
   if (autoScroll.value || isManual) {
     nextTick(() => {
       if (logContainer.value) {
-        logContainer.value.scrollTop = logContainer.value.scrollHeight;
+        logContainer.value.scrollTop = 0; // 始终保持顶部查看最新日志
       }
     });
   }
@@ -203,7 +205,7 @@ function stopPolling() {
 
 function manualRefresh() {
   fetchLogs(true);
-  showToast('已刷新最新运行日志');
+  showToast('已刷新最新运行日志 (置顶显示)');
 }
 
 function toggleAutoScroll() {
@@ -211,12 +213,12 @@ function toggleAutoScroll() {
   if (autoScroll.value) {
     nextTick(() => {
       if (logContainer.value) {
-        logContainer.value.scrollTop = logContainer.value.scrollHeight;
+        logContainer.value.scrollTop = 0;
       }
     });
-    showToast('自动滚底已开启');
+    showToast('最新日志自动置顶已开启');
   } else {
-    showToast('自动滚底已暂停');
+    showToast('最新日志自动置顶已暂停');
   }
 }
 
