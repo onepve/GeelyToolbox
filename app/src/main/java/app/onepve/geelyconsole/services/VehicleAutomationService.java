@@ -835,8 +835,8 @@ public class VehicleAutomationService extends Service {
         if (currentSpeedKmH > 0) return true;
         // 3. 发电机高压充电权威信号：若电压稳稳 ≥13.2V，发电机必然在转，100% 确认运行
         if (latestBatteryVoltage >= 13.2f) return true;
-        // 4. 明确检测到电源点火处于就绪状态 (lastPowerMode == 1 或钥匙 ON / RUN 信号)
-        if (lastPowerMode == 1 || lastKeyState == 2 || lastKeyState >= 10) return true;
+        // 4. 明确检测到电源点火处于就绪状态 (lastPowerMode == 1 或钥匙 ON 信号)
+        if (lastPowerMode == 1 || lastKeyState == 2) return true;
         // 5. 其余静止无充电状态（蓄电池自然静置电压 9.0V~13.0V 且零车速）：判定为熄火未启动状态，绝对静默！
         if (latestBatteryVoltage >= 9.0f && latestBatteryVoltage < 13.0f && currentSpeedKmH == 0) {
             return false;
@@ -975,13 +975,13 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // KEY_STATE: 0=关 1=ACC 2=ON (缤越 COOL 点火启动后上报 10, 14, 15 等 RUN 状态值)
+        // KEY_STATE: 0=关 1=ACC 2=ON (原厂funValue=0x00200105末尾0x05解析为2，表示点火就绪)
         if (rawLine.toLowerCase().contains("info_id_vpowerinfo_key_state") || (rawLine.toLowerCase().contains("key_state") && (rawLine.toLowerCase().contains("power") || rawLine.toLowerCase().contains("peps")))) {
             lastKeyState = val;
-            if (val == 2 || val >= 10) {
-                lastPowerMode = 1; // 钥匙 ON / RUN -> 点火启动瞬发就绪，彻底消除 7 秒等待盲区
+            if (val == 2) {
+                lastPowerMode = 1; // 钥匙 ON -> 点火就绪
                 doorStateManager.markDriverInside();
-                AppLogger.i("电源状态", "钥匙 ON/RUN (key=" + val + ") -> 点火启动就绪");
+                AppLogger.i("电源状态", "钥匙 ON (key=2) -> 点火启动就绪");
             } else if (val == 0) {
                 // 若发电机正在以 >=13.2V 充电，或车速非零，绝不可因偶发性按键释放日志误置熄火
                 if (latestBatteryVoltage < 13.2f && currentSpeedKmH == 0) {
