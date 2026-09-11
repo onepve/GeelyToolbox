@@ -69,7 +69,13 @@ def main():
             "md5": md5,
             "sha256": sha256,
             "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyPilot-beta.apk?v={version_name}",
-            "changelog": "【测试通道优先体验】\n1. 自动同步内测修复与前沿特性实验\n2. 仅面向已激活测试身份的车友推送，正式车友不受任何影响",
+            "changelog": (
+                "【测试通道优先体验】\n"
+                "1. 日志无截断全量导出：彻底解除4万行限制，倾倒全量缓冲区，完美覆盖长时段路试排查\n"
+                "2. 换挡信号与模式防抖强化：根治假10号挡位死循环，旋钮极速旋转不再掐灭声音\n"
+                "3. 守护日志与终端双控倒序置顶：最新日志高居最顶端，视口平稳0晃眼\n"
+                "4. 模块开关精简实装：剔除废弃死开关，实装【语音播报】开关(默认开)"
+            ),
             "release_date": today
         }
         with open("/tmp/version-beta.json", "w", encoding="utf-8") as f:
