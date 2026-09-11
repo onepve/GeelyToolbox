@@ -2231,7 +2231,30 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String dumpSystemLogcat() {
-            return SystemUtils.dumpFullSystemLogcat(MainActivity.this).toString();
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    showToast("正在后台抓取并打包车机日志，请稍候...");
+                }
+            });
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    final JSONObject res = SystemUtils.dumpFullSystemLogcat(MainActivity.this);
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            boolean ok = res.optBoolean("success", false);
+                            String msg = res.optString("message", "日志打包完成");
+                            showToast(ok ? ("✓ " + msg) : ("❌ " + msg));
+                            if (webView != null) {
+                                webView.evaluateJavascript("if (window.onLogcatDumpFinished) window.onLogcatDumpFinished(" + res.toString() + ");", null);
+                            }
+                        }
+                    });
+                }
+            }, "AsyncLogcatDump").start();
+            return "{\"success\":true,\"message\":\"已启动后台采集\"}";
         }
 
         @JavascriptInterface

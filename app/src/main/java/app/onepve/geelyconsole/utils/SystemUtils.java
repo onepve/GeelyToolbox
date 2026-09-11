@@ -1139,9 +1139,9 @@ public class SystemUtils {
             File tempDir = new File(downloadDir, "log_verify_" + System.currentTimeMillis());
             if (!tempDir.exists()) tempDir.mkdirs();
 
-            // 1. 抓取最近 60 秒 logcat
+            // 1. 抓取最近 logcat (限制 8000 行，覆盖最近 2~3 分钟操作，1 秒极速完成防卡死)
             logFile = new File(tempDir, "all.log");
-            String cmd = "logcat -d -v time -t 60000 > " + logFile.getAbsolutePath();
+            String cmd = "logcat -d -v time -t 8000 > " + logFile.getAbsolutePath();
             executeShell(cmd);
 
             if (!logFile.exists() || logFile.length() == 0) {

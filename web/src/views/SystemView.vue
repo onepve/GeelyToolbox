@@ -78,12 +78,26 @@
         title="4. 运行与守护日志"
         desc="实时采集车门、挡位与方控信号记录，支持独立清空与离线导出。"
       >
-        <button 
-          @click="openLogModal"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
-        >
-          <span>查看运行与守护日志</span>
-        </button>
+        <div class="flex space-x-3 w-full">
+          <button 
+            @click="openLogModal"
+            class="flex-1 min-h-[72px] rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+          >
+            <span>查看守护日志</span>
+          </button>
+          <button 
+            @click="dumpLogcatFromMain"
+            :disabled="isMainDumping"
+            :class="[
+              'flex-1 min-h-[72px] rounded-2xl border-2 font-black text-[17px] transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
+              isMainDumping
+                ? 'bg-car-card border-car-accent text-car-accent opacity-80 cursor-wait'
+                : 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20 cursor-pointer hover:border-car-accent'
+            ]"
+          >
+            <span>{{ isMainDumping ? '⏳ 正在打包...' : '⚡ 导出全量日志' }}</span>
+          </button>
+        </div>
       </FeatureCard>
 
       <!-- 5. 应用商店管理 (带二次校验) -->
@@ -317,6 +331,19 @@ function openDeepTools() {
 
 function openLogModal() {
   store.modals.log = true;
+}
+
+const isMainDumping = ref(false);
+function dumpLogcatFromMain() {
+  if (isMainDumping.value) return;
+  isMainDumping.value = true;
+  showToast('正在后台采集并打包车机日志，请稍候...');
+  try {
+    bridge.call('dumpSystemLogcat');
+  } catch (e) {}
+  setTimeout(() => {
+    isMainDumping.value = false;
+  }, 4000);
 }
 
 function confirmFreezeStore() {

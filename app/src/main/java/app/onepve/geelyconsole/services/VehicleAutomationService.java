@@ -545,6 +545,21 @@ public class VehicleAutomationService extends Service {
                 handleGearSignal(gearVal);
                 return;
             }
+
+            // 3.2 解析原厂核心服务 ecarx_core_server 挡位报文容灾 (mModelGearPos = 2/3/4/5)
+            // 以及 OpenAPI 属性 INFO_ID_VDRIVEINFO_GEAR_POSITION
+            if (line.contains("mModelGearPos") || line.contains("VDRIVEINFO_GEAR_POSITION") || line.contains("GearPos =")) {
+                try {
+                    Matcher gm = Pattern.compile("(?:mModelGearPos|VDRIVEINFO_GEAR_POSITION|GearPos)[^0-9]*(\\d+)").matcher(line);
+                    if (gm.find()) {
+                        int gVal = Integer.parseInt(gm.group(1));
+                        if (gVal >= 2 && gVal <= 7) {
+                            handleGearSignal(gVal);
+                            return;
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
         }
 
         // 4.1 解析底层 MCU 串口车身报文: 91 02 01 ... b6(四门) 与 b7(尾门) (最权威物理硬件通道！)
@@ -683,6 +698,19 @@ public class VehicleAutomationService extends Service {
                     else if (tm == 2 || tm == 0) modeVal = MODE_ECO;
                     else if (tm == 6) modeVal = MODE_SMART;
                     else if (tm == 4 || tm == 5) modeVal = MODE_SPORT;
+                }
+            } catch (Exception ignored) {}
+        }
+        // 优先 5: 原厂核心服务 ecarx_core_server (mModelDriverMode / mModelDriveMode)
+        else if (line.contains("mModelDriverMode") || line.contains("mModelDriveMode") || line.contains("VDRIVEINFO_DRIVER_MODE") || line.contains("DriverMode =")) {
+            try {
+                Matcher dm = Pattern.compile("(?:mModelDriverMode|mModelDriveMode|VDRIVEINFO_DRIVER_MODE|DriverMode)[^0-9]*(\\d+)").matcher(line);
+                if (dm.find()) {
+                    int dVal = Integer.parseInt(dm.group(1));
+                    if (dVal == 1) modeVal = MODE_COMFORT;
+                    else if (dVal == 2) modeVal = MODE_SPORT;
+                    else if (dVal == 3) modeVal = MODE_ECO;
+                    else if (dVal == 4 || dVal == 6) modeVal = MODE_SMART;
                 }
             } catch (Exception ignored) {}
         }
@@ -891,15 +919,20 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // KEY_STATE: 0=关 1=ACC 2=ON
-        if (rawLine.toLowerCase().contains("key_state") || rawLine.toLowerCase().contains("info_id_vpowerinfo_key_state")) {
+        // KEY_STATE: 0=关 1=ACC 2=ON (严格限定为电源总线信号，避免普通硬件按键释放报文污染)
+        if (rawLine.toLowerCase().contains("info_id_vpowerinfo_key_state") || (rawLine.toLowerCase().contains("key_state") && (rawLine.toLowerCase().contains("power") || rawLine.toLowerCase().contains("peps")))) {
             lastKeyState = val;
             if (val == 2) {
                 lastPowerMode = 1; // ON 视为点火就绪
                 doorStateManager.markDriverInside();
                 AppLogger.i("电源状态", "钥匙 ON -> 主驾已就坐基准建立");
             } else if (val == 0) {
-                lastPowerMode = 0;
+                // 若发电机正在以 >=13.2V 充电，或车速非零，绝不可因偶发性按键释放日志误置熄火
+                if (latestBatteryVoltage < 13.2f && currentSpeedKmH == 0) {
+                    lastPowerMode = 0;
+                } else {
+                    AppLogger.i("电源状态", "忽略疑似按键释放噪音 key=0 (当前电压=" + latestBatteryVoltage + "V)");
+                }
             }
         }
         // ENGINE_STATE: 0=停止 1=启动中 2=停止中 3=运行

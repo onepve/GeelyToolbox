@@ -14,9 +14,15 @@
       </div>
       <button 
         @click="dumpLogcat"
-        class="min-h-[66px] px-8 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[18.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+        :disabled="isDumping"
+        :class="[
+          'min-h-[66px] px-8 rounded-2xl border-2 font-black text-[18.5px] shadow-sm transition-all flex items-center justify-center',
+          isDumping 
+            ? 'bg-car-card border-car-accent text-car-accent opacity-80 cursor-wait' 
+            : 'bg-car-card border-car-border text-car-text hover:border-car-border-light cursor-pointer'
+        ]"
       >
-        采集车机全量日志 (ZIP)
+        <span>{{ isDumping ? '⏳ 正在采集打包中...' : '采集车机全量日志 (ZIP)' }}</span>
       </button>
     </div>
 
@@ -155,12 +161,16 @@ const packageStates = ref({
   'com.ecarx.multimedia': false
 });
 
+const isDumping = ref(false);
+
 function refreshPackageStates() {
-  try {
-    packageStates.value['com.ecarx.appstore'] = !!bridge.call('isPackageFrozen', 'com.ecarx.appstore');
-    packageStates.value['ecarx.upgrade'] = !!bridge.call('isPackageFrozen', 'ecarx.upgrade');
-    packageStates.value['com.ecarx.multimedia'] = !!bridge.call('isPackageFrozen', 'com.ecarx.multimedia');
-  } catch (e) {}
+  setTimeout(() => {
+    try {
+      packageStates.value['com.ecarx.appstore'] = !!bridge.call('isPackageFrozen', 'com.ecarx.appstore');
+      packageStates.value['ecarx.upgrade'] = !!bridge.call('isPackageFrozen', 'ecarx.upgrade');
+      packageStates.value['com.ecarx.multimedia'] = !!bridge.call('isPackageFrozen', 'com.ecarx.multimedia');
+    } catch (e) {}
+  }, 100);
 }
 
 watch(() => store.modals.deepTools, (show) => {
@@ -220,7 +230,19 @@ function toggleFreeze(pkg) {
 }
 
 function dumpLogcat() {
-  bridge.call('dumpSystemLogcat');
-  showToast('系统日志已导出并压缩至 /sdcard/Download/car_full.zip');
+  if (isDumping.value) return;
+  isDumping.value = true;
+  showToast('正在后台采集并打包最近日志，请稍候...');
+  try {
+    bridge.call('dumpSystemLogcat');
+  } catch (e) {}
+  setTimeout(() => {
+    isDumping.value = false;
+  }, 4000);
 }
+
+// 接收 Java 异步导出完成回调
+window.onLogcatDumpFinished = (res) => {
+  isDumping.value = false;
+};
 </script>
