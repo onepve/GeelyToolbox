@@ -126,11 +126,11 @@ public class GearStateMachine {
 
                     // 2. 播报判定 (干脆利落短句，强制瞬发打断旧语音)
                     if (voiceMasterSwitch) {
-                        boolean enableD = prefs.getBoolean("voice_enable_gear_d", true) && prefs.getBoolean("enable_gear_d", true);
-                        boolean enableR = prefs.getBoolean("voice_enable_gear_r", true) && prefs.getBoolean("enable_gear_r", true);
-                        boolean enableN = prefs.getBoolean("voice_enable_gear_n", true) && prefs.getBoolean("enable_gear_n", true);
-                        boolean enableS = prefs.getBoolean("voice_enable_gear_s", true) && prefs.getBoolean("enable_gear_s", true);
-                        boolean enableP = prefs.getBoolean("voice_enable_gear_p", true) && prefs.getBoolean("enable_gear_p", true);
+                        boolean enableD = prefs.contains("voice_enable_gear_d") ? prefs.getBoolean("voice_enable_gear_d", true) : prefs.getBoolean("enable_gear_d", true);
+                        boolean enableR = prefs.contains("voice_enable_gear_r") ? prefs.getBoolean("voice_enable_gear_r", true) : prefs.getBoolean("enable_gear_r", true);
+                        boolean enableN = prefs.contains("voice_enable_gear_n") ? prefs.getBoolean("voice_enable_gear_n", true) : prefs.getBoolean("enable_gear_n", true);
+                        boolean enableS = prefs.contains("voice_enable_gear_s") ? prefs.getBoolean("voice_enable_gear_s", true) : prefs.getBoolean("enable_gear_s", true);
+                        boolean enableP = prefs.contains("voice_enable_gear_p") ? prefs.getBoolean("voice_enable_gear_p", true) : prefs.getBoolean("enable_gear_p", true);
 
                         if (gear == 2) { // D 挡
                             if (enableD && voicePlayer != null) {

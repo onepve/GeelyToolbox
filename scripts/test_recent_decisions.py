@@ -50,10 +50,11 @@ public static void main(String[] args)throws Exception{
  eq(-1L,parseIdleMs(null,now,uptime));
  DecisionTest t=new DecisionTest();
  t.lastPowerMode=0;t.latestBatteryVoltage=14f;eq(false,t.isEngineRunning());
- t.lastPowerMode=1;eq(true,t.isEngineRunning());
- t.latestBatteryVoltage=12f;eq(false,t.isEngineRunning());
- t.latestBatteryVoltage=0;eq(true,t.isEngineRunning());
- t.latestBatteryVoltage=12f;t.currentSpeedKmH=10;eq(true,t.isEngineRunning());
+ t.lastPowerMode=1;t.latestBatteryVoltage=12f;t.currentSpeedKmH=0;eq(true,t.isEngineRunning());
+ t.lastPowerMode=-1;t.latestBatteryVoltage=10f;t.currentSpeedKmH=0;eq(false,t.isEngineRunning());
+ t.lastPowerMode=-1;t.latestBatteryVoltage=0f;eq(true,t.isEngineRunning());
+ t.lastPowerMode=-1;t.latestBatteryVoltage=13.5f;eq(true,t.isEngineRunning());
+ t.lastPowerMode=-1;t.latestBatteryVoltage=10f;t.currentSpeedKmH=10;eq(true,t.isEngineRunning());
  t.pendingText="最新语音";t.pendingTextAt=now;t.flushPendingSpeech();eq(1,t.spoken);eq("最新语音",t.spokenText);
  t.flushPendingSpeech();eq(1,t.spoken);
  t.pendingText="过期";t.pendingTextAt=now-9000;t.flushPendingSpeech();eq(1,t.spoken);

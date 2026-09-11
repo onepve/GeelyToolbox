@@ -81,10 +81,10 @@ public class DriveModeManager {
 
         // 2. 播报判定 (默认全开，支持双别名兼容)
         if (voiceMasterSwitch) {
-            boolean enableComfort = prefs.getBoolean("voice_enable_mode_comfort", true) && prefs.getBoolean("enable_mode_comfort", true);
-            boolean enableSport = prefs.getBoolean("voice_enable_mode_sport", true) && prefs.getBoolean("enable_mode_sport", true);
-            boolean enableEco = prefs.getBoolean("voice_enable_mode_eco", true) && prefs.getBoolean("enable_mode_eco", true);
-            boolean enableSmart = prefs.getBoolean("voice_enable_mode_smart", true) && prefs.getBoolean("enable_mode_smart", true);
+            boolean enableComfort = prefs.contains("voice_enable_mode_comfort") ? prefs.getBoolean("voice_enable_mode_comfort", true) : prefs.getBoolean("enable_mode_comfort", true);
+            boolean enableSport = prefs.contains("voice_enable_mode_sport") ? prefs.getBoolean("voice_enable_mode_sport", true) : prefs.getBoolean("enable_mode_sport", true);
+            boolean enableEco = prefs.contains("voice_enable_mode_eco") ? prefs.getBoolean("voice_enable_mode_eco", true) : prefs.getBoolean("enable_mode_eco", true);
+            boolean enableSmart = prefs.contains("voice_enable_mode_smart") ? prefs.getBoolean("voice_enable_mode_smart", true) : prefs.getBoolean("enable_mode_smart", true);
 
             switch (mode) {
                 case MODE_COMFORT:
