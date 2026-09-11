@@ -90,9 +90,10 @@ def main():
             "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyPilot.apk?v={version_name}",
             "changelog": (
                 "本次同步更新：\n"
-                "1. 方控交互精简收敛：彻底下线不可用的2号键滚轮垂直按压映射卡片，卡片编号顺延重排\n"
-                "2. 原厂图解规范化：金色文字统一代表自研监控与接管功能，未接管按键规范为普通文字\n"
-                "3. 2号键与5号键说明精炼单行，去除冗余描述，排版清爽无折行"
+                "1. 换挡信号四大源全面接线闭环：实装原厂 360 环视核心状态机 onVehicleEventGear (state[GEAR_*]) 与 AVM 换挡事件直通\n"
+                "2. 根治十六进制报文解析截断：全面修复 SensorModule 底层属性 0x 前缀误截断 Bug，点火与挡位信号毫秒直通\n"
+                "3. 驾驶模式与倒车信号多轨融合：打通 AudioPolicyManager 硬件倒车与底盘模式多源联动，换挡模式即刻发声\n"
+                "4. 日志导出窗口扩展至 40,000 行：覆盖最近 2 分钟全量动作，彻底防止高频日志冲刷"
             ),
             "release_date": today
         }

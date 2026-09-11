@@ -24,6 +24,7 @@ import boto3
 from pathlib import Path
 
 # 导入本地 apk 解析工具
+sys.path.insert(0, os.path.expanduser('~/.hermes/scripts'))
 sys.path.insert(0, '/root/.hermes/scripts')
 try:
     from apk_parser import parse_apk
@@ -32,7 +33,9 @@ except ImportError:
 
 def get_env():
     env = {}
-    env_file = '/root/.hermes/onepve/.env'
+    env_file = os.path.expanduser('~/.hermes/onepve/.env')
+    if not os.path.exists(env_file):
+        env_file = '/root/.hermes/onepve/.env'
     if os.path.exists(env_file):
         with open(env_file, 'r', encoding='utf-8') as f:
             for line in f:
@@ -140,6 +143,19 @@ def update_store_app(new_apk_path, target_app_id=None, custom_filename=None, cus
     
     # 1. 解析新 APK 元数据
     apk_meta = parse_apk(new_apk_path) if parse_apk else {}
+    if not apk_meta.get('package_name'):
+        import subprocess, re
+        aapt_bin = "/data/android-sdk/build-tools/34.0.0/aapt2"
+        if os.path.exists(aapt_bin):
+            try:
+                out = subprocess.check_output([aapt_bin, "dump", "badging", new_apk_path]).decode('utf-8')
+                pkg_m = re.search(r"package:\s+name='([^']+)'", out)
+                if pkg_m: apk_meta['package_name'] = pkg_m.group(1)
+                ver_c = re.search(r"versionCode='([^']+)'", out)
+                if ver_c: apk_meta['version_code'] = int(ver_c.group(1))
+                ver_n = re.search(r"versionName='([^']+)'", out)
+                if ver_n: apk_meta['version_name'] = ver_n.group(1)
+            except Exception: pass
     file_bytes = os.path.getsize(new_apk_path)
     file_size_mb = f"{file_bytes / (1024 * 1024):.2f} MB"
     

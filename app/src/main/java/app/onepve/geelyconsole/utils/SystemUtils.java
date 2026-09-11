@@ -1139,9 +1139,9 @@ public class SystemUtils {
             File tempDir = new File(downloadDir, "log_verify_" + System.currentTimeMillis());
             if (!tempDir.exists()) tempDir.mkdirs();
 
-            // 1. 抓取最近 logcat (限制 8000 行，覆盖最近 2~3 分钟操作，1 秒极速完成防卡死)
+            // 1. 抓取最近 logcat (限制 40000 行，覆盖最近 1.5~2 分钟操作，彻底防止高频刷屏冲刷)
             logFile = new File(tempDir, "all.log");
-            String cmd = "logcat -d -v time -t 8000 > " + logFile.getAbsolutePath();
+            String cmd = "logcat -d -v time -t 40000 > " + logFile.getAbsolutePath();
             executeShell(cmd);
 
             if (!logFile.exists() || logFile.length() == 0) {
@@ -1162,6 +1162,7 @@ public class SystemUtils {
 
             gearFile = filterLogByKeywords(logFile, new File(tempDir, "gear.log"),
                     "GearStateMachine", "挡位状态", "ECARX_GEAR_POSITION", "GEAR_SELECTION", "CURRENT_GEAR",
+                    "VehId=Vehicle_Gear", "onVehicleEventGear", "AvmStateManger", "isGearReverse",
                     "换挡", "档位", "gear", "DRIVEINFO", "INFO_ID_VDRIVEINFO_GEAR_POSITION", "驾驶模式", "DriveMode");
 
             powerFile = filterLogByKeywords(logFile, new File(tempDir, "power.log"),

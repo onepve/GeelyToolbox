@@ -509,57 +509,67 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // 3. 解析车辆挡位报文: MCULog:GearPosition: x (2=D, 3=N, 4=R, 5=P) 或 VehId=Vehicle_Gear value=0x0x
-        if (line.contains("GearPosition:") || line.contains("VehId=Vehicle_Gear value=0x")) {
-            int gearVal = -1;
-            int idx = line.indexOf("GearPosition:");
-            if (idx != -1) {
-                try {
-                    String sub = line.substring(idx + 13).trim();
-                    gearVal = Integer.parseInt(sub.substring(0, 1));
-                } catch (Exception ignored) {}
-            } else {
-                int gidx = line.indexOf("VehId=Vehicle_Gear value=0x");
-                if (gidx != -1) {
-                    try {
-                        String hex = line.substring(gidx + 27, gidx + 29).trim();
-                        int rawHex = Integer.parseInt(hex, 16);
-                        // 吉利/ECARX Vehicle_Gear 权威报文映射:
-                        // 0x14 (20) -> P挡 (5)
-                        // 0x13 (19) -> R挡 (4)
-                        // 0x12 (18) -> N挡 (3)
-                        // 0x11 (17) -> D挡 (2)
-                        // 0x15 (21) / 0x16 (22) -> S挡 (6)
-                        if (rawHex == 0x14) gearVal = 5;
-                        else if (rawHex == 0x13) gearVal = 4;
-                        else if (rawHex == 0x12) gearVal = 3;
-                        else if (rawHex == 0x11) gearVal = 2;
-                        else if (rawHex == 0x15 || rawHex == 0x16) gearVal = 6;
-                        else gearVal = rawHex;
-                    } catch (Exception ignored) {}
-                }
-            }
-            if (gearVal > 0) {
-                // MCU 串口报文（MCULog:GearPosition / VehId=Vehicle_Gear）是档位唯一权威源
-                // （原厂 HAL / CarService 直通实验通道已下线：该车机固件未授予平台签名，无法注册车辆属性回调）
-                handleGearSignal(gearVal);
-                return;
-            }
+        // 3. 解析车辆挡位报文 (四大独立权威源融合)
+        int gearVal = -1;
 
-            // 3.2 解析原厂核心服务 ecarx_core_server 挡位报文容灾 (mModelGearPos = 2/3/4/5)
-            // 以及 OpenAPI 属性 INFO_ID_VDRIVEINFO_GEAR_POSITION
-            if (line.contains("mModelGearPos") || line.contains("VDRIVEINFO_GEAR_POSITION") || line.contains("GearPos =")) {
+        // 3.1 吉利原厂 360 环视核心状态机 (AvmStateManger / onVehicleEventGear / state[GEAR_*]) 与 VehId=Vehicle_Gear
+        if (line.contains("onVehicleEventGear") || line.contains("state[GEAR_") || line.contains("Vehicle_Gear")) {
+            if (line.contains("GEAR_DRIVE") || line.contains("state[GEAR_DRIVE]")) gearVal = 2;
+            else if (line.contains("GEAR_REVERSE") || line.contains("state[GEAR_REVERSE]")) gearVal = 4;
+            else if (line.contains("GEAR_NEUTRAL") || line.contains("state[GEAR_NEUTRAL]")) gearVal = 3;
+            else if (line.contains("GEAR_PARK") || line.contains("state[GEAR_PARK]")) gearVal = 5;
+            else if (line.contains("GEAR_SPORT") || line.contains("state[GEAR_SPORT]")) gearVal = 6;
+            else if (line.contains("VehId=Vehicle_Gear")) {
                 try {
-                    Matcher gm = Pattern.compile("(?:mModelGearPos|VDRIVEINFO_GEAR_POSITION|GearPos)[^0-9]*(\\d+)").matcher(line);
-                    if (gm.find()) {
-                        int gVal = Integer.parseInt(gm.group(1));
-                        if (gVal >= 2 && gVal <= 7) {
-                            handleGearSignal(gVal);
-                            return;
-                        }
+                    Matcher m = Pattern.compile("VehId=Vehicle_Gear[^0-9a-fA-F]*(?:0x)?([0-9a-fA-F]+)").matcher(line);
+                    if (m.find()) {
+                        int rawHex = Integer.parseInt(m.group(1), 16);
+                        if (rawHex == 0x05 || rawHex == 0x14) gearVal = 5;
+                        else if (rawHex == 0x04 || rawHex == 0x13) gearVal = 4;
+                        else if (rawHex == 0x03 || rawHex == 0x12) gearVal = 3;
+                        else if (rawHex == 0x02 || rawHex == 0x11) gearVal = 2;
+                        else if (rawHex == 0x06 || rawHex == 0x15 || rawHex == 0x16) gearVal = 6;
+                        else gearVal = rawHex;
                     }
                 } catch (Exception ignored) {}
             }
+        }
+
+        // 3.2 MCU 串口硬件报文: MCULog:GearPosition: x (2=D, 3=N, 4=R, 5=P)
+        if (gearVal <= 0 && line.contains("GearPosition:")) {
+            try {
+                int idx = line.indexOf("GearPosition:");
+                if (idx != -1) {
+                    String sub = line.substring(idx + 13).trim();
+                    gearVal = Integer.parseInt(sub.substring(0, 1));
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 3.3 AudioPolicyManager 硬件倒车静音标志 (isGearReverse 1 -> 确认挂入倒车挡)
+        if (gearVal <= 0 && line.contains("isGearReverse 1")) {
+            gearVal = 4; // R挡
+        }
+
+        // 3.4 原厂核心服务与底层传感器属性: INFO_ID_VDRIVEINFO_GEAR_POSITION / mModelGearPos
+        if (gearVal <= 0 && (line.contains("VDRIVEINFO_GEAR_POSITION") || line.contains("mModelGearPos") || line.contains("GearPos ="))) {
+            try {
+                Matcher gm = Pattern.compile("(?:funValue|mModelGearPos|VDRIVEINFO_GEAR_POSITION|GearPos)[^0-9a-fA-F]*(?:0x)?([0-9a-fA-F]+)").matcher(line);
+                if (gm.find()) {
+                    int raw = Integer.parseInt(gm.group(1), 16);
+                    int low = raw & 0xFF;
+                    if (low == 0x30 || low == 0x05) gearVal = 5; // P
+                    else if (low == 0x31 || low == 0x04) gearVal = 4; // R
+                    else if (low == 0x32 || low == 0x03) gearVal = 3; // N
+                    else if (low == 0x33 || low == 0x02) gearVal = 2; // D
+                    else if (low >= 2 && low <= 7) gearVal = low;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        if (gearVal > 0) {
+            handleGearSignal(gearVal);
+            return;
         }
 
         // 4.1 解析底层 MCU 串口车身报文: 91 02 01 ... b6(四门) 与 b7(尾门) (最权威物理硬件通道！)
@@ -701,12 +711,13 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
-        // 优先 5: 原厂核心服务 ecarx_core_server (mModelDriverMode / mModelDriveMode)
-        else if (line.contains("mModelDriverMode") || line.contains("mModelDriveMode") || line.contains("VDRIVEINFO_DRIVER_MODE") || line.contains("DriverMode =")) {
+        // 优先 5: 原厂核心服务 ecarx_core_server 与 SensorModule (mModelDriverMode / mModelDriveMode / VDRIVEINFO_DRIVER_MODE)
+        else if (line.contains("mModelDriverMode") || line.contains("mModelDriveMode") || line.contains("VDRIVEINFO_DRIVER_MODE") || line.contains("DriverMode =") || line.contains("DriveMode =")) {
             try {
-                Matcher dm = Pattern.compile("(?:mModelDriverMode|mModelDriveMode|VDRIVEINFO_DRIVER_MODE|DriverMode)[^0-9]*(\\d+)").matcher(line);
+                Matcher dm = Pattern.compile("(?:funValue|mModelDriverMode|mModelDriveMode|VDRIVEINFO_DRIVER_MODE|DriverMode|DriveMode)[^0-9a-fA-F]*(?:0x)?([0-9a-fA-F]+)").matcher(line);
                 if (dm.find()) {
-                    int dVal = Integer.parseInt(dm.group(1));
+                    int raw = Integer.parseInt(dm.group(1), 16);
+                    int dVal = raw & 0xFF;
                     if (dVal == 1) modeVal = MODE_COMFORT;
                     else if (dVal == 2) modeVal = MODE_SPORT;
                     else if (dVal == 3) modeVal = MODE_ECO;
@@ -890,8 +901,15 @@ public class VehicleAutomationService extends Service {
                 if (m.find()) return Integer.parseInt(m.group(1));
             }
             if (l.contains("info_id_vpowerinfo_key_state") || l.contains("key_state")) {
-                Matcher m = Pattern.compile("(?:info_id_vpowerinfo_key_state|key_state)[^0-9]*(\\d+)").matcher(l);
-                if (m.find()) return Integer.parseInt(m.group(1));
+                Matcher m = Pattern.compile("(?:funvalue|info_id_vpowerinfo_key_state|key_state)[^0-9a-f]*(?:0x)?([0-9a-f]+)").matcher(l);
+                if (m.find()) {
+                    int raw = Integer.parseInt(m.group(1), 16);
+                    int low = raw & 0xFF;
+                    if (low == 0x05 || low == 2) return 2; // ON 点火就绪
+                    if (low == 0x02 || low == 1) return 1; // ACC 通电
+                    if (low == 0) return 0; // 熄火下电
+                    return low;
+                }
             }
             if (l.contains("info_id_vpowerinfo_engine_state") || l.contains("engine_state")) {
                 Matcher m = Pattern.compile("(?:info_id_vpowerinfo_engine_state|engine_state)[^0-9]*(\\d+)").matcher(l);
