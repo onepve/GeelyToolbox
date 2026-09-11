@@ -521,7 +521,7 @@ public class VehicleAutomationService extends Service {
             else if (line.contains("GEAR_SPORT") || line.contains("state[GEAR_SPORT]")) gearVal = 6;
             else if (line.contains("VehId=Vehicle_Gear")) {
                 try {
-                    Matcher m = Pattern.compile("VehId=Vehicle_Gear[^0-9a-fA-F]*(?:0x)?([0-9a-fA-F]+)").matcher(line);
+                    Matcher m = Pattern.compile("VehId=Vehicle_Gear\\s+value=(?:0x)?([0-9a-fA-F]+)").matcher(line);
                     if (m.find()) {
                         int rawHex = Integer.parseInt(m.group(1), 16);
                         if (rawHex == 0x05 || rawHex == 0x14) gearVal = 5;

@@ -2,6 +2,8 @@ package app.onepve.geelyconsole.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Handler;
+import android.os.Looper;
 
 /**
  * 驾驶模式独立判定器 (DriveModeManager)
@@ -29,11 +31,14 @@ public class DriveModeManager {
     }
 
     private final Context context;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private VehicleVoicePlayer voicePlayer;
     private DriveModeListener listener;
 
     private int lastDriveMode = MODE_SMART; // 缤越 COOL 点火出厂默认基准锁定智能模式
     private int isDriveModeVoiceArmed = 0; // 0=智能模式静默态, 1=车主激活态
+    private Runnable pendingModeTask = null;
+    private static final long MODE_DEBOUNCE_MS = 160; // 模式切换防抖滤波窗口 (160ms 滤除旋钮极速滑动过渡态)
 
     public DriveModeManager(Context context, VehicleVoicePlayer voicePlayer) {
         this.context = context.getApplicationContext();
@@ -56,6 +61,10 @@ public class DriveModeManager {
      * ⚠️ 幂等静默：仅在状态真正发生变化时才写日志，严禁被 MCU 心跳无限刷屏。
      */
     public synchronized void resetState() {
+        if (pendingModeTask != null) {
+            mainHandler.removeCallbacks(pendingModeTask);
+            pendingModeTask = null;
+        }
         boolean changed = (lastDriveMode != MODE_SMART || isDriveModeVoiceArmed != 0);
         lastDriveMode = MODE_SMART;
         isDriveModeVoiceArmed = 0;
@@ -64,7 +73,7 @@ public class DriveModeManager {
         }
     }
 
-    public synchronized void updateDriveMode(int mode, boolean voiceMasterSwitch, SharedPreferences prefs) {
+    public synchronized void updateDriveMode(int mode, final boolean voiceMasterSwitch, final SharedPreferences prefs) {
         if (mode <= 0) return;
 
         if (mode == lastDriveMode) {
@@ -72,51 +81,71 @@ public class DriveModeManager {
             return;
         }
 
-        AppLogger.i("驾驶模式", "模式切换: " + getModeName(lastDriveMode) + " -> " + getModeName(mode) + ", armed=" + isDriveModeVoiceArmed);
-
-        // 1. 从默认智能模式切出 -> 激活状态机
-        if (lastDriveMode == MODE_SMART && mode != MODE_SMART) {
-            isDriveModeVoiceArmed = 1;
+        // 取消上一次正在防抖中的模式任务 (滤除旋钮快速连切的瞬态，如快速划过经济直接切入舒适)
+        if (pendingModeTask != null) {
+            mainHandler.removeCallbacks(pendingModeTask);
+            pendingModeTask = null;
         }
 
-        // 2. 播报判定 (默认全开，支持双别名兼容)
-        if (voiceMasterSwitch) {
-            boolean enableComfort = prefs.contains("voice_enable_mode_comfort") ? prefs.getBoolean("voice_enable_mode_comfort", true) : prefs.getBoolean("enable_mode_comfort", true);
-            boolean enableSport = prefs.contains("voice_enable_mode_sport") ? prefs.getBoolean("voice_enable_mode_sport", true) : prefs.getBoolean("enable_mode_sport", true);
-            boolean enableEco = prefs.contains("voice_enable_mode_eco") ? prefs.getBoolean("voice_enable_mode_eco", true) : prefs.getBoolean("enable_mode_eco", true);
-            boolean enableSmart = prefs.contains("voice_enable_mode_smart") ? prefs.getBoolean("voice_enable_mode_smart", true) : prefs.getBoolean("enable_mode_smart", true);
+        final int targetMode = mode;
+        pendingModeTask = new Runnable() {
+            @Override
+            public void run() {
+                synchronized (DriveModeManager.this) {
+                    pendingModeTask = null;
+                    if (targetMode == lastDriveMode) return;
 
-            switch (mode) {
-                case MODE_COMFORT:
-                    if (enableComfort && voicePlayer != null) {
-                        voicePlayer.play("mode_comfort.mp3", "舒适模式");
+                    AppLogger.i("驾驶模式", "模式确认切换: " + getModeName(lastDriveMode) + " -> " + getModeName(targetMode) + ", armed=" + isDriveModeVoiceArmed);
+
+                    // 1. 从默认智能模式切出 -> 激活状态机
+                    if (lastDriveMode == MODE_SMART && targetMode != MODE_SMART) {
+                        isDriveModeVoiceArmed = 1;
                     }
-                    break;
-                case MODE_SPORT:
-                    if (enableSport && voicePlayer != null) {
-                        voicePlayer.play("mode_sport.mp3", "运动模式");
-                    }
-                    break;
-                case MODE_ECO:
-                    if (enableEco && voicePlayer != null) {
-                        voicePlayer.play("mode_eco.mp3", "经济模式");
-                    }
-                    break;
-                case MODE_SMART:
-                    if (isDriveModeVoiceArmed == 1) {
-                        if (enableSmart && voicePlayer != null) {
-                            voicePlayer.play("mode_smart.mp3", "智能模式");
+
+                    // 2. 播报判定 (默认全开，支持双别名兼容)
+                    if (voiceMasterSwitch) {
+                        boolean enableComfort = prefs.contains("voice_enable_mode_comfort") ? prefs.getBoolean("voice_enable_mode_comfort", true) : prefs.getBoolean("enable_mode_comfort", true);
+                        boolean enableSport = prefs.contains("voice_enable_mode_sport") ? prefs.getBoolean("voice_enable_mode_sport", true) : prefs.getBoolean("enable_mode_sport", true);
+                        boolean enableEco = prefs.contains("voice_enable_mode_eco") ? prefs.getBoolean("voice_enable_mode_eco", true) : prefs.getBoolean("enable_mode_eco", true);
+                        boolean enableSmart = prefs.contains("voice_enable_mode_smart") ? prefs.getBoolean("voice_enable_mode_smart", true) : prefs.getBoolean("enable_mode_smart", true);
+
+                        switch (targetMode) {
+                            case MODE_COMFORT:
+                                if (enableComfort && voicePlayer != null) {
+                                    voicePlayer.play("mode_comfort.mp3", "舒适模式");
+                                }
+                                break;
+                            case MODE_SPORT:
+                                if (enableSport && voicePlayer != null) {
+                                    voicePlayer.play("mode_sport.mp3", "运动模式");
+                                }
+                                break;
+                            case MODE_ECO:
+                                if (enableEco && voicePlayer != null) {
+                                    voicePlayer.play("mode_eco.mp3", "经济模式");
+                                }
+                                break;
+                            case MODE_SMART:
+                                if (isDriveModeVoiceArmed == 1) {
+                                    if (enableSmart && voicePlayer != null) {
+                                        voicePlayer.play("mode_smart.mp3", "智能模式");
+                                    }
+                                }
+                                isDriveModeVoiceArmed = 0; // 归零！进入静默态
+                                break;
                         }
                     }
-                    isDriveModeVoiceArmed = 0; // 归零！进入静默态
-                    break;
-            }
-        }
 
-        lastDriveMode = mode;
-        if (listener != null) {
-            listener.onDriveModeChanged(lastDriveMode);
-        }
+                    lastDriveMode = targetMode;
+                    if (listener != null) {
+                        listener.onDriveModeChanged(lastDriveMode);
+                    }
+                }
+            }
+        };
+
+        // 立即投递 160ms 防抖确认，确保旋钮旋转到位后干脆播报，绝不被中间态掐断
+        mainHandler.postDelayed(pendingModeTask, MODE_DEBOUNCE_MS);
     }
 
     private String getModeName(int mode) {
