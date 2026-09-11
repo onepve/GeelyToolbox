@@ -35,15 +35,14 @@ public class DriveModeManager {
     private VehicleVoicePlayer voicePlayer;
     private DriveModeListener listener;
 
-    private int lastDriveMode = MODE_SMART; // 缤越 COOL 点火出厂默认基准锁定智能模式
-    private int isDriveModeVoiceArmed = 0; // 0=智能模式静默态, 1=车主激活态
+    private int lastDriveMode = -1; // 初始未定态 (-1)，开机首包静默确立基准
+    private int isDriveModeVoiceArmed = 0; // 0=静默休眠态, 1=车主激活态
     private Runnable pendingModeTask = null;
     private static final long MODE_DEBOUNCE_MS = 160; // 模式切换防抖滤波窗口 (160ms 滤除旋钮极速滑动过渡态)
 
     public DriveModeManager(Context context, VehicleVoicePlayer voicePlayer) {
         this.context = context.getApplicationContext();
         this.voicePlayer = voicePlayer;
-        AppLogger.i("驾驶模式", "驾驶模式状态机就绪: 默认确立智能模式基准 (armed=0 静默)");
     }
 
     public void setListener(DriveModeListener listener) {
@@ -54,10 +53,10 @@ public class DriveModeManager {
         this.voicePlayer = voicePlayer;
     }
 
-    public int getDriveMode() { return lastDriveMode; }
+    public int getDriveMode() { return lastDriveMode == -1 ? MODE_SMART : lastDriveMode; }
 
     /**
-     * 车辆熄火/断电/休眠复位：驾驶模式状态机重置为默认智能模式基准，下一次点火绝对静默
+     * 车辆熄火/断电/休眠复位：驾驶模式状态机重置归零，下一次点火绝对静默
      * ⚠️ 幂等静默：仅在状态真正发生变化时才写日志，严禁被 MCU 心跳无限刷屏。
      */
     public synchronized void resetState() {
@@ -65,20 +64,36 @@ public class DriveModeManager {
             mainHandler.removeCallbacks(pendingModeTask);
             pendingModeTask = null;
         }
-        boolean changed = (lastDriveMode != MODE_SMART || isDriveModeVoiceArmed != 0);
-        lastDriveMode = MODE_SMART;
+        boolean changed = (lastDriveMode != -1 || isDriveModeVoiceArmed != 0);
+        lastDriveMode = -1;
         isDriveModeVoiceArmed = 0;
         if (changed) {
-            AppLogger.i("驾驶模式", "熄火休眠复位: 重置归位默认智能模式基准 (armed=0)");
+            AppLogger.i("驾驶模式", "熄火休眠复位: 重置归位基准 (lastMode=-1, armed=0)");
         }
     }
 
     public synchronized void updateDriveMode(int mode, final boolean voiceMasterSwitch, final SharedPreferences prefs) {
         if (mode <= 0) return;
 
+        // 1. 开机首包基准静默建立：绝不盲目发声！
+        if (lastDriveMode == -1) {
+            lastDriveMode = mode;
+            isDriveModeVoiceArmed = 0;
+            AppLogger.i("驾驶模式", "基准初始化: 当前模式=" + getModeName(mode) + ", armed=0 (静默休眠)");
+            if (listener != null) {
+                listener.onDriveModeChanged(lastDriveMode);
+            }
+            return;
+        }
+
         if (mode == lastDriveMode) {
             // 同模式信号重复接收，静默放行
             return;
+        }
+
+        // 模式切换瞬间，第一毫秒立刻掐灭上一句旧声音
+        if (voicePlayer != null) {
+            voicePlayer.stopCurrentVoice();
         }
 
         // 取消上一次正在防抖中的模式任务 (滤除旋钮快速连切的瞬态，如快速划过经济直接切入舒适)

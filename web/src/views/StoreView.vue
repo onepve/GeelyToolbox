@@ -64,7 +64,7 @@
               {{ app.size }}
             </span>
           </div>
-          <p class="text-[16px] text-car-sub font-medium leading-relaxed pt-1">{{ app.desc }}</p>
+          <p class="text-[16px] text-car-sub font-medium leading-relaxed pt-1 line-clamp-2">{{ getBriefDesc(app) }}</p>
         </div>
 
         <div class="flex items-center justify-between pt-4 mt-3 border-t border-car-border/60">
@@ -98,13 +98,19 @@ const filteredApps = computed(() => {
   return allApps.value.filter(a => a.category === currentCategory.value);
 });
 
+function getBriefDesc(app) {
+  const raw = app?.desc || app?.description || '';
+  return raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 function refreshApps() {
   bridge.call('refreshCloudApps');
   showToast('正在从云端拉取最新应用清单...');
 }
 
 function handleDownload(app) {
-  bridge.call('downloadApp', app.id, app.url, app.filename);
+  const url = app.download_url || app.url;
+  bridge.call('downloadApp', app.id, url, app.filename);
   showToast('已下发下载任务: ' + app.name);
 }
 </script>

@@ -144,7 +144,13 @@ onMounted(() => {
     try {
       const data = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
       if (data && Array.isArray(data.apps)) {
-        store.apps = data.apps;
+        store.apps = data.apps.map(item => ({
+          ...item,
+          desc: item.description || item.desc || '',
+          description: item.description || item.desc || '',
+          url: item.download_url || item.url || '',
+          download_url: item.download_url || item.url || ''
+        }));
       }
     } catch (e) {}
   };

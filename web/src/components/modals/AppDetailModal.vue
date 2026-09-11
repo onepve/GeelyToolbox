@@ -34,7 +34,7 @@
       <!-- 详细特性说明卡片 -->
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-2">
         <span class="text-[18px] font-black text-car-text">功能特性与适配说明</span>
-        <p class="text-[16.5px] text-car-sub font-semibold leading-relaxed whitespace-pre-wrap">{{ app.desc }}</p>
+        <div class="text-[16.5px] text-car-sub font-semibold leading-relaxed" v-html="app.description || app.desc"></div>
       </div>
 
       <!-- 动态全宽下载进度条 (下载中/暂停/完成动态展开) -->
@@ -181,7 +181,8 @@ const actionButtonText = computed(() => {
 
 function handleInstallAction() {
   if (!app.value) return;
-  bridge.call('downloadApp', app.value.id, app.value.url, app.value.filename);
+  const url = app.value.download_url || app.value.url;
+  bridge.call('downloadApp', app.value.id, url, app.value.filename);
   showToast(`已下发下载任务: ${app.value.name}`);
 }
 
@@ -196,7 +197,8 @@ function pauseDownload() {
 
 function resumeDownload() {
   if (!app.value) return;
-  bridge.call('downloadApp', app.value.id, app.value.url, app.value.filename);
+  const url = app.value.download_url || app.value.url;
+  bridge.call('downloadApp', app.value.id, url, app.value.filename);
   if (store.downloadProgress[app.value.id]) {
     store.downloadProgress[app.value.id].status = 'downloading';
   }

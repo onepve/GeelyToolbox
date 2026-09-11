@@ -29,7 +29,7 @@ static String lastRawValue="";
 static class TextUtils {static boolean isEmpty(String s){return s==null||s.isEmpty();}}
 static class Log {static void i(String t,String m){}}
 static String TAG="test";
-int lastPowerMode=1; float latestBatteryVoltage=0; int currentSpeedKmH=0;
+int lastPowerMode=1; float latestBatteryVoltage=0; int currentSpeedKmH=0; int lastKeyState=0;
 Object tts=new Object(); boolean ttsReady=true; String pendingText,pendingVoiceType;
 long pendingTextAt; %s
 int spoken; String spokenText;

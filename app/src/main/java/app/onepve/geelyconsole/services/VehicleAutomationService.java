@@ -831,15 +831,14 @@ public class VehicleAutomationService extends Service {
     public boolean isEngineRunning() {
         // 1. 明确检测到熄火下电（SHUTDOWN / QUICKBOOT_POWEROFF / ECARX_SHUTDOWN 广播锁定，或 PEPS/KEY=0）→ 绝对静音
         if (lastPowerMode == 0) return false;
-        // 2. 发电机高压充电权威信号：若电压稳稳 ≥13.2V，发电机必然在转，100% 确认运行
-        if (latestBatteryVoltage >= 13.2f) return true;
-        // 3. 车速非零：车辆行驶移动中，100% 确认运行
+        // 2. 车速非零：车辆行驶移动中，100% 确认运行
         if (currentSpeedKmH > 0) return true;
-        // 4. 明确检测到电源点火处于就绪状态 (lastPowerMode > 0)
-        if (lastPowerMode > 0) return true;
-        // 5. 初始未定态 (lastPowerMode == -1)：除极度亏电浅休眠 (9.0V~11.5V) 且零车速外，默认放行
-        //    内置有人感知状态机（P挡静眠/智能模式静眠）天然具备开机防误播防线，绝不漏报点火换挡与模式切换
-        if (latestBatteryVoltage >= 9.0f && latestBatteryVoltage < 11.5f && currentSpeedKmH == 0) {
+        // 3. 发电机高压充电权威信号：若电压稳稳 ≥13.2V，发电机必然在转，100% 确认运行
+        if (latestBatteryVoltage >= 13.2f) return true;
+        // 4. 明确检测到电源点火处于就绪状态 (lastPowerMode == 1 或钥匙 ON 信号)
+        if (lastPowerMode == 1 || lastKeyState == 2) return true;
+        // 5. 其余静止无充电状态（蓄电池自然静置电压 9.0V~13.0V 且零车速）：判定为熄火未启动状态，绝对静默！
+        if (latestBatteryVoltage >= 9.0f && latestBatteryVoltage < 13.0f && currentSpeedKmH == 0) {
             return false;
         }
         return true;
@@ -971,7 +970,7 @@ public class VehicleAutomationService extends Service {
                 doorStateManager.markDriverMayEnter();
                 // QQ 音乐解锁即预载同款：解锁/上电瞬间提前预热 TTS，点火后首条语音秒出
                 if (voicePlayer != null) voicePlayer.ensureTtsReady();
-                lastPowerMode = 1; // 明确标记上电点火就绪
+                // 铁律：蓝牙靠近唤醒/解锁绝不等于发动机点火，绝对严禁标记 lastPowerMode = 1，防止车外空响！
             }
             return;
         }

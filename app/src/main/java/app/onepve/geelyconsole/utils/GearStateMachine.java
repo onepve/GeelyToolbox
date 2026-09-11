@@ -97,6 +97,8 @@ public class GearStateMachine {
     public synchronized void updateGear(int rawGear, final boolean voiceMasterSwitch, final SharedPreferences prefs) {
         if (rawGear <= 0) return;
         final int gear = normalizeGear(rawGear);
+        // 严格挡位合法性检查：仅允许 2(D)、3(N)、4(R)、5(P)、6/7(S) 真实物理挡位，拦截 1 等非标诊断脏数据
+        if (gear < 2 || gear > 7) return;
 
         if (lastGearPos == -1) {
             lastGearPos = gear;
@@ -132,8 +134,8 @@ public class GearStateMachine {
 
                     AppLogger.i("挡位状态", "挡位确认跃变: " + getGearName(lastGearPos) + " -> " + getGearName(gear) + ", armed=" + isGearVoiceArmed);
 
-                    // 1. 换出 P 挡进入行车挡 (D挡2, R挡4, S挡6/7 或从P切出)，立即武装状态机
-                    if (gear == 2 || gear == 4 || gear == 6 || gear == 7 || (lastGearPos == 5 && gear != 5)) {
+                    // 1. 换出 P 挡真正进入行车挡 (D挡2, R挡4, S挡6/7)，才允许武装状态机
+                    if (gear == 2 || gear == 4 || gear == 6 || gear == 7) {
                         isGearVoiceArmed = 1;
                     }
 
@@ -162,8 +164,9 @@ public class GearStateMachine {
                                 voicePlayer.play("gear_s.mp3", "已挂入运动挡");
                             }
                         } else if (gear == 5) { // P 挡
-                            // 只要曾切出过 P 挡（isGearVoiceArmed == 1 或 prevGear != 5），挂回 P 挡即刻播报
-                            if (isGearVoiceArmed == 1 || prevGear != 5) {
+                            // 严格铁律：必须且仅当曾换入行车挡武装过 (isGearVoiceArmed == 1)，挂回 P 挡才允许播报！
+                            // 彻底拔除 || prevGear != 5 漏洞，杜绝熄火或刚开机时因总线诊断心跳反复误报驻车挡
+                            if (isGearVoiceArmed == 1) {
                                 if (enableP && voicePlayer != null) {
                                     voicePlayer.play("gear_p.mp3", "已挂入驻车挡");
                                 }
