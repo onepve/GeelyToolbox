@@ -87,7 +87,7 @@ def main():
             "bytes": bytes_len,
             "md5": md5,
             "sha256": sha256,
-            "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v={version_name}",
+            "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyPilot.apk?v={version_name}",
             "changelog": (
                 "本次同步更新：\n"
                 "1. 修复点火后首条语音播报缺失：语音引擎未就绪时自动排队补播，点火即挂挡绝不漏报\n"
@@ -117,7 +117,7 @@ def main():
                 "sha256": sha256,
                 "bytes": bytes_len,
                 "size": size_mb,
-                "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v={version_name}"
+                "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyPilot.apk?v={version_name}"
             })
             apps_data["toolbox"] = tb
             with open(apps_json_path, "w", encoding="utf-8") as f:
