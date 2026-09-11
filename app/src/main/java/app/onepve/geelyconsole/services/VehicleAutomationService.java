@@ -537,6 +537,21 @@ public class VehicleAutomationService extends Service {
             }
         }
 
+        // 3.15 吉利 VehicleManager 框架标准状态: getDrivingMode: gear=X mode=Y (Tasker实车权威验证源)
+        if (gearVal <= 0 && line.contains("getDrivingMode") && line.contains("gear=")) {
+            try {
+                Matcher m = Pattern.compile("gear=(\\d+)").matcher(line);
+                if (m.find()) {
+                    long gNum = Long.parseLong(m.group(1));
+                    long low = gNum & 0xFF;
+                    if (low == 0x20 || gNum == 2097696L) gearVal = 2; // D挡 (0x200220)
+                    else if (low == 0x40 || gNum == 2097728L) gearVal = 4; // R挡 (0x200240)
+                    else if (low == 0x10 || gNum == 2097680L) gearVal = 3; // N挡 (0x200210)
+                    else if (low == 0x30 || gNum == 2097712L) gearVal = 5; // P挡 (0x200230)
+                }
+            } catch (Exception ignored) {}
+        }
+
         // 3.2 MCU 串口硬件报文: MCULog:GearPosition: x (2=D, 3=N, 4=R, 5=P)
         if (gearVal <= 0 && line.contains("GearPosition:")) {
             try {
@@ -701,10 +716,28 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
-        // 优先 4: MCU TargetMode 与 CarConfig DirveMode
-        else if (line.contains("TargetMode:") || line.contains("DirveMode =")) {
+        // 优先 4: ECarXCarConfigService 官方系统级上报 (DirveMode = X / DriveMode = X)
+        // 严格遵循吉利 E02 实车权威映射 (与 Tasker 100% 对齐):
+        // 1 -> 舒适模式 (MODE_COMFORT)
+        // 2 -> 运动模式 (MODE_SPORT)
+        // 3 -> 经济模式 (MODE_ECO)
+        // 4 / 6 -> 智能模式 (MODE_SMART)
+        else if (line.contains("DirveMode =") || line.contains("DirveMode=") || line.contains("DriveMode =") || line.contains("DriveMode=")) {
             try {
-                Matcher m = Pattern.compile("(?:TargetMode:|DirveMode\\s*=)\\s*(\\d+)").matcher(line);
+                Matcher m = Pattern.compile("Di(?:r|v)eMode\\s*=\\s*(\\d+)").matcher(line);
+                if (m.find()) {
+                    int dm = Integer.parseInt(m.group(1));
+                    if (dm == 1) modeVal = MODE_COMFORT;
+                    else if (dm == 2) modeVal = MODE_SPORT;
+                    else if (dm == 3) modeVal = MODE_ECO;
+                    else if (dm == 4 || dm == 6) modeVal = MODE_SMART;
+                }
+            } catch (Exception ignored) {}
+        }
+        // 优先 4.5: MCU 底盘原始指令 (TargetMode: X)
+        else if (line.contains("TargetMode:")) {
+            try {
+                Matcher m = Pattern.compile("TargetMode:\\s*(\\d+)").matcher(line);
                 if (m.find()) {
                     int tm = Integer.parseInt(m.group(1));
                     if (tm == 1 || tm == 3) modeVal = MODE_COMFORT;
@@ -714,10 +747,10 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
-        // 优先 5: 原厂核心服务 ecarx_core_server 与 SensorModule (mModelDriverMode / mModelDriveMode / VDRIVEINFO_DRIVER_MODE)
-        else if (line.contains("mModelDriverMode") || line.contains("mModelDriveMode") || line.contains("VDRIVEINFO_DRIVER_MODE") || line.contains("DriverMode =") || line.contains("DriveMode =")) {
+        // 优先 5: 原厂核心服务 ecarx_core_server 与 SensorModule (mModelDriverMode / mModelDriveMode / VDRIVEINFO_DRIVER_MODE / getDrivingMode mode=X)
+        else if (line.contains("mModelDriverMode") || line.contains("mModelDriveMode") || line.contains("VDRIVEINFO_DRIVER_MODE") || line.contains("DriverMode =") || (line.contains("getDrivingMode") && line.contains("mode="))) {
             try {
-                Matcher dm = Pattern.compile("(?:funValue|mModelDriverMode|mModelDriveMode|VDRIVEINFO_DRIVER_MODE|DriverMode|DriveMode)[^0-9a-fA-F]*(?:0x)?([0-9a-fA-F]+)").matcher(line);
+                Matcher dm = Pattern.compile("(?:funValue|mModelDriverMode|mModelDriveMode|VDRIVEINFO_DRIVER_MODE|DriverMode|mode)\\s*[:=]?\\s*(?:0x)?([0-9a-fA-F]+)").matcher(line);
                 if (dm.find()) {
                     int raw = Integer.parseInt(dm.group(1), 16);
                     int dVal = raw & 0xFF;
@@ -899,6 +932,9 @@ public class VehicleAutomationService extends Service {
         if (line == null) return -1;
         String l = line.toLowerCase();
         try {
+            if (l.contains("onaccoff") || l.contains("on_acc_off") || (l.contains("fuelconsumptionservice") && l.contains("accoff"))) {
+                return 0; // Tasker实车验证: FuelConsumptionServiceImpl onAccOff -> 车辆熄火下电
+            }
             if (l.contains("peps_powermode")) {
                 Matcher m = Pattern.compile("peps_powermode[^0-9]*(\\d+)").matcher(l);
                 if (m.find()) return Integer.parseInt(m.group(1));
