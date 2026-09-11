@@ -835,8 +835,8 @@ public class VehicleAutomationService extends Service {
         if (currentSpeedKmH > 0) return true;
         // 3. 发电机高压充电权威信号：若电压稳稳 ≥13.2V，发电机必然在转，100% 确认运行
         if (latestBatteryVoltage >= 13.2f) return true;
-        // 4. 明确检测到电源点火处于就绪状态 (lastPowerMode == 1 或钥匙 ON 信号)
-        if (lastPowerMode == 1 || lastKeyState == 2) return true;
+        // 4. 明确检测到电源点火处于就绪状态 (lastPowerMode == 1 或钥匙 ON / RUN 信号)
+        if (lastPowerMode == 1 || lastKeyState == 2 || lastKeyState >= 10) return true;
         // 5. 其余静止无充电状态（蓄电池自然静置电压 9.0V~13.0V 且零车速）：判定为熄火未启动状态，绝对静默！
         if (latestBatteryVoltage >= 9.0f && latestBatteryVoltage < 13.0f && currentSpeedKmH == 0) {
             return false;
