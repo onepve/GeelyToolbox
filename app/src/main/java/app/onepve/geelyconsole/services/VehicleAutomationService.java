@@ -672,57 +672,16 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // 4.1 解析驾驶模式切换信号 (涵盖 AdaptAPI 9位常量、ComfortModule、MCULog 及 CarSettingLogs)
+        // 4.1 解析驾驶模式切换信号 (严格收敛对齐 Tasker 实车验证黄金法则: 纯净收敛于 ECarXCarConfigService 与 AdaptAPI 权威常量)
         int modeVal = -1;
 
-        // 优先 1: AdaptAPI 9位全局权威常量 (100% 准确、零歧义)
-        if (line.contains("570491138")) {
-            modeVal = MODE_COMFORT; // 舒适模式 (DRIVE_MODE_SELECTION_COMFORT = 570491138)
-        } else if (line.contains("570491139")) {
-            modeVal = MODE_SPORT;   // 运动模式 (DRIVE_MODE_SELECTION_DYNAMIC = 570491139)
-        } else if (line.contains("570491137")) {
-            modeVal = MODE_ECO;     // 经济模式 (DRIVE_MODE_SELECTION_ECO = 570491137)
-        } else if (line.contains("570491158")) {
-            modeVal = MODE_SMART;   // 智能模式 (DRIVE_MODE_SELECTION_ADAPTIVE = 570491158)
-        }
-        // 优先 2: ComfortModule 上报 (DM_FUNC_DRIVE_MODE_SELECT value=X)
-        else if (line.contains("DM_FUNC_DRIVE_MODE_SELECT")) {
-            try {
-                Matcher m = Pattern.compile("DM_FUNC_DRIVE_MODE_SELECT[\\s:]+value[=:\\s]+(\\d+)").matcher(line);
-                if (m.find()) {
-                    int val = Integer.parseInt(m.group(1));
-                    if (val == 1) modeVal = MODE_COMFORT;
-                    else if (val == 2) modeVal = MODE_SPORT;
-                    else if (val == 3) modeVal = MODE_ECO;
-                    else if (val == 6) modeVal = MODE_SMART;
-                }
-            } catch (Exception ignored) {}
-        }
-        // 优先 3: MCU 底盘按键上报 (MCU Report SwitchMode: X)
-        // 吉利缤越 COOL SX11-A3 实体按键映射真实对应:
-        // 0 -> 经济模式 (MODE_ECO)
-        // 1 -> 舒适模式 (MODE_COMFORT)
-        // 2 -> 运动模式 (MODE_SPORT)
-        // 6 -> 智能模式 (MODE_SMART)
-        else if (line.contains("SwitchMode:")) {
-            try {
-                Matcher m = Pattern.compile("SwitchMode:\\s*(\\d+)").matcher(line);
-                if (m.find()) {
-                    int sm = Integer.parseInt(m.group(1));
-                    if (sm == 1) modeVal = MODE_COMFORT;
-                    else if (sm == 0) modeVal = MODE_ECO;
-                    else if (sm == 2) modeVal = MODE_SPORT;
-                    else if (sm == 6) modeVal = MODE_SMART;
-                }
-            } catch (Exception ignored) {}
-        }
-        // 优先 4: ECarXCarConfigService 官方系统级上报 (DirveMode = X / DriveMode = X)
-        // 严格遵循吉利 E02 实车权威映射 (与 Tasker 100% 对齐):
+        // 优先 1: ECarXCarConfigService 官方系统级权威上报 (DirveMode = X / DriveMode = X)
+        // 缤越 COOL Tasker 验证黄金源：旋钮切挡与系统配置全局同步，彻底杜绝杂波
         // 1 -> 舒适模式 (MODE_COMFORT)
         // 2 -> 运动模式 (MODE_SPORT)
         // 3 -> 经济模式 (MODE_ECO)
         // 4 / 6 -> 智能模式 (MODE_SMART)
-        else if (line.contains("DirveMode =") || line.contains("DirveMode=") || line.contains("DriveMode =") || line.contains("DriveMode=")) {
+        if (line.contains("DirveMode =") || line.contains("DirveMode=") || line.contains("DriveMode =") || line.contains("DriveMode=")) {
             try {
                 Matcher m = Pattern.compile("Di(?:r|v)eMode\\s*=\\s*(\\d+)").matcher(line);
                 if (m.find()) {
@@ -734,32 +693,15 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
-        // 优先 4.5: MCU 底盘原始指令 (TargetMode: X)
-        else if (line.contains("TargetMode:")) {
-            try {
-                Matcher m = Pattern.compile("TargetMode:\\s*(\\d+)").matcher(line);
-                if (m.find()) {
-                    int tm = Integer.parseInt(m.group(1));
-                    if (tm == 1 || tm == 3) modeVal = MODE_COMFORT;
-                    else if (tm == 2 || tm == 0) modeVal = MODE_ECO;
-                    else if (tm == 6) modeVal = MODE_SMART;
-                    else if (tm == 4 || tm == 5) modeVal = MODE_SPORT;
-                }
-            } catch (Exception ignored) {}
-        }
-        // 优先 5: 原厂核心服务 ecarx_core_server 与 SensorModule (mModelDriverMode / mModelDriveMode / VDRIVEINFO_DRIVER_MODE / getDrivingMode mode=X)
-        else if (line.contains("mModelDriverMode") || line.contains("mModelDriveMode") || line.contains("VDRIVEINFO_DRIVER_MODE") || line.contains("DriverMode =") || (line.contains("getDrivingMode") && line.contains("mode="))) {
-            try {
-                Matcher dm = Pattern.compile("(?:funValue|mModelDriverMode|mModelDriveMode|VDRIVEINFO_DRIVER_MODE|DriverMode|mode)\\s*[:=]?\\s*(?:0x)?([0-9a-fA-F]+)").matcher(line);
-                if (dm.find()) {
-                    int raw = Integer.parseInt(dm.group(1), 16);
-                    int dVal = raw & 0xFF;
-                    if (dVal == 1) modeVal = MODE_COMFORT;
-                    else if (dVal == 2) modeVal = MODE_SPORT;
-                    else if (dVal == 3) modeVal = MODE_ECO;
-                    else if (dVal == 4 || dVal == 6) modeVal = MODE_SMART;
-                }
-            } catch (Exception ignored) {}
+        // 优先 2: AdaptAPI 9位全局权威常量容灾 (570491138/9/7/58)
+        else if (line.contains("570491138")) {
+            modeVal = MODE_COMFORT; // 舒适模式 (DRIVE_MODE_SELECTION_COMFORT = 570491138)
+        } else if (line.contains("570491139")) {
+            modeVal = MODE_SPORT;   // 运动模式 (DRIVE_MODE_SELECTION_DYNAMIC = 570491139)
+        } else if (line.contains("570491137")) {
+            modeVal = MODE_ECO;     // 经济模式 (DRIVE_MODE_SELECTION_ECO = 570491137)
+        } else if (line.contains("570491158")) {
+            modeVal = MODE_SMART;   // 智能模式 (DRIVE_MODE_SELECTION_ADAPTIVE = 570491158)
         }
 
         if (modeVal > 0) {
