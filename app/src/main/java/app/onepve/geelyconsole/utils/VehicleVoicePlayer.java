@@ -45,14 +45,14 @@ public class VehicleVoicePlayer {
         AudioAttributes.Builder builder = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH);
 
-        // 倒车挡 (R 挡) 核心保护：车机进入倒车挡时硬件 DSP 会强制将媒体流 (STREAM_MUSIC) 静音或衰减 80%
-        // 故倒车播报必须优先走独立防衰减的安全导航引导通道 (USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+        // 倒车挡 (R 挡) 核心保护：强制走系统通知通道 (USAGE_NOTIFICATION_EVENT)
+        // 彻底免去导航引导流 (USAGE_ASSISTANCE_NAVIGATION_GUIDANCE) 沉重的淡入淡出与系统排队，瞬发且抗倒车衰减！
         boolean isReverse = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse") || voiceType.contains("倒车")));
 
-        if (isReverse || "nav".equals(channel)) {
-            builder.setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE);
-        } else if ("notification".equals(channel)) {
+        if (isReverse || "notification".equals(channel)) {
             builder.setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT);
+        } else if ("nav".equals(channel)) {
+            builder.setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE);
         } else {
             // 默认走媒体主通道，保证车机主功放喇叭 100% 放出温润声音，永不静音！
             builder.setUsage(AudioAttributes.USAGE_MEDIA);
@@ -234,6 +234,11 @@ public class VehicleVoicePlayer {
                     if (currentMediaPlayer.isPlaying()) {
                         currentMediaPlayer.stop();
                     }
+                } catch (Exception ignored) {}
+                try {
+                    currentMediaPlayer.reset();
+                } catch (Exception ignored) {}
+                try {
                     currentMediaPlayer.release();
                 } catch (Exception ignored) {}
                 currentMediaPlayer = null;
@@ -391,6 +396,15 @@ public class VehicleVoicePlayer {
                     requestAudioFocus(voiceType);
                     applyVolumeOffsetBeforePlay(voiceType);
                     mp = new MediaPlayer();
+                    synchronized (playerLock) {
+                        if (playSessionId.get() != sessionId) {
+                            try { mp.release(); } catch (Exception ignored) {}
+                            abandonAudioFocus();
+                            restoreVolumeAfterPlay();
+                            return;
+                        }
+                        currentMediaPlayer = mp;
+                    }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         mp.setAudioAttributes(getVoiceAudioAttributes(context, voiceType));
                     } else {
@@ -401,6 +415,9 @@ public class VehicleVoicePlayer {
                     mp.prepare();
                     if (playSessionId.get() != sessionId) {
                         try { mp.release(); } catch (Exception ignored) {}
+                        synchronized (playerLock) {
+                            if (currentMediaPlayer == mp) currentMediaPlayer = null;
+                        }
                         abandonAudioFocus();
                         restoreVolumeAfterPlay();
                         return;

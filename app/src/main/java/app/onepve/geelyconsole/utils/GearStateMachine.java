@@ -110,6 +110,12 @@ public class GearStateMachine {
 
         if (gear == lastGearPos) return;
 
+        // 核心铁律：一旦物理挡位发生跃变，第一毫秒立即掐灭上一段旧语音！
+        // 彻底解决从倒挡切回空挡时，倒挡声音仍在播放或排队延迟播报的问题，手拨即静、立竿见影
+        if (voicePlayer != null) {
+            voicePlayer.stopCurrentVoice();
+        }
+
         // 取消上一次正在防抖中的换挡任务 (滤除极速连切的中间过渡态，如快速从P划过N进入D)
         if (pendingGearTask != null) {
             mainHandler.removeCallbacks(pendingGearTask);

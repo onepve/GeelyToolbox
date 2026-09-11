@@ -71,10 +71,10 @@ def main():
             "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyPilot-beta.apk?v={version_name}",
             "changelog": (
                 "【测试通道优先体验】\n"
-                "1. Tasker实车规则全面对齐：彻底校准DirveMode=2运动/DirveMode=3经济误报Bug，实装getDrivingMode权威挡位\n"
-                "2. 根治挡位错位与循环播报：纠正0x14(R挡)误报驻车挡、0x12(D挡)误报空挡Bug，物理挡位精确按低4位解析\n"
-                "3. 补齐系统级通道动态补音：彻底打通系统通知声道与音量动态增益调节联动\n"
-                "4. 毫秒级熄火感知：纳入onAccOff燃油服务熄火广播，下电复位更加干脆利落\n"
+                "1. 倒挡强制走系统通知声道：彻底拔除导航引导流排队锁与淡入淡出延迟，零排队瞬发响亮\n"
+                "2. 换挡0ms强制抢占打断：手拨换挡瞬间立刻掐灭上一段旧语音，快切挡位绝不堆叠重音\n"
+                "3. Tasker实车规则全面对齐：彻底校准DirveMode=2运动/DirveMode=3经济误报Bug，实装getDrivingMode权威挡位\n"
+                "4. 根治挡位错位与循环播报：纠正0x14(R挡)误报驻车挡、0x12(D挡)误报空挡Bug\n"
             ),
             "release_date": today
         }
