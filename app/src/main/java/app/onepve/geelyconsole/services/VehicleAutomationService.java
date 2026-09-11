@@ -975,13 +975,13 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // KEY_STATE: 0=关 1=ACC 2=ON (严格限定为电源总线信号，避免普通硬件按键释放报文污染)
+        // KEY_STATE: 0=关 1=ACC 2=ON (缤越 COOL 点火启动后上报 10, 14, 15 等 RUN 状态值)
         if (rawLine.toLowerCase().contains("info_id_vpowerinfo_key_state") || (rawLine.toLowerCase().contains("key_state") && (rawLine.toLowerCase().contains("power") || rawLine.toLowerCase().contains("peps")))) {
             lastKeyState = val;
-            if (val == 2) {
-                lastPowerMode = 1; // ON 视为点火就绪
+            if (val == 2 || val >= 10) {
+                lastPowerMode = 1; // 钥匙 ON / RUN -> 点火启动瞬发就绪，彻底消除 7 秒等待盲区
                 doorStateManager.markDriverInside();
-                AppLogger.i("电源状态", "钥匙 ON -> 主驾已就坐基准建立");
+                AppLogger.i("电源状态", "钥匙 ON/RUN (key=" + val + ") -> 点火启动就绪");
             } else if (val == 0) {
                 // 若发电机正在以 >=13.2V 充电，或车速非零，绝不可因偶发性按键释放日志误置熄火
                 if (latestBatteryVoltage < 13.2f && currentSpeedKmH == 0) {

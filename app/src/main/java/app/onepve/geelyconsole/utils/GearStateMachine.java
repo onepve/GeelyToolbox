@@ -134,8 +134,8 @@ public class GearStateMachine {
 
                     AppLogger.i("挡位状态", "挡位确认跃变: " + getGearName(lastGearPos) + " -> " + getGearName(gear) + ", armed=" + isGearVoiceArmed);
 
-                    // 1. 换出 P 挡真正进入行车挡 (D挡2, R挡4, S挡6/7)，才允许武装状态机
-                    if (gear == 2 || gear == 4 || gear == 6 || gear == 7) {
+                    // 1. 换出 P 挡真正进入行车/运行挡 (D挡2, N挡3, R挡4, S挡6/7)，才允许武装状态机
+                    if (gear == 2 || gear == 3 || gear == 4 || gear == 6 || gear == 7) {
                         isGearVoiceArmed = 1;
                     }
 
