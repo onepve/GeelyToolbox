@@ -21,7 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * 吉利工具箱持久化运行日志系统
+ * 吉利智驾持久化运行日志系统
  * 1. 日志文件保存于 /sdcard/Download/geely_toolbox.log
  * 2. 单文件最大 2MB，超出自动滚动保留最多 3 个历史备份 (geely_toolbox.log.1, .2)
  * 3. 启动及定时清理超过 7 天的历史日志文件

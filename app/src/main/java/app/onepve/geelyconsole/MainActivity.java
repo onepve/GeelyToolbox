@@ -109,7 +109,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         initWebView();
         checkAndRequestStoragePermission();
-        AppLogger.i("应用启动", "吉利工具箱界面启动完成");
+        AppLogger.i("应用启动", "吉利智驾界面启动完成");
         // 启动时自动探测并开启白名单，若为真车环境且商店未冻结则自动执行安全冻结保护
         new Thread(new Runnable() {
             @Override

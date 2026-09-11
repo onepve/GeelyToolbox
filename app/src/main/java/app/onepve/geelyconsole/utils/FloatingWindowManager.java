@@ -21,7 +21,7 @@ import android.widget.TextView;
 import app.onepve.geelyconsole.MainActivity;
 
 /**
- * 悬浮窗管理器（吉利工具箱桌面迷你胶囊浮窗）
+ * 悬浮窗管理器（吉利智驾桌面迷你胶囊浮窗）
  * 在车机桌面上显示轻量小胶囊，点击秒回工具箱主界面，支持任意拖拽吸边。
  */
 public class FloatingWindowManager {
@@ -169,7 +169,7 @@ public class FloatingWindowManager {
 
         // 文字
         TextView tvText = new TextView(context);
-        tvText.setText("工具箱");
+        tvText.setText("吉利智驾");
         tvText.setTextColor(Color.parseColor("#F8FAFC"));
         tvText.setTextSize(12);
         tvText.getPaint().setFakeBoldText(true);
