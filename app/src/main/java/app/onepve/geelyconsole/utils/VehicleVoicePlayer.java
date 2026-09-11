@@ -95,7 +95,8 @@ public class VehicleVoicePlayer {
             int offset = prefs.getInt("voice_volume_offset", 0);
 
             boolean isReverse = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse") || voiceType.contains("倒车")));
-            int stream = (isReverse || "nav".equals(prefs.getString("voice_audio_channel", "music")))
+            String channel = prefs.getString("voice_audio_channel", "music");
+            int stream = (isReverse || "nav".equals(channel) || "notification".equals(channel))
                     ? AudioManager.STREAM_NOTIFICATION
                     : AudioManager.STREAM_MUSIC;
 
@@ -115,7 +116,7 @@ public class VehicleVoicePlayer {
                 originalStreamType = stream;
                 audioManager.setStreamVolume(stream, targetVol, 0);
                 Log.i(TAG, "Applied voice volume offset: " + offset + " (vol: " + currentVol + " -> " + targetVol + ", stream: " + stream + ")");
-                AppLogger.i("语音播报", "音量动态补偿生效: 当前=" + currentVol + " -> 目标=" + targetVol + " (" + (offset >= 0 ? "+" + offset : offset) + "格)");
+                AppLogger.i("语音播报", "音量动态补偿生效: 当前=" + currentVol + " -> 目标=" + targetVol + " (" + (offset >= 0 ? "+" + offset : offset) + "格, 通道=" + (stream == AudioManager.STREAM_NOTIFICATION ? "通知/系统" : "媒体") + ")");
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to apply volume offset: " + e.getMessage());
@@ -508,7 +509,10 @@ public class VehicleVoicePlayer {
                             }
                         } catch (Exception ignored) {}
                         boolean isRev = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse") || voiceType.contains("倒车")));
-                        int streamType = isRev ? AudioManager.STREAM_NOTIFICATION : ("nav".equals(prefs.getString("voice_audio_channel", "music")) ? AudioManager.STREAM_NOTIFICATION : AudioManager.STREAM_MUSIC);
+                        String channel = prefs.getString("voice_audio_channel", "music");
+                        int streamType = (isRev || "nav".equals(channel) || "notification".equals(channel))
+                                ? AudioManager.STREAM_NOTIFICATION
+                                : AudioManager.STREAM_MUSIC;
                         android.os.Bundle ttsParams = new android.os.Bundle();
                         ttsParams.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, streamType);
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {

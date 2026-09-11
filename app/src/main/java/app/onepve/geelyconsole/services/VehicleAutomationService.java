@@ -524,12 +524,14 @@ public class VehicleAutomationService extends Service {
                     Matcher m = Pattern.compile("VehId=Vehicle_Gear\\s+value=(?:0x)?([0-9a-fA-F]+)").matcher(line);
                     if (m.find()) {
                         int rawHex = Integer.parseInt(m.group(1), 16);
-                        if (rawHex == 0x05 || rawHex == 0x14) gearVal = 5;
-                        else if (rawHex == 0x04 || rawHex == 0x13) gearVal = 4;
-                        else if (rawHex == 0x03 || rawHex == 0x12) gearVal = 3;
-                        else if (rawHex == 0x02 || rawHex == 0x11) gearVal = 2;
-                        else if (rawHex == 0x06 || rawHex == 0x15 || rawHex == 0x16) gearVal = 6;
-                        else gearVal = rawHex;
+                        // 吉利 E02 复合报文：高4位为驾驶模式 (如 0x1=舒适), 低4位为物理挡位 (0x2=D挡, 0x3=N挡, 0x4=R挡, 0x5=P挡)
+                        int low = rawHex & 0x0F;
+                        if (low == 0x05) gearVal = 5;
+                        else if (low == 0x04) gearVal = 4;
+                        else if (low == 0x03) gearVal = 3;
+                        else if (low == 0x02) gearVal = 2;
+                        else if (low == 0x06 || low == 0x07) gearVal = 6;
+                        else gearVal = low;
                     }
                 } catch (Exception ignored) {}
             }
@@ -552,11 +554,12 @@ public class VehicleAutomationService extends Service {
         }
 
         // 3.4 原厂核心服务与底层传感器属性: INFO_ID_VDRIVEINFO_GEAR_POSITION / mModelGearPos
-        if (gearVal <= 0 && (line.contains("VDRIVEINFO_GEAR_POSITION") || line.contains("mModelGearPos") || line.contains("GearPos ="))) {
+        if (gearVal <= 0 && (line.contains("VDRIVEINFO_GEAR_POSITION") || line.contains("mModelGearPos") || line.contains("GearPos =") || line.contains("GearPos:"))) {
             try {
-                Matcher gm = Pattern.compile("(?:funValue|mModelGearPos|VDRIVEINFO_GEAR_POSITION|GearPos)[^0-9a-fA-F]*(?:0x)?([0-9a-fA-F]+)").matcher(line);
+                Matcher gm = Pattern.compile("(?:funValue\\((?:0x)?([0-9a-fA-F]+)\\)|(?:mModelGearPos|GearPos)\\s*[:=]\\s*(?:0x)?([0-9a-fA-F]+))").matcher(line);
                 if (gm.find()) {
-                    int raw = Integer.parseInt(gm.group(1), 16);
+                    String valStr = gm.group(1) != null ? gm.group(1) : gm.group(2);
+                    int raw = Integer.parseInt(valStr, 16);
                     int low = raw & 0xFF;
                     if (low == 0x30 || low == 0x05) gearVal = 5; // P
                     else if (low == 0x31 || low == 0x04) gearVal = 4; // R

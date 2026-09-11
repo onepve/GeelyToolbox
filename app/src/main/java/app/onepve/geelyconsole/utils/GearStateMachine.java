@@ -31,25 +31,32 @@ public class GearStateMachine {
     private static final long GEAR_DEBOUNCE_MS = 160; // 换挡防抖滤波窗口 (160ms 滤除快切瞬态，保证最终挡位干脆秒出)
 
     public static int normalizeGear(int rawGear) {
+        int low = rawGear & 0x0F;
+        if (rawGear > 0x0F && low >= 2 && low <= 7) {
+            // 吉利 E02 复合高位报文 (如 0x12 舒适模式D挡 -> low=2, 0x15 P挡 -> low=5)
+            if (low == 6 || low == 7) return 6;
+            return low;
+        }
         switch (rawGear) {
             case 2:
-            case 17: // 0x11 ECARX Vehicle_Gear D挡
+            case 17: // 0x11 D挡
+            case 18: // 0x12 D挡 (低4位=2, 舒适模式D挡)
                 return 2;
             case 3:
-            case 18: // 0x12 ECARX Vehicle_Gear N挡
+            case 19: // 0x13 N挡 (低4位=3)
                 return 3;
             case 4:
-            case 19: // 0x13 ECARX Vehicle_Gear R挡
+            case 20: // 0x14 R挡 (低4位=4)
                 return 4;
             case 5:
-            case 20: // 0x14 ECARX Vehicle_Gear P挡
+            case 21: // 0x15 P挡 (低4位=5)
                 return 5;
             case 6:
             case 7:
-            case 21: // 0x15 ECARX Vehicle_Gear S/M挡
-            case 22: // 0x16 ECARX Vehicle_Gear S/B挡
+            case 22: // 0x16 S挡
                 return 6;
             default:
+                if (low >= 2 && low <= 7) return (low == 7 ? 6 : low);
                 return rawGear;
         }
     }
