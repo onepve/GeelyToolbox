@@ -45,16 +45,14 @@ public class VehicleVoicePlayer {
         AudioAttributes.Builder builder = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH);
 
-        // 倒车挡 (R 挡) 核心保护：强制走系统通知通道 (USAGE_NOTIFICATION_EVENT)
-        // 彻底免去导航引导流 (USAGE_ASSISTANCE_NAVIGATION_GUIDANCE) 沉重的淡入淡出与系统排队，瞬发且抗倒车衰减！
-        boolean isReverse = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse") || voiceType.contains("倒车")));
-
-        if (isReverse || "notification".equals(channel)) {
+        // 倒车挡核心铁律：回归默认媒体声道 (USAGE_MEDIA / STREAM_MUSIC)！
+        // 实车证实：挂R挡时原厂倒车雷达与AVM独占系统通知通道，若倒挡走通知流会被系统底层互斥挂起，切回N挡雷达释放瞬间才突发滞后大声爆音！
+        if ("notification".equals(channel)) {
             builder.setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT);
         } else if ("nav".equals(channel)) {
             builder.setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE);
         } else {
-            // 默认走媒体主通道，保证车机主功放喇叭 100% 放出温润声音，永不静音！
+            // 默认走媒体主通道，保证车机主功放喇叭 100% 放出温润声音，永不静音！倒车挡亦走媒体主通道！
             builder.setUsage(AudioAttributes.USAGE_MEDIA);
         }
         return builder.build();
@@ -96,7 +94,7 @@ public class VehicleVoicePlayer {
 
             boolean isReverse = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse") || voiceType.contains("倒车")));
             String channel = prefs.getString("voice_audio_channel", "music");
-            int stream = (isReverse || "nav".equals(channel) || "notification".equals(channel))
+            int stream = ("nav".equals(channel) || "notification".equals(channel))
                     ? AudioManager.STREAM_NOTIFICATION
                     : AudioManager.STREAM_MUSIC;
 
@@ -104,10 +102,10 @@ public class VehicleVoicePlayer {
             int maxVol = audioManager.getStreamMaxVolume(stream);
             int targetVol = Math.max(0, Math.min(maxVol, currentVol + offset));
 
-            // 倒车挡防衰减智能补偿：通知通道动态补偿 +N 格 (车主可在倒车声效弹窗自由调节，默认+6)
+            // 倒车挡防衰减智能补偿：媒体声道动态补偿 +N 格 (车主可在倒车声效弹窗自由调节，默认+6)，拉高媒体音量抵抗原厂倒车媒体衰减
             if (isReverse) {
                 int boost = prefs.getInt("reverse_volume_boost", 6);
-                int boostedVol = Math.max((int) (maxVol * 0.80f), currentVol + boost);
+                int boostedVol = Math.max((int) (maxVol * 0.70f), currentVol + boost);
                 targetVol = Math.max(1, Math.min(maxVol, boostedVol));
             }
 
@@ -525,9 +523,8 @@ public class VehicleVoicePlayer {
                                 tts.setAudioAttributes(getVoiceAudioAttributes(context, voiceType));
                             }
                         } catch (Exception ignored) {}
-                        boolean isRev = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse") || voiceType.contains("倒车")));
                         String channel = prefs.getString("voice_audio_channel", "music");
-                        int streamType = (isRev || "nav".equals(channel) || "notification".equals(channel))
+                        int streamType = ("nav".equals(channel) || "notification".equals(channel))
                                 ? AudioManager.STREAM_NOTIFICATION
                                 : AudioManager.STREAM_MUSIC;
                         android.os.Bundle ttsParams = new android.os.Bundle();
