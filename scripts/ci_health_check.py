@@ -665,12 +665,34 @@ with open(confirm_modal_path, "r", encoding="utf-8") as f:
 if "countdownLeft" not in cm_code or "请仔细阅读" not in cm_code:
     reg_violations.append("ConfirmModal.vue 缺少高危确认倒计时逻辑 (countdownLeft / 请仔细阅读)！")
 
+# 16.6 已修复问题的专项回归：源码契约 + 真实 Java/JS 决策 + 反例自检
+# 在本地与 tag CI 中均执行；任何失败阻断 APK 编译和上传。
+regression_scripts = [
+    "check_recent_regressions.py",
+    "test_button_focus_gate.py",
+    "test_recent_decisions.py",
+    "test_update_filename.py",
+    "test_regression_mutations.py",
+]
+for regression_script in regression_scripts:
+    try:
+        result = subprocess.run(
+            [sys.executable, os.path.join(ROOT_DIR, "scripts", regression_script)],
+            cwd=ROOT_DIR, capture_output=True, text=True, timeout=90,
+        )
+        if result.returncode:
+            reg_violations.append(f"专项回归 {regression_script} 失败:\n{result.stdout}\n{result.stderr}")
+        else:
+            print(f"[PASS] 专项回归: {regression_script}")
+    except (OSError, subprocess.TimeoutExpired) as e:
+        reg_violations.append(f"专项回归 {regression_script} 无法完成: {e}")
+
 if reg_violations:
     for v in reg_violations:
         print(f"  [FAIL] {v}")
     passed = False
 else:
-    print("[PASS] 核心业务功能防回退门禁全绿：下载控制链(暂停/取消/安装)、方控双轨引擎、长按滑块、倒车音量滑块100%存在且闭环！")
+    print("[PASS] 核心功能与已修复缺陷回归通过：下载控制、方控兼容、语音、屏保、焦点框、安装分流、命名及性能防线。")
 
 
 # ----------------------------------------------------------------------

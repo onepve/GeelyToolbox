@@ -197,6 +197,7 @@ public final class IdleScreensaverManager {
                     try {
                         if (!Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) return;
                         if (!isEnabled(context)) return;
+                        if (getSeconds(context) == NEVER_SECONDS) return;
                         if (isHomeOnly(context)
                                 && !ForegroundAppDetector.isHomeForeground(context)) {
                             return;
