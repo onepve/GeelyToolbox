@@ -67,11 +67,10 @@ const loading = ref(false);
 const searchQuery = ref('');
 
 const modalData = computed(() => store.modals.appSelect || {});
-const keyTarget = computed(() => modalData.value.keyTarget || 'ok'); // 'ok' | 'mute' | 'mode'
+const keyTarget = computed(() => modalData.value.keyTarget || 'mute'); // 'mute' | 'mode'
 
 const keyTitle = computed(() => {
-  if (keyTarget.value === 'ok') return '编号 2 滚轮按压';
-  if (keyTarget.value === 'mute') return '编号 3 静音短按';
+  if (keyTarget.value === 'mute') return '编号 3 静音按键';
   if (keyTarget.value === 'mode') return '编号 6 Mode键';
   return '方向盘按键';
 });
