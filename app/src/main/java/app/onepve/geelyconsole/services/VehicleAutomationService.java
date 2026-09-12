@@ -161,10 +161,11 @@ public class VehicleAutomationService extends Service {
             boolean anyVoiceEnabled = voiceMaster && (doorFl || doorFlClose || doorFr || doorFrClose ||
                                 doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
                                 trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
-                                modeSmart || modeComfort || modeEco || modeSport || turn360 ||
-                                lightNav || flameout);
+                                modeSmart || modeComfort || modeEco || modeSport ||
+                                flameout);
+            boolean anyVehicleAutoEnabled = turn360 || lightNav;
 
-            boolean shouldRun = anyVoiceEnabled || wheelEnabled
+            boolean shouldRun = anyVoiceEnabled || anyVehicleAutoEnabled || wheelEnabled
                     || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
             Intent intent = new Intent(context, VehicleAutomationService.class);
@@ -303,9 +304,11 @@ public class VehicleAutomationService extends Service {
                              enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
                              enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN || enableGearS ||
                              enableModeSmart || enableModeComfort || enableModeEco || enableModeSport ||
-                             enableTurn360 || enableLightNav || enableFlameoutVoice);
+                             enableFlameoutVoice);
+        boolean anyVehicleAutoEnabled = enableTurn360 || enableLightNav;
 
-        boolean anyEnabled = anyVoiceEnabled || wheelEnabled;
+        boolean anyEnabled = anyVoiceEnabled || anyVehicleAutoEnabled || wheelEnabled
+                || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
         if (!anyEnabled) {
             stopSelf();
@@ -489,11 +492,18 @@ public class VehicleAutomationService extends Service {
         }
 
         // 2. 解析车辆实时车速
-        if (line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")) {
-            int idx = line.indexOf("speed ==");
-            if (idx == -1) idx = line.indexOf("speed=");
-            if (idx != -1) {
-                try {
+        if (line.contains("Get Speed ") || line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")) {
+            try {
+                if (line.contains("Get Speed ")) {
+                    Matcher m = Pattern.compile("Get Speed\\s+(\\d+)km/h").matcher(line);
+                    if (m.find()) {
+                        currentSpeedKmH = Integer.parseInt(m.group(1));
+                        return;
+                    }
+                }
+                int idx = line.indexOf("speed ==");
+                if (idx == -1) idx = line.indexOf("speed=");
+                if (idx != -1) {
                     String sub = line.substring(idx + (line.contains("speed ==") ? 8 : 6)).trim();
                     StringBuilder num = new StringBuilder();
                     for (int i = 0; i < sub.length(); i++) {
@@ -504,8 +514,8 @@ public class VehicleAutomationService extends Service {
                     if (num.length() > 0) {
                         currentSpeedKmH = Integer.parseInt(num.toString());
                     }
-                } catch (Exception ignored) {}
-            }
+                }
+            } catch (Exception ignored) {}
             return;
         }
 
@@ -716,6 +726,38 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
+        // 4.95 解析转向灯与原厂 360 环视联动
+        // 权威源 1: 吉利 AVM 状态机报文 VehId=STEERING_ROD value=0x01(左转) / 0x02(右转) / 0x00(回正)
+        // 权威源 2: 原厂 AVM 适配器 paramVehicleTurnLight ... turnLight=1(左转) / 2(右转) / 0(回正)
+        // 权威源 3: AVM 视角状态 state=TURNLIGHT_LEFT / TURNLIGHT_RIGHT / TURNLIGHT_OFF
+        if (enableTurn360) {
+            int turnVal = -1;
+            if (line.contains("VehId=STEERING_ROD") || line.contains("STEERING_ROD")) {
+                try {
+                    Matcher m = Pattern.compile("VehId=STEERING_ROD\\s+value=(?:0x)?([0-9a-fA-F]+)").matcher(line);
+                    if (m.find()) {
+                        turnVal = Integer.parseInt(m.group(1), 16);
+                    }
+                } catch (Exception ignored) {}
+            } else if (line.contains("paramVehicleTurnLight") && line.contains("turnLight=")) {
+                try {
+                    Matcher m = Pattern.compile("turnLight\\s*=\\s*(\\d+)").matcher(line);
+                    if (m.find()) {
+                        turnVal = Integer.parseInt(m.group(1));
+                    }
+                } catch (Exception ignored) {}
+            } else if (line.contains("state=TURNLIGHT_")) {
+                if (line.contains("state=TURNLIGHT_LEFT")) turnVal = 1;
+                else if (line.contains("state=TURNLIGHT_RIGHT")) turnVal = 2;
+                else if (line.contains("state=TURNLIGHT_OFF")) turnVal = 0;
+            }
+
+            if (turnVal >= 0) {
+                handleTurnSignal(turnVal);
+                return;
+            }
+        }
+
         // 5. 解析 CAN 数据: parseCanData
         if (line.contains("parseCanData")) {
             try {
@@ -797,6 +839,14 @@ public class VehicleAutomationService extends Service {
         if (gearStateMachine != null) {
             gearStateMachine.updateGear(gear, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
         }
+        if (gear == 2) {
+            boolean gearD360 = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                    .getBoolean("vehicle_gear_d_360_enabled", false);
+            if (gearD360 && currentSpeedKmH <= 30) {
+                AppLogger.i("车身联动", "【D挡起步联动360】挂入前进挡 D，秒级唤起 360 全景盲区影像");
+                open360Camera();
+            }
+        }
     }
 
     /**
@@ -816,22 +866,31 @@ public class VehicleAutomationService extends Service {
         }
     }
 
-    private void handleCanSignal(String key, int val) {
-        // 转向灯联动 360 全景影像 (严格车速过滤 <=30km/h)
-        if (enableTurn360 && "TCM_Req_TurnIndicationAct".equals(key)) {
-            if (val == 1 || val == 2) { // 1 左转, 2 右转
-                if (currentSpeedKmH <= 30) {
+    private void handleTurnSignal(int val) {
+        if (!enableTurn360) return;
+        if (val == 1 || val == 2) { // 1 左转, 2 右转
+            if (currentSpeedKmH <= 30) {
+                if (!is360OpenedByTurn) {
+                    AppLogger.i("车身联动", "【转向灯联动360】打起转向灯 (" + (val == 1 ? "左转" : "右转") + ")，车速 " + currentSpeedKmH + "km/h <= 30km/h，秒级唤起 360 全景");
                     open360Camera();
                     is360OpenedByTurn = true;
-                } else {
-                    Log.d(TAG, "车速 " + currentSpeedKmH + " > 30km/h，已自动静默抑制 360 唤起以保护导航画面");
                 }
-            } else if (val == 0) { // 转向灯回正复位
-                if (is360OpenedByTurn) {
-                    close360Camera();
-                    is360OpenedByTurn = false;
-                }
+            } else {
+                Log.d(TAG, "车速 " + currentSpeedKmH + " > 30km/h，已自动静默抑制 360 唤起以保护导航画面");
             }
+        } else if (val == 0) { // 转向灯回正复位
+            if (is360OpenedByTurn) {
+                AppLogger.i("车身联动", "【转向灯联动360】转向灯已回正复位，自动退出 360 全景");
+                close360Camera();
+                is360OpenedByTurn = false;
+            }
+        }
+    }
+
+    private void handleCanSignal(String key, int val) {
+        // 转向灯联动 360 全景影像 (兼容第三方 CAN 报文 TCM_Req_TurnIndicationAct)
+        if (enableTurn360 && "TCM_Req_TurnIndicationAct".equals(key)) {
+            handleTurnSignal(val);
         }
 
         // 大灯联动高德日夜模式
@@ -973,12 +1032,16 @@ public class VehicleAutomationService extends Service {
     private void open360Camera() {
         try {
             Intent intent = getPackageManager().getLaunchIntentForPackage("ecarx.camera.calibration");
-            if (intent != null) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-                startActivity(intent);
+            if (intent == null) {
+                intent = new Intent(Intent.ACTION_MAIN);
+                intent.setComponent(new ComponentName("ecarx.camera.calibration", "ecarx.camera.calibration.MainActivity"));
             }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+            startActivity(intent);
+            AppLogger.i("车身联动", "已成功下发指令唤起 360 全景环视界面");
         } catch (Exception e) {
             Log.w(TAG, "Failed to launch 360: " + e.getMessage());
+            AppLogger.w("车身联动", "唤起 360 失败: " + e.getMessage());
         }
     }
 
@@ -988,8 +1051,10 @@ public class VehicleAutomationService extends Service {
             closeIntent.setData(Uri.parse("ecarx://vr.com/360全景"));
             closeIntent.setPackage("ecarx.camera.calibration");
             sendBroadcast(closeIntent);
+            AppLogger.i("车身联动", "已下发指令退出 360 全景界面");
         } catch (Exception e) {
             Log.w(TAG, "Failed to close 360: " + e.getMessage());
+            AppLogger.w("车身联动", "退出 360 失败: " + e.getMessage());
         }
     }
 

@@ -18,7 +18,7 @@ export const bridge = {
 
 // 全局响应式状态
 export const store = reactive({
-  currentNav: 'wheel',
+  currentNav: 'store',
   isNight: true,
   toast: { show: false, msg: '' },
   
@@ -68,6 +68,7 @@ export const store = reactive({
     voice_enable_trunk_open: true,
     voice_enable_trunk_close: true,
     vehicle_turn_360_enabled: false,
+    vehicle_gear_d_360_enabled: false,
     vehicle_light_nav_enabled: false
   },
 

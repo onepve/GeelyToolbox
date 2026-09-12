@@ -63,13 +63,19 @@ public class SteeringWheelKeyManager {
     public static final int KEY_PREV = 304;     // 键 7: 上一曲
     public static final int KEY_NEXT = 305;     // 键 4: 下一曲
     public static final int KEY_OK = 306;       // 键 2: 滚轮下按确认
+    public static final int KEY_BACK = 307;     // 键 1/返回: 原厂返回按键
+    public static final int KEY_CALL = 287;     // 键 8: 电话接听/挂断按键
+    public static final int KEY_VOICE = 286;    // 键 5: 语音话筒按键
     public static final int KEY_WMODE = 348;    // 键 6: MODE 键
     public static final int KEY_CUSTOM = 349;   // 键 1: 自定义菱形键
+    public static final int KEY_HOME_ALREADY = 9999; // 桌面二次按 Home 键
 
     private static final Pattern WHEEL_KEY_PATTERN =
             Pattern.compile("IMS\\s+reportKeyToAdaptApi\\s*:\\s*(\\d+)\\s+(press|release)", Pattern.CASE_INSENSITIVE);
     private static final Pattern OK_KEY_PATTERN =
             Pattern.compile("shouldCallback:\\s*code\\s*=\\s*(\\d+)\\s+action\\s*=\\s*1", Pattern.CASE_INSENSITIVE);
+    private static final Pattern ADAPT_KEY_PATTERN =
+            Pattern.compile("handleMessage\\s+down=(true|false).*?keycode=(\\d+)", Pattern.CASE_INSENSITIVE);
 
     private final Context context;
     private final SharedPreferences prefs;
@@ -171,7 +177,11 @@ public class SteeringWheelKeyManager {
             case KEY_WMODE: return "mode";
             case KEY_NEXT: return "next";
             case KEY_PREV: return "prev";
+            case KEY_BACK: return "back";
+            case KEY_CALL: return "call";
+            case KEY_VOICE: return "voice";
             case KEY_CUSTOM: return "custom";
+            case KEY_HOME_ALREADY: return "home";
             default: return "key_" + keyCode;
         }
     }
@@ -238,6 +248,58 @@ public class SteeringWheelKeyManager {
                         return KEY_OK;
                     }
                 } catch (Exception ignored) {}
+            }
+        }
+
+        // 3. AdaptAPI 物理按键与返回键 (307/300)
+        if (line.contains("handleMessage") && line.contains("keycode=")) {
+            try {
+                Matcher m3 = ADAPT_KEY_PATTERN.matcher(line);
+                if (m3.find()) {
+                    boolean isDown = Boolean.parseBoolean(m3.group(1));
+                    int code = Integer.parseInt(m3.group(2));
+                    if (isDown) {
+                        handleKeyDown(code);
+                    } else {
+                        handleKeyUp(code);
+                    }
+                    return code;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 4. 原厂桌面二次按 Home 键 ([JRWidget_SCROLL][onAlreadyHome])
+        if (line.contains("onAlreadyHome")) {
+            handleKeyDown(KEY_HOME_ALREADY);
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    handleKeyUp(KEY_HOME_ALREADY);
+                }
+            }, 80);
+            return KEY_HOME_ALREADY;
+        }
+
+        // 5. DefaultVehicleHal_v2_0: do nothing for this key(0x37 / 0x2d) (Tasker 黄金按键)
+        if (line.contains("do nothing for this key")) {
+            if (line.contains("0x37")) {
+                handleKeyDown(KEY_CUSTOM);
+                mainHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        handleKeyUp(KEY_CUSTOM);
+                    }
+                }, 80);
+                return KEY_CUSTOM;
+            } else if (line.contains("0x2d")) {
+                handleKeyDown(KEY_OK);
+                mainHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        handleKeyUp(KEY_OK);
+                    }
+                }, 80);
+                return KEY_OK;
             }
         }
         return 0;
@@ -368,6 +430,10 @@ public class SteeringWheelKeyManager {
             case KEY_OK: return "2号键·滚轮垂直按压";
             case KEY_WMODE: return "6号键·Mode音源切换";
             case KEY_CUSTOM: return "1号键·菱形自定义";
+            case KEY_BACK: return "返回按键";
+            case KEY_CALL: return "电话按键";
+            case KEY_VOICE: return "语音话筒键";
+            case KEY_HOME_ALREADY: return "桌面二次Home键";
             default: return "按键(Code:" + keyCode + ")";
         }
     }

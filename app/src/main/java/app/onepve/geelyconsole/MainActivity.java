@@ -2465,6 +2465,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
                 // 360 与车灯联动
                 obj.put("vehicle_turn_360_enabled", prefs.getBoolean("vehicle_turn_360_enabled", false));
+                obj.put("vehicle_gear_d_360_enabled", prefs.getBoolean("vehicle_gear_d_360_enabled", false));
                 obj.put("vehicle_light_nav_enabled", prefs.getBoolean("vehicle_light_nav_enabled", false));
                 obj.put("vehicle_flameout_voice_enabled", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
 
@@ -2513,7 +2514,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("has_carmedia_installed", hasCarMedia);
 
                 // 方控多手势映射 (单击/双击/长按)
-                String[] gestureKeys = {"ok", "mute", "mode", "next", "prev", "custom"};
+                String[] gestureKeys = {"ok", "mute", "mode", "next", "prev", "back", "call", "voice", "home", "custom"};
                 String[] gestures = {"single", "double", "long"};
                 for (String k : gestureKeys) {
                     for (String g : gestures) {

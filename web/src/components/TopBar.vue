@@ -47,8 +47,8 @@
 
       <!-- 关于按键 -->
       <button 
-        @click="openAbout"
-        class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light transition-all shadow-sm"
+        @click="openModal('about')"
+        class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light transition-all shadow-sm whitespace-nowrap"
       >
         关于
       </button>
@@ -56,9 +56,9 @@
       <!-- 退出按键 -->
       <button 
         @click="exitApp"
-        class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light hover:text-rose-400 transition-all shadow-sm flex items-center"
+        class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light hover:text-rose-400 transition-all shadow-sm flex items-center whitespace-nowrap"
       >
-        <span class="mr-1 text-[13px] opacity-70">✕</span> 退出
+        <span class="mr-1 text-[13px] opacity-70">✕</span>退出
       </button>
     </div>
   </header>

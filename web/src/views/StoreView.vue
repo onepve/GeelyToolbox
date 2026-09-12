@@ -19,7 +19,7 @@
           :key="cat.id"
           @click="currentCategory = cat.id"
           :class="[
-            'px-5 py-2.5 rounded-xl font-extrabold text-[16px] cursor-pointer transition-all',
+            'px-5 py-2.5 rounded-xl font-extrabold text-[16px] cursor-pointer transition-all whitespace-nowrap',
             currentCategory === cat.id 
               ? 'bg-car-item border-2 border-car-accent text-car-text font-black ring-2 ring-car-accent/20' 
               : 'bg-car-item text-car-sub border border-car-border hover:border-car-border-light'
@@ -29,13 +29,13 @@
         </button>
         <button 
           @click="refreshApps"
-          class="px-5 py-2.5 rounded-xl bg-car-card border border-car-border text-car-text font-extrabold text-[16px] cursor-pointer hover:border-car-border-light shadow-sm"
+          class="px-5 py-2.5 rounded-xl bg-car-card border border-car-border text-car-text font-extrabold text-[16px] cursor-pointer hover:border-car-border-light shadow-sm whitespace-nowrap"
         >
           刷新
         </button>
         <button 
           @click="openModal('cleanDownload')"
-          class="px-5 py-2.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text font-extrabold text-[16px] cursor-pointer shadow-sm transition-all flex items-center"
+          class="px-5 py-2.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text font-extrabold text-[16px] cursor-pointer shadow-sm transition-all flex items-center whitespace-nowrap"
         >
           <span class="mr-1.5 opacity-80">🧹</span>
           <span>清理下载目录</span>

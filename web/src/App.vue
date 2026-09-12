@@ -10,10 +10,12 @@
 
       <!-- 右侧专属大舞台 (切换功能时自动回顶) -->
       <section ref="mainContent" class="flex-1 h-full overflow-y-auto p-6 flex flex-col space-y-6">
-        <WheelView v-if="store.currentNav === 'wheel'" />
+        <StoreView v-if="store.currentNav === 'store'" />
+        <WheelView v-else-if="store.currentNav === 'wheel'" />
+        <LinkView v-else-if="store.currentNav === 'link'" />
         <BodyView v-else-if="store.currentNav === 'body'" />
         <AudioView v-else-if="store.currentNav === 'audio'" />
-        <StoreView v-else-if="store.currentNav === 'store'" />
+        <FloatingView v-else-if="store.currentNav === 'floating'" />
         <InstallView v-else-if="store.currentNav === 'install'" />
         <SystemView v-else-if="store.currentNav === 'system'" />
       </section>
@@ -55,10 +57,12 @@
 import { ref, watch, nextTick, onMounted } from 'vue';
 import TopBar from './components/TopBar.vue';
 import Sidebar from './components/Sidebar.vue';
+import StoreView from './views/StoreView.vue';
 import WheelView from './views/WheelView.vue';
+import LinkView from './views/LinkView.vue';
 import BodyView from './views/BodyView.vue';
 import AudioView from './views/AudioView.vue';
-import StoreView from './views/StoreView.vue';
+import FloatingView from './views/FloatingView.vue';
 import InstallView from './views/InstallView.vue';
 import SystemView from './views/SystemView.vue';
 

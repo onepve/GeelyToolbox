@@ -42,33 +42,61 @@
         <div class="flex items-center">
           <span class="w-3 h-3 rounded-full bg-car-accent mr-3 shadow-[0_0_8px_var(--accent-gold)]"></span>
           <div class="flex flex-col">
-            <span class="text-[18px] font-black text-car-text">吉利缤越 COOL (SX-0017 / IHU516G) 原厂方控图解</span>
-            <span class="text-[14px] text-car-sub font-bold mt-0.5">左侧多媒体控制区：静音、切歌与Mode键已全量打通；滚轮按压与模式键底层无日志</span>
+            <span class="text-[18px] font-black text-car-text">吉利缤越 COOL (IHU516G / E02) 原厂方控图解</span>
+            <span class="text-[14px] text-car-sub font-bold mt-0.5">
+              {{ activeCluster === 'right' ? '右侧多媒体控制区 (SX-0017)：静音、切歌、Mode键已全量打通多手势' : '左侧智驾巡航控制区 (SX-0016)：智驾领航、LIM限速、0x37高德一键切换与电话按键' }}
+            </span>
           </div>
         </div>
-        <button 
-          @click="toggleDiagram()"
-          class="h-[44px] px-5 rounded-xl bg-car-card border border-car-border text-car-sub hover:text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light transition-all shadow-sm"
-        >
-          {{ showDiagram ? '收起图解' : '展开图解' }}
-        </button>
+        <div class="flex items-center space-x-3">
+          <div class="flex bg-car-card border border-car-border rounded-xl p-1 items-center">
+            <button 
+              @click="setCluster('right')"
+              :class="[
+                'h-[42px] px-4 rounded-lg text-[14px] font-black cursor-pointer transition-all whitespace-nowrap flex items-center',
+                activeCluster === 'right' ? 'bg-car-item border border-car-accent text-car-text shadow-sm' : 'text-car-sub hover:text-car-text'
+              ]"
+            >
+              右侧多媒体 (SX-0017)
+            </button>
+            <button 
+              @click="setCluster('left')"
+              :class="[
+                'h-[42px] px-4 rounded-lg text-[14px] font-black cursor-pointer transition-all whitespace-nowrap flex items-center',
+                activeCluster === 'left' ? 'bg-car-item border border-car-accent text-car-text shadow-sm' : 'text-car-sub hover:text-car-text'
+              ]"
+            >
+              左侧智驾区 (SX-0016)
+            </button>
+          </div>
+          <button 
+            @click="toggleDiagram()"
+            class="h-[46px] px-5 rounded-xl bg-car-card border border-car-border text-car-sub hover:text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light transition-all shadow-sm whitespace-nowrap flex items-center"
+          >
+            {{ showDiagram ? '收起图解' : '展开图解' }}
+          </button>
+        </div>
       </div>
 
       <!-- 图解内容展示区 -->
       <div v-if="showDiagram" class="mt-4 pt-4 border-t border-car-border/60 flex items-start space-x-6">
         <!-- 原厂方向盘按键高清图示 -->
         <div class="p-3 bg-white rounded-2xl shadow-md border-2 border-car-border w-[320px] min-w-[320px] max-w-[320px] shrink-0">
-          <img :src="wheelGuideImg" alt="吉利缤越 COOL 方向盘多媒体按键说明图 SX-0017" class="w-full h-auto rounded-xl object-contain block" />
+          <img 
+            :src="activeCluster === 'right' ? wheelGuideImg : wheelLeftGuideImg" 
+            :alt="activeCluster === 'right' ? '吉利缤越 COOL 右侧多媒体 SX-0017' : '吉利缤越 COOL 左侧智驾 SX-0016'" 
+            class="w-full h-auto rounded-xl object-contain block" 
+          />
         </div>
 
         <!-- 按键编号与原厂定义清单 -->
-        <div class="flex-1 min-w-0 flex flex-col space-y-2.5 text-[14.5px] font-bold text-car-sub">
+        <div v-if="activeCluster === 'right'" class="flex-1 min-w-0 flex flex-col space-y-2.5 text-[14.5px] font-bold text-car-sub">
           <div class="flex space-x-3">
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-text font-black mr-1.5">① 主页键:</span> 返回车机中控主页
+              <span class="text-car-accent font-black mr-1.5">① 主页/返回键:</span> 返回车机中控主页 / 支持二次点击
             </div>
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-text font-black mr-1.5">② 音量调节键:</span> 上下拨动调音量 (按压不可用)
+              <span class="text-car-text font-black mr-1.5">② 音量调节键:</span> 上下拨动调音量 (滚轮按压支持暂停)
             </div>
           </div>
           <div class="flex space-x-3">
@@ -89,6 +117,36 @@
           </div>
           <div class="w-full p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
             <span class="text-car-accent font-black mr-1.5">⑦ 向左选择键:</span> 上一个文件 / 上一曲 (支持多手势)
+          </div>
+        </div>
+
+        <div v-else class="flex-1 min-w-0 flex flex-col space-y-2.5 text-[14.5px] font-bold text-car-sub">
+          <div class="flex space-x-3">
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-text font-black mr-1.5">① 智驾领航键:</span> ICC 智能领航 / 自适应巡航
+            </div>
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-text font-black mr-1.5">② LIM 限速键:</span> 最高限速设定与开启
+            </div>
+          </div>
+          <div class="flex space-x-3">
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-text font-black mr-1.5">③ 巡航调节滚轮:</span> 设定速度上下微调与确认
+            </div>
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-text font-black mr-1.5">④ 跟车距离调节:</span> 多挡跟车安全时距切换
+            </div>
+          </div>
+          <div class="flex space-x-3">
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-accent font-black mr-1.5">⑤ 电话接听键:</span> 287 电话接听与挂断
+            </div>
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-accent font-black mr-1.5">⑥ 语音唤醒键:</span> 286 语音控制话筒键
+            </div>
+          </div>
+          <div class="w-full p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+            <span class="text-car-accent font-black mr-1.5">⑦ 自定义/高德键:</span> 0x37 硬件按键 (Tasker 黄金高德/桌面往返)
           </div>
         </div>
       </div>
@@ -173,7 +231,7 @@
             :key="g.id"
             @click="activeGesture.mute = g.id"
             :class="[
-              'px-4 py-2 rounded-xl text-[14.5px] font-black cursor-pointer transition-all',
+              'px-4 py-2 rounded-xl text-[14.5px] font-black cursor-pointer transition-all whitespace-nowrap',
               activeGesture.mute === g.id
                 ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
                 : 'bg-car-card border border-car-border text-car-sub hover:border-car-border-light'
@@ -235,7 +293,7 @@
             :key="g.id"
             @click="activeGesture.mode = g.id"
             :class="[
-              'px-4 py-2 rounded-xl text-[14.5px] font-black cursor-pointer transition-all',
+              'px-4 py-2 rounded-xl text-[14.5px] font-black cursor-pointer transition-all whitespace-nowrap',
               activeGesture.mode === g.id
                 ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
                 : 'bg-car-card border border-car-border text-car-sub hover:border-car-border-light'
@@ -376,6 +434,102 @@
         </div>
       </div>
     </FeatureCard>
+
+    <!-- 6. 原厂返回按键多手势映射 -->
+    <FeatureCard 
+      title="6. 原厂返回按键多手势映射 (Keycode 307)"
+      desc="支持【单击】、【双击】、【长按】自定义。可保留系统原厂返回，或映射为一键唤起高德、360、切歌或自定义 App。"
+    >
+      <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
+        <div class="flex items-center space-x-2">
+          <button
+            v-for="g in gestureList"
+            :key="g.id"
+            @click="activeGesture.back = g.id"
+            :class="[
+              'px-4 py-2 rounded-xl text-[14.5px] font-black cursor-pointer transition-all whitespace-nowrap',
+              activeGesture.back === g.id
+                ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
+                : 'bg-car-card border border-car-border text-car-sub hover:border-car-border-light'
+            ]"
+          >
+            {{ g.name }}
+          </button>
+        </div>
+        <div class="text-[13.5px] font-bold text-car-sub">
+          当前配置：<span class="text-car-accent">单击[{{ getActionName(getGestureAction('back', 'single')) }}]</span> · 
+          <span>双击[{{ getActionName(getGestureAction('back', 'double')) }}]</span> · 
+          <span>长按[{{ getActionName(getGestureAction('back', 'long')) }}]</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-5 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
+        <MatrixButton 
+          title="保持原厂不动"
+          subtitle="系统原厂返回"
+          :active="getGestureAction('back', activeGesture.back) === 'default'"
+          @click="setGestureAction('back', activeGesture.back, 'default')"
+        />
+        <MatrixButton 
+          title="打开高德地图"
+          subtitle="一键秒切导航"
+          :active="getGestureAction('back', activeGesture.back) === 'open_navi'"
+          @click="setGestureAction('back', activeGesture.back, 'open_navi')"
+        />
+        <MatrixButton 
+          title="打开 360 全景"
+          subtitle="一键秒看盲区"
+          :active="getGestureAction('back', activeGesture.back) === 'open_360'"
+          @click="setGestureAction('back', activeGesture.back, 'open_360')"
+        />
+        <MatrixButton 
+          title="音量暂停 / 播放"
+          subtitle="媒体暂停或继续"
+          :active="getGestureAction('back', activeGesture.back) === 'play_pause'"
+          @click="setGestureAction('back', activeGesture.back, 'play_pause')"
+        />
+        <MatrixButton 
+          :title="isCustomApp(getGestureAction('back', activeGesture.back)) ? (getCustomAppName('back_' + activeGesture.back) || '自定义应用') : '自定义打开应用'"
+          :subtitle="isCustomApp(getGestureAction('back', activeGesture.back)) ? '点击可重新更换应用' : '自由挑选车机第三方应用'"
+          :active="isCustomApp(getGestureAction('back', activeGesture.back))"
+          @click="openAppSelectModal('back_' + activeGesture.back)"
+        />
+      </div>
+    </FeatureCard>
+
+    <!-- 7. 0x37 按键快捷往返 (高德地图 / 桌面往返) -->
+    <FeatureCard 
+      title="7. 0x37 硬件按键往返映射 (Tasker 黄金方案)"
+      desc="左侧面板 0x37 自定义键接管。支持单击秒开高德地图，再次按下自动退回桌面，实现两端无感盲操往返。"
+    >
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
+          <div class="mb-3">
+            <div class="text-[19px] font-black text-car-text">高德地图 ↔ 桌面一键往返</div>
+            <div class="text-[15px] text-car-sub mt-1 font-bold">按第 1 下切出高德，按第 2 下最小化高德回桌面</div>
+          </div>
+          <MatrixButton 
+            title="高德/桌面双向往返"
+            subtitle="Tasker 黄金验证 · 盲操神器"
+            :active="getGestureAction('custom', 'single') === 'open_navi' || getGestureAction('custom', 'single') === 'default'"
+            @click="setGestureAction('custom', 'single', 'open_navi')"
+          />
+        </div>
+
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
+          <div class="mb-3">
+            <div class="text-[19px] font-black text-car-text">360 全景 ↔ 桌面往返</div>
+            <div class="text-[15px] text-car-sub mt-1 font-bold">按第 1 下呼出 360，按第 2 下退出 360 回桌面</div>
+          </div>
+          <MatrixButton 
+            title="360 全景双向往返"
+            subtitle="环视秒调 · 盲区随时看"
+            :active="getGestureAction('custom', 'single') === 'open_360'"
+            @click="setGestureAction('custom', 'single', 'open_360')"
+          />
+        </div>
+      </div>
+    </FeatureCard>
   </div>
 </template>
 
@@ -385,14 +539,21 @@ import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
 import { store, bridge, showToast, openModal } from '../store';
 import wheelGuideImg from '../assets/steering_wheel_guide.webp';
+import wheelLeftGuideImg from '../assets/steering_wheel_left_guide.webp';
 
-// 原厂方控图解：默认折叠，并记忆上次的展开/折叠状态
+// 原厂方控图解：默认折叠，并记忆上次的展开/折叠状态与左右侧视图
 const DIAGRAM_KEY = 'wheel_diagram_expanded';
 const showDiagram = ref(localStorage.getItem(DIAGRAM_KEY) === 'true');
+const activeCluster = ref(localStorage.getItem('wheel_active_cluster') || 'right');
 
 function toggleDiagram() {
   showDiagram.value = !showDiagram.value;
   localStorage.setItem(DIAGRAM_KEY, String(showDiagram.value));
+}
+
+function setCluster(side) {
+  activeCluster.value = side;
+  localStorage.setItem('wheel_active_cluster', side);
 }
 const longPressSec = computed({
   get: () => {
@@ -418,16 +579,17 @@ function setLongPressPreset(sec) {
 }
 
 const gestureList = computed(() => [
-  { id: 'single', name: '单击 (Single)', shortName: '单击' },
-  { id: 'double', name: '双击 (Double)', shortName: '双击' },
-  { id: 'long', name: `长按 ${longPressSec.value}s (Long Press)`, shortName: `长按${longPressSec.value}s` }
+  { id: 'single', name: '单击', shortName: '单击' },
+  { id: 'double', name: '双击', shortName: '双击' },
+  { id: 'long', name: `长按 (${longPressSec.value}s)`, shortName: `长按${longPressSec.value}s` }
 ]);
 
 const activeGesture = reactive({
   mute: 'single',
   mode: 'single',
   next: 'single',
-  prev: 'single'
+  prev: 'single',
+  back: 'single'
 });
 
 function getGestureAction(key, gesture) {
