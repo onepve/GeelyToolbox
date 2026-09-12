@@ -566,13 +566,18 @@ public class SteeringWheelKeyManager {
 
     private void openAmapNavi() {
         try {
-            Intent intent = context.getPackageManager().getLaunchIntentForPackage("com.autonavi.amapauto");
+            String naviPkg = prefs.getString("preferred_navi_pkg", "com.autonavi.amapauto");
+            Intent intent = context.getPackageManager().getLaunchIntentForPackage(naviPkg);
+            if (intent == null && !"com.autonavi.amapauto".equals(naviPkg)) {
+                intent = context.getPackageManager().getLaunchIntentForPackage("com.autonavi.amapauto");
+            }
             if (intent != null) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
                 context.startActivity(intent);
+                AppLogger.i("方控按键", "已唤起当前主力导航: " + (intent.getPackage() != null ? intent.getPackage() : naviPkg));
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to launch Amap: " + e.getMessage());
+            Log.w(TAG, "Failed to launch Navigation: " + e.getMessage());
         }
     }
 
@@ -596,6 +601,10 @@ public class SteeringWheelKeyManager {
     /**
      * 官方级三重通道媒体按键分发机制 (100% 解决 QQ音乐/网易云 切歌与播放暂停)
      */
+    public void sendMediaKeyEventPublic(int keyCode) {
+        sendMediaKeyEvent(keyCode);
+    }
+
     private void sendMediaKeyEvent(int keyCode) {
         long now = SystemClock.uptimeMillis();
 

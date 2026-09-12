@@ -10,15 +10,22 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.media.AudioManager;
+import android.media.MediaMetadata;
+import android.media.session.MediaController;
+import android.media.session.MediaSessionManager;
+import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
+import android.view.KeyEvent;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,6 +34,7 @@ import app.onepve.geelyconsole.utils.AdbClient;
 import app.onepve.geelyconsole.utils.AppLogger;
 import app.onepve.geelyconsole.utils.DoorStateManager;
 import app.onepve.geelyconsole.utils.DriveModeManager;
+import app.onepve.geelyconsole.utils.EasMediaBridge;
 import app.onepve.geelyconsole.utils.GearStateMachine;
 import app.onepve.geelyconsole.utils.IdleScreensaverManager;
 import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
@@ -157,6 +165,15 @@ public class VehicleAutomationService extends Service {
             boolean flameout = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
             String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
             boolean wheelEnabled = wheelMaster && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
+            boolean pushPlayback = prefs.getBoolean("wheel_push_playback_cluster", false);
+            boolean pushLyrics = prefs.getBoolean("wheel_push_lyrics_cluster", false);
+            try {
+                if (wheelMaster && "toolbox_alone".equals(wheelMode)) {
+                    EasMediaBridge.getInstance(context).syncConfig(wheelMode, pushPlayback, pushLyrics);
+                } else {
+                    EasMediaBridge.getInstance(context).releaseEasRegistration();
+                }
+            } catch (Throwable ignored) {}
 
             boolean anyVoiceEnabled = voiceMaster && (doorFl || doorFlClose || doorFr || doorFrClose ||
                                 doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
@@ -245,6 +262,7 @@ public class VehicleAutomationService extends Service {
         registerPowerStateReceiver();
         startLogcatReader();
         registerEcarxKeyReceiver();
+        startMediaMonitor();
         SystemUtils.warmDisabledPackagesCache();
         AppLogger.i("系统日志", "车辆启动自动运行守护服务已启动 -> 开启底层门控、挡位与方控全量监听");
         Log.i(TAG, "VehicleAutomationService started successfully");
@@ -498,6 +516,7 @@ public class VehicleAutomationService extends Service {
                     Matcher m = Pattern.compile("Get Speed\\s+(\\d+)km/h").matcher(line);
                     if (m.find()) {
                         currentSpeedKmH = Integer.parseInt(m.group(1));
+                        processVehicleSpeedAutomation(currentSpeedKmH);
                         return;
                     }
                 }
@@ -513,6 +532,7 @@ public class VehicleAutomationService extends Service {
                     }
                     if (num.length() > 0) {
                         currentSpeedKmH = Integer.parseInt(num.toString());
+                        processVehicleSpeedAutomation(currentSpeedKmH);
                     }
                 }
             } catch (Exception ignored) {}
@@ -846,6 +866,13 @@ public class VehicleAutomationService extends Service {
         if (gearStateMachine != null) {
             gearStateMachine.updateGear(gear, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
         }
+        if (gear == 2 || gear == 6) {
+            speedAutoplayArmed = true; // 出P挡起步武装
+        } else if (gear == 5) {
+            speedAutoplayArmed = false; // 回P挡停稳归零
+            overspeedStartMs = 0;
+            overspeedWarned = false;
+        }
         if (gear == 2) {
             boolean gearD360 = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
                     .getBoolean("vehicle_gear_d_360_enabled", false);
@@ -905,10 +932,12 @@ public class VehicleAutomationService extends Service {
             if (doorStateManager != null) {
                 doorStateManager.updateDoors(val, -1, -1, -1, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
             }
+            if (val == 1) checkFrontDoorPauseMusic();
         } else if ("BCM_FrontRightDoorAjarStatus".equals(key)) {
             if (doorStateManager != null) {
                 doorStateManager.updateDoors(-1, val, -1, -1, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
             }
+            if (val == 1) checkFrontDoorPauseMusic();
         } else if ("BCM_RearLeftDoorAjarStatus".equals(key)) {
             if (doorStateManager != null) {
                 doorStateManager.updateDoors(-1, -1, val, -1, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
@@ -919,18 +948,22 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 大灯联动高德日夜模式
-        if (enableLightNav && "BCM_PositionLightSts".equals(key)) {
-            if (lastLightSts == -1) {
-                lastLightSts = val;
-                return;
+        // 大灯联动高德日夜模式与背光微调
+        if ("BCM_PositionLightSts".equals(key)) {
+            if (enableLightNav) {
+                if (lastLightSts == -1) {
+                    lastLightSts = val;
+                } else if (val == 1 && lastLightSts == 0) {
+                    sendAmapDayNightMode(2); // 黑夜模式
+                    lastLightSts = 1;
+                } else if (val == 0 && lastLightSts == 1) {
+                    sendAmapDayNightMode(0); // 日间模式
+                    lastLightSts = 0;
+                }
             }
-            if (val == 1 && lastLightSts == 0) {
-                sendAmapDayNightMode(2); // 黑夜模式
-                lastLightSts = 1;
-            } else if (val == 0 && lastLightSts == 1) {
-                sendAmapDayNightMode(0); // 日间模式
-                lastLightSts = 0;
+            SharedPreferences p = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            if (p.getBoolean("vehicle_light_brightness_dim_enabled", false)) {
+                adjustScreenBrightness(val == 1);
             }
         }
 
@@ -1125,6 +1158,192 @@ public class VehicleAutomationService extends Service {
         try {
             IdleScreensaverManager.stop();
         } catch (Throwable ignored) {}
+        stopMediaMonitor();
+        try {
+            EasMediaBridge.getInstance(this).releaseEasRegistration();
+        } catch (Throwable ignored) {}
         Log.i(TAG, "VehicleAutomationService stopped");
+    }
+
+    private final Runnable mediaMonitorRunnable = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                pollActiveMediaSession();
+            } catch (Throwable ignored) {}
+            if (isRunning) {
+                mainHandler.postDelayed(this, 3000);
+            }
+        }
+    };
+
+    private void startMediaMonitor() {
+        mainHandler.removeCallbacks(mediaMonitorRunnable);
+        mainHandler.postDelayed(mediaMonitorRunnable, 3000);
+    }
+
+    private void stopMediaMonitor() {
+        mainHandler.removeCallbacks(mediaMonitorRunnable);
+    }
+
+    private void pollActiveMediaSession() {
+        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        boolean pushPb = prefs.getBoolean("wheel_push_playback_cluster", false);
+        if (!pushPb) return;
+        String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
+        if (!"toolbox_alone".equals(wheelMode)) return;
+
+        MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
+        if (msm == null) return;
+        List<MediaController> controllers = null;
+        try {
+            controllers = msm.getActiveSessions(null);
+        } catch (Throwable ignored) {}
+        if (controllers == null || controllers.isEmpty()) return;
+
+        for (MediaController mc : controllers) {
+            if (mc == null) continue;
+            PlaybackState state = mc.getPlaybackState();
+            if (state != null && state.getState() == PlaybackState.STATE_PLAYING) {
+                MediaMetadata md = mc.getMetadata();
+                if (md != null) {
+                    String title = md.getString(MediaMetadata.METADATA_KEY_TITLE);
+                    String artist = md.getString(MediaMetadata.METADATA_KEY_ARTIST);
+                    String album = md.getString(MediaMetadata.METADATA_KEY_ALBUM);
+                    long duration = md.getLong(MediaMetadata.METADATA_KEY_DURATION);
+                    EasMediaBridge.getInstance(this).pushPlaybackInfoIfEnabled(title, artist, album, duration, 1);
+                    return;
+                }
+            }
+        }
+    }
+
+    // ==========================================
+    // 车速与门控自动化中枢 (单次行程防抖闭环)
+    // ==========================================
+    private boolean speedAutoplayArmed = false;
+    private long overspeedStartMs = 0;
+    private boolean overspeedWarned = false;
+
+    private void processVehicleSpeedAutomation(int speed) {
+        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+
+        // 1. 车速智能自启多媒体
+        boolean autoplayEnabled = prefs.getBoolean("vehicle_speed_autoplay_enabled", false);
+        if (autoplayEnabled && speedAutoplayArmed && isEngineRunning()) {
+            int threshold = prefs.getInt("vehicle_speed_autoplay_threshold", 20);
+            if (speed >= threshold) {
+                speedAutoplayArmed = false; // 触发一次即锁定，等红绿灯不重复触发
+                String targetPkg = prefs.getString("vehicle_speed_autoplay_pkg", "com.luna.music");
+                boolean fullscreen = prefs.getBoolean("vehicle_speed_autoplay_fullscreen", false);
+                triggerMusicAutoplay(targetPkg, fullscreen);
+            }
+        }
+
+        // 2. 车速超限轻提醒
+        boolean overspeedEnabled = prefs.getBoolean("vehicle_overspeed_voice_enabled", false);
+        if (overspeedEnabled && isEngineRunning()) {
+            int overspeedThreshold = prefs.getInt("vehicle_overspeed_threshold", 80);
+            if (speed >= overspeedThreshold) {
+                if (overspeedStartMs == 0) {
+                    overspeedStartMs = System.currentTimeMillis();
+                } else if (!overspeedWarned && (System.currentTimeMillis() - overspeedStartMs >= 3000)) {
+                    overspeedWarned = true;
+                    if (voicePlayer != null) {
+                        voicePlayer.play("custom_voice_overspeed.mp3", "当前车速已超过" + overspeedThreshold + "公里每小时，请减速慢行");
+                        AppLogger.i("车身联动", "连续超速达到 3 秒，触发车速安全轻提醒: " + speed + "km/h >= " + overspeedThreshold + "km/h");
+                    }
+                }
+            } else if (speed < overspeedThreshold - 5) {
+                overspeedStartMs = 0;
+                overspeedWarned = false;
+            }
+        }
+    }
+
+    private void triggerMusicAutoplay(final String pkg, boolean fullscreen) {
+        if (isAnyMediaPlaying()) {
+            AppLogger.i("车身联动", "车速达到阈值，但检测到当前已有媒体在播放，静默放行防打断");
+            return;
+        }
+        AppLogger.i("车身联动", "车速达到阈值，触发智能多媒体自启: " + pkg + " (全屏=" + fullscreen + ")");
+        if (fullscreen && pkg != null && !pkg.isEmpty()) {
+            try {
+                Intent launch = getPackageManager().getLaunchIntentForPackage(pkg);
+                if (launch != null) {
+                    launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(launch);
+                }
+            } catch (Throwable t) {
+                AppLogger.w("车身联动", "唤起前台媒体应用失败: " + t.getMessage());
+            }
+        }
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
+                } catch (Throwable ignored) {}
+            }
+        }, 800);
+    }
+
+    private boolean isAnyMediaPlaying() {
+        try {
+            MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (msm != null) {
+                List<MediaController> controllers = msm.getActiveSessions(null);
+                if (controllers != null) {
+                    for (MediaController mc : controllers) {
+                        if (mc != null && mc.getPlaybackState() != null && mc.getPlaybackState().getState() == PlaybackState.STATE_PLAYING) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            if (am != null && am.isMusicActive()) {
+                return true;
+            }
+        } catch (Throwable ignored) {}
+        return false;
+    }
+
+    private void checkFrontDoorPauseMusic() {
+        try {
+            SharedPreferences p = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            if (p.getBoolean("vehicle_door_pause_music_enabled", false)) {
+                if (gearStateMachine != null && gearStateMachine.getGear() == 5) {
+                    new SteeringWheelKeyManager(this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PAUSE);
+                    AppLogger.i("车身联动", "检测到P挡且前门开启，已自动发送媒体暂停指令");
+                }
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    private int originalBrightness = -1;
+    private void adjustScreenBrightness(final boolean dim) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                    int dimPercent = prefs.getInt("vehicle_light_dim_level", 35);
+                    if (dim) {
+                        try {
+                            originalBrightness = android.provider.Settings.System.getInt(getContentResolver(), android.provider.Settings.System.SCREEN_BRIGHTNESS, 180);
+                        } catch (Throwable ignored) {}
+                        int targetVal = (int) (dimPercent * 255.0f / 100.0f);
+                        if (targetVal < 20) targetVal = 20;
+                        AdbClient.execute(VehicleAutomationService.this, "settings put system screen_brightness " + targetVal);
+                        AppLogger.i("车身联动", "进隧道/夜间开大灯，已平滑微调屏幕背光至护眼亮度 (" + dimPercent + "%)");
+                    } else {
+                        int restoreVal = originalBrightness > 0 ? originalBrightness : 180;
+                        AdbClient.execute(VehicleAutomationService.this, "settings put system screen_brightness " + restoreVal);
+                        AppLogger.i("车身联动", "出隧道/白天关大灯，已恢复屏幕原始亮度 (" + restoreVal + ")");
+                    }
+                } catch (Throwable ignored) {}
+            }
+        }).start();
     }
 }

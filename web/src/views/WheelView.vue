@@ -51,15 +51,6 @@
         <div class="flex items-center space-x-3">
           <div class="flex bg-car-card border border-car-border rounded-xl p-1 items-center">
             <button 
-              @click="setCluster('right')"
-              :class="[
-                'h-[42px] px-4 rounded-lg text-[14px] font-black cursor-pointer transition-all whitespace-nowrap flex items-center',
-                activeCluster === 'right' ? 'bg-car-item border border-car-accent text-car-text shadow-sm' : 'text-car-sub hover:text-car-text'
-              ]"
-            >
-              右方向盘 (SX-0017 多媒体)
-            </button>
-            <button 
               @click="setCluster('left')"
               :class="[
                 'h-[42px] px-4 rounded-lg text-[14px] font-black cursor-pointer transition-all whitespace-nowrap flex items-center',
@@ -67,6 +58,15 @@
               ]"
             >
               左方向盘 (SX-0016 智驾区)
+            </button>
+            <button 
+              @click="setCluster('right')"
+              :class="[
+                'h-[42px] px-4 rounded-lg text-[14px] font-black cursor-pointer transition-all whitespace-nowrap flex items-center',
+                activeCluster === 'right' ? 'bg-car-item border border-car-accent text-car-text shadow-sm' : 'text-car-sub hover:text-car-text'
+              ]"
+            >
+              右方向盘 (SX-0017 多媒体)
             </button>
           </div>
           <button 
@@ -166,7 +166,7 @@
         />
         <MatrixButton 
           title="控制台独立接管 (推荐)"
-          subtitle="工具箱接管切歌与所有按键多手势自定义"
+          subtitle="全量接管切歌与按键，并自动选通原车蓝牙音频硬件通道"
           :active="store.vehicleAuto.wheel_control_mode === 'toolbox_alone' || (!store.vehicleAuto.wheel_control_mode && store.vehicleAuto.wheel_control_mode !== 'factory_default')"
           @click="setWheelMode('toolbox_alone')"
         />
@@ -176,6 +176,37 @@
           :active="store.vehicleAuto.wheel_control_mode === 'factory_default'"
           @click="setWheelMode('factory_default')"
         />
+      </div>
+
+      <!-- 仪表盘与屏保显示扩展 (独立开关·默认关闭) -->
+      <div class="mt-4 pt-4 border-t border-car-border/60 flex flex-col space-y-3">
+        <div class="flex items-center justify-between p-3.5 rounded-xl bg-car-item border border-car-border/50">
+          <div class="flex flex-col space-y-0.5">
+            <span class="text-[14.5px] font-bold text-car-title">投递播放状态至仪表盘与息屏时钟</span>
+            <span class="text-[12px] text-car-sub">开启后向原厂 EAS 广播歌名与歌手，车机息屏后将显示音乐小部件卡片。默认关闭保持极简。</span>
+          </div>
+          <button 
+            @click="toggleClusterPlayback" 
+            class="px-4 py-1.5 rounded-xl text-[13px] font-bold border transition-colors whitespace-nowrap"
+            :class="store.vehicleAuto.wheel_push_playback_cluster ? 'bg-car-accent/20 border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'"
+          >
+            {{ store.vehicleAuto.wheel_push_playback_cluster ? '已开启 (投递状态)' : '已关闭 (默认纯净)' }}
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between p-3.5 rounded-xl bg-car-item border border-car-border/50">
+          <div class="flex flex-col space-y-0.5">
+            <span class="text-[14.5px] font-bold text-car-title">投递当前歌词至原车仪表盘 (HUD)</span>
+            <span class="text-[12px] text-car-sub">开启后向吉利全液晶仪表盘中间卡片推送实时滚动歌词。默认关闭防信息刷屏。</span>
+          </div>
+          <button 
+            @click="toggleClusterLyrics" 
+            class="px-4 py-1.5 rounded-xl text-[13px] font-bold border transition-colors whitespace-nowrap"
+            :class="store.vehicleAuto.wheel_push_lyrics_cluster ? 'bg-car-accent/20 border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'"
+          >
+            {{ store.vehicleAuto.wheel_push_lyrics_cluster ? '已开启 (投递歌词)' : '已关闭 (默认纯净)' }}
+          </button>
+        </div>
       </div>
     </FeatureCard>
 
@@ -787,6 +818,20 @@ function setWheelMode(mode) {
   store.vehicleAuto.wheel_control_mode = mode;
   bridge.call('setWheelControlStringSetting', 'wheel_control_mode', mode);
   showToast('方控模式已切换: ' + (mode === 'carmedia_first' ? '米小江优先' : (mode === 'toolbox_alone' ? '控制台独立接管' : '恢复原厂')));
+}
+
+function toggleClusterPlayback() {
+  const next = !store.vehicleAuto.wheel_push_playback_cluster;
+  store.vehicleAuto.wheel_push_playback_cluster = next;
+  bridge.call('setVehicleAutomationSetting', 'wheel_push_playback_cluster', next);
+  showToast(next ? '已开启仪表/屏保播放状态投递' : '已关闭投递，保持仪表盘与屏保纯净');
+}
+
+function toggleClusterLyrics() {
+  const next = !store.vehicleAuto.wheel_push_lyrics_cluster;
+  store.vehicleAuto.wheel_push_lyrics_cluster = next;
+  bridge.call('setVehicleAutomationSetting', 'wheel_push_lyrics_cluster', next);
+  showToast(next ? '已开启仪表盘歌词投递' : '已关闭歌词投递，保持仪表盘纯净');
 }
 
 function applyRecommendedPreset() {

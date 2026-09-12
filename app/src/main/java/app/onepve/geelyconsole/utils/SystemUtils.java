@@ -1826,4 +1826,73 @@ public class SystemUtils {
             return "";
         }
     }
+
+    /** 动态探测整车已安装的音乐与音频软件 */
+    public static List<DetailedAppInfo> getInstalledMusicApps(Context context) {
+        List<DetailedAppInfo> musicApps = new ArrayList<>();
+        List<DetailedAppInfo> all = getAllInstalledApps(context);
+        String[] knownMusicPkgs = {
+            "com.luna.music", "com.tencent.qqmusiccar", "cn.kuwo.kwmusiccar",
+            "com.netease.cloudmusiccar", "com.kugou.androidCar", "cn.toside.music.mobile",
+            "com.ecarx.carmedia", "com.netease.cloudmusic", "com.tencent.qqmusic",
+            "cn.kuwo.player", "com.kugou.player", "com.ximalaya.ting.android",
+            "com.edog.car", "remix.myplayer", "com.sds.android.ttpod"
+        };
+        for (DetailedAppInfo app : all) {
+            if (!app.enabled) continue;
+            boolean matched = false;
+            String pkgLower = app.packageName.toLowerCase(Locale.ROOT);
+            String nameLower = app.appName.toLowerCase(Locale.ROOT);
+            for (String kp : knownMusicPkgs) {
+                if (pkgLower.contains(kp) || kp.contains(pkgLower)) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                if (nameLower.contains("音乐") || nameLower.contains("电台") || nameLower.contains("听书") ||
+                    nameLower.contains("music") || nameLower.contains("audio") || nameLower.contains("player") ||
+                    nameLower.contains("收音机") || nameLower.contains("伴听") || nameLower.contains("洛雪")) {
+                    matched = true;
+                }
+            }
+            if (matched) {
+                musicApps.add(app);
+            }
+        }
+        return musicApps;
+    }
+
+    /** 动态探测整车已安装的地图与导航软件 */
+    public static List<DetailedAppInfo> getInstalledNaviApps(Context context) {
+        List<DetailedAppInfo> naviApps = new ArrayList<>();
+        List<DetailedAppInfo> all = getAllInstalledApps(context);
+        String[] knownNaviPkgs = {
+            "com.autonavi.amapauto", "com.baidu.BaiduMap.auto", "com.tencent.map.auto",
+            "com.autonavi.minimap", "com.baidu.BaiduMap", "com.tencent.map",
+            "com.careland", "com.sogou.map.android.automobile"
+        };
+        for (DetailedAppInfo app : all) {
+            if (!app.enabled) continue;
+            boolean matched = false;
+            String pkgLower = app.packageName.toLowerCase(Locale.ROOT);
+            String nameLower = app.appName.toLowerCase(Locale.ROOT);
+            for (String kp : knownNaviPkgs) {
+                if (pkgLower.contains(kp) || kp.contains(pkgLower)) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                if (nameLower.contains("地图") || nameLower.contains("导航") ||
+                    nameLower.contains("map") || nameLower.contains("navi") || nameLower.contains("高德") || nameLower.contains("百度")) {
+                    matched = true;
+                }
+            }
+            if (matched) {
+                naviApps.add(app);
+            }
+        }
+        return naviApps;
+    }
 }

@@ -2512,6 +2512,21 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("wheel_action_mode", prefs.getString("wheel_action_mode", defaultModeAction));
                 obj.put("wheel_action_ok", prefs.getString("wheel_action_ok", "default"));
                 obj.put("has_carmedia_installed", hasCarMedia);
+                obj.put("wheel_push_playback_cluster", prefs.getBoolean("wheel_push_playback_cluster", false));
+                obj.put("wheel_push_lyrics_cluster", prefs.getBoolean("wheel_push_lyrics_cluster", false));
+
+                // 车速联动自启与行车安全
+                obj.put("vehicle_speed_autoplay_enabled", prefs.getBoolean("vehicle_speed_autoplay_enabled", false));
+                obj.put("vehicle_speed_autoplay_threshold", prefs.getInt("vehicle_speed_autoplay_threshold", 20));
+                obj.put("vehicle_speed_autoplay_pkg", prefs.getString("vehicle_speed_autoplay_pkg", "com.luna.music"));
+                obj.put("vehicle_speed_autoplay_fullscreen", prefs.getBoolean("vehicle_speed_autoplay_fullscreen", false));
+                obj.put("vehicle_overspeed_voice_enabled", prefs.getBoolean("vehicle_overspeed_voice_enabled", false));
+                obj.put("vehicle_overspeed_threshold", prefs.getInt("vehicle_overspeed_threshold", 80));
+                obj.put("vehicle_door_pause_music_enabled", prefs.getBoolean("vehicle_door_pause_music_enabled", false));
+                obj.put("vehicle_rear_door_alert_enabled", prefs.getBoolean("vehicle_rear_door_alert_enabled", false));
+                obj.put("vehicle_light_brightness_dim_enabled", prefs.getBoolean("vehicle_light_brightness_dim_enabled", false));
+                obj.put("vehicle_light_dim_level", prefs.getInt("vehicle_light_dim_level", 35));
+                obj.put("preferred_navi_pkg", prefs.getString("preferred_navi_pkg", "com.autonavi.amapauto"));
 
                 // 方控多手势映射 (单击/双击/长按)
                 String[] gestureKeys = {"ok", "mute", "mode", "next", "prev", "back", "call", "voice", "home", "custom"};
@@ -2625,6 +2640,51 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
             });
             return true;
+        }
+
+        @JavascriptInterface
+        public boolean refreshInstalledApps() {
+            SystemUtils.clearAppsCache();
+            AppLogger.i("应用管理", "手动清除已装应用缓存，触发全仓重新扫描");
+            return true;
+        }
+
+        @JavascriptInterface
+        public String getInstalledMusicAppsJson() {
+            try {
+                List<SystemUtils.DetailedAppInfo> apps = SystemUtils.getInstalledMusicApps(MainActivity.this);
+                org.json.JSONArray arr = new org.json.JSONArray();
+                for (SystemUtils.DetailedAppInfo a : apps) {
+                    org.json.JSONObject o = new org.json.JSONObject();
+                    o.put("packageName", a.packageName);
+                    o.put("appName", a.appName);
+                    o.put("enabled", a.enabled);
+                    o.put("isSystem", a.isSystemApp);
+                    arr.put(o);
+                }
+                return arr.toString();
+            } catch (Exception e) {
+                return "[]";
+            }
+        }
+
+        @JavascriptInterface
+        public String getInstalledNaviAppsJson() {
+            try {
+                List<SystemUtils.DetailedAppInfo> apps = SystemUtils.getInstalledNaviApps(MainActivity.this);
+                org.json.JSONArray arr = new org.json.JSONArray();
+                for (SystemUtils.DetailedAppInfo a : apps) {
+                    org.json.JSONObject o = new org.json.JSONObject();
+                    o.put("packageName", a.packageName);
+                    o.put("appName", a.appName);
+                    o.put("enabled", a.enabled);
+                    o.put("isSystem", a.isSystemApp);
+                    arr.put(o);
+                }
+                return arr.toString();
+            } catch (Exception e) {
+                return "[]";
+            }
         }
 
         @JavascriptInterface
