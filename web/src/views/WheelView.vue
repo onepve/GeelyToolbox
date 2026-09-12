@@ -44,31 +44,11 @@
           <div class="flex flex-col">
             <span class="text-[18px] font-black text-car-text">吉利缤越 COOL (IHU516G / E02) 原厂方控图解</span>
             <span class="text-[14px] text-car-sub font-bold mt-0.5">
-              {{ activeCluster === 'right' ? '右方向盘多媒体控制区 (SX-0017)：静音、切歌、MODE、返回键全量打通多手势' : '左方向盘智驾控制区 (SX-0016)：智驾领航、LIM限速、⑦号自定义高德往返按键' }}
+              右方向盘多媒体控制区 (SX-0017)：静音、切歌、MODE、返回键全量打通多手势
             </span>
           </div>
         </div>
         <div class="flex items-center space-x-3">
-          <div class="flex bg-car-card border-2 border-car-border rounded-2xl p-1.5 items-center">
-            <button 
-              @click="setCluster('left')"
-              :class="[
-                'h-[52px] px-5 rounded-xl text-[16px] font-black cursor-pointer transition-all whitespace-nowrap flex items-center',
-                activeCluster === 'left' ? 'bg-car-item border-2 border-car-accent text-car-text shadow-md ring-2 ring-car-accent/20' : 'text-car-sub hover:text-car-text'
-              ]"
-            >
-              左方向盘 (SX-0016 智驾区)
-            </button>
-            <button 
-              @click="setCluster('right')"
-              :class="[
-                'h-[52px] px-5 rounded-xl text-[16px] font-black cursor-pointer transition-all whitespace-nowrap flex items-center',
-                activeCluster === 'right' ? 'bg-car-item border-2 border-car-accent text-car-text shadow-md ring-2 ring-car-accent/20' : 'text-car-sub hover:text-car-text'
-              ]"
-            >
-              右方向盘 (SX-0017 多媒体)
-            </button>
-          </div>
           <button 
             @click="toggleDiagram()"
             class="h-[52px] px-6 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light transition-all shadow-sm whitespace-nowrap flex items-center"
@@ -83,14 +63,14 @@
         <!-- 原厂方向盘按键高清图示 (沉稳车规底座，绝非刺眼白底) -->
         <div class="p-3 bg-car-item rounded-2xl shadow-md border-2 border-car-border w-[320px] min-w-[320px] max-w-[320px] shrink-0">
           <img 
-            :src="activeCluster === 'right' ? wheelGuideImg : wheelLeftGuideImg" 
-            :alt="activeCluster === 'right' ? '吉利缤越 COOL 右侧多媒体 SX-0017' : '吉利缤越 COOL 左侧智驾 SX-0016'" 
+            :src="wheelGuideImg" 
+            alt="吉利缤越 COOL 右侧多媒体 SX-0017" 
             class="w-full h-auto rounded-xl object-contain block" 
           />
         </div>
 
         <!-- 按键编号与原厂定义清单 -->
-        <div v-if="activeCluster === 'right'" class="flex-1 min-w-0 flex flex-col space-y-2.5 text-[14.5px] font-bold text-car-sub">
+        <div class="flex-1 min-w-0 flex flex-col space-y-2.5 text-[14.5px] font-bold text-car-sub">
           <div class="flex space-x-3">
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
               <span class="text-car-accent font-black mr-1.5">① 主页/返回键:</span> 返回车机中控主页 / 支持多手势
@@ -117,36 +97,6 @@
           </div>
           <div class="w-full p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
             <span class="text-car-accent font-black mr-1.5">⑦ 向左选择键:</span> 上一个文件 / 上一曲 (支持多手势)
-          </div>
-        </div>
-
-        <div v-else class="flex-1 min-w-0 flex flex-col space-y-2.5 text-[14.5px] font-bold text-car-sub">
-          <div class="flex space-x-3">
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-text font-black mr-1.5">① 智驾领航键:</span> ICC 智能领航 / 自适应巡航
-            </div>
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-text font-black mr-1.5">② LIM 限速键:</span> 最高限速设定与开启
-            </div>
-          </div>
-          <div class="flex space-x-3">
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-text font-black mr-1.5">③ 巡航调节滚轮:</span> 设定速度上下微调与确认
-            </div>
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-text font-black mr-1.5">④ 跟车距离调节:</span> 多挡跟车安全时距切换
-            </div>
-          </div>
-          <div class="flex space-x-3">
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">⑤ 电话接听键:</span> 原厂电话接听与挂断
-            </div>
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">⑥ 语音唤醒键:</span> 原厂语音控制话筒键
-            </div>
-          </div>
-          <div class="w-full p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-            <span class="text-car-accent font-black mr-1.5">⑦ 自定义按键:</span> 高德地图与桌面一键往返 (盲操神器)
           </div>
         </div>
       </div>
@@ -707,21 +657,14 @@ import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
 import { store, bridge, showToast, openModal } from '../store';
 import wheelGuideImg from '../assets/steering_wheel_guide.webp';
-import wheelLeftGuideImg from '../assets/steering_wheel_left_guide.webp';
 
-// 原厂方控图解：默认折叠，并记忆上次的展开/折叠状态与左右侧视图
+// 原厂方控图解：默认折叠，并记忆展开状态
 const DIAGRAM_KEY = 'wheel_diagram_expanded';
 const showDiagram = ref(localStorage.getItem(DIAGRAM_KEY) === 'true');
-const activeCluster = ref(localStorage.getItem('wheel_active_cluster') || 'right');
 
 function toggleDiagram() {
   showDiagram.value = !showDiagram.value;
   localStorage.setItem(DIAGRAM_KEY, String(showDiagram.value));
-}
-
-function setCluster(side) {
-  activeCluster.value = side;
-  localStorage.setItem('wheel_active_cluster', side);
 }
 const longPressSec = computed({
   get: () => {
