@@ -106,7 +106,7 @@
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 shadow-xl">
       <div class="flex items-center justify-between pb-3 mb-3 border-b border-car-border/60">
         <div class="flex items-center space-x-2.5">
-          <span class="text-[20px]">🔊</span>
+          
           <span class="text-[19px] font-black text-car-text">语音播报音频输出通道 (声道配置)</span>
         </div>
         <button
@@ -193,7 +193,7 @@
           @click="openAddVoiceModal"
           class="h-[54px] px-6 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent-light text-car-accent font-black text-[16px] cursor-pointer shadow-md flex items-center space-x-2 transition-all"
         >
-          <span>➕ 添加语音计划</span>
+          <span>添加语音计划</span>
           <span v-if="removedVoiceTaskIds.length > 0" class="px-2 py-0.5 text-[12.5px] bg-car-card rounded-full border border-car-accent/40 text-car-text">
             {{ removedVoiceTaskIds.length }} 项待添加
           </span>
@@ -243,13 +243,13 @@
               @click="openGearConfigModal"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent text-car-accent font-black text-[15.5px] cursor-pointer shadow-sm transition-all"
             >
-              🕹️ 挡位细分配置 ➔
+              挡位细分配置 ➔
             </button>
             <button 
               @click="removeVoiceTask('gear_voice', '换挡语音计划')"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
             >
-              <span>🗑️</span>
+              
               <span>移除</span>
             </button>
           </div>
@@ -306,13 +306,13 @@
               @click="openModeConfigModal"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent text-car-accent font-black text-[15.5px] cursor-pointer shadow-sm transition-all"
             >
-              🏎️ 模式细分配置 ➔
+              模式细分配置 ➔
             </button>
             <button 
               @click="removeVoiceTask('mode_voice', '驾驶模式计划')"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
             >
-              <span>🗑️</span>
+              
               <span>移除</span>
             </button>
           </div>
@@ -369,13 +369,13 @@
               @click="openDoorConfigModal"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent text-car-accent font-black text-[15.5px] cursor-pointer shadow-sm transition-all"
             >
-              🚪 车门独立台词配置 ➔
+              车门独立台词配置 ➔
             </button>
             <button 
               @click="removeVoiceTask('door_voice', '车门语音计划')"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
             >
-              <span>🗑️</span>
+              
               <span>移除</span>
             </button>
           </div>
@@ -866,7 +866,7 @@
               @click="restoreVoiceTask(task.id)"
               class="h-[52px] px-6 rounded-xl bg-car-card border-2 border-car-accent text-car-accent font-black text-[15px] cursor-pointer hover:bg-car-item whitespace-nowrap shadow-sm"
             >
-              ➕ 加入工作台
+              加入工作台
             </button>
             <div 
               v-else

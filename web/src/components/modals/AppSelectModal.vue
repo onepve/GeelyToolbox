@@ -26,13 +26,13 @@
           @click="toggleShowAllApps"
           class="h-[52px] px-4 rounded-xl bg-car-card border border-car-border hover:border-car-accent text-car-accent font-bold text-[14.5px] flex items-center space-x-1.5 whitespace-nowrap shadow-sm cursor-pointer"
         >
-          <span>{{ showAllApps ? '🎵 仅看音乐分类' : '📱 展开整车所有App' }}</span>
+          <span>{{ showAllApps ? '仅看音乐分类' : '展开整车所有App' }}</span>
         </button>
         <button
           @click="rescanApps"
           class="h-[52px] px-4 rounded-xl bg-car-card border border-car-border hover:border-car-accent text-car-text font-bold text-[14.5px] flex items-center space-x-1.5 whitespace-nowrap shadow-sm cursor-pointer"
         >
-          <span>🔄 重新扫描已装App</span>
+          <span>重新扫描已装App</span>
         </button>
       </div>
 
@@ -62,20 +62,22 @@
 
           <div class="flex items-center space-x-2 shrink-0">
             <!-- 优先级上移/下移 (仅在 speed_autoplay 且未处于搜索时可用) -->
-            <div v-if="keyTarget === 'speed_autoplay' && !searchQuery.trim()" class="flex space-x-1 mr-1">
+            <div v-if="keyTarget === 'speed_autoplay' && !searchQuery.trim()" class="flex items-center space-x-2 mr-2">
               <button 
                 @click.stop="moveMusicPriority(app.pkg, -1)" 
-                class="px-2.5 py-1.5 rounded-lg bg-car-card border border-car-border hover:border-car-accent text-car-text font-bold text-[12px] whitespace-nowrap"
+                class="h-[52px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[14px] cursor-pointer flex items-center space-x-1 shadow-sm active:scale-95 whitespace-nowrap"
                 title="优先级上移"
               >
-                ▲
+                <span>▲</span>
+                <span>上移</span>
               </button>
               <button 
                 @click.stop="moveMusicPriority(app.pkg, 1)" 
-                class="px-2.5 py-1.5 rounded-lg bg-car-card border border-car-border hover:border-car-accent text-car-text font-bold text-[12px] whitespace-nowrap"
+                class="h-[52px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[14px] cursor-pointer flex items-center space-x-1 shadow-sm active:scale-95 whitespace-nowrap"
                 title="优先级下移"
               >
-                ▼
+                <span>▼</span>
+                <span>下移</span>
               </button>
             </div>
 
@@ -83,7 +85,7 @@
               class="px-5 py-2.5 rounded-xl font-black text-[15px] transition-all shadow-sm shrink-0"
               :class="isCurrentSelected(app.pkg) ? 'bg-car-accent text-slate-950 shadow-md' : 'bg-car-card border border-car-border text-car-text hover:border-car-accent'"
             >
-              {{ isCurrentSelected(app.pkg) ? '👑 当前选定' : '选定应用' }}
+              {{ isCurrentSelected(app.pkg) ? '当前选定' : '选定应用' }}
             </button>
           </div>
         </div>

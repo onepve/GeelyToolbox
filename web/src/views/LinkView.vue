@@ -19,7 +19,7 @@
           @click="openAddTaskModal"
           class="h-[54px] px-6 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent-light text-car-accent font-black text-[16px] cursor-pointer shadow-md flex items-center space-x-2 transition-all"
         >
-          <span>➕ 添加联动计划</span>
+          <span>添加联动计划</span>
           <span v-if="removedTaskIds.length > 0" class="px-2 py-0.5 text-[12.5px] bg-car-card rounded-full border border-car-accent/40 text-car-text">
             {{ removedTaskIds.length }} 项待添加
           </span>
@@ -69,7 +69,7 @@
               @click="removeTask('turn_360', '转向灯联动 360 全景')"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
             >
-              <span>🗑️</span>
+              
               <span>移除</span>
             </button>
           </div>
@@ -127,7 +127,7 @@
               @click="removeTask('d_360', 'D 挡起步联动 360')"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
             >
-              <span>🗑️</span>
+              
               <span>移除</span>
             </button>
           </div>
@@ -178,7 +178,7 @@
               @click="removeTask('speed_music', '车速启播音乐')"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
             >
-              <span>🗑️</span>
+              
               <span>移除</span>
             </button>
           </div>
@@ -277,15 +277,15 @@
                 @click="refreshDetectedApps" 
                 class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-accent font-black text-[14.5px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
               >
-                <span>🔄</span>
+                
                 <span>手动重新扫描</span>
               </button>
               <button 
                 @click="openSelectModal('speed_autoplay')"
                 class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[14.5px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
               >
-                <span>🎵</span>
-                <span>自定义排序 (▲/▼) ➔</span>
+                
+                <span>自定义应用排序 (▲/▼) ➔</span>
               </button>
             </div>
           </div>
@@ -303,14 +303,14 @@
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
               ]"
             >
-              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === app.pkg" class="text-car-accent font-black">👑</span>
+              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === app.pkg" class="px-2 py-0.5 text-[11px] rounded bg-car-item border border-car-accent text-car-accent font-black mr-1">首选</span>
               <span>{{ app.name }}</span>
             </button>
             <button 
               @click="openSelectModal('speed_autoplay')"
               class="h-[54px] px-5 rounded-xl text-[15.5px] font-black cursor-pointer transition-all border-2 border-car-border bg-car-card hover:border-car-accent text-car-accent whitespace-nowrap flex items-center space-x-2 m-1 shadow-sm"
             >
-              <span>➕</span>
+              
               <span>自选整车已装软件 ➔</span>
             </button>
           </div>
@@ -344,7 +344,7 @@
               @click="removeTask('speed_action', '车速自定义动作')"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
             >
-              <span>🗑️</span>
+              
               <span>移除</span>
             </button>
           </div>
@@ -469,7 +469,7 @@
               @click="removeTask('overspeed', '超速语音提醒')"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
             >
-              <span>🗑️</span>
+              
               <span>移除</span>
             </button>
           </div>
@@ -563,7 +563,7 @@
               @click="removeTask('light_nav', '进隧道高德日夜联动')"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
             >
-              <span>🗑️</span>
+              
               <span>移除</span>
             </button>
           </div>
@@ -620,7 +620,7 @@
               @click="removeTask('light_dim', '中控背光微调')"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
             >
-              <span>🗑️</span>
+              
               <span>移除</span>
             </button>
           </div>
@@ -677,7 +677,7 @@
               @click="removeTask('door_pause', '推门暂停音乐')"
               class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
             >
-              <span>🗑️</span>
+              
               <span>移除</span>
             </button>
           </div>
@@ -742,7 +742,7 @@
               @click="restoreTask(task.id)"
               class="h-[52px] px-6 rounded-xl bg-car-card border-2 border-car-accent text-car-accent font-black text-[15px] cursor-pointer hover:bg-car-item whitespace-nowrap shadow-sm"
             >
-              ➕ 加入工作台
+              加入工作台
             </button>
             <div 
               v-else
