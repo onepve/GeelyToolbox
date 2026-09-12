@@ -16,13 +16,12 @@
       </div>
       <div class="flex items-center space-x-3 shrink-0">
         <button
-          v-if="removedTaskIds.length > 0"
           @click="openAddTaskModal"
           class="h-[54px] px-6 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent-light text-car-accent font-black text-[16px] cursor-pointer shadow-md flex items-center space-x-2 transition-all"
         >
-          <span>+ 添加联动计划</span>
-          <span class="px-2 py-0.5 text-[12.5px] bg-car-card rounded-full border border-car-accent/40 text-car-text">
-            {{ removedTaskIds.length }} 项可添加
+          <span>➕ 添加联动计划</span>
+          <span v-if="removedTaskIds.length > 0" class="px-2 py-0.5 text-[12.5px] bg-car-card rounded-full border border-car-accent/40 text-car-text">
+            {{ removedTaskIds.length }} 项待添加
           </span>
         </button>
         <button
@@ -39,12 +38,7 @@
       <!-- 任务 1: 转向灯联动 360 -->
       <div 
         v-if="isTaskVisible('turn_360')"
-        :class="[
-          'rounded-3xl border-2 p-6 shadow-xl transition-all duration-200 flex flex-col space-y-4',
-          store.vehicleAuto.vehicle_turn_360_enabled 
-            ? 'bg-car-card border-car-accent shadow-[0_0_15px_rgba(230,168,34,0.12)]' 
-            : 'bg-car-card border-car-border hover:border-car-border-light'
-        ]"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -103,12 +97,7 @@
       <!-- 任务 2: D 挡起步联动 360 -->
       <div 
         v-if="isTaskVisible('d_360')"
-        :class="[
-          'rounded-3xl border-2 p-6 shadow-xl transition-all duration-200 flex flex-col space-y-4',
-          store.vehicleAuto.vehicle_d_gear_360_enabled 
-            ? 'bg-car-card border-car-accent shadow-[0_0_15px_rgba(230,168,34,0.12)]' 
-            : 'bg-car-card border-car-border hover:border-car-border-light'
-        ]"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -165,12 +154,7 @@
       <!-- 任务 3: 车速达标智能启播车载音乐 (纯加减微调控制器) -->
       <div 
         v-if="isTaskVisible('speed_music')"
-        :class="[
-          'rounded-3xl border-2 p-6 shadow-xl transition-all duration-200 flex flex-col space-y-4',
-          store.vehicleAuto.vehicle_speed_autoplay_enabled 
-            ? 'bg-car-card border-car-accent shadow-[0_0_15px_rgba(230,168,34,0.12)]' 
-            : 'bg-car-card border-car-border hover:border-car-border-light'
-        ]"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -322,6 +306,13 @@
               <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === app.pkg" class="text-car-accent font-black">👑</span>
               <span>{{ app.name }}</span>
             </button>
+            <button 
+              @click="openSelectModal('speed_autoplay')"
+              class="h-[54px] px-5 rounded-xl text-[15.5px] font-black cursor-pointer transition-all border-2 border-car-border bg-car-card hover:border-car-accent text-car-accent whitespace-nowrap flex items-center space-x-2 m-1 shadow-sm"
+            >
+              <span>➕</span>
+              <span>自选整车已装软件 ➔</span>
+            </button>
           </div>
         </div>
       </div>
@@ -329,12 +320,7 @@
       <!-- 任务 4: 车速达标自定义动作与唤起应用 (纯加减微调控制器) -->
       <div 
         v-if="isTaskVisible('speed_action')"
-        :class="[
-          'rounded-3xl border-2 p-6 shadow-xl transition-all duration-200 flex flex-col space-y-4',
-          store.vehicleAuto.vehicle_speed_custom_action_enabled 
-            ? 'bg-car-card border-car-accent shadow-[0_0_15px_rgba(230,168,34,0.12)]' 
-            : 'bg-car-card border-car-border hover:border-car-border-light'
-        ]"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -459,12 +445,7 @@
       <!-- 任务 5: 行车超速语音警示 (纯加减微调控制器) -->
       <div 
         v-if="isTaskVisible('overspeed')"
-        :class="[
-          'rounded-3xl border-2 p-6 shadow-xl transition-all duration-200 flex flex-col space-y-4',
-          store.vehicleAuto.vehicle_overspeed_enabled 
-            ? 'bg-car-card border-car-accent shadow-[0_0_15px_rgba(230,168,34,0.12)]' 
-            : 'bg-car-card border-car-border hover:border-car-border-light'
-        ]"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -552,12 +533,7 @@
       <!-- 任务 6: 白天大灯联动高德日夜模式 -->
       <div 
         v-if="isTaskVisible('light_nav')"
-        :class="[
-          'rounded-3xl border-2 p-6 shadow-xl transition-all duration-200 flex flex-col space-y-4',
-          store.vehicleAuto.vehicle_headlight_nav_night_enabled 
-            ? 'bg-car-card border-car-accent shadow-[0_0_15px_rgba(230,168,34,0.12)]' 
-            : 'bg-car-card border-car-border hover:border-car-border-light'
-        ]"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -614,12 +590,7 @@
       <!-- 任务 7: 进隧道中控屏幕护眼背光微调 -->
       <div 
         v-if="isTaskVisible('light_dim')"
-        :class="[
-          'rounded-3xl border-2 p-6 shadow-xl transition-all duration-200 flex flex-col space-y-4',
-          store.vehicleAuto.vehicle_headlight_dim_screen_enabled 
-            ? 'bg-car-card border-car-accent shadow-[0_0_15px_rgba(230,168,34,0.12)]' 
-            : 'bg-car-card border-car-border hover:border-car-border-light'
-        ]"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -676,12 +647,7 @@
       <!-- 任务 8: P 挡开门多媒体优雅静音 -->
       <div 
         v-if="isTaskVisible('door_pause')"
-        :class="[
-          'rounded-3xl border-2 p-6 shadow-xl transition-all duration-200 flex flex-col space-y-4',
-          store.vehicleAuto.vehicle_door_pause_music_enabled 
-            ? 'bg-car-card border-car-accent shadow-[0_0_15px_rgba(230,168,34,0.12)]' 
-            : 'bg-car-card border-car-border hover:border-car-border-light'
-        ]"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -758,9 +724,9 @@
 
         <div class="flex flex-col space-y-3 max-h-[460px] overflow-y-auto pr-1">
           <div 
-            v-for="task in availablePresetTasks" 
+            v-for="task in allTasks" 
             :key="task.id"
-            class="p-4 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-accent flex items-center justify-between transition-all"
+            class="p-4 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light flex items-center justify-between transition-all"
           >
             <div class="flex flex-col space-y-1 pr-4">
               <div class="flex items-center space-x-2">
@@ -772,11 +738,19 @@
               <span class="text-[14px] text-car-sub font-bold">{{ task.desc }}</span>
             </div>
             <button 
+              v-if="removedTaskIds.includes(task.id)"
               @click="restoreTask(task.id)"
-              class="h-[52px] px-5 rounded-xl bg-car-card border-2 border-car-accent text-car-text font-black text-[15px] cursor-pointer hover:bg-car-item whitespace-nowrap shadow-sm m-1"
+              class="h-[52px] px-6 rounded-xl bg-car-card border-2 border-car-accent text-car-accent font-black text-[15px] cursor-pointer hover:bg-car-item whitespace-nowrap shadow-sm"
             >
-              + 加入列表
+              ➕ 加入工作台
             </button>
+            <div 
+              v-else
+              class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border text-car-sub font-black text-[14px] flex items-center space-x-1.5 whitespace-nowrap select-none"
+            >
+              <span class="w-2 h-2 rounded-full bg-car-accent"></span>
+              <span>已在工作台中</span>
+            </div>
           </div>
         </div>
 
@@ -910,7 +884,13 @@ function loadSortedMusicApps() {
     });
   }
 
-  sortedMusicApps.value = list.slice(0, 5);
+  const currentPkg = store.vehicleAuto.vehicle_speed_autoplay_pkg;
+  const currentName = localStorage.getItem('vehicle_speed_autoplay_app_name');
+  if (currentPkg && !list.some(a => a.pkg === currentPkg)) {
+    list.unshift({ name: currentName || '自选应用', pkg: currentPkg });
+  }
+
+  sortedMusicApps.value = list;
 
   if (!store.vehicleAuto.vehicle_speed_autoplay_pkg && sortedMusicApps.value.length > 0) {
     store.vehicleAuto.vehicle_speed_autoplay_pkg = sortedMusicApps.value[0].pkg;

@@ -18,12 +18,19 @@
             type="text"
             v-model="searchQuery"
             placeholder="搜索应用名称或包名..."
-            class="w-full h-12 px-4 rounded-xl bg-car-item border border-car-border text-car-text placeholder-car-sub font-bold text-[16px] outline-none focus:border-car-accent transition-all"
+            class="w-full h-[52px] px-4 rounded-xl bg-car-item border border-car-border text-car-text placeholder-car-sub font-bold text-[16px] outline-none focus:border-car-accent transition-all"
           />
         </div>
         <button
+          v-if="keyTarget === 'speed_autoplay'"
+          @click="toggleShowAllApps"
+          class="h-[52px] px-4 rounded-xl bg-car-card border border-car-border hover:border-car-accent text-car-accent font-bold text-[14.5px] flex items-center space-x-1.5 whitespace-nowrap shadow-sm cursor-pointer"
+        >
+          <span>{{ showAllApps ? '🎵 仅看音乐分类' : '📱 展开整车所有App' }}</span>
+        </button>
+        <button
           @click="rescanApps"
-          class="h-12 px-4 rounded-xl bg-car-card border border-car-border hover:border-car-accent text-car-text font-bold text-[14.5px] flex items-center space-x-1.5 whitespace-nowrap shadow-sm"
+          class="h-[52px] px-4 rounded-xl bg-car-card border border-car-border hover:border-car-accent text-car-text font-bold text-[14.5px] flex items-center space-x-1.5 whitespace-nowrap shadow-sm cursor-pointer"
         >
           <span>🔄 重新扫描已装App</span>
         </button>
@@ -113,16 +120,23 @@ watch(() => store.modals.appSelect, (val) => {
   }
 });
 
+const showAllApps = ref(false);
+
+function toggleShowAllApps() {
+  showAllApps.value = !showAllApps.value;
+  loadApps();
+}
+
 function loadApps() {
   loading.value = true;
   try {
     let raw = null;
-    if (keyTarget.value === 'speed_autoplay') {
+    if (keyTarget.value === 'speed_autoplay' && !showAllApps.value) {
       raw = bridge.call('getInstalledMusicAppsJson');
-    } else if (keyTarget.value === 'preferred_navi') {
+    } else if (keyTarget.value === 'preferred_navi' && !showAllApps.value) {
       raw = bridge.call('getInstalledNaviAppsJson');
     }
-    if (!raw || raw === '[]') {
+    if (!raw || raw === '[]' || showAllApps.value) {
       raw = bridge.call('getInstalledLaunchableApps');
     }
     if (raw) {

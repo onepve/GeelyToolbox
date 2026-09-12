@@ -3,12 +3,7 @@
     <!-- 1. 座舱车身语音播报总开关 (整卡一体化开关：整卡即触控大靶区 · 右侧纯文字) -->
     <div 
       @click="toggleVoiceMasterSwitch"
-      :class="[
-        'rounded-3xl border-2 p-6 shadow-xl transition-all duration-200 cursor-pointer flex items-center justify-between',
-        store.vehicleAuto.voice_master_switch 
-          ? 'bg-car-card border-car-accent shadow-[0_0_15px_rgba(230,168,34,0.12)]' 
-          : 'bg-car-card border-car-border hover:border-car-border-light'
-      ]"
+      class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl transition-all duration-200 cursor-pointer flex items-center justify-between"
     >
       <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-2">
         <div class="flex items-center space-x-3">
@@ -195,13 +190,12 @@
       </div>
       <div class="flex items-center space-x-3 shrink-0">
         <button
-          v-if="removedVoiceTaskIds.length > 0"
           @click="openAddVoiceModal"
           class="h-[54px] px-6 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent-light text-car-accent font-black text-[16px] cursor-pointer shadow-md flex items-center space-x-2 transition-all"
         >
-          <span>+ 添加语音计划</span>
-          <span class="px-2 py-0.5 text-[12.5px] bg-car-card rounded-full border border-car-accent/40 text-car-text">
-            {{ removedVoiceTaskIds.length }} 项可添加
+          <span>➕ 添加语音计划</span>
+          <span v-if="removedVoiceTaskIds.length > 0" class="px-2 py-0.5 text-[12.5px] bg-car-card rounded-full border border-car-accent/40 text-car-text">
+            {{ removedVoiceTaskIds.length }} 项待添加
           </span>
         </button>
         <button
@@ -218,12 +212,7 @@
       <!-- 语音任务 1: 挡位安全播报计划 -->
       <div 
         v-if="isVoiceTaskVisible('gear_voice')"
-        :class="[
-          'rounded-3xl border-2 p-6 shadow-xl transition-all duration-200 flex flex-col space-y-4',
-          isGearVoicePlanActive 
-            ? 'bg-car-card border-car-accent shadow-[0_0_15px_rgba(230,168,34,0.12)]' 
-            : 'bg-car-card border-car-border hover:border-car-border-light'
-        ]"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -287,12 +276,7 @@
       <!-- 语音任务 2: 驾驶模式旋钮播报计划 -->
       <div 
         v-if="isVoiceTaskVisible('mode_voice')"
-        :class="[
-          'rounded-3xl border-2 p-6 shadow-xl transition-all duration-200 flex flex-col space-y-4',
-          isModeVoicePlanActive 
-            ? 'bg-car-card border-car-accent shadow-[0_0_15px_rgba(230,168,34,0.12)]' 
-            : 'bg-car-card border-car-border hover:border-car-border-light'
-        ]"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -355,12 +339,7 @@
       <!-- 语音任务 3: 四门迎宾与关门安全播报计划 -->
       <div 
         v-if="isVoiceTaskVisible('door_voice')"
-        :class="[
-          'rounded-3xl border-2 p-6 shadow-xl transition-all duration-200 flex flex-col space-y-4',
-          isDoorVoicePlanActive 
-            ? 'bg-car-card border-car-accent shadow-[0_0_15px_rgba(230,168,34,0.12)]' 
-            : 'bg-car-card border-car-border hover:border-car-border-light'
-        ]"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -869,9 +848,9 @@
 
         <div class="flex flex-col space-y-3 max-h-[460px] overflow-y-auto pr-1">
           <div 
-            v-for="task in availableVoiceTasks" 
+            v-for="task in allVoiceTasks" 
             :key="task.id"
-            class="p-4 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-accent flex items-center justify-between transition-all"
+            class="p-4 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light flex items-center justify-between transition-all"
           >
             <div class="flex flex-col space-y-1 pr-4">
               <div class="flex items-center space-x-2">
@@ -883,11 +862,19 @@
               <span class="text-[14px] text-car-sub font-bold">{{ task.desc }}</span>
             </div>
             <button 
+              v-if="removedVoiceTaskIds.includes(task.id)"
               @click="restoreVoiceTask(task.id)"
-              class="h-[52px] px-5 rounded-xl bg-car-card border-2 border-car-accent text-car-text font-black text-[15px] cursor-pointer hover:bg-car-item whitespace-nowrap shadow-sm"
+              class="h-[52px] px-6 rounded-xl bg-car-card border-2 border-car-accent text-car-accent font-black text-[15px] cursor-pointer hover:bg-car-item whitespace-nowrap shadow-sm"
             >
-              + 加入列表
+              ➕ 加入工作台
             </button>
+            <div 
+              v-else
+              class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border text-car-sub font-black text-[14px] flex items-center space-x-1.5 whitespace-nowrap select-none"
+            >
+              <span class="w-2 h-2 rounded-full bg-car-accent"></span>
+              <span>已在工作台中</span>
+            </div>
           </div>
         </div>
 
