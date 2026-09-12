@@ -52,7 +52,7 @@ export const store = reactive({
     voice_enable_gear_d: true,
     voice_enable_gear_r: true,
     voice_enable_gear_p: true,
-    voice_enable_gear_n: true,
+    voice_enable_gear_n: false,
     voice_enable_mode_smart: true,
     voice_enable_mode_comfort: true,
     voice_enable_mode_eco: true,
@@ -67,7 +67,7 @@ export const store = reactive({
     voice_enable_door_rr_close: true,
     voice_enable_trunk_open: true,
     voice_enable_trunk_close: true,
-    vehicle_turn_360_enabled: false,
+    vehicle_turn_360_enabled: true,
     vehicle_gear_d_360_enabled: false,
     vehicle_light_nav_enabled: false
   },
@@ -100,9 +100,9 @@ export const store = reactive({
   
   // 系统设置持久态
   settings: {
-    autostart: false,
+    autostart: true,
     floating_pill: false,
-    floating_mode: 'title', // 'title' | 'code'
+    floating_mode: 'battery', // 'name' | 'code' | 'battery'
     expert_rabbit: false
   }
 });

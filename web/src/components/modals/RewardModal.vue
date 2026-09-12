@@ -8,7 +8,7 @@
   >
     <div class="flex flex-col items-center text-center space-y-3">
       <div class="text-[15.5px] text-car-sub font-bold">
-        感谢你对《吉利智驾 (GeelyPilot)》独立座舱生态与开源改装的支持与喜爱！
+        感谢你对《吉利智驾 (GeelyToolbox)》独立座舱生态与开源改装的支持与喜爱！
       </div>
 
       <!-- 赞赏卡片展示区 -->

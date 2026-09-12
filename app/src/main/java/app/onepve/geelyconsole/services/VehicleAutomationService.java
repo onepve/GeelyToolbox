@@ -147,12 +147,12 @@ public class VehicleAutomationService extends Service {
             boolean gearD = prefs.getBoolean("voice_enable_gear_d", true);
             boolean gearR = prefs.getBoolean("voice_enable_gear_r", true);
             boolean gearP = prefs.getBoolean("voice_enable_gear_p", true);
-            boolean gearN = prefs.getBoolean("voice_enable_gear_n", true);
+            boolean gearN = prefs.getBoolean("voice_enable_gear_n", false);
             boolean modeSmart = prefs.getBoolean("voice_enable_mode_smart", true);
             boolean modeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
             boolean modeEco = prefs.getBoolean("voice_enable_mode_eco", true);
             boolean modeSport = prefs.getBoolean("voice_enable_mode_sport", true);
-            boolean turn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
+            boolean turn360 = prefs.getBoolean("vehicle_turn_360_enabled", true);
             boolean lightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
             boolean flameout = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
             String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
@@ -282,13 +282,13 @@ public class VehicleAutomationService extends Service {
         enableGearD = prefs.getBoolean("voice_enable_gear_d", true);
         enableGearR = prefs.getBoolean("voice_enable_gear_r", true);
         enableGearP = prefs.getBoolean("voice_enable_gear_p", true);
-        enableGearN = prefs.getBoolean("voice_enable_gear_n", true);
+        enableGearN = prefs.getBoolean("voice_enable_gear_n", false);
         enableGearS = prefs.getBoolean("voice_enable_gear_s", true);
         enableModeSmart = prefs.getBoolean("voice_enable_mode_smart", true);
         enableModeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
         enableModeEco = prefs.getBoolean("voice_enable_mode_eco", true);
         enableModeSport = prefs.getBoolean("voice_enable_mode_sport", true);
-        enableTurn360 = prefs.getBoolean("vehicle_turn_360_enabled", false);
+        enableTurn360 = prefs.getBoolean("vehicle_turn_360_enabled", true);
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
 

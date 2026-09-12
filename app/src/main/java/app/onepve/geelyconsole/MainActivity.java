@@ -390,9 +390,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("rabbit", ThemePatcher.getRabbitDisguiseInfo(MainActivity.this));
                     obj.put("rabbitPostReboot", ThemePatcher.checkRabbitPostRebootStatus(MainActivity.this));
                     android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                    obj.put("autostart", prefs.getBoolean("autostart_enabled", false));
+                    obj.put("autostart", prefs.getBoolean("autostart_enabled", true));
                     obj.put("floating_enabled", prefs.getBoolean("floating_enabled", false));
-                    obj.put("floating_display_mode", prefs.getString("floating_display_mode", "name"));
+                    obj.put("floating_display_mode", prefs.getString("floating_display_mode", "battery"));
                     obj.put("rabbit_safe_mode", prefs.getBoolean("rabbit_safe_mode_enabled", true));
                     obj.put("expert_rabbit_enabled", prefs.getBoolean("expert_rabbit_theme_enabled", false));
                     obj.put("has_system_settings", SystemUtils.isPackageInstalled(MainActivity.this, "com.android.settings"));
@@ -677,9 +677,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                 boolean isBeta = ver.toLowerCase().contains("beta");
                 obj.put("is_beta", isBeta);
-                obj.put("autostart", prefs.getBoolean("autostart_enabled", false));
+                obj.put("autostart", prefs.getBoolean("autostart_enabled", true));
                 obj.put("floating_enabled", prefs.getBoolean("floating_enabled", false));
-                obj.put("floating_display_mode", prefs.getString("floating_display_mode", "name"));
+                obj.put("floating_display_mode", prefs.getString("floating_display_mode", "battery"));
                 obj.put("expert_rabbit_enabled", prefs.getBoolean("expert_rabbit_theme_enabled", false));
                 float batteryVolt = VehicleAutomationService.latestBatteryVoltage;
                 if (batteryVolt < 9.0f || batteryVolt > 16.5f) {
@@ -1696,7 +1696,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void startToolboxSelfUpdate(final String downloadUrl, final String rawVer) {
-            // 自动更新与强制重下载统一使用 GeelyPilot 文件名；兼容旧版前端输入。
+            // 自动更新与强制重下载统一使用 GeelyToolbox 规范文件名；兼容各种历史版本输入。
             String ver = rawVer == null ? "" : rawVer.trim();
             if (ver.startsWith("GeelyToolbox_v")) ver = ver.substring("GeelyToolbox_v".length());
             if (ver.startsWith("GeelyPilot_v")) ver = ver.substring("GeelyPilot_v".length());
@@ -1704,7 +1704,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             if (ver.toLowerCase(java.util.Locale.ROOT).endsWith(".apk")) ver = ver.substring(0, ver.length() - 4);
             ver = ver.trim();
             if (ver.isEmpty()) ver = "latest";
-            final String apkFileName = "GeelyPilot_v" + ver + ".apk";
+            final String apkFileName = "GeelyToolbox_v" + ver + ".apk";
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -2464,7 +2464,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("wheel_master_switch", prefs.getBoolean("wheel_master_switch", true));
 
                 // 360 与车灯联动
-                obj.put("vehicle_turn_360_enabled", prefs.getBoolean("vehicle_turn_360_enabled", false));
+                obj.put("vehicle_turn_360_enabled", prefs.getBoolean("vehicle_turn_360_enabled", true));
                 obj.put("vehicle_gear_d_360_enabled", prefs.getBoolean("vehicle_gear_d_360_enabled", false));
                 obj.put("vehicle_light_nav_enabled", prefs.getBoolean("vehicle_light_nav_enabled", false));
                 obj.put("vehicle_flameout_voice_enabled", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
@@ -2490,11 +2490,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_enable_trunk_open", prefs.getBoolean("voice_enable_trunk_open", true));
                 obj.put("voice_enable_trunk_close", prefs.getBoolean("voice_enable_trunk_close", true));
 
-                // 4 大挡位播报 (D/R/P/N 默认均开启)
+                // 4 大挡位播报 (D/R/P 默认开启，N 挡空挡默认关闭防频报)
                 obj.put("voice_enable_gear_d", prefs.getBoolean("voice_enable_gear_d", true));
                 obj.put("voice_enable_gear_r", prefs.getBoolean("voice_enable_gear_r", true));
                 obj.put("voice_enable_gear_p", prefs.getBoolean("voice_enable_gear_p", true));
-                obj.put("voice_enable_gear_n", prefs.getBoolean("voice_enable_gear_n", true));
+                obj.put("voice_enable_gear_n", prefs.getBoolean("voice_enable_gear_n", false));
 
                 // 4 大功能模式播报 (智能/舒适/经济/运动 默认均开启)
                 obj.put("voice_enable_mode_smart", prefs.getBoolean("voice_enable_mode_smart", true));

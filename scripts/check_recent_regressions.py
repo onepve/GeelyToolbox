@@ -56,7 +56,7 @@ CONTRACTS = [
  ('idle-timeout', JAVA+'utils/IdleScreensaverManager.java', 'private static long readIdleMs', [r'executeWithTimeout\(',r'3000L'], [r'executePrivileged\(']),
  ('idle-service', JAVA+'services/VehicleAutomationService.java', 'public static void syncState',
   [r'boolean shouldRun\s*=[^;]*IdleScreensaverManager.KEY_ENABLED'], []),
- ('idle-ui-never', 'web/src/views/SystemView.vue', 'function toggleNever()', [r'saveScreensaverConfig\(\{ seconds: -1 \}\)',r'saveScreensaverConfig\(\{ seconds: 30 \}\)'], []),
+ ('idle-ui-never', 'web/src/views/FloatingView.vue', 'function toggleNever()', [r'saveScreensaverConfig\(\{ seconds: -1 \}\)',r'saveScreensaverConfig\(\{ seconds: 30 \}\)'], []),
  ('theme-install-flag', 'web/src/components/modals/AppDetailModal.vue', 'const isMapApp = computed',
   [r'if\s*\(typeof app.value.need_theme_install === .boolean.\)\s*\{\s*return app.value.need_theme_install;'], [r'category\s*===\s*.navigation.']),
  ('pkg-query-no-shell', JAVA+'utils/SystemUtils.java', 'public static int getAppDetailedState',

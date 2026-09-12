@@ -44,7 +44,7 @@
           <div class="flex flex-col">
             <span class="text-[18px] font-black text-car-text">吉利缤越 COOL (IHU516G / E02) 原厂方控图解</span>
             <span class="text-[14px] text-car-sub font-bold mt-0.5">
-              {{ activeCluster === 'right' ? '右侧多媒体控制区 (SX-0017)：静音、切歌、Mode键已全量打通多手势' : '左侧智驾巡航控制区 (SX-0016)：智驾领航、LIM限速、0x37高德一键切换与电话按键' }}
+              {{ activeCluster === 'right' ? '右方向盘多媒体控制区 (SX-0017)：静音、切歌、MODE、返回键全量打通多手势' : '左方向盘智驾控制区 (SX-0016)：智驾领航、LIM限速、⑦号自定义高德往返按键' }}
             </span>
           </div>
         </div>
@@ -57,7 +57,7 @@
                 activeCluster === 'right' ? 'bg-car-item border border-car-accent text-car-text shadow-sm' : 'text-car-sub hover:text-car-text'
               ]"
             >
-              右侧多媒体 (SX-0017)
+              右方向盘 (SX-0017 多媒体)
             </button>
             <button 
               @click="setCluster('left')"
@@ -66,7 +66,7 @@
                 activeCluster === 'left' ? 'bg-car-item border border-car-accent text-car-text shadow-sm' : 'text-car-sub hover:text-car-text'
               ]"
             >
-              左侧智驾区 (SX-0016)
+              左方向盘 (SX-0016 智驾区)
             </button>
           </div>
           <button 
@@ -139,14 +139,14 @@
           </div>
           <div class="flex space-x-3">
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">⑤ 电话接听键:</span> 287 电话接听与挂断
+              <span class="text-car-accent font-black mr-1.5">⑤ 电话接听键:</span> 原厂电话接听与挂断
             </div>
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">⑥ 语音唤醒键:</span> 286 语音控制话筒键
+              <span class="text-car-accent font-black mr-1.5">⑥ 语音唤醒键:</span> 原厂语音控制话筒键
             </div>
           </div>
           <div class="w-full p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-            <span class="text-car-accent font-black mr-1.5">⑦ 自定义/高德键:</span> 0x37 硬件按键 (Tasker 黄金高德/桌面往返)
+            <span class="text-car-accent font-black mr-1.5">⑦ 自定义按键:</span> 高德地图与桌面一键往返 (盲操神器)
           </div>
         </div>
       </div>
@@ -219,10 +219,10 @@
       </div>
     </FeatureCard>
 
-    <!-- 3. 独立静音键多手势映射 (编号 3) -->
+    <!-- 3. 右方向盘 ③ 静音键多手势映射 -->
     <FeatureCard 
-      title="3. 方向盘独立静音键映射 (编号 3)"
-      desc="支持【单击】、【双击】、【长按 1.5 秒】多手势；长按 10 秒依然是整车硬件看门狗冷重启救砖，互不冲突！"
+      title="3. 右方向盘 ③ 静音按键映射"
+      desc="对应右方向盘 ③ 号静音键。支持【单击】、【双击】、【长按 1.5 秒】多手势；长按 10 秒依然是整车硬件冷重启，互不冲突！"
     >
       <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
         <div class="flex items-center space-x-2">
@@ -281,10 +281,10 @@
       </div>
     </FeatureCard>
 
-    <!-- 4. Mode 键多手势映射 (编号 6) -->
+    <!-- 4. 右方向盘 ⑥ MODE 键多手势映射 -->
     <FeatureCard 
-      title="4. 方向盘 Mode 键映射 (编号 6)"
-      desc="原车用于切换伴听/收音机。默认单击秒开 360 全景，同时支持双击与长按个性化定制。"
+      title="4. 右方向盘 ⑥ MODE 按键映射"
+      desc="对应右方向盘 ⑥ 号 MODE 模式键。原车用于切换伴听/收音机。默认单击一键秒开 360 全景，同时支持双击与长按个性化定制。"
     >
       <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
         <div class="flex items-center space-x-2">
@@ -343,16 +343,16 @@
       </div>
     </FeatureCard>
 
-    <!-- 5. 切歌键多手势映射 (编号 4 下一曲 / 编号 7 上一曲) -->
+    <!-- 5. 右方向盘 ④ 下一曲 / ⑦ 上一曲 切歌按键映射 -->
     <FeatureCard 
-      title="5. 方向盘切歌键映射 (编号 4 下一曲 / 编号 7 上一曲)"
-      desc="内置官方三重通道调度机制，完美兼容 QQ音乐车机版、网易云、酷狗。支持双击/长按扩展自定义。"
+      title="5. 右方向盘 ④ 下一曲 / ⑦ 上一曲 切歌按键映射"
+      desc="对应右方向盘 ④ 号（向右下一曲）与 ⑦ 号（向左上一曲）按键。内置官方三重通道调度，完美兼容 QQ音乐车机版、网易云等。"
     >
       <div class="grid grid-cols-2 gap-4">
-        <!-- 下一曲 (编号 4) -->
+        <!-- 下一曲 (④ 号键) -->
         <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-[19px] font-black text-car-text">④ 下一曲键 (Next Track)</span>
+            <span class="text-[19px] font-black text-car-text">④ 下一曲键</span>
             <div class="flex space-x-1.5">
               <button
                 v-for="g in gestureList"
@@ -391,10 +391,10 @@
           </div>
         </div>
 
-        <!-- 上一曲 (编号 7) -->
+        <!-- 上一曲 (⑦ 号键) -->
         <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-[19px] font-black text-car-text">⑦ 上一曲键 (Prev Track)</span>
+            <span class="text-[19px] font-black text-car-text">⑦ 上一曲键</span>
             <div class="flex space-x-1.5">
               <button
                 v-for="g in gestureList"
@@ -435,10 +435,10 @@
       </div>
     </FeatureCard>
 
-    <!-- 6. 原厂返回按键多手势映射 -->
+    <!-- 6. 右方向盘 ① 主页/返回按键多手势映射 -->
     <FeatureCard 
-      title="6. 原厂返回按键多手势映射 (Keycode 307)"
-      desc="支持【单击】、【双击】、【长按】自定义。可保留系统原厂返回，或映射为一键唤起高德、360、切歌或自定义 App。"
+      title="6. 右方向盘 ① 主页/返回按键映射"
+      desc="对应右方向盘 ① 号返回/主页键。支持【单击】、【双击】、【长按】自定义。可保留系统原厂返回，或映射为高德导航、360全景或自定义应用。"
     >
       <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
         <div class="flex items-center space-x-2">
@@ -497,10 +497,10 @@
       </div>
     </FeatureCard>
 
-    <!-- 7. 0x37 按键快捷往返 (高德地图 / 桌面往返) -->
+    <!-- 7. 左方向盘 ⑦ 自定义键往返映射 (高德地图 ↔ 桌面) -->
     <FeatureCard 
-      title="7. 0x37 硬件按键往返映射 (Tasker 黄金方案)"
-      desc="左侧面板 0x37 自定义键接管。支持单击秒开高德地图，再次按下自动退回桌面，实现两端无感盲操往返。"
+      title="7. 左方向盘 ⑦ 自定义按键映射 (高德 ↔ 桌面)"
+      desc="对应左方向盘 ⑦ 号按键。支持按第 1 下秒开高德地图，按第 2 下最小化退回桌面，实现两端无感盲操往返。"
     >
       <div class="grid grid-cols-2 gap-4">
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
@@ -510,7 +510,7 @@
           </div>
           <MatrixButton 
             title="高德/桌面双向往返"
-            subtitle="Tasker 黄金验证 · 盲操神器"
+            subtitle="盲操神器 · 无感切换"
             :active="getGestureAction('custom', 'single') === 'open_navi' || getGestureAction('custom', 'single') === 'default'"
             @click="setGestureAction('custom', 'single', 'open_navi')"
           />
@@ -530,6 +530,75 @@
         </div>
       </div>
     </FeatureCard>
+
+    <!-- 8. 新手按键能力指引与一键方案配置 -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-2xl mb-5">
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-car-border/60">
+        <div class="flex items-center space-x-3">
+          <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)]"></span>
+          <span class="text-[20px] font-black text-car-text">新手功能指引 & 常用方案一键配置</span>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button
+            @click="applyRecommendedPreset"
+            class="h-[46px] px-5 rounded-xl border-2 border-car-accent bg-car-item text-car-text font-black text-[15px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center whitespace-nowrap"
+          >
+            ✨ 一键应用车友黄金方案
+          </button>
+          <button
+            @click="resetAllToFactory"
+            class="h-[46px] px-5 rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center whitespace-nowrap"
+          >
+            🔄 一键恢复全车原厂默认
+          </button>
+        </div>
+      </div>
+
+      <!-- 功能介绍与玩法说明 -->
+      <div class="grid grid-cols-3 gap-3.5 text-[14px]">
+        <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-between shadow-sm">
+          <div>
+            <div class="font-black text-car-text text-[16px] mb-1.5 flex items-center">
+              <span class="text-car-accent mr-2">●</span> 环视 360 全景盲区
+            </div>
+            <div class="text-car-sub font-bold text-[13.5px] leading-relaxed">
+              将原厂闲置的右侧 MODE 键映射为 360 全景，行车路遇窄路盲区随时方向盘盲操秒开，无需低头在中控大屏上找按键。
+            </div>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-car-border/50 text-[12.5px] text-car-accent font-black">
+            推荐键位：右方向盘 ⑥ MODE 键
+          </div>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-between shadow-sm">
+          <div>
+            <div class="font-black text-car-text text-[16px] mb-1.5 flex items-center">
+              <span class="text-car-accent mr-2">●</span> 高德 ↔ 桌面双向往返
+            </div>
+            <div class="text-car-sub font-bold text-[13.5px] leading-relaxed">
+              将左方向盘 ⑦ 号自定义键映射为往返高德：按第 1 下切出导航，按第 2 下最小化退回桌面，两端无感双向盲操切换。
+            </div>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-car-border/50 text-[12.5px] text-car-accent font-black">
+            推荐键位：左方向盘 ⑦ 自定义键
+          </div>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-between shadow-sm">
+          <div>
+            <div class="font-black text-car-text text-[16px] mb-1.5 flex items-center">
+              <span class="text-car-accent mr-2">●</span> 音量暂停 / 息屏休眠
+            </div>
+            <div class="text-car-sub font-bold text-[13.5px] leading-relaxed">
+              支持将按键映射为媒体播放暂停或屏幕一键休眠，夜间行车防眩目或接打电话时，方向盘轻点一下即可物理静音关屏。
+            </div>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-car-border/50 text-[12.5px] text-car-accent font-black">
+            推荐键位：右方向盘 ③ 静音键 / ① 返回键
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -654,4 +723,39 @@ function setWheelMode(mode) {
   showToast('方控模式已切换: ' + (mode === 'carmedia_first' ? '米小江优先' : (mode === 'toolbox_alone' ? '控制台独立接管' : '恢复原厂')));
 }
 
+function applyRecommendedPreset() {
+  openModal('confirm', {
+    title: '一键应用车友黄金推荐方案',
+    desc: '即将应用最受车友喜爱的成熟按键配置：\n• 右方向盘 ⑥ MODE 键 ➔ 单击秒开 360 全景\n• 左方向盘 ⑦ 自定义键 ➔ 高德 ↔ 桌面双向往返\n• 右方向盘 ③ 静音键 ➔ 保持原厂静音\n• 右方向盘 ① 返回键 ➔ 保持原厂返回\n• 右方向盘 ④/⑦ 切歌键 ➔ 官方调度切歌',
+    confirmText: '确认应用方案',
+    onConfirm: () => {
+      setGestureAction('mode', 'single', 'open_360');
+      setGestureAction('custom', 'single', 'open_navi');
+      setGestureAction('mute', 'single', 'default');
+      setGestureAction('back', 'single', 'default');
+      setGestureAction('next', 'single', 'next_track');
+      setGestureAction('prev', 'single', 'prev_track');
+      showToast('已成功应用车友黄金方案！');
+    }
+  });
+}
+
+function resetAllToFactory() {
+  openModal('confirm', {
+    title: '一键恢复全车原厂默认',
+    desc: '将方向盘所有按键手势全部恢复为系统原厂默认动作，工具箱将不拦截任何物理按键。是否确认？',
+    isDanger: true,
+    confirmText: '确认恢复原厂',
+    onConfirm: () => {
+      const keys = ['ok', 'mute', 'mode', 'next', 'prev', 'back', 'call', 'voice', 'home', 'custom'];
+      const gestures = ['single', 'double', 'long'];
+      for (const k of keys) {
+        for (const g of gestures) {
+          setGestureAction(k, g, 'default');
+        }
+      }
+      showToast('所有方向盘按键已恢复原厂默认直通！');
+    }
+  });
+}
 </script>

@@ -68,16 +68,15 @@ def main():
             "bytes": bytes_len,
             "md5": md5,
             "sha256": sha256,
-            "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyPilot-beta.apk?v={version_name}",
+            "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox-beta.apk?v={version_name}",
             "changelog": (
                 "【测试通道优先体验】\n"
-                "1. 驾驶模式全面收敛Tasker黄金法则：只认ECarXCarConfigService权威源，彻底拔除多路杂讯混淆与死循环播报\n"
-                "2. 拔除key=14误判点火漏洞：明确key=14仅为车内待机/蓝牙连接，静置工况(电压<13V且车速0)坚决判定为熄火\n"
-                "3. 守死点火发电物理铁壁：点火严格以发电机工作提压(≥13.2V)或原厂funValue(0x00200105)为准，未打火绝对静默\n"
-                "4. 换挡武装状态机补齐：补齐N挡切入武装判定，从N挡挂回P挡100%响亮播报，杜绝时有时无\n"
-                "5. 彻底根治驻车挡循环误报：严格过滤1号等非标诊断脏报文，P挡必须且仅当切入有效挡位挂回才允许播报\n"
-                "6. 倒挡全面回归默认媒体声道：彻底消除系统通知流被倒车雷达死锁挂起与切回N挡滞后爆音问题\n"
-                "7. 换挡0ms强制抢占打断：手拨换挡瞬间立刻掐灭上一段旧语音，快切挡位绝不堆叠重音\n"
+                "1. 闲置自动屏保归位【桌面悬浮】：息屏时长精准收敛至3秒~3分钟，提供5档车规快捷预设与永不进入\n"
+                "2. 方控按键全面去十六进制工程化：重构为左/右方向盘+序号直观命名，新增新手功能指引与一键方案配置\n"
+                "3. 座舱核心默认值全面优化：转向灯360默认开启、开机自启守护默认开启、悬浮胶囊默认显示电瓶电压、N挡空挡默认关闭\n"
+                "4. 守护日志采集策略全面收紧：6大通道默认全关零I/O开销，按需开启彻底根治日志刷屏与性能损耗\n"
+                "5. 英文品牌名全链条收敛定案：统一收敛为GeelyToolbox，彻底告别GeelyPilot混淆，安装包与仓库浑然一体\n"
+                "6. 智能语音能力指南与避坑说明：新增有人感知状态机与车门自适应场景说明卡片\n"
             ),
             "release_date": today
         }
@@ -96,7 +95,7 @@ def main():
             "bytes": bytes_len,
             "md5": md5,
             "sha256": sha256,
-            "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyPilot.apk?v={version_name}",
+            "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v={version_name}",
             "changelog": (
                 "本次正式版核心修复与升级：\n"
                 "1. 拔除key=14误判点火漏洞：明确key=14仅为车内待机/蓝牙连接，静置工况(电压<13V且车速0)坚决判定为熄火\n"

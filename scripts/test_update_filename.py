@@ -18,14 +18,14 @@ java = '''public class FilenameCheck {
   }
   public static void main(String[] args) {
     String[][] cases = {
-      {"1.7.13", "GeelyPilot_v1.7.13.apk"},
-      {"GeelyToolbox_v1.7.13.apk", "GeelyPilot_v1.7.13.apk"},
-      {"GeelyPilot_1.7.13.apk", "GeelyPilot_v1.7.13.apk"},
-      {"GeelyPilot_v1.7.13.apk", "GeelyPilot_v1.7.13.apk"},
-      {" 1.7.14-beta.1 ", "GeelyPilot_v1.7.14-beta.1.apk"},
-      {"GeelyToolbox_v1.7.13.APK", "GeelyPilot_v1.7.13.apk"},
-      {null, "GeelyPilot_vlatest.apk"},
-      {"", "GeelyPilot_vlatest.apk"}
+      {"1.7.13", "GeelyToolbox_v1.7.13.apk"},
+      {"GeelyToolbox_v1.7.13.apk", "GeelyToolbox_v1.7.13.apk"},
+      {"GeelyPilot_1.7.13.apk", "GeelyToolbox_v1.7.13.apk"},
+      {"GeelyPilot_v1.7.13.apk", "GeelyToolbox_v1.7.13.apk"},
+      {" 1.7.14-beta.1 ", "GeelyToolbox_v1.7.14-beta.1.apk"},
+      {"GeelyToolbox_v1.7.13.APK", "GeelyToolbox_v1.7.13.apk"},
+      {null, "GeelyToolbox_vlatest.apk"},
+      {"", "GeelyToolbox_vlatest.apk"}
     };
     for (String[] c : cases) {
       String got = normalize(c[0]);

@@ -8,7 +8,7 @@
           <span class="text-[18.5px] font-black text-car-text">车身全域物理信号实时探针 (实车调试专用)</span>
         </div>
         <span class="text-[13.5px] text-car-sub font-bold">
-          底层 MCU 串口 91 02 01、TCU 换挡与驾驶模式广播全量监听，动作毫秒级点亮
+          四门、尾门、换挡、模式与车速信号全量实时监听，动作毫秒级点亮
         </span>
       </div>
 
@@ -114,7 +114,7 @@
             </div>
           </div>
           <span class="px-2.5 py-1 text-[12px] font-extrabold rounded-lg bg-car-card border border-car-border text-car-sub">
-            AdaptAPI 9位常量直通
+            原厂驾驶模式直通
           </span>
         </div>
 

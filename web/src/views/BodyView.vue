@@ -856,6 +856,58 @@
         </div>
       </div>
     </FeatureCard>
+
+    <!-- 4. 智能语音场景逻辑与避坑说明 -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-2xl mb-5">
+      <div class="flex items-center space-x-3 pb-4 mb-4 border-b border-car-border/60">
+        <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)]"></span>
+        <span class="text-[20px] font-black text-car-text">智能语音能力指南 & 有人感知逻辑说明</span>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3.5 text-[14px]">
+        <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-between shadow-sm">
+          <div>
+            <div class="font-black text-car-text text-[16px] mb-1.5 flex items-center">
+              <span class="text-car-accent mr-2">●</span> 有人感知状态机
+            </div>
+            <div class="text-car-sub font-bold text-[13.5px] leading-relaxed">
+              车主靠近车辆或蓝牙解锁时默认保持 100% 绝对静默，只有当真正打火踩刹车挂入有效挡位（D/R）时才激活播报，彻底杜绝人不在车内的误唤醒骚扰。
+            </div>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-car-border/50 text-[12.5px] text-car-accent font-black">
+            核心保障：零误触 · 绝不乱叫
+          </div>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-between shadow-sm">
+          <div>
+            <div class="font-black text-car-text text-[16px] mb-1.5 flex items-center">
+              <span class="text-car-accent mr-2">●</span> 车门场景智能自适应
+            </div>
+            <div class="text-car-sub font-bold text-[13.5px] leading-relaxed">
+              登车开门提醒启程，关门利落提示“车门已关好”；停车下车开门贴心提醒“请带好随身物品”；行车中意外开门立即触发高优先级危险警报。
+            </div>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-car-border/50 text-[12.5px] text-car-accent font-black">
+            推荐模式：通用智能车门语音
+          </div>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-between shadow-sm">
+          <div>
+            <div class="font-black text-car-text text-[16px] mb-1.5 flex items-center">
+              <span class="text-car-accent mr-2">●</span> 媒体主声道混音避让
+            </div>
+            <div class="text-car-sub font-bold text-[13.5px] leading-relaxed">
+              播报走媒体主声道，听歌时自动将音乐平滑降音 60% 进行温润混音，播完后秒级恢复，声音自然不炸耳，且绝不与高德导航的导航声冲突。
+            </div>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-car-border/50 text-[12.5px] text-car-accent font-black">
+            推荐声道：媒体主声道 (music)
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

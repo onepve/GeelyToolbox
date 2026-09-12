@@ -132,17 +132,17 @@ jobs:
 
           if [[ "$TAG_NAME" == beta-* ]]; then
             echo "⚡ 正在同步【测试通道】至 R2..."
+            aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyToolbox-beta.apk" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
             aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyPilot-beta.apk" \
               --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
             aws s3 cp /tmp/version-beta.json "${BUCKET}version-beta.json" \
               --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
           else
             echo "🚀 正在同步【正式通道】至 R2..."
-            # 双直链过渡：新主名 GeelyPilot.apk（客户端自更新从此走它）+ 老名 GeelyToolbox.apk 兼容保留
-            # （老直链历史分享/教程不断链；存量车机下次升级即读新地址，全部过渡完成后移除老名上传）
-            aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyPilot.apk" \
-              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
             aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyToolbox.apk" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+            aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyPilot.apk" \
               --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
             aws s3 cp /tmp/version.json "${BUCKET}version.json" \
               --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress

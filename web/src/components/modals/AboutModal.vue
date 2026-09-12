@@ -10,7 +10,7 @@
       <!-- 品牌、版本与 5 连击彩蛋区域 -->
       <div class="p-6 rounded-3xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center shadow-md relative">
         <div class="flex items-center space-x-3 mb-2">
-          <span class="text-[26px] font-black text-car-text">吉利智驾 (GeelyPilot)</span>
+          <span class="text-[26px] font-black text-car-text">吉利智驾 (GeelyToolbox)</span>
           <span 
             @click="handleVersionClick"
             class="text-[14px] px-3 py-1 rounded-full bg-car-card text-car-text font-black border border-car-border cursor-pointer hover:border-car-border-light transition-all shadow-sm select-none"

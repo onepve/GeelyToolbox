@@ -48,13 +48,12 @@ public class AppLogger {
     private static final java.util.List<String> KNOWN_MODULES = java.util.Arrays.asList(
             "电源状态", "挡位状态", "驾驶模式", "车门状态", "语音播报", "方控按键");
     static {
-        // 默认开启：整车四大基础物理信号 + 语音播报动作必须可观测
-        DEFAULT_MODULE_STATES.put("电源状态", true);
-        DEFAULT_MODULE_STATES.put("挡位状态", true);
-        DEFAULT_MODULE_STATES.put("驾驶模式", true);
-        DEFAULT_MODULE_STATES.put("车门状态", true);
-        DEFAULT_MODULE_STATES.put("语音播报", true);
-        // 默认关闭：方控按键高频物理流，排查按键时按需开启
+        // 日志按需采集哲学：默认全关，零 I/O 写入开销与零日志风暴。排查问题时车主按需开启对应模块。
+        DEFAULT_MODULE_STATES.put("电源状态", false);
+        DEFAULT_MODULE_STATES.put("挡位状态", false);
+        DEFAULT_MODULE_STATES.put("驾驶模式", false);
+        DEFAULT_MODULE_STATES.put("车门状态", false);
+        DEFAULT_MODULE_STATES.put("语音播报", false);
         DEFAULT_MODULE_STATES.put("方控按键", false);
     }
 
