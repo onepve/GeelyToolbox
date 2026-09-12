@@ -27,6 +27,128 @@ public class ThemePatcher {
             "    <uiVersion>1</uiVersion>\n" +
             "</XUI-Theme>";
 
+    private static final String R2_PREVIEW_URL = "https://dl.onepve.com/GeelyToolbox/preview1.png";
+
+    // 最小有效 1x1 占位 PNG (67 字节)，确保极端缺图时 zip 结构 100% 完备无异常
+    private static final byte[] MINIMAL_PNG_BYTES = new byte[]{
+            (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+            0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, (byte) 0xC4,
+            (byte) 0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41,
+            0x54, 0x78, (byte) 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+            0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, (byte) 0xB4, 0x00,
+            0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, (byte) 0xAE,
+            0x42, 0x60, (byte) 0x82
+    };
+
+    public static void prepareThemeAssetsAsync(final Context context) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    getOrExtractPreviewBytes(context);
+                } catch (Exception ignored) {}
+            }
+        }).start();
+    }
+
+    public static byte[] getOrExtractPreviewBytes(Context context) {
+        File pilotThemeDir = new File(Environment.getExternalStorageDirectory(), "GeelyPilot/theme");
+        if (!pilotThemeDir.exists()) {
+            pilotThemeDir.mkdirs();
+        }
+        File cachedPreview = new File(pilotThemeDir, "preview1.png");
+
+        // 1. 优先读取持久缓存目录 /sdcard/GeelyPilot/theme/preview1.png
+        if (cachedPreview.exists() && cachedPreview.length() > 1024) {
+            try (FileInputStream fis = new FileInputStream(cachedPreview)) {
+                byte[] data = new byte[(int) cachedPreview.length()];
+                int read = fis.read(data);
+                if (read == data.length) return data;
+            } catch (Exception ignored) {}
+        }
+
+        // 2. 从车机原厂出厂主题包 /sdcard/XUI/theme/clock.rabbit.xtz 中动态提取 (当其为原厂包而非伪装包时)
+        File themeDir = new File(Environment.getExternalStorageDirectory(), "XUI/theme");
+        File officialXtz = new File(themeDir, "clock.rabbit.xtz");
+        if (officialXtz.exists() && officialXtz.length() > 1024 && officialXtz.length() < 10 * 1024 * 1024) {
+            byte[] extracted = extractPreviewFromZip(officialXtz, cachedPreview);
+            if (extracted != null) return extracted;
+        }
+
+        // 3. 检索系统原厂预置固件目录 (/system/etc/theme/ 或 /system/media/theme/ 等)
+        String[] sysPaths = {
+            "/system/etc/theme/clock.rabbit.xtz",
+            "/system/media/theme/clock.rabbit.xtz",
+            "/product/etc/theme/clock.rabbit.xtz",
+            "/vendor/etc/theme/clock.rabbit.xtz"
+        };
+        for (String sp : sysPaths) {
+            File sysFile = new File(sp);
+            if (sysFile.exists() && sysFile.length() > 1024 && sysFile.length() < 10 * 1024 * 1024) {
+                byte[] extracted = extractPreviewFromZip(sysFile, cachedPreview);
+                if (extracted != null) return extracted;
+            }
+        }
+
+        // 4. 从 Cloudflare R2 CDN 静默下载（点击专家模式 20s 倒计时期间后台异步完成）
+        try {
+            java.net.URL url = new java.net.URL(R2_PREVIEW_URL);
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(4000);
+            conn.setReadTimeout(8000);
+            if (conn.getResponseCode() == 200) {
+                try (InputStream is = conn.getInputStream();
+                     FileOutputStream fos = new FileOutputStream(cachedPreview)) {
+                    byte[] buf = new byte[64 * 1024];
+                    int r;
+                    while ((r = is.read(buf)) != -1) {
+                        fos.write(buf, 0, r);
+                    }
+                }
+                if (cachedPreview.exists() && cachedPreview.length() > 1024) {
+                    AppLogger.action("兔子主题", "从 R2 云端静默拉取官方壁纸完成", true, "大小: " + cachedPreview.length() + " 字节");
+                    try (FileInputStream fis = new FileInputStream(cachedPreview)) {
+                        byte[] data = new byte[(int) cachedPreview.length()];
+                        int read = fis.read(data);
+                        if (read == data.length) return data;
+                    } catch (Exception ignored) {}
+                }
+            }
+        } catch (Exception e) {
+            AppLogger.action("兔子主题", "R2 预览壁纸下载跳过或异常", false, e.getMessage());
+        }
+
+        // 5. 兜底最小有效 1x1 PNG，确保时钟包结构 100% 完备
+        return MINIMAL_PNG_BYTES;
+    }
+
+    private static byte[] extractPreviewFromZip(File zipFile, File destFile) {
+        try (java.util.zip.ZipFile zf = new java.util.zip.ZipFile(zipFile)) {
+            ZipEntry entry = zf.getEntry("preview/preview1.png");
+            if (entry != null) {
+                try (InputStream is = zf.getInputStream(entry);
+                     FileOutputStream fos = new FileOutputStream(destFile)) {
+                    byte[] buf = new byte[64 * 1024];
+                    int r;
+                    while ((r = is.read(buf)) != -1) {
+                        fos.write(buf, 0, r);
+                    }
+                }
+                if (destFile.exists() && destFile.length() > 0) {
+                    AppLogger.action("兔子主题", "成功从原车出厂主题提取 preview1.png 并持久化", true, "来源: " + zipFile.getAbsolutePath());
+                    try (FileInputStream fis = new FileInputStream(destFile)) {
+                        byte[] data = new byte[(int) destFile.length()];
+                        int read = fis.read(data);
+                        if (read == data.length) return data;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
     public static boolean packageToRabbitTheme(File sourceApk) {
         return packageToRabbitTheme(null, sourceApk);
     }
@@ -59,18 +181,12 @@ public class ThemePatcher {
             zos.putNextEntry(previewDir);
             zos.closeEntry();
 
-            if (context != null) {
-                try (InputStream is = context.getAssets().open("theme_rabbit/preview/preview1.png")) {
-                    ZipEntry previewFileEntry = new ZipEntry("preview/preview1.png");
-                    zos.putNextEntry(previewFileEntry);
-                    byte[] pBuf = new byte[64 * 1024];
-                    int pRead;
-                    while ((pRead = is.read(pBuf)) != -1) {
-                        zos.write(pBuf, 0, pRead);
-                    }
-                    zos.closeEntry();
-                } catch (Exception ignored) {
-                }
+            byte[] previewBytes = getOrExtractPreviewBytes(context);
+            if (previewBytes != null && previewBytes.length > 0) {
+                ZipEntry previewFileEntry = new ZipEntry("preview/preview1.png");
+                zos.putNextEntry(previewFileEntry);
+                zos.write(previewBytes);
+                zos.closeEntry();
             }
 
             // 3. wallpaper directories

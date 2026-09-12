@@ -783,6 +783,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public void prepareThemeAssets() {
+            ThemePatcher.prepareThemeAssetsAsync(MainActivity.this);
+        }
+
+        @JavascriptInterface
         public void startAutoPilotInject(final String filename) {
             mainHandler.post(new Runnable() {
                 @Override

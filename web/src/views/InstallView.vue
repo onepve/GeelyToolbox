@@ -183,6 +183,11 @@ function confirmUnlockExpert() {
     return;
   }
 
+  // 提前在后台触发原车主题提取与 R2 静默缓存（在 20s 倒计时期间完成准备）
+  try {
+    bridge.call('prepareThemeAssets');
+  } catch (e) {}
+
   // 第 1 次确认：高危警告 (10s 倒计时防盲点)
   openModal('confirm', {
     title: '【高危警告】解锁专家模式 (第 1/3 次确认)',
