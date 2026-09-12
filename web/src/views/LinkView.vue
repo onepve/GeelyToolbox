@@ -281,30 +281,45 @@
           </div>
         </div>
 
-        <!-- 启播目标音乐应用选择 -->
-        <div class="pt-2 flex flex-col space-y-2 border-t border-car-border/60">
+        <!-- 启播目标音乐应用选择 (支持自动探测、手动强刷扫描、▲/▼ 优先级排序与更多软件选择) -->
+        <div class="pt-3 flex flex-col space-y-3 border-t border-car-border/60">
           <div class="flex items-center justify-between">
-            <span class="text-[14.5px] text-car-sub font-bold">自启首选主力音乐软件：</span>
-            <button 
-              @click="refreshDetectedApps" 
-              class="text-[13.5px] text-car-accent hover:underline font-bold cursor-pointer"
-            >
-              🔄 重新扫描已装应用
-            </button>
+            <div class="flex items-center space-x-2">
+              <span class="text-[15.5px] font-black text-car-text">自启首选主力音乐软件：</span>
+              <span class="text-[13.5px] text-car-sub font-bold">（开机自动探测，点击任意磁贴直接设为首选主力）</span>
+            </div>
+            <div class="flex items-center space-x-2.5">
+              <button 
+                @click="refreshDetectedApps" 
+                class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-accent font-black text-[14.5px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
+              >
+                <span>🔄</span>
+                <span>手动重新扫描</span>
+              </button>
+              <button 
+                @click="openSelectModal('speed_autoplay')"
+                class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[14.5px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
+              >
+                <span>🎵</span>
+                <span>自定义排序 (▲/▼) ➔</span>
+              </button>
+            </div>
           </div>
+
+          <!-- 常用音乐软件磁贴 (按用户优先级动态排序) -->
           <div class="flex flex-wrap -m-1">
             <button 
               v-for="app in sortedMusicApps" 
               :key="app.pkg"
               @click="setAutoplayApp(app.pkg, app.name)"
               :class="[
-                'h-[52px] px-5 rounded-xl text-[15px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center space-x-1.5 m-1',
+                'h-[54px] px-5 rounded-xl text-[15.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center space-x-2 m-1 shadow-sm',
                 store.vehicleAuto.vehicle_speed_autoplay_pkg === app.pkg
-                  ? 'bg-car-item border-car-accent text-car-text shadow-sm'
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+                  ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
+                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
               ]"
             >
-              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === app.pkg" class="text-car-accent font-black">✓</span>
+              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === app.pkg" class="text-car-accent font-black">👑</span>
               <span>{{ app.name }}</span>
             </button>
           </div>
