@@ -868,8 +868,10 @@ public class VehicleAutomationService extends Service {
         }
         if (gear == 2 || gear == 6) {
             speedAutoplayArmed = true; // 出P挡起步武装
+            speedCustomActionArmed = true; // 出P挡自定义车速动作武装
         } else if (gear == 5) {
             speedAutoplayArmed = false; // 回P挡停稳归零
+            speedCustomActionArmed = false;
             overspeedStartMs = 0;
             overspeedWarned = false;
         }
@@ -1230,6 +1232,7 @@ public class VehicleAutomationService extends Service {
     // 车速与门控自动化中枢 (单次行程防抖闭环)
     // ==========================================
     private boolean speedAutoplayArmed = false;
+    private boolean speedCustomActionArmed = false; // 车速自定义联动武装锁
     private boolean gearD360Armed = true; // D挡起步360单次跃变武装锁 (离开D挡才复位，彻底根治手动退出后循环调起)
     private long overspeedStartMs = 0;
     private boolean overspeedWarned = false;
@@ -1267,6 +1270,34 @@ public class VehicleAutomationService extends Service {
                 overspeedStartMs = 0;
                 overspeedWarned = false;
             }
+        }
+
+        // 3. 车速达标自定义动作与唤起应用 (满足车主任意设定车速与打开指定软件/360)
+        boolean customActionEnabled = prefs.getBoolean("vehicle_speed_custom_action_enabled", false);
+        if (customActionEnabled && speedCustomActionArmed && isEngineRunning()) {
+            int customThreshold = prefs.getInt("vehicle_speed_custom_action_threshold", 40);
+            if (speed >= customThreshold) {
+                speedCustomActionArmed = false; // 触发一次即锁定，等红绿灯不重复弹，单次行程防抖
+                String actionTarget = prefs.getString("vehicle_speed_custom_action_target", "action_360");
+                triggerCustomSpeedAction(actionTarget);
+            }
+        }
+    }
+
+    private void triggerCustomSpeedAction(String target) {
+        if (target == null || target.isEmpty()) return;
+        AppLogger.i("车身联动", "车速达到自定义阈值，触发自定义联动动作: " + target);
+        if ("action_360".equals(target)) {
+            open360Camera();
+        } else {
+            String pkg = target.startsWith("pkg:") ? target.substring(4) : target;
+            try {
+                android.content.Intent launchIntent = getPackageManager().getLaunchIntentForPackage(pkg);
+                if (launchIntent != null) {
+                    launchIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(launchIntent);
+                }
+            } catch (Exception ignored) {}
         }
     }
 

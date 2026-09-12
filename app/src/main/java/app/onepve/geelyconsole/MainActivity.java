@@ -2468,6 +2468,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("vehicle_gear_d_360_enabled", prefs.getBoolean("vehicle_gear_d_360_enabled", false));
                 obj.put("vehicle_light_nav_enabled", prefs.getBoolean("vehicle_light_nav_enabled", false));
                 obj.put("vehicle_flameout_voice_enabled", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
+                obj.put("vehicle_speed_custom_action_enabled", prefs.getBoolean("vehicle_speed_custom_action_enabled", false));
+                obj.put("vehicle_speed_custom_action_threshold", prefs.getInt("vehicle_speed_custom_action_threshold", 40));
+                obj.put("vehicle_speed_custom_action_target", prefs.getString("vehicle_speed_custom_action_target", "action_360"));
 
                 // 播报音频输出通道 (music | nav | notification)
                 obj.put("voice_audio_channel", prefs.getString("voice_audio_channel", "music"));

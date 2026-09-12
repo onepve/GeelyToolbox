@@ -1,297 +1,249 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 1. 全局桌面迷你悬浮胶囊 -->
-    <FeatureCard 
-      title="1. 全局桌面迷你悬浮胶囊 (实时状态与动态暗码)"
-      desc="在车机桌面或其他应用上层常驻迷你流光胶囊，支持手指自由拖拽吸附，实时显示软件状态或今日动态工程暗码。"
-      helpTitle="【功能指南】桌面悬浮微胶囊运行机制"
-      helpText="1. 浮窗交互：&#10;在车机桌面或其他全屏应用上层常驻微型流光胶囊，支持手指自由拖拽并自动贴边吸附，点击胶囊秒开控制台。&#10;&#10;2. 三大显示模式：&#10;• 显示应用名：当前最上层前台运行的软件名称；&#10;• 显示动态暗码：直接在胶囊内展示今日工程模式暗码；&#10;• 显示电瓶电压：实时监测整车 12V 蓄电池电压与发电机发电状态。"
-      helpTip="建议将显示模式设为「显示电瓶电压」，可时刻掌握爱车电瓶健康状态，防亏电趴窝。"
+    <!-- 1. 全局桌面迷你悬浮胶囊 (整卡一体化开关：整卡即触控大靶区 · 右侧纯文字) -->
+    <div 
+      @click="toggleFloatingWindow"
+      :class="[
+        'rounded-3xl border-2 p-6 transition-all flex items-center justify-between cursor-pointer select-none shadow-xl',
+        store.deviceInfo.floating_enabled
+          ? 'bg-car-card border-car-accent ring-2 ring-car-accent/20'
+          : 'bg-car-card border-car-border hover:border-car-border-light'
+      ]"
     >
-      <div class="flex flex-col space-y-4">
-        <!-- 胶囊总开关 (单列整行大卡片) -->
-        <div class="bg-car-item border-2 border-car-border rounded-2xl p-6 flex items-center justify-between shadow-sm">
-          <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
-            <div class="flex items-center space-x-3">
-              <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">悬浮微胶囊总开关</span>
-              <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-card border-car-border text-car-accent inline-flex items-center shadow-sm">
-                桌面常驻
-              </span>
-            </div>
-            <div class="text-[15px] text-car-sub font-bold leading-relaxed">
-              在桌面及全屏应用上层常驻微型流光胶囊，支持自由拖拽吸附，点击胶囊秒开吉利控制台。
-            </div>
-          </div>
-          <div class="shrink-0 w-[230px]">
-            <button 
-              @click="toggleFloatingWindow"
-              :class="[
-                'w-full h-[78px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center',
-                store.deviceInfo.floating_enabled
-                  ? 'bg-car-item border-car-accent text-car-text font-black'
-                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-              ]"
-            >
-              <span class="text-[19px] font-black text-car-text tracking-wide whitespace-nowrap">
-                {{ store.deviceInfo.floating_enabled ? '胶囊已常驻' : '胶囊已隐藏' }}
-              </span>
-              <span :class="['text-[13px] font-bold mt-1 whitespace-nowrap', store.deviceInfo.floating_enabled ? 'text-car-accent' : 'text-car-sub']">
-                {{ store.deviceInfo.floating_enabled ? '点击关闭胶囊' : '点击开启悬浮' }}
-              </span>
-            </button>
-          </div>
+      <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-2">
+        <div class="flex items-center space-x-3">
+          <span class="text-[23px] font-black text-car-text tracking-wide">1. 全局桌面迷你悬浮胶囊总开关</span>
+          <button 
+            @click.stop="openFloatingHelp" 
+            class="w-8 h-8 rounded-full bg-car-item border-2 border-car-accent text-car-accent font-black text-[16px] flex items-center justify-center cursor-pointer shadow-sm shrink-0"
+            title="查看功能指南"
+          >?</button>
+          <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent">桌面常驻</span>
         </div>
-
-        <!-- 胶囊内容显示模式 (独立大卡片) -->
-        <div class="bg-car-item border-2 border-car-border rounded-2xl p-6 flex flex-col space-y-4 shadow-sm">
-          <div class="flex items-center justify-between">
-            <div class="flex flex-col">
-              <span class="text-[18px] font-black text-car-text">胶囊内容显示模式</span>
-              <span class="text-[14px] text-car-sub font-bold mt-0.5">切换胶囊内常驻展示的核心实时信息</span>
-            </div>
-          </div>
-          <div class="grid grid-cols-3 gap-3.5">
-            <button 
-              @click="setFloatingMode('name')"
-              :class="[
-                'min-h-[66px] p-3 rounded-2xl font-black text-[16.5px] border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
-                store.deviceInfo.floating_display_mode === 'name' || (!store.deviceInfo.floating_display_mode)
-                  ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              显示应用名
-            </button>
-            <button 
-              @click="setFloatingMode('code')"
-              :class="[
-                'min-h-[66px] p-3 rounded-2xl font-black text-[16.5px] border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
-                store.deviceInfo.floating_display_mode === 'code'
-                  ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              显示动态暗码
-            </button>
-            <button 
-              @click="setFloatingMode('battery')"
-              :class="[
-                'min-h-[66px] p-3 rounded-2xl font-black text-[16.5px] border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
-                store.deviceInfo.floating_display_mode === 'battery'
-                  ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              显示电瓶电压
-            </button>
-          </div>
+        <div class="text-[15.5px] text-car-sub font-bold leading-relaxed">
+          在桌面及全屏应用上层常驻微型流光胶囊，支持手指自由拖拽贴边吸附，实时展示电瓶电压或动态暗码，点击胶囊秒开控制台。轻触整卡直接开/关！
         </div>
       </div>
-    </FeatureCard>
+      <div class="min-w-[240px] shrink-0 flex flex-col items-end justify-center text-right">
+        <div class="flex items-center space-x-2.5">
+          <span :class="['w-3 h-3 rounded-full', store.deviceInfo.floating_enabled ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-slate-500']"></span>
+          <span :class="['text-[22px] font-black tracking-wide', store.deviceInfo.floating_enabled ? 'text-car-text' : 'text-car-sub']">
+            {{ store.deviceInfo.floating_enabled ? '胶囊已常驻' : '胶囊已隐藏' }}
+          </span>
+        </div>
+        <span :class="['text-[13.5px] font-bold mt-1.5', store.deviceInfo.floating_enabled ? 'text-car-accent' : 'text-car-sub']">
+          {{ store.deviceInfo.floating_enabled ? '桌面边缘常驻 · 轻触整卡关闭' : '点击整卡开启桌面胶囊' }}
+        </span>
+      </div>
+    </div>
 
-    <!-- 2. 闲置自动屏保：主页面闲置 N 秒后自动进入原厂屏保（原生 Service 调用，不依赖 ADB） -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-2xl">
-      <!-- 顶部黄金分栏：左详尽说明 + 右 230px 紧凑开关磁贴 -->
+    <!-- 胶囊内容显示模式 (独立大卡片 · 3选1饱满磁贴) -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex flex-col space-y-4">
       <div class="flex items-center justify-between">
-        <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
-          <div class="flex items-center space-x-3">
-            <span class="w-3.5 h-3.5 rounded-full shadow-md shrink-0 bg-car-accent"></span>
-            <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">2. 闲置自动屏保 (息屏休眠)</span>
-            <button
-              @click="openScreensaverHelp"
-              class="w-7 h-7 rounded-full bg-car-item border border-car-border text-car-accent hover:border-car-accent hover:bg-car-card font-black text-[15px] flex items-center justify-center cursor-pointer transition-all shadow-sm shrink-0 select-none"
-              title="查看自动屏保核心原理"
-            >
-              ?
-            </button>
-            <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
-              <span class="w-2.5 h-2.5 rounded-full mr-2" :class="ssStatusDot"></span>{{ ssStatusText }}
-            </span>
-          </div>
-          <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-            主页面（桌面）闲置达到设定时长后，自动进入原厂屏幕保护。导航、音乐、设置等界面闲置时不会打扰，行车途中同样不误触发。
-          </div>
+        <div class="flex flex-col">
+          <span class="text-[20px] font-black text-car-text">胶囊常驻展示模式</span>
+          <span class="text-[14.5px] text-car-sub font-bold mt-0.5">选择迷你胶囊上层常驻展示的核心实时数据</span>
         </div>
-
-        <div class="shrink-0 w-[230px]">
-          <button
-            @click="toggleScreensaver"
-            :class="[
-              'w-full h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center',
-              ssEnabled
-                ? 'bg-car-item border-car-accent'
-                : 'bg-car-card border-car-border hover:border-car-border-light'
-            ]"
-          >
-            <span class="text-[18.5px] font-black text-car-text tracking-wide whitespace-nowrap">{{ ssEnabled ? '闲置屏保: 已开启' : '闲置屏保: 已关闭' }}</span>
-            <span class="text-[12.5px] font-bold mt-1 whitespace-nowrap" :class="ssEnabled ? 'text-car-accent' : 'text-car-sub'">{{ ssEnabled ? '点击关闭自动屏保' : '点击开启自动屏保' }}</span>
-          </button>
-        </div>
+        <span class="text-[14px] text-car-accent font-black px-3.5 py-1 rounded-xl bg-car-item border border-car-border">
+          当前模式: {{ store.deviceInfo.floating_display_mode === 'name' ? '显示应用名' : (store.deviceInfo.floating_display_mode === 'code' ? '显示动态暗码' : '显示电瓶电压 (推荐)') }}
+        </span>
       </div>
-
-      <!-- 主页面识别权限（使用情况访问）授权状态 -->
-      <div class="mt-5 bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between">
-        <div class="flex flex-col space-y-1">
-          <div class="flex items-center space-x-2.5">
-            <span class="w-2.5 h-2.5 rounded-full shrink-0" :class="ssUsageAccess ? 'bg-emerald-400' : 'bg-amber-400'"></span>
-            <span class="text-[16px] font-black text-car-text whitespace-nowrap">主页面识别权限（使用情况访问）</span>
-            <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-card border-car-border text-car-text whitespace-nowrap">{{ ssUsageAccess ? '已授权' : '未授权' }}</span>
-          </div>
-          <div class="text-[13.5px] text-car-sub font-bold leading-normal">
-            用于判断当前是否停留在主页面。授权一次永久有效，仅本机读取，不联网、不上传任何数据。
-          </div>
-        </div>
-        <button
-          @click="openUsageAccess"
+      <div class="grid grid-cols-3 gap-3.5">
+        <button 
+          @click="setFloatingMode('battery')"
           :class="[
-            'shrink-0 min-h-[54px] px-5 rounded-2xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm whitespace-nowrap',
-            ssUsageAccess
-              ? 'bg-car-card border-car-border text-car-sub'
-              : 'bg-car-item border-car-accent text-car-text'
+            'min-h-[68px] p-3 rounded-2xl font-black text-[17px] border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
+            store.deviceInfo.floating_display_mode === 'battery' || (!store.deviceInfo.floating_display_mode)
+              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
+              : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
           ]"
         >
-          {{ ssUsageAccess ? '重新授权' : '去授权' }}
+          ⚡ 显示电瓶电压 (推荐)
+        </button>
+        <button 
+          @click="setFloatingMode('code')"
+          :class="[
+            'min-h-[68px] p-3 rounded-2xl font-black text-[17px] border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
+            store.deviceInfo.floating_display_mode === 'code'
+              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
+              : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+          ]"
+        >
+          🔑 显示动态暗码
+        </button>
+        <button 
+          @click="setFloatingMode('name')"
+          :class="[
+            'min-h-[68px] p-3 rounded-2xl font-black text-[17px] border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
+            store.deviceInfo.floating_display_mode === 'name'
+              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
+              : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+          ]"
+        >
+          📱 显示当前应用名
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. 闲置自动屏保：整卡一体化总开关 (整卡即触控大靶区 · 右侧纯文字) -->
+    <div 
+      @click="toggleScreensaver"
+      :class="[
+        'rounded-3xl border-2 p-6 transition-all flex items-center justify-between cursor-pointer select-none shadow-xl',
+        ssEnabled
+          ? 'bg-car-card border-car-accent ring-2 ring-car-accent/20'
+          : 'bg-car-card border-car-border hover:border-car-border-light'
+      ]"
+    >
+      <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-2">
+        <div class="flex items-center space-x-3">
+          <span class="text-[23px] font-black text-car-text tracking-wide">2. 闲置自动屏保 (息屏休眠总开关)</span>
+          <button 
+            @click.stop="openScreensaverHelp" 
+            class="w-8 h-8 rounded-full bg-car-item border-2 border-car-accent text-car-accent font-black text-[16px] flex items-center justify-center cursor-pointer shadow-sm shrink-0"
+            title="查看自动屏保核心原理"
+          >?</button>
+          <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent inline-flex items-center">
+            <span class="w-2.5 h-2.5 rounded-full mr-2" :class="ssStatusDot"></span>{{ ssStatusText }}
+          </span>
+        </div>
+        <div class="text-[15.5px] text-car-sub font-bold leading-relaxed">
+          主页面（桌面）闲置达到设定秒数后自动唤起原厂屏幕保护；导航、音乐等应用运行中绝不打扰。关闭总开关后后台计时器彻底销毁，零 CPU 消耗！
+        </div>
+      </div>
+      <div class="min-w-[240px] shrink-0 flex flex-col items-end justify-center text-right">
+        <div class="flex items-center space-x-2.5">
+          <span :class="['w-3 h-3 rounded-full', ssEnabled ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-slate-500']"></span>
+          <span :class="['text-[22px] font-black tracking-wide', ssEnabled ? 'text-car-text' : 'text-car-sub']">
+            {{ ssEnabled ? '自动屏保已开启' : '自动屏保已关闭' }}
+          </span>
+        </div>
+        <span :class="['text-[13.5px] font-bold mt-1.5', ssEnabled ? 'text-car-accent' : 'text-car-sub']">
+          {{ ssEnabled ? '闲置达标自动息屏 · 轻触整卡关闭' : '点击整卡开启自动屏保' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- 闲置时长与生效控制卡片 (纯加减时间步进器 · 彻底去除死板预设与永不休眠) -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex flex-col space-y-5">
+      <div class="flex items-center justify-between">
+        <div class="flex flex-col space-y-1">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[20px] font-black text-car-text">闲置时长精准微调</span>
+            <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent">自由设定</span>
+          </div>
+          <span class="text-[14.5px] text-car-sub font-bold">
+            支持自由设定 3 秒 ~ 180 秒。点击两侧 [-15s] / [-5s] 与 [+5s] [+15s] 步进加减时长，想常亮直接关掉上方总开关即可。
+          </span>
+        </div>
+        <div class="flex items-center space-x-3 shrink-0">
+          <button 
+            @click="adjustSeconds(-15)"
+            class="h-[54px] px-4 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center active:scale-95"
+            title="减少 15 秒"
+          >-15s</button>
+          <button 
+            @click="adjustSeconds(-5)"
+            class="h-[54px] px-4 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center active:scale-95"
+            title="减少 5 秒"
+          >-5s</button>
+          <div class="flex items-baseline px-5 py-1.5 bg-car-item rounded-2xl border-2 border-car-accent/60 min-w-[140px] justify-center shadow-inner">
+            <span class="text-[32px] font-black text-car-accent font-mono leading-none">{{ ssSeconds }}</span>
+            <span class="text-[15px] font-bold text-car-sub ml-1.5 font-mono">秒 ({{ ssSeconds >= 60 ? (ssSeconds / 60).toFixed(1) + '分' : '息屏' }})</span>
+          </div>
+          <button 
+            @click="adjustSeconds(5)"
+            class="h-[54px] px-4 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center active:scale-95"
+            title="增加 5 秒"
+          >+5s</button>
+          <button 
+            @click="adjustSeconds(15)"
+            class="h-[54px] px-4 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center active:scale-95"
+            title="增加 15 秒"
+          >+15s</button>
+        </div>
+      </div>
+
+      <!-- 快捷档位大磁贴 (5 档纯净车规预设) -->
+      <div class="grid grid-cols-5 gap-3 pt-2">
+        <button
+          v-for="preset in ssPresets"
+          :key="preset.value"
+          @click="setSecondsPreset(preset.value)"
+          :class="[
+            'h-[56px] rounded-xl border-2 font-black text-[16px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center',
+            ssSeconds === preset.value
+              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20'
+              : 'bg-car-item border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
+          ]"
+        >
+          {{ preset.label }}
         </button>
       </div>
 
-      <!-- 闲置时长：滑块 + 预设磁贴 + 进度条 -->
-      <div class="mt-3 bg-car-item border border-car-border rounded-2xl p-4">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-[16px] font-black text-car-text whitespace-nowrap">闲置时长</span>
-          <span class="text-[15px] font-black text-car-accent px-3.5 py-1.5 bg-car-card rounded-xl border border-car-border whitespace-nowrap">
-            当前设定: {{ ssSecondsDisplay }}
+      <!-- 主页面识别权限授权状态 -->
+      <div class="pt-3 border-t border-car-border/60 flex items-center justify-between">
+        <div class="flex flex-col space-y-0.5">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" :class="ssUsageAccess ? 'bg-emerald-400' : 'bg-amber-400'"></span>
+            <span class="text-[16px] font-black text-car-text">主页面识别权限（使用情况访问）</span>
+            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-car-text">{{ ssUsageAccess ? '已授权' : '未授权' }}</span>
+          </div>
+          <span class="text-[13.5px] text-car-sub font-bold">用于精准判断当前是否停留在主页面桌面，授权一次永久有效。</span>
+        </div>
+        <button
+          @click="openUsageAccess"
+          class="h-[52px] px-6 rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-black text-[15.5px] cursor-pointer shadow-sm whitespace-nowrap"
+        >
+          {{ ssUsageAccess ? '重新授权' : '去授权 ➔' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. 主页面限制模式 (整卡一体化开关) -->
+    <div 
+      @click="toggleHomeOnly"
+      :class="[
+        'rounded-3xl border-2 p-6 transition-all flex items-center justify-between cursor-pointer select-none shadow-xl',
+        ssHomeOnly
+          ? 'bg-car-card border-car-accent ring-2 ring-car-accent/20'
+          : 'bg-car-card border-car-border hover:border-car-border-light'
+      ]"
+    >
+      <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-2">
+        <div class="flex items-center space-x-3">
+          <span class="text-[23px] font-black text-car-text tracking-wide">3. 主页面限制模式</span>
+          <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent">前台避让</span>
+        </div>
+        <div class="text-[15.5px] text-car-sub font-bold leading-relaxed">
+          仅在停留在主页面（桌面）闲置时进入屏保；高德导航、音乐播放等前台应用运行时绝不打扰。轻触整卡切换！
+        </div>
+      </div>
+      <div class="min-w-[240px] shrink-0 flex flex-col items-end justify-center text-right">
+        <div class="flex items-center space-x-2.5">
+          <span :class="['w-3 h-3 rounded-full', ssHomeOnly ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-slate-500']"></span>
+          <span :class="['text-[22px] font-black tracking-wide', ssHomeOnly ? 'text-car-text' : 'text-car-sub']">
+            {{ ssHomeOnly ? '仅主页生效' : '任意界面放开' }}
           </span>
         </div>
-
-        <div class="flex items-center space-x-4">
-          <span class="text-[14px] text-car-sub font-bold whitespace-nowrap">{{ ssMinSeconds }} 秒 (更灵敏)</span>
-          <input
-            type="range"
-            :min="ssMinSeconds"
-            :max="ssMaxSeconds"
-            step="1"
-            v-model.number="ssSeconds"
-            :disabled="ssNever"
-            @change="saveSeconds"
-            class="flex-1 accent-car-accent h-2.5 bg-car-card rounded-lg cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-          />
-          <span class="text-[14px] text-car-sub font-bold whitespace-nowrap">{{ ssMaxSeconds }} 秒 (3分钟)</span>
-          <div class="flex space-x-2 shrink-0">
-            <button
-              v-for="preset in ssPresets"
-              :key="preset.value"
-              @click="setSecondsPreset(preset.value)"
-              :class="[
-                'px-3 py-1.5 text-[13.5px] font-black rounded-xl border transition-all cursor-pointer whitespace-nowrap',
-                ssSeconds === preset.value
-                  ? 'bg-car-card border-car-accent text-car-text'
-                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-              ]"
-            >
-              {{ preset.label }}
-            </button>
-          </div>
-        </div>
-
-        <!-- 永不自动进入：哨兵值 -1，计时器照常巡检但绝不触发 -->
-        <div class="mt-3 flex items-center space-x-3">
-          <button
-            @click="toggleNever"
-            :class="[
-              'min-h-[50px] px-5 rounded-xl border-2 font-black text-[14.5px] cursor-pointer transition-all shadow-sm whitespace-nowrap',
-              ssNever
-                ? 'bg-car-item border-car-accent text-car-text'
-                : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-            ]"
-          >
-            {{ ssNever ? '永不自动进入: 已开启' : '永不自动进入' }}
-          </button>
-          <span class="text-[13px] text-car-sub font-bold leading-normal">
-            开启后屏保永不自动弹出；「立即测试一次屏保」仍可正常手动验证。
-          </span>
-        </div>
-
-        <!-- 进度条：与滑块实时联动 -->
-        <div class="mt-3.5 flex items-center space-x-3">
-          <div class="flex-1 h-2.5 rounded-full bg-car-card overflow-hidden">
-            <div class="h-full rounded-full bg-car-accent transition-all duration-200" :style="{ width: ssProgressPercent + '%' }"></div>
-          </div>
-          <span class="text-[13px] text-car-sub font-bold whitespace-nowrap">进度 {{ ssProgressPercent }}%</span>
-        </div>
+        <span :class="['text-[13.5px] font-bold mt-1.5', ssHomeOnly ? 'text-car-accent' : 'text-car-sub']">
+          {{ ssHomeOnly ? '导航中绝不打扰 · 点击放开' : '点击限制仅主页面' }}
+        </span>
       </div>
+    </div>
 
-      <!-- 生效范围与验证 (单列车规整行大卡片) -->
-      <div class="mt-4 flex flex-col space-y-4">
-        <!-- 主页面限制模式 -->
-        <div class="bg-car-item border-2 border-car-border rounded-2xl p-6 flex items-center justify-between shadow-sm">
-          <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
-            <div class="flex items-center space-x-3">
-              <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">主页面限制模式</span>
-              <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-card border-car-border text-car-accent inline-flex items-center shadow-sm">
-                前台避让
-              </span>
-            </div>
-            <div class="text-[15px] text-car-sub font-bold leading-relaxed">
-              仅在主页面（桌面）闲置时进入屏保；高德导航、音乐播放等应用在前台运行时绝不打扰。
-            </div>
-          </div>
-          <div class="shrink-0 w-[230px]">
-            <button
-              @click="toggleHomeOnly"
-              :class="[
-                'w-full h-[78px] px-4 py-2 rounded-2xl border-2 font-black cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center',
-                ssHomeOnly
-                  ? 'bg-car-item border-car-accent text-car-text font-black'
-                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-              ]"
-            >
-              <span class="text-[19px] font-black text-car-text tracking-wide whitespace-nowrap">
-                {{ ssHomeOnly ? '仅主页: 已开启' : '任意界面: 放开' }}
-              </span>
-              <span :class="['text-[13px] font-bold mt-1 whitespace-nowrap', ssHomeOnly ? 'text-car-accent' : 'text-car-sub']">
-                {{ ssHomeOnly ? '应用运行中不打扰' : '点击限制仅桌面' }}
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 屏保即时验证 -->
-        <div class="bg-car-item border-2 border-car-border rounded-2xl p-6 flex items-center justify-between shadow-sm">
-          <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
-            <div class="flex items-center space-x-3">
-              <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">屏保效果即时验证</span>
-              <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-card border-car-border text-car-accent inline-flex items-center shadow-sm">
-                即时测试
-              </span>
-            </div>
-            <div class="text-[15px] text-car-sub font-bold leading-relaxed">
-              直接下发底层原生屏保广播，无需等待闲置倒计时即可直接验证屏幕保护效果与唤醒流程。
-            </div>
-          </div>
-          <div class="shrink-0 w-[230px]">
-            <button
-              @click="testScreensaver"
-              class="w-full h-[78px] px-4 py-2 rounded-2xl border-2 border-car-accent bg-car-card hover:bg-car-item text-car-text font-black cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center"
-            >
-              <span class="text-[19px] font-black text-car-text tracking-wide whitespace-nowrap">
-                立即测试屏保
-              </span>
-              <span class="text-[13px] font-bold mt-1 text-car-accent whitespace-nowrap">
-                即刻唤醒屏保 ➔
-              </span>
-            </button>
-          </div>
-        </div>
+    <!-- 4. 屏保即时测试 (独立大卡片) -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between">
+      <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1.5">
+        <span class="text-[21px] font-black text-car-text">屏保效果即时测试</span>
+        <span class="text-[15px] text-car-sub font-bold">直接下发车载原生屏保指令，无需等待闲置倒计时即可当场验证屏幕保护效果。</span>
       </div>
-
-      <!-- 实时诊断信息 -->
-      <div class="mt-3 bg-car-card border border-car-border rounded-2xl p-4 text-[13px] text-car-sub font-bold leading-relaxed space-y-1">
-        <div>运行通道：<span class="text-car-text">{{ ssChannel }}</span></div>
-        <div>当前闲置：<span class="text-car-text">{{ ssIdleDisplay }}</span>（每 3 秒自动检测一次）</div>
-        <div>系统原始读数：<span class="text-car-text">{{ ssIdleRaw || '—' }}</span></div>
-        <div>前台判定：<span class="text-car-text">{{ ssForeground }}</span></div>
-        <div v-if="ssFailReason" class="text-amber-400">通道A提示：{{ ssFailReason }}</div>
-      </div>
+      <button
+        @click="testScreensaver"
+        class="min-w-[220px] h-[64px] px-6 rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent shadow-md flex items-center justify-center whitespace-nowrap"
+      >
+        <span>立即测试屏保 ➔</span>
+      </button>
     </div>
   </div>
 </template>
@@ -299,20 +251,27 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { store, bridge, showToast, openModal } from '../store';
-import FeatureCard from '../components/FeatureCard.vue';
-import MatrixButton from '../components/MatrixButton.vue';
+
+function openFloatingHelp() {
+  openModal('confirm', {
+    title: '【功能指南】桌面悬浮微胶囊机制',
+    desc: '1. 浮窗交互：在车机桌面或其他全屏应用上层常驻微型流光胶囊，支持手指自由拖拽并自动贴边吸附，点击胶囊秒开控制台。\n\n2. 三大显示模式：\n• 显示电瓶电压：实时监测整车 12V 蓄电池精准电压；\n• 显示动态暗码：直接展示今日工程模式暗码；\n• 显示应用名：当前最上层运行的软件名称。',
+    tip: '建议将显示模式设为「显示电瓶电压」，时刻掌握爱车电瓶健康。',
+    showCancel: false,
+    confirmText: '我知道了'
+  });
+}
 
 function openScreensaverHelp() {
   openModal('confirm', {
     title: '【功能指南】闲置自动屏保与前台主页感知',
-    desc: '1. 原生 Service 调用：\n无需通过 ADB 命令强行熄屏，直接调用车载原生屏保服务，纯净稳定。\n\n2. 5 档快捷车规时限：\n精准收敛至 3秒 ~ 3分钟（5秒、15秒、30秒、1分钟、3分钟）及永不进入，杜绝原厂过长等待。\n\n3. 主页面保护模式：\n仅在停留在车机主页面（桌面）闲置时才触发屏保；在导航、音乐、微信等应用前台运行时绝不打扰。',
+    desc: '1. 原生 Service 调用：无需通过 ADB 命令强行熄屏，直接调用车载原生屏保服务，纯净稳定。\n\n2. 自由秒数调节：收敛至 3秒 ~ 3分钟（180秒），左右加减步进，想常亮直接关掉上方总开关，彻底停止后台计时器。\n\n3. 主页面保护模式：仅在停留在车机主页面（桌面）闲置时才触发屏保；导航、音乐等应用前台运行时绝不打扰。',
     tip: '需要授予一次「使用情况访问权限」，授权永久生效，仅本机读取，不联网、不上传任何数据。',
     showCancel: false,
     confirmText: '我知道了'
   });
 }
 
-// ==================== 1. 桌面悬浮胶囊 ====================
 function toggleFloatingWindow() {
   const next = !store.deviceInfo.floating_enabled;
   store.deviceInfo.floating_enabled = next;
@@ -326,39 +285,24 @@ function setFloatingMode(mode) {
   showToast('显示模式已切换');
 }
 
-// ==================== 2. 闲置自动屏保 ====================
+// 自动屏保状态
 const ssEnabled = ref(false);
 const ssSeconds = ref(30);
-const ssMinSeconds = ref(3);
-const ssMaxSeconds = ref(180);
-const ssNever = ref(false);
+const ssMinSeconds = 3;
+const ssMaxSeconds = 180;
 const ssHomeOnly = ref(true);
 const ssUsageAccess = ref(false);
 const ssChannel = ref('未启动');
-const ssIdleMs = ref(-1);
-const ssIdleRaw = ref('');
 const ssFailReason = ref('');
 const ssChannelAReady = ref(false);
-const ssForeground = ref('查询中');
 const ssPresets = [
-  { value: 5, label: '5秒' },
-  { value: 15, label: '15秒' },
-  { value: 30, label: '30秒' },
-  { value: 60, label: '1分钟' },
-  { value: 180, label: '3分钟' },
+  { value: 5, label: '5 秒 (极速)' },
+  { value: 15, label: '15 秒 (推荐)' },
+  { value: 30, label: '30 秒 (半分钟)' },
+  { value: 60, label: '1 分钟 (中度)' },
+  { value: 180, label: '3 分钟 (深度)' },
 ];
 let ssTimer = null;
-
-const ssSecondsDisplay = computed(() => ssNever.value ? '永不' : (ssSeconds.value + ' 秒'));
-
-const ssProgressPercent = computed(() => {
-  if (ssNever.value) return 0;
-  const min = ssMinSeconds.value;
-  const max = ssMaxSeconds.value;
-  if (max <= min) return 0;
-  const v = Math.min(Math.max(ssSeconds.value, min), max);
-  return Math.round(((v - min) / (max - min)) * 100);
-});
 
 const ssDegraded = computed(() => {
   const c = String(ssChannel.value || '');
@@ -373,117 +317,77 @@ const ssStatusText = computed(() => {
 });
 
 const ssStatusDot = computed(() => {
-  if (!ssEnabled.value) return 'bg-car-sub';
+  if (!ssEnabled.value) return 'bg-slate-500';
   if (ssChannelAReady.value) return 'bg-emerald-400';
   if (ssDegraded.value) return 'bg-rose-400';
   return 'bg-amber-400';
 });
 
-const ssIdleDisplay = computed(() => {
-  const v = ssIdleMs.value;
-  if (v === null || v === undefined || v < 0) return '读取中';
-  return (v / 1000).toFixed(1) + ' 秒';
-});
-
-function loadScreensaverConfig() {
-  try {
-    const raw = bridge.call('getScreensaverConfig');
-    if (!raw) return;
-    const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    if (typeof data.enabled === 'boolean') ssEnabled.value = data.enabled;
-    if (typeof data.seconds === 'number') {
-      ssSeconds.value = data.seconds;
-      ssNever.value = (data.seconds === -1);
-    }
-    if (typeof data.minSeconds === 'number') ssMinSeconds.value = data.minSeconds;
-    if (typeof data.maxSeconds === 'number') ssMaxSeconds.value = data.maxSeconds;
-    if (typeof data.home_only === 'boolean') ssHomeOnly.value = data.home_only;
-    if (typeof data.usage_access === 'boolean') ssUsageAccess.value = data.usage_access;
-    if (typeof data.channel === 'string') ssChannel.value = data.channel;
-    if (typeof data.idle_ms === 'number') ssIdleMs.value = data.idle_ms;
-    if (typeof data.idle_raw === 'string') ssIdleRaw.value = data.idle_raw;
-    if (typeof data.fail_reason === 'string') ssFailReason.value = data.fail_reason;
-    if (typeof data.channel_a_ready === 'boolean') ssChannelAReady.value = data.channel_a_ready;
-    if (typeof data.foreground === 'string') ssForeground.value = data.foreground;
-  } catch (e) {}
-}
-
-function saveScreensaverConfig(patch) {
-  try {
-    bridge.call('setScreensaverConfig', JSON.stringify(patch));
-  } catch (e) {}
-}
-
 function toggleScreensaver() {
   const next = !ssEnabled.value;
   ssEnabled.value = next;
-  saveScreensaverConfig({ enabled: next });
-  if (next) {
-    if (!ssUsageAccess.value) {
-      showToast('已开启闲置屏保，请先授权「使用情况访问」才能识别主页面');
-    } else {
-      showToast('已开启闲置屏保：主页面闲置 ' + ssSeconds.value + ' 秒后自动进入屏保');
-    }
-  } else {
-    showToast('已关闭闲置自动屏保');
-  }
-  setTimeout(loadScreensaverConfig, 400);
+  bridge.call('setScreensaverConfig', JSON.stringify({ enabled: next }));
+  showToast('自动屏保已' + (next ? '开启' : '关闭'));
+  fetchScreensaverState();
 }
 
-function saveSeconds() {
-  const v = Math.min(Math.max(Math.round(ssSeconds.value), ssMinSeconds.value), ssMaxSeconds.value);
-  ssSeconds.value = v;
-  ssNever.value = false;
-  saveScreensaverConfig({ seconds: v });
-  showToast('闲置时长已设为 ' + v + ' 秒');
-}
-
-function setSecondsPreset(value) {
-  ssSeconds.value = value;
+function adjustSeconds(delta) {
+  let next = Math.max(ssMinSeconds, Math.min(ssMaxSeconds, ssSeconds.value + delta));
+  ssSeconds.value = next;
   saveSeconds();
 }
 
-function toggleNever() {
-  const next = !ssNever.value;
-  ssNever.value = next;
-  if (next) {
-    ssSeconds.value = -1;
-    saveScreensaverConfig({ seconds: -1 });
-    showToast('已设为永不自动进入屏保');
-  } else {
-    ssSeconds.value = 30;
-    saveScreensaverConfig({ seconds: 30 });
-    showToast('已恢复自动屏保（30 秒）');
-  }
+function setSecondsPreset(val) {
+  ssSeconds.value = val;
+  saveSeconds();
+}
+
+function saveSeconds() {
+  bridge.call('setScreensaverConfig', JSON.stringify({ seconds: ssSeconds.value }));
+  showToast(`屏保闲置时长已设为: ${ssSeconds.value} 秒`);
 }
 
 function toggleHomeOnly() {
   const next = !ssHomeOnly.value;
   ssHomeOnly.value = next;
-  saveScreensaverConfig({ home_only: next });
-  showToast(next ? '已限制为仅在主页面生效' : '已放开为任意界面生效');
+  bridge.call('setScreensaverConfig', JSON.stringify({ home_only: next }));
+  showToast('主页面限制模式: ' + (next ? '已开启' : '已放开'));
 }
 
 function openUsageAccess() {
   bridge.call('openUsageAccessSettings');
-  showToast('请在系统列表中勾选「吉利控制台」以授予使用情况访问权限');
+  showToast('正在打开权限设置...');
 }
 
 function testScreensaver() {
-  const res = bridge.call('triggerScreenSaverNow');
-  showToast(res ? String(res) : '已下发屏保调用指令');
-  setTimeout(loadScreensaverConfig, 600);
+  bridge.call('triggerScreenSaverNow');
+  showToast('正在唤起车载屏幕保护...');
+}
+
+function fetchScreensaverState() {
+  try {
+    const raw = bridge.call('getScreensaverConfig');
+    if (raw) {
+      const cfg = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      ssEnabled.value = !!cfg.enabled;
+      if (typeof cfg.seconds === 'number' && cfg.seconds >= ssMinSeconds) {
+        ssSeconds.value = cfg.seconds;
+      }
+      ssHomeOnly.value = cfg.home_only !== false;
+      ssUsageAccess.value = !!cfg.usage_access;
+      ssChannel.value = cfg.channel || '未启动';
+      ssChannelAReady.value = !!cfg.channel_a_ready;
+      ssFailReason.value = cfg.fail_reason || '';
+    }
+  } catch (e) {}
 }
 
 onMounted(() => {
-  loadScreensaverConfig();
-  ssTimer = setInterval(loadScreensaverConfig, 3000);
+  fetchScreensaverState();
+  ssTimer = setInterval(fetchScreensaverState, 3000);
 });
 
 onUnmounted(() => {
-  if (ssTimer) {
-    clearInterval(ssTimer);
-    ssTimer = null;
-  }
+  if (ssTimer) clearInterval(ssTimer);
 });
 </script>

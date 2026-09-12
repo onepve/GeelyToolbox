@@ -99,6 +99,7 @@ const keyTarget = computed(() => modalData.value.keyTarget || 'mute'); // 'mute'
 
 const keyTitle = computed(() => {
   if (keyTarget.value === 'speed_autoplay') return '车速自启音乐软件';
+  if (keyTarget.value === 'speed_custom_action') return '车速联动打开应用';
   if (keyTarget.value === 'preferred_navi') return '主力导航软件';
   if (keyTarget.value === 'mute') return '右方向盘 ③ 静音键';
   if (keyTarget.value === 'mode') return '右方向盘 ⑥ Mode键';
@@ -217,6 +218,9 @@ function isCurrentSelected(pkg) {
   if (keyTarget.value === 'preferred_navi') {
     return (store.vehicleAuto.preferred_navi_pkg || 'com.autonavi.amapauto') === pkg;
   }
+  if (keyTarget.value === 'speed_custom_action') {
+    return store.vehicleAuto.vehicle_speed_custom_action_target === `pkg:${pkg}`;
+  }
   const currentAction = store.vehicleAuto[`wheel_action_${keyTarget.value}`];
   return currentAction === `app:${pkg}`;
 }
@@ -240,6 +244,16 @@ function selectApp(app) {
     bridge.call('setWheelControlStringSetting', 'preferred_navi_pkg', app.pkg);
     localStorage.setItem('preferred_navi_app_name', app.name);
     showToast(`当前主力导航已设为: ${app.name}`);
+    closeModal('appSelect');
+    return;
+  }
+  if (keyTarget.value === 'speed_custom_action') {
+    const act = `pkg:${app.pkg}`;
+    store.vehicleAuto.vehicle_speed_custom_action_target = act;
+    bridge.call('setWheelControlStringSetting', 'vehicle_speed_custom_action_target', act);
+    localStorage.setItem('vehicle_speed_custom_action_app_name', app.name);
+    showToast(`车速达标联动目标已设为: ${app.name}`);
+    window.dispatchEvent(new CustomEvent('custom-action-target-updated'));
     closeModal('appSelect');
     return;
   }

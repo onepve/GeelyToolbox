@@ -63,40 +63,49 @@
           </span>
         </div>
 
-        <!-- 刻度长滑条 -->
-        <div class="flex flex-col space-y-2">
-          <input 
-            type="range" 
-            min="-10" 
-            max="15" 
-            step="1" 
-            v-model.number="volumeOffset" 
-            @change="saveVolumeOffset"
-            class="w-full h-3 bg-car-card rounded-lg appearance-none cursor-pointer accent-amber-500"
-          />
-          <div class="flex justify-between text-[13px] text-car-sub font-mono font-bold px-1">
-            <span>-10 (极轻)</span>
-            <span>-5</span>
-            <span class="text-car-text font-black">0 (默认跟随)</span>
-            <span class="text-car-accent font-black">+5 (加重补偿)</span>
-            <span>+10 (开窗防漏)</span>
-            <span>+15 (高音满血)</span>
+        <!-- 车规纯加减音量补偿控制器 (彻底拔除细长滑条，盲调顺手) -->
+        <div class="flex items-center justify-between pt-2">
+          <div class="flex items-center space-x-3">
+            <button 
+              @click="adjustVolumeOffset(-2)"
+              class="h-[56px] px-5 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center active:scale-95"
+              title="降低 2 格"
+            >-2 格</button>
+            <button 
+              @click="adjustVolumeOffset(-1)"
+              class="h-[56px] px-5 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center active:scale-95"
+              title="降低 1 格"
+            >-1 格</button>
+            <div class="flex items-baseline px-6 py-2 bg-car-card rounded-2xl border-2 border-car-accent min-w-[140px] justify-center shadow-inner">
+              <span class="text-[34px] font-black text-car-accent font-mono leading-none">{{ volumeOffset >= 0 ? '+' + volumeOffset : volumeOffset }}</span>
+              <span class="text-[16px] font-bold text-car-sub ml-1.5">格</span>
+            </div>
+            <button 
+              @click="adjustVolumeOffset(1)"
+              class="h-[56px] px-5 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center active:scale-95"
+              title="增加 1 格"
+            >+1 格</button>
+            <button 
+              @click="adjustVolumeOffset(2)"
+              class="h-[56px] px-5 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center active:scale-95"
+              title="增加 2 格"
+            >+2 格</button>
           </div>
-        </div>
 
-        <div class="flex items-center justify-end space-x-3 pt-2">
-          <button 
-            @click="resetVolumeOffset"
-            class="h-[52px] px-6 bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
-          >
-            重置归零 (+0)
-          </button>
-          <button 
-            @click="testVolumeOffset"
-            class="h-[52px] px-8 bg-car-card border-2 border-car-accent text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-accent shadow-md ring-2 ring-car-accent/20"
-          >
-            试听当前音量增益
-          </button>
+          <div class="flex items-center space-x-3">
+            <button 
+              @click="resetVolumeOffset"
+              class="h-[56px] px-6 bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[16px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
+            >
+              重置归零 (+0)
+            </button>
+            <button 
+              @click="testVolumeOffset"
+              class="h-[56px] px-8 bg-car-card border-2 border-car-accent text-car-text font-black text-[17px] rounded-2xl cursor-pointer hover:border-car-accent shadow-md ring-2 ring-car-accent/20"
+            >
+              🔊 试听当前音量增益
+            </button>
+          </div>
         </div>
       </div>
     </FeatureCard>
@@ -328,6 +337,12 @@ function openStoreToDownload() {
 
 function saveVolumeOffset() {
   bridge.call('setVoiceVolumeOffset', volumeOffset.value);
+}
+
+function adjustVolumeOffset(delta) {
+  let next = Math.max(-10, Math.min(15, volumeOffset.value + delta));
+  volumeOffset.value = next;
+  saveVolumeOffset();
 }
 
 function resetVolumeOffset() {
