@@ -27,6 +27,7 @@ public class ThemePatcher {
             "    <uiVersion>1</uiVersion>\n" +
             "</XUI-Theme>";
 
+    private static final String R2_PREVIEW_ZIP_URL = "https://dl.onepve.com/GeelyToolbox/preview1.zip";
     private static final String R2_PREVIEW_URL = "https://dl.onepve.com/GeelyToolbox/preview1.png";
 
     // 最小有效 1x1 占位 PNG (67 字节)，确保极端缺图时 zip 结构 100% 完备无异常
@@ -92,12 +93,47 @@ public class ThemePatcher {
             }
         }
 
-        // 4. 从 Cloudflare R2 CDN 静默下载（点击专家模式 20s 倒计时期间后台异步完成）
+        // 4. 从 Cloudflare R2 CDN 高速拉取 69KB 极限压缩包，并解压至本地持久缓存
+        try {
+            java.net.URL url = new java.net.URL(R2_PREVIEW_ZIP_URL);
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(6000);
+            if (conn.getResponseCode() == 200) {
+                try (java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(conn.getInputStream())) {
+                    java.util.zip.ZipEntry ze;
+                    while ((ze = zis.getNextEntry()) != null) {
+                        if (ze.getName().endsWith("preview1.png")) {
+                            try (FileOutputStream fos = new FileOutputStream(cachedPreview)) {
+                                byte[] buf = new byte[64 * 1024];
+                                int r;
+                                while ((r = zis.read(buf)) != -1) {
+                                    fos.write(buf, 0, r);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+                if (cachedPreview.exists() && cachedPreview.length() > 1024) {
+                    AppLogger.action("兔子主题", "从 R2 云端高速拉取 69KB 压缩包并解压落盘", true, "解压后大小: " + cachedPreview.length() + " 字节");
+                    try (FileInputStream fis = new FileInputStream(cachedPreview)) {
+                        byte[] data = new byte[(int) cachedPreview.length()];
+                        int read = fis.read(data);
+                        if (read == data.length) return data;
+                    } catch (Exception ignored) {}
+                }
+            }
+        } catch (Exception e) {
+            AppLogger.action("兔子主题", "R2 压缩包静默拉取跳过，尝试备用链路", false, e.getMessage());
+        }
+
+        // 备用：若压缩包链路异常，尝试拉取单图
         try {
             java.net.URL url = new java.net.URL(R2_PREVIEW_URL);
             java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(4000);
-            conn.setReadTimeout(8000);
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(6000);
             if (conn.getResponseCode() == 200) {
                 try (InputStream is = conn.getInputStream();
                      FileOutputStream fos = new FileOutputStream(cachedPreview)) {
@@ -108,7 +144,6 @@ public class ThemePatcher {
                     }
                 }
                 if (cachedPreview.exists() && cachedPreview.length() > 1024) {
-                    AppLogger.action("兔子主题", "从 R2 云端静默拉取官方壁纸完成", true, "大小: " + cachedPreview.length() + " 字节");
                     try (FileInputStream fis = new FileInputStream(cachedPreview)) {
                         byte[] data = new byte[(int) cachedPreview.length()];
                         int read = fis.read(data);
@@ -116,9 +151,7 @@ public class ThemePatcher {
                     } catch (Exception ignored) {}
                 }
             }
-        } catch (Exception e) {
-            AppLogger.action("兔子主题", "R2 预览壁纸下载跳过或异常", false, e.getMessage());
-        }
+        } catch (Exception ignored) {}
 
         // 5. 兜底最小有效 1x1 PNG，确保时钟包结构 100% 完备
         return MINIMAL_PNG_BYTES;
