@@ -39,7 +39,7 @@ export const CLOUD_APPS = [
     "size": "111.3 MB",
     "filename": "AutoMap_7.5_FlyScreen.apk",
     "package_name": "com.autonavi.amapauto",
-    "desc": "轻量 7.5 MG版仅 111MB 极速省运存，目前唯一稳定飞屏的轻量版，集成横屏全向红绿灯实时读秒与仪表盘飞屏。",
+    "desc": "轻量 7.5 MG版仅 111MB 极速省运存，支持三指飞屏仪表盘与横屏全向红绿灯实时读秒，运行轻快流畅。",
     "updated_at": "2023-09-01",
     "status": "download",
     "url": "https://dl.onepve.com/GeelyToolbox/AutoMap_7.5_FlyScreen.apk"
