@@ -49,12 +49,12 @@
           </div>
         </div>
         <div class="flex items-center space-x-3">
-          <div class="flex bg-car-card border border-car-border rounded-xl p-1 items-center">
+          <div class="flex bg-car-card border-2 border-car-border rounded-2xl p-1.5 items-center">
             <button 
               @click="setCluster('left')"
               :class="[
-                'h-[42px] px-4 rounded-lg text-[14px] font-black cursor-pointer transition-all whitespace-nowrap flex items-center',
-                activeCluster === 'left' ? 'bg-car-item border border-car-accent text-car-text shadow-sm' : 'text-car-sub hover:text-car-text'
+                'h-[52px] px-5 rounded-xl text-[16px] font-black cursor-pointer transition-all whitespace-nowrap flex items-center',
+                activeCluster === 'left' ? 'bg-car-item border-2 border-car-accent text-car-text shadow-md ring-2 ring-car-accent/20' : 'text-car-sub hover:text-car-text'
               ]"
             >
               左方向盘 (SX-0016 智驾区)
@@ -62,8 +62,8 @@
             <button 
               @click="setCluster('right')"
               :class="[
-                'h-[42px] px-4 rounded-lg text-[14px] font-black cursor-pointer transition-all whitespace-nowrap flex items-center',
-                activeCluster === 'right' ? 'bg-car-item border border-car-accent text-car-text shadow-sm' : 'text-car-sub hover:text-car-text'
+                'h-[52px] px-5 rounded-xl text-[16px] font-black cursor-pointer transition-all whitespace-nowrap flex items-center',
+                activeCluster === 'right' ? 'bg-car-item border-2 border-car-accent text-car-text shadow-md ring-2 ring-car-accent/20' : 'text-car-sub hover:text-car-text'
               ]"
             >
               右方向盘 (SX-0017 多媒体)
@@ -71,7 +71,7 @@
           </div>
           <button 
             @click="toggleDiagram()"
-            class="h-[46px] px-5 rounded-xl bg-car-card border border-car-border text-car-sub hover:text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light transition-all shadow-sm whitespace-nowrap flex items-center"
+            class="h-[52px] px-6 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light transition-all shadow-sm whitespace-nowrap flex items-center"
           >
             {{ showDiagram ? '收起图解' : '展开图解' }}
           </button>
@@ -80,8 +80,8 @@
 
       <!-- 图解内容展示区 -->
       <div v-if="showDiagram" class="mt-4 pt-4 border-t border-car-border/60 flex items-start space-x-6">
-        <!-- 原厂方向盘按键高清图示 -->
-        <div class="p-3 bg-white rounded-2xl shadow-md border-2 border-car-border w-[320px] min-w-[320px] max-w-[320px] shrink-0">
+        <!-- 原厂方向盘按键高清图示 (沉稳车规底座，绝非刺眼白底) -->
+        <div class="p-3 bg-car-item rounded-2xl shadow-md border-2 border-car-border w-[320px] min-w-[320px] max-w-[320px] shrink-0">
           <img 
             :src="activeCluster === 'right' ? wheelGuideImg : wheelLeftGuideImg" 
             :alt="activeCluster === 'right' ? '吉利缤越 COOL 右侧多媒体 SX-0017' : '吉利缤越 COOL 左侧智驾 SX-0016'" 
@@ -182,30 +182,30 @@
       </div>
 
       <!-- 仪表盘与屏保显示扩展 (独立开关·默认关闭) -->
-      <div class="mt-4 pt-4 border-t border-car-border/60 flex flex-col space-y-3">
-        <div class="flex items-center justify-between p-3.5 rounded-xl bg-car-item border border-car-border/50">
-          <div class="flex flex-col space-y-0.5">
-            <span class="text-[14.5px] font-bold text-car-title">投递播放状态至仪表盘与息屏时钟</span>
-            <span class="text-[12px] text-car-sub">开启后向原厂 EAS 广播歌名与歌手，车机息屏后将显示音乐小部件卡片。默认关闭保持极简。</span>
+      <div class="mt-5 pt-5 border-t border-car-border/60 flex flex-col space-y-4">
+        <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border-2 border-car-border">
+          <div class="flex flex-col space-y-1">
+            <span class="text-[17px] font-black text-car-text">投递播放状态至仪表盘与息屏时钟</span>
+            <span class="text-[14px] text-car-sub font-bold">开启后向原厂 EAS 广播歌名与歌手，车机息屏后将显示音乐小部件卡片。默认关闭保持极简。</span>
           </div>
           <button 
             @click="toggleClusterPlayback" 
-            class="px-4 py-1.5 rounded-xl text-[13px] font-bold border transition-colors whitespace-nowrap"
-            :class="store.vehicleAuto.wheel_push_playback_cluster ? 'bg-car-accent/20 border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'"
+            class="h-[52px] px-5 rounded-xl text-[15.5px] font-black border-2 transition-all whitespace-nowrap cursor-pointer shadow-sm"
+            :class="store.vehicleAuto.wheel_push_playback_cluster ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' : 'bg-car-card border-car-border text-car-sub hover:text-car-text'"
           >
             {{ store.vehicleAuto.wheel_push_playback_cluster ? '已开启 (投递状态)' : '已关闭 (默认纯净)' }}
           </button>
         </div>
 
-        <div class="flex items-center justify-between p-3.5 rounded-xl bg-car-item border border-car-border/50">
-          <div class="flex flex-col space-y-0.5">
-            <span class="text-[14.5px] font-bold text-car-title">投递当前歌词至原车仪表盘 (HUD)</span>
-            <span class="text-[12px] text-car-sub">开启后向吉利全液晶仪表盘中间卡片推送实时滚动歌词。默认关闭防信息刷屏。</span>
+        <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border-2 border-car-border">
+          <div class="flex flex-col space-y-1">
+            <span class="text-[17px] font-black text-car-text">投递当前歌词至原车仪表盘 (HUD)</span>
+            <span class="text-[14px] text-car-sub font-bold">开启后向吉利全液晶仪表盘中间卡片推送实时滚动歌词。默认关闭防信息刷屏。</span>
           </div>
           <button 
             @click="toggleClusterLyrics" 
-            class="px-4 py-1.5 rounded-xl text-[13px] font-bold border transition-colors whitespace-nowrap"
-            :class="store.vehicleAuto.wheel_push_lyrics_cluster ? 'bg-car-accent/20 border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'"
+            class="h-[52px] px-5 rounded-xl text-[15.5px] font-black border-2 transition-all whitespace-nowrap cursor-pointer shadow-sm"
+            :class="store.vehicleAuto.wheel_push_lyrics_cluster ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' : 'bg-car-card border-car-border text-car-sub hover:text-car-text'"
           >
             {{ store.vehicleAuto.wheel_push_lyrics_cluster ? '已开启 (投递歌词)' : '已关闭 (默认纯净)' }}
           </button>
@@ -640,13 +640,13 @@
         <div class="flex items-center space-x-3">
           <button
             @click="applyRecommendedPreset"
-            class="h-[46px] px-5 rounded-xl border-2 border-car-accent bg-car-item text-car-text font-black text-[15px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center whitespace-nowrap"
+            class="h-[52px] px-6 rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center whitespace-nowrap"
           >
             ✨ 一键应用车友黄金方案
           </button>
           <button
             @click="resetAllToFactory"
-            class="h-[46px] px-5 rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center whitespace-nowrap"
+            class="h-[52px] px-6 rounded-2xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center whitespace-nowrap"
           >
             🔄 一键恢复全车原厂默认
           </button>

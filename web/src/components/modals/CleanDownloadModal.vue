@@ -18,7 +18,7 @@
         </div>
         <button 
           @click="fetchStats"
-          class="h-[46px] px-5 rounded-xl bg-car-card border border-car-border text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+          class="h-[52px] px-6 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all"
         >
           刷新状态
         </button>
@@ -53,7 +53,7 @@
           <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
             <div class="flex items-center space-x-2.5">
               <span class="text-[19px] font-black text-car-text group-hover:text-car-accent">🛡️ 智能安全清理</span>
-              <span class="px-2.5 py-0.5 rounded-md bg-car-accent/15 border border-car-accent/30 text-car-accent text-[12.5px] font-black">官方推荐</span>
+              <span class="px-2.5 py-0.5 rounded-md bg-car-item border border-car-accent text-car-accent text-[12.5px] font-black">官方推荐</span>
             </div>
             <span class="text-[14.5px] text-car-sub font-bold leading-relaxed">
               清理已下载的 APK 安装包、临时压缩包与空文件夹；自动识别并保留音频素材与非空目录，安全释放数百兆闪存。

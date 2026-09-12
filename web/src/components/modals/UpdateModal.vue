@@ -16,7 +16,7 @@
               'text-[14px] px-3 py-1 rounded-full font-extrabold border',
               updateInfo.is_beta 
                 ? 'bg-rose-500/20 border-rose-500 text-rose-400' 
-                : 'bg-car-accent/20 border-car-accent text-car-accent'
+                : 'bg-car-card border-2 border-car-accent text-car-text font-black'
             ]"
           >
             v{{ updateInfo.version }}

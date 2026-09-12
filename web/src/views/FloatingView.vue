@@ -8,45 +8,56 @@
       helpText="1. 浮窗交互：&#10;在车机桌面或其他全屏应用上层常驻微型流光胶囊，支持手指自由拖拽并自动贴边吸附，点击胶囊秒开控制台。&#10;&#10;2. 三大显示模式：&#10;• 显示应用名：当前最上层前台运行的软件名称；&#10;• 显示动态暗码：直接在胶囊内展示今日工程模式暗码；&#10;• 显示电瓶电压：实时监测整车 12V 蓄电池电压与发电机发电状态。"
       helpTip="建议将显示模式设为「显示电瓶电压」，可时刻掌握爱车电瓶健康状态，防亏电趴窝。"
     >
-      <div class="grid grid-cols-2 gap-4">
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
-          <div class="flex-1 min-w-0 pr-5 flex flex-col justify-center">
-            <div class="text-[19px] font-black text-car-text whitespace-nowrap">悬浮微胶囊总开关</div>
-            <div class="text-[13.5px] text-car-sub font-bold mt-1 leading-normal">
-              在桌面及全屏应用上层常驻微型流光胶囊，支持自由拖拽吸附，点击秒开工具箱。
+      <div class="flex flex-col space-y-4">
+        <!-- 胶囊总开关 (单列整行大卡片) -->
+        <div class="bg-car-item border-2 border-car-border rounded-2xl p-6 flex items-center justify-between shadow-sm">
+          <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
+            <div class="flex items-center space-x-3">
+              <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">悬浮微胶囊总开关</span>
+              <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-card border-car-border text-car-accent inline-flex items-center shadow-sm">
+                桌面常驻
+              </span>
+            </div>
+            <div class="text-[15px] text-car-sub font-bold leading-relaxed">
+              在桌面及全屏应用上层常驻微型流光胶囊，支持自由拖拽吸附，点击胶囊秒开吉利控制台。
             </div>
           </div>
-          <button 
-            @click="toggleFloatingWindow"
-            :class="[
-              'w-[170px] h-[74px] px-3 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0',
-              store.deviceInfo.floating_enabled
-                ? 'bg-car-item border-car-accent'
-                : 'bg-car-card border-car-border hover:border-car-border-light'
-            ]"
-          >
-            <span class="text-[17.5px] font-black text-car-text tracking-wide whitespace-nowrap">
-              {{ store.deviceInfo.floating_enabled ? '胶囊已常驻' : '胶囊已隐藏' }}
-            </span>
-            <span :class="['text-[12px] font-bold mt-1 whitespace-nowrap', store.deviceInfo.floating_enabled ? 'text-car-accent' : 'text-car-sub']">
-              {{ store.deviceInfo.floating_enabled ? '点击关闭胶囊' : '点击开启悬浮' }}
-            </span>
-          </button>
+          <div class="shrink-0 w-[230px]">
+            <button 
+              @click="toggleFloatingWindow"
+              :class="[
+                'w-full h-[78px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center',
+                store.deviceInfo.floating_enabled
+                  ? 'bg-car-item border-car-accent text-car-text font-black'
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
+            >
+              <span class="text-[19px] font-black text-car-text tracking-wide whitespace-nowrap">
+                {{ store.deviceInfo.floating_enabled ? '胶囊已常驻' : '胶囊已隐藏' }}
+              </span>
+              <span :class="['text-[13px] font-bold mt-1 whitespace-nowrap', store.deviceInfo.floating_enabled ? 'text-car-accent' : 'text-car-sub']">
+                {{ store.deviceInfo.floating_enabled ? '点击关闭胶囊' : '点击开启悬浮' }}
+              </span>
+            </button>
+          </div>
         </div>
 
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
-          <div class="mb-3">
-            <div class="text-[19px] font-black text-car-text">胶囊内容显示模式</div>
-            <div class="text-[15px] text-car-sub mt-1 font-bold">切换胶囊内展示的文字信息</div>
+        <!-- 胶囊内容显示模式 (独立大卡片) -->
+        <div class="bg-car-item border-2 border-car-border rounded-2xl p-6 flex flex-col space-y-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div class="flex flex-col">
+              <span class="text-[18px] font-black text-car-text">胶囊内容显示模式</span>
+              <span class="text-[14px] text-car-sub font-bold mt-0.5">切换胶囊内常驻展示的核心实时信息</span>
+            </div>
           </div>
-          <div class="flex space-x-2">
+          <div class="grid grid-cols-3 gap-3.5">
             <button 
               @click="setFloatingMode('name')"
               :class="[
-                'flex-1 min-h-[58px] rounded-xl font-black text-[15.5px] border-2 cursor-pointer transition-all shadow-sm whitespace-nowrap',
+                'min-h-[66px] p-3 rounded-2xl font-black text-[16.5px] border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
                 store.deviceInfo.floating_display_mode === 'name' || (!store.deviceInfo.floating_display_mode)
                   ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
-                  : 'bg-car-card border-car-border text-car-sub'
+                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
               ]"
             >
               显示应用名
@@ -54,10 +65,10 @@
             <button 
               @click="setFloatingMode('code')"
               :class="[
-                'flex-1 min-h-[58px] rounded-xl font-black text-[15.5px] border-2 cursor-pointer transition-all shadow-sm whitespace-nowrap',
+                'min-h-[66px] p-3 rounded-2xl font-black text-[16.5px] border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
                 store.deviceInfo.floating_display_mode === 'code'
                   ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
-                  : 'bg-car-card border-car-border text-car-sub'
+                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
               ]"
             >
               显示动态暗码
@@ -65,10 +76,10 @@
             <button 
               @click="setFloatingMode('battery')"
               :class="[
-                'flex-1 min-h-[58px] rounded-xl font-black text-[15.5px] border-2 cursor-pointer transition-all shadow-sm whitespace-nowrap',
+                'min-h-[66px] p-3 rounded-2xl font-black text-[16.5px] border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
                 store.deviceInfo.floating_display_mode === 'battery'
                   ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
-                  : 'bg-car-card border-car-border text-car-sub'
+                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
               ]"
             >
               显示电瓶电压
@@ -209,51 +220,67 @@
         </div>
       </div>
 
-      <!-- 生效范围与验证 -->
-      <div class="mt-3 grid grid-cols-2 gap-4">
-        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
-          <div class="flex-1 min-w-0 pr-4 flex flex-col justify-center">
-            <div class="text-[17px] font-black text-car-text whitespace-nowrap">主页面限制模式</div>
-            <div class="text-[13px] text-car-sub font-bold mt-0.5 leading-normal">
-              仅在主页面（桌面）闲置时进入屏保；导航、音乐等应用中绝不打扰。
+      <!-- 生效范围与验证 (单列车规整行大卡片) -->
+      <div class="mt-4 flex flex-col space-y-4">
+        <!-- 主页面限制模式 -->
+        <div class="bg-car-item border-2 border-car-border rounded-2xl p-6 flex items-center justify-between shadow-sm">
+          <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
+            <div class="flex items-center space-x-3">
+              <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">主页面限制模式</span>
+              <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-card border-car-border text-car-accent inline-flex items-center shadow-sm">
+                前台避让
+              </span>
+            </div>
+            <div class="text-[15px] text-car-sub font-bold leading-relaxed">
+              仅在主页面（桌面）闲置时进入屏保；高德导航、音乐播放等应用在前台运行时绝不打扰。
             </div>
           </div>
-          <button
-            @click="toggleHomeOnly"
-            :class="[
-              'w-[160px] h-[64px] px-3 py-1.5 rounded-2xl border-2 font-black cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0',
-              ssHomeOnly
-                ? 'bg-car-item border-car-accent text-car-text'
-                : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-            ]"
-          >
-            <span class="text-[16px] font-black text-car-text tracking-wide whitespace-nowrap">
-              {{ ssHomeOnly ? '仅主页: 开启' : '任意界面: 放开' }}
-            </span>
-            <span :class="['text-[11.5px] font-bold mt-0.5 whitespace-nowrap', ssHomeOnly ? 'text-car-accent' : 'text-car-sub']">
-              {{ ssHomeOnly ? '应用中不打扰' : '点击限制桌面' }}
-            </span>
-          </button>
+          <div class="shrink-0 w-[230px]">
+            <button
+              @click="toggleHomeOnly"
+              :class="[
+                'w-full h-[78px] px-4 py-2 rounded-2xl border-2 font-black cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center',
+                ssHomeOnly
+                  ? 'bg-car-item border-car-accent text-car-text font-black'
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
+            >
+              <span class="text-[19px] font-black text-car-text tracking-wide whitespace-nowrap">
+                {{ ssHomeOnly ? '仅主页: 已开启' : '任意界面: 放开' }}
+              </span>
+              <span :class="['text-[13px] font-bold mt-1 whitespace-nowrap', ssHomeOnly ? 'text-car-accent' : 'text-car-sub']">
+                {{ ssHomeOnly ? '应用运行中不打扰' : '点击限制仅桌面' }}
+              </span>
+            </button>
+          </div>
         </div>
 
-        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
-          <div class="flex-1 min-w-0 pr-4 flex flex-col justify-center">
-            <div class="text-[17px] font-black text-car-text whitespace-nowrap">屏保效果即时验证</div>
-            <div class="text-[13px] text-car-sub font-bold mt-0.5 leading-normal">
-              下发底层屏保广播指令，无需等待闲置倒计时即可直接验证屏保效果。
+        <!-- 屏保即时验证 -->
+        <div class="bg-car-item border-2 border-car-border rounded-2xl p-6 flex items-center justify-between shadow-sm">
+          <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
+            <div class="flex items-center space-x-3">
+              <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">屏保效果即时验证</span>
+              <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-card border-car-border text-car-accent inline-flex items-center shadow-sm">
+                即时测试
+              </span>
+            </div>
+            <div class="text-[15px] text-car-sub font-bold leading-relaxed">
+              直接下发底层原生屏保广播，无需等待闲置倒计时即可直接验证屏幕保护效果与唤醒流程。
             </div>
           </div>
-          <button
-            @click="testScreensaver"
-            class="w-[160px] h-[64px] px-3 py-1.5 rounded-2xl border-2 border-car-border bg-car-card hover:border-car-accent text-car-text font-black cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0"
-          >
-            <span class="text-[16px] font-black text-car-text tracking-wide whitespace-nowrap">
-              立即测试屏保
-            </span>
-            <span class="text-[11.5px] font-bold mt-0.5 text-car-accent whitespace-nowrap">
-              即刻唤醒屏保 ➔
-            </span>
-          </button>
+          <div class="shrink-0 w-[230px]">
+            <button
+              @click="testScreensaver"
+              class="w-full h-[78px] px-4 py-2 rounded-2xl border-2 border-car-accent bg-car-card hover:bg-car-item text-car-text font-black cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center"
+            >
+              <span class="text-[19px] font-black text-car-text tracking-wide whitespace-nowrap">
+                立即测试屏保
+              </span>
+              <span class="text-[13px] font-bold mt-1 text-car-accent whitespace-nowrap">
+                即刻唤醒屏保 ➔
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 

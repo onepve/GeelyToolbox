@@ -2,7 +2,7 @@
   <div class="flex flex-col space-y-6">
     <!-- 实测机型声明 (OnePve 极简美学：日夜自适应高对比，告别眩光与日间隐形) -->
     <div class="bg-car-item border-2 border-car-border rounded-2xl p-5 flex items-center shadow-sm">
-      <span class="px-3 py-1.5 rounded-lg bg-car-accent/20 border border-car-accent text-car-accent font-black text-[15px] mr-4 shrink-0">
+      <span class="px-3.5 py-1.5 rounded-xl bg-car-card border-2 border-car-accent text-car-text font-black text-[15px] mr-4 shrink-0 shadow-sm">
         实测机型声明
       </span>
       <div class="text-[16px] text-car-text font-bold leading-relaxed">

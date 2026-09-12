@@ -121,7 +121,7 @@
           v-for="cmd in quickCmds" 
           :key="cmd"
           @click="inputCmd = cmd"
-          class="min-h-[46px] px-4 py-2 mr-2 mb-2 rounded-xl bg-car-item border border-car-border text-car-sub hover:text-car-text text-[15px] font-mono cursor-pointer hover:border-car-border-light font-bold"
+          class="min-h-[52px] px-5 py-2.5 mr-2.5 mb-2.5 rounded-2xl bg-car-item border border-car-border text-car-text hover:text-car-text text-[15.5px] font-mono cursor-pointer hover:border-car-accent font-bold"
         >
           {{ cmd }}
         </button>

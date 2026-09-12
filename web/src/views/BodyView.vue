@@ -194,7 +194,7 @@
         </div>
         <button
           @click="testCurrentChannelVoice"
-          class="h-[44px] px-5 rounded-xl border-2 border-car-accent bg-car-item text-car-text font-black text-[15px] cursor-pointer hover:border-car-accent shadow-sm flex items-center shrink-0"
+          class="h-[52px] px-6 rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md flex items-center shrink-0"
         >
           <span>试听当前通道</span>
         </button>

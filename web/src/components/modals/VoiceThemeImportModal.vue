@@ -20,7 +20,7 @@
         </div>
         <button 
           @click="scanZips"
-          class="h-[46px] px-5 rounded-xl bg-car-card border border-car-border text-car-text font-black text-[15px] cursor-pointer hover:border-car-border-light shadow-sm transition-all shrink-0"
+          class="h-[52px] px-6 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all shrink-0"
         >
           🔄 重新扫描
         </button>
@@ -50,7 +50,7 @@
             <div class="flex-1 min-w-0 pr-4 flex flex-col space-y-1">
               <div class="flex items-center space-x-2.5">
                 <span class="text-[18px] font-black text-car-text truncate">{{ zip.name }}</span>
-                <span class="px-2 py-0.5 rounded-md bg-car-accent/15 border border-car-accent/30 text-car-accent text-[12px] font-black shrink-0">ZIP 语音包</span>
+                <span class="px-2 py-0.5 rounded-md bg-car-item border border-car-accent text-car-accent text-[12px] font-black shrink-0">ZIP 语音包</span>
               </div>
               <span class="text-[13.5px] text-car-sub font-mono font-bold">
                 体积: {{ zip.size }} · 时间: {{ zip.time }}
@@ -59,7 +59,7 @@
 
             <button 
               @click="importZip(zip.name)"
-              class="h-[48px] px-6 bg-car-item border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md shrink-0 transition-all"
+              class="h-[52px] px-6 bg-car-item border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md shrink-0 transition-all"
             >
               📥 一键解压导入
             </button>
@@ -81,7 +81,7 @@
 
         <button 
           @click="openQrCodeModal"
-          class="h-[48px] px-6 bg-car-card border-2 border-car-border text-car-accent font-black text-[15.5px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm shrink-0 transition-all"
+          class="h-[52px] px-6 bg-car-card border-2 border-car-border text-car-accent font-black text-[16px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm shrink-0 transition-all"
         >
           📡 打开快传二维码
         </button>

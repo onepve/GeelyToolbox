@@ -873,13 +873,21 @@ public class VehicleAutomationService extends Service {
             overspeedStartMs = 0;
             overspeedWarned = false;
         }
+
+        // D挡起步联动 360 严格单次跃变状态机：切入D挡仅触发1次，锁死不循环调起；切出D挡重新武装
         if (gear == 2) {
-            boolean gearD360 = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
-                    .getBoolean("vehicle_gear_d_360_enabled", false);
-            if (gearD360 && currentSpeedKmH <= 30) {
-                AppLogger.i("车身联动", "【D挡起步联动360】挂入前进挡 D，秒级唤起 360 全景盲区影像");
-                open360Camera();
+            if (gearD360Armed) {
+                gearD360Armed = false; // 触发后立即闭锁，车主手动退出360绝不反复调起！
+                boolean gearD360 = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                        .getBoolean("vehicle_gear_d_360_enabled", false);
+                if (gearD360 && currentSpeedKmH <= 30) {
+                    AppLogger.i("车身联动", "【D挡起步联动360】挂入前进挡 D，秒级唤起 360 全景盲区影像 (单次跃变闭环)");
+                    open360Camera();
+                }
             }
+        } else {
+            // 只要不是 D 挡 (P/R/N)，重新恢复武装状态，等待下一次起步切入 D 挡
+            gearD360Armed = true;
         }
     }
 
@@ -1222,6 +1230,7 @@ public class VehicleAutomationService extends Service {
     // 车速与门控自动化中枢 (单次行程防抖闭环)
     // ==========================================
     private boolean speedAutoplayArmed = false;
+    private boolean gearD360Armed = true; // D挡起步360单次跃变武装锁 (离开D挡才复位，彻底根治手动退出后循环调起)
     private long overspeedStartMs = 0;
     private boolean overspeedWarned = false;
 

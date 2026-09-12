@@ -184,6 +184,8 @@ if os.path.exists(confirm_modal_path):
 # ----------------------------------------------------------------------
 log_step("5. Checking Cockpit Color, Contrast & Tombstone Aesthetics")
 tombstone_violations = []
+slash_opacity_violations = []
+white_bg_violations = []
 
 for root, _, files in os.walk(WEB_SRC_DIR):
     for fn in files:
@@ -191,15 +193,38 @@ for root, _, files in os.walk(WEB_SRC_DIR):
             fp = os.path.join(root, fn)
             with open(fp, "r", encoding="utf-8") as f:
                 for idx, line in enumerate(f):
+                    # 1. 丧葬墓碑纯白底座黑字检测
                     if ("<button" in line or "cursor-pointer" in line) and "bg-white" in line and "text-black" in line:
                         tombstone_violations.append((fn, idx + 1, line.strip()))
+                    
+                    # 2. Android 9 Chromium 68 塌陷为白底的现代 slash opacity 类检测 (bg-car-accent/xx)
+                    if "bg-car-accent/" in line and not line.strip().startswith("//") and not line.strip().startswith("<!--"):
+                        slash_opacity_violations.append((fn, idx + 1, line.strip()))
+
+                    # 3. 车载夜间深色模式下未经脱敏的刺眼纯白底座检测 (排除二维码与微信赞赏码实体卡片)
+                    if "bg-white" in line and not any(x in fn for x in ["QrCode", "Reward"]) and not line.strip().startswith("//") and not line.strip().startswith("<!--"):
+                        white_bg_violations.append((fn, idx + 1, line.strip()))
 
 if tombstone_violations:
     for v in tombstone_violations:
         print(f"  [FAIL] Tombstone pure-white button found at {v[0]}:{v[1]} -> {v[2]}")
     passed = False
 else:
-    print("[PASS] Zero tombstone (bg-white text-black) buttons found. All interactive buttons follow Obsidian/Halo Ring design.")
+    print("[PASS] Zero tombstone (bg-white text-black) buttons found.")
+
+if slash_opacity_violations:
+    for v in slash_opacity_violations:
+        print(f"  [FAIL] Chromium 68 white-background fallback hazard (bg-car-accent/xx) found at {v[0]}:{v[1]} -> {v[2]}")
+    passed = False
+else:
+    print("[PASS] Zero Chromium 68 slash opacity (bg-car-accent/xx) hazards found. All backgrounds are solid and immune to white fallback.")
+
+if white_bg_violations:
+    for v in white_bg_violations:
+        print(f"  [FAIL] Inappropriate pure-white background (bg-white) found at {v[0]}:{v[1]} -> {v[2]}")
+    passed = False
+else:
+    print("[PASS] Zero dazzling white backgrounds in cockpit UI. High-contrast Obsidian & Halo Ring strictly enforced.")
 
 
 # ----------------------------------------------------------------------
@@ -214,19 +239,23 @@ for root, _, files in os.walk(WEB_SRC_DIR):
             fp = os.path.join(root, fn)
             with open(fp, "r", encoding="utf-8") as f:
                 content = f.read()
-            # Check critical buttons for touch height: min-h / h >= 50px
+            # Check critical buttons for touch height: primary switch/action buttons must be >= 50px
             buttons = re.findall(r'<button([^>]+)>', content)
             for b in buttons:
+                # 排除状态栏顶部 TopBar 小药丸按钮
+                if "TopBar" in fn:
+                    continue
                 if 'class=' in b and 'h-[' in b:
                     h_m = re.search(r'h-\[(\d+)px\]', b)
-                    if h_m and int(h_m.group(1)) < 40:
-                        touch_violations.append((fn, b.strip()))
+                    if h_m and int(h_m.group(1)) < 50:
+                        touch_violations.append((fn, h_m.group(1), b.strip()))
 
 if touch_violations:
     for v in touch_violations:
-        print(f"  [WARN] Button height under 40px at {v[0]}: {v[1][:60]}")
+        print(f"  [FAIL] Primary vehicle button height under 50px ({v[1]}px) at {v[0]}: {v[2][:60]}")
+    passed = False
 else:
-    print("[PASS] All primary vehicle touch buttons satisfy car-grade touch sizing (>= 50px, primary tiles 80~88px).")
+    print("[PASS] All primary vehicle touch buttons satisfy car-grade touch sizing (>= 50px, primary tiles 78~88px).")
 
 
 # ----------------------------------------------------------------------

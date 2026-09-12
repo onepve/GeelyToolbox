@@ -72,7 +72,7 @@
           </span>
           <button 
             @click="checkBetaUpdateManually"
-            class="h-[44px] px-5 rounded-xl bg-car-item border-2 border-amber-500/50 text-amber-400 font-black text-[14.5px] cursor-pointer hover:bg-amber-500/20 transition-all shrink-0"
+            class="h-[52px] px-6 rounded-2xl bg-car-item border-2 border-car-accent text-car-text font-black text-[16px] cursor-pointer hover:bg-car-card transition-all shrink-0"
           >
             检查测试通道更新
           </button>
