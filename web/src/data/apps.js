@@ -64,15 +64,15 @@ export const CLOUD_APPS = [
     "category": "music",
     "badgeClass": "music",
     "badgeText": "方控",
-    "name": "CarMedia 车机媒体 1.3.3 (稳定推荐版)",
-    "badge": "方控切歌/开机自启",
-    "size": "749 KB",
-    "filename": "CarMedia_1.3.3.apk",
+    "name": "CarMedia 车机媒体 1.4.3 (全新双轨方控/支持U盘音乐最新版)",
+    "badge": "全新双轨方控/支持U盘音乐",
+    "size": "673 KB",
+    "filename": "CarMedia_1.4.3.apk",
     "package_name": "com.ecarx.carmedia",
-    "desc": "米小江出品，吉利车机专属方控媒体中心：方向盘物理按键切歌/播放暂停/自定义应用联动。",
-    "updated_at": "2026-08-23",
+    "desc": "米小江出品，吉利车机专属方控媒体中心：全新CarProperty直连+Logcat双轨监听，新增U盘离线音乐播放，开机自启、方向盘物理按键切歌/播放暂停/自定义应用联动。",
+    "updated_at": "2026-09-12",
     "status": "download",
-    "url": "https://dl.onepve.com/GeelyToolbox/CarMedia_1.3.3.apk"
+    "url": "https://dl.onepve.com/GeelyToolbox/CarMedia_1.4.3.apk"
   },
   {
     "id": "mediabridge",

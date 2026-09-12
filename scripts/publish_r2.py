@@ -128,7 +128,7 @@ def main():
                 "sha256": sha256,
                 "bytes": bytes_len,
                 "size": size_mb,
-                "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyPilot.apk?v={version_name}"
+                "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v={version_name}"
             })
             apps_data["toolbox"] = tb
             with open(apps_json_path, "w", encoding="utf-8") as f:
