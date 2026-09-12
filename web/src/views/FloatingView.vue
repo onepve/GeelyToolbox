@@ -4,18 +4,34 @@
     <FeatureCard 
       title="1. 全局桌面迷你悬浮胶囊 (实时状态与动态暗码)"
       desc="在车机桌面或其他应用上层常驻迷你流光胶囊，支持手指自由拖拽吸附，实时显示软件状态或今日动态工程暗码。"
+      helpTitle="【功能指南】桌面悬浮微胶囊运行机制"
+      helpText="1. 浮窗交互：&#10;在车机桌面或其他全屏应用上层常驻微型流光胶囊，支持手指自由拖拽并自动贴边吸附，点击胶囊秒开控制台。&#10;&#10;2. 三大显示模式：&#10;• 显示应用名：当前最上层前台运行的软件名称；&#10;• 显示动态暗码：直接在胶囊内展示今日工程模式暗码；&#10;• 显示电瓶电压：实时监测整车 12V 蓄电池电压与发电机发电状态。"
+      helpTip="建议将显示模式设为「显示电瓶电压」，可时刻掌握爱车电瓶健康状态，防亏电趴窝。"
     >
       <div class="grid grid-cols-2 gap-4">
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
-          <div class="mb-3">
-            <div class="text-[19px] font-black text-car-text">悬浮微胶囊总开关</div>
-            <div class="text-[15px] text-car-sub mt-1 font-bold">开启后在全屏最上层常驻微型胶囊，点击秒开工具箱</div>
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex-1 min-w-0 pr-5 flex flex-col justify-center">
+            <div class="text-[19px] font-black text-car-text whitespace-nowrap">悬浮微胶囊总开关</div>
+            <div class="text-[13.5px] text-car-sub font-bold mt-1 leading-normal">
+              在桌面及全屏应用上层常驻微型流光胶囊，支持自由拖拽吸附，点击秒开工具箱。
+            </div>
           </div>
-          <MatrixButton 
-            :title="store.deviceInfo.floating_enabled ? '已开启' : '已关闭'"
-            :active="store.deviceInfo.floating_enabled"
+          <button 
             @click="toggleFloatingWindow"
-          />
+            :class="[
+              'w-[170px] h-[74px] px-3 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0',
+              store.deviceInfo.floating_enabled
+                ? 'bg-car-item border-car-accent'
+                : 'bg-car-card border-car-border hover:border-car-border-light'
+            ]"
+          >
+            <span class="text-[17.5px] font-black text-car-text tracking-wide whitespace-nowrap">
+              {{ store.deviceInfo.floating_enabled ? '胶囊已常驻' : '胶囊已隐藏' }}
+            </span>
+            <span :class="['text-[12px] font-bold mt-1 whitespace-nowrap', store.deviceInfo.floating_enabled ? 'text-car-accent' : 'text-car-sub']">
+              {{ store.deviceInfo.floating_enabled ? '点击关闭胶囊' : '点击开启悬浮' }}
+            </span>
+          </button>
         </div>
 
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
@@ -70,6 +86,13 @@
           <div class="flex items-center space-x-3">
             <span class="w-3.5 h-3.5 rounded-full shadow-md shrink-0 bg-car-accent"></span>
             <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">2. 闲置自动屏保 (息屏休眠)</span>
+            <button
+              @click="openScreensaverHelp"
+              class="w-7 h-7 rounded-full bg-car-item border border-car-border text-car-accent hover:border-car-accent hover:bg-car-card font-black text-[15px] flex items-center justify-center cursor-pointer transition-all shadow-sm shrink-0 select-none"
+              title="查看自动屏保核心原理"
+            >
+              ?
+            </button>
             <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
               <span class="w-2.5 h-2.5 rounded-full mr-2" :class="ssStatusDot"></span>{{ ssStatusText }}
             </span>
@@ -187,25 +210,51 @@
       </div>
 
       <!-- 生效范围与验证 -->
-      <div class="mt-3 flex items-center justify-between">
-        <button
-          @click="toggleHomeOnly"
-          :class="[
-            'min-h-[54px] px-5 rounded-2xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm whitespace-nowrap',
-            ssHomeOnly
-              ? 'bg-car-item border-car-accent text-car-text'
-              : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-          ]"
-        >
-          {{ ssHomeOnly ? '仅在主页面生效: 已开启' : '仅在主页面生效: 已关闭 (任意界面)' }}
-        </button>
+      <div class="mt-3 grid grid-cols-2 gap-4">
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
+          <div class="flex-1 min-w-0 pr-4 flex flex-col justify-center">
+            <div class="text-[17px] font-black text-car-text whitespace-nowrap">主页面限制模式</div>
+            <div class="text-[13px] text-car-sub font-bold mt-0.5 leading-normal">
+              仅在主页面（桌面）闲置时进入屏保；导航、音乐等应用中绝不打扰。
+            </div>
+          </div>
+          <button
+            @click="toggleHomeOnly"
+            :class="[
+              'w-[160px] h-[64px] px-3 py-1.5 rounded-2xl border-2 font-black cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0',
+              ssHomeOnly
+                ? 'bg-car-item border-car-accent text-car-text'
+                : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+            ]"
+          >
+            <span class="text-[16px] font-black text-car-text tracking-wide whitespace-nowrap">
+              {{ ssHomeOnly ? '仅主页: 开启' : '任意界面: 放开' }}
+            </span>
+            <span :class="['text-[11.5px] font-bold mt-0.5 whitespace-nowrap', ssHomeOnly ? 'text-car-accent' : 'text-car-sub']">
+              {{ ssHomeOnly ? '应用中不打扰' : '点击限制桌面' }}
+            </span>
+          </button>
+        </div>
 
-        <button
-          @click="testScreensaver"
-          class="shrink-0 min-h-[54px] px-6 rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light transition-all shadow-sm whitespace-nowrap"
-        >
-          立即测试一次屏保
-        </button>
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
+          <div class="flex-1 min-w-0 pr-4 flex flex-col justify-center">
+            <div class="text-[17px] font-black text-car-text whitespace-nowrap">屏保效果即时验证</div>
+            <div class="text-[13px] text-car-sub font-bold mt-0.5 leading-normal">
+              下发底层屏保广播指令，无需等待闲置倒计时即可直接验证屏保效果。
+            </div>
+          </div>
+          <button
+            @click="testScreensaver"
+            class="w-[160px] h-[64px] px-3 py-1.5 rounded-2xl border-2 border-car-border bg-car-card hover:border-car-accent text-car-text font-black cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0"
+          >
+            <span class="text-[16px] font-black text-car-text tracking-wide whitespace-nowrap">
+              立即测试屏保
+            </span>
+            <span class="text-[11.5px] font-bold mt-0.5 text-car-accent whitespace-nowrap">
+              即刻唤醒屏保 ➔
+            </span>
+          </button>
+        </div>
       </div>
 
       <!-- 实时诊断信息 -->
@@ -217,86 +266,24 @@
         <div v-if="ssFailReason" class="text-amber-400">通道A提示：{{ ssFailReason }}</div>
       </div>
     </div>
-
-    <!-- 3. 今日工程动态暗码大卡片 -->
-    <FeatureCard 
-      title="3. 今日动态工程暗码 (免剪贴板 · 物理大字号直显)"
-      desc="根据车载系统时钟每秒自动计算，直出高亮暗码。车机拨号界面不支持粘贴，请点击按钮打开拨号盘手动按键输入。"
-    >
-      <div class="grid grid-cols-2 gap-4">
-        <!-- 主流+5暗码 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
-          <div>
-            <div class="text-[15px] font-bold text-car-sub">主流新固件 (月份+5 算法)</div>
-            <div class="text-[28px] font-black text-car-accent mt-1 tracking-wider">
-              {{ store.dynamicCodePlus5 }}
-            </div>
-            <div class="text-[13px] text-car-sub mt-1">适用于绝大多数 2022~2024 款吉利车机</div>
-          </div>
-          <button 
-            @click="openDialer"
-            class="h-[58px] px-6 rounded-2xl bg-car-card border-2 border-car-accent text-car-accent hover:bg-car-item font-black text-[17px] cursor-pointer shadow-md transition-all whitespace-nowrap"
-          >
-            📞 打开拨号盘
-          </button>
-        </div>
-
-        <!-- 老固件+10暗码 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
-          <div>
-            <div class="text-[15px] font-bold text-car-sub">早期老版固件 (月份+10 算法)</div>
-            <div class="text-[28px] font-black text-car-text mt-1 tracking-wider">
-              {{ store.dynamicCode }}
-            </div>
-            <div class="text-[13px] text-car-sub mt-1">若加 5 暗码提示错误，请尝试此备选暗码</div>
-          </div>
-          <button 
-            @click="openDialer"
-            class="h-[58px] px-6 rounded-2xl bg-car-card border-2 border-car-border text-car-text hover:border-car-border-light font-black text-[17px] cursor-pointer shadow-md transition-all whitespace-nowrap"
-          >
-            📞 打开拨号盘
-          </button>
-        </div>
-      </div>
-    </FeatureCard>
-
-    <!-- 4. 工具箱开机自启动与后台常驻 -->
-    <FeatureCard 
-      title="4. 工具箱开机自启动与后台守护"
-      desc="控制车机上电开机后是否在后台静默运行工具箱。独立生效，不影响底层车身硬件监听。"
-    >
-      <div class="grid grid-cols-2 gap-4">
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
-          <div class="mb-3">
-            <div class="text-[19px] font-black text-car-text">开机自启静默守护</div>
-            <div class="text-[15px] text-car-sub mt-1 font-bold">系统完全开机后自动拉起后台服务并展示桌面胶囊</div>
-          </div>
-          <MatrixButton 
-            :title="store.deviceInfo.autostart ? '已开启' : '已关闭'"
-            :active="store.deviceInfo.autostart"
-            @click="toggleAutostart"
-          />
-        </div>
-
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
-          <div class="mb-3">
-            <div class="text-[19px] font-black text-car-text">自启状态说明</div>
-            <div class="text-[15px] text-car-sub mt-1 font-bold">如需保持悬浮窗常驻，建议保持开启</div>
-          </div>
-          <div class="p-3 bg-car-card border border-car-border rounded-xl text-[14px] text-car-sub font-bold leading-relaxed">
-            工具箱采用轻量级前台守护进程，开机自启内存占用低于 15MB，零唤醒锁，对车机性能与蓄电池 0 损耗。
-          </div>
-        </div>
-      </div>
-    </FeatureCard>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { store, bridge, showToast } from '../store';
+import { store, bridge, showToast, openModal } from '../store';
 import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
+
+function openScreensaverHelp() {
+  openModal('confirm', {
+    title: '【功能指南】闲置自动屏保与前台主页感知',
+    desc: '1. 原生 Service 调用：\n无需通过 ADB 命令强行熄屏，直接调用车载原生屏保服务，纯净稳定。\n\n2. 5 档快捷车规时限：\n精准收敛至 3秒 ~ 3分钟（5秒、15秒、30秒、1分钟、3分钟）及永不进入，杜绝原厂过长等待。\n\n3. 主页面保护模式：\n仅在停留在车机主页面（桌面）闲置时才触发屏保；在导航、音乐、微信等应用前台运行时绝不打扰。',
+    tip: '需要授予一次「使用情况访问权限」，授权永久生效，仅本机读取，不联网、不上传任何数据。',
+    showCancel: false,
+    confirmText: '我知道了'
+  });
+}
 
 // ==================== 1. 桌面悬浮胶囊 ====================
 function toggleFloatingWindow() {
@@ -310,17 +297,6 @@ function setFloatingMode(mode) {
   store.deviceInfo.floating_display_mode = mode;
   bridge.call('setFloatingDisplayMode', mode);
   showToast('显示模式已切换');
-}
-
-function openDialer() {
-  bridge.call('openDialer');
-}
-
-function toggleAutostart() {
-  const next = !store.deviceInfo.autostart;
-  store.deviceInfo.autostart = next;
-  bridge.call('setAutostartEnabled', next);
-  showToast('开机自启动已' + (next ? '开启' : '关闭'));
 }
 
 // ==================== 2. 闲置自动屏保 ====================

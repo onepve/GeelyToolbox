@@ -1,181 +1,64 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 实时车身物理信号探针 (支持折叠·默认收起) -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-4 shadow-xl">
-      <div class="flex items-center justify-between" :class="isProbeExpanded ? 'pb-3 mb-3 border-b border-car-border/60' : ''">
-        <div class="flex items-center space-x-2.5">
-          <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10B981]"></span>
-          <span class="text-[18px] font-black text-car-text whitespace-nowrap">车身全域物理信号实时探针</span>
-          <!-- 折叠状态下的微型读数胶囊 -->
-          <span v-if="!isProbeExpanded" class="text-[13px] px-3 py-1 rounded-xl bg-car-item border border-car-border text-car-accent font-bold whitespace-nowrap">
-            {{ doorStatus.gear_name || 'P挡' }} · {{ doorStatus.mode_name || '模式直通' }} · {{ doorStatus.speed !== undefined ? doorStatus.speed : 0 }} km/h
-          </span>
-        </div>
-        <div class="flex items-center space-x-3">
-          <span v-if="isProbeExpanded" class="text-[13px] text-car-sub font-bold whitespace-nowrap">
-            四门、尾门、换挡、模式与车速信号全量实时监听
-          </span>
-          <button 
-            @click="isProbeExpanded = !isProbeExpanded"
-            class="px-4 py-1.5 rounded-xl bg-car-item border border-car-border hover:border-car-accent text-car-text font-bold text-[13.5px] transition-all whitespace-nowrap"
-          >
-            {{ isProbeExpanded ? '收起探针 ▲' : '展开实时探针 (实车调试) ▼' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- 展开后的探针内容 -->
-      <div v-if="isProbeExpanded" class="flex flex-col space-y-3">
-        <!-- 第一排：四门与电动尾门 -->
-        <div class="grid grid-cols-5 gap-3">
-          <!-- 主驾门 -->
-          <div 
-            :class="[
-              'p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
-              doorStatus.fl === 1 
-                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
-                : 'bg-car-item border-car-border text-car-sub'
-            ]"
-          >
-            <span class="text-[13px] font-bold whitespace-nowrap">主驾车门 (FL)</span>
-            <span class="text-[16px] font-black mt-1 whitespace-nowrap">
-              {{ doorStatus.fl === 1 ? '● 物理打开' : (doorStatus.fl === 0 ? '○ 已关好' : '采集中...') }}
-            </span>
-          </div>
-
-          <!-- 副驾门 -->
-          <div 
-            :class="[
-              'p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
-              doorStatus.fr === 1 
-                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
-                : 'bg-car-item border-car-border text-car-sub'
-            ]"
-          >
-            <span class="text-[13px] font-bold whitespace-nowrap">副驾车门 (FR)</span>
-            <span class="text-[16px] font-black mt-1 whitespace-nowrap">
-              {{ doorStatus.fr === 1 ? '● 物理打开' : (doorStatus.fr === 0 ? '○ 已关好' : '采集中...') }}
-            </span>
-          </div>
-
-          <!-- 左后门 -->
-          <div 
-            :class="[
-              'p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
-              doorStatus.rl === 1 
-                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
-                : 'bg-car-item border-car-border text-car-sub'
-            ]"
-          >
-            <span class="text-[13px] font-bold whitespace-nowrap">左后车门 (RL)</span>
-            <span class="text-[16px] font-black mt-1 whitespace-nowrap">
-              {{ doorStatus.rl === 1 ? '● 物理打开' : (doorStatus.rl === 0 ? '○ 已关好' : '采集中...') }}
-            </span>
-          </div>
-
-          <!-- 右后门 -->
-          <div 
-            :class="[
-              'p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
-              doorStatus.rr === 1 
-                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
-                : 'bg-car-item border-car-border text-car-sub'
-            ]"
-          >
-            <span class="text-[13px] font-bold whitespace-nowrap">右后车门 (RR)</span>
-            <span class="text-[16px] font-black mt-1 whitespace-nowrap">
-              {{ doorStatus.rr === 1 ? '● 物理打开' : (doorStatus.rr === 0 ? '○ 已关好' : '采集中...') }}
-            </span>
-          </div>
-
-          <!-- 电动尾门 -->
-          <div 
-            :class="[
-              'p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all',
-              doorStatus.trunk === 1 
-                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 ring-2 ring-emerald-500/30 shadow-md' 
-                : 'bg-car-item border-car-border text-car-sub'
-            ]"
-          >
-            <span class="text-[13px] font-bold whitespace-nowrap">电动尾门 (Trunk)</span>
-            <span class="text-[16px] font-black mt-1 whitespace-nowrap">
-              {{ doorStatus.trunk === 1 ? '● 升起打开' : (doorStatus.trunk === 0 ? '○ 已锁止' : '采集中...') }}
-            </span>
-          </div>
-        </div>
-
-        <!-- 第二排：挡位、驾驶模式与实时车速 -->
-        <div class="grid grid-cols-3 gap-3">
-          <!-- 挡位状态 -->
-          <div class="p-3 rounded-2xl bg-car-item border-2 border-car-border flex items-center justify-between">
-            <div>
-              <div class="text-[13px] font-bold text-car-sub whitespace-nowrap">实时挡位状态 (Gear)</div>
-              <div class="text-[17px] font-black text-car-text mt-0.5 whitespace-nowrap">
-                {{ doorStatus.gear_name || '采集中...' }}
-              </div>
-            </div>
-            <span class="px-2.5 py-1 text-[12px] font-extrabold rounded-lg bg-car-card border border-car-border text-car-sub whitespace-nowrap">
-              实时监听中
-            </span>
-          </div>
-
-          <!-- 驾驶模式 -->
-          <div class="p-3 rounded-2xl bg-car-item border-2 border-car-border flex items-center justify-between">
-            <div>
-              <div class="text-[13px] font-bold text-car-sub whitespace-nowrap">实时驾驶模式 (DriveMode)</div>
-              <div class="text-[17px] font-black text-car-accent mt-0.5 whitespace-nowrap">
-                {{ doorStatus.mode_name || '采集中...' }}
-              </div>
-            </div>
-            <span class="px-2.5 py-1 text-[12px] font-extrabold rounded-lg bg-car-card border border-car-border text-car-sub whitespace-nowrap">
-              原厂模式直通
-            </span>
-          </div>
-
-          <!-- 实时车速 -->
-          <div class="p-3 rounded-2xl bg-car-item border-2 border-car-border flex items-center justify-between">
-            <div>
-              <div class="text-[13px] font-bold text-car-sub whitespace-nowrap">实时车速 (Speed)</div>
-              <div class="text-[17px] font-black text-car-text mt-0.5 whitespace-nowrap">
-                {{ doorStatus.speed !== undefined ? doorStatus.speed + ' km/h' : '采集中...' }}
-              </div>
-            </div>
-            <span class="px-2.5 py-1 text-[12px] font-extrabold rounded-lg bg-car-card border border-car-border text-car-sub whitespace-nowrap">
-              ≤30km/h 盲区保护
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- 1. 转向灯与 D 挡起步 360 全景联动 -->
     <FeatureCard 
       title="1. 转向灯与 D 挡起步 360 全景盲区联动"
       desc="原厂 360 环视核心状态机毫秒级联动；内置车速 ≤30km/h 安全阈值保护，高速巡航变道自动静默抑制。"
+      helpTitle="【功能指南】360 全景盲区联动原理与安全阈值"
+      helpText="1. 转向灯联动原理：&#10;监听底层原厂 AVM 环视状态机与转向拨杆电平（turnLight=1 左转 / 2 右转 / 0 复位）。打起转向灯毫秒级拉起 360 盲区影像；方向盘回正后自动平滑关闭。&#10;&#10;2. D 挡起步联动原理：&#10;从驻车 P 挡切入前进 D 挡瞬间，自动唤醒 360 盲区画面，便于起步前环视车身四周障碍物，车速超过 15km/h 后自动退出。&#10;&#10;3. 车速 ≤30km/h 抑制保护：&#10;为防止高速公路或城市快速路巡航打转向灯变道时频繁跳出全景画面遮挡高德地图导航，内置了 30km/h 车速硬门槛；时速高于 30km/h 时转向灯联动自动静默。"
+      helpTip="建议转向灯联动保持开启，D 挡起步联动根据个人泊车习惯按需选择。"
     >
       <div class="grid grid-cols-2 gap-4">
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
-          <div class="mb-3">
+        <!-- 转向灯 360 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex-1 min-w-0 pr-5 flex flex-col justify-center">
             <div class="text-[19px] font-black text-car-text whitespace-nowrap">转向灯联动 360 全景</div>
-            <div class="text-[14.5px] text-car-sub mt-1 font-bold whitespace-nowrap">打起转向灯秒开盲区画面，回正自动退出</div>
+            <div class="text-[13.5px] text-car-sub font-bold mt-1 leading-normal">
+              打起转向灯秒开盲区画面，方向盘回正自动退出；内置车速 ≤30km/h 安全阈值保护。
+            </div>
           </div>
-          <MatrixButton 
-            :title="store.vehicleAuto.vehicle_turn_360_enabled ? '已开启' : '已关闭'"
-            :active="store.vehicleAuto.vehicle_turn_360_enabled"
+          <button 
             @click="toggleSetting('vehicle_turn_360_enabled')"
-          />
+            :class="[
+              'w-[170px] h-[74px] px-3 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0',
+              store.vehicleAuto.vehicle_turn_360_enabled
+                ? 'bg-car-item border-car-accent'
+                : 'bg-car-card border-car-border hover:border-car-border-light'
+            ]"
+          >
+            <span class="text-[17.5px] font-black text-car-text tracking-wide whitespace-nowrap">
+              {{ store.vehicleAuto.vehicle_turn_360_enabled ? '360联动已开启' : '360联动已关闭' }}
+            </span>
+            <span :class="['text-[12px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.vehicle_turn_360_enabled ? 'text-car-accent' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_turn_360_enabled ? '点击关闭联动' : '点击开启盲区' }}
+            </span>
+          </button>
         </div>
 
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
-          <div class="mb-3">
+        <!-- D 挡起步 360 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex-1 min-w-0 pr-5 flex flex-col justify-center">
             <div class="text-[19px] font-black text-car-text whitespace-nowrap">D 挡起步联动 360 全景</div>
-            <div class="text-[14.5px] text-car-sub mt-1 font-bold whitespace-nowrap">挂入前进挡秒开全景看盲区，起步后自动退出</div>
+            <div class="text-[13.5px] text-car-sub font-bold mt-1 leading-normal">
+              挂入前进挡秒开全景看盲区，起步或车速超限自动退出，起步观察更安全。
+            </div>
           </div>
-          <MatrixButton 
-            :title="store.vehicleAuto.vehicle_gear_d_360_enabled ? '已开启' : '已关闭'"
-            :active="store.vehicleAuto.vehicle_gear_d_360_enabled"
+          <button 
             @click="toggleSetting('vehicle_gear_d_360_enabled')"
-          />
+            :class="[
+              'w-[170px] h-[74px] px-3 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0',
+              store.vehicleAuto.vehicle_gear_d_360_enabled
+                ? 'bg-car-item border-car-accent'
+                : 'bg-car-card border-car-border hover:border-car-border-light'
+            ]"
+          >
+            <span class="text-[17.5px] font-black text-car-text tracking-wide whitespace-nowrap">
+              {{ store.vehicleAuto.vehicle_gear_d_360_enabled ? 'D挡360已开启' : 'D挡360已关闭' }}
+            </span>
+            <span :class="['text-[12px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.vehicle_gear_d_360_enabled ? 'text-car-accent' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_gear_d_360_enabled ? '点击关闭联动' : '点击开启全景' }}
+            </span>
+          </button>
         </div>
       </div>
     </FeatureCard>
@@ -184,6 +67,9 @@
     <FeatureCard 
       title="2. 车速联动与起步多媒体智能启播"
       desc="挂 D 挡出发达到设定时速，自动起播自选音乐 App。内置单次行程防抖闭环，等红绿灯不重复触发；若车主已在放歌则静默放行。"
+      helpTitle="【功能指南】车速自启多媒体与单次行程防抖闭环"
+      helpText="1. 车速自启逻辑：&#10;车辆点火出库挂入 D 挡起步，车速达到设定阈值（推荐 20 km/h）时，后台自动向目标音乐软件发送播放指令，上车无需再手动翻点屏幕放歌。&#10;&#10;2. 单次行程防抖状态机：&#10;吸取 Tasker 状态机精髓并进行了原生重构。单次行程中达到速度仅触发一次播放指令，随后状态机自动锁定；路上遇到红绿灯、堵车起步绝不重复拉起应用或重复切歌。只有车辆停稳并挂回 P 挡后才会重新复位待命。&#10;&#10;3. 已有播放智能避让：&#10;达到速度时底层会先探查全局 AudioFocus 音频焦点与 MediaSession 状态。若车主在上车前就已经在放歌，系统会静默放行，绝不粗暴打断现有歌曲。"
+      helpTip="推荐阈值设为 20 km/h，并选择「后台静默放歌」，可在不打扰高德全屏导航的同时畅听音乐。"
     >
       <template #badge>
         <span class="text-[14.5px] font-black text-car-accent px-3 py-1 bg-car-item rounded-xl border border-car-border whitespace-nowrap">
@@ -193,22 +79,31 @@
 
       <div class="flex flex-col space-y-4">
         <!-- 总开关与启播模式行 -->
-        <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border border-car-border">
-          <div class="flex flex-col space-y-1">
-            <div class="flex items-center space-x-2">
-              <span class="text-[17px] font-black text-car-title whitespace-nowrap">车速自动启播总开关</span>
-              <span class="text-[12px] px-2 py-0.5 rounded bg-car-accent/15 text-car-accent font-bold whitespace-nowrap">单次行程防抖</span>
+        <div class="flex items-center justify-between p-5 rounded-2xl bg-car-item border border-car-border shadow-sm">
+          <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-[19px] font-black text-car-text whitespace-nowrap">车速自动启播总开关</span>
+              <span class="text-[12.5px] px-2.5 py-0.5 rounded-full border bg-car-card border-car-border text-car-accent font-bold whitespace-nowrap">单次行程防抖</span>
             </div>
-            <span class="text-[13px] text-car-sub font-bold whitespace-nowrap">
-              点火出 P 挡起步达到设定车速触发 1 次；停车回 P 挡归零重置。
-            </span>
+            <div class="text-[14px] text-car-sub font-bold leading-normal">
+              点火出 P 挡起步达到设定车速触发 1 次；等红绿灯不重复放歌；停车回 P 挡归零重置。若车主上车已在放歌则静默放行。
+            </div>
           </div>
           <button 
             @click="toggleSetting('vehicle_speed_autoplay_enabled')" 
-            class="px-5 py-2 rounded-xl text-[14px] font-black border transition-colors whitespace-nowrap"
-            :class="store.vehicleAuto.vehicle_speed_autoplay_enabled ? 'bg-car-accent/20 border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'"
+            :class="[
+              'w-[190px] h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0',
+              store.vehicleAuto.vehicle_speed_autoplay_enabled
+                ? 'bg-car-item border-car-accent'
+                : 'bg-car-card border-car-border hover:border-car-border-light'
+            ]"
           >
-            {{ store.vehicleAuto.vehicle_speed_autoplay_enabled ? '已开启' : '已关闭 (默认)' }}
+            <span class="text-[18px] font-black text-car-text tracking-wide whitespace-nowrap">
+              {{ store.vehicleAuto.vehicle_speed_autoplay_enabled ? '车速自启已开启' : '车速自启已关闭' }}
+            </span>
+            <span :class="['text-[12px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.vehicle_speed_autoplay_enabled ? 'text-car-accent' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_speed_autoplay_enabled ? '起步达到时速自启' : '点击开启自启动' }}
+            </span>
           </button>
         </div>
 
@@ -308,6 +203,9 @@
     <FeatureCard 
       title="3. 行车车速超限安全语音提醒"
       desc="车速达到设定限速红线并持续超过 3 秒，媒体声道短促温润提醒一次，防城市高架与高速超速罚单。车速回落后自动重新武装。"
+      helpTitle="【功能指南】行车超速提醒与自动重新武装机制"
+      helpText="1. 判定逻辑：&#10;底层持续监听仪表实时时速。当车速达到你设定的红线（80 / 100 / 120 km/h）且连续超速超过 3 秒时，通过媒体声道进行一次温润知性的晓晓原声播报：“当前车速已超限，请减速慢行”。&#10;&#10;2. 防疲劳重新武装：&#10;为防止超速时语音连续轰炸打扰驾驶，每次播报后会自动锁定；只有当车速充分回落至红线下方 5 km/h（如 80 回落至 75）后，状态机才会重新武装，为下一次超速做好预警。"
+      helpTip="城市高架道路推荐设定为 80 km/h，高速巡航推荐设定为 120 km/h。"
     >
       <template #badge>
         <span class="text-[14.5px] font-black text-car-accent px-3 py-1 bg-car-item rounded-xl border border-car-border whitespace-nowrap">
@@ -317,19 +215,31 @@
 
       <div class="flex flex-col space-y-4">
         <!-- 总开关 -->
-        <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border border-car-border">
-          <div class="flex flex-col space-y-1">
-            <span class="text-[17px] font-black text-car-title whitespace-nowrap">行车超速播报提醒总开关</span>
-            <span class="text-[13px] text-car-sub font-bold whitespace-nowrap">
-              点火行车中连续超速 3 秒播报“当前车速已超限，请减速慢行”；低于阈值 5km/h 自动复位。
-            </span>
+        <div class="flex items-center justify-between p-5 rounded-2xl bg-car-item border border-car-border shadow-sm">
+          <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-[19px] font-black text-car-text whitespace-nowrap">行车超速播报提醒总开关</span>
+              <span class="text-[12.5px] px-2.5 py-0.5 rounded-full border bg-car-card border-car-border text-car-accent font-bold whitespace-nowrap">安全防御</span>
+            </div>
+            <div class="text-[14px] text-car-sub font-bold leading-normal">
+              点火行车中连续超速 3 秒播报“当前车速已超限，请减速慢行”；车速回落 5km/h 自动重新武装，有效防城市高架与高速罚单。
+            </div>
           </div>
           <button 
             @click="toggleSetting('vehicle_overspeed_voice_enabled')" 
-            class="px-5 py-2 rounded-xl text-[14px] font-black border transition-colors whitespace-nowrap"
-            :class="store.vehicleAuto.vehicle_overspeed_voice_enabled ? 'bg-car-accent/20 border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'"
+            :class="[
+              'w-[190px] h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0',
+              store.vehicleAuto.vehicle_overspeed_voice_enabled
+                ? 'bg-car-item border-car-accent'
+                : 'bg-car-card border-car-border hover:border-car-border-light'
+            ]"
           >
-            {{ store.vehicleAuto.vehicle_overspeed_voice_enabled ? '已开启' : '已关闭 (默认)' }}
+            <span class="text-[18px] font-black text-car-text tracking-wide whitespace-nowrap">
+              {{ store.vehicleAuto.vehicle_overspeed_voice_enabled ? '超速提醒已开启' : '超速提醒已关闭' }}
+            </span>
+            <span :class="['text-[12px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.vehicle_overspeed_voice_enabled ? 'text-car-accent' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_overspeed_voice_enabled ? '超出红线温润播报' : '点击开启安全提醒' }}
+            </span>
           </button>
         </div>
 
@@ -361,32 +271,61 @@
     <FeatureCard 
       title="4. 进出隧道大灯日夜与护眼背光联动"
       desc="破译原厂大灯信号；白天开大灯（进隧道或天黑）不仅联动高德切深色夜间地图，还可平滑微调中控背光防眩目，出隧道自动恢复。"
+      helpTitle="【功能指南】进出隧道大灯与中控背光护眼原理"
+      helpText="1. 破译原厂大灯信号：&#10;实时监听原厂车身大灯电平。白天驾车进出隧道或进出地下车库开大灯时，毫秒级捕获大灯点亮信号。&#10;&#10;2. 高德深色底图联动：&#10;开大灯时向高德地图发送夜间深色模式选通，出隧道关大灯时自动恢复白天浅色地图，告别刺眼白底。&#10;&#10;3. 护眼背光微调：&#10;开大灯后自动将车机中控屏幕亮度微调压低至 35%，消除进隧道瞬间强光眩目；出隧道关大灯后秒级恢复你原本的屏幕亮度。"
+      helpTip="两个子功能均带独立开关，互不冲突，常走高架隧道的车友建议开启。"
     >
       <div class="grid grid-cols-2 gap-4">
         <!-- 子功能 A: 高德日夜地图 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
-          <div class="mb-3">
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex-1 min-w-0 pr-5 flex flex-col justify-center">
             <div class="text-[19px] font-black text-car-text whitespace-nowrap">大灯联动高德日夜模式</div>
-            <div class="text-[14px] text-car-sub mt-1 font-bold whitespace-nowrap">进出隧道与黑夜自动切换高德深色底图</div>
+            <div class="text-[13.5px] text-car-sub font-bold mt-1 leading-normal">
+              进出隧道与天黑自动切换高德深色夜间地图底图，出隧道恢复浅色模式。
+            </div>
           </div>
-          <MatrixButton 
-            :title="store.vehicleAuto.vehicle_light_nav_enabled ? '已开启' : '已关闭'"
-            :active="store.vehicleAuto.vehicle_light_nav_enabled"
+          <button 
             @click="toggleSetting('vehicle_light_nav_enabled')"
-          />
+            :class="[
+              'w-[170px] h-[74px] px-3 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0',
+              store.vehicleAuto.vehicle_light_nav_enabled
+                ? 'bg-car-item border-car-accent'
+                : 'bg-car-card border-car-border hover:border-car-border-light'
+            ]"
+          >
+            <span class="text-[17.5px] font-black text-car-text tracking-wide whitespace-nowrap">
+              {{ store.vehicleAuto.vehicle_light_nav_enabled ? '地图夜间已开启' : '地图夜间已关闭' }}
+            </span>
+            <span :class="['text-[12px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.vehicle_light_nav_enabled ? 'text-car-accent' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_light_nav_enabled ? '开大灯切夜色' : '点击开启深色底图' }}
+            </span>
+          </button>
         </div>
 
         <!-- 子功能 B: 隧道屏幕背光微调 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
-          <div class="mb-3">
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex-1 min-w-0 pr-5 flex flex-col justify-center">
             <div class="text-[19px] font-black text-car-text whitespace-nowrap">进隧道中控护眼背光微调</div>
-            <div class="text-[14px] text-car-sub mt-1 font-bold whitespace-nowrap">开大灯自动压低中控背光至 35%，出隧道恢复</div>
+            <div class="text-[13.5px] text-car-sub font-bold mt-1 leading-normal">
+              白天开大灯自动压低中控背光至 35% 防眩目刺眼，出隧道秒级恢复原亮度。
+            </div>
           </div>
-          <MatrixButton 
-            :title="store.vehicleAuto.vehicle_light_brightness_dim_enabled ? '已开启' : '已关闭'"
-            :active="store.vehicleAuto.vehicle_light_brightness_dim_enabled"
+          <button 
             @click="toggleSetting('vehicle_light_brightness_dim_enabled')"
-          />
+            :class="[
+              'w-[170px] h-[74px] px-3 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0',
+              store.vehicleAuto.vehicle_light_brightness_dim_enabled
+                ? 'bg-car-item border-car-accent'
+                : 'bg-car-card border-car-border hover:border-car-border-light'
+            ]"
+          >
+            <span class="text-[17.5px] font-black text-car-text tracking-wide whitespace-nowrap">
+              {{ store.vehicleAuto.vehicle_light_brightness_dim_enabled ? '护眼微调已开启' : '护眼微调已关闭' }}
+            </span>
+            <span :class="['text-[12px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.vehicle_light_brightness_dim_enabled ? 'text-car-accent' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_light_brightness_dim_enabled ? '进隧道平滑压暗' : '点击开启护眼背光' }}
+            </span>
+          </button>
         </div>
       </div>
     </FeatureCard>
@@ -395,60 +334,56 @@
     <FeatureCard 
       title="5. 停车开门多媒体优雅静音联动"
       desc="挂入 P 挡停稳推开前门，毫秒级自动暂停当前多媒体播放，保持下车从容安静。（注：四门安全播报与有人感知由【座舱语音】专属中枢统一接管，零冲突零重复）"
+      helpTitle="【功能指南】P 挡开门音乐暂停与座舱语音职责划分"
+      helpText="1. 停稳下车优雅静音：&#10;当车辆挂入驻车 P 挡并推开前门时，底层自动向正在播放的音乐软件发送 MEDIA_PAUSE 暂停指令。到达目的地停稳开门，音乐戛然而止，下车从容安静，杜绝开门大声喧哗。&#10;&#10;2. 职责解耦与零冲突设计：&#10;车门开闭的语音提醒（如“车门已打开”、“请注意后方来车”）全部由【座舱语音】专职中枢管理；【车身联动】只负责物理动作（暂停音乐），彻底根绝两个模块发声打架的问题。"
+      helpTip="本功能仅在停稳挂 P 挡后推门生效，行车途中推门（如未关严）不会暂停音乐，确保行车安全。"
     >
       <div class="grid grid-cols-2 gap-4">
         <!-- P挡开门暂停音乐 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
-          <div class="mb-3">
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex-1 min-w-0 pr-5 flex flex-col justify-center">
             <div class="text-[19px] font-black text-car-text whitespace-nowrap">P 挡开门自动暂停音乐</div>
-            <div class="text-[14px] text-car-sub mt-1 font-bold whitespace-nowrap">挂入驻车 P 挡推开前门，毫秒级暂停当前音乐</div>
+            <div class="text-[13.5px] text-car-sub font-bold mt-1 leading-normal">
+              挂入驻车 P 挡推开前门，毫秒级自动暂停当前多媒体播放，保持下车从容安静。
+            </div>
           </div>
-          <MatrixButton 
-            :title="store.vehicleAuto.vehicle_door_pause_music_enabled ? '已开启' : '已关闭'"
-            :active="store.vehicleAuto.vehicle_door_pause_music_enabled"
+          <button 
             @click="toggleSetting('vehicle_door_pause_music_enabled')"
-          />
+            :class="[
+              'w-[170px] h-[74px] px-3 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0',
+              store.vehicleAuto.vehicle_door_pause_music_enabled
+                ? 'bg-car-item border-car-accent'
+                : 'bg-car-card border-car-border hover:border-car-border-light'
+            ]"
+          >
+            <span class="text-[17.5px] font-black text-car-text tracking-wide whitespace-nowrap">
+              {{ store.vehicleAuto.vehicle_door_pause_music_enabled ? '开门暂停已开启' : '开门暂停已关闭' }}
+            </span>
+            <span :class="['text-[12px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.vehicle_door_pause_music_enabled ? 'text-car-accent' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_door_pause_music_enabled ? '停稳推门秒暂停' : '点击开启下车静音' }}
+            </span>
+          </button>
         </div>
 
         <!-- 联动座舱语音指引 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
-          <div class="mb-3">
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex-1 min-w-0 pr-5 flex flex-col justify-center">
             <div class="text-[19px] font-black text-car-text whitespace-nowrap">座舱车门语音统一归口</div>
-            <div class="text-[14px] text-car-sub mt-1 font-bold whitespace-nowrap">四门下车离车提醒与防开门杀已接入【座舱语音】</div>
+            <div class="text-[13.5px] text-car-sub font-bold mt-1 leading-normal">
+              四门登车开门提醒、离车下车安全播报与防开门杀，已统一接入【座舱语音】专职发声。
+            </div>
           </div>
           <button 
-            @click="store.currentNav = 'voice'"
-            class="h-[46px] px-5 rounded-xl bg-car-card border border-car-border hover:border-car-accent text-car-accent font-black text-[15px] transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+            @click="store.currentNav = 'body'"
+            class="w-[170px] h-[74px] px-3 py-2 rounded-2xl border-2 border-car-accent bg-car-card hover:bg-car-item text-car-accent cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center shrink-0"
           >
-            前往【座舱语音】配置车门台词 ➔
+            <span class="text-[17.5px] font-black text-car-text tracking-wide whitespace-nowrap">
+              前往【座舱语音】
+            </span>
+            <span class="text-[12px] font-bold mt-1 text-car-accent whitespace-nowrap">
+              配置车门台词 ➔
+            </span>
           </button>
-        </div>
-      </div>
-    </FeatureCard>
-
-    <!-- 6. 原厂电动尾门物理串口探针与锁止播报 -->
-    <FeatureCard 
-      title="6. 原厂电动尾门 (b7) 串口状态与锁止播报"
-      desc="原厂电动尾门底层串口独立监听；升起打开安全警示，闭合完全锁止短促语音播报。"
-    >
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between">
-        <div class="mb-3">
-          <div class="text-[19px] font-black text-car-text whitespace-nowrap">原厂电动尾门开闭独立语音播报</div>
-          <div class="text-[14.5px] text-car-sub mt-1 font-bold whitespace-nowrap">后备箱抬起升起时提醒，完全闭合锁止时短促播报“后备箱已关好”</div>
-        </div>
-        <div class="grid grid-cols-2 gap-3.5">
-          <MatrixButton 
-            title="尾门升起播报"
-            :subtitle="store.vehicleAuto.voice_enable_trunk_open ? '已开启' : '已关闭'"
-            :active="store.vehicleAuto.voice_enable_trunk_open"
-            @click="toggleSetting('voice_enable_trunk_open')"
-          />
-          <MatrixButton 
-            title="尾门锁止播报"
-            :subtitle="store.vehicleAuto.voice_enable_trunk_close ? '已开启' : '已关闭'"
-            :active="store.vehicleAuto.voice_enable_trunk_close"
-            @click="toggleSetting('voice_enable_trunk_close')"
-          />
         </div>
       </div>
     </FeatureCard>
@@ -460,21 +395,6 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { store, bridge, showToast, openModal } from '../store';
 import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
-
-const isProbeExpanded = ref(false);
-
-const doorStatus = ref({
-  fl: -1,
-  fr: -1,
-  rl: -1,
-  rr: -1,
-  trunk: -1,
-  gear_name: '采集中...',
-  mode_name: '采集中...',
-  speed: 0
-});
-
-let statusPollTimer = null;
 
 const sortedMusicApps = ref([]);
 
@@ -539,16 +459,6 @@ function refreshDetectedApps() {
   showToast('已重新扫描整车已安装音乐软件并刷新排序');
 }
 
-function fetchVehicleStatus() {
-  try {
-    const raw = bridge.call('getDoorStatus');
-    if (raw) {
-      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      doorStatus.value = { ...doorStatus.value, ...data };
-    }
-  } catch (e) {}
-}
-
 function toggleSetting(key) {
   const next = !store.vehicleAuto[key];
   store.vehicleAuto[key] = next;
@@ -596,14 +506,11 @@ function onMusicOrderChanged() {
 }
 
 onMounted(() => {
-  fetchVehicleStatus();
-  statusPollTimer = setInterval(fetchVehicleStatus, 800);
   loadSortedMusicApps();
   window.addEventListener('music-order-updated', onMusicOrderChanged);
 });
 
 onUnmounted(() => {
-  if (statusPollTimer) clearInterval(statusPollTimer);
   window.removeEventListener('music-order-updated', onMusicOrderChanged);
 });
 </script>

@@ -118,10 +118,10 @@
         </button>
       </FeatureCard>
 
-      <!-- 6. 工具箱开机自启与桌面胶囊 -->
+      <!-- 6. 工具箱开机自启动与后台守护 -->
       <FeatureCard 
-        title="6. 工具箱开机自启与桌面胶囊"
-        desc="控制开机后是否在后台静默运行工具箱并常驻桌面悬浮胶囊。独立生效，不影响语音与方控。"
+        title="6. 工具箱开机自启动与后台守护"
+        desc="控制车机上电开机后是否在后台静默运行工具箱。独立生效，不影响底层车身硬件监听。"
       >
         <button 
           @click="toggleAutostart"
@@ -132,7 +132,7 @@
               : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
           ]"
         >
-          <span>{{ store.deviceInfo.autostart ? '桌面胶囊自启: 已开启' : '桌面胶囊自启: 已关闭 (开机不弹)' }}</span>
+          <span>{{ store.deviceInfo.autostart ? '开机自启静默守护: 已开启' : '开机自启静默守护: 已关闭' }}</span>
         </button>
       </FeatureCard>
     </div>

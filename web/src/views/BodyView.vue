@@ -36,20 +36,34 @@
       </div>
     </div>
 
-    <!-- 实时车身物理信号探针 (四门、尾门、挡位、模式 全量直观反映底层电平跃变) -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 shadow-xl">
-      <div class="flex items-center justify-between pb-3 mb-3 border-b border-car-border/60">
+    <!-- 实时车身物理信号探针 (支持折叠·默认收起) -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-4 shadow-xl">
+      <div class="flex items-center justify-between" :class="isProbeExpanded ? 'pb-3 mb-3 border-b border-car-border/60' : ''">
         <div class="flex items-center space-x-2.5">
           <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10B981]"></span>
-          <span class="text-[18.5px] font-black text-car-text">车身全域物理信号实时探针 (实车调试专用)</span>
+          <span class="text-[18.5px] font-black text-car-text whitespace-nowrap">车身全域物理信号实时探针 (实车调试专用)</span>
+          <!-- 折叠状态下的微型读数胶囊 -->
+          <span v-if="!isProbeExpanded" class="text-[13px] px-3 py-1 rounded-xl bg-car-item border border-car-border text-car-accent font-bold whitespace-nowrap">
+            {{ formatGearName(doorStatus.gear) }} · {{ formatModeName(doorStatus.mode) }} · 五门电平监听中
+          </span>
         </div>
-        <span class="text-[13.5px] text-car-sub font-bold">
-          底层 MCU 串口 91 02 01、TCU 换挡与驾驶模式广播全量监听，动作毫秒级点亮
-        </span>
+        <div class="flex items-center space-x-3">
+          <span v-if="isProbeExpanded" class="text-[13.5px] text-car-sub font-bold whitespace-nowrap">
+            底层 MCU 串口 91 02 01、TCU 换挡与驾驶模式广播全量监听，动作毫秒级点亮
+          </span>
+          <button 
+            @click="isProbeExpanded = !isProbeExpanded"
+            class="px-4 py-1.5 rounded-xl bg-car-item border border-car-border hover:border-car-accent text-car-text font-bold text-[13.5px] transition-all whitespace-nowrap cursor-pointer shadow-sm"
+          >
+            {{ isProbeExpanded ? '收起探针 ▲' : '展开实时探针 (实车调试) ▼' }}
+          </button>
+        </div>
       </div>
 
-      <!-- 第一排：四门与电动尾门 -->
-      <div class="grid grid-cols-5 gap-3 mb-3">
+      <!-- 探针主体内容 (折叠控制) -->
+      <div v-if="isProbeExpanded" class="flex flex-col space-y-3">
+        <!-- 第一排：四门与电动尾门 -->
+        <div class="grid grid-cols-5 gap-3">
         <!-- 主驾门 -->
         <div 
           :class="[
@@ -168,6 +182,7 @@
           </span>
         </div>
       </div>
+      </div>
     </div>
 
     <!-- 语音播报音频输出通道与混音抗衰减配置 -->
@@ -249,6 +264,9 @@
     <FeatureCard 
       title="1. 挡位安全播报 (前进档 D / 倒车档 R / 驻车档 P / 空档 N)"
       desc="四大标准挡位均已生成专属高品质晓晓知性语音，并支持【声效设置】。内置【有人感知状态机】：开机与蓝牙靠近默认 P 挡绝对静默，换出激活，换回归零。"
+      helpTitle="【功能指南】换挡权威源与有人感知状态机"
+      helpText="1. 权威换挡判定：&#10;严格以原厂 360 环视 AVM 广播与 TCU 换挡底层低 4 位为权威源，彻底过滤 10 号假挡位与点火电平抖动。&#10;&#10;2. 有人感知状态机：&#10;车辆熄火或人不在车内时，蓝牙钥匙靠近唤醒整车时保持绝对静默。只有真正踩下刹车挂入 D 挡或 R 挡时才开始激活播报。回 P 挡播报一次后状态机立即归零休眠。"
+      helpTip="N 挡空挡播报默认关闭，避免等红绿灯切 N 挡频繁打扰，按需开启即可。"
     >
       <div class="grid grid-cols-2 gap-4">
         <!-- 前进挡 D -->
@@ -425,6 +443,9 @@
     <FeatureCard 
       title="2. 功能模式切换播报 (智能模式 / 舒适模式 / 经济模式 / 运动模式)"
       desc="全车 4 大功能模式均已配置专属晓晓温婉知性原声。内置【模式有人感知状态机】：默认智能模式静默，手动切出其他模式激活，切回智能模式播报后置 0 归位，杜绝蓝牙钥匙靠近唤醒误报！"
+      helpTitle="【功能指南】驾驶模式 160ms 防抖滤波原理"
+      helpText="1. 权威模式信号：&#10;直接读取 ECarXCarConfigService 底层模式电平，兼容 DirveMode 与 DriveMode 正则判定。&#10;&#10;2. 160ms 极速旋钮防抖：&#10;旋钮在舒适、经济、运动、智能之间快速拨动时，内置 160ms 滤波防抖，防止连续滑动导致音频掐灭或重叠。"
+      helpTip="全车 4 大模式均支持独立开关、试听语音与自定义声效设置。"
     >
       <div class="grid grid-cols-2 gap-4">
         <!-- 智能模式 -->
@@ -601,6 +622,9 @@
     <FeatureCard 
       title="3. 四门迎宾与关门提醒 (状态翻转机 · 关门立断)"
       desc="100% 锁定吉利真实 MCU 串口物理报文 (91 02 01 b6)，支持【通用智能语音】与【独立分门自定义】双模式无缝切换。"
+      helpTitle="【功能指南】四门迎宾与通用智能语音"
+      helpText="1. 状态翻转机：&#10;底层锁定 MCU 串口报文（91 02 01 b6），关门立断，关门动作毫秒级点亮。&#10;&#10;2. 通用智能车门语音（推荐）：&#10;登车关门提示“车门已关好”，停车下车温馨提醒“请注意后方来车，带好随身物品”，行车中意外开门危险紧急报警，自适应不同用车场景。"
+      helpTip="嫌播报太细的车友推荐选择【通用智能车门语音】，想单独定制台词的选择【独立分门语音】。"
     >
       <!-- 模式切换选择栏 (车规大胶囊) -->
       <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-4 mb-4 shadow-sm">
@@ -857,7 +881,102 @@
       </div>
     </FeatureCard>
 
-    <!-- 4. 智能语音场景逻辑与避坑说明 -->
+    <!-- 4. 原厂电动尾门物理串口探针与独立语音播报 -->
+    <FeatureCard 
+      title="4. 原厂电动尾门开闭独立语音播报 (升起提醒 / 闭合锁止)"
+      desc="原厂电动尾门底层串口独立监听 (91 02 01 b7)；升起打开安全警示，闭合完全锁止短促语音播报。"
+      helpTitle="【功能指南】原厂电动尾门串口状态与开闭防刮"
+      helpText="1. 底层独立串口：&#10;独立监听 MCU 串口 91 02 01 b7 尾门信号。&#10;&#10;2. 升起提醒与锁止播报：&#10;后备箱抬起升起时提醒，防止在低矮车库碰擦顶梁；电吸完全锁止时短促播报“后备箱已关好”，关后备箱无需回头确认。"
+      helpTip="升起播报与锁止播报均带独立开关，支持试听与自定义声效。"
+    >
+      <div class="grid grid-cols-2 gap-4">
+        <!-- 尾门升起 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
+            <div class="flex items-center space-x-3 mb-1.5">
+              <span class="text-[22px] font-black text-car-text tracking-wide">尾门升起提醒</span>
+              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent font-bold">防碰防刮</span>
+            </div>
+            <span class="text-[15px] text-car-sub font-bold leading-relaxed">后备箱抬起升起时短促提醒，防止碰擦车库顶梁</span>
+          </div>
+
+          <div class="flex space-x-3 shrink-0 items-center">
+            <button 
+              @click="toggleSetting('voice_enable_trunk_open')"
+              :class="[
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center select-none cursor-pointer shadow-md',
+                store.vehicleAuto.voice_enable_trunk_open 
+                  ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
+            >
+              <span class="text-[19.5px] font-black text-car-text tracking-wide mb-1">升起播报</span>
+              <span :class="['text-[14px] font-bold', store.vehicleAuto.voice_enable_trunk_open ? 'text-car-accent' : 'text-car-sub']">
+                {{ store.vehicleAuto.voice_enable_trunk_open ? '已开启' : '已关闭' }}
+              </span>
+            </button>
+            <div class="flex flex-col space-y-2.5 w-[130px]">
+              <button 
+                @click="testVoice('trunk_open')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                试听语音
+              </button>
+              <button 
+                @click="openCustomVoice('trunk_open', '尾门升起')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-sub hover:text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                声效设置
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 尾门锁止 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
+          <div class="flex flex-col justify-center pr-6 flex-1 min-w-0">
+            <div class="flex items-center space-x-3 mb-1.5">
+              <span class="text-[22px] font-black text-car-text tracking-wide">尾门完全锁止</span>
+              <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 font-bold">锁闭就绪</span>
+            </div>
+            <span class="text-[15px] text-car-sub font-bold leading-relaxed">后备箱电吸闭合完全锁止时短促播报“后备箱已关好”</span>
+          </div>
+
+          <div class="flex space-x-3 shrink-0 items-center">
+            <button 
+              @click="toggleSetting('voice_enable_trunk_close')"
+              :class="[
+                'w-[124px] h-[120px] rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center select-none cursor-pointer shadow-md',
+                store.vehicleAuto.voice_enable_trunk_close 
+                  ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-amber-500/10' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
+            >
+              <span class="text-[19.5px] font-black text-car-text tracking-wide mb-1">锁止播报</span>
+              <span :class="['text-[14px] font-bold', store.vehicleAuto.voice_enable_trunk_close ? 'text-car-accent' : 'text-car-sub']">
+                {{ store.vehicleAuto.voice_enable_trunk_close ? '已开启' : '已关闭' }}
+              </span>
+            </button>
+            <div class="flex flex-col space-y-2.5 w-[130px]">
+              <button 
+                @click="testVoice('trunk_close')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                试听语音
+              </button>
+              <button 
+                @click="openCustomVoice('trunk_close', '尾门闭合锁止')"
+                class="h-[55px] rounded-xl border-2 border-car-border bg-car-card text-car-sub hover:text-car-text font-black text-[16.5px] flex items-center justify-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              >
+                声效设置
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </FeatureCard>
+
+    <!-- 5. 智能语音场景逻辑与避坑说明 -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-2xl mb-5">
       <div class="flex items-center space-x-3 pb-4 mb-4 border-b border-car-border/60">
         <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)]"></span>
@@ -918,6 +1037,7 @@ import MatrixButton from '../components/MatrixButton.vue';
 import { store, bridge, openModal, showToast } from '../store';
 
 const selectedModelId = ref(localStorage.getItem('geely_vehicle_model') || 'binyue_cool');
+const isProbeExpanded = ref(false);
 const doorStatus = ref({ fl: -1, fr: -1, rl: -1, rr: -1, trunk: -1, gear: -1, mode: -1 });
 let doorPollTimer = null;
 

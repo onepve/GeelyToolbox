@@ -4,6 +4,9 @@
     <FeatureCard 
       title="1. 车载原生文件管理 (特权安装正解通道)"
       desc="严禁直接通过 ADB 命令行 pm install 强行静默安装，底层安全策略会导致应用无法运行或白屏！"
+      helpTitle="【功能指南】车载原生文件管理与特权安装规范"
+      helpText="1. 为什么严禁 ADB pm install：&#10;吉利车机系统底层有签名校验安全策略，直接通过 ADB 命令行静默安装会导致第三方软件白屏或签名崩溃闪退。&#10;&#10;2. 特权正解通道：&#10;将安装包放入车机 Download 目录后，通过点击本卡片按钮调起车载原生文件管理，在系统级特权应用内点击安装，系统将自动放行安装并正常运行。"
+      helpTip="下载或传到车机 Download 目录的 APK，统一通过原生文件管理点击安装。"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
         <div class="flex-1 min-w-0 pr-6 flex flex-col">
@@ -33,6 +36,9 @@
     <FeatureCard 
       title="2. 手机局域网无线快传 (免插线极速推包)"
       desc="无需繁琐插拔 U 盘或携带电脑，通过车机内置 HTTP 文件快传服务直接秒传安装包。"
+      helpTitle="【功能指南】手机无线局域网极速推包"
+      helpText="1. 免插拔 U 盘原理：&#10;车机内置轻量级 HTTP 局域网传输服务（端口 8888）。手机连接车机 Wi-Fi 热点或同局域网后，扫码即可秒开上传页面。&#10;&#10;2. 自动落盘路径：&#10;手机上传的 APK 会自动保存到车机 /sdcard/Download/ 目录中，随后点击上方 Card 1 原生文件管理即可直接点击安装。"
+      helpTip="建议手机连接车机发出的 Wi-Fi 热点，传输速度最快、延迟最低。"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
         <div class="flex-1 min-w-0 pr-6 flex flex-col">
@@ -57,26 +63,45 @@
     <!-- 3. 今日动态工程暗码 (+10 / +5) -->
     <FeatureCard 
       title="3. 今日动态工程暗码与 ADB 开启"
-      desc="每日按时间对时生成的专车动态工程模式暗码，用于打开车机底层无线 ADB 调试与系统特权。"
+      desc="根据车载系统时钟每秒自动计算，直出高亮暗码。车机拨号界面不支持粘贴，请点击按钮打开拨号盘手动按键输入。"
+      helpTitle="【功能指南】动态工程暗码算法与拨号盘操作"
+      helpText="1. 动态暗码生成机制：&#10;吉利车机工程密码每天根据系统时间动态计算对时。主流新版固件采用「月份+5」算法，早期老固件采用「月份+10」算法。&#10;&#10;2. 拨号盘输入规范：&#10;吉利车机拨号界面原生不支持剪贴板粘贴。请点击右侧「打开拨号盘」按钮调起系统电话，在拨号键盘上照着上方高亮的暗码依次手动输入，即可秒进工程模式。"
+      helpTip="进工程模式后，找到「系统信息」或「开发者选项」即可开启无线 ADB。"
     >
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
-        <div class="flex-1 min-w-0 pr-6 flex flex-col">
-          <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-2">
-            吉利车机工程密码每天根据时间动态计算。点击右侧打开车机原生电话拨号盘，手动在键盘输入今日暗码即可秒进工程菜单开启 ADB。
+      <div class="grid grid-cols-2 gap-4">
+        <!-- 主流+5暗码 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
+          <div>
+            <div class="text-[15px] font-bold text-car-sub">主流新固件 (月份+5 算法)</div>
+            <div class="text-[28px] font-black text-car-accent mt-1 tracking-wider">
+              {{ store.dynamicCodePlus5 }}
+            </div>
+            <div class="text-[13px] text-car-sub mt-1">适用于绝大多数 2022~2024 款吉利车机</div>
           </div>
-          <div class="flex items-center text-[14px] font-bold">
-            <span class="text-car-sub mr-2">今日标准暗码:</span>
-            <span class="font-mono text-[17px] text-car-accent font-black mr-4">{{ store.dynamicCode }}</span>
-            <span class="text-[13px] text-car-sub font-normal">(早期固件备用: {{ store.dynamicCodePlus5 }})</span>
-          </div>
+          <button 
+            @click="openDialer"
+            class="h-[58px] px-6 rounded-2xl bg-car-card border-2 border-car-accent text-car-accent hover:bg-car-item font-black text-[17px] cursor-pointer shadow-md transition-all whitespace-nowrap"
+          >
+            📞 打开拨号盘
+          </button>
         </div>
 
-        <button 
-          @click="openDialer"
-          class="min-w-[220px] min-h-[72px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[19px] rounded-2xl cursor-pointer hover:border-car-border-light shrink-0 shadow-sm transition-all"
-        >
-          查看暗码 & 打开电话
-        </button>
+        <!-- 老固件+10暗码 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
+          <div>
+            <div class="text-[15px] font-bold text-car-sub">早期老版固件 (月份+10 算法)</div>
+            <div class="text-[28px] font-black text-car-text mt-1 tracking-wider">
+              {{ store.dynamicCode }}
+            </div>
+            <div class="text-[13px] text-car-sub mt-1">若加 5 暗码提示错误，请尝试此备选暗码</div>
+          </div>
+          <button 
+            @click="openDialer"
+            class="h-[58px] px-6 rounded-2xl bg-car-card border-2 border-car-border text-car-text hover:border-car-border-light font-black text-[17px] cursor-pointer shadow-md transition-all whitespace-nowrap"
+          >
+            📞 打开拨号盘
+          </button>
+        </div>
       </div>
     </FeatureCard>
 
@@ -84,6 +109,9 @@
     <FeatureCard 
       title="4. 专家级伪装与卡主题注入 (专家模式)"
       desc="解除主题防护白名单限制，支持直接将任意第三方应用伪装注入为桌面兔子时钟屏保卡片。"
+      helpTitle="【功能指南】卡主题伪装注入与安全规范"
+      helpText="1. 核心技术原理：&#10;通过重写吉利原厂桌面兔子时钟屏保卡片（com.ecarx.screensaver）实现无损系统级提权，突破第三方地图签名白名单限制。&#10;&#10;2. 高德免卡兔子升级：&#10;当前高德 7.5 / 8.5 / 9.5 全线已统一使用原厂 AOSP 平台密钥重签，开启白名单后已可直接覆盖安装，无需再卡兔子主题！本专家功能仅留给高阶玩家极客改装使用。"
+      helpTip="高德全线已支持免卡兔子直装，普通车友无需开启专家模式。"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
         <div class="flex-1 min-w-0 pr-6 flex flex-col">

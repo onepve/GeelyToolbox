@@ -2,7 +2,7 @@
   <ModalWrapper
     :show="!!store.modals.confirm"
     :title="confirmData?.title || '操作确认'"
-    :badge="confirmData?.isDanger ? '高危操作' : '安全确认'"
+    :badge="confirmData?.isDanger ? '高危操作' : (confirmData?.badge || '功能指南')"
     maxWidthClass="max-w-[860px]"
     zIndexClass="z-[9999]"
     @close="handleCancel"
@@ -15,20 +15,21 @@
         <b>【高危操作警告】</b>该操作涉及整车底层硬件或系统核心，请确保已充分知晓实际影响！
       </div>
 
-      <div class="text-[21px] text-car-text font-black leading-relaxed whitespace-pre-wrap">
+      <div class="text-[18px] text-car-text font-bold leading-relaxed whitespace-pre-wrap">
         {{ confirmData.desc }}
       </div>
 
-      <div v-if="confirmData.tip" class="text-[17px] text-car-sub font-extrabold bg-car-item p-4 rounded-xl border border-car-border">
-        {{ confirmData.tip }}
+      <div v-if="confirmData.tip" class="text-[15.5px] text-car-sub font-bold bg-car-item p-4 rounded-xl border border-car-border leading-relaxed">
+        💡 {{ confirmData.tip }}
       </div>
     </div>
 
     <template #footer>
       <div class="flex items-center justify-end space-x-4 w-full">
         <button 
+          v-if="confirmData?.showCancel !== false"
           @click="closeModal('confirm')"
-          class="min-h-[68px] px-10 rounded-2xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[20px] cursor-pointer hover:border-car-border-light shadow-sm"
+          class="min-h-[64px] px-8 rounded-2xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[19px] cursor-pointer hover:border-car-border-light shadow-sm"
         >
           取消
         </button>
@@ -36,7 +37,7 @@
           @click="handleConfirm"
           :disabled="countdownLeft > 0"
           :class="[
-            'min-h-[68px] px-12 rounded-2xl font-black text-[21px] transition-all shadow-md',
+            'min-h-[64px] px-10 rounded-2xl font-black text-[19px] transition-all shadow-md',
             countdownLeft > 0
               ? 'bg-car-item border-2 border-car-border text-car-sub opacity-60 cursor-not-allowed'
               : (confirmData?.isDanger 
@@ -44,7 +45,7 @@
                   : 'bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25 cursor-pointer')
           ]"
         >
-          {{ countdownLeft > 0 ? `⏳ 请仔细阅读 (${countdownLeft}s)` : (confirmData?.confirmText || '确认执行') }}
+          {{ countdownLeft > 0 ? `⏳ 请仔细阅读 (${countdownLeft}s)` : (confirmData?.confirmText || (confirmData?.showCancel === false ? '我知道了' : '确认执行')) }}
         </button>
       </div>
     </template>
