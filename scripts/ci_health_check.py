@@ -694,7 +694,62 @@ with open(confirm_modal_path, "r", encoding="utf-8") as f:
 if "countdownLeft" not in cm_code or "请仔细阅读" not in cm_code:
     reg_violations.append("ConfirmModal.vue 缺少高危确认倒计时逻辑 (countdownLeft / 请仔细阅读)！")
 
-# 16.6 已修复问题的专项回归：源码契约 + 真实 Java/JS 决策 + 反例自检
+# 16.6 座舱语音计划工作台完整性与声效设置贯通防御 (Voice Workbench Defense)
+with open(body_view_path, "r", encoding="utf-8") as f:
+    bv_full_code = f.read()
+
+for req_voice_task in ["gear_voice", "mode_voice", "door_voice", "trunk_voice"]:
+    if req_voice_task not in bv_full_code:
+        reg_violations.append(f"BodyView.vue 缺少座舱语音核心计划任务: {req_voice_task}！")
+
+if "整套语音主题包" not in bv_full_code:
+    reg_violations.append("BodyView.vue 顶栏缺少【整套语音主题包 ➔】车载音频大厅直通大磁贴！")
+if "添加语音计划" not in bv_full_code:
+    reg_violations.append("BodyView.vue 顶栏缺少【添加语音计划】常驻入口！")
+if "voiceItemSettings" not in bv_full_code and "openCustomVoice" not in bv_full_code:
+    reg_violations.append("BodyView.vue 未贯通 VoiceItemSettingsModal（缺少 openCustomVoice 或 voiceItemSettings）！")
+
+if bv_full_code.count("声效设置") < 10:
+    reg_violations.append("BodyView.vue 二级向导弹窗内缺少【声效设置】个性化配置按钮！")
+
+# 16.7 车身智能联动工作台 8 大计划完整性与车速微调防御 (Linkage Workbench Defense)
+link_view_path = os.path.join(WEB_SRC_DIR, "views/LinkView.vue")
+with open(link_view_path, "r", encoding="utf-8") as f:
+    lv_full_code = f.read()
+
+required_link_keys = [
+    ("vehicle_turn_360_enabled", "转向灯联动 360"),
+    ("vehicle_speed_autoplay_enabled", "车速达标智能启播音乐"),
+    ("vehicle_speed_custom_action_enabled", "车速达标自定义动作"),
+    ("vehicle_door_pause_music_enabled", "停稳推门多媒体自动暂停")
+]
+for lk, ldesc in required_link_keys:
+    if lk not in lv_full_code:
+        reg_violations.append(f"LinkView.vue 缺少车身联动核心任务: {ldesc} ({lk})！")
+
+if "vehicle_d_gear_360_enabled" not in lv_full_code and "vehicle_gear_d_360_enabled" not in lv_full_code:
+    reg_violations.append("LinkView.vue 缺少 D 挡起步 360 联动任务！")
+if "vehicle_overspeed_enabled" not in lv_full_code and "vehicle_overspeed_voice_enabled" not in lv_full_code:
+    reg_violations.append("LinkView.vue 缺少行车车速超限语音提醒任务！")
+if "vehicle_headlight_nav_night_enabled" not in lv_full_code and "vehicle_light_nav_night_enabled" not in lv_full_code:
+    reg_violations.append("LinkView.vue 缺少进出隧道大灯联动高德任务！")
+if "vehicle_headlight_dim_screen_enabled" not in lv_full_code and "vehicle_light_brightness_dim_enabled" not in lv_full_code:
+    reg_violations.append("LinkView.vue 缺少进隧道中控护眼背光微调任务！")
+
+if "adjustAutoplaySpeed" not in lv_full_code or "adjustCustomActionSpeed" not in lv_full_code or "adjustOverspeedThreshold" not in lv_full_code:
+    reg_violations.append("LinkView.vue 缺少车速纯加减微调控制器，不得回退为死板预设！")
+if "添加联动计划" not in lv_full_code:
+    reg_violations.append("LinkView.vue 顶栏缺少【添加联动计划】常驻大磁贴！")
+
+# 16.8 死代码与孤岛弹窗防御 (Dead Code & Modal Orphan Defense)
+with open(os.path.join(WEB_SRC_DIR, "App.vue"), "r", encoding="utf-8") as f:
+    app_vue_latest = f.read()
+if re.search(r'\bCustomVoiceTextModal\b', app_vue_latest):
+    reg_violations.append("App.vue 仍挂载已下线的 CustomVoiceTextModal 死代码组件！")
+if re.search(r'(?<!VoiceItem)SettingsModal\b', app_vue_latest):
+    reg_violations.append("App.vue 仍挂载已下线的 SettingsModal 死代码组件！")
+
+# 16.9 已修复问题的专项回归：源码契约 + 真实 Java/JS 决策 + 反例自检
 # 在本地与 tag CI 中均执行；任何失败阻断 APK 编译和上传。
 regression_scripts = [
     "check_recent_regressions.py",

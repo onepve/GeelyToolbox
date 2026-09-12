@@ -22,7 +22,6 @@
     </main>
 
     <!-- 7 大 M3 车规级二级模态弹窗 -->
-    <SettingsModal />
     <AboutModal />
     <BatteryModal />
     <RewardModal />
@@ -30,7 +29,6 @@
     <QrCodeModal />
     <DialerModal />
     <AppDetailModal />
-    <CustomVoiceTextModal />
     <ConfirmModal />
     <RabbitInstallModal />
     <UpdateModal />
@@ -78,7 +76,6 @@ watch(() => store.currentNav, () => {
 });
 
 // 7 大 M3 二级模态弹窗组件
-import SettingsModal from './components/modals/SettingsModal.vue';
 import AboutModal from './components/modals/AboutModal.vue';
 import BatteryModal from './components/modals/BatteryModal.vue';
 import RewardModal from './components/modals/RewardModal.vue';
@@ -86,7 +83,6 @@ import DeepToolsModal from './components/modals/DeepToolsModal.vue';
 import QrCodeModal from './components/modals/QrCodeModal.vue';
 import DialerModal from './components/modals/DialerModal.vue';
 import AppDetailModal from './components/modals/AppDetailModal.vue';
-import CustomVoiceTextModal from './components/modals/CustomVoiceTextModal.vue';
 import ConfirmModal from './components/modals/ConfirmModal.vue';
 import RabbitInstallModal from './components/modals/RabbitInstallModal.vue';
 import UpdateModal from './components/modals/UpdateModal.vue';

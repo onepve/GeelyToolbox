@@ -909,6 +909,22 @@ function toggleSetting(key) {
   const next = !store.vehicleAuto[key];
   store.vehicleAuto[key] = next;
   bridge.call('setVehicleAutomationSetting', key, next);
+  
+  // 双向兼容映射：保证 Java 后端能百分之百接收对应真实 key
+  const aliasMap = {
+    vehicle_d_gear_360_enabled: 'vehicle_gear_d_360_enabled',
+    vehicle_gear_d_360_enabled: 'vehicle_d_gear_360_enabled',
+    vehicle_headlight_nav_night_enabled: 'vehicle_light_nav_enabled',
+    vehicle_light_nav_enabled: 'vehicle_headlight_nav_night_enabled',
+    vehicle_headlight_dim_screen_enabled: 'vehicle_light_brightness_dim_enabled',
+    vehicle_light_brightness_dim_enabled: 'vehicle_headlight_dim_screen_enabled',
+    vehicle_overspeed_enabled: 'vehicle_overspeed_voice_enabled',
+    vehicle_overspeed_voice_enabled: 'vehicle_overspeed_enabled'
+  };
+  if (aliasMap[key]) {
+    store.vehicleAuto[aliasMap[key]] = next;
+    bridge.call('setVehicleAutomationSetting', aliasMap[key], next);
+  }
   showToast('计划状态已更新: ' + (next ? '已开启执行' : '已暂停'));
 }
 
@@ -1021,6 +1037,18 @@ function showHelp(key) {
 }
 
 onMounted(() => {
+  if (store.vehicleAuto.vehicle_gear_d_360_enabled !== undefined) {
+    store.vehicleAuto.vehicle_d_gear_360_enabled = store.vehicleAuto.vehicle_gear_d_360_enabled;
+  }
+  if (store.vehicleAuto.vehicle_light_nav_enabled !== undefined) {
+    store.vehicleAuto.vehicle_headlight_nav_night_enabled = store.vehicleAuto.vehicle_light_nav_enabled;
+  }
+  if (store.vehicleAuto.vehicle_light_brightness_dim_enabled !== undefined) {
+    store.vehicleAuto.vehicle_headlight_dim_screen_enabled = store.vehicleAuto.vehicle_light_brightness_dim_enabled;
+  }
+  if (store.vehicleAuto.vehicle_overspeed_voice_enabled !== undefined) {
+    store.vehicleAuto.vehicle_overspeed_enabled = store.vehicleAuto.vehicle_overspeed_voice_enabled;
+  }
   loadSortedMusicApps();
   loadCustomActionAppName();
   window.addEventListener('music-order-updated', loadSortedMusicApps);

@@ -4,6 +4,7 @@
     :title="`${targetItem?.title || '声效'} · 专车声效个性化设置`" 
     badge="声效配置"
     maxWidthClass="max-w-[1020px]"
+    zIndexClass="z-[9999]"
     @close="closeModal('voiceItemSettings')"
   >
     <div v-if="targetItem" class="flex flex-col space-y-4">

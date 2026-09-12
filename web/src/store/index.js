@@ -81,7 +81,6 @@ export const store = reactive({
 
   // 7 大二级弹窗管理
   modals: {
-    settings: false,
     about: false,
     battery: false,
     deepTools: false,
@@ -89,7 +88,6 @@ export const store = reactive({
     dialer: false,
     appDetail: null,
     rabbitInstall: null,
-    customVoiceText: null,
     confirm: null,
     update: false,
     reward: false,
