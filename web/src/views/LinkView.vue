@@ -158,6 +158,45 @@
           />
         </div>
 
+        <!-- 自定义车速精准微调器 (新增：满足车主任意自定车速需求 1~120 km/h) -->
+        <div class="p-5 rounded-2xl bg-car-item border-2 border-car-border flex items-center justify-between shadow-sm">
+          <div class="flex flex-col space-y-1">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-[18px] font-black text-car-text">自定义车速微调</span>
+              <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-card border-car-border text-car-accent">精准可调</span>
+            </div>
+            <span class="text-[14px] text-car-sub font-bold leading-normal">
+              支持任意设定 1 ~ 120 km/h。点击两侧 [-5] / [-1] 与 [+1] / [+5] 自定义专属起播时速。
+            </span>
+          </div>
+          <div class="flex items-center space-x-3 shrink-0">
+            <button 
+              @click="adjustAutoplaySpeed(-5)"
+              class="h-[54px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center"
+              title="减少 5 km/h"
+            >-5</button>
+            <button 
+              @click="adjustAutoplaySpeed(-1)"
+              class="h-[54px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center"
+              title="减少 1 km/h"
+            >-1</button>
+            <div class="flex items-baseline px-5 py-1.5 bg-car-card rounded-2xl border-2 border-car-accent/60 min-w-[130px] justify-center shadow-inner">
+              <span class="text-[32px] font-black text-car-accent font-mono leading-none">{{ store.vehicleAuto.vehicle_speed_autoplay_threshold || 20 }}</span>
+              <span class="text-[15px] font-bold text-car-sub ml-1.5 font-mono">km/h</span>
+            </div>
+            <button 
+              @click="adjustAutoplaySpeed(1)"
+              class="h-[54px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center"
+              title="增加 1 km/h"
+            >+1</button>
+            <button 
+              @click="adjustAutoplaySpeed(5)"
+              class="h-[54px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center"
+              title="增加 5 km/h"
+            >+5</button>
+          </div>
+        </div>
+
         <!-- 目标自选音乐 App 与展示形式 (全面拉伸加大) -->
         <div class="p-6 rounded-2xl bg-car-item border-2 border-car-border flex flex-col space-y-4 shadow-sm">
           <div class="flex items-center justify-between">
@@ -508,6 +547,12 @@ function setAutoplaySpeed(speed) {
   store.vehicleAuto.vehicle_speed_autoplay_threshold = speed;
   bridge.call('setVehicleAutomationIntSetting', 'vehicle_speed_autoplay_threshold', speed);
   showToast(`自启车速阈值已设为: ${speed} km/h`);
+}
+
+function adjustAutoplaySpeed(delta) {
+  let current = store.vehicleAuto.vehicle_speed_autoplay_threshold || 20;
+  let next = Math.max(1, Math.min(120, current + delta));
+  setAutoplaySpeed(next);
 }
 
 function setAutoplayApp(pkg, name) {
