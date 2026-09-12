@@ -562,6 +562,13 @@ public class VehicleAutomationService extends Service {
             } catch (Exception ignored) {}
         }
 
+        // 3.16 ecarx_core_server 电子手刹/驻车: mModelEPB = 0 -> P 挡 (Tasker 模式.prj 黄金源)
+        if (gearVal <= 0 && line.contains("mModelEPB")) {
+            if (line.contains("mModelEPB = 0") || line.contains("mModelEPB=0")) {
+                gearVal = 5; // P 挡 (驻车挡)
+            }
+        }
+
         // 3.2 MCU 串口硬件报文: MCULog:GearPosition: x (2=D, 3=N, 4=R, 5=P)
         if (gearVal <= 0 && line.contains("GearPosition:")) {
             try {
@@ -693,7 +700,7 @@ public class VehicleAutomationService extends Service {
         // 4 / 6 -> 智能模式 (MODE_SMART)
         if (line.contains("DirveMode =") || line.contains("DirveMode=") || line.contains("DriveMode =") || line.contains("DriveMode=")) {
             try {
-                Matcher m = Pattern.compile("Di(?:r|v)eMode\\s*=\\s*(\\d+)").matcher(line);
+                Matcher m = Pattern.compile("(?:DirveMode|DriveMode)\\s*=\\s*(\\d+)").matcher(line);
                 if (m.find()) {
                     int dm = Integer.parseInt(m.group(1));
                     if (dm == 1) modeVal = MODE_COMFORT;
@@ -891,6 +898,25 @@ public class VehicleAutomationService extends Service {
         // 转向灯联动 360 全景影像 (兼容第三方 CAN 报文 TCM_Req_TurnIndicationAct)
         if (enableTurn360 && "TCM_Req_TurnIndicationAct".equals(key)) {
             handleTurnSignal(val);
+        }
+
+        // 四门状态监听 (Tasker 核心源: BCM_*DoorAjarStatus, data=1 开 / 0 关)
+        if ("BCM_FrontLeftDoorAjarStatus".equals(key)) {
+            if (doorStateManager != null) {
+                doorStateManager.updateDoors(val, -1, -1, -1, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
+            }
+        } else if ("BCM_FrontRightDoorAjarStatus".equals(key)) {
+            if (doorStateManager != null) {
+                doorStateManager.updateDoors(-1, val, -1, -1, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
+            }
+        } else if ("BCM_RearLeftDoorAjarStatus".equals(key)) {
+            if (doorStateManager != null) {
+                doorStateManager.updateDoors(-1, -1, val, -1, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
+            }
+        } else if ("BCM_RearRightDoorAjarStatus".equals(key)) {
+            if (doorStateManager != null) {
+                doorStateManager.updateDoors(-1, -1, -1, val, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
+            }
         }
 
         // 大灯联动高德日夜模式

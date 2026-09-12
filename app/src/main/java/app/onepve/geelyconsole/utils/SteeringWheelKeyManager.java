@@ -198,6 +198,8 @@ public class SteeringWheelKeyManager {
             if (keyCode == KEY_WMODE) return prefs.getString(legacyKey, ACTION_OPEN_360);
             if (keyCode == KEY_NEXT) return prefs.getString(legacyKey, ACTION_NEXT_TRACK);
             if (keyCode == KEY_PREV) return prefs.getString(legacyKey, ACTION_PREV_TRACK);
+            if (keyCode == KEY_CUSTOM) return prefs.getString(legacyKey, ACTION_OPEN_NAVI);
+            if (keyCode == KEY_OK) return prefs.getString(legacyKey, ACTION_PLAY_PAUSE);
             return prefs.getString(legacyKey, ACTION_DEFAULT);
         }
         return ACTION_DEFAULT;
@@ -281,7 +283,7 @@ public class SteeringWheelKeyManager {
         }
 
         // 5. DefaultVehicleHal_v2_0: do nothing for this key(0x37 / 0x2d) (Tasker 黄金按键)
-        if (line.contains("do nothing for this key")) {
+        if (line.contains("do nothing for this key") || (line.contains("DefaultVehicleHal") && (line.contains("0x37") || line.contains("0x2d")))) {
             if (line.contains("0x37")) {
                 handleKeyDown(KEY_CUSTOM);
                 mainHandler.postDelayed(new Runnable() {
@@ -301,6 +303,26 @@ public class SteeringWheelKeyManager {
                 }, 80);
                 return KEY_OK;
             }
+        }
+
+        // 6. ecarx_core_server 物理硬按键 (cmd_data[1] = 304 / 305) (Tasker 123.prj 黄金源)
+        if (line.contains("cmd_data[1] =") || line.contains("cmd_data[1]=")) {
+            try {
+                Matcher m = Pattern.compile("cmd_data\\[1\\]\\s*=\\s*(\\d+)").matcher(line);
+                if (m.find()) {
+                    final int code = Integer.parseInt(m.group(1));
+                    if (code == KEY_PREV || code == KEY_NEXT || code == KEY_MUTE || code == KEY_BACK) {
+                        handleKeyDown(code);
+                        mainHandler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                handleKeyUp(code);
+                            }
+                        }, 80);
+                        return code;
+                    }
+                }
+            } catch (Exception ignored) {}
         }
         return 0;
     }
@@ -422,18 +444,18 @@ public class SteeringWheelKeyManager {
 
     private String getKeyName(int keyCode) {
         switch (keyCode) {
-            case KEY_MUTE: return "3号键·静音键";
-            case KEY_VOL_DOWN: return "2号键·音量减/滚轮下拨";
-            case KEY_VOL_UP: return "2号键·音量加/滚轮上拨";
-            case KEY_PREV: return "7号键·上一曲";
-            case KEY_NEXT: return "4号键·下一曲";
-            case KEY_OK: return "2号键·滚轮垂直按压";
-            case KEY_WMODE: return "6号键·Mode音源切换";
-            case KEY_CUSTOM: return "1号键·菱形自定义";
-            case KEY_BACK: return "返回按键";
-            case KEY_CALL: return "电话按键";
-            case KEY_VOICE: return "语音话筒键";
-            case KEY_HOME_ALREADY: return "桌面二次Home键";
+            case KEY_BACK: return "右方向盘 ① 主页/返回键";
+            case KEY_OK: return "右方向盘 ② 滚轮垂直按压";
+            case KEY_MUTE: return "右方向盘 ③ 静音键";
+            case KEY_NEXT: return "右方向盘 ④ 下一曲";
+            case KEY_CUSTOM: return "右方向盘 ⑤ 自定义按键";
+            case KEY_WMODE: return "右方向盘 ⑥ MODE 键";
+            case KEY_PREV: return "右方向盘 ⑦ 上一曲";
+            case KEY_VOL_DOWN: return "音量减/滚轮下拨";
+            case KEY_VOL_UP: return "音量加/滚轮上拨";
+            case KEY_CALL: return "左方向盘 ⑤ 电话按键";
+            case KEY_VOICE: return "左方向盘 ⑥ 语音按键";
+            case KEY_HOME_ALREADY: return "桌面二次 Home 键";
             default: return "按键(Code:" + keyCode + ")";
         }
     }

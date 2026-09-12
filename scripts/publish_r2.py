@@ -70,13 +70,13 @@ def main():
             "sha256": sha256,
             "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox-beta.apk?v={version_name}",
             "changelog": (
-                "【测试通道优先体验】\n"
-                "1. 闲置自动屏保归位【桌面悬浮】：息屏时长精准收敛至3秒~3分钟，提供5档车规快捷预设与永不进入\n"
-                "2. 方控按键全面去十六进制工程化：重构为左/右方向盘+序号直观命名，新增新手功能指引与一键方案配置\n"
-                "3. 座舱核心默认值全面优化：转向灯360默认开启、开机自启守护默认开启、悬浮胶囊默认显示电瓶电压、N挡空挡默认关闭\n"
-                "4. 守护日志采集策略全面收紧：6大通道默认全关零I/O开销，按需开启彻底根治日志刷屏与性能损耗\n"
-                "5. 英文品牌名全链条收敛定案：统一收敛为GeelyToolbox，彻底告别GeelyPilot混淆，安装包与仓库浑然一体\n"
-                "6. 智能语音能力指南与避坑说明：新增有人感知状态机与车门自适应场景说明卡片\n"
+                "【测试通道优先体验 beta-v1.7.26.1】\n"
+                "1. 吸收 Tasker 完整方控链路：增设右方向盘 ② 滚轮按压多手势映射（key 0x2d，默认媒体暂停/播放），0x37 彻底正名为右方向盘 ⑤ 号自定义键\n"
+                "2. 方控按键严格遵循 1～7 顺序排列：界面卡片按 ①主页 ➔ ②滚轮下按 ➔ ③静音 ➔ ④下一曲/⑦上一曲 ➔ ⑤自定义 ➔ ⑥MODE 顺排呈现\n"
+                "3. 修复驾驶模式正则匹配缺陷：修正 (?:DirveMode|DriveMode) 严密捕获 DirveMode 与 DriveMode，彻底根治模式状态机漏判\n"
+                "4. 补齐原厂驻车 (P挡) 信号监听：吸收 Tasker 核心源 ecarx_core_server 的 mModelEPB = 0 电子手刹/驻车报文\n"
+                "5. 吸收 Tasker 四门独立 CAN 报文：新增 BCM_*DoorAjarStatus (FL/FR/RL/RR) 独立接入四门状态机\n"
+                "6. 补齐物理切歌硬按键监听：解析 ecarx_core_server 的 cmd_data[1] = 304/305 上一曲/下一曲\n"
             ),
             "release_date": today
         }
