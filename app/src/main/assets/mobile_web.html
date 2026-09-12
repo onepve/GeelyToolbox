@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>吉利智驾 · 手机无线快传</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+        body { background: #ebeff4; color: #1e293b; padding: 16px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 480px; background: #ffffff; border-radius: 16px; border: 1px solid #d1d8e2; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+        .header { text-align: center; margin-bottom: 20px; }
+        .title { font-size: 20px; font-weight: bold; color: #0284c7; }
+        .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+        .card { background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 14px; margin-bottom: 16px; }
+        .card-title { font-size: 14px; font-weight: bold; color: #334155; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .input-group { margin-bottom: 12px; }
+        .input-label { font-size: 12px; color: #64748b; margin-bottom: 6px; display: block; }
+        input[type="text"], input[type="file"], textarea, .input-box {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #ffffff;
+            outline: none;
+            box-sizing: border-box;
+            display: block;
+        }
+        input[type="text"]:focus, textarea:focus, .input-box:focus { border-color: #0284c7; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; white-space: nowrap; transition: 0.2s; box-sizing: border-box; }
+        .btn-primary { background: #0284c7; color: #ffffff; }
+        .btn-primary:active { background: #0369a1; }
+        .btn-secondary { background: #ffffff; color: #1e293b; border: 1.5px solid #cbd5e1; margin-top: 8px; }
+        .btn-secondary:active { background: #f1f5f9; }
+        .btn-danger { background: #ef4444; color: #ffffff; margin-top: 8px; }
+        .btn-danger:active { background: #dc2626; }
+        .progress-bar { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 10px; display: none; }
+        .progress-fill { height: 100%; width: 0%; background: #10b981; transition: width 0.2s; }
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; background: #e0f2fe; color: #0284c7; }
+        .tip-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px; font-size: 12px; color: #d97706; line-height: 1.5; margin-top: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">吉利车机无线快传</div>
+            <div class="subtitle">免车机打字 · 极速直传至 /sdcard/Download/</div>
+        </div>
+
+        <!-- 卡片 1: 推送 URL -->
+        <div class="card">
+            <div class="card-title"><span>🚀 推送下载链接到车机</span><span class="status-badge" id="car-status">车机在线</span></div>
+            <div class="input-group">
+                <label class="input-label">直接粘贴外部 APK 直链下载地址：</label>
+                <input type="text" id="push-url" placeholder="https://example.com/app.apk">
+            </div>
+            <button class="btn btn-primary" onclick="pushUrl()">一键推送车机下载</button>
+        </div>
+
+        <!-- 卡片 2: 手机本地 APK 上传 -->
+        <div class="card">
+            <div class="card-title"><span>📁 手机本地 APK 秒传到车机</span></div>
+            <div class="input-group">
+                <label class="input-label">选择手机中的 APK 安装包或语音包 ZIP：</label>
+                <input type="file" id="file-input" accept=".apk,.zip,.xtz">
+            </div>
+            <button class="btn btn-primary" onclick="uploadFile()">开始局域网高速传输</button>
+            <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+            <div id="upload-status" style="font-size:12px; color:#64748b; margin-top:6px; text-align:center;"></div>
+        </div>
+
+        <!-- 卡片 2.5: 🎙️ 自定义车载语音制作与导入中枢 -->
+        <div class="card" style="border-left: 4px solid #f59e0b;">
+            <div class="card-title"><span>🎙️ 自定义车载语音制作中枢</span><span class="status-badge" style="background:#fef3c7; color:#b45309;">专属主题</span></div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 10px; line-height: 1.5;">
+                免电脑制作！手机扫码直接下载官方空模板与制作指南，替换为你的 MP3 音频后打包为 <b>.zip</b> 上传，车机自动解压部署到 <code>/sdcard/GeelyPilot/voices/</code> 专属目录！
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 8px;">
+                <a href="/api/voice_template" download="voice_template.zip" style="text-decoration:none; width:100%; display:block;">
+                    <button class="btn btn-primary" style="background:#f59e0b; border-color:#d97706; margin-top:0; width:100%;">📥 下载官方语音模板 (ZIP)</button>
+                </a>
+                <button class="btn btn-secondary" style="width:100%; margin-top:0;" onclick="showVoiceReadme()">📖 查看制作说明 (README)</button>
+            </div>
+            <div class="tip-box" style="margin-top:4px; font-size:11.5px;">
+                💡 <b>贴心提示</b>：语音包名字支持中文（如“我的专属语音.zip”），解压后会自动以压缩包名字命名。未包含的音频会自动以出厂晓晓原声兜底，绝不静音！
+            </div>
+        </div>
+
+        <!-- 卡片 3: 推送 ADB 命令 -->
+        <div class="card">
+            <div class="card-title"><span>💻 手机推送 ADB 命令到车机</span></div>
+            <div class="input-group">
+                <label class="input-label">输入或粘贴 Shell / ADB 指令：</label>
+                <textarea id="adb-cmd" rows="3" placeholder="例如: pm list packages -3"></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="pushAdbCmd()">📡 推送命令到车机屏幕</button>
+            <div style="font-size: 11.5px; color: #64748b; margin-top: 6px; line-height: 1.45;">
+                🛡️ <b>安全机制</b>：指令仅推送到车机【ADB 终端】输入框中，不会自动静默执行。请在车机大屏上人工核验后点击【▶️ 执行】确认！
+            </div>
+        </div>
+
+        <!-- 卡片 4: 远程编辑 TTS 台词 -->
+        <div class="card">
+            <div class="card-title"><span>🗣️ 手机远程编辑车身播报台词</span><button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin-top:0;" onclick="loadTtsSettings()">🔄 刷新</button></div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">在手机上打字更便捷，输入后保存将直接同步并生效至车机系统：</div>
+            <div style="display:grid; grid-template-columns: 1fr; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 4px;">
+                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🚗 前进挡(D挡)播报台词：</label><input type="text" id="tts-gear_d" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 已挂入前进挡，系好安全带，祝你一路平安"></div>
+                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🔙 倒车挡(R挡)播报台词：</label><input type="text" id="tts-gear_r" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 已挂入倒车挡，请注意观察后方安全"></div>
+                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🅿️ 驻车挡(P挡)播报台词：</label><input type="text" id="tts-gear_p" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 已挂入驻车挡"></div>
+                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🚪 主驾开门播报台词：</label><input type="text" id="tts-door_fl" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 主驾车门打开，请注意后方来车"></div>
+                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🚪 主驾关门播报台词：</label><input type="text" id="tts-door_fl_close" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 主驾车门已关好"></div>
+                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🚪 副驾开门播报台词：</label><input type="text" id="tts-door_fr" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 欢迎乘车，请注意安全"></div>
+                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🚪 副驾关门播报台词：</label><input type="text" id="tts-door_fr_close" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 副驾已就坐，请系好安全带"></div>
+                <div><label style="font-size:12px; font-weight:bold; color:#334155;">📦 后备箱打开台词：</label><input type="text" id="tts-trunk_open" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 后备箱已打开"></div>
+                <div><label style="font-size:12px; font-weight:bold; color:#334155;">📦 后备箱关闭台词：</label><input type="text" id="tts-trunk_close" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 后备箱已关闭"></div>
+                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🔑 车辆熄火提醒台词：</label><input type="text" id="tts-flameout" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 车辆已熄火，请带好随身物品"></div>
+            </div>
+            <button class="btn btn-primary" style="margin-top:12px;" onclick="saveTtsSettings()">💾 保存台词并推送至车机</button>
+        </div>
+
+        <!-- 卡片 5: 反向导出 -->
+        <div class="card">
+            <div class="card-title"><span>📥 车机文件反向导出到手机</span><button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin-top:0;" onclick="loadCarFiles()">🔄 刷新列表</button></div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">点击即可将车机 /sdcard/Download/ 下的日志与 APK 下回到手机：</div>
+            <div id="car-files-box" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+                <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 16px;">正在加载车机文件列表...</div>
+            </div>
+        </div>
+
+        <!-- 卡片 6: 快捷指令 -->
+        <div class="card">
+            <div class="card-title"><span>⚡ 车机远程快捷指令</span></div>
+            <button class="btn btn-secondary" onclick="sendAction('open_files')">📁 调起车机原生文件管理</button>
+            <button class="btn btn-danger" onclick="confirmHardReboot()">⚡ 一键重启车机</button>
+        </div>
+
+        <div class="tip-box">
+            🛡️ 安全提示：传输完成后，请在车机端打开原生文件管理直接点击安装，严禁使用 ADB 直装破坏空调界面。
+        </div>
+    </div>
+
+    <script>
+        const ttsKeys = ['gear_d', 'gear_r', 'gear_p', 'door_fl', 'door_fl_close', 'door_fr', 'door_fr_close', 'trunk_open', 'trunk_close', 'flameout'];
+
+        async function loadTtsSettings() {
+            try {
+                const res = await fetch('/api/get_tts');
+                const data = await res.json();
+                ttsKeys.forEach(k => {
+                    const el = document.getElementById('tts-' + k);
+                    if (el && data[k] !== undefined) el.value = data[k];
+                });
+            } catch(e) {}
+        }
+        loadTtsSettings();
+
+        async function saveTtsSettings() {
+            const payload = {};
+            ttsKeys.forEach(k => {
+                const el = document.getElementById('tts-' + k);
+                if (el) payload[k] = el.value.trim();
+            });
+            try {
+                const res = await fetch('/api/save_tts', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                const data = await res.json();
+                alert(data.message || '台词已成功保存！');
+            } catch(e) { alert('保存失败: ' + e.message); }
+        }
+
+        async function loadCarFiles() {
+            const box = document.getElementById('car-files-box');
+            box.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 16px;">正在加载车机文件列表...</div>';
+            try {
+                const res = await fetch('/api/list_downloads');
+                const data = await res.json();
+                if (!data.files || data.files.length === 0) {
+                    box.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 16px;">车机下载目录暂无文件</div>';
+                    return;
+                }
+                let html = '';
+                data.files.forEach(f => {
+                    const isLog = f.name.endsWith('.log') || f.name.endsWith('.txt');
+                    const icon = isLog ? '📋' : (f.name.endsWith('.apk') ? '📦' : '📄');
+                    html += '<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid #f1f5f9;">' +
+                            '  <div style="overflow:hidden; margin-right:8px;">' +
+                            '    <div style="font-size:13px; font-weight:600; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + icon + ' ' + f.name + '</div>' +
+                            '    <div style="font-size:11px; color:#64748b;">' + f.sizeFormatted + ' · ' + f.timeFormatted + '</div>' +
+                            '  </div>' +
+                            '  <a href="/api/download?file=' + encodeURIComponent(f.name) + '" download="' + f.name + '" style="text-decoration:none;"><button class="btn btn-primary" style="width:auto; padding:6px 12px; font-size:12px; white-space:nowrap;">⬇️ 下载</button></a>' +
+                            '</div>';
+                });
+                box.innerHTML = html;
+            } catch(e) {
+                box.innerHTML = '<div style="text-align: center; color: #ef4444; font-size: 12px; padding: 16px;">加载失败: ' + e.message + '</div>';
+            }
+        }
+        loadCarFiles();
+
+        async function pushUrl() {
+            const url = document.getElementById('push-url').value.trim();
+            if (!url) { alert('请输入下载地址'); return; }
+            try {
+                const res = await fetch('/api/push_url', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ url: url }) });
+                const data = await res.json();
+                alert(data.message || '已成功推送到车机后台下载！');
+                document.getElementById('push-url').value = '';
+            } catch(e) { alert('推送失败: ' + e.message); }
+        }
+
+        async function pushAdbCmd() {
+            const cmd = document.getElementById('adb-cmd').value.trim();
+            if (!cmd) { alert('请输入 ADB 指令'); return; }
+            try {
+                const res = await fetch('/api/push_cmd', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ cmd: cmd }) });
+                const data = await res.json();
+                alert(data.message || '✅ 指令已推送至车机屏幕待核对！');
+                document.getElementById('adb-cmd').value = '';
+            } catch(e) { alert('推送失败: ' + e.message); }
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('file-input');
+            if (!fileInput.files.length) { alert('请先选择文件'); return; }
+            const file = fileInput.files[0];
+            const chunkSize = 2 * 1024 * 1024; // 2MB chunks
+            const totalChunks = Math.ceil(file.size / chunkSize);
+            const pBar = document.getElementById('progress-bar');
+            const pFill = document.getElementById('progress-fill');
+            const pStatus = document.getElementById('upload-status');
+            pBar.style.display = 'block';
+            let resolvedName = file.name;
+            for (let i = 0; i < totalChunks; i++) {
+                const start = i * chunkSize;
+                const end = Math.min(file.size, start + chunkSize);
+                const chunk = file.slice(start, end);
+                const isLast = (i === totalChunks - 1);
+                pStatus.innerText = '正在传输: ' + Math.round((i / totalChunks) * 100) + '% (' + (start / 1024 / 1024).toFixed(1) + 'MB / ' + (file.size / 1024 / 1024).toFixed(1) + 'MB)';
+                const res = await fetch('/api/upload_chunk', {
+                    method: 'POST',
+                    headers: {
+                        'x-file-name': encodeURIComponent(resolvedName),
+                        'x-chunk-offset': start.toString(),
+                        'x-name-resolved': (i > 0 ? 'true' : 'false'),
+                        'x-last-chunk': isLast ? 'true' : 'false'
+                    },
+                    body: chunk
+                });
+                try {
+                    const chunkJson = await res.json();
+                    if (chunkJson && chunkJson.savedName) resolvedName = chunkJson.savedName;
+                } catch(e) {}
+                pFill.style.width = Math.round(((i + 1) / totalChunks) * 100) + '%';
+            }
+            pStatus.innerText = '✅ 传输完成！已保存至车机 /sdcard/Download/' + resolvedName;
+        }
+
+        async function sendAction(act) {
+            try {
+                await fetch('/api/action', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: act }) });
+                alert('指令已执行！');
+            } catch(e) { alert('执行失败: ' + e.message); }
+        }
+
+        function confirmHardReboot() {
+            if (confirm('【安全提示】确认远程重启车机系统？\n请确保车辆已安全停稳！')) {
+                sendAction('hard_reboot');
+            }
+        }
+
+        async function showVoiceReadme() {
+            const modal = document.getElementById('readme-modal');
+            const content = document.getElementById('readme-content');
+            content.innerText = '正在加载说明文档...';
+            modal.style.display = 'flex';
+            try {
+                const res = await fetch('/api/voice_readme');
+                const text = await res.text();
+                content.innerText = text;
+            } catch(e) {
+                content.innerText = '加载说明文档失败: ' + e.message;
+            }
+        }
+
+        function closeVoiceReadme() {
+            document.getElementById('readme-modal').style.display = 'none';
+        }
+    </script>
+
+    <!-- README 弹窗 -->
+    <div id="readme-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); z-index:9999; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;">
+        <div style="background:#ffffff; border-radius:14px; max-width:600px; width:100%; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
+            <div style="padding:14px 16px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:bold; font-size:15px; color:#1e293b;">📖 吉利智驾 · 专车语音制作指南</span>
+                <button onclick="closeVoiceReadme()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#64748b; padding:4px 8px;">✕</button>
+            </div>
+            <pre id="readme-content" style="padding:14px 16px; margin:0; font-size:12px; color:#334155; line-height:1.6; overflow-y:auto; white-space:pre-wrap; font-family:monospace; background:#fdfdfd; flex:1;"></pre>
+            <div style="padding:10px 16px; background:#f8fafc; border-top:1px solid #e2e8f0; text-align:right;">
+                <button class="btn btn-primary" style="width:auto; padding:6px 22px; margin-top:0;" onclick="closeVoiceReadme()">我知道了</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

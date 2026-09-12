@@ -1,0 +1,219 @@
+name: Build & Release GeelyConsole APK
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+      - 'beta-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  build:
+    name: Build & Verify APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Setup Node.js & Build Vite Web Assets
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install pnpm & Build Frontend
+        run: |
+          npm install -g pnpm
+          cd web
+          pnpm install --no-frozen-lockfile --dangerously-allow-all-builds
+          pnpm build
+          cd ..
+
+      - name: Inject Tag Version & VersionCode (Tag-Driven, Dual Channel)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG_RAW="${GITHUB_REF#refs/tags/}"
+          IS_BETA=false
+          REV=99
+          if [[ "$TAG_RAW" == beta-* ]]; then
+            IS_BETA=true
+            TAG_VER="${TAG_RAW#beta-v}"
+            # 测试版必须使用四段号 beta-vX.Y.Z.N（N = 1~98 测试序号），严禁与正式版同码
+            IFS='.' read -r MAJ MIN PATCH REVISION <<< "$TAG_VER"
+            if [[ -z "$REVISION" ]]; then
+              echo "!! [FAIL] 测试版 Tag 必须为四段号 beta-vX.Y.Z.N（如 beta-v1.7.8.1），当前: ${TAG_RAW}"; exit 1
+            fi
+            REV="$REVISION"
+            if (( REV < 1 || REV > 98 )); then
+              echo "!! [FAIL] 测试序号必须为 1~98（beta-vX.Y.Z.N），当前: ${REV}"; exit 1
+            fi
+            BASE_VER="${MAJ}.${MIN}.${PATCH}"
+            VNAME="${BASE_VER}-beta.${REV}"
+          else
+            TAG_VER="${TAG_RAW#v}"
+            IFS='.' read -r MAJ MIN PATCH <<< "$TAG_VER"
+            BASE_VER="${TAG_VER}"
+            VNAME="${TAG_VER}"
+          fi
+          # 新公式（消除 1.7.10 与 1.8.0 撞码）：(主*10000+次*100+修订)*100 + 序号
+          # 正式版序号固定 99，测试版序号 1~98 → 同版本测试号恒排在正式号之前
+          VCODE=$(( (MAJ*10000 + MIN*100 + PATCH) * 100 + REV ))
+          echo "Injecting tag-driven version: ${VNAME} (versionCode ${VCODE}, base ${BASE_VER}, rev ${REV})"
+          sed -i "s/versionCode [0-9]*/versionCode ${VCODE}/" app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"${VNAME}\"/" app/build.gradle
+          grep -E 'version(Name|Code)' app/build.gradle
+          GOT_CODE=$(grep -oP 'versionCode \K[0-9]+' app/build.gradle)
+          GOT_NAME=$(grep -oP 'versionName "\K[^"]+' app/build.gradle)
+          if [[ "$GOT_CODE" != "$VCODE" || "$GOT_NAME" != "$VNAME" ]]; then
+            echo "!! [FAIL] Tag version/versionCode injection verification failed. Aborting."
+            exit 1
+          fi
+          echo "[PASS] build.gradle now: ${GOT_NAME} (code ${GOT_CODE}) — matches publish_r2.py formula"
+
+      - name: Run CI Health Checks (Links, JSBridge, DOM Handlers, Version Contract)
+        run: python3 scripts/ci_health_check.py
+
+      - name: Build Release APK (Verification)
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Copy & Rename APK
+        run: |
+          mkdir -p output
+          cp app/build/outputs/apk/release/app-release.apk output/GeelyConsole.apk
+
+            # APK 直接通过 R2 和 GitHub Release 分发，免占用 Actions Artifact 存储配额
+
+            # 🌟 分流推送：正式版 Tag (v*) 更新正式版，测试版 Tag (beta-v*) 仅更新测试通道
+      - name: Push APK & Metadata to R2 on Tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          set -e
+          # 安装 AWS CLI（R2 兼容 S3 API）
+          if ! command -v aws &>/dev/null; then
+            curl -sL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/awscliv2.zip
+            unzip -qo /tmp/awscliv2.zip -d /tmp/awscli
+            /tmp/awscli/aws/install --update
+          fi
+
+          export VERSION_NAME=$(grep -oP 'versionName "\K[^"]+' app/build.gradle)
+          export VERSION_CODE=$(grep -oP 'versionCode \K[0-9]+' app/build.gradle)
+          export TAG_NAME="${GITHUB_REF#refs/tags/}"
+
+          # 配置 aws cli 访问 R2
+          export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
+          export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
+          export AWS_DEFAULT_REGION=auto
+          BUCKET="s3://downloads/GeelyToolbox/"
+
+          # 如果是正式版发布，预先拉取线上 apps.json 供脚本更新
+          if [[ "$TAG_NAME" != beta-* ]]; then
+            curl -s "https://dl.onepve.com/GeelyToolbox/apps.json?t=$(date +%s)" -o /tmp/apps.json || true
+          fi
+
+          # 统一由独立 Python 脚本生成规范元数据，彻底避免 shell heredoc 缩进问题
+          python3 scripts/publish_r2.py
+
+          if [[ "$TAG_NAME" == beta-* ]]; then
+            echo "⚡ 正在同步【测试通道】至 R2..."
+            aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyToolbox-beta.apk" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+            aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyPilot-beta.apk" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+            aws s3 cp /tmp/version-beta.json "${BUCKET}version-beta.json" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+          else
+            echo "🚀 正在同步【正式通道】至 R2..."
+            aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyToolbox.apk" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+            aws s3 cp output/GeelyConsole.apk "${BUCKET}GeelyPilot.apk" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+            aws s3 cp /tmp/version.json "${BUCKET}version.json" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+            if [ -f /tmp/apps.json ]; then
+              aws s3 cp /tmp/apps.json "${BUCKET}apps.json" \
+                --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+            fi
+          fi
+
+      - name: Publish Official Release on Tag
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "GeelyConsole ${{ github.ref_name }}"
+          files: |
+            output/GeelyConsole.apk
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 发新版时自动清理旧版 Release/Draft 发行版与旧远程 Git Tags，永不堆积
+      - name: Cleanup Old Releases & Tags on Tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          set +e
+          CURRENT_TAG="${{ github.ref_name }}"
+          echo "1. Cleaning up older releases and drafts (except $CURRENT_TAG)..."
+          gh release list -R "${{ github.repository }}" --exclude-drafts=false --json tagName -q ".[].tagName" | while read -r tag; do
+            if [ -n "$tag" ] && [ "$tag" != "$CURRENT_TAG" ]; then
+              echo "Deleting old release: $tag"
+              gh release delete "$tag" -R "${{ github.repository }}" -y 2>/dev/null || true
+            fi
+          done
+
+          echo "2. Cleaning up older remote git tags (except $CURRENT_TAG)..."
+          git ls-remote --tags origin | awk '{print $2}' | sed 's@refs/tags/@@' | grep -v '\^{}' | while read -r tag; do
+            if [ -n "$tag" ] && [ "$tag" != "$CURRENT_TAG" ]; then
+              echo "Deleting old remote tag: $tag"
+              git push origin --delete "$tag" 2>/dev/null || true
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 每次运行无论成功失败，自动清理旧缓存、历史旧构建产物与所有历史 CI 运行记录，防止存储超量
+      - name: Auto Cleanup Old CI Runs, Caches & Artifacts
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          echo "1. Cleaning up repository action caches..."
+          gh extension install actions/gh-actions-cache 2>/dev/null || true
+          gh actions-cache list -R "${{ github.repository }}" -L 100 --order desc | cut -f 1 | while read -r key; do
+            [ -n "$key" ] && gh actions-cache delete "$key" -R "${{ github.repository }}" --confirm 2>/dev/null || true
+          done
+
+          echo "2. Cleaning up repository action artifacts..."
+          gh api repos/"${{ github.repository }}"/actions/artifacts -q '.artifacts[].id' 2>/dev/null | while read -r artifact_id; do
+            if [ -n "$artifact_id" ]; then
+              echo "Deleting artifact: $artifact_id"
+              gh api -X DELETE repos/"${{ github.repository }}"/actions/artifacts/"$artifact_id" 2>/dev/null || true
+            fi
+          done
+
+          echo "3. Cleaning up all old workflow runs (keeping current)..."
+          gh run list -R "${{ github.repository }}" -L 100 --json databaseId -q '.[] | select(.databaseId != ${{ github.run_id }}) | .databaseId' | while read -r run_id; do
+            if [ -n "$run_id" ]; then
+              echo "Deleting old run: $run_id"
+              gh run delete "$run_id" -R "${{ github.repository }}" 2>/dev/null || true
+            fi
+          done
