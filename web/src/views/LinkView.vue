@@ -38,9 +38,9 @@
       <!-- 任务 1: 转向灯联动 360 -->
       <div 
         v-if="isTaskVisible('turn_360')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
       >
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
             <span class="text-[21px] font-black text-car-text tracking-wide">1. 转向灯联动 360 全景</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">AVM 盲区</span>
@@ -59,12 +59,12 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
           <div class="text-car-sub font-bold">拨动转向拨杆，且当前行车车速 ≤ 30 km/h</div>
           <div class="text-car-text font-bold">秒级调起 360 全景盲区影像；方向盘回正自动退出</div>
         </div>
 
-        <div class="pt-2 border-t border-car-border/60">
+        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
           <button
             @click="toggleSetting('vehicle_turn_360_enabled')"
             :class="[
@@ -83,9 +83,9 @@
       <!-- 任务 2: D 挡起步联动 360 -->
       <div 
         v-if="isTaskVisible('d_360')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
       >
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
             <span class="text-[21px] font-black text-car-text tracking-wide">2. 前进 D 挡起步联动 360</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">单次跃变</span>
@@ -104,12 +104,12 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
           <div class="text-car-sub font-bold">从 P 挡或 R 挡切入前进 D 挡起步 (单次跃变锁)</div>
           <div class="text-car-text font-bold">唤醒 360 扫除起步盲区；车速超 15 km/h 自动还原</div>
         </div>
 
-        <div class="pt-2 border-t border-car-border/60">
+        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
           <button
             @click="toggleSetting('vehicle_d_gear_360_enabled')"
             :class="[
@@ -499,9 +499,9 @@
       <!-- 任务 6: 白天大灯联动高德日夜模式 -->
       <div 
         v-if="isTaskVisible('light_nav')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
       >
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
             <span class="text-[21px] font-black text-car-text tracking-wide">6. 进隧道大灯联动高德</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">高德暗色</span>
@@ -520,12 +520,12 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
           <div class="text-car-sub font-bold">白天行车开启前大灯（驶入地下车库或隧道）</div>
           <div class="text-car-text font-bold">秒级切为夜间深色导航；关灯自动恢复浅色</div>
         </div>
 
-        <div class="pt-2 border-t border-car-border/60">
+        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
           <button
             @click="toggleSetting('vehicle_headlight_nav_night_enabled')"
             :class="[
@@ -544,9 +544,9 @@
       <!-- 任务 7: 进隧道中控屏幕护眼背光微调 -->
       <div 
         v-if="isTaskVisible('light_dim')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
       >
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
             <span class="text-[21px] font-black text-car-text tracking-wide">7. 进隧道中控背光微调</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">背光柔和</span>
@@ -565,12 +565,12 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
           <div class="text-car-sub font-bold">白天开启前大灯（进车库或穿行长隧道）</div>
           <div class="text-car-text font-bold">自动将中控屏幕亮度微调压低至 35% 柔光护眼</div>
         </div>
 
-        <div class="pt-2 border-t border-car-border/60">
+        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
           <button
             @click="toggleSetting('vehicle_headlight_dim_screen_enabled')"
             :class="[
@@ -589,9 +589,9 @@
       <!-- 任务 8: P 挡开门多媒体优雅静音 -->
       <div 
         v-if="isTaskVisible('door_pause')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
       >
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
             <span class="text-[21px] font-black text-car-text tracking-wide">8. 停稳推门多媒体暂停</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">下车静音</span>
@@ -610,12 +610,12 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
           <div class="text-car-sub font-bold">挂入驻车 P 挡且推开前排车门（准备下车）</div>
           <div class="text-car-text font-bold">自动向音乐播放器发送暂停指令，下车优雅安静</div>
         </div>
 
-        <div class="pt-2 border-t border-car-border/60">
+        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
           <button
             @click="toggleSetting('vehicle_door_pause_music_enabled')"
             :class="[

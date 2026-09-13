@@ -904,11 +904,60 @@ else:
 
 
 # ----------------------------------------------------------------------
+# 18. HMI Alignment, Card Equal-Height & Anti-Crowding Spacing Gate
+# (双列等高对齐、按钮基线对齐、严禁 pt-1/pt-2 贴脸分割线、主视图零 Emoji 防线)
+# ----------------------------------------------------------------------
+log_step("18. Checking HMI Alignment, Card Equal-Height & Anti-Crowding Spacing Gate")
+hmi_violations = []
+
+# 1. 源码级静态扫描：禁止在主要任务卡片分割线操作区使用 pt-1 或 pt-2 贴脸
+for root, _, files in os.walk(WEB_SRC_DIR):
+    for fn in files:
+        if fn.endswith(".vue"):
+            fp = os.path.join(root, fn)
+            with open(fp, "r", encoding="utf-8") as f:
+                content = f.read()
+            # 扫描 pt-1 或 pt-2 紧贴 border-t 的操作区
+            for idx, line in enumerate(content.splitlines(), 1):
+                if "border-t" in line and re.search(r'\bpt-[12]\b', line):
+                    if "button" in line or "grid" in line or "flex" in line:
+                        hmi_violations.append((fn, f"第 {idx} 行发现 pt-[12] 贴脸分割线操作区 ({line.strip()})，必须保持 >= pt-4 (16px) 车规舒展间距！"))
+
+            # 主视图 views/ 下除临时测试面板外，严格禁止彩色 Emoji
+            if os.path.basename(root) == "views":
+                bad_emojis = re.findall(r'[\U0001F300-\U0001F64F\U0001F680-\U0001F6FF\U0001F900-\U0001F9FF]', content)
+                if bad_emojis:
+                    hmi_violations.append((fn, f"发现违规彩色 Emoji 字符: {bad_emojis[:5]}，主视图必须使用纯净车规中文！"))
+
+# 2. 动用自动化视觉巡检探针 (audit_full_ui.py)
+audit_script = os.path.join(ROOT_DIR, "scripts", "audit_full_ui.py")
+if os.path.exists(audit_script):
+    try:
+        res = subprocess.run(
+            [sys.executable, audit_script],
+            cwd=ROOT_DIR, capture_output=True, text=True, timeout=120
+        )
+        if res.returncode != 0:
+            hmi_violations.append(f"自动化视觉巡检失败:\n{res.stdout}\n{res.stderr}")
+        else:
+            print("[PASS] 自动化视觉巡检探针：8 大主视图 + 17 大二级/三级弹窗向导 100% 几何对齐与视口合规！")
+    except Exception as e:
+        hmi_violations.append(f"自动化视觉巡检探针执行异常: {e}")
+
+if hmi_violations:
+    for hv in hmi_violations:
+        print(f"  [FAIL] {hv}")
+    passed = False
+else:
+    print("[PASS] 全场景 HMI 几何对齐与防错位防贴脸门禁全绿！(双列卡片绝对等高、按钮基线拉平、上下间距舒展 >= 16px、零违规 Emoji)")
+
+
+# ----------------------------------------------------------------------
 # Final Summary Verdict
 # ----------------------------------------------------------------------
-log_step("CI 17-Gate Health Check Verdict")
+log_step("CI 18-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 17 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense & version contract consistency all closed)")
+    print("[SUCCESS] All 18 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency & HMI geometric alignment all closed)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")

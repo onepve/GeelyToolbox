@@ -140,7 +140,7 @@
     <!-- 底部运维与避坑指引 -->
     <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
       <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
-        <span class="mr-2">💡</span> 座舱底层维护铁律与核心原理说明：
+        座舱底层维护铁律与核心原理说明：
       </div>
       <div>• <b>冷重启原理</b>：彻底断电重启 MCU 与 Framework，彻底杜绝开门播报延迟与系统卡顿；</div>
       <div>• <b>应用商店与白名单</b>：原厂应用商店运行会破坏白名单策略导致第三方软件无法安装，必须保持冻结锁定；</div>

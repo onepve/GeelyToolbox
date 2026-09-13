@@ -147,9 +147,9 @@
       <!-- 语音任务 1: 挡位安全播报计划 -->
       <div 
         v-if="isVoiceTaskVisible('gear_voice')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
       >
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
             <span class="text-[21px] font-black text-car-text tracking-wide">1. 换挡有人感知语音计划</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">换挡安全</span>
@@ -169,14 +169,14 @@
           </button>
         </div>
 
-        <!-- 逻辑说明：纯净两段式流向说明，彻底告别金色当就小标签与嵌套灰框 -->
-        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+        <!-- 逻辑说明：纯净两段式流向说明，垂直居中撑开 -->
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
           <div class="text-car-sub font-bold">踩刹车挂入 D / R / N 挡，或从行车切回 P 挡驻车</div>
           <div class="text-car-text font-bold">清晰播报挡位状态，支持自定义台词与音频混搭</div>
         </div>
 
-        <!-- 底部车规双大按钮：左开关 + 右配置 -->
-        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-car-border/60">
+        <!-- 底部车规双大按钮：拉大间距至 pt-4，mt-auto 锁定绝对基线对齐 -->
+        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
           <button
             @click="toggleAllGearVoice"
             :class="[
@@ -202,9 +202,9 @@
       <!-- 语音任务 2: 驾驶模式旋钮播报计划 -->
       <div 
         v-if="isVoiceTaskVisible('mode_voice')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
       >
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
             <span class="text-[21px] font-black text-car-text tracking-wide">2. 驾驶模式旋钮切换计划</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">旋钮激擎</span>
@@ -224,12 +224,12 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
           <div class="text-car-sub font-bold">中控模式旋钮转动切换至舒适、经济、运动或智能</div>
           <div class="text-car-text font-bold">晓晓知性声线发声，点亮对应氛围 (含 160ms 防抖)</div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-car-border/60">
+        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
           <button
             @click="toggleAllModeVoice"
             :class="[
@@ -255,9 +255,9 @@
       <!-- 语音任务 3: 四门迎宾与关门安全播报计划 -->
       <div 
         v-if="isVoiceTaskVisible('door_voice')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
       >
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
             <span class="text-[21px] font-black text-car-text tracking-wide">3. 四门迎宾与关门安全计划</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">五门防抖</span>
@@ -277,12 +277,12 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
           <div class="text-car-sub font-bold">主驾、副驾、后排车门开启或关好 (防抖合并)</div>
           <div class="text-car-text font-bold">通用「车门已打开/关好」或独立分门，支持小爱定制</div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-car-border/60">
+        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
           <button
             @click="toggleAllDoorVoice"
             :class="[
@@ -308,9 +308,9 @@
       <!-- 语音任务 4: 原厂电动尾门安全播报计划 -->
       <div 
         v-if="isVoiceTaskVisible('trunk_voice')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
       >
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
             <span class="text-[21px] font-black text-car-text tracking-wide">4. 原厂电动尾门安全计划</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">尾门防碰</span>
@@ -330,12 +330,12 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
           <div class="text-car-sub font-bold">电动尾门按键触发升起，或锁扣电机下落闭锁确认</div>
           <div class="text-car-text font-bold">播报升起防刮蹭警示与落锁提示，支持专属定制</div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-car-border/60">
+        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
           <button
             @click="toggleAllTrunkVoice"
             :class="[

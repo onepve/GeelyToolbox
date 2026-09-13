@@ -592,13 +592,13 @@
             @click="applyRecommendedPreset"
             class="h-[52px] px-6 rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center whitespace-nowrap"
           >
-            ✨ 一键应用车友黄金方案
+            一键应用车友黄金方案
           </button>
           <button
             @click="resetAllToFactory"
             class="h-[52px] px-6 rounded-2xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center whitespace-nowrap"
           >
-            🔄 一键恢复全车原厂默认
+            一键恢复全车原厂默认
           </button>
         </div>
       </div>

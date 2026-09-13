@@ -82,7 +82,7 @@
             @click="openDialer"
             class="h-[58px] px-6 rounded-2xl bg-car-card border-2 border-car-accent text-car-accent hover:bg-car-item font-black text-[17px] cursor-pointer shadow-md transition-all whitespace-nowrap"
           >
-            📞 打开拨号盘
+            打开工程拨号盘
           </button>
         </div>
 
@@ -99,7 +99,7 @@
             @click="openDialer"
             class="h-[58px] px-6 rounded-2xl bg-car-card border-2 border-car-border text-car-text hover:border-car-border-light font-black text-[17px] cursor-pointer shadow-md transition-all whitespace-nowrap"
           >
-            📞 打开拨号盘
+            打开工程拨号盘
           </button>
         </div>
       </div>
@@ -153,7 +153,7 @@
             @click="openRabbitGuideModal"
             class="min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-accent flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all"
           >
-            <span class="text-[19px] font-black text-car-text">🛠️ 半自动保姆式卡主题向导</span>
+            <span class="text-[19px] font-black text-car-text">半自动保姆式卡主题向导</span>
             <span class="text-[13.5px] font-bold text-car-sub mt-1">分步向导弹窗引导注入与重启覆盖</span>
           </button>
 
@@ -162,7 +162,7 @@
             @click="openFileManager"
             class="min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
           >
-            <span class="text-[19px] font-black text-car-text">📁 调起原生文件管理</span>
+            <span class="text-[19px] font-black text-car-text">调起原生文件管理</span>
             <span class="text-[13.5px] font-bold text-car-sub mt-1">直接浏览车机 Download 目录与安装包</span>
           </button>
         </div>
@@ -209,7 +209,7 @@ function confirmUnlockExpert() {
           // 第 3 次确认：最终特权授权 (5s 倒计时)
           openModal('confirm', {
             title: '【最终授权】正式激活专家模式 (第 3/3 次确认)',
-            desc: '确认正式激活专家模式？激活后，下方将立即解锁【🛠️ 半自动保姆式卡主题向导】与【📁 调起原生文件管理】两大高阶工具。',
+            desc: '确认正式激活专家模式？激活后，下方将立即解锁【半自动保姆式卡主题向导】与【调起原生文件管理】两大高阶工具。',
             tip: '【提示】后续可随时在此处一键恢复安全锁定。',
             isDanger: true,
             countdown: 5,
@@ -217,7 +217,7 @@ function confirmUnlockExpert() {
             onConfirm: () => {
               store.settings.expert_rabbit = true;
               bridge.call('setSetting', 'expert_rabbit', true);
-              showToast('⚡ 专家模式已成功激活！高级注入工具箱已解锁');
+              showToast('专家模式已成功激活！高级注入工具箱已解锁');
             }
           });
         }
