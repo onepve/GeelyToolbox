@@ -431,88 +431,91 @@
       <!-- 任务 5: 行车超速语音警示 (纯加减微调控制器) -->
       <div 
         v-if="isTaskVisible('overspeed')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <span class="text-[22px] font-black text-car-text tracking-wide">5. 行车车速超限安全语音提醒</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent">超速警示</span>
+          <div class="flex items-center space-x-3 min-w-0">
+            <span class="text-[21px] font-black text-car-text tracking-wide truncate">5. 行车车速超限提醒</span>
+            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">超速警示</span>
+            <button 
+              @click.stop="showHelp('overspeed')"
+              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
+              title="查看功能指南"
+            >?</button>
           </div>
-          <div class="flex items-center space-x-3">
-            <button
-              @click="toggleSetting('vehicle_overspeed_enabled')"
-              :class="[
-                'h-[54px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center space-x-2',
-                store.vehicleAuto.vehicle_overspeed_enabled
-                  ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                  : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-              ]"
+          <button 
+            @click="removeTask('overspeed', '超速语音提醒')"
+            class="h-[50px] px-4 rounded-xl bg-car-item border border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[14px] cursor-pointer shadow-sm transition-all shrink-0 ml-3"
+            title="从工作台移除"
+          >
+            移除
+          </button>
+        </div>
+
+        <!-- 纯加减数值步进器 (上下通透，彻底杜绝左右横向挤压) -->
+        <div class="bg-car-item border-2 border-car-border rounded-2xl p-3 flex items-center justify-between shadow-inner">
+          <div class="flex items-center space-x-2">
+            <button 
+              @click="adjustOverspeedThreshold(-10)"
+              class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
             >
-              <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_overspeed_enabled ? 'bg-car-accent' : 'bg-car-sub']"></span>
-              <span>{{ store.vehicleAuto.vehicle_overspeed_enabled ? '计划运行中' : '计划已暂停' }}</span>
+              -10
             </button>
             <button 
-              @click="removeTask('overspeed', '超速语音提醒')"
-              class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
+              @click="adjustOverspeedThreshold(-5)"
+              class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
             >
-              
-              <span>移除</span>
+              -5
+            </button>
+          </div>
+          <div class="flex items-baseline space-x-1.5 px-3">
+            <span class="text-[32px] font-black text-car-accent tracking-tight font-mono">
+              {{ store.vehicleAuto.vehicle_overspeed_threshold || 80 }}
+            </span>
+            <span class="text-[15px] text-car-sub font-black">km/h</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button 
+              @click="adjustOverspeedThreshold(5)"
+              class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
+            >
+              +5
+            </button>
+            <button 
+              @click="adjustOverspeedThreshold(10)"
+              class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
+            >
+              +10
             </button>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3">
-            <div class="flex items-center space-x-3">
-              <span class="px-3 py-1 rounded-xl bg-car-card border border-car-border text-car-accent text-[15px] font-black shrink-0">当</span>
-              <span class="text-[16px] font-black text-car-text">车速连续超过设定红线达 3 秒：</span>
-            </div>
-            <!-- 纯加减数值步进器 -->
-            <div class="flex items-center justify-between bg-car-card border-2 border-car-border rounded-2xl p-2.5">
-              <div class="flex items-center space-x-2">
-                <button 
-                  @click="adjustOverspeedThreshold(-10)"
-                  class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-                >
-                  -10
-                </button>
-                <button 
-                  @click="adjustOverspeedThreshold(-5)"
-                  class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-                >
-                  -5
-                </button>
-              </div>
-              <div class="flex items-baseline space-x-1 px-4">
-                <span class="text-[32px] font-black text-car-accent tracking-tight font-mono">
-                  {{ store.vehicleAuto.vehicle_overspeed_threshold || 80 }}
-                </span>
-                <span class="text-[15px] text-car-sub font-black">km/h</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <button 
-                  @click="adjustOverspeedThreshold(5)"
-                  class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-                >
-                  +5
-                </button>
-                <button 
-                  @click="adjustOverspeedThreshold(10)"
-                  class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-                >
-                  +10
-                </button>
-              </div>
-            </div>
+        <!-- 纯净两段式流向说明 -->
+        <div class="flex flex-col space-y-1.5 py-1">
+          <div class="flex items-start space-x-2.5">
+            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
+            <span class="text-[15px] font-bold text-car-text leading-relaxed">行车车速连续超过设定红线达 3 秒</span>
           </div>
+          <div class="flex items-start space-x-2.5">
+            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
+            <span class="text-[15px] font-bold text-car-text leading-relaxed">温和提醒“您已超速，请注意安全”(带60秒防骚扰冷却)</span>
+          </div>
+        </div>
 
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-start space-x-3">
-            <span class="px-3 py-1 rounded-xl bg-car-card border border-car-accent/40 text-car-accent text-[15px] font-black shrink-0">就</span>
-            <div class="flex flex-col space-y-1">
-              <span class="text-[16px] font-black text-car-text">晓晓温润女声温和提醒：“您已超速，请注意行车安全”</span>
-              <span class="text-[13.5px] text-car-sub font-bold">内置 60 秒语音播报冷却防抖，杜绝长时段超速持续骚扰打扰。</span>
-            </div>
-          </div>
+        <!-- 底部全宽车规大磁贴开关 -->
+        <div class="pt-2 border-t border-car-border/60">
+          <button
+            @click="toggleSetting('vehicle_overspeed_enabled')"
+            :class="[
+              'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
+              store.vehicleAuto.vehicle_overspeed_enabled
+                ? 'bg-car-item border-car-accent text-car-text shadow-md'
+                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
+            ]"
+          >
+            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_overspeed_enabled ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
+            <span>{{ store.vehicleAuto.vehicle_overspeed_enabled ? '超速提醒计划运行中' : '超速提醒计划已暂停' }}</span>
+          </button>
         </div>
       </div>
 
