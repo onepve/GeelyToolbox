@@ -33,128 +33,114 @@
       </div>
     </div>
 
-    <!-- 计划任务流列表 -->
-    <div class="flex flex-col space-y-5">
+    <!-- 计划任务流列表 (车规对称双列网格 · 告别单列8层面条堆叠 · 1920宽屏黄金排布) -->
+    <div class="grid grid-cols-2 gap-5">
       <!-- 任务 1: 转向灯联动 360 -->
       <div 
         v-if="isTaskVisible('turn_360')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
-            <span class="text-[22px] font-black text-car-text tracking-wide">1. 转向灯联动 360 全景盲区</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent">AVM 盲区</span>
+            <span class="text-[21px] font-black text-car-text tracking-wide">1. 转向灯联动 360 全景</span>
+            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">AVM 盲区</span>
             <button 
               @click.stop="showHelp('turn_360')"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95"
-            >
-              ?
-            </button>
+              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
+              title="查看功能指南"
+            >?</button>
           </div>
-          <!-- 右侧操作区 -->
-          <div class="flex items-center space-x-3">
-            <button
-              @click="toggleSetting('vehicle_turn_360_enabled')"
-              :class="[
-                'h-[54px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center space-x-2',
-                store.vehicleAuto.vehicle_turn_360_enabled
-                  ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                  : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_turn_360_enabled ? 'bg-car-accent' : 'bg-car-sub']"></span>
-              <span>{{ store.vehicleAuto.vehicle_turn_360_enabled ? '计划运行中' : '计划已暂停' }}</span>
-            </button>
-            <button 
-              @click="removeTask('turn_360', '转向灯联动 360 全景')"
-              class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
-            >
-              
-              <span>移除</span>
-            </button>
+          <button 
+            @click="removeTask('turn_360', '转向灯联动 360 全景')"
+            class="h-[50px] px-4 rounded-xl bg-car-item border border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[14px] cursor-pointer shadow-sm transition-all shrink-0"
+            title="从工作台移除"
+          >
+            移除
+          </button>
+        </div>
+
+        <div class="flex flex-col space-y-2 py-1">
+          <div class="flex items-start space-x-2.5">
+            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
+            <span class="text-[15px] font-bold text-car-text leading-relaxed">拨动转向拨杆，且当前行车车速 ≤ 30 km/h</span>
+          </div>
+          <div class="flex items-start space-x-2.5">
+            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
+            <span class="text-[15px] font-bold text-car-text leading-relaxed">秒级调起 360 全景盲区影像；方向盘回正自动退出</span>
           </div>
         </div>
 
-        <!-- 两段式逻辑卡片 (When ➔ Then) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-start space-x-3">
-            <span class="px-3 py-1 rounded-xl bg-car-card border border-car-border text-car-accent text-[15px] font-black shrink-0">当</span>
-            <div class="flex flex-col space-y-1">
-              <span class="text-[16px] font-black text-car-text">拨动方向盘左/右转向灯，且当前车速 ≤ 30 km/h</span>
-              <span class="text-[13.5px] text-car-sub font-bold">监听底盘转向拨杆电平；时速超 30km/h 自动静默防挡导航。</span>
-            </div>
-          </div>
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-start space-x-3">
-            <span class="px-3 py-1 rounded-xl bg-car-card border border-car-accent/40 text-car-accent text-[15px] font-black shrink-0">就</span>
-            <div class="flex flex-col space-y-1">
-              <span class="text-[16px] font-black text-car-text">毫秒级唤起 360 全景盲区影像；方向盘回正后自动退出</span>
-              <span class="text-[13.5px] text-car-sub font-bold">直连吉利原厂 AVM 环视通道，行云流水无缝切换。</span>
-            </div>
-          </div>
+        <div class="pt-2 border-t border-car-border/60">
+          <button
+            @click="toggleSetting('vehicle_turn_360_enabled')"
+            :class="[
+              'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
+              store.vehicleAuto.vehicle_turn_360_enabled
+                ? 'bg-car-item border-car-accent text-car-text shadow-md'
+                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
+            ]"
+          >
+            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_turn_360_enabled ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
+            <span>{{ store.vehicleAuto.vehicle_turn_360_enabled ? '转向灯 360 联动运行中' : '转向灯 360 联动已暂停' }}</span>
+          </button>
         </div>
       </div>
 
       <!-- 任务 2: D 挡起步联动 360 -->
       <div 
         v-if="isTaskVisible('d_360')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
-            <span class="text-[22px] font-black text-car-text tracking-wide">2. 前进 D 挡起步联动 360 全景</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent">起步环视</span>
+            <span class="text-[21px] font-black text-car-text tracking-wide">2. 前进 D 挡起步联动 360</span>
+            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">单次跃变</span>
             <button 
               @click.stop="showHelp('gear_d_360')"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95"
-            >
-              ?
-            </button>
+              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
+              title="查看功能指南"
+            >?</button>
           </div>
-          <div class="flex items-center space-x-3">
-            <button
-              @click="toggleSetting('vehicle_d_gear_360_enabled')"
-              :class="[
-                'h-[54px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center space-x-2',
-                store.vehicleAuto.vehicle_d_gear_360_enabled
-                  ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                  : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_d_gear_360_enabled ? 'bg-car-accent' : 'bg-car-sub']"></span>
-              <span>{{ store.vehicleAuto.vehicle_d_gear_360_enabled ? '计划运行中' : '计划已暂停' }}</span>
-            </button>
-            <button 
-              @click="removeTask('d_360', 'D 挡起步联动 360')"
-              class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
-            >
-              
-              <span>移除</span>
-            </button>
+          <button 
+            @click="removeTask('d_360', 'D 挡起步联动 360')"
+            class="h-[50px] px-4 rounded-xl bg-car-item border border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[14px] cursor-pointer shadow-sm transition-all shrink-0"
+            title="从工作台移除"
+          >
+            移除
+          </button>
+        </div>
+
+        <div class="flex flex-col space-y-2 py-1">
+          <div class="flex items-start space-x-2.5">
+            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
+            <span class="text-[15px] font-bold text-car-text leading-relaxed">从 P 挡或 R 挡切入前进 D 挡起步 (单次跃变锁)</span>
+          </div>
+          <div class="flex items-start space-x-2.5">
+            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
+            <span class="text-[15px] font-bold text-car-text leading-relaxed">唤醒 360 扫除起步盲区；车速超 15 km/h 自动还原</span>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-start space-x-3">
-            <span class="px-3 py-1 rounded-xl bg-car-card border border-car-border text-car-accent text-[15px] font-black shrink-0">当</span>
-            <div class="flex flex-col space-y-1">
-              <span class="text-[16px] font-black text-car-text">从 P 挡或 R 挡切入前进 D 挡起步</span>
-              <span class="text-[13.5px] text-car-sub font-bold">内置单次跃变武装锁，手动退出绝不循环弹窗。</span>
-            </div>
-          </div>
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-start space-x-3">
-            <span class="px-3 py-1 rounded-xl bg-car-card border border-car-accent/40 text-car-accent text-[15px] font-black shrink-0">就</span>
-            <div class="flex flex-col space-y-1">
-              <span class="text-[16px] font-black text-car-text">唤醒 360 环视车身四周；车速超 15 km/h 自动退出</span>
-              <span class="text-[13.5px] text-car-sub font-bold">起步扫除盲区，车速起来后自动还原本来导航界面。</span>
-            </div>
-          </div>
+        <div class="pt-2 border-t border-car-border/60">
+          <button
+            @click="toggleSetting('vehicle_d_gear_360_enabled')"
+            :class="[
+              'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
+              store.vehicleAuto.vehicle_d_gear_360_enabled
+                ? 'bg-car-item border-car-accent text-car-text shadow-md'
+                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
+            ]"
+          >
+            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_d_gear_360_enabled ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
+            <span>{{ store.vehicleAuto.vehicle_d_gear_360_enabled ? 'D 挡起步 360 运行中' : 'D 挡起步 360 已暂停' }}</span>
+          </button>
         </div>
       </div>
 
-      <!-- 任务 3: 车速达标智能启播车载音乐 (纯加减微调控制器) -->
+      <!-- 任务 3: 车速达标智能启播车载音乐 (整宽大卡片 · 纯加减微调控制器) -->
       <div 
         v-if="isTaskVisible('speed_music')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
+        class="col-span-2 rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -317,10 +303,10 @@
         </div>
       </div>
 
-      <!-- 任务 4: 车速达标自定义动作与唤起应用 (纯加减微调控制器) -->
+      <!-- 任务 4: 车速达标自定义动作与唤起应用 (整宽大卡片 · 纯加减微调控制器) -->
       <div 
         v-if="isTaskVisible('speed_action')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
+        class="col-span-2 rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -533,171 +519,153 @@
       <!-- 任务 6: 白天大灯联动高德日夜模式 -->
       <div 
         v-if="isTaskVisible('light_nav')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
-            <span class="text-[22px] font-black text-car-text tracking-wide">6. 进隧道大灯联动高德日夜模式</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent">高德暗色</span>
+            <span class="text-[21px] font-black text-car-text tracking-wide">6. 进隧道大灯联动高德</span>
+            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">高德暗色</span>
             <button 
               @click.stop="showHelp('light_nav')"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95"
-            >
-              ?
-            </button>
+              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
+              title="查看功能指南"
+            >?</button>
           </div>
-          <div class="flex items-center space-x-3">
-            <button
-              @click="toggleSetting('vehicle_headlight_nav_night_enabled')"
-              :class="[
-                'h-[54px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center space-x-2',
-                store.vehicleAuto.vehicle_headlight_nav_night_enabled
-                  ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                  : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_headlight_nav_night_enabled ? 'bg-car-accent' : 'bg-car-sub']"></span>
-              <span>{{ store.vehicleAuto.vehicle_headlight_nav_night_enabled ? '计划运行中' : '计划已暂停' }}</span>
-            </button>
-            <button 
-              @click="removeTask('light_nav', '进隧道高德日夜联动')"
-              class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
-            >
-              
-              <span>移除</span>
-            </button>
+          <button 
+            @click="removeTask('light_nav', '进隧道高德日夜联动')"
+            class="h-[50px] px-4 rounded-xl bg-car-item border border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[14px] cursor-pointer shadow-sm transition-all shrink-0"
+            title="从工作台移除"
+          >
+            移除
+          </button>
+        </div>
+
+        <div class="flex flex-col space-y-2 py-1">
+          <div class="flex items-start space-x-2.5">
+            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
+            <span class="text-[15px] font-bold text-car-text leading-relaxed">白天行车开启前大灯（驶入地下车库或隧道）</span>
+          </div>
+          <div class="flex items-start space-x-2.5">
+            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
+            <span class="text-[15px] font-bold text-car-text leading-relaxed">秒级切为夜间深色导航；关灯自动恢复浅色</span>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-start space-x-3">
-            <span class="px-3 py-1 rounded-xl bg-car-card border border-car-border text-car-accent text-[15px] font-black shrink-0">当</span>
-            <div class="flex flex-col space-y-1">
-              <span class="text-[16px] font-black text-car-text">白天行车开启前大灯（驶入地下车库或隧道）</span>
-              <span class="text-[13.5px] text-car-sub font-bold">监听 MCU 大灯开关信号与环境光照传感器。</span>
-            </div>
-          </div>
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-start space-x-3">
-            <span class="px-3 py-1 rounded-xl bg-car-card border border-car-accent/40 text-car-accent text-[15px] font-black shrink-0">就</span>
-            <div class="flex flex-col space-y-1">
-              <span class="text-[16px] font-black text-car-text">秒级将高德车机地图切为夜间深色；关灯自动恢复白天浅色</span>
-              <span class="text-[13.5px] text-car-sub font-bold">消除黑暗环境下中控大屏白光刺眼，护眼安心。</span>
-            </div>
-          </div>
+        <div class="pt-2 border-t border-car-border/60">
+          <button
+            @click="toggleSetting('vehicle_headlight_nav_night_enabled')"
+            :class="[
+              'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
+              store.vehicleAuto.vehicle_headlight_nav_night_enabled
+                ? 'bg-car-item border-car-accent text-car-text shadow-md'
+                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
+            ]"
+          >
+            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_headlight_nav_night_enabled ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
+            <span>{{ store.vehicleAuto.vehicle_headlight_nav_night_enabled ? '大灯联动高德运行中' : '大灯联动高德已暂停' }}</span>
+          </button>
         </div>
       </div>
 
       <!-- 任务 7: 进隧道中控屏幕护眼背光微调 -->
       <div 
         v-if="isTaskVisible('light_dim')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
-            <span class="text-[22px] font-black text-car-text tracking-wide">7. 进隧道中控屏幕护眼背光微调</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent">背光柔和</span>
+            <span class="text-[21px] font-black text-car-text tracking-wide">7. 进隧道中控背光微调</span>
+            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">背光柔和</span>
             <button 
               @click.stop="showHelp('light_dim')"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95"
-            >
-              ?
-            </button>
+              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
+              title="查看功能指南"
+            >?</button>
           </div>
-          <div class="flex items-center space-x-3">
-            <button
-              @click="toggleSetting('vehicle_headlight_dim_screen_enabled')"
-              :class="[
-                'h-[54px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center space-x-2',
-                store.vehicleAuto.vehicle_headlight_dim_screen_enabled
-                  ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                  : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_headlight_dim_screen_enabled ? 'bg-car-accent' : 'bg-car-sub']"></span>
-              <span>{{ store.vehicleAuto.vehicle_headlight_dim_screen_enabled ? '计划运行中' : '计划已暂停' }}</span>
-            </button>
-            <button 
-              @click="removeTask('light_dim', '中控背光微调')"
-              class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
-            >
-              
-              <span>移除</span>
-            </button>
+          <button 
+            @click="removeTask('light_dim', '中控背光微调')"
+            class="h-[50px] px-4 rounded-xl bg-car-item border border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[14px] cursor-pointer shadow-sm transition-all shrink-0"
+            title="从工作台移除"
+          >
+            移除
+          </button>
+        </div>
+
+        <div class="flex flex-col space-y-2 py-1">
+          <div class="flex items-start space-x-2.5">
+            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
+            <span class="text-[15px] font-bold text-car-text leading-relaxed">白天开启前大灯（进车库或穿行长隧道）</span>
+          </div>
+          <div class="flex items-start space-x-2.5">
+            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
+            <span class="text-[15px] font-bold text-car-text leading-relaxed">自动将中控屏幕亮度微调压低至 35% 柔光护眼</span>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-start space-x-3">
-            <span class="px-3 py-1 rounded-xl bg-car-card border border-car-border text-car-accent text-[15px] font-black shrink-0">当</span>
-            <div class="flex flex-col space-y-1">
-              <span class="text-[16px] font-black text-car-text">白天开启前大灯（进车库或穿行长隧道）</span>
-              <span class="text-[13.5px] text-car-sub font-bold">与高德夜间联动解耦独立，按需开启。</span>
-            </div>
-          </div>
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-start space-x-3">
-            <span class="px-3 py-1 rounded-xl bg-car-card border border-car-accent/40 text-car-accent text-[15px] font-black shrink-0">就</span>
-            <div class="flex flex-col space-y-1">
-              <span class="text-[16px] font-black text-car-text">自动将车机中控屏幕亮度微调压低至 35% 柔光模式</span>
-              <span class="text-[13.5px] text-car-sub font-bold">出隧道关大灯秒级恢复原亮度，平滑舒适零眩晕。</span>
-            </div>
-          </div>
+        <div class="pt-2 border-t border-car-border/60">
+          <button
+            @click="toggleSetting('vehicle_headlight_dim_screen_enabled')"
+            :class="[
+              'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
+              store.vehicleAuto.vehicle_headlight_dim_screen_enabled
+                ? 'bg-car-item border-car-accent text-car-text shadow-md'
+                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
+            ]"
+          >
+            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_headlight_dim_screen_enabled ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
+            <span>{{ store.vehicleAuto.vehicle_headlight_dim_screen_enabled ? '隧道背光微调运行中' : '隧道背光微调已暂停' }}</span>
+          </button>
         </div>
       </div>
 
       <!-- 任务 8: P 挡开门多媒体优雅静音 -->
       <div 
         v-if="isTaskVisible('door_pause')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
-            <span class="text-[22px] font-black text-car-text tracking-wide">8. 停稳推门多媒体自动暂停</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent">下车静音</span>
+            <span class="text-[21px] font-black text-car-text tracking-wide">8. 停稳推门多媒体暂停</span>
+            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">下车静音</span>
             <button 
               @click.stop="showHelp('door_pause')"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95"
-            >
-              ?
-            </button>
+              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
+              title="查看功能指南"
+            >?</button>
           </div>
-          <div class="flex items-center space-x-3">
-            <button
-              @click="toggleSetting('vehicle_door_pause_music_enabled')"
-              :class="[
-                'h-[54px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center space-x-2',
-                store.vehicleAuto.vehicle_door_pause_music_enabled
-                  ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                  : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_door_pause_music_enabled ? 'bg-car-accent' : 'bg-car-sub']"></span>
-              <span>{{ store.vehicleAuto.vehicle_door_pause_music_enabled ? '计划运行中' : '计划已暂停' }}</span>
-            </button>
-            <button 
-              @click="removeTask('door_pause', '推门暂停音乐')"
-              class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[15px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
-            >
-              
-              <span>移除</span>
-            </button>
+          <button 
+            @click="removeTask('door_pause', '推门暂停音乐')"
+            class="h-[50px] px-4 rounded-xl bg-car-item border border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[14px] cursor-pointer shadow-sm transition-all shrink-0"
+            title="从工作台移除"
+          >
+            移除
+          </button>
+        </div>
+
+        <div class="flex flex-col space-y-2 py-1">
+          <div class="flex items-start space-x-2.5">
+            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
+            <span class="text-[15px] font-bold text-car-text leading-relaxed">挂入驻车 P 挡且推开前排车门（准备下车）</span>
+          </div>
+          <div class="flex items-start space-x-2.5">
+            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
+            <span class="text-[15px] font-bold text-car-text leading-relaxed">自动向音乐播放器发送暂停指令，下车优雅安静</span>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-start space-x-3">
-            <span class="px-3 py-1 rounded-xl bg-car-card border border-car-border text-car-accent text-[15px] font-black shrink-0">当</span>
-            <div class="flex flex-col space-y-1">
-              <span class="text-[16px] font-black text-car-text">挂入驻车 P 挡且推开前排车门（准备下车）</span>
-              <span class="text-[13.5px] text-car-sub font-bold">严格绑定 P 挡停稳状态，行车中误碰车门不触发。</span>
-            </div>
-          </div>
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-start space-x-3">
-            <span class="px-3 py-1 rounded-xl bg-car-card border border-car-accent/40 text-car-accent text-[15px] font-black shrink-0">就</span>
-            <div class="flex flex-col space-y-1">
-              <span class="text-[16px] font-black text-car-text">自动向多媒体发送暂停播放广播指令</span>
-              <span class="text-[13.5px] text-car-sub font-bold">下车优雅安静，杜绝车门大开时音乐外响噪音。</span>
-            </div>
-          </div>
+        <div class="pt-2 border-t border-car-border/60">
+          <button
+            @click="toggleSetting('vehicle_door_pause_music_enabled')"
+            :class="[
+              'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
+              store.vehicleAuto.vehicle_door_pause_music_enabled
+                ? 'bg-car-item border-car-accent text-car-text shadow-md'
+                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
+            ]"
+          >
+            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_door_pause_music_enabled ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
+            <span>{{ store.vehicleAuto.vehicle_door_pause_music_enabled ? '推门暂停音乐运行中' : '推门暂停音乐已暂停' }}</span>
+          </button>
         </div>
       </div>
     </div>
