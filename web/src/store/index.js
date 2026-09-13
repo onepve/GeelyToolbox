@@ -72,7 +72,11 @@ export const store = reactive({
     vehicle_light_nav_enabled: false,
     vehicle_speed_custom_action_enabled: false,
     vehicle_speed_custom_action_threshold: 40,
-    vehicle_speed_custom_action_target: 'action_360'
+    vehicle_speed_custom_action_target: 'action_360',
+    voice_volume_offset: 0,
+    voice_volume_offset_music: 0,
+    voice_volume_offset_nav: 0,
+    voice_volume_offset_notification: 0
   },
 
   // 云端应用与下载

@@ -90,10 +90,10 @@ public class VehicleVoicePlayer {
         if (audioManager == null) return;
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            int offset = prefs.getInt("voice_volume_offset", 0);
+            String channel = prefs.getString("voice_audio_channel", "music");
+            int offset = prefs.getInt("voice_volume_offset_" + channel, prefs.getInt("voice_volume_offset", 0));
 
             boolean isReverse = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse") || voiceType.contains("倒车")));
-            String channel = prefs.getString("voice_audio_channel", "music");
             int stream = ("nav".equals(channel) || "notification".equals(channel))
                     ? AudioManager.STREAM_NOTIFICATION
                     : AudioManager.STREAM_MUSIC;

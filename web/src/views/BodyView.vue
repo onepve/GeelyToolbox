@@ -102,78 +102,7 @@
       </div>
     </div>
 
-    <!-- 3. 语音播报输出通道 (声道配置) -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 shadow-xl">
-      <div class="flex items-center justify-between pb-3 mb-3 border-b border-car-border/60">
-        <div class="flex items-center space-x-2.5">
-          <span class="text-[19px] font-black text-car-text">语音播报音频输出通道 (声道配置)</span>
-        </div>
-        <button
-          @click="testCurrentChannelVoice"
-          class="h-[52px] px-6 rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent shadow-md flex items-center shrink-0"
-        >
-          <span>试听当前通道</span>
-        </button>
-      </div>
-
-      <div class="grid grid-cols-3 gap-3">
-        <button 
-          @click="setAudioChannel('music')"
-          :class="[
-            'p-4 rounded-2xl border-2 text-left flex flex-col justify-between cursor-pointer transition-all shadow-sm',
-            currentAudioChannel === 'music'
-              ? 'bg-car-item border-car-accent shadow-md'
-              : 'bg-car-item border-car-border hover:border-car-border-light'
-          ]"
-        >
-          <div class="flex items-center justify-between">
-            <span class="text-[17px] font-black text-car-text">媒体主声道 (推荐)</span>
-            <span v-if="currentAudioChannel === 'music'" class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>
-          </div>
-          <span class="text-[13.5px] text-car-sub font-bold mt-2 leading-relaxed">
-            走媒体主功放扬声器，听歌时自动降音 60% 混音，播完后平滑恢复
-          </span>
-        </button>
-
-        <button 
-          @click="setAudioChannel('nav')"
-          :class="[
-            'p-4 rounded-2xl border-2 text-left flex flex-col justify-between cursor-pointer transition-all shadow-sm',
-            currentAudioChannel === 'nav'
-              ? 'bg-car-item border-car-accent shadow-md'
-              : 'bg-car-item border-car-border hover:border-car-border-light'
-          ]"
-        >
-          <div class="flex items-center justify-between">
-            <span class="text-[17px] font-black text-car-text">导航引导声道</span>
-            <span v-if="currentAudioChannel === 'nav'" class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>
-          </div>
-          <span class="text-[13.5px] text-car-sub font-bold mt-2 leading-relaxed">
-            与高德地图同级 DSP 混音，抗车身衰减能力最强，清晰度最高
-          </span>
-        </button>
-
-        <button 
-          @click="setAudioChannel('notification')"
-          :class="[
-            'p-4 rounded-2xl border-2 text-left flex flex-col justify-between cursor-pointer transition-all shadow-sm',
-            currentAudioChannel === 'notification'
-              ? 'bg-car-item border-car-accent shadow-md'
-              : 'bg-car-item border-car-border hover:border-car-border-light'
-          ]"
-        >
-          <div class="flex items-center justify-between">
-            <span class="text-[17px] font-black text-car-text">系统通知声道</span>
-            <span v-if="currentAudioChannel === 'notification'" class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>
-          </div>
-          <span class="text-[13.5px] text-car-sub font-bold mt-2 leading-relaxed">
-            走车载系统事件通知流，与原厂系统提示音同级，待机无歌时最佳
-          </span>
-        </button>
-      </div>
-    </div>
-
-    <!-- 4. 座舱语音计划任务工作台 (场景工坊) -->
+    <!-- 3. 座舱语音计划任务工作台 (场景工坊) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between">
       <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
         <div class="flex items-center space-x-3">
@@ -1423,24 +1352,6 @@ function fetchDoorStatus() {
       }
     }
   } catch (e) {}
-}
-
-const currentAudioChannel = computed(() => store.vehicleAuto.voice_audio_channel || 'music');
-
-function setAudioChannel(channel) {
-  store.vehicleAuto.voice_audio_channel = channel;
-  bridge.call('setVehicleAutomationStringSetting', 'voice_audio_channel', channel);
-  const labels = {
-    music: '媒体主声道 (听歌自动压音混音)',
-    nav: '导航引导声道 (抗衰减强力混音)',
-    notification: '系统通知声道 (事件提示音)'
-  };
-  showToast('已切换至: ' + (labels[channel] || channel));
-}
-
-function testCurrentChannelVoice() {
-  bridge.call('testVehicleVoice', 'door_fl');
-  showToast('正在通过当前选择声道试听播报...');
 }
 
 function setDoorMode(isUniversal) {

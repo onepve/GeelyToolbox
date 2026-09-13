@@ -49,7 +49,7 @@
     <!-- 2. 播报音量相对增益补偿滑条 (解决听歌低音量时听不清开门/换挡) -->
     <FeatureCard 
       title="2. 播报音量动态增益补偿 (听歌低音量时自动增补)"
-      desc="听歌时媒体音量调低容易听不清开门与换挡提醒。设置增益后，播报瞬间自动在当前音量上动态叠加补偿，播完秒级恢复原音量！"
+      desc="听歌时媒体音量调低容易听不清开门与换挡提醒。设置增益后，播报瞬间自动在当前媒体音量上动态叠加补偿，播完秒级恢复原音量！"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-6 flex flex-col space-y-4 shadow-sm">
         <div class="flex items-center justify-between">
@@ -103,7 +103,7 @@
               @click="testVolumeOffset"
               class="h-[56px] px-8 bg-car-card border-2 border-car-accent text-car-text font-black text-[17px] rounded-2xl cursor-pointer hover:border-car-accent shadow-md ring-2 ring-car-accent/20"
             >
-              🔊 试听当前音量增益
+              试听当前音量增益
             </button>
           </div>
         </div>
@@ -140,13 +140,13 @@
               @click="openModal('voiceThemeImport')"
               class="min-h-[56px] px-6 bg-car-card border-2 border-car-accent text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center space-x-2"
             >
-              <span>📂 导入语音包 (.zip)</span>
+              <span>导入语音包 (.zip)</span>
             </button>
             <button 
               @click="loadVoiceThemes"
               class="min-h-[56px] px-5 bg-car-card border-2 border-car-border text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm transition-all"
             >
-              🔄 刷新
+              刷新列表
             </button>
           </div>
         </div>
@@ -157,7 +157,7 @@
           <div class="bg-car-item border-2 border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
             <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
               <div class="flex items-center space-x-2.5">
-                <span class="text-[19px] font-black text-car-text">👑 出厂官方原声 (晓晓温婉知性)</span>
+                <span class="text-[19px] font-black text-car-text">出厂官方原声 (晓晓温婉知性)</span>
                 <span class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[12px] font-black">系统内置</span>
                 <span v-if="!activeThemeName" class="px-2.5 py-0.5 rounded-md bg-car-item border border-car-border text-car-text text-[12px] font-black inline-flex items-center shadow-sm"><span class="w-2 h-2 rounded-full mr-1.5 bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>正在生效</span>
               </div>
@@ -171,7 +171,7 @@
                 @click="testThemeVoice('')"
                 class="h-[52px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[16px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all"
               >
-                ▶️ 试听样音
+                试听样音
               </button>
               <button 
                 v-if="activeThemeName"
@@ -185,7 +185,7 @@
                 disabled
                 class="h-[52px] px-6 bg-car-card border-2 border-car-border text-car-sub font-black text-[16px] rounded-xl opacity-60 cursor-default"
               >
-                ✓ 正在生效
+                正在生效
               </button>
             </div>
           </div>
@@ -203,7 +203,7 @@
                 <span class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-border text-car-accent text-[12px] font-black shrink-0">
                   包含 {{ theme.count }} 个音频
                 </span>
-                <span v-if="activeThemeName === theme.name" class="px-2.5 py-0.5 rounded-md bg-car-item border border-car-border text-car-text text-[12px] font-black shrink-0 inline-flex items-center shadow-sm"><span class="w-2 h-2 rounded-full mr-1.5 bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>✓ 正在整套生效</span>
+                <span v-if="activeThemeName === theme.name" class="px-2.5 py-0.5 rounded-md bg-car-item border border-car-border text-car-text text-[12px] font-black shrink-0 inline-flex items-center shadow-sm"><span class="w-2 h-2 rounded-full mr-1.5 bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>正在整套生效</span>
               </div>
               <span class="text-[14.5px] text-car-sub font-mono font-bold truncate">
                 目录: {{ theme.path }}
@@ -215,7 +215,7 @@
                 @click="testThemeVoice(theme.name)"
                 class="h-[52px] px-5 bg-car-card border-2 border-car-border text-car-text font-black text-[16px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all"
               >
-                ▶️ 试听样音
+                试听样音
               </button>
               <button 
                 v-if="activeThemeName !== theme.name"
@@ -229,13 +229,13 @@
                 disabled
                 class="h-[52px] px-6 bg-car-card border-2 border-car-accent text-car-accent font-black text-[16px] rounded-xl cursor-default opacity-80"
               >
-                ✓ 正在生效
+                正在生效
               </button>
               <button 
                 @click="confirmDeleteTheme(theme.name)"
                 class="h-[52px] px-4 bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text hover:text-rose-400 font-black text-[15px] rounded-xl cursor-pointer shadow-sm transition-all"
               >
-                🗑️
+                删除
               </button>
             </div>
           </div>
@@ -318,6 +318,7 @@ onMounted(() => {
     const off = bridge.call('getVoiceVolumeOffset');
     if (typeof off === 'number') {
       volumeOffset.value = off;
+      store.vehicleAuto.voice_volume_offset = off;
     }
   } catch (e) {}
 
@@ -336,11 +337,12 @@ function openStoreToDownload() {
 }
 
 function saveVolumeOffset() {
+  store.vehicleAuto.voice_volume_offset = volumeOffset.value;
   bridge.call('setVoiceVolumeOffset', volumeOffset.value);
 }
 
 function adjustVolumeOffset(delta) {
-  let next = Math.max(-10, Math.min(15, volumeOffset.value + delta));
+  let next = Math.max(-5, Math.min(10, volumeOffset.value + delta));
   volumeOffset.value = next;
   saveVolumeOffset();
 }
