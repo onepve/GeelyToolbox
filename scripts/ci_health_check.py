@@ -245,14 +245,26 @@ for root, _, files in os.walk(WEB_SRC_DIR):
                 # 排除状态栏顶部 TopBar 小药丸按钮
                 if "TopBar" in fn:
                     continue
-                if 'class=' in b and 'h-[' in b:
+                # 主视图页面（views/）中的操作按钮，严禁缺少显式车规高度 (>=50px)
+                if os.path.basename(root) == "views":
+                    # 排除方控滑块等微型胶囊预设
+                    if "preset in" in b or "g in gestureList" in b:
+                        continue
                     h_m = re.search(r'h-\[(\d+)px\]', b)
-                    if h_m and int(h_m.group(1)) < 50:
+                    if not h_m:
+                        touch_violations.append((fn, "missing_explicit_h", b.strip()))
+                    elif int(h_m.group(1)) < 50:
                         touch_violations.append((fn, h_m.group(1), b.strip()))
+                else:
+                    # 组件和模态弹窗内检查显式 h-[xx] 是否低于 50
+                    if 'class=' in b and 'h-[' in b:
+                        h_m = re.search(r'h-\[(\d+)px\]', b)
+                        if h_m and int(h_m.group(1)) < 50:
+                            touch_violations.append((fn, h_m.group(1), b.strip()))
 
 if touch_violations:
     for v in touch_violations:
-        print(f"  [FAIL] Primary vehicle button height under 50px ({v[1]}px) at {v[0]}: {v[2][:60]}")
+        print(f"  [FAIL] Vehicle button sizing violation ({v[1]}) at {v[0]}: {v[2][:70]}")
     passed = False
 else:
     print("[PASS] All primary vehicle touch buttons satisfy car-grade touch sizing (>= 50px, primary tiles 78~88px).")
@@ -749,7 +761,23 @@ if re.search(r'\bCustomVoiceTextModal\b', app_vue_latest):
 if re.search(r'(?<!VoiceItem)SettingsModal\b', app_vue_latest):
     reg_violations.append("App.vue 仍挂载已下线的 SettingsModal 死代码组件！")
 
-# 16.9 已修复问题的专项回归：源码契约 + 真实 Java/JS 决策 + 反例自检
+# 16.9 车机精选商城车规尺度与零 Emoji 防线 (Store Car-Grade Sizing & Zero Emoji Defense)
+with open(os.path.join(WEB_SRC_DIR, "views", "StoreView.vue"), "r", encoding="utf-8") as f:
+    store_vue_code = f.read()
+if "实测机型声明" not in store_vue_code:
+    reg_violations.append("StoreView.vue 缺少实测机型声明核心卡片！")
+if "h-[48px]" not in store_vue_code and "h-[50px]" not in store_vue_code and "h-[52px]" not in store_vue_code:
+    reg_violations.append("StoreView.vue 实测机型声明徽标缺少车规大胶囊高度 (>=48px)！")
+if "p-6" not in store_vue_code and "p-7" not in store_vue_code:
+    reg_violations.append("StoreView.vue 实测机型声明内边距不足 (必须 >= p-6)，防止上下压窄！")
+if "h-[52px]" not in store_vue_code and "h-[50px]" not in store_vue_code:
+    reg_violations.append("StoreView.vue 分类与工具菜单缺少车规大按钮高度 (h-[50px] 或 h-[52px])！")
+if "🧹" in store_vue_code:
+    reg_violations.append("StoreView.vue 包含 Emoji 字符 (如扫帚)，违反全仓纯净车规中文规范！")
+if "查看详情与安装" not in store_vue_code:
+    reg_violations.append("StoreView.vue 应用卡片底栏缺少大号【查看详情与安装】操作靶区！")
+
+# 16.10 已修复问题的专项回归：源码契约 + 真实 Java/JS 决策 + 反例自检
 # 在本地与 tag CI 中均执行；任何失败阻断 APK 编译和上传。
 regression_scripts = [
     "check_recent_regressions.py",

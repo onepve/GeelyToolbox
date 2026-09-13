@@ -15,7 +15,7 @@
           <span class="text-[23px] font-black text-car-text tracking-wide">1. 全局桌面迷你悬浮胶囊总开关</span>
           <button 
             @click.stop="openFloatingHelp" 
-            class="w-8 h-8 rounded-full bg-car-item border-2 border-car-accent text-car-accent font-black text-[16px] flex items-center justify-center cursor-pointer shadow-sm shrink-0"
+            class="w-[50px] h-[50px] rounded-full bg-car-item border-2 border-car-border hover:border-car-accent text-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm shrink-0 transition-transform active:scale-95"
             title="查看功能指南"
           >?</button>
           <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent">桌面常驻</span>
@@ -100,7 +100,7 @@
           <span class="text-[23px] font-black text-car-text tracking-wide">2. 闲置自动屏保 (息屏休眠总开关)</span>
           <button 
             @click.stop="openScreensaverHelp" 
-            class="w-8 h-8 rounded-full bg-car-item border-2 border-car-accent text-car-accent font-black text-[16px] flex items-center justify-center cursor-pointer shadow-sm shrink-0"
+            class="w-[50px] h-[50px] rounded-full bg-car-item border-2 border-car-border hover:border-car-accent text-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm shrink-0 transition-transform active:scale-95"
             title="查看自动屏保核心原理"
           >?</button>
           <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent inline-flex items-center">
