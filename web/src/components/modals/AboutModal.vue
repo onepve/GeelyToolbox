@@ -39,24 +39,19 @@
         </div>
       </div>
 
-      <!-- 临时测试：车机 Emoji 兼容性实验室 (置顶显眼呈现，一开即见无需下拉) -->
-      <div class="p-5 rounded-2xl bg-amber-500/15 border-2 border-amber-500 flex items-center justify-between shadow-lg">
-        <div class="flex items-center space-x-3.5">
-          <span class="text-[28px] leading-none">🧪</span>
-          <div class="flex flex-col">
-            <span class="text-[17px] font-black text-amber-300 flex items-center">
-              车机 Emoji 兼容性实验室 (临时实测专用)
-            </span>
-            <span class="text-[13.5px] text-amber-200/90 font-bold mt-0.5">
-              内置 8 大类 188 个候选全场景图标，拍照自检车机字体支持，实测后自动下线
-            </span>
-          </div>
+      <!-- 临时测试：车机 Emoji 兼容性实测 (置顶全屏高密平铺入口) -->
+      <div class="p-4 rounded-2xl bg-amber-500/15 border-2 border-amber-500 flex items-center justify-between shadow-lg">
+        <div class="flex items-center space-x-3">
+          <span class="text-[24px]">🧪</span>
+          <span class="text-[17px] font-black text-amber-300">
+            车机 Emoji 实机全屏高密测试面板 (无废字纯图标平铺)
+          </span>
         </div>
         <button 
           @click="openEmojiTest"
-          class="h-[52px] px-6 rounded-xl bg-amber-500 text-black font-black text-[16.5px] cursor-pointer hover:bg-amber-400 shadow-md transition-all shrink-0"
+          class="h-[50px] px-6 rounded-xl bg-amber-500 text-black font-black text-[16px] cursor-pointer hover:bg-amber-400 shadow-md transition-all shrink-0"
         >
-          立即进入测试 ➔
+          全屏打开测试 ➔
         </button>
       </div>
 
