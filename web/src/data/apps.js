@@ -63,16 +63,16 @@ export const CLOUD_APPS = [
     "id": "amap95_flyscreen_inject",
     "category": "navigation",
     "badgeClass": "nav",
-    "badgeText": "测试",
-    "name": "高德地图 9.5.13 (64位SO飞屏注入测试版)",
-    "badge": "飞屏注入测试版",
-    "size": "149.98 MB",
-    "filename": "AutoMap_9.5.13_FlyScreen_Injection_Test.apk",
+    "badgeText": "推荐",
+    "name": "高德地图 9.5 (64位飞屏/7.5协议通用/原包名版)",
+    "badge": "64位飞屏/7.5协议通用",
+    "size": "158.90 MB",
+    "filename": "AutoMap_9.5_FlyScreen_7.5Protocol.apk",
     "package_name": "com.autonavi.amapauto",
-    "desc": "基于 9.5 全功能红绿灯底包制作，注入定制 64 位仪表飞屏适配库 (libInstrumentPannelLarge.so) 与 1920x720 双屏通道配置，保留红绿灯读秒，用于测试液晶仪表飞屏联动。",
+    "desc": "高德 9.5 官方原包名版：集成 64 位底层仪表飞屏库 (libInstrumentPannelLarge.so)，向下兼容吉利原厂 7.5 仪表通讯协议，适配双联大屏液晶仪表投屏联动，AOSP 平台重签直装免卡兔子。",
     "updated_at": "2026-09-13",
     "status": "download",
-    "url": "https://dl.onepve.com/GeelyToolbox/AutoMap_9.5.13_FlyScreen_Injection_Test.apk"
+    "url": "https://dl.onepve.com/GeelyToolbox/AutoMap_9.5_FlyScreen_7.5Protocol.apk"
   },
   {
     "id": "carmedia",
