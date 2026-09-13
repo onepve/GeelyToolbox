@@ -27,7 +27,13 @@
           </div>
         </div>
 
-        <div class="shrink-0">
+        <div class="shrink-0 flex items-center space-x-3">
+          <button 
+            @click="openTtsSettings"
+            class="min-h-[64px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[18px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
+          >
+            小爱设置
+          </button>
           <button 
             v-if="ttsInfo.connected"
             @click="testTtsEngine"
@@ -325,6 +331,11 @@ onMounted(() => {
   loadVoiceThemes();
   window.refreshVoiceThemes = loadVoiceThemes;
 });
+
+function openTtsSettings() {
+  bridge.call('openTtsSettings');
+  showToast('正在打开小爱语音设置界面...');
+}
 
 function testTtsEngine() {
   bridge.call('testVehicleVoice', 'custom');

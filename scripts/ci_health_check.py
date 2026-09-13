@@ -766,9 +766,9 @@ with open(os.path.join(WEB_SRC_DIR, "views", "StoreView.vue"), "r", encoding="ut
     store_vue_code = f.read()
 if "实测机型声明" not in store_vue_code:
     reg_violations.append("StoreView.vue 缺少实测机型声明核心卡片！")
-if "h-[48px]" not in store_vue_code and "h-[50px]" not in store_vue_code and "h-[52px]" not in store_vue_code:
+if not any(h in store_vue_code for h in ["h-[48px]", "h-[50px]", "h-[52px]", "h-[72px]"]):
     reg_violations.append("StoreView.vue 实测机型声明徽标缺少车规大胶囊高度 (>=48px)！")
-if "p-6" not in store_vue_code and "p-7" not in store_vue_code:
+if not any(p in store_vue_code for p in ["p-6", "p-7", "py-9", "p-9", "py-[36px]"]):
     reg_violations.append("StoreView.vue 实测机型声明内边距不足 (必须 >= p-6)，防止上下压窄！")
 if "h-[52px]" not in store_vue_code and "h-[50px]" not in store_vue_code:
     reg_violations.append("StoreView.vue 分类与工具菜单缺少车规大按钮高度 (h-[50px] 或 h-[52px])！")

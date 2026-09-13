@@ -230,11 +230,13 @@ public class VehicleVoicePlayer {
                 @Override
                 public void onStart(String utteranceId) {
                     Log.d(TAG, "TTS onStart: " + utteranceId);
+                    AppLogger.i("语音播报", "TTS引擎开始发声 (" + utteranceId + ")");
                 }
 
                 @Override
                 public void onDone(String utteranceId) {
                     Log.d(TAG, "TTS onDone: " + utteranceId);
+                    AppLogger.i("语音播报", "TTS引擎发声播报完毕 (" + utteranceId + ")");
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -249,6 +251,7 @@ public class VehicleVoicePlayer {
                 @Override
                 public void onError(String utteranceId) {
                     Log.w(TAG, "TTS onError: " + utteranceId);
+                    AppLogger.w("语音播报", "TTS引擎发声错误 (" + utteranceId + ")，请点击【小爱设置】检查发音人与离线语音包");
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -621,9 +624,6 @@ public class VehicleVoicePlayer {
                         try {
                             float speed = prefs.getFloat("voice_playback_speed", 1.0f);
                             tts.setSpeechRate(speed);
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                tts.setAudioAttributes(getVoiceAudioAttributes(context, voiceType));
-                            }
                         } catch (Exception ignored) {}
                         String channel = prefs.getString("voice_audio_channel", "music");
                         int streamType = ("nav".equals(channel) || "notification".equals(channel))
@@ -631,12 +631,23 @@ public class VehicleVoicePlayer {
                                 : AudioManager.STREAM_MUSIC;
                         android.os.Bundle ttsParams = new android.os.Bundle();
                         ttsParams.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, streamType);
+                        String uttId = "tts_" + System.currentTimeMillis();
+                        AppLogger.i("语音播报", "发起TTS朗读: \"" + text + "\" (引擎=" + getActiveTtsEngine() + ", 声道=" + (streamType == AudioManager.STREAM_MUSIC ? "媒体" : "通知") + ")");
+
+                        int speakRes = -1;
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            tts.speak(text, TextToSpeech.QUEUE_FLUSH, ttsParams, "voice_" + System.currentTimeMillis());
+                            try {
+                                tts.setAudioAttributes(getVoiceAudioAttributes(context, voiceType));
+                            } catch (Exception ignored) {}
+                            speakRes = tts.speak(text, TextToSpeech.QUEUE_FLUSH, ttsParams, uttId);
                         } else {
                             java.util.HashMap<String, String> map = new java.util.HashMap<>();
                             map.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(streamType));
-                            tts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
+                            map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, uttId);
+                            speakRes = tts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
+                        }
+                        if (speakRes != TextToSpeech.SUCCESS) {
+                            AppLogger.w("语音播报", "TTS speak 请求失败 (错误码: " + speakRes + ")，小爱可能未准备好发音数据");
                         }
                     } else {
                         // 冷启动兜底：TTS 未就绪时缓存最新一条待播台词（覆盖旧缓存），并触发一次重试预热。
@@ -645,7 +656,7 @@ public class VehicleVoicePlayer {
                         pendingVoiceType = voiceType;
                         pendingTextAt = System.currentTimeMillis();
                         ensureTtsReady();
-                        Log.w(TAG, "TTS not ready, buffered pending speech (retrying warmup): " + text);
+                        AppLogger.w("语音播报", "TTS尚未就绪，已加入待播队列并触发唤醒: " + text);
                     }
                     focusReleaseRunnable = new Runnable() {
                         @Override
@@ -655,7 +666,7 @@ public class VehicleVoicePlayer {
                             focusReleaseRunnable = null;
                         }
                     };
-                    mainHandler.postDelayed(focusReleaseRunnable, 2200);
+                    mainHandler.postDelayed(focusReleaseRunnable, 6000);
                 } catch (Exception e) {
                     Log.w(TAG, "speakText error: " + e.getMessage());
                     abandonAudioFocus();

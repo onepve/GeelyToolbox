@@ -18,7 +18,7 @@ export const bridge = {
 
 // 全局响应式状态
 export const store = reactive({
-  currentNav: 'store',
+  currentNav: 'wheel',
   isNight: true,
   toast: { show: false, msg: '' },
   

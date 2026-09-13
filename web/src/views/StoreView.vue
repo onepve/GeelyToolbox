@@ -1,11 +1,11 @@
 <template>
   <div class="flex flex-col space-y-7">
-    <!-- 实测机型声明 (OnePve 极简美学：上下舒展充盈、车规大胶囊徽标、告别压窄逼仄) -->
-    <div class="bg-car-item border-2 border-car-border rounded-3xl p-6 flex items-center shadow-md">
-      <div class="h-[48px] px-5 rounded-2xl bg-car-card border-2 border-car-accent text-car-accent font-black text-[16px] mr-5 shrink-0 shadow-sm flex items-center justify-center">
+    <!-- 实测机型声明 (OnePve 极简美学：上下舒展充盈乘1.5放大、车规大胶囊徽标、告别压窄逼仄) -->
+    <div class="bg-car-item border-2 border-car-border rounded-3xl py-9 px-7 min-h-[108px] flex items-center shadow-md">
+      <div class="h-[72px] px-6 rounded-2xl bg-car-card border-2 border-car-accent text-car-accent font-black text-[18px] mr-6 shrink-0 shadow-sm flex items-center justify-center">
         实测机型声明
       </div>
-      <div class="text-[17px] text-car-text font-bold leading-relaxed">
+      <div class="text-[18px] text-car-text font-bold leading-[34px]">
         以下精选车载软件已在 <span class="text-car-accent font-black underline decoration-car-accent/40">吉利缤越COOL 2022 (亿咖通 E02 / IHU516G / Android 9)</span> 专车深度实测调优，其他车型车友请自行评估后安全安装。
       </div>
     </div>

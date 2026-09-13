@@ -135,20 +135,29 @@ public class FloatingWindowService extends Service {
         startForegroundSafely();
         wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         SystemUtils.grantOverlayPermissionViaShell(this);
-        showPill();
+        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        if (prefs.getBoolean("floating_enabled", false)) {
+            showPill();
+        }
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         startForegroundSafely();
+        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        boolean floatingEnabled = prefs.getBoolean("floating_enabled", false);
         if (intent != null && intent.getAction() != null) {
             String action = intent.getAction();
             if (ACTION_HIDE.equals(action)) {
                 hidePill();
             } else if (ACTION_SHOW.equals(action)) {
-                showPill();
+                if (floatingEnabled || currentDynamicCode != null) {
+                    showPill();
+                } else {
+                    hidePill();
+                }
             } else if (ACTION_TOGGLE.equals(action)) {
-                if (visible) hidePill(); else showPill();
+                if (visible) hidePill(); else if (floatingEnabled) showPill();
             } else if (ACTION_SHOW_CODE.equals(action)) {
                 currentDynamicCode = intent.getStringExtra(EXTRA_CODE);
                 showPill();
@@ -157,7 +166,11 @@ public class FloatingWindowService extends Service {
                 handler.postDelayed(revertCodeRunnable, 25000); // 25秒后自动恢复正常文字
             }
         } else {
-            showPill();
+            if (floatingEnabled || currentDynamicCode != null) {
+                showPill();
+            } else {
+                hidePill();
+            }
         }
         return START_STICKY;
     }
@@ -233,6 +246,12 @@ public class FloatingWindowService extends Service {
     private void showPill() {
         if (isMainActivityInForeground) {
             Log.i(TAG, "MainActivity is in foreground, suppressing floating pill.");
+            hidePill();
+            return;
+        }
+        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        if (!prefs.getBoolean("floating_enabled", false) && currentDynamicCode == null) {
+            Log.i(TAG, "Floating window is disabled in settings and no dynamic code, suppressing showPill.");
             hidePill();
             return;
         }

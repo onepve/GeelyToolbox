@@ -1455,7 +1455,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                         prefs.edit().putString("floating_display_mode", mode).commit();
-                        if (FloatingWindowService.isRunning) {
+                        boolean floatingEnabled = prefs.getBoolean("floating_enabled", false);
+                        if (floatingEnabled && FloatingWindowService.isRunning) {
                             FloatingWindowService.ensureServiceStarted(MainActivity.this);
                         }
                         showToast("悬浮胶囊显示内容已切换");
@@ -2107,7 +2108,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    FloatingWindowService.ensureServiceStarted(MainActivity.this);
+                    android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                    if (prefs.getBoolean("floating_enabled", false)) {
+                        FloatingWindowService.ensureServiceStarted(MainActivity.this);
+                    }
                     moveTaskToBack(true);
                 }
             });
@@ -3049,7 +3053,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     } else if ("door_fl_close".equals(type)) {
                         player.play("door_fl_close.mp3", "主驾车门已关好");
                     } else if ("door_fr".equals(type)) {
-                        player.play("door_fr.mp3", "副驾车门已打开，请注意安全");
+                        player.play("door_fr.mp3", "欢迎乘车，副驾请注意安全");
                     } else if ("door_fr_close".equals(type)) {
                         player.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
                     } else if ("door_rl".equals(type)) {

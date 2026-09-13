@@ -223,6 +223,7 @@ public class DoorStateManager {
                     else if ("RL".equals(doorCode)) soundFile = "door_rl.mp3";
                     else if ("RR".equals(doorCode)) soundFile = "door_rr.mp3";
                     String text = doorName + "车门打开，请注意后方来车";
+                    if ("FR".equals(doorCode)) text = "欢迎乘车，副驾请注意安全";
                     voicePlayer.play(soundFile, text);
                 }
             }

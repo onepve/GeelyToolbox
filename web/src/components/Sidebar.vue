@@ -29,10 +29,10 @@ import { store } from '../store';
 import { playTouchFeedback } from '../utils/sound';
 
 const navItems = [
-  { id: 'store', name: '精选商城', badge: '专车应用' },
   { id: 'wheel', name: '方控按键', badge: '核心改装' },
   { id: 'link', name: '车身联动', badge: '盲区/大灯' },
   { id: 'body', name: '座舱语音', badge: '门挡播报' },
+  { id: 'store', name: '精选商城', badge: '专车应用' },
   { id: 'audio', name: '车载音频', badge: 'TTS/增益' },
   { id: 'floating', name: '桌面悬浮', badge: '胶囊/息屏' },
   { id: 'install', name: '特权安装', badge: '原生互联' },
