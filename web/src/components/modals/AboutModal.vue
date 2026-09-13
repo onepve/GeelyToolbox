@@ -39,6 +39,27 @@
         </div>
       </div>
 
+      <!-- 临时测试：车机 Emoji 兼容性实验室 (置顶显眼呈现，一开即见无需下拉) -->
+      <div class="p-5 rounded-2xl bg-amber-500/15 border-2 border-amber-500 flex items-center justify-between shadow-lg">
+        <div class="flex items-center space-x-3.5">
+          <span class="text-[28px] leading-none">🧪</span>
+          <div class="flex flex-col">
+            <span class="text-[17px] font-black text-amber-300 flex items-center">
+              车机 Emoji 兼容性实验室 (临时实测专用)
+            </span>
+            <span class="text-[13.5px] text-amber-200/90 font-bold mt-0.5">
+              内置 8 大类 188 个候选全场景图标，拍照自检车机字体支持，实测后自动下线
+            </span>
+          </div>
+        </div>
+        <button 
+          @click="openEmojiTest"
+          class="h-[52px] px-6 rounded-xl bg-amber-500 text-black font-black text-[16.5px] cursor-pointer hover:bg-amber-400 shadow-md transition-all shrink-0"
+        >
+          立即进入测试 ➔
+        </button>
+      </div>
+
       <!-- 内测特权卡片 (仅在测试通道激活时展示，切回正式通道自动隐藏) -->
       <div v-if="isTester && useBetaChannel" class="p-5 rounded-2xl bg-car-card border border-car-border flex flex-col space-y-3">
         <div class="flex items-center justify-between">
@@ -225,5 +246,9 @@ function toggleAutoCheckUpdate() {
 
 function openReward() {
   openModal('reward');
+}
+
+function openEmojiTest() {
+  openModal('emojiTest');
 }
 </script>

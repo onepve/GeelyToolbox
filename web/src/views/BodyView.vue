@@ -169,16 +169,10 @@
           </button>
         </div>
 
-        <!-- 逻辑说明：去套娃化，纯净单行流向，彻底告别嵌套灰框 -->
-        <div class="flex flex-col space-y-2 py-1">
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">踩刹车挂入 D / R / N 挡，或从行车切回 P 挡驻车</span>
-          </div>
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">清晰播报挡位状态，支持自定义台词与音频混搭</span>
-          </div>
+        <!-- 逻辑说明：纯净两段式流向说明，彻底告别金色当就小标签与嵌套灰框 -->
+        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+          <div class="text-car-sub font-bold">踩刹车挂入 D / R / N 挡，或从行车切回 P 挡驻车</div>
+          <div class="text-car-text font-bold">清晰播报挡位状态，支持自定义台词与音频混搭</div>
         </div>
 
         <!-- 底部车规双大按钮：左开关 + 右配置 -->
@@ -230,15 +224,9 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-2 py-1">
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">中控模式旋钮转动切换至舒适、经济、运动或智能</span>
-          </div>
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">晓晓知性声线发声，点亮对应氛围 (含 160ms 防抖)</span>
-          </div>
+        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+          <div class="text-car-sub font-bold">中控模式旋钮转动切换至舒适、经济、运动或智能</div>
+          <div class="text-car-text font-bold">晓晓知性声线发声，点亮对应氛围 (含 160ms 防抖)</div>
         </div>
 
         <div class="grid grid-cols-2 gap-3 pt-2 border-t border-car-border/60">
@@ -289,15 +277,9 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-2 py-1">
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">主驾、副驾、后排车门开启或关好 (防抖合并)</span>
-          </div>
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">通用「车门已打开/关好」或独立分门，支持小爱定制</span>
-          </div>
+        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+          <div class="text-car-sub font-bold">主驾、副驾、后排车门开启或关好 (防抖合并)</div>
+          <div class="text-car-text font-bold">通用「车门已打开/关好」或独立分门，支持小爱定制</div>
         </div>
 
         <div class="grid grid-cols-2 gap-3 pt-2 border-t border-car-border/60">
@@ -348,15 +330,9 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-2 py-1">
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">电动尾门按键触发升起，或锁扣电机下落闭锁确认</span>
-          </div>
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">播报升起防刮蹭警示与落锁提示，支持专属定制</span>
-          </div>
+        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+          <div class="text-car-sub font-bold">电动尾门按键触发升起，或锁扣电机下落闭锁确认</div>
+          <div class="text-car-text font-bold">播报升起防刮蹭警示与落锁提示，支持专属定制</div>
         </div>
 
         <div class="grid grid-cols-2 gap-3 pt-2 border-t border-car-border/60">

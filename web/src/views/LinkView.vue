@@ -59,15 +59,9 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-2 py-1">
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">拨动转向拨杆，且当前行车车速 ≤ 30 km/h</span>
-          </div>
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">秒级调起 360 全景盲区影像；方向盘回正自动退出</span>
-          </div>
+        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+          <div class="text-car-sub font-bold">拨动转向拨杆，且当前行车车速 ≤ 30 km/h</div>
+          <div class="text-car-text font-bold">秒级调起 360 全景盲区影像；方向盘回正自动退出</div>
         </div>
 
         <div class="pt-2 border-t border-car-border/60">
@@ -110,15 +104,9 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-2 py-1">
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">从 P 挡或 R 挡切入前进 D 挡起步 (单次跃变锁)</span>
-          </div>
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">唤醒 360 扫除起步盲区；车速超 15 km/h 自动还原</span>
-          </div>
+        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+          <div class="text-car-sub font-bold">从 P 挡或 R 挡切入前进 D 挡起步 (单次跃变锁)</div>
+          <div class="text-car-text font-bold">唤醒 360 扫除起步盲区；车速超 15 km/h 自动还原</div>
         </div>
 
         <div class="pt-2 border-t border-car-border/60">
@@ -175,7 +163,6 @@
           <!-- 当: 车速控制器 -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3">
             <div class="flex items-center space-x-3">
-              <span class="px-3 py-1 rounded-xl bg-car-card border border-car-border text-car-accent text-[15px] font-black shrink-0">当</span>
               <span class="text-[16px] font-black text-car-text">出 P 挡起步行驶，车速达到设定阈值：</span>
             </div>
             <!-- 纯加减数值步进器 -->
@@ -220,7 +207,6 @@
           <!-- 就: 自动放歌 -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3">
             <div class="flex items-center space-x-3">
-              <span class="px-3 py-1 rounded-xl bg-car-card border border-car-accent/40 text-car-accent text-[15px] font-black shrink-0">就</span>
               <span class="text-[16px] font-black text-car-text">触发主力软件播放（单次行程防抖闭环，等红灯不重复放）：</span>
             </div>
             <!-- 形式与软件选择 -->
@@ -340,7 +326,6 @@
           <!-- 当: 设定速度 -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3">
             <div class="flex items-center space-x-3">
-              <span class="px-3 py-1 rounded-xl bg-car-card border border-car-border text-car-accent text-[15px] font-black shrink-0">当</span>
               <span class="text-[16px] font-black text-car-text">起步加速，当前车速达到设定阈值：</span>
             </div>
             <!-- 纯加减数值步进器 -->
@@ -385,7 +370,6 @@
           <!-- 就: 执行动作 -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3">
             <div class="flex items-center space-x-3">
-              <span class="px-3 py-1 rounded-xl bg-car-card border border-car-accent/40 text-car-accent text-[15px] font-black shrink-0">就</span>
               <span class="text-[16px] font-black text-car-text">自动唤起预选目标（单次行程防抖，回 P 挡重置）：</span>
             </div>
             <!-- 动作选择 -->
@@ -490,16 +474,9 @@
           </div>
         </div>
 
-        <!-- 纯净两段式流向说明 -->
-        <div class="flex flex-col space-y-1.5 py-1">
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">行车车速连续超过设定红线达 3 秒</span>
-          </div>
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">温和提醒“您已超速，请注意安全”(带60秒防骚扰冷却)</span>
-          </div>
+        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+          <div class="text-car-sub font-bold">行车车速连续超过设定红线达 3 秒</div>
+          <div class="text-car-text font-bold">温和提醒“您已超速，请注意安全”(带 60 秒防骚扰冷却)</div>
         </div>
 
         <!-- 底部全宽车规大磁贴开关 -->
@@ -543,15 +520,9 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-2 py-1">
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">白天行车开启前大灯（驶入地下车库或隧道）</span>
-          </div>
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">秒级切为夜间深色导航；关灯自动恢复浅色</span>
-          </div>
+        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+          <div class="text-car-sub font-bold">白天行车开启前大灯（驶入地下车库或隧道）</div>
+          <div class="text-car-text font-bold">秒级切为夜间深色导航；关灯自动恢复浅色</div>
         </div>
 
         <div class="pt-2 border-t border-car-border/60">
@@ -594,15 +565,9 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-2 py-1">
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">白天开启前大灯（进车库或穿行长隧道）</span>
-          </div>
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">自动将中控屏幕亮度微调压低至 35% 柔光护眼</span>
-          </div>
+        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+          <div class="text-car-sub font-bold">白天开启前大灯（进车库或穿行长隧道）</div>
+          <div class="text-car-text font-bold">自动将中控屏幕亮度微调压低至 35% 柔光护眼</div>
         </div>
 
         <div class="pt-2 border-t border-car-border/60">
@@ -645,15 +610,9 @@
           </button>
         </div>
 
-        <div class="flex flex-col space-y-2 py-1">
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-border text-car-accent text-[13.5px] font-black shrink-0">当</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">挂入驻车 P 挡且推开前排车门（准备下车）</span>
-          </div>
-          <div class="flex items-start space-x-2.5">
-            <span class="px-2.5 py-0.5 rounded-xl bg-car-item border border-car-accent/40 text-car-accent text-[13.5px] font-black shrink-0">就</span>
-            <span class="text-[15px] font-bold text-car-text leading-relaxed">自动向音乐播放器发送暂停指令，下车优雅安静</span>
-          </div>
+        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
+          <div class="text-car-sub font-bold">挂入驻车 P 挡且推开前排车门（准备下车）</div>
+          <div class="text-car-text font-bold">自动向音乐播放器发送暂停指令，下车优雅安静</div>
         </div>
 
         <div class="pt-2 border-t border-car-border/60">
