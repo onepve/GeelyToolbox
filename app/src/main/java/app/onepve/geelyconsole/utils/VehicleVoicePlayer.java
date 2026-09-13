@@ -644,9 +644,10 @@ public class VehicleVoicePlayer {
 
                         int speakRes = -1;
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            try {
-                                tts.setAudioAttributes(getVoiceAudioAttributes(context, voiceType));
-                            } catch (Exception ignored) {}
+                            // 关键修复：坚决不向 TextToSpeech 注入 setAudioAttributes(USAGE_MEDIA)！
+                            // 车载 Android 9 底层对 TTS 的 AudioTrack 有专用的流类型映射规则，
+                            // 一旦外部注入 setAudioAttributes 会导致车机 DSP 产生总线错位静音！
+                            // 恢复为系统默认原生流直通（最早可发声版本的纯净实现）
                             speakRes = tts.speak(text, TextToSpeech.QUEUE_FLUSH, ttsParams, uttId);
                         } else {
                             java.util.HashMap<String, String> map = new java.util.HashMap<>();
