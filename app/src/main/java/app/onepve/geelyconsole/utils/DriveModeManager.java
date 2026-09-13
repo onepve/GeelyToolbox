@@ -119,22 +119,22 @@ public class DriveModeManager {
                         switch (targetMode) {
                             case MODE_COMFORT:
                                 if (enableComfort && voicePlayer != null) {
-                                    voicePlayer.play("mode_comfort.mp3", "舒适模式");
+                                    voicePlayer.play("mode_comfort.mp3", "舒适");
                                 }
                                 break;
                             case MODE_SPORT:
                                 if (enableSport && voicePlayer != null) {
-                                    voicePlayer.play("mode_sport.mp3", "运动模式");
+                                    voicePlayer.play("mode_sport.mp3", "运动");
                                 }
                                 break;
                             case MODE_ECO:
                                 if (enableEco && voicePlayer != null) {
-                                    voicePlayer.play("mode_eco.mp3", "经济模式");
+                                    voicePlayer.play("mode_eco.mp3", "经济");
                                 }
                                 break;
                             case MODE_SMART:
                                 if (enableSmart && voicePlayer != null) {
-                                    voicePlayer.play("mode_smart.mp3", "智能模式");
+                                    voicePlayer.play("mode_smart.mp3", "智能");
                                 }
                                 break;
                         }

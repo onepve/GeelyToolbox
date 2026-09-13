@@ -3081,13 +3081,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     } else if ("gear_s".equals(type)) {
                         player.play("gear_s.mp3", "已挂入运动挡，动力充沛");
                     } else if ("mode_smart".equals(type)) {
-                        player.play("mode_smart.mp3", "智能模式");
+                        player.play("mode_smart.mp3", "智能");
                     } else if ("mode_comfort".equals(type)) {
-                        player.play("mode_comfort.mp3", "舒适模式");
+                        player.play("mode_comfort.mp3", "舒适");
                     } else if ("mode_eco".equals(type)) {
-                        player.play("mode_eco.mp3", "经济模式");
+                        player.play("mode_eco.mp3", "经济");
                     } else if ("mode_sport".equals(type)) {
-                        player.play("mode_sport.mp3", "运动模式");
+                        player.play("mode_sport.mp3", "运动");
                     } else if ("flameout".equals(type)) {
                         player.play("flameout.mp3", "车辆已熄火，请带好随身物品");
                     } else if ("seatbelt".equals(type)) {
