@@ -1,12 +1,14 @@
 <template>
   <div class="flex flex-col space-y-7">
-    <!-- 实测机型声明 (OnePve 极简美学：上下舒展充盈乘1.5放大、车规大胶囊徽标、告别压窄逼仄) -->
-    <div class="bg-car-item border-2 border-car-border rounded-3xl py-9 px-7 min-h-[108px] flex items-center shadow-md">
-      <div class="h-[72px] px-6 rounded-2xl bg-car-card border-2 border-car-accent text-car-accent font-black text-[18px] mr-6 shrink-0 shadow-sm flex items-center justify-center">
-        实测机型声明
+    <!-- 实测机型声明 (安全实测认证标识：翠绿圆环徽标与流线说明，彻底告别伪按钮误触) -->
+    <div class="bg-car-item border-2 border-car-border rounded-3xl py-7 px-7 min-h-[106px] flex items-center shadow-md">
+      <div class="w-[52px] h-[52px] rounded-full bg-emerald-500/15 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center mr-6 shrink-0 shadow-sm">
+        <svg class="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+        </svg>
       </div>
-      <div class="text-[18px] text-car-text font-bold leading-[34px]">
-        以下精选车载软件已在 <span class="text-car-accent font-black underline decoration-car-accent/40">吉利缤越COOL 2022 (亿咖通 E02 / IHU516G / Android 9)</span> 专车深度实测调优，其他车型车友请自行评估后安全安装。
+      <div class="text-[17.5px] text-car-text font-bold leading-[32px]">
+        <span class="text-emerald-400 font-black mr-2">【实测机型声明】</span>以下精选车载软件已在 <span class="text-car-accent font-black underline decoration-car-accent/40">吉利缤越COOL 2022 (亿咖通 E02 / IHU516G / Android 9)</span> 专车深度实测调优，其他车型车友请自行评估后安全安装。
       </div>
     </div>
 

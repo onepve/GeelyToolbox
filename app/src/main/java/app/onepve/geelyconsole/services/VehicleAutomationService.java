@@ -730,15 +730,17 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
-        // 优先 2: AdaptAPI 9位全局权威常量容灾 (570491138/9/7/58)
-        else if (line.contains("570491138")) {
-            modeVal = MODE_COMFORT; // 舒适模式 (DRIVE_MODE_SELECTION_COMFORT = 570491138)
-        } else if (line.contains("570491139")) {
-            modeVal = MODE_SPORT;   // 运动模式 (DRIVE_MODE_SELECTION_DYNAMIC = 570491139)
-        } else if (line.contains("570491137")) {
-            modeVal = MODE_ECO;     // 经济模式 (DRIVE_MODE_SELECTION_ECO = 570491137)
-        } else if (line.contains("570491158")) {
-            modeVal = MODE_SMART;   // 智能模式 (DRIVE_MODE_SELECTION_ADAPTIVE = 570491158)
+        // 优先 2: AdaptAPI 9位全局权威常量容灾 (必须携带 DM_FUNC_DRIVE_MODE_SELECT 或 mModelDriveMode 上下文，严禁裸数字误配)
+        else if (line.contains("DM_FUNC_DRIVE_MODE_SELECT") || line.contains("mModelDriveMode")) {
+            if (line.contains("570491138")) {
+                modeVal = MODE_COMFORT; // 舒适模式 (DRIVE_MODE_SELECTION_COMFORT = 570491138)
+            } else if (line.contains("570491139")) {
+                modeVal = MODE_SPORT;   // 运动模式 (DRIVE_MODE_SELECTION_DYNAMIC = 570491139)
+            } else if (line.contains("570491137")) {
+                modeVal = MODE_ECO;     // 经济模式 (DRIVE_MODE_SELECTION_ECO = 570491137)
+            } else if (line.contains("570491158")) {
+                modeVal = MODE_SMART;   // 智能模式 (DRIVE_MODE_SELECTION_ADAPTIVE = 570491158)
+            }
         }
 
         if (modeVal > 0) {
@@ -894,12 +896,30 @@ public class VehicleAutomationService extends Service {
     }
 
     /**
+     * 判定整车当前是否处于允许切换驾驶模式的工况
+     * 熄火下电、钥匙关/ACC(熄火只开车机听歌)、驻车未启动等状态下，物理旋钮被吉利底层锁定，任何日志均为假信号，绝对静默！
+     */
+    private boolean isDrivingModeAllowed() {
+        if (lastPowerMode == 0) return false;
+        if (lastKeyState == 0 || lastKeyState == 1) return false; // 0=关, 1=ACC (熄火只开车机听歌)
+        if (lastEngineState == 0 && currentSpeedKmH == 0) return false; // 发动机明确停止且零车速
+        if (currentSpeedKmH > 0) return true; // 行驶中，必然处于运转工况
+        if (latestBatteryVoltage >= 13.0f) return true; // 发电机发电中，发动机必然运转中
+        if (lastEngineState == 3) return true; // 发动机明确处于运行状态
+        // 蓄电池自然静置电压 (9.0V~12.9V) 且零车速：属于熄火未点火驻车状态，旋钮无法切换模式
+        if (latestBatteryVoltage >= 9.0f && latestBatteryVoltage < 12.9f && currentSpeedKmH == 0) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * 处理驾驶模式切换状态 (智能有人感知状态机：默认智能模式静默，手动切出智能模式后激活全量播报，切回智能模式播报后置0归位)
      * 模式枚举: MODE_COMFORT=1, MODE_SPORT=2, MODE_ECO=3, MODE_SMART=4 (全局解耦，零错位)
      */
     private void handleDriveModeSignal(int mode) {
-        if (lastPowerMode == 0) {
-            // 明确下电关机状态：强制重置状态机，绝对静音
+        if (!isDrivingModeAllowed()) {
+            // 明确熄火/未启动/ACC状态：强制重置状态机，绝对静音
             if (driveModeManager != null) {
                 driveModeManager.resetState();
             }

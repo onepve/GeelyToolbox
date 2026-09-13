@@ -3154,27 +3154,41 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
+                    // 1. 后台静默保障小爱权限与免CTA拦截
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
                             try {
-                                // 1. 自动配置小爱权限、系统默认引擎与免CTA拦截
                                 SystemUtils.configureXiaoAiTts(MainActivity.this);
-
-                                // 2. 通过特权 Shell 启动设置界面（绕过 exported=false 权限限制）
-                                String out = SystemUtils.executePrivileged(MainActivity.this,
-                                        "am start -n com.xiaomi.mibrain.speech/.tts.TtsSettingsActivity");
-                                Log.i("MainActivity", "Launch TtsSettingsActivity via privileged shell: " + out);
-
-                                if (out == null || out.contains("Error") || out.contains("does not exist")) {
-                                    SystemUtils.executePrivileged(MainActivity.this,
-                                            "am start -n com.xiaomi.mibrain.speech/.tts.TtsActivity");
-                                }
-                            } catch (Exception e) {
-                                Log.w("MainActivity", "Failed to open TTS settings: " + e.getMessage());
-                            }
+                            } catch (Exception ignored) {}
                         }
                     }).start();
+
+                    // 2. 优先调起系统首选语音引擎设置（即车主选择 XCTtsEngine / 系统语音引擎 核心界面）
+                    try {
+                        Intent sysTts = new Intent("com.android.settings.TTS_SETTINGS");
+                        sysTts.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(sysTts);
+                        return;
+                    } catch (Exception e) {
+                        Log.i("MainActivity", "Direct TTS_SETTINGS failed, try privileged fallback: " + e.getMessage());
+                    }
+
+                    // 3. 特权 Shell 容灾唤起系统 TTS 设置
+                    try {
+                        String out = SystemUtils.executePrivileged(MainActivity.this, "am start -a com.android.settings.TTS_SETTINGS");
+                        if (out != null && !out.contains("Error") && !out.contains("does not exist")) {
+                            return;
+                        }
+                    } catch (Exception ignored) {}
+
+                    // 4. 小爱专属设置界面备选
+                    try {
+                        SystemUtils.executePrivileged(MainActivity.this,
+                                "am start -n com.xiaomi.mibrain.speech/.tts.TtsSettingsActivity");
+                    } catch (Exception e) {
+                        Toast.makeText(MainActivity.this, "未找到语音引擎设置界面", Toast.LENGTH_SHORT).show();
+                    }
                 }
             });
         }

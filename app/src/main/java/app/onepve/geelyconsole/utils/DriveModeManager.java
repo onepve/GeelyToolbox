@@ -36,6 +36,7 @@ public class DriveModeManager {
     private DriveModeListener listener;
 
     private int lastDriveMode = -1; // 初始未定态 (-1)，开机首包静默确立基准
+    private boolean isSmartModeArmed = false; // 智能模式闭锁标志：默认锁定(false)，切到其他模式时武装(true)，切回智能并播报一次后立即恢复锁定值(false)，彻底杜绝驻车循环播报
     private Runnable pendingModeTask = null;
     private static final long MODE_DEBOUNCE_MS = 160; // 模式切换防抖滤波窗口 (160ms 滤除旋钮极速滑动过渡态)
 
@@ -63,20 +64,22 @@ public class DriveModeManager {
             mainHandler.removeCallbacks(pendingModeTask);
             pendingModeTask = null;
         }
-        boolean changed = (lastDriveMode != -1);
+        boolean changed = (lastDriveMode != -1 || isSmartModeArmed);
         lastDriveMode = -1;
+        isSmartModeArmed = false;
         if (changed) {
-            AppLogger.i("驾驶模式", "熄火休眠复位: 重置归位基准 (lastMode=-1)");
+            AppLogger.i("驾驶模式", "熄火休眠复位: 重置归位基准 (lastMode=-1, smartArmed=false)");
         }
     }
 
     public synchronized void updateDriveMode(int mode, final boolean voiceMasterSwitch, final SharedPreferences prefs) {
         if (mode <= 0) return;
 
-        // 1. 开机首包基准静默建立：绝不盲目发声！
+        // 1. 开机首包基准静默建立：绝不盲目发声！基准确立且智能模式锁定
         if (lastDriveMode == -1) {
             lastDriveMode = mode;
-            AppLogger.i("驾驶模式", "基准初始化: 当前模式=" + getModeName(mode) + " (静默建立基准，开机不误播)");
+            isSmartModeArmed = false;
+            AppLogger.i("驾驶模式", "基准初始化: 当前模式=" + getModeName(mode) + " (静默建立基准，开机绝不误播，智能模式锁定)");
             if (listener != null) {
                 listener.onDriveModeChanged(lastDriveMode);
             }
@@ -107,7 +110,7 @@ public class DriveModeManager {
                     pendingModeTask = null;
                     if (targetMode == lastDriveMode) return;
 
-                    AppLogger.i("驾驶模式", "模式确认切换: " + getModeName(lastDriveMode) + " -> " + getModeName(targetMode));
+                    AppLogger.i("驾驶模式", "模式确认切换: " + getModeName(lastDriveMode) + " -> " + getModeName(targetMode) + ", smartArmed=" + isSmartModeArmed);
 
                     // 播报判定 (默认全开，支持双别名兼容)
                     if (voiceMasterSwitch) {
@@ -121,21 +124,30 @@ public class DriveModeManager {
                                 if (enableComfort && voicePlayer != null) {
                                     voicePlayer.play("mode_comfort.mp3", "舒适");
                                 }
+                                isSmartModeArmed = true; // 主动旋到舒适：武装智能模式，允许后续切回智能时播报一次
                                 break;
                             case MODE_SPORT:
                                 if (enableSport && voicePlayer != null) {
                                     voicePlayer.play("mode_sport.mp3", "运动");
                                 }
+                                isSmartModeArmed = true; // 主动旋到运动：武装智能模式，允许后续切回智能时播报一次
                                 break;
                             case MODE_ECO:
                                 if (enableEco && voicePlayer != null) {
                                     voicePlayer.play("mode_eco.mp3", "经济");
                                 }
+                                isSmartModeArmed = true; // 主动旋到经济：武装智能模式，允许后续切回智能时播报一次
                                 break;
                             case MODE_SMART:
-                                if (enableSmart && voicePlayer != null) {
-                                    voicePlayer.play("mode_smart.mp3", "智能");
+                                if (isSmartModeArmed) {
+                                    if (enableSmart && voicePlayer != null) {
+                                        voicePlayer.play("mode_smart.mp3", "智能");
+                                    }
+                                    AppLogger.i("驾驶模式", "切回智能模式并播报一次，立即闭锁为锁定值(false)，防止驻车循环误报");
+                                } else {
+                                    AppLogger.i("驾驶模式", "智能模式处于锁定状态 (未从其他模式主动切回)，保持绝对静默");
                                 }
+                                isSmartModeArmed = false; // 立即重置为锁定值！在再次切到其他模式前绝不重复播报
                                 break;
                         }
                     }
