@@ -30,21 +30,6 @@ export const CLOUD_APPS = [
     "url": "https://dl.onepve.com/GeelyToolbox/XiaoAi_TTS_Engine_1.5.1.apk"
   },
   {
-    "id": "amap75_flyscreen",
-    "category": "navigation",
-    "badgeClass": "nav",
-    "badgeText": "导航",
-    "name": "高德地图 7.5 (MG横屏红绿灯/飞屏版)",
-    "badge": "轻量主力/横屏红绿灯/飞屏",
-    "size": "111.3 MB",
-    "filename": "AutoMap_7.5_FlyScreen.apk",
-    "package_name": "com.autonavi.amapauto",
-    "desc": "轻量 7.5 MG版仅 111MB 极速省运存，支持三指飞屏仪表盘与横屏全向红绿灯实时读秒，运行轻快流畅。",
-    "updated_at": "2023-09-01",
-    "status": "download",
-    "url": "https://dl.onepve.com/GeelyToolbox/AutoMap_7.5_FlyScreen.apk"
-  },
-  {
     "id": "amap95_trafficlight",
     "category": "navigation",
     "badgeClass": "nav",
