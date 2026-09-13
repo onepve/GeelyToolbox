@@ -1597,6 +1597,26 @@ public class SystemUtils {
         }
     }
 
+    public static void configureXiaoAiTts(Context context) {
+        if (context == null) return;
+        try {
+            String pkg = "com.xiaomi.mibrain.speech";
+            executePrivileged(context, "pm grant " + pkg + " android.permission.RECORD_AUDIO");
+            executePrivileged(context, "pm grant " + pkg + " android.permission.READ_PHONE_STATE");
+            executePrivileged(context, "pm grant " + pkg + " android.permission.WRITE_EXTERNAL_STORAGE");
+            executePrivileged(context, "pm grant " + pkg + " android.permission.READ_EXTERNAL_STORAGE");
+            executePrivileged(context, "appops set " + pkg + " SYSTEM_ALERT_WINDOW allow");
+            executePrivileged(context, "settings put secure tts_default_synth " + pkg);
+            executePrivileged(context, "settings put secure tts_enabled_plugins " + pkg);
+
+            // 写入 CTA 隐私免授权与自启配置，彻底解除小爱 TTS 内部 CTAActivity 静默拦截
+            executePrivileged(context, "mkdir -p /data/data/" + pkg + "/shared_prefs");
+            String xml = "<?xml version='1.0' encoding='utf-8' standalone='yes' ?><map><boolean name='permission_allow' value='true' /><boolean name='is_cta_selected' value='true' /></map>";
+            executePrivileged(context, "echo \"" + xml + "\" > /data/data/" + pkg + "/shared_prefs/MutiProcessShare.xml");
+            executePrivileged(context, "chmod 660 /data/data/" + pkg + "/shared_prefs/MutiProcessShare.xml");
+        } catch (Exception ignored) {}
+    }
+
     public static File resolveAndRenameApkToFriendlyName(Context context, File sourceApk) {
         if (sourceApk == null || !sourceApk.exists() || !sourceApk.getName().toLowerCase().endsWith(".apk")) {
             return sourceApk;

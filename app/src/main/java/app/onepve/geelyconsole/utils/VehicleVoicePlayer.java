@@ -275,6 +275,12 @@ public class VehicleVoicePlayer {
                     try {
                         context.getPackageManager().getPackageInfo("com.xiaomi.mibrain.speech", 0);
                         targetEngine = "com.xiaomi.mibrain.speech";
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                SystemUtils.configureXiaoAiTts(context);
+                            }
+                        }).start();
                     } catch (Exception ignored) {}
 
                     final String engineToTry = targetEngine;
@@ -631,6 +637,8 @@ public class VehicleVoicePlayer {
                                 : AudioManager.STREAM_MUSIC;
                         android.os.Bundle ttsParams = new android.os.Bundle();
                         ttsParams.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, streamType);
+                        ttsParams.putBoolean("skipTtsCta", true);
+                        ttsParams.putBoolean("onlyoffline", false);
                         String uttId = "tts_" + System.currentTimeMillis();
                         AppLogger.i("语音播报", "发起TTS朗读: \"" + text + "\" (引擎=" + getActiveTtsEngine() + ", 声道=" + (streamType == AudioManager.STREAM_MUSIC ? "媒体" : "通知") + ")");
 
