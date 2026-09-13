@@ -82,7 +82,11 @@
               class="h-[56px] px-5 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center active:scale-95"
               title="降低 1 格"
             >-1 格</button>
-            <div class="flex items-baseline px-6 py-2 bg-car-card rounded-2xl border-2 border-car-accent min-w-[140px] justify-center shadow-inner">
+            <div 
+              @click="resetVolumeOffset"
+              class="flex items-baseline px-6 py-2 bg-car-card rounded-2xl border-2 border-car-accent min-w-[140px] justify-center shadow-inner cursor-pointer hover:bg-car-item active:scale-95 transition-all"
+              title="点击重置为 0 格"
+            >
               <span class="text-[34px] font-black text-car-accent font-mono leading-none">{{ volumeOffset >= 0 ? '+' + volumeOffset : volumeOffset }}</span>
               <span class="text-[16px] font-bold text-car-sub ml-1.5">格</span>
             </div>
@@ -186,13 +190,13 @@
               >
                 恢复此原声
               </button>
-              <button 
+              <div 
                 v-else
-                disabled
-                class="h-[52px] px-6 bg-car-card border-2 border-car-border text-car-sub font-black text-[16px] rounded-xl opacity-60 cursor-default"
+                class="h-[52px] px-5 bg-emerald-500/15 border-2 border-emerald-500/50 text-emerald-400 font-black text-[15px] rounded-xl flex items-center justify-center space-x-1.5 shadow-sm select-none"
               >
-                正在生效
-              </button>
+                <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#10B981]"></span>
+                <span>正在生效</span>
+              </div>
             </div>
           </div>
 
@@ -230,13 +234,13 @@
               >
                 整套启用
               </button>
-              <button 
+              <div 
                 v-else
-                disabled
-                class="h-[52px] px-6 bg-car-card border-2 border-car-accent text-car-accent font-black text-[16px] rounded-xl cursor-default opacity-80"
+                class="h-[52px] px-5 bg-emerald-500/15 border-2 border-emerald-500/50 text-emerald-400 font-black text-[15px] rounded-xl flex items-center justify-center space-x-1.5 shadow-sm select-none"
               >
-                正在生效
-              </button>
+                <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#10B981]"></span>
+                <span>正在生效</span>
+              </div>
               <button 
                 @click="confirmDeleteTheme(theme.name)"
                 class="h-[52px] px-4 bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text hover:text-rose-400 font-black text-[15px] rounded-xl cursor-pointer shadow-sm transition-all"

@@ -1061,9 +1061,9 @@
             </button>
             <div 
               v-else
-              class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border text-car-sub font-black text-[14px] flex items-center space-x-1.5 whitespace-nowrap select-none"
+              class="h-[52px] px-5 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 font-black text-[14px] flex items-center space-x-1.5 whitespace-nowrap select-none shadow-sm"
             >
-              <span class="w-2 h-2 rounded-full bg-car-accent"></span>
+              <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#10B981]"></span>
               <span>已在工作台中</span>
             </div>
           </div>
