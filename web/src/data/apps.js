@@ -60,6 +60,21 @@ export const CLOUD_APPS = [
     "url": "https://dl.onepve.com/GeelyToolbox/AutoMap_9.5.13_FullFeatures_TrafficLight.apk"
   },
   {
+    "id": "amap95_flyscreen_inject",
+    "category": "navigation",
+    "badgeClass": "nav",
+    "badgeText": "测试",
+    "name": "高德地图 9.5.13 (64位SO飞屏注入测试版)",
+    "badge": "飞屏注入测试版",
+    "size": "149.98 MB",
+    "filename": "AutoMap_9.5.13_FlyScreen_Injection_Test.apk",
+    "package_name": "com.autonavi.amapauto",
+    "desc": "基于 9.5 全功能红绿灯底包制作，注入定制 64 位仪表飞屏适配库 (libInstrumentPannelLarge.so) 与 1920x720 双屏通道配置，保留红绿灯读秒，用于测试液晶仪表飞屏联动。",
+    "updated_at": "2026-09-13",
+    "status": "download",
+    "url": "https://dl.onepve.com/GeelyToolbox/AutoMap_9.5.13_FlyScreen_Injection_Test.apk"
+  },
+  {
     "id": "carmedia",
     "category": "music",
     "badgeClass": "music",

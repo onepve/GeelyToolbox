@@ -1,34 +1,38 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 1. 座舱车身语音播报总开关 (整卡一体化开关：整卡即触控大靶区 · 右侧纯文字) -->
-    <div 
-      @click="toggleVoiceMasterSwitch"
-      class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl transition-all duration-200 cursor-pointer flex items-center justify-between"
-    >
-      <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-2">
+    <!-- 核心：座舱车身语音播报总开关 - 提权置顶首屏 (左右分栏车规黄金磁贴 · 完全对齐方控总开关标准) -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
+      <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
-          <span :class="['w-3.5 h-3.5 rounded-full shadow-md shrink-0', store.vehicleAuto.voice_master_switch ? 'bg-car-accent shadow-[0_0_10px_var(--accent-gold)]' : 'bg-slate-400']"></span>
-          <span class="text-[23px] font-black text-car-text tracking-wide whitespace-nowrap">座舱车身语音播报总开关 (全车总闸)</span>
-          <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent inline-flex items-center shrink-0">
-            {{ store.vehicleAuto.voice_master_switch ? '全车正常发声' : '全车一键静音' }}
+          <span :class="['w-3.5 h-3.5 rounded-full shadow-md shrink-0', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-slate-400']"></span>
+          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">座舱车身语音播报总开关</span>
+          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
+            <span :class="['w-2.5 h-2.5 rounded-full mr-2', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-slate-400']"></span>
+            {{ store.vehicleAuto.voice_master_switch ? '全车播报已启用' : '全车已彻底静音 (全车总闸)' }}
           </span>
         </div>
-        <span class="text-[15.5px] text-car-sub font-bold">
+        <div class="text-[14.5px] text-car-sub font-bold leading-normal">
           一键管控全车车门、尾门、挡位与驾驶模式语音播报。关闭后全车物理静音，独立生效。
-        </span>
+        </div>
       </div>
 
-      <!-- 右侧纯文字状态呈现 (整卡可点，无多余嵌套小按钮框) -->
-      <div class="shrink-0 flex flex-col items-end pr-2">
-        <div class="flex items-center space-x-2">
-          <span :class="['w-3 h-3 rounded-full', store.vehicleAuto.voice_master_switch ? 'bg-car-accent shadow-[0_0_8px_var(--accent-gold)]' : 'bg-slate-500']"></span>
-          <span :class="['text-[20px] font-black tracking-wide', store.vehicleAuto.voice_master_switch ? 'text-car-accent' : 'text-car-sub']">
-            {{ store.vehicleAuto.voice_master_switch ? '● 全车播报中' : '○ 全车已静音' }}
+      <div class="shrink-0 w-[230px]">
+        <button
+          @click="toggleVoiceMasterSwitch"
+          :class="[
+            'w-full h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center',
+            store.vehicleAuto.voice_master_switch
+              ? 'bg-car-item border-car-accent'
+              : 'bg-car-card border-car-border hover:border-car-border-light'
+          ]"
+        >
+          <span class="text-[18.5px] font-black text-car-text tracking-wide whitespace-nowrap">
+            {{ store.vehicleAuto.voice_master_switch ? '全车播报已开启' : '全车已一键静音' }}
           </span>
-        </div>
-        <span :class="['text-[13.5px] font-bold mt-1.5', store.vehicleAuto.voice_master_switch ? 'text-car-accent' : 'text-car-sub']">
-          {{ store.vehicleAuto.voice_master_switch ? '点击整卡一键全车静音' : '轻触整卡开启语音播报' }}
-        </span>
+          <span :class="['text-[12.5px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.voice_master_switch ? 'text-car-accent' : 'text-car-sub']">
+            {{ store.vehicleAuto.voice_master_switch ? '点击切换为全车静音' : '点击开启全车播报' }}
+          </span>
+        </button>
       </div>
     </div>
 
@@ -102,40 +106,40 @@
       </div>
     </div>
 
-    <!-- 3. 座舱语音计划任务工作台 (场景工坊) -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between">
-      <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
+    <!-- 3. 座舱语音计划任务工作台 (场景工坊 · 对齐方控 106px 车规标准) -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
+      <div class="w-[52%] max-w-[52%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
-          <span class="w-3 h-3 rounded-full bg-car-accent shadow-[0_0_10px_var(--accent-gold)]"></span>
-          <span class="text-[23px] font-black text-car-text tracking-wide">座舱语音播报 · 计划任务工作台</span>
-          <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-accent/40 text-car-accent">
+          <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_10px_var(--accent-gold)] shrink-0"></span>
+          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">座舱语音播报 · 计划任务工作台</span>
+          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-accent/40 text-car-accent inline-flex items-center shrink-0 shadow-sm">
             {{ activeVoiceTaskCount }} / {{ visibleVoiceTasks.length }} 项运行中
           </span>
         </div>
-        <span class="text-[15.5px] text-car-sub font-bold">
+        <div class="text-[14.5px] text-car-sub font-bold leading-normal">
           将繁杂的二十余项播报开关收拢为四大场景计划。不需要的计划可一键移除，点击二级向导可独立试听与配置自定义台词/音效。
-        </span>
+        </div>
       </div>
       <div class="flex items-center space-x-3 shrink-0">
         <!-- 核心打通：一键跳转车载音频语音主题包与TTS大厅 -->
         <button
           @click="store.currentNav = 'audio'"
-          class="h-[54px] px-6 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text hover:text-car-accent font-black text-[16px] cursor-pointer shadow-sm flex items-center space-x-2 transition-all"
+          class="h-[60px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text hover:text-car-accent font-black text-[15.5px] cursor-pointer shadow-sm flex items-center space-x-2 transition-all"
         >
           <span>整套语音主题包 ➔</span>
         </button>
         <button
           @click="openAddVoiceModal"
-          class="h-[54px] px-6 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent-light text-car-accent font-black text-[16px] cursor-pointer shadow-md flex items-center space-x-2 transition-all"
+          class="h-[60px] px-5 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent-light text-car-accent font-black text-[15.5px] cursor-pointer shadow-md flex items-center space-x-2 transition-all"
         >
           <span>添加语音计划</span>
-          <span v-if="removedVoiceTaskIds.length > 0" class="px-2 py-0.5 text-[12.5px] bg-car-card rounded-full border border-car-accent/40 text-car-text">
+          <span v-if="removedVoiceTaskIds.length > 0" class="px-2 py-0.5 text-[12px] bg-car-card rounded-full border border-car-accent/40 text-car-text">
             {{ removedVoiceTaskIds.length }} 项待添加
           </span>
         </button>
         <button
           @click="resetAllVoiceTasks"
-          class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-sub hover:text-car-text font-black text-[15.5px] cursor-pointer shadow-sm transition-all"
+          class="h-[60px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-sub hover:text-car-text font-black text-[15px] cursor-pointer shadow-sm transition-all"
         >
           ↺ 恢复推荐计划
         </button>

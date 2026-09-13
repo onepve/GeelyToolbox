@@ -1,32 +1,32 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 顶部计划工作台概览与操作栏 -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-xl flex items-center justify-between">
-      <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
+    <!-- 顶部计划工作台概览与操作栏 (对齐方控 106px 车规标准) -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
+      <div class="w-[58%] max-w-[58%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
-          <span class="w-3 h-3 rounded-full bg-car-accent shadow-[0_0_10px_var(--accent-gold)]"></span>
-          <span class="text-[23px] font-black text-car-text tracking-wide">车身智能联动 · 计划任务工作台</span>
-          <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-accent/40 text-car-accent">
+          <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_10px_var(--accent-gold)] shrink-0"></span>
+          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">车身智能联动 · 计划任务工作台</span>
+          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-accent/40 text-car-accent inline-flex items-center shrink-0 shadow-sm">
             {{ activeTaskCount }} / {{ visibleTasks.length }} 项运行中
           </span>
         </div>
-        <span class="text-[15.5px] text-car-sub font-bold">
+        <div class="text-[14.5px] text-car-sub font-bold leading-normal">
           基于车载 CAN 总线与 MCU 底层传感器事件驱动。支持独立开关、加减微调触发阈值，不需要的计划可随心一键移除。
-        </span>
+        </div>
       </div>
       <div class="flex items-center space-x-3 shrink-0">
         <button
           @click="openAddTaskModal"
-          class="h-[54px] px-6 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent-light text-car-accent font-black text-[16px] cursor-pointer shadow-md flex items-center space-x-2 transition-all"
+          class="h-[60px] px-6 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent-light text-car-accent font-black text-[16px] cursor-pointer shadow-md flex items-center space-x-2 transition-all"
         >
           <span>添加联动计划</span>
-          <span v-if="removedTaskIds.length > 0" class="px-2 py-0.5 text-[12.5px] bg-car-card rounded-full border border-car-accent/40 text-car-text">
+          <span v-if="removedTaskIds.length > 0" class="px-2 py-0.5 text-[12px] bg-car-card rounded-full border border-car-accent/40 text-car-text">
             {{ removedTaskIds.length }} 项待添加
           </span>
         </button>
         <button
           @click="resetAllTasks"
-          class="h-[54px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-sub hover:text-car-text font-black text-[15.5px] cursor-pointer shadow-sm transition-all"
+          class="h-[60px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-sub hover:text-car-text font-black text-[15px] cursor-pointer shadow-sm transition-all"
         >
           ↺ 恢复推荐计划
         </button>

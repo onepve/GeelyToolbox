@@ -100,8 +100,7 @@ export const store = reactive({
     otaCapture: false,
     appSelect: null,
     cleanDownload: false,
-    voiceThemeImport: false,
-    emojiTest: false
+    voiceThemeImport: false
   },
   
   // 系统设置持久态

@@ -171,8 +171,7 @@ async def run_audit():
             ("voiceItem_door", "车门细分配置"),
             ("voiceItem_trunk", "尾门细分配置"),
             ("otaCapture", "抓OTA固件向导"),
-            ("cleanDownload", "清理下载目录"),
-            ("emojiTest", "Emoji实测全屏面板")
+            ("cleanDownload", "清理下载目录")
         ]
 
         for m_key, m_name in modals_to_test:
@@ -198,7 +197,6 @@ async def run_audit():
                 else if ('{m_key}' === 'log') store.modals.log = true;
                 else if ('{m_key}' === 'otaCapture') store.modals.otaCapture = true;
                 else if ('{m_key}' === 'cleanDownload') store.modals.cleanDownload = true;
-                else if ('{m_key}' === 'emojiTest') store.modals.emojiTest = true;
                 else if ('{m_key}' === 'update') {{
                     if (window.forceShowUpdateModal) {{
                         window.forceShowUpdateModal({{
