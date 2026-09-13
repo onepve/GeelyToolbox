@@ -246,32 +246,41 @@ public class SystemUtils {
             if (interfaces != null) {
                 while (interfaces.hasMoreElements()) {
                     NetworkInterface iface = interfaces.nextElement();
-                    if (iface.isUp() && !iface.isLoopback()) {
-                        String name = iface.getName().toLowerCase();
-                        Enumeration<InetAddress> addresses = iface.getInetAddresses();
-                        while (addresses.hasMoreElements()) {
-                            InetAddress addr = addresses.nextElement();
-                            if (!addr.isLoopbackAddress() && addr instanceof Inet4Address) {
-                                String host = addr.getHostAddress();
-                                if (name.contains("wlan") || name.contains("ap") || name.contains("rndis") || name.contains("eth")) {
-                                    status.ip = host;
-                                    status.ifaceName = name;
-                                    status.isWifiOrLan = true;
-                                    status.isCellular = false;
-                                    if (name.contains("ap") || name.contains("softap")) {
-                                        status.typeName = "车机热点";
-                                    } else if (name.contains("wlan")) {
-                                        status.typeName = "Wi-Fi 局域网";
-                                    } else {
-                                        status.typeName = "有线/USB 局域网";
-                                    }
-                                    status.message = "🟢 局域网已就绪，手机连接同一网络后可访问 http://" + host + ":8888";
-                                    return status;
-                                } else if (name.contains("rmnet") || name.contains("ccmni") || name.contains("pdp") || name.contains("wwan") || name.contains("cellular") || name.contains("lte") || name.contains("usb")) {
-                                    if (fallbackCellularIp == null) {
-                                        fallbackCellularIp = host;
-                                        fallbackCellularIface = name;
-                                    }
+                    try {
+                        if (iface.isLoopback()) continue;
+                    } catch (Exception ignored) {}
+
+                    String name = iface.getName().toLowerCase();
+                    Enumeration<InetAddress> addresses = iface.getInetAddresses();
+                    while (addresses.hasMoreElements()) {
+                        InetAddress addr = addresses.nextElement();
+                        if (!addr.isLoopbackAddress() && addr instanceof Inet4Address) {
+                            String host = addr.getHostAddress();
+                            if (host == null || host.startsWith("127.")) continue;
+
+                            // 1. 局域网 Wi-Fi / 热点 / USB共享网络 (支持无线快传)
+                            boolean isLan = name.contains("wlan") || name.contains("ap") || name.contains("rndis") || name.contains("eth") || name.contains("br-");
+                            boolean isLanIp = host.startsWith("192.168.") || host.startsWith("10.") || host.startsWith("172.");
+
+                            if (isLan || isLanIp) {
+                                status.ip = host;
+                                status.ifaceName = name;
+                                status.isWifiOrLan = true;
+                                status.isCellular = false;
+                                if (name.contains("ap") || name.contains("softap")) {
+                                    status.typeName = "车机热点";
+                                } else if (name.contains("wlan")) {
+                                    status.typeName = "Wi-Fi 局域网";
+                                } else {
+                                    status.typeName = "有线/USB 局域网";
+                                }
+                                status.message = "🟢 局域网已就绪，手机连接同一网络后可访问 http://" + host + ":8888";
+                                return status;
+                            } else {
+                                // 2. 其它非回环有效 IPv4 统一作为蜂窝移动网/SIM卡候选 (无论网卡名为 rmnet, seth, radio, ccmni, pdp, usb 等)
+                                if (fallbackCellularIp == null) {
+                                    fallbackCellularIp = host;
+                                    fallbackCellularIface = name;
                                 }
                             }
                         }
@@ -283,11 +292,11 @@ public class SystemUtils {
 
         if (fallbackCellularIp != null) {
             status.ip = fallbackCellularIp;
-            status.ifaceName = fallbackCellularIface != null ? fallbackCellularIface : "rmnet";
+            status.ifaceName = fallbackCellularIface != null ? fallbackCellularIface : "cellular";
             status.isWifiOrLan = false;
             status.isCellular = true;
             status.typeName = "车机内置 SIM 流量";
-            status.message = "⚠️ 当前为车机内置 SIM 移动网络 (" + fallbackCellularIp + ")，手机无法直连！请连同一 Wi-Fi 或开启手机热点供车机连接";
+            status.message = "⚠️ 当前为车机内置 SIM 移动网络 (" + fallbackCellularIp + ")，手机无法跨公网直连！请连同一 Wi-Fi 或开启手机热点供车机连接";
             return status;
         }
 
@@ -653,9 +662,14 @@ public class SystemUtils {
 
     public static OpResult setPackageEnabled(Context ctx, String pkg, boolean enable) {
         OpResult result;
+        // 关键：立即清空禁用包名内存缓存，强制回读底层真实状态
+        disabledPkgsCache = null;
+        disabledPkgsCacheAt = 0L;
         try {
             String cmd = enable ? ("pm enable " + pkg + " || pm unhide " + pkg) : ("pm disable-user --user 0 " + pkg + " || pm disable " + pkg + " || pm hide " + pkg);
             String out = executePrivileged(ctx, cmd);
+            disabledPkgsCache = null;
+            disabledPkgsCacheAt = 0L;
             
             if (out != null && (out.contains("new state") || out.contains("enabled") || out.contains("disabled") || out.contains("Success") || out.contains("Package " + pkg))) {
                 result = new OpResult(true, enable ? "已成功解冻恢复" : "已成功安全冻结", out);

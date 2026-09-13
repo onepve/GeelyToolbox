@@ -898,8 +898,8 @@ public class VehicleAutomationService extends Service {
      * 模式枚举: MODE_COMFORT=1, MODE_SPORT=2, MODE_ECO=3, MODE_SMART=4 (全局解耦，零错位)
      */
     private void handleDriveModeSignal(int mode) {
-        if (!isEngineRunning()) {
-            // 熄火断电/浅待机：强制重置状态机，绝对静音！
+        if (lastPowerMode == 0) {
+            // 明确下电关机状态：强制重置状态机，绝对静音
             if (driveModeManager != null) {
                 driveModeManager.resetState();
             }

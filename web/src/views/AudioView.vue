@@ -328,7 +328,15 @@ onMounted(() => {
 
 function testTtsEngine() {
   bridge.call('testVehicleVoice', 'custom');
-  showToast('正在调用小爱语音合成引擎播放测试语音...');
+  showToast('正在调用语音合成引擎播放测试语音...');
+  setTimeout(() => {
+    try {
+      const raw = bridge.call('getTtsEngineInfo');
+      if (raw) {
+        ttsInfo.value = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      }
+    } catch (e) {}
+  }, 1200);
 }
 
 function openStoreToDownload() {

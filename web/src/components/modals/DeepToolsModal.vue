@@ -28,18 +28,21 @@
 
     <!-- 核心组件推荐冻结列表 (大卡片 + 66px 按钮) -->
     <div class="mb-5">
-      <div class="text-[21px] font-black text-car-text mb-3">原厂核心组件推荐冻结 / 解冻</div>
-      <div class="flex space-x-4">
-        <!-- 应用商店 -->
-        <div class="flex-1 bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div class="flex flex-col mb-4">
-            <span class="text-[19px] font-black text-car-text mb-1">吉利应用商店</span>
-            <span class="text-[14px] text-car-sub font-mono">com.ecarx.appstore</span>
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-[21px] font-black text-car-text">原厂预装组件推荐冻结 / 解冻 (二次确认保护)</div>
+        <span class="text-[13px] text-car-sub font-bold">释放车机约 150MB 运存 · 彻底杜绝开机自启抢占与后台偷跑</span>
+      </div>
+      <div class="grid grid-cols-4 gap-3.5">
+        <!-- 1. 吉利应用商店 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+          <div class="flex flex-col mb-3">
+            <span class="text-[17px] font-black text-car-text mb-0.5">吉利应用商店</span>
+            <span class="text-[12px] text-car-sub font-mono truncate">com.ecarx.appstore</span>
           </div>
           <button 
-            @click="toggleFreeze('com.ecarx.appstore')"
+            @click="confirmToggleFreeze('com.ecarx.appstore', '吉利应用商店')"
             :class="[
-              'min-h-[66px] rounded-2xl border-2 font-black text-[17.5px] cursor-pointer transition-all',
+              'min-h-[58px] px-2 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all',
               packageStates['com.ecarx.appstore'] 
                 ? 'bg-car-card border-emerald-500/60 text-emerald-400' 
                 : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400'
@@ -49,41 +52,60 @@
           </button>
         </div>
 
-        <!-- 系统 OTA -->
-        <div class="flex-1 bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div class="flex flex-col mb-4">
-            <span class="text-[19px] font-black text-car-text mb-1">原厂 OTA 升级服务</span>
-            <span class="text-[14px] text-car-sub font-mono">ecarx.upgrade</span>
+        <!-- 2. 原厂多媒体伴听 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+          <div class="flex flex-col mb-3">
+            <span class="text-[17px] font-black text-car-text mb-0.5">原厂多媒体伴听</span>
+            <span class="text-[12px] text-car-sub font-mono truncate">com.ecarx.multimedia</span>
           </div>
           <button 
-            @click="toggleFreeze('ecarx.upgrade')"
+            @click="confirmToggleFreeze('com.ecarx.multimedia', '原厂多媒体伴听')"
             :class="[
-              'min-h-[66px] rounded-2xl border-2 font-black text-[17.5px] cursor-pointer transition-all',
-              packageStates['ecarx.upgrade'] 
-                ? 'bg-car-card border-emerald-500/60 text-emerald-400' 
-                : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
-            ]"
-          >
-            {{ packageStates['ecarx.upgrade'] ? '已安全冻结 (OTA静默)' : '运行中 · 点击安全冻结' }}
-          </button>
-        </div>
-
-        <!-- 原厂多媒体伴听 -->
-        <div class="flex-1 bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-          <div class="flex flex-col mb-4">
-            <span class="text-[19px] font-black text-car-text mb-1">原厂多媒体伴听</span>
-            <span class="text-[14px] text-car-sub font-mono">com.ecarx.multimedia</span>
-          </div>
-          <button 
-            @click="toggleFreeze('com.ecarx.multimedia')"
-            :class="[
-              'min-h-[66px] rounded-2xl border-2 font-black text-[17.5px] cursor-pointer transition-all',
+              'min-h-[58px] px-2 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all',
               packageStates['com.ecarx.multimedia'] 
                 ? 'bg-car-card border-emerald-500/60 text-emerald-400' 
                 : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400'
             ]"
           >
             {{ packageStates['com.ecarx.multimedia'] ? '已安全冻结 (方控免误弹)' : '运行中 · 点击安全冻结' }}
+          </button>
+        </div>
+
+        <!-- 3. 原厂云听车机版 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+          <div class="flex flex-col mb-3">
+            <span class="text-[17px] font-black text-car-text mb-0.5">原厂云听车机版</span>
+            <span class="text-[12px] text-car-sub font-mono truncate">com.edog.car</span>
+          </div>
+          <button 
+            @click="confirmToggleFreeze('com.edog.car', '原厂云听车机版')"
+            :class="[
+              'min-h-[58px] px-2 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all',
+              packageStates['com.edog.car'] 
+                ? 'bg-car-card border-emerald-500/60 text-emerald-400' 
+                : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400'
+            ]"
+          >
+            {{ packageStates['com.edog.car'] ? '已安全冻结 (省运存36M)' : '运行中 · 点击安全冻结' }}
+          </button>
+        </div>
+
+        <!-- 4. 火山车娱 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+          <div class="flex flex-col mb-3">
+            <span class="text-[17px] font-black text-car-text mb-0.5">火山车娱</span>
+            <span class="text-[12px] text-car-sub font-mono truncate">com.bytedance.byteautoservice</span>
+          </div>
+          <button 
+            @click="confirmToggleFreeze('com.bytedance.byteautoservice', '火山车娱')"
+            :class="[
+              'min-h-[58px] px-2 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all',
+              packageStates['com.bytedance.byteautoservice'] 
+                ? 'bg-car-card border-emerald-500/60 text-emerald-400' 
+                : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400'
+            ]"
+          >
+            {{ packageStates['com.bytedance.byteautoservice'] ? '已安全冻结 (免后台偷跑)' : '运行中 · 点击安全冻结' }}
           </button>
         </div>
       </div>
@@ -160,8 +182,9 @@ import { store, bridge, closeModal, openModal, showToast } from '../../store';
 
 const packageStates = ref({
   'com.ecarx.appstore': false,
-  'ecarx.upgrade': false,
-  'com.ecarx.multimedia': false
+  'com.ecarx.multimedia': false,
+  'com.edog.car': false,
+  'com.bytedance.byteautoservice': false
 });
 
 const isDumping = ref(false);
@@ -170,8 +193,9 @@ function refreshPackageStates() {
   setTimeout(() => {
     try {
       packageStates.value['com.ecarx.appstore'] = !!bridge.call('isPackageFrozen', 'com.ecarx.appstore');
-      packageStates.value['ecarx.upgrade'] = !!bridge.call('isPackageFrozen', 'ecarx.upgrade');
       packageStates.value['com.ecarx.multimedia'] = !!bridge.call('isPackageFrozen', 'com.ecarx.multimedia');
+      packageStates.value['com.edog.car'] = !!bridge.call('isPackageFrozen', 'com.edog.car');
+      packageStates.value['com.bytedance.byteautoservice'] = !!bridge.call('isPackageFrozen', 'com.bytedance.byteautoservice');
     } catch (e) {}
   }, 100);
 }
@@ -241,12 +265,54 @@ function saveLog() {
   showToast('终端日志已保存至 /sdcard/Download/');
 }
 
+function confirmToggleFreeze(pkg, pkgName) {
+  const isFrozen = !!packageStates.value[pkg];
+  const actionText = isFrozen ? '解冻恢复' : '安全冻结';
+  
+  let desc = '';
+  let tip = '';
+  if (pkg === 'com.ecarx.appstore') {
+    desc = isFrozen 
+      ? `即将解冻【${pkgName}】(${pkg})。解冻后应用商店将恢复开机自启，可能会在每次开机时强制重置车机安装白名单策略。`
+      : `即将安全冻结【${pkgName}】(${pkg})。冻结后可彻底杜绝车机每次开机自动重置白名单，并释放约 100MB 运行内存，保障第三方地图与应用稳定直装。`;
+    tip = isFrozen ? '如需安装第三方软件，建议保持应用商店处于冻结状态。' : '如需使用官方应用商店下载原厂应用，可随时在此解冻。';
+  } else if (pkg === 'ecarx.upgrade') {
+    desc = isFrozen
+      ? `即将解冻【${pkgName}】(${pkg})。解冻后车机将恢复接收吉利官方 OTA 系统固件推送。`
+      : `即将安全冻结【${pkgName}】(${pkg})。冻结后将彻底静默官方 OTA 自动静默下载与强制弹窗更新，防止系统升级后被覆盖丢失已装软件。`;
+    tip = isFrozen ? '解冻后建议留意系统更新提示。' : '冻结不影响车机日常联网、导航与多媒体功能。';
+  } else if (pkg === 'com.ecarx.multimedia') {
+    desc = isFrozen
+      ? `即将解冻【${pkgName}】(${pkg})。解冻后原车伴听与多媒体中心将恢复开机自启。`
+      : `即将安全冻结【${pkgName}】(${pkg})。冻结后将彻底屏蔽原厂伴听开机自启与广告电台抢占，方向盘切歌与方控将纯净交给第三方音乐。`;
+    tip = isFrozen ? '解冻后原厂多媒体将重新接管媒体按键。' : '冻结原厂多媒体不影响车载蓝牙电话接打与配对。';
+  } else {
+    desc = `即将执行【${actionText}】组件【${pkgName}】(${pkg})，是否确认继续？`;
+    tip = '请确保了解该组件的系统功能，非必要请勿随意变更。';
+  }
+
+  openModal('confirm', {
+    title: `【高危操作确认】${actionText} ${pkgName}`,
+    desc: desc,
+    tip: tip,
+    isDanger: !isFrozen,
+    confirmText: `确认${actionText}`,
+    cancelText: '取消',
+    onConfirm: () => {
+      toggleFreeze(pkg);
+    }
+  });
+}
+
 function toggleFreeze(pkg) {
   bridge.call('togglePackageFreeze', pkg);
-  showToast('正在下发 ADB 指令更新组件状态...');
+  showToast('正在下发底层 ADB 指令执行操作...');
   setTimeout(() => {
     refreshPackageStates();
-  }, 1200);
+  }, 600);
+  setTimeout(() => {
+    refreshPackageStates();
+  }, 1800);
 }
 
 function dumpLogcat() {

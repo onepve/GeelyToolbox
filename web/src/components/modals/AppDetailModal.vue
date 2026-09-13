@@ -68,13 +68,13 @@
     <template #footer>
       <div class="flex items-center justify-between w-full">
         <!-- 专家模式卡主题通道按键 (严密安全限制：仅限高德地图底包，非地图坚决禁止卡主题) -->
-        <button 
-          v-if="store.settings.expert_rabbit && isMapApp"
+        <button
+          v-if="isMapApp"
           @click="openRabbitGuide"
           class="h-[60px] px-6 bg-amber-500/15 border-2 border-amber-500/50 rounded-2xl text-amber-300 font-black text-[17.5px] cursor-pointer hover:bg-amber-500/25 ring-2 ring-amber-500/20 shadow-md flex items-center"
         >
           <span class="mr-2">⚡</span>
-          <span>专家模式: 卡主题安装向导</span>
+          <span>卡主题安装向导</span>
         </button>
         <div v-else></div>
 
@@ -112,13 +112,25 @@
             </button>
           </template>
 
-          <!-- 3. 下载完成：提供立即安装应用与重新下载按钮 -->
+          <!-- 3. 下载完成：提供卡主题注入/直接覆盖安装与重新下载按钮 -->
           <template v-else-if="currentTask?.status === 'completed'">
             <button 
-              @click="handleInstallDownloaded"
-              class="min-h-[66px] px-10 bg-car-item border-2 border-emerald-500 text-emerald-400 rounded-2xl font-black text-[20px] cursor-pointer hover:border-emerald-400 shadow-lg ring-2 ring-emerald-500/20 transition-all flex items-center"
+              v-if="isMapApp"
+              @click="openRabbitGuide"
+              class="min-h-[66px] px-8 bg-amber-500/20 border-2 border-amber-500 text-amber-300 rounded-2xl font-black text-[19px] cursor-pointer hover:bg-amber-500/30 shadow-lg ring-2 ring-amber-500/20 transition-all flex items-center"
             >
-              <span class="mr-2">✅</span> 立即安装应用
+              <span class="mr-2">⚡</span> 注入兔子时钟 (卡主题安装)
+            </button>
+            <button 
+              @click="handleInstallDownloaded"
+              :class="[
+                'min-h-[66px] rounded-2xl font-black transition-all flex items-center cursor-pointer shadow-lg',
+                isMapApp
+                  ? 'px-6 bg-car-item border border-car-border text-car-text hover:border-car-border-light text-[17px]'
+                  : 'px-10 bg-car-item border-2 border-emerald-500 text-emerald-400 hover:border-emerald-400 text-[20px] ring-2 ring-emerald-500/20'
+              ]"
+            >
+              <span class="mr-2">✅</span> {{ isMapApp ? '尝试直接覆盖安装' : '立即安装应用' }}
             </button>
             <button 
               @click="handleInstallAction"

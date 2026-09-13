@@ -36,7 +36,6 @@ public class DriveModeManager {
     private DriveModeListener listener;
 
     private int lastDriveMode = -1; // 初始未定态 (-1)，开机首包静默确立基准
-    private int isDriveModeVoiceArmed = 0; // 0=静默休眠态, 1=车主激活态
     private Runnable pendingModeTask = null;
     private static final long MODE_DEBOUNCE_MS = 160; // 模式切换防抖滤波窗口 (160ms 滤除旋钮极速滑动过渡态)
 
@@ -64,11 +63,10 @@ public class DriveModeManager {
             mainHandler.removeCallbacks(pendingModeTask);
             pendingModeTask = null;
         }
-        boolean changed = (lastDriveMode != -1 || isDriveModeVoiceArmed != 0);
+        boolean changed = (lastDriveMode != -1);
         lastDriveMode = -1;
-        isDriveModeVoiceArmed = 0;
         if (changed) {
-            AppLogger.i("驾驶模式", "熄火休眠复位: 重置归位基准 (lastMode=-1, armed=0)");
+            AppLogger.i("驾驶模式", "熄火休眠复位: 重置归位基准 (lastMode=-1)");
         }
     }
 
@@ -78,8 +76,7 @@ public class DriveModeManager {
         // 1. 开机首包基准静默建立：绝不盲目发声！
         if (lastDriveMode == -1) {
             lastDriveMode = mode;
-            isDriveModeVoiceArmed = 0;
-            AppLogger.i("驾驶模式", "基准初始化: 当前模式=" + getModeName(mode) + ", armed=0 (静默休眠)");
+            AppLogger.i("驾驶模式", "基准初始化: 当前模式=" + getModeName(mode) + " (静默建立基准，开机不误播)");
             if (listener != null) {
                 listener.onDriveModeChanged(lastDriveMode);
             }
@@ -110,14 +107,9 @@ public class DriveModeManager {
                     pendingModeTask = null;
                     if (targetMode == lastDriveMode) return;
 
-                    AppLogger.i("驾驶模式", "模式确认切换: " + getModeName(lastDriveMode) + " -> " + getModeName(targetMode) + ", armed=" + isDriveModeVoiceArmed);
+                    AppLogger.i("驾驶模式", "模式确认切换: " + getModeName(lastDriveMode) + " -> " + getModeName(targetMode));
 
-                    // 1. 从默认智能模式切出 -> 激活状态机
-                    if (lastDriveMode == MODE_SMART && targetMode != MODE_SMART) {
-                        isDriveModeVoiceArmed = 1;
-                    }
-
-                    // 2. 播报判定 (默认全开，支持双别名兼容)
+                    // 播报判定 (默认全开，支持双别名兼容)
                     if (voiceMasterSwitch) {
                         boolean enableComfort = prefs.contains("voice_enable_mode_comfort") ? prefs.getBoolean("voice_enable_mode_comfort", true) : prefs.getBoolean("enable_mode_comfort", true);
                         boolean enableSport = prefs.contains("voice_enable_mode_sport") ? prefs.getBoolean("voice_enable_mode_sport", true) : prefs.getBoolean("enable_mode_sport", true);
@@ -141,12 +133,9 @@ public class DriveModeManager {
                                 }
                                 break;
                             case MODE_SMART:
-                                if (isDriveModeVoiceArmed == 1) {
-                                    if (enableSmart && voicePlayer != null) {
-                                        voicePlayer.play("mode_smart.mp3", "智能模式");
-                                    }
+                                if (enableSmart && voicePlayer != null) {
+                                    voicePlayer.play("mode_smart.mp3", "智能模式");
                                 }
-                                isDriveModeVoiceArmed = 0; // 归零！进入静默态
                                 break;
                         }
                     }

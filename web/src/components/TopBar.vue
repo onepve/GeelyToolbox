@@ -128,8 +128,22 @@ const statusPills = computed(() => {
       onClick: () => handleStoreCapsuleClick() 
     },
     { 
-      text: `IP: ${store.deviceInfo.car_ip || '127.0.0.1'}`, 
-      dotClass: 'bg-sky-500 shadow-[0_0_6px_#0EA5E9]',
+      text: (() => {
+        const ip = store.deviceInfo.car_ip || store.deviceInfo.ip || '';
+        const isWifi = store.deviceInfo.is_wifi || (ip && (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')));
+        const isCellular = store.deviceInfo.is_cellular || (ip && !ip.startsWith('127.') && !isWifi);
+        if (isWifi && ip && !ip.startsWith('127.')) return `IP: ${ip}`;
+        if (isCellular) return 'SIM: 流量在线';
+        return '网络: 未连热点';
+      })(), 
+      dotClass: (() => {
+        const ip = store.deviceInfo.car_ip || store.deviceInfo.ip || '';
+        const isWifi = store.deviceInfo.is_wifi || (ip && (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')));
+        const isCellular = store.deviceInfo.is_cellular || (ip && !ip.startsWith('127.') && !isWifi);
+        if (isWifi && ip && !ip.startsWith('127.')) return 'bg-emerald-500 shadow-[0_0_6px_#10B981]';
+        if (isCellular) return 'bg-sky-500 shadow-[0_0_6px_#0EA5E9]';
+        return 'bg-slate-400';
+      })(),
       onClick: () => openModal('qrCode') 
     }
   ];
@@ -141,6 +155,10 @@ function autoPollDeviceInfo() {
     if (raw) {
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
       Object.assign(store.deviceInfo, parsed);
+      if (parsed.ip) {
+        store.deviceInfo.ip = parsed.ip;
+        store.deviceInfo.car_ip = parsed.ip;
+      }
       if (parsed.real_battery_volt && parsed.real_battery_volt >= 9.0 && parsed.real_battery_volt <= 16.5) {
         store.batteryVoltage = parsed.real_battery_volt;
       }
@@ -150,6 +168,18 @@ function autoPollDeviceInfo() {
 
 onMounted(() => {
   autoPollDeviceInfo();
+  // 实时网络切换主动广播回调：连接/断开热点毫秒级响应
+  window.onNetworkChanged = (net) => {
+    if (net) {
+      if (net.ip) {
+        store.deviceInfo.ip = net.ip;
+        store.deviceInfo.car_ip = net.ip;
+      }
+      if (typeof net.isWifiOrLan === 'boolean') store.deviceInfo.is_wifi = net.isWifiOrLan;
+      if (typeof net.isCellular === 'boolean') store.deviceInfo.is_cellular = net.isCellular;
+      if (net.typeName) store.deviceInfo.net_type = net.typeName;
+    }
+  };
   // 4 秒自适应心跳：Java 侧已对白名单/包状态做零 shell 缓存，轮询本身不再卡顿
   topBarTimer = setInterval(autoPollDeviceInfo, 4000);
 });

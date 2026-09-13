@@ -2,11 +2,14 @@ package app.onepve.geelyconsole;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -99,6 +102,34 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
     };
 
+    private final BroadcastReceiver networkChangeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            pushNetworkStatusToWeb();
+        }
+    };
+
+    public void pushNetworkStatusToWeb() {
+        if (webView == null) return;
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    SystemUtils.NetStatus net = SystemUtils.getNetworkStatus();
+                    JSONObject obj = net.toJson();
+                    obj.put("ip", net.ip);
+                    obj.put("car_ip", net.ip);
+                    obj.put("net_type", net.typeName);
+                    obj.put("is_wifi", net.isWifiOrLan);
+                    obj.put("is_cellular", net.isCellular);
+                    if (webView != null) {
+                        webView.evaluateJavascript("if(window.onNetworkChanged) window.onNetworkChanged(" + obj.toString() + ");", null);
+                    }
+                } catch (Exception ignored) {}
+            }
+        });
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -109,6 +140,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         initWebView();
         checkAndRequestStoragePermission();
+        try {
+            registerReceiver(networkChangeReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+        } catch (Exception ignored) {}
         AppLogger.i("应用启动", "吉利智驾界面启动完成");
         // 启动时自动探测并开启白名单，若为真车环境且商店未冻结则自动执行安全冻结保护
         new Thread(new Runnable() {
@@ -316,6 +350,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        try {
+            unregisterReceiver(networkChangeReceiver);
+        } catch (Exception ignored) {}
         if (webServer != null) {
             webServer.stop();
         }
@@ -659,8 +696,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         public String getDeviceInfo() {
             try {
                 SystemUtils.NetStatus net = SystemUtils.getNetworkStatus();
-                JSONObject obj = new JSONObject();
+                JSONObject obj = net.toJson();
                 obj.put("ip", net.ip);
+                obj.put("car_ip", net.ip);
+                obj.put("net_type", net.typeName);
+                obj.put("is_wifi", net.isWifiOrLan);
+                obj.put("is_cellular", net.isCellular);
                 obj.put("dynamicCode", SystemUtils.calculateDynamicCode());
                 obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
                 obj.put("whitelist", SystemUtils.isApkVerifyWhitelistEnabled());
@@ -1458,11 +1499,19 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    SystemUtils.setPackageEnabled(context, pkg, !freeze);
+                    final SystemUtils.OpResult res = SystemUtils.setPackageEnabled(context, pkg, !freeze);
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(context, (freeze ? "已安全冻结: " : "已解冻恢复: ") + pkg, Toast.LENGTH_SHORT).show();
+                            if (res != null && res.success) {
+                                Toast.makeText(context, (freeze ? "已成功安全冻结: " : "已成功解冻恢复: ") + pkg, Toast.LENGTH_SHORT).show();
+                            } else {
+                                String msg = (res != null && res.message != null && !res.message.isEmpty()) ? res.message : "ADB 指令未生效";
+                                Toast.makeText(context, "操作未生效: " + msg + " (请检查本地 5555 ADB 授权)", Toast.LENGTH_LONG).show();
+                            }
+                            if (webView != null) {
+                                webView.evaluateJavascript("if(window.refreshPackageStates) window.refreshPackageStates();", null);
+                            }
                         }
                     });
                 }
@@ -3040,6 +3089,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     } else if ("seatbelt".equals(type)) {
                         player.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
                     } else {
+                        if (!player.isTtsReady()) {
+                            player.ensureTtsReady();
+                            Toast.makeText(MainActivity.this, "小爱语音引擎正在唤醒连接中，请稍候再试...", Toast.LENGTH_SHORT).show();
+                        }
                         player.speakText("吉利车机座舱智能语音联动测试成功");
                     }
                 }
@@ -3049,10 +3102,46 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public String getTtsEngineInfo() {
             try {
-                getPackageManager().getPackageInfo("com.xiaomi.mibrain.speech", 0);
-                return "{\"connected\":true,\"name\":\"小爱语音合成引擎 (XiaoAi TTS 1.5.1)\",\"status\":\"已成功连接小爱语音引擎 · 专车TTS声线就绪\",\"type\":\"xiaoai\"}";
+                VehicleVoicePlayer player = VehicleVoicePlayer.getInstance(MainActivity.this);
+                boolean ready = player.isTtsReady();
+                boolean xiaoaiInstalled = false;
+                try {
+                    getPackageManager().getPackageInfo("com.xiaomi.mibrain.speech", 0);
+                    xiaoaiInstalled = true;
+                } catch (Exception ignored) {}
+
+                String activeEngine = player.getActiveTtsEngine();
+                boolean isXiaoaiActive = "com.xiaomi.mibrain.speech".equals(activeEngine) || activeEngine.contains("xiaomi");
+
+                JSONObject res = new JSONObject();
+                res.put("connected", ready);
+                res.put("installed", xiaoaiInstalled);
+                res.put("engine", activeEngine);
+
+                if (ready) {
+                    if (isXiaoaiActive || xiaoaiInstalled) {
+                        res.put("name", "小爱语音合成引擎 (XiaoAi TTS 1.5.1)");
+                        res.put("status", "已成功直连小爱语音引擎 · 专车TTS声线就绪");
+                        res.put("type", "xiaoai");
+                    } else {
+                        res.put("name", "系统默认语音引擎 (" + activeEngine + ")");
+                        res.put("status", "当前使用系统底层默认 TTS 引擎");
+                        res.put("type", "native");
+                    }
+                } else {
+                    if (xiaoaiInstalled) {
+                        res.put("name", "小爱语音合成引擎 (唤醒中/未就绪)");
+                        res.put("status", "已安装小爱TTS包，后台服务正在唤醒绑定中。点击试听可触发激活。");
+                        res.put("type", "xiaoai");
+                    } else {
+                        res.put("name", "系统原厂默认引擎");
+                        res.put("status", "未检测到小爱TTS包，当前使用系统底层默认语音引擎");
+                        res.put("type", "native");
+                    }
+                }
+                return res.toString();
             } catch (Exception e) {
-                return "{\"connected\":false,\"name\":\"系统原厂默认引擎\",\"status\":\"未检测到小爱TTS包，当前使用系统底层默认语音引擎\",\"type\":\"native\"}";
+                return "{\"connected\":false,\"name\":\"系统默认引擎\",\"status\":\"TTS状态获取异常\",\"type\":\"native\"}";
             }
         }
 

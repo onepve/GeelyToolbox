@@ -11,6 +11,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 
 import java.io.File;
@@ -181,6 +182,87 @@ public class VehicleVoicePlayer {
         }).start();
     }
 
+    public boolean isTtsReady() {
+        return tts != null && ttsReady;
+    }
+
+    public String getActiveTtsEngine() {
+        if (tts != null) {
+            try {
+                String eng = tts.getDefaultEngine();
+                if (eng != null && !eng.isEmpty()) return eng;
+            } catch (Exception ignored) {}
+        }
+        return "none";
+    }
+
+    private void setupTtsLanguageAndReady() {
+        if (tts == null) return;
+        try {
+            // 依次尝试 CHINA(zh_CN) -> SIMPLIFIED_CHINESE -> CHINESE -> getDefault()，最大化兼容小爱等第三方引擎
+            int res = tts.setLanguage(Locale.CHINA);
+            if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
+                res = tts.setLanguage(Locale.SIMPLIFIED_CHINESE);
+            }
+            if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
+                res = tts.setLanguage(Locale.CHINESE);
+            }
+            if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
+                res = tts.setLanguage(Locale.getDefault());
+            }
+
+            ttsReady = true;
+            tts.setSpeechRate(1.05f);
+            setupUtteranceListener();
+            Log.i(TAG, "TextToSpeech init ready! Engine=" + tts.getDefaultEngine() + ", langRes=" + res);
+            flushPendingSpeech();
+        } catch (Exception e) {
+            Log.w(TAG, "setupTtsLanguageAndReady error: " + e.getMessage());
+            ttsReady = true;
+            flushPendingSpeech();
+        }
+    }
+
+    private void setupUtteranceListener() {
+        if (tts == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) return;
+        try {
+            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                @Override
+                public void onStart(String utteranceId) {
+                    Log.d(TAG, "TTS onStart: " + utteranceId);
+                }
+
+                @Override
+                public void onDone(String utteranceId) {
+                    Log.d(TAG, "TTS onDone: " + utteranceId);
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (focusReleaseRunnable != null) {
+                                mainHandler.removeCallbacks(focusReleaseRunnable);
+                                focusReleaseRunnable.run();
+                            }
+                        }
+                    });
+                }
+
+                @Override
+                public void onError(String utteranceId) {
+                    Log.w(TAG, "TTS onError: " + utteranceId);
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (focusReleaseRunnable != null) {
+                                mainHandler.removeCallbacks(focusReleaseRunnable);
+                                focusReleaseRunnable.run();
+                            }
+                        }
+                    });
+                }
+            });
+        } catch (Exception ignored) {}
+    }
+
     private void initTts() {
         mainHandler.post(new Runnable() {
             @Override
@@ -192,17 +274,37 @@ public class VehicleVoicePlayer {
                         targetEngine = "com.xiaomi.mibrain.speech";
                     } catch (Exception ignored) {}
 
+                    final String engineToTry = targetEngine;
                     TextToSpeech.OnInitListener listener = new TextToSpeech.OnInitListener() {
                         @Override
                         public void onInit(int status) {
                             if (status == TextToSpeech.SUCCESS && tts != null) {
-                                int res = tts.setLanguage(Locale.CHINESE);
-                                if (res != TextToSpeech.LANG_MISSING_DATA && res != TextToSpeech.LANG_NOT_SUPPORTED) {
-                                    ttsReady = true;
-                                    tts.setSpeechRate(1.05f);
-                                    Log.i(TAG, "TextToSpeech init ready!");
-                                    // 引擎就绪瞬间，立即补播排队中的首条语音（点火即挂挡场景零丢失）
-                                    flushPendingSpeech();
+                                setupTtsLanguageAndReady();
+                                ttsReady = true;
+                                flushPendingSpeech();
+                            } else {
+                                Log.w(TAG, "TTS onInit failed for engine [" + engineToTry + "], status=" + status);
+                                if (engineToTry != null) {
+                                    // 若小爱引擎绑定失败，自动优雅降级使用系统默认 TTS 引擎重新初始化
+                                    Log.i(TAG, "Falling back to system default TextToSpeech engine...");
+                                    try {
+                                        if (tts != null) tts.shutdown();
+                                    } catch (Throwable ignored) {}
+                                    tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
+                                        @Override
+                                        public void onInit(int fallbackStatus) {
+                                            if (fallbackStatus == TextToSpeech.SUCCESS && tts != null) {
+                                                setupTtsLanguageAndReady();
+                                                ttsReady = true;
+                                                flushPendingSpeech();
+                                            } else {
+                                                Log.e(TAG, "Default TTS also failed with status: " + fallbackStatus);
+                                                ttsReady = false;
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    ttsReady = false;
                                 }
                             }
                         }
