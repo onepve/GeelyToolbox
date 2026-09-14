@@ -710,6 +710,22 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
+        // 4.4 解析底盘主副驾座椅乘员与安全带状态 (INFO_ID_IPKWARN_PASS_SEAT_BELT / INFO_ID_IPKWARN_DRV_SEAT_BELT)
+        if (line.contains("INFO_ID_IPKWARN_PASS_SEAT_BELT") || line.contains("0x00201300")) {
+            if (line.contains("funValue(0x00201202)") || line.contains("funValue(2)")) {
+                if (doorStateManager != null) doorStateManager.updatePassengerOccupancy(true);
+            } else if (line.contains("funValue(0x00201201)") || line.contains("funValue(1)")) {
+                if (doorStateManager != null) doorStateManager.updatePassengerOccupancy(false);
+            }
+        }
+        if (line.contains("INFO_ID_IPKWARN_DRV_SEAT_BELT") || line.contains("0x00201200")) {
+            if (line.contains("funValue(0x00201201)") || line.contains("funValue(1)")) {
+                if (doorStateManager != null) doorStateManager.updateDriverBeltState(true);
+            } else if (line.contains("funValue(0x00201202)") || line.contains("funValue(2)")) {
+                if (doorStateManager != null) doorStateManager.updateDriverBeltState(false);
+            }
+        }
+
         // 4.1 解析驾驶模式切换信号 (严格收敛对齐 Tasker 实车验证黄金法则: 纯净收敛于 ECarXCarConfigService 与 AdaptAPI 权威常量)
         int modeVal = -1;
 

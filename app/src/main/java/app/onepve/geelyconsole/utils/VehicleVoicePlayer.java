@@ -754,6 +754,16 @@ public class VehicleVoicePlayer {
     private void requestAudioFocus(String voiceType) {
         if (audioManager == null) return;
         try {
+            // 核心铁律：当车载蓝牙音频通道处于激活连接态时，严禁申请 AudioFocus！
+            // 吉利原厂蓝牙协议栈收到焦点退让广播 (-3) 后，会反向向手机下发 AVRCP keyCode 68 (PAUSE)，
+            // 导致微信语音或手机音乐被强制暂停掐断。直接走 AudioFlinger PCM 底层硬件混音即可完美共存！
+            try {
+                if (EasMediaBridge.getInstance(context).isBluetoothChannelActive()) {
+                    Log.i(TAG, "Bluetooth channel active, bypassing requestAudioFocus to prevent sending AVRCP PAUSE to phone.");
+                    return;
+                }
+            } catch (Throwable ignored) {}
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 AudioAttributes attrs = getVoiceAudioAttributes(context, voiceType);
                 AudioFocusRequest req = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)

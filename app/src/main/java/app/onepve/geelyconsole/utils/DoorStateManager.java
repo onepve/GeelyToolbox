@@ -48,6 +48,26 @@ public class DoorStateManager {
     private boolean isRLInside = false;     // 左后座乘员
     private boolean isRRInside = false;     // 右后座乘员
 
+    // 底盘硬件传感器多重融合 (座椅 SBR 重力感应 + 安全带卡扣检测)
+    private boolean hardwareDriverBeltBuckled = false;
+    private boolean hardwarePassengerSeated = false;
+    private boolean hasDriverBeltSensor = false;
+    private boolean hasPassengerSensor = false;
+
+    public void updateDriverBeltState(boolean buckled) {
+        this.hardwareDriverBeltBuckled = buckled;
+        this.hasDriverBeltSensor = true;
+        if (buckled) {
+            this.isDriverInside = true;
+        }
+    }
+
+    public void updatePassengerOccupancy(boolean seated) {
+        this.hardwarePassengerSeated = seated;
+        this.hasPassengerSensor = true;
+        this.isFRInside = seated;
+    }
+
     public DoorStateManager(Context context, VehicleVoicePlayer voicePlayer) {
         this.context = context.getApplicationContext();
         this.voicePlayer = voicePlayer;
@@ -194,8 +214,11 @@ public class DoorStateManager {
             }
 
             if (universalMode) {
-                // 通用模式：根据该座位的乘员状态自适应分流
+                // 通用模式：结合底盘硬件传感器 (SBR重力感应/安全带卡扣) 与自适应乘员状态流
                 boolean isSeated = getSeatState(doorCode);
+                if ("FR".equals(doorCode) && hasPassengerSensor) {
+                    isSeated = hardwarePassengerSeated;
+                }
                 boolean enableOpen = prefs.getBoolean("voice_enable_door_universal_open", true);
 
                 if (isSeated) {
@@ -232,7 +255,14 @@ public class DoorStateManager {
                 boolean isSeated = getSeatState(doorCode);
                 boolean enableClose = prefs.getBoolean("voice_enable_door_universal_close", true);
 
-                if (!isSeated) {
+                if ("FR".equals(doorCode) && hasPassengerSensor && !hardwarePassengerSeated) {
+                    // 核心消灭误报：如果副驾关门后，底盘座椅重力传感器检测到【座椅依然无人】(只是放了个包/拿了件衣服关门)
+                    AppLogger.i("车门状态", "【副驾物品拿放完成】座椅保持空座，车门关好");
+                    if (voiceMasterSwitch && enableClose && voicePlayer != null) {
+                        voicePlayer.play("door_close.mp3", "车门已关好");
+                    }
+                    setSeatState("FR", false);
+                } else if (!isSeated) {
                     // 刚才从车外拉门进来，现在关好车门 -> 判定为【就坐就绪，准备出发】
                     AppLogger.i("车门状态", "【就坐就绪】" + doorName + "门 关好 -> 乘员已在车内就位");
                     if (voiceMasterSwitch && enableClose && voicePlayer != null) {
