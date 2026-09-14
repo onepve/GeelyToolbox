@@ -45,7 +45,7 @@
     </div>
 
     <!-- 应用流 (双列网格 · 强制等高 h-full 对齐基准线) -->
-    <div class="grid grid-cols-2 gap-5 items-stretch">
+    <div v-if="filteredApps.length > 0" class="grid grid-cols-2 gap-5 items-stretch">
       <div 
         v-for="app in filteredApps" 
         :key="app.id"
@@ -77,13 +77,25 @@
         </div>
       </div>
     </div>
+
+    <!-- 纯云端拉取中状态 (彻底去除本地静态兜底，100% 动态云端加载) -->
+    <div v-else class="bg-car-item border-2 border-car-border rounded-3xl p-12 flex flex-col items-center justify-center space-y-4 shadow-md min-h-[260px]">
+      <div class="w-10 h-10 rounded-full border-4 border-car-border border-t-car-accent animate-spin"></div>
+      <div class="text-[19px] text-car-text font-black">正在从云端获取最新应用商城清单...</div>
+      <div class="text-[15px] text-car-sub font-bold">已直连 dl.onepve.com 专属源，实时拉取已实测车机软件</div>
+      <button 
+        @click="refreshApps"
+        class="mt-3 h-[52px] px-8 rounded-2xl bg-car-card border-2 border-car-accent text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-md active:scale-95"
+      >
+        重新拉取云端清单
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
-import { CLOUD_APPS } from '../data/apps';
 
 const currentCategory = ref('all');
 const categories = [
@@ -94,12 +106,19 @@ const categories = [
 ];
 
 const allApps = computed(() => {
-  return store.apps.length > 0 ? store.apps : CLOUD_APPS;
+  return store.apps || [];
 });
 
 const filteredApps = computed(() => {
   if (currentCategory.value === 'all') return allApps.value;
   return allApps.value.filter(a => a.category === currentCategory.value);
+});
+
+onMounted(() => {
+  // 进入商城视图时，若未加载或需更新，立即主动从云端异步拉取最新 apps.json
+  if (!store.apps || store.apps.length === 0) {
+    bridge.call('refreshCloudApps');
+  }
 });
 
 function getBriefDesc(app) {

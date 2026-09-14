@@ -231,6 +231,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 pushDeviceInfoToWeb();
+                // 页面加载就绪后，静默异步拉取最新云端 apps.json 并推送前端 (纯云端无本地静态兜底)
+                fetchCloudAppsAsync(false);
                 if (getIntent() != null && getIntent().hasExtra("eval_js")) {
                     mainHandler.postDelayed(() -> callJs(getIntent().getStringExtra("eval_js")), 300);
                 }
@@ -240,6 +242,65 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         webView.setWebChromeClient(new WebChromeClient());
         webView.addJavascriptInterface(new ToolboxBridge(this), "ToolboxBridge");
         webView.loadUrl("file:///android_asset/toolbox_ui.html");
+    }
+
+    public void fetchCloudAppsAsync(final boolean showToast) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    java.net.URL url = new java.net.URL("https://dl.onepve.com/GeelyToolbox/apps.json?t=" + System.currentTimeMillis());
+                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                    conn.setConnectTimeout(6000);
+                    conn.setReadTimeout(6000);
+                    final int respCode = conn.getResponseCode();
+                    if (respCode == 200) {
+                        java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
+                        StringBuilder sb = new StringBuilder();
+                        String line;
+                        while ((line = reader.readLine()) != null) sb.append(line);
+                        reader.close();
+                        final String jsonContent = sb.toString();
+
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (webView != null) {
+                                    webView.evaluateJavascript("if(window.applyCloudAppsJson) window.applyCloudAppsJson(" + JSONObject.quote(jsonContent) + "); if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(true, 'ok');", null);
+                                }
+                                if (showToast) {
+                                    Toast.makeText(MainActivity.this, "车载软件列表已刷新至最新", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                    } else {
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (webView != null) {
+                                    webView.evaluateJavascript("if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(false, 'HTTP " + respCode + "');", null);
+                                }
+                                if (showToast) {
+                                    Toast.makeText(MainActivity.this, "无法连接云端软件源", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                    }
+                } catch (final Exception e) {
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (webView != null) {
+                                webView.evaluateJavascript("if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(false, '" + e.getMessage().replace("'", "\\'") + "');", null);
+                            }
+                            if (showToast) {
+                                Toast.makeText(MainActivity.this, "刷新云端软件失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                }
+            }
+        }).start();
     }
 
     public void callJs(final String script) {
@@ -2322,56 +2383,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void refreshCloudApps() {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        java.net.URL url = new java.net.URL("https://dl.onepve.com/GeelyToolbox/apps.json?t=" + System.currentTimeMillis());
-                        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-                        conn.setConnectTimeout(6000);
-                        conn.setReadTimeout(6000);
-                        final int respCode = conn.getResponseCode();
-                        if (respCode == 200) {
-                            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
-                            StringBuilder sb = new StringBuilder();
-                            String line;
-                            while ((line = reader.readLine()) != null) sb.append(line);
-                            reader.close();
-                            final String jsonContent = sb.toString();
-
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (webView != null) {
-                                        webView.evaluateJavascript("if(window.applyCloudAppsJson) window.applyCloudAppsJson(" + JSONObject.quote(jsonContent) + "); if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(true, 'ok');", null);
-                                    }
-                                    Toast.makeText(context, "车载软件列表已刷新至最新 (๑•̀ㅂ•́)و", Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                        } else {
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (webView != null) {
-                                        webView.evaluateJavascript("if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(false, 'HTTP " + respCode + "');", null);
-                                    }
-                                    Toast.makeText(context, "无法连接云端软件源", Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                        }
-                    } catch (final Exception e) {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (webView != null) {
-                                    webView.evaluateJavascript("if(window.onCloudAppsRefreshComplete) window.onCloudAppsRefreshComplete(false, '" + e.getMessage().replace("'", "\\'") + "');", null);
-                                }
-                                Toast.makeText(context, "刷新云端软件失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                }
-            }).start();
+            fetchCloudAppsAsync(true);
         }
 
         @JavascriptInterface

@@ -40,7 +40,6 @@ APP_LOGGER_PATH = os.path.join(JAVA_SRC_DIR, "app/onepve/geelyconsole/utils/AppL
 
 APP_VUE_PATH = os.path.join(WEB_SRC_DIR, "App.vue")
 STORE_JS_PATH = os.path.join(WEB_SRC_DIR, "store/index.js")
-APPS_DATA_PATH = os.path.join(WEB_SRC_DIR, "data/apps.js")
 BUILD_GRADLE_PATH = os.path.join(ROOT_DIR, "app/build.gradle")
 MOBILE_WEB_PATH = os.path.join(ASSETS_DIR, "mobile_web.html")
 
@@ -391,34 +390,42 @@ else:
     print("[FAIL] Failed to parse versionCode/versionName from app/build.gradle")
     passed = False
 
-if os.path.exists(APPS_DATA_PATH):
-    with open(APPS_DATA_PATH, "r", encoding="utf-8") as f:
-        app_urls = re.findall(r'\"url\":\s*\"([^\"]+)\"', f.read())
-    print(f"Total cloud app URLs to verify: {len(app_urls)}")
-    failures = []
-    for url in app_urls:
-        status_code = None
-        err = None
-        for attempt in range(1, 4):
-            try:
-                req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "GeelyToolbox-CI/1.0"})
-                with urllib.request.urlopen(req, timeout=10) as resp:
-                    status_code = resp.status
-                    if status_code in (200, 301, 302):
-                        break
-            except Exception as ex:
-                err = ex
-                time.sleep(1)
-        if status_code in (200, 301, 302):
-            print(f"  [OK] {status_code} -> {url}")
-        else:
-            print(f"  [FAIL] -> {url} (Error: {err})")
-            failures.append((url, str(err)))
-    if failures:
-        print(f"  [FAIL] {len(failures)} asset links failed verification!")
-        passed = False
+# 权威来源：纯云端 dl.onepve.com/GeelyToolbox/apps.json (彻底拔除本地静态兜底，100% 动态云端化)
+cloud_apps_url = f"https://dl.onepve.com/GeelyToolbox/apps.json?t={int(time.time())}"
+try:
+    req = urllib.request.Request(cloud_apps_url, headers={"User-Agent": "GeelyToolbox-CI/1.0"})
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        cloud_apps_data = json.loads(resp.read().decode("utf-8"))
+        app_urls = [a.get("download_url") or a.get("url") for a in cloud_apps_data.get("apps", []) if a.get("download_url") or a.get("url")]
+except Exception as ex:
+    print(f"[WARN] Failed to fetch cloud apps.json directly: {ex}")
+    app_urls = []
+
+print(f"Total cloud app URLs to verify: {len(app_urls)}")
+failures = []
+for url in app_urls:
+    status_code = None
+    err = None
+    for attempt in range(1, 4):
+        try:
+            req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "GeelyToolbox-CI/1.0"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                status_code = resp.status
+                if status_code in (200, 301, 302):
+                    break
+        except Exception as ex:
+            err = ex
+            time.sleep(1)
+    if status_code in (200, 301, 302):
+        print(f"  [OK] {status_code} -> {url}")
     else:
-        print("[PASS] All cloud app asset links verified accessible.")
+        print(f"  [FAIL] -> {url} (Error: {err})")
+        failures.append((url, str(err)))
+if failures:
+    print(f"  [FAIL] {len(failures)} asset links failed verification!")
+    passed = False
+else:
+    print("[PASS] All cloud app asset links verified accessible.")
 
 
 # ----------------------------------------------------------------------

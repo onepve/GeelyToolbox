@@ -121,6 +121,11 @@ onMounted(() => {
     }
   } catch (e) {}
 
+  // 启动即主动从云端异步拉取最新商城应用配置 (纯云端无本地硬编码兜底)
+  try {
+    bridge.call('refreshCloudApps');
+  } catch (e) {}
+
   // 挂载 Java 状态与下载推送监听
   window.updateDeviceInfo = (jsonStr) => {
     try {
