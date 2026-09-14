@@ -211,7 +211,7 @@ public class SteeringWheelKeyManager {
             if (keyCode == KEY_WMODE) return prefs.getString(legacyKey, ACTION_OPEN_360);
             if (keyCode == KEY_NEXT) return prefs.getString(legacyKey, ACTION_NEXT_TRACK);
             if (keyCode == KEY_PREV) return prefs.getString(legacyKey, ACTION_PREV_TRACK);
-            if (keyCode == KEY_CUSTOM) return prefs.getString(legacyKey, ACTION_OPEN_NAVI);
+            if (keyCode == KEY_CUSTOM) return prefs.getString(legacyKey, ACTION_DEFAULT);
             if (keyCode == KEY_OK) return prefs.getString(legacyKey, ACTION_PLAY_PAUSE);
             return prefs.getString(legacyKey, ACTION_DEFAULT);
         }
