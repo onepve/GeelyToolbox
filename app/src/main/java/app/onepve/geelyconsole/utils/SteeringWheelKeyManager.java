@@ -83,11 +83,24 @@ public class SteeringWheelKeyManager {
     private long lastTriggerTime = 0;
     private int lastTriggerKey = -1;
 
-    // 手势状态追踪 (单击/双击/长按)
-    private final Map<Integer, Long> keyDownTimes = new HashMap<>();
+    // 手势状态追踪 (单击/双击/长按 严格4相物理闭环状态机)
+    private enum KeyPhase {
+        IDLE,                // 空闲态
+        DOWN_1,              // 第 1 次物理按下中
+        UP_1_WAITING_DOWN_2, // 第 1 次松开完成，等待第 2 次物理按下
+        DOWN_2               // 第 2 次物理按下中，等待第 2 次松开
+    }
+
+    private static final long DOUBLE_CLICK_WINDOW_MS = 380L; // 双击有效窗口期（380ms，自然贴合人类按键节奏）
+    private static final long MIN_CLICK_INTERVAL_MS = 60L;   // 两次物理按下间的最小有效间隔（过滤多源重复日志）
+    private static final long MIN_PRESS_DURATION_MS = 35L;   // 单次按压最小有效持续时长（防触点毛刺）
+
+    private final Map<Integer, KeyPhase> keyPhases = new HashMap<>();
+    private final Map<Integer, Long> phaseDownTime1 = new HashMap<>();
+    private final Map<Integer, Long> phaseUpTime1 = new HashMap<>();
+    private final Map<Integer, Long> phaseDownTime2 = new HashMap<>();
     private final Map<Integer, Boolean> isLongPressed = new HashMap<>();
-    private final Map<Integer, Integer> clickCounts = new HashMap<>();
-    private final Map<Integer, Runnable> pendingClickTasks = new HashMap<>();
+    private final Map<Integer, Runnable> pendingSingleTasks = new HashMap<>();
     private final Map<Integer, Runnable> pendingLongTasks = new HashMap<>();
 
     public SteeringWheelKeyManager(Context context) {
@@ -285,40 +298,53 @@ public class SteeringWheelKeyManager {
         // 5. DefaultVehicleHal_v2_0: do nothing for this key(0x37 / 0x2d) (Tasker 黄金按键)
         if (line.contains("do nothing for this key") || (line.contains("DefaultVehicleHal") && (line.contains("0x37") || line.contains("0x2d")))) {
             if (line.contains("0x37")) {
-                handleKeyDown(KEY_CUSTOM);
-                mainHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        handleKeyUp(KEY_CUSTOM);
-                    }
-                }, 80);
+                Long lastDown = phaseDownTime1.get(KEY_CUSTOM);
+                long now = System.currentTimeMillis();
+                if (lastDown == null || (now - lastDown) > 400) {
+                    handleKeyDown(KEY_CUSTOM);
+                    mainHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            handleKeyUp(KEY_CUSTOM);
+                        }
+                    }, 80);
+                }
                 return KEY_CUSTOM;
             } else if (line.contains("0x2d")) {
-                handleKeyDown(KEY_OK);
-                mainHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        handleKeyUp(KEY_OK);
-                    }
-                }, 80);
+                Long lastDown = phaseDownTime1.get(KEY_OK);
+                long now = System.currentTimeMillis();
+                if (lastDown == null || (now - lastDown) > 400) {
+                    handleKeyDown(KEY_OK);
+                    mainHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            handleKeyUp(KEY_OK);
+                        }
+                    }, 80);
+                }
                 return KEY_OK;
             }
         }
 
-        // 6. ecarx_core_server 物理硬按键 (cmd_data[1] = 304 / 305) (Tasker 123.prj 黄金源)
+        // 6. ecarx_core_server 物理硬按键 (cmd_data[1] = 304 / 305) (Tasker 123.prj 黄金源兜底)
         if (line.contains("cmd_data[1] =") || line.contains("cmd_data[1]=")) {
             try {
                 Matcher m = Pattern.compile("cmd_data\\[1\\]\\s*=\\s*(\\d+)").matcher(line);
                 if (m.find()) {
                     final int code = Integer.parseInt(m.group(1));
                     if (code == KEY_PREV || code == KEY_NEXT || code == KEY_MUTE || code == KEY_BACK) {
-                        handleKeyDown(code);
-                        mainHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                handleKeyUp(code);
-                            }
-                        }, 80);
+                        Long lastDown = phaseDownTime1.get(code);
+                        long now = System.currentTimeMillis();
+                        // 若 400ms 内已有硬件 reportKeyToAdaptApi 触发，坚决不重复分发假按键
+                        if (lastDown == null || (now - lastDown) > 400) {
+                            handleKeyDown(code);
+                            mainHandler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    handleKeyUp(code);
+                                }
+                            }, 80);
+                        }
                         return code;
                     }
                 }
@@ -328,110 +354,164 @@ public class SteeringWheelKeyManager {
     }
 
     /**
-     * 按下事件：记录时间并启动 500ms 长按检测定时器
+     * 按下事件：严格 4 相物理状态机第一相/第三相驱动
      */
-    private final Map<Integer, Long> lastKeyDownTime = new HashMap<>();
-    private static final long KEYDOWN_DEDUP_MS = 80;
-
     public void handleKeyDown(final int keyCode) {
         if (!wheelMasterCached) return;
         long now = System.currentTimeMillis();
-        Long lastDown = lastKeyDownTime.get(keyCode);
-        if (lastDown != null && (now - lastDown) < KEYDOWN_DEDUP_MS) {
-            // 已处于按下态，仅更新时间戳，避免重复启动长按计时器
-            keyDownTimes.put(keyCode, now);
+        KeyPhase currentPhase = keyPhases.getOrDefault(keyCode, KeyPhase.IDLE);
+
+        // 如果已处于按下态中 (DOWN_1 或 DOWN_2)，多源并发日志直接防抖忽略
+        if (currentPhase == KeyPhase.DOWN_1 || currentPhase == KeyPhase.DOWN_2) {
             return;
         }
-        lastKeyDownTime.put(keyCode, now);
-        keyDownTimes.put(keyCode, now);
-        isLongPressed.put(keyCode, false);
 
-        final String longAction = getGestureAction(keyCode, GESTURE_LONG);
-        if (!ACTION_DEFAULT.equals(longAction)) {
-            final int lpMs = prefs.getInt("wheel_long_press_ms", LONG_PRESS_MS);
-            Runnable lpTask = new Runnable() {
+        // 阶段 1: 空闲状态下物理按下 -> 确立第 1 次按下
+        if (currentPhase == KeyPhase.IDLE) {
+            keyPhases.put(keyCode, KeyPhase.DOWN_1);
+            phaseDownTime1.put(keyCode, now);
+            isLongPressed.put(keyCode, false);
+
+            final String longAction = getGestureAction(keyCode, GESTURE_LONG);
+            if (!ACTION_DEFAULT.equals(longAction)) {
+                final int lpMs = prefs.getInt("wheel_long_press_ms", LONG_PRESS_MS);
+                Runnable lpTask = new Runnable() {
+                    @Override
+                    public void run() {
+                        isLongPressed.put(keyCode, true);
+                        keyPhases.put(keyCode, KeyPhase.IDLE);
+                        AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【长按 " + (lpMs / 1000.0f) + "秒】: " + longAction);
+                        executeAction(longAction);
+                    }
+                };
+                pendingLongTasks.put(keyCode, lpTask);
+                mainHandler.postDelayed(lpTask, lpMs);
+            }
+            return;
+        }
+
+        // 阶段 3: 处于 UP_1_WAITING_DOWN_2 (第 1 次松开完成，正在等待第 2 次物理按下)
+        if (currentPhase == KeyPhase.UP_1_WAITING_DOWN_2) {
+            Long up1 = phaseUpTime1.get(keyCode);
+            long interval = (up1 != null) ? (now - up1) : 9999L;
+
+            // 物理防抖：如果第二次按下与第一次松开相隔 < 60ms，判定为日志重叠或毛刺杂波，直接滤除
+            if (interval < MIN_CLICK_INTERVAL_MS) {
+                AppLogger.i("方控按键", getKeyName(keyCode) + " 抬起与再次按下仅隔 " + interval + "ms，判定为信号抖动杂波，已滤除");
+                return;
+            }
+
+            // 用户真正进行了第 2 次物理按下！立即取消单机定时任务
+            Runnable singleTask = pendingSingleTasks.remove(keyCode);
+            if (singleTask != null) {
+                mainHandler.removeCallbacks(singleTask);
+            }
+
+            // 跃迁至第 2 次物理按下中
+            keyPhases.put(keyCode, KeyPhase.DOWN_2);
+            phaseDownTime2.put(keyCode, now);
+
+            // 800ms 自愈防卡死看门狗
+            mainHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    isLongPressed.put(keyCode, true);
-                    AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【长按 " + (lpMs / 1000.0f) + "秒】: " + longAction);
-                    executeAction(longAction);
+                    if (keyPhases.get(keyCode) == KeyPhase.DOWN_2) {
+                        keyPhases.put(keyCode, KeyPhase.IDLE);
+                    }
                 }
-            };
-            pendingLongTasks.put(keyCode, lpTask);
-            mainHandler.postDelayed(lpTask, lpMs); // 支持车主在设置中自由配置判定秒数
+            }, 800);
         }
     }
 
     /**
-     * 抬起事件：取消长按，判定单击或多击 (0ms 极速响应优化)
+     * 抬起事件：严格 4 相物理状态机第二相/第四相驱动
      */
-    // 同一物理键 press/release 跨通道去重：避免 logcat + HAL + 广播导致的一次按键被算多次
-    private final Map<Integer, Long> lastKeyUpTime = new HashMap<>();
-    private static final long KEYUP_DEDUP_MS = 80;
-
     public void handleKeyUp(final int keyCode) {
         if (!wheelMasterCached) return;
         long now = System.currentTimeMillis();
-        Long lastUp = lastKeyUpTime.get(keyCode);
-        if (lastUp != null && (now - lastUp) < KEYUP_DEDUP_MS) {
-            AppLogger.i("方控按键", "按键 " + keyCode + " 80ms 内重复 Up，已去重");
+        KeyPhase currentPhase = keyPhases.getOrDefault(keyCode, KeyPhase.IDLE);
+
+        // 如果在空闲态或等待按下态收到 KeyUp（无前置物理按下），直接丢弃
+        if (currentPhase == KeyPhase.IDLE || currentPhase == KeyPhase.UP_1_WAITING_DOWN_2) {
             return;
         }
-        lastKeyUpTime.put(keyCode, now);
 
+        // 取消可能存在的长按定时器
         Runnable lpTask = pendingLongTasks.remove(keyCode);
         if (lpTask != null) {
             mainHandler.removeCallbacks(lpTask);
         }
 
-        // 若长按已触发，松手时静默放行
+        // 若长按已触发，松手时静默归位
         if (Boolean.TRUE.equals(isLongPressed.get(keyCode))) {
             isLongPressed.put(keyCode, false);
+            keyPhases.put(keyCode, KeyPhase.IDLE);
             return;
         }
 
         if (MODE_FACTORY_DEFAULT.equals(wheelModeCached)) {
+            keyPhases.put(keyCode, KeyPhase.IDLE);
             AppLogger.i("方控按键", "处于[恢复原厂默认]模式，完全放行按键事件给车机原厂总线");
             return;
         }
 
-        final String doubleAction = getGestureAction(keyCode, GESTURE_DOUBLE);
         final String singleAction = getGestureAction(keyCode, GESTURE_SINGLE);
+        final String doubleAction = getGestureAction(keyCode, GESTURE_DOUBLE);
 
-        // 极速 0ms 优化铁律：若未配置双击动作，坚决不等待 260ms，0 毫秒立即瞬发执行单击！
-        if (ACTION_DEFAULT.equals(doubleAction)) {
-            AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【单击】(0ms极速): " + singleAction);
-            executeAction(singleAction);
+        // 阶段 2: 处理第 1 次松手 (DOWN_1 -> UP_1)
+        if (currentPhase == KeyPhase.DOWN_1) {
+            Long down1 = phaseDownTime1.get(keyCode);
+            long pressDuration = (down1 != null) ? (now - down1) : 100L;
+            if (pressDuration < MIN_PRESS_DURATION_MS) {
+                // 按压时长过短，判定为接触不良毛刺
+                keyPhases.put(keyCode, KeyPhase.IDLE);
+                return;
+            }
+
+            // 极速 0ms 优化铁律：若未配置双击动作，坚决不等待，0 毫秒立即瞬发执行单击！
+            if (ACTION_DEFAULT.equals(doubleAction)) {
+                keyPhases.put(keyCode, KeyPhase.IDLE);
+                AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【单击】(0ms极速): " + singleAction);
+                executeAction(singleAction);
+                return;
+            }
+
+            // 配置了双击：进入 UP_1_WAITING_DOWN_2，启动 380ms 物理双击等待窗口
+            keyPhases.put(keyCode, KeyPhase.UP_1_WAITING_DOWN_2);
+            phaseUpTime1.put(keyCode, now);
+
+            Runnable singleTask = new Runnable() {
+                @Override
+                public void run() {
+                    // 380ms 窗口期内未等到合法的第 2 次完整按下松开，确认触发【单击】
+                    if (keyPhases.get(keyCode) == KeyPhase.UP_1_WAITING_DOWN_2) {
+                        keyPhases.put(keyCode, KeyPhase.IDLE);
+                        pendingSingleTasks.remove(keyCode);
+                        AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【单击】: " + singleAction);
+                        executeAction(singleAction);
+                    }
+                }
+            };
+            pendingSingleTasks.put(keyCode, singleTask);
+            mainHandler.postDelayed(singleTask, DOUBLE_CLICK_WINDOW_MS);
             return;
         }
 
-        // 配置了双击：进入 260ms 多击判定时间窗口
-        int count = clickCounts.getOrDefault(keyCode, 0) + 1;
-        clickCounts.put(keyCode, count);
+        // 阶段 4: 处理第 2 次松手 (DOWN_2 -> 完成【按下➔松开➔按下➔松开】4 相物理闭环)
+        if (currentPhase == KeyPhase.DOWN_2) {
+            keyPhases.put(keyCode, KeyPhase.IDLE);
+            pendingSingleTasks.remove(keyCode);
 
-        Runnable oldTask = pendingClickTasks.remove(keyCode);
-        if (oldTask != null) {
-            mainHandler.removeCallbacks(oldTask);
-        }
-
-        Runnable evalTask = new Runnable() {
-            @Override
-            public void run() {
-                int finalCount = clickCounts.getOrDefault(keyCode, 1);
-                clickCounts.remove(keyCode);
-                pendingClickTasks.remove(keyCode);
-
-                if (finalCount == 1) {
-                    AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【单击】: " + singleAction);
-                    executeAction(singleAction);
-                } else if (finalCount >= 2) {
-                    AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【双击】: " + doubleAction);
-                    executeAction(doubleAction);
-                }
+            Long down2 = phaseDownTime2.get(keyCode);
+            long pressDuration2 = (down2 != null) ? (now - down2) : 100L;
+            if (pressDuration2 < MIN_PRESS_DURATION_MS) {
+                return;
             }
-        };
-        pendingClickTasks.put(keyCode, evalTask);
-        mainHandler.postDelayed(evalTask, 260);
+
+            // 严格满足：【按下1 ➔ 松开1 ➔ 按下2 ➔ 松开2】4 相全流程物理闭环！
+            AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【双击】(严格4相物理闭环): " + doubleAction);
+            executeAction(doubleAction);
+        }
     }
 
     /**
