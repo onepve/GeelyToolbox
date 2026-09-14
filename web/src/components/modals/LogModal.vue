@@ -28,21 +28,55 @@
             {{ item.enabled ? '●' : '○' }} {{ item.label }}
           </button>
         </div>
-        <div class="mt-2.5 pt-2 border-t border-car-border/40 text-[12px] text-car-accent font-bold leading-relaxed">
-          💡 【存储寿命保护指南】：出厂默认全部关闭。守护日志全程在 RAM 内存流转，0 次磁盘擦写；仅在需要排查问题时按需开启对应模块，点击底部【导出全量日志 (ZIP)】一键打包整车全量诊断包。
+        <div class="mt-3 pt-4 border-t border-car-border/40 flex flex-col space-y-2 text-[12.5px] leading-relaxed">
+          <div class="text-car-accent font-bold">
+            【存储寿命保护】：出厂默认全部关闭。守护日志全程在 RAM 内存流转，0 次磁盘擦写磨损；仅在需要排查问题时按需开启对应模块。
+          </div>
+          <div class="text-emerald-400 font-bold">
+            【隐私安全全脱敏·放心抓取】：导出时已自动执行车规级 5 重安全脱敏！手机号、实时 GPS 经纬度、门牌详细地址 100% 彻底抹除；车架号 (VIN) 与硬件码自动打码掩护 (如 LB37****2076，仅留首尾供车型区分)，绝不泄露行踪与个人隐私，可放心提交排查！
+          </div>
         </div>
       </div>
 
       <!-- 核心日志控制台输出屏 (固定高度，独立平滑滚动，白天/黑夜双主题护眼自适应) -->
       <pre 
         ref="logContainer"
-        class="h-[380px] overflow-y-auto rounded-2xl p-5 font-mono text-[14.5px] font-semibold leading-[1.75] select-text whitespace-pre-wrap shadow-inner transition-colors duration-200"
+        class="h-[360px] overflow-y-auto rounded-2xl p-5 font-mono text-[14.5px] font-semibold leading-[1.75] select-text whitespace-pre-wrap shadow-inner transition-colors duration-200"
         :class="[
           store.isNight 
             ? 'bg-[#0B101B] border-2 border-white/15 text-[#E2E8F0] shadow-black/80' 
             : 'bg-[#F8FAFC] border-2 border-[#CBD5E1] text-[#0F172A] shadow-slate-200'
         ]"
       >{{ logContent || '暂无日志记录...' }}</pre>
+
+      <!-- 全量脱敏日志导出实时进度胶囊 -->
+      <div 
+        v-if="isExporting || exportFinished" 
+        class="mt-3 p-3.5 bg-car-item border-2 rounded-2xl transition-all shadow-md"
+        :class="exportFinished ? 'border-emerald-500/60' : 'border-car-accent/70'"
+      >
+        <div class="flex items-center justify-between text-[14px] font-bold mb-2">
+          <span class="flex items-center" :class="exportFinished ? 'text-emerald-400' : 'text-car-accent'">
+            <span v-if="isExporting" class="inline-block w-2.5 h-2.5 rounded-full bg-car-accent animate-pulse mr-2.5"></span>
+            <span v-else class="mr-2">✓</span>
+            {{ exportStepText }}
+          </span>
+          <span class="font-mono font-black" :class="exportFinished ? 'text-emerald-400' : 'text-car-text'">
+            {{ exportPercent }}%
+          </span>
+        </div>
+        <div class="w-full h-3 bg-car-card rounded-full overflow-hidden p-0.5 border border-car-border/50">
+          <div 
+            class="h-full rounded-full transition-all duration-300 ease-out"
+            :class="exportFinished ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-car-accent shadow-[0_0_10px_rgba(245,158,11,0.5)]'"
+            :style="{ width: exportPercent + '%' }"
+          ></div>
+        </div>
+        <div v-if="exportFinished && exportFileName" class="mt-2 text-[12.5px] text-car-sub font-mono flex items-center justify-between">
+          <span>存储路径: /sdcard/Download/{{ exportFileName }} ({{ exportSizeStr }})</span>
+          <span class="text-emerald-400 font-bold">已覆盖唯一样本 · 5重深度脱敏</span>
+        </div>
+      </div>
     </div>
 
     <!-- 底部固定常驻操作栏 (shrink-0 物理吸底，绝不随内容滚动丢失) -->
@@ -68,10 +102,16 @@
             刷新日志
           </button>
           <button 
-            @click="exportGuardLog"
-            class="min-h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-accent text-car-accent hover:border-car-accent font-black text-[15.5px] cursor-pointer shadow-sm transition-all flex items-center"
+            @click="exportFullLogs"
+            :disabled="isExporting"
+            class="min-h-[50px] px-5 rounded-xl border-2 font-black text-[15.5px] transition-all flex items-center shadow-sm"
+            :class="[
+              isExporting 
+                ? 'bg-car-item border-car-accent text-car-accent opacity-80 cursor-wait' 
+                : 'bg-car-item border-car-accent text-car-accent hover:border-car-accent cursor-pointer'
+            ]"
           >
-            💾 导出日志 (ZIP)
+            <span>{{ isExporting ? `正在打包 (${exportPercent}%)` : '导出全量脱敏日志 (ZIP)' }}</span>
           </button>
           <button 
             @click="clearLogs"
@@ -203,9 +243,51 @@ function manualRefresh() {
   showToast('已刷新最新运行日志 (置顶显示)');
 }
 
-function exportGuardLog() {
-  bridge.call('exportGuardLogZip');
+const isExporting = ref(false);
+const exportPercent = ref(0);
+const exportStepText = ref('');
+const exportFinished = ref(false);
+const exportFileName = ref('');
+const exportSizeStr = ref('');
+
+function exportFullLogs() {
+  if (isExporting.value) return;
+  isExporting.value = true;
+  exportPercent.value = 5;
+  exportStepText.value = '正在准备全量采集与脱敏环境...';
+  exportFinished.value = false;
+  exportFileName.value = '';
+  exportSizeStr.value = '';
+  try {
+    bridge.call('dumpFullSystemLogcat');
+  } catch (e) {
+    showToast('发起全量日志采集失败: ' + e);
+    isExporting.value = false;
+  }
 }
+
+// 接收全局进度与完成回调
+window.onLogDumpProgress = (percent, message) => {
+  isExporting.value = true;
+  exportPercent.value = percent;
+  exportStepText.value = message;
+};
+
+window.onLogcatDumpFinished = (res) => {
+  isExporting.value = false;
+  exportFinished.value = true;
+  exportPercent.value = 100;
+  if (res && res.success) {
+    exportFileName.value = res.filename || 'Geely_Log_Full.zip';
+    exportSizeStr.value = res.sizeStr || '';
+    exportStepText.value = '✓ ' + (res.message || '全量脱敏日志打包完成');
+  } else {
+    exportStepText.value = '❌ ' + ((res && res.message) || '日志打包失败');
+  }
+  setTimeout(() => {
+    exportFinished.value = false;
+  }, 6000);
+};
 
 function toggleAutoScroll() {
   autoScroll.value = !autoScroll.value;

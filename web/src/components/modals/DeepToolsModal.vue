@@ -13,16 +13,10 @@
         <span class="text-[20px] font-black text-car-text">ADB 端口状态：127.0.0.1:5555 (Shell 2000 就绪)</span>
       </div>
       <button 
-        @click="dumpLogcat"
-        :disabled="isDumping"
-        :class="[
-          'min-h-[66px] px-8 rounded-2xl border-2 font-black text-[18.5px] shadow-sm transition-all flex items-center justify-center',
-          isDumping 
-            ? 'bg-car-card border-car-accent text-car-accent opacity-80 cursor-wait' 
-            : 'bg-car-card border-car-border text-car-text hover:border-car-border-light cursor-pointer'
-        ]"
+        @click="openLogModalFromAdb"
+        class="min-h-[66px] px-8 rounded-2xl border-2 border-car-border bg-car-card text-car-text hover:border-car-border-light font-black text-[17.5px] shadow-sm transition-all flex items-center justify-center cursor-pointer"
       >
-        <span>{{ isDumping ? '⏳ 正在采集打包中...' : '采集车机全量日志 (ZIP)' }}</span>
+        <span>📋 统一日志中枢 & 导出 (ZIP) ➔</span>
       </button>
     </div>
 
@@ -228,6 +222,11 @@ function openOtaCapture() {
 function openAllAppsFromAdb() {
   closeModal('deepTools');
   store.modals.allApps = true;
+}
+
+function openLogModalFromAdb() {
+  closeModal('deepTools');
+  openModal('log');
 }
 
 const termContainer = ref(null);

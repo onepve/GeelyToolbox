@@ -48,6 +48,7 @@ import app.onepve.geelyconsole.utils.FloatingWindowManager;
 import app.onepve.geelyconsole.utils.ForegroundAppDetector;
 import app.onepve.geelyconsole.utils.IdleScreensaverManager;
 import app.onepve.geelyconsole.utils.SystemUtils;
+import app.onepve.geelyconsole.utils.SystemUtils.LogDumpProgressListener;
 import app.onepve.geelyconsole.utils.ThemePatcher;
 import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
 import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
@@ -2398,16 +2399,25 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String dumpFullSystemLogcat() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    showToast("正在后台抓取并打包车机全量日志，请稍候...");
-                }
-            });
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    final JSONObject res = SystemUtils.dumpFullSystemLogcat(MainActivity.this);
+                    final JSONObject res = SystemUtils.dumpFullSystemLogcat(MainActivity.this, new LogDumpProgressListener() {
+                        @Override
+                        public void onProgress(final int percent, final String message) {
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (webView != null) {
+                                        String js = String.format(java.util.Locale.US,
+                                            "if (window.onLogDumpProgress) window.onLogDumpProgress(%d, '%s');",
+                                            percent, message.replace("'", "\\'"));
+                                        webView.evaluateJavascript(js, null);
+                                    }
+                                }
+                            });
+                        }
+                    });
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {

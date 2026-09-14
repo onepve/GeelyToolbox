@@ -48,6 +48,7 @@ public class EasMediaBridge {
 
     private boolean a2dpSinkConnected = false;
     private BroadcastReceiver a2dpReceiver;
+    private long lastA2dpWakeTime = 0;
 
     private String currentControlMode = "carmedia_first";
     private boolean pushPlaybackCluster = false;
@@ -349,7 +350,11 @@ public class EasMediaBridge {
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action) ||
                            "android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED".equals(action)) {
                     // 当手机端点开微信语音或音乐开始推流瞬间，毫秒级唤醒 A2DP Sink AudioFocus 与选通通道，杜绝无声与被动暂停
-                    activateBluetoothChannel();
+                    long now = System.currentTimeMillis();
+                    if (now - lastA2dpWakeTime > 4000) {
+                        lastA2dpWakeTime = now;
+                        activateBluetoothChannel();
+                    }
                 }
             }
         };
