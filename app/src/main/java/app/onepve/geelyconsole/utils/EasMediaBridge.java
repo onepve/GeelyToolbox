@@ -185,22 +185,50 @@ public class EasMediaBridge {
      * 选通原车蓝牙音频硬件通道并申请焦点
      */
     public synchronized void activateBluetoothChannel() {
-        if (!"toolbox_alone".equals(currentControlMode)) {
-            return;
-        }
         try {
             if (mApi != null && mRegistered && mToken != null) {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
-                AppLogger.i("音频通道", "已下发 updateCurrentSourceType(6)，原车蓝牙音频物理通道已选通！");
+                AppLogger.i("蓝牙音频", "已下发 updateCurrentSourceType(6)，原车蓝牙音频物理通道已选通！");
             }
-            // 申请系统音频焦点，确保功放路由给蓝牙
+            // 关键：通知底层 com.android.bluetooth A2dpSink 激活音频焦点，解除 MT8666 音量为 0 与被动 Pause 限制
+            wakeBluetoothAudioSink();
+
+            // 申请系统音频焦点，采用车规闪避属性，与高德导航及车身播报混音共存
             AudioManager am = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
             if (am != null) {
-                am.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+                am.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
             }
         } catch (Throwable t) {
-            AppLogger.w("音频通道", "选通蓝牙音频物理通道失败: " + t.getMessage());
+            AppLogger.w("蓝牙音频", "选通蓝牙音频物理通道失败: " + t.getMessage());
         }
+    }
+
+    /**
+     * 唤醒底层 com.android.bluetooth A2DP Sink 链路，使其主动向系统申请 AudioFocus 避免静音
+     */
+    public void wakeBluetoothAudioSink() {
+        try {
+            MediaSessionManager mm = (MediaSessionManager) appContext.getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (mm != null) {
+                List<MediaController> controllers = mm.getActiveSessions(null);
+                if (controllers != null) {
+                    for (MediaController mc : controllers) {
+                        String pkg = mc.getPackageName();
+                        if ("com.android.bluetooth".equals(pkg)) {
+                            AppLogger.i("蓝牙音频", "命中蓝牙 MediaSession，下发 play() 唤醒底层 A2DP AudioFocus！");
+                            mc.getTransportControls().play();
+                            return;
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "通过 MediaSession 唤醒蓝牙音频焦点异常: " + t.getMessage());
+        }
+    }
+
+    public synchronized boolean isBluetoothChannelActive() {
+        return mRegistered && a2dpSinkConnected;
     }
 
     /**
@@ -302,24 +330,34 @@ public class EasMediaBridge {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (intent == null) return;
-                int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
-                if (state == 2) {
-                    a2dpSinkConnected = true;
-                    AppLogger.i("音频通道", "监听到蓝牙 A2DP-Sink 已连接，准备选通音频通道");
-                    mainHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            activateBluetoothChannel();
-                        }
-                    }, 1000);
-                } else if (state == 0) {
-                    a2dpSinkConnected = false;
-                    AppLogger.i("音频通道", "监听到蓝牙 A2DP-Sink 已断开");
+                String action = intent.getAction();
+                if ("android.bluetooth.a2dp-sink.profile.action.CONNECTION_STATE_CHANGED".equals(action)) {
+                    int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
+                    if (state == 2) {
+                        a2dpSinkConnected = true;
+                        AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已连接，准备选通音频通道并唤醒链路");
+                        mainHandler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                activateBluetoothChannel();
+                            }
+                        }, 1000);
+                    } else if (state == 0) {
+                        a2dpSinkConnected = false;
+                        AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已断开");
+                    }
+                } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action) ||
+                           "android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED".equals(action)) {
+                    // 当手机端点开微信语音或音乐开始推流瞬间，毫秒级唤醒 A2DP Sink AudioFocus 与选通通道，杜绝无声与被动暂停
+                    activateBluetoothChannel();
                 }
             }
         };
 
-        IntentFilter filter = new IntentFilter("android.bluetooth.a2dp-sink.profile.action.CONNECTION_STATE_CHANGED");
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("android.bluetooth.a2dp-sink.profile.action.CONNECTION_STATE_CHANGED");
+        filter.addAction("android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED");
+        filter.addAction("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT");
         try {
             appContext.registerReceiver(a2dpReceiver, filter);
         } catch (Throwable ignored) {}

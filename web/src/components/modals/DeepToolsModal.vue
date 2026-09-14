@@ -160,7 +160,10 @@
           v-model="inputCmd"
           type="text"
           placeholder="请输入 Shell / ADB 指令，如: pm list packages"
-          class="flex-1 h-[68px] bg-[#0A0D12] border-2 border-car-border rounded-2xl px-5 text-emerald-400 font-mono text-[18px] outline-none focus:border-car-accent mr-3"
+          :class="[
+            'flex-1 h-[68px] border-2 border-car-border rounded-2xl px-5 font-mono text-[18px] outline-none focus:border-car-accent mr-3 transition-all',
+            store.isNight ? 'bg-[#0A0D12] text-emerald-400' : 'bg-car-item text-car-text'
+          ]"
           @keyup.enter="execCmd"
         />
         <button 
@@ -174,7 +177,10 @@
       <!-- 终端输出屏 (最新执行结果始终置顶在最上方第一行) -->
       <pre 
         ref="termContainer"
-        class="min-h-[220px] max-h-[300px] overflow-y-auto bg-[#0A0D12] border-2 border-white/10 rounded-2xl p-5 font-mono text-[15px] text-emerald-400 leading-relaxed select-text whitespace-pre-wrap shadow-inner"
+        :class="[
+          'min-h-[220px] max-h-[300px] overflow-y-auto border-2 border-car-border rounded-2xl p-5 font-mono text-[15px] leading-relaxed select-text whitespace-pre-wrap shadow-inner transition-all',
+          store.isNight ? 'bg-[#0A0D12] text-emerald-400' : 'bg-car-item text-emerald-700'
+        ]"
       >{{ outputText }}</pre>
     </div>
   </ModalWrapper>

@@ -20,6 +20,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <!-- 蓝牙连接与音频流状态监听 (QQ音乐同款无感秒级唤醒) -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.MEDIA_CONTENT_CONTROL" tools:ignore="ProtectedPermissions" />
     <!-- 原厂 Automotive HAL 直通: 读动力总成档位属性 (GEAR_SELECTION / CURRENT_GEAR) -->
     <uses-permission android:name="android.car.permission.CAR_POWERTRAIN" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.car.permission.CAR_VENDOR_EXTENSION" tools:ignore="ProtectedPermissions" />

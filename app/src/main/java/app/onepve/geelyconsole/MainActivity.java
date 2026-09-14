@@ -13,6 +13,10 @@ import android.net.ConnectivityManager;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.bluetooth.BluetoothAdapter;
+import android.net.wifi.WifiManager;
+import android.net.wifi.WifiInfo;
+import app.onepve.geelyconsole.utils.EasMediaBridge;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.net.Uri;
@@ -142,6 +146,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         checkAndRequestStoragePermission();
         try {
             registerReceiver(networkChangeReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+        } catch (Exception ignored) {}
+        try {
+            IntentFilter pkgFilter = new IntentFilter();
+            pkgFilter.addAction(Intent.ACTION_PACKAGE_ADDED);
+            pkgFilter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+            pkgFilter.addAction(Intent.ACTION_PACKAGE_REPLACED);
+            pkgFilter.addDataScheme("package");
+            registerReceiver(packageChangeReceiver, pkgFilter);
         } catch (Exception ignored) {}
         AppLogger.i("应用启动", "吉利智驾界面启动完成");
         // 启动时自动探测并开启白名单，若为真车环境且商店未冻结则自动执行安全冻结保护
@@ -413,11 +425,30 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         mainHandler.postDelayed(pendingShowPillRunnable, 1200);
     }
 
+    private final BroadcastReceiver packageChangeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (webView != null) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (webView != null) {
+                            webView.evaluateJavascript("if(window.onPackageChanged) window.onPackageChanged();", null);
+                        }
+                    }
+                });
+            }
+        }
+    };
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         try {
             unregisterReceiver(networkChangeReceiver);
+        } catch (Exception ignored) {}
+        try {
+            unregisterReceiver(packageChangeReceiver);
         } catch (Exception ignored) {}
         if (webServer != null) {
             webServer.stop();
@@ -2393,6 +2424,110 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             String filename = res.optString("filename", "Geely_Log_Guard.zip");
             showToast(ok ? ("✓ 守护日志已导出: " + filename) : "❌ 导出守护日志失败");
             return res.toString();
+        }
+
+        @JavascriptInterface
+        public String getConnectivityStatus() {
+            JSONObject res = new JSONObject();
+            try {
+                BluetoothAdapter ba = BluetoothAdapter.getDefaultAdapter();
+                boolean btEnabled = (ba != null && ba.isEnabled());
+                res.put("bluetooth_enabled", btEnabled);
+                boolean btConnected = false;
+                String btDeviceName = "未连接设备";
+                if (btEnabled && ba != null) {
+                    try {
+                        int a2dpState = ba.getProfileConnectionState(11); // 11=A2DP_SINK
+                        btConnected = (a2dpState == 2);
+                        java.util.Set<android.bluetooth.BluetoothDevice> bonded = ba.getBondedDevices();
+                        if (bonded != null) {
+                            for (android.bluetooth.BluetoothDevice dev : bonded) {
+                                if (btConnected) {
+                                    btDeviceName = dev.getName();
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+                res.put("bluetooth_connected", btConnected);
+                res.put("bluetooth_device_name", btConnected ? (btDeviceName != null ? btDeviceName : "手机蓝牙") : "未连接设备");
+
+                WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                boolean wifiEnabled = (wm != null && wm.isWifiEnabled());
+                res.put("wifi_enabled", wifiEnabled);
+                String wifiSsid = "未连接热点";
+                boolean wifiConnected = false;
+                if (wifiEnabled && wm != null) {
+                    WifiInfo info = wm.getConnectionInfo();
+                    if (info != null && info.getNetworkId() != -1) {
+                        String s = info.getSSID();
+                        if (s != null && !s.isEmpty() && !"<unknown ssid>".equals(s)) {
+                            wifiSsid = s.replace("\"", "");
+                            wifiConnected = true;
+                        }
+                    }
+                }
+                res.put("wifi_connected", wifiConnected);
+                res.put("wifi_ssid", wifiSsid);
+                SystemUtils.NetStatus net = SystemUtils.getNetworkStatus();
+                res.put("car_ip", (net != null && net.ip != null) ? net.ip : "127.0.0.1");
+                res.put("eas_channel_active", EasMediaBridge.getInstance(MainActivity.this).isBluetoothChannelActive());
+            } catch (Exception e) {
+                try { res.put("error", e.getMessage()); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        @JavascriptInterface
+        public void toggleBluetooth(boolean enable) {
+            BluetoothAdapter ba = BluetoothAdapter.getDefaultAdapter();
+            if (ba != null) {
+                if (enable) ba.enable();
+                else ba.disable();
+                showToast(enable ? "正在开启车机蓝牙..." : "已关闭车机蓝牙");
+            } else {
+                AdbClient.execute(MainActivity.this, "svc bluetooth " + (enable ? "enable" : "disable"));
+                showToast(enable ? "已下发指令开启蓝牙" : "已下发指令关闭蓝牙");
+            }
+        }
+
+        @JavascriptInterface
+        public void openBluetoothSettings() {
+            AdbClient.execute(MainActivity.this, "am start -a android.settings.BLUETOOTH_SETTINGS");
+        }
+
+        @JavascriptInterface
+        public void toggleWifi(boolean enable) {
+            WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            if (wm != null) {
+                wm.setWifiEnabled(enable);
+                showToast(enable ? "正在开启车机 Wi-Fi..." : "已关闭车机 Wi-Fi");
+            } else {
+                AdbClient.execute(MainActivity.this, "svc wifi " + (enable ? "enable" : "disable"));
+                showToast(enable ? "已下发指令开启 Wi-Fi" : "已下发指令关闭 Wi-Fi");
+            }
+        }
+
+        @JavascriptInterface
+        public void openWifiSettings() {
+            AdbClient.execute(MainActivity.this, "am start -a android.settings.WIFI_SETTINGS");
+        }
+
+        @JavascriptInterface
+        public String forceActivateBluetoothChannel() {
+            EasMediaBridge.getInstance(MainActivity.this).activateBluetoothChannel();
+            showToast("已强制选通 6 号蓝牙物理声道并申请焦点");
+            return "{\"success\":true}";
+        }
+
+        @JavascriptInterface
+        public void testBluetoothAudio() {
+            VehicleVoicePlayer player = VehicleVoicePlayer.getInstance(MainActivity.this);
+            if (player != null) {
+                player.play("gear_d.mp3", "蓝牙音频通道测试");
+                showToast("正在通过当前音频通道播放测试样音...");
+            }
         }
 
         @JavascriptInterface

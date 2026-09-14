@@ -14,14 +14,14 @@
             v-model="searchQuery"
             type="text" 
             placeholder="搜索应用名称或包名 (如: 高德, ecarx, 微信, 音乐)..."
-            class="w-full min-h-[54px] pl-5 pr-12 rounded-2xl bg-car-card border-2 border-car-border text-car-text text-[16px] font-bold focus:border-car-accent outline-none shadow-sm transition-all"
+            class="w-full min-h-[54px] pl-5 pr-12 rounded-2xl bg-car-item border-2 border-car-border text-car-text text-[16px] font-bold focus:border-car-accent outline-none shadow-sm transition-all"
           />
           <span v-if="searchQuery" @click="searchQuery = ''" class="absolute right-4 top-1/2 -translate-y-1/2 text-car-sub hover:text-car-text text-[18px] cursor-pointer">✕</span>
         </div>
         <button 
           @click="loadApps(true)"
           :disabled="isLoading"
-          class="min-h-[54px] px-6 rounded-2xl border-2 border-car-border bg-car-card hover:border-car-border-light text-car-text font-black text-[16px] cursor-pointer shadow-sm transition-all shrink-0 flex items-center space-x-2"
+          class="min-h-[54px] px-6 rounded-2xl border-2 border-car-border bg-car-item hover:border-car-border-light text-car-text font-black text-[16px] cursor-pointer shadow-sm transition-all shrink-0 flex items-center space-x-2"
         >
           <span>{{ isLoading ? '正在刷新...' : '刷新列表' }}</span>
         </button>
@@ -38,7 +38,7 @@
             :class="[
               'min-h-[50px] px-4 rounded-xl border-2 text-[14.5px] font-black cursor-pointer transition-all',
               currentType === t.key
-                ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/20'
+                ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/20 shadow-md'
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
@@ -55,7 +55,7 @@
             :class="[
               'min-h-[50px] px-4 rounded-xl border-2 text-[14.5px] font-black cursor-pointer transition-all',
               currentState === s.key
-                ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/20'
+                ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/20 shadow-md'
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
@@ -65,7 +65,7 @@
       </div>
 
       <!-- 应用列表视口 (固定 410px 高度独立滚动) -->
-      <div class="h-[410px] overflow-y-auto rounded-2xl border border-car-border/60 bg-[#0B101B]/40 p-2.5 space-y-2">
+      <div class="h-[410px] overflow-y-auto rounded-2xl border border-car-border bg-car-item p-3 space-y-2">
         <div v-if="filteredApps.length === 0" class="h-full flex flex-col items-center justify-center text-car-sub text-[16px] font-bold space-y-2">
           <span>{{ isLoading ? '正在读取整车已安装应用清单...' : '未找到符合条件的应用' }}</span>
         </div>
@@ -161,20 +161,20 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, openModal, showToast } from '../../store';
 
 const allApps = ref([]);
 const isLoading = ref(false);
 const searchQuery = ref('');
-const currentType = ref('all');   // 'all' | 'user' | 'system'
+const currentType = ref('user');   // 默认点亮'第三方用户软件'，快速响应并减少初次渲染卡顿
 const currentState = ref('all');  // 'all' | 'active' | 'frozen'
 
 const typeFilters = [
-  { key: 'all', label: '全部类型' },
   { key: 'user', label: '第三方用户软件' },
-  { key: 'system', label: '原厂系统组件' }
+  { key: 'system', label: '原厂系统组件' },
+  { key: 'all', label: '全部类型' }
 ];
 
 const stateFilters = [
@@ -203,6 +203,15 @@ watch(() => store.modals.allApps, (show) => {
   if (show) {
     loadApps(false);
   }
+});
+
+onMounted(() => {
+  // 监听原生安装、卸载、更新广播，毫秒级自愈刷新
+  window.onPackageChanged = () => {
+    if (store.modals.allApps) {
+      loadApps(false);
+    }
+  };
 });
 
 function getCountByType(type) {
@@ -257,6 +266,7 @@ function handleToggleFreeze(app) {
       bridge.call('togglePackageFreeze', app.pkg, nextFreeze);
       app.frozen = nextFreeze;
       showToast(nextFreeze ? `已冻结: ${app.name}` : `已解冻: ${app.name}`);
+      setTimeout(() => loadApps(false), 600);
     }
   });
 }
@@ -268,7 +278,8 @@ function handleClearData(app) {
     isDanger: true,
     onConfirm: () => {
       bridge.call('clearAppData', app.pkg);
-      showToast(`正在清除 ${app.name} 数据...`);
+      showToast(`已下发清除 ${app.name} 数据指令`);
+      setTimeout(() => loadApps(false), 800);
     }
   });
 }
@@ -283,7 +294,7 @@ function handleUninstall(app) {
       showToast(`正在卸载 ${app.name}...`);
       setTimeout(() => {
         loadApps(false);
-      }, 2000);
+      }, 1500);
     }
   });
 }
