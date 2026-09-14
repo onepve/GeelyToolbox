@@ -4,6 +4,11 @@ import json
 import hashlib
 from datetime import date
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from changelog_builder import build_changelog, previous_tag  # noqa: E402
+
+REPO_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
 def get_apk_meta(apk_path):
     with open(apk_path, 'rb') as f:
         data = f.read()
@@ -56,6 +61,13 @@ def main():
     is_beta = tag_name.startswith("beta-")
     print(f">> Executing publish metadata: tag={tag_name}, is_beta={is_beta}, ver={version_name}, code={version_code}")
 
+    # 更新说明必须与本次版本同源生成（手写覆盖文件优先，其次真实提交记录），
+    # 严禁在此硬编码固定文案 —— 否则每次发版都会带出过期的历史更新内容。
+    changelog_text = build_changelog(tag_name, REPO_DIR, previous_tag(tag_name, REPO_DIR)) if tag_name else (
+        "【测试通道】本版本改动详见仓库提交记录"
+    )
+    print(f">> changelog 已按真实改动生成 ({len(changelog_text)} 字符)")
+
     if is_beta:
         meta = {
             "version": version_name,
@@ -69,15 +81,7 @@ def main():
             "md5": md5,
             "sha256": sha256,
             "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox-beta.apk?v={version_name}",
-            "changelog": (
-                "【测试通道优先体验 beta-v1.7.26.1】\n"
-                "1. 吸收 Tasker 完整方控链路：增设右方向盘 ② 滚轮按压多手势映射（key 0x2d，默认媒体暂停/播放），0x37 彻底正名为右方向盘 ⑤ 号自定义键\n"
-                "2. 方控按键严格遵循 1～7 顺序排列：界面卡片按 ①主页 ➔ ②滚轮下按 ➔ ③静音 ➔ ④下一曲/⑦上一曲 ➔ ⑤自定义 ➔ ⑥MODE 顺排呈现\n"
-                "3. 修复驾驶模式正则匹配缺陷：修正 (?:DirveMode|DriveMode) 严密捕获 DirveMode 与 DriveMode，彻底根治模式状态机漏判\n"
-                "4. 补齐原厂驻车 (P挡) 信号监听：吸收 Tasker 核心源 ecarx_core_server 的 mModelEPB = 0 电子手刹/驻车报文\n"
-                "5. 吸收 Tasker 四门独立 CAN 报文：新增 BCM_*DoorAjarStatus (FL/FR/RL/RR) 独立接入四门状态机\n"
-                "6. 补齐物理切歌硬按键监听：解析 ecarx_core_server 的 cmd_data[1] = 304/305 上一曲/下一曲\n"
-            ),
+            "changelog": changelog_text,
             "release_date": today
         }
         with open("/tmp/version-beta.json", "w", encoding="utf-8") as f:
@@ -96,17 +100,7 @@ def main():
             "md5": md5,
             "sha256": sha256,
             "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v={version_name}",
-            "changelog": (
-                "本次正式版核心修复与重大重构升级：\n"
-                "1. 全新 8 大 4 字极简座舱架构：精选商城排第 1 位，模块职责纯粹清晰，单行防折字更美观\n"
-                "2. 转向灯与起步联动 360 盲区神器：转向灯联动 360 全景（车速≤30km/h 安全抑制保护，回正退出，默认开启），支持 D 挡起步联动\n"
-                "3. 闲置自动屏保归位【桌面悬浮】：息屏时长精准收敛至 3 秒~3 分钟车规级，提供 5 档快捷预设与永不进入，调起原生原厂屏保\n"
-                "4. 方控按键全面去十六进制工程化：重构为左/右方向盘+序号直观命名，新增新手功能指引与一键方案配置（车友黄金方案/一键恢复原厂）\n"
-                "5. 座舱核心默认值全面优化：转向灯 360 默认开启、开机自启守护默认开启、悬浮胶囊默认显示实时电瓶电压、N 挡空挡默认关闭\n"
-                "6. 守护日志采集策略全面收紧：6 大通道默认全关零 I/O 开销，按需开启彻底根治日志刷屏与性能损耗\n"
-                "7. 英文品牌名全链条收敛定案：统一收敛为 GeelyToolbox，安装包、仓库与分发浑然一体，彻底告别混淆\n"
-                "8. 点火物理铁壁与换挡武装状态机：发电机发电电压（≥13.2V）权威判定点火，换挡 0ms 强占打断，倒挡回归媒体声道防雷达死锁\n"
-            ),
+            "changelog": changelog_text,
             "release_date": today
         }
         with open("/tmp/version.json", "w", encoding="utf-8") as f:

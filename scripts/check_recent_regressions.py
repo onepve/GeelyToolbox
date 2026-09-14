@@ -98,14 +98,24 @@ def evaluate(files):
     if re.search(r'\b(?:CarGearHALMonitor|CarPropertyKeyMonitor)\b', all_java):
         failures.append('retired-hal-listeners')
     logger = clean(files.get(JAVA+'utils/AppLogger.java', ''))
-    if not re.search(r'if\s*\(lastLogTime.size\(\) > 500\)\s*\{\s*lastLogTime.clear\(\);', logger):
+    if not re.search(r'if\s*\(lastLogTime\.size\(\) > 500\)\s*\{\s*lastLogTime\.clear\(\);', logger):
         failures.append('log-dedup-bounded')
+    # 发布说明必须按真实版本改动生成，严禁在发布脚本里硬编码固定文案
+    # (历史缺陷: 测试通道 changelog 写死远古版本号，每次发版都带出过期更新内容)
+    publisher = files.get('scripts/publish_r2.py', '')
+    if not re.search(r'build_changelog\(', publisher):
+        failures.append('changelog-from-vcs')
+    if re.search(r'【测试通道优先体验\s*beta-v', publisher) or re.search(r'【正式版\s*v\d+\.\d+\.\d+】', publisher):
+        failures.append('changelog-no-hardcoded-version')
+    builder = files.get('scripts/changelog_builder.py', '')
+    if not re.search(r'def build_changelog\(', builder) or not re.search(r'def read_override\(', builder):
+        failures.append('changelog-builder-contract')
     return failures
 
 
 def load(root):
     root = Path(root)
-    paths = {c[1] for c in CONTRACTS} | {'web/src/App.vue', 'app/src/main/assets/toolbox_ui.html', JAVA+'utils/AppLogger.java'}
+    paths = {c[1] for c in CONTRACTS} | {'web/src/App.vue', 'app/src/main/assets/toolbox_ui.html', JAVA+'utils/AppLogger.java', 'scripts/publish_r2.py', 'scripts/changelog_builder.py'}
     paths.update(str(p.relative_to(root)) for p in (root/JAVA).rglob('*.java'))
     return {p:(root/p).read_text() for p in paths if (root/p).exists()}
 

@@ -29,6 +29,14 @@ mutated=dict(files);mutated[JAVA+'utils/AppLogger.java']=files[JAVA+'utils/AppLo
 results.append({'id':'log-dedup-bounded','caught':'log-dedup-bounded' in evaluate(mutated)})
 mutated=dict(files);mutated[JAVA+'utils/CarGearHALMonitor.java']='class CarGearHALMonitor {}'
 results.append({'id':'retired-hal-listeners','caught':'retired-hal-listeners' in evaluate(mutated)})
+# 发布说明：回退成硬编码固定文案必须被拦截
+mutated=dict(files);mutated['scripts/publish_r2.py']=files['scripts/publish_r2.py'].replace('build_changelog(','hardcoded_changelog(')
+results.append({'id':'changelog-from-vcs','caught':'changelog-from-vcs' in evaluate(mutated)})
+mutated=dict(files)
+mutated['scripts/publish_r2.py']=files['scripts/publish_r2.py']+'\nHARDCODED = "【测试通道优先体验 beta-v1.7.26.1】"\n'
+results.append({'id':'changelog-no-hardcoded-version','caught':'changelog-no-hardcoded-version' in evaluate(mutated)})
+mutated=dict(files);mutated['scripts/changelog_builder.py']=files['scripts/changelog_builder.py'].replace('def read_override(','def read_override_removed(')
+results.append({'id':'changelog-builder-contract','caught':'changelog-builder-contract' in evaluate(mutated)})
 print(json.dumps(results,ensure_ascii=False,indent=2))
 assert all(r['caught'] for r in results), 'Some mutations escaped'
 print(f'PASS {len(results)}/{len(results)} targeted mutations rejected')
