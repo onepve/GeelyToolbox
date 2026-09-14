@@ -657,7 +657,7 @@ public class VehicleVoicePlayer {
                             speakRes = tts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
                         }
                         if (speakRes != TextToSpeech.SUCCESS) {
-                            AppLogger.w("语音播报", "TTS speak 请求失败 (错误码: " + speakRes + ")，小爱可能未准备好发音数据");
+                            AppLogger.w("语音播报", "TTS speak 请求失败 (错误码: " + speakRes + ")，语音引擎可能未准备好发音数据");
                         }
                     } else {
                         // 冷启动兜底：TTS 未就绪时缓存最新一条待播台词（覆盖旧缓存），并触发一次重试预热。

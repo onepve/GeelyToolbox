@@ -2355,10 +2355,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String dumpSystemLogcat() {
+            return dumpFullSystemLogcat();
+        }
+
+        @JavascriptInterface
+        public String dumpFullSystemLogcat() {
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    showToast("正在后台抓取并打包车机日志，请稍候...");
+                    showToast("正在后台抓取并打包车机全量日志，请稍候...");
                 }
             });
             new Thread(new Runnable() {
@@ -2379,6 +2384,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
             }, "AsyncLogcatDump").start();
             return "{\"success\":true,\"message\":\"已启动后台采集\"}";
+        }
+
+        @JavascriptInterface
+        public String exportGuardLogZip() {
+            final JSONObject res = AppLogger.exportGuardLogZip(MainActivity.this);
+            boolean ok = res.optBoolean("success", false);
+            String filename = res.optString("filename", "Geely_Log_Guard.zip");
+            showToast(ok ? ("✓ 守护日志已导出: " + filename) : "❌ 导出守护日志失败");
+            return res.toString();
         }
 
         @JavascriptInterface
@@ -2545,7 +2559,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("vehicle_flameout_voice_enabled", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
                 obj.put("vehicle_speed_custom_action_enabled", prefs.getBoolean("vehicle_speed_custom_action_enabled", false));
                 obj.put("vehicle_speed_custom_action_threshold", prefs.getInt("vehicle_speed_custom_action_threshold", 40));
-                obj.put("vehicle_speed_custom_action_target", prefs.getString("vehicle_speed_custom_action_target", "action_360"));
+                obj.put("vehicle_speed_custom_action_target", prefs.getString("vehicle_speed_custom_action_target", "pkg:com.autonavi.amapauto"));
 
                 // 播报音频输出通道 (music | nav | notification)
                 obj.put("voice_audio_channel", prefs.getString("voice_audio_channel", "music"));
@@ -2580,10 +2594,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_enable_mode_eco", prefs.getBoolean("voice_enable_mode_eco", true));
                 obj.put("voice_enable_mode_sport", prefs.getBoolean("voice_enable_mode_sport", true));
 
-                // 默认值自适应：未设置时根据米小江是否安装智能选定
+                // 默认值：出厂统一默认控制台独立接管模式，短按 Mode 唤起 360
                 boolean hasCarMedia = SystemUtils.isPackageInstalled(MainActivity.this, "com.ecarx.carmedia");
-                String defaultWheelMode = hasCarMedia ? "carmedia_first" : "toolbox_alone";
-                String defaultModeAction = hasCarMedia ? "default" : "open_360";
+                String defaultWheelMode = "toolbox_alone";
+                String defaultModeAction = "open_360";
 
                 obj.put("wheel_control_mode", prefs.getString("wheel_control_mode", defaultWheelMode));
                 obj.put("wheel_action_mute", prefs.getString("wheel_action_mute", "default"));
@@ -2602,7 +2616,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("vehicle_overspeed_threshold", prefs.getInt("vehicle_overspeed_threshold", 80));
                 obj.put("vehicle_door_pause_music_enabled", prefs.getBoolean("vehicle_door_pause_music_enabled", false));
                 obj.put("vehicle_rear_door_alert_enabled", prefs.getBoolean("vehicle_rear_door_alert_enabled", false));
-                obj.put("vehicle_light_brightness_dim_enabled", prefs.getBoolean("vehicle_light_brightness_dim_enabled", false));
+                obj.put("vehicle_light_brightness_dim_enabled", prefs.getBoolean("vehicle_light_brightness_dim_enabled", true));
                 obj.put("vehicle_light_dim_level", prefs.getInt("vehicle_light_dim_level", 35));
                 obj.put("preferred_navi_pkg", prefs.getString("preferred_navi_pkg", "com.autonavi.amapauto"));
 
@@ -3112,7 +3126,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     } else {
                         if (!player.isTtsReady()) {
                             player.ensureTtsReady();
-                            Toast.makeText(MainActivity.this, "小爱语音引擎正在唤醒连接中，请稍候再试...", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, "语音合成引擎正在唤醒连接中，请稍候再试...", Toast.LENGTH_SHORT).show();
                         }
                         player.speakText("吉利车机座舱智能语音联动测试成功");
                     }

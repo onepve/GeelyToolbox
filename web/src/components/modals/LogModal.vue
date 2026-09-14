@@ -43,6 +43,9 @@
             {{ item.enabled ? '●' : '○' }} {{ item.label }}
           </button>
         </div>
+        <div class="mt-2.5 pt-2 border-t border-car-border/40 text-[12px] text-car-accent font-bold leading-relaxed">
+          💡 【存储寿命保护指南】：出厂默认全部关闭。守护日志全程在 RAM 内存流转，0 次磁盘擦写；仅在需要排查问题时按需开启对应模块，点击底部【导出日志 (ZIP)】直接打包为轻量压缩包。
+        </div>
       </div>
 
       <!-- 核心日志控制台输出屏 (固定高度，独立平滑滚动，白天/黑夜双主题护眼自适应) -->
@@ -78,6 +81,12 @@
             class="min-h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center"
           >
             刷新日志
+          </button>
+          <button 
+            @click="exportGuardLog"
+            class="min-h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-accent text-car-accent hover:border-car-accent font-black text-[15.5px] cursor-pointer shadow-sm transition-all flex items-center"
+          >
+            💾 导出日志 (ZIP)
           </button>
           <button 
             @click="clearLogs"
@@ -206,6 +215,10 @@ function stopPolling() {
 function manualRefresh() {
   fetchLogs(true);
   showToast('已刷新最新运行日志 (置顶显示)');
+}
+
+function exportGuardLog() {
+  bridge.call('exportGuardLogZip');
 }
 
 function toggleAutoScroll() {

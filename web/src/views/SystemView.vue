@@ -121,19 +121,12 @@
       <!-- 6. 工具箱开机自启动与后台守护 -->
       <FeatureCard 
         title="6. 工具箱开机自启动与后台守护"
-        desc="控制车机上电开机后是否在后台静默运行工具箱。独立生效，不影响底层车身硬件监听。"
+        desc="控制车机上电开机后在后台静默运行工具箱。出厂默认常驻开启，各联动项由各自开关独立管控。"
       >
-        <button 
-          @click="toggleAutostart"
-          :class="[
-            'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
-            store.deviceInfo.autostart 
-              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
-              : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-          ]"
-        >
-          <span>{{ store.deviceInfo.autostart ? '开机自启静默守护: 已开启' : '开机自启静默守护: 已关闭' }}</span>
-        </button>
+        <div class="w-full min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[18px] shadow-sm flex items-center justify-center space-x-2">
+          <span class="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_#10B981]"></span>
+          <span>开机自启静默守护: 已默认常驻启用</span>
+        </div>
       </FeatureCard>
     </div>
 

@@ -372,19 +372,8 @@
             <div class="flex items-center space-x-3">
               <span class="text-[16px] font-black text-car-text">自动唤起预选目标（单次行程防抖，回 P 挡重置）：</span>
             </div>
-            <!-- 动作选择 -->
+            <!-- 动作选择：默认高德地图，360移至右侧并标注原厂限速限制 -->
             <div class="flex items-center space-x-3">
-              <button 
-                @click="setCustomActionTarget('action_360')"
-                :class="[
-                  'flex-1 h-[52px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
-                  store.vehicleAuto.vehicle_speed_custom_action_target === 'action_360'
-                    ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                    : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-                ]"
-              >
-                唤起 360 全景
-              </button>
               <button 
                 @click="setCustomActionTarget('pkg:com.autonavi.amapauto')"
                 :class="[
@@ -406,6 +395,17 @@
                 ]"
               >
                 {{ customActionAppName ? customActionAppName : '自选应用 ➔' }}
+              </button>
+              <button 
+                @click="setCustomActionTarget('action_360')"
+                :class="[
+                  'flex-1 h-[52px] rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2 whitespace-nowrap',
+                  store.vehicleAuto.vehicle_speed_custom_action_target === 'action_360'
+                    ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+                    : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+                ]"
+              >
+                唤起 360 (限速≤30)
               </button>
             </div>
           </div>

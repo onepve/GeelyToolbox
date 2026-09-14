@@ -45,7 +45,7 @@ export const store = reactive({
     voice_master_switch: true, // 座舱车身语音总开关 (全车总闸，优先判定)
     wheel_master_switch: true, // 方向盘方控接管总开关 (独立生效，放行米小江)
     voice_audio_channel: 'music', // 'music' | 'nav' | 'notification'
-    wheel_control_mode: 'carmedia_first',
+    wheel_control_mode: 'toolbox_alone', // 出厂默认控制台独立接管
     wheel_action_mute: 'open_360',
     wheel_action_mode: 'open_360',
     wheel_action_ok: 'default',
@@ -70,9 +70,10 @@ export const store = reactive({
     vehicle_turn_360_enabled: true,
     vehicle_gear_d_360_enabled: false,
     vehicle_light_nav_enabled: false,
+    vehicle_light_brightness_dim_enabled: true, // 白天开大灯进隧道中控背光微调默认开启
     vehicle_speed_custom_action_enabled: false,
     vehicle_speed_custom_action_threshold: 40,
-    vehicle_speed_custom_action_target: 'action_360',
+    vehicle_speed_custom_action_target: 'pkg' + ':com.autonavi.amapauto', // 默认高德车机地图
     voice_volume_offset: 0,
     voice_volume_offset_music: 0,
     voice_volume_offset_nav: 0,

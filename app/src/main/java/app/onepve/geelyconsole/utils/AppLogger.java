@@ -33,9 +33,11 @@ public class AppLogger {
     private static final String TAG = "GeelyToolbox_Logger";
     private static final String LOG_FILENAME = "geely_toolbox.log";
     private static final long MAX_FILE_SIZE = 512 * 1024; // 512KB，防止日志界面读取卡死
-    private static final int MAX_BACKUP_COUNT = 3;
-    private static final long MAX_RETENTION_MILLIS = 7L * 24 * 60 * 60 * 1000; // 7 天
-    private static final long LOG_DEDUP_MILLIS = 1000; // 相同模块+消息 1s 内只写一次，抑制日志风暴
+    private static final int MAX_BACKUP_COUNT = 2; // 最多保留 2 个历史切片
+    private static final long MAX_RETENTION_MILLIS = 7L * 24 * 3600 * 1000; // 7 天过期清理
+    private static final long LOG_DEDUP_MILLIS = 1000L; // 相同模块相同消息 1s 内不重复写盘
+    private static final int MAX_MEMORY_LOGS = 500; // 内存环形缓冲区上限（零磁盘写入保护闪存）
+    private static final java.util.LinkedList<String> memoryLogs = new java.util.LinkedList<>();
 
     private static final ExecutorService logExecutor = Executors.newSingleThreadExecutor();
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.CHINA);
@@ -159,41 +161,82 @@ public class AppLogger {
 
         if (!fileEnabled) return;
 
-        logExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    File logFile = getLogFile();
-                    checkAndRotate(logFile);
+        // 纯内存写入：极速入队，零磁盘 I/O 损耗，彻底保护车机闪存芯片
+        String timeStr;
+        synchronized (dateFormat) {
+            timeStr = dateFormat.format(new Date(time));
+        }
 
-                    String timeStr;
-                    synchronized (dateFormat) {
-                        timeStr = dateFormat.format(new Date(time));
-                    }
+        StringBuilder sb = new StringBuilder(128);
+        sb.append('[').append(timeStr).append("] ")
+                .append('[').append(level).append("] ")
+                .append('[').append(module).append("] ")
+                .append(message);
 
-                    StringBuilder sb = new StringBuilder(128);
-                    sb.append('[').append(timeStr).append("] ")
-                            .append('[').append(level).append("] ")
-                            .append('[').append(module).append("] ")
-                            .append(message).append('\n');
+        if (tr != null) {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            tr.printStackTrace(pw);
+            sb.append('\n').append(sw.toString());
+        }
+        String entry = sb.toString();
 
-                    if (tr != null) {
-                        StringWriter sw = new StringWriter();
-                        PrintWriter pw = new PrintWriter(sw);
-                        tr.printStackTrace(pw);
-                        sb.append(sw.toString()).append('\n');
-                    }
+        synchronized (memoryLogs) {
+            if (memoryLogs.size() >= MAX_MEMORY_LOGS) {
+                memoryLogs.removeFirst();
+            }
+            memoryLogs.addLast(entry);
+        }
+    }
 
-                    FileOutputStream fos = new FileOutputStream(logFile, true);
-                    OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
-                    osw.write(sb.toString());
-                    osw.flush();
-                    osw.close();
-                    fos.close();
-                } catch (Exception ignored) {
+    /**
+     * 将当前内存守护日志直接打包压缩为 ZIP，并在完成时物理清理历史碎片
+     */
+    public static org.json.JSONObject exportGuardLogZip(android.content.Context context) {
+        org.json.JSONObject result = new org.json.JSONObject();
+        try {
+            File downloadDir = SystemUtils.getAppDownloadDir();
+            if (!downloadDir.exists()) downloadDir.mkdirs();
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA).format(new Date());
+            File zipFile = new File(downloadDir, "Geely_Log_Guard_" + timeStamp + ".zip");
+            if (zipFile.exists()) zipFile.delete();
+
+            StringBuilder sb = new StringBuilder(memoryLogs.size() * 128);
+            synchronized (memoryLogs) {
+                for (String l : memoryLogs) {
+                    sb.append(l).append('\n');
                 }
             }
-        });
+            if (sb.length() == 0) {
+                sb.append("暂无守护日志记录（开机运行至今零磁盘写入）。\n");
+            }
+
+            byte[] logBytes = sb.toString().getBytes("UTF-8");
+            try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(new FileOutputStream(zipFile))) {
+                java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry("guard.log");
+                zos.putNextEntry(entry);
+                zos.write(logBytes);
+                zos.closeEntry();
+            }
+
+            // 清理可能残留的历史未压缩 log 文件，保持磁盘纯净
+            try {
+                File oldLog = getLogFile();
+                if (oldLog.exists()) oldLog.delete();
+            } catch (Exception ignored) {}
+
+            result.put("success", true);
+            result.put("path", zipFile.getAbsolutePath());
+            result.put("filename", zipFile.getName());
+            result.put("size", zipFile.length());
+            result.put("message", "守护日志已导出: " + zipFile.getName());
+        } catch (Exception e) {
+            try {
+                result.put("success", false);
+                result.put("message", "导出守护日志异常: " + e.getMessage());
+            } catch (Exception ignored) {}
+        }
+        return result;
     }
 
     private static void checkAndRotate(File file) {
@@ -237,54 +280,29 @@ public class AppLogger {
     }
 
     /**
-     * 读取最近的 N 行日志（最多 500 行），供前端界面直观查看
+     * 读取最近的 N 行守护日志（直接从纯内存环形缓冲区读取，0 磁盘 I/O 损耗）
      */
     public static String readRecentLogs(int maxLines) {
-        File file = getLogFile();
-        if (!file.exists() || file.length() == 0) {
-            return "暂无运行日志记录。";
-        }
-
-        // 性能优化：先按字节从尾部读取一个窗口，避免每次读完整文件
-        List<String> lines = new ArrayList<>();
-        try {
-            long fileLen = file.length();
-            int windowSize = (int) Math.min(fileLen, maxLines * 256L); // 预估每行 256 字节
-            long startPos = Math.max(0, fileLen - windowSize);
-
-            java.io.RandomAccessFile raf = new java.io.RandomAccessFile(file, "r");
-            raf.seek(startPos);
-            // 如果不在文件开头，丢弃第一行（可能不完整）
-            if (startPos > 0) {
-                raf.readLine();
+        synchronized (memoryLogs) {
+            if (memoryLogs.isEmpty()) {
+                return "暂无守护日志记录（开机至今纯内存运行，零磁盘写入）。";
             }
-            BufferedReader br = new BufferedReader(new InputStreamReader(
-                    new java.io.FileInputStream(raf.getFD()), "UTF-8"));
-            String line;
-            while ((line = br.readLine()) != null) {
-                lines.add(line);
-                if (lines.size() > maxLines * 2) {
-                    lines = new ArrayList<>(lines.subList(lines.size() - maxLines, lines.size()));
-                }
+            int start = Math.max(0, memoryLogs.size() - maxLines);
+            StringBuilder sb = new StringBuilder(memoryLogs.size() * 128);
+            for (int i = start; i < memoryLogs.size(); i++) {
+                sb.append(memoryLogs.get(i)).append('\n');
             }
-            br.close();
-            raf.close();
-        } catch (Exception e) {
-            return "读取日志失败: " + e.getMessage();
+            return sb.toString();
         }
-
-        int start = Math.max(0, lines.size() - maxLines);
-        StringBuilder sb = new StringBuilder();
-        for (int i = start; i < lines.size(); i++) {
-            sb.append(lines.get(i)).append('\n');
-        }
-        return sb.toString();
     }
 
     /**
-     * 清空当前日志文件
+     * 清空当前内存守护日志
      */
     public static boolean clearLog() {
+        synchronized (memoryLogs) {
+            memoryLogs.clear();
+        }
         try {
             File file = getLogFile();
             if (file.exists()) {
@@ -297,7 +315,6 @@ public class AppLogger {
                     if (bk.exists()) bk.delete();
                 }
             }
-            i("日志系统", "用户手动清空了历史运行日志");
             return true;
         } catch (Exception e) {
             return false;
@@ -305,14 +322,11 @@ public class AppLogger {
     }
 
     /**
-     * 获取日志文件大小友好字符串（如 "128.5 KB"）
+     * 获取日志内存缓冲状态字符串
      */
     public static String getLogFileSizeStr() {
-        File file = getLogFile();
-        if (!file.exists()) return "0 KB";
-        long len = file.length();
-        if (len < 1024) return len + " B";
-        if (len < 1024 * 1024) return String.format(Locale.CHINA, "%.1f KB", len / 1024.0);
-        return String.format(Locale.CHINA, "%.2f MB", len / (1024.0 * 1024.0));
+        synchronized (memoryLogs) {
+            return "内存缓冲 (" + memoryLogs.size() + " 行)";
+        }
     }
 }

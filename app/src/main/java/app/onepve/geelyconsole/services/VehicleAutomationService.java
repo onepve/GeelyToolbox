@@ -60,6 +60,7 @@ public class VehicleAutomationService extends Service {
     public static volatile float latestBatteryVoltage = 0.0f;
     public static volatile boolean voiceMasterSwitch = true;
     public static volatile boolean wheelMasterSwitch = true;
+    private float lastSavedBatteryVoltage = -1.0f;
 
     // 功能开关
     private boolean enableDoorFl = false;
@@ -825,11 +826,14 @@ public class VehicleAutomationService extends Service {
                             volt = rawVolt / 1000.0f;
                         }
 
-                        // 只有在 9.0V ~ 16.5V 车规安全范围内才更新并物理落地，坚决杜绝 4.2V 等假信号污染
+                        // 只有在 9.0V ~ 16.5V 车规安全范围内才更新内存（纯内存流转，零高频磁盘擦写）
                         if (volt >= 9.0f && volt <= 16.5f) {
                             latestBatteryVoltage = volt;
-                            SharedPreferences sp = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                            sp.edit().putFloat("vehicle_real_battery_volt", volt).commit();
+                            if (Math.abs(volt - lastSavedBatteryVoltage) >= 0.2f) {
+                                lastSavedBatteryVoltage = volt;
+                                getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                                        .edit().putFloat("vehicle_real_battery_volt", volt).apply();
+                            }
                         }
                     }
                 }

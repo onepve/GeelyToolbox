@@ -1194,7 +1194,7 @@ public class SystemUtils {
 
             // 4. 打包
             String timeStamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.CHINA).format(new java.util.Date());
-            File zipFile = new File(downloadDir, "GeelyToolbox_LogVerify_" + timeStamp + ".zip");
+            File zipFile = new File(downloadDir, "Geely_Log_Full_" + timeStamp + ".zip");
             if (zipFile.exists()) zipFile.delete();
 
             List<File> filesToZip = new ArrayList<>();
@@ -1208,7 +1208,7 @@ public class SystemUtils {
 
             boolean zipped = zipFiles(filesToZip, zipFile);
 
-            // 5. 清理临时目录
+            // 5. 清理临时目录，绝不残留散落未压缩原始日志
             deleteRecursive(tempDir);
 
             if (zipped && zipFile.exists() && zipFile.length() > 0) {
@@ -1217,7 +1217,7 @@ public class SystemUtils {
                 double mb = zipFile.length() / (1024.0 * 1024.0);
                 String sizeStr = (mb >= 1.0) ? String.format(java.util.Locale.CHINA, "%.2f MB", mb) : (zipFile.length() / 1024 + " KB");
                 result.put("sizeStr", sizeStr);
-                result.put("message", "协议验证日志已采集并打包: " + zipFile.getName());
+                result.put("message", "车机全量日志已打包: " + zipFile.getName());
             } else {
                 result.put("success", false);
                 result.put("message", "日志打包失败");
