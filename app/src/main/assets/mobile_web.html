@@ -69,7 +69,36 @@
             <div id="upload-status" style="font-size:12px; color:#64748b; margin-top:6px; text-align:center;"></div>
         </div>
 
-        <!-- 卡片 2.5: 🎙️ 自定义车载语音制作与导入中枢 -->
+        <!-- 卡片 3: 推送 ADB 命令 -->
+        <div class="card">
+            <div class="card-title"><span>💻 手机推送 ADB 命令到车机</span></div>
+            <div class="input-group">
+                <label class="input-label">输入或粘贴 Shell / ADB 指令：</label>
+                <textarea id="adb-cmd" rows="3" placeholder="例如: pm list packages -3"></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="pushAdbCmd()">📡 推送命令到车机屏幕</button>
+            <div style="font-size: 11.5px; color: #64748b; margin-top: 6px; line-height: 1.45;">
+                🛡️ <b>安全机制</b>：指令仅推送到车机【ADB 终端】输入框中，不会自动静默执行。请在车机大屏上人工核验后点击【▶️ 执行】确认！
+            </div>
+        </div>
+
+        <!-- 卡片 4: 反向导出 -->
+        <div class="card">
+            <div class="card-title"><span>📥 车机文件反向导出到手机</span><button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin-top:0;" onclick="loadCarFiles()">🔄 刷新列表</button></div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">点击即可将车机 /sdcard/Download/ 下的日志与 APK 下回到手机：</div>
+            <div id="car-files-box" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+                <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 16px;">正在加载车机文件列表...</div>
+            </div>
+        </div>
+
+        <!-- 卡片 5: 快捷指令 -->
+        <div class="card">
+            <div class="card-title"><span>⚡ 车机远程快捷指令</span></div>
+            <button class="btn btn-secondary" onclick="sendAction('open_files')">📁 调起车机原生文件管理</button>
+            <button class="btn btn-danger" onclick="confirmHardReboot()">⚡ 一键重启车机</button>
+        </div>
+
+        <!-- 卡片 5.5: 🎙️ 自定义车载语音制作与导入中枢 (下移) -->
         <div class="card" style="border-left: 4px solid #f59e0b;">
             <div class="card-title"><span>🎙️ 自定义车载语音制作中枢</span><span class="status-badge" style="background:#fef3c7; color:#b45309;">专属主题</span></div>
             <div style="font-size: 12px; color: #64748b; margin-bottom: 10px; line-height: 1.5;">
@@ -86,20 +115,7 @@
             </div>
         </div>
 
-        <!-- 卡片 3: 推送 ADB 命令 -->
-        <div class="card">
-            <div class="card-title"><span>💻 手机推送 ADB 命令到车机</span></div>
-            <div class="input-group">
-                <label class="input-label">输入或粘贴 Shell / ADB 指令：</label>
-                <textarea id="adb-cmd" rows="3" placeholder="例如: pm list packages -3"></textarea>
-            </div>
-            <button class="btn btn-primary" onclick="pushAdbCmd()">📡 推送命令到车机屏幕</button>
-            <div style="font-size: 11.5px; color: #64748b; margin-top: 6px; line-height: 1.45;">
-                🛡️ <b>安全机制</b>：指令仅推送到车机【ADB 终端】输入框中，不会自动静默执行。请在车机大屏上人工核验后点击【▶️ 执行】确认！
-            </div>
-        </div>
-
-        <!-- 卡片 4: 远程编辑 TTS 台词 -->
+        <!-- 卡片 6: 远程编辑 TTS 台词 (置底) -->
         <div class="card">
             <div class="card-title"><span>🗣️ 手机远程编辑车身播报台词</span><button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin-top:0;" onclick="loadTtsSettings()">🔄 刷新</button></div>
             <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">在手机上打字更便捷，输入后保存将直接同步并生效至车机系统：</div>
@@ -115,23 +131,7 @@
                 <div><label style="font-size:12px; font-weight:bold; color:#334155;">📦 后备箱关闭台词：</label><input type="text" id="tts-trunk_close" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 后备箱已关闭"></div>
                 <div><label style="font-size:12px; font-weight:bold; color:#334155;">🔑 车辆熄火提醒台词：</label><input type="text" id="tts-flameout" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 车辆已熄火，请带好随身物品"></div>
             </div>
-            <button class="btn btn-primary" style="margin-top:12px;" onclick="saveTtsSettings()">💾 保存台词并推送至车机</button>
-        </div>
-
-        <!-- 卡片 5: 反向导出 -->
-        <div class="card">
-            <div class="card-title"><span>📥 车机文件反向导出到手机</span><button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin-top:0;" onclick="loadCarFiles()">🔄 刷新列表</button></div>
-            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">点击即可将车机 /sdcard/Download/ 下的日志与 APK 下回到手机：</div>
-            <div id="car-files-box" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
-                <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 16px;">正在加载车机文件列表...</div>
-            </div>
-        </div>
-
-        <!-- 卡片 6: 快捷指令 -->
-        <div class="card">
-            <div class="card-title"><span>⚡ 车机远程快捷指令</span></div>
-            <button class="btn btn-secondary" onclick="sendAction('open_files')">📁 调起车机原生文件管理</button>
-            <button class="btn btn-danger" onclick="confirmHardReboot()">⚡ 一键重启车机</button>
+            <button class="btn btn-primary" style="margin-top:12px;" onclick=\"saveTtsSettings()\">💾 保存台词并推送至车机</button>
         </div>
 
         <div class="tip-box">
@@ -179,8 +179,21 @@
                 }
                 let html = '';
                 data.files.forEach(f => {
-                    const isLog = f.name.endsWith('.log') || f.name.endsWith('.txt');
-                    const icon = isLog ? '📋' : (f.name.endsWith('.apk') ? '📦' : '📄');
+                    const lower = f.name.toLowerCase();
+                    let icon = '📄';
+                    if (lower.endsWith('.apk')) {
+                        icon = '📦';
+                    } else if (lower.endsWith('.zip') || lower.endsWith('.rar') || lower.endsWith('.7z') || lower.endsWith('.tar') || lower.endsWith('.gz') || lower.endsWith('.xtz')) {
+                        icon = '🗜️';
+                    } else if (lower.endsWith('.log') || lower.endsWith('.txt') || lower.endsWith('.json') || lower.endsWith('.xml')) {
+                        icon = '📋';
+                    } else if (lower.endsWith('.mp3') || lower.endsWith('.wav') || lower.endsWith('.m4a') || lower.endsWith('.flac') || lower.endsWith('.aac') || lower.endsWith('.ogg')) {
+                        icon = '🎵';
+                    } else if (lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.webp') || lower.endsWith('.gif')) {
+                        icon = '🖼️';
+                    } else if (lower.endsWith('.mp4') || lower.endsWith('.mkv') || lower.endsWith('.avi')) {
+                        icon = '🎬';
+                    }
                     html += '<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid #f1f5f9;">' +
                             '  <div style="overflow:hidden; margin-right:8px;">' +
                             '    <div style="font-size:13px; font-weight:600; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + icon + ' ' + f.name + '</div>' +
