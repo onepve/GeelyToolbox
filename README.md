@@ -8,8 +8,8 @@
 
 - **官方保姆级图文教程**：<a href="https://onepve.com/geely-toolbox-guide/" target="_blank" rel="noopener noreferrer">吉利智驾 (GeelyToolbox) 从零初始化与座舱实战全指南</a>
 - **GitHub 开源仓库**：<a href="https://github.com/onepve/GeelyToolbox" target="_blank" rel="noopener noreferrer">onepve/GeelyToolbox</a>
-- **最新正式版本**：`v1.7.31` (versionCode `1073199`)
-- **官方直装下载直链**：<a href="https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.7.31" target="_blank" rel="noopener noreferrer">GeelyToolbox.apk (v1.7.31 · 正式版)</a>
+- **最新正式版本**：`v1.7.32` (versionCode `1073299`)
+- **官方直装下载直链**：<a href="https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.7.32" target="_blank" rel="noopener noreferrer">GeelyToolbox.apk (v1.7.32 · 正式版)</a>
 - **版本元数据接口**：<a href="https://dl.onepve.com/GeelyToolbox/version.json" target="_blank" rel="noopener noreferrer">version.json</a>
 - **配套软件源接口**：<a href="https://dl.onepve.com/GeelyToolbox/apps.json" target="_blank" rel="noopener noreferrer">apps.json</a>
 - **全栈设计系统规范**：<a href="https://onepve.com/geely-toolbox-guide/" target="_blank" rel="noopener noreferrer">OnePve Design (PPanel 极简美学规范)</a>
@@ -17,7 +17,7 @@
 
 ---
 
-## 🚀 核心架构与功能一览 (v1.7.31)
+## 🚀 核心架构与功能一览 (v1.7.32)
 
 1. **全新 OnePve Design 极简美学架构 (Dark Glassmorphism)**：全面基于 Vite + Vue 3 + Tailwind CSS 纯组件化工程重构，采用深邃星空漫反射大底座、PPanel 同款亚克力微透悬浮卡片、日夜双模无缝自适应；
 2. **黄金车规大磁贴与暖阳琥珀光环 (Halo Ring)**：按键高度精准收敛为 **78~88px 黄金触控大磁贴**，文字保持默认高对比（夜间纯白/白天墨黑），金色外圈严格且仅用于工具箱自研监控/接管按键；
