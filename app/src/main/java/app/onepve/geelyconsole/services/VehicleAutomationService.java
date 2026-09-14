@@ -34,9 +34,12 @@ import app.onepve.geelyconsole.utils.AdbClient;
 import app.onepve.geelyconsole.utils.AppLogger;
 import app.onepve.geelyconsole.utils.DoorStateManager;
 import app.onepve.geelyconsole.utils.DriveModeManager;
+import app.onepve.geelyconsole.utils.DriveModePresetGate;
 import app.onepve.geelyconsole.utils.EasMediaBridge;
 import app.onepve.geelyconsole.utils.GearStateMachine;
 import app.onepve.geelyconsole.utils.IdleScreensaverManager;
+import app.onepve.geelyconsole.utils.PrefsCompat;
+import app.onepve.geelyconsole.utils.SafetySensorStateMachine;
 import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
 import app.onepve.geelyconsole.utils.SystemUtils;
 import app.onepve.geelyconsole.utils.TrunkStateManager;
@@ -86,6 +89,9 @@ public class VehicleAutomationService extends Service {
     private boolean enableTurn360 = false;
     private boolean enableLightNav = false;
     private boolean enableFlameoutVoice = false;
+    // 车况安全守护四项测试开关聚合 + 上车预设驾驶模式 (shouldRun 门控)
+    private boolean enableSafetyGuards = true;
+    private boolean enablePresetDriveMode = false;
 
     // 驾驶模式标准解耦枚举 (100% 根绝底层各协议数值冲突)
     public static final int MODE_COMFORT = 1; // 舒适模式
@@ -133,6 +139,141 @@ public class VehicleAutomationService extends Service {
     private GearStateMachine gearStateMachine;
     private DriveModeManager driveModeManager;
 
+    // 车况感知与安全守护状态变量 (判定逻辑收敛进 SafetySensorStateMachine 纯 Java 状态机)
+    private final app.onepve.geelyconsole.utils.SafetySensorStateMachine safetySensors =
+            new SafetySensorStateMachine(null);
+    /** 上车预设驾驶模式自动触发安全门控 (纯 Java 状态机) */
+    private final app.onepve.geelyconsole.utils.DriveModePresetGate presetGate =
+            new DriveModePresetGate(null);
+    /** 信号时间戳 (单调 SystemClock) */
+    private long steerAngleSignalAt = 0L;
+    private long epbSignalAt = 0L;
+    private long remainOdoSignalAt = 0L;
+    private long tcuTempSignalAt = 0L;
+    private long oilPressureSignalAt = 0L;
+    /** 桥接只读快照 (供 MainActivity 同步读取，不加锁只写 volatile) */
+    private volatile boolean lastEngineRunningSnapshot = false;
+
+    /** 桥接辅助: MainActivity 同步读取发动机运行判定 */
+    public static boolean isEngineRunningForBridge() {
+        VehicleAutomationService svc = instance;
+        return svc != null && svc.isEngineRunning();
+    }
+
+    /** 桥接辅助: 停稳 P 挡 + 新鲜零车速判定 (手动实测门槛) */
+    public static boolean isParkedStillForBridge() {
+        VehicleAutomationService svc = instance;
+        if (svc == null) return false;
+        return svc.gearStateMachine != null && svc.gearStateMachine.getGear() == 5
+                && VehicleAutomationService.currentSpeedKmH == 0;
+    }
+
+    private static volatile VehicleAutomationService instance;
+
+    /**
+     * P挡开门安全守护 (证据不足安全静默):
+     * - EPB: 仅当 EPB 信号在新鲜窗口内且确知为「释放」才告警 (P0)；
+     * - 方向盘: 仅当角度信号新鲜且 |角度|>60° 才提醒 (P3)；
+     * - 任何 unknown/过期信号一律静默，绝不误警。
+     */
+    private void checkEpbAndSteerAngleOnDriverDoorOpen() {
+        if (gearStateMachine == null || gearStateMachine.getGear() != 5) {
+            return;
+        }
+        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        long now = android.os.SystemClock.elapsedRealtime();
+
+        // 1. 电子手刹未拉溜车报警 (P0 优先级)
+        boolean epbGuard = prefs.getBoolean("voice_enable_epb_guard", true);
+        if (epbGuard && epbSignalAt > 0 && now - epbSignalAt <= SafetySensorStateMachine.SIGNAL_FRESHNESS_MS) {
+            int r = safetySensors.checkEpbNotEngagedOnPDoorOpen(now);
+            if (r == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED) {
+                AppLogger.w("安全守护", "【P0报警】挂P挡推开主驾门，检测到电子手刹未拉起！(已确认，本行程不再重复)");
+                if (voicePlayer != null) {
+                    voicePlayer.play("epb_alarm.mp3", "警告，电子手刹未拉起", VehicleVoicePlayer.PRIORITY_P0_ALARM);
+                }
+                return; // P0 报警触发后不再报次要提醒
+            }
+        }
+
+        // 2. 方向盘未回正提醒 (P3 优先级; 阈值 60° 为测试值)
+        boolean steerGuard = prefs.getBoolean("voice_enable_steer_angle_guard", true);
+        if (steerGuard && steerAngleSignalAt > 0
+                && now - steerAngleSignalAt <= SafetySensorStateMachine.SIGNAL_FRESHNESS_MS) {
+            int r = safetySensors.checkSteerAngleNotCentered(now);
+            if (r == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED) {
+                double deg = safetySensors.getKnownValue(SafetySensorStateMachine.SENSOR_STEER_ANGLE);
+                AppLogger.i("安全守护", "【P3关怀】挂P挡推开主驾门，方向盘未回正 (偏角=" + (int) deg + "°，测试阈值60°)");
+                if (voicePlayer != null) {
+                    voicePlayer.play("steer_angle_guard.mp3", "请注意回正方向盘", VehicleVoicePlayer.PRIORITY_P3_ADVISORY);
+                }
+            }
+        }
+    }
+
+    /**
+     * 上车预设驾驶模式自动触发 (点火边沿一次周期，绝不每心跳重复):
+     * 由 handlePowerState 的点火边沿调用；内部走 DriveModePresetGate 安全门控，
+     * 延迟 2.5s 到点后复查 (设置可能被改/可能已起步/可能熄火)，任一失守静默取消。
+     * 冷启动 (服务在点火后才起来，无点火边沿) 绝不自动补发。
+     */
+    private void onIgnitionEdgeDetected() {
+        long now = android.os.SystemClock.elapsedRealtime();
+        presetGate.feedEngineRunning(true, now);
+        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        boolean enabled = prefs.getBoolean("vehicle_preset_drive_mode_enabled", false);
+        String target = PrefsCompat.getString(prefs, "vehicle_preset_drive_mode_target", "default");
+        presetGate.updateConfig(enabled, target, now);
+        // 立即喂入当前挡位/车速快照
+        presetGate.feedGear(gearStateMachine != null ? gearStateMachine.getGear() : -1);
+        presetGate.feedSpeed(currentSpeedKmH, now);
+        maybeSchedulePresetDriveMode();
+    }
+
+    private void maybeSchedulePresetDriveMode() {
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (presetGate.shouldSchedule(now)) {
+            String target = presetGate.getTargetMode();
+            AppLogger.i("驾驶模式", "上车预设武装: 目标[" + target + "] 延迟 "
+                    + presetGate.getDelayMs() + "ms 后复查条件再下发 (本点火周期仅一次)");
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    executePresetDriveModeIfAllowed();
+                }
+            }, presetGate.getDelayMs());
+        }
+    }
+
+    /** 延迟到点: 复查全部条件后决定是否真的下发一次请求 */
+    private void executePresetDriveModeIfAllowed() {
+        long now = android.os.SystemClock.elapsedRealtime();
+        // 复查前刷新最新挡位/车速/设置快照
+        presetGate.feedGear(gearStateMachine != null ? gearStateMachine.getGear() : -1);
+        presetGate.feedSpeed(currentSpeedKmH, now);
+        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        presetGate.updateConfig(
+                prefs.getBoolean("vehicle_preset_drive_mode_enabled", false),
+                PrefsCompat.getString(prefs, "vehicle_preset_drive_mode_target", "default"), now);
+        int decision = presetGate.decideAtFireTime(now);
+        if (decision != DriveModePresetGate.DECISION_PROCEED) {
+            AppLogger.i("驾驶模式", "上车预设复查未通过 (decision=" + decision + ")，本周期静默取消");
+            return;
+        }
+        String target = presetGate.getTargetMode();
+        AppLogger.i("驾驶模式", "上车预设复查通过: 下发一次切换请求 [" + target + "] (成功以仪表跃变为准)");
+        org.json.JSONObject result = DriveModeManager.switchDriveModeWithResult(this, target);
+        try {
+            AppLogger.i("驾驶模式", "上车预设下发回执: status=" + result.opt("status") + " msg=" + result.opt("message"));
+        } catch (Throwable ignored) {}
+    }
+
+    /** 熄火/下电: 预设门控周期复位 */
+    private void onPowerOffForPresetGate() {
+        presetGate.feedEngineRunning(false, android.os.SystemClock.elapsedRealtime());
+        safetySensors.powerOff(android.os.SystemClock.elapsedRealtime());
+    }
+
     public static void syncState(Context context) {
         if (context == null) return;
         try {
@@ -176,12 +317,20 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Throwable ignored) {}
 
+            boolean guardSteer = prefs.getBoolean("voice_enable_steer_angle_guard", true);
+            boolean guardEpb = prefs.getBoolean("voice_enable_epb_guard", true);
+            boolean guardLowFuel = prefs.getBoolean("voice_enable_low_fuel_guard", true);
+            boolean guardPowertrain = prefs.getBoolean("voice_enable_powertrain_guard", true);
+            boolean anySafetyGuardEnabled = voiceMaster && (guardSteer || guardEpb || guardLowFuel || guardPowertrain);
+            boolean presetDriveMode = prefs.getBoolean("vehicle_preset_drive_mode_enabled", false)
+                    && !"default".equalsIgnoreCase(PrefsCompat.getString(prefs, "vehicle_preset_drive_mode_target", "default"));
+
             boolean anyVoiceEnabled = voiceMaster && (doorFl || doorFlClose || doorFr || doorFrClose ||
                                 doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
                                 trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
                                 modeSmart || modeComfort || modeEco || modeSport ||
-                                flameout);
-            boolean anyVehicleAutoEnabled = turn360 || lightNav;
+                                flameout || anySafetyGuardEnabled);
+            boolean anyVehicleAutoEnabled = turn360 || lightNav || presetDriveMode;
 
             boolean shouldRun = anyVoiceEnabled || anyVehicleAutoEnabled || wheelEnabled
                     || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
@@ -213,12 +362,16 @@ public class VehicleAutomationService extends Service {
     public void onCreate() {
         super.onCreate();
         isRunning = true;
+        instance = this;
         voicePlayer = VehicleVoicePlayer.getInstance(this);
         wheelKeyManager = new SteeringWheelKeyManager(this);
 
         // 初始化四大独立状态机
         doorStateManager = new DoorStateManager(this, voicePlayer);
         doorStateManager.setListener((fl, fr, rl, rr) -> {
+            if (fl == 1 && currentDoorFL == 0) {
+                checkEpbAndSteerAngleOnDriverDoorOpen();
+            }
             currentDoorFL = fl;
             currentDoorFR = fr;
             currentDoorRL = rl;
@@ -311,6 +464,20 @@ public class VehicleAutomationService extends Service {
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
 
+        // 车况安全守护四项测试开关 + 上车预设驾驶模式 (同步进 shouldRun 门控)
+        enableSafetyGuards = voiceMasterSwitch && (
+                prefs.getBoolean("voice_enable_steer_angle_guard", true)
+                        || prefs.getBoolean("voice_enable_epb_guard", true)
+                        || prefs.getBoolean("voice_enable_low_fuel_guard", true)
+                        || prefs.getBoolean("voice_enable_powertrain_guard", true));
+        enablePresetDriveMode = prefs.getBoolean("vehicle_preset_drive_mode_enabled", false)
+                && !"default".equalsIgnoreCase(PrefsCompat.getString(prefs, "vehicle_preset_drive_mode_target", "default"));
+        // 配置变化同步进预设门控 (改设置取消 pending)
+        presetGate.updateConfig(
+                prefs.getBoolean("vehicle_preset_drive_mode_enabled", false),
+                PrefsCompat.getString(prefs, "vehicle_preset_drive_mode_target", "default"),
+                android.os.SystemClock.elapsedRealtime());
+
         // 若服务在行车中启动，立即建立主驾已就坐基准，避免车门语音误判为上车
         if (lastPowerMode > 0 && doorStateManager != null) {
             doorStateManager.markDriverInside();
@@ -323,8 +490,8 @@ public class VehicleAutomationService extends Service {
                              enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
                              enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN || enableGearS ||
                              enableModeSmart || enableModeComfort || enableModeEco || enableModeSport ||
-                             enableFlameoutVoice);
-        boolean anyVehicleAutoEnabled = enableTurn360 || enableLightNav;
+                             enableFlameoutVoice || enableSafetyGuards);
+        boolean anyVehicleAutoEnabled = enableTurn360 || enableLightNav || enablePresetDriveMode;
 
         boolean anyEnabled = anyVoiceEnabled || anyVehicleAutoEnabled || wheelEnabled
                 || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
@@ -726,6 +893,127 @@ public class VehicleAutomationService extends Service {
             }
         }
 
+        // 4.5 解析方向盘物理转角 (INFO_ID_VSTEERWHEELINFO_ANGLE_VALUE)
+        // 强匹配: 必须同时含属性名与 funValue；数值在低16位 (实车采样 0x0000002c=44°)；
+        // 0 或超量程 (±540°) 一律 unknown 静默。
+        if (line.contains("INFO_ID_VSTEERWHEELINFO_ANGLE_VALUE")) {
+            try {
+                Matcher m = Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)").matcher(line);
+                if (m.find()) {
+                    int raw = (int) Long.parseLong(m.group(1), 16);
+                    int low16 = raw & 0xFFFF;
+                    // 低16位按有符号解释 (左负右正, 16位补码)
+                    if (low16 > 32767) low16 -= 65536;
+                    long now = android.os.SystemClock.elapsedRealtime();
+                    if (safetySensors.feedSteerAngle(raw, now)) {
+                        steerAngleSignalAt = now;
+                    } else {
+                        steerAngleSignalAt = 0L; // unknown: 失去新鲜度资格
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 4.6 解析电子手刹 EPB 状态 (INFO_ID_VDRIVEINFO_EPB_STATE)
+        // 强匹配 + 已知枚举 (0=释放 1=拉起, 实车采样)；其余值 unknown 静默。
+        if (line.contains("INFO_ID_VDRIVEINFO_EPB_STATE")) {
+            try {
+                Matcher m = Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)").matcher(line);
+                if (m.find()) {
+                    int raw = (int) Long.parseLong(m.group(1), 16);
+                    int state = raw & 0xFFFF;
+                    long now = android.os.SystemClock.elapsedRealtime();
+                    if (state == SafetySensorStateMachine.EPB_RELEASED
+                            || state == SafetySensorStateMachine.EPB_ENGAGED) {
+                        safetySensors.feedEpbState(state, now);
+                        epbSignalAt = now;
+                    } else {
+                        // 未知枚举: 证据不足安全静默，标记信号不新鲜
+                        epbSignalAt = 0L;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 4.7 解析剩余里程与低油量关怀 (INFO_ID_IPKINFO_REMAIN_ODO)
+        // 强匹配: 0 = 无效读数 (刚通电/仪表未就绪) 绝不告警；0 < km <= 50 每点火一次。
+        if (line.contains("INFO_ID_IPKINFO_REMAIN_ODO")) {
+            try {
+                Matcher m = Pattern.compile("(?:funValue|funcValue)\\((?:0x)?([0-9a-fA-F]+)\\)").matcher(line);
+                if (m.find()) {
+                    int raw = (int) Long.parseLong(m.group(1), 16);
+                    int odo = raw & 0xFFFF; // 低16位为公里数 (实车采样 0x10b=267km)
+                    long now = android.os.SystemClock.elapsedRealtime();
+                    safetySensors.feedRemainOdo(odo, now);
+                    if (odo > 0) remainOdoSignalAt = now;
+                    if (odo > 0 && isEngineRunning()) {
+                        SharedPreferences p = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        if (p.getBoolean("voice_enable_low_fuel_guard", true)) {
+                            int r = safetySensors.checkLowFuel(now);
+                            if (r == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED) {
+                                AppLogger.w("安全守护", "【P3关怀】剩余续航不足 50km (当前=" + odo + "km)，单次低油量温馨播报 (本点火行程不再重复)");
+                                if (voicePlayer != null) {
+                                    voicePlayer.play("low_fuel.mp3", "燃油即将耗尽，请及时加油", VehicleVoicePlayer.PRIORITY_P3_ADVISORY);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 4.8 解析动力总成高危 (INFO_ID_IPKWARN_TCU_OVER_TEMP_LEVEL / INFO_ID_IPKWARN_OIL_LOW_PRESSURE)
+        // 铁律: funValue 为 funId基址|数值 打包。机油正常报文 funValue(0x00300000) 低16位=0 ——
+        // raw > 0 绝不能当警报！必须提取低16位，仅数值非0且持续去抖后才确认一次。
+        if (line.contains("INFO_ID_IPKWARN_TCU_OVER_TEMP_LEVEL")) {
+            try {
+                Matcher m = Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)").matcher(line);
+                if (m.find()) {
+                    int raw = (int) Long.parseLong(m.group(1), 16);
+                    int level = raw & 0xFFFF; // 提取有效等级数值
+                    long now = android.os.SystemClock.elapsedRealtime();
+                    safetySensors.feedTcuTempLevel(level, now);
+                    if (level >= 0) tcuTempSignalAt = now;
+                    if (isEngineRunning()) {
+                        SharedPreferences p = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        if (p.getBoolean("voice_enable_powertrain_guard", true)) {
+                            int r = safetySensors.checkTcuOverTemp(now);
+                            if (r == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED) {
+                                AppLogger.e("安全守护", "【P0报警】变速箱油温过高告警确认 (Level=" + level + "，去抖1200ms通过，本行程仅一次)");
+                                if (voicePlayer != null) {
+                                    voicePlayer.play("tcu_alarm.mp3", "警告，变速箱油温过高，请靠边停车怠速散热", VehicleVoicePlayer.PRIORITY_P0_ALARM);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        if (line.contains("INFO_ID_IPKWARN_OIL_LOW_PRESSURE")) {
+            try {
+                Matcher m = Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)").matcher(line);
+                if (m.find()) {
+                    int raw = (int) Long.parseLong(m.group(1), 16);
+                    int level = raw & 0xFFFF; // 正常 0x00300000 → 0 = 正常，绝非警报!
+                    long now = android.os.SystemClock.elapsedRealtime();
+                    safetySensors.feedOilPressure(level, now);
+                    if (level >= 0) oilPressureSignalAt = now;
+                    if (isEngineRunning()) {
+                        SharedPreferences p = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        if (p.getBoolean("voice_enable_powertrain_guard", true)) {
+                            int r = safetySensors.checkOilLowPressure(now);
+                            if (r == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED) {
+                                AppLogger.e("安全守护", "【P0报警】机油压力过低告警确认 (值=" + level + "，去抖1200ms通过，本行程仅一次)");
+                                if (voicePlayer != null) {
+                                    voicePlayer.play("oil_alarm.mp3", "警告，机油压力过低，请检查发动机", VehicleVoicePlayer.PRIORITY_P0_ALARM);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
         // 4.1 解析驾驶模式切换信号 (严格收敛对齐 Tasker 实车验证黄金法则: 纯净收敛于 ECarXCarConfigService 与 AdaptAPI 权威常量)
         int modeVal = -1;
 
@@ -1091,6 +1379,7 @@ public class VehicleAutomationService extends Service {
             if (val == 2) {
                 lastPowerMode = 1; // 钥匙 ON -> 点火就绪
                 doorStateManager.markDriverInside();
+                // 预设门控: KEY ON 只是就绪，不喂发动机边沿 (KEY ON/ACC 绝不算点火运行)
                 AppLogger.i("电源状态", "钥匙 ON (key=2) -> 点火启动就绪");
             } else if (val == 0) {
                 // 若发电机正在以 >=13.2V 充电，或车速非零，绝不可因偶发性按键释放日志误置熄火
@@ -1107,6 +1396,8 @@ public class VehicleAutomationService extends Service {
             if (val == 3) {
                 lastPowerMode = 1;
                 doorStateManager.markDriverInside();
+                // 发动机真正运行边沿 (非 KEY ON/ACC): 上车预设唯一自动入口
+                onIgnitionEdgeDetected();
             } else if (val == 0) {
                 // 引擎停止不一定熄火，等待 PEPS_PowerMode=0 或 KEY_STATE=0
             }
@@ -1133,8 +1424,10 @@ public class VehicleAutomationService extends Service {
         if (gearStateMachine != null) gearStateMachine.resetState();
         if (driveModeManager != null) driveModeManager.resetState();
         if (doorStateManager != null) doorStateManager.resetState();
+        // 熄火下电: 安全传感器一次触发锁复位 + 预设门控周期结束 (取消 pending)
+        onPowerOffForPresetGate();
         if (flameout && enableFlameoutVoice && voicePlayer != null) {
-            voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品");
+            voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品", VehicleVoicePlayer.PRIORITY_P3_ADVISORY);
         }
     }
 
@@ -1183,6 +1476,7 @@ public class VehicleAutomationService extends Service {
     public void onDestroy() {
         super.onDestroy();
         isRunning = false;
+        instance = null;
         if (powerReceiver != null) {
             try {
                 unregisterReceiver(powerReceiver);

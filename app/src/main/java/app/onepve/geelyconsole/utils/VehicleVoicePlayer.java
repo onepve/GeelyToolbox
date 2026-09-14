@@ -1,5 +1,18 @@
 package app.onepve.geelyconsole.utils;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.media.AudioAttributes;
@@ -10,29 +23,29 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.util.Locale;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 /**
- * 车辆语音播报器（支持本地短音频与系统 TTS 引擎）
- * 1. 优先读取用户自定义台词 TTS
- * 2. 其次读取自定义音频文件路径 (MP3/WAV)
- * 3. 其次读取外部放置目录 (/sdcard/Download/语音主题包/ 或 /sdcard/Music/)
- * 4. 其次读取内置资产 assets/audio/xxx.mp3，解压至内部私有目录播放 (防FD关闭异常)
- * 5. 最后兜底调用系统原生 TextToSpeech (对接小爱同学)
- * 6. 默认走车规媒体通道 (STREAM_MUSIC / USAGE_MEDIA)，确保车载功放 100% 出声
+ * 车辆语音播报器 (支持本地短音频与系统 TTS 引擎)
+ *
+ * 仲裁架构 (v2)：对外公开 API (play/speakText/playCustomFile/stopCurrentVoice) 全部
+ * 收敛进 VoiceArbiter 单线程仲裁状态机，彻底修复以下历史缺陷：
+ *  - 低优先级 else 分支会打断 P0 (旧代码无差别 stopCurrentVoice)
+ *  - isPlaying() 在 prepare 阶段抛 IllegalStateException (不再参与仲裁判断)
+ *  - 准备中的请求不占位 (PREPARING 态占位，抢占照常生效)
+ *  - 过期队列回调会错清新会话 (generation 单调代数校验)
+ *  - TTS 任意 onDone 都释放当前焦点 (onDone 与 generation 绑定，仅当前代生效)
+ *  - 6s 超时把错误当完成 (超时是失败兜底，按 finish 处理并记录日志，出队照常衔接)
+ *
+ * 外部流避让：
+ *  - 通话/VoIP/HFP：ExternalAudioDetector 检测，非 P0 全部闭嘴，P0 仅 best-effort。
+ *  - 蓝牙 A2DP 活跃时免申请焦点 (防 AVRCP 反向下发暂停手机播放)。
+ *
+ * 音频解析顺序保持不变：自定义台词 TTS > 自定义音频文件 > 主题包 > 外部目录 >
+ * 内置 assets (版本号驱动强制覆盖) > 系统 TTS 兜底。
  */
 public class VehicleVoicePlayer {
 
@@ -87,6 +100,195 @@ public class VehicleVoicePlayer {
     private volatile long lastInitAttemptAt = 0L;          // ensureTtsReady 重试节流时间戳
     private static final long INIT_RETRY_INTERVAL_MS = 3000L; // 节流：最短 3 秒重试一次
 
+    // ---- 车规四级语音仲裁金字塔 (Priority Scheduling & Queue) ----
+    public static final int PRIORITY_P0_ALARM = 0;    // 极限高危安全警报 (手刹未拉、变速箱高温、机油低压) - 一票否决强杀
+    public static final int PRIORITY_P1_ACTION = 1;   // 核心行车动作 (换挡、驾驶模式) - 瞬态覆盖响应
+    public static final int PRIORITY_P2_DOOR = 2;     // 车身迎宾与车门 (车门开闭、后备箱) - 1条浅缓冲队列+3s超时丢弃
+    public static final int PRIORITY_P3_ADVISORY = 3; // 舒适关怀 (方向盘未回正、低油量单次、超速) - 闲时顺延、遇忙丢弃
+
+    // ---- VoiceArbiter 单线程仲裁核心 ----
+    private final Object arbiterLock = new Object();
+    private volatile VoiceArbiter arbiter;
+    /** 仲裁是否已完成引擎回调绑定 (供测试等待) */
+    private volatile boolean arbiterReady = false;
+
+    private final ExternalAudioDetector externalDetector;
+
+    /** 仲裁时钟 (包内可见，测试可注入) */
+    static final VoiceArbiter.Clock MONOTONIC_CLOCK = new VoiceArbiter.Clock() {
+        @Override
+        public long now() {
+            return SystemClock.elapsedRealtime();
+        }
+    };
+
+    public static int resolveDefaultPriority(String voiceFileName) {
+        if (voiceFileName == null) return PRIORITY_P2_DOOR;
+        String fn = voiceFileName.toLowerCase();
+        if (fn.contains("alarm") || fn.contains("epb") || fn.contains("tcu") || fn.contains("oil")) {
+            return PRIORITY_P0_ALARM;
+        }
+        if (fn.contains("gear") || fn.contains("mode")) {
+            return PRIORITY_P1_ACTION;
+        }
+        if (fn.contains("steer") || fn.contains("fuel") || fn.contains("overspeed") || fn.contains("flameout")) {
+            return PRIORITY_P3_ADVISORY;
+        }
+        return PRIORITY_P2_DOOR;
+    }
+
+    /**
+     * 通话/外部音频流检测器。
+     * 检测维度 (全部为真实可获取状态，不编造能力)：
+     *  1. AudioManager.getMode() == MODE_IN_CALL / MODE_IN_COMMUNICATION / MODE_RINGTONE
+     *     (蓝牙 HFP 通话与 VoIP/微信 QQ 语音都会切 MODE_IN_COMMUNICATION)
+     *  2. TelecomManager.isInCall() (API 26+)
+     *  3. AudioManager.MODE_IN_COMMUNICATION 同样覆盖 HFP/SCO 蓝牙电话
+     * 导航播报流 (AudioPlaybackConfiguration USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+     * 因本播报自身就是媒体流，不强制避让导航，仅通话类避让 (设计决策：导航与
+     * 播报同为短促引导音，MAY_DUCK 焦点下可混音共存)。
+     */
+    static class ExternalAudioDetector {
+        private final Context context;
+
+        ExternalAudioDetector(Context context) {
+            this.context = context != null ? context.getApplicationContext() : null;
+        }
+
+        /** 真实电话/VoIP/HFP 通话中 (含蓝牙 HFP：MODE_IN_CALL 同样成立) */
+        boolean isPhoneCallActive() {
+            return isPhoneCallActive(this.context);
+        }
+
+        /** 通话中或外部导航播报流活跃 (当前设计：仅通话避让) */
+        boolean shouldBlockNormalVoice() {
+            return isPhoneCallActive();
+        }
+
+        static boolean isPhoneCallActive(Context context) {
+            if (context == null) return false;
+            try {
+                AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                if (am != null) {
+                    int mode = am.getMode();
+                    if (mode == AudioManager.MODE_IN_CALL
+                            || mode == AudioManager.MODE_IN_COMMUNICATION
+                            || mode == AudioManager.MODE_RINGTONE) {
+                        return true;
+                    }
+                    // HFP/SCO：蓝牙电话通话中系统 mode 即为 MODE_IN_CALL，
+                    // 不再依赖仅本地可见的 SCO 断言
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    android.telecom.TelecomManager tm = (android.telecom.TelecomManager) context.getSystemService(Context.TELECOM_SERVICE);
+                    if (tm != null && tm.isInCall()) {
+                        return true;
+                    }
+                }
+            } catch (Throwable ignored) {}
+            return false;
+        }
+    }
+
+    public static boolean isInPhoneCall(Context context) {
+        return ExternalAudioDetector.isPhoneCallActive(context);
+    }
+
+    /** 仲裁引擎实现：VoiceArbiter -> 底层播放 */
+    private class ArbiterEngine implements VoiceArbiter.Engine {
+        @Override
+        public void engineStop() {
+            hardStopPlayback();
+        }
+
+        @Override
+        public void enginePlay(final String voiceFileName, final String fallbackText) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    resolveAndPlay(voiceFileName, fallbackText);
+                }
+            });
+        }
+    }
+
+    private VoiceArbiter getArbiter() {
+        VoiceArbiter a = arbiter;
+        if (a == null) {
+            synchronized (arbiterLock) {
+                a = arbiter;
+                if (a == null) {
+                    a = new VoiceArbiter(new ArbiterEngine(), new VoiceArbiter.Environment() {
+                        @Override
+                        public boolean isExternalAudioActive() {
+                            return externalDetector.shouldBlockNormalVoice();
+                        }
+                    }, MONOTONIC_CLOCK, null);
+                    arbiter = a;
+                }
+            }
+        }
+        return a;
+    }
+
+    /** 测试专用：注入仲裁器与事件监听 (生产不可用) */
+    VoiceArbiter injectArbiterForTest(VoiceArbiter a) {
+        synchronized (arbiterLock) {
+            this.arbiter = a;
+            this.arbiterReady = true;
+            return a;
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 底层物理控制 (与仲裁状态解耦)
+    // ------------------------------------------------------------------
+
+    /**
+     * 立即物理停止当前播报 (引擎层)。仲裁代数推进由 VoiceArbiter 负责。
+     */
+    private void hardStopPlayback() {
+        playSessionId.incrementAndGet();
+        if (focusReleaseRunnable != null) {
+            mainHandler.removeCallbacks(focusReleaseRunnable);
+            focusReleaseRunnable = null;
+        }
+        synchronized (playerLock) {
+            if (currentMediaPlayer != null) {
+                try {
+                    currentMediaPlayer.stop();
+                } catch (Exception ignored) {}
+                try {
+                    currentMediaPlayer.reset();
+                } catch (Exception ignored) {}
+                try {
+                    currentMediaPlayer.release();
+                } catch (Exception ignored) {}
+                currentMediaPlayer = null;
+            }
+        }
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            try {
+                if (tts != null && tts.isSpeaking()) {
+                    tts.stop();
+                }
+            } catch (Exception ignored) {}
+        } else {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (tts != null && tts.isSpeaking()) {
+                            tts.stop();
+                        }
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+        abandonAudioFocus();
+        restoreVolumeAfterPlay();
+    }
+
     private synchronized void applyVolumeOffsetBeforePlay(String voiceType) {
         if (audioManager == null) return;
         try {
@@ -140,6 +342,8 @@ public class VehicleVoicePlayer {
     private VehicleVoicePlayer(Context context) {
         this.context = context.getApplicationContext();
         this.audioManager = (AudioManager) this.context.getSystemService(Context.AUDIO_SERVICE);
+        this.externalDetector = new ExternalAudioDetector(this.context);
+        getArbiter(); // 提前建立仲裁器
         initTts();
         // 预热将内置音频解压到私有目录，确保极速秒播
         extractAssetsAsync();
@@ -227,43 +431,79 @@ public class VehicleVoicePlayer {
         if (tts == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) return;
         try {
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                private String extractGen(String utteranceId) {
+                    // utteranceId 形如 "tts_<generation>_<seq>"
+                    if (utteranceId == null) return null;
+                    String[] parts = utteranceId.split("_");
+                    return parts.length >= 3 ? parts[1] : null;
+                }
+
+                private long generationOf(String utteranceId) {
+                    try {
+                        return Long.parseLong(extractGen(utteranceId));
+                    } catch (Exception e) {
+                        return -1L;
+                    }
+                }
+
                 @Override
                 public void onStart(String utteranceId) {
                     Log.d(TAG, "TTS onStart: " + utteranceId);
                     AppLogger.i("语音播报", "TTS引擎开始发声 (" + utteranceId + ")");
+                    // 就绪即通知仲裁器进入 ACTIVE
+                    long gen = generationOf(utteranceId);
+                    notifyArbiterStarted(gen);
                 }
 
                 @Override
                 public void onDone(String utteranceId) {
                     Log.d(TAG, "TTS onDone: " + utteranceId);
                     AppLogger.i("语音播报", "TTS引擎发声播报完毕 (" + utteranceId + ")");
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (focusReleaseRunnable != null) {
-                                mainHandler.removeCallbacks(focusReleaseRunnable);
-                                focusReleaseRunnable.run();
-                            }
-                        }
-                    });
+                    // 仅当前代 onDone 才允许释放焦点与出队，杜绝过期回调错清新会话
+                    notifyArbiterFinishedIfCurrent(generationOf(utteranceId));
                 }
 
                 @Override
                 public void onError(String utteranceId) {
                     Log.w(TAG, "TTS onError: " + utteranceId);
                     AppLogger.w("语音播报", "TTS引擎发声错误 (" + utteranceId + ")，请点击【TTS设置】检查语音引擎配置");
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (focusReleaseRunnable != null) {
-                                mainHandler.removeCallbacks(focusReleaseRunnable);
-                                focusReleaseRunnable.run();
-                            }
-                        }
-                    });
+                    notifyArbiterFinishedIfCurrent(generationOf(utteranceId));
                 }
             });
         } catch (Exception ignored) {}
+    }
+
+    private void notifyArbiterStarted(final long gen) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                VoiceArbiter a = arbiter;
+                if (a != null && gen >= 0) {
+                    a.onEngineStarted(gen);
+                }
+            }
+        });
+    }
+
+    private void notifyArbiterFinishedIfCurrent(final long gen) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (focusReleaseRunnable != null) {
+                    mainHandler.removeCallbacks(focusReleaseRunnable);
+                    focusReleaseRunnable = null;
+                }
+                abandonAudioFocus();
+                restoreVolumeAfterPlay();
+                VoiceArbiter a = arbiter;
+                if (a != null && gen >= 0) {
+                    a.onEngineFinished(gen);
+                } else if (a != null) {
+                    // 无代数信息的历史回调：按当前代结束 (兼容外部引擎)
+                    a.onEngineFinished(a.currentGeneration());
+                }
+            }
+        });
     }
 
     private void initTts() {
@@ -332,51 +572,29 @@ public class VehicleVoicePlayer {
         } catch (Exception ignored) {}
     }
 
+    /**
+     * 公开停止入口：换挡跃变第一毫秒掐灭 / 主开关关闭 / 服务销毁。
+     * 仲裁代数推进 + 队列清空全部在主线程串行完成。
+     */
     public void stopCurrentVoice() {
-        playSessionId.incrementAndGet();
-        if (focusReleaseRunnable != null) {
-            mainHandler.removeCallbacks(focusReleaseRunnable);
-            focusReleaseRunnable = null;
-        }
-        synchronized (playerLock) {
-            if (currentMediaPlayer != null) {
-                try {
-                    if (currentMediaPlayer.isPlaying()) {
-                        currentMediaPlayer.stop();
-                    }
-                } catch (Exception ignored) {}
-                try {
-                    currentMediaPlayer.reset();
-                } catch (Exception ignored) {}
-                try {
-                    currentMediaPlayer.release();
-                } catch (Exception ignored) {}
-                currentMediaPlayer = null;
+        final VoiceArbiter a = getArbiter();
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                a.stopAll("stopCurrentVoice");
             }
-        }
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            try {
-                if (tts != null && tts.isSpeaking()) {
-                    tts.stop();
-                }
-            } catch (Exception ignored) {}
-        } else {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        if (tts != null && tts.isSpeaking()) {
-                            tts.stop();
-                        }
-                    } catch (Exception ignored) {}
-                }
-            });
-        }
-        abandonAudioFocus();
-        restoreVolumeAfterPlay();
+        });
     }
 
+    // ------------------------------------------------------------------
+    // 公开播报入口 (全部走仲裁)
+    // ------------------------------------------------------------------
+
     public void play(String voiceFileName, final String fallbackText) {
+        play(voiceFileName, fallbackText, resolveDefaultPriority(voiceFileName));
+    }
+
+    public void play(final String voiceFileName, final String fallbackText, final int priority) {
         // 核心优先判定：座舱车身语音播报总开关 (voice_master_switch)
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
@@ -387,8 +605,141 @@ public class VehicleVoicePlayer {
             }
         } catch (Exception ignored) {}
 
-        stopCurrentVoice();
+        final VoiceArbiter a = getArbiter();
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                a.submit(new VoiceArbiter.Request(voiceFileName, fallbackText, priority, MONOTONIC_CLOCK.now()));
+            }
+        });
+    }
 
+    public void playCustomFile(final String path) {
+        if (path == null || path.trim().isEmpty()) return;
+        // 试听/自定义文件按 P1 即时反馈处理 (用户主动操作，最高即时响应)
+        final String name = new File(path.trim()).getName();
+        play(name, "[[" + path.trim() + "]]", PRIORITY_P1_ACTION);
+    }
+
+    public void speakText(final String text) {
+        speakText(text, null);
+    }
+
+    public void speakText(final String text, final String voiceType) {
+        if (text == null || text.trim().isEmpty()) return;
+        // 纯 TTS 文本播报：以文件名 "tts:<text>" 作为仲裁身份，P2 级 (界面测试播报)
+        play("tts:" + text.trim(), text, PRIORITY_P2_DOOR);
+    }
+
+    // ------------------------------------------------------------------
+    // 仲裁引擎回调：解析并真实播放 (主线程)
+    // ------------------------------------------------------------------
+
+    private void resolveAndPlay(String voiceFileName, String fallbackText) {
+        if (voiceFileName != null && voiceFileName.startsWith("[[") && voiceFileName.endsWith("]]")) {
+            // playCustomFile 的显式文件路径直达分支
+            String path = voiceFileName.substring(2, voiceFileName.length() - 2);
+            File f = new File(path);
+            if (f.exists() && f.length() > 0) {
+                Log.i(TAG, "Playing explicit custom audio file: " + f.getAbsolutePath());
+                playAudioFile(f, f.getName());
+                return;
+            }
+            Log.w(TAG, "Custom audio file missing: " + path);
+            speakTextInternal("指定自定义音频文件不存在", voiceFileName);
+            return;
+        }
+
+        if (voiceFileName != null && voiceFileName.startsWith("tts:")) {
+            // 纯 TTS 文本播报
+            speakTextInternal(voiceFileName.substring(4), voiceFileName);
+            return;
+        }
+
+        executeActualPlay(voiceFileName, fallbackText);
+    }
+
+    private void speakTextInternal(final String text, final String arbiterKey) {
+        // 历史公开 speakText 逻辑的内部直通版本 (已由仲裁放行，不再重复仲裁)
+        try {
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            boolean masterSwitch = prefs.getBoolean("voice_master_switch", true);
+            if (!masterSwitch) {
+                Log.i(TAG, "Voice master switch is OFF, dropping TTS speak: " + text);
+                return;
+            }
+        } catch (Exception ignored) {}
+
+        if (focusReleaseRunnable != null) {
+            mainHandler.removeCallbacks(focusReleaseRunnable);
+            focusReleaseRunnable = null;
+        }
+        requestAudioFocus(arbiterKey);
+        applyVolumeOffsetBeforePlay(null);
+        SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        if (tts != null && ttsReady) {
+            try {
+                float speed = prefs.getFloat("voice_playback_speed", 1.0f);
+                tts.setSpeechRate(speed);
+            } catch (Exception ignored) {}
+            String channel = prefs.getString("voice_audio_channel", "music");
+            int streamType = ("nav".equals(channel) || "notification".equals(channel))
+                    ? AudioManager.STREAM_NOTIFICATION
+                    : AudioManager.STREAM_MUSIC;
+            android.os.Bundle ttsParams = new android.os.Bundle();
+            ttsParams.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, streamType);
+            ttsParams.putBoolean("skipTtsCta", true);
+            ttsParams.putBoolean("onlyoffline", false);
+            // utteranceId 携带仲裁代数：onDone 只在代数匹配时释放焦点
+            String uttId = "tts_" + arbiterCurrentGeneration() + "_" + System.currentTimeMillis();
+            AppLogger.i("语音播报", "发起TTS朗读: \"" + text + "\" (引擎=" + getActiveTtsEngine() + ", 声道=" + (streamType == AudioManager.STREAM_MUSIC ? "媒体" : "通知") + ")");
+
+            int speakRes;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                // 关键修复：坚决不向 TextToSpeech 注入 setAudioAttributes(USAGE_MEDIA)！
+                // 车载 Android 9 底层对 TTS 的 AudioTrack 有专用的流类型映射规则，
+                // 一旦外部注入 setAudioAttributes 会导致车机 DSP 产生总线错位静音！
+                // 恢复为系统默认原生流直通（最早可发声版本的纯净实现）
+                speakRes = tts.speak(text, TextToSpeech.QUEUE_FLUSH, ttsParams, uttId);
+            } else {
+                java.util.HashMap<String, String> map = new java.util.HashMap<>();
+                map.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(streamType));
+                map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, uttId);
+                speakRes = tts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
+            }
+            if (speakRes != TextToSpeech.SUCCESS) {
+                AppLogger.w("语音播报", "TTS speak 请求失败 (错误码: " + speakRes + ")，语音引擎可能未准备好发音数据");
+            }
+        } else {
+            // 冷启动兜底：TTS 未就绪时缓存最新一条待播台词（覆盖旧缓存），并触发一次重试预热。
+            pendingText = text;
+            pendingVoiceType = arbiterKey;
+            pendingTextAt = System.currentTimeMillis();
+            ensureTtsReady();
+            AppLogger.w("语音播报", "TTS尚未就绪，已加入待播队列并触发唤醒: " + text);
+        }
+        // 6s 超时兜底：TTS 引擎可能永远不回调 (车载 IPC 异常)；超时按失败处理，
+        // 只对当前代生效，绝不把超时当成功、也绝不误清新会话。
+        final long gen = arbiterCurrentGeneration();
+        focusReleaseRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (focusReleaseRunnable == this) {
+                    focusReleaseRunnable = null;
+                }
+                AppLogger.w("语音播报", "TTS 6秒超时未收到引擎回调，按失败兜底释放焦点 (gen=" + gen + ")");
+                notifyArbiterFinishedIfCurrent(gen);
+            }
+        };
+        mainHandler.postDelayed(focusReleaseRunnable, 6000);
+    }
+
+    private long arbiterCurrentGeneration() {
+        VoiceArbiter a = arbiter;
+        return a != null ? a.currentGeneration() : 0L;
+    }
+
+    private void executeActualPlay(String voiceFileName, final String fallbackText) {
         // 0. 用户自定义台词优先
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
@@ -402,7 +753,7 @@ public class VehicleVoicePlayer {
             }
             if (customText != null && !customText.trim().isEmpty()) {
                 Log.i(TAG, "Playing custom TTS text: " + customText);
-                speakText(customText.trim(), voiceFileName);
+                speakTextInternal(customText.trim(), voiceFileName);
                 return;
             }
         } catch (Exception ignored) {}
@@ -465,7 +816,7 @@ public class VehicleVoicePlayer {
         // 4. 兜底调用系统 TTS
         Log.i(TAG, "Fallback speaking TTS: " + fallbackText);
         AppLogger.i("语音播报", "触发朗读[系统TTS(" + getActiveTtsEngine() + ")]: " + fallbackText);
-        speakText(fallbackText, voiceFileName);
+        speakTextInternal(fallbackText, voiceFileName);
     }
 
     private File getLocalAssetFile(String voiceFileName) {
@@ -504,6 +855,7 @@ public class VehicleVoicePlayer {
 
     private void playAudioFile(final File file, final String voiceType) {
         final int sessionId = playSessionId.incrementAndGet();
+        final long arbiterGen = arbiterCurrentGeneration();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -548,6 +900,7 @@ public class VehicleVoicePlayer {
                             abandonAudioFocus();
                             restoreVolumeAfterPlay();
                             try { mediaPlayer.release(); } catch (Exception ignored) {}
+                            notifyArbiterFinishedIfCurrent(arbiterGen);
                         }
                     });
                     mp.setOnErrorListener(new MediaPlayer.OnErrorListener() {
@@ -559,6 +912,7 @@ public class VehicleVoicePlayer {
                             abandonAudioFocus();
                             restoreVolumeAfterPlay();
                             try { mediaPlayer.release(); } catch (Exception ignored) {}
+                            notifyArbiterFinishedIfCurrent(arbiterGen);
                             return true;
                         }
                     });
@@ -576,6 +930,7 @@ public class VehicleVoicePlayer {
                         }
                     } catch (Exception ignored) {}
                     mp.start();
+                    notifyArbiterStarted(arbiterGen);
                     Log.i(TAG, "MediaPlayer started successfully for " + file.getName());
                 } catch (Exception e) {
                     Log.e(TAG, "playAudioFile failed: " + e.getMessage(), e);
@@ -587,6 +942,8 @@ public class VehicleVoicePlayer {
                     synchronized (playerLock) {
                         if (currentMediaPlayer == mp) currentMediaPlayer = null;
                     }
+                    // 准备失败也要通知仲裁器结束，否则通道永久卡死
+                    notifyArbiterFinishedIfCurrent(arbiterGen);
                 }
             }
         }).start();
@@ -594,107 +951,6 @@ public class VehicleVoicePlayer {
 
     private void playAudioFile(final File file) {
         playAudioFile(file, null);
-    }
-
-    public void playCustomFile(final String path) {
-        if (path == null || path.trim().isEmpty()) return;
-        try {
-            File f = new File(path.trim());
-            if (f.exists() && f.length() > 0) {
-                Log.i(TAG, "Playing explicit custom audio file: " + f.getAbsolutePath());
-                playAudioFile(f, f.getName());
-            } else {
-                speakText("指定自定义音频文件不存在");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "playCustomFile error: " + e.getMessage());
-        }
-    }
-
-    public void speakText(final String text, final String voiceType) {
-        if (text == null || text.trim().isEmpty()) return;
-        // 核心优先判定：座舱车身语音播报总开关 (voice_master_switch)
-        try {
-            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            boolean masterSwitch = prefs.getBoolean("voice_master_switch", true);
-            if (!masterSwitch) {
-                Log.i(TAG, "Voice master switch is OFF, dropping TTS speak: " + text);
-                return;
-            }
-        } catch (Exception ignored) {}
-
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (focusReleaseRunnable != null) {
-                        mainHandler.removeCallbacks(focusReleaseRunnable);
-                        focusReleaseRunnable = null;
-                    }
-                    requestAudioFocus(voiceType);
-                    applyVolumeOffsetBeforePlay(voiceType);
-                    SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                    if (tts != null && ttsReady) {
-                        try {
-                            float speed = prefs.getFloat("voice_playback_speed", 1.0f);
-                            tts.setSpeechRate(speed);
-                        } catch (Exception ignored) {}
-                        String channel = prefs.getString("voice_audio_channel", "music");
-                        int streamType = ("nav".equals(channel) || "notification".equals(channel))
-                                ? AudioManager.STREAM_NOTIFICATION
-                                : AudioManager.STREAM_MUSIC;
-                        android.os.Bundle ttsParams = new android.os.Bundle();
-                        ttsParams.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, streamType);
-                        ttsParams.putBoolean("skipTtsCta", true);
-                        ttsParams.putBoolean("onlyoffline", false);
-                        String uttId = "tts_" + System.currentTimeMillis();
-                        AppLogger.i("语音播报", "发起TTS朗读: \"" + text + "\" (引擎=" + getActiveTtsEngine() + ", 声道=" + (streamType == AudioManager.STREAM_MUSIC ? "媒体" : "通知") + ")");
-
-                        int speakRes = -1;
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            // 关键修复：坚决不向 TextToSpeech 注入 setAudioAttributes(USAGE_MEDIA)！
-                            // 车载 Android 9 底层对 TTS 的 AudioTrack 有专用的流类型映射规则，
-                            // 一旦外部注入 setAudioAttributes 会导致车机 DSP 产生总线错位静音！
-                            // 恢复为系统默认原生流直通（最早可发声版本的纯净实现）
-                            speakRes = tts.speak(text, TextToSpeech.QUEUE_FLUSH, ttsParams, uttId);
-                        } else {
-                            java.util.HashMap<String, String> map = new java.util.HashMap<>();
-                            map.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(streamType));
-                            map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, uttId);
-                            speakRes = tts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
-                        }
-                        if (speakRes != TextToSpeech.SUCCESS) {
-                            AppLogger.w("语音播报", "TTS speak 请求失败 (错误码: " + speakRes + ")，语音引擎可能未准备好发音数据");
-                        }
-                    } else {
-                        // 冷启动兜底：TTS 未就绪时缓存最新一条待播台词（覆盖旧缓存），并触发一次重试预热。
-                        // 引擎 onInit 成功后会立即 flushPendingSpeech() 补出，绝不丢失点火后首条语音。
-                        pendingText = text;
-                        pendingVoiceType = voiceType;
-                        pendingTextAt = System.currentTimeMillis();
-                        ensureTtsReady();
-                        AppLogger.w("语音播报", "TTS尚未就绪，已加入待播队列并触发唤醒: " + text);
-                    }
-                    focusReleaseRunnable = new Runnable() {
-                        @Override
-                        public void run() {
-                            abandonAudioFocus();
-                            restoreVolumeAfterPlay();
-                            focusReleaseRunnable = null;
-                        }
-                    };
-                    mainHandler.postDelayed(focusReleaseRunnable, 6000);
-                } catch (Exception e) {
-                    Log.w(TAG, "speakText error: " + e.getMessage());
-                    abandonAudioFocus();
-                    restoreVolumeAfterPlay();
-                }
-            }
-        });
-    }
-
-    public void speakText(final String text) {
-        speakText(text, null);
     }
 
     /**
@@ -754,12 +1010,14 @@ public class VehicleVoicePlayer {
     private void requestAudioFocus(String voiceType) {
         if (audioManager == null) return;
         try {
-            // 核心铁律：当车载蓝牙音频通道处于激活连接态时，严禁申请 AudioFocus！
-            // 吉利原厂蓝牙协议栈收到焦点退让广播 (-3) 后，会反向向手机下发 AVRCP keyCode 68 (PAUSE)，
-            // 导致微信语音或手机音乐被强制暂停掐断。直接走 AudioFlinger PCM 底层硬件混音即可完美共存！
+            // 核心铁律：当车载蓝牙音频通道处于活跃连接态时，严禁申请 AudioFocus！
+            // 吉利原厂蓝牙协议栈收到焦点退让广播 (-3) 后，会反向向手机下发 AVRCP 指令，
+            // 其中十进制 keyCode 68 = 0x44 = PLAY，keyCode 70 = 0x46 = PAUSE；
+            // 误触发 PAUSE 会导致微信语音或手机音乐被强制暂停掐断。
+            // 直接走 AudioFlinger PCM 底层硬件混音即可完美共存！
             try {
                 if (EasMediaBridge.getInstance(context).isBluetoothChannelActive()) {
-                    Log.i(TAG, "Bluetooth channel active, bypassing requestAudioFocus to prevent sending AVRCP PAUSE to phone.");
+                    Log.i(TAG, "Bluetooth channel active, bypassing requestAudioFocus to prevent AVRCP PAUSE(0x46/70) to phone.");
                     return;
                 }
             } catch (Throwable ignored) {}
@@ -878,7 +1136,7 @@ public class VehicleVoicePlayer {
             }
             return count;
         } catch (Exception e) {
-            Log.e(TAG, "extractVoiceZip error: " + e.getMessage());
+            Log.e(TAG, "extractVoiceZip error: " + e.getMessage(), e);
             return -1;
         } finally {
             if (zis != null) {

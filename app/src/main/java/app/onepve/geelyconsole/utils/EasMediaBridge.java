@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaMetadata;
 import android.media.session.MediaController;
@@ -31,11 +32,22 @@ import java.util.List;
  *    解决冻结原厂多媒体后手机蓝牙/微信语音无声的死锁痛点；在【米小江优先】模式下主动退让，零冲突。
  * 2. 仪表/屏保播放状态投递开关 (wheel_push_playback_cluster，默认 false)：开启时向 EAS 投递歌名歌手，息屏唤起音乐卡片。
  * 3. 仪表盘实时歌词投递开关 (wheel_push_lyrics_cluster，默认 false)：开启时向仪表盘/HUD 投递当前歌词。
+ *
+ * 音频状态事实边界 (不编造能力)：
+ * - A2DP「已连接 (connected)」≠「正在推流 (streaming/active)」：只有底层 AUDIO_STATE_CHANGED
+ *   上报 STATE_STARTED 才认为蓝牙音频流真正活跃。手机暂停音乐后连接仍在但推流停止。
+ * - 车机侧无法分辨手机端推的是「微信语音」还是「本地音乐」——二者在 A2DP 通道上完全同构，
+ *   因此一律按「外部蓝牙音频流」同等保护 (免焦点申请防 AVRCP 反向下发)。
+ * - AVRCP 十进制键码事实：68 (0x44) = PLAY，70 (0x46) = PAUSE。原厂协议栈在焦点退让时
+ *   反向下发的是 PAUSE (70)，绝非 68。
  */
 public class EasMediaBridge {
     private static final String TAG = "EasMediaBridge";
     public static final String PKG_BLUETOOTH = "com.android.bluetooth";
     public static final int SOURCE_TYPE_BLUETOOTH = 6;
+
+    /** A2DP Sink 音频流状态广播中的真实推流态 (STATE_STARTED) */
+    private static final int A2DP_AUDIO_STATE_STARTED = 1;
 
     private static volatile EasMediaBridge sInstance;
     private final Context appContext;
@@ -46,7 +58,8 @@ public class EasMediaBridge {
     private boolean mRegistered = false;
     private boolean mInitStarted = false;
 
-    private boolean a2dpSinkConnected = false;
+    private boolean a2dpSinkConnected = false;   // 物理连接态 (connected != active!)
+    private volatile boolean a2dpStreaming = false; // 底层真实推流态 (AUDIO_STATE_CHANGED STATE_STARTED)
     private BroadcastReceiver a2dpReceiver;
     private long lastA2dpWakeTime = 0;
 
@@ -172,7 +185,7 @@ public class EasMediaBridge {
                 mApi.declareSupportCollectTypes(mToken, new int[]{0, 3, 4});
                 AppLogger.i("音频通道", "EAS 注册成功，已声明蓝牙音频能力 (SourceType=6)");
 
-                // 若手机蓝牙处于连接状态，立即激活蓝牙音频通路
+                // 若手机蓝牙处于推流状态，立即激活蓝牙音频通路
                 if (a2dpSinkConnected) {
                     activateBluetoothChannel();
                 }
@@ -191,7 +204,7 @@ public class EasMediaBridge {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
                 AppLogger.i("蓝牙音频", "已下发 updateCurrentSourceType(6)，原车蓝牙音频物理通道已选通！");
             }
-            // 关键：通知底层 com.android.bluetooth A2dpSink 激活音频焦点，解除 MT8666 音量为 0 与被动 Pause 限制
+            // 关键：通知底层 com.android.bluetooth A2dpSink 激活音频焦点，解除 MT8666 音量为 0 与被动暂停限制
             wakeBluetoothAudioSink();
 
             // 申请系统音频焦点，采用车规闪避属性，与高德导航及车身播报混音共存
@@ -228,8 +241,21 @@ public class EasMediaBridge {
         }
     }
 
+    /**
+     * 蓝牙外部音频流是否真正活跃 (正在推流)。
+     * 事实边界：仅底层 A2DP Sink AUDIO_STATE_CHANGED 上报 STATE_STARTED 时为 true；
+     * 「已连接但未推流」(connected-only，手机暂停了音乐) 返回 false。
+     * 车机侧无法、也不试图分辨手机端推的是微信语音还是本地音乐。
+     */
     public synchronized boolean isBluetoothChannelActive() {
-        return mRegistered && a2dpSinkConnected;
+        return a2dpStreaming;
+    }
+
+    /**
+     * A2DP Sink 物理连接态 (连接不等于推流)。仅作 UI/诊断显示。
+     */
+    public synchronized boolean isA2dpSinkConnected() {
+        return a2dpSinkConnected;
     }
 
     /**
@@ -315,7 +341,7 @@ public class EasMediaBridge {
     }
 
     /**
-     * 监听 A2DP Sink 连接状态
+     * 监听 A2DP Sink 连接与真实推流状态
      */
     private void registerA2dpReceiver() {
         if (a2dpReceiver != null) return;
@@ -336,7 +362,7 @@ public class EasMediaBridge {
                     int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
                     if (state == 2) {
                         a2dpSinkConnected = true;
-                        AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已连接，准备选通音频通道并唤醒链路");
+                        AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已连接 (connected)，准备选通音频通道并唤醒链路");
                         mainHandler.postDelayed(new Runnable() {
                             @Override
                             public void run() {
@@ -345,11 +371,27 @@ public class EasMediaBridge {
                         }, 1000);
                     } else if (state == 0) {
                         a2dpSinkConnected = false;
-                        AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已断开");
+                        a2dpStreaming = false; // 断开必然不再推流
+                        AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已断开，推流态同步复位");
                     }
-                } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action) ||
-                           "android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED".equals(action)) {
+                } else if ("android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED".equals(action)) {
+                    // 真实推流状态：只有 STATE_STARTED 才认为蓝牙音频流活跃 (connected != streaming)
+                    int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
+                    boolean streaming = (state == A2DP_AUDIO_STATE_STARTED);
+                    if (streaming != a2dpStreaming) {
+                        a2dpStreaming = streaming;
+                        AppLogger.i("蓝牙音频", "蓝牙 A2DP 推流状态跃变: streaming=" + streaming
+                                + " (connected=" + a2dpSinkConnected + ")");
+                    }
                     // 当手机端点开微信语音或音乐开始推流瞬间，毫秒级唤醒 A2DP Sink AudioFocus 与选通通道，杜绝无声与被动暂停
+                    if (streaming) {
+                        long now = System.currentTimeMillis();
+                        if (now - lastA2dpWakeTime > 4000) {
+                            lastA2dpWakeTime = now;
+                            activateBluetoothChannel();
+                        }
+                    }
+                } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
                     long now = System.currentTimeMillis();
                     if (now - lastA2dpWakeTime > 4000) {
                         lastA2dpWakeTime = now;

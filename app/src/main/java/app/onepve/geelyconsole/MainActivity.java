@@ -47,11 +47,13 @@ import app.onepve.geelyconsole.utils.DownloadManager;
 import app.onepve.geelyconsole.utils.FloatingWindowManager;
 import app.onepve.geelyconsole.utils.ForegroundAppDetector;
 import app.onepve.geelyconsole.utils.IdleScreensaverManager;
+import app.onepve.geelyconsole.utils.PrefsCompat;
 import app.onepve.geelyconsole.utils.SystemUtils;
 import app.onepve.geelyconsole.utils.SystemUtils.LogDumpProgressListener;
 import app.onepve.geelyconsole.utils.ThemePatcher;
 import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
 import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
+import app.onepve.geelyconsole.utils.DriveModeManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -2746,6 +2748,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_enable_mode_eco", prefs.getBoolean("voice_enable_mode_eco", true));
                 obj.put("voice_enable_mode_sport", prefs.getBoolean("voice_enable_mode_sport", true));
 
+                // 车况感知与安全守护 (测试)
+                obj.put("voice_enable_steer_angle_guard", prefs.getBoolean("voice_enable_steer_angle_guard", true));
+                obj.put("voice_enable_epb_guard", prefs.getBoolean("voice_enable_epb_guard", true));
+                obj.put("voice_enable_low_fuel_guard", prefs.getBoolean("voice_enable_low_fuel_guard", true));
+                obj.put("voice_enable_powertrain_guard", prefs.getBoolean("voice_enable_powertrain_guard", true));
+
+                // 上车预设驾驶模式 (测试)
+                obj.put("vehicle_preset_drive_mode_enabled", prefs.getBoolean("vehicle_preset_drive_mode_enabled", false));
+                obj.put("vehicle_preset_drive_mode_target", PrefsCompat.getString(prefs, "vehicle_preset_drive_mode_target", "default"));
+
                 // 默认值：出厂统一默认控制台独立接管模式，短按 Mode 唤起 360
                 boolean hasCarMedia = SystemUtils.isPackageInstalled(MainActivity.this, "com.ecarx.carmedia");
                 String defaultWheelMode = "toolbox_alone";
@@ -2972,6 +2984,81 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
             });
             return true;
+        }
+
+        @JavascriptInterface
+        public String testSwitchDriveMode(final String mode) {
+            // 同步返回 JSON 结果字符串 {status, message}；前端 JSON.parse。
+            // 只有 status="sent" 表示请求已下发 (绝非切换成功)，不伪造任何成功状态。
+            org.json.JSONObject result;
+            try {
+                // 手动测试门槛: 停稳 P 挡 + 发动机运行才放行 (与自动路径同一安全门控)
+                boolean engineRunning = VehicleAutomationService.isEngineRunningForBridge();
+                boolean parked = VehicleAutomationService.isParkedStillForBridge();
+                if (!engineRunning) {
+                    result = new org.json.JSONObject();
+                    result.put("status", "blocked");
+                    result.put("message", "当前未检测到发动机运行 (KEY ON/ACC 待机不算点火)，为安全已拒绝实测下发");
+                    return result.toString();
+                }
+                if (!parked) {
+                    result = new org.json.JSONObject();
+                    result.put("status", "blocked");
+                    result.put("message", "当前未检测到停稳 P 挡 + 零车速，为安全已拒绝实测下发，请挂 P 挡停稳后再试");
+                    return result.toString();
+                }
+                result = DriveModeManager.switchDriveModeWithResult(MainActivity.this, mode);
+            } catch (Throwable t) {
+                try {
+                    result = new org.json.JSONObject();
+                    result.put("status", "error");
+                    result.put("message", "桥接执行出错: " + t.getMessage());
+                } catch (Exception ignored) {
+                    return "{\"status\":\"error\",\"message\":\"桥接执行出错\"}";
+                }
+            }
+            return result.toString();
+        }
+
+        @JavascriptInterface
+        public String getExperimentalVehicleStatus() {
+            // 实验通道车辆状态 (供前端显示真实物理状态，绝不编造)
+            try {
+                org.json.JSONObject obj = new org.json.JSONObject();
+                boolean engineRunning = VehicleAutomationService.isEngineRunningForBridge();
+                obj.put("engine_running", engineRunning);
+                obj.put("gear", VehicleAutomationService.lastGearPos);
+                obj.put("speed_kmh", VehicleAutomationService.currentSpeedKmH);
+                obj.put("battery_volt", (double) VehicleAutomationService.latestBatteryVoltage);
+                obj.put("drive_mode", VehicleAutomationService.lastDriveMode);
+                // 状态描述: 如实汇报，未知就是未知
+                StringBuilder sb = new StringBuilder();
+                sb.append(engineRunning ? "发动机运行中" : "发动机未确认运行 (可能 KEY ON/ACC)");
+                if (VehicleAutomationService.currentSpeedKmH == 0) {
+                    sb.append(", 零车速");
+                } else {
+                    sb.append(", 车速 ").append(VehicleAutomationService.currentSpeedKmH).append("km/h");
+                }
+                if (VehicleAutomationService.lastGearPos == 5) {
+                    sb.append(", P挡");
+                } else if (VehicleAutomationService.lastGearPos > 0) {
+                    sb.append(", 非P挡");
+                } else {
+                    sb.append(", 挡位未定");
+                }
+                obj.put("message", sb.toString());
+                obj.put("status", engineRunning ? "ok" : "unknown");
+                return obj.toString();
+            } catch (Throwable t) {
+                try {
+                    org.json.JSONObject obj = new org.json.JSONObject();
+                    obj.put("status", "error");
+                    obj.put("message", "状态读取失败: " + t.getMessage());
+                    return obj.toString();
+                } catch (Exception ignored) {
+                    return "{\"status\":\"error\",\"message\":\"状态读取失败\"}";
+                }
+            }
         }
 
         @JavascriptInterface
@@ -3275,6 +3362,21 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         player.play("flameout.mp3", "车辆已熄火，请带好随身物品");
                     } else if ("seatbelt".equals(type)) {
                         player.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
+                    } else if ("steer_angle_guard".equals(type)) {
+                        // 车况安全守护试听 (P3): 纯界面试听，与真实触发无关
+                        player.play("steer_angle_guard.mp3", "请注意回正方向盘", VehicleVoicePlayer.PRIORITY_P3_ADVISORY);
+                    } else if ("epb_guard".equals(type)) {
+                        // 车况安全守护试听 (P0): 纯界面试听，与真实触发无关
+                        player.play("epb_alarm.mp3", "警告，电子手刹未拉起", VehicleVoicePlayer.PRIORITY_P0_ALARM);
+                    } else if ("low_fuel".equals(type)) {
+                        // 车况安全守护试听 (P3): 纯界面试听，与真实触发无关
+                        player.play("low_fuel.mp3", "燃油即将耗尽，请及时加油", VehicleVoicePlayer.PRIORITY_P3_ADVISORY);
+                    } else if ("tcu_alarm".equals(type)) {
+                        // 车况安全守护试听 (P0): 纯界面试听，与真实触发无关
+                        player.play("tcu_alarm.mp3", "警告，变速箱油温过高，请靠边停车怠速散热", VehicleVoicePlayer.PRIORITY_P0_ALARM);
+                    } else if ("oil_alarm".equals(type)) {
+                        // 车况安全守护试听 (P0): 纯界面试听，与真实触发无关
+                        player.play("oil_alarm.mp3", "警告，机油压力过低，请检查发动机", VehicleVoicePlayer.PRIORITY_P0_ALARM);
                     } else {
                         if (!player.isTtsReady()) {
                             player.ensureTtsReady();

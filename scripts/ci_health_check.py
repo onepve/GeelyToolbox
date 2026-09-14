@@ -275,7 +275,7 @@ else:
 log_step("7. Checking Voice Audio Asset Completeness (Zero Dead Audio)")
 audio_refs = set()
 for root, _, files in os.walk(ROOT_DIR):
-    if "node_modules" in root or ".git" in root:
+    if "node_modules" in root or ".git" in root or "/src/test" in root or "/build/" in root:
         continue
     for fn in files:
         if fn.endswith((".java", ".vue")):

@@ -31,8 +31,10 @@ def region(source, marker):
 
 # id, path, method/block marker, required regexes, forbidden regexes
 CONTRACTS = [
- ('tts-buffer', JAVA+'utils/VehicleVoicePlayer.java', 'public void speakText(final String text, final String voiceType)',
-  [r'pendingText\s*=\s*text', r'pendingVoiceType\s*=\s*voiceType', r'pendingTextAt\s*=\s*System.currentTimeMillis\(\)', r'ensureTtsReady\(\)'], []),
+ ('tts-arbiter-route', JAVA+'utils/VehicleVoicePlayer.java', 'public void speakText(final String text, final String voiceType)',
+  [r'play\("tts:"', r'PRIORITY_P2_DOOR'], []),
+ ('tts-buffer', JAVA+'utils/VehicleVoicePlayer.java', 'private void speakTextInternal(final String text, final String arbiterKey)',
+  [r'pendingText\s*=\s*text', r'pendingVoiceType\s*=\s*arbiterKey', r'pendingTextAt\s*=\s*System.currentTimeMillis\(\)', r'ensureTtsReady\(\)'], []),
  ('tts-ready-flush', JAVA+'utils/VehicleVoicePlayer.java', 'private void initTts()', [r'ttsReady\s*=\s*true', r'flushPendingSpeech\(\)'], []),
  ('tts-expiry', JAVA+'utils/VehicleVoicePlayer.java', 'private void flushPendingSpeech()',
   [r'System.currentTimeMillis\(\)\s*-\s*at\s*>\s*PENDING_TTL_MS', r'pendingText\s*=\s*null',r'speakText\(text,\s*voiceType\)'], []),

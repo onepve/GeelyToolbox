@@ -182,4 +182,93 @@ public class DriveModeManager {
             default: return "模式(" + mode + ")";
         }
     }
+
+    /**
+     * 主动请求切换驾驶模式 (测试通道) —— 仅是「下发请求」，绝不等于切换成功。
+     *
+     * 原厂源码证据 (CarService_java ECarXCarConfigService.java)：
+     * - 底层唯一确认的控制入口是原厂 ECarXCarConfigService 监听 HAL 属性
+     *   INFO_ID_VDRIVEINFO_SWITCH_DRIVER_MODE (678428908)，在模式值跃变时才
+     *   startService(new Intent("ecarx.settings.ACTION_DRIVE_MODE").setPackage("ecarx.settings")
+     *   .putExtra("intentKey", converDriveMode(status)))。
+     * - converDriveMode 官方映射 (1=舒适 570491138 / 2=运动 570491139 / 3=经济 570491137 /
+     *   4=越野 570491140 / 5=雪地 570491145)；570491158(ADAPTIVE) 仅出现在 LocalConfig
+     *   getDriveMode() 支持列表中，不在 converDriveMode 输出内 —— smart 下发代码不存在。
+     * - 原厂发送的是 startService (显式 Intent + setPackage)，不是 broadcast。
+     *
+     * 工具箱作为第三方应用无法写 HAL vendor 属性 (CAR_VENDOR_EXTENSION signature|privileged)，
+     * 只能尝试以显式 startService 复刻原厂入口；接收端 ecarx.settings 在固件内无源码，
+     * 是否放行只能实车验证。因此：
+     *   1. status="sent"    —— 请求已成功送出 (仅表示请求下发，不代表模式已切换)；
+     *   2. status="blocked" —— 底层拒绝 (SecurityException/目标服务不存在)；
+     *   3. status="unsupported" —— 目标模式在原厂映射表中不存在 (smart/unknown)；
+     *   4. 绝不发伪造状态的 DRIVE_MODE_CHANGED 全局广播 (旧版通道 2 已删除)；
+     *      那是原厂系统内部的「模式已变化」通知，第三方伪造会造成状态错乱。
+     */
+    public static org.json.JSONObject switchDriveModeWithResult(Context context, String modeStr) {
+        org.json.JSONObject result = new org.json.JSONObject();
+        try {
+            result.put("status", "error");
+            result.put("message", "");
+        } catch (Exception ignored) {}
+        if (context == null || modeStr == null) {
+            return put(result, "error", "上下文或模式为空");
+        }
+        String mode = modeStr.trim().toLowerCase();
+        int modeCode;
+        int targetInt;
+        switch (mode) {
+            case "comfort":
+                modeCode = 570491138; // 原厂 converDriveMode(1)
+                targetInt = MODE_COMFORT;
+                break;
+            case "sport":
+                modeCode = 570491139; // 原厂 converDriveMode(2)
+                targetInt = MODE_SPORT;
+                break;
+            case "eco":
+                modeCode = 570491137; // 原厂 converDriveMode(3)
+                targetInt = MODE_ECO;
+                break;
+            case "default":
+            case "":
+                // default = 保持原厂智能模式: 语义上就没有「切换」可言，静默拒绝
+                return put(result, "unsupported",
+                        "当前预设为「保持原厂」，不存在需要下发的切换请求；请先在上方选择 智能/舒适/经济/运动 之外的目标模式");
+            default:
+                // smart 不在原厂 converDriveMode 映射表内 (其值 570491158 不是该函数输出)，
+                // 无法构造合法 intentKey → 证据不足，返回 unsupported 静默，绝不猜 ID。
+                return put(result, "unsupported",
+                        "目标模式 [" + modeStr + "] 无原厂下发映射 (仅支持 comfort/sport/eco)，已静默拒绝");
+        }
+
+        try {
+            AppLogger.i(TAG, "【测试切换驾驶模式】目标模式: " + mode + ", intentKey=" + modeCode
+                    + " (仅下发请求，成功与否以仪表跃变为准)");
+            // 唯一通道: 复刻原厂 ECarXCarConfigService 的显式 startService 入口
+            android.content.Intent intent = new android.content.Intent("ecarx.settings.ACTION_DRIVE_MODE");
+            intent.setPackage("ecarx.settings");
+            intent.putExtra("intentKey", modeCode);
+            intent.putExtra("driveMode", targetInt);
+            context.startService(intent);
+            return put(result, "sent",
+                    "切换请求已下发 (intentKey=" + modeCode + ")，请观察仪表盘模式图标是否跟随跃变；"
+                    + "未跃变即代表底层网关未放行软切换，工具箱绝不伪造成功");
+        } catch (SecurityException se) {
+            AppLogger.w(TAG, "【测试切换驾驶模式】底层权限拒绝: " + se.getMessage());
+            return put(result, "blocked",
+                    "底层网关拒绝下发 (目标服务未导出或权限不足): " + se.getMessage());
+        } catch (Throwable t) {
+            AppLogger.e(TAG, "切换驾驶模式异常: " + t.getMessage());
+            return put(result, "error", "底层执行出错: " + t.getMessage());
+        }
+    }
+
+    private static org.json.JSONObject put(org.json.JSONObject obj, String status, String message) {
+        try {
+            obj.put("status", status);
+            obj.put("message", message);
+        } catch (Exception ignored) {}
+        return obj;
+    }
 }

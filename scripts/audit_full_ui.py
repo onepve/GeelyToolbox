@@ -47,7 +47,7 @@ async def run_audit():
 
     total_violations = []
 
-    async with websockets.connect(ws_url) as ws:
+    async with websockets.connect(ws_url, max_size=16 * 1024 * 1024) as ws:
         async def evaluate(js):
             msg = {"id": 1, "method": "Runtime.evaluate", "params": {"expression": js, "returnByValue": True}}
             await ws.send(json.dumps(msg))
