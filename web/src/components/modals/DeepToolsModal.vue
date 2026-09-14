@@ -30,7 +30,12 @@
     <div class="mb-5">
       <div class="flex items-center justify-between mb-3">
         <div class="text-[21px] font-black text-car-text">原厂预装组件推荐冻结 / 解冻 (二次确认保护)</div>
-        <span class="text-[13px] text-car-sub font-bold">释放车机约 150MB 运存 · 彻底杜绝开机自启抢占与后台偷跑</span>
+        <button 
+          @click="openAllAppsFromAdb"
+          class="text-[14.5px] font-black text-car-accent hover:text-amber-400 cursor-pointer flex items-center space-x-1"
+        >
+          <span>查看整车所有已安装软件清单 (卸载/冻结/清数据) ➔</span>
+        </button>
       </div>
       <div class="grid grid-cols-4 gap-3.5">
         <!-- 1. 吉利应用商店 -->
@@ -212,6 +217,11 @@ onMounted(() => {
 
 function openOtaCapture() {
   openModal('otaCapture');
+}
+
+function openAllAppsFromAdb() {
+  closeModal('deepTools');
+  store.modals.allApps = true;
 }
 
 const termContainer = ref(null);

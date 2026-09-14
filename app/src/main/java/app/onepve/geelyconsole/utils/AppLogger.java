@@ -48,7 +48,7 @@ public class AppLogger {
     // 聚焦座舱核心状态，高频/调试通道按需开启避免日志风暴
     private static final java.util.Map<String, Boolean> DEFAULT_MODULE_STATES = new java.util.HashMap<>();
     private static final java.util.List<String> KNOWN_MODULES = java.util.Arrays.asList(
-            "电源状态", "挡位状态", "驾驶模式", "车门状态", "语音播报", "方控按键");
+            "电源状态", "挡位状态", "驾驶模式", "车门状态", "语音播报", "方控按键", "蓝牙音频");
     static {
         // 日志按需采集哲学：默认全关，零 I/O 写入开销与零日志风暴。排查问题时车主按需开启对应模块。
         DEFAULT_MODULE_STATES.put("电源状态", false);
@@ -57,6 +57,7 @@ public class AppLogger {
         DEFAULT_MODULE_STATES.put("车门状态", false);
         DEFAULT_MODULE_STATES.put("语音播报", false);
         DEFAULT_MODULE_STATES.put("方控按键", false);
+        DEFAULT_MODULE_STATES.put("蓝牙音频", false);
     }
 
     public static void init(android.content.Context ctx) {

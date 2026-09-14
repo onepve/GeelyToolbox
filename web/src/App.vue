@@ -38,6 +38,7 @@
     <AppSelectModal />
     <CleanDownloadModal />
     <VoiceThemeImportModal />
+    <AllAppsModal />
 
     <!-- 极简 Toast 提示 -->
     <transition name="fade">
@@ -92,6 +93,7 @@ import OtaCaptureModal from './components/modals/OtaCaptureModal.vue';
 import AppSelectModal from './components/modals/AppSelectModal.vue';
 import CleanDownloadModal from './components/modals/CleanDownloadModal.vue';
 import VoiceThemeImportModal from './components/modals/VoiceThemeImportModal.vue';
+import AllAppsModal from './components/modals/AllAppsModal.vue';
 
 import { store, bridge } from './store';
 

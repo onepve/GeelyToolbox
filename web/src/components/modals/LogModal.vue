@@ -8,21 +8,6 @@
     @close="closeModal('log')"
   >
     <div class="flex flex-col space-y-3">
-      <!-- 顶部轻量信息条 (不占过多垂直空间，防遮挡) -->
-      <div class="bg-car-item border border-car-border rounded-xl px-4 py-2.5 flex items-center justify-between shadow-sm">
-        <div class="flex items-center space-x-2.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10B981]"></span>
-          <span class="text-[14.5px] font-mono text-car-text font-bold">
-            {{ logInfo.path }}
-          </span>
-        </div>
-        <div class="flex items-center space-x-2 text-[13px] text-car-sub font-bold">
-          <span>体积: {{ logInfo.size }}</span>
-          <span>·</span>
-          <span class="text-car-accent font-mono font-bold">最新在上 · 保留 300 行</span>
-        </div>
-      </div>
-
       <!-- 模块日志开关：用户可独立控制高频模块写入，默认关闭以避免日志风暴卡死界面 -->
       <div class="bg-car-item border border-car-border rounded-xl p-3 shadow-sm">
         <div class="text-[13.5px] text-car-sub font-bold mb-2 flex items-center">
@@ -44,7 +29,7 @@
           </button>
         </div>
         <div class="mt-2.5 pt-2 border-t border-car-border/40 text-[12px] text-car-accent font-bold leading-relaxed">
-          💡 【存储寿命保护指南】：出厂默认全部关闭。守护日志全程在 RAM 内存流转，0 次磁盘擦写；仅在需要排查问题时按需开启对应模块，点击底部【导出日志 (ZIP)】直接打包为轻量压缩包。
+          💡 【存储寿命保护指南】：出厂默认全部关闭。守护日志全程在 RAM 内存流转，0 次磁盘擦写；仅在需要排查问题时按需开启对应模块，点击底部【导出全量日志 (ZIP)】一键打包整车全量诊断包。
         </div>
       </div>
 
@@ -129,7 +114,8 @@ const MODULE_LABELS = {
   '驾驶模式': '驾驶模式',
   '车门状态': '车门状态',
   '语音播报': '语音播报',
-  '方控按键': '方控按键'
+  '方控按键': '方控按键',
+  '蓝牙音频': '蓝牙音频'
 };
 const moduleSwitches = ref([]);
 

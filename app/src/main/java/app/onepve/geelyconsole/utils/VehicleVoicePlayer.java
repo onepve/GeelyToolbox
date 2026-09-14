@@ -473,7 +473,13 @@ public class VehicleVoicePlayer {
             File voiceDir = new File(context.getFilesDir(), "voices");
             if (!voiceDir.exists()) voiceDir.mkdirs();
             File target = new File(voiceDir, voiceFileName);
-            if (target.exists() && target.length() > 0) {
+
+            // 检查应用版本：当升级安装新版时，强制重新从 assets 提取覆盖，确保新音频立即生效！
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            int currentCode = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionCode;
+            int lastExtractedCode = prefs.getInt("last_asset_extracted_code", 0);
+
+            if (target.exists() && target.length() > 0 && currentCode <= lastExtractedCode) {
                 return target;
             }
 
@@ -486,12 +492,13 @@ public class VehicleVoicePlayer {
                     out.write(buf, 0, len);
                 }
             }
+            if (currentCode > lastExtractedCode) {
+                prefs.edit().putInt("last_asset_extracted_code", currentCode).apply();
+            }
             if (target.exists() && target.length() > 0) {
                 return target;
             }
-        } catch (Exception e) {
-            Log.d(TAG, "Asset " + voiceFileName + " not in assets folder: " + e.getMessage());
-        }
+        } catch (Exception ignored) {}
         return null;
     }
 

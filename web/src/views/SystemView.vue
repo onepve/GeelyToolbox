@@ -45,14 +45,22 @@
       <!-- 2. 车机深度工具箱 & ADB 控制台 (从顶栏移至此处) -->
       <FeatureCard 
         title="2. 车机深度工具箱 & ADB"
-        desc="内置本地 ADB Client 2000 端口，提供命令行交互与系统维护。"
+        desc="内置本地 ADB 与整车应用管理，支持系统/用户分类、冻结与卸载。"
       >
-        <button 
-          @click="openDeepTools"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center justify-center whitespace-nowrap"
-        >
-          <span>打开 ADB 交互控制台</span>
-        </button>
+        <div class="flex space-x-2.5 w-full">
+          <button 
+            @click="openAllApps"
+            class="flex-1 min-h-[72px] rounded-2xl border-2 border-car-border hover:border-car-border-light bg-car-item text-car-text font-black text-[16.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+          >
+            <span>应用高级管理</span>
+          </button>
+          <button 
+            @click="openDeepTools"
+            class="flex-1 min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[16.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center justify-center whitespace-nowrap"
+          >
+            <span>ADB 交互终端</span>
+          </button>
+        </div>
       </FeatureCard>
 
       <!-- 3. 安装白名单属性放行 -->
@@ -76,28 +84,14 @@
       <!-- 4. 运行与安全审计日志 -->
       <FeatureCard 
         title="4. 运行与守护日志"
-        desc="实时采集车门、挡位与方控信号记录，支持独立清空与离线导出。"
+        desc="实时采集车门、挡位与方控信号记录，支持独立清空与一键全量导出。"
       >
-        <div class="flex space-x-3 w-full">
-          <button 
-            @click="openLogModal"
-            class="flex-1 min-h-[72px] rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
-          >
-            <span>查看守护日志</span>
-          </button>
-          <button 
-            @click="dumpLogcatFromMain"
-            :disabled="isMainDumping"
-            :class="[
-              'flex-1 min-h-[72px] rounded-2xl border-2 font-black text-[17px] transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
-              isMainDumping
-                ? 'bg-car-card border-car-accent text-car-accent opacity-80 cursor-wait'
-                : 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20 cursor-pointer hover:border-car-accent'
-            ]"
-          >
-            <span>{{ isMainDumping ? '⏳ 正在打包...' : '⚡ 导出全量日志' }}</span>
-          </button>
-        </div>
+        <button 
+          @click="openLogModal"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+        >
+          <span>查看与管理守护日志</span>
+        </button>
       </FeatureCard>
 
       <!-- 5. 应用商店管理 (带二次校验) -->
@@ -166,21 +160,12 @@ function openDeepTools() {
   openModal('deepTools');
 }
 
-function openLogModal() {
-  store.modals.log = true;
+function openAllApps() {
+  store.modals.allApps = true;
 }
 
-const isMainDumping = ref(false);
-function dumpLogcatFromMain() {
-  if (isMainDumping.value) return;
-  isMainDumping.value = true;
-  showToast('正在后台采集并打包车机日志，请稍候...');
-  try {
-    bridge.call('dumpSystemLogcat');
-  } catch (e) {}
-  setTimeout(() => {
-    isMainDumping.value = false;
-  }, 4000);
+function openLogModal() {
+  store.modals.log = true;
 }
 
 function confirmFreezeStore() {

@@ -1187,6 +1187,15 @@ public class SystemUtils {
                     "GeelyToolbox", "VehicleAutomationService",
                     "VehicleVoicePlayer", "系统日志", "HAL探针", "去重");
 
+            File btFile = filterLogByKeywords(logFile, new File(tempDir, "bluetooth.log"),
+                    "Bluetooth", "bluetooth", "a2dp", "A2DP", "A2dpSink", "bt_stack", "avdt",
+                    "AudioFocus", "requestAudioFocus", "abandonAudioFocus", "EasMediaBridge",
+                    "updateCurrentSourceType", "SourceType", "STREAM_BLUETOOTH", "SCO", "HFP", "音频通道", "蓝牙");
+
+            // 2.5 将最新纯内存守护日志一并归入 guard.log
+            File guardFile = new File(tempDir, "guard.log");
+            writeTextFile(guardFile, AppLogger.readRecentLogs(500));
+
             // 3. 生成统计摘要
             summaryFile = new File(tempDir, "summary.json");
             JSONObject summary = buildLogSummary(logFile, wheelFile, doorFile, gearFile, powerFile, appFile);
@@ -1199,6 +1208,8 @@ public class SystemUtils {
 
             List<File> filesToZip = new ArrayList<>();
             filesToZip.add(logFile);
+            if (guardFile.exists() && guardFile.length() > 0) filesToZip.add(guardFile);
+            if (btFile.exists() && btFile.length() > 0) filesToZip.add(btFile);
             if (wheelFile.exists() && wheelFile.length() > 0) filesToZip.add(wheelFile);
             if (doorFile.exists() && doorFile.length() > 0) filesToZip.add(doorFile);
             if (gearFile.exists() && gearFile.length() > 0) filesToZip.add(gearFile);
