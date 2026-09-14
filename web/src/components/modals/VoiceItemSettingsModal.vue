@@ -67,7 +67,7 @@
         <!-- 1. 自定义 TTS 朗读台词 -->
         <div class="flex-1 bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm space-y-3">
           <div class="flex items-center justify-between">
-            <div class="text-[17px] font-black text-car-text">1. 自定义台词 (小爱语音合成)</div>
+            <div class="text-[17px] font-black text-car-text">1. 自定义台词 (TTS 语音合成)</div>
             <span class="text-[12.5px] text-car-sub font-bold">留空不使用</span>
           </div>
           <input
@@ -237,7 +237,7 @@ const activeVoiceTypeLabel = computed(() => {
 });
 
 const activeVoiceDesc = computed(() => {
-  if (customText.value.trim()) return `台词: “${customText.value.trim()}” (小爱语音合成)`;
+  if (customText.value.trim()) return `台词: “${customText.value.trim()}” (TTS 语音合成)`;
   if (customFilePath.value.trim()) return `文件: ${customFilePath.value.trim()}`;
   return '吉利智驾内置官方精调晓晓知性女声';
 });

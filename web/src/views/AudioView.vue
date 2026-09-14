@@ -1,9 +1,9 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 1. 系统语音引擎与小爱 TTS 直通 (拔除死按键，状态直显与试听) -->
+    <!-- 1. 系统语音合成引擎 (TTS) 直通状态 (支持原厂与第三方TTS自由切换，状态直显与试听) -->
     <FeatureCard 
-      title="1. 系统语音引擎与小爱 TTS 直通状态"
-      desc="系统已直接通过后台 IPC 直连语音合成引擎。因吉利原厂车机精简删除了系统设置中的 TTS 菜单，此处直接常驻显示真实引擎连接状态。"
+      title="1. 系统语音合成引擎 (TTS) 直通状态"
+      desc="系统直接通过后台 IPC 接入安卓系统语音合成服务。支持车机原厂语音引擎与第三方 TTS 自由选择，点击设置可随心切换。"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
         <div class="flex-1 min-w-0 pr-6 flex flex-col">
@@ -14,10 +14,10 @@
                 ttsInfo.connected ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-amber-500 shadow-[0_0_8px_#F59E0B]'
               ]"
             ></span>
-            <span class="text-[19px] font-black text-car-text">
+            <span class="text-[19px] font-black text-car-text truncate">
               {{ ttsInfo.name }}
             </span>
-            <span class="ml-3 text-[12.5px] px-2.5 py-0.5 rounded-full font-black border bg-car-item border-car-border text-car-text inline-flex items-center shadow-sm">
+            <span class="ml-3 text-[12.5px] px-2.5 py-0.5 rounded-full font-black border bg-car-item border-car-border text-car-text inline-flex items-center shadow-sm shrink-0">
               <span :class="['w-2 h-2 rounded-full mr-1.5', ttsInfo.connected ? 'bg-sky-500 shadow-[0_0_6px_#0EA5E9]' : 'bg-slate-400']"></span>
               {{ ttsInfo.connected ? '已成功直连' : '默认引擎' }}
             </span>
@@ -32,21 +32,21 @@
             @click="openTtsSettings"
             class="min-h-[64px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[18px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
           >
-            小爱设置
+            TTS 设置
           </button>
           <button 
             v-if="ttsInfo.connected"
             @click="testTtsEngine"
             class="min-h-[64px] px-8 bg-car-card border-2 border-car-accent text-car-text font-black text-[19px] rounded-2xl cursor-pointer hover:border-car-accent shadow-md ring-2 ring-car-accent/20"
           >
-            试听小爱语音
+            试听语音
           </button>
           <button 
             v-else
             @click="openStoreToDownload"
             class="min-h-[64px] px-8 bg-car-card border-2 border-car-border text-car-accent font-black text-[19px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
           >
-            前往商城下载小爱TTS
+            前往商城获取语音引擎
           </button>
         </div>
       </div>
@@ -262,8 +262,8 @@ import { store, bridge, openModal, showToast } from '../store';
 
 const ttsInfo = ref({
   connected: true,
-  name: '小爱语音合成引擎 (XiaoAi TTS 1.5.1)',
-  status: '已成功连接小爱语音引擎 · 专车TTS声线就绪'
+  name: '系统默认语音合成引擎',
+  status: '已连接系统底层默认语音引擎 · 声线就绪'
 });
 
 const volumeOffset = ref(0);
@@ -319,8 +319,8 @@ onMounted(() => {
   } catch (e) {
     ttsInfo.value = {
       connected: true,
-      name: '小爱语音合成引擎 (XiaoAi TTS 1.5.1)',
-      status: '已成功直连小爱语音引擎 · 专车TTS声线就绪'
+      name: '系统默认语音合成引擎',
+      status: '已连接系统底层默认语音引擎 · 声线就绪'
     };
   }
 
@@ -338,7 +338,7 @@ onMounted(() => {
 
 function openTtsSettings() {
   bridge.call('openTtsSettings');
-  showToast('正在打开小爱语音设置界面...');
+  showToast('正在打开系统 TTS 语音引擎设置...');
 }
 
 function testTtsEngine() {
@@ -356,7 +356,7 @@ function testTtsEngine() {
 
 function openStoreToDownload() {
   store.currentNav = 'store';
-  showToast('已跳转至精选软件中心');
+  showToast('已跳转至精选商城');
 }
 
 function saveVolumeOffset() {

@@ -64,15 +64,15 @@ export const CLOUD_APPS = [
     "category": "music",
     "badgeClass": "music",
     "badgeText": "方控",
-    "name": "CarMedia 车机媒体 1.4.3 (全新双轨方控/修复扫描卡顿版)",
-    "badge": "全新双轨方控/修复扫描卡顿",
-    "size": "677 KB",
-    "filename": "CarMedia_1.4.3.apk",
+    "name": "CarMedia 车机媒体 1.4.7 (全新双轨方控/稳定升级版)",
+    "badge": "全新双轨方控/稳定升级版",
+    "size": "857 KB",
+    "filename": "CarMedia_1.4.7.apk",
     "package_name": "com.ecarx.carmedia",
-    "desc": "米小江出品，吉利车机专属方控媒体中心：全新CarProperty直连+Logcat双轨监听，优化挂载缓存与前台渲染彻底修复扫描卡顿，支持U盘离线音乐、开机自启、方向盘按键切歌联动。",
-    "updated_at": "2026-09-12",
+    "desc": "米小江出品，吉利车机专属方控媒体中心：全新CarProperty直连+Logcat双轨监听，支持U盘离线音乐、开机自启、方向盘按键切歌联动，原包签名直装。",
+    "updated_at": "2026-09-14",
     "status": "download",
-    "url": "https://dl.onepve.com/GeelyToolbox/CarMedia_1.4.3.apk"
+    "url": "https://dl.onepve.com/GeelyToolbox/CarMedia_1.4.7.apk"
   },
   {
     "id": "mediabridge",

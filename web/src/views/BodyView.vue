@@ -283,7 +283,7 @@
 
         <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
           <div class="text-car-sub font-bold">主驾、副驾、后排车门开启或关好 (防抖合并)</div>
-          <div class="text-car-text font-bold">通用「车门已打开/关好」或独立分门，支持小爱定制</div>
+          <div class="text-car-text font-bold">通用「车门已打开/关好」或独立分门，支持 TTS 定制</div>
         </div>
 
         <div class="grid grid-cols-2 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
@@ -1270,7 +1270,7 @@ function showTrunkHelp() {
   openModal('confirm', {
     title: '【功能指南】原厂电动尾门独立语音播报',
     desc: '1. 底层独立串口：独立监听 MCU 串口 91 02 01 b7 尾门位图，与四门逻辑完全解耦独立。\n\n2. 升起防刮与锁止确认：后备箱抬起升起时安全警示，防碰擦车库顶梁；电吸完全锁止时短促确认“后备箱已关好”，关后备箱无需回头确认。',
-    tip: '升起播报与锁止播报均带独立开关，支持试听与自定义小爱 TTS 台词/音频文件。',
+    tip: '升起播报与锁止播报均带独立开关，支持试听与自定义 TTS 台词/音频文件。',
     showCancel: false,
     confirmText: '我知道了'
   });

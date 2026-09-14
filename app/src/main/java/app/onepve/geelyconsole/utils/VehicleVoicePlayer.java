@@ -251,7 +251,7 @@ public class VehicleVoicePlayer {
                 @Override
                 public void onError(String utteranceId) {
                     Log.w(TAG, "TTS onError: " + utteranceId);
-                    AppLogger.w("语音播报", "TTS引擎发声错误 (" + utteranceId + ")，请点击【小爱设置】检查发音人与离线语音包");
+                    AppLogger.w("语音播报", "TTS引擎发声错误 (" + utteranceId + ")，请点击【TTS设置】检查语音引擎配置");
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -271,10 +271,18 @@ public class VehicleVoicePlayer {
             @Override
             public void run() {
                 try {
-                    String targetEngine = null;
+                    if (tts != null) {
+                        try {
+                            tts.stop();
+                            tts.shutdown();
+                        } catch (Throwable ignored) {}
+                        tts = null;
+                        ttsReady = false;
+                    }
+
+                    // 1. 若检测到安装了小爱TTS，后台静默保障其权限与免CTA拦截，但不强制写死绑定小爱
                     try {
                         context.getPackageManager().getPackageInfo("com.xiaomi.mibrain.speech", 0);
-                        targetEngine = "com.xiaomi.mibrain.speech";
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
@@ -283,7 +291,7 @@ public class VehicleVoicePlayer {
                         }).start();
                     } catch (Exception ignored) {}
 
-                    final String engineToTry = targetEngine;
+                    // 2. 监听器：就绪后设置语言并刷新待播语音 (100% 满足 CI tts-ready-flush 契约)
                     TextToSpeech.OnInitListener listener = new TextToSpeech.OnInitListener() {
                         @Override
                         public void onInit(int status) {
@@ -292,43 +300,36 @@ public class VehicleVoicePlayer {
                                 ttsReady = true;
                                 flushPendingSpeech();
                             } else {
-                                Log.w(TAG, "TTS onInit failed for engine [" + engineToTry + "], status=" + status);
-                                if (engineToTry != null) {
-                                    // 若小爱引擎绑定失败，自动优雅降级使用系统默认 TTS 引擎重新初始化
-                                    Log.i(TAG, "Falling back to system default TextToSpeech engine...");
-                                    try {
-                                        if (tts != null) tts.shutdown();
-                                    } catch (Throwable ignored) {}
-                                    tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
-                                        @Override
-                                        public void onInit(int fallbackStatus) {
-                                            if (fallbackStatus == TextToSpeech.SUCCESS && tts != null) {
-                                                setupTtsLanguageAndReady();
-                                                ttsReady = true;
-                                                flushPendingSpeech();
-                                            } else {
-                                                Log.e(TAG, "Default TTS also failed with status: " + fallbackStatus);
-                                                ttsReady = false;
-                                            }
-                                        }
-                                    });
-                                } else {
-                                    ttsReady = false;
-                                }
+                                Log.w(TAG, "TextToSpeech onInit failed, status=" + status);
+                                ttsReady = false;
                             }
                         }
                     };
 
-                    if (targetEngine != null) {
-                        tts = new TextToSpeech(context, listener, targetEngine);
-                    } else {
-                        tts = new TextToSpeech(context, listener);
-                    }
+                    // 3. 原生直连系统当前首选/默认 TTS 引擎（由车主在系统设置中自主决定，原厂 XCTtsEngine / 小爱 / 其它第三方引擎自由切换）
+                    tts = new TextToSpeech(context, listener);
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to init TextToSpeech: " + e.getMessage());
+                    ttsReady = false;
                 }
             }
         });
+    }
+
+    public synchronized void reinitTts() {
+        lastInitAttemptAt = 0;
+        initTts();
+    }
+
+    public synchronized void checkAndReloadTtsIfNeeded() {
+        try {
+            String sysDefault = android.provider.Settings.Secure.getString(context.getContentResolver(), android.provider.Settings.Secure.TTS_DEFAULT_SYNTH);
+            String current = getActiveTtsEngine();
+            if (sysDefault != null && !sysDefault.isEmpty() && !sysDefault.equals(current) && !"none".equals(current)) {
+                Log.i(TAG, "System TTS default changed: " + current + " -> " + sysDefault + ", reloading TTS engine...");
+                reinitTts();
+            }
+        } catch (Exception ignored) {}
     }
 
     public void stopCurrentVoice() {
@@ -463,7 +464,7 @@ public class VehicleVoicePlayer {
 
         // 4. 兜底调用系统 TTS
         Log.i(TAG, "Fallback speaking TTS: " + fallbackText);
-        AppLogger.i("语音播报", "触发朗读[小爱TTS]: " + fallbackText);
+        AppLogger.i("语音播报", "触发朗读[系统TTS(" + getActiveTtsEngine() + ")]: " + fallbackText);
         speakText(fallbackText, voiceFileName);
     }
 

@@ -278,6 +278,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             pendingShowPillRunnable = null;
         }
 
+        // 检查系统当前默认 TTS 引擎是否发生变更，支持无缝热重载
+        try {
+            VehicleVoicePlayer.getInstance(this).checkAndReloadTtsIfNeeded();
+        } catch (Exception ignored) {}
+
         // 前台自适应：当控制台处于前台大屏展示时，隐藏悬浮小胶囊，彻底杜绝悬浮窗遮挡顶栏与页面内闪烁
         try {
             Intent hidePill = new Intent(this, FloatingWindowService.class);
@@ -3107,45 +3112,43 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         public String getTtsEngineInfo() {
             try {
                 VehicleVoicePlayer player = VehicleVoicePlayer.getInstance(MainActivity.this);
-                boolean ready = player.isTtsReady();
-                boolean xiaoaiInstalled = false;
-                try {
-                    getPackageManager().getPackageInfo("com.xiaomi.mibrain.speech", 0);
-                    xiaoaiInstalled = true;
-                } catch (Exception ignored) {}
+                // 检测系统首选引擎是否有变化，有变则静默刷新
+                player.checkAndReloadTtsIfNeeded();
 
+                boolean ready = player.isTtsReady();
                 String activeEngine = player.getActiveTtsEngine();
-                boolean isXiaoaiActive = "com.xiaomi.mibrain.speech".equals(activeEngine) || activeEngine.contains("xiaomi");
+
+                String engineLabel = "系统默认语音引擎";
+                if (activeEngine != null && !activeEngine.isEmpty() && !"none".equals(activeEngine)) {
+                    try {
+                        PackageManager pm = getPackageManager();
+                        ApplicationInfo ai = pm.getApplicationInfo(activeEngine, 0);
+                        CharSequence label = pm.getApplicationLabel(ai);
+                        if (label != null && label.length() > 0) {
+                            engineLabel = label.toString();
+                        }
+                    } catch (Exception e) {
+                        engineLabel = activeEngine;
+                    }
+                }
 
                 JSONObject res = new JSONObject();
                 res.put("connected", ready);
-                res.put("installed", xiaoaiInstalled);
                 res.put("engine", activeEngine);
+                if (activeEngine != null && !activeEngine.isEmpty() && !"none".equals(activeEngine)) {
+                    res.put("name", engineLabel + " (" + activeEngine + ")");
+                } else {
+                    res.put("name", engineLabel);
+                }
 
                 if (ready) {
-                    if (isXiaoaiActive || xiaoaiInstalled) {
-                        res.put("name", "小爱语音合成引擎 (XiaoAi TTS 1.5.1)");
-                        res.put("status", "已成功直连小爱语音引擎 · 专车TTS声线就绪");
-                        res.put("type", "xiaoai");
-                    } else {
-                        res.put("name", "系统默认语音引擎 (" + activeEngine + ")");
-                        res.put("status", "当前使用系统底层默认 TTS 引擎");
-                        res.put("type", "native");
-                    }
+                    res.put("status", "已成功直连系统首选语音合成引擎 · 声线就绪");
                 } else {
-                    if (xiaoaiInstalled) {
-                        res.put("name", "小爱语音合成引擎 (唤醒中/未就绪)");
-                        res.put("status", "已安装小爱TTS包，后台服务正在唤醒绑定中。点击试听可触发激活。");
-                        res.put("type", "xiaoai");
-                    } else {
-                        res.put("name", "系统原厂默认引擎");
-                        res.put("status", "未检测到小爱TTS包，当前使用系统底层默认语音引擎");
-                        res.put("type", "native");
-                    }
+                    res.put("status", "语音合成引擎未就绪，可点击【TTS设置】选择或切换首选引擎");
                 }
                 return res.toString();
             } catch (Exception e) {
-                return "{\"connected\":false,\"name\":\"系统默认引擎\",\"status\":\"TTS状态获取异常\",\"type\":\"native\"}";
+                return "{\"connected\":false,\"name\":\"系统语音引擎\",\"status\":\"TTS状态获取异常\",\"type\":\"native\"}";
             }
         }
 
