@@ -428,6 +428,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     private final BroadcastReceiver packageChangeReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            if (intent != null && intent.getData() != null) {
+                String pkg = intent.getData().getSchemeSpecificPart();
+                if ("com.maxmpz.equalizer".equals(pkg)) {
+                    AdbClient.execute(MainActivity.this, "pm grant com.maxmpz.equalizer android.permission.DUMP");
+                    AppLogger.i("应用权限", "检测到 Poweramp 均衡器安装，已自动授予 DUMP 高级播放器追踪特权");
+                }
+            }
             if (webView != null) {
                 mainHandler.post(new Runnable() {
                     @Override

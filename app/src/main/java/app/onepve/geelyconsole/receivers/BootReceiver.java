@@ -43,6 +43,9 @@ public class BootReceiver extends BroadcastReceiver {
                     Log.i(TAG, "Nav package installed/replaced: " + pkg + ", auto-healing rabbit theme immediately!");
                     AppLogger.action("安装自愈", "检测到目标专车导航安装完成，触发官方原版时钟还原", true, "目标包: " + pkg);
                     ThemePatcher.restoreOfficialRabbitTheme(context);
+                } else if ("com.maxmpz.equalizer".equals(pkg)) {
+                    AppLogger.action("权限赋权", "检测到 Poweramp 均衡器安装完成，自动授予 DUMP 权限", true, "目标包: " + pkg);
+                    app.onepve.geelyconsole.utils.AdbClient.execute(context, "pm grant com.maxmpz.equalizer android.permission.DUMP");
                 }
             } catch (Exception e) {
                 Log.w(TAG, "Failed package install cleanup: " + e.getMessage());
