@@ -75,34 +75,41 @@
           :key="app.pkg"
           class="bg-car-item/90 hover:bg-car-item border border-car-border rounded-xl p-3.5 flex items-center justify-between shadow-sm transition-all"
         >
-          <!-- 左侧信息 -->
-          <div class="flex flex-col space-y-1 min-w-0 flex-1 pr-4">
-            <div class="flex items-center space-x-2.5">
-              <span class="text-[17px] font-black text-car-text truncate">{{ app.name }}</span>
-              <span 
-                :class="[
-                  'text-[11.5px] px-2 py-0.5 rounded-md font-extrabold shrink-0 border',
-                  app.isSystem 
-                    ? 'bg-rose-500/15 border-rose-500/30 text-rose-400' 
-                    : 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400'
-                ]"
-              >
-                {{ app.isSystem ? '原厂系统' : '第三方自装' }}
-              </span>
-              <span 
-                :class="[
-                  'text-[11.5px] px-2 py-0.5 rounded-md font-extrabold shrink-0 border',
-                  app.frozen 
-                    ? 'bg-amber-500/15 border-amber-500/30 text-amber-400' 
-                    : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
-                ]"
-              >
-                {{ app.frozen ? '已冻结停用' : '活跃运行中' }}
-              </span>
-            </div>
-            <div class="flex items-center space-x-3 text-[12.5px] font-mono text-car-sub">
-              <span class="truncate">{{ app.pkg }}</span>
-              <span v-if="app.version">· v{{ app.version }}</span>
+          <!-- 左侧信息 (含车规拟物圆角图标) -->
+          <div class="flex items-center space-x-3.5 min-w-0 flex-1 pr-4">
+            <img 
+              :src="getAppIcon(app.pkg)" 
+              class="w-12 h-12 rounded-2xl object-cover border border-car-border/60 shadow-md shrink-0" 
+              alt="icon"
+            />
+            <div class="flex flex-col space-y-1 min-w-0 flex-1">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-[17.5px] font-black text-car-text truncate">{{ app.name }}</span>
+                <span 
+                  :class="[
+                    'text-[11.5px] px-2 py-0.5 rounded-md font-extrabold shrink-0 border',
+                    app.isSystem 
+                      ? 'bg-rose-500/15 border-rose-500/30 text-rose-400' 
+                      : 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400'
+                  ]"
+                >
+                  {{ app.isSystem ? '原厂系统' : '第三方自装' }}
+                </span>
+                <span 
+                  :class="[
+                    'text-[11.5px] px-2 py-0.5 rounded-md font-extrabold shrink-0 border',
+                    app.frozen 
+                      ? 'bg-amber-500/15 border-amber-500/30 text-amber-400' 
+                      : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                  ]"
+                >
+                  {{ app.frozen ? '已冻结停用' : '活跃运行中' }}
+                </span>
+              </div>
+              <div class="flex items-center space-x-3 text-[12.5px] font-mono text-car-sub">
+                <span class="truncate">{{ app.pkg }}</span>
+                <span v-if="app.version">· v{{ app.version }}</span>
+              </div>
             </div>
           </div>
 
@@ -164,6 +171,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, openModal, showToast } from '../../store';
+import { getAppIcon } from '../../utils/appIcons';
 
 const allApps = ref([]);
 const isLoading = ref(false);

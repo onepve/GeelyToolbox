@@ -52,20 +52,28 @@
         @click="openModal('appDetail', app)"
         class="bg-car-card border-2 border-car-border hover:border-car-accent rounded-3xl p-6 flex flex-col justify-between cursor-pointer transition-all shadow-md group h-full min-h-[190px]"
       >
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-2 py-1">
-          <div class="flex items-center justify-between space-x-3">
-            <span class="text-[21px] font-black text-car-text group-hover:text-car-accent transition-colors flex-1 min-w-0 truncate" :title="app.name">
-              {{ app.name }}
-            </span>
-            <span v-if="store.downloadProgress[app.id]" class="h-[36px] border px-4 rounded-xl bg-car-item border-car-border text-car-text font-black text-[13.5px] shrink-0 whitespace-nowrap inline-flex items-center shadow-sm">
-              <span :class="['w-2.5 h-2.5 rounded-full mr-2', store.downloadProgress[app.id].status === 'paused' ? 'bg-amber-400 shadow-[0_0_6px_#F59E0B]' : (store.downloadProgress[app.id].status === 'completed' ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-sky-500 shadow-[0_0_6px_#0EA5E9] animate-pulse')]"></span>
-              {{ store.downloadProgress[app.id].status === 'paused' ? '已暂停' : (store.downloadProgress[app.id].status === 'completed' ? '已下载' : `下载中 ${store.downloadProgress[app.id].percent || 0}%`) }}
-            </span>
-            <span v-else class="h-[36px] bg-car-item border-2 border-car-border px-3.5 rounded-xl text-car-sub font-mono font-black text-[13.5px] shrink-0 whitespace-nowrap flex items-center justify-center">
-              {{ app.size }}
-            </span>
+        <div class="flex-1 min-w-0 flex items-center space-x-4 py-2">
+          <!-- 软件高保真车规圆角拟物大图标 (58x58px) -->
+          <img 
+            :src="getAppIcon(app)" 
+            class="w-[58px] h-[58px] rounded-2xl object-cover shadow-md border-2 border-car-border/60 shrink-0 group-hover:border-car-accent/80 transition-all"
+            alt="icon" 
+          />
+          <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5">
+            <div class="flex items-center justify-between space-x-3">
+              <span class="text-[20px] font-black text-car-text group-hover:text-car-accent transition-colors truncate" :title="app.name">
+                {{ app.name }}
+              </span>
+              <span v-if="store.downloadProgress[app.id]" class="h-[34px] border px-3.5 rounded-xl bg-car-item border-car-border text-car-text font-black text-[13px] shrink-0 whitespace-nowrap inline-flex items-center shadow-sm">
+                <span :class="['w-2.5 h-2.5 rounded-full mr-2', store.downloadProgress[app.id].status === 'paused' ? 'bg-amber-400 shadow-[0_0_6px_#F59E0B]' : (store.downloadProgress[app.id].status === 'completed' ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-sky-500 shadow-[0_0_6px_#0EA5E9] animate-pulse')]"></span>
+                {{ store.downloadProgress[app.id].status === 'paused' ? '已暂停' : (store.downloadProgress[app.id].status === 'completed' ? '已下载' : `下载中 ${store.downloadProgress[app.id].percent || 0}%`) }}
+              </span>
+              <span v-else class="h-[34px] bg-car-item border-2 border-car-border px-3 rounded-xl text-car-sub font-mono font-black text-[13px] shrink-0 whitespace-nowrap flex items-center justify-center">
+                {{ app.size }}
+              </span>
+            </div>
+            <p class="text-[15px] text-car-sub font-medium leading-relaxed line-clamp-2">{{ getBriefDesc(app) }}</p>
           </div>
-          <p class="text-[16px] text-car-sub font-medium leading-relaxed line-clamp-2">{{ getBriefDesc(app) }}</p>
         </div>
 
         <div class="h-[52px] px-5 rounded-2xl bg-car-item border-2 border-car-border group-hover:border-car-accent/60 flex items-center justify-between transition-all mt-auto shrink-0">
@@ -96,6 +104,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
+import { getAppIcon } from '../utils/appIcons';
 
 const currentCategory = ref('all');
 const categories = [
