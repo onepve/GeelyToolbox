@@ -27,7 +27,13 @@ import java.util.regex.Pattern;
  * 吉利方向盘方控与按键拦截管理器
  * 1. 拦截原厂多媒体 MediaKeyReceiver (拔掉原厂收音机/伴听抢占广播的耳朵)
  * 2. 兼容米小江方控 (CarMedia) 与 控制台独立接管模式
- * 3. 监听 logcat 物理按键事件: IMS reportKeyToAdaptApi : (\\d+) (press|release)
+ * 3. 按键通道分级铁律：
+ *    - 精确通道 (真实物理 Press/Release)：MCU SWC_TRIP、IMS reportKeyToAdaptApi、
+ *      AdaptAPI handleMessage、ecarx_core_server cmd_data 状态位 —— 天然支持单击/双击/长按；
+ *    - 合成兜底通道 (按下后 80ms 强制抬手)：HAL do nothing / shouldCallback / onAlreadyHome
+ *      —— 结构上永远只能表达单击，仅在对应按键被证实没有精确通道时才启用。
+ *    任一按键一旦被证实存在精确通道，其合成兜底通道即刻永久失效，彻底根治
+ *    双击与长按被合成通道抢占吞成单击的问题。
  * 4. 支持按键手势化：单击 (Single)、双击 (Double)、长按 (Long Press)
  */
 public class SteeringWheelKeyManager {
@@ -102,6 +108,95 @@ public class SteeringWheelKeyManager {
     private final Map<Integer, Boolean> isLongPressed = new HashMap<>();
     private final Map<Integer, Runnable> pendingSingleTasks = new HashMap<>();
     private final Map<Integer, Runnable> pendingLongTasks = new HashMap<>();
+
+    // ================= 精确通道登记表 (真实物理 Press/Release 源) =================
+    // 铁律：只要某按键被证实存在真实物理 Press/Release 源，它的「合成兜底通道」
+    // (HAL do nothing / shouldCallback / cmd_data 无状态位) 即刻永久失效。
+    // 合成兜底通道的本质是「按下后 80ms 强制抬手」，结构上永远无法表达双击与长按；
+    // 它与精确源并发抢占时还会把真实相位吞掉 (实测被吞掉约 6 成按键)。
+    private final Map<Integer, Boolean> preciseChannelProven = new HashMap<>();
+    // 合成兜底按下令牌：真实物理按下到达即作废尚未执行的强制抬手，防误吞相位
+    private final Map<Integer, Boolean> syntheticPressActive = new HashMap<>();
+
+    /** 该按键是否已被证实存在精确物理通道 (内存缓存 + prefs 持久化，避免长年重启后重学) */
+    private boolean isPreciseChannelProven(int keyCode) {
+        Boolean cached = preciseChannelProven.get(keyCode);
+        if (cached != null) return cached;
+        boolean proven = false;
+        try {
+            proven = prefs.getBoolean("wheel_precise_proven_" + keyCode, false);
+        } catch (Throwable ignored) {
+        }
+        preciseChannelProven.put(keyCode, proven);
+        return proven;
+    }
+
+    /** 登记一次真实物理事件：作废合成残留相位，并把该键永久升格为精确通道 */
+    private void markPreciseEvent(int keyCode) {
+        syntheticPressActive.remove(keyCode);
+        if (Boolean.TRUE.equals(preciseChannelProven.get(keyCode))) return;
+        preciseChannelProven.put(keyCode, true);
+        try {
+            prefs.edit().putBoolean("wheel_precise_proven_" + keyCode, true).apply();
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /** 合成兜底通道统一闸门：精确通道已证实的按键，坚决不再走任何合成通道 */
+    private boolean syntheticFallbackDisabled(int keyCode) {
+        return isPreciseChannelProven(keyCode);
+    }
+
+    /** cmd_data[0] 按键状态位解析：0x0 = 物理按下，0x1 = 物理抬起 (实车报文实证) */
+    private static boolean parseCmdKeyStateIsPress(String raw) {
+        try {
+            if (raw == null) return false;
+            String v = raw.trim().toLowerCase();
+            long n = v.startsWith("0x") ? Long.parseLong(v.substring(2), 16) : Long.parseLong(v);
+            return n == 0L;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** 合成兜底专用：按下 80ms 后强制抬手 (仅用于完全没有精确源的按键) */
+    private void syntheticPressAndAutoRelease(final int keyCode) {
+        handleKeyDown(keyCode);
+        syntheticPressActive.put(keyCode, Boolean.TRUE);
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (syntheticPressActive.remove(keyCode) != null) {
+                    handleKeyUp(keyCode);
+                }
+            }
+        }, 80);
+    }
+
+    /**
+     * 精确通道抬手补齐：MCU 与原厂核心服务在极速连发时，会把某些真实点击的
+     * 「按下 + 抬起」写进同一毫秒 (实车日志实测 36 次按下中有 15 次如此)。
+     * 直接抬手会被 MIN_PRESS_DURATION_MS 毛刺门限整次吞掉，故不足最小有效
+     * 按压时长时，把抬手补齐到 35ms 再交给 4 相状态机，确保单击/双击/长按不被吞。
+     */
+    private void preciseRelease(final int keyCode) {
+        KeyPhase phase = keyPhases.getOrDefault(keyCode, KeyPhase.IDLE);
+        long downAt = System.currentTimeMillis();
+        Long recorded = (phase == KeyPhase.DOWN_2) ? phaseDownTime2.get(keyCode) : phaseDownTime1.get(keyCode);
+        if (recorded != null) downAt = recorded;
+        long held = System.currentTimeMillis() - downAt;
+        long pad = MIN_PRESS_DURATION_MS - held;
+        if (pad > 0 && pad <= MIN_PRESS_DURATION_MS) {
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    handleKeyUp(keyCode);
+                }
+            }, pad);
+        } else {
+            handleKeyUp(keyCode);
+        }
+    }
 
     public SteeringWheelKeyManager(Context context) {
         this.context = context.getApplicationContext();
@@ -228,6 +323,20 @@ public class SteeringWheelKeyManager {
         }
         if (line == null || line.isEmpty()) return 0;
 
+        // 0. 原厂 MCU 精确物理按键事件 (MCULog:SWC_TRIP_Press / SWC_TRIP_Release)
+        // ⑤ 自定义键 (HAL 侧编码 0x37) 在 HAL 上是「do nothing」哑键，但 MCU 始终广播完整的
+        // Press/Release 物理闭环，实测按住 1.2 秒即真实上报 1.2 秒时长 —— 这是该键双击与
+        // 长按的唯一可靠来源 (HAL 合成通道只能表达单击)。
+        if (line.contains("SWC_TRIP_Press") || line.contains("SWC_TRIP_Release")) {
+            markPreciseEvent(KEY_CUSTOM);
+            if (line.contains("SWC_TRIP_Press")) {
+                handleKeyDown(KEY_CUSTOM);
+            } else {
+                preciseRelease(KEY_CUSTOM);
+            }
+            return KEY_CUSTOM;
+        }
+
         // 1. 标准物理按键 (press / release)
         if (line.contains("reportKeyToAdaptApi")) {
             Matcher m = WHEEL_KEY_PATTERN.matcher(line);
@@ -236,6 +345,7 @@ public class SteeringWheelKeyManager {
                     int code = Integer.parseInt(m.group(1));
                     if (code == 45) code = KEY_OK; // 缤越 COOL IHU516G 滚轮按压硬件码 45 映射为 KEY_OK
                     String act = m.group(2);
+                    markPreciseEvent(code);
                     if ("press".equalsIgnoreCase(act)) {
                         handleKeyDown(code);
                     } else if ("release".equalsIgnoreCase(act)) {
@@ -246,33 +356,30 @@ public class SteeringWheelKeyManager {
             }
         }
 
-        // 2. 滚轮下按确认 (OK 键 / shouldCallback 容灾)
+        // 2. 滚轮下按确认 (OK 键 / shouldCallback 容灾)：无真实抬手事件，仅合成兜底
         if (line.contains("shouldCallback")) {
             Matcher m2 = OK_KEY_PATTERN.matcher(line);
             if (m2.find()) {
                 try {
                     int code = Integer.parseInt(m2.group(1));
                     if (code == KEY_OK || code == 45 || code == 85 || code == 66) {
-                        handleKeyDown(KEY_OK);
-                        mainHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                handleKeyUp(KEY_OK);
-                            }
-                        }, 80);
+                        if (!syntheticFallbackDisabled(KEY_OK)) {
+                            syntheticPressAndAutoRelease(KEY_OK);
+                        }
                         return KEY_OK;
                     }
                 } catch (Exception ignored) {}
             }
         }
 
-        // 3. AdaptAPI 物理按键与返回键 (307/300)
+        // 3. AdaptAPI 物理按键与返回键 (307/300)，携带真实 down=true/false 按下抬起状态
         if (line.contains("handleMessage") && line.contains("keycode=")) {
             try {
                 Matcher m3 = ADAPT_KEY_PATTERN.matcher(line);
                 if (m3.find()) {
                     boolean isDown = Boolean.parseBoolean(m3.group(1));
                     int code = Integer.parseInt(m3.group(2));
+                    markPreciseEvent(code);
                     if (isDown) {
                         handleKeyDown(code);
                     } else {
@@ -283,67 +390,62 @@ public class SteeringWheelKeyManager {
             } catch (Exception ignored) {}
         }
 
-        // 4. 原厂桌面二次按 Home 键 ([JRWidget_SCROLL][onAlreadyHome])
+        // 4. 原厂桌面二次按 Home 键 ([JRWidget_SCROLL][onAlreadyHome])：无精确源，仅合成兜底
         if (line.contains("onAlreadyHome")) {
-            handleKeyDown(KEY_HOME_ALREADY);
-            mainHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    handleKeyUp(KEY_HOME_ALREADY);
-                }
-            }, 80);
+            syntheticPressAndAutoRelease(KEY_HOME_ALREADY);
             return KEY_HOME_ALREADY;
         }
 
-        // 5. DefaultVehicleHal_v2_0: do nothing for this key(0x37 / 0x2d) (Tasker 黄金按键)
+        // 5. DefaultVehicleHal_v2_0: do nothing for this key(0x37 / 0x2d) (HAL 哑键合成兜底)
+        // 该通道只能伪造「按下 + 80ms 强制抬手」，仅在对应按键被证实没有精确物理通道时才启用。
         if (line.contains("do nothing for this key") || (line.contains("DefaultVehicleHal") && (line.contains("0x37") || line.contains("0x2d")))) {
             if (line.contains("0x37")) {
+                if (syntheticFallbackDisabled(KEY_CUSTOM)) return 0;
                 Long lastDown = phaseDownTime1.get(KEY_CUSTOM);
                 long now = System.currentTimeMillis();
                 if (lastDown == null || (now - lastDown) > 400) {
-                    handleKeyDown(KEY_CUSTOM);
-                    mainHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            handleKeyUp(KEY_CUSTOM);
-                        }
-                    }, 80);
+                    syntheticPressAndAutoRelease(KEY_CUSTOM);
                 }
                 return KEY_CUSTOM;
             } else if (line.contains("0x2d")) {
+                if (syntheticFallbackDisabled(KEY_OK)) return 0;
                 Long lastDown = phaseDownTime1.get(KEY_OK);
                 long now = System.currentTimeMillis();
                 if (lastDown == null || (now - lastDown) > 400) {
-                    handleKeyDown(KEY_OK);
-                    mainHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            handleKeyUp(KEY_OK);
-                        }
-                    }, 80);
+                    syntheticPressAndAutoRelease(KEY_OK);
                 }
                 return KEY_OK;
             }
         }
 
-        // 6. ecarx_core_server 物理硬按键 (cmd_data[1] = 304 / 305) (Tasker 123.prj 黄金源兜底)
-        if (line.contains("cmd_data[1] =") || line.contains("cmd_data[1]=")) {
+        // 6. ecarx_core_server 物理硬按键 (cmd_data[0] = 按键状态 0x0按下 / 0x1抬起, cmd_data[1] = 键码)
+        // 实测原厂核心服务已随包广播真实按下/抬起状态位，故此处升级为精确通道：
+        // ④下一曲 / ⑦上一曲 / ③静音 / ①返回 由此获得完整单击 / 双击 / 长按能力。
+        if (line.contains("cmd_data[1]")) {
             try {
                 Matcher m = Pattern.compile("cmd_data\\[1\\]\\s*=\\s*(\\d+)").matcher(line);
                 if (m.find()) {
                     final int code = Integer.parseInt(m.group(1));
                     if (code == KEY_PREV || code == KEY_NEXT || code == KEY_MUTE || code == KEY_BACK) {
-                        Long lastDown = phaseDownTime1.get(code);
-                        long now = System.currentTimeMillis();
-                        // 若 400ms 内已有硬件 reportKeyToAdaptApi 触发，坚决不重复分发假按键
-                        if (lastDown == null || (now - lastDown) > 400) {
-                            handleKeyDown(code);
-                            mainHandler.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    handleKeyUp(code);
-                                }
-                            }, 80);
+                        Matcher m0 = Pattern.compile("cmd_data\\[0\\]\\s*=\\s*(0[xX][0-9a-fA-F]+|\\d+)").matcher(line);
+                        if (m0.find()) {
+                            // 精确通道：真实按下 / 抬起物理闭环
+                            markPreciseEvent(code);
+                            if (parseCmdKeyStateIsPress(m0.group(1))) {
+                                handleKeyDown(code);
+                            } else {
+                                preciseRelease(code);
+                            }
+                            return code;
+                        }
+                        // 旧固件无状态位：仅在精确通道未被证实时退化为合成兜底
+                        if (!syntheticFallbackDisabled(code)) {
+                            Long lastDown = phaseDownTime1.get(code);
+                            long now = System.currentTimeMillis();
+                            // 若 400ms 内已有硬件 reportKeyToAdaptApi 触发，坚决不重复分发假按键
+                            if (lastDown == null || (now - lastDown) > 400) {
+                                syntheticPressAndAutoRelease(code);
+                            }
                         }
                         return code;
                     }
@@ -499,14 +601,35 @@ public class SteeringWheelKeyManager {
 
         // 阶段 4: 处理第 2 次松手 (DOWN_2 -> 完成【按下➔松开➔按下➔松开】4 相物理闭环)
         if (currentPhase == KeyPhase.DOWN_2) {
-            keyPhases.put(keyCode, KeyPhase.IDLE);
-            pendingSingleTasks.remove(keyCode);
-
             Long down2 = phaseDownTime2.get(keyCode);
             long pressDuration2 = (down2 != null) ? (now - down2) : 100L;
+
             if (pressDuration2 < MIN_PRESS_DURATION_MS) {
+                // 第 2 次按压过短 (多源重复报文 / 触点毛刺)：绝不允许它白吞车主的真实单击！
+                // 回滚至「等待第 2 次按下」相位，并按剩余窗口重新武装单击兜底任务。
+                pendingSingleTasks.remove(keyCode);
+                keyPhases.put(keyCode, KeyPhase.UP_1_WAITING_DOWN_2);
+                Long up1 = phaseUpTime1.get(keyCode);
+                long elapsed = (up1 != null) ? (now - up1) : DOUBLE_CLICK_WINDOW_MS;
+                long remain = Math.max(0L, DOUBLE_CLICK_WINDOW_MS - elapsed);
+                Runnable fallbackSingleTask = new Runnable() {
+                    @Override
+                    public void run() {
+                        if (keyPhases.get(keyCode) == KeyPhase.UP_1_WAITING_DOWN_2) {
+                            keyPhases.put(keyCode, KeyPhase.IDLE);
+                            pendingSingleTasks.remove(keyCode);
+                            AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【单击】: " + singleAction);
+                            executeAction(singleAction);
+                        }
+                    }
+                };
+                pendingSingleTasks.put(keyCode, fallbackSingleTask);
+                mainHandler.postDelayed(fallbackSingleTask, remain);
                 return;
             }
+
+            keyPhases.put(keyCode, KeyPhase.IDLE);
+            pendingSingleTasks.remove(keyCode);
 
             // 严格满足：【按下1 ➔ 松开1 ➔ 按下2 ➔ 松开2】4 相全流程物理闭环！
             AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【双击】(严格4相物理闭环): " + doubleAction);

@@ -109,6 +109,7 @@ public class VehicleAutomationService extends Service {
     public static volatile int lastGearPos = -1;
     public static volatile int lastDriveMode = -1;
     private int lastLightSts = -1;
+    private int lastLightStsForDim = -1; // 背光微调专用跃变记录（与高德日夜模式判定解耦，避免互相干扰）
     private int lastPowerMode = -1;
     private int lastKeyState = -1;
     private int lastEngineState = -1;
@@ -1176,14 +1177,21 @@ public class VehicleAutomationService extends Service {
         if (gearStateMachine != null) {
             gearStateMachine.updateGear(gear, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
         }
-        if (gear == 2 || gear == 6) {
-            speedAutoplayArmed = true; // 出P挡起步武装
-            speedCustomActionArmed = true; // 出P挡自定义车速动作武装
-        } else if (gear == 5) {
-            speedAutoplayArmed = false; // 回P挡停稳归零
-            speedCustomActionArmed = false;
-            overspeedStartMs = 0;
-            overspeedWarned = false;
+        // 挡位跃变才重新武装/归零：
+        // D 挡心跳报文约每秒复读一次，若无条件 speedAutoplayArmed = true，会把「单次行程
+        // 触发即锁定」的闩锁每秒解一次 —— 表现为车速自启每秒重触发一次（媒体已在播放时
+        // 就是每秒刷一条「静默放行防打断」日志，实测 30 秒刷 30 条）。
+        if (gear != lastArmedGear) {
+            lastArmedGear = gear;
+            if (gear == 2 || gear == 6) {
+                speedAutoplayArmed = true; // 出P挡起步武装
+                speedCustomActionArmed = true; // 出P挡自定义车速动作武装
+            } else if (gear == 5) {
+                speedAutoplayArmed = false; // 回P挡停稳归零
+                speedCustomActionArmed = false;
+                overspeedStartMs = 0;
+                overspeedWarned = false;
+            }
         }
 
         // D挡起步联动 360 严格单次跃变状态机：切入D挡仅触发1次，锁死不循环调起；切出D挡重新武装
@@ -1270,12 +1278,27 @@ public class VehicleAutomationService extends Service {
             if (doorStateManager != null) {
                 doorStateManager.updateDoors(val, -1, -1, -1, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
             }
-            if (val == 1) checkFrontDoorPauseMusic();
+            // 关 ➔ 开 跃变才触发一次；门持续开着期间一律静默 (CAN 心跳复读不再刷屏、不再重复发暂停)
+            if (val == 1) {
+                if (!frontLeftDoorOpenLatched) {
+                    frontLeftDoorOpenLatched = true;
+                    checkFrontDoorPauseMusic();
+                }
+            } else if (val == 0) {
+                frontLeftDoorOpenLatched = false;
+            }
         } else if ("BCM_FrontRightDoorAjarStatus".equals(key)) {
             if (doorStateManager != null) {
                 doorStateManager.updateDoors(-1, val, -1, -1, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
             }
-            if (val == 1) checkFrontDoorPauseMusic();
+            if (val == 1) {
+                if (!frontRightDoorOpenLatched) {
+                    frontRightDoorOpenLatched = true;
+                    checkFrontDoorPauseMusic();
+                }
+            } else if (val == 0) {
+                frontRightDoorOpenLatched = false;
+            }
         } else if ("BCM_RearLeftDoorAjarStatus".equals(key)) {
             if (doorStateManager != null) {
                 doorStateManager.updateDoors(-1, -1, val, -1, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
@@ -1299,9 +1322,14 @@ public class VehicleAutomationService extends Service {
                     lastLightSts = 0;
                 }
             }
-            SharedPreferences p = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            if (p.getBoolean("vehicle_light_brightness_dim_enabled", false)) {
-                adjustScreenBrightness(val == 1);
+            // 背光微调必须同样走「跃变」判定：BCM_PositionLightSts 会被底层反复上报，若无跃变
+            // 闩锁，每次信号都要 spawn 一次 ADB shell 改亮度并打日志（实车即每秒一次 shell 调用）。
+            if (val != lastLightStsForDim) {
+                lastLightStsForDim = val;
+                SharedPreferences p = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                if (p.getBoolean("vehicle_light_brightness_dim_enabled", false)) {
+                    adjustScreenBrightness(val == 1);
+                }
             }
         }
 
@@ -1567,9 +1595,16 @@ public class VehicleAutomationService extends Service {
     // ==========================================
     private boolean speedAutoplayArmed = false;
     private boolean speedCustomActionArmed = false; // 车速自定义联动武装锁
+    // 上一次武装判定所用的挡位（跃变判定用）：D 挡心跳每秒复读，必须只在真实换挡跃变时
+    // 重新武装，否则「单次行程触发即锁定」的闩锁会被心跳每秒解开，导致车速自启与日志刷屏。
+    private volatile int lastArmedGear = -1;
     private boolean gearD360Armed = true; // D挡起步360单次跃变武装锁 (离开D挡才复位，彻底根治手动退出后循环调起)
     private long overspeedStartMs = 0;
     private boolean overspeedWarned = false;
+    // 前门开启「单次跃变」闩锁：门开着期间 CAN 报文会持续高频重复上报 data=1，
+    // 必须只在 关 ➔ 开 物理跃变的那一刻执行一次门控暂停，杜绝反复下发暂停指令与日志刷屏。
+    private volatile boolean frontLeftDoorOpenLatched = false;
+    private volatile boolean frontRightDoorOpenLatched = false;
 
     private void processVehicleSpeedAutomation(int speed) {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
