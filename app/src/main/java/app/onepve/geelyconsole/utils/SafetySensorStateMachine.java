@@ -3,25 +3,22 @@ package app.onepve.geelyconsole.utils;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 四项测试语音传感器的纯 Java安全判定状态机 (零 Android 依赖，可直跑 JVM 回归)。
+ * 两项测试语音传感器的纯 Java安全判定状态机 (零 Android 依赖，可直跑 JVM 回归)。
  *
  * 证据与铁律 (来源: 固件逆向 + 实车日志 + 用户安全决策)：
- * 1. oil normal 0x00300000 属于正常状态报文，绝不能当 "raw > 0 即警报" 判定 ——
- *    AdaptAPI funValue 采用 「funId基址 | 数值」打包编码：
+ * 1. AdaptAPI funValue 采用 「funId基址 | 数值」打包编码：
  *      - 安全带 DRV funId 0x00201200：funValue(0x00201201)=已系带(值1)，funValue(0x00201202)=未系(值2)；
- *      - 机油压力 funValue(0x00300000)：低 16 位数值 = 0 → 正常，数值非 0 才是低压警报；
  *      - 方向盘转角采样 funValue(0x0000002c)=44° → 数值在低 16 位。
- *    因此数值提取统一取 funValue & 0xFFFF (低16位)，仅当数值非 0 才可能是警报。
- * 2. TCU / OIL / EPB / 角度的 "未知值必须静默"：任何未在白名单内的枚举值一律判 unknown，
+ *    因此数值提取统一取 funValue & 0xFFFF (低16位)。
+ * 2. EPB / 角度的 "未知值必须静默"：任何未在白名单内的枚举值一律判 unknown，
  *    坚决不播报、不误警 (证据不足安全静默)。
  * 3. 信号新鲜度：每个传感器记录最后收到时间戳 (单调时钟注入)，过期 (默认 5s) 一律视为
  *    unknown，绝不以陈旧值报警。
  * 4. 一次触发/去抖：同一告警需要持续时间 (默认 1200ms 去抖窗口) 才确认，且每个点火
  *    行程 (trip) 内同类告警仅播报一次，杜绝心跳复读。
- * 5. 低续航 <= 50km 含 0：0 属于 "仪表无有效读数/刚通电无效值"，必须静默 (不是没油了)。
- * 6. 角度比例未实车验证：偏角判定阈值 60° 为测试值，超过正负最大量程(±540°)判 unknown。
- * 7. EPB 语义: 0x00/0=释放, 0x01/1=拉起 (实车采样值)。其余值 unknown。
- * 8. 告警确认后回调播报由调用方执行；本类只做判定，绝不谎称已播放 ——
+ * 5. 角度比例未实车验证：偏角判定阈值 60° 为测试值，超过正负最大量程(±540°)判 unknown。
+ * 6. EPB 语义: 0x00/0=释放, 0x01/1=拉起 (实车采样值)。其余值 unknown。
+ * 7. 告警确认后回调播报由调用方执行；本类只做判定，绝不谎称已播放 ——
  *    onAlarmConfirmed 返回后调用方自行记录是否真实送入仲裁器。
  */
 public final class SafetySensorStateMachine {
@@ -29,16 +26,11 @@ public final class SafetySensorStateMachine {
     /** 传感器种类 */
     public static final int SENSOR_STEER_ANGLE = 0;   // 方向盘转角 (P3 关怀)
     public static final int SENSOR_EPB = 1;           // 电子手刹 (P0 高危)
-    public static final int SENSOR_LOW_FUEL = 2;       // 低续航 (P3 单次关怀)
-    public static final int SENSOR_TCU_TEMP = 3;       // 变速箱高温 (P0)
-    public static final int SENSOR_OIL_PRESSURE = 4;   // 机油低压 (P0)
 
     /** EPB 已知枚举 (实车采样: 0x01=拉起 / 0x00=释放) */
     public static final int EPB_RELEASED = 0;
     public static final int EPB_ENGAGED = 1;
 
-    /** 低续航阈值: <=50km 且 >0 才提醒 (0 是无效值不是没油) */
-    public static final int LOW_FUEL_THRESHOLD_KM = 50;
     /** 方向盘未回正测试阈值 (度，测试值未实车标定) */
     public static final int STEER_ANGLE_THRESHOLD_DEG = 60;
     /** 方向盘角度合理量程上限 (度) */
@@ -59,13 +51,13 @@ public final class SafetySensorStateMachine {
     }
 
     /** 一次触发锁: 每个点火行程每类告警仅确认一次 */
-    private final boolean[] trippedThisCycle = new boolean[5];
+    private final boolean[] trippedThisCycle = new boolean[2];
     /** 告警开始时间戳 (0=当前无告警候选) */
-    private final long[] alarmCandidateSince = new long[5];
+    private final long[] alarmCandidateSince = new long[2];
     /** 各传感器最后收到有效 (已知枚举) 信号的时间戳 */
-    private final long[] lastSignalAt = new long[5];
+    private final long[] lastSignalAt = new long[2];
     /** 各传感器当前已知值; unknown 用 NaN / -1 表示 */
-    private final double[] currentKnownValue = new double[5];
+    private final double[] currentKnownValue = new double[2];
 
     private final Clock clock;
     private long tripStartAt = 0L;
@@ -78,10 +70,10 @@ public final class SafetySensorStateMachine {
         resetTrip(this.clock.now());
     }
 
-    /** 新点火行程开始: 重置一次触发锁与告警候选 (低续航每点火一次的语义载体) */
+    /** 新点火行程开始: 重置一次触发锁与告警候选 */
     public synchronized void resetTrip(long now) {
         tripStartAt = now;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 2; i++) {
             trippedThisCycle[i] = false;
             alarmCandidateSince[i] = 0L;
             lastSignalAt[i] = 0L;
@@ -160,61 +152,6 @@ public final class SafetySensorStateMachine {
         }
     }
 
-    /**
-     * 剩余续航 (km)。0 = 无效读数 (刚通电/仪表未就绪) 静默；负数无效静默。
-     */
-    public synchronized void feedRemainOdo(int remainKm, long now) {
-        if (remainKm <= 0) {
-            // 0 含在阈值内但属于无效值: 仅记录 unknown，绝不触发低油量告警
-            currentKnownValue[SENSOR_LOW_FUEL] = Double.NaN;
-            return;
-        }
-        currentKnownValue[SENSOR_LOW_FUEL] = remainKm;
-        lastSignalAt[SENSOR_LOW_FUEL] = now;
-    }
-
-    /**
-     * TCU 过热等级 (0=正常, >0 为告警等级)。TCU 不得猜 ID/枚举:
-     * 等级数值 >0 才是告警候选 (feed 时开始计时去抖)；0=正常清候选。
-     */
-    public synchronized void feedTcuTempLevel(int level, long now) {
-        if (level < 0) {
-            currentKnownValue[SENSOR_TCU_TEMP] = Double.NaN;
-            alarmCandidateSince[SENSOR_TCU_TEMP] = 0L;
-            return;
-        }
-        currentKnownValue[SENSOR_TCU_TEMP] = level;
-        lastSignalAt[SENSOR_TCU_TEMP] = now;
-        if (level > 0) {
-            if (alarmCandidateSince[SENSOR_TCU_TEMP] == 0L && !trippedThisCycle[SENSOR_TCU_TEMP]) {
-                alarmCandidateSince[SENSOR_TCU_TEMP] = now;
-            }
-        } else {
-            alarmCandidateSince[SENSOR_TCU_TEMP] = 0L;
-        }
-    }
-
-    /**
-     * 机油压力低压值 (0=正常, >0=低压告警等级)。
-     * 关键: funValue 0x00300000 提取低16位=0 → 正常，绝不能 raw>0 就当警报！
-     */
-    public synchronized void feedOilPressure(int level, long now) {
-        if (level < 0) {
-            currentKnownValue[SENSOR_OIL_PRESSURE] = Double.NaN;
-            alarmCandidateSince[SENSOR_OIL_PRESSURE] = 0L;
-            return;
-        }
-        currentKnownValue[SENSOR_OIL_PRESSURE] = level;
-        lastSignalAt[SENSOR_OIL_PRESSURE] = now;
-        if (level > 0) {
-            if (alarmCandidateSince[SENSOR_OIL_PRESSURE] == 0L && !trippedThisCycle[SENSOR_OIL_PRESSURE]) {
-                alarmCandidateSince[SENSOR_OIL_PRESSURE] = now;
-            }
-        } else {
-            alarmCandidateSince[SENSOR_OIL_PRESSURE] = 0L;
-        }
-    }
-
     // ---------------- 判定 (证据不足安全静默) ----------------
 
     /**
@@ -259,63 +196,11 @@ public final class SafetySensorStateMachine {
         return RESULT_ALARM_CONFIRMED;
     }
 
-    /** 低续航判定: 0 < remain <= 50 才提醒，每点火行程一次 */
-    public synchronized int checkLowFuel(long now) {
-        if (!isFresh(SENSOR_LOW_FUEL, now)) {
-            return RESULT_SILENT;
-        }
-        double km = currentKnownValue[SENSOR_LOW_FUEL];
-        if (Double.isNaN(km) || km <= 0 || km > LOW_FUEL_THRESHOLD_KM) {
-            return RESULT_SILENT;
-        }
-        if (trippedThisCycle[SENSOR_LOW_FUEL]) {
-            return RESULT_ALARM_ONGOING;
-        }
-        trippedThisCycle[SENSOR_LOW_FUEL] = true;
-        return RESULT_ALARM_CONFIRMED;
-    }
-
-    /** TCU 过热判定: 等级 > 0 持续去抖后确认一次 */
-    public synchronized int checkTcuOverTemp(long now) {
-        return checkP0Alarm(SENSOR_TCU_TEMP, now);
-    }
-
-    /** 机油低压判定: 提取后数值 > 0 持续去抖后确认一次 */
-    public synchronized int checkOilLowPressure(long now) {
-        return checkP0Alarm(SENSOR_OIL_PRESSURE, now);
-    }
-
     // ---------------- 内部 ----------------
 
     private boolean isFresh(int sensor, long now) {
         long at = lastSignalAt[sensor];
         return at > 0 && (now - at) <= SIGNAL_FRESHNESS_MS;
-    }
-
-    /**
-     * P0 告警统一判定 (TCU/OIL): 数值 > 0 (提取后) 且信号新鲜且自 feed 起持续
-     * ALARM_DEBOUNCE_MS 才确认，每点火行程仅确认一次 (RESULT_ALARM_CONFIRMED)。
-     */
-    private int checkP0Alarm(int sensor, long now) {
-        if (!isFresh(sensor, now)) {
-            return RESULT_SILENT;
-        }
-        double v = currentKnownValue[sensor];
-        if (Double.isNaN(v) || v <= 0) {
-            return RESULT_SILENT;
-        }
-        // 一次触发锁: 已确认过的行程内绝不复读
-        if (trippedThisCycle[sensor]) {
-            return RESULT_ALARM_ONGOING;
-        }
-        // 去抖: 由 feed 开始计时，此刻校验持续时间
-        if (alarmCandidateSince[sensor] == 0L
-                || now - alarmCandidateSince[sensor] < ALARM_DEBOUNCE_MS) {
-            return RESULT_SILENT;
-        }
-        trippedThisCycle[sensor] = true;
-        alarmCandidateSince[sensor] = 0L;
-        return RESULT_ALARM_CONFIRMED;
     }
 
     /** 诊断: 当前已知值 (NaN=unknown)，仅测试与状态回显用 */

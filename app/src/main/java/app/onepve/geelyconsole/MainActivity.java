@@ -2706,9 +2706,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_master_switch", prefs.getBoolean("voice_master_switch", true));
                 obj.put("wheel_master_switch", prefs.getBoolean("wheel_master_switch", true));
 
-                // 360 与车灯联动
+                // 360 与熄火提醒联动
                 obj.put("vehicle_gear_d_360_enabled", prefs.getBoolean("vehicle_gear_d_360_enabled", false));
-                obj.put("vehicle_light_nav_enabled", prefs.getBoolean("vehicle_light_nav_enabled", false));
                 obj.put("vehicle_flameout_voice_enabled", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
                 obj.put("vehicle_speed_custom_action_enabled", prefs.getBoolean("vehicle_speed_custom_action_enabled", false));
                 obj.put("vehicle_speed_custom_action_threshold", prefs.getInt("vehicle_speed_custom_action_threshold", 40));
@@ -2747,11 +2746,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_enable_mode_eco", prefs.getBoolean("voice_enable_mode_eco", true));
                 obj.put("voice_enable_mode_sport", prefs.getBoolean("voice_enable_mode_sport", true));
 
-                // 车况感知与安全守护 (测试)
+                // 车况感知与安全守护 (两项测试)
                 obj.put("voice_enable_steer_angle_guard", prefs.getBoolean("voice_enable_steer_angle_guard", true));
                 obj.put("voice_enable_epb_guard", prefs.getBoolean("voice_enable_epb_guard", true));
-                obj.put("voice_enable_low_fuel_guard", prefs.getBoolean("voice_enable_low_fuel_guard", true));
-                obj.put("voice_enable_powertrain_guard", prefs.getBoolean("voice_enable_powertrain_guard", true));
 
                 // 默认值：出厂统一默认控制台独立接管模式，短按 Mode 唤起 360
                 boolean hasCarMedia = SystemUtils.isPackageInstalled(MainActivity.this, "com.ecarx.carmedia");
@@ -2773,8 +2770,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("vehicle_speed_autoplay_fullscreen", prefs.getBoolean("vehicle_speed_autoplay_fullscreen", false));
                 obj.put("vehicle_door_pause_music_enabled", prefs.getBoolean("vehicle_door_pause_music_enabled", false));
                 obj.put("vehicle_rear_door_alert_enabled", prefs.getBoolean("vehicle_rear_door_alert_enabled", false));
-                obj.put("vehicle_light_brightness_dim_enabled", prefs.getBoolean("vehicle_light_brightness_dim_enabled", true));
-                obj.put("vehicle_light_dim_level", prefs.getInt("vehicle_light_dim_level", 35));
                 obj.put("preferred_navi_pkg", prefs.getString("preferred_navi_pkg", "com.autonavi.amapauto"));
 
                 // 方控多手势映射 (单击/双击/长按)
@@ -2794,7 +2789,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
 
                 // 兼容历史老 Key 别名
-                obj.put("light_nav", prefs.getBoolean("vehicle_light_nav_enabled", false));
                 obj.put("flameout_voice", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
                 obj.put("voice_door_fl", prefs.getBoolean("voice_enable_door_fl", true));
                 obj.put("voice_door_fl_close", prefs.getBoolean("voice_enable_door_fl_close", true));
@@ -3326,15 +3320,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     } else if ("epb_guard".equals(type)) {
                         // 车况安全守护试听 (P0): 纯界面试听，与真实触发无关
                         player.play("epb_alarm.mp3", "警告，电子手刹未拉起", VehicleVoicePlayer.PRIORITY_P0_ALARM);
-                    } else if ("low_fuel".equals(type)) {
-                        // 车况安全守护试听 (P3): 纯界面试听，与真实触发无关
-                        player.play("low_fuel.mp3", "燃油即将耗尽，请及时加油", VehicleVoicePlayer.PRIORITY_P3_ADVISORY);
-                    } else if ("tcu_alarm".equals(type)) {
-                        // 车况安全守护试听 (P0): 纯界面试听，与真实触发无关
-                        player.play("tcu_alarm.mp3", "警告，变速箱油温过高，请靠边停车怠速散热", VehicleVoicePlayer.PRIORITY_P0_ALARM);
-                    } else if ("oil_alarm".equals(type)) {
-                        // 车况安全守护试听 (P0): 纯界面试听，与真实触发无关
-                        player.play("oil_alarm.mp3", "警告，机油压力过低，请检查发动机", VehicleVoicePlayer.PRIORITY_P0_ALARM);
                     } else {
                         if (!player.isTtsReady()) {
                             player.ensureTtsReady();

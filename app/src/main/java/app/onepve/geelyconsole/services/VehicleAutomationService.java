@@ -85,9 +85,8 @@ public class VehicleAutomationService extends Service {
     private boolean enableModeComfort = true;
     private boolean enableModeEco = true;
     private boolean enableModeSport = true;
-    private boolean enableLightNav = false;
     private boolean enableFlameoutVoice = false;
-    // 车况安全守护四项测试开关聚合 (shouldRun 门控)
+    // 车况安全守护两项测试开关聚合 (shouldRun 门控)
     private boolean enableSafetyGuards = true;
 
     // 驾驶模式标准解耦枚举 (100% 根绝底层各协议数值冲突)
@@ -105,8 +104,6 @@ public class VehicleAutomationService extends Service {
 
     public static volatile int lastGearPos = -1;
     public static volatile int lastDriveMode = -1;
-    private int lastLightSts = -1;
-    private int lastLightStsForDim = -1; // 背光微调专用跃变记录（与高德日夜模式判定解耦，避免互相干扰）
     private int lastPowerMode = -1;
     private int lastKeyState = -1;
     private int lastEngineState = -1;
@@ -142,9 +139,6 @@ public class VehicleAutomationService extends Service {
     /** 信号时间戳 (单调 SystemClock) */
     private long steerAngleSignalAt = 0L;
     private long epbSignalAt = 0L;
-    private long remainOdoSignalAt = 0L;
-    private long tcuTempSignalAt = 0L;
-    private long oilPressureSignalAt = 0L;
     /** 桥接只读快照 (供 MainActivity 同步读取，不加锁只写 volatile) */
     private volatile boolean lastEngineRunningSnapshot = false;
 
@@ -251,7 +245,6 @@ public class VehicleAutomationService extends Service {
             boolean modeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
             boolean modeEco = prefs.getBoolean("voice_enable_mode_eco", true);
             boolean modeSport = prefs.getBoolean("voice_enable_mode_sport", true);
-            boolean lightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
             boolean flameout = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
             String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
             boolean wheelEnabled = wheelMaster && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
@@ -267,18 +260,15 @@ public class VehicleAutomationService extends Service {
 
             boolean guardSteer = prefs.getBoolean("voice_enable_steer_angle_guard", true);
             boolean guardEpb = prefs.getBoolean("voice_enable_epb_guard", true);
-            boolean guardLowFuel = prefs.getBoolean("voice_enable_low_fuel_guard", true);
-            boolean guardPowertrain = prefs.getBoolean("voice_enable_powertrain_guard", true);
-            boolean anySafetyGuardEnabled = voiceMaster && (guardSteer || guardEpb || guardLowFuel || guardPowertrain);
+            boolean anySafetyGuardEnabled = voiceMaster && (guardSteer || guardEpb);
 
             boolean anyVoiceEnabled = voiceMaster && (doorFl || doorFlClose || doorFr || doorFrClose ||
                                 doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
                                 trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
                                 modeSmart || modeComfort || modeEco || modeSport ||
                                 flameout || anySafetyGuardEnabled);
-            boolean anyVehicleAutoEnabled = lightNav;
 
-            boolean shouldRun = anyVoiceEnabled || anyVehicleAutoEnabled || wheelEnabled
+            boolean shouldRun = anyVoiceEnabled || wheelEnabled
                     || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
             Intent intent = new Intent(context, VehicleAutomationService.class);
@@ -406,15 +396,12 @@ public class VehicleAutomationService extends Service {
         enableModeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
         enableModeEco = prefs.getBoolean("voice_enable_mode_eco", true);
         enableModeSport = prefs.getBoolean("voice_enable_mode_sport", true);
-        enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
 
-        // 车况安全守护四项测试开关 (同步进 shouldRun 门控)
+        // 车况安全守护两项测试开关 (同步进 shouldRun 门控)
         enableSafetyGuards = voiceMasterSwitch && (
                 prefs.getBoolean("voice_enable_steer_angle_guard", true)
-                        || prefs.getBoolean("voice_enable_epb_guard", true)
-                        || prefs.getBoolean("voice_enable_low_fuel_guard", true)
-                        || prefs.getBoolean("voice_enable_powertrain_guard", true));
+                        || prefs.getBoolean("voice_enable_epb_guard", true));
 
         // 若服务在行车中启动，立即建立主驾已就坐基准，避免车门语音误判为上车
         if (lastPowerMode > 0 && doorStateManager != null) {
@@ -429,9 +416,7 @@ public class VehicleAutomationService extends Service {
                              enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN || enableGearS ||
                              enableModeSmart || enableModeComfort || enableModeEco || enableModeSport ||
                              enableFlameoutVoice || enableSafetyGuards);
-        boolean anyVehicleAutoEnabled = enableLightNav;
-
-        boolean anyEnabled = anyVoiceEnabled || anyVehicleAutoEnabled || wheelEnabled
+        boolean anyEnabled = anyVoiceEnabled || wheelEnabled
                 || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
         if (!anyEnabled) {
@@ -873,85 +858,6 @@ public class VehicleAutomationService extends Service {
             } catch (Exception ignored) {}
         }
 
-        // 4.7 解析剩余里程与低油量关怀 (INFO_ID_IPKINFO_REMAIN_ODO)
-        // 强匹配: 0 = 无效读数 (刚通电/仪表未就绪) 绝不告警；0 < km <= 50 每点火一次。
-        if (line.contains("INFO_ID_IPKINFO_REMAIN_ODO")) {
-            try {
-                Matcher m = Pattern.compile("(?:funValue|funcValue)\\((?:0x)?([0-9a-fA-F]+)\\)").matcher(line);
-                if (m.find()) {
-                    int raw = (int) Long.parseLong(m.group(1), 16);
-                    int odo = raw & 0xFFFF; // 低16位为公里数 (实车采样 0x10b=267km)
-                    long now = android.os.SystemClock.elapsedRealtime();
-                    safetySensors.feedRemainOdo(odo, now);
-                    if (odo > 0) remainOdoSignalAt = now;
-                    if (odo > 0 && isEngineRunning()) {
-                        SharedPreferences p = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        if (p.getBoolean("voice_enable_low_fuel_guard", true)) {
-                            int r = safetySensors.checkLowFuel(now);
-                            if (r == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED) {
-                                AppLogger.w("安全守护", "【P3关怀】剩余续航不足 50km (当前=" + odo + "km)，单次低油量温馨播报 (本点火行程不再重复)");
-                                if (voicePlayer != null) {
-                                    voicePlayer.play("low_fuel.mp3", "燃油即将耗尽，请及时加油", VehicleVoicePlayer.PRIORITY_P3_ADVISORY);
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (Exception ignored) {}
-        }
-
-        // 4.8 解析动力总成高危 (INFO_ID_IPKWARN_TCU_OVER_TEMP_LEVEL / INFO_ID_IPKWARN_OIL_LOW_PRESSURE)
-        // 铁律: funValue 为 funId基址|数值 打包。机油正常报文 funValue(0x00300000) 低16位=0 ——
-        // raw > 0 绝不能当警报！必须提取低16位，仅数值非0且持续去抖后才确认一次。
-        if (line.contains("INFO_ID_IPKWARN_TCU_OVER_TEMP_LEVEL")) {
-            try {
-                Matcher m = Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)").matcher(line);
-                if (m.find()) {
-                    int raw = (int) Long.parseLong(m.group(1), 16);
-                    int level = raw & 0xFFFF; // 提取有效等级数值
-                    long now = android.os.SystemClock.elapsedRealtime();
-                    safetySensors.feedTcuTempLevel(level, now);
-                    if (level >= 0) tcuTempSignalAt = now;
-                    if (isEngineRunning()) {
-                        SharedPreferences p = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        if (p.getBoolean("voice_enable_powertrain_guard", true)) {
-                            int r = safetySensors.checkTcuOverTemp(now);
-                            if (r == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED) {
-                                AppLogger.e("安全守护", "【P0报警】变速箱油温过高告警确认 (Level=" + level + "，去抖1200ms通过，本行程仅一次)");
-                                if (voicePlayer != null) {
-                                    voicePlayer.play("tcu_alarm.mp3", "警告，变速箱油温过高，请靠边停车怠速散热", VehicleVoicePlayer.PRIORITY_P0_ALARM);
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (Exception ignored) {}
-        }
-        if (line.contains("INFO_ID_IPKWARN_OIL_LOW_PRESSURE")) {
-            try {
-                Matcher m = Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)").matcher(line);
-                if (m.find()) {
-                    int raw = (int) Long.parseLong(m.group(1), 16);
-                    int level = raw & 0xFFFF; // 正常 0x00300000 → 0 = 正常，绝非警报!
-                    long now = android.os.SystemClock.elapsedRealtime();
-                    safetySensors.feedOilPressure(level, now);
-                    if (level >= 0) oilPressureSignalAt = now;
-                    if (isEngineRunning()) {
-                        SharedPreferences p = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        if (p.getBoolean("voice_enable_powertrain_guard", true)) {
-                            int r = safetySensors.checkOilLowPressure(now);
-                            if (r == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED) {
-                                AppLogger.e("安全守护", "【P0报警】机油压力过低告警确认 (值=" + level + "，去抖1200ms通过，本行程仅一次)");
-                                if (voicePlayer != null) {
-                                    voicePlayer.play("oil_alarm.mp3", "警告，机油压力过低，请检查发动机", VehicleVoicePlayer.PRIORITY_P0_ALARM);
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (Exception ignored) {}
-        }
-
         // 4.1 解析驾驶模式切换信号 (严格收敛对齐 Tasker 实车验证黄金法则: 纯净收敛于 ECarXCarConfigService 与 AdaptAPI 权威常量)
         int modeVal = -1;
 
@@ -1172,30 +1078,6 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 大灯联动高德日夜模式与背光微调
-        if ("BCM_PositionLightSts".equals(key)) {
-            if (enableLightNav) {
-                if (lastLightSts == -1) {
-                    lastLightSts = val;
-                } else if (val == 1 && lastLightSts == 0) {
-                    sendAmapDayNightMode(2); // 黑夜模式
-                    lastLightSts = 1;
-                } else if (val == 0 && lastLightSts == 1) {
-                    sendAmapDayNightMode(0); // 日间模式
-                    lastLightSts = 0;
-                }
-            }
-            // 背光微调必须同样走「跃变」判定：BCM_PositionLightSts 会被底层反复上报，若无跃变
-            // 闩锁，每次信号都要 spawn 一次 ADB shell 改亮度并打日志（实车即每秒一次 shell 调用）。
-            if (val != lastLightStsForDim) {
-                lastLightStsForDim = val;
-                SharedPreferences p = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                if (p.getBoolean("vehicle_light_brightness_dim_enabled", false)) {
-                    adjustScreenBrightness(val == 1);
-                }
-            }
-        }
-
         // 电源模式/熄火检测
         if ("PEPS_PowerMode".equals(key)) {
             if (val == 0) {
@@ -1348,18 +1230,6 @@ public class VehicleAutomationService extends Service {
         } catch (Exception e) {
             Log.w(TAG, "Failed to close 360: " + e.getMessage());
             AppLogger.w("车身联动", "退出 360 失败: " + e.getMessage());
-        }
-    }
-
-    private void sendAmapDayNightMode(int mode) {
-        try {
-            Intent intent = new Intent("AUTONAVI_STANDARD_BROADCAST_RECV");
-            intent.putExtra("KEY_TYPE", 10048);
-            intent.putExtra("EXTRA_DAY_NIGHT_MODE", mode);
-            intent.setComponent(new ComponentName("com.autonavi.amapauto", "com.autonavi.amapauto.adapter.internal.AmapAutoBroadcastReceiver"));
-            sendBroadcast(intent);
-        } catch (Exception e) {
-            Log.w(TAG, "Failed to send Amap broadcast: " + e.getMessage());
         }
     }
 
@@ -1576,29 +1446,4 @@ public class VehicleAutomationService extends Service {
         } catch (Throwable ignored) {}
     }
 
-    private int originalBrightness = -1;
-    private void adjustScreenBrightness(final boolean dim) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                    int dimPercent = prefs.getInt("vehicle_light_dim_level", 35);
-                    if (dim) {
-                        try {
-                            originalBrightness = android.provider.Settings.System.getInt(getContentResolver(), android.provider.Settings.System.SCREEN_BRIGHTNESS, 180);
-                        } catch (Throwable ignored) {}
-                        int targetVal = (int) (dimPercent * 255.0f / 100.0f);
-                        if (targetVal < 20) targetVal = 20;
-                        AdbClient.execute(VehicleAutomationService.this, "settings put system screen_brightness " + targetVal);
-                        AppLogger.i("车身联动", "进隧道/夜间开大灯，已平滑微调屏幕背光至护眼亮度 (" + dimPercent + "%)");
-                    } else {
-                        int restoreVal = originalBrightness > 0 ? originalBrightness : 180;
-                        AdbClient.execute(VehicleAutomationService.this, "settings put system screen_brightness " + restoreVal);
-                        AppLogger.i("车身联动", "出隧道/白天关大灯，已恢复屏幕原始亮度 (" + restoreVal + ")");
-                    }
-                } catch (Throwable ignored) {}
-            }
-        }).start();
-    }
 }

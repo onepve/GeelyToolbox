@@ -59,8 +59,6 @@ export const store = reactive({
     voice_enable_mode_sport: true,
     voice_enable_steer_angle_guard: true,
     voice_enable_epb_guard: true,
-    voice_enable_low_fuel_guard: true,
-    voice_enable_powertrain_guard: true,
     voice_enable_door_fl: true,
     voice_enable_door_fl_close: true,
     voice_enable_door_fr: true,
@@ -72,8 +70,6 @@ export const store = reactive({
     voice_enable_trunk_open: true,
     voice_enable_trunk_close: true,
     vehicle_gear_d_360_enabled: false,
-    vehicle_light_nav_enabled: false,
-    vehicle_light_brightness_dim_enabled: true, // 白天开大灯进隧道中控背光微调默认开启
     vehicle_speed_custom_action_enabled: false,
     vehicle_speed_custom_action_threshold: 40,
     vehicle_speed_custom_action_target: 'pkg' + ':com.autonavi.amapauto', // 默认高德车机地图

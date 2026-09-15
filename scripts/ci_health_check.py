@@ -747,10 +747,6 @@ for lk, ldesc in required_link_keys:
 
 if "vehicle_d_gear_360_enabled" not in lv_full_code and "vehicle_gear_d_360_enabled" not in lv_full_code:
     reg_violations.append("LinkView.vue 缺少 D 挡起步 360 联动任务！")
-if "vehicle_headlight_nav_night_enabled" not in lv_full_code and "vehicle_light_nav_night_enabled" not in lv_full_code:
-    reg_violations.append("LinkView.vue 缺少进出隧道大灯联动高德任务！")
-if "vehicle_headlight_dim_screen_enabled" not in lv_full_code and "vehicle_light_brightness_dim_enabled" not in lv_full_code:
-    reg_violations.append("LinkView.vue 缺少进隧道中控护眼背光微调任务！")
 
 if "adjustAutoplaySpeed" not in lv_full_code or "adjustCustomActionSpeed" not in lv_full_code:
     reg_violations.append("LinkView.vue 缺少车速纯加减微调控制器，不得回退为死板预设！")

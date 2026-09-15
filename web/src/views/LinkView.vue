@@ -327,7 +327,7 @@
             <div class="flex items-center space-x-3">
               <span class="text-[16px] font-black text-car-text">自动唤起预选目标（单次行程防抖，回 P 挡重置）：</span>
             </div>
-            <!-- 动作选择：默认高德地图，360移至右侧并标注原厂限速限制 -->
+            <!-- 动作选择：默认高德车机地图，或自选整车任意第三方软件 -->
             <div class="flex items-center space-x-3">
               <button 
                 @click="setCustomActionTarget('pkg:com.autonavi.amapauto')"
@@ -351,120 +351,19 @@
               >
                 {{ customActionAppName ? customActionAppName : '自选应用 ➔' }}
               </button>
-              <button 
-                @click="setCustomActionTarget('action_360')"
-                :class="[
-                  'flex-1 h-[52px] rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2 whitespace-nowrap',
-                  store.vehicleAuto.vehicle_speed_custom_action_target === 'action_360'
-                    ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                    : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-                ]"
-              >
-                唤起 360 (限速≤30)
-              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 任务 5: 白天大灯联动高德日夜模式 -->
-      <div 
-        v-if="isTaskVisible('light_nav')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
-      >
-        <div class="flex items-center justify-between shrink-0 mb-2">
-          <div class="flex items-center space-x-3">
-            <span class="text-[21px] font-black text-car-text tracking-wide">5. 进隧道大灯联动高德</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">高德暗色</span>
-            <button 
-              @click.stop="showHelp('light_nav')"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-              title="查看功能指南"
-            >?</button>
-          </div>
-          <button 
-            @click="removeTask('light_nav', '进隧道高德日夜联动')"
-            class="h-[50px] px-4 rounded-xl bg-car-item border border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[14px] cursor-pointer shadow-sm transition-all shrink-0"
-            title="从工作台移除"
-          >
-            移除
-          </button>
-        </div>
-
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">白天行车开启前大灯（驶入地下车库或隧道）</div>
-          <div class="text-car-text font-bold">秒级切为夜间深色导航；关灯自动恢复浅色</div>
-        </div>
-
-        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <button
-            @click="toggleSetting('vehicle_headlight_nav_night_enabled')"
-            :class="[
-              'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-              store.vehicleAuto.vehicle_headlight_nav_night_enabled
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_headlight_nav_night_enabled ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
-            <span>{{ store.vehicleAuto.vehicle_headlight_nav_night_enabled ? '大灯联动高德运行中' : '大灯联动高德已暂停' }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 任务 6: 进隧道中控屏幕护眼背光微调 -->
-      <div 
-        v-if="isTaskVisible('light_dim')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
-      >
-        <div class="flex items-center justify-between shrink-0 mb-2">
-          <div class="flex items-center space-x-3">
-            <span class="text-[21px] font-black text-car-text tracking-wide">6. 进隧道中控背光微调</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">背光柔和</span>
-            <button 
-              @click.stop="showHelp('light_dim')"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-              title="查看功能指南"
-            >?</button>
-          </div>
-          <button 
-            @click="removeTask('light_dim', '中控背光微调')"
-            class="h-[50px] px-4 rounded-xl bg-car-item border border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[14px] cursor-pointer shadow-sm transition-all shrink-0"
-            title="从工作台移除"
-          >
-            移除
-          </button>
-        </div>
-
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">白天开启前大灯（进车库或穿行长隧道）</div>
-          <div class="text-car-text font-bold">自动将中控屏幕亮度微调压低至 35% 柔光护眼</div>
-        </div>
-
-        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <button
-            @click="toggleSetting('vehicle_headlight_dim_screen_enabled')"
-            :class="[
-              'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-              store.vehicleAuto.vehicle_headlight_dim_screen_enabled
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_headlight_dim_screen_enabled ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
-            <span>{{ store.vehicleAuto.vehicle_headlight_dim_screen_enabled ? '隧道背光微调运行中' : '隧道背光微调已暂停' }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 任务 7: P 挡开门多媒体优雅静音 -->
+      <!-- 任务 5: P 挡开门多媒体优雅静音 -->
       <div 
         v-if="isTaskVisible('door_pause')"
         class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
       >
         <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
-            <span class="text-[21px] font-black text-car-text tracking-wide">7. 停稳推门多媒体暂停</span>
+            <span class="text-[21px] font-black text-car-text tracking-wide">5. 停稳推门多媒体暂停</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">下车静音</span>
             <button 
               @click.stop="showHelp('door_pause')"
@@ -579,9 +478,7 @@ const showAddModal = ref(false);
 const allTasks = [
   { id: 'd_360', title: '前进 D 挡起步联动 360 全景', tag: '起步环视', desc: '从 P/R 挂入 D 挡起步唤醒 360 环视四周；单次跃变锁防反复弹出。' },
   { id: 'speed_music', title: '车速达标智能启播车载音乐', tag: '起步自启', desc: '车速达到设定阈值后后台自动启播自选音乐，支持纯加减自由微调速度。' },
-  { id: 'speed_action', title: '车速达标自定义动作与唤起应用', tag: '自定动作', desc: '车速达标后自动打开 360、高德或整车已安装的任意第三方软件。' },
-  { id: 'light_nav', title: '进隧道大灯联动高德日夜模式', tag: '高德暗色', desc: '白天开大灯秒级切深色高德地图，出隧道关大灯自动恢复浅色。' },
-  { id: 'light_dim', title: '进隧道中控屏幕护眼背光微调', tag: '背光柔和', desc: '白天开大灯后中控屏幕亮度压暗至 35%，出隧道关灯秒恢复。' },
+  { id: 'speed_action', title: '车速达标自定义动作与唤起应用', tag: '自定动作', desc: '车速达标后自动打开高德或整车已安装的任意第三方软件。' },
   { id: 'door_pause', title: '停稳推门多媒体自动暂停', tag: '下车静音', desc: '挂 P 挡推开车门秒级暂停音乐，下车安静从容。' }
 ];
 
@@ -602,8 +499,6 @@ const activeTaskCount = computed(() => {
   if (isTaskVisible('d_360') && store.vehicleAuto.vehicle_d_gear_360_enabled) count++;
   if (isTaskVisible('speed_music') && store.vehicleAuto.vehicle_speed_autoplay_enabled) count++;
   if (isTaskVisible('speed_action') && store.vehicleAuto.vehicle_speed_custom_action_enabled) count++;
-  if (isTaskVisible('light_nav') && store.vehicleAuto.vehicle_headlight_nav_night_enabled) count++;
-  if (isTaskVisible('light_dim') && store.vehicleAuto.vehicle_headlight_dim_screen_enabled) count++;
   if (isTaskVisible('door_pause') && store.vehicleAuto.vehicle_door_pause_music_enabled) count++;
   return count;
 });
@@ -710,11 +605,7 @@ function toggleSetting(key) {
   // 双向兼容映射：保证 Java 后端能百分之百接收对应真实 key
   const aliasMap = {
     vehicle_d_gear_360_enabled: 'vehicle_gear_d_360_enabled',
-    vehicle_gear_d_360_enabled: 'vehicle_d_gear_360_enabled',
-    vehicle_headlight_nav_night_enabled: 'vehicle_light_nav_enabled',
-    vehicle_light_nav_enabled: 'vehicle_headlight_nav_night_enabled',
-    vehicle_headlight_dim_screen_enabled: 'vehicle_light_brightness_dim_enabled',
-    vehicle_light_brightness_dim_enabled: 'vehicle_headlight_dim_screen_enabled'
+    vehicle_gear_d_360_enabled: 'vehicle_d_gear_360_enabled'
   };
   if (aliasMap[key]) {
     store.vehicleAuto[aliasMap[key]] = next;
@@ -750,9 +641,7 @@ function adjustCustomActionSpeed(delta) {
 function setCustomActionTarget(target) {
   store.vehicleAuto.vehicle_speed_custom_action_target = target;
   bridge.call('setWheelControlStringSetting', 'vehicle_speed_custom_action_target', target);
-  if (target === 'action_360') {
-    showToast('车速达标联动目标已设为: 唤起 360 全景盲区');
-  } else if (target === 'pkg:com.autonavi.amapauto') {
+  if (target === 'pkg:com.autonavi.amapauto') {
     showToast('车速达标联动目标已设为: 打开高德车机地图');
   }
 }
@@ -786,16 +675,6 @@ function showHelp(key) {
       desc: '1. 单次跃变锁：从 P 挡或 R 挡切入前进 D 挡瞬间自动唤醒 360 环视四周；触发一次即锁定，手动退出绝不重复弹出。\n\n2. 自动退出：起步车速超 15km/h 自动退出全景，保持导航视线。',
       tip: '切出 D 挡离开后才会重新武装待命。'
     },
-    light_nav: {
-      title: '【功能指南】大灯联动高德日夜模式',
-      desc: '白天开大灯（进地下车库或隧道）秒级向高德发送夜间模式指令，出隧道关大灯自动恢复白天浅色地图，告别刺眼白底。',
-      tip: '常走隧道的车友建议保持开启。'
-    },
-    light_dim: {
-      title: '【功能指南】进隧道中控护眼背光微调',
-      desc: '白天开大灯后自动将车机中控屏幕亮度微调压低至 35%，消除进隧道瞬间强光眩目；出隧道关大灯秒级恢复原亮度。',
-      tip: '可与高德夜间联动独立开关。'
-    },
     door_pause: {
       title: '【功能指南】P 挡开门音乐暂停',
       desc: '挂入驻车 P 挡推开前门，毫秒级自动向播放器发送暂停指令，下车从容安静。（车门安全播报由【座舱语音】专职管理，零冲突零重复）',
@@ -817,12 +696,6 @@ function showHelp(key) {
 onMounted(() => {
   if (store.vehicleAuto.vehicle_gear_d_360_enabled !== undefined) {
     store.vehicleAuto.vehicle_d_gear_360_enabled = store.vehicleAuto.vehicle_gear_d_360_enabled;
-  }
-  if (store.vehicleAuto.vehicle_light_nav_enabled !== undefined) {
-    store.vehicleAuto.vehicle_headlight_nav_night_enabled = store.vehicleAuto.vehicle_light_nav_enabled;
-  }
-  if (store.vehicleAuto.vehicle_light_brightness_dim_enabled !== undefined) {
-    store.vehicleAuto.vehicle_headlight_dim_screen_enabled = store.vehicleAuto.vehicle_light_brightness_dim_enabled;
   }
   loadSortedMusicApps();
   loadCustomActionAppName();

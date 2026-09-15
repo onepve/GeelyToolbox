@@ -8,11 +8,11 @@
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">车况安全守护语音 (测试)</span>
           <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
             <span :class="['w-2.5 h-2.5 rounded-full mr-2', activeGuardCount > 0 ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-slate-400']"></span>
-            {{ activeGuardCount }} / 4 项守护运行中
+            {{ activeGuardCount }} / 2 项守护运行中
           </span>
         </div>
         <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-          四项底盘安全信号守护语音均为测试功能，逐项独立开关。语音仅作辅助提醒，不能替代仪表与警示灯；未知信号不报警。
+          两项底盘安全信号守护语音均为测试功能，逐项独立开关。语音仅作辅助提醒，不能替代仪表与警示灯；未知信号不报警。
         </div>
       </div>
       <div class="shrink-0 w-[230px]">
@@ -26,7 +26,7 @@
       </div>
     </div>
 
-    <!-- 四项守护双列等高网格 (2x2) -->
+    <!-- 两项守护双列等高网格 -->
     <div class="grid grid-cols-2 gap-5">
       <!-- 守护项 1: 方向盘未回正 -->
       <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200">
@@ -117,101 +117,6 @@
           </button>
         </div>
       </div>
-
-      <!-- 守护项 3: 低油量关怀 -->
-      <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200">
-        <div class="flex items-center justify-between shrink-0 mb-2">
-          <div class="flex items-center space-x-3">
-            <span class="text-[20px] font-black text-car-text tracking-wide">低油量温馨关怀 (测试)</span>
-            <button
-              @click.stop="showLowFuelHelp"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-            >
-              ?
-            </button>
-          </div>
-          <span :class="['px-3 py-1 rounded-full text-[13px] font-black border shrink-0', store.vehicleAuto.voice_enable_low_fuel_guard ? 'bg-emerald-500/10 border-emerald-500/40 text-car-text' : 'bg-car-item border-car-border text-car-sub']">
-            {{ store.vehicleAuto.voice_enable_low_fuel_guard ? '● 已开启' : '○ 已关闭' }}
-          </span>
-        </div>
-
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">续航不足 50km 或油量低于 12%，单次点火行程仅提醒一次</div>
-          <div class="text-car-text font-bold">温婉提示及时加油，不复读、不强跳地图搜索加油站</div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <button
-            @click="toggleGuard('voice_enable_low_fuel_guard')"
-            :class="[
-              'h-[52px] px-4 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-              store.vehicleAuto.voice_enable_low_fuel_guard
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.voice_enable_low_fuel_guard ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
-            <span class="truncate">{{ store.vehicleAuto.voice_enable_low_fuel_guard ? '守护已开启' : '守护已关闭' }}</span>
-          </button>
-          <button
-            @click="testVoice('low_fuel')"
-            class="h-[52px] px-4 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[16px] cursor-pointer shadow-sm transition-all flex items-center justify-center space-x-1"
-          >
-            <span>试听关怀</span>
-            <span>➔</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 守护项 4: 动力总成守护 (双声效) -->
-      <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200">
-        <div class="flex items-center justify-between shrink-0 mb-2">
-          <div class="flex items-center space-x-3">
-            <span class="text-[20px] font-black text-car-text tracking-wide">动力总成高危守护 (测试)</span>
-            <button
-              @click.stop="showPowertrainHelp"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-            >
-              ?
-            </button>
-          </div>
-          <span :class="['px-3 py-1 rounded-full text-[13px] font-black border shrink-0', store.vehicleAuto.voice_enable_powertrain_guard ? 'bg-emerald-500/10 border-emerald-500/40 text-car-text' : 'bg-car-item border-car-border text-car-sub']">
-            {{ store.vehicleAuto.voice_enable_powertrain_guard ? '● 已开启' : '○ 已关闭' }}
-          </span>
-        </div>
-
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">变速箱高温或机油压力过低，纯语音高危通道告警</div>
-          <div class="text-car-text font-bold">不弹全屏红警遮挡导航，两组声效可分别独立试听</div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <button
-            @click="toggleGuard('voice_enable_powertrain_guard')"
-            :class="[
-              'h-[52px] px-3 rounded-2xl font-black text-[15.5px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-              store.vehicleAuto.voice_enable_powertrain_guard
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.voice_enable_powertrain_guard ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
-            <span class="truncate">{{ store.vehicleAuto.voice_enable_powertrain_guard ? '已开启' : '已关闭' }}</span>
-          </button>
-          <button
-            @click="testVoice('tcu_alarm')"
-            class="h-[52px] px-3 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
-          >
-            <span class="truncate">试听变速箱高温</span>
-          </button>
-          <button
-            @click="testVoice('oil_alarm')"
-            class="h-[52px] px-3 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
-          >
-            <span class="truncate">试听机油压力</span>
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -224,8 +129,6 @@ const activeGuardCount = computed(() => {
   let count = 0;
   if (store.vehicleAuto.voice_enable_steer_angle_guard) count++;
   if (store.vehicleAuto.voice_enable_epb_guard) count++;
-  if (store.vehicleAuto.voice_enable_low_fuel_guard) count++;
-  if (store.vehicleAuto.voice_enable_powertrain_guard) count++;
   return count;
 });
 
@@ -255,26 +158,6 @@ function showEpbHelp() {
   openModal('confirm', {
     title: '【测试功能指南】电子手刹未拉起预警',
     desc: '1. 触发条件：挂 P 挡推开主驾车门瞬间，检测到电子手刹未拉起时语音警报。\n\n2. 防溜车定位：纯语音提醒不遮挡视线，防止坡道溜车隐患。\n\n3. 辅助定位：仅作辅助提醒，不替代仪表与警示灯；未知信号不报警。',
-    tip: '测试阶段功能，待实车逐项验证通过后转正。',
-    showCancel: false,
-    confirmText: '我知道了'
-  });
-}
-
-function showLowFuelHelp() {
-  openModal('confirm', {
-    title: '【测试功能指南】低油量温馨关怀',
-    desc: '1. 触发条件：续航不足 50km 或油量低于 12% 时，单次点火行程仅温婉提醒一次"燃油不足，请及时加油"。\n\n2. 克制原则：坚决不复读、坚决不强跳地图搜索加油站，杜绝遮挡行车视线。\n\n3. 辅助定位：仅作辅助提醒，不替代仪表油量警示灯；未知信号不报警。',
-    tip: '测试阶段功能，待实车逐项验证通过后转正。',
-    showCancel: false,
-    confirmText: '我知道了'
-  });
-}
-
-function showPowertrainHelp() {
-  openModal('confirm', {
-    title: '【测试功能指南】动力总成高危守护',
-    desc: '1. 触发条件：变速箱高温或机油压力过低信号触发专属高危语音通道告警，两组声效可分别独立试听。\n\n2. 纯语音克制：不弹全屏大红弹窗，避免高速或激烈驾驶时遮挡导航。\n\n3. 辅助定位：仅作辅助提醒，不替代仪表故障灯；未知信号不报警，请以仪表为准并尽快安全停车检查。',
     tip: '测试阶段功能，待实车逐项验证通过后转正。',
     showCancel: false,
     confirmText: '我知道了'
