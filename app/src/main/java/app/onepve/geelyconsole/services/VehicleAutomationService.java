@@ -173,9 +173,27 @@ public class VehicleAutomationService extends Service {
      * - 任何 unknown/过期信号一律静默，绝不误警。
      */
     private void checkEpbAndSteerAngleOnDriverDoorOpen() {
-        if (gearStateMachine == null || gearStateMachine.getGear() != 5) {
+        if (gearStateMachine == null) {
             return;
         }
+
+        int gear = gearStateMachine.getGear();
+
+        // 【最高优先级 P0】挡位与电子手刹双维度驻车安全守护：
+        //   停车状态下推开车门前，必须确认「已挂 P 挡」且「电子手刹已拉起」，
+        //   任一项不满足车辆都可能溜车（P 挡与手刹既关联又独立，两者都要检测）。
+        if (gear != 5) {
+            // 未挂驻车挡(P挡)就推开车门 → 溜车高危，最高优先级警告。
+            // 仅当车辆点火运行时才告警；熄火下电或 ACC 只开车机时证据不足安全静默。
+            if (isEngineRunning()) {
+                AppLogger.w("安全守护", "【P0报警】挡位[" + gear + "]未挂驻车挡就推开车门，车辆可能溜车！");
+                if (voicePlayer != null) {
+                    voicePlayer.play("gear_park_alarm.mp3", "请挂入驻车挡", VehicleVoicePlayer.PRIORITY_P0_ALARM);
+                }
+            }
+            return; // 非驻车挡：不再检查手刹与方向盘
+        }
+
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
         long now = android.os.SystemClock.elapsedRealtime();
 
