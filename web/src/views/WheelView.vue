@@ -50,6 +50,14 @@
         </div>
         <div class="flex items-center space-x-3">
           <button 
+            @click="toggleFloating()"
+            class="h-[52px] px-5 rounded-2xl border-2 cursor-pointer transition-all shadow-sm whitespace-nowrap flex items-center font-black text-[16px]"
+            :class="floatingEnabled ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/20' : 'bg-car-card border-car-border text-car-sub'"
+          >
+            <span :class="['w-2.5 h-2.5 rounded-full mr-2.5', floatingEnabled ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-slate-400']"></span>
+            {{ floatingEnabled ? '悬浮图解：开' : '悬浮图解：关' }}
+          </button>
+          <button 
             @click="toggleDiagram()"
             class="h-[52px] px-6 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light transition-all shadow-sm whitespace-nowrap flex items-center"
           >
@@ -423,6 +431,22 @@ function toggleDiagram() {
 // 默认出现在内容区右上角（绝不遮挡自下而上展开的功能菜单），支持拖放自定义位置并本地记忆，下次同位显示
 const FLOAT_POS_KEY = 'wheel_floating_guide_pos';
 const showFloating = ref(false);
+
+// 悬浮图解总开关：展卡内显式控制悬浮图显示/不显示，持久记忆（默认开，保留老用户既有体验）
+const FLOAT_TOGGLE_KEY = 'wheel_floating_guide_enabled';
+const floatingEnabled = ref(localStorage.getItem(FLOAT_TOGGLE_KEY) !== 'false');
+
+function toggleFloating() {
+  floatingEnabled.value = !floatingEnabled.value;
+  localStorage.setItem(FLOAT_TOGGLE_KEY, String(floatingEnabled.value));
+  if (!floatingEnabled.value) {
+    showFloating.value = false;
+  } else {
+    const st = document.documentElement.scrollTop || document.body.scrollTop || 0;
+    showFloating.value = st > 40;
+  }
+}
+
 const floatingGuideEl = ref(null);
 const floatingPos = reactive(loadFloatingPos());
 
@@ -439,8 +463,8 @@ function onWheelScroll(e) {
   // document 级 capture 捕获任意滚动源，读取实际滚动元素的 scrollTop
   const el = e && e.target;
   const st = el && el.scrollTop ? el.scrollTop : (document.documentElement.scrollTop || document.body.scrollTop || 0);
-  // 回到顶端收起悬浮卡；下滑则浮现（隐藏后再滚动即重新浮现于记忆位置）
-  showFloating.value = st > 40;
+  // 回到顶端收起悬浮卡；下滑则浮现（开关开启时，隐藏后再滚动即重新浮现于记忆位置）
+  showFloating.value = floatingEnabled.value && st > 40;
 }
 
 // 拖放自定义位置：pointer 事件触摸/鼠标通吃；拖动即位移，松手记忆位置；原地松手（未拖动）视为点按隐藏

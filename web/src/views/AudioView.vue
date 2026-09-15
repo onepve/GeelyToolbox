@@ -1,8 +1,120 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 1. 系统语音合成引擎 (TTS) 直通状态 (支持原厂与第三方TTS自由切换，状态直显与试听) -->
+    <!-- 1. 车载蓝牙音频与网络互联 -->
+    <FeatureCard 
+      title="1. 车载蓝牙音频与网络互联 (原厂混音与硬件声道调试)"
+      desc="直控车机蓝牙与 Wi-Fi 开关，实时呈现 6 号蓝牙硬件声道仲裁与推流状态，提供一键强制声道选通与发声调试。"
+      helpTitle="【功能指南】车载蓝牙音频与网络互联"
+      helpText="1. 蓝牙/Wi-Fi 直控：&#10;一键开关车机蓝牙与 Wi-Fi，实时呈现连接设备、热点与局域网 IP。&#10;&#10;2. EAS 6 号物理声道仲裁：&#10;手机蓝牙播放微信语音或音乐无声时，点击「一键强制选通蓝牙声道」可向 EAS 下发切换指令激活喇叭，解决原厂多媒体冻结后的无声痛点。&#10;&#10;3. 发声调试：&#10;「测试发声」立即验证当前蓝牙声道选通是否成功。"
+      helpTip="手机无声时先点「测试发声」确认喇叭，再点「一键强制选通蓝牙声道」。"
+    >
+      <div class="bg-car-item border border-car-border rounded-2xl p-6 flex flex-col space-y-4 shadow-sm">
+        <!-- 上层：蓝牙与 Wi-Fi 硬件连接看板 (双列对称大卡片) -->
+        <div class="grid grid-cols-2 gap-4">
+          <!-- 蓝牙控制看板 -->
+          <div class="bg-car-card border border-car-border rounded-2xl p-4 flex flex-col justify-between space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2.5">
+                <span :class="['w-3 h-3 rounded-full', connStatus.bluetooth_enabled ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-slate-400']"></span>
+                <span class="text-[18px] font-black text-car-text">车机蓝牙</span>
+              </div>
+              <button 
+                @click="toggleBluetooth"
+                :class="[
+                  'min-h-[50px] px-4 rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all',
+                  connStatus.bluetooth_enabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-item text-car-sub'
+                ]"
+              >
+                {{ connStatus.bluetooth_enabled ? '已开启' : '已关闭' }}
+              </button>
+            </div>
+            <div class="text-[14.5px] font-mono text-car-sub truncate">
+              设备: {{ connStatus.bluetooth_device_name || '未连接设备' }}
+            </div>
+            <div class="pt-4 border-t border-car-border/50 flex items-center justify-between">
+              <span class="text-[12.5px] text-car-sub font-bold">配对与连接管理</span>
+              <button 
+                @click="openBluetoothSettings"
+                class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer"
+              >
+                打开蓝牙设置 ➔
+              </button>
+            </div>
+          </div>
+
+          <!-- Wi-Fi 控制看板 -->
+          <div class="bg-car-card border border-car-border rounded-2xl p-4 flex flex-col justify-between space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2.5">
+                <span :class="['w-3 h-3 rounded-full', connStatus.wifi_enabled ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-slate-400']"></span>
+                <span class="text-[18px] font-black text-car-text">车机 Wi-Fi</span>
+              </div>
+              <button 
+                @click="toggleWifi"
+                :class="[
+                  'min-h-[50px] px-4 rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all',
+                  connStatus.wifi_enabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-item text-car-sub'
+                ]"
+              >
+                {{ connStatus.wifi_enabled ? '已开启' : '已关闭' }}
+              </button>
+            </div>
+            <div class="text-[14.5px] font-mono text-car-sub truncate">
+              热点: {{ connStatus.wifi_ssid || '未连接热点' }} ({{ connStatus.car_ip || '127.0.0.1' }})
+            </div>
+            <div class="pt-4 border-t border-car-border/50 flex items-center justify-between">
+              <span class="text-[12.5px] text-car-sub font-bold">热点连接向导</span>
+              <button 
+                @click="openWifiSettings"
+                class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer"
+              >
+                打开 Wi-Fi 设置 ➔
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 下层：EAS 6 号蓝牙物理声道与调试操作条 -->
+        <div class="bg-car-card border border-car-border rounded-2xl p-4 flex items-center justify-between">
+          <div class="flex flex-col space-y-1 min-w-0 pr-4">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-[17.5px] font-black text-car-text">EAS 6 号蓝牙物理声道仲裁</span>
+              <span 
+                :class="[
+                  'text-[12px] px-2.5 py-0.5 rounded-md font-black border',
+                  connStatus.eas_channel_active
+                    ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-400'
+                    : 'border-car-border bg-car-item text-car-sub'
+                ]"
+              >
+                {{ connStatus.eas_channel_active ? '物理声道已选通' : '声道待机中' }}
+              </span>
+            </div>
+            <div class="text-[13px] text-car-sub font-bold">
+              手机播放微信语音或音乐不出声时，可点击右侧按钮强制下发 EAS 切换指令激活喇叭
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3 shrink-0">
+            <button 
+              @click="testBluetoothAudio"
+              class="min-h-[52px] px-5 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text font-black text-[15px] cursor-pointer shadow-sm"
+            >
+              测试发声
+            </button>
+            <button 
+              @click="forceActivateBluetooth"
+              class="min-h-[52px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-text hover:border-car-accent font-black text-[15.5px] cursor-pointer shadow-md ring-2 ring-car-accent/20"
+            >
+              一键强制选通蓝牙声道
+            </button>
+          </div>
+        </div>
+      </div>
+    </FeatureCard>
+    <!-- 2. 系统语音合成引擎 (TTS) 直通状态 (支持原厂与第三方TTS自由切换，状态直显与试听) -->
     <div class="grid grid-cols-2 gap-5 items-start"><FeatureCard class="!mb-0"
-      title="1. 系统语音合成引擎 (TTS) 直通状态"
+      title="2. 系统语音合成引擎 (TTS) 直通状态"
       desc="系统直接通过后台 IPC 接入安卓系统语音合成服务。支持车机原厂语音引擎与第三方 TTS 自由选择，点击设置可随心切换。"
       helpTitle="【功能指南】系统语音合成引擎 (TTS) 直通"
       helpText="1. 直连原理：&#10;工具箱通过后台 IPC 直接接入安卓系统级语音合成服务，可实时读取当前引擎连接状态与声线就绪情况。&#10;&#10;2. 引擎自由切换：&#10;支持在车机原厂语音引擎与第三方 TTS 之间自由选择；点击「TTS 设置」调起系统引擎选择，点击「试听语音」立即播放测试样音验证当前引擎发声是否正常。&#10;&#10;3. 缺引擎兜底：&#10;若系统无第三方 TTS 引擎，可点击「前往商城获取语音引擎」一键跳转精选商城下载安装。"
@@ -55,9 +167,9 @@
       </div>
     </FeatureCard>
 
-    <!-- 2. 播报音量相对增益补偿滑条 (解决听歌低音量时听不清开门/换挡) -->
+    <!-- 3. 播报音量相对增益补偿滑条 (解决听歌低音量时听不清开门/换挡) -->
     <FeatureCard class="!mb-0"
-      title="2. 播报音量动态增益补偿 (听歌低音量时自动增补)"
+      title="3. 播报音量动态增益补偿 (听歌低音量时自动增补)"
       desc="听歌时媒体音量调低容易听不清开门与换挡提醒。设置增益后，播报瞬间自动在当前媒体音量上动态叠加补偿，播完秒级恢复原音量！"
       helpTitle="【功能指南】播报音量动态增益补偿"
       helpText="1. 解决痛点：&#10;听歌时媒体音量调低，开门/换挡等安全播报容易被音乐盖过听不清。&#10;&#10;2. 增益机制：&#10;设置正增益后，每次播报瞬间会在当前媒体音量上临时叠加补偿格数，播报结束秒级恢复原音量，不影响后续听歌。&#10;&#10;3. 纯加减操控：&#10;提供 -2/-1/+1/+2 快速步进与点击中央数值归零，盲调顺手；可随时「试听当前音量增益」即时验证效果。"
@@ -126,9 +238,9 @@
       </div>
     </FeatureCard></div>
 
-    <!-- 3. 座舱专属语音主题包与自定义音效 (一键整套换装 · 物理隔离) -->
+    <!-- 4. 座舱专属语音主题包与自定义音效 (一键整套换装 · 物理隔离) -->
     <FeatureCard 
-      title="3. 座舱专属语音主题包 (一键整套换装 · 物理隔离)"
+      title="4. 座舱专属语音主题包 (一键整套换装 · 物理隔离)"
       desc="支持导入车规级 ZIP 语音包。所有语音主题物理隔离保存在 /sdcard/GeelyPilot/voices/ 专属目录中，清空下载目录绝不受任何影响！"
       helpTitle="【功能指南】座舱专属语音主题包"
       helpText="1. 整套换装：&#10;支持导入车规级 ZIP 语音包，一键整套替换全车播报音色与音效。&#10;&#10;2. 物理隔离：&#10;所有语音主题独立保存在 /sdcard/GeelyPilot/voices/ 专属目录，与下载目录完全隔离，清空 Download 目录绝不影响已导入主题。&#10;&#10;3. 出厂兜底：&#10;未导入任何主题时自动使用出厂官方晓晓原声；导入的主题若有音频缺失项，自动补齐兜底，确保零丢失。"
@@ -262,118 +374,7 @@
       </div>
     </FeatureCard>
 
-    <!-- 4. 车载蓝牙音频与网络互联 -->
-    <FeatureCard 
-      title="4. 车载蓝牙音频与网络互联 (原厂混音与硬件声道调试)"
-      desc="直控车机蓝牙与 Wi-Fi 开关，实时呈现 6 号蓝牙硬件声道仲裁与推流状态，提供一键强制声道选通与发声调试。"
-      helpTitle="【功能指南】车载蓝牙音频与网络互联"
-      helpText="1. 蓝牙/Wi-Fi 直控：&#10;一键开关车机蓝牙与 Wi-Fi，实时呈现连接设备、热点与局域网 IP。&#10;&#10;2. EAS 6 号物理声道仲裁：&#10;手机蓝牙播放微信语音或音乐无声时，点击「一键强制选通蓝牙声道」可向 EAS 下发切换指令激活喇叭，解决原厂多媒体冻结后的无声痛点。&#10;&#10;3. 发声调试：&#10;「测试发声」立即验证当前蓝牙声道选通是否成功。"
-      helpTip="手机无声时先点「测试发声」确认喇叭，再点「一键强制选通蓝牙声道」。"
-    >
-      <div class="bg-car-item border border-car-border rounded-2xl p-6 flex flex-col space-y-4 shadow-sm">
-        <!-- 上层：蓝牙与 Wi-Fi 硬件连接看板 (双列对称大卡片) -->
-        <div class="grid grid-cols-2 gap-4">
-          <!-- 蓝牙控制看板 -->
-          <div class="bg-car-card border border-car-border rounded-2xl p-4 flex flex-col justify-between space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2.5">
-                <span :class="['w-3 h-3 rounded-full', connStatus.bluetooth_enabled ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-slate-400']"></span>
-                <span class="text-[18px] font-black text-car-text">车机蓝牙</span>
-              </div>
-              <button 
-                @click="toggleBluetooth"
-                :class="[
-                  'min-h-[50px] px-4 rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all',
-                  connStatus.bluetooth_enabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-item text-car-sub'
-                ]"
-              >
-                {{ connStatus.bluetooth_enabled ? '已开启' : '已关闭' }}
-              </button>
-            </div>
-            <div class="text-[14.5px] font-mono text-car-sub truncate">
-              设备: {{ connStatus.bluetooth_device_name || '未连接设备' }}
-            </div>
-            <div class="pt-4 border-t border-car-border/50 flex items-center justify-between">
-              <span class="text-[12.5px] text-car-sub font-bold">配对与连接管理</span>
-              <button 
-                @click="openBluetoothSettings"
-                class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer"
-              >
-                打开蓝牙设置 ➔
-              </button>
-            </div>
-          </div>
 
-          <!-- Wi-Fi 控制看板 -->
-          <div class="bg-car-card border border-car-border rounded-2xl p-4 flex flex-col justify-between space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2.5">
-                <span :class="['w-3 h-3 rounded-full', connStatus.wifi_enabled ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-slate-400']"></span>
-                <span class="text-[18px] font-black text-car-text">车机 Wi-Fi</span>
-              </div>
-              <button 
-                @click="toggleWifi"
-                :class="[
-                  'min-h-[50px] px-4 rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all',
-                  connStatus.wifi_enabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-item text-car-sub'
-                ]"
-              >
-                {{ connStatus.wifi_enabled ? '已开启' : '已关闭' }}
-              </button>
-            </div>
-            <div class="text-[14.5px] font-mono text-car-sub truncate">
-              热点: {{ connStatus.wifi_ssid || '未连接热点' }} ({{ connStatus.car_ip || '127.0.0.1' }})
-            </div>
-            <div class="pt-4 border-t border-car-border/50 flex items-center justify-between">
-              <span class="text-[12.5px] text-car-sub font-bold">热点连接向导</span>
-              <button 
-                @click="openWifiSettings"
-                class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer"
-              >
-                打开 Wi-Fi 设置 ➔
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 下层：EAS 6 号蓝牙物理声道与调试操作条 -->
-        <div class="bg-car-card border border-car-border rounded-2xl p-4 flex items-center justify-between">
-          <div class="flex flex-col space-y-1 min-w-0 pr-4">
-            <div class="flex items-center space-x-2.5">
-              <span class="text-[17.5px] font-black text-car-text">EAS 6 号蓝牙物理声道仲裁</span>
-              <span 
-                :class="[
-                  'text-[12px] px-2.5 py-0.5 rounded-md font-black border',
-                  connStatus.eas_channel_active
-                    ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-400'
-                    : 'border-car-border bg-car-item text-car-sub'
-                ]"
-              >
-                {{ connStatus.eas_channel_active ? '物理声道已选通' : '声道待机中' }}
-              </span>
-            </div>
-            <div class="text-[13px] text-car-sub font-bold">
-              手机播放微信语音或音乐不出声时，可点击右侧按钮强制下发 EAS 切换指令激活喇叭
-            </div>
-          </div>
-
-          <div class="flex items-center space-x-3 shrink-0">
-            <button 
-              @click="testBluetoothAudio"
-              class="min-h-[52px] px-5 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text font-black text-[15px] cursor-pointer shadow-sm"
-            >
-              测试发声
-            </button>
-            <button 
-              @click="forceActivateBluetooth"
-              class="min-h-[52px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-text hover:border-car-accent font-black text-[15.5px] cursor-pointer shadow-md ring-2 ring-car-accent/20"
-            >
-              一键强制选通蓝牙声道
-            </button>
-          </div>
-        </div>
-      </div>
-    </FeatureCard>
   </div>
 </template>
 
