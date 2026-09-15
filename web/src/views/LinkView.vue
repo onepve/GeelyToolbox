@@ -1,11 +1,11 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 顶部计划工作台概览与操作栏 (对齐方控 106px 车规标准) -->
+    <!-- 顶部计划概览与操作栏 (对齐方控 106px 车规标准) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-full flex flex-col space-y-1.5">
         <div class="flex items-center space-x-3">
           <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_10px_var(--accent-gold)] shrink-0"></span>
-          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">车身智能联动 · 计划任务工作台</span>
+          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">车身智能联动计划</span>
           <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-accent/40 text-car-accent inline-flex items-center shrink-0 shadow-sm">
             {{ activeTaskCount }} / 4 项运行中
           </span>

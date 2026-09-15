@@ -106,12 +106,12 @@
       </div>
     </div>
 
-    <!-- 3. 座舱语音计划任务工作台 (场景工坊 · 对齐方控 106px 车规标准) -->
+    <!-- 3. 座舱语音播报计划 (对齐方控 106px 车规标准) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-full flex flex-col space-y-1.5">
         <div class="flex items-center space-x-3">
           <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_10px_var(--accent-gold)] shrink-0"></span>
-          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">座舱语音播报 · 计划任务工作台</span>
+          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">座舱语音播报计划</span>
           <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-accent/40 text-car-accent inline-flex items-center shrink-0 shadow-sm">
             {{ activeVoiceTaskCount }} / 4 项运行中
           </span>
@@ -121,7 +121,7 @@
         </div>
       </div>
       <div class="flex items-center space-x-3 shrink-0">
-        <!-- 核心打通：一键跳转车载音频语音主题包与TTS大厅 -->
+        <!-- 核心打通：一键跳转车载音频语音主题包 -->
         <button
           @click="store.currentNav = 'audio'"
           class="h-[60px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text hover:text-car-accent font-black text-[15.5px] cursor-pointer shadow-sm flex items-center space-x-2 transition-all"

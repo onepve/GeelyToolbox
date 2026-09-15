@@ -16,7 +16,7 @@
         @click="openLogModalFromAdb"
         class="min-h-[66px] px-8 rounded-2xl border-2 border-car-border bg-car-card text-car-text hover:border-car-border-light font-black text-[17.5px] shadow-sm transition-all flex items-center justify-center cursor-pointer"
       >
-        <span>📋 统一日志中枢 & 导出 (ZIP) ➔</span>
+        <span>📋 日志查看与导出 (ZIP) ➔</span>
       </button>
     </div>
 

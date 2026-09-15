@@ -1,7 +1,7 @@
 <template>
   <ModalWrapper 
     :show="store.modals.cleanDownload" 
-    title="吉利智驾 · 车载下载目录清理中枢" 
+    title="吉利智驾 · 车载下载目录清理" 
     badge="存储空间优化"
     maxWidthClass="max-w-[880px]"
     @close="closeModal('cleanDownload')"

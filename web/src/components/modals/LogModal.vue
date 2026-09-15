@@ -142,7 +142,7 @@ import { ref, watch, nextTick, onUnmounted } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, showToast, openModal } from '../../store';
 
-const logContent = ref('正在加载中枢运行日志...');
+const logContent = ref('正在加载运行日志...');
 const logInfo = ref({ path: '/sdcard/Download/geely_toolbox.log', size: '0 KB' });
 const logContainer = ref(null);
 const autoScroll = ref(true);

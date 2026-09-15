@@ -717,19 +717,37 @@ if "countdownLeft" not in cm_code or "请仔细阅读" not in cm_code:
 with open(body_view_path, "r", encoding="utf-8") as f:
     bv_full_code = f.read()
 
-for req_voice_task in ["gear_voice", "mode_voice", "door_voice", "trunk_voice"]:
-    if req_voice_task not in bv_full_code:
-        reg_violations.append(f"BodyView.vue 缺少座舱语音核心计划任务: {req_voice_task}！")
+# 四大场景语音计划已收敛为固定常驻卡片（无动态「添加」按钮），断言改为校验独立开关函数与二级向导弹窗挂载
+for req_voice_fn in ["toggleAllGearVoice", "toggleAllModeVoice", "toggleAllDoorVoice", "toggleAllTrunkVoice"]:
+    if req_voice_fn not in bv_full_code:
+        reg_violations.append(f"BodyView.vue 缺少座舱语音核心计划开关函数: {req_voice_fn}！")
+for req_voice_modal in ["GearConfigModal", "ModeConfigModal", "DoorConfigModal", "TrunkConfigModal"]:
+    if f"<{req_voice_modal} v-if" not in bv_full_code:
+        reg_violations.append(f"BodyView.vue 缺少{req_voice_modal} 二级向导弹窗挂载！")
 
 if "整套语音主题包" not in bv_full_code:
-    reg_violations.append("BodyView.vue 顶栏缺少【整套语音主题包 ➔】车载音频大厅直通大磁贴！")
-if "添加语音计划" not in bv_full_code:
-    reg_violations.append("BodyView.vue 顶栏缺少【添加语音计划】常驻入口！")
-if "voiceItemSettings" not in bv_full_code and "openCustomVoice" not in bv_full_code:
-    reg_violations.append("BodyView.vue 未贯通 VoiceItemSettingsModal（缺少 openCustomVoice 或 voiceItemSettings）！")
+    reg_violations.append("BodyView.vue 顶栏缺少【整套语音主题包 ➔】车载音频直通大磁贴！")
+if "座舱语音播报计划" not in bv_full_code:
+    reg_violations.append("BodyView.vue 缺少【座舱语音播报计划】固定常驻卡片！")
 
-if bv_full_code.count("声效设置") < 10:
-    reg_violations.append("BodyView.vue 二级向导弹窗内缺少【声效设置】个性化配置按钮！")
+# 声效设置与 VoiceItemSettingsModal 贯通已下沉至四个二级向导 ConfigModal，逐一校验其完整性与声效按钮数量
+voice_modal_contracts = {
+    "GearConfigModal.vue": 5,
+    "ModeConfigModal.vue": 5,
+    "DoorConfigModal.vue": 6,
+    "TrunkConfigModal.vue": 3,
+}
+for modal_file, min_sfx in voice_modal_contracts.items():
+    modal_path = os.path.join(WEB_SRC_DIR, "components", modal_file)
+    if not os.path.exists(modal_path):
+        reg_violations.append(f"{modal_file} 二级向导组件缺失！")
+        continue
+    with open(modal_path, "r", encoding="utf-8") as f:
+        modal_code = f.read()
+    if "voiceItemSettings" not in modal_code and "openCustomVoice" not in modal_code:
+        reg_violations.append(f"{modal_file} 未贯通 VoiceItemSettingsModal（缺少 openCustomVoice 或 voiceItemSettings）！")
+    if modal_code.count("声效设置") < min_sfx:
+        reg_violations.append(f"{modal_file} 二级向导内【声效设置】个性化配置按钮不足（当前 {modal_code.count('声效设置')} 处，须 >= {min_sfx}）！")
 
 # 16.7 车身智能联动工作台 8 大计划完整性与车速微调防御 (Linkage Workbench Defense)
 link_view_path = os.path.join(WEB_SRC_DIR, "views/LinkView.vue")
@@ -750,8 +768,8 @@ if "vehicle_d_gear_360_enabled" not in lv_full_code and "vehicle_gear_d_360_enab
 
 if "adjustAutoplaySpeed" not in lv_full_code or "adjustCustomActionSpeed" not in lv_full_code:
     reg_violations.append("LinkView.vue 缺少车速纯加减微调控制器，不得回退为死板预设！")
-if "添加联动计划" not in lv_full_code:
-    reg_violations.append("LinkView.vue 顶栏缺少【添加联动计划】常驻大磁贴！")
+if "车身智能联动计划" not in lv_full_code:
+    reg_violations.append("LinkView.vue 缺少【车身智能联动计划】固定常驻卡片！")
 
 # 16.8 死代码与孤岛弹窗防御 (Dead Code & Modal Orphan Defense)
 with open(os.path.join(WEB_SRC_DIR, "App.vue"), "r", encoding="utf-8") as f:

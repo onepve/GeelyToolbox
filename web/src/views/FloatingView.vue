@@ -1,8 +1,8 @@
 <template>
   <div class="flex flex-col space-y-7">
-    <!-- 双列对称中枢：左列【桌面悬浮微胶囊】 + 右列【闲置自动息屏保护】 -->
+    <!-- 双列对称：左列【桌面悬浮微胶囊】 + 右列【闲置自动息屏保护】 -->
     <div class="grid grid-cols-2 gap-5 items-stretch">
-      <!-- 左列：桌面迷你悬浮胶囊中枢 (强制等高 h-full min-h-[460px]) -->
+      <!-- 左列：桌面迷你悬浮胶囊 (强制等高 h-full min-h-[460px]) -->
       <div class="rounded-3xl border-2 border-car-border bg-car-card p-6 shadow-xl h-full min-h-[460px] flex flex-col justify-between transition-all duration-200">
         <!-- 头部标题 + 帮助 -->
         <div class="flex items-center justify-between shrink-0 mb-4">
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <!-- 右列：闲置自动屏保息屏中枢 (强制等高 h-full min-h-[460px]) -->
+      <!-- 右列：闲置自动屏保息屏 (强制等高 h-full min-h-[460px]) -->
       <div class="rounded-3xl border-2 border-car-border bg-car-card p-6 shadow-xl h-full min-h-[460px] flex flex-col justify-between transition-all duration-200">
         <!-- 头部标题 + 帮助 -->
         <div class="flex items-center justify-between shrink-0 mb-4">
