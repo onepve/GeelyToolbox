@@ -803,8 +803,6 @@ public class SteeringWheelKeyManager {
         } catch (Exception ignored) {}
     }
 
-    public static volatile long lastMediaKeySentTime = 0L;
-
     /**
      * 官方级三重通道媒体按键分发机制 (100% 解决 QQ音乐/网易云 切歌与播放暂停)
      */
@@ -814,7 +812,6 @@ public class SteeringWheelKeyManager {
 
     private void sendMediaKeyEvent(int keyCode) {
         long now = SystemClock.uptimeMillis();
-        lastMediaKeySentTime = now;
 
         // 1. Android 原生官方推荐通道: AudioManager.dispatchMediaKeyEvent
         try {

@@ -15,7 +15,6 @@ import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.KeyEvent;
 
 import com.ecarx.eas.sdk.ECarXApiClient;
@@ -147,43 +146,32 @@ public class EasMediaBridge {
             }
 
             MusicClient client = new MusicClient() {
-                private long lastPlayPauseCb = 0L;
 
+                // 铁律：EAS 回调（onPlay/onPause/onNext/onPrevious）是蓝牙 AVRCP 状态变化通知，
+                // 严禁在此回灌媒体键（sendMediaKeyEvent）。回灌会经 AudioManager -> AVRCP -> EAS 回调
+                // 形成自激回环：单次方控按键曾实测触发 5 秒内 837 次媒体键风暴。
+                // 方控按键已由 SteeringWheelKeyManager.executeAction 独立处理，此处仅记录状态。
                 @Override
                 public boolean onPlay() {
-                    long now = android.os.SystemClock.uptimeMillis();
-                    if (now - lastPlayPauseCb < 1200 || now - SteeringWheelKeyManager.lastMediaKeySentTime < 1200) {
-                        return true;
-                    }
-                    lastPlayPauseCb = now;
-                    AppLogger.i("音频通道", "EAS 回调: onPlay -> 分发媒体播放键");
-                    sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+                    AppLogger.i("音频通道", "EAS 回调: onPlay（仅记录，不回流媒体键）");
                     return true;
                 }
 
                 @Override
                 public boolean onPause() {
-                    long now = android.os.SystemClock.uptimeMillis();
-                    if (now - lastPlayPauseCb < 1200 || now - SteeringWheelKeyManager.lastMediaKeySentTime < 1200) {
-                        return true;
-                    }
-                    lastPlayPauseCb = now;
-                    AppLogger.i("音频通道", "EAS 回调: onPause -> 分发媒体暂停键");
-                    sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+                    AppLogger.i("音频通道", "EAS 回调: onPause（仅记录，不回流媒体键）");
                     return true;
                 }
 
                 @Override
                 public boolean onNext() {
-                    AppLogger.i("音频通道", "EAS 回调: onNext -> 分发下一曲");
-                    sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_NEXT);
+                    AppLogger.i("音频通道", "EAS 回调: onNext（仅记录，不回流媒体键）");
                     return true;
                 }
 
                 @Override
                 public boolean onPrevious() {
-                    AppLogger.i("音频通道", "EAS 回调: onPrevious -> 分发上一曲");
-                    sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
+                    AppLogger.i("音频通道", "EAS 回调: onPrevious（仅记录，不回流媒体键）");
                     return true;
                 }
             };
@@ -420,19 +408,5 @@ public class EasMediaBridge {
         try {
             appContext.registerReceiver(a2dpReceiver, filter);
         } catch (Throwable ignored) {}
-    }
-
-    private void sendMediaKeyEvent(int keyCode) {
-        long now = android.os.SystemClock.uptimeMillis();
-        // 关键防抖与回环过滤：若方控刚刚下发过媒体按键（500ms 内），忽略 EAS 回显避免二次触发
-        if (now - SteeringWheelKeyManager.lastMediaKeySentTime < 500) {
-            Log.d(TAG, "sendMediaKeyEvent ignored echo within 500ms");
-            return;
-        }
-        try {
-            new SteeringWheelKeyManager(appContext).sendMediaKeyEventPublic(keyCode);
-        } catch (Throwable t) {
-            Log.w(TAG, "sendMediaKeyEvent error: " + t.getMessage());
-        }
     }
 }
