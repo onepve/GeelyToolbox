@@ -1,64 +1,65 @@
 <template>
   <div class="flex flex-col space-y-5">
     <!-- 1. 原生文件管理特权安装通道 (核心通道) -->
-    <FeatureCard 
-      title="1. 车载原生文件管理 (特权安装正解通道)"
-      desc="严禁直接通过 ADB 命令行 pm install 强行静默安装，底层安全策略会导致应用无法运行或白屏！"
-      helpTitle="【功能指南】车载原生文件管理与特权安装规范"
-      helpText="1. 为什么严禁 ADB pm install：&#10;吉利车机系统底层有签名校验安全策略，直接通过 ADB 命令行静默安装会导致第三方软件白屏或签名崩溃闪退。&#10;&#10;2. 特权正解通道：&#10;将安装包放入车机 Download 目录后，通过点击本卡片按钮调起车载原生文件管理，在系统级特权应用内点击安装，系统将自动放行安装并正常运行。"
-      helpTip="下载或传到车机 Download 目录的 APK，统一通过原生文件管理点击安装。"
-    >
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
-        <div class="flex-1 min-w-0 pr-6 flex flex-col">
-          <div class="text-[18px] font-black text-car-text mb-2">
-            标准无损安装路线：
+    <div class="grid grid-cols-2 gap-5 items-start">
+      <FeatureCard class="!mb-0" 
+        title="1. 车载原生文件管理 (特权安装正解通道)"
+        desc="严禁直接通过 ADB 命令行 pm install 强行静默安装，底层安全策略会导致应用无法运行或白屏！"
+        helpTitle="【功能指南】车载原生文件管理与特权安装规范"
+        helpText="1. 为什么严禁 ADB pm install：&#10;吉利车机系统底层有签名校验安全策略，直接通过 ADB 命令行静默安装会导致第三方软件白屏或签名崩溃闪退。&#10;&#10;2. 特权正解通道：&#10;将安装包放入车机 Download 目录后，通过点击本卡片按钮调起车载原生文件管理，在系统级特权应用内点击安装，系统将自动放行安装并正常运行。"
+        helpTip="下载或传到车机 Download 目录的 APK，统一通过原生文件管理点击安装。"
+      >
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
+          <div class="flex-1 min-w-0 pr-6 flex flex-col">
+            <div class="text-[18px] font-black text-car-text mb-2">
+              标准无损安装路线：
+            </div>
+            <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-3">
+              手机通过无线快传或甲壳虫将 APK 推送至车机 <code class="px-2 py-0.5 rounded bg-car-card text-car-accent font-mono">/sdcard/Download/</code> 目录，点击右侧按钮进入原生文件管理器，直接点击 APK 即可调用系统原生特权打包器无损直装。
+            </div>
+            <div class="flex items-center text-[13.5px] text-emerald-400 font-extrabold">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 shadow-[0_0_8px_#10B981]"></span>
+              <span>已接入 Android 9 原生 PackageInstaller 特权证书白名单</span>
+            </div>
           </div>
-          <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-3">
-            手机通过无线快传或甲壳虫将 APK 推送至车机 <code class="px-2 py-0.5 rounded bg-car-card text-car-accent font-mono">/sdcard/Download/</code> 目录，点击右侧按钮进入原生文件管理器，直接点击 APK 即可调用系统原生特权打包器无损直装。
-          </div>
-          <div class="flex items-center text-[13.5px] text-emerald-400 font-extrabold">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 shadow-[0_0_8px_#10B981]"></span>
-            <span>已接入 Android 9 原生 PackageInstaller 特权证书白名单</span>
-          </div>
+
+          <button 
+            @click="openFileManager"
+            class="min-w-[240px] min-h-[76px] px-6 bg-car-card border-2 border-car-accent rounded-2xl flex flex-col items-center justify-center text-car-text font-black cursor-pointer hover:border-car-accent ring-2 ring-car-accent/25 shadow-lg shrink-0 transition-all"
+          >
+            <span class="text-[20px]">打开原生文件管理</span>
+            <span class="text-[13px] text-car-accent mt-0.5 font-extrabold">进入 Download 目录</span>
+          </button>
         </div>
+      </FeatureCard>
 
-        <button 
-          @click="openFileManager"
-          class="min-w-[240px] min-h-[76px] px-6 bg-car-card border-2 border-car-accent rounded-2xl flex flex-col items-center justify-center text-car-text font-black cursor-pointer hover:border-car-accent ring-2 ring-car-accent/25 shadow-lg shrink-0 transition-all"
-        >
-          <span class="text-[20px]">打开原生文件管理</span>
-          <span class="text-[13px] text-car-accent mt-0.5 font-extrabold">进入 Download 目录</span>
-        </button>
-      </div>
-    </FeatureCard>
+      <FeatureCard class="!mb-0" 
+        title="2. 手机局域网无线快传 (免插线极速推包)"
+        desc="无需繁琐插拔 U 盘或携带电脑，通过车机内置 HTTP 文件快传服务直接秒传安装包。"
+        helpTitle="【功能指南】手机无线局域网极速推包"
+        helpText="1. 免插拔 U 盘原理：&#10;车机内置轻量级 HTTP 局域网传输服务（端口 8888）。手机连接车机 Wi-Fi 热点或同局域网后，扫码即可秒开上传页面。&#10;&#10;2. 自动落盘路径：&#10;手机上传的 APK 会自动保存到车机 /sdcard/Download/ 目录中，随后点击上方 Card 1 原生文件管理即可直接点击安装。"
+        helpTip="建议手机连接车机发出的 Wi-Fi 热点，传输速度最快、延迟最低。"
+      >
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
+          <div class="flex-1 min-w-0 pr-6 flex flex-col">
+            <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-2">
+              只要手机与车机处于同一 Wi-Fi 或车机热点下，扫码即可秒开网页，将手机下载的高德地图、音乐等 APK 秒传至车机 Download 目录。
+            </div>
+            <div class="flex items-center text-[14px] text-car-sub font-mono font-bold">
+              <span class="px-2.5 py-0.5 rounded bg-car-card border border-car-border mr-3 text-car-text">HTTP 服务端口: 8888</span>
+              <span>当前局域网 IP: {{ store.deviceInfo.car_ip || '未连接热点' }}</span>
+            </div>
+          </div>
 
-    <!-- 2. 手机无线快传 (8888 端口) -->
-    <FeatureCard 
-      title="2. 手机局域网无线快传 (免插线极速推包)"
-      desc="无需繁琐插拔 U 盘或携带电脑，通过车机内置 HTTP 文件快传服务直接秒传安装包。"
-      helpTitle="【功能指南】手机无线局域网极速推包"
-      helpText="1. 免插拔 U 盘原理：&#10;车机内置轻量级 HTTP 局域网传输服务（端口 8888）。手机连接车机 Wi-Fi 热点或同局域网后，扫码即可秒开上传页面。&#10;&#10;2. 自动落盘路径：&#10;手机上传的 APK 会自动保存到车机 /sdcard/Download/ 目录中，随后点击上方 Card 1 原生文件管理即可直接点击安装。"
-      helpTip="建议手机连接车机发出的 Wi-Fi 热点，传输速度最快、延迟最低。"
-    >
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
-        <div class="flex-1 min-w-0 pr-6 flex flex-col">
-          <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-2">
-            只要手机与车机处于同一 Wi-Fi 或车机热点下，扫码即可秒开网页，将手机下载的高德地图、音乐等 APK 秒传至车机 Download 目录。
-          </div>
-          <div class="flex items-center text-[14px] text-car-sub font-mono font-bold">
-            <span class="px-2.5 py-0.5 rounded bg-car-card border border-car-border mr-3 text-car-text">HTTP 服务端口: 8888</span>
-            <span>当前局域网 IP: {{ store.deviceInfo.car_ip || '未连接热点' }}</span>
-          </div>
+          <button 
+            @click="showQrCode"
+            class="min-w-[220px] min-h-[72px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[19px] rounded-2xl cursor-pointer hover:border-car-border-light shrink-0 shadow-sm transition-all"
+          >
+            打开无线快传二维码
+          </button>
         </div>
-
-        <button 
-          @click="showQrCode"
-          class="min-w-[220px] min-h-[72px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[19px] rounded-2xl cursor-pointer hover:border-car-border-light shrink-0 shadow-sm transition-all"
-        >
-          打开无线快传二维码
-        </button>
-      </div>
-    </FeatureCard>
+      </FeatureCard>
+    </div>
 
     <!-- 3. 今日动态工程暗码 (+10 / +5) -->
     <FeatureCard 

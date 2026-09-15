@@ -92,9 +92,9 @@
         </div>
       </div>
 
-      <!-- 任务 4: 车速达标智能启播车载音乐 (整宽大卡片 · 纯加减微调控制器) -->
-      <div 
-        class="col-span-2 rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
+      <!-- 任务 4: 车速达标智能启播车载音乐 (双列网格 · 内容纵向拉宽填充) -->
+      <div
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -117,10 +117,10 @@
           </div>
         </div>
 
-        <!-- 任务两段流 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+        <!-- 任务两段流（纵向堆叠拉宽填充，根治「一宽一窄不协调」） -->
+        <div class="flex flex-col space-y-3 pt-1 min-w-0 flex-1">
           <!-- 当: 车速控制器 -->
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3">
+          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3 min-w-0 flex-1">
             <div class="flex items-center space-x-3">
               <span class="text-[16px] font-black text-car-text">出 P 挡起步行驶，车速达到设定阈值：</span>
             </div>
@@ -168,12 +168,12 @@
             <div class="flex items-center space-x-3">
               <span class="text-[16px] font-black text-car-text">触发主力软件播放（单次行程防抖闭环，等红灯不重复放）：</span>
             </div>
-            <!-- 形式与软件选择 -->
-            <div class="flex items-center space-x-3">
+            <!-- 形式与软件选择（两张等宽对称按钮） -->
+            <div class="grid grid-cols-2 gap-3 items-stretch">
               <button 
                 @click="setAutoplayFullscreen(false)"
                 :class="[
-                  'flex-1 h-[52px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
+                  'w-full h-[52px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
                   !store.vehicleAuto.vehicle_speed_autoplay_fullscreen
                     ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                     : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
@@ -184,20 +184,20 @@
               <button 
                 @click="setAutoplayFullscreen(true)"
                 :class="[
-                  'h-[52px] px-4 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
+                  'w-full h-[52px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
                   store.vehicleAuto.vehicle_speed_autoplay_fullscreen
                     ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                     : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
                 ]"
               >
-                前台全屏
+                前台全屏播放 (沉浸大屏)
               </button>
             </div>
           </div>
         </div>
 
         <!-- 启播目标音乐应用选择 (支持自动探测、手动强刷扫描、▲/▼ 优先级排序与更多软件选择) -->
-        <div class="pt-3 flex flex-col space-y-3 border-t border-car-border/60">
+        <div class="pt-3 flex flex-col space-y-3 border-t border-car-border/60 min-w-0 flex-1">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2">
               <span class="text-[15.5px] font-black text-car-text">自启首选主力音乐软件：</span>
@@ -248,9 +248,9 @@
         </div>
       </div>
 
-      <!-- 任务 5: 车速达标自定义动作与唤起应用 (整宽大卡片 · 纯加减微调控制器) -->
-      <div 
-        class="col-span-2 rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col space-y-4 transition-all duration-200"
+      <!-- 任务 5: 车速达标自定义动作与唤起应用 (双列网格 · 内容纵向拉宽填充) -->
+      <div
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col space-y-4 transition-all duration-200"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -273,9 +273,9 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+        <div class="flex flex-col pt-1 min-w-0 flex-1">
           <!-- 当: 设定速度 -->
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3">
+          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-center space-y-3 min-w-0 flex-1">
             <div class="flex items-center space-x-3">
               <span class="text-[16px] font-black text-car-text">起步加速，当前车速达到设定阈值：</span>
             </div>
@@ -319,16 +319,16 @@
           </div>
 
           <!-- 就: 执行动作 -->
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3">
+          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-center space-y-3 min-w-0 flex-1 mt-3">
             <div class="flex items-center space-x-3">
               <span class="text-[16px] font-black text-car-text">自动唤起预选目标（单次行程防抖，回 P 挡重置）：</span>
             </div>
-            <!-- 动作选择：默认高德车机地图，或自选整车任意第三方软件 -->
-            <div class="flex items-center space-x-3">
+            <!-- 动作选择（两张等宽对称按钮） -->
+            <div class="grid grid-cols-2 gap-3 items-stretch">
               <button 
                 @click="setCustomActionTarget('pkg:com.autonavi.amapauto')"
                 :class="[
-                  'flex-1 h-[52px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
+                  'w-full h-[52px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
                   store.vehicleAuto.vehicle_speed_custom_action_target === 'pkg:com.autonavi.amapauto'
                     ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                     : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
@@ -339,7 +339,7 @@
               <button 
                 @click="openSelectModal('speed_custom_action')"
                 :class="[
-                  'h-[52px] px-4 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
+                  'w-full h-[52px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
                   store.vehicleAuto.vehicle_speed_custom_action_target?.startsWith('pkg:') && store.vehicleAuto.vehicle_speed_custom_action_target !== 'pkg:com.autonavi.amapauto'
                     ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                     : 'bg-car-card border-car-border text-car-sub hover:text-car-text'

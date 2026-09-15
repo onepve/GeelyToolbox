@@ -1,15 +1,15 @@
 <template>
   <div class="flex flex-col space-y-6">
     <!-- 1. 系统语音合成引擎 (TTS) 直通状态 (支持原厂与第三方TTS自由切换，状态直显与试听) -->
-    <FeatureCard 
+    <div class="grid grid-cols-2 gap-5 items-start"><FeatureCard class="!mb-0"
       title="1. 系统语音合成引擎 (TTS) 直通状态"
       desc="系统直接通过后台 IPC 接入安卓系统语音合成服务。支持车机原厂语音引擎与第三方 TTS 自由选择，点击设置可随心切换。"
       helpTitle="【功能指南】系统语音合成引擎 (TTS) 直通"
       helpText="1. 直连原理：&#10;工具箱通过后台 IPC 直接接入安卓系统级语音合成服务，可实时读取当前引擎连接状态与声线就绪情况。&#10;&#10;2. 引擎自由切换：&#10;支持在车机原厂语音引擎与第三方 TTS 之间自由选择；点击「TTS 设置」调起系统引擎选择，点击「试听语音」立即播放测试样音验证当前引擎发声是否正常。&#10;&#10;3. 缺引擎兜底：&#10;若系统无第三方 TTS 引擎，可点击「前往商城获取语音引擎」一键跳转精选商城下载安装。"
       helpTip="推荐保持原厂晓晓温婉知性声线，端庄舒缓不刺耳。"
     >
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
-        <div class="flex-1 min-w-0 pr-6 flex flex-col">
+      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-3">
+        <div class="w-full flex flex-col">
           <div class="flex items-center mb-2">
             <span 
               :class="[
@@ -30,7 +30,7 @@
           </div>
         </div>
 
-        <div class="shrink-0 flex items-center space-x-3">
+        <div class="grid grid-cols-2 gap-3 w-full">
           <button 
             @click="openTtsSettings"
             class="min-h-[64px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[18px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
@@ -56,15 +56,15 @@
     </FeatureCard>
 
     <!-- 2. 播报音量相对增益补偿滑条 (解决听歌低音量时听不清开门/换挡) -->
-    <FeatureCard 
+    <FeatureCard class="!mb-0"
       title="2. 播报音量动态增益补偿 (听歌低音量时自动增补)"
       desc="听歌时媒体音量调低容易听不清开门与换挡提醒。设置增益后，播报瞬间自动在当前媒体音量上动态叠加补偿，播完秒级恢复原音量！"
       helpTitle="【功能指南】播报音量动态增益补偿"
       helpText="1. 解决痛点：&#10;听歌时媒体音量调低，开门/换挡等安全播报容易被音乐盖过听不清。&#10;&#10;2. 增益机制：&#10;设置正增益后，每次播报瞬间会在当前媒体音量上临时叠加补偿格数，播报结束秒级恢复原音量，不影响后续听歌。&#10;&#10;3. 纯加减操控：&#10;提供 -2/-1/+1/+2 快速步进与点击中央数值归零，盲调顺手；可随时「试听当前音量增益」即时验证效果。"
       helpTip="建议设为 +2 格，既能清晰听清播报，又不会突兀爆音。"
     >
-      <div class="bg-car-item border border-car-border rounded-2xl p-6 flex flex-col space-y-4 shadow-sm">
-        <div class="flex items-center justify-between">
+      <div class="bg-car-item border border-car-border rounded-2xl p-6 flex flex-col space-y-4 shadow-sm min-w-0 flex-1">
+        <div class="flex flex-col space-y-1.5">
           <div class="flex items-baseline">
             <span class="text-[20px] font-black text-car-text mr-3">动态音量补偿：</span>
             <span class="text-[34px] font-black text-car-accent font-mono">{{ volumeOffset >= 0 ? '+' + volumeOffset : volumeOffset }}</span>
@@ -76,7 +76,7 @@
         </div>
 
         <!-- 车规纯加减音量补偿控制器 (彻底拔除细长滑条，盲调顺手) -->
-        <div class="flex items-center justify-between pt-2">
+        <div class="flex flex-col space-y-3 pt-2">
           <div class="flex items-center space-x-3">
             <button 
               @click="adjustVolumeOffset(-2)"
@@ -108,7 +108,7 @@
             >+2 格</button>
           </div>
 
-          <div class="flex items-center space-x-3">
+          <div class="grid grid-cols-2 gap-3">
             <button 
               @click="resetVolumeOffset"
               class="h-[56px] px-6 bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[16px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
@@ -124,7 +124,7 @@
           </div>
         </div>
       </div>
-    </FeatureCard>
+    </FeatureCard></div>
 
     <!-- 3. 座舱专属语音主题包与自定义音效 (一键整套换装 · 物理隔离) -->
     <FeatureCard 

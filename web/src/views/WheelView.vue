@@ -231,64 +231,64 @@
         card-title="5. 右方向盘 ③ 静音按键映射"
         card-desc="对应右方向盘 ③ 号静音键（KeyCode 300）。支持【单击】、【双击】、【长按 1.5 秒】多手势；长按 10 秒依然是整车硬件冷重启，互不冲突！"
       />
+
+      <!-- 6. 右方向盘 ④ 下一曲 / ⑦ 上一曲 切歌按键映射 -->
+      <FeatureCard class="!mb-0"
+        title="6. 右方向盘 ④ 下一曲 / ⑦ 上一曲 切歌按键映射"
+        desc="对应右方向盘 ④ 号（向右下一曲 KeyCode 305）与 ⑦ 号（向左上一曲 KeyCode 304）按键。内置官方三重通道调度，完美兼容 QQ音乐车机版、网易云等。"
+        helpTitle="【功能指南】下一曲 / 上一曲切歌按键映射"
+        helpText="1. 键位对应：&#10;④ 号键（向右）控制下一曲，⑦ 号键（向左）控制上一曲，均支持单击、双击、长按三种手势自由映射。&#10;&#10;2. 官方三重通道调度：&#10;内置官方切歌三重通道调度机制，完美兼容 QQ音乐车机版、网易云音乐等主流车载音乐应用，切歌稳定不串台。&#10;&#10;3. 动作映射：&#10;可将手势映射为「切歌(官方调度)」「打开 360 全景」或「播放/暂停」，满足不同驾驶场景需求。"
+        helpTip="切歌动作建议保持「切歌(官方调度)」，兼容性与稳定性最佳。"
+      >
+        <div class="flex flex-col space-y-3">
+          <!-- 下一曲 (④ 号键) -->
+          <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[19px] font-black text-car-text">④ 下一曲键</span>
+              <div class="flex space-x-1.5">
+                <button
+                  v-for="g in gestureList"
+                  :key="g.id"
+                  @click="activeGesture.next = g.id"
+                  :class="[
+                    'px-4 py-2 rounded-xl text-[15px] font-black cursor-pointer transition-all',
+                    activeGesture.next === g.id
+                      ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
+                      : 'bg-car-card border border-car-border text-car-sub'
+                  ]"
+                >
+                  {{ g.shortName }}
+                </button>
+              </div>
+            </div>
+            <ActionSelect key-name="next" :gesture="activeGesture.next" />
+          </div>
+
+          <!-- 上一曲 (⑦ 号键) -->
+          <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[19px] font-black text-car-text">⑦ 上一曲键</span>
+              <div class="flex space-x-1.5">
+                <button
+                  v-for="g in gestureList"
+                  :key="g.id"
+                  @click="activeGesture.prev = g.id"
+                  :class="[
+                    'px-4 py-2 rounded-xl text-[15px] font-black cursor-pointer transition-all',
+                    activeGesture.prev === g.id
+                      ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
+                      : 'bg-car-card border border-car-border text-car-sub'
+                  ]"
+                >
+                  {{ g.shortName }}
+                </button>
+              </div>
+            </div>
+            <ActionSelect key-name="prev" :gesture="activeGesture.prev" />
+          </div>
+        </div>
+      </FeatureCard>
     </div>
-
-    <!-- 6. 右方向盘 ④ 下一曲 / ⑦ 上一曲 切歌按键映射 -->
-    <FeatureCard 
-      title="6. 右方向盘 ④ 下一曲 / ⑦ 上一曲 切歌按键映射"
-      desc="对应右方向盘 ④ 号（向右下一曲 KeyCode 305）与 ⑦ 号（向左上一曲 KeyCode 304）按键。内置官方三重通道调度，完美兼容 QQ音乐车机版、网易云等。"
-      helpTitle="【功能指南】下一曲 / 上一曲切歌按键映射"
-      helpText="1. 键位对应：&#10;④ 号键（向右）控制下一曲，⑦ 号键（向左）控制上一曲，均支持单击、双击、长按三种手势自由映射。&#10;&#10;2. 官方三重通道调度：&#10;内置官方切歌三重通道调度机制，完美兼容 QQ音乐车机版、网易云音乐等主流车载音乐应用，切歌稳定不串台。&#10;&#10;3. 动作映射：&#10;可将手势映射为「切歌(官方调度)」「打开 360 全景」或「播放/暂停」，满足不同驾驶场景需求。"
-      helpTip="切歌动作建议保持「切歌(官方调度)」，兼容性与稳定性最佳。"
-    >
-      <div class="grid grid-cols-2 gap-4">
-        <!-- 下一曲 (④ 号键) -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-[19px] font-black text-car-text">④ 下一曲键</span>
-            <div class="flex space-x-1.5">
-              <button
-                v-for="g in gestureList"
-                :key="g.id"
-                @click="activeGesture.next = g.id"
-                :class="[
-                  'px-4 py-2 rounded-xl text-[15px] font-black cursor-pointer transition-all',
-                  activeGesture.next === g.id
-                    ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
-                    : 'bg-car-card border border-car-border text-car-sub'
-                ]"
-              >
-                {{ g.shortName }}
-              </button>
-            </div>
-          </div>
-          <ActionSelect key-name="next" :gesture="activeGesture.next" />
-        </div>
-
-        <!-- 上一曲 (⑦ 号键) -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-[19px] font-black text-car-text">⑦ 上一曲键</span>
-            <div class="flex space-x-1.5">
-              <button
-                v-for="g in gestureList"
-                :key="g.id"
-                @click="activeGesture.prev = g.id"
-                :class="[
-                  'px-4 py-2 rounded-xl text-[15px] font-black cursor-pointer transition-all',
-                  activeGesture.prev === g.id
-                    ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
-                    : 'bg-car-card border border-car-border text-car-sub'
-                ]"
-              >
-                {{ g.shortName }}
-              </button>
-            </div>
-          </div>
-          <ActionSelect key-name="prev" :gesture="activeGesture.prev" />
-        </div>
-      </div>
-    </FeatureCard>
 
     <!-- 7/8. 按键功能卡一排两个：节省纵向空间，卡片与字号尺寸全部原样保留 -->
     <div class="grid grid-cols-2 items-start gap-3.5">
