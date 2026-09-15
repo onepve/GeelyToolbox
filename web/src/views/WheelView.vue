@@ -206,26 +206,32 @@
       </div>
     </FeatureCard>
 
-    <!-- 3. 右方向盘 ① 主页/返回按键多手势映射 -->
-    <WheelGestureCard
-      key-name="back"
-      card-title="3. 右方向盘 ① 主页/返回按键映射"
-      card-desc="对应右方向盘 ① 号返回/主页键（KeyCode 307）。支持【单击】、【双击】、【长按】自定义。可保留系统原厂返回，或映射为高德导航、360全景或自定义应用。"
-    />
+    <!-- 3/4/5. 按键功能卡一排两个：节省纵向空间，卡片与字号尺寸全部原样保留 -->
+    <div class="grid grid-cols-2 items-start gap-3.5">
+      <!-- 3. 右方向盘 ① 主页/返回按键多手势映射 -->
+      <WheelGestureCard
+        class="!mb-0"
+        key-name="back"
+        card-title="3. 右方向盘 ① 主页/返回按键映射"
+        card-desc="对应右方向盘 ① 号返回/主页键（KeyCode 307）。支持【单击】、【双击】、【长按】自定义。可保留系统原厂返回，或映射为高德导航、360全景或自定义应用。"
+      />
 
-    <!-- 4. 右方向盘 ② 音量滚轮按压多手势映射 -->
-    <WheelGestureCard
-      key-name="ok"
-      card-title="4. 右方向盘 ② 音量滚轮按压映射"
-      card-desc="对应右方向盘 ② 号音量滚轮垂直按压（Tasker 黄金键码 0x2d）。支持【单击】、【双击】、【长按】多手势；默认单击控制媒体暂停/播放，亦可秒开 360 或高德。"
-    />
+      <!-- 4. 右方向盘 ② 音量滚轮按压多手势映射 -->
+      <WheelGestureCard
+        class="!mb-0"
+        key-name="ok"
+        card-title="4. 右方向盘 ② 音量滚轮按压映射"
+        card-desc="对应右方向盘 ② 号音量滚轮垂直按压（Tasker 黄金键码 0x2d）。支持【单击】、【双击】、【长按】多手势；默认单击控制媒体暂停/播放，亦可秒开 360 或高德。"
+      />
 
-    <!-- 5. 右方向盘 ③ 静音键多手势映射 -->
-    <WheelGestureCard
-      key-name="mute"
-      card-title="5. 右方向盘 ③ 静音按键映射"
-      card-desc="对应右方向盘 ③ 号静音键（KeyCode 300）。支持【单击】、【双击】、【长按 1.5 秒】多手势；长按 10 秒依然是整车硬件冷重启，互不冲突！"
-    />
+      <!-- 5. 右方向盘 ③ 静音键多手势映射 -->
+      <WheelGestureCard
+        class="!mb-0"
+        key-name="mute"
+        card-title="5. 右方向盘 ③ 静音按键映射"
+        card-desc="对应右方向盘 ③ 号静音键（KeyCode 300）。支持【单击】、【双击】、【长按 1.5 秒】多手势；长按 10 秒依然是整车硬件冷重启，互不冲突！"
+      />
+    </div>
 
     <!-- 6. 右方向盘 ④ 下一曲 / ⑦ 上一曲 切歌按键映射 -->
     <FeatureCard 
@@ -284,19 +290,24 @@
       </div>
     </FeatureCard>
 
-    <!-- 7. 右方向盘 ⑤ 自定义按键多手势映射 (原厂模式 / 高德 / 360 / 自定义) -->
-    <WheelGestureCard
-      key-name="custom"
-      card-title="7. 右方向盘 ⑤ 自定义按键映射"
-      card-desc="对应右方向盘 ⑤ 号自定义按键（Tasker 黄金键码 0x37）。中高配车型原车中控已具备自定义设置，默认保持原厂模式直通；亦支持多手势选配高德、360或自定义App。"
-    />
+    <!-- 7/8. 按键功能卡一排两个：节省纵向空间，卡片与字号尺寸全部原样保留 -->
+    <div class="grid grid-cols-2 items-start gap-3.5">
+      <!-- 7. 右方向盘 ⑤ 自定义按键多手势映射 (原厂模式 / 高德 / 360 / 自定义) -->
+      <WheelGestureCard
+        class="!mb-0"
+        key-name="custom"
+        card-title="7. 右方向盘 ⑤ 自定义按键映射"
+        card-desc="对应右方向盘 ⑤ 号自定义按键（Tasker 黄金键码 0x37）。中高配车型原车中控已具备自定义设置，默认保持原厂模式直通；亦支持多手势选配高德、360或自定义App。"
+      />
 
-    <!-- 8. 右方向盘 ⑥ MODE 键多手势映射 -->
-    <WheelGestureCard
-      key-name="mode"
-      card-title="8. 右方向盘 ⑥ MODE 按键映射"
-      card-desc="对应右方向盘 ⑥ 号 MODE 模式键（KeyCode 348）。原车用于切换伴听/收音机。默认单击一键秒开 360 全景，同时支持双击与长按个性化定制。"
-    />
+      <!-- 8. 右方向盘 ⑥ MODE 键多手势映射 -->
+      <WheelGestureCard
+        class="!mb-0"
+        key-name="mode"
+        card-title="8. 右方向盘 ⑥ MODE 按键映射"
+        card-desc="对应右方向盘 ⑥ 号 MODE 模式键（KeyCode 348）。原车用于切换伴听/收音机。默认单击一键秒开 360 全景，同时支持双击与长按个性化定制。"
+      />
+    </div>
 
     <!-- 9. 新手按键能力指引与一键方案配置 -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-2xl mb-5">
@@ -367,19 +378,21 @@
       </div>
     </div>
 
-    <!-- 方向盘图解悬浮对照卡：向下滚动设置键位时，自动悬浮至右下角便于对照编号位置 -->
+    <!-- 方向盘图解悬浮对照卡：滚动设键位时默认悬浮于内容区右上角（绝不遮挡下方功能菜单）；
+         支持拖放自定义位置并本地记忆，下次同位显示；原地点按隐藏 -->
     <transition name="floating-fade">
       <div
         v-if="showFloating"
-        @click="dismissFloating"
-        class="fixed left-[320px] bottom-5 z-30 p-1.5 rounded-xl bg-car-card/90 border border-car-border/60 shadow-xl shadow-black/50 cursor-pointer backdrop-blur-sm select-none"
-        style="width: 168px;"
-        title="方向盘图解对照，点按隐藏"
+        ref="floatingGuideEl"
+        @pointerdown="startFloatingDrag"
+        class="fixed z-30 cursor-move select-none"
+        :style="{ left: floatingPos.x + 'px', top: floatingPos.y + 'px', width: '168px', touchAction: 'none' }"
+        title="方向盘图解对照：拖动到任意位置，点一下隐藏"
       >
         <img
-          :src="wheelGuideImg"
+          :src="wheelGuideFloatingImg"
           alt="方控图解悬浮对照"
-          class="guide-img w-full h-auto rounded-lg object-contain block"
+          class="w-full h-auto object-contain block pointer-events-none select-none"
         />
       </div>
     </transition>
@@ -395,6 +408,7 @@ import ActionSelect from '../components/ActionSelect.vue';
 import { store, bridge, showToast, openModal } from '../store';
 import { useWheelGesture } from '../composables/useWheelGesture';
 import wheelGuideImg from '../assets/steering_wheel_guide.webp';
+import wheelGuideFloatingImg from '../assets/steering_wheel_guide_floating.svg';
 
 // 原厂方控图解：默认折叠，并记忆展开状态
 const DIAGRAM_KEY = 'wheel_diagram_expanded';
@@ -405,22 +419,73 @@ function toggleDiagram() {
   localStorage.setItem(DIAGRAM_KEY, String(showDiagram.value));
 }
 
-// 方向盘图解悬浮对照卡：向下滚动设置键位时贴边悬浮，回顶复位；点按临时隐藏
+// 方向盘图解悬浮对照卡：下滑设键位时悬浮显示，回顶自动收起；点按临时隐藏。
+// 默认出现在内容区右上角（绝不遮挡自下而上展开的功能菜单），支持拖放自定义位置并本地记忆，下次同位显示
+const FLOAT_POS_KEY = 'wheel_floating_guide_pos';
 const showFloating = ref(false);
+const floatingGuideEl = ref(null);
+const floatingPos = reactive(loadFloatingPos());
+
+function loadFloatingPos() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FLOAT_POS_KEY));
+    if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) return saved;
+  } catch (e) {}
+  // 默认初始值：内容区右上角（右侧留白 38px：卡片边距 28px + 呼吸间隙 10px），顶部 88px
+  return { x: window.innerWidth - 168 - 38, y: 88 };
+}
 
 function onWheelScroll(e) {
   // document 级 capture 捕获任意滚动源，读取实际滚动元素的 scrollTop
   const el = e && e.target;
   const st = el && el.scrollTop ? el.scrollTop : (document.documentElement.scrollTop || document.body.scrollTop || 0);
-  // 回到顶端收起悬浮卡；下滑则浮现（点按隐藏后再滚动即重新浮现）
+  // 回到顶端收起悬浮卡；下滑则浮现（隐藏后再滚动即重新浮现于记忆位置）
   showFloating.value = st > 40;
 }
 
-function dismissFloating() {
-  showFloating.value = false;
+// 拖放自定义位置：pointer 事件触摸/鼠标通吃；拖动即位移，松手记忆位置；原地松手（未拖动）视为点按隐藏
+function startFloatingDrag(e) {
+  if (!e || e.button === 2) return;
+  const card = floatingGuideEl.value;
+  if (!card) return;
+  const w = card.offsetWidth || 168;
+  const h = card.offsetHeight || 120;
+  const startX = e.clientX;
+  const startY = e.clientY;
+  const origX = floatingPos.x;
+  const origY = floatingPos.y;
+  let moved = false;
+
+  // 位置钳制：绝不拖出屏幕可视区
+  const clamp = (x, y) => ({
+    x: Math.min(Math.max(8, x), window.innerWidth - w - 8),
+    y: Math.min(Math.max(8, y), window.innerHeight - h - 8)
+  });
+
+  const onMove = (ev) => {
+    if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) > 6) moved = true;
+    const next = clamp(origX + ev.clientX - startX, origY + ev.clientY - startY);
+    floatingPos.x = next.x;
+    floatingPos.y = next.y;
+  };
+  const onUp = () => {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    if (moved) {
+      // 拖放结束：记忆位置，下次滚动浮现时仍在同位显示
+      localStorage.setItem(FLOAT_POS_KEY, JSON.stringify({ x: floatingPos.x, y: floatingPos.y }));
+    } else {
+      showFloating.value = false; // 原地点按：临时隐藏
+    }
+  };
+  document.addEventListener('pointermove', onMove);
+  document.addEventListener('pointerup', onUp);
 }
 
 onMounted(() => {
+  // 视口兜底：记忆位置或默认值超界（如分辨率/朝向变化）时拉回可视区内
+  floatingPos.x = Math.min(Math.max(8, floatingPos.x), Math.max(8, window.innerWidth - 184));
+  floatingPos.y = Math.min(Math.max(8, floatingPos.y), Math.max(8, window.innerHeight - 140));
   document.addEventListener('scroll', onWheelScroll, { passive: true, capture: true });
 });
 
