@@ -71,7 +71,6 @@ export const store = reactive({
     voice_enable_door_rr_close: true,
     voice_enable_trunk_open: true,
     voice_enable_trunk_close: true,
-    vehicle_turn_360_enabled: true,
     vehicle_gear_d_360_enabled: false,
     vehicle_light_nav_enabled: false,
     vehicle_light_brightness_dim_enabled: true, // 白天开大灯进隧道中控背光微调默认开启

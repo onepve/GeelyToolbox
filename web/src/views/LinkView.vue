@@ -35,51 +35,6 @@
 
     <!-- 计划任务流列表 (车规对称双列网格 · 告别单列8层面条堆叠 · 1920宽屏黄金排布) -->
     <div class="grid grid-cols-2 gap-5">
-      <!-- 任务 1: 转向灯联动 360 -->
-      <div 
-        v-if="isTaskVisible('turn_360')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
-      >
-        <div class="flex items-center justify-between shrink-0 mb-2">
-          <div class="flex items-center space-x-3">
-            <span class="text-[21px] font-black text-car-text tracking-wide">1. 转向灯联动 360 全景</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">AVM 盲区</span>
-            <button 
-              @click.stop="showHelp('turn_360')"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-              title="查看功能指南"
-            >?</button>
-          </div>
-          <button 
-            @click="removeTask('turn_360', '转向灯联动 360 全景')"
-            class="h-[50px] px-4 rounded-xl bg-car-item border border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[14px] cursor-pointer shadow-sm transition-all shrink-0"
-            title="从工作台移除"
-          >
-            移除
-          </button>
-        </div>
-
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">拨动转向拨杆，且当前行车车速 ≤ 30 km/h</div>
-          <div class="text-car-text font-bold">秒级调起 360 全景盲区影像；方向盘回正自动退出</div>
-        </div>
-
-        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <button
-            @click="toggleSetting('vehicle_turn_360_enabled')"
-            :class="[
-              'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-              store.vehicleAuto.vehicle_turn_360_enabled
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_turn_360_enabled ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
-            <span>{{ store.vehicleAuto.vehicle_turn_360_enabled ? '转向灯 360 联动运行中' : '转向灯 360 联动已暂停' }}</span>
-          </button>
-        </div>
-      </div>
-
       <!-- 任务 2: D 挡起步联动 360 -->
       <div 
         v-if="isTaskVisible('d_360')"
@@ -412,98 +367,14 @@
         </div>
       </div>
 
-      <!-- 任务 5: 行车超速语音警示 (纯加减微调控制器) -->
-      <div 
-        v-if="isTaskVisible('overspeed')"
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-200"
-      >
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3 min-w-0">
-            <span class="text-[21px] font-black text-car-text tracking-wide truncate">5. 行车车速超限提醒</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">超速警示</span>
-            <button 
-              @click.stop="showHelp('overspeed')"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-              title="查看功能指南"
-            >?</button>
-          </div>
-          <button 
-            @click="removeTask('overspeed', '超速语音提醒')"
-            class="h-[50px] px-4 rounded-xl bg-car-item border border-car-border hover:border-red-500/80 text-car-sub hover:text-red-400 font-black text-[14px] cursor-pointer shadow-sm transition-all shrink-0 ml-3"
-            title="从工作台移除"
-          >
-            移除
-          </button>
-        </div>
-
-        <!-- 纯加减数值步进器 (上下通透，彻底杜绝左右横向挤压) -->
-        <div class="bg-car-item border-2 border-car-border rounded-2xl p-3 flex items-center justify-between shadow-inner">
-          <div class="flex items-center space-x-2">
-            <button 
-              @click="adjustOverspeedThreshold(-10)"
-              class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-            >
-              -10
-            </button>
-            <button 
-              @click="adjustOverspeedThreshold(-5)"
-              class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-            >
-              -5
-            </button>
-          </div>
-          <div class="flex items-baseline space-x-1.5 px-3">
-            <span class="text-[32px] font-black text-car-accent tracking-tight font-mono">
-              {{ store.vehicleAuto.vehicle_overspeed_threshold || 80 }}
-            </span>
-            <span class="text-[15px] text-car-sub font-black">km/h</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <button 
-              @click="adjustOverspeedThreshold(5)"
-              class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-            >
-              +5
-            </button>
-            <button 
-              @click="adjustOverspeedThreshold(10)"
-              class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-            >
-              +10
-            </button>
-          </div>
-        </div>
-
-        <div class="flex flex-col space-y-1 py-1 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">行车车速连续超过设定红线达 3 秒</div>
-          <div class="text-car-text font-bold">温和提醒“您已超速，请注意安全”(带 60 秒防骚扰冷却)</div>
-        </div>
-
-        <!-- 底部全宽车规大磁贴开关 -->
-        <div class="pt-2 border-t border-car-border/60">
-          <button
-            @click="toggleSetting('vehicle_overspeed_enabled')"
-            :class="[
-              'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-              store.vehicleAuto.vehicle_overspeed_enabled
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_overspeed_enabled ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
-            <span>{{ store.vehicleAuto.vehicle_overspeed_enabled ? '超速提醒计划运行中' : '超速提醒计划已暂停' }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 任务 6: 白天大灯联动高德日夜模式 -->
+      <!-- 任务 5: 白天大灯联动高德日夜模式 -->
       <div 
         v-if="isTaskVisible('light_nav')"
         class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
       >
         <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
-            <span class="text-[21px] font-black text-car-text tracking-wide">6. 进隧道大灯联动高德</span>
+            <span class="text-[21px] font-black text-car-text tracking-wide">5. 进隧道大灯联动高德</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">高德暗色</span>
             <button 
               @click.stop="showHelp('light_nav')"
@@ -541,14 +412,14 @@
         </div>
       </div>
 
-      <!-- 任务 7: 进隧道中控屏幕护眼背光微调 -->
+      <!-- 任务 6: 进隧道中控屏幕护眼背光微调 -->
       <div 
         v-if="isTaskVisible('light_dim')"
         class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
       >
         <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
-            <span class="text-[21px] font-black text-car-text tracking-wide">7. 进隧道中控背光微调</span>
+            <span class="text-[21px] font-black text-car-text tracking-wide">6. 进隧道中控背光微调</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">背光柔和</span>
             <button 
               @click.stop="showHelp('light_dim')"
@@ -586,14 +457,14 @@
         </div>
       </div>
 
-      <!-- 任务 8: P 挡开门多媒体优雅静音 -->
+      <!-- 任务 7: P 挡开门多媒体优雅静音 -->
       <div 
         v-if="isTaskVisible('door_pause')"
         class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
       >
         <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
-            <span class="text-[21px] font-black text-car-text tracking-wide">8. 停稳推门多媒体暂停</span>
+            <span class="text-[21px] font-black text-car-text tracking-wide">7. 停稳推门多媒体暂停</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">下车静音</span>
             <button 
               @click.stop="showHelp('door_pause')"
@@ -706,11 +577,9 @@ const removedTaskIds = ref(JSON.parse(localStorage.getItem(STORAGE_REMOVED_KEY) 
 const showAddModal = ref(false);
 
 const allTasks = [
-  { id: 'turn_360', title: '转向灯联动 360 全景盲区', tag: 'AVM 盲区', desc: '打转向灯秒级开 360 盲区，回正自动退出，车速超 30km/h 智能静默。' },
   { id: 'd_360', title: '前进 D 挡起步联动 360 全景', tag: '起步环视', desc: '从 P/R 挂入 D 挡起步唤醒 360 环视四周；单次跃变锁防反复弹出。' },
   { id: 'speed_music', title: '车速达标智能启播车载音乐', tag: '起步自启', desc: '车速达到设定阈值后后台自动启播自选音乐，支持纯加减自由微调速度。' },
   { id: 'speed_action', title: '车速达标自定义动作与唤起应用', tag: '自定动作', desc: '车速达标后自动打开 360、高德或整车已安装的任意第三方软件。' },
-  { id: 'overspeed', title: '行车车速超限安全语音提醒', tag: '超速警示', desc: '超速达 3 秒触发晓晓温润语音提醒，带 60 秒防骚扰冷却机制。' },
   { id: 'light_nav', title: '进隧道大灯联动高德日夜模式', tag: '高德暗色', desc: '白天开大灯秒级切深色高德地图，出隧道关大灯自动恢复浅色。' },
   { id: 'light_dim', title: '进隧道中控屏幕护眼背光微调', tag: '背光柔和', desc: '白天开大灯后中控屏幕亮度压暗至 35%，出隧道关灯秒恢复。' },
   { id: 'door_pause', title: '停稳推门多媒体自动暂停', tag: '下车静音', desc: '挂 P 挡推开车门秒级暂停音乐，下车安静从容。' }
@@ -730,11 +599,9 @@ function isTaskVisible(id) {
 
 const activeTaskCount = computed(() => {
   let count = 0;
-  if (isTaskVisible('turn_360') && store.vehicleAuto.vehicle_turn_360_enabled) count++;
   if (isTaskVisible('d_360') && store.vehicleAuto.vehicle_d_gear_360_enabled) count++;
   if (isTaskVisible('speed_music') && store.vehicleAuto.vehicle_speed_autoplay_enabled) count++;
   if (isTaskVisible('speed_action') && store.vehicleAuto.vehicle_speed_custom_action_enabled) count++;
-  if (isTaskVisible('overspeed') && store.vehicleAuto.vehicle_overspeed_enabled) count++;
   if (isTaskVisible('light_nav') && store.vehicleAuto.vehicle_headlight_nav_night_enabled) count++;
   if (isTaskVisible('light_dim') && store.vehicleAuto.vehicle_headlight_dim_screen_enabled) count++;
   if (isTaskVisible('door_pause') && store.vehicleAuto.vehicle_door_pause_music_enabled) count++;
@@ -847,9 +714,7 @@ function toggleSetting(key) {
     vehicle_headlight_nav_night_enabled: 'vehicle_light_nav_enabled',
     vehicle_light_nav_enabled: 'vehicle_headlight_nav_night_enabled',
     vehicle_headlight_dim_screen_enabled: 'vehicle_light_brightness_dim_enabled',
-    vehicle_light_brightness_dim_enabled: 'vehicle_headlight_dim_screen_enabled',
-    vehicle_overspeed_enabled: 'vehicle_overspeed_voice_enabled',
-    vehicle_overspeed_voice_enabled: 'vehicle_overspeed_enabled'
+    vehicle_light_brightness_dim_enabled: 'vehicle_headlight_dim_screen_enabled'
   };
   if (aliasMap[key]) {
     store.vehicleAuto[aliasMap[key]] = next;
@@ -910,29 +775,12 @@ function setAutoplayFullscreen(fullscreen) {
   showToast(fullscreen ? '已设为前台全屏大屏打开' : '已设为后台静默放歌 (保持高德导航)');
 }
 
-function setOverspeedThreshold(speed) {
-  store.vehicleAuto.vehicle_overspeed_threshold = speed;
-  bridge.call('setVehicleAutomationIntSetting', 'vehicle_overspeed_threshold', speed);
-  showToast(`超速红线已设为: ${speed} km/h`);
-}
-
-function adjustOverspeedThreshold(delta) {
-  let current = store.vehicleAuto.vehicle_overspeed_threshold || 80;
-  let next = Math.max(30, Math.min(150, current + delta));
-  setOverspeedThreshold(next);
-}
-
 function openSelectModal(target) {
   openModal('appSelect', { keyTarget: target });
 }
 
 function showHelp(key) {
   const helpData = {
-    turn_360: {
-      title: '【功能指南】转向灯联动 360 全景盲区',
-      desc: '1. 联动原理：监听底层原厂 AVM 环视状态机与转向拨杆电平。打起转向灯秒级唤起 360 盲区影像；方向盘回正后自动平滑退出。\n\n2. 安全限速：时速高于 30km/h 时自动静默，防止高速变道遮挡地图导航。',
-      tip: '整张卡片任意位置一拍即合开/关。'
-    },
     gear_d_360: {
       title: '【功能指南】前进 D 挡起步 360 全景',
       desc: '1. 单次跃变锁：从 P 挡或 R 挡切入前进 D 挡瞬间自动唤醒 360 环视四周；触发一次即锁定，手动退出绝不重复弹出。\n\n2. 自动退出：起步车速超 15km/h 自动退出全景，保持导航视线。',
@@ -975,9 +823,6 @@ onMounted(() => {
   }
   if (store.vehicleAuto.vehicle_light_brightness_dim_enabled !== undefined) {
     store.vehicleAuto.vehicle_headlight_dim_screen_enabled = store.vehicleAuto.vehicle_light_brightness_dim_enabled;
-  }
-  if (store.vehicleAuto.vehicle_overspeed_voice_enabled !== undefined) {
-    store.vehicleAuto.vehicle_overspeed_enabled = store.vehicleAuto.vehicle_overspeed_voice_enabled;
   }
   loadSortedMusicApps();
   loadCustomActionAppName();

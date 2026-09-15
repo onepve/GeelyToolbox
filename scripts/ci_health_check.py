@@ -737,7 +737,6 @@ with open(link_view_path, "r", encoding="utf-8") as f:
     lv_full_code = f.read()
 
 required_link_keys = [
-    ("vehicle_turn_360_enabled", "转向灯联动 360"),
     ("vehicle_speed_autoplay_enabled", "车速达标智能启播音乐"),
     ("vehicle_speed_custom_action_enabled", "车速达标自定义动作"),
     ("vehicle_door_pause_music_enabled", "停稳推门多媒体自动暂停")
@@ -748,14 +747,12 @@ for lk, ldesc in required_link_keys:
 
 if "vehicle_d_gear_360_enabled" not in lv_full_code and "vehicle_gear_d_360_enabled" not in lv_full_code:
     reg_violations.append("LinkView.vue 缺少 D 挡起步 360 联动任务！")
-if "vehicle_overspeed_enabled" not in lv_full_code and "vehicle_overspeed_voice_enabled" not in lv_full_code:
-    reg_violations.append("LinkView.vue 缺少行车车速超限语音提醒任务！")
 if "vehicle_headlight_nav_night_enabled" not in lv_full_code and "vehicle_light_nav_night_enabled" not in lv_full_code:
     reg_violations.append("LinkView.vue 缺少进出隧道大灯联动高德任务！")
 if "vehicle_headlight_dim_screen_enabled" not in lv_full_code and "vehicle_light_brightness_dim_enabled" not in lv_full_code:
     reg_violations.append("LinkView.vue 缺少进隧道中控护眼背光微调任务！")
 
-if "adjustAutoplaySpeed" not in lv_full_code or "adjustCustomActionSpeed" not in lv_full_code or "adjustOverspeedThreshold" not in lv_full_code:
+if "adjustAutoplaySpeed" not in lv_full_code or "adjustCustomActionSpeed" not in lv_full_code:
     reg_violations.append("LinkView.vue 缺少车速纯加减微调控制器，不得回退为死板预设！")
 if "添加联动计划" not in lv_full_code:
     reg_violations.append("LinkView.vue 顶栏缺少【添加联动计划】常驻大磁贴！")

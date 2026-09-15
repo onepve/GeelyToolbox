@@ -2707,7 +2707,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("wheel_master_switch", prefs.getBoolean("wheel_master_switch", true));
 
                 // 360 与车灯联动
-                obj.put("vehicle_turn_360_enabled", prefs.getBoolean("vehicle_turn_360_enabled", true));
                 obj.put("vehicle_gear_d_360_enabled", prefs.getBoolean("vehicle_gear_d_360_enabled", false));
                 obj.put("vehicle_light_nav_enabled", prefs.getBoolean("vehicle_light_nav_enabled", false));
                 obj.put("vehicle_flameout_voice_enabled", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
@@ -2772,8 +2771,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("vehicle_speed_autoplay_threshold", prefs.getInt("vehicle_speed_autoplay_threshold", 20));
                 obj.put("vehicle_speed_autoplay_pkg", prefs.getString("vehicle_speed_autoplay_pkg", "com.luna.music"));
                 obj.put("vehicle_speed_autoplay_fullscreen", prefs.getBoolean("vehicle_speed_autoplay_fullscreen", false));
-                obj.put("vehicle_overspeed_voice_enabled", prefs.getBoolean("vehicle_overspeed_voice_enabled", false));
-                obj.put("vehicle_overspeed_threshold", prefs.getInt("vehicle_overspeed_threshold", 80));
                 obj.put("vehicle_door_pause_music_enabled", prefs.getBoolean("vehicle_door_pause_music_enabled", false));
                 obj.put("vehicle_rear_door_alert_enabled", prefs.getBoolean("vehicle_rear_door_alert_enabled", false));
                 obj.put("vehicle_light_brightness_dim_enabled", prefs.getBoolean("vehicle_light_brightness_dim_enabled", true));
@@ -2797,7 +2794,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
 
                 // 兼容历史老 Key 别名
-                obj.put("turn_360", prefs.getBoolean("vehicle_turn_360_enabled", false));
                 obj.put("light_nav", prefs.getBoolean("vehicle_light_nav_enabled", false));
                 obj.put("flameout_voice", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
                 obj.put("voice_door_fl", prefs.getBoolean("voice_enable_door_fl", true));

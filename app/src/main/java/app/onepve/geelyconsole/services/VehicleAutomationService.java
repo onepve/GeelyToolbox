@@ -85,7 +85,6 @@ public class VehicleAutomationService extends Service {
     private boolean enableModeComfort = true;
     private boolean enableModeEco = true;
     private boolean enableModeSport = true;
-    private boolean enableTurn360 = false;
     private boolean enableLightNav = false;
     private boolean enableFlameoutVoice = false;
     // 车况安全守护四项测试开关聚合 (shouldRun 门控)
@@ -112,7 +111,6 @@ public class VehicleAutomationService extends Service {
     private int lastKeyState = -1;
     private int lastEngineState = -1;
     public static volatile int currentSpeedKmH = 0;
-    private boolean is360OpenedByTurn = false;
 
     // 同状态接触微抖动过滤 (毫秒)
     private long lastTriggerFL = 0;
@@ -253,7 +251,6 @@ public class VehicleAutomationService extends Service {
             boolean modeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
             boolean modeEco = prefs.getBoolean("voice_enable_mode_eco", true);
             boolean modeSport = prefs.getBoolean("voice_enable_mode_sport", true);
-            boolean turn360 = prefs.getBoolean("vehicle_turn_360_enabled", true);
             boolean lightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
             boolean flameout = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
             String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
@@ -279,7 +276,7 @@ public class VehicleAutomationService extends Service {
                                 trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
                                 modeSmart || modeComfort || modeEco || modeSport ||
                                 flameout || anySafetyGuardEnabled);
-            boolean anyVehicleAutoEnabled = turn360 || lightNav;
+            boolean anyVehicleAutoEnabled = lightNav;
 
             boolean shouldRun = anyVoiceEnabled || anyVehicleAutoEnabled || wheelEnabled
                     || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
@@ -409,7 +406,6 @@ public class VehicleAutomationService extends Service {
         enableModeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
         enableModeEco = prefs.getBoolean("voice_enable_mode_eco", true);
         enableModeSport = prefs.getBoolean("voice_enable_mode_sport", true);
-        enableTurn360 = prefs.getBoolean("vehicle_turn_360_enabled", true);
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
 
@@ -433,7 +429,7 @@ public class VehicleAutomationService extends Service {
                              enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN || enableGearS ||
                              enableModeSmart || enableModeComfort || enableModeEco || enableModeSport ||
                              enableFlameoutVoice || enableSafetyGuards);
-        boolean anyVehicleAutoEnabled = enableTurn360 || enableLightNav;
+        boolean anyVehicleAutoEnabled = enableLightNav;
 
         boolean anyEnabled = anyVoiceEnabled || anyVehicleAutoEnabled || wheelEnabled
                 || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
@@ -1002,38 +998,6 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // 4.95 解析转向灯与原厂 360 环视联动
-        // 权威源 1: 吉利 AVM 状态机报文 VehId=STEERING_ROD value=0x01(左转) / 0x02(右转) / 0x00(回正)
-        // 权威源 2: 原厂 AVM 适配器 paramVehicleTurnLight ... turnLight=1(左转) / 2(右转) / 0(回正)
-        // 权威源 3: AVM 视角状态 state=TURNLIGHT_LEFT / TURNLIGHT_RIGHT / TURNLIGHT_OFF
-        if (enableTurn360) {
-            int turnVal = -1;
-            if (line.contains("VehId=STEERING_ROD") || line.contains("STEERING_ROD")) {
-                try {
-                    Matcher m = Pattern.compile("VehId=STEERING_ROD\\s+value=(?:0x)?([0-9a-fA-F]+)").matcher(line);
-                    if (m.find()) {
-                        turnVal = Integer.parseInt(m.group(1), 16);
-                    }
-                } catch (Exception ignored) {}
-            } else if (line.contains("paramVehicleTurnLight") && line.contains("turnLight=")) {
-                try {
-                    Matcher m = Pattern.compile("turnLight\\s*=\\s*(\\d+)").matcher(line);
-                    if (m.find()) {
-                        turnVal = Integer.parseInt(m.group(1));
-                    }
-                } catch (Exception ignored) {}
-            } else if (line.contains("state=TURNLIGHT_")) {
-                if (line.contains("state=TURNLIGHT_LEFT")) turnVal = 1;
-                else if (line.contains("state=TURNLIGHT_RIGHT")) turnVal = 2;
-                else if (line.contains("state=TURNLIGHT_OFF")) turnVal = 0;
-            }
-
-            if (turnVal >= 0) {
-                handleTurnSignal(turnVal);
-                return;
-            }
-        }
-
         // 5. 解析 CAN 数据: parseCanData
         if (line.contains("parseCanData")) {
             try {
@@ -1118,22 +1082,6 @@ public class VehicleAutomationService extends Service {
         if (gearStateMachine != null) {
             gearStateMachine.updateGear(gear, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
         }
-        // 挡位跃变才重新武装/归零：
-        // D 挡心跳报文约每秒复读一次，若无条件 speedAutoplayArmed = true，会把「单次行程
-        // 触发即锁定」的闩锁每秒解一次 —— 表现为车速自启每秒重触发一次（媒体已在播放时
-        // 就是每秒刷一条「静默放行防打断」日志，实测 30 秒刷 30 条）。
-        if (gear != lastArmedGear) {
-            lastArmedGear = gear;
-            if (gear == 2 || gear == 6) {
-                speedAutoplayArmed = true; // 出P挡起步武装
-                speedCustomActionArmed = true; // 出P挡自定义车速动作武装
-            } else if (gear == 5) {
-                speedAutoplayArmed = false; // 回P挡停稳归零
-                speedCustomActionArmed = false;
-                overspeedStartMs = 0;
-                overspeedWarned = false;
-            }
-        }
 
         // D挡起步联动 360 严格单次跃变状态机：切入D挡仅触发1次，锁死不循环调起；切出D挡重新武装
         if (gear == 2) {
@@ -1187,33 +1135,7 @@ public class VehicleAutomationService extends Service {
         }
     }
 
-    private void handleTurnSignal(int val) {
-        if (!enableTurn360) return;
-        if (val == 1 || val == 2) { // 1 左转, 2 右转
-            if (currentSpeedKmH <= 30) {
-                if (!is360OpenedByTurn) {
-                    AppLogger.i("车身联动", "【转向灯联动360】打起转向灯 (" + (val == 1 ? "左转" : "右转") + ")，车速 " + currentSpeedKmH + "km/h <= 30km/h，秒级唤起 360 全景");
-                    open360Camera();
-                    is360OpenedByTurn = true;
-                }
-            } else {
-                Log.d(TAG, "车速 " + currentSpeedKmH + " > 30km/h，已自动静默抑制 360 唤起以保护导航画面");
-            }
-        } else if (val == 0) { // 转向灯回正复位
-            if (is360OpenedByTurn) {
-                AppLogger.i("车身联动", "【转向灯联动360】转向灯已回正复位，自动退出 360 全景");
-                close360Camera();
-                is360OpenedByTurn = false;
-            }
-        }
-    }
-
     private void handleCanSignal(String key, int val) {
-        // 转向灯联动 360 全景影像 (兼容第三方 CAN 报文 TCM_Req_TurnIndicationAct)
-        if (enableTurn360 && "TCM_Req_TurnIndicationAct".equals(key)) {
-            handleTurnSignal(val);
-        }
-
         // 四门状态监听 (Tasker 核心源: BCM_*DoorAjarStatus, data=1 开 / 0 关)
         if ("BCM_FrontLeftDoorAjarStatus".equals(key)) {
             if (doorStateManager != null) {
@@ -1534,14 +1456,9 @@ public class VehicleAutomationService extends Service {
     // ==========================================
     // 车速与门控自动化中枢 (单次行程防抖闭环)
     // ==========================================
-    private boolean speedAutoplayArmed = false;
-    private boolean speedCustomActionArmed = false; // 车速自定义联动武装锁
-    // 上一次武装判定所用的挡位（跃变判定用）：D 挡心跳每秒复读，必须只在真实换挡跃变时
-    // 重新武装，否则「单次行程触发即锁定」的闩锁会被心跳每秒解开，导致车速自启与日志刷屏。
-    private volatile int lastArmedGear = -1;
+    private boolean speedAutoplayArmed = true; // 车速自启武装锁：初始已武装，车速回落近停后重新武装
+    private boolean speedCustomActionArmed = true; // 车速自定义联动武装锁
     private boolean gearD360Armed = true; // D挡起步360单次跃变武装锁 (离开D挡才复位，彻底根治手动退出后循环调起)
-    private long overspeedStartMs = 0;
-    private boolean overspeedWarned = false;
     // 前门开启「单次跃变」闩锁：门开着期间 CAN 报文会持续高频重复上报 data=1，
     // 必须只在 关 ➔ 开 物理跃变的那一刻执行一次门控暂停，杜绝反复下发暂停指令与日志刷屏。
     private volatile boolean frontLeftDoorOpenLatched = false;
@@ -1549,6 +1466,14 @@ public class VehicleAutomationService extends Service {
 
     private void processVehicleSpeedAutomation(int speed) {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+
+        // 车速回落接近停车 (<=5km/h) 才重新武装：彻底根治「挡位跃变驱动武装」导致 beta 失效 ——
+        // 原实现把武装锁挂在挡位跃变上，一旦日志丢失挡位报文或长时间驻车，武装锁永远不解锁，
+        // 车速自启与自定义动作整段失效。改为以车速自身回落为权威信号，无需依赖挡位日志。
+        if (speed <= 5) {
+            speedAutoplayArmed = true;
+            speedCustomActionArmed = true;
+        }
 
         // 1. 车速智能自启多媒体
         boolean autoplayEnabled = prefs.getBoolean("vehicle_speed_autoplay_enabled", false);
@@ -1562,27 +1487,7 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 2. 车速超限轻提醒
-        boolean overspeedEnabled = prefs.getBoolean("vehicle_overspeed_voice_enabled", false);
-        if (overspeedEnabled && isEngineRunning()) {
-            int overspeedThreshold = prefs.getInt("vehicle_overspeed_threshold", 80);
-            if (speed >= overspeedThreshold) {
-                if (overspeedStartMs == 0) {
-                    overspeedStartMs = System.currentTimeMillis();
-                } else if (!overspeedWarned && (System.currentTimeMillis() - overspeedStartMs >= 3000)) {
-                    overspeedWarned = true;
-                    if (voicePlayer != null) {
-                        voicePlayer.play("custom_voice_overspeed.mp3", "当前车速已超过" + overspeedThreshold + "公里每小时，请减速慢行");
-                        AppLogger.i("车身联动", "连续超速达到 3 秒，触发车速安全轻提醒: " + speed + "km/h >= " + overspeedThreshold + "km/h");
-                    }
-                }
-            } else if (speed < overspeedThreshold - 5) {
-                overspeedStartMs = 0;
-                overspeedWarned = false;
-            }
-        }
-
-        // 3. 车速达标自定义动作与唤起应用 (满足车主任意设定车速与打开指定软件/360)
+        // 2. 车速达标自定义动作与唤起应用 (满足车主任意设定车速与打开指定软件/360)
         boolean customActionEnabled = prefs.getBoolean("vehicle_speed_custom_action_enabled", false);
         if (customActionEnabled && speedCustomActionArmed && isEngineRunning()) {
             int customThreshold = prefs.getInt("vehicle_speed_custom_action_threshold", 40);
