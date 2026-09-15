@@ -357,12 +357,14 @@ public class SteeringWheelKeyManager {
         }
 
         // 2. 滚轮下按确认 (OK 键 / shouldCallback 容灾)：无真实抬手事件，仅合成兜底
+        // 铁律：严禁匹配 85 (KEYCODE_MEDIA_PLAY_PAUSE)！媒体按键下发后系统会输出 shouldCallback(85)，
+        // 若将 85 误判为 OK 键，会导致按一次暂停无限自反馈死循环下发暂停！
         if (line.contains("shouldCallback")) {
             Matcher m2 = OK_KEY_PATTERN.matcher(line);
             if (m2.find()) {
                 try {
                     int code = Integer.parseInt(m2.group(1));
-                    if (code == KEY_OK || code == 45 || code == 85 || code == 66) {
+                    if (code == KEY_OK || code == 45 || code == 66) {
                         if (!syntheticFallbackDisabled(KEY_OK)) {
                             syntheticPressAndAutoRelease(KEY_OK);
                         }
@@ -663,16 +665,16 @@ public class SteeringWheelKeyManager {
         }
     }
 
-    // 同一动作跨通道去重窗口：HAL/logcat/广播可能在 80ms 内同时到达，只执行一次
+    // 同一动作跨通道去重窗口：HAL/logcat/广播可能在短时间内同时到达，只执行一次
     private final Map<String, Long> lastActionTime = new HashMap<>();
-    private static final long ACTION_DEDUP_MS = 120;
+    private static final long ACTION_DEDUP_MS = 300;
 
     private void executeAction(String action) {
         if (action == null || ACTION_DEFAULT.equals(action)) return;
         long now = System.currentTimeMillis();
         Long last = lastActionTime.get(action);
         if (last != null && (now - last) < ACTION_DEDUP_MS) {
-            AppLogger.i("方控按键", "动作 " + action + " 120ms 内重复触发，已去重");
+            AppLogger.i("方控按键", "动作 " + action + " " + ACTION_DEDUP_MS + "ms 内重复触发，已去重");
             return;
         }
         lastActionTime.put(action, now);
@@ -801,6 +803,8 @@ public class SteeringWheelKeyManager {
         } catch (Exception ignored) {}
     }
 
+    public static volatile long lastMediaKeySentTime = 0L;
+
     /**
      * 官方级三重通道媒体按键分发机制 (100% 解决 QQ音乐/网易云 切歌与播放暂停)
      */
@@ -810,6 +814,7 @@ public class SteeringWheelKeyManager {
 
     private void sendMediaKeyEvent(int keyCode) {
         long now = SystemClock.uptimeMillis();
+        lastMediaKeySentTime = now;
 
         // 1. Android 原生官方推荐通道: AudioManager.dispatchMediaKeyEvent
         try {
@@ -823,7 +828,7 @@ public class SteeringWheelKeyManager {
             Log.w(TAG, "AudioManager.dispatchMediaKeyEvent error: " + e.getMessage());
         }
 
-        // 2. MediaSessionManager 传输控制通道 (直接调用当前活跃会话的 skipToNext / skipToPrevious)
+        // 2. MediaSessionManager 传输控制通道 (直接调用当前第三方活跃会话的 skipToNext / skipToPrevious / 播放暂停)
         try {
             MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
             if (msm != null) {
@@ -834,14 +839,27 @@ public class SteeringWheelKeyManager {
                 if (controllers != null) {
                     for (MediaController mc : controllers) {
                         if (mc != null && mc.getTransportControls() != null) {
+                            String pkg = mc.getPackageName();
+                            // 关键保护：跳过车机原厂多媒体与自身，严禁向原厂下发 TransportControls 导致 EAS 回调触发死循环
+                            if ("ecarx.xsf.mediacenter".equals(pkg) || "com.ecarx.multimedia".equals(pkg) || context.getPackageName().equals(pkg)) {
+                                continue;
+                            }
                             if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT) {
                                 mc.getTransportControls().skipToNext();
                             } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
                                 mc.getTransportControls().skipToPrevious();
                             } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
-                                mc.getTransportControls().pause();
+                                android.media.session.PlaybackState state = mc.getPlaybackState();
+                                if (state != null && state.getState() == android.media.session.PlaybackState.STATE_PLAYING) {
+                                    mc.getTransportControls().pause();
+                                } else if (state != null && (state.getState() == android.media.session.PlaybackState.STATE_PAUSED || state.getState() == android.media.session.PlaybackState.STATE_STOPPED)) {
+                                    mc.getTransportControls().play();
+                                } else {
+                                    mc.dispatchMediaButtonEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
+                                    mc.dispatchMediaButtonEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
+                                }
                             }
-                            Log.i(TAG, "TransportControls dispatched to " + mc.getPackageName());
+                            Log.i(TAG, "TransportControls dispatched to " + pkg);
                         }
                     }
                 }

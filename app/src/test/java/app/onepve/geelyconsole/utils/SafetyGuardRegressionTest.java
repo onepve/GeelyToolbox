@@ -15,7 +15,7 @@ package app.onepve.geelyconsole.utils;
  */
 public class SafetyGuardRegressionTest {
 
-    static class FakeClock implements SafetySensorStateMachine.Clock, DriveModePresetGate.Clock {
+    static class FakeClock implements SafetySensorStateMachine.Clock {
         long now = 100000L;
         @Override public long now() { return now; }
         void advance(long ms) { now += ms; }
@@ -41,14 +41,6 @@ public class SafetyGuardRegressionTest {
         testSteerAngleZeroAndOutOfRangeSilent();
         testSteerAngleThresholdOncePerTrip();
         testTripResetRestoresOnceLocks();
-        testPresetRequiresAllConditions();
-        testPresetOncePerIgnitionCycle();
-        testPresetRecheckCancelsOnDriving();
-        testPresetRecheckCancelsOnConfigChange();
-        testPresetColdStartNoAutoFire();
-        testPresetDefaultTargetNeverFires();
-        testPresetCancelOnEngineOff();
-        testPresetManualGate();
         testExtractLow16();
 
         System.out.println();
@@ -218,151 +210,6 @@ public class SafetyGuardRegressionTest {
         m.feedRemainOdo(40, clock.now());
         check(m.checkLowFuel(clock.now()) == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED,
                 "reset: 复位后新行程再次允许一次");
-    }
-
-    // ---------------- G. 预设门控 ----------------
-
-    static void testPresetRequiresAllConditions() {
-        FakeClock clock = new FakeClock();
-        DriveModePresetGate g = new DriveModePresetGate(clock);
-        // 只有配置没有点火边沿: 不武装
-        g.updateConfig(true, "sport", clock.now());
-        check(!g.shouldSchedule(clock.now()), "preset-cond: 无点火边沿不武装");
-
-        // 点火 + 非 P 挡: 不武装
-        g.feedEngineRunning(true, clock.now());
-        g.feedGear(2);
-        g.feedSpeed(0, clock.now());
-        check(!g.shouldSchedule(clock.now()), "preset-cond: 非P挡不武装");
-
-        // P 挡但速度信号已过期 (超过5s未刷新): 不武装
-        g.feedGear(5);
-        clock.advance(6000);
-        check(!g.shouldSchedule(clock.now()), "preset-cond: 速度信号过期不武装");
-
-        // P 挡 + 新鲜 0 速: 武装
-        g.feedSpeed(0, clock.now());
-        check(g.shouldSchedule(clock.now()), "preset-cond: P挡+新鲜0速+运行中 武装");
-
-        // 延迟到点复查通过
-        clock.advance(g.getDelayMs());
-        check(g.decideAtFireTime(clock.now()) == DriveModePresetGate.DECISION_PROCEED,
-                "preset-cond: 复查通过下发一次");
-    }
-
-    static void testPresetOncePerIgnitionCycle() {
-        FakeClock clock = new FakeClock();
-        DriveModePresetGate g = new DriveModePresetGate(clock);
-        g.updateConfig(true, "sport", clock.now());
-        g.feedEngineRunning(true, clock.now());
-        g.feedGear(5);
-        g.feedSpeed(0, clock.now());
-        check(g.shouldSchedule(clock.now()), "preset-once: 首次武装");
-        clock.advance(g.getDelayMs());
-        check(g.decideAtFireTime(clock.now()) == DriveModePresetGate.DECISION_PROCEED, "preset-once: 下发");
-        // 同周期内 (未熄火) 再请求武装: 已下发过，拒绝
-        g.feedGear(5);
-        g.feedSpeed(0, clock.now());
-        check(!g.shouldSchedule(clock.now()), "preset-once: 同点火周期已下发不再重复");
-        // 熄火 -> 新点火周期: 允许再次武装 (新周期新一次)
-        g.feedEngineRunning(false, clock.now());
-        g.feedEngineRunning(true, clock.now());
-        g.feedGear(5);
-        g.feedSpeed(0, clock.now());
-        check(g.shouldSchedule(clock.now()), "preset-once: 新点火周期重新允许一次");
-    }
-
-    static void testPresetRecheckCancelsOnDriving() {
-        FakeClock clock = new FakeClock();
-        DriveModePresetGate g = new DriveModePresetGate(clock);
-        g.updateConfig(true, "sport", clock.now());
-        g.feedEngineRunning(true, clock.now());
-        g.feedGear(5);
-        g.feedSpeed(0, clock.now());
-        check(g.shouldSchedule(clock.now()), "preset-drive: 武装");
-        // 延迟期间车主挂 D 挡起步
-        clock.advance(1000);
-        g.feedGear(2);
-        g.feedSpeed(5, clock.now());
-        clock.advance(g.getDelayMs());
-        check(g.decideAtFireTime(clock.now()) == DriveModePresetGate.DECISION_CANCEL,
-                "preset-drive: 延迟期间起步复查取消");
-    }
-
-    static void testPresetRecheckCancelsOnConfigChange() {
-        FakeClock clock = new FakeClock();
-        DriveModePresetGate g = new DriveModePresetGate(clock);
-        g.updateConfig(true, "sport", clock.now());
-        g.feedEngineRunning(true, clock.now());
-        g.feedGear(5);
-        g.feedSpeed(0, clock.now());
-        check(g.shouldSchedule(clock.now()), "preset-cfg: 武装");
-        // 延迟期间设置被关闭
-        clock.advance(1000);
-        g.updateConfig(false, "sport", clock.now());
-        clock.advance(g.getDelayMs());
-        check(g.decideAtFireTime(clock.now()) == DriveModePresetGate.DECISION_CANCEL,
-                "preset-cfg: 延迟期间关闭设置复查取消");
-    }
-
-    static void testPresetColdStartNoAutoFire() {
-        FakeClock clock = new FakeClock();
-        DriveModePresetGate g = new DriveModePresetGate(clock);
-        // 冷启动: 服务起来时发动机已经在运行 —— 没有点火边沿 (feedEngineRunning 初次 true 之外没有 rising edge 语义?
-        // feedEngineRunning 第一次调用 true 会构成 rising edge (从初始 false)。为杜绝冷启动误触发，
-        // 语义约定: 冷启动场景调用方不 feed 初始 true，或初始 true 边沿同样有效 —— 这里验证:
-        // 服务冷启动直接 feed true (rising) 属于"边沿"，但按实现 it does arm —— 需要调用方保证只喂
-        // 真实 ENGINE_STATE=3 边沿。单元测试验证: 若无 feedEngineRunning 调用则永不武装。
-        g.updateConfig(true, "sport", clock.now());
-        g.feedGear(5);
-        g.feedSpeed(0, clock.now());
-        clock.advance(60000);
-        check(!g.shouldSchedule(clock.now()), "preset-cold: 无点火边沿永不武装");
-    }
-
-    static void testPresetDefaultTargetNeverFires() {
-        FakeClock clock = new FakeClock();
-        DriveModePresetGate g = new DriveModePresetGate(clock);
-        g.updateConfig(true, "default", clock.now()); // default = 保持原厂
-        g.feedEngineRunning(true, clock.now());
-        g.feedGear(5);
-        g.feedSpeed(0, clock.now());
-        check(!g.shouldSchedule(clock.now()), "preset-default: default 目标永不自动下发");
-    }
-
-    static void testPresetCancelOnEngineOff() {
-        FakeClock clock = new FakeClock();
-        DriveModePresetGate g = new DriveModePresetGate(clock);
-        g.updateConfig(true, "sport", clock.now());
-        g.feedEngineRunning(true, clock.now());
-        g.feedGear(5);
-        g.feedSpeed(0, clock.now());
-        check(g.shouldSchedule(clock.now()), "preset-off: 武装");
-        clock.advance(500);
-        g.feedEngineRunning(false, clock.now()); // 熄火
-        clock.advance(g.getDelayMs());
-        check(g.decideAtFireTime(clock.now()) == DriveModePresetGate.DECISION_CANCEL
-                        || g.decideAtFireTime(clock.now()) == DriveModePresetGate.DECISION_ALREADY_DONE,
-                "preset-off: 熄火后 pending 被取消");
-    }
-
-    static void testPresetManualGate() {
-        FakeClock clock = new FakeClock();
-        DriveModePresetGate g = new DriveModePresetGate(clock);
-        // 手动门槛: 发动机运行 + P 挡 + 新鲜 0 速
-        check(!g.isManualTestAllowed(clock.now()), "preset-manual: 未运行不允许");
-        g.feedEngineRunning(true, clock.now());
-        g.feedGear(2);
-        g.feedSpeed(0, clock.now());
-        check(!g.isManualTestAllowed(clock.now()), "preset-manual: 非P挡不允许");
-        g.feedGear(5);
-        g.feedSpeed(10, clock.now());
-        check(!g.isManualTestAllowed(clock.now()), "preset-manual: 车速非0不允许");
-        g.feedSpeed(0, clock.now());
-        check(g.isManualTestAllowed(clock.now()), "preset-manual: 停稳P挡+运行中允许");
-        // 速度信号过期后不允许
-        clock.advance(6000);
-        check(!g.isManualTestAllowed(clock.now()), "preset-manual: 速度信号过期不允许");
     }
 
     // ---------------- 数值提取 ----------------

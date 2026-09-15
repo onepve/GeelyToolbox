@@ -147,8 +147,15 @@ public class EasMediaBridge {
             }
 
             MusicClient client = new MusicClient() {
+                private long lastPlayPauseCb = 0L;
+
                 @Override
                 public boolean onPlay() {
+                    long now = android.os.SystemClock.uptimeMillis();
+                    if (now - lastPlayPauseCb < 1200 || now - SteeringWheelKeyManager.lastMediaKeySentTime < 1200) {
+                        return true;
+                    }
+                    lastPlayPauseCb = now;
                     AppLogger.i("音频通道", "EAS 回调: onPlay -> 分发媒体播放键");
                     sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
                     return true;
@@ -156,6 +163,11 @@ public class EasMediaBridge {
 
                 @Override
                 public boolean onPause() {
+                    long now = android.os.SystemClock.uptimeMillis();
+                    if (now - lastPlayPauseCb < 1200 || now - SteeringWheelKeyManager.lastMediaKeySentTime < 1200) {
+                        return true;
+                    }
+                    lastPlayPauseCb = now;
                     AppLogger.i("音频通道", "EAS 回调: onPause -> 分发媒体暂停键");
                     sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
                     return true;
@@ -411,6 +423,12 @@ public class EasMediaBridge {
     }
 
     private void sendMediaKeyEvent(int keyCode) {
+        long now = android.os.SystemClock.uptimeMillis();
+        // 关键防抖与回环过滤：若方控刚刚下发过媒体按键（500ms 内），忽略 EAS 回显避免二次触发
+        if (now - SteeringWheelKeyManager.lastMediaKeySentTime < 500) {
+            Log.d(TAG, "sendMediaKeyEvent ignored echo within 500ms");
+            return;
+        }
         try {
             new SteeringWheelKeyManager(appContext).sendMediaKeyEventPublic(keyCode);
         } catch (Throwable t) {

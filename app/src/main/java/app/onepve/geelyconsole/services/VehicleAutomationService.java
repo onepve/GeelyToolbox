@@ -34,7 +34,6 @@ import app.onepve.geelyconsole.utils.AdbClient;
 import app.onepve.geelyconsole.utils.AppLogger;
 import app.onepve.geelyconsole.utils.DoorStateManager;
 import app.onepve.geelyconsole.utils.DriveModeManager;
-import app.onepve.geelyconsole.utils.DriveModePresetGate;
 import app.onepve.geelyconsole.utils.EasMediaBridge;
 import app.onepve.geelyconsole.utils.GearStateMachine;
 import app.onepve.geelyconsole.utils.IdleScreensaverManager;
@@ -89,9 +88,8 @@ public class VehicleAutomationService extends Service {
     private boolean enableTurn360 = false;
     private boolean enableLightNav = false;
     private boolean enableFlameoutVoice = false;
-    // 车况安全守护四项测试开关聚合 + 上车预设驾驶模式 (shouldRun 门控)
+    // 车况安全守护四项测试开关聚合 (shouldRun 门控)
     private boolean enableSafetyGuards = true;
-    private boolean enablePresetDriveMode = false;
 
     // 驾驶模式标准解耦枚举 (100% 根绝底层各协议数值冲突)
     public static final int MODE_COMFORT = 1; // 舒适模式
@@ -143,9 +141,6 @@ public class VehicleAutomationService extends Service {
     // 车况感知与安全守护状态变量 (判定逻辑收敛进 SafetySensorStateMachine 纯 Java 状态机)
     private final app.onepve.geelyconsole.utils.SafetySensorStateMachine safetySensors =
             new SafetySensorStateMachine(null);
-    /** 上车预设驾驶模式自动触发安全门控 (纯 Java 状态机) */
-    private final app.onepve.geelyconsole.utils.DriveModePresetGate presetGate =
-            new DriveModePresetGate(null);
     /** 信号时间戳 (单调 SystemClock) */
     private long steerAngleSignalAt = 0L;
     private long epbSignalAt = 0L;
@@ -212,69 +207,6 @@ public class VehicleAutomationService extends Service {
         }
     }
 
-    /**
-     * 上车预设驾驶模式自动触发 (点火边沿一次周期，绝不每心跳重复):
-     * 由 handlePowerState 的点火边沿调用；内部走 DriveModePresetGate 安全门控，
-     * 延迟 2.5s 到点后复查 (设置可能被改/可能已起步/可能熄火)，任一失守静默取消。
-     * 冷启动 (服务在点火后才起来，无点火边沿) 绝不自动补发。
-     */
-    private void onIgnitionEdgeDetected() {
-        long now = android.os.SystemClock.elapsedRealtime();
-        presetGate.feedEngineRunning(true, now);
-        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-        boolean enabled = prefs.getBoolean("vehicle_preset_drive_mode_enabled", false);
-        String target = PrefsCompat.getString(prefs, "vehicle_preset_drive_mode_target", "default");
-        presetGate.updateConfig(enabled, target, now);
-        // 立即喂入当前挡位/车速快照
-        presetGate.feedGear(gearStateMachine != null ? gearStateMachine.getGear() : -1);
-        presetGate.feedSpeed(currentSpeedKmH, now);
-        maybeSchedulePresetDriveMode();
-    }
-
-    private void maybeSchedulePresetDriveMode() {
-        long now = android.os.SystemClock.elapsedRealtime();
-        if (presetGate.shouldSchedule(now)) {
-            String target = presetGate.getTargetMode();
-            AppLogger.i("驾驶模式", "上车预设武装: 目标[" + target + "] 延迟 "
-                    + presetGate.getDelayMs() + "ms 后复查条件再下发 (本点火周期仅一次)");
-            mainHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    executePresetDriveModeIfAllowed();
-                }
-            }, presetGate.getDelayMs());
-        }
-    }
-
-    /** 延迟到点: 复查全部条件后决定是否真的下发一次请求 */
-    private void executePresetDriveModeIfAllowed() {
-        long now = android.os.SystemClock.elapsedRealtime();
-        // 复查前刷新最新挡位/车速/设置快照
-        presetGate.feedGear(gearStateMachine != null ? gearStateMachine.getGear() : -1);
-        presetGate.feedSpeed(currentSpeedKmH, now);
-        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-        presetGate.updateConfig(
-                prefs.getBoolean("vehicle_preset_drive_mode_enabled", false),
-                PrefsCompat.getString(prefs, "vehicle_preset_drive_mode_target", "default"), now);
-        int decision = presetGate.decideAtFireTime(now);
-        if (decision != DriveModePresetGate.DECISION_PROCEED) {
-            AppLogger.i("驾驶模式", "上车预设复查未通过 (decision=" + decision + ")，本周期静默取消");
-            return;
-        }
-        String target = presetGate.getTargetMode();
-        AppLogger.i("驾驶模式", "上车预设复查通过: 下发一次切换请求 [" + target + "] (成功以仪表跃变为准)");
-        org.json.JSONObject result = DriveModeManager.switchDriveModeWithResult(this, target);
-        try {
-            AppLogger.i("驾驶模式", "上车预设下发回执: status=" + result.opt("status") + " msg=" + result.opt("message"));
-        } catch (Throwable ignored) {}
-    }
-
-    /** 熄火/下电: 预设门控周期复位 */
-    private void onPowerOffForPresetGate() {
-        presetGate.feedEngineRunning(false, android.os.SystemClock.elapsedRealtime());
-        safetySensors.powerOff(android.os.SystemClock.elapsedRealtime());
-    }
-
     public static void syncState(Context context) {
         if (context == null) return;
         try {
@@ -323,15 +255,13 @@ public class VehicleAutomationService extends Service {
             boolean guardLowFuel = prefs.getBoolean("voice_enable_low_fuel_guard", true);
             boolean guardPowertrain = prefs.getBoolean("voice_enable_powertrain_guard", true);
             boolean anySafetyGuardEnabled = voiceMaster && (guardSteer || guardEpb || guardLowFuel || guardPowertrain);
-            boolean presetDriveMode = prefs.getBoolean("vehicle_preset_drive_mode_enabled", false)
-                    && !"default".equalsIgnoreCase(PrefsCompat.getString(prefs, "vehicle_preset_drive_mode_target", "default"));
 
             boolean anyVoiceEnabled = voiceMaster && (doorFl || doorFlClose || doorFr || doorFrClose ||
                                 doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
                                 trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
                                 modeSmart || modeComfort || modeEco || modeSport ||
                                 flameout || anySafetyGuardEnabled);
-            boolean anyVehicleAutoEnabled = turn360 || lightNav || presetDriveMode;
+            boolean anyVehicleAutoEnabled = turn360 || lightNav;
 
             boolean shouldRun = anyVoiceEnabled || anyVehicleAutoEnabled || wheelEnabled
                     || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
@@ -465,19 +395,12 @@ public class VehicleAutomationService extends Service {
         enableLightNav = prefs.getBoolean("vehicle_light_nav_enabled", false);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
 
-        // 车况安全守护四项测试开关 + 上车预设驾驶模式 (同步进 shouldRun 门控)
+        // 车况安全守护四项测试开关 (同步进 shouldRun 门控)
         enableSafetyGuards = voiceMasterSwitch && (
                 prefs.getBoolean("voice_enable_steer_angle_guard", true)
                         || prefs.getBoolean("voice_enable_epb_guard", true)
                         || prefs.getBoolean("voice_enable_low_fuel_guard", true)
                         || prefs.getBoolean("voice_enable_powertrain_guard", true));
-        enablePresetDriveMode = prefs.getBoolean("vehicle_preset_drive_mode_enabled", false)
-                && !"default".equalsIgnoreCase(PrefsCompat.getString(prefs, "vehicle_preset_drive_mode_target", "default"));
-        // 配置变化同步进预设门控 (改设置取消 pending)
-        presetGate.updateConfig(
-                prefs.getBoolean("vehicle_preset_drive_mode_enabled", false),
-                PrefsCompat.getString(prefs, "vehicle_preset_drive_mode_target", "default"),
-                android.os.SystemClock.elapsedRealtime());
 
         // 若服务在行车中启动，立即建立主驾已就坐基准，避免车门语音误判为上车
         if (lastPowerMode > 0 && doorStateManager != null) {
@@ -492,7 +415,7 @@ public class VehicleAutomationService extends Service {
                              enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN || enableGearS ||
                              enableModeSmart || enableModeComfort || enableModeEco || enableModeSport ||
                              enableFlameoutVoice || enableSafetyGuards);
-        boolean anyVehicleAutoEnabled = enableTurn360 || enableLightNav || enablePresetDriveMode;
+        boolean anyVehicleAutoEnabled = enableTurn360 || enableLightNav;
 
         boolean anyEnabled = anyVoiceEnabled || anyVehicleAutoEnabled || wheelEnabled
                 || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
@@ -1424,8 +1347,6 @@ public class VehicleAutomationService extends Service {
             if (val == 3) {
                 lastPowerMode = 1;
                 doorStateManager.markDriverInside();
-                // 发动机真正运行边沿 (非 KEY ON/ACC): 上车预设唯一自动入口
-                onIgnitionEdgeDetected();
             } else if (val == 0) {
                 // 引擎停止不一定熄火，等待 PEPS_PowerMode=0 或 KEY_STATE=0
             }
@@ -1452,8 +1373,10 @@ public class VehicleAutomationService extends Service {
         if (gearStateMachine != null) gearStateMachine.resetState();
         if (driveModeManager != null) driveModeManager.resetState();
         if (doorStateManager != null) doorStateManager.resetState();
-        // 熄火下电: 安全传感器一次触发锁复位 + 预设门控周期结束 (取消 pending)
-        onPowerOffForPresetGate();
+        // 熄火下电: 安全传感器一次触发锁复位
+        if (safetySensors != null) {
+            safetySensors.powerOff(android.os.SystemClock.elapsedRealtime());
+        }
         if (flameout && enableFlameoutVoice && voicePlayer != null) {
             voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品", VehicleVoicePlayer.PRIORITY_P3_ADVISORY);
         }

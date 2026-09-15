@@ -2754,10 +2754,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_enable_low_fuel_guard", prefs.getBoolean("voice_enable_low_fuel_guard", true));
                 obj.put("voice_enable_powertrain_guard", prefs.getBoolean("voice_enable_powertrain_guard", true));
 
-                // 上车预设驾驶模式 (测试)
-                obj.put("vehicle_preset_drive_mode_enabled", prefs.getBoolean("vehicle_preset_drive_mode_enabled", false));
-                obj.put("vehicle_preset_drive_mode_target", PrefsCompat.getString(prefs, "vehicle_preset_drive_mode_target", "default"));
-
                 // 默认值：出厂统一默认控制台独立接管模式，短按 Mode 唤起 360
                 boolean hasCarMedia = SystemUtils.isPackageInstalled(MainActivity.this, "com.ecarx.carmedia");
                 String defaultWheelMode = "toolbox_alone";
@@ -2984,40 +2980,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
             });
             return true;
-        }
-
-        @JavascriptInterface
-        public String testSwitchDriveMode(final String mode) {
-            // 同步返回 JSON 结果字符串 {status, message}；前端 JSON.parse。
-            // 只有 status="sent" 表示请求已下发 (绝非切换成功)，不伪造任何成功状态。
-            org.json.JSONObject result;
-            try {
-                // 手动测试门槛: 停稳 P 挡 + 发动机运行才放行 (与自动路径同一安全门控)
-                boolean engineRunning = VehicleAutomationService.isEngineRunningForBridge();
-                boolean parked = VehicleAutomationService.isParkedStillForBridge();
-                if (!engineRunning) {
-                    result = new org.json.JSONObject();
-                    result.put("status", "blocked");
-                    result.put("message", "当前未检测到发动机运行 (KEY ON/ACC 待机不算点火)，为安全已拒绝实测下发");
-                    return result.toString();
-                }
-                if (!parked) {
-                    result = new org.json.JSONObject();
-                    result.put("status", "blocked");
-                    result.put("message", "当前未检测到停稳 P 挡 + 零车速，为安全已拒绝实测下发，请挂 P 挡停稳后再试");
-                    return result.toString();
-                }
-                result = DriveModeManager.switchDriveModeWithResult(MainActivity.this, mode);
-            } catch (Throwable t) {
-                try {
-                    result = new org.json.JSONObject();
-                    result.put("status", "error");
-                    result.put("message", "桥接执行出错: " + t.getMessage());
-                } catch (Exception ignored) {
-                    return "{\"status\":\"error\",\"message\":\"桥接执行出错\"}";
-                }
-            }
-            return result.toString();
         }
 
         @JavascriptInterface

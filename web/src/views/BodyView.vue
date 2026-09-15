@@ -1080,10 +1080,7 @@
       </div>
     </div>
 
-    <!-- 底部独立专区 1: 上车预设驾驶模式 (测试 · 独立组件防膨胀) -->
-    <DriveModePresetSection />
-
-    <!-- 底部独立专区 2: 车况安全守护语音四项测试卡 (2x2 双列等高 · 独立组件防膨胀) -->
+    <!-- 底部独立专区: 车况安全守护语音四项测试卡 (2x2 双列等高 · 独立组件防膨胀) -->
     <SafetyGuardVoiceSection />
   </div>
 </template>
@@ -1091,7 +1088,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { store, bridge, showToast, openModal } from '../store';
-import DriveModePresetSection from '../components/DriveModePresetSection.vue';
 import SafetyGuardVoiceSection from '../components/SafetyGuardVoiceSection.vue';
 
 const STORAGE_VOICE_KEY = 'geely_removed_voice_tasks_v2';
