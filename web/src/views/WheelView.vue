@@ -207,190 +207,28 @@
     </FeatureCard>
 
     <!-- 3. 右方向盘 ① 主页/返回按键多手势映射 -->
-    <FeatureCard 
-      title="3. 右方向盘 ① 主页/返回按键映射"
-      desc="对应右方向盘 ① 号返回/主页键（KeyCode 307）。支持【单击】、【双击】、【长按】自定义。可保留系统原厂返回，或映射为高德导航、360全景或自定义应用。"
-    >
-      <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
-        <div class="flex items-center space-x-2">
-          <button
-            v-for="g in gestureList"
-            :key="g.id"
-            @click="activeGesture.back = g.id"
-            :class="[
-              'px-4 py-2 rounded-xl text-[14.5px] font-black cursor-pointer transition-all whitespace-nowrap',
-              activeGesture.back === g.id
-                ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
-                : 'bg-car-card border border-car-border text-car-sub hover:border-car-border-light'
-            ]"
-          >
-            {{ g.name }}
-          </button>
-        </div>
-        <div class="text-[13.5px] font-bold text-car-sub">
-          当前配置：<span class="text-car-accent">单击[{{ getActionName(getGestureAction('back', 'single')) }}]</span> · 
-          <span>双击[{{ getActionName(getGestureAction('back', 'double')) }}]</span> · 
-          <span>长按[{{ getActionName(getGestureAction('back', 'long')) }}]</span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-5 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
-        <MatrixButton 
-          title="保持原厂不动"
-          subtitle="系统原厂返回"
-          :active="getGestureAction('back', activeGesture.back) === 'default'"
-          @click="setGestureAction('back', activeGesture.back, 'default')"
-        />
-        <MatrixButton 
-          title="打开高德地图"
-          subtitle="一键秒切导航"
-          :active="getGestureAction('back', activeGesture.back) === 'open_navi'"
-          @click="setGestureAction('back', activeGesture.back, 'open_navi')"
-        />
-        <MatrixButton 
-          title="打开 360 全景"
-          subtitle="一键秒看盲区"
-          :active="getGestureAction('back', activeGesture.back) === 'open_360'"
-          @click="setGestureAction('back', activeGesture.back, 'open_360')"
-        />
-        <MatrixButton 
-          title="音量暂停 / 播放"
-          subtitle="媒体暂停或继续"
-          :active="getGestureAction('back', activeGesture.back) === 'play_pause'"
-          @click="setGestureAction('back', activeGesture.back, 'play_pause')"
-        />
-        <MatrixButton 
-          :title="isCustomApp(getGestureAction('back', activeGesture.back)) ? (getCustomAppName('back_' + activeGesture.back) || '自定义应用') : '自定义打开应用'"
-          :subtitle="isCustomApp(getGestureAction('back', activeGesture.back)) ? '点击可重新更换应用' : '自由挑选车机第三方应用'"
-          :active="isCustomApp(getGestureAction('back', activeGesture.back))"
-          @click="openAppSelectModal('back_' + activeGesture.back)"
-        />
-      </div>
-    </FeatureCard>
+    <WheelGestureCard
+      key-name="back"
+      card-title="3. 右方向盘 ① 主页/返回按键映射"
+      card-desc="对应右方向盘 ① 号返回/主页键（KeyCode 307）。支持【单击】、【双击】、【长按】自定义。可保留系统原厂返回，或映射为高德导航、360全景或自定义应用。"
+      :actions="[{ title: '保持原厂不动', subtitle: '系统原厂返回', action: 'default' }, { title: '打开高德地图', subtitle: '一键秒切导航', action: 'open_navi' }, { title: '打开 360 全景', subtitle: '一键秒看盲区', action: 'open_360' }, { title: '音量暂停 / 播放', subtitle: '媒体暂停或继续', action: 'play_pause' }]"
+    />
 
     <!-- 4. 右方向盘 ② 音量滚轮按压多手势映射 -->
-    <FeatureCard 
-      title="4. 右方向盘 ② 音量滚轮按压映射"
-      desc="对应右方向盘 ② 号音量滚轮垂直按压（Tasker 黄金键码 0x2d）。支持【单击】、【双击】、【长按】多手势；默认单击控制媒体暂停/播放，亦可秒开 360 或高德。"
-    >
-      <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
-        <div class="flex items-center space-x-2">
-          <button
-            v-for="g in gestureList"
-            :key="g.id"
-            @click="activeGesture.ok = g.id"
-            :class="[
-              'px-4 py-2 rounded-xl text-[14.5px] font-black cursor-pointer transition-all whitespace-nowrap',
-              activeGesture.ok === g.id
-                ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
-                : 'bg-car-card border border-car-border text-car-sub hover:border-car-border-light'
-            ]"
-          >
-            {{ g.name }}
-          </button>
-        </div>
-        <div class="text-[13.5px] font-bold text-car-sub">
-          当前配置：<span class="text-car-accent">单击[{{ getActionName(getGestureAction('ok', 'single')) }}]</span> · 
-          <span>双击[{{ getActionName(getGestureAction('ok', 'double')) }}]</span> · 
-          <span>长按[{{ getActionName(getGestureAction('ok', 'long')) }}]</span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-5 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
-        <MatrixButton 
-          title="保持原厂不动"
-          subtitle="原厂按压确认"
-          :active="getGestureAction('ok', activeGesture.ok) === 'default'"
-          @click="setGestureAction('ok', activeGesture.ok, 'default')"
-        />
-        <MatrixButton 
-          title="音量暂停 / 播放"
-          subtitle="媒体暂停或继续"
-          :active="getGestureAction('ok', activeGesture.ok) === 'play_pause'"
-          @click="setGestureAction('ok', activeGesture.ok, 'play_pause')"
-        />
-        <MatrixButton 
-          title="打开 360 全景"
-          subtitle="一键秒看盲区"
-          :active="getGestureAction('ok', activeGesture.ok) === 'open_360'"
-          @click="setGestureAction('ok', activeGesture.ok, 'open_360')"
-        />
-        <MatrixButton 
-          title="打开高德地图"
-          subtitle="一键秒切导航"
-          :active="getGestureAction('ok', activeGesture.ok) === 'open_navi'"
-          @click="setGestureAction('ok', activeGesture.ok, 'open_navi')"
-        />
-        <MatrixButton 
-          :title="isCustomApp(getGestureAction('ok', activeGesture.ok)) ? (getCustomAppName('ok_' + activeGesture.ok) || '自定义应用') : '自定义打开应用'"
-          :subtitle="isCustomApp(getGestureAction('ok', activeGesture.ok)) ? '点击可重新更换应用' : '自由挑选车机第三方应用'"
-          :active="isCustomApp(getGestureAction('ok', activeGesture.ok))"
-          @click="openAppSelectModal('ok_' + activeGesture.ok)"
-        />
-      </div>
-    </FeatureCard>
+    <WheelGestureCard
+      key-name="ok"
+      card-title="4. 右方向盘 ② 音量滚轮按压映射"
+      card-desc="对应右方向盘 ② 号音量滚轮垂直按压（Tasker 黄金键码 0x2d）。支持【单击】、【双击】、【长按】多手势；默认单击控制媒体暂停/播放，亦可秒开 360 或高德。"
+      :actions="[{ title: '保持原厂不动', subtitle: '原厂按压确认', action: 'default' }, { title: '音量暂停 / 播放', subtitle: '媒体暂停或继续', action: 'play_pause' }, { title: '打开 360 全景', subtitle: '一键秒看盲区', action: 'open_360' }, { title: '打开高德地图', subtitle: '一键秒切导航', action: 'open_navi' }]"
+    />
 
     <!-- 5. 右方向盘 ③ 静音键多手势映射 -->
-    <FeatureCard 
-      title="5. 右方向盘 ③ 静音按键映射"
-      desc="对应右方向盘 ③ 号静音键（KeyCode 300）。支持【单击】、【双击】、【长按 1.5 秒】多手势；长按 10 秒依然是整车硬件冷重启，互不冲突！"
-    >
-      <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
-        <div class="flex items-center space-x-2">
-          <button
-            v-for="g in gestureList"
-            :key="g.id"
-            @click="activeGesture.mute = g.id"
-            :class="[
-              'px-4 py-2 rounded-xl text-[14.5px] font-black cursor-pointer transition-all whitespace-nowrap',
-              activeGesture.mute === g.id
-                ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
-                : 'bg-car-card border border-car-border text-car-sub hover:border-car-border-light'
-            ]"
-          >
-            {{ g.name }}
-          </button>
-        </div>
-        <div class="text-[13.5px] font-bold text-car-sub">
-          当前配置：<span class="text-car-accent">单击[{{ getActionName(getGestureAction('mute', 'single')) }}]</span> · 
-          <span>双击[{{ getActionName(getGestureAction('mute', 'double')) }}]</span> · 
-          <span>长按[{{ getActionName(getGestureAction('mute', 'long')) }}]</span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-5 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
-        <MatrixButton 
-          title="保持原厂不动"
-          subtitle="系统原厂静音/恢复"
-          :active="getGestureAction('mute', activeGesture.mute) === 'default'"
-          @click="setGestureAction('mute', activeGesture.mute, 'default')"
-        />
-        <MatrixButton 
-          title="打开 360 全景"
-          subtitle="一键秒调环视盲区"
-          :active="getGestureAction('mute', activeGesture.mute) === 'open_360'"
-          @click="setGestureAction('mute', activeGesture.mute, 'open_360')"
-        />
-        <MatrixButton 
-          title="打开高德地图"
-          subtitle="一键秒切车载导航"
-          :active="getGestureAction('mute', activeGesture.mute) === 'open_navi'"
-          @click="setGestureAction('mute', activeGesture.mute, 'open_navi')"
-        />
-        <MatrixButton 
-          title="音量暂停 / 播放"
-          subtitle="媒体暂停或继续播放"
-          :active="getGestureAction('mute', activeGesture.mute) === 'play_pause'"
-          @click="setGestureAction('mute', activeGesture.mute, 'play_pause')"
-        />
-        <MatrixButton 
-          :title="isCustomApp(getGestureAction('mute', activeGesture.mute)) ? (getCustomAppName('mute_' + activeGesture.mute) || '自定义应用') : '自定义打开应用'"
-          :subtitle="isCustomApp(getGestureAction('mute', activeGesture.mute)) ? '点击可重新更换应用' : '自由挑选车机第三方应用'"
-          :active="isCustomApp(getGestureAction('mute', activeGesture.mute))"
-          @click="openAppSelectModal('mute_' + activeGesture.mute)"
-        />
-      </div>
-    </FeatureCard>
+    <WheelGestureCard
+      key-name="mute"
+      card-title="5. 右方向盘 ③ 静音按键映射"
+      card-desc="对应右方向盘 ③ 号静音键（KeyCode 300）。支持【单击】、【双击】、【长按 1.5 秒】多手势；长按 10 秒依然是整车硬件冷重启，互不冲突！"
+      :actions="[{ title: '保持原厂不动', subtitle: '系统原厂静音/恢复', action: 'default' }, { title: '打开 360 全景', subtitle: '一键秒调环视盲区', action: 'open_360' }, { title: '打开高德地图', subtitle: '一键秒切车载导航', action: 'open_navi' }, { title: '音量暂停 / 播放', subtitle: '媒体暂停或继续播放', action: 'play_pause' }]"
+    />
 
     <!-- 6. 右方向盘 ④ 下一曲 / ⑦ 上一曲 切歌按键映射 -->
     <FeatureCard 
@@ -485,128 +323,20 @@
     </FeatureCard>
 
     <!-- 7. 右方向盘 ⑤ 自定义按键多手势映射 (原厂模式 / 高德 / 360 / 自定义) -->
-    <FeatureCard 
-      title="7. 右方向盘 ⑤ 自定义按键映射"
-      desc="对应右方向盘 ⑤ 号自定义按键（Tasker 黄金键码 0x37）。中高配车型原车中控已具备自定义设置，默认保持原厂模式直通；亦支持多手势选配高德、360或自定义App。"
-    >
-      <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
-        <div class="flex items-center space-x-2">
-          <button
-            v-for="g in gestureList"
-            :key="g.id"
-            @click="activeGesture.custom = g.id"
-            :class="[
-              'px-4 py-2 rounded-xl text-[14.5px] font-black cursor-pointer transition-all whitespace-nowrap',
-              activeGesture.custom === g.id
-                ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
-                : 'bg-car-card border border-car-border text-car-sub hover:border-car-border-light'
-            ]"
-          >
-            {{ g.name }}
-          </button>
-        </div>
-        <div class="text-[13.5px] font-bold text-car-sub">
-          当前配置：<span class="text-car-accent">单击[{{ getActionName(getGestureAction('custom', 'single')) }}]</span> · 
-          <span>双击[{{ getActionName(getGestureAction('custom', 'double')) }}]</span> · 
-          <span>长按[{{ getActionName(getGestureAction('custom', 'long')) }}]</span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-5 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
-        <MatrixButton 
-          title="保持原厂模式"
-          subtitle="原车自定义直通"
-          :active="getGestureAction('custom', activeGesture.custom) === 'default'"
-          @click="setGestureAction('custom', activeGesture.custom, 'default')"
-        />
-        <MatrixButton 
-          title="打开高德地图"
-          subtitle="一键秒切车载导航"
-          :active="getGestureAction('custom', activeGesture.custom) === 'open_navi'"
-          @click="setGestureAction('custom', activeGesture.custom, 'open_navi')"
-        />
-        <MatrixButton 
-          title="打开 360 全景"
-          subtitle="一键秒看车身环视"
-          :active="getGestureAction('custom', activeGesture.custom) === 'open_360'"
-          @click="setGestureAction('custom', activeGesture.custom, 'open_360')"
-        />
-        <MatrixButton 
-          title="音量暂停 / 播放"
-          subtitle="媒体暂停或继续"
-          :active="getGestureAction('custom', activeGesture.custom) === 'play_pause'"
-          @click="setGestureAction('custom', activeGesture.custom, 'play_pause')"
-        />
-        <MatrixButton 
-          :title="isCustomApp(getGestureAction('custom', activeGesture.custom)) ? (getCustomAppName('custom_' + activeGesture.custom) || '自定义应用') : '自定义打开应用'"
-          :subtitle="isCustomApp(getGestureAction('custom', activeGesture.custom)) ? '点击可重新更换应用' : '自由挑选车机第三方应用'"
-          :active="isCustomApp(getGestureAction('custom', activeGesture.custom))"
-          @click="openAppSelectModal('custom_' + activeGesture.custom)"
-        />
-      </div>
-    </FeatureCard>
+    <WheelGestureCard
+      key-name="custom"
+      card-title="7. 右方向盘 ⑤ 自定义按键映射"
+      card-desc="对应右方向盘 ⑤ 号自定义按键（Tasker 黄金键码 0x37）。中高配车型原车中控已具备自定义设置，默认保持原厂模式直通；亦支持多手势选配高德、360或自定义App。"
+      :actions="[{ title: '保持原厂模式', subtitle: '原车自定义直通', action: 'default' }, { title: '打开高德地图', subtitle: '一键秒切车载导航', action: 'open_navi' }, { title: '打开 360 全景', subtitle: '一键秒看车身环视', action: 'open_360' }, { title: '音量暂停 / 播放', subtitle: '媒体暂停或继续', action: 'play_pause' }]"
+    />
 
     <!-- 8. 右方向盘 ⑥ MODE 键多手势映射 -->
-    <FeatureCard 
-      title="8. 右方向盘 ⑥ MODE 按键映射"
-      desc="对应右方向盘 ⑥ 号 MODE 模式键（KeyCode 348）。原车用于切换伴听/收音机。默认单击一键秒开 360 全景，同时支持双击与长按个性化定制。"
-    >
-      <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
-        <div class="flex items-center space-x-2">
-          <button
-            v-for="g in gestureList"
-            :key="g.id"
-            @click="activeGesture.mode = g.id"
-            :class="[
-              'px-4 py-2 rounded-xl text-[14.5px] font-black cursor-pointer transition-all whitespace-nowrap',
-              activeGesture.mode === g.id
-                ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
-                : 'bg-car-card border border-car-border text-car-sub hover:border-car-border-light'
-            ]"
-          >
-            {{ g.name }}
-          </button>
-        </div>
-        <div class="text-[13.5px] font-bold text-car-sub">
-          当前配置：<span class="text-car-accent">单击[{{ getActionName(getGestureAction('mode', 'single')) }}]</span> · 
-          <span>双击[{{ getActionName(getGestureAction('mode', 'double')) }}]</span> · 
-          <span>长按[{{ getActionName(getGestureAction('mode', 'long')) }}]</span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-5 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
-        <MatrixButton 
-          title="保持原厂不动"
-          subtitle="走原车音源切换"
-          :active="getGestureAction('mode', activeGesture.mode) === 'default'"
-          @click="setGestureAction('mode', activeGesture.mode, 'default')"
-        />
-        <MatrixButton 
-          title="打开 360 全景"
-          subtitle="一键秒开车身环视"
-          :active="getGestureAction('mode', activeGesture.mode) === 'open_360'"
-          @click="setGestureAction('mode', activeGesture.mode, 'open_360')"
-        />
-        <MatrixButton 
-          title="打开高德地图"
-          subtitle="一键秒切车载导航"
-          :active="getGestureAction('mode', activeGesture.mode) === 'open_navi'"
-          @click="setGestureAction('mode', activeGesture.mode, 'open_navi')"
-        />
-        <MatrixButton 
-          title="音量暂停 / 播放"
-          subtitle="媒体暂停或继续播放"
-          :active="getGestureAction('mode', activeGesture.mode) === 'play_pause'"
-          @click="setGestureAction('mode', activeGesture.mode, 'play_pause')"
-        />
-        <MatrixButton 
-          :title="isCustomApp(getGestureAction('mode', activeGesture.mode)) ? (getCustomAppName('mode_' + activeGesture.mode) || '自定义应用') : '自定义打开应用'"
-          :subtitle="isCustomApp(getGestureAction('mode', activeGesture.mode)) ? '点击可重新更换应用' : '自由挑选车机第三方应用'"
-          :active="isCustomApp(getGestureAction('mode', activeGesture.mode))"
-          @click="openAppSelectModal('mode_' + activeGesture.mode)"
-        />
-      </div>
-    </FeatureCard>
+    <WheelGestureCard
+      key-name="mode"
+      card-title="8. 右方向盘 ⑥ MODE 按键映射"
+      card-desc="对应右方向盘 ⑥ 号 MODE 模式键（KeyCode 348）。原车用于切换伴听/收音机。默认单击一键秒开 360 全景，同时支持双击与长按个性化定制。"
+      :actions="[{ title: '保持原厂不动', subtitle: '走原车音源切换', action: 'default' }, { title: '打开 360 全景', subtitle: '一键秒开车身环视', action: 'open_360' }, { title: '打开高德地图', subtitle: '一键秒切车载导航', action: 'open_navi' }, { title: '音量暂停 / 播放', subtitle: '媒体暂停或继续播放', action: 'play_pause' }]"
+    />
 
     <!-- 9. 新手按键能力指引与一键方案配置 -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-2xl mb-5">
@@ -683,7 +413,9 @@
 import { ref, reactive, computed } from 'vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
+import WheelGestureCard from '../components/WheelGestureCard.vue';
 import { store, bridge, showToast, openModal } from '../store';
+import { useWheelGesture } from '../composables/useWheelGesture';
 import wheelGuideImg from '../assets/steering_wheel_guide.webp';
 
 // 原厂方控图解：默认折叠，并记忆展开状态
@@ -717,72 +449,18 @@ function setLongPressPreset(sec) {
   showToast(`长按判定时长已设定为: ${sec} 秒`);
 }
 
-const gestureList = computed(() => [
-  { id: 'single', name: '单击', shortName: '单击' },
-  { id: 'double', name: '双击', shortName: '双击' },
-  { id: 'long', name: `长按 (${longPressSec.value}s)`, shortName: `长按${longPressSec.value}s` }
-]);
+const { gestureList, getActionName, getGestureAction, setGestureAction } = useWheelGesture();
 
 const activeGesture = reactive({
-  back: 'single',
-  ok: 'single',
-  mute: 'single',
   next: 'single',
-  custom: 'single',
-  mode: 'single',
   prev: 'single'
 });
 
-function getGestureAction(key, gesture) {
-  const pKey = `wheel_action_${key}_${gesture}`;
-  if (store.vehicleAuto[pKey]) return store.vehicleAuto[pKey];
-  if (gesture === 'single') {
-    if (store.vehicleAuto[`wheel_action_${key}`]) return store.vehicleAuto[`wheel_action_${key}`];
-    if (key === 'mode') return 'open_360';
-    if (key === 'custom') return 'default';
-    if (key === 'ok') return 'play_pause';
-    if (key === 'next') return 'next_track';
-    if (key === 'prev') return 'prev_track';
-  }
-  return 'default';
-}
 
-function getActionName(act) {
-  const map = {
-    default: '原厂默认',
-    open_360: '360全景',
-    open_navi: '高德地图',
-    play_pause: '播放/暂停',
-    next_track: '下一曲',
-    prev_track: '上一曲',
-    mute_toggle: '静音切换',
-    screen_off: '息屏休眠'
-  };
-  if (isCustomApp(act)) return '自定义App';
-  return map[act] || act;
-}
 
-function setGestureAction(key, gesture, act) {
-  const pKey = `wheel_action_${key}_${gesture}`;
-  store.vehicleAuto[pKey] = act;
-  if (gesture === 'single') {
-    store.vehicleAuto[`wheel_action_${key}`] = act;
-  }
-  bridge.call('setWheelGestureAction', key, gesture, act);
-  showToast(`已映射 [${gesture === 'single' ? '单击' : (gesture === 'double' ? '双击' : '长按')}] -> ${getActionName(act)}`);
-}
 
-function isCustomApp(actionVal) {
-  return typeof actionVal === 'string' && actionVal.startsWith('app:');
-}
 
-function getCustomAppName(target) {
-  return localStorage.getItem(`wheel_action_${target}_app_name`) || '';
-}
 
-function openAppSelectModal(target) {
-  openModal('appSelect', { keyTarget: target });
-}
 
 function toggleWheelMasterSwitch() {
   const next = !store.vehicleAuto.wheel_master_switch;
