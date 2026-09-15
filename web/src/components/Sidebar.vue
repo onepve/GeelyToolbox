@@ -31,12 +31,12 @@ import { playTouchFeedback } from '../utils/sound';
 const navItems = [
   { id: 'wheel', name: '方控按键', badge: '核心改装' },
   { id: 'link', name: '车身联动', badge: '360/车速' },
-  { id: 'body', name: '座舱语音', badge: '门挡播报' },
+  { id: 'body', name: '座舱语音', badge: '换挡/车门播报' },
   { id: 'store', name: '精选商城', badge: '专车应用' },
-  { id: 'audio', name: '车载音频', badge: 'TTS/增益' },
+  { id: 'audio', name: '车载音频', badge: '语音/蓝牙' },
   { id: 'floating', name: '桌面悬浮', badge: '胶囊/息屏' },
   { id: 'install', name: '特权安装', badge: '暗码/快传' },
-  { id: 'system', name: '系统维护', badge: 'ADB/重启' }
+  { id: 'system', name: '系统维护', badge: '系统/守护' }
 ];
 
 function selectNav(id) {

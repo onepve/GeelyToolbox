@@ -65,7 +65,7 @@
           <img 
             :src="wheelGuideImg" 
             alt="吉利缤越 COOL 右侧多媒体 SX-0017" 
-            class="w-full h-auto rounded-xl object-contain block" 
+            class="guide-img w-full h-auto rounded-xl object-contain block" 
           />
         </div>
 
@@ -211,7 +211,6 @@
       key-name="back"
       card-title="3. 右方向盘 ① 主页/返回按键映射"
       card-desc="对应右方向盘 ① 号返回/主页键（KeyCode 307）。支持【单击】、【双击】、【长按】自定义。可保留系统原厂返回，或映射为高德导航、360全景或自定义应用。"
-      :actions="[{ title: '保持原厂不动', subtitle: '系统原厂返回', action: 'default' }, { title: '打开高德地图', subtitle: '一键秒切导航', action: 'open_navi' }, { title: '打开 360 全景', subtitle: '一键秒看盲区', action: 'open_360' }, { title: '音量暂停 / 播放', subtitle: '媒体暂停或继续', action: 'play_pause' }]"
     />
 
     <!-- 4. 右方向盘 ② 音量滚轮按压多手势映射 -->
@@ -219,7 +218,6 @@
       key-name="ok"
       card-title="4. 右方向盘 ② 音量滚轮按压映射"
       card-desc="对应右方向盘 ② 号音量滚轮垂直按压（Tasker 黄金键码 0x2d）。支持【单击】、【双击】、【长按】多手势；默认单击控制媒体暂停/播放，亦可秒开 360 或高德。"
-      :actions="[{ title: '保持原厂不动', subtitle: '原厂按压确认', action: 'default' }, { title: '音量暂停 / 播放', subtitle: '媒体暂停或继续', action: 'play_pause' }, { title: '打开 360 全景', subtitle: '一键秒看盲区', action: 'open_360' }, { title: '打开高德地图', subtitle: '一键秒切导航', action: 'open_navi' }]"
     />
 
     <!-- 5. 右方向盘 ③ 静音键多手势映射 -->
@@ -227,7 +225,6 @@
       key-name="mute"
       card-title="5. 右方向盘 ③ 静音按键映射"
       card-desc="对应右方向盘 ③ 号静音键（KeyCode 300）。支持【单击】、【双击】、【长按 1.5 秒】多手势；长按 10 秒依然是整车硬件冷重启，互不冲突！"
-      :actions="[{ title: '保持原厂不动', subtitle: '系统原厂静音/恢复', action: 'default' }, { title: '打开 360 全景', subtitle: '一键秒调环视盲区', action: 'open_360' }, { title: '打开高德地图', subtitle: '一键秒切车载导航', action: 'open_navi' }, { title: '音量暂停 / 播放', subtitle: '媒体暂停或继续播放', action: 'play_pause' }]"
     />
 
     <!-- 6. 右方向盘 ④ 下一曲 / ⑦ 上一曲 切歌按键映射 -->
@@ -240,7 +237,7 @@
     >
       <div class="grid grid-cols-2 gap-4">
         <!-- 下一曲 (④ 号键) -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
           <div class="flex items-center justify-between mb-3">
             <span class="text-[19px] font-black text-car-text">④ 下一曲键</span>
             <div class="flex space-x-1.5">
@@ -249,9 +246,9 @@
                 :key="g.id"
                 @click="activeGesture.next = g.id"
                 :class="[
-                  'px-2.5 py-1 rounded-lg text-[13px] font-black cursor-pointer transition-all',
+                  'px-4 py-2 rounded-xl text-[15px] font-black cursor-pointer transition-all',
                   activeGesture.next === g.id
-                    ? 'bg-car-card border border-car-accent text-car-text shadow-sm'
+                    ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
                     : 'bg-car-card border border-car-border text-car-sub'
                 ]"
               >
@@ -259,30 +256,11 @@
               </button>
             </div>
           </div>
-          <div class="grid grid-cols-3 gap-2.5 mb-2">
-            <MatrixButton 
-              title="下一曲"
-              subtitle="切歌(官方调度)"
-              :active="getGestureAction('next', activeGesture.next) === 'next_track' || getGestureAction('next', activeGesture.next) === 'default'"
-              @click="setGestureAction('next', activeGesture.next, 'next_track')"
-            />
-            <MatrixButton 
-              title="打开 360"
-              subtitle="唤起环视"
-              :active="getGestureAction('next', activeGesture.next) === 'open_360'"
-              @click="setGestureAction('next', activeGesture.next, 'open_360')"
-            />
-            <MatrixButton 
-              title="播放/暂停"
-              subtitle="音乐暂停"
-              :active="getGestureAction('next', activeGesture.next) === 'play_pause'"
-              @click="setGestureAction('next', activeGesture.next, 'play_pause')"
-            />
-          </div>
+          <ActionSelect key-name="next" :gesture="activeGesture.next" />
         </div>
 
         <!-- 上一曲 (⑦ 号键) -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
           <div class="flex items-center justify-between mb-3">
             <span class="text-[19px] font-black text-car-text">⑦ 上一曲键</span>
             <div class="flex space-x-1.5">
@@ -291,9 +269,9 @@
                 :key="g.id"
                 @click="activeGesture.prev = g.id"
                 :class="[
-                  'px-2.5 py-1 rounded-lg text-[13px] font-black cursor-pointer transition-all',
+                  'px-4 py-2 rounded-xl text-[15px] font-black cursor-pointer transition-all',
                   activeGesture.prev === g.id
-                    ? 'bg-car-card border border-car-accent text-car-text shadow-sm'
+                    ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
                     : 'bg-car-card border border-car-border text-car-sub'
                 ]"
               >
@@ -301,26 +279,7 @@
               </button>
             </div>
           </div>
-          <div class="grid grid-cols-3 gap-2.5 mb-2">
-            <MatrixButton 
-              title="上一曲"
-              subtitle="切歌(官方调度)"
-              :active="getGestureAction('prev', activeGesture.prev) === 'prev_track' || getGestureAction('prev', activeGesture.prev) === 'default'"
-              @click="setGestureAction('prev', activeGesture.prev, 'prev_track')"
-            />
-            <MatrixButton 
-              title="打开高德"
-              subtitle="唤起导航"
-              :active="getGestureAction('prev', activeGesture.prev) === 'open_navi'"
-              @click="setGestureAction('prev', activeGesture.prev, 'open_navi')"
-            />
-            <MatrixButton 
-              title="播放/暂停"
-              subtitle="音乐暂停"
-              :active="getGestureAction('prev', activeGesture.prev) === 'play_pause'"
-              @click="setGestureAction('prev', activeGesture.prev, 'play_pause')"
-            />
-          </div>
+          <ActionSelect key-name="prev" :gesture="activeGesture.prev" />
         </div>
       </div>
     </FeatureCard>
@@ -330,7 +289,6 @@
       key-name="custom"
       card-title="7. 右方向盘 ⑤ 自定义按键映射"
       card-desc="对应右方向盘 ⑤ 号自定义按键（Tasker 黄金键码 0x37）。中高配车型原车中控已具备自定义设置，默认保持原厂模式直通；亦支持多手势选配高德、360或自定义App。"
-      :actions="[{ title: '保持原厂模式', subtitle: '原车自定义直通', action: 'default' }, { title: '打开高德地图', subtitle: '一键秒切车载导航', action: 'open_navi' }, { title: '打开 360 全景', subtitle: '一键秒看车身环视', action: 'open_360' }, { title: '音量暂停 / 播放', subtitle: '媒体暂停或继续', action: 'play_pause' }]"
     />
 
     <!-- 8. 右方向盘 ⑥ MODE 键多手势映射 -->
@@ -338,7 +296,6 @@
       key-name="mode"
       card-title="8. 右方向盘 ⑥ MODE 按键映射"
       card-desc="对应右方向盘 ⑥ 号 MODE 模式键（KeyCode 348）。原车用于切换伴听/收音机。默认单击一键秒开 360 全景，同时支持双击与长按个性化定制。"
-      :actions="[{ title: '保持原厂不动', subtitle: '走原车音源切换', action: 'default' }, { title: '打开 360 全景', subtitle: '一键秒开车身环视', action: 'open_360' }, { title: '打开高德地图', subtitle: '一键秒切车载导航', action: 'open_navi' }, { title: '音量暂停 / 播放', subtitle: '媒体暂停或继续播放', action: 'play_pause' }]"
     />
 
     <!-- 9. 新手按键能力指引与一键方案配置 -->
@@ -409,14 +366,32 @@
         </div>
       </div>
     </div>
+
+    <!-- 方向盘图解悬浮对照卡：向下滚动设置键位时，自动悬浮至右下角便于对照编号位置 -->
+    <transition name="floating-fade">
+      <div
+        v-if="showFloating"
+        @click="dismissFloating"
+        class="fixed left-[320px] bottom-5 z-30 p-1.5 rounded-xl bg-car-card/90 border border-car-border/60 shadow-xl shadow-black/50 cursor-pointer backdrop-blur-sm select-none"
+        style="width: 168px;"
+        title="方向盘图解对照，点按隐藏"
+      >
+        <img
+          :src="wheelGuideImg"
+          alt="方控图解悬浮对照"
+          class="guide-img w-full h-auto rounded-lg object-contain block"
+        />
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
 import WheelGestureCard from '../components/WheelGestureCard.vue';
+import ActionSelect from '../components/ActionSelect.vue';
 import { store, bridge, showToast, openModal } from '../store';
 import { useWheelGesture } from '../composables/useWheelGesture';
 import wheelGuideImg from '../assets/steering_wheel_guide.webp';
@@ -429,6 +404,29 @@ function toggleDiagram() {
   showDiagram.value = !showDiagram.value;
   localStorage.setItem(DIAGRAM_KEY, String(showDiagram.value));
 }
+
+// 方向盘图解悬浮对照卡：向下滚动设置键位时贴边悬浮，回顶复位；点按临时隐藏
+const showFloating = ref(false);
+
+function onWheelScroll(e) {
+  // document 级 capture 捕获任意滚动源，读取实际滚动元素的 scrollTop
+  const el = e && e.target;
+  const st = el && el.scrollTop ? el.scrollTop : (document.documentElement.scrollTop || document.body.scrollTop || 0);
+  // 回到顶端收起悬浮卡；下滑则浮现（点按隐藏后再滚动即重新浮现）
+  showFloating.value = st > 40;
+}
+
+function dismissFloating() {
+  showFloating.value = false;
+}
+
+onMounted(() => {
+  document.addEventListener('scroll', onWheelScroll, { passive: true, capture: true });
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('scroll', onWheelScroll, { capture: true });
+});
 const longPressSec = computed({
   get: () => {
     const ms = store.vehicleAuto.wheel_long_press_ms || 1500;
@@ -529,3 +527,20 @@ function resetAllToFactory() {
   });
 }
 </script>
+
+<style scoped>
+/* 方向盘图解统一调暗：降一档亮度，柔和进车规深色主题，兼防白色编号圈在夜间刺眼 */
+.guide-img {
+  filter: brightness(0.86) contrast(1.02);
+}
+
+.floating-fade-enter-active,
+.floating-fade-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.floating-fade-enter-from,
+.floating-fade-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+</style>
