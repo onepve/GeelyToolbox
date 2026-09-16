@@ -669,6 +669,12 @@ public class SteeringWheelKeyManager {
     private final Map<String, Long> lastActionTime = new HashMap<>();
     private static final long ACTION_DEDUP_MS = 300;
 
+    // 播放/暂停方向缓存：媒体中心 PlaybackState 广播可能滞后 1~2 秒，
+    // 窗口内以上次下发方向推算当前应处状态，杜绝读态滞后导致暂停/播放方向反转
+    private volatile long lastToggleActionAt = 0L;
+    private volatile boolean lastToggleWasPause = false;
+    private static final long TOGGLE_STATE_CACHE_MS = 1200;
+
     private void executeAction(String action) {
         if (action == null || ACTION_DEFAULT.equals(action)) return;
         long now = System.currentTimeMillis();
@@ -692,12 +698,33 @@ public class SteeringWheelKeyManager {
                 openAmapNavi();
                 break;
             case ACTION_PLAY_PAUSE:
-                // 按压前先判定「本次是否为暂停动作」：若正在播放，则本次按下即暂停，
-                // 必须开启自动唤醒抑制窗口，否则原车 EAS 约 1.5 秒后会强拉回播放。
-                if (isAnyMediaPlaying()) {
-                    EasMediaBridge.getInstance(context).suppressAutoWakeAfterUserPause(8000);
+                // 根治「单击暂停后音乐又自动续播」（2026-09-16 用户真车复现）：
+                // 1) 播放判定必须包含原厂多媒体（isAnyMediaPlaying 已修），否则原厂在放时
+                //    抑制窗口不武装，原车 EAS 约 1.5 秒后重新仲裁把暂停强行顶回播放；
+                // 2) 严禁下发 TOGGLE 型 KEYCODE_MEDIA_PLAY_PAUSE：官方级三重通道会重复注入
+                //    （AudioManager 1 次 + 每活跃会话 1 次 + 3 个车机音乐包广播），
+                //    toggle 键注入偶数次 = 净效果回原态，且通道间 PlaybackState 异步更新
+                //    存在读态竞态会把暂停反向 play 回去。改为状态判定后下发幂等键
+                //    （KEYCODE_MEDIA_PAUSE / KEYCODE_MEDIA_PLAY），无论注入几次语义不变。
+                // 3) 1.2 秒方向缓存：媒体中心 PlaybackState 广播可能滞后 1~2 秒，
+                //    缓存窗口内以上次下发方向推算当前应处状态，杜绝读态滞后导致反向。
+                boolean playingNow;
+                long toggleNow = System.currentTimeMillis();
+                if (toggleNow - lastToggleActionAt < TOGGLE_STATE_CACHE_MS) {
+                    playingNow = !lastToggleWasPause; // 上次发 PAUSE → 系统应处暂停态 → 本次视为不在放
+                } else {
+                    playingNow = isAnyMediaPlaying();
                 }
-                sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+                lastToggleActionAt = toggleNow;
+                lastToggleWasPause = playingNow;
+                if (playingNow) {
+                    // 按压前先判定「本次是否为暂停动作」：若正在播放，则本次按下即暂停，
+                    // 必须开启自动唤醒抑制窗口，否则原车 EAS 约 1.5 秒后会强拉回播放。
+                    EasMediaBridge.getInstance(context).suppressAutoWakeAfterUserPause(8000);
+                    sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PAUSE);
+                } else {
+                    sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PLAY);
+                }
                 break;
             case ACTION_NEXT_TRACK:
                 sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_NEXT);
@@ -727,8 +754,10 @@ public class SteeringWheelKeyManager {
             for (MediaController mc : controllers) {
                 if (mc == null) continue;
                 String pkg = mc.getPackageName();
-                if ("ecarx.xsf.mediacenter".equals(pkg) || "com.ecarx.multimedia".equals(pkg)
-                        || context.getPackageName().equals(pkg)) {
+                // 2026-09-16 修复：原厂多媒体会话必须纳入播放判定。此前被排除导致原厂音乐
+                // 在放时误判「不在放」→ EAS 唤醒抑制窗口不武装 → 暂停约 1.5 秒后被原车
+                // 重新仲裁顶回播放（用户真车复现「单击暂停却又自动续播」）。
+                if (context.getPackageName().equals(pkg)) {
                     continue;
                 }
                 android.media.session.PlaybackState st = mc.getPlaybackState();
@@ -876,6 +905,12 @@ public class SteeringWheelKeyManager {
                                 mc.getTransportControls().skipToNext();
                             } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
                                 mc.getTransportControls().skipToPrevious();
+                            } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
+                                // 幂等暂停：无论状态广播是否滞后，pause() 语义恒定为暂停
+                                mc.getTransportControls().pause();
+                            } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
+                                // 幂等播放：与 pause() 对称，杜绝 TOGGLE 读态竞态反向
+                                mc.getTransportControls().play();
                             } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
                                 android.media.session.PlaybackState state = mc.getPlaybackState();
                                 if (state != null && state.getState() == android.media.session.PlaybackState.STATE_PLAYING) {

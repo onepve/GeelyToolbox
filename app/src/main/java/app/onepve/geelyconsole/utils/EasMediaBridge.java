@@ -259,6 +259,11 @@ public class EasMediaBridge {
         AppLogger.i("蓝牙音频", "用户主动暂停，已开启 " + (ms / 1000) + " 秒自动唤醒抑制窗口");
     }
 
+    /** 当前是否处于「用户主动暂停后的自动唤醒抑制窗口」内（供车身联动等自动 play() 前守卫查询） */
+    public synchronized boolean isAutoWakeSuppressed() {
+        return System.currentTimeMillis() < autoWakeSuppressUntil;
+    }
+
     /**
      * 蓝牙外部音频流是否真正活跃 (正在推流)。
      * 事实边界：仅底层 A2DP Sink AUDIO_STATE_CHANGED 上报 STATE_STARTED 时为 true；

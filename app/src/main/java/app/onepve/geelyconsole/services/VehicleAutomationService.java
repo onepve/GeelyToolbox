@@ -1387,6 +1387,12 @@ public class VehicleAutomationService extends Service {
     }
 
     private void triggerMusicAutoplay(final String pkg, boolean fullscreen) {
+        // 用户主动暂停守卫：方控2/车门联动等主动暂停会开启 8 秒自动唤醒抑制窗口，
+        // 车速联动不得在窗口内把用户刚按下的暂停强行顶回播放（「暂停后又自动续播」同源病灶）。
+        if (EasMediaBridge.getInstance(this).isAutoWakeSuppressed()) {
+            AppLogger.i("车身联动", "车速达到阈值，但处于用户主动暂停抑制窗口内，跳过自动播放（尊重用户暂停意图）");
+            return;
+        }
         if (isAnyMediaPlaying()) {
             AppLogger.i("车身联动", "车速达到阈值，但检测到当前已有媒体在播放，静默放行防打断");
             return;
