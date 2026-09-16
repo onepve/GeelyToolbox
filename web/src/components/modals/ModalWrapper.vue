@@ -80,9 +80,14 @@ function handleBackdropClick() {
 </script>
 
 <style scoped>
+/* 弹窗淡入曲线：0.2s -> 0.26s 缓出，并把遮罩提升为独立合成层。
+   老 WebView（Android 9）上，整屏遮罩若无独立图层，淡入会触发整页重绘，
+   车主观感就是「点一下关于，画面闪一下」。will-change + translateZ(0) 后只重绘遮罩层本身。 */
 .modal-fade-enter-active,
 .modal-fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.26s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.26s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: opacity, transform;
+  transform: translateZ(0);
 }
 
 .modal-fade-enter-from,

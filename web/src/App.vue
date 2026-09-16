@@ -1,7 +1,8 @@
 <template>
   <div class="h-screen w-screen flex flex-col bg-transparent text-car-text font-sans overflow-hidden select-none transition-colors duration-200">
     <!-- 液态玻璃柔光晕背景（纯氛围，不可交互） -->
-    <div class="bg-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <!-- 装饰光斑层已拔除：真机上 900px 级 blur 色块从屏幕底部探入，被用户识别为「下方浮出半截的未知窗口」；
+         且老 WebView 不支持 filter:blur 时会退化成硬边色块更吓人。纯装饰零功能，直接移除。 -->
     <!-- 顶部状态栏 -->
     <TopBar />
 
@@ -213,22 +214,14 @@ onMounted(() => {
   --modal-backdrop: rgba(11, 15, 25, 0.72);
 }
 
-html.light, body.light {
-  /* 日间高对比抗眩光亮色模式 (Daylight) */
-  --bg-main: #E2E8F0;
-  --bg-panel: #f8fafd;          /* 柔和浅冷灰底，车规抗过曝，绝非刺眼纯白 */
-  --bg-card: #FFFFFF;          /* 纯白卡片，立体鲜明 */
-  --bg-item: #F1F5F9;          /* 次级按键底 */
-  --bg-item-hover: #E2E8F0;
-  --border-color: #CBD5E1;     /* 清晰车规边框 */
-  --border-light: #94A3B8;
-  --text-main: #0F172A;        /* 强制深墨黑字，强对比抗强光 */
-  --text-sub: #475569;         /* 稳重板岩灰 */
-  --accent-gold: #D97706;      /* 日间暖阳金/琥珀橙（更深沉抗反光） */
-  --accent-gold-bg: #FEF3C7;   /* 日间暖金底座 */
-  --accent-gold-text: #78350F; /* 日间超深金棕墨字，WCAG AAA 顶级对比度 */
-  --accent-gold-sub: #92400E;  /* 日间深金棕副字 */
-  --modal-backdrop: rgba(15, 23, 42, 0.40);
+/* 日间模式仅保留「弹窗遮罩」这一项变量。
+   铁律：严禁在此重复声明 --bg-main / --bg-card / --accent-gold 等任何主题变量！
+   theme/palette.js 已把四套配色（含昼夜）完整注入 <html> 内联样式，而 body 上的同名
+   声明会遮蔽 html 内联值并向下继承，导致白天模式下切换任何配色都毫无效果（黑夜正常）。
+   另：选择器只写 html.light —— 首帧引导脚本在 <head> 里执行，那时 body 还不存在，
+   挂在 body.light 上的规则会漏掉首帧；--modal-backdrop 可从 html 正常向下继承。 */
+html.light {
+  --modal-backdrop: rgba(20, 28, 44, 0.26);
 }
 
 body {
@@ -236,25 +229,6 @@ body {
 }
 
 /* ===== 液态玻璃主题层 ===== */
-/* 大片化开柔光晕背景：无可辨认圆球轮廓，纯氛围，绝不压按钮造成误读 */
-.bg-orbs {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.bg-orbs i {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  opacity: .30;
-}
-.bg-orbs i:nth-child(1) { width: 980px; height: 980px; background: var(--orb-1); left: -260px; top: -320px; }
-.bg-orbs i:nth-child(2) { width: 900px; height: 900px; background: var(--orb-2); right: -300px; top: -260px; }
-.bg-orbs i:nth-child(3) { width: 880px; height: 880px; background: var(--orb-3); left: -240px; bottom: -340px; }
-.bg-orbs i:nth-child(4) { width: 760px; height: 760px; background: var(--orb-4); right: -220px; bottom: -300px; }
-
 /* 玻璃卡片反射质感：顶部高光条 + 斜向折射光带（仅大卡片，小按钮不加防杂乱） */
 .bg-car-card {
   position: relative;

@@ -4,8 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>吉利智驾</title>
+    <!-- 无 JS 兜底底色（黑夜默认）。正常路径由构建期内联的主题引导脚本在首帧前覆盖。 -->
+    <style>html{background:#090d18;}</style>
   </head>
-  <body class="bg-[#12141A] select-none">
+  <!-- 铁律：body 严禁再硬编码任何固定底色（曾为 bg-[#12141A]，会导致白天模式下首帧先黑一下）。
+       底色一律由 theme/palette.js -> 构建期引导脚本 -> body{background:var(--bg-main)} 统一接管。 -->
+  <body class="select-none">
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
   </body>
