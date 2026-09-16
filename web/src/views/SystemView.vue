@@ -152,7 +152,7 @@
     >
       <div class="w-full flex flex-col space-y-4">
         <!-- 7 个近正方形主题方块（3 昼夜档 + 4 配色），居中等距排布，杜绝扁长拉伸 -->
-        <div class="flex justify-center items-stretch gap-4 w-full">
+        <div class="flex justify-center items-stretch space-x-4 w-full">
           <button
             v-for="m in MODES"
             :key="m"
