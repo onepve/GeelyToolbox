@@ -14,3 +14,6 @@ web/node_modules/
 web/dist/
 __pycache__/
 .shots/
+
+# probe screenshots
+scripts/shots/
