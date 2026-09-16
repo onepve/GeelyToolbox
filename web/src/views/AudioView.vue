@@ -379,7 +379,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import { store, bridge, openModal, showToast } from '../store';
 
@@ -416,9 +416,21 @@ function toggleBluetooth() {
   setTimeout(refreshConnectivity, 1500);
 }
 
+// 原厂系统设置页入口：Java 侧已改为 UI 线程直启（不再卡 JS 线程）+ 显式指定唯一组件
+// （消除系统「应用选择器」）+ 900ms 连点防抖。此处再加一道前端闸门：
+// 旧版正是「点了没反应 → 车主再点一次 → 两个窗口叠出来」，闸门期间给即时反馈，
+// 让车主不必、也无法重复点击。
+let settingsLaunchLockUntil = 0;
+function launchSystemSettingsPage(kind) {
+  const now = Date.now();
+  if (now < settingsLaunchLockUntil) return;   // 闸门内重复点击直接吞掉
+  settingsLaunchLockUntil = now + 900;
+  bridge.call(kind === 'bluetooth' ? 'openBluetoothSettings' : 'openWifiSettings');
+  showToast(kind === 'bluetooth' ? '正在打开原厂系统蓝牙设置...' : '正在打开原厂系统 Wi-Fi 设置...');
+}
+
 function openBluetoothSettings() {
-  bridge.call('openBluetoothSettings');
-  showToast('正在打开原厂系统蓝牙配对设置...');
+  launchSystemSettingsPage('bluetooth');
 }
 
 function toggleWifi() {
@@ -429,8 +441,7 @@ function toggleWifi() {
 }
 
 function openWifiSettings() {
-  bridge.call('openWifiSettings');
-  showToast('正在打开原厂系统 Wi-Fi 设置...');
+  launchSystemSettingsPage('wifi');
 }
 
 function forceActivateBluetooth() {
@@ -485,33 +496,60 @@ function confirmDeleteTheme(themeName) {
   });
 }
 
-onMounted(() => {
-  try {
-    const raw = bridge.call('getTtsEngineInfo');
-    if (raw) {
-      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      ttsInfo.value = parsed;
-    }
-  } catch (e) {
-    ttsInfo.value = {
-      connected: true,
-      name: '系统默认语音合成引擎',
-      status: '已连接系统底层默认语音引擎 · 声线就绪'
-    };
+// 切页首帧优先：桥调用一律延后到首帧绘制之后执行。
+// getTtsEngineInfo（内部 checkAndReloadTtsIfNeeded 要读系统首选 TTS 引擎）与
+// getConnectivityStatus（内部 5+ 次蓝牙/WiFi binder IPC，含昂贵的 getBondedDevices）
+// 都是同步 JSBridge，写在 onMounted 里会阻塞「本页首次绘制」，
+// 车主观感就是「点一下语音，要等一小会才切过去」。延后一帧后画面先出、数据随后到。
+function afterFirstPaint(fn) {
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(() => setTimeout(fn, 0));
+  } else {
+    setTimeout(fn, 0);
   }
+}
 
-  try {
-    const off = bridge.call('getVoiceVolumeOffset');
-    if (typeof off === 'number') {
-      volumeOffset.value = off;
-      store.vehicleAuto.voice_volume_offset = off;
+// 轮询句柄必须持有：本页由 App.vue 的 v-if 销毁重建，若不清理，
+// 每进一次「语音」页就永久多留一条 4 秒同步跨端轮询（越用越卡的实测铁证）。
+let connectivityTimer = null;
+
+onMounted(() => {
+  afterFirstPaint(() => {
+    try {
+      const raw = bridge.call('getTtsEngineInfo');
+      if (raw) {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        ttsInfo.value = parsed;
+      }
+    } catch (e) {
+      ttsInfo.value = {
+        connected: true,
+        name: '系统默认语音合成引擎',
+        status: '已连接系统底层默认语音引擎 · 声线就绪'
+      };
     }
-  } catch (e) {}
 
-  loadVoiceThemes();
-  window.refreshVoiceThemes = loadVoiceThemes;
-  refreshConnectivity();
-  setInterval(refreshConnectivity, 4000);
+    try {
+      const off = bridge.call('getVoiceVolumeOffset');
+      if (typeof off === 'number') {
+        volumeOffset.value = off;
+        store.vehicleAuto.voice_volume_offset = off;
+      }
+    } catch (e) {}
+
+    loadVoiceThemes();
+    window.refreshVoiceThemes = loadVoiceThemes;
+    refreshConnectivity();
+    if (connectivityTimer) clearInterval(connectivityTimer);
+    connectivityTimer = setInterval(refreshConnectivity, 4000);
+  });
+});
+
+onBeforeUnmount(() => {
+  if (connectivityTimer) {
+    clearInterval(connectivityTimer);
+    connectivityTimer = null;
+  }
 });
 
 function openTtsSettings() {

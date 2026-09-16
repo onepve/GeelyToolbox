@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -2458,10 +2459,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     try {
                         int a2dpState = ba.getProfileConnectionState(11); // 11=A2DP_SINK
                         btConnected = (a2dpState == 2);
-                        java.util.Set<android.bluetooth.BluetoothDevice> bonded = ba.getBondedDevices();
-                        if (bonded != null) {
-                            for (android.bluetooth.BluetoothDevice dev : bonded) {
-                                if (btConnected) {
+                        // 性能铁律：getBondedDevices() 是昂贵的蓝牙 binder IPC（车机慢栈上可达数百毫秒），
+                        // 而 getConnectivityStatus 由前端每 4 秒同步调用一次、且 JS 线程会被它整段阻塞。
+                        // 仅在真的处于已连接态时才去取设备名；未连接（绝大多数时候）直接跳过这次整表 IPC。
+                        if (btConnected) {
+                            java.util.Set<android.bluetooth.BluetoothDevice> bonded = ba.getBondedDevices();
+                            if (bonded != null) {
+                                for (android.bluetooth.BluetoothDevice dev : bonded) {
                                     btDeviceName = dev.getName();
                                     break;
                                 }
@@ -2511,9 +2515,81 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             }
         }
 
+        // ============ 原厂系统设置页启动（蓝牙 / Wi-Fi） ============
+        // 车主实测缺陷：「点一下要等好久才出现窗口，而且冒出来还是两个，还得自己挑一个」。
+        //   ① 卡顿根因：此前走 AdbClient.execute("am start -a ...")。纯 Java ADB 客户端要先
+        //      建 TCP 连接、跑 RSA 握手、再等 shell 命令执行完毕才返回，整段全压在 WebView 的
+        //      JS 线程上，点击后界面直接冻结数秒（车机上更明显）。
+        //   ② 两个窗口根因：action 不带 component。车机上多个 Activity 都声明了同一 action，
+        //      系统于是弹出「选择应用」让车主自己挑，等于点一次要确认两回。
+        // 修法：改为 UI 线程直接 startActivity（立刻返回，绝不阻塞 JS 线程），并先用
+        //       PackageManager 把候选收敛为唯一的原厂设置组件显式指定；重复点击靠
+        //       SINGLE_TOP + 防抖复用同一窗口，杜绝叠出第二个。
+        private static final long SETTINGS_LAUNCH_DEBOUNCE_MS = 900L;
+        private long settingsLaunchLastAt = 0L;
+        private String settingsLaunchLastAction = "";
+
+        private void openSystemSettingsPage(final String action) {
+            final long now = System.currentTimeMillis();
+            if (action.equals(settingsLaunchLastAction)
+                    && (now - settingsLaunchLastAt) < SETTINGS_LAUNCH_DEBOUNCE_MS) {
+                return; // 连点防抖：同一入口 900ms 内只认一次
+            }
+            settingsLaunchLastAction = action;
+            settingsLaunchLastAt = now;
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent intent = new Intent(action);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                                | Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        ResolveInfo pick = resolvePreferredSettingsHandler(intent);
+                        if (pick != null && pick.activityInfo != null) {
+                            intent.setComponent(new ComponentName(
+                                    pick.activityInfo.packageName, pick.activityInfo.name));
+                        }
+                        MainActivity.this.startActivity(intent);
+                    } catch (Exception e) {
+                        AppLogger.w("系统设置", "直接拉起设置页失败，转 ADB 兜底: " + e.getMessage());
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                AdbClient.execute(MainActivity.this, "am start -a " + action);
+                            }
+                        }, "settings-adb-fallback").start();
+                    }
+                }
+            });
+        }
+
+        /** 把「打开系统设置」的候选 Activity 收敛为唯一一个原厂设置组件。
+         *  不收敛时，多个应用都声明同一 action，系统会弹「选择应用」让车主自己挑。 */
+        private ResolveInfo resolvePreferredSettingsHandler(Intent intent) {
+            try {
+                List<ResolveInfo> list = getPackageManager().queryIntentActivities(intent, 0);
+                if (list == null || list.isEmpty()) return null;
+                if (list.size() == 1) return list.get(0);
+                String[] preferPackages = {"com.android.settings", "com.ecarx.settings", "com.ecarx.xctsettings"};
+                for (String pkg : preferPackages) {
+                    for (ResolveInfo ri : list) {
+                        if (ri.activityInfo != null && pkg.equals(ri.activityInfo.packageName)) return ri;
+                    }
+                }
+                String self = getPackageName();
+                for (ResolveInfo ri : list) {
+                    if (ri.activityInfo != null && !self.equals(ri.activityInfo.packageName)) return ri;
+                }
+                return list.get(0);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
         @JavascriptInterface
         public void openBluetoothSettings() {
-            AdbClient.execute(MainActivity.this, "am start -a android.settings.BLUETOOTH_SETTINGS");
+            openSystemSettingsPage("android.settings.BLUETOOTH_SETTINGS");
         }
 
         @JavascriptInterface
@@ -2530,7 +2606,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void openWifiSettings() {
-            AdbClient.execute(MainActivity.this, "am start -a android.settings.WIFI_SETTINGS");
+            openSystemSettingsPage("android.settings.WIFI_SETTINGS");
         }
 
         @JavascriptInterface
