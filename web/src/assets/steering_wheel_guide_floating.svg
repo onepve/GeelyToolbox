@@ -1,38 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 320" width="220" height="320">
-  <!-- 黑白重绘方向盘右侧多媒体按键示意图：透明底、纯黑白、大号数字、保留按键形状 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 172" width="220" height="172">
+  <!-- 黑白重绘方向盘右侧多媒体按键示意图：透明底、纯黑白、三排紧凑、序号内嵌按键正中央 -->
   <g fill="#ffffff" stroke="#0a0a0a" stroke-width="2.5" stroke-linejoin="round">
-    <!-- ① 返回键（上左·圆角方块） -->
-    <rect x="34" y="46" width="50" height="54" rx="12"/>
-    <!-- ② 滚轮/旋钮（上中·竖向椭圆） -->
-    <ellipse cx="110" cy="73" rx="21" ry="35"/>
-    <!-- ③ 静音键（上右·圆角方块） -->
-    <rect x="136" y="46" width="50" height="54" rx="12"/>
-    <!-- ⑦ 向左选择键（中左·三角箭头） -->
-    <path d="M62 150 L28 170 L62 190 Z"/>
-    <!-- ④ 向右选择键（中右·三角箭头） -->
-    <path d="M158 150 L192 170 L158 190 Z"/>
-    <!-- ⑥ MODE 键（下左·横向长条） -->
-    <rect x="30" y="238" width="74" height="40" rx="10"/>
-    <!-- ⑤ 自定义键（下右·横向长条） -->
-    <rect x="116" y="238" width="74" height="40" rx="10"/>
+    <!-- 上排：① 返回键 + ② 滚轮 + ③ 静音键 -->
+    <rect x="34" y="16" width="50" height="44" rx="10"/>
+    <ellipse cx="110" cy="38" rx="20" ry="28"/>
+    <rect x="136" y="16" width="50" height="44" rx="10"/>
+    <!-- 中排：⑦ 向左选择 + ④ 向右选择 -->
+    <path d="M58 78 L30 94 L58 110 Z"/>
+    <path d="M162 78 L190 94 L162 110 Z"/>
+    <!-- 下排：⑥ MODE 键 + ⑤ 自定义键 -->
+    <rect x="30" y="126" width="74" height="36" rx="9"/>
+    <rect x="116" y="126" width="74" height="36" rx="9"/>
   </g>
-  <!-- 数字圆圈：黑底白字，大号醒目 -->
-  <g fill="#0a0a0a">
-    <circle cx="59" cy="21" r="19"/>
-    <circle cx="110" cy="21" r="19"/>
-    <circle cx="161" cy="21" r="19"/>
-    <circle cx="19" cy="170" r="19"/>
-    <circle cx="201" cy="170" r="19"/>
-    <circle cx="67" cy="300" r="19"/>
-    <circle cx="153" cy="300" r="19"/>
-  </g>
-  <g fill="#ffffff" font-family="Arial, sans-serif" font-weight="800" font-size="26" text-anchor="middle" dominant-baseline="central">
-    <text x="59" y="21">1</text>
-    <text x="110" y="21">2</text>
-    <text x="161" y="21">3</text>
-    <text x="19" y="170">7</text>
-    <text x="201" y="170">4</text>
-    <text x="67" y="300">6</text>
-    <text x="153" y="300">5</text>
+  <!-- 序号内嵌按键正中央 -->
+  <g fill="#0a0a0a" font-family="Arial, sans-serif" font-weight="800" font-size="18" text-anchor="middle" dominant-baseline="central">
+    <text x="59" y="38">1</text>
+    <text x="110" y="38">2</text>
+    <text x="161" y="38">3</text>
+    <text x="46" y="94">7</text>
+    <text x="174" y="94">4</text>
+    <text x="67" y="144">6</text>
+    <text x="153" y="144">5</text>
   </g>
 </svg>

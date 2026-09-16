@@ -1,5 +1,5 @@
 <template>
-  <header class="h-[64px] min-h-[64px] bg-car-card border-b border-car-border px-5 flex items-center justify-between z-20 select-none transition-colors">
+  <header class="h-[64px] min-h-[64px] border-b border-car-border px-5 flex items-center justify-between z-20 select-none transition-colors" :style="{ background: 'var(--bg-panel)' }">
     <!-- 品牌与版本 -->
     <div class="flex items-center">
       <span class="text-[20px] font-black text-car-text tracking-wide mr-2.5">吉利智驾</span>
@@ -67,6 +67,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
+import { quickToggleDayNight } from '../theme/themes';
 
 let topBarTimer = null;
 
@@ -209,14 +210,7 @@ function handleStoreCapsuleClick() {
 }
 
 function toggleTheme() {
-  store.isNight = !store.isNight;
-  if (!store.isNight) {
-    document.documentElement.classList.add('light');
-    document.body.classList.add('light');
-  } else {
-    document.documentElement.classList.remove('light');
-    document.body.classList.remove('light');
-  }
+  quickToggleDayNight();
   showToast(store.isNight ? '已切换为夜间护眼模式' : '已切换为日间高对比模式');
 }
 

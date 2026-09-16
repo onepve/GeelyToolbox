@@ -142,6 +142,51 @@
       </FeatureCard>
     </div>
 
+    <!-- 7. 主题外观与昼夜模式 (液态玻璃 4 色 × 白夜三档) -->
+    <FeatureCard 
+      title="7. 主题外观与昼夜模式"
+      desc="四套液态玻璃配色任选，昼夜三档切换；顶栏太阳/月亮按钮可随时一键快捷翻转。"
+      helpTitle="【功能指南】主题外观与昼夜模式"
+      helpText="1. 配色主题：&#10;清晨蓝 / 琥珀棕 / 晨曦绿 / 樱语粉四套液态玻璃配色，点选立即生效。&#10;&#10;2. 昼夜模式：&#10;跟随时间（6:00~17:59 呈现白天，其余时段黑夜）/ 强制白天 / 强制黑夜 三档自由掌控。&#10;&#10;3. 快捷翻转：&#10;顶栏的太阳/月亮按钮随时一键切换昼夜，不影响配色选择。"
+      helpTip="主题偏好自动记忆，熄火重新上电后保持不变。"
+    >
+      <div class="w-full flex flex-col space-y-4">
+        <!-- 7 个近正方形主题方块（3 昼夜档 + 4 配色），居中等距排布，杜绝扁长拉伸 -->
+        <div class="flex justify-center items-stretch gap-4 w-full">
+          <button
+            v-for="m in MODES"
+            :key="m"
+            @click="onSetMode(m)"
+            :class="[
+              'w-[150px] h-[150px] rounded-3xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-2.5',
+              store.theme.mode === m
+                ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-lg'
+                : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
+            ]"
+          >
+            <span class="text-[23px] font-black leading-none whitespace-nowrap">{{ MODE_LABELS[m] }}</span>
+            <span class="text-[14px] font-bold text-car-sub leading-none whitespace-nowrap">{{ MODE_SUBS[m] }}</span>
+          </button>
+          <div class="w-px self-stretch my-4 bg-car-border" aria-hidden="true"></div>
+          <button
+            v-for="p in PALETTES"
+            :key="p"
+            @click="onSetPalette(p)"
+            :class="[
+              'w-[150px] h-[150px] rounded-3xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-2.5',
+              store.theme.palette === p
+                ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-lg'
+                : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
+            ]"
+          >
+            <span class="w-11 h-11 rounded-full border border-black/20 shadow-md shrink-0" :style="{ background: PALETTE_DOT[p] }"></span>
+            <span class="text-[23px] font-black leading-none whitespace-nowrap">{{ PALETTE_FULL[p] }}</span>
+            <span class="text-[14px] font-bold text-car-sub leading-none whitespace-nowrap">{{ PALETTE_LABELS[p] }}色主题</span>
+          </button>
+        </div>
+      </div>
+    </FeatureCard>
+
     <!-- 底部运维与避坑指引 -->
     <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
       <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
@@ -159,6 +204,21 @@
 import FeatureCard from '../components/FeatureCard.vue';
 import { store, bridge, openModal, showToast } from '../store';
 import { ref } from 'vue';
+import { MODES, MODE_LABELS, PALETTES, PALETTE_LABELS, PALETTE_DOT, setMode, setPalette } from '../theme/themes';
+
+// 方块副标题：昼夜档标注时段语义，配色卡标注主题全名
+const MODE_SUBS = { auto: '6:00~17:59', day: '常驻白天', night: '常驻黑夜' };
+const PALETTE_FULL = { blue: '清晨蓝', brown: '琥珀棕', green: '晨曦绿', pink: '樱语粉' };
+
+function onSetMode(v) {
+  setMode(v);
+  showToast(`昼夜模式：${MODE_LABELS[v] || v}`);
+}
+
+function onSetPalette(v) {
+  setPalette(v);
+  showToast(`已切换「${PALETTE_LABELS[v] || v}」玻璃主题`);
+}
 
 function confirmHardReboot() {
   openModal('confirm', {

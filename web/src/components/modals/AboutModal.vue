@@ -33,9 +33,26 @@
         <!-- 车机硬件唯一识别码 (UID) -->
         <div class="mt-4 pt-3 border-t border-car-border/60 w-full flex items-center justify-between px-2">
           <span class="text-[14px] text-car-sub font-bold">车机硬件唯一识别码 (UID):</span>
-          <span class="text-[15px] text-car-text font-mono font-black bg-car-card px-3 py-1 rounded-lg border border-car-border select-all">
-            {{ deviceUid }}
-          </span>
+          <div class="flex items-center space-x-2">
+            <span class="text-[15px] text-car-text font-mono font-black bg-car-card px-3 py-1 rounded-lg border border-car-border select-all" :class="uidVisible ? '' : 'tracking-[0.15em]'">
+              {{ uidVisible ? deviceUid : uidMask }}
+            </span>
+            <button
+              @click="uidVisible = !uidVisible"
+              class="shrink-0 w-9 h-9 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-text hover:border-car-border-light cursor-pointer transition-all flex items-center justify-center select-none"
+              :aria-label="uidVisible ? '隐藏识别码' : '显示识别码'"
+              :title="uidVisible ? '隐藏识别码' : '显示识别码'"
+            >
+              <svg v-if="uidVisible" viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg v-else viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -142,6 +159,11 @@ const autoCheckUpdateEnabled = ref(localStorage.getItem('geely_auto_check_update
 const isTester = ref(localStorage.getItem('geely_tester_unlocked') === 'true');
 const useBetaChannel = ref(localStorage.getItem('geely_use_beta_channel') === 'true');
 const deviceUid = ref('读取中...');
+const uidVisible = ref(false);
+const uidMask = computed(() => {
+  const chars = deviceUid.value.replace(/\s/g, '');
+  return chars.replace(/./g, '●').slice(0, Math.max(6, Math.min(chars.length, 12)));
+});
 
 let versionClickCount = 0;
 let lastVersionClickTime = 0;

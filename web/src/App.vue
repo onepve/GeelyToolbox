@@ -1,5 +1,7 @@
 <template>
-  <div class="h-screen w-screen flex flex-col bg-car-bg text-car-text font-sans overflow-hidden select-none transition-colors duration-200">
+  <div class="h-screen w-screen flex flex-col bg-transparent text-car-text font-sans overflow-hidden select-none transition-colors duration-200">
+    <!-- 液态玻璃柔光晕背景（纯氛围，不可交互） -->
+    <div class="bg-orbs" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     <!-- 顶部状态栏 -->
     <TopBar />
 
@@ -96,23 +98,19 @@ import VoiceThemeImportModal from './components/modals/VoiceThemeImportModal.vue
 import AllAppsModal from './components/modals/AllAppsModal.vue';
 
 import { store, bridge } from './store';
+import { initTheme, quickToggleDayNight } from './theme/themes';
 
 onMounted(() => {
-  // 检查系统日夜模式
+  // 初始化液态玻璃主题（读持久化偏好 → 应用变量 → auto 模式每分钟跟随昼夜）
+  try { initTheme(); } catch (e) {}
+
+  // 兜底：JSBridge 可用时以车机系统日夜状态校正 auto 档的实际呈现
   try {
     const isNight = bridge.call('isNightMode');
-    if (typeof isNight === 'boolean') {
+    if (typeof isNight === 'boolean' && store.theme.mode === 'auto') {
       store.isNight = isNight;
     }
   } catch (e) {}
-
-  if (!store.isNight) {
-    document.documentElement.classList.add('light');
-    document.body.classList.add('light');
-  } else {
-    document.documentElement.classList.remove('light');
-    document.body.classList.remove('light');
-  }
 
   // 从 Java 原生拉取初始配置
   try {
@@ -203,6 +201,7 @@ onMounted(() => {
 :root {
   /* 默认夜间豪华车规深色模式 (实体卡片高对比架构，彻底杜绝隐形错位感) */
   --bg-main: #0B0F19;
+  --bg-panel: #101728;   /* 侧栏/顶栏实底面板，杜绝彩色光晕透垫文字发糊 */
   --bg-card: #151C2C;          /* 提升卡片不透明实体度，轮廓分明 */
   --bg-item: #1E273C;          /* 按钮底座与卡片底座形成层次分明对比 */
   --bg-item-hover: #28334E;
@@ -216,7 +215,8 @@ onMounted(() => {
 
 html.light, body.light {
   /* 日间高对比抗眩光亮色模式 (Daylight) */
-  --bg-main: #E2E8F0;          /* 柔和浅冷灰底，车规抗过曝，绝非刺眼纯白 */
+  --bg-main: #E2E8F0;
+  --bg-panel: #f8fafd;          /* 柔和浅冷灰底，车规抗过曝，绝非刺眼纯白 */
   --bg-card: #FFFFFF;          /* 纯白卡片，立体鲜明 */
   --bg-item: #F1F5F9;          /* 次级按键底 */
   --bg-item-hover: #E2E8F0;
@@ -232,11 +232,45 @@ html.light, body.light {
 }
 
 body {
-  background: radial-gradient(circle at 18% 12%, #182438 0%, #0A0D15 55%, #05070B 100%) no-repeat fixed !important;
+  background: var(--bg-main) !important;
 }
 
-html.light body, body.light {
-  background: #E2E8F0 !important;
+/* ===== 液态玻璃主题层 ===== */
+/* 大片化开柔光晕背景：无可辨认圆球轮廓，纯氛围，绝不压按钮造成误读 */
+.bg-orbs {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.bg-orbs i {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: .30;
+}
+.bg-orbs i:nth-child(1) { width: 980px; height: 980px; background: var(--orb-1); left: -260px; top: -320px; }
+.bg-orbs i:nth-child(2) { width: 900px; height: 900px; background: var(--orb-2); right: -300px; top: -260px; }
+.bg-orbs i:nth-child(3) { width: 880px; height: 880px; background: var(--orb-3); left: -240px; bottom: -340px; }
+.bg-orbs i:nth-child(4) { width: 760px; height: 760px; background: var(--orb-4); right: -220px; bottom: -300px; }
+
+/* 玻璃卡片反射质感：顶部高光条 + 斜向折射光带（仅大卡片，小按钮不加防杂乱） */
+.bg-car-card {
+  position: relative;
+}
+.bg-car-card::before {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 1px;
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--glass-toplight), transparent);
+  filter: blur(1px);
+  opacity: .35;
+  pointer-events: none;
 }
 
 .fade-enter-active,

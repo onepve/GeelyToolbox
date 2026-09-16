@@ -20,6 +20,11 @@ export const bridge = {
 export const store = reactive({
   currentNav: 'wheel',
   isNight: true,
+  // 液态玻璃主题：palette=蓝/棕/绿/粉，mode=auto(跟随时间)/day/night
+  theme: {
+    palette: 'blue',
+    mode: 'night'
+  },
   toast: { show: false, msg: '' },
   
   // 顶栏状态
