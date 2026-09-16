@@ -211,7 +211,10 @@ onMounted(() => {
   --text-main: #E2E8F0;        /* 柔和温润高级白，降低夜间刺眼过曝度，防视觉疲劳 */
   --text-sub: #94A3B8;
   --accent-gold: #F59E0B;
-  --modal-backdrop: rgba(11, 15, 25, 0.72);
+  --modal-backdrop: rgba(11, 15, 25, 0.78);
+  /* --bg-modal 的无脚本兜底值（首帧引导脚本正常时会被 <html> 内联值覆盖）。
+     仅作底色保险，绝非主题数据源——四套配色 × 昼夜的权威值一律在 theme/palette.js。 */
+  --bg-modal: rgba(20, 27, 43, 0.96);
 }
 
 /* 日间模式仅保留「弹窗遮罩」这一项变量。
@@ -221,7 +224,7 @@ onMounted(() => {
    另：选择器只写 html.light —— 首帧引导脚本在 <head> 里执行，那时 body 还不存在，
    挂在 body.light 上的规则会漏掉首帧；--modal-backdrop 可从 html 正常向下继承。 */
 html.light {
-  --modal-backdrop: rgba(20, 28, 44, 0.26);
+  --modal-backdrop: rgba(20, 28, 44, 0.42);
 }
 
 body {

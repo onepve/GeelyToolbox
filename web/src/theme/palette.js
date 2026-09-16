@@ -13,6 +13,9 @@ export const DEFAULT_MODE = 'night';
 export const MODES = ['auto', 'day', 'night'];
 export const PALETTES = ['blue', 'brown', 'green', 'pink'];
 
+// 弹窗专用「实底」表面 --bg-modal：二级/三级弹窗是叠在页面之上的独立层，
+// 若沿用 --bg-card（玻璃半透 0.13~0.68）会让背后页面内容透上来、正文读不清。
+// 故每档单列一个 96% 高实度表面：保留一丝玻璃透感，同时确保文字清晰可读。
 export const THEMES = {
   blue: {
     label: '蓝',
@@ -20,6 +23,7 @@ export const THEMES = {
     night: {
       '--bg-main': '#090d18',
       '--bg-panel': '#101728',
+      '--bg-modal': 'rgba(17,24,40,.96)',
       '--bg-card': 'rgba(255,255,255,.13)',
       '--bg-item': 'rgba(255,255,255,.07)',
       '--bg-item-hover': 'rgba(255,255,255,.13)',
@@ -39,6 +43,7 @@ export const THEMES = {
     day: {
       '--bg-main': '#e9eef8',
       '--bg-panel': '#f8fafd',
+      '--bg-modal': 'rgba(250,252,255,.96)',
       '--bg-card': 'rgba(255,255,255,.68)',
       '--bg-item': 'rgba(255,255,255,.46)',
       '--bg-item-hover': 'rgba(255,255,255,.60)',
@@ -62,6 +67,7 @@ export const THEMES = {
     night: {
       '--bg-main': '#141008',
       '--bg-panel': '#241b0e',
+      '--bg-modal': 'rgba(33,25,14,.96)',
       '--bg-card': 'rgba(255,255,255,.14)',
       '--bg-item': 'rgba(255,255,255,.08)',
       '--bg-item-hover': 'rgba(255,255,255,.14)',
@@ -81,6 +87,7 @@ export const THEMES = {
     day: {
       '--bg-main': '#f2ece0',
       '--bg-panel': '#fbf7ef',
+      '--bg-modal': 'rgba(252,249,242,.96)',
       '--bg-card': 'rgba(255,255,255,.68)',
       '--bg-item': 'rgba(255,255,255,.48)',
       '--bg-item-hover': 'rgba(255,255,255,.60)',
@@ -104,6 +111,7 @@ export const THEMES = {
     night: {
       '--bg-main': '#06120c',
       '--bg-panel': '#0b1f15',
+      '--bg-modal': 'rgba(12,32,22,.96)',
       '--bg-card': 'rgba(255,255,255,.13)',
       '--bg-item': 'rgba(255,255,255,.07)',
       '--bg-item-hover': 'rgba(255,255,255,.13)',
@@ -123,6 +131,7 @@ export const THEMES = {
     day: {
       '--bg-main': '#e8f2ec',
       '--bg-panel': '#f3faf5',
+      '--bg-modal': 'rgba(245,251,247,.96)',
       '--bg-card': 'rgba(255,255,255,.68)',
       '--bg-item': 'rgba(255,255,255,.48)',
       '--bg-item-hover': 'rgba(255,255,255,.60)',
@@ -146,6 +155,7 @@ export const THEMES = {
     night: {
       '--bg-main': '#160d12',
       '--bg-panel': '#251319',
+      '--bg-modal': 'rgba(36,19,25,.96)',
       '--bg-card': 'rgba(255,255,255,.13)',
       '--bg-item': 'rgba(255,255,255,.07)',
       '--bg-item-hover': 'rgba(255,255,255,.13)',
@@ -165,6 +175,7 @@ export const THEMES = {
     day: {
       '--bg-main': '#f6e9ee',
       '--bg-panel': '#fdf2f6',
+      '--bg-modal': 'rgba(253,245,249,.96)',
       '--bg-card': 'rgba(255,255,255,.68)',
       '--bg-item': 'rgba(255,255,255,.48)',
       '--bg-item-hover': 'rgba(255,255,255,.60)',

@@ -8,14 +8,14 @@
     >
       <div 
         :class="[
-          'bg-car-card rounded-3xl overflow-hidden flex flex-col transition-all duration-200 w-full shadow-2xl',
+          'tb-modal-surface rounded-3xl overflow-hidden flex flex-col transition-all duration-200 w-full shadow-2xl',
           'border border-car-border/80',
           maxWidthClass || 'max-w-[1000px]',
           maxHeightClass || 'max-h-[90vh]'
         ]"
       >
         <!-- 弹窗标题栏 (车规加高 80px：标题左区独占可自动换行完整显示，徽标+关闭按钮右区成组永不挤压错位) -->
-        <div class="min-h-[80px] px-8 py-4 border-b border-car-border flex items-center justify-between shrink-0 bg-car-card">
+        <div class="min-h-[80px] px-8 py-4 border-b border-car-border flex items-center justify-between shrink-0 tb-modal-surface">
           <div class="flex-1 min-w-0 text-[25px] font-black text-car-text tracking-wide leading-[1.3]">{{ title }}</div>
           <div class="shrink-0 ml-5 flex items-center space-x-3">
             <span v-if="badge" class="text-[13.5px] px-3 py-1.5 rounded-full border border-car-border bg-car-item text-car-sub font-black whitespace-nowrap">
@@ -37,7 +37,7 @@
         </div>
 
         <!-- 底部可选操作栏 (车规加高 84px) -->
-        <div v-if="$slots.footer" class="px-8 py-5 border-t border-car-border bg-car-card shrink-0 flex items-center justify-end space-x-4">
+        <div v-if="$slots.footer" class="px-8 py-5 border-t border-car-border tb-modal-surface shrink-0 flex items-center justify-end space-x-4">
           <slot name="footer" />
         </div>
       </div>
@@ -80,6 +80,14 @@ function handleBackdropClick() {
 </script>
 
 <style scoped>
+/* 弹窗专用实底（二级/三级弹窗铁律）：
+   弹窗是叠在页面内容之上的独立层，必须用 --bg-modal（96% 高实度）而不是 --bg-card。
+   --bg-card 是「贴在实底页面上的玻璃卡」，夜间仅 13% 实度，用在弹窗上会让背后
+   页面内容直接透上来，车主观感就是「弹窗过于透明、字看不清」。 */
+.tb-modal-surface {
+  background: var(--bg-modal, rgba(20, 27, 43, 0.96));
+}
+
 /* 弹窗淡入曲线：0.2s -> 0.26s 缓出，并把遮罩提升为独立合成层。
    老 WebView（Android 9）上，整屏遮罩若无独立图层，淡入会触发整页重绘，
    车主观感就是「点一下关于，画面闪一下」。will-change + translateZ(0) 后只重绘遮罩层本身。 */
