@@ -252,7 +252,7 @@
           <!-- 上一曲 (⑦ 号键)：与原车「向左」物理方位一致，并排置于左侧 -->
           <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
             <div class="flex items-center justify-between mb-3">
-              <span class="text-[19px] font-black text-car-text whitespace-nowrap">⑦ 上一曲键</span>
+              <span class="text-[19px] font-black text-car-text whitespace-nowrap">⑦ 上一曲</span>
               <div class="flex space-x-1.5">
                 <button
                   v-for="g in gestureList"
@@ -275,7 +275,7 @@
           <!-- 下一曲 (④ 号键)：与原车「向右」物理方位一致，并排置于右侧 -->
           <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
             <div class="flex items-center justify-between mb-3">
-              <span class="text-[19px] font-black text-car-text whitespace-nowrap">④ 下一曲键</span>
+              <span class="text-[19px] font-black text-car-text whitespace-nowrap">④ 下一曲</span>
               <div class="flex space-x-1.5">
                 <button
                   v-for="g in gestureList"

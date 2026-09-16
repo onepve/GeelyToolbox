@@ -16,11 +16,13 @@
       <span class="text-[20px] text-car-sub font-black ml-3 shrink-0">▾</span>
     </button>
 
-    <!-- 下拉面板：大磁贴选项列表 -->
+    <!-- 下拉面板：大磁贴选项列表（浮动弹出：动态方向+高度钳制，永不撑破页面/超出视口）-->
     <transition name="drop">
       <div
         v-if="open"
-        class="absolute z-50 mt-2 w-full min-w-[280px] rounded-2xl border-2 border-car-border bg-car-card shadow-2xl p-2 space-y-1.5"
+        class="absolute z-50 w-full min-w-[280px] overflow-y-auto rounded-2xl border-2 border-car-border bg-[var(--bg-card)] shadow-2xl p-2 space-y-1.5"
+        :class="dropUp ? 'bottom-full mb-2' : 'top-full mt-2'"
+        :style="{ maxHeight: maxPanelH + 'px' }"
       >
         <button
           v-for="opt in options"
@@ -71,6 +73,8 @@ const props = defineProps({
 
 const open = ref(false);
 const rootEl = ref(null);
+const dropUp = ref(false);
+const maxPanelH = ref(320);
 
 const { getActionOptions, getGestureAction, setGestureAction, isCustomApp, getCustomAppName, openAppSelectModal, getActionName } = useWheelGesture();
 
@@ -95,6 +99,17 @@ const displaySub = computed(() => {
 
 function toggle() {
   playTouchFeedback();
+  if (!open.value) {
+    // 量测按钮在视口中的位置，动态决定弹出方向与最大高度，保证面板完整可见
+    const rect = rootEl.value?.getBoundingClientRect();
+    if (rect) {
+      const spaceUp = rect.top;
+      const spaceDown = window.innerHeight - rect.bottom;
+      dropUp.value = spaceUp > spaceDown;
+      const margin = 16;
+      maxPanelH.value = Math.max(200, Math.floor((dropUp.value ? spaceUp : spaceDown) - margin));
+    }
+  }
   open.value = !open.value;
 }
 
@@ -121,5 +136,5 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside));
 
 <style scoped>
 .drop-enter-active, .drop-leave-active { transition: opacity 0.15s ease, transform 0.15s ease; }
-.drop-enter-from, .drop-leave-to { opacity: 0; transform: translateY(-6px); }
+.drop-enter-from, .drop-leave-to { opacity: 0; transform: translateY(6px); }
 </style>
