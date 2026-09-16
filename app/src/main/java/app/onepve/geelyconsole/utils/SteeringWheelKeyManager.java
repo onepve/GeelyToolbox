@@ -692,6 +692,11 @@ public class SteeringWheelKeyManager {
                 openAmapNavi();
                 break;
             case ACTION_PLAY_PAUSE:
+                // 按压前先判定「本次是否为暂停动作」：若正在播放，则本次按下即暂停，
+                // 必须开启自动唤醒抑制窗口，否则原车 EAS 约 1.5 秒后会强拉回播放。
+                if (isAnyMediaPlaying()) {
+                    EasMediaBridge.getInstance(context).suppressAutoWakeAfterUserPause(8000);
+                }
                 sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
                 break;
             case ACTION_NEXT_TRACK:
@@ -707,6 +712,32 @@ public class SteeringWheelKeyManager {
                 turnScreenOff();
                 break;
         }
+    }
+
+    /**
+     * 当前是否有第三方媒体会话正在播放（用于判定本次 play_pause 究竟会「暂停」还是「恢复」）。
+     * 与 sendMediaKeyEvent 的会话过滤保持一致：跳过车机原厂多媒体与自身，避免误判。
+     */
+    private boolean isAnyMediaPlaying() {
+        try {
+            MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (msm == null) return false;
+            java.util.List<MediaController> controllers = msm.getActiveSessions(null);
+            if (controllers == null) return false;
+            for (MediaController mc : controllers) {
+                if (mc == null) continue;
+                String pkg = mc.getPackageName();
+                if ("ecarx.xsf.mediacenter".equals(pkg) || "com.ecarx.multimedia".equals(pkg)
+                        || context.getPackageName().equals(pkg)) {
+                    continue;
+                }
+                android.media.session.PlaybackState st = mc.getPlaybackState();
+                if (st != null && st.getState() == android.media.session.PlaybackState.STATE_PLAYING) {
+                    return true;
+                }
+            }
+        } catch (Throwable ignored) {}
+        return false;
     }
 
     private void launchCustomApp(String pkg) {

@@ -229,6 +229,11 @@ public class EasMediaBridge {
                     for (MediaController mc : controllers) {
                         String pkg = mc.getPackageName();
                         if ("com.android.bluetooth".equals(pkg)) {
+                            // 铁律：用户刚主动暂停 → 严禁自动 play() 顶回播放
+                            if (System.currentTimeMillis() < autoWakeSuppressUntil) {
+                                AppLogger.i("蓝牙音频", "处于用户暂停抑制窗口内，跳过 play() 唤醒（尊重用户暂停意图）");
+                                return;
+                            }
                             AppLogger.i("蓝牙音频", "命中蓝牙 MediaSession，下发 play() 唤醒底层 A2DP AudioFocus！");
                             mc.getTransportControls().play();
                             return;
@@ -239,6 +244,19 @@ public class EasMediaBridge {
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "通过 MediaSession 唤醒蓝牙音频焦点异常: " + t.getMessage());
         }
+    }
+
+    /** 用户主动暂停后的自动唤醒抑制截止时间戳 (ms)，期间严禁任何自动 play() */
+    private volatile long autoWakeSuppressUntil = 0L;
+
+    /**
+     * 用户主动暂停后开启自动唤醒抑制窗口。
+     * 事实依据（真车日志）：原车 EAS 在暂停后约 1.5 秒重新仲裁音频源并回调选通流程，
+     * 若无条件下发 play()，会把用户刚按下的暂停强行顶回播放，表现为「暂停后立马又继续播放」。
+     */
+    public synchronized void suppressAutoWakeAfterUserPause(long ms) {
+        autoWakeSuppressUntil = System.currentTimeMillis() + ms;
+        AppLogger.i("蓝牙音频", "用户主动暂停，已开启 " + (ms / 1000) + " 秒自动唤醒抑制窗口");
     }
 
     /**
@@ -391,20 +409,17 @@ public class EasMediaBridge {
                             activateBluetoothChannel();
                         }
                     }
-                } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
-                    long now = System.currentTimeMillis();
-                    if (now - lastA2dpWakeTime > 4000) {
-                        lastA2dpWakeTime = now;
-                        activateBluetoothChannel();
-                    }
                 }
+                // 已移除 AVRCP TRACK_EVENT 触发的通道选通：
+                // 该事件在「暂停 / 切歌 / 播放」时都会下发，据此无条件唤醒会在用户按下暂停
+                // 后立刻把播放顶回来。真正的「手机端开始推流」已由上面 AUDIO_STATE_CHANGED
+                // 的 STATE_STARTED (streaming=true) 分支覆盖，无需重复触发。
             }
         };
 
         IntentFilter filter = new IntentFilter();
         filter.addAction("android.bluetooth.a2dp-sink.profile.action.CONNECTION_STATE_CHANGED");
         filter.addAction("android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED");
-        filter.addAction("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT");
         try {
             appContext.registerReceiver(a2dpReceiver, filter);
         } catch (Throwable ignored) {}
