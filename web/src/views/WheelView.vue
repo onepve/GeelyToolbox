@@ -248,41 +248,18 @@
         helpText="1. 键位对应：&#10;④ 号键（向右）控制下一曲，⑦ 号键（向左）控制上一曲，均支持单击、双击、长按三种手势自由映射。&#10;&#10;2. 官方三重通道调度：&#10;内置官方切歌三重通道调度机制，完美兼容 QQ音乐车机版、网易云音乐等主流车载音乐应用，切歌稳定不串台。&#10;&#10;3. 动作映射：&#10;可将手势映射为「切歌(官方调度)」「打开 360 全景」或「播放/暂停」，满足不同驾驶场景需求。"
         helpTip="切歌动作建议保持「切歌(官方调度)」，兼容性与稳定性最佳。"
       >
-        <div class="flex flex-col space-y-3">
-          <!-- 下一曲 (④ 号键) -->
+        <div class="grid grid-cols-2 gap-3.5">
+          <!-- 上一曲 (⑦ 号键)：与原车「向左」物理方位一致，并排置于左侧 -->
           <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
             <div class="flex items-center justify-between mb-3">
-              <span class="text-[19px] font-black text-car-text">④ 下一曲键</span>
-              <div class="flex space-x-1.5">
-                <button
-                  v-for="g in gestureList"
-                  :key="g.id"
-                  @click="activeGesture.next = g.id"
-                  :class="[
-                    'px-4 py-2 rounded-xl text-[15px] font-black cursor-pointer transition-all',
-                    activeGesture.next === g.id
-                      ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
-                      : 'bg-car-card border border-car-border text-car-sub'
-                  ]"
-                >
-                  {{ g.shortName }}
-                </button>
-              </div>
-            </div>
-            <ActionSelect key-name="next" :gesture="activeGesture.next" />
-          </div>
-
-          <!-- 上一曲 (⑦ 号键) -->
-          <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-[19px] font-black text-car-text">⑦ 上一曲键</span>
+              <span class="text-[19px] font-black text-car-text whitespace-nowrap">⑦ 上一曲键</span>
               <div class="flex space-x-1.5">
                 <button
                   v-for="g in gestureList"
                   :key="g.id"
                   @click="activeGesture.prev = g.id"
                   :class="[
-                    'px-4 py-2 rounded-xl text-[15px] font-black cursor-pointer transition-all',
+                    'px-3.5 py-2 rounded-xl text-[15px] font-black cursor-pointer transition-all whitespace-nowrap',
                     activeGesture.prev === g.id
                       ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
                       : 'bg-car-card border border-car-border text-car-sub'
@@ -293,6 +270,29 @@
               </div>
             </div>
             <ActionSelect key-name="prev" :gesture="activeGesture.prev" />
+          </div>
+
+          <!-- 下一曲 (④ 号键)：与原车「向右」物理方位一致，并排置于右侧 -->
+          <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[19px] font-black text-car-text whitespace-nowrap">④ 下一曲键</span>
+              <div class="flex space-x-1.5">
+                <button
+                  v-for="g in gestureList"
+                  :key="g.id"
+                  @click="activeGesture.next = g.id"
+                  :class="[
+                    'px-3.5 py-2 rounded-xl text-[15px] font-black cursor-pointer transition-all whitespace-nowrap',
+                    activeGesture.next === g.id
+                      ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
+                      : 'bg-car-card border border-car-border text-car-sub'
+                  ]"
+                >
+                  {{ g.shortName }}
+                </button>
+              </div>
+            </div>
+            <ActionSelect key-name="next" :gesture="activeGesture.next" />
           </div>
         </div>
       </FeatureCard>
