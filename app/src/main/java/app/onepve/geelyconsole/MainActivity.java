@@ -1859,18 +1859,26 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void startToolboxSelfUpdate(final String downloadUrl, final String rawVer) {
-            // 自动更新与强制重下载统一使用 GeelyToolbox 规范文件名；兼容各种历史版本输入。
-            String ver = rawVer == null ? "" : rawVer.trim();
-            if (ver.startsWith("GeelyToolbox_v")) ver = ver.substring("GeelyToolbox_v".length());
-            if (ver.startsWith("GeelyPilot_v")) ver = ver.substring("GeelyPilot_v".length());
-            if (ver.startsWith("GeelyPilot_")) ver = ver.substring("GeelyPilot_".length());
-            if (ver.toLowerCase(java.util.Locale.ROOT).endsWith(".apk")) ver = ver.substring(0, ver.length() - 4);
-            ver = ver.trim();
-            if (ver.isEmpty()) ver = "latest";
-            final String apkFileName = "GeelyToolbox_v" + ver + ".apk";
+            // 2026-09-16 统一固定文件名：下载走 .tmp 临时文件，完成后 rename 原子覆盖，
+            // 不再按版本号命名导致 Download 目录堆积历史安装包。rawVer 仅为兼容旧 Web 端签名保留。
+            final String apkFileName = "GeelyToolbox.apk";
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
+                    // 一次性自清历史版本号命名的残留安装包（GeelyToolbox_v*.apk / GeelyPilot_*.apk）
+                    try {
+                        java.io.File dlDir = SystemUtils.getAppDownloadDir();
+                        java.io.File[] olds = dlDir == null ? null : dlDir.listFiles();
+                        if (olds != null) {
+                            for (java.io.File f : olds) {
+                                String n = f.getName();
+                                if (f.isFile() && n.endsWith(".apk")
+                                        && (n.startsWith("GeelyToolbox_v") || n.startsWith("GeelyPilot_v") || n.startsWith("GeelyPilot_"))) {
+                                    f.delete();
+                                }
+                            }
+                        }
+                    } catch (Throwable ignored) {}
                     showToast("开始下载工具箱新版本...");
                     DownloadManager.startDownload("toolbox_update", downloadUrl, apkFileName, new DownloadManager.DownloadListener() {
                         private int lastReportedProgress = -1;
