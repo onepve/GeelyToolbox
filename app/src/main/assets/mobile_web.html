@@ -57,6 +57,16 @@
             <button class="btn btn-primary" onclick="pushUrl()">一键推送车机下载</button>
         </div>
 
+        <!-- 卡片 1.5: OTA 官方升级直链（车机捕获到时显示，手机可复制） -->
+        <div class="card" id="ota-card" style="display:none;">
+            <div class="card-title"><span>📡 OTA 官方升级直链（车机已捕获）</span></div>
+            <div class="input-group">
+                <label class="input-label">车机从升级日志中捕获到的官方升级包直链：</label>
+                <input type="text" id="ota-url" class="input-box" style="font-size:12px; color:#059669;" readonly onclick="this.select();">
+            </div>
+            <button class="btn btn-primary" style="background:#059669;" onclick="copyOtaUrl()">📋 复制 OTA 直链</button>
+        </div>
+
         <!-- 卡片 2: 手机本地 APK 上传 -->
         <div class="card">
             <div class="card-title"><span>📁 手机本地 APK 秒传到车机</span></div>
@@ -140,6 +150,25 @@
     </div>
 
     <script>
+        // ---- OTA 直链卡片（车机捕获到地址时显示；__OTA_HAS_URL__ 由车机注入 1/0）----
+        const OTA_HAS_URL = "__OTA_HAS_URL__" === "1";
+        const OTA_URL = "__OTA_CAPTURE_URL__";
+        if (OTA_HAS_URL && OTA_URL) {
+            const otaCard = document.getElementById('ota-card');
+            const otaUrlEl = document.getElementById('ota-url');
+            if (otaCard) otaCard.style.display = '';
+            if (otaUrlEl) otaUrlEl.value = OTA_URL;
+        }
+        function copyOtaUrl() {
+            const el = document.getElementById('ota-url');
+            if (!el || !el.value) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(el.value).then(() => alert('OTA 直链已复制到剪贴板')).catch(() => { el.select(); document.execCommand('copy'); });
+            } else {
+                el.select(); document.execCommand('copy'); alert('OTA 直链已复制到剪贴板');
+            }
+        }
+
         const ttsKeys = ['gear_d', 'gear_r', 'gear_p', 'door_fl', 'door_fl_close', 'door_fr', 'door_fr_close', 'trunk_open', 'trunk_close', 'flameout'];
 
         async function loadTtsSettings() {

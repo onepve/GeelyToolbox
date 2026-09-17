@@ -1,8 +1,7 @@
 <template>
     <!-- 弹窗 4: 原厂电动尾门细分配置二级向导 (TrunkConfigModal · 补齐开闭与声效设置) -->
     <div 
-      class="fixed z-[9998] flex items-center justify-center bg-black/75 p-6"
-      style="top:0; left:0; width:100vw; height:100vh;"
+      class="fixed z-[9998] flex items-center justify-center p-6" style="top:0; left:0; width:100vw; height:100vh; background: rgba(11, 15, 25, 0.85);"
     >
       <div class="bg-car-card border-2 border-car-border rounded-3xl p-7 shadow-2xl max-w-[880px] w-full flex flex-col space-y-5 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between border-b border-car-border pb-4">
@@ -23,8 +22,8 @@
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-center justify-between">
             <div class="flex flex-col space-y-1">
               <div class="flex items-center space-x-2">
-                <span class="text-[19px] font-black text-car-text">尾门升起提醒</span>
-                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent text-[12px] font-bold">防碰防刮</span>
+                <span class="text-[21.5px] font-black text-car-text">尾门升起提醒</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent text-[14px] font-bold">防碰防刮</span>
               </div>
               <span class="text-[13px] text-car-sub font-bold">后备箱抬起升起时短促提醒，防止碰擦低矮车库顶梁</span>
             </div>
@@ -57,8 +56,8 @@
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-center justify-between">
             <div class="flex flex-col space-y-1">
               <div class="flex items-center space-x-2">
-                <span class="text-[19px] font-black text-car-text">尾门完全锁止</span>
-                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 text-[12px] font-bold">锁闭就绪</span>
+                <span class="text-[21.5px] font-black text-car-text">尾门完全锁止</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 text-[14px] font-bold">锁闭就绪</span>
               </div>
               <span class="text-[13px] text-car-sub font-bold">后备箱电吸闭合完全锁止时短促播报“后备箱已关好”，关后备箱无需回头确认</span>
             </div>

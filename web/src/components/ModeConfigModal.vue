@@ -1,8 +1,7 @@
 <template>
     <!-- 弹窗 2: 驾驶模式细分配置二级向导 (ModeConfigModal · 全量补齐声效设置) -->
     <div 
-      class="fixed z-[9998] flex items-center justify-center bg-black/75 p-6"
-      style="top:0; left:0; width:100vw; height:100vh;"
+      class="fixed z-[9998] flex items-center justify-center p-6" style="top:0; left:0; width:100vw; height:100vh; background: rgba(11, 15, 25, 0.85);"
     >
       <div class="bg-car-card border-2 border-car-border rounded-3xl p-7 shadow-2xl max-w-[880px] w-full flex flex-col space-y-5 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between border-b border-car-border pb-4">
@@ -22,8 +21,8 @@
           <!-- 舒适 -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-center justify-between">
             <div class="flex flex-col space-y-1">
-              <span class="text-[19px] font-black text-car-text">舒适模式 (Comfort)</span>
-              <span class="text-[13px] text-car-sub font-bold">换挡平顺温润</span>
+              <span class="text-[21.5px] font-black text-car-text">舒适模式 (Comfort)</span>
+              <span class="text-[15.5px] text-car-sub font-bold">换挡平顺温润</span>
             </div>
             <div class="flex items-center space-x-2 shrink-0">
               <button 
@@ -53,8 +52,8 @@
           <!-- 经济 -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-center justify-between">
             <div class="flex flex-col space-y-1">
-              <span class="text-[19px] font-black text-car-text">经济模式 (Eco)</span>
-              <span class="text-[13px] text-car-sub font-bold">极致节油长途巡航</span>
+              <span class="text-[21.5px] font-black text-car-text">经济模式 (Eco)</span>
+              <span class="text-[15.5px] text-car-sub font-bold">极致节油长途巡航</span>
             </div>
             <div class="flex items-center space-x-2 shrink-0">
               <button 
@@ -84,8 +83,8 @@
           <!-- 运动 -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-center justify-between">
             <div class="flex flex-col space-y-1">
-              <span class="text-[19px] font-black text-car-text">运动模式 (Sport)</span>
-              <span class="text-[13px] text-car-sub font-bold">油门激进动力充沛</span>
+              <span class="text-[21.5px] font-black text-car-text">运动模式 (Sport)</span>
+              <span class="text-[15.5px] text-car-sub font-bold">油门激进动力充沛</span>
             </div>
             <div class="flex items-center space-x-2 shrink-0">
               <button 
@@ -115,8 +114,8 @@
           <!-- 智能 -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-center justify-between">
             <div class="flex flex-col space-y-1">
-              <span class="text-[19px] font-black text-car-text">智能模式 (Smart)</span>
-              <span class="text-[13px] text-car-sub font-bold">动态自适应工况</span>
+              <span class="text-[21.5px] font-black text-car-text">智能模式 (Smart)</span>
+              <span class="text-[15.5px] text-car-sub font-bold">动态自适应工况</span>
             </div>
             <div class="flex items-center space-x-2 shrink-0">
               <button 

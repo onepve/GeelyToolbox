@@ -1,8 +1,7 @@
 <template>
     <!-- 弹窗 3: 四门迎宾与关门安全二级向导 (DoorConfigModal · 通用/分门全量完好) -->
     <div 
-      class="fixed z-[9998] flex items-center justify-center bg-black/75 p-6"
-      style="top:0; left:0; width:100vw; height:100vh;"
+      class="fixed z-[9998] flex items-center justify-center p-6" style="top:0; left:0; width:100vw; height:100vh; background: rgba(11, 15, 25, 0.85);"
     >
       <div class="bg-car-card border-2 border-car-border rounded-3xl p-7 shadow-2xl max-w-[880px] w-full flex flex-col space-y-5 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between border-b border-car-border pb-4">
@@ -50,8 +49,8 @@
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-center justify-between">
             <div class="flex flex-col space-y-1">
               <div class="flex items-center space-x-2">
-                <span class="text-[19px] font-black text-car-text">通用开门提醒</span>
-                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent text-[12px] font-bold">场景自适应</span>
+                <span class="text-[21.5px] font-black text-car-text">通用开门提醒</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent text-[14px] font-bold">场景自适应</span>
               </div>
               <span class="text-[13px] text-car-sub font-bold">登车开门提醒启程，停车下车提醒带好随身物品，行车意外开门紧急报警</span>
             </div>
@@ -84,8 +83,8 @@
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-center justify-between">
             <div class="flex flex-col space-y-1">
               <div class="flex items-center space-x-2">
-                <span class="text-[19px] font-black text-car-text">通用关门提醒</span>
-                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 text-[12px] font-bold">安全闭合</span>
+                <span class="text-[21.5px] font-black text-car-text">通用关门提醒</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 text-[14px] font-bold">安全闭合</span>
               </div>
               <span class="text-[13px] text-car-sub font-bold">车门闭合完毕干脆提示“车门已关好”，多门同时动作合并防抖</span>
             </div>
@@ -131,15 +130,15 @@
             <div class="flex items-center justify-between">
               <span class="text-[14px] text-car-sub font-bold">开门播报</span>
               <div class="flex items-center space-x-2">
-                <button @click="testVoice('door_fl')" class="h-[50px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[13.5px] cursor-pointer">试听</button>
-                <button @click="toggleSetting('voice_enable_door_fl')" :class="['h-[50px] px-3.5 rounded-lg border-2 font-black text-[13.5px] cursor-pointer', store.vehicleAuto.voice_enable_door_fl ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_fl ? '开启' : '关闭' }}</button>
+                <button @click="testVoice('door_fl')" class="h-[52px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[16px] cursor-pointer">试听</button>
+                <button @click="toggleSetting('voice_enable_door_fl')" :class="['h-[52px] px-3.5 rounded-lg border-2 font-black text-[16px] cursor-pointer', store.vehicleAuto.voice_enable_door_fl ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_fl ? '开启' : '关闭' }}</button>
               </div>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-[14px] text-car-sub font-bold">关门播报</span>
               <div class="flex items-center space-x-2">
-                <button @click="testVoice('door_fl_close')" class="h-[50px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[13.5px] cursor-pointer">试听</button>
-                <button @click="toggleSetting('voice_enable_door_fl_close')" :class="['h-[50px] px-3.5 rounded-lg border-2 font-black text-[13.5px] cursor-pointer', store.vehicleAuto.voice_enable_door_fl_close ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_fl_close ? '开启' : '关闭' }}</button>
+                <button @click="testVoice('door_fl_close')" class="h-[52px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[16px] cursor-pointer">试听</button>
+                <button @click="toggleSetting('voice_enable_door_fl_close')" :class="['h-[52px] px-3.5 rounded-lg border-2 font-black text-[16px] cursor-pointer', store.vehicleAuto.voice_enable_door_fl_close ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_fl_close ? '开启' : '关闭' }}</button>
               </div>
             </div>
           </div>
@@ -158,15 +157,15 @@
             <div class="flex items-center justify-between">
               <span class="text-[14px] text-car-sub font-bold">开门播报</span>
               <div class="flex items-center space-x-2">
-                <button @click="testVoice('door_fr')" class="h-[50px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[13.5px] cursor-pointer">试听</button>
-                <button @click="toggleSetting('voice_enable_door_fr')" :class="['h-[50px] px-3.5 rounded-lg border-2 font-black text-[13.5px] cursor-pointer', store.vehicleAuto.voice_enable_door_fr ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_fr ? '开启' : '关闭' }}</button>
+                <button @click="testVoice('door_fr')" class="h-[52px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[16px] cursor-pointer">试听</button>
+                <button @click="toggleSetting('voice_enable_door_fr')" :class="['h-[52px] px-3.5 rounded-lg border-2 font-black text-[16px] cursor-pointer', store.vehicleAuto.voice_enable_door_fr ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_fr ? '开启' : '关闭' }}</button>
               </div>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-[14px] text-car-sub font-bold">关门播报</span>
               <div class="flex items-center space-x-2">
-                <button @click="testVoice('door_fr_close')" class="h-[50px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[13.5px] cursor-pointer">试听</button>
-                <button @click="toggleSetting('voice_enable_door_fr_close')" :class="['h-[50px] px-3.5 rounded-lg border-2 font-black text-[13.5px] cursor-pointer', store.vehicleAuto.voice_enable_door_fr_close ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_fr_close ? '开启' : '关闭' }}</button>
+                <button @click="testVoice('door_fr_close')" class="h-[52px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[16px] cursor-pointer">试听</button>
+                <button @click="toggleSetting('voice_enable_door_fr_close')" :class="['h-[52px] px-3.5 rounded-lg border-2 font-black text-[16px] cursor-pointer', store.vehicleAuto.voice_enable_door_fr_close ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_fr_close ? '开启' : '关闭' }}</button>
               </div>
             </div>
           </div>
@@ -185,15 +184,15 @@
             <div class="flex items-center justify-between">
               <span class="text-[14px] text-car-sub font-bold">开门播报</span>
               <div class="flex items-center space-x-2">
-                <button @click="testVoice('door_rl')" class="h-[50px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[13.5px] cursor-pointer">试听</button>
-                <button @click="toggleSetting('voice_enable_door_rl')" :class="['h-[50px] px-3.5 rounded-lg border-2 font-black text-[13.5px] cursor-pointer', store.vehicleAuto.voice_enable_door_rl ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_rl ? '开启' : '关闭' }}</button>
+                <button @click="testVoice('door_rl')" class="h-[52px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[16px] cursor-pointer">试听</button>
+                <button @click="toggleSetting('voice_enable_door_rl')" :class="['h-[52px] px-3.5 rounded-lg border-2 font-black text-[16px] cursor-pointer', store.vehicleAuto.voice_enable_door_rl ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_rl ? '开启' : '关闭' }}</button>
               </div>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-[14px] text-car-sub font-bold">关门播报</span>
               <div class="flex items-center space-x-2">
-                <button @click="testVoice('door_rl_close')" class="h-[50px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[13.5px] cursor-pointer">试听</button>
-                <button @click="toggleSetting('voice_enable_door_rl_close')" :class="['h-[50px] px-3.5 rounded-lg border-2 font-black text-[13.5px] cursor-pointer', store.vehicleAuto.voice_enable_door_rl_close ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_rl_close ? '开启' : '关闭' }}</button>
+                <button @click="testVoice('door_rl_close')" class="h-[52px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[16px] cursor-pointer">试听</button>
+                <button @click="toggleSetting('voice_enable_door_rl_close')" :class="['h-[52px] px-3.5 rounded-lg border-2 font-black text-[16px] cursor-pointer', store.vehicleAuto.voice_enable_door_rl_close ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_rl_close ? '开启' : '关闭' }}</button>
               </div>
             </div>
           </div>
@@ -212,15 +211,15 @@
             <div class="flex items-center justify-between">
               <span class="text-[14px] text-car-sub font-bold">开门播报</span>
               <div class="flex items-center space-x-2">
-                <button @click="testVoice('door_rr')" class="h-[50px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[13.5px] cursor-pointer">试听</button>
-                <button @click="toggleSetting('voice_enable_door_rr')" :class="['h-[50px] px-3.5 rounded-lg border-2 font-black text-[13.5px] cursor-pointer', store.vehicleAuto.voice_enable_door_rr ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_rr ? '开启' : '关闭' }}</button>
+                <button @click="testVoice('door_rr')" class="h-[52px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[16px] cursor-pointer">试听</button>
+                <button @click="toggleSetting('voice_enable_door_rr')" :class="['h-[52px] px-3.5 rounded-lg border-2 font-black text-[16px] cursor-pointer', store.vehicleAuto.voice_enable_door_rr ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_rr ? '开启' : '关闭' }}</button>
               </div>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-[14px] text-car-sub font-bold">关门播报</span>
               <div class="flex items-center space-x-2">
-                <button @click="testVoice('door_rr_close')" class="h-[50px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[13.5px] cursor-pointer">试听</button>
-                <button @click="toggleSetting('voice_enable_door_rr_close')" :class="['h-[50px] px-3.5 rounded-lg border-2 font-black text-[13.5px] cursor-pointer', store.vehicleAuto.voice_enable_door_rr_close ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_rr_close ? '开启' : '关闭' }}</button>
+                <button @click="testVoice('door_rr_close')" class="h-[52px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[16px] cursor-pointer">试听</button>
+                <button @click="toggleSetting('voice_enable_door_rr_close')" :class="['h-[52px] px-3.5 rounded-lg border-2 font-black text-[16px] cursor-pointer', store.vehicleAuto.voice_enable_door_rr_close ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_rr_close ? '开启' : '关闭' }}</button>
               </div>
             </div>
           </div>

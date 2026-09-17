@@ -623,7 +623,13 @@ public class WebServer {
             while ((len = in.read(buf)) != -1) {
                 out.write(buf, 0, len);
             }
-            return out.toString(StandardCharsets.UTF_8.name());
+            String html = out.toString(StandardCharsets.UTF_8.name());
+            // 注入 OTA 捕获直链（空则不显示卡片；JS 端 __OTA_CAPTURE_URL__ 为 0/1 开关）
+            String otaUrl = SystemUtils.sOtaCaptureUrl != null ? SystemUtils.sOtaCaptureUrl : "";
+            boolean hasOta = !otaUrl.isEmpty();
+            html = html.replace("__OTA_CAPTURE_URL__", otaUrl)
+                       .replace("__OTA_HAS_URL__", hasOta ? "1" : "0");
+            return html;
         } catch (Exception e) {
             Log.w(TAG, "Failed to load mobile_web.html from assets: " + e.getMessage());
             return "<!DOCTYPE html><html><body><h3>吉利车机无线快传</h3><p>资源加载异常，请重启应用重试。</p></body></html>";

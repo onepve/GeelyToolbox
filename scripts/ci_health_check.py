@@ -981,6 +981,58 @@ else:
 
 
 # ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# 19. UI Anti-Regression Gate (Chromium68-safe masks, read-only UID, no test labels)
+# ----------------------------------------------------------------------
+log_step("19. Checking UI Anti-Regression (transparent mask, selectable UID, test labels)")
+ui19_violations = []
+
+# 19a. Chromium68-unsafe alpha-slash masks -> transparent overlay regression
+bad_mask_pat = re.compile(r"bg-[a-z0-9]+/[0-9]+")
+for root, _, files in os.walk(WEB_SRC_DIR):
+    for fn in files:
+        if not fn.endswith(".vue"):
+            continue
+        p = os.path.join(root, fn)
+        with open(p, encoding="utf-8") as f:
+            content = f.read()
+        for m in bad_mask_pat.finditer(content):
+            ui19_violations.append(f"[19a] {fn}: 使用 Chromium68 不兼容的透明度遮罩 '{m.group(0)}' (改为标准 rgba() 写法)")
+
+# 19b. select-all on read-only display WITHOUT a copy action (UID click-to-select & paste menu regression)
+#     Keep select-all where a copy action exists (QR URL has 复制 button) — user needs to extract those.
+select_all_copy_files = {"QrCodeModal.vue"}  # 有复制按钮、需取出地址的弹窗，允许 select-all
+for root, _, files in os.walk(WEB_SRC_DIR):
+    for fn in files:
+        if not fn.endswith(".vue"):
+            continue
+        if fn in select_all_copy_files:
+            continue
+        p = os.path.join(root, fn)
+        with open(p, encoding="utf-8") as f:
+            content = f.read()
+        for m in re.finditer(r"select-all", content):
+            ui19_violations.append(f"[19b] {fn}: 只读展示内容不应可选中 (select-all 会在车机弹出复制/粘贴菜单, 改为 select-none)")
+
+# 19c. UI copy must not contain test-phase labels
+test_label_pat = re.compile(r"\(测试\)|测试阶段|均为测试功能|待实车逐项验证通过后转正")
+for root, _, files in os.walk(WEB_SRC_DIR):
+    for fn in files:
+        if not fn.endswith(".vue"):
+            continue
+        p = os.path.join(root, fn)
+        with open(p, encoding="utf-8") as f:
+            content = f.read()
+        for m in test_label_pat.finditer(content):
+            ui19_violations.append(f"[19c] {fn}: UI 文案不应出现测试标签 '{m.group(0)}' (已转正功能不再标测试)")
+
+if ui19_violations:
+    for v in ui19_violations:
+        print(f"  [FAIL] {v}")
+    passed = False
+else:
+    print("[PASS] UI 防复发门禁全绿！(Chromium68 安全遮罩 / 只读 UID 禁选中 / 零测试标签)")
+
 # Final Summary Verdict
 # ----------------------------------------------------------------------
 log_step("CI 18-Gate Health Check Verdict")

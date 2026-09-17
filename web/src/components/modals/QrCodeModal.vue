@@ -12,9 +12,10 @@
         :class="[
           'px-5 py-2.5 rounded-full font-black text-[16px] mb-5 shadow-sm flex items-center space-x-2',
           isWifiConnected 
-            ? 'bg-emerald-500/15 text-emerald-500 border-2 border-emerald-500/40' 
-            : 'bg-amber-500/15 text-amber-500 border-2 border-amber-500/40'
+            ? 'text-emerald-500 border-2' 
+            : 'text-amber-500 border-2'
         ]"
+        :style="isWifiConnected ? 'background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4);' : 'background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.4);'"
       >
         <span class="w-2.5 h-2.5 rounded-full" :class="isWifiConnected ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-amber-500'"></span>
         <span>{{ isWifiConnected ? `局域网已就绪: ${serverUrl}` : '提示: 请让手机与车机处于同一热点/Wi-Fi' }}</span>

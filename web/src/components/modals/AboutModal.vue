@@ -34,7 +34,7 @@
         <div class="mt-4 pt-3 border-t border-car-border/60 w-full flex items-center justify-between px-2">
           <span class="text-[14px] text-car-sub font-bold">车机硬件唯一识别码 (UID):</span>
           <div class="flex items-center space-x-2">
-            <span class="text-[15px] text-car-text font-mono font-black bg-car-card px-3 py-1 rounded-lg border border-car-border select-all" :class="uidVisible ? '' : 'tracking-[0.15em]'">
+            <span class="text-[15px] text-car-text font-mono font-black bg-car-card px-3 py-1 rounded-lg border border-car-border select-none" :class="uidVisible ? '' : 'tracking-[0.15em]'">
               {{ uidVisible ? deviceUid : uidMask }}
             </span>
             <button

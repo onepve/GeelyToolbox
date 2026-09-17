@@ -13,8 +13,8 @@
           <div class="flex items-center space-x-3">
             <span class="text-[26px]">⚠️</span>
             <div class="flex flex-col">
-              <span class="text-[17px] font-black text-car-text">请确认：车机自带【系统升级】是否已经运行过？</span>
-              <span class="text-[13.5px] text-car-sub font-bold mt-0.5">
+              <span class="text-[19.5px] font-black text-car-text">请确认：车机自带【系统升级】是否已经运行过？</span>
+              <span class="text-[16px] text-car-sub font-bold mt-0.5">
                 原厂固件下载链接仅在官方升级程序发起联网检查更新时，才会实时记录到系统日志中。
               </span>
             </div>
@@ -55,8 +55,8 @@
         <!-- 抓取中状态 -->
         <div v-if="loading" class="py-12 flex flex-col items-center justify-center space-y-3">
           <div class="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
-          <span class="text-[16.5px] font-black text-car-text">正在检索系统升级日志与缓存目录...</span>
-          <span class="text-[13.5px] text-car-sub font-bold">正在匹配 http/https 固件下载直链</span>
+          <span class="text-[19px] font-black text-car-text">正在检索系统升级日志与缓存目录...</span>
+          <span class="text-[16px] text-car-sub font-bold">正在匹配 http/https 固件下载直链</span>
         </div>
 
         <!-- 抓取成功展示直链 -->
@@ -64,19 +64,21 @@
           <div class="p-4 rounded-2xl bg-emerald-500/15 border-2 border-emerald-500/40 text-emerald-400 flex items-center space-x-3">
             <span class="text-[24px]">🎉</span>
             <div class="flex flex-col">
-              <span class="text-[17px] font-black">成功捕获原厂 OTA 固件下载直链！</span>
-              <span class="text-[13px] text-emerald-300/80 font-bold mt-0.5">
+              <span class="text-[19.5px] font-black">成功捕获原厂 OTA 固件下载直链！</span>
+              <span class="text-[15.5px] text-emerald-300/80 font-bold mt-0.5">
                 {{ captureResult.details || '已从官方升级服务日志中精准提取' }}
               </span>
             </div>
           </div>
 
-          <!-- URL 结果大框 -->
+          <!-- URL 结果大框 (readonly: 可点击/可拖动查看, 不可编辑内容) -->
           <div class="flex flex-col space-y-2">
-            <span class="text-[14px] text-car-sub font-bold">官方升级包直接下载地址：</span>
-            <div class="p-4 rounded-2xl bg-[#0A0D12] border-2 border-white/10 text-emerald-400 font-mono text-[14.5px] leading-relaxed break-all select-all shadow-inner">
-              {{ captureResult.url }}
-            </div>
+            <span class="text-[16.5px] text-car-sub font-bold">官方升级包直接下载地址：</span>
+            <textarea
+              readonly
+              rows="4"
+              class="w-full p-4 rounded-2xl bg-[#0A0D12] border-2 border-white/10 text-emerald-400 font-mono text-[16.5px] leading-relaxed break-all resize-none select-text overflow-y-auto shadow-inner focus:outline-none"
+            >{{ captureResult.url }}</textarea>
           </div>
 
           <div class="flex items-center justify-between pt-2">
@@ -100,8 +102,8 @@
           <div class="p-4 rounded-2xl bg-car-item border border-car-border text-car-text flex items-center space-x-3">
             <span class="text-[24px]">🔍</span>
             <div class="flex flex-col">
-              <span class="text-[16.5px] font-black">未在当前日志中捕获到有效下载直链</span>
-              <span class="text-[13px] text-car-sub font-bold mt-0.5">
+              <span class="text-[19px] font-black">未在当前日志中捕获到有效下载直链</span>
+              <span class="text-[15.5px] text-car-sub font-bold mt-0.5">
                 车机可能已是最新版本暂无推包，或日志已被系统滚动覆盖。
               </span>
             </div>
@@ -109,8 +111,8 @@
 
           <!-- 日志输出诊断框 -->
           <div class="flex flex-col space-y-1.5">
-            <span class="text-[13.5px] text-car-sub font-bold">抓取日志诊断输出：</span>
-            <pre class="p-4 max-h-[180px] overflow-y-auto rounded-2xl bg-[#0A0D12] border border-white/10 text-slate-300 font-mono text-[13px] leading-relaxed select-text whitespace-pre-wrap">{{ captureResult.details || '当前日志缓冲区无 ecarx.upgrade / otaservice 联网记录' }}</pre>
+            <span class="text-[16px] text-car-sub font-bold">抓取日志诊断输出：</span>
+            <pre class="p-4 max-h-[180px] overflow-y-auto rounded-2xl bg-[#0A0D12] border border-white/10 text-slate-300 font-mono text-[15.5px] leading-relaxed select-text whitespace-pre-wrap">{{ captureResult.details || '当前日志缓冲区无 ecarx.upgrade / otaservice 联网记录' }}</pre>
           </div>
 
           <div class="flex items-center justify-between pt-2">

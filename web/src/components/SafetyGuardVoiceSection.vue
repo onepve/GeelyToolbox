@@ -5,14 +5,14 @@
       <div class="w-[58%] max-w-[58%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
           <span :class="['w-3.5 h-3.5 rounded-full shadow-md shrink-0', activeGuardCount > 0 ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-slate-400']"></span>
-          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">车况安全守护语音 (测试)</span>
-          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
+          <span class="text-[24px] font-black text-car-text tracking-wide whitespace-nowrap">车况安全守护语音</span>
+          <span class="px-3 py-0.5 text-[15.5px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
             <span :class="['w-2.5 h-2.5 rounded-full mr-2', activeGuardCount > 0 ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-slate-400']"></span>
             {{ activeGuardCount }} / 2 项守护运行中
           </span>
         </div>
         <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-          两项底盘安全信号守护语音均为测试功能，逐项独立开关。语音仅作辅助提醒，不能替代仪表与警示灯；未知信号不报警。
+          两项底盘安全信号守护语音逐项独立开关。语音仅作辅助提醒，不能替代仪表与警示灯；未知信号不报警。
         </div>
       </div>
       <div class="shrink-0 w-[230px]">
@@ -20,8 +20,8 @@
           @click="showArbiterHelp"
           class="w-full h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center bg-car-item border-car-accent"
         >
-          <span class="text-[17.5px] font-black text-car-text tracking-wide whitespace-nowrap">语音协同与仲裁说明</span>
-          <span class="text-[12.5px] font-bold mt-1 text-car-accent whitespace-nowrap">通话静默规则 · 点击查看</span>
+          <span class="text-[20px] font-black text-car-text tracking-wide whitespace-nowrap">语音协同与仲裁说明</span>
+          <span class="text-[15px] font-bold mt-1 text-car-accent whitespace-nowrap">通话静默规则 · 点击查看</span>
         </button>
       </div>
     </div>
@@ -32,7 +32,7 @@
       <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200">
         <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
-            <span class="text-[20px] font-black text-car-text tracking-wide">方向盘未回正提醒 (测试)</span>
+            <span class="text-[20px] font-black text-car-text tracking-wide">方向盘未回正提醒</span>
             <button
               @click.stop="showSteerHelp"
               class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
@@ -77,7 +77,7 @@
       <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200">
         <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
-            <span class="text-[20px] font-black text-car-text tracking-wide">电子手刹未拉起预警 (测试)</span>
+            <span class="text-[20px] font-black text-car-text tracking-wide">电子手刹未拉起预警</span>
             <button
               @click.stop="showEpbHelp"
               class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
@@ -146,9 +146,9 @@ function testVoice(type) {
 
 function showSteerHelp() {
   openModal('confirm', {
-    title: '【测试功能指南】方向盘未回正提醒',
+    title: '【功能指南】方向盘未回正提醒',
     desc: '1. 触发条件：挂入 P 挡解开安全带或推开主驾车门准备下车时，方向盘偏离中心角度较大则温婉提醒回正。\n\n2. 克制表述：偶尔停放时方向盘未完全回正属正常现象，不必然伤车；坡道停车请按驾驶规范转向车轮并拉起手刹。\n\n3. 辅助定位：本提醒仅作下车前辅助提示，不替代仪表与警示灯；未知信号不报警。',
-    tip: '测试阶段功能，待实车逐项验证通过后转正。',
+    tip: '语音仅作辅助提醒，不替代仪表与警示灯；未知信号不报警。',
     showCancel: false,
     confirmText: '我知道了'
   });
@@ -156,9 +156,9 @@ function showSteerHelp() {
 
 function showEpbHelp() {
   openModal('confirm', {
-    title: '【测试功能指南】电子手刹未拉起预警',
+    title: '【功能指南】电子手刹未拉起预警',
     desc: '1. 触发条件：挂 P 挡推开主驾车门瞬间，检测到电子手刹未拉起时语音警报。\n\n2. 防溜车定位：纯语音提醒不遮挡视线，防止坡道溜车隐患。\n\n3. 辅助定位：仅作辅助提醒，不替代仪表与警示灯；未知信号不报警。',
-    tip: '测试阶段功能，待实车逐项验证通过后转正。',
+    tip: '语音仅作辅助提醒，不替代仪表与警示灯；未知信号不报警。',
     showCancel: false,
     confirmText: '我知道了'
   });

@@ -1005,6 +1005,8 @@ public class SystemUtils {
         return false;
     }
 
+    public static volatile String sOtaCaptureUrl = "";
+
     public static OtaExtractResult extractOtaUrl() {
         OtaExtractResult result = new OtaExtractResult();
 
@@ -1021,6 +1023,7 @@ public class SystemUtils {
                         if (url != null) {
                             result.success = true;
                             result.url = url;
+                            sOtaCaptureUrl = url;
                             result.details = "发现于升级缓存: " + f.getName();
                             return result;
                         }
@@ -1038,6 +1041,7 @@ public class SystemUtils {
                 if (url != null) {
                     result.success = true;
                     result.url = url;
+                    sOtaCaptureUrl = url;
                     result.details = "从系统实时日志中捕获";
                     return result;
                 }
@@ -1053,6 +1057,7 @@ public class SystemUtils {
                 if (url != null) {
                     result.success = true;
                     result.url = url;
+                    sOtaCaptureUrl = url;
                     result.details = "从 OTA 服务存储配置中提取";
                     return result;
                 }
@@ -1061,6 +1066,7 @@ public class SystemUtils {
         }
 
         result.success = false;
+        sOtaCaptureUrl = "";
         return result;
     }
 

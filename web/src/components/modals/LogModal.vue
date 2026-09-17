@@ -29,6 +29,9 @@
           </button>
         </div>
         <div class="mt-3 pt-4 border-t border-car-border/40 flex flex-col space-y-2 text-[12.5px] leading-relaxed">
+          <div class="text-car-sub font-bold">
+            【导出内容说明】：导出的是<strong class="text-car-text">系统全量日志 (logcat)</strong>与按关键词分类的专属切片（方控按键 / 换挡 / 车门 / 蓝牙 / 电源 / 应用安装），来自系统底层 logcat 缓冲区实时倾倒，非本工具操作记录。
+          </div>
           <div class="text-car-accent font-bold">
             【存储寿命保护】：出厂默认全部关闭。守护日志全程在 RAM 内存流转，0 次磁盘擦写磨损；仅在需要排查问题时按需开启对应模块。
           </div>
