@@ -117,15 +117,15 @@
           </div>
         </div>
 
-        <!-- 任务两段流（纵向堆叠拉宽填充，根治「一宽一窄不协调」） -->
-        <div class="flex flex-col space-y-3 pt-1 min-w-0 flex-1">
+        <!-- 任务两段流（纵向堆叠拉宽填充，根治「一宽一窄不协调」；shrink-0 防旧内核 WebView66 flex 压缩致步进器穿卡悬浮） -->
+        <div class="flex flex-col space-y-3 pt-1 min-w-0 flex-1 shrink-0">
           <!-- 当: 车速控制器 -->
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3 min-w-0 flex-1">
+          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3 min-w-0 flex-1 shrink-0">
             <div class="flex items-center space-x-3">
               <span class="text-[16px] font-black text-car-text">出 P 挡起步行驶，车速达到设定阈值：</span>
             </div>
-            <!-- 纯加减数值步进器 -->
-            <div class="flex items-center justify-between bg-car-card border-2 border-car-border rounded-2xl p-2.5">
+            <!-- 纯加减数值步进器 (shrink-0: 车机 WebView66 旧内核 flex 压缩会使按钮穿出卡外悬浮) -->
+            <div class="flex items-center justify-between bg-car-card border-2 border-car-border rounded-2xl p-2.5 shrink-0">
               <div class="flex items-center space-x-2">
                 <button 
                   @click="adjustAutoplaySpeed(-5)"
@@ -197,7 +197,7 @@
         </div>
 
         <!-- 启播目标音乐应用选择 (支持自动探测、手动强刷扫描、▲/▼ 优先级排序与更多软件选择) -->
-        <div class="pt-3 flex flex-col space-y-3 border-t border-car-border/60 min-w-0 flex-1">
+        <div class="pt-3 flex flex-col space-y-3 border-t border-car-border/60 min-w-0 flex-1 shrink-0">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2">
               <span class="text-[15.5px] font-black text-car-text">自启首选主力音乐软件，开机自动探测，点击磁贴即设为首选：</span>
@@ -272,14 +272,14 @@
           </div>
         </div>
 
-        <div class="flex flex-col pt-1 min-w-0 flex-1">
+        <div class="flex flex-col pt-1 min-w-0 flex-1 shrink-0">
           <!-- 当: 设定速度 -->
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-center space-y-3 min-w-0 flex-1">
+          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-center space-y-3 min-w-0 flex-1 shrink-0">
             <div class="flex items-center space-x-3">
               <span class="text-[16px] font-black text-car-text">起步加速，当前车速达到设定阈值：</span>
             </div>
             <!-- 纯加减数值步进器 -->
-            <div class="flex items-center justify-between bg-car-card border-2 border-car-border rounded-2xl p-2.5">
+            <div class="flex items-center justify-between bg-car-card border-2 border-car-border rounded-2xl p-2.5 shrink-0">
               <div class="flex items-center space-x-2">
                 <button 
                   @click="adjustCustomActionSpeed(-5)"
@@ -318,7 +318,7 @@
           </div>
 
           <!-- 就: 执行动作 -->
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-center space-y-3 min-w-0 flex-1 mt-3">
+          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-center space-y-3 min-w-0 flex-1 mt-3 shrink-0">
             <div class="flex items-center space-x-3">
               <span class="text-[16px] font-black text-car-text">自动唤起预选目标（单次行程防抖，回 P 挡重置）：</span>
             </div>
