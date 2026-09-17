@@ -1,5 +1,6 @@
 package app.onepve.geelyconsole.utils;
 
+import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -718,9 +719,14 @@ public class SteeringWheelKeyManager {
                 lastToggleActionAt = toggleNow;
                 lastToggleWasPause = playingNow;
                 if (playingNow) {
-                    // 按压前先判定「本次是否为暂停动作」：若正在播放，则本次按下即暂停，
-                    // 必须开启自动唤醒抑制窗口，否则原车 EAS 约 1.5 秒后会强拉回播放。
-                    EasMediaBridge.getInstance(context).suppressAutoWakeAfterUserPause(8000);
+                    // 蓝牙开关分入口（2026-09-17 用户真车口径：蓝牙关时暂停/播放正常，蓝牙开时才异常）：
+                    // - 蓝牙关：走纯原厂直发入口，不武装抑制窗口（蓝牙链路不存在，无需抑制），
+                    //   行为与「蓝牙修复前」完全一致，绝不被蓝牙修复牵连；
+                    // - 蓝牙开：武装抑制窗口 15 秒（原 8 秒太短，原车 EAS 仲裁链可能超时），
+                    //   拦截 A2DP 晚到事件与 EAS 重新仲裁把暂停顶回播放。
+                    if (isBluetoothEnabled()) {
+                        EasMediaBridge.getInstance(context).suppressAutoWakeAfterUserPause(15000);
+                    }
                     sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PAUSE);
                 } else {
                     sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PLAY);
@@ -738,6 +744,18 @@ public class SteeringWheelKeyManager {
             case ACTION_SCREEN_OFF:
                 turnScreenOff();
                 break;
+        }
+    }
+
+    /**
+     * 蓝牙开关是否已打开（蓝牙修复分入口判定：蓝牙关时走纯原厂直发，不武装抑制窗口）。
+     */
+    private boolean isBluetoothEnabled() {
+        try {
+            BluetoothAdapter ba = BluetoothAdapter.getDefaultAdapter();
+            return ba != null && ba.isEnabled();
+        } catch (Throwable ignored) {
+            return false;
         }
     }
 

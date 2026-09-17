@@ -199,6 +199,14 @@ public class EasMediaBridge {
      * 选通原车蓝牙音频硬件通道并申请焦点
      */
     public synchronized void activateBluetoothChannel() {
+        // 2026-09-17 修复：抑制窗口内严禁通道选通。
+        // 真车日志 17:59:20.900：用户刚暂停（17:59:19.465）后 updateCurrentSourceType(6)
+        // 仍被下发，选通动作会触发原车 EAS 重新仲裁音频源，把用户暂停顶回播放。
+        // 仅跳过 play() 唤醒不够，通道选通本身也要在抑制窗口内拦截。
+        if (isAutoWakeSuppressed()) {
+            AppLogger.i("蓝牙音频", "处于用户暂停抑制窗口内，跳过蓝牙通道选通 (尊重用户暂停意图)");
+            return;
+        }
         try {
             if (mApi != null && mRegistered && mToken != null) {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
@@ -248,20 +256,40 @@ public class EasMediaBridge {
 
     /** 用户主动暂停后的自动唤醒抑制截止时间戳 (ms)，期间严禁任何自动 play() */
     private volatile long autoWakeSuppressUntil = 0L;
+    private static final String PREFS_AUTO_WAKE_SUPPRESS = "auto_wake_suppress_until";
+    private static final String PREFS_NAME = "toolbox_settings";
 
     /**
      * 用户主动暂停后开启自动唤醒抑制窗口。
      * 事实依据（真车日志）：原车 EAS 在暂停后约 1.5 秒重新仲裁音频源并回调选通流程，
      * 若无条件下发 play()，会把用户刚按下的暂停强行顶回播放，表现为「暂停后立马又继续播放」。
+     *
+     * 2026-09-17 修复：抑制窗口落盘 SharedPreferences —— 此前为纯内存态，
+     * 应用一重启（日志 18:00:01 应用重启）窗口即归零，A2DP 晚到事件与 EAS 重新仲裁
+     * 会把用户暂停顶回播放。落盘后重启不丢，窗口语义完整。
      */
     public synchronized void suppressAutoWakeAfterUserPause(long ms) {
-        autoWakeSuppressUntil = System.currentTimeMillis() + ms;
-        AppLogger.i("蓝牙音频", "用户主动暂停，已开启 " + (ms / 1000) + " 秒自动唤醒抑制窗口");
+        long until = System.currentTimeMillis() + ms;
+        autoWakeSuppressUntil = until;
+        try {
+            appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit().putLong(PREFS_AUTO_WAKE_SUPPRESS, until).apply();
+        } catch (Throwable ignored) {}
+        AppLogger.i("蓝牙音频", "用户主动暂停，已开启 " + (ms / 1000) + " 秒自动唤醒抑制窗口 (已落盘)");
     }
 
     /** 当前是否处于「用户主动暂停后的自动唤醒抑制窗口」内（供车身联动等自动 play() 前守卫查询） */
     public synchronized boolean isAutoWakeSuppressed() {
-        return System.currentTimeMillis() < autoWakeSuppressUntil;
+        // 合并内存态与落盘态：启动时从 SharedPreferences 恢复，重启后窗口依然有效
+        if (System.currentTimeMillis() < autoWakeSuppressUntil) return true;
+        try {
+            long persisted = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    .getLong(PREFS_AUTO_WAKE_SUPPRESS, 0L);
+            if (persisted > autoWakeSuppressUntil) autoWakeSuppressUntil = persisted;
+            return System.currentTimeMillis() < autoWakeSuppressUntil;
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 
     /**
