@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col space-y-6">
+  <div class="flex flex-col space-y-6 shrink-0">
     <!-- 仅在应用商店未冻结时展示的警示横幅 (已冻结时自动隐藏，保持界面清爽) - 布局完全复刻 WheelView 方控总开关黄金分栏 -->
     <div 
       v-if="!store.deviceInfo.appstore_frozen" 

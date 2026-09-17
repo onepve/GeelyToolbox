@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col space-y-7">
+  <div class="flex flex-col space-y-7 shrink-0">
     <!-- 双列对称：左列【桌面悬浮微胶囊】 + 右列【闲置自动息屏保护】 -->
     <div class="grid grid-cols-2 gap-5 items-stretch">
       <!-- 左列：桌面迷你悬浮胶囊 (强制等高 h-full min-h-[460px]) -->
