@@ -1050,6 +1050,17 @@ if os.path.exists(appdetail_path):
     for m in HARDCODED_THEME_PAT.finditer(ad_content):
         ui19_violations.append(f"[19c3] components/modals/AppDetailModal.vue: 卡主题提示禁止硬编码 id 判断 '{m.group(0)}' (必须走云端 need_theme_install 字段)")
 
+# 19c4. 商城禁用第三方应用图标（2026-09-17 用户定案：全部移除不再使用）——禁止 <img> 渲染 getAppIcon / 引用 app_icons 资产 / 复活 utils/appIcons.js
+APP_ICON_PAT = re.compile(r"getAppIcon|app_icons|utils/appIcons")
+ICON_VIEW_FILES = ["views/StoreView.vue", "components/modals/AllAppsModal.vue", "components/modals/AppSelectModal.vue", "views/InstallView.vue"]
+for _rel in ICON_VIEW_FILES:
+    _p = os.path.join(WEB_SRC_DIR, _rel)
+    if os.path.exists(_p):
+        with open(_p, encoding="utf-8") as f:
+            _c = f.read()
+        for m in APP_ICON_PAT.finditer(_c):
+            ui19_violations.append(f"[19c4] {_rel}: 商城禁用第三方应用图标 '{m.group(0)}' (2026-09-17 已全部移除, 用首字徽标替代, 勿恢复)")
+
 # 19d. Icon PNGs must not contain black pixel blocks (right-bottom corner sampling)
 try:
     from PIL import Image

@@ -77,11 +77,10 @@
         >
           <!-- 左侧信息 (含车规拟物圆角图标) -->
           <div class="flex items-center space-x-3.5 min-w-0 flex-1 pr-4">
-            <img 
-              :src="getAppIcon(app.pkg)" 
-              class="w-12 h-12 rounded-2xl object-cover border border-car-border/60 shadow-md shrink-0" 
-              alt="icon"
-            />
+            <!-- 应用首字徽标 (不使用第三方应用图标) -->
+            <div class="w-12 h-12 rounded-2xl bg-car-card border border-car-border/60 shadow-md shrink-0 flex items-center justify-center">
+              <span class="text-[19px] font-black text-car-accent leading-none">{{ (app.name || '?').slice(0, 1) }}</span>
+            </div>
             <div class="flex flex-col space-y-1 min-w-0 flex-1">
               <div class="flex items-center space-x-2.5">
                 <span class="text-[17.5px] font-black text-car-text truncate">{{ app.name }}</span>
@@ -171,7 +170,6 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, openModal, showToast } from '../../store';
-import { getAppIcon } from '../../utils/appIcons';
 
 const allApps = ref([]);
 const isLoading = ref(false);
