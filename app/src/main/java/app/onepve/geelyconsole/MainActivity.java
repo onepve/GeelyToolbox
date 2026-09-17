@@ -3320,6 +3320,24 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public int forceRestoreFactoryVoice() {
+            final int count = VehicleVoicePlayer.forceRestoreFactoryVoice(MainActivity.this);
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (count >= 0) {
+                        showToast("已强制重装官方原声，共更新 " + count + " 个音频文件");
+                        VehicleVoicePlayer.getInstance(MainActivity.this).play("gear_d.mp3", "官方原声已强制重装完成");
+                    } else {
+                        showToast("原声重装失败，请稍后重试");
+                    }
+                    callJs("if(window.refreshVoiceThemes) window.refreshVoiceThemes();");
+                }
+            });
+            return count;
+        }
+
+        @JavascriptInterface
         public String scanVoiceZipsInDownload() {
             try {
                 File downloadDir = SystemUtils.getAppDownloadDir();

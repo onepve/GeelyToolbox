@@ -46,8 +46,7 @@
               只要手机与车机处于同一 Wi-Fi 或车机热点下，扫码即可秒开网页，将手机下载的高德地图、音乐等 APK 秒传至车机 Download 目录。
             </div>
             <div class="flex items-center text-[14px] text-car-sub font-mono font-bold">
-              <span class="px-2.5 py-0.5 rounded bg-car-card border border-car-border mr-3 text-car-text">HTTP 服务端口: 8888</span>
-              <span>当前局域网 IP: {{ store.deviceInfo.car_ip || '未连接热点' }}</span>
+              <span class="whitespace-nowrap min-w-0 truncate">当前局域网 IP: {{ store.deviceInfo.car_ip ? store.deviceInfo.car_ip + ':8888' : '未连接热点' }}</span>
             </div>
           </div>
 

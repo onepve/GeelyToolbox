@@ -243,8 +243,8 @@
       title="4. 座舱专属语音主题包 (一键整套换装 · 物理隔离)"
       desc="支持导入车规级 ZIP 语音包。所有语音主题物理隔离保存在 /sdcard/GeelyPilot/voices/ 专属目录中，清空下载目录绝不受任何影响！"
       helpTitle="【功能指南】座舱专属语音主题包"
-      helpText="1. 整套换装：&#10;支持导入车规级 ZIP 语音包，一键整套替换全车播报音色与音效。&#10;&#10;2. 物理隔离：&#10;所有语音主题独立保存在 /sdcard/GeelyPilot/voices/ 专属目录，与下载目录完全隔离，清空 Download 目录绝不影响已导入主题。&#10;&#10;3. 出厂兜底：&#10;未导入任何主题时自动使用出厂官方晓晓原声；导入的主题若有音频缺失项，自动补齐兜底，确保零丢失。"
-      helpTip="导入前请确认 ZIP 为车规语音包结构，删除主题会自动恢复出厂原声。"
+      helpText="1. 整套换装：&#10;支持导入车规级 ZIP 语音包，一键整套替换全车播报音色与音效。&#10;&#10;2. 物理隔离：&#10;所有语音主题独立保存在 /sdcard/GeelyPilot/voices/ 专属目录，与下载目录完全隔离，清空 Download 目录绝不影响已导入主题。&#10;&#10;3. 出厂兜底：&#10;未导入任何主题时自动使用出厂官方晓晓原声；导入的主题若有音频缺失项，自动补齐兜底，确保零丢失。&#10;&#10;4. 强制重装原声：&#10;App 升级后如果听到的还是旧声音，点一下「强制重装原声」，就会把车上旧的原声文件全部删掉，用车机里最新版的原声重新覆盖一遍，并自动切回出厂官方原声。"
+      helpTip="导入前请确认 ZIP 为车规语音包结构，删除主题会自动恢复出厂原声；升级后声音没换成新的，点「强制重装原声」即可。"
     >
       <div class="flex flex-col space-y-4">
         <!-- 状态与快捷操作顶栏 -->
@@ -304,7 +304,13 @@
               >
                 试听样音
               </button>
-              <button 
+              <button
+                @click="confirmForceRestoreFactory"
+                class="h-[52px] px-6 bg-car-card border-2 border-car-border text-car-accent font-black text-[16px] rounded-xl hover:border-car-accent cursor-pointer shadow-sm transition-all"
+              >
+                强制重装原声
+              </button>
+              <button
                 v-if="activeThemeName"
                 @click="applyVoiceTheme('')"
                 class="h-[52px] px-6 bg-car-card border-2 border-car-accent text-car-accent font-black text-[16px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md transition-all"
@@ -474,6 +480,25 @@ function applyVoiceTheme(themeName) {
   bridge.call('setActiveVoiceTheme', themeName);
   activeThemeName.value = themeName;
   loadVoiceThemes();
+}
+
+// 强制重装官方原声：App 升级后若仍听到旧原声，一键清掉车上旧文件、用新版原声全量覆盖
+function confirmForceRestoreFactory() {
+  openModal('confirm', {
+    title: '强制重装官方原声',
+    desc: '会把车上旧的原声文件全部删掉，用车机里最新版的原声重新覆盖一遍，并自动切回出厂官方原声。',
+    tip: '正在使用的自定义语音包会被取消生效，但文件不会被删除，随时可以再整套启用。',
+    confirmText: '立即重装原声',
+    onConfirm: () => {
+      const count = bridge.call('forceRestoreFactoryVoice');
+      if (typeof count === 'number' && count >= 0) {
+        showToast(`已强制重装原声，更新 ${count} 个音频文件`);
+      } else {
+        showToast('原声重装失败，请稍后重试');
+      }
+      loadVoiceThemes();
+    }
+  });
 }
 
 function testThemeVoice(themeName) {

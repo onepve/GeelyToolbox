@@ -361,29 +361,103 @@ public class VehicleVoicePlayer {
             @Override
             public void run() {
                 try {
-                    File voiceDir = new File(context.getFilesDir(), "voices");
-                    if (!voiceDir.exists()) voiceDir.mkdirs();
-                    String[] list = context.getAssets().list("audio");
-                    if (list != null) {
-                        for (String f : list) {
-                            File dest = new File(voiceDir, f);
-                            if (!dest.exists() || dest.length() == 0) {
-                                try (InputStream in = context.getAssets().open("audio/" + f);
-                                     FileOutputStream out = new FileOutputStream(dest)) {
-                                    byte[] buf = new byte[16 * 1024];
-                                    int len;
-                                    while ((len = in.read(buf)) > 0) {
-                                        out.write(buf, 0, len);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    // 版本号驱动：App 升级后全量覆盖内置原声，确保新音频立即生效
+                    syncBuiltinAssets(context, false);
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to pre-extract assets: " + e.getMessage());
                 }
             }
         }).start();
+    }
+
+    private static int currentVersionCode(Context context) {
+        try {
+            return context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionCode;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 把 assets/audio 里的内置原声同步到私有目录。
+     *
+     * 旧版只在「目标文件不存在」时复制，App 升级换了新原声也不覆盖，
+     * 车上听到的一直是旧声音 —— 这里改为版本号驱动：
+     *   force=false：版本号变化时全量覆盖（升级自动换新原声）
+     *   force=true ：无视版本号强制全量覆盖（「强制重装原声」按钮调用）
+     *
+     * @return 实际写入的文件数；-1 表示当前版本无需刷新或执行失败
+     */
+    public static int syncBuiltinAssets(Context context, boolean force) {
+        try {
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            int code = currentVersionCode(context);
+            int lastCode = prefs.getInt("last_asset_extracted_code", 0);
+            if (!force && code != 0 && code == lastCode) {
+                return -1; // 当前版本已刷新过，无需重复拷贝
+            }
+
+            File voiceDir = new File(context.getFilesDir(), "voices");
+            if (!voiceDir.exists()) voiceDir.mkdirs();
+
+            String[] list = context.getAssets().list("audio");
+            int count = 0;
+            if (list != null) {
+                for (String f : list) {
+                    File dest = new File(voiceDir, f);
+                    try (InputStream in = context.getAssets().open("audio/" + f);
+                         FileOutputStream out = new FileOutputStream(dest)) {
+                        byte[] buf = new byte[16 * 1024];
+                        int len;
+                        while ((len = in.read(buf)) > 0) {
+                            out.write(buf, 0, len);
+                        }
+                    }
+                    count++;
+                }
+            }
+            // 全量覆盖完成后才写入版本戳：中途写会让后续文件永远不再刷新
+            prefs.edit().putInt("last_asset_extracted_code", code).apply();
+            Log.i(TAG, "Builtin voice assets synced (force=" + force + "), files=" + count + ", ver=" + code);
+            return count;
+        } catch (Exception e) {
+            Log.w(TAG, "syncBuiltinAssets error: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    /**
+     * 手动强制恢复官方原声：清掉车机上旧的原声缓存文件，
+     * 用当前版本内置的新原声全量覆盖重装，并切回出厂原声（取消当前生效的语音主题）。
+     * 自定义语音包目录在外部存储，不受影响、不会被删除。
+     *
+     * @return 重新写入的音频文件数；-1 表示失败
+     */
+    public static int forceRestoreFactoryVoice(Context context) {
+        try {
+            File voiceDir = new File(context.getFilesDir(), "voices");
+            if (voiceDir.exists()) {
+                File[] olds = voiceDir.listFiles();
+                if (olds != null) {
+                    for (File f : olds) {
+                        if (f.isFile()) {
+                            // 只删内置原声文件，不动任何子目录
+                            f.delete();
+                        }
+                    }
+                }
+            } else {
+                voiceDir.mkdirs();
+            }
+            // 版本戳归零 + 切回出厂原声，随后强制全量重装
+            context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                   .edit().putInt("last_asset_extracted_code", 0)
+                   .putString("active_voice_theme", "").commit();
+            return syncBuiltinAssets(context, true);
+        } catch (Exception e) {
+            Log.w(TAG, "forceRestoreFactoryVoice error: " + e.getMessage());
+            return -1;
+        }
     }
 
     public boolean isTtsReady() {
@@ -825,16 +899,18 @@ public class VehicleVoicePlayer {
             if (!voiceDir.exists()) voiceDir.mkdirs();
             File target = new File(voiceDir, voiceFileName);
 
-            // 检查应用版本：当升级安装新版时，强制重新从 assets 提取覆盖，确保新音频立即生效！
+            // 版本戳只在 syncBuiltinAssets() 全量覆盖完成后统一写入。
+            // 旧版在这里就地写戳，导致首个播放的文件把版本号拉满，
+            // 其余文件永远不再刷新（升级后「半新半旧」的元凶）。
+            int currentCode = currentVersionCode(context);
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            int currentCode = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionCode;
             int lastExtractedCode = prefs.getInt("last_asset_extracted_code", 0);
 
-            if (target.exists() && target.length() > 0 && currentCode <= lastExtractedCode) {
+            if (target.exists() && target.length() > 0 && currentCode != 0 && currentCode == lastExtractedCode) {
                 return target;
             }
 
-            // 同步从 assets 提取
+            // 版本不一致（App 刚升级）或文件缺失：就地覆盖成当前版本的新音频
             try (InputStream in = context.getAssets().open("audio/" + voiceFileName);
                  FileOutputStream out = new FileOutputStream(target)) {
                 byte[] buf = new byte[16 * 1024];
@@ -842,9 +918,6 @@ public class VehicleVoicePlayer {
                 while ((len = in.read(buf)) > 0) {
                     out.write(buf, 0, len);
                 }
-            }
-            if (currentCode > lastExtractedCode) {
-                prefs.edit().putInt("last_asset_extracted_code", currentCode).apply();
             }
             if (target.exists() && target.length() > 0) {
                 return target;
