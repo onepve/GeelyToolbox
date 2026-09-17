@@ -3,7 +3,7 @@
     <!-- 1. 原生文件管理特权安装通道 (核心通道) -->
     <div class="grid grid-cols-2 gap-5 items-start">
       <FeatureCard class="!mb-0" 
-        title="1. 车载原生文件管理 (特权安装正解通道)"
+        title="车载原生文件管理 (特权安装正解通道)"
         desc="严禁直接通过 ADB 命令行 pm install 强行静默安装，底层安全策略会导致应用无法运行或白屏！"
         helpTitle="【功能指南】车载原生文件管理与特权安装规范"
         helpText="1. 为什么严禁 ADB pm install：&#10;吉利车机系统底层有签名校验安全策略，直接通过 ADB 命令行静默安装会导致第三方软件白屏或签名崩溃闪退。&#10;&#10;2. 特权正解通道：&#10;将安装包放入车机 Download 目录后，通过点击本卡片按钮调起车载原生文件管理，在系统级特权应用内点击安装，系统将自动放行安装并正常运行。"
@@ -34,7 +34,7 @@
       </FeatureCard>
 
       <FeatureCard class="!mb-0" 
-        title="2. 手机局域网无线快传 (免插线极速推包)"
+        title="手机局域网无线快传 (免插线极速推包)"
         desc="无需繁琐插拔 U 盘或携带电脑，通过车机内置 HTTP 文件快传服务直接秒传安装包。"
         helpTitle="【功能指南】手机无线局域网极速推包"
         helpText="1. 免插拔 U 盘原理：&#10;车机内置轻量级 HTTP 局域网传输服务（端口 8888）。手机连接车机 Wi-Fi 热点或同局域网后，扫码即可秒开上传页面。&#10;&#10;2. 自动落盘路径：&#10;手机上传的 APK 会自动保存到车机 /sdcard/Download/ 目录中，随后点击上方 Card 1 原生文件管理即可直接点击安装。"
@@ -62,7 +62,7 @@
 
     <!-- 3. 今日动态工程暗码 (+10 / +5) -->
     <FeatureCard 
-      title="3. 今日动态工程暗码（解锁 ADB）"
+      title="今日动态工程暗码（解锁 ADB）"
       desc="根据车载系统时钟每秒自动计算，直出高亮暗码。车机拨号界面不支持粘贴，请点击按钮打开拨号盘手动按键输入。"
       helpTitle="【功能指南】动态工程暗码算法与拨号盘操作"
       helpText="1. 动态暗码生成机制：&#10;吉利车机工程密码每天根据系统时间动态计算对时。主流新版固件采用「月份+5」算法，早期老固件采用「月份+10」算法。&#10;&#10;2. 拨号盘输入规范：&#10;吉利车机拨号界面原生不支持剪贴板粘贴。请点击右侧「打开拨号盘」按钮调起系统电话，在拨号键盘上照着上方高亮的暗码依次手动输入，即可秒进工程模式。"
@@ -107,11 +107,11 @@
 
     <!-- 4. 专家模式与卡主题伪装注入 -->
     <FeatureCard 
-      title="4. 专家级伪装与卡主题注入 (专家模式)"
+      title="专家级伪装与卡兔子主题注入 (专家模式)"
       desc="解除主题防护白名单限制，支持直接将任意第三方应用伪装注入为桌面兔子时钟屏保卡片。"
-      helpTitle="【功能指南】卡主题伪装注入与安全规范"
-      helpText="1. 核心技术原理：&#10;通过重写吉利原厂桌面兔子时钟屏保卡片（com.ecarx.screensaver）实现无损系统级提权，突破第三方地图签名白名单限制。&#10;&#10;2. 高德免卡兔子升级：&#10;当前高德 7.5 / 8.5 / 9.5 全线已统一使用原厂 AOSP 平台密钥重签，开启白名单后已可直接覆盖安装，无需再卡兔子主题！本专家功能仅留给高阶玩家极客改装使用。"
-      helpTip="高德全线已支持免卡兔子直装，普通车友无需开启专家模式。"
+      helpTitle="【功能指南】卡兔子主题伪装注入与安全规范"
+      helpText="1. 核心技术原理：&#10;通过重写吉利原厂桌面兔子时钟屏保卡片（com.ecarx.screensaver）实现无损系统级提权，突破第三方地图签名白名单限制。&#10;&#10;2. 高德版本兼容说明：&#10;仅高德 8.5 专车版（AE86 版）可直接安装免卡兔子主题；商城内的 9.5 版必须使用本卡兔子主题通道安装，否则无法通过签名校验。其他版本未在商城上架，请用户自行测试兼容性。&#10;&#10;3. 适用场景：&#10;当商城高德 9.5 直装失败、或想安装其它第三方地图时，请使用本专家通道完成卡兔子主题伪装注入。"
+      helpTip="高德 8.5 专车版可直接安装；商城 9.5 版必须走卡兔子主题通道，其他版本请自行测试。"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
         <div class="flex-1 min-w-0 pr-6 flex flex-col">
@@ -123,7 +123,7 @@
             </span>
           </div>
           <div class="text-[15px] text-car-sub font-bold">
-            {{ store.settings.expert_rabbit ? '已解除地图白名单限制，精选软件中心与本地应用详情均可直接调起卡主题注入向导' : '默认仅限车载地图导航使用，点击右侧可解锁专家模式体验完整高级功能' }}
+            {{ store.settings.expert_rabbit ? '已解除地图白名单限制，精选软件中心与本地应用详情均可直接调起卡兔子主题注入向导' : '默认仅限车载地图导航使用，点击右侧可解锁专家模式体验完整高级功能' }}
           </div>
         </div>
 
@@ -143,7 +143,7 @@
       <!-- 专家模式专属工具栏 (激活后平铺直出) -->
       <div v-if="store.settings.expert_rabbit" class="mt-4 pt-4 border-t border-car-border/60 flex flex-col space-y-3">
         <div class="flex items-center space-x-2">
-          <span class="text-[17px] font-black text-car-accent">⚡ 专家模式专属卡主题注入工具：</span>
+          <span class="text-[17px] font-black text-car-accent">⚡ 专家模式专属卡兔子主题注入工具：</span>
           <span class="text-[13.5px] text-car-sub font-bold">突破系统签名保护，半自动保姆式将高德或音乐伪装注入为桌面时钟屏保</span>
         </div>
 
@@ -153,7 +153,7 @@
             @click="openRabbitGuideModal"
             class="min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-accent flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all"
           >
-            <span class="text-[19px] font-black text-car-text">半自动保姆式卡主题向导</span>
+            <span class="text-[19px] font-black text-car-text">半自动保姆式卡兔子主题向导</span>
             <span class="text-[13.5px] font-bold text-car-sub mt-1">分步向导弹窗引导注入与重启覆盖</span>
           </button>
 
@@ -199,8 +199,8 @@ function confirmUnlockExpert() {
     onConfirm: () => {
       // 第 2 次确认：技术原理与行车安全 (5s 倒计时)
       openModal('confirm', {
-        title: '【安全确认】卡主题屏保注入规范 (第 2/3 次确认)',
-        desc: '卡主题注入通过重写原厂兔子时钟屏保包名（com.ecarx.screensaver）实现无损系统级提权。在执行主题注入或整车重启前，请务必保证车辆安全停稳并挂入 P 挡。严禁在行驶途中操作！',
+        title: '【安全确认】卡兔子主题屏保注入规范 (第 2/3 次确认)',
+        desc: '卡兔子主题注入通过重写原厂兔子时钟屏保包名（com.ecarx.screensaver）实现无损系统级提权。在执行主题注入或整车重启前，请务必保证车辆安全停稳并挂入 P 挡。严禁在行驶途中操作！',
         tip: '【操作铁律】严禁在行车行驶过程中执行注入或冷重启！',
         isDanger: true,
         countdown: 5,
@@ -209,7 +209,7 @@ function confirmUnlockExpert() {
           // 第 3 次确认：最终特权授权 (5s 倒计时)
           openModal('confirm', {
             title: '【最终授权】正式激活专家模式 (第 3/3 次确认)',
-            desc: '确认正式激活专家模式？激活后，下方将立即解锁【半自动保姆式卡主题向导】与【调起原生文件管理】两大高阶工具。',
+            desc: '确认正式激活专家模式？激活后，下方将立即解锁【半自动保姆式卡兔子主题向导】与【调起原生文件管理】两大高阶工具。',
             tip: '【提示】后续可随时在此处一键恢复安全锁定。',
             isDanger: true,
             countdown: 5,

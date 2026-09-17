@@ -18,9 +18,9 @@
         <LinkView v-else-if="store.currentNav === 'link'" />
         <BodyView v-else-if="store.currentNav === 'body'" />
         <AudioView v-else-if="store.currentNav === 'audio'" />
-        <FloatingView v-else-if="store.currentNav === 'floating'" />
+        <!-- 桌面悬浮已并入系统维护：floating 导航兼容跳转 -->
+        <SystemView v-else-if="store.currentNav === 'floating' || store.currentNav === 'system'" />
         <InstallView v-else-if="store.currentNav === 'install'" />
-        <SystemView v-else-if="store.currentNav === 'system'" />
       </section>
     </main>
 
@@ -143,6 +143,7 @@ onMounted(() => {
       if (typeof data.floating_enabled === 'boolean') store.settings.floating_pill = data.floating_enabled;
       if (data.floating_display_mode) store.settings.floating_mode = data.floating_display_mode === 'code' ? 'code' : 'title';
       if (typeof data.expert_rabbit_enabled === 'boolean') store.settings.expert_rabbit = data.expert_rabbit_enabled;
+      if (typeof data.silent_appstore_freeze === 'boolean') store.settings.silent_appstore_freeze = data.silent_appstore_freeze;
     } catch (e) {}
   };
 

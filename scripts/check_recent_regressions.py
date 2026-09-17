@@ -66,7 +66,7 @@ CONTRACTS = [
  ('whitelist-cache', JAVA+'utils/SystemUtils.java', 'public static boolean isApkVerifyWhitelistEnabled()',
   [r'WHITELIST_TTL_MS',r'refreshWhitelistAsync\(\)'], [r'executeShell\(']),
  ('adb-cached', JAVA+'utils/SystemUtils.java', 'public static String executePrivileged',
-  [r'isAdbPortOpenCached\(\)',r'execProcess\("su", "-c", cmd, 2500L\)'], [r'\.waitFor\(\)']),
+  [r'isAdbPortOpenCached\(\)', r'executeShell\(cmd\)'], [r'execProcess\("su"', r'\bsu\b']),
  ('process-timeout', JAVA+'utils/SystemUtils.java', 'public static String execProcess',
   [r'waitFor\(timeoutMs,',r't.join\(timeoutMs \+ 200L\)'], [r'\.waitFor\(\)']),
  ('foreground-breaker', JAVA+'utils/ForegroundAppDetector.java', 'private static String queryByDumpsys',

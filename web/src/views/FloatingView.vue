@@ -7,7 +7,7 @@
         <!-- 头部标题 + 帮助 -->
         <div class="flex items-center justify-between shrink-0 mb-4">
           <div class="flex items-center space-x-3">
-            <span class="text-[22px] font-black text-car-text tracking-wide">1. 桌面迷你悬浮胶囊</span>
+            <span class="text-[22px] font-black text-car-text tracking-wide">桌面迷你悬浮胶囊</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">桌面常驻</span>
             <button 
               @click.stop="openFloatingHelp" 
@@ -97,7 +97,7 @@
         <!-- 头部标题 + 帮助 -->
         <div class="flex items-center justify-between shrink-0 mb-4">
           <div class="flex items-center space-x-3">
-            <span class="text-[22px] font-black text-car-text tracking-wide">2. 闲置自动屏保</span>
+            <span class="text-[22px] font-black text-car-text tracking-wide">闲置自动屏保</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent inline-flex items-center shrink-0">
               <span class="w-2.5 h-2.5 rounded-full mr-2" :class="ssStatusDot"></span>{{ ssStatusText }}
             </span>

@@ -170,10 +170,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     if (!SystemUtils.isApkVerifyWhitelistEnabled()) {
                         SystemUtils.enableApkVerifyWhitelist(MainActivity.this);
                     }
-                    if (isCarDevice(MainActivity.this)) {
+                    // 启动静默冻结应用商店：仅当用户在「系统维护」里显式开启开关后才执行（默认关闭，
+                    // 严禁一启动就自动冻结 —— 是否冻结始终由用户主动决定）
+                    android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                    if (prefs.getBoolean("silent_appstore_freeze", false) && isCarDevice(MainActivity.this)) {
                         boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
                         if (!isAppstoreFrozen && SystemUtils.isPackageInstalled(MainActivity.this, "com.ecarx.appstore")) {
                             SystemUtils.setPackageEnabled(MainActivity.this, "com.ecarx.appstore", false);
+                            AppLogger.action("应用商店", "启动静默冻结开关已开启，检测到商店未冻结，已自动冻结锁定白名单", true, "已冻结");
                         }
                     }
                 } catch (Exception ignored) {
@@ -532,6 +536,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
                     obj.put("multimedia_frozen", isMediaFrozen);
                     obj.put("appstore_frozen", isAppstoreFrozen);
+                    android.content.SharedPreferences prefsSilentFreeze = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                    obj.put("silent_appstore_freeze", prefsSilentFreeze.getBoolean("silent_appstore_freeze", false));
                     obj.put("rabbit", ThemePatcher.getRabbitDisguiseInfo(MainActivity.this));
                     obj.put("rabbitPostReboot", ThemePatcher.checkRabbitPostRebootStatus(MainActivity.this));
                     android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
@@ -824,6 +830,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("multimedia_frozen", isMediaFrozen);
                 obj.put("appstore_frozen", isAppstoreFrozen);
                 android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                obj.put("silent_appstore_freeze", prefs.getBoolean("silent_appstore_freeze", false));
                 boolean isBeta = ver.toLowerCase().contains("beta");
                 obj.put("is_beta", isBeta);
                 obj.put("autostart", prefs.getBoolean("autostart_enabled", true));

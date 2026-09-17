@@ -200,8 +200,7 @@
         <div class="pt-3 flex flex-col space-y-3 border-t border-car-border/60 min-w-0 flex-1">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2">
-              <span class="text-[15.5px] font-black text-car-text">自启首选主力音乐软件：</span>
-              <span class="text-[13.5px] text-car-sub font-bold">（开机自动探测，点击任意磁贴直接设为首选主力）</span>
+              <span class="text-[15.5px] font-black text-car-text">自启首选主力音乐软件，开机自动探测，点击磁贴即设为首选：</span>
             </div>
             <div class="flex items-center space-x-2.5">
               <button 

@@ -18,7 +18,7 @@
 
       <div class="shrink-0 w-[230px]">
         <button
-          @click="confirmFreezeStore"
+          @click="openAppstoreFlow"
           class="w-full h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center bg-car-item border-amber-500/80 hover:border-amber-400 ring-2 ring-amber-500/20"
         >
           <span class="text-[18.5px] font-black text-car-text tracking-wide whitespace-nowrap">一键安全冻结</span>
@@ -27,11 +27,18 @@
       </div>
     </div>
 
+    <!-- 桌面悬浮与息屏保护（原「桌面悬浮」大分类已并入系统维护） -->
+    <div class="flex items-center space-x-3 pt-1">
+      <span class="text-[18.5px] font-black text-car-sub tracking-wide whitespace-nowrap">桌面悬浮与息屏保护</span>
+      <div class="flex-1 h-px bg-car-border/70"></div>
+    </div>
+    <FloatingView />
+
     <!-- 系统底层维护 6 大核心功能矩阵 (3 列自适应车规排版) -->
     <div class="grid grid-cols-3 gap-4">
       <!-- 1. 整车硬件冷重启控制台 (紧凑饱满) -->
       <FeatureCard 
-        title="1. 整车硬件冷重启"
+        title="整车硬件冷重启"
         desc="彻底掉电重置车机 MCU 与安卓核心，白名单与底层服务立即生效。"
         helpTitle="【功能指南】整车硬件冷重启"
         helpText="1. 冷重启原理：&#10;对整车中控硬件执行完全掉电冷启动（reboot），彻底重置 MCU 与安卓 Framework。&#10;&#10;2. 生效场景：&#10;白名单、音频通道、系统框架等底层改动需冷重启后才能真正刷新生效，杜绝开门播报延迟与系统卡顿。&#10;&#10;3. 安全铁律：&#10;严禁在行车行驶过程中执行！请确保车辆已安全停稳、挂入 P 挡后操作。"
@@ -47,7 +54,7 @@
 
       <!-- 2. 车机深度工具箱 & ADB 控制台 (从顶栏移至此处) -->
       <FeatureCard 
-        title="2. 车机深度工具箱 & ADB"
+        title="车机深度工具箱 & ADB"
         desc="内置本地 ADB 与整车应用管理，支持系统/用户分类、冻结与卸载。"
         helpTitle="【功能指南】车机深度工具箱 & ADB"
         helpText="1. 应用高级管理：&#10;内置整车应用管理，支持系统/用户应用分类、冻结、卸载与清数据。&#10;&#10;2. ADB 交互终端：&#10;本地 ADB 终端支持执行 Shell 指令，用于进阶调试与抓取日志。&#10;&#10;3. 安全边界：&#10;深度终端已做系统核心保护，严禁自行卸载系统 Framework 核心组件。"
@@ -71,7 +78,7 @@
 
       <!-- 3. 安装白名单属性放行 -->
       <FeatureCard 
-        title="3. 第三方 APK 放行白名单"
+        title="第三方 APK 放行白名单"
         desc="注入 sys.jsbd.apk_verify=1 属性，解除系统级安装包签名校验限制。"
         helpTitle="【功能指南】第三方 APK 放行白名单"
         helpText="1. 核心原理：&#10;注入 sys.jsbd.apk_verify=1 属性，解除车机原生 PackageInstaller 的签名校验限制。&#10;&#10;2. 效果：&#10;开启后即可自由安装第三方 APK 软件；关闭后恢复系统原生限制，第三方包可能报解析失败。&#10;&#10;3. 建议：&#10;始终保持开启状态，这是安装高德、音乐等第三方应用的基础前提。"
@@ -92,7 +99,7 @@
 
       <!-- 4. 运行与安全审计日志 -->
       <FeatureCard 
-        title="4. 运行与守护日志"
+        title="运行与守护日志"
         desc="实时采集车门、挡位与方控信号记录，支持独立清空与一键全量导出。"
         helpTitle="【功能指南】运行与守护日志"
         helpText="1. 采集内容：&#10;实时记录车门、挡位、方控按键等信号，方便排查问题。&#10;&#10;2. 存储保护：&#10;守护日志全程在内存环形缓冲区流转，默认零磁盘写入；仅按需开启模块或手动导出才落盘。&#10;&#10;3. 脱敏导出：&#10;导出 ZIP 时自动执行 5 重脱敏，手机号、GPS 经纬度、门牌地址、VIN 等敏感信息全部抹除，可放心提交排查。"
@@ -108,14 +115,14 @@
 
       <!-- 5. 应用商店管理 (带二次校验) -->
       <FeatureCard 
-        title="5. 应用商店状态管理"
+        title="应用商店状态管理"
         desc="未冻结会破坏白名单导致无法安装第三方软件，必须冻结进行锁定。"
         helpTitle="【功能指南】应用商店状态管理"
         helpText="1. 冻结原因：&#10;原厂应用商店运行会破坏白名单策略，直接导致第三方软件无法安装。&#10;&#10;2. 冻结效果：&#10;冻结后锁定白名单，第三方应用可稳定安装与运行。&#10;&#10;3. 解冻警告：&#10;仅在急需使用官方商店时临时解冻，解冻后会再次破坏白名单，请尽快重新冻结。"
         helpTip="强烈建议始终保持「已冻结」状态，需要官方商店时再临时解冻。"
       >
         <button 
-          @click="confirmToggleAppstore"
+          @click="openAppstoreFlow"
           :class="[
             'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
             store.deviceInfo.appstore_frozen 
@@ -125,11 +132,28 @@
         >
           <span>{{ store.deviceInfo.appstore_frozen ? '商店: 已冻结 (锁定白名单)' : '商店: 未冻结 (点击安全冻结)' }}</span>
         </button>
+
+        <!-- 启动静默冻结开关：默认关，开启后每次打开工具箱自动静默冻结应用商店 -->
+        <div class="mt-3 w-full min-h-[72px] rounded-2xl border-2 border-car-border bg-car-card flex items-center justify-between px-4 cursor-pointer transition-all hover:border-car-border-light" @click="toggleSilentFreeze">
+          <div class="flex flex-col justify-center">
+            <span class="text-[16px] font-black text-car-text leading-tight">启动静默冻结应用商店</span>
+            <span class="text-[13px] font-bold text-car-sub leading-tight mt-0.5">{{ store.settings.silent_appstore_freeze ? '已开启：每次打开工具箱自动静默冻结' : '默认关闭：仅手动冻结生效' }}</span>
+          </div>
+          <div :class="[
+            'relative w-[58px] h-[32px] rounded-full transition-all flex-shrink-0',
+            store.settings.silent_appstore_freeze ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-car-border'
+          ]">
+            <div :class="[
+              'absolute top-[3px] w-[26px] h-[26px] rounded-full shadow transition-all',
+              store.settings.silent_appstore_freeze ? 'left-[29px] bg-emerald-300' : 'left-[3px] bg-slate-300'
+            ]"></div>
+          </div>
+        </div>
       </FeatureCard>
 
       <!-- 6. 工具箱开机自启动与后台守护 -->
       <FeatureCard 
-        title="6. 工具箱开机自启动与后台守护"
+        title="工具箱开机自启动与后台守护"
         desc="控制车机上电开机后在后台静默运行工具箱。出厂默认常驻开启，各联动项由各自开关独立管控。"
         helpTitle="【功能指南】工具箱开机自启动与后台守护"
         helpText="1. 常驻守护：&#10;车机上电开机后在后台静默运行工具箱，桌面胶囊、车身语音、方控接管三大开关各自独立生效。&#10;&#10;2. 独立管控：&#10;各联动项（D挡360、推门暂停音乐、车速启播等）由各自开关独立管控，不互相捆绑。&#10;&#10;3. 出厂默认：&#10;默认常驻启用，保证各项自动化功能上电即生效。"
@@ -144,7 +168,7 @@
 
     <!-- 7. 主题外观与昼夜模式 (液态玻璃 4 色 × 白夜三档) -->
     <FeatureCard 
-      title="7. 主题外观与昼夜模式"
+      title="主题外观与昼夜模式"
       desc="四套液态玻璃配色任选，昼夜三档切换；顶栏太阳/月亮按钮可随时一键快捷翻转。"
       helpTitle="【功能指南】主题外观与昼夜模式"
       helpText="1. 配色主题：&#10;清晨蓝 / 琥珀棕 / 晨曦绿 / 樱语粉四套液态玻璃配色，点选立即生效。&#10;&#10;2. 昼夜模式：&#10;跟随时间（6:00~17:59 呈现白天，其余时段黑夜）/ 强制白天 / 强制黑夜 三档自由掌控。&#10;&#10;3. 快捷翻转：&#10;顶栏的太阳/月亮按钮随时一键切换昼夜，不影响配色选择。"
@@ -204,7 +228,9 @@
 import FeatureCard from '../components/FeatureCard.vue';
 import { store, bridge, openModal, showToast } from '../store';
 import { ref } from 'vue';
+import FloatingView from './FloatingView.vue';
 import { MODES, MODE_LABELS, PALETTES, PALETTE_LABELS, PALETTE_DOT, setMode, setPalette } from '../theme/themes';
+import { openAppstoreFlow } from '../utils/appstoreFreeze';
 
 // 方块副标题：昼夜档标注时段语义，配色卡标注主题全名
 const MODE_SUBS = { auto: '6:00~17:59', day: '常驻白天', night: '常驻黑夜' };
@@ -246,38 +272,11 @@ function openLogModal() {
   store.modals.log = true;
 }
 
-function confirmFreezeStore() {
-  openModal('confirm', {
-    title: '冻结吉利应用商店 (锁定白名单)',
-    desc: '冻结吉利原厂应用商店后，将永久锁定第三方软件安装白名单，确保第三方应用能够顺利安装并正常运行。',
-    tip: '【强烈建议】请始终保持应用商店冻结状态。后续需要时可随时在此解冻恢复。',
-    isDanger: false,
-    onConfirm: () => {
-      bridge.call('toggleFreezeAppStore', true);
-      showToast('正在执行应用商店安全冻结...');
-    }
-  });
-}
-
-function confirmToggleAppstore() {
-  const isFrozen = store.deviceInfo.appstore_frozen;
-  if (isFrozen) {
-    // 当前已冻结，解冻需要二次警告确认
-    openModal('confirm', {
-      title: '解冻恢复吉利应用商店',
-      desc: '解冻原厂应用商店后，商店将破坏系统白名单策略，直接导致第三方软件无法安装，且已有软件可能被后台静默拦截。是否确认解冻？',
-      tip: '【高危警告】解冻后将直接影响白名单导致无法安装第三方软件！仅在急需使用官方商店时临时开启。',
-      isDanger: true,
-      confirmText: '确认解冻',
-      onConfirm: () => {
-        bridge.call('toggleFreezeAppStore', false);
-        showToast('正在解冻恢复吉利应用商店...');
-      }
-    });
-  } else {
-    // 当前未冻结，引导冻结
-    confirmFreezeStore();
-  }
+function toggleSilentFreeze() {
+  const next = !store.settings.silent_appstore_freeze;
+  store.settings.silent_appstore_freeze = next;
+  bridge.call('setSetting', 'silent_appstore_freeze', next);
+  showToast(next ? '启动静默冻结已开启：每次打开工具箱自动静默冻结应用商店' : '启动静默冻结已关闭：仅手动冻结生效');
 }
 
 function confirmToggleWhitelist() {

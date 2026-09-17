@@ -1,7 +1,7 @@
 <template>
   <ModalWrapper 
     :show="!!store.modals.rabbitInstall" 
-    :title="`${targetApp?.name || '目标应用'} · 卡主题安装向导`" 
+    :title="`${targetApp?.name || '目标应用'} · 卡兔子主题安装向导`" 
     badge="专家模式"
     maxWidthClass="max-w-[860px]"
     @close="closeModal('rabbitInstall')"
@@ -100,7 +100,7 @@ function checkIsMapApp(app) {
 function startAutoPilot() {
   if (!targetApp.value) return;
   if (!checkIsMapApp(targetApp.value)) {
-    showToast('安全保护：卡主题功能仅限高德地图底包专用，非地图已禁止！');
+    showToast('安全保护：卡兔子主题功能仅限高德地图底包专用，非地图已禁止！');
     return;
   }
   closeModal('rabbitInstall');
@@ -111,7 +111,7 @@ function startAutoPilot() {
 function reInjectDirectly() {
   if (!targetApp.value) return;
   if (!checkIsMapApp(targetApp.value)) {
-    showToast('安全保护：卡主题功能仅限高德地图底包专用，非地图已禁止！');
+    showToast('安全保护：卡兔子主题功能仅限高德地图底包专用，非地图已禁止！');
     return;
   }
   closeModal('rabbitInstall');

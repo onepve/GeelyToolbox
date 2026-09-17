@@ -16,7 +16,7 @@
         @click="openLogModalFromAdb"
         class="min-h-[66px] px-8 rounded-2xl border-2 border-car-border bg-car-card text-car-text hover:border-car-border-light font-black text-[17.5px] shadow-sm transition-all flex items-center justify-center cursor-pointer"
       >
-        <span>📋 日志查看与导出 (ZIP) ➔</span>
+        <span>📋 系统日志查看与导出 (ZIP) ➔</span>
       </button>
     </div>
 
@@ -136,15 +136,15 @@
         </div>
       </div>
 
-      <!-- 快捷指令胶囊 (大号点击区) -->
+      <!-- 快捷指令胶囊 (中文作用说明，点击自动填入对应英文命令) -->
       <div class="flex flex-wrap mb-3">
         <button 
-          v-for="cmd in quickCmds" 
-          :key="cmd"
-          @click="inputCmd = cmd"
-          class="min-h-[52px] px-5 py-2.5 mr-2.5 mb-2.5 rounded-2xl bg-car-item border border-car-border text-car-text hover:text-car-text text-[15.5px] font-mono cursor-pointer hover:border-car-accent font-bold"
+          v-for="item in quickCmds" 
+          :key="item.cmd"
+          @click="inputCmd = item.cmd"
+          class="min-h-[52px] px-5 py-2.5 mr-2.5 mb-2.5 rounded-2xl bg-car-item border border-car-border text-car-text hover:text-car-text text-[15.5px] cursor-pointer hover:border-car-accent font-bold"
         >
-          {{ cmd }}
+          {{ item.label }}
         </button>
       </div>
 
@@ -184,6 +184,7 @@
 import { ref, watch, onMounted } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, openModal, showToast } from '../../store';
+import { openAppstoreFlow } from '../../utils/appstoreFreeze';
 
 const packageStates = ref({
   'com.ecarx.appstore': false,
@@ -235,10 +236,10 @@ const INITIAL_PROMPT = '[ADB Client 127.0.0.1:5555 就绪 · 最新输出置顶�
 const outputText = ref(INITIAL_PROMPT);
 
 const quickCmds = [
-  'getprop ro.product.model',
-  'pm list packages -3',
-  'dumpsys meminfo',
-  'logcat -d -v time | tail -n 20'
+  { label: '查看车机型号', cmd: 'getprop ro.product.model' },
+  { label: '列出全部已装应用', cmd: 'pm list packages -3' },
+  { label: '查看内存占用', cmd: 'dumpsys meminfo' },
+  { label: '查看最近20行日志', cmd: 'logcat -d -v time | tail -n 20' }
 ];
 
 function execCmd() {
@@ -287,10 +288,9 @@ function confirmToggleFreeze(pkg, pkgName) {
   let desc = '';
   let tip = '';
   if (pkg === 'com.ecarx.appstore') {
-    desc = isFrozen 
-      ? `即将解冻【${pkgName}】(${pkg})。解冻后应用商店将恢复开机自启，可能会在每次开机时强制重置车机安装白名单策略。`
-      : `即将安全冻结【${pkgName}】(${pkg})。冻结后可彻底杜绝车机每次开机自动重置白名单，并释放约 100MB 运行内存，保障第三方地图与应用稳定直装。`;
-    tip = isFrozen ? '如需安装第三方软件，建议保持应用商店处于冻结状态。' : '如需使用官方应用商店下载原厂应用，可随时在此解冻。';
+    // 商店统一走共享主控（与顶部胶囊/系统维护同源，文案只维护一份）
+    openAppstoreFlow(() => refreshPackageStates());
+    return;
   } else if (pkg === 'ecarx.upgrade') {
     desc = isFrozen
       ? `即将解冻【${pkgName}】(${pkg})。解冻后车机将恢复接收吉利官方 OTA 系统固件推送。`

@@ -23,12 +23,21 @@
         </span>
       </div>
 
-      <!-- 高德 8.5 专车惯导避坑高危警示 -->
+      <!-- 地图直装版说明（云端 need_theme_install=false 驱动，无任何硬编码 id） -->
       <div 
-        v-if="app.id === 'amap_ae86'" 
+        v-if="isMapCategory && !isMapApp" 
         class="bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl p-4 text-amber-500 text-[16px] font-bold leading-relaxed"
       >
-        <b>【惯导避坑铁律】</b>高德 8.5 专车版惯导参数默认匹配星瑞 (CMA)；在缤越 COOL (BMA) 等车型上安装后<b>必须进入高德设置将【惯性导航】关闭</b>，关闭后走原生 GPS 即可 100% 稳定流畅不漂移！
+        <b>【安装方式】</b>本版本为<strong>免卡兔子主题直装版</strong>，冻结应用商店并开启安装白名单后，可直接覆盖安装，无需卡兔子主题。<br><br>
+        <b>【惯导避坑铁律】</b>在缤越 COOL (BMA) 等车型上安装后若出现定位漂移，<b>必须进入高德设置将【惯性导航】关闭</b>，关闭后走原生 GPS 即可 100% 稳定流畅不漂移！
+      </div>
+
+      <!-- 卡主题版说明（云端 need_theme_install=true 驱动） -->
+      <div 
+        v-if="isMapApp"
+        class="bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl p-4 text-amber-500 text-[16px] font-bold leading-relaxed"
+      >
+        <b>【安装方式】</b>本版本<strong>必须通过【注入兔子时钟 (卡兔子主题安装)】通道安装</strong>；直接覆盖安装无法通过签名校验。
       </div>
 
       <!-- 详细特性说明卡片 -->
@@ -74,7 +83,7 @@
           class="h-[60px] px-6 bg-amber-500/15 border-2 border-amber-500/50 rounded-2xl text-amber-300 font-black text-[17.5px] cursor-pointer hover:bg-amber-500/25 ring-2 ring-amber-500/20 shadow-md flex items-center"
         >
           <span class="mr-2">⚡</span>
-          <span>卡主题安装向导</span>
+          <span>卡兔子主题安装向导</span>
         </button>
         <div v-else></div>
 
@@ -119,7 +128,7 @@
               @click="openRabbitGuide"
               class="min-h-[66px] px-8 bg-amber-500/20 border-2 border-amber-500 text-amber-300 rounded-2xl font-black text-[19px] cursor-pointer hover:bg-amber-500/30 shadow-lg ring-2 ring-amber-500/20 transition-all flex items-center"
             >
-              <span class="mr-2">⚡</span> 注入兔子时钟 (卡主题安装)
+              <span class="mr-2">⚡</span> 注入兔子时钟 (卡兔子主题安装)
             </button>
             <button 
               @click="handleInstallDownloaded"
@@ -186,6 +195,12 @@ const isMapApp = computed(() => {
   return pkg.includes('autonavi') || filename.startsWith('automap') || name.includes('高德') || name.includes('地图');
 });
 
+// 地图类应用判定（与云端 category=navigation 对齐）：用于区分「直装版/卡主题版」说明框
+const isMapCategory = computed(() => {
+  if (!app.value) return false;
+  return app.value.category === 'navigation' || /高德|地图/.test(app.value.name || '');
+});
+
 const actionButtonText = computed(() => {
   if (!app.value) return '立即下载安装';
   return app.value.statusText || '立即下载安装';
@@ -233,7 +248,7 @@ function handleInstallDownloaded() {
 
 function openRabbitGuide() {
   if (!app.value || !isMapApp.value) {
-    showToast('安全保护：非地图类应用严禁使用卡主题方式！');
+    showToast('安全保护：非地图类应用严禁使用卡兔子主题方式！');
     return;
   }
   const currentApp = app.value;

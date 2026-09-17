@@ -1026,6 +1026,55 @@ for root, _, files in os.walk(WEB_SRC_DIR):
         for m in test_label_pat.finditer(content):
             ui19_violations.append(f"[19c] {fn}: UI 文案不应出现测试标签 '{m.group(0)}' (已转正功能不再标测试)")
 
+# 19c2. 应用商店冻结文案必须单点维护：禁止入口组件内联商店确认文案（统一走 utils/appstoreFreeze.js 主控）
+INLINE_FREEZE_PAT = re.compile(r"即将安全冻结【吉利应用商店】|即将解冻【吉利应用商店】|冻结吉利原厂应用商店后，将永久锁定")
+for root, _, files in os.walk(WEB_SRC_DIR):
+    for fn in files:
+        if not (fn.endswith(".vue") or fn.endswith(".js")):
+            continue
+        p = os.path.join(root, fn)
+        rel = os.path.relpath(p, ROOT_DIR)
+        if "appstoreFreeze" in rel:
+            continue  # 主控文件本身豁免
+        with open(p, encoding="utf-8") as f:
+            content = f.read()
+        for m in INLINE_FREEZE_PAT.finditer(content):
+            ui19_violations.append(f"[19c2] {rel}: 商店冻结确认文案只能维护在 web/src/utils/appstoreFreeze.js，入口组件禁止内联重复文案")
+
+# 19c3. 商城卡主题提示禁止硬编码应用 id：必须由云端 need_theme_install 字段驱动
+HARDCODED_THEME_PAT = re.compile(r"app\.id\s*===\s*['\"]amap|app\.id\s*!==\s*['\"]amap|includes\(['\"]amap")
+appdetail_path = os.path.join(WEB_SRC_DIR, "components/modals/AppDetailModal.vue")
+if os.path.exists(appdetail_path):
+    with open(appdetail_path, encoding="utf-8") as f:
+        ad_content = f.read()
+    for m in HARDCODED_THEME_PAT.finditer(ad_content):
+        ui19_violations.append(f"[19c3] components/modals/AppDetailModal.vue: 卡主题提示禁止硬编码 id 判断 '{m.group(0)}' (必须走云端 need_theme_install 字段)")
+
+# 19d. Icon PNGs must not contain black pixel blocks (right-bottom corner sampling)
+try:
+    from PIL import Image
+    ICON_DIRS = [os.path.join(APP_SRC_DIR, f"res/mipmap-{d}") for d in ("mdpi","hdpi","xhdpi","xxhdpi","xxxhdpi")]
+    for icon_dir in ICON_DIRS:
+        icon_path = os.path.join(icon_dir, "ic_launcher.png")
+        if not os.path.exists(icon_path):
+            continue
+        im = Image.open(icon_path).convert("RGBA")
+        w, h = im.size
+        px = im.load()
+        # sample right-bottom quarter for near-black pixels (not alpha)
+        blacks = 0
+        for y in range(int(h * 0.75), h):
+            for x in range(int(w * 0.75), w):
+                r, g, b, a = px[x, y]
+                if a > 200 and r < 40 and g < 40 and b < 40:
+                    blacks += 1
+        if blacks > 5:
+            ui19_violations.append(f"[19d] {os.path.relpath(icon_path, ROOT_DIR)}: 右下角存在 {blacks} 个近黑像素 (疑似黑块残留, 检查裁剪填充)")
+        else:
+            print(f"[PASS] {os.path.relpath(icon_path, ROOT_DIR)} 右下角无黑块 ({blacks} 近黑像素)")
+except ImportError:
+    print("[19d] PIL 不可用，跳过图标黑块检测")
+
 if ui19_violations:
     for v in ui19_violations:
         print(f"  [FAIL] {v}")

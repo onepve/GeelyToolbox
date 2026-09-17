@@ -567,14 +567,10 @@ public class SystemUtils {
         } catch (Exception ignored) {
         }
 
-        // 2. Try su (if root available) —— 必须带硬超时：su 若弹出授权框或被 SELinux 拦停，
-        //    waitFor() 会永久挂死调用线程（曾导致闲置屏保计时线程与主线程一起假死）
-        String suOut = execProcess("su", "-c", cmd, 2500L);
-        if (suOut != null) {
-            return suOut.trim();
-        }
-
-        // 3. Normal shell execution fallback
+        // 2. 普通 shell 执行兜底
+        // ⚠️ 本软件不申请、不使用 root（su）权限：所有功能要么走常规 API，要么走本地 ADB
+        //    （uid 2000 shell 特权通道）。历史上此处曾有 su 备用通道，会在无 ADB 的已 root
+        //    车机上触发 root 授权弹窗，已按「零 root 申请」要求彻底移除。
         return executeShell(cmd);
     }
 

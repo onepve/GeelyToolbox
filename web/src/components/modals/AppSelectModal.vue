@@ -1,8 +1,8 @@
 <template>
   <ModalWrapper
     :show="!!store.modals.appSelect"
-    :title="`选择按键自定义打开应用 (${keyTitle})`"
-    badge="方控映射"
+    :title="`${modalTitle}`"
+    badge="应用选择"
     maxWidthClass="max-w-[760px]"
     @close="closeModal('appSelect')"
   >
@@ -34,6 +34,21 @@
         >
           <span>重新扫描已装App</span>
         </button>
+      </div>
+
+      <!-- 分类 Tab：用户已安装(默认) / 系统应用 / 全部（精选音乐/导航清单下自动隐藏） -->
+      <div v-if="showFilterTabs" class="grid grid-cols-3 gap-2">
+        <button
+          v-for="tab in appFilterTabs"
+          :key="tab.key"
+          @click="appFilter = tab.key"
+          :class="[
+            'h-[52px] rounded-xl border-2 font-black text-[17px] cursor-pointer transition-all whitespace-nowrap shadow-sm',
+            appFilter === tab.key
+              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20 shadow-md'
+              : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
+          ]"
+        >{{ tab.label }}</button>
       </div>
 
       <!-- 应用列表容器 -->
@@ -116,8 +131,25 @@ const keyTitle = computed(() => {
   return '应用选择';
 });
 
+// 弹窗标题：精简短标题（长说明交给下方副文案，杜绝标题换行）
+const modalTitle = computed(() => {
+  if (keyTarget.value === 'speed_autoplay') return '车速自启音乐软件';
+  if (keyTarget.value === 'speed_custom_action') return '车速联动应用';
+  if (keyTarget.value === 'preferred_navi') return '主力导航软件';
+  return '自定义打开应用';
+});
+
+// 全局应用列表缓存（模块级）：首次扫描后常驻内存，6 个入口共享同一份数据，
+// 再次打开任意入口秒显不重扫；仅手动点「重新扫描」才清缓存重扫
+const _appListCache = { launchable: null, music: null, navi: null };
+
+// 分类筛选：默认只看用户自己安装的应用（列表短、刷新快）
+const appFilter = ref('user');
+
 watch(() => store.modals.appSelect, (val) => {
   if (val) {
+    appFilter.value = 'user';
+    searchQuery.value = '';
     loadApps();
   }
 });
@@ -134,12 +166,12 @@ function loadApps() {
   try {
     let raw = null;
     if (keyTarget.value === 'speed_autoplay' && !showAllApps.value) {
-      raw = bridge.call('getInstalledMusicAppsJson');
+      raw = _appListCache.music || (_appListCache.music = bridge.call('getInstalledMusicAppsJson'));
     } else if (keyTarget.value === 'preferred_navi' && !showAllApps.value) {
-      raw = bridge.call('getInstalledNaviAppsJson');
+      raw = _appListCache.navi || (_appListCache.navi = bridge.call('getInstalledNaviAppsJson'));
     }
     if (!raw || raw === '[]' || showAllApps.value) {
-      raw = bridge.call('getInstalledLaunchableApps');
+      raw = _appListCache.launchable || (_appListCache.launchable = bridge.call('getInstalledLaunchableApps'));
     }
     if (raw) {
       let list = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -181,6 +213,10 @@ function rescanApps() {
   } catch (e) {}
   showToast('已重新全仓扫描整车已安装应用');
   setTimeout(() => {
+    // 仅手动重扫时清除全局缓存，重扫结果回填供所有入口共用
+    _appListCache.launchable = null;
+    _appListCache.music = null;
+    _appListCache.navi = null;
     loadApps();
   }, 350);
 }
@@ -218,11 +254,29 @@ function moveMusicPriority(pkg, dir) {
   }
 }
 
+const appFilterTabs = [
+  { key: 'user', label: '用户已安装' },
+  { key: 'system', label: '系统应用' },
+  { key: 'all', label: '全部' }
+];
+
+// 精选分类模式（车速自启仅看音乐 / 主力导航列表）列表本身已是精选小清单，不再套用户/系统筛选
+const showFilterTabs = computed(() => {
+  if (keyTarget.value === 'speed_autoplay' && !showAllApps.value) return false;
+  if (keyTarget.value === 'preferred_navi' && !showAllApps.value) return false;
+  return true;
+});
+
 const filteredApps = computed(() => {
-  if (!searchQuery.value.trim()) return apps.value;
+  let list = apps.value;
+  if (showFilterTabs.value) {
+    if (appFilter.value === 'user') list = list.filter(a => !a.isSystem);
+    else if (appFilter.value === 'system') list = list.filter(a => !!a.isSystem);
+  }
   const q = searchQuery.value.trim().toLowerCase();
-  return apps.value.filter(a => 
-    (a.name && a.name.toLowerCase().includes(q)) || 
+  if (!q) return list;
+  return list.filter(a =>
+    (a.name && a.name.toLowerCase().includes(q)) ||
     (a.pkg && a.pkg.toLowerCase().includes(q))
   );
 });

@@ -68,6 +68,7 @@
 import { computed, onMounted, onUnmounted } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
 import { quickToggleDayNight } from '../theme/themes';
+import { openAppstoreFlow } from '../utils/appstoreFreeze';
 
 let topBarTimer = null;
 
@@ -193,20 +194,8 @@ onUnmounted(() => {
 });
 
 function handleStoreCapsuleClick() {
-  if (store.deviceInfo.appstore_frozen) {
-    showToast('吉利应用商店当前处于安全冻结状态，白名单已锁定 (๑•̀ㅂ•́)و');
-  } else {
-    openModal('confirm', {
-      title: '一键冻结吉利应用商店',
-      desc: '冻结吉利原厂应用商店后，可永久锁定第三方软件白名单，彻底防止高德地图等应用被后台静默卸载。是否立即执行？',
-      isDanger: false,
-      tip: '提示：后续可随时在系统维护中解冻恢复。',
-      onConfirm: () => {
-        bridge.call('toggleFreezeAppStore', true);
-        showToast('正在执行应用商店安全冻结...');
-      }
-    });
-  }
+  // 顶部胶囊仅显示状态，点击统一走共享主控（与系统维护/ADB 冻结卡同源同文案）
+  openAppstoreFlow();
 }
 
 function toggleTheme() {

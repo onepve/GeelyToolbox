@@ -114,7 +114,8 @@ export const store = reactive({
     autostart: true,
     floating_pill: false,
     floating_mode: 'battery', // 'name' | 'code' | 'battery'
-    expert_rabbit: false
+    expert_rabbit: false,
+    silent_appstore_freeze: false
   }
 });
 
