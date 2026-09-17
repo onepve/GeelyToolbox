@@ -53,10 +53,6 @@
         class="bg-car-card border-2 border-car-border hover:border-car-accent rounded-3xl p-6 flex flex-col justify-between cursor-pointer transition-all shadow-md group h-full min-h-[190px]"
       >
         <div class="flex-1 min-w-0 flex items-center space-x-4 py-2">
-          <!-- 应用首字徽标 (58x58px, 不使用第三方应用图标) -->
-          <div class="w-[58px] h-[58px] rounded-2xl bg-car-item border-2 border-car-border/60 shadow-md shrink-0 group-hover:border-car-accent/80 transition-all flex items-center justify-center">
-            <span class="text-[24px] font-black text-car-accent leading-none">{{ (app.name || '?').slice(0, 1) }}</span>
-          </div>
           <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5">
             <div class="flex items-center justify-between space-x-3">
               <span class="text-[20px] font-black text-car-text group-hover:text-car-accent transition-colors truncate" :title="app.name">

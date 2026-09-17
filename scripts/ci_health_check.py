@@ -1059,7 +1059,9 @@ for _rel in ICON_VIEW_FILES:
         with open(_p, encoding="utf-8") as f:
             _c = f.read()
         for m in APP_ICON_PAT.finditer(_c):
-            ui19_violations.append(f"[19c4] {_rel}: 商城禁用第三方应用图标 '{m.group(0)}' (2026-09-17 已全部移除, 用首字徽标替代, 勿恢复)")
+            ui19_violations.append(f"[19c4] {_rel}: 商城禁用第三方应用图标 '{m.group(0)}' (2026-09-17 已全部移除, 勿恢复)")
+        for m in re.finditer(r"\(app\.name \|\| '\?'\)\.slice", _c):
+            ui19_violations.append(f"[19c4] {_rel}: 商城禁用应用徽标(含首字徽标) '{m.group(0)}' (2026-09-17 用户定案: 图标与徽标全不要, 卡片仅文字)")
 
 # 19d. Icon PNGs must not contain black pixel blocks (right-bottom corner sampling)
 try:
