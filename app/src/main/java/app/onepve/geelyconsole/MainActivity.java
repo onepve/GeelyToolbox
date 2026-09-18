@@ -3662,9 +3662,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         String pkg = ri.activityInfo.packageName;
                         if (seenPkgs.contains(pkg)) continue;
                         seenPkgs.add(pkg);
-                        
-                        // 过滤掉当前工具箱本体
-                        if (context.getPackageName().equals(pkg)) continue;
+                        // 2026-09-18 用户要求：方控「自定义打开应用」需能选择缤越助手本体，
+                        // 不再过滤自身包名（此前自排除导致「用户已安装」列表看不到自己）
 
                         JSONObject item = new JSONObject();
                         item.put("pkg", pkg);

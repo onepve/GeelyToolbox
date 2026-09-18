@@ -164,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, openModal, showToast } from '../../store';
 
@@ -187,7 +187,9 @@ const isBeta = computed(() => {
   return ver.includes('beta');
 });
 
-// 真实屏幕参数 (由 Java Bridge getDeviceInfo/pushDeviceInfoToWeb 启动自动采集上报, 此处纯展示)
+// 真实屏幕参数：屏幕参数是固定值 —— 每次车机上电 Java 侧只采集一次（2026-09-18 用户定案），
+// 弹窗响应式跟进显示 + localStorage 缓存秒显（重启也能立刻显示上次参数），严禁反复轮询
+const SCREEN_CACHE_KEY = 'geely_screen_info_cache';
 const screenInfo = ref({
   size: '读取中...',
   dpi: '读取中...',
@@ -195,19 +197,40 @@ const screenInfo = ref({
   wm: ''
 });
 
-function refreshScreenInfo() {
-  const di = store.deviceInfo || {};
-  if (di.screen_size || di.screen_real_size) {
-    screenInfo.value.size = di.screen_size && di.screen_size !== '未知'
+function applyScreenInfo(di) {
+  if (!di || !(di.screen_size || di.screen_real_size)) return false;
+  const next = {
+    size: di.screen_size && di.screen_size !== '未知'
       ? di.screen_size
-      : (di.screen_real_size || '未知');
-    screenInfo.value.dpi = di.screen_density || (di.screen_density_dpi ? di.screen_density_dpi + ' dpi' : '未知');
-    screenInfo.value.appBounds = di.screen_app_bounds || '未知';
-    screenInfo.value.wm = di.screen_wm || '';
-  }
+      : (di.screen_real_size || '未知'),
+    dpi: di.screen_density || (di.screen_density_dpi ? di.screen_density_dpi + ' dpi' : '未知'),
+    appBounds: di.screen_app_bounds || '未知',
+    wm: di.screen_wm || ''
+  };
+  screenInfo.value = next;
+  try { localStorage.setItem(SCREEN_CACHE_KEY, JSON.stringify(next)); } catch (e) {}
+  return true;
 }
 
-refreshScreenInfo();
+applyScreenInfo(store.deviceInfo || {});
+if (screenInfo.value.size === '读取中...') {
+  // 启动采集尚未到达或失败：先回显上次上电的缓存（参数固定，直接秒显）
+  try {
+    const cached = JSON.parse(localStorage.getItem(SCREEN_CACHE_KEY) || 'null');
+    if (cached && cached.size) screenInfo.value = cached;
+  } catch (e) {}
+  // 首次运行且无任何缓存：兜底拉取一次（仍遵循「只抓一次」原则）
+  if (!localStorage.getItem(SCREEN_CACHE_KEY)) {
+    try {
+      const raw = bridge.call('getDeviceInfo');
+      if (raw) applyScreenInfo(typeof raw === 'string' ? JSON.parse(raw) : raw);
+    } catch (e) {}
+  }
+}
+watch(
+  () => [store.deviceInfo.screen_size, store.deviceInfo.screen_real_size, store.deviceInfo.screen_density, store.deviceInfo.screen_app_bounds],
+  () => { applyScreenInfo(store.deviceInfo || {}); }
+);
 
 try {
   const uid = bridge.call('getDeviceUid');

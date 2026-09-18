@@ -130,6 +130,9 @@
             placeholder="例如: /sdcard/Music/gear_d.mp3"
             class="w-full h-[54px] bg-car-card border-2 border-car-border rounded-xl px-3 text-car-text font-mono text-[14px] outline-none focus:border-car-accent shadow-inner placeholder-car-sub"
           />
+          <div class="text-[12px] text-car-sub leading-relaxed">
+            🎙️ 规格要求：音频开头请保留 ≥280ms 静音（车机功放建立通道需 0.2~0.3 秒，零静音直录会吞掉第一个字）。ffmpeg 一条命令补齐：<span class="font-mono">ffmpeg -i in.mp3 -af "adelay=280" out.mp3</span>，详见语音包模板 README。
+          </div>
 
           <!-- 快速从已安装语音包中点选混搭 -->
           <div v-if="installedThemes.length > 0" class="flex flex-col space-y-1.5">
