@@ -1132,11 +1132,36 @@ if _g22:
 else:
     print("[PASS] 真机窄视口磁贴防复发锁全绿！(flex-wrap 自动折行 / m-2 margin 间距 / 分隔线 hidden xl:block)")
 
+# ----------------------------------------------------------------------
+# 23. Floating Layer Opaque Background Gate (浮层实底背景防复发锁)
+#     血泪教训：方控页「原厂默认」功能菜单下拉面板误用 --bg-card(玻璃半透 .13~.68)，
+#     底下页面文字透上来与选项重叠看不清（2026-09-18 用户实测反馈）。
+#     铁律：一切叠在页面内容之上的浮层（弹窗/下拉/动作面板）必须用 96% 实底 --bg-modal，
+#     严禁 --bg-card。字符串级锁定，只增不减。
+# ----------------------------------------------------------------------
+log_step("23. Checking Floating Layer Opaque Background (浮层实底背景防复发)")
+_actionselect_23_path = os.path.join(ROOT_DIR, "web/src/components/ActionSelect.vue")
+with open(_actionselect_23_path, encoding="utf-8") as _f23:
+    _actionselect_23 = _f23.read()
+_g23 = []
+# 23a: 下拉面板严禁玻璃半透背景 --bg-card
+if "bg-[var(--bg-card)]" in _actionselect_23:
+    _g23.append("[23a] ActionSelect 面板使用半透 --bg-card（浮层实底铁律：叠层浮层严禁玻璃半透，文字会与底层重叠）")
+# 23b: 下拉面板必须使用 96% 实底 --bg-modal
+if "bg-[var(--bg-modal)]" not in _actionselect_23:
+    _g23.append("[23b] ActionSelect 面板缺少实底 --bg-modal（须与 ModalWrapper 同规：浮层一律 96% 实底）")
+if _g23:
+    for _v23 in _g23:
+        print(f"  [FAIL] {_v23}")
+    passed = False
+else:
+    print("[PASS] 浮层实底背景防复发锁全绿！(ActionSelect 面板 = --bg-modal 96% 实底 / 玻璃半透 0 命中)")
+
 # Final Summary Verdict
 # ----------------------------------------------------------------------
-log_step("CI 22-Gate Health Check Verdict")
+log_step("CI 23-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 22 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety all closed)")
+    print("[SUCCESS] All 23 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background all closed)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")

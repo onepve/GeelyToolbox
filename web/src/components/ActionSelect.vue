@@ -16,11 +16,13 @@
       <span class="text-[20px] text-car-sub font-black ml-3 shrink-0">▾</span>
     </button>
 
-    <!-- 下拉面板：大磁贴选项列表（浮动弹出：动态方向+高度钳制，永不撑破页面/超出视口）-->
+    <!-- 下拉面板：大磁贴选项列表（浮动弹出：动态方向+高度钳制，永不撑破页面/超出视口）
+         铁律：浮层叠在页面内容之上，必须用弹窗实底 --bg-modal(96%)，严禁 --bg-card(玻璃半透 .13~.68)
+         —— 半透会让底下页面文字透上来与选项重叠（2026-09-18 用户实测反馈，门禁23 锁定） -->
     <transition name="drop">
       <div
         v-if="open"
-        class="absolute z-50 w-full min-w-[280px] overflow-y-auto rounded-2xl border-2 border-car-border bg-[var(--bg-card)] shadow-2xl p-2 space-y-1.5"
+        class="absolute z-50 w-full min-w-[280px] overflow-y-auto rounded-2xl border-2 border-car-border bg-[var(--bg-modal)] shadow-2xl p-2 space-y-1.5"
         :class="dropUp ? 'bottom-full mb-2' : 'top-full mt-2'"
         :style="{ maxHeight: maxPanelH + 'px' }"
       >
