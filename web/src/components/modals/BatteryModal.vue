@@ -43,6 +43,37 @@
           <span><b>&lt; 11.5V（重度亏电）</b>：面临打不着火风险，请立即关闭大灯及高功耗电器。</span>
         </div>
       </div>
+
+      <!-- 电瓶健康看板一期：静置电压/启动压降/充电平台（Java 侧被动采样，本层只渲染分级结论） -->
+      <div class="p-5 rounded-2xl bg-car-item border-2 border-car-border shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-[16px] text-car-text font-black flex items-center">
+            <span class="mr-2">🔋</span> 健康采样
+          </div>
+          <div class="flex items-baseline" v-if="health && health.score >= 0">
+            <span class="text-[26px] font-black font-mono leading-none"
+                  :class="health.score >= 85 ? 'text-emerald-400' : (health.score >= 65 ? 'text-amber-400' : 'text-rose-400')">{{ health.score }}</span>
+            <span class="text-[13px] text-car-sub font-bold ml-1.5">分 · {{ health.scoreText }}</span>
+          </div>
+          <div class="text-[13px] text-car-sub font-bold" v-else>采样积累中</div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div v-for="m in healthItems" :key="m.key"
+               class="p-3 rounded-xl bg-car-card border border-car-border text-center">
+            <div class="text-[13px] text-car-sub font-black mb-1 whitespace-nowrap">{{ m.label }}</div>
+            <div class="text-[20px] font-black font-mono leading-none mb-1.5" :class="gradeTextClass(m.grade)">
+              <template v-if="m.value !== null">{{ m.value }}<span class="text-[12px] ml-0.5">V</span></template>
+              <template v-else>--</template>
+            </div>
+            <div class="text-[12px] font-bold whitespace-nowrap" :class="gradeTextClass(m.grade)">{{ m.gradeText }}</div>
+          </div>
+        </div>
+
+        <div class="text-[12px] text-car-sub font-bold mt-3 leading-relaxed opacity-80">
+          采样说明：熄火停放满 3 分钟记录静置电压；点火瞬间电压低谷记为启动压降；行车充电后自动记录发电机回充平台。数据长期积累，参考越准。
+        </div>
+      </div>
     </div>
 
     <template #footer>
@@ -65,11 +96,39 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, showToast } from '../../store';
 
 let voltTimer = null;
+const health = ref(null);
+
+// 电瓶健康一期三项（Java 侧 BatteryHealthMonitor 已算好分级，本层纯渲染）
+const healthItems = computed(() => {
+  const h = health.value || {};
+  const rest = h.rest || {}, crank = h.crank || {}, charge = h.charge || {};
+  return [
+    { key: 'rest', label: '静置电压', value: rest.v != null ? rest.v.toFixed(1) : null, grade: rest.grade || 0, gradeText: rest.gradeText || '待采样' },
+    { key: 'crank', label: '启动压降', value: crank.v != null ? crank.v.toFixed(1) : null, grade: crank.grade || 0, gradeText: crank.gradeText || '待点火采样' },
+    { key: 'charge', label: '充电平台', value: charge.avg != null ? (Math.round(charge.avg * 10) / 10).toFixed(1) : null, grade: charge.grade || 0, gradeText: charge.gradeText || '待行驶采样' }
+  ];
+});
+
+function gradeTextClass(g) {
+  if (g === 1 || g === 2) return 'text-emerald-400';
+  if (g === 3) return 'text-amber-400';
+  if (g === 4) return 'text-rose-400';
+  return 'text-car-sub';
+}
+
+function fetchHealth() {
+  try {
+    const raw = bridge.call('getBatteryHealth');
+    if (raw) {
+      health.value = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    }
+  } catch (e) {}
+}
 
 const batteryStatus = computed(() => {
   let v = null;
@@ -150,11 +209,13 @@ function fetchVoltSilently() {
 
 function refreshVolt() {
   fetchVoltSilently();
+  fetchHealth();
   showToast('已刷新蓄电池电压检测');
 }
 
 onMounted(() => {
   fetchVoltSilently();
+  fetchHealth();
   voltTimer = setInterval(fetchVoltSilently, 2000); // 打开弹窗期间每 2 秒自适应实时刷新
 });
 

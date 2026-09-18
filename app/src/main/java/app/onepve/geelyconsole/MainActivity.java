@@ -43,6 +43,7 @@ import app.onepve.geelyconsole.services.VehicleAutomationService;
 import app.onepve.geelyconsole.utils.AdbClient;
 import app.onepve.geelyconsole.utils.AppLogger;
 import app.onepve.geelyconsole.utils.AutoPilotManager;
+import app.onepve.geelyconsole.utils.BatteryHealthMonitor;
 import app.onepve.geelyconsole.utils.DialogHelper;
 import app.onepve.geelyconsole.utils.DownloadManager;
 import app.onepve.geelyconsole.utils.FloatingWindowManager;
@@ -415,18 +416,56 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             mainHandler.removeCallbacks(pendingShowPillRunnable);
         }
         pendingShowPillRunnable = new Runnable() {
+            // 2026-09-18 用户实测：呼出车机自带菜单浏览数秒后被弹回 = 本防抖到期时菜单仍在最前台，
+            // addView 顶层 Overlay 直接把菜单顶掉。修法：挂载前先判定前台归属——
+            // ① 原厂系统界面（SystemUI / 非桌面的 ecarx 组件）在前台 → 不挂载，1.5s 后重查（带总量上限）；
+            // ② 桌面在前台 → 首次到点先二次确认（下一拍仍为桌面才挂），防菜单收起瞬间的假"桌面"误判；
+            // ③ 第三方应用 / 检测不到（无使用情况权限且 dumpsys 熔断）→ 维持旧行为直接挂载。
+            private int attempts = 0;
+            private boolean homeConfirmPending = false;
+
+            private void repost() {
+                attempts++;
+                if (attempts <= 10) {
+                    mainHandler.postDelayed(this, 1500);
+                } else {
+                    AppLogger.i("悬浮胶囊", "连续多拍检测到系统界面在前台，本轮放弃自动挂载，等待下次回到前台再触发");
+                }
+            }
+
             @Override
             public void run() {
                 try {
-                    if (!isForeground) {
-                        android.content.SharedPreferences sp = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        if (sp.getBoolean("floating_enabled", false)) {
-                            Intent showPill = new Intent(MainActivity.this, FloatingWindowService.class);
-                            showPill.setAction(FloatingWindowService.ACTION_SHOW);
-                            startService(showPill);
-                            AppLogger.i("悬浮胶囊", "已稳定处于外部桌面或第三方应用，平滑挂载悬浮小胶囊");
-                        }
+                    if (isForeground) {
+                        return; // 回到工具箱自身前台：不需要胶囊
                     }
+                    android.content.SharedPreferences sp = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                    if (!sp.getBoolean("floating_enabled", false)) {
+                        return;
+                    }
+                    String fg = ForegroundAppDetector.getForegroundPackage(MainActivity.this);
+                    boolean isHome = !android.text.TextUtils.isEmpty(fg)
+                            && ForegroundAppDetector.isHomePackage(MainActivity.this, fg);
+                    boolean isSelf = getPackageName().equals(fg);
+                    // isSelf：熄屏/浅待机时使用统计常返回「最后使用的自己」——若真在前台则 isForeground 必为 true，
+                    // 走不到这里；故视为不可见读数，等待重查，杜绝往锁屏/未知界面上挂胶囊（2026-09-18 模拟器实测发现）
+                    boolean isSystemUi = "com.android.systemui".equals(fg);
+                    boolean isEcarxNonHome = fg != null && fg.startsWith("com.ecarx.") && !isHome;
+                    if (isSelf || isSystemUi || isEcarxNonHome) {
+                        // 原厂菜单/抽屉/系统面板仍在最前台：绝不 addView 顶菜单，稍后重查
+                        repost();
+                        return;
+                    }
+                    if (isHome && !homeConfirmPending) {
+                        // 首拍到桌面：多等一拍确认菜单不是恰好收在中转态
+                        homeConfirmPending = true;
+                        repost();
+                        return;
+                    }
+                    Intent showPill = new Intent(MainActivity.this, FloatingWindowService.class);
+                    showPill.setAction(FloatingWindowService.ACTION_SHOW);
+                    startService(showPill);
+                    AppLogger.i("悬浮胶囊", "已稳定处于外部桌面或第三方应用，平滑挂载悬浮小胶囊");
                 } catch (Exception ignored) {}
             }
         };
@@ -835,6 +874,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         public ToolboxBridge(Context context) {
             this.context = context;
+        }
+
+        @JavascriptInterface
+        public String getBatteryHealth() {
+            // 电瓶健康看板一期：静置电压/启动压降/充电平台 + 综合健康分（分级结论 Java 算好，前端只渲染）
+            try {
+                return BatteryHealthMonitor.buildHealthJson(context);
+            } catch (Exception e) {
+                return "{\"error\":\"monitor_unavailable\"}";
+            }
         }
 
         @JavascriptInterface

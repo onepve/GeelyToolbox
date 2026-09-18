@@ -1157,11 +1157,48 @@ if _g23:
 else:
     print("[PASS] 浮层实底背景防复发锁全绿！(ActionSelect 面板 = --bg-modal 96% 实底 / 玻璃半透 0 命中)")
 
+# ----------------------------------------------------------------------
+# 24. Voice Leading-Silence & Pill Mount Guard Gate (语音前置静音 + 胶囊挂载防复发锁)
+#     血泪教训一：2 字模式语音 mode_*.mp3 重录时零前置静音，车机功放建立通道吃掉首字
+#     （4 字旧文件自带 0.2s 静音所以听得清；2026-09-18 用户实测反馈）。
+#     血泪教训二：呼出原厂菜单触发 MainActivity.onStop，1200ms 防抖到期时菜单仍在
+#     前台，addView 直接把菜单顶掉弹回（2026-09-18 用户实测反馈）。
+#     字符串级+资产级锁定，只增不减。
+# ----------------------------------------------------------------------
+log_step("24. Checking Voice Leading-Silence & Pill Mount Guard (语音静音+胶囊挂载防复发)")
+_g24 = []
+# 24a: 2 字模式音频必须保留 ≥0.7s 时长（48kbps CBR 下 = 4200 字节，即必须含 280ms 前置静音；
+#      若回退成零静音直录版本则约 0.5s/3000 字节，本门禁立即红灯）
+for _vf in ("mode_comfort.mp3", "mode_sport.mp3", "mode_eco.mp3", "mode_smart.mp3"):
+    _vp = os.path.join(ROOT_DIR, "app/src/main/assets/audio", _vf)
+    if not os.path.exists(_vp) or os.path.getsize(_vp) < 4200:
+        _g24.append(f"[24a] {_vf} 时长不足（缺失 280ms 前置静音，车机功放会吃掉首字；重录必须带前置静音）")
+# 24b: onStop 胶囊挂载防抖必须带前台归属门禁（原厂系统界面/自身包名一律重查不挂载）
+_main_24_path = os.path.join(ROOT_DIR, "app/src/main/java/app/onepve/geelyconsole/MainActivity.java")
+with open(_main_24_path, encoding="utf-8") as _f24:
+    _main_24 = _f24.read()
+if "isSelf || isSystemUi || isEcarxNonHome" not in _main_24:
+    _g24.append("[24b] onStop 胶囊挂载缺少前台归属门禁（isSelf/isSystemUi/isEcarxNonHome 重查铁律，防顶回原厂菜单/挂上锁屏）")
+# 24c: 语音生成脚本必须内置前置静音步骤（重录链路防复发）
+_voice_sh_24_path = os.path.join(ROOT_DIR, "scripts/generate_voice.sh")
+_voice_sh_24 = ""
+if os.path.exists(_voice_sh_24_path):
+    with open(_voice_sh_24_path, encoding="utf-8") as _f24b:
+        _voice_sh_24 = _f24b.read()
+if "adelay" not in _voice_sh_24:
+    _g24.append("[24c] generate_voice.sh 缺少 adelay 前置静音步骤（280ms 铁律，防重录复发吞字）")
+if _g24:
+    for _v24 in _g24:
+        print(f"  [FAIL] {_v24}")
+    passed = False
+else:
+    print("[PASS] 语音前置静音+胶囊挂载防复发锁全绿！(mode_*.mp3 ≥280ms 前置静音 / onStop 挂载前台门禁 / 生成脚本 adelay 内置)")
+
 # Final Summary Verdict
 # ----------------------------------------------------------------------
-log_step("CI 23-Gate Health Check Verdict")
+log_step("CI 24-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 23 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background all closed)")
+    print("[SUCCESS] All 24 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard all closed)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")

@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import app.onepve.geelyconsole.R;
 import app.onepve.geelyconsole.utils.AdbClient;
 import app.onepve.geelyconsole.utils.AppLogger;
+import app.onepve.geelyconsole.utils.BatteryHealthMonitor;
 import app.onepve.geelyconsole.utils.DoorStateManager;
 import app.onepve.geelyconsole.utils.DriveModeManager;
 import app.onepve.geelyconsole.utils.EasMediaBridge;
@@ -945,6 +946,11 @@ public class VehicleAutomationService extends Service {
                         // 只有在 9.0V ~ 16.5V 车规安全范围内才更新内存（纯内存流转，零高频磁盘擦写）
                         if (volt >= 9.0f && volt <= 16.5f) {
                             latestBatteryVoltage = volt;
+                            // 电瓶健康看板一期：同步喂入健康采集中枢（纯被动，见 BatteryHealthMonitor）
+                            try {
+                                BatteryHealthMonitor.onVoltageSample(
+                                        VehicleAutomationService.this, volt, currentSpeedKmH, isEngineRunning());
+                            } catch (Exception ignored) {}
                             if (Math.abs(volt - lastSavedBatteryVoltage) >= 0.2f) {
                                 lastSavedBatteryVoltage = volt;
                                 getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
