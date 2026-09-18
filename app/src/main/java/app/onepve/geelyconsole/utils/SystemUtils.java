@@ -925,13 +925,8 @@ public class SystemUtils {
         return false;
     }
 
-    public static boolean openEngineerMode(Context context) {
-        String[][] candidates = new String[][]{
-                {"ecarx.debugtools", "ecarx.debugtools.MainActivity"},
-                {"com.mediatek.engineermode", "com.mediatek.engineermode.EngineerMode"},
-                {"ecarx.debugtools", "ecarx.debugtools.install.InternalInstallActivity"},
-                {"com.ecarx.factory", "com.ecarx.factory.MainActivity"}
-        };
+    /** 依次尝试 candidates 里的 pkg/activity，首个启动成功即返回 true（供原厂入口探测共用） */
+    private static boolean startFirstAvailable(Context context, String[][] candidates) {
         for (String[] comp : candidates) {
             try {
                 Intent intent = new Intent(Intent.ACTION_MAIN);
@@ -945,21 +940,22 @@ public class SystemUtils {
         return false;
     }
 
+    public static boolean openEngineerMode(Context context) {
+        return startFirstAvailable(context, new String[][]{
+                {"ecarx.debugtools", "ecarx.debugtools.MainActivity"},
+                {"com.mediatek.engineermode", "com.mediatek.engineermode.EngineerMode"},
+                {"ecarx.debugtools", "ecarx.debugtools.install.InternalInstallActivity"},
+                {"com.ecarx.factory", "com.ecarx.factory.MainActivity"}
+        });
+    }
+
     public static boolean triggerOtaCheck(Context context) {
-        String[][] candidates = new String[][]{
+        if (startFirstAvailable(context, new String[][]{
                 {"ecarx.upgrade", "ecarx.upgrade.ota.ui.MainActivity"},
                 {"ecarx.upgrade", "ecarx.upgrade.fota.ui.FotaMainActivity"},
                 {"com.android.car.systemupdater", "com.android.car.systemupdater.SystemUpdaterActivity"}
-        };
-        for (String[] comp : candidates) {
-            try {
-                Intent intent = new Intent(Intent.ACTION_MAIN);
-                intent.setComponent(new ComponentName(comp[0], comp[1]));
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(intent);
-                return true;
-            } catch (Exception ignored) {
-            }
+        })) {
+            return true;
         }
 
         try {

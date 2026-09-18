@@ -532,11 +532,32 @@ public class VehicleAutomationService extends Service {
         } catch (Exception ignored) {}
     }
 
-    // 正则表达式
+    // 正则表达式（全部预编译为静态常量：本类逐行处理 logcat 全量流，
+    // 禁止在 parse 路径内 Pattern.compile —— 每行重复编译正则是高频 CPU 浪费）
     private static final Pattern CAN_PATTERN =
             Pattern.compile("key\\s*=\\s*([^,\\s]+).*?data\\s*=\\s*(-?\\d+)");
     private static final Pattern SERIAL_DOOR_PATTERN =
             Pattern.compile("91\\s+02\\s+01(?:\\s+[0-9a-fA-F]{1,2}){3}\\s+([0-9a-fA-F]{1,2})\\s+([0-9a-fA-F]{1,2})");
+    private static final Pattern P_GET_SPEED =
+            Pattern.compile("Get Speed\\s+(\\d+)km/h");
+    private static final Pattern P_VEHICLE_GEAR =
+            Pattern.compile("VehId=Vehicle_Gear\\s+value=(?:0x)?([0-9a-fA-F]+)");
+    private static final Pattern P_GEAR_EQ =
+            Pattern.compile("gear=(\\d+)");
+    private static final Pattern P_GEAR_POS =
+            Pattern.compile("(?:funValue\\((?:0x)?([0-9a-fA-F]+)\\)|(?:mModelGearPos|GearPos)\\s*[:=]\\s*(?:0x)?([0-9a-fA-F]+))");
+    private static final Pattern P_FUNVALUE =
+            Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)");
+    private static final Pattern P_DRIVE_MODE =
+            Pattern.compile("(?:DirveMode|DriveMode)\\s*=\\s*(\\d+)");
+    private static final Pattern P_PEPS_POWERMODE =
+            Pattern.compile("peps_powermode[^0-9]*(\\d+)");
+    private static final Pattern P_KEY_STATE =
+            Pattern.compile("(?:funvalue|info_id_vpowerinfo_key_state|key_state)[^0-9a-f]*(?:0x)?([0-9a-f]+)");
+    private static final Pattern P_ENGINE_STATE =
+            Pattern.compile("(?:info_id_vpowerinfo_engine_state|engine_state)[^0-9]*(\\d+)");
+    private static final Pattern P_BOOTUP_REASON =
+            Pattern.compile("ap_power_bootup_reason[^0-9]*(\\d+)");
 
     private void startLogcatReader() {
         if (logcatThread != null && logcatThread.isAlive()) return;
@@ -605,7 +626,7 @@ public class VehicleAutomationService extends Service {
         if (line.contains("Get Speed ") || line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")) {
             try {
                 if (line.contains("Get Speed ")) {
-                    Matcher m = Pattern.compile("Get Speed\\s+(\\d+)km/h").matcher(line);
+                    Matcher m = P_GET_SPEED.matcher(line);
                     if (m.find()) {
                         currentSpeedKmH = Integer.parseInt(m.group(1));
                         processVehicleSpeedAutomation(currentSpeedKmH);
@@ -643,7 +664,7 @@ public class VehicleAutomationService extends Service {
             else if (line.contains("GEAR_SPORT") || line.contains("state[GEAR_SPORT]")) gearVal = 6;
             else if (line.contains("VehId=Vehicle_Gear")) {
                 try {
-                    Matcher m = Pattern.compile("VehId=Vehicle_Gear\\s+value=(?:0x)?([0-9a-fA-F]+)").matcher(line);
+                    Matcher m = P_VEHICLE_GEAR.matcher(line);
                     if (m.find()) {
                         int rawHex = Integer.parseInt(m.group(1), 16);
                         // 吉利 E02 复合报文：高4位为驾驶模式 (如 0x1=舒适), 低4位为物理挡位 (0x2=D挡, 0x3=N挡, 0x4=R挡, 0x5=P挡)
@@ -662,7 +683,7 @@ public class VehicleAutomationService extends Service {
         // 3.15 吉利 VehicleManager 框架标准状态: getDrivingMode: gear=X mode=Y (Tasker实车权威验证源)
         if (gearVal <= 0 && line.contains("getDrivingMode") && line.contains("gear=")) {
             try {
-                Matcher m = Pattern.compile("gear=(\\d+)").matcher(line);
+                Matcher m = P_GEAR_EQ.matcher(line);
                 if (m.find()) {
                     long gNum = Long.parseLong(m.group(1));
                     long low = gNum & 0xFF;
@@ -700,7 +721,7 @@ public class VehicleAutomationService extends Service {
         // 3.4 原厂核心服务与底层传感器属性: INFO_ID_VDRIVEINFO_GEAR_POSITION / mModelGearPos
         if (gearVal <= 0 && (line.contains("VDRIVEINFO_GEAR_POSITION") || line.contains("mModelGearPos") || line.contains("GearPos =") || line.contains("GearPos:"))) {
             try {
-                Matcher gm = Pattern.compile("(?:funValue\\((?:0x)?([0-9a-fA-F]+)\\)|(?:mModelGearPos|GearPos)\\s*[:=]\\s*(?:0x)?([0-9a-fA-F]+))").matcher(line);
+                Matcher gm = P_GEAR_POS.matcher(line);
                 if (gm.find()) {
                     String valStr = gm.group(1) != null ? gm.group(1) : gm.group(2);
                     int raw = Integer.parseInt(valStr, 16);
@@ -822,7 +843,7 @@ public class VehicleAutomationService extends Service {
         // 0 或超量程 (±540°) 一律 unknown 静默。
         if (line.contains("INFO_ID_VSTEERWHEELINFO_ANGLE_VALUE")) {
             try {
-                Matcher m = Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)").matcher(line);
+                Matcher m = P_FUNVALUE.matcher(line);
                 if (m.find()) {
                     int raw = (int) Long.parseLong(m.group(1), 16);
                     int low16 = raw & 0xFFFF;
@@ -842,7 +863,7 @@ public class VehicleAutomationService extends Service {
         // 强匹配 + 已知枚举 (0=释放 1=拉起, 实车采样)；其余值 unknown 静默。
         if (line.contains("INFO_ID_VDRIVEINFO_EPB_STATE")) {
             try {
-                Matcher m = Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)").matcher(line);
+                Matcher m = P_FUNVALUE.matcher(line);
                 if (m.find()) {
                     int raw = (int) Long.parseLong(m.group(1), 16);
                     int state = raw & 0xFFFF;
@@ -870,7 +891,7 @@ public class VehicleAutomationService extends Service {
         // 4 / 6 -> 智能模式 (MODE_SMART)
         if (line.contains("DirveMode =") || line.contains("DirveMode=") || line.contains("DriveMode =") || line.contains("DriveMode=")) {
             try {
-                Matcher m = Pattern.compile("(?:DirveMode|DriveMode)\\s*=\\s*(\\d+)").matcher(line);
+                Matcher m = P_DRIVE_MODE.matcher(line);
                 if (m.find()) {
                     int dm = Integer.parseInt(m.group(1));
                     if (dm == 1) modeVal = MODE_COMFORT;
@@ -1112,11 +1133,11 @@ public class VehicleAutomationService extends Service {
                 return 0; // Tasker实车验证: FuelConsumptionServiceImpl onAccOff -> 车辆熄火下电
             }
             if (l.contains("peps_powermode")) {
-                Matcher m = Pattern.compile("peps_powermode[^0-9]*(\\d+)").matcher(l);
+                Matcher m = P_PEPS_POWERMODE.matcher(l);
                 if (m.find()) return Integer.parseInt(m.group(1));
             }
             if (l.contains("info_id_vpowerinfo_key_state") || l.contains("key_state")) {
-                Matcher m = Pattern.compile("(?:funvalue|info_id_vpowerinfo_key_state|key_state)[^0-9a-f]*(?:0x)?([0-9a-f]+)").matcher(l);
+                Matcher m = P_KEY_STATE.matcher(l);
                 if (m.find()) {
                     int raw = Integer.parseInt(m.group(1), 16);
                     int low = raw & 0xFF;
@@ -1127,11 +1148,11 @@ public class VehicleAutomationService extends Service {
                 }
             }
             if (l.contains("info_id_vpowerinfo_engine_state") || l.contains("engine_state")) {
-                Matcher m = Pattern.compile("(?:info_id_vpowerinfo_engine_state|engine_state)[^0-9]*(\\d+)").matcher(l);
+                Matcher m = P_ENGINE_STATE.matcher(l);
                 if (m.find()) return Integer.parseInt(m.group(1));
             }
             if (l.contains("ap_power_bootup_reason")) {
-                Matcher m = Pattern.compile("ap_power_bootup_reason[^0-9]*(\\d+)").matcher(l);
+                Matcher m = P_BOOTUP_REASON.matcher(l);
                 if (m.find()) return 100 + Integer.parseInt(m.group(1));
             }
         } catch (Exception ignored) {}

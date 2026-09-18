@@ -46,7 +46,6 @@ import app.onepve.geelyconsole.utils.AutoPilotManager;
 import app.onepve.geelyconsole.utils.BatteryHealthMonitor;
 import app.onepve.geelyconsole.utils.DialogHelper;
 import app.onepve.geelyconsole.utils.DownloadManager;
-import app.onepve.geelyconsole.utils.FloatingWindowManager;
 import app.onepve.geelyconsole.utils.ForegroundAppDetector;
 import app.onepve.geelyconsole.utils.IdleScreensaverManager;
 import app.onepve.geelyconsole.utils.PrefsCompat;
@@ -3111,10 +3110,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             return true;
         }
 
-        @JavascriptInterface
-        public String getInstalledMusicAppsJson() {
+        /** DetailedAppInfo 列表 → JSON 数组（供各 getInstalled*AppsJson 共用，消除样板克隆） */
+        private static String appsToJson(List<SystemUtils.DetailedAppInfo> apps) {
             try {
-                List<SystemUtils.DetailedAppInfo> apps = SystemUtils.getInstalledMusicApps(MainActivity.this);
                 org.json.JSONArray arr = new org.json.JSONArray();
                 for (SystemUtils.DetailedAppInfo a : apps) {
                     org.json.JSONObject o = new org.json.JSONObject();
@@ -3131,19 +3129,18 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public String getInstalledMusicAppsJson() {
+            try {
+                return appsToJson(SystemUtils.getInstalledMusicApps(MainActivity.this));
+            } catch (Exception e) {
+                return "[]";
+            }
+        }
+
+        @JavascriptInterface
         public String getInstalledNaviAppsJson() {
             try {
-                List<SystemUtils.DetailedAppInfo> apps = SystemUtils.getInstalledNaviApps(MainActivity.this);
-                org.json.JSONArray arr = new org.json.JSONArray();
-                for (SystemUtils.DetailedAppInfo a : apps) {
-                    org.json.JSONObject o = new org.json.JSONObject();
-                    o.put("packageName", a.packageName);
-                    o.put("appName", a.appName);
-                    o.put("enabled", a.enabled);
-                    o.put("isSystem", a.isSystemApp);
-                    arr.put(o);
-                }
-                return arr.toString();
+                return appsToJson(SystemUtils.getInstalledNaviApps(MainActivity.this));
             } catch (Exception e) {
                 return "[]";
             }
