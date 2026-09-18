@@ -534,6 +534,62 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     private static final java.util.concurrent.ExecutorService DEVICE_INFO_EXECUTOR =
             java.util.concurrent.Executors.newSingleThreadExecutor();
     private volatile boolean deviceInfoPushing = false;
+    /** 屏幕参数进程级缓存：软件每次启动只真实采集一次，之后推送复用（2026-09-18 定案，修复「屏幕采集」日志无限刷屏） */
+    private org.json.JSONObject screenInfoCache = null;
+
+    /**
+     * 真实屏幕参数采集（wm size/density + DisplayMetrics 真实值，消灭写死魔数）。
+     * 加锁保证「采集 + 落日志」全局恰好一次：首次调用真实执行并记一条「屏幕采集」日志，
+     * 之后所有调用方（pushDeviceInfoToWeb / getDeviceInfo）直接复用缓存，不再刷日志。
+     */
+    private org.json.JSONObject ensureScreenInfoOnce(String ver) {
+        synchronized (this) {
+            if (screenInfoCache == null) {
+                org.json.JSONObject fresh = collectScreenInfo();
+                if (fresh != null) {
+                    screenInfoCache = fresh;
+                    try {
+                        AppLogger.i("屏幕采集", "启动首次采集 wm: " + fresh.optString("screen_wm")
+                            + " | 实测: " + fresh.optString("screen_real_size")
+                            + " | density: " + fresh.optString("screen_density")
+                            + " | appBounds: " + fresh.optString("screen_app_bounds")
+                            + " | version: " + ver);
+                    } catch (Exception ignored) {}
+                }
+            }
+            return screenInfoCache;
+        }
+    }
+
+    /** 只做一次真实采集（shell + Display 查询），不落日志；失败返回 null 由调用方下次重试 */
+    private org.json.JSONObject collectScreenInfo() {
+        try {
+            org.json.JSONObject s = new org.json.JSONObject();
+            String wmSize = SystemUtils.executeShell("wm size");
+            String wmDensity = SystemUtils.executeShell("wm density");
+            android.graphics.Point realSize = new android.graphics.Point();
+            android.view.Display d = ((android.view.WindowManager) getSystemService(android.content.Context.WINDOW_SERVICE)).getDefaultDisplay();
+            d.getRealSize(realSize);
+            android.graphics.Rect appBounds = new android.graphics.Rect();
+            d.getRectSize(appBounds);
+            android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+            d.getRealMetrics(dm);
+            String sizeStr = "未知";
+            if (wmSize != null) {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)x(\\d+)").matcher(wmSize);
+                if (m.find()) sizeStr = m.group(1) + "x" + m.group(2);
+            }
+            s.put("screen_size", sizeStr);
+            s.put("screen_real_size", realSize.x + "x" + realSize.y);
+            s.put("screen_density", dm.densityDpi + " dpi");
+            s.put("screen_density_dpi", dm.densityDpi);
+            s.put("screen_app_bounds", appBounds.width() + "x" + appBounds.height());
+            s.put("screen_wm", (wmSize == null ? "" : wmSize.trim()) + (wmDensity == null ? "" : " | " + wmDensity.trim()));
+            return s;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     public void pushDeviceInfoToWeb() {
         if (webView == null) return;
@@ -589,37 +645,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("is_car_device", isCarDevice(MainActivity.this));
                     obj.put("logPath", AppLogger.getLogFilePath());
                     obj.put("logSize", AppLogger.getLogFileSizeStr());
-                    // 真实屏幕参数采集（消灭写死魔数）：wm size/density + DisplayMetrics 真实值
-                    try {
-                        String wmSize = SystemUtils.executeShell("wm size");
-                        String wmDensity = SystemUtils.executeShell("wm density");
-                        android.graphics.Point realSize = new android.graphics.Point();
-                        android.view.Display d = ((android.view.WindowManager) getSystemService(android.content.Context.WINDOW_SERVICE)).getDefaultDisplay();
-                        d.getRealSize(realSize);
-                        android.graphics.Rect appBounds = new android.graphics.Rect();
-                        d.getRectSize(appBounds);
-                        android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
-                        d.getRealMetrics(dm);
-                        String sizeStr = "未知";
-                        if (wmSize != null) {
-                            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)x(\\d+)").matcher(wmSize);
-                            if (m.find()) sizeStr = m.group(1) + "x" + m.group(2);
-                        }
-                        obj.put("screen_size", sizeStr);
-                        obj.put("screen_real_size", realSize.x + "x" + realSize.y);
-                        obj.put("screen_density", dm.densityDpi + " dpi");
-                        obj.put("screen_density_dpi", dm.densityDpi);
-                        obj.put("screen_app_bounds", appBounds.width() + "x" + appBounds.height());
-                        obj.put("screen_wm", (wmSize == null ? "" : wmSize.trim()) + (wmDensity == null ? "" : " | " + wmDensity.trim()));
-                        // 落日志：屏幕参数真实采集 (消灭写死魔数, 日志可溯源)
-                        try {
-                            AppLogger.i("屏幕采集", "wm: " + obj.optString("screen_wm")
-                                + " | 实测: " + obj.optString("screen_real_size")
-                                + " | density: " + obj.optString("screen_density")
-                                + " | appBounds: " + obj.optString("screen_app_bounds")
-                                + " | version: " + currentVer);
-                        } catch (Exception ignored) {}
-                    } catch (Exception ignored) {}
+                    // 真实屏幕参数：每次启动只采一次，之后复用缓存（修「屏幕采集」日志无限刷屏）
+                    org.json.JSONObject scr = ensureScreenInfoOnce(currentVer);
+                    if (scr != null) {
+                        obj.put("screen_size", scr.optString("screen_size"));
+                        obj.put("screen_real_size", scr.optString("screen_real_size"));
+                        obj.put("screen_density", scr.optString("screen_density"));
+                        obj.put("screen_density_dpi", scr.optInt("screen_density_dpi"));
+                        obj.put("screen_app_bounds", scr.optString("screen_app_bounds"));
+                        obj.put("screen_wm", scr.optString("screen_wm"));
+                    }
                     script = "if(window.updateDeviceInfo){window.updateDeviceInfo('" + obj.toString() + "');}";
                 } catch (Exception e) {
                     deviceInfoPushing = false;
@@ -909,29 +944,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
                 obj.put("multimedia_frozen", isMediaFrozen);
                 obj.put("appstore_frozen", isAppstoreFrozen);
-                // 真实屏幕参数采集（与 pushDeviceInfoToWeb 同步）
-                try {
-                    String wmSize = SystemUtils.executeShell("wm size");
-                    String wmDensity = SystemUtils.executeShell("wm density");
-                    android.graphics.Point realSize = new android.graphics.Point();
-                    android.view.Display d = ((android.view.WindowManager) getSystemService(android.content.Context.WINDOW_SERVICE)).getDefaultDisplay();
-                    d.getRealSize(realSize);
-                    android.graphics.Rect appBounds = new android.graphics.Rect();
-                    d.getRectSize(appBounds);
-                    android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
-                    d.getRealMetrics(dm);
-                    String sizeStr = "未知";
-                    if (wmSize != null) {
-                        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)x(\\d+)").matcher(wmSize);
-                        if (m.find()) sizeStr = m.group(1) + "x" + m.group(2);
-                    }
-                    obj.put("screen_size", sizeStr);
-                    obj.put("screen_real_size", realSize.x + "x" + realSize.y);
-                    obj.put("screen_density", dm.densityDpi + " dpi");
-                    obj.put("screen_density_dpi", dm.densityDpi);
-                    obj.put("screen_app_bounds", appBounds.width() + "x" + appBounds.height());
-                    obj.put("screen_wm", (wmSize == null ? "" : wmSize.trim()) + (wmDensity == null ? "" : " | " + wmDensity.trim()));
-                } catch (Exception ignored) {}
+                // 真实屏幕参数：每次启动只采一次，之后复用缓存（与 pushDeviceInfoToWeb 同步）
+                org.json.JSONObject scr = ensureScreenInfoOnce(ver);
+                if (scr != null) {
+                    obj.put("screen_size", scr.optString("screen_size"));
+                    obj.put("screen_real_size", scr.optString("screen_real_size"));
+                    obj.put("screen_density", scr.optString("screen_density"));
+                    obj.put("screen_density_dpi", scr.optInt("screen_density_dpi"));
+                    obj.put("screen_app_bounds", scr.optString("screen_app_bounds"));
+                    obj.put("screen_wm", scr.optString("screen_wm"));
+                }
                 android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                 obj.put("silent_appstore_freeze", prefs.getBoolean("silent_appstore_freeze", false));
                 boolean isBeta = ver.toLowerCase().contains("beta");

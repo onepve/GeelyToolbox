@@ -812,6 +812,7 @@ regression_scripts = [
     "test_button_focus_gate.py",
     "test_recent_decisions.py",
     "test_update_filename.py",
+    "test_screen_collect_once.py",
     "test_regression_mutations.py",
 ]
 for regression_script in regression_scripts:
