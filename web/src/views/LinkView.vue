@@ -4,7 +4,7 @@
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-full flex flex-col space-y-1.5">
         <div class="flex items-center space-x-3">
-          <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_10px_var(--accent-gold)] shrink-0"></span>
+          <StatusDot size="lg" color="accent" :glow-px="10" class="shrink-0" />
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">车身智能联动计划</span>
           <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-accent/40 text-car-accent inline-flex items-center shrink-0 shadow-sm">
             {{ activeTaskCount }} / 4 项运行中
@@ -19,78 +19,38 @@
     <!-- 计划任务流列表 (车规对称双列网格 · 告别单列8层面条堆叠 · 1920宽屏黄金排布) -->
     <div class="grid grid-cols-2 gap-5">
       <!-- 任务 2: D 挡起步联动 360 -->
-      <div 
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
+      <PlanCard
+        title="2. 前进 D 挡起步联动 360"
+        tag="单次跃变"
+        help-text="gear_d_360"
+        flow-sub="从 P 挡或 R 挡切入前进 D 挡起步 (单次跃变锁)"
+        flow-main="唤醒 360 扫除起步盲区；车速超 15 km/h 自动还原"
+        @help="showHelp('gear_d_360')"
       >
-        <div class="flex items-center justify-between shrink-0 mb-2">
-          <div class="flex items-center space-x-3">
-            <span class="text-[21px] font-black text-car-text tracking-wide">2. 前进 D 挡起步联动 360</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">单次跃变</span>
-            <button 
-              @click.stop="showHelp('gear_d_360')"
-              class="w-[34px] h-[34px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[15px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-              title="查看功能指南"
-            >?</button>
-          </div>
-        </div>
-
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">从 P 挡或 R 挡切入前进 D 挡起步 (单次跃变锁)</div>
-          <div class="text-car-text font-bold">唤醒 360 扫除起步盲区；车速超 15 km/h 自动还原</div>
-        </div>
-
-        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <button
-            @click="toggleSetting('vehicle_d_gear_360_enabled')"
-            :class="[
-              'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-              store.vehicleAuto.vehicle_d_gear_360_enabled
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_d_gear_360_enabled ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
+        <template #footer>
+          <BaseButton variant="planToggle" :active="store.vehicleAuto.vehicle_d_gear_360_enabled" @click="toggleSetting('vehicle_d_gear_360_enabled')">
+            <StatusDot size="sm" :color="store.vehicleAuto.vehicle_d_gear_360_enabled ? 'accent' : 'sub'" :glow-px="6" />
             <span>{{ store.vehicleAuto.vehicle_d_gear_360_enabled ? 'D 挡起步 360 运行中' : 'D 挡起步 360 已暂停' }}</span>
-          </button>
-        </div>
-      </div>
+          </BaseButton>
+        </template>
+      </PlanCard>
 
       <!-- 任务 3: P 挡开门多媒体优雅静音 -->
-      <div 
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
+      <PlanCard
+        title="3. 停稳推门多媒体暂停"
+        tag="下车静音"
+        help-text="door_pause"
+        flow-sub="挂入驻车 P 挡且推开前排车门（准备下车）"
+        flow-main="自动向音乐播放器发送暂停指令，下车优雅安静"
+        @help="showHelp('door_pause')"
       >
-        <div class="flex items-center justify-between shrink-0 mb-2">
-          <div class="flex items-center space-x-3">
-            <span class="text-[21px] font-black text-car-text tracking-wide">3. 停稳推门多媒体暂停</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">下车静音</span>
-            <button 
-              @click.stop="showHelp('door_pause')"
-              class="w-[34px] h-[34px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[15px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-              title="查看功能指南"
-            >?</button>
-          </div>
-        </div>
-
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">挂入驻车 P 挡且推开前排车门（准备下车）</div>
-          <div class="text-car-text font-bold">自动向音乐播放器发送暂停指令，下车优雅安静</div>
-        </div>
-
-        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <button
-            @click="toggleSetting('vehicle_door_pause_music_enabled')"
-            :class="[
-              'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-              store.vehicleAuto.vehicle_door_pause_music_enabled
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_door_pause_music_enabled ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
+        <template #footer>
+          <BaseButton variant="planToggle" :active="store.vehicleAuto.vehicle_door_pause_music_enabled" @click="toggleSetting('vehicle_door_pause_music_enabled')">
+            <StatusDot size="sm" :color="store.vehicleAuto.vehicle_door_pause_music_enabled ? 'accent' : 'sub'" :glow-px="6" />
             <span>{{ store.vehicleAuto.vehicle_door_pause_music_enabled ? '推门暂停音乐运行中' : '推门暂停音乐已暂停' }}</span>
-          </button>
-        </div>
-      </div>
+          </BaseButton>
+        </template>
+      </PlanCard>
 
       <!-- 任务 4: 车速达标智能启播车载音乐 (双列网格 · 内容纵向拉宽填充) -->
       <div
@@ -358,6 +318,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { store, bridge, showToast, openModal } from '../store';
+import PlanCard from '../components/PlanCard.vue';
+import BaseButton from '../components/BaseButton.vue';
+import StatusDot from '../components/StatusDot.vue';
 
 
 

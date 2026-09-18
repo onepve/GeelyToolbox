@@ -15,7 +15,7 @@
           <div class="bg-car-card border border-car-border rounded-2xl p-4 flex flex-col justify-between space-y-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-2.5">
-                <span :class="['w-3 h-3 rounded-full', connStatus.bluetooth_enabled ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-slate-400']"></span>
+                <StatusDot size="md" :color="connStatus.bluetooth_enabled ? 'ok' : 'off'" :glow-px="8" />
                 <span class="text-[18px] font-black text-car-text">车机蓝牙</span>
               </div>
               <button 
@@ -46,7 +46,7 @@
           <div class="bg-car-card border border-car-border rounded-2xl p-4 flex flex-col justify-between space-y-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-2.5">
-                <span :class="['w-3 h-3 rounded-full', connStatus.wifi_enabled ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-slate-400']"></span>
+                <StatusDot size="md" :color="connStatus.wifi_enabled ? 'ok' : 'off'" :glow-px="8" />
                 <span class="text-[18px] font-black text-car-text">车机 Wi-Fi</span>
               </div>
               <button 
@@ -387,6 +387,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import FeatureCard from '../components/FeatureCard.vue';
+import StatusDot from '../components/StatusDot.vue';
 import { store, bridge, openModal, showToast } from '../store';
 
 const ttsInfo = ref({

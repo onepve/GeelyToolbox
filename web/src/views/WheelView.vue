@@ -4,10 +4,10 @@
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
-          <span :class="['w-3.5 h-3.5 rounded-full shadow-md shrink-0', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-slate-400']"></span>
+          <StatusDot size="lg" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">方向盘按键方控接管总开关</span>
           <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
-            <span :class="['w-2.5 h-2.5 rounded-full mr-2', store.vehicleAuto.wheel_master_switch ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-slate-400']"></span>
+            <StatusDot class="mr-2" size="sm" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" />
             {{ store.vehicleAuto.wheel_master_switch ? '方控接管已启用' : '方控已彻底放行 (不干涉)' }}
           </span>
         </div>
@@ -17,14 +17,10 @@
       </div>
 
       <div class="shrink-0 w-[230px]">
-        <button
+        <BaseButton
+          variant="master"
+          :active="store.vehicleAuto.wheel_master_switch"
           @click="toggleWheelMasterSwitch"
-          :class="[
-            'w-full h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center',
-            store.vehicleAuto.wheel_master_switch
-              ? 'bg-car-item border-car-accent'
-              : 'bg-car-card border-car-border hover:border-car-border-light'
-          ]"
         >
           <span class="text-[18.5px] font-black text-car-text tracking-wide whitespace-nowrap">
             {{ store.vehicleAuto.wheel_master_switch ? '方控接管已开启' : '方控接管已关闭' }}
@@ -32,7 +28,7 @@
           <span :class="['text-[12.5px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.wheel_master_switch ? 'text-car-accent' : 'text-car-sub']">
             {{ store.vehicleAuto.wheel_master_switch ? '点击切换为彻底放行' : '点击开启按键接管' }}
           </span>
-        </button>
+        </BaseButton>
       </div>
     </div>
 
@@ -40,7 +36,7 @@
     <div class="bg-car-item border border-car-border rounded-2xl p-5 shadow-sm">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center">
-          <span class="w-3 h-3 rounded-full bg-car-accent mr-3 shadow-[0_0_8px_var(--accent-gold)]"></span>
+          <StatusDot class="mr-3" size="md" color="accent" :glow-px="8" />
           <div class="flex flex-col">
             <span class="text-[18px] font-black text-car-text">吉利缤越 COOL (IHU516G / E02) 原厂方控图解</span>
             <span class="text-[14px] text-car-sub font-bold mt-0.5">
@@ -49,20 +45,13 @@
           </div>
         </div>
         <div class="flex items-center space-x-3">
-          <button 
-            @click="toggleFloating()"
-            class="h-[52px] px-5 rounded-2xl border-2 cursor-pointer transition-all shadow-sm whitespace-nowrap flex items-center font-black text-[16px]"
-            :class="floatingEnabled ? 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/20' : 'bg-car-card border-car-border text-car-sub'"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full mr-2.5', floatingEnabled ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-slate-400']"></span>
+          <BaseButton variant="chipLg" :active="floatingEnabled" @click="toggleFloating()">
+            <StatusDot class="mr-2.5" size="sm" :color="floatingEnabled ? 'ok' : 'off'" />
             {{ floatingEnabled ? '悬浮图解：开' : '悬浮图解：关' }}
-          </button>
-          <button 
-            @click="toggleDiagram()"
-            class="h-[52px] px-6 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light transition-all shadow-sm whitespace-nowrap flex items-center"
-          >
+          </BaseButton>
+          <BaseButton variant="ghost" @click="toggleDiagram()">
             {{ showDiagram ? '收起图解' : '展开图解' }}
-          </button>
+          </BaseButton>
         </div>
       </div>
 
@@ -146,13 +135,9 @@
             <span class="text-[17px] font-black text-car-text">投递播放状态至仪表盘与息屏时钟</span>
             <span class="text-[14px] text-car-sub font-bold">开启后向原厂 EAS 广播歌名与歌手，车机息屏后将显示音乐小部件卡片。默认关闭保持极简。</span>
           </div>
-          <button 
-            @click="toggleClusterPlayback" 
-            class="h-[52px] px-5 rounded-xl text-[15.5px] font-black border-2 transition-all whitespace-nowrap cursor-pointer shadow-sm"
-            :class="store.vehicleAuto.wheel_push_playback_cluster ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' : 'bg-car-card border-car-border text-car-sub hover:text-car-text'"
-          >
+          <BaseButton variant="pill" :active="store.vehicleAuto.wheel_push_playback_cluster" @click="toggleClusterPlayback">
             {{ store.vehicleAuto.wheel_push_playback_cluster ? '已开启 (投递状态)' : '已关闭 (默认纯净)' }}
-          </button>
+          </BaseButton>
         </div>
 
         <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border-2 border-car-border">
@@ -160,13 +145,9 @@
             <span class="text-[17px] font-black text-car-text">投递当前歌词至原车仪表盘 (HUD)</span>
             <span class="text-[14px] text-car-sub font-bold">开启后向吉利全液晶仪表盘中间卡片推送实时滚动歌词。默认关闭防信息刷屏。</span>
           </div>
-          <button 
-            @click="toggleClusterLyrics" 
-            class="h-[52px] px-5 rounded-xl text-[15.5px] font-black border-2 transition-all whitespace-nowrap cursor-pointer shadow-sm"
-            :class="store.vehicleAuto.wheel_push_lyrics_cluster ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' : 'bg-car-card border-car-border text-car-sub hover:text-car-text'"
-          >
+          <BaseButton variant="pill" :active="store.vehicleAuto.wheel_push_lyrics_cluster" @click="toggleClusterLyrics">
             {{ store.vehicleAuto.wheel_push_lyrics_cluster ? '已开启 (投递歌词)' : '已关闭 (默认纯净)' }}
-          </button>
+          </BaseButton>
         </div>
       </div>
     </FeatureCard>
@@ -199,17 +180,15 @@
         />
         <span class="text-[14px] text-car-sub font-bold whitespace-nowrap">6.0 秒 (防误触)</span>
         <div class="flex space-x-2 shrink-0">
-          <button 
-            v-for="preset in [1.0, 1.5, 2.0, 3.0, 5.0]" 
+          <BaseButton
+            v-for="preset in [1.0, 1.5, 2.0, 3.0, 5.0]"
             :key="preset"
+            variant="miniChip"
+            :active="longPressSec === preset"
             @click="setLongPressPreset(preset)"
-            :class="[
-              'px-3 py-1.5 text-[13.5px] font-black rounded-xl border transition-all cursor-pointer shadow-sm',
-              longPressSec === preset ? 'bg-car-card border-2 border-car-accent text-car-accent' : 'bg-car-card border border-car-border text-car-sub'
-            ]"
           >
             {{ preset }}s
-          </button>
+          </BaseButton>
         </div>
       </div>
     </FeatureCard>
@@ -254,19 +233,15 @@
             <div class="flex items-center justify-between mb-3">
               <span class="text-[19px] font-black text-car-text whitespace-nowrap">⑦ 上一曲</span>
               <div class="flex flex-wrap space-x-1.5">
-                <button
+                <BaseButton
                   v-for="g in gestureList"
                   :key="g.id"
+                  variant="gestureChip"
+                  :active="activeGesture.prev === g.id"
                   @click="activeGesture.prev = g.id"
-                  :class="[
-                    'px-3.5 py-2 rounded-xl text-[15px] font-black cursor-pointer transition-all whitespace-nowrap',
-                    activeGesture.prev === g.id
-                      ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
-                      : 'bg-car-card border border-car-border text-car-sub'
-                  ]"
                 >
                   {{ g.shortName }}
-                </button>
+                </BaseButton>
               </div>
             </div>
             <ActionSelect key-name="prev" :gesture="activeGesture.prev" />
@@ -277,19 +252,15 @@
             <div class="flex items-center justify-between mb-3">
               <span class="text-[19px] font-black text-car-text whitespace-nowrap">④ 下一曲</span>
               <div class="flex flex-wrap space-x-1.5">
-                <button
+                <BaseButton
                   v-for="g in gestureList"
                   :key="g.id"
+                  variant="gestureChip"
+                  :active="activeGesture.next === g.id"
                   @click="activeGesture.next = g.id"
-                  :class="[
-                    'px-3.5 py-2 rounded-xl text-[15px] font-black cursor-pointer transition-all whitespace-nowrap',
-                    activeGesture.next === g.id
-                      ? 'bg-car-card border-2 border-car-accent text-car-text shadow-sm'
-                      : 'bg-car-card border border-car-border text-car-sub'
-                  ]"
                 >
                   {{ g.shortName }}
-                </button>
+                </BaseButton>
               </div>
             </div>
             <ActionSelect key-name="next" :gesture="activeGesture.next" />
@@ -321,22 +292,16 @@
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-2xl mb-5">
       <div class="flex items-center justify-between pb-4 mb-4 border-b border-car-border/60">
         <div class="flex items-center space-x-3">
-          <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)]"></span>
+          <StatusDot size="lg" color="accent" :glow-px="8" />
           <span class="text-[20px] font-black text-car-text">新手功能指引 & 常用方案一键配置</span>
         </div>
         <div class="flex items-center space-x-3">
-          <button
-            @click="applyRecommendedPreset"
-            class="h-[52px] px-6 rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center whitespace-nowrap"
-          >
+          <BaseButton variant="cta" @click="applyRecommendedPreset">
             一键应用车友黄金方案
-          </button>
-          <button
-            @click="resetAllToFactory"
-            class="h-[52px] px-6 rounded-2xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center whitespace-nowrap"
-          >
+          </BaseButton>
+          <BaseButton variant="ghostSoft" @click="resetAllToFactory">
             一键恢复全车原厂默认
-          </button>
+          </BaseButton>
         </div>
       </div>
 
@@ -411,6 +376,8 @@
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
+import BaseButton from '../components/BaseButton.vue';
+import StatusDot from '../components/StatusDot.vue';
 import WheelGestureCard from '../components/WheelGestureCard.vue';
 import ActionSelect from '../components/ActionSelect.vue';
 import { store, bridge, showToast, openModal } from '../store';

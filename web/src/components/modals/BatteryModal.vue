@@ -11,7 +11,7 @@
       <div class="p-6 rounded-3xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center shadow-md relative overflow-hidden">
         <div class="flex items-center mb-3">
           <span :class="['text-[15.5px] px-4 py-1.5 rounded-full font-black tracking-wide shadow-sm flex items-center', batteryStatus.badgeClass]">
-            <span :class="['w-2 h-2 rounded-full mr-2', batteryStatus.dotClass]"></span>
+            <StatusDot class="mr-2" size="xs" :color="batteryStatus.dot.color" :pulse="batteryStatus.dot.pulse" />
             {{ batteryStatus.text }}
           </span>
         </div>
@@ -31,15 +31,15 @@
           <span class="mr-2">⚡</span> 车规级蓄电池电压安全参考标准：
         </div>
         <div class="flex items-center text-emerald-400">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 shrink-0"></span>
+          <StatusDot class="mr-2" size="xs" color="ok" :glow="false" />
           <span><b>≥ 11.8V（健康充沛）</b>：熄火电量充足；启动后发电机供电正常升至 13.5V~14.5V。</span>
         </div>
         <div class="flex items-center text-amber-400">
-          <span class="w-2 h-2 rounded-full bg-amber-500 mr-2 shrink-0"></span>
+          <StatusDot class="mr-2" size="xs" color="warn" :glow="false" />
           <span><b>11.5V ~ 11.8V（低电警戒）</b>：剩余电量较低，建议发动车辆运转充能。</span>
         </div>
         <div class="flex items-center text-rose-400">
-          <span class="w-2 h-2 rounded-full bg-rose-500 mr-2 shrink-0"></span>
+          <StatusDot class="mr-2" size="xs" color="err" :glow="false" />
           <span><b>&lt; 11.5V（重度亏电）</b>：面临打不着火风险，请立即关闭大灯及高功耗电器。</span>
         </div>
       </div>
@@ -98,6 +98,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
+import StatusDot from '../StatusDot.vue';
 import { store, bridge, closeModal, showToast } from '../../store';
 
 let voltTimer = null;
@@ -148,7 +149,7 @@ const batteryStatus = computed(() => {
       text: '传感器采集中...',
       desc: '正在监听车身 CAN 总线物理电压报文，请稍候...',
       badgeClass: 'bg-car-item border border-car-border text-car-text',
-      dotClass: 'bg-amber-400 animate-pulse shadow-[0_0_6px_#F59E0B]'
+      dot: { color: 'warn', pulse: true }
     };
   }
 
@@ -162,7 +163,7 @@ const batteryStatus = computed(() => {
       text: '发电机充能中',
       desc: '发动机已启动，车载发电机正在为蓄电池持续回充',
       badgeClass: 'bg-car-item border border-car-border text-car-text',
-      dotClass: 'bg-emerald-500 animate-pulse shadow-[0_0_6px_#10B981]'
+      dot: { color: 'ok', pulse: true }
     };
   } else if (v >= 11.8) {
     return {
@@ -171,7 +172,7 @@ const batteryStatus = computed(() => {
       text: '健康充沛',
       desc: '12V 蓄电池状态健康，剩余电量充裕',
       badgeClass: 'bg-car-item border border-car-border text-car-text',
-      dotClass: 'bg-emerald-500 shadow-[0_0_6px_#10B981]'
+      dot: { color: 'ok' }
     };
   } else if (v >= 11.5) {
     return {
@@ -180,7 +181,7 @@ const batteryStatus = computed(() => {
       text: '低电警戒 (建议启动)',
       desc: '蓄电池电量偏低，建议尽快发动车辆充能',
       badgeClass: 'bg-car-item border border-car-border text-car-text',
-      dotClass: 'bg-amber-400 shadow-[0_0_6px_#F59E0B]'
+      dot: { color: 'warn' }
     };
   } else {
     return {
@@ -189,7 +190,7 @@ const batteryStatus = computed(() => {
       text: '严重亏电 (面临无法点火)',
       desc: '电瓶严重亏电！请立即关闭高功耗电器，准备启动充能',
       badgeClass: 'bg-car-item border border-car-border text-car-text',
-      dotClass: 'bg-rose-500 animate-pulse shadow-[0_0_6px_#EF4444]'
+      dot: { color: 'err', pulse: true }
     };
   }
 });

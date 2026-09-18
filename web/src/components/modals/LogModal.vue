@@ -60,7 +60,7 @@
       >
         <div class="flex items-center justify-between text-[14px] font-bold mb-2">
           <span class="flex items-center" :class="exportFinished ? 'text-emerald-400' : 'text-car-accent'">
-            <span v-if="isExporting" class="inline-block w-2.5 h-2.5 rounded-full bg-car-accent animate-pulse mr-2.5"></span>
+            <StatusDot v-if="isExporting" class="mr-2.5" size="sm" color="accent" :glow="false" pulse />
             <span v-else class="mr-2">✓</span>
             {{ exportStepText }}
           </span>
@@ -143,6 +143,7 @@
 <script setup>
 import { ref, watch, nextTick, onUnmounted } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
+import StatusDot from '../StatusDot.vue';
 import { store, bridge, closeModal, showToast, openModal } from '../../store';
 
 const logContent = ref('正在加载运行日志...');

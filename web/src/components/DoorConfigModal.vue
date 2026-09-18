@@ -238,33 +238,20 @@
 </template>
 
 <script setup>
-import { store, bridge, showToast, openModal } from '../store';
+import { store } from '../store';
+import { useConfigModal } from '../composables/useConfigModal';
 
 const emit = defineEmits(['close']);
 
-function toggleSetting(key) {
-  const next = !store.vehicleAuto[key];
-  store.vehicleAuto[key] = next;
-  bridge.call('setVehicleAutomationSetting', key, next);
-  showToast('设置已更新: ' + (next ? '已开启' : '已关闭'));
-}
+const { toggleSetting, testVoice, openCustomVoice, setSetting } = useConfigModal();
 
-function testVoice(type) {
-  bridge.call('testVehicleVoice', type);
-}
-
-function openCustomVoice(key, title, soundFile) {
-  openModal('voiceItemSettings', {
-    key,
-    title,
-    soundFile: soundFile || (key + '.mp3')
-  });
-}
-
+/** 车门语音双模式切换：key 与 toast 固定，仅布尔值可变 */
 function setDoorMode(isUniversal) {
-  store.vehicleAuto.voice_door_mode_universal = isUniversal;
-  bridge.call('setVehicleAutomationSetting', 'voice_door_mode_universal', isUniversal);
-  showToast(isUniversal ? '已切换为: 通用智能车门语音 (推荐)' : '已切换为: 独立分门明细语音');
+  setSetting(
+    'voice_door_mode_universal',
+    isUniversal,
+    isUniversal ? '已切换为: 通用智能车门语音 (推荐)' : '已切换为: 独立分门明细语音'
+  );
 }
 
 </script>

@@ -213,6 +213,12 @@ onMounted(() => {
   --text-sub: #94A3B8;
   --accent-gold: #F59E0B;
   --modal-backdrop: rgba(11, 15, 25, 0.78);
+  /* 状态语义色（全站状态灯唯一真源，StatusDot 发光经变量自动换肤）。
+     非主题变量（palette 不下发、昼夜同值），不违反「:root 禁重复主题变量」铁律。 */
+  --status-ok: #10B981;
+  --status-warn: #F59E0B;
+  --status-err: #EF4444;
+  --status-info: #0EA5E9;
   /* --bg-modal 的无脚本兜底值（首帧引导脚本正常时会被 <html> 内联值覆盖）。
      仅作底色保险，绝非主题数据源——四套配色 × 昼夜的权威值一律在 theme/palette.js。 */
   --bg-modal: rgba(20, 27, 43, 0.96);

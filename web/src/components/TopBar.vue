@@ -14,7 +14,7 @@
         @click="pill.onClick"
         class="inline-flex items-center px-3 py-1.5 rounded-full bg-car-item border border-car-border text-[13.5px] font-extrabold text-car-text cursor-pointer hover:border-car-border-light transition-all shadow-sm"
       >
-        <span :class="['w-2.5 h-2.5 rounded-full mr-2', pill.dotClass || 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]']"></span>
+        <StatusDot class="mr-2" size="sm" :color="pill.dot ? pill.dot.color : 'accent'" :pulse="pill.dot ? !!pill.dot.pulse : false" />
         <span>{{ pill.text }}</span>
       </div>
     </div>
@@ -69,6 +69,7 @@ import { computed, onMounted, onUnmounted } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
 import { quickToggleDayNight } from '../theme/themes';
 import { openAppstoreFlow } from '../utils/appstoreFreeze';
+import StatusDot from './StatusDot.vue';
 
 let topBarTimer = null;
 
@@ -92,23 +93,23 @@ const statusPills = computed(() => {
   }
 
   let batteryText = '电瓶: 采集中...';
-  let dotColor = 'bg-amber-500 shadow-[0_0_6px_#F59E0B] animate-pulse';
+  let dot = { color: 'warn', pulse: true };
 
   // 车规 12V 蓄电池有效区间校验 (严格限制在 9.0V ~ 16.5V，低于 9V 坚决视为未就绪，杜绝 4.2V 等假数据污染)
   if (v && v >= 9.0 && v <= 16.5) {
     const voltStr = v.toFixed(1);
     const isCharging = v >= 13.4;
     let batteryStatus = '健康充沛';
-    dotColor = 'bg-emerald-500 shadow-[0_0_6px_#10B981]';
+    dot = { color: 'ok', pulse: false };
     if (isCharging) {
       batteryStatus = '充能中';
-      dotColor = 'bg-emerald-500 shadow-[0_0_6px_#10B981] animate-pulse';
+      dot = { color: 'ok', pulse: true };
     } else if (v < 11.5) {
       batteryStatus = '重度亏电';
-      dotColor = 'bg-rose-500 shadow-[0_0_6px_#EF4444] animate-pulse';
+      dot = { color: 'err', pulse: true };
     } else if (v < 11.8) {
       batteryStatus = '低电警戒';
-      dotColor = 'bg-amber-500 shadow-[0_0_6px_#F59E0B]';
+      dot = { color: 'warn', pulse: false };
     }
     batteryText = `电瓶: ${voltStr}V (${batteryStatus})`;
   }
@@ -116,17 +117,17 @@ const statusPills = computed(() => {
   return [
     { 
       text: batteryText, 
-      dotClass: dotColor,
+      dot,
       onClick: () => openModal('battery') 
     },
     { 
       text: `暗码(+10): ${store.dynamicCode}`, 
-      dotClass: 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]',
+      dot: { color: 'accent' },
       onClick: () => openModal('dialer') 
     },
     { 
       text: `商店: ${store.deviceInfo.appstore_frozen ? '已冻结' : '未冻结'}`, 
-      dotClass: store.deviceInfo.appstore_frozen ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-amber-500 shadow-[0_0_6px_#F59E0B]',
+      dot: { color: store.deviceInfo.appstore_frozen ? 'ok' : 'warn' },
       onClick: () => handleStoreCapsuleClick() 
     },
     { 
@@ -142,9 +143,9 @@ const statusPills = computed(() => {
         const ip = store.deviceInfo.car_ip || store.deviceInfo.ip || '';
         const isWifi = store.deviceInfo.is_wifi || (ip && (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')));
         const isCellular = store.deviceInfo.is_cellular || (ip && !ip.startsWith('127.') && !isWifi);
-        if (isWifi && ip && !ip.startsWith('127.')) return 'bg-emerald-500 shadow-[0_0_6px_#10B981]';
-        if (isCellular) return 'bg-sky-500 shadow-[0_0_6px_#0EA5E9]';
-        return 'bg-slate-400';
+        if (isWifi && ip && !ip.startsWith('127.')) return { color: 'ok' };
+        if (isCellular) return { color: 'info' };
+        return { color: 'off' };
       })(),
       onClick: () => openModal('qrCode') 
     }

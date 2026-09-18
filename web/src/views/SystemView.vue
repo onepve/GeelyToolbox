@@ -7,9 +7,9 @@
     >
       <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
-          <span class="w-3.5 h-3.5 rounded-full shadow-md shrink-0 bg-amber-400 shadow-[0_0_10px_#F59E0B]"></span>
+          <StatusDot size="lg" color="warn" :glow-px="10" class="shadow-md" />
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">检测到吉利应用商店处于未冻结状态</span>
-          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm"><span class="w-2.5 h-2.5 rounded-full mr-2 bg-amber-400 shadow-[0_0_6px_#F59E0B]"></span>建议处置</span>
+          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm"><StatusDot class="mr-2" size="sm" color="warn" />建议处置</span>
         </div>
         <div class="text-[14.5px] text-car-sub font-bold leading-normal">
           原厂商店运行会破坏白名单策略，直接导致第三方软件无法安装，强烈建议立即冻结锁定！
@@ -160,7 +160,7 @@
         helpTip="这是所有自动化功能的基础开关，建议保持常驻启用。"
       >
         <div class="w-full min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[18px] shadow-sm flex items-center justify-center space-x-2">
-          <span class="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_#10B981]"></span>
+          <StatusDot size="md" color="ok" :glow-px="8" />
           <span>开机自启静默守护: 已默认常驻启用</span>
         </div>
       </FeatureCard>
@@ -226,6 +226,7 @@
 
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
+import StatusDot from '../components/StatusDot.vue';
 import { store, bridge, openModal, showToast } from '../store';
 import { ref } from 'vue';
 import FloatingView from './FloatingView.vue';

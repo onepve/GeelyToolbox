@@ -4,10 +4,10 @@
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
-          <span :class="['w-3.5 h-3.5 rounded-full shadow-md shrink-0', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-slate-400']"></span>
+          <StatusDot size="lg" :color="store.vehicleAuto.voice_master_switch ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">座舱车身语音播报总开关</span>
           <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
-            <span :class="['w-2.5 h-2.5 rounded-full mr-2', store.vehicleAuto.voice_master_switch ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-slate-400']"></span>
+            <StatusDot class="mr-2" size="sm" :color="store.vehicleAuto.voice_master_switch ? 'ok' : 'off'" />
             {{ store.vehicleAuto.voice_master_switch ? '全车播报已启用' : '全车已彻底静音 (全车总闸)' }}
           </span>
         </div>
@@ -40,7 +40,7 @@
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 shadow-xl">
       <div class="flex items-center justify-between" :class="isProbeExpanded ? 'pb-3 mb-3 border-b border-car-border/60' : ''">
         <div class="flex items-center space-x-3">
-          <span class="w-3 h-3 rounded-full bg-car-accent animate-pulse shadow-[0_0_8px_var(--accent-gold)]"></span>
+          <StatusDot size="md" color="accent" :glow-px="8" pulse />
           <span class="text-[20px] font-black text-car-text whitespace-nowrap">车身全域物理信号实时探针 (实车调试专用)</span>
           <span v-if="!isProbeExpanded" class="text-[14px] px-3.5 py-1 rounded-xl bg-car-item border border-car-border text-car-accent font-bold whitespace-nowrap">
             {{ formatGearName(doorStatus.gear) }} · {{ formatModeName(doorStatus.mode) }} · 五门电平监听中
@@ -110,7 +110,7 @@
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-full flex flex-col space-y-1.5">
         <div class="flex items-center space-x-3">
-          <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_10px_var(--accent-gold)] shrink-0"></span>
+          <StatusDot size="lg" color="accent" :glow-px="10" class="shrink-0" />
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">座舱语音播报计划</span>
           <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-accent/40 text-car-accent inline-flex items-center shrink-0 shadow-sm">
             {{ activeVoiceTaskCount }} / 4 项运行中
@@ -134,186 +134,100 @@
     <!-- 语音任务流列表 (车规双列网格 2x2 · 告别单列堆叠面条 · 一屏尽览四大场景) -->
     <div class="grid grid-cols-2 gap-5">
       <!-- 语音任务 1: 挡位安全播报计划 -->
-      <div 
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
+      <PlanCard
+        title="1. 换挡有人感知语音计划"
+        tag="换挡安全"
+        help-size="lg"
+        help-text="gear"
+        flow-sub="踩刹车挂入 D / R / N 挡，或从行车切回 P 挡驻车"
+        flow-main="清晰播报挡位状态，支持自定义台词与音频混搭"
+        @help="showGearHelp"
       >
-        <div class="flex items-center justify-between shrink-0 mb-2">
-          <div class="flex items-center space-x-3">
-            <span class="text-[21px] font-black text-car-text tracking-wide">1. 换挡有人感知语音计划</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">换挡安全</span>
-            <button 
-              @click.stop="showGearHelp"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-            >
-              ?
-            </button>
+        <template #footer>
+          <div class="grid grid-cols-2 gap-3">
+            <BaseButton variant="planToggleGrid" :active="isGearVoicePlanActive" @click="toggleAllGearVoice">
+              <StatusDot size="sm" :color="isGearVoicePlanActive ? 'accent' : 'sub'" :glow-px="6" />
+              <span class="truncate">{{ isGearVoicePlanActive ? '计划运行中' : '计划已暂停' }}</span>
+            </BaseButton>
+            <BaseButton variant="configCta" @click="openGearConfigModal">
+              <span>挡位细分配置</span>
+              <span>➔</span>
+            </BaseButton>
           </div>
-        </div>
-
-        <!-- 逻辑说明：纯净两段式流向说明，垂直居中撑开 -->
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">踩刹车挂入 D / R / N 挡，或从行车切回 P 挡驻车</div>
-          <div class="text-car-text font-bold">清晰播报挡位状态，支持自定义台词与音频混搭</div>
-        </div>
-
-        <!-- 底部车规双大按钮：拉大间距至 pt-4，mt-auto 锁定绝对基线对齐 -->
-        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <button
-            @click="toggleAllGearVoice"
-            :class="[
-              'h-[52px] px-4 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-              isGearVoicePlanActive
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full', isGearVoicePlanActive ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
-            <span class="truncate">{{ isGearVoicePlanActive ? '计划运行中' : '计划已暂停' }}</span>
-          </button>
-          <button 
-            @click="openGearConfigModal"
-            class="h-[52px] px-4 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent text-car-accent font-black text-[16px] cursor-pointer shadow-sm transition-all flex items-center justify-center space-x-1"
-          >
-            <span>挡位细分配置</span>
-            <span>➔</span>
-          </button>
-        </div>
-      </div>
+        </template>
+      </PlanCard>
 
       <!-- 语音任务 2: 驾驶模式旋钮播报计划 -->
-      <div 
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
+      <PlanCard
+        title="2. 驾驶模式旋钮切换计划"
+        tag="旋钮激擎"
+        help-size="lg"
+        help-text="mode"
+        flow-sub="中控模式旋钮转动切换至舒适、经济、运动或智能"
+        flow-main="晓晓知性声线发声，点亮对应氛围 (含 160ms 防抖)"
+        @help="showModeHelp"
       >
-        <div class="flex items-center justify-between shrink-0 mb-2">
-          <div class="flex items-center space-x-3">
-            <span class="text-[21px] font-black text-car-text tracking-wide">2. 驾驶模式旋钮切换计划</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">旋钮激擎</span>
-            <button 
-              @click.stop="showModeHelp"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-            >
-              ?
-            </button>
+        <template #footer>
+          <div class="grid grid-cols-2 gap-3">
+            <BaseButton variant="planToggleGrid" :active="isModeVoicePlanActive" @click="toggleAllModeVoice">
+              <StatusDot size="sm" :color="isModeVoicePlanActive ? 'accent' : 'sub'" :glow-px="6" />
+              <span class="truncate">{{ isModeVoicePlanActive ? '模式计划运行中' : '模式计划已暂停' }}</span>
+            </BaseButton>
+            <BaseButton variant="configCta" @click="openModeConfigModal">
+              <span>模式细分配置</span>
+              <span>➔</span>
+            </BaseButton>
           </div>
-        </div>
-
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">中控模式旋钮转动切换至舒适、经济、运动或智能</div>
-          <div class="text-car-text font-bold">晓晓知性声线发声，点亮对应氛围 (含 160ms 防抖)</div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <button
-            @click="toggleAllModeVoice"
-            :class="[
-              'h-[52px] px-4 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-              isModeVoicePlanActive
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full', isModeVoicePlanActive ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
-            <span class="truncate">{{ isModeVoicePlanActive ? '模式计划运行中' : '模式计划已暂停' }}</span>
-          </button>
-          <button 
-            @click="openModeConfigModal"
-            class="h-[52px] px-4 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent text-car-accent font-black text-[16px] cursor-pointer shadow-sm transition-all flex items-center justify-center space-x-1"
-          >
-            <span>模式细分配置</span>
-            <span>➔</span>
-          </button>
-        </div>
-      </div>
+        </template>
+      </PlanCard>
 
       <!-- 语音任务 3: 四门迎宾与关门安全播报计划 -->
-      <div 
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
+      <PlanCard
+        title="3. 四门迎宾与关门安全计划"
+        tag="五门防抖"
+        help-size="lg"
+        help-text="door"
+        flow-sub="主驾、副驾、后排车门开启或关好 (防抖合并)"
+        flow-main="通用「车门已打开/关好」或独立分门，支持 TTS 定制"
+        @help="showDoorHelp"
       >
-        <div class="flex items-center justify-between shrink-0 mb-2">
-          <div class="flex items-center space-x-3">
-            <span class="text-[21px] font-black text-car-text tracking-wide">3. 四门迎宾与关门安全计划</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">五门防抖</span>
-            <button 
-              @click.stop="showDoorHelp"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-            >
-              ?
-            </button>
+        <template #footer>
+          <div class="grid grid-cols-2 gap-3">
+            <BaseButton variant="planToggleGrid" :active="isDoorVoicePlanActive" @click="toggleAllDoorVoice">
+              <StatusDot size="sm" :color="isDoorVoicePlanActive ? 'accent' : 'sub'" :glow-px="6" />
+              <span class="truncate">{{ isDoorVoicePlanActive ? '车门计划运行中' : '车门计划已暂停' }}</span>
+            </BaseButton>
+            <BaseButton variant="configCta" @click="openDoorConfigModal">
+              <span>车门详细配置</span>
+              <span>➔</span>
+            </BaseButton>
           </div>
-        </div>
-
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">主驾、副驾、后排车门开启或关好 (防抖合并)</div>
-          <div class="text-car-text font-bold">通用「车门已打开/关好」或独立分门，支持 TTS 定制</div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <button
-            @click="toggleAllDoorVoice"
-            :class="[
-              'h-[52px] px-4 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-              isDoorVoicePlanActive
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full', isDoorVoicePlanActive ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
-            <span class="truncate">{{ isDoorVoicePlanActive ? '车门计划运行中' : '车门计划已暂停' }}</span>
-          </button>
-          <button 
-            @click="openDoorConfigModal"
-            class="h-[52px] px-4 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent text-car-accent font-black text-[16px] cursor-pointer shadow-sm transition-all flex items-center justify-center space-x-1"
-          >
-            <span>车门详细配置</span>
-            <span>➔</span>
-          </button>
-        </div>
-      </div>
+        </template>
+      </PlanCard>
 
       <!-- 语音任务 4: 原厂电动尾门安全播报计划 -->
-      <div 
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200"
+      <PlanCard
+        title="4. 原厂电动尾门安全计划"
+        tag="尾门防碰"
+        help-size="lg"
+        help-text="trunk"
+        flow-sub="电动尾门按键触发升起，或锁扣电机下落闭锁确认"
+        flow-main="播报升起防刮蹭警示与落锁提示，支持专属定制"
+        @help="showTrunkHelp"
       >
-        <div class="flex items-center justify-between shrink-0 mb-2">
-          <div class="flex items-center space-x-3">
-            <span class="text-[21px] font-black text-car-text tracking-wide">4. 原厂电动尾门安全计划</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">尾门防碰</span>
-            <button 
-              @click.stop="showTrunkHelp"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-            >
-              ?
-            </button>
+        <template #footer>
+          <div class="grid grid-cols-2 gap-3">
+            <BaseButton variant="planToggleGrid" :active="isTrunkVoicePlanActive" @click="toggleAllTrunkVoice">
+              <StatusDot size="sm" :color="isTrunkVoicePlanActive ? 'accent' : 'sub'" :glow-px="6" />
+              <span class="truncate">{{ isTrunkVoicePlanActive ? '尾门计划运行中' : '尾门计划已暂停' }}</span>
+            </BaseButton>
+            <BaseButton variant="configCta" @click="openTrunkConfigModal">
+              <span>尾门详细配置</span>
+              <span>➔</span>
+            </BaseButton>
           </div>
-        </div>
-
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">电动尾门按键触发升起，或锁扣电机下落闭锁确认</div>
-          <div class="text-car-text font-bold">播报升起防刮蹭警示与落锁提示，支持专属定制</div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <button
-            @click="toggleAllTrunkVoice"
-            :class="[
-              'h-[52px] px-4 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-              isTrunkVoicePlanActive
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full', isTrunkVoicePlanActive ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
-            <span class="truncate">{{ isTrunkVoicePlanActive ? '尾门计划运行中' : '尾门计划已暂停' }}</span>
-          </button>
-          <button 
-            @click="openTrunkConfigModal"
-            class="h-[52px] px-4 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent text-car-accent font-black text-[16px] cursor-pointer shadow-sm transition-all flex items-center justify-center space-x-1"
-          >
-            <span>尾门详细配置</span>
-            <span>➔</span>
-          </button>
-        </div>
-      </div>
+        </template>
+      </PlanCard>
     </div>
 
     <!-- 挡位细分配置二级向导 → 独立组件（二级向导） -->
@@ -336,6 +250,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { store, bridge, showToast, openModal } from '../store';
+import PlanCard from '../components/PlanCard.vue';
+import BaseButton from '../components/BaseButton.vue';
+import StatusDot from '../components/StatusDot.vue';
 import SafetyGuardVoiceSection from '../components/SafetyGuardVoiceSection.vue';
 import GearConfigModal from '../components/GearConfigModal.vue';
 import ModeConfigModal from '../components/ModeConfigModal.vue';

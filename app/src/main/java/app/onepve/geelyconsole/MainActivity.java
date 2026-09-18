@@ -910,14 +910,36 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             this.context = context;
         }
 
+        // ============================================================================
+        // safeCall / safeRun — @JavascriptInterface 方法统一安全包装。
+        // 收敛全类几十处雷同的样板 try/catch：String 型方法失败时回退字面量并记日志；
+        // void 型方法静默吞异常（保持既有「尽力而为、不打扰」语义）。
+        // 仅包裹整方法体的单一 try/catch 场景；带自定义 catch 逻辑的方法保持原样。
+        // ============================================================================
+        private interface BridgeAction { String run() throws Exception; }
+
+        private interface BridgeTask { void run() throws Exception; }
+
+        private String safeCall(String fallback, BridgeAction action) {
+            try {
+                return action.run();
+            } catch (Exception e) {
+                Log.w(TAG, "ToolboxBridge 调用失败，返回兜底: " + fallback, e);
+                return fallback;
+            }
+        }
+
+        private void safeRun(BridgeTask task) {
+            try {
+                task.run();
+            } catch (Exception ignored) {}
+        }
+
         @JavascriptInterface
         public String getBatteryHealth() {
-            // 电瓶健康看板一期：静置电压/启动压降/充电平台 + 综合健康分（分级结论 Java 算好，前端只渲染）
-            try {
+            return safeCall("{\"error\":\"monitor_unavailable\"}", () -> {
                 return BatteryHealthMonitor.buildHealthJson(context);
-            } catch (Exception e) {
-                return "{\"error\":\"monitor_unavailable\"}";
-            }
+            });
         }
 
         @JavascriptInterface
@@ -986,7 +1008,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String getDoorStatus() {
-            try {
+            return safeCall("{}", () -> {
                 JSONObject obj = new JSONObject();
                 obj.put("fl", VehicleAutomationService.currentDoorFL);
                 obj.put("fr", VehicleAutomationService.currentDoorFR);
@@ -996,9 +1018,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("gear", VehicleAutomationService.lastGearPos);
                 obj.put("mode", VehicleAutomationService.lastDriveMode);
                 return obj.toString();
-            } catch (Exception e) {
-                return "{}";
-            }
+            });
         }
 
         @JavascriptInterface
@@ -1367,14 +1387,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String getLogInfo() {
-            try {
+            return safeCall("{\"path\":\"/sdcard/Download/geely_toolbox.log\",\"size\":\"0 KB\"}", () -> {
                 JSONObject obj = new JSONObject();
                 obj.put("path", AppLogger.getLogFilePath());
                 obj.put("size", AppLogger.getLogFileSizeStr());
                 return obj.toString();
-            } catch (Exception e) {
-                return "{\"path\":\"/sdcard/Download/geely_toolbox.log\",\"size\":\"0 KB\"}";
-            }
+            });
         }
 
         @JavascriptInterface
@@ -1555,7 +1573,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
          */
         @JavascriptInterface
         public String getScreensaverConfig() {
-            try {
+            return safeCall("{}", () -> {
                 JSONObject obj = new JSONObject();
                 obj.put("enabled", IdleScreensaverManager.isEnabled(context));
                 obj.put("seconds", IdleScreensaverManager.getSeconds(context));
@@ -1572,9 +1590,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("service_running", VehicleAutomationService.isRunning);
                 obj.put("screensaver_pkg", ForegroundAppDetector.PKG_SCREENSAVER);
                 return obj.toString();
-            } catch (Throwable e) {
-                return "{}";
-            }
+            });
         }
 
         /**
@@ -1838,7 +1854,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String extractOta() {
-            try {
+            return safeCall("{\"success\":false,\"url\":\"\"}", () -> {
                 SystemUtils.OtaExtractResult res = SystemUtils.extractOtaUrl();
                 JSONObject obj = new JSONObject();
                 obj.put("success", res != null && res.success);
@@ -1846,9 +1862,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("version", res != null ? res.version : "");
                 obj.put("details", res != null ? res.details : "");
                 return obj.toString();
-            } catch (Exception e) {
-                return "{\"success\":false,\"url\":\"\"}";
-            }
+            });
         }
 
         @JavascriptInterface
@@ -2111,7 +2125,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String getDownloadDirStats() {
-            try {
+            return safeCall("{\"count\":0,\"size_mb\":\"0.00\",\"path\":\"/sdcard/Download/\"}", () -> {
                 File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
                 if (downloadDir == null || !downloadDir.exists()) {
                     return "{\"count\":0,\"size_mb\":\"0.00\",\"path\":\"/sdcard/Download/\"}";
@@ -2131,9 +2145,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
                 double mb = (double) totalBytes / (1024 * 1024);
                 return String.format(Locale.US, "{\"count\":%d,\"size_mb\":\"%.2f\",\"path\":\"/sdcard/Download/\"}", count, mb);
-            } catch (Exception e) {
-                return "{\"count\":0,\"size_mb\":\"0.00\",\"path\":\"/sdcard/Download/\"}";
-            }
+            });
         }
 
         private long getDirSizeBytes(File dir) {
@@ -2379,7 +2391,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String getAllInstalledApps() {
-            try {
+            return safeCall("[]", () -> {
                 SystemUtils.clearAppsCache();
                 java.util.List<SystemUtils.DetailedAppInfo> apps = SystemUtils.getAllInstalledApps(MainActivity.this);
                 org.json.JSONArray array = new org.json.JSONArray();
@@ -2395,14 +2407,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
                 }
                 return array.toString();
-            } catch (Exception e) {
-                return "[]";
-            }
+            });
         }
 
         @JavascriptInterface
         public String checkLocalAppStatuses(String jsonArrayStr) {
-            try {
+            return safeCall("{}", () -> {
                 org.json.JSONArray arr = new org.json.JSONArray(jsonArrayStr);
                 JSONObject result = new JSONObject();
                 File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
@@ -2441,9 +2451,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     result.put(id, stat);
                 }
                 return result.toString();
-            } catch (Exception e) {
-                return "{}";
-            }
+            });
         }
 
         @JavascriptInterface
@@ -2913,7 +2921,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String getVehicleAutomationSettings() {
-            try {
+            return safeCall("{}", () -> {
                 android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                 org.json.JSONObject obj = new org.json.JSONObject();
                 
@@ -3042,9 +3050,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_volume_offset_notification", prefs.getInt("voice_volume_offset_notification", 0));
 
                 return obj.toString();
-            } catch (Exception e) {
-                return "{}";
-            }
+            });
         }
 
         @JavascriptInterface
@@ -3130,20 +3136,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String getInstalledMusicAppsJson() {
-            try {
+            return safeCall("[]", () -> {
                 return appsToJson(SystemUtils.getInstalledMusicApps(MainActivity.this));
-            } catch (Exception e) {
-                return "[]";
-            }
+            });
         }
 
         @JavascriptInterface
         public String getInstalledNaviAppsJson() {
-            try {
+            return safeCall("[]", () -> {
                 return appsToJson(SystemUtils.getInstalledNaviApps(MainActivity.this));
-            } catch (Exception e) {
-                return "[]";
-            }
+            });
         }
 
         @JavascriptInterface
@@ -3468,7 +3470,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String scanVoiceZipsInDownload() {
-            try {
+            return safeCall("[]", () -> {
                 File downloadDir = SystemUtils.getAppDownloadDir();
                 File[] files = downloadDir.listFiles();
                 JSONArray arr = new JSONArray();
@@ -3486,9 +3488,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
                 }
                 return arr.toString();
-            } catch (Exception e) {
-                return "[]";
-            }
+            });
         }
 
         @JavascriptInterface

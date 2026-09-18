@@ -59,7 +59,7 @@
                 {{ app.name }}
               </span>
               <span v-if="store.downloadProgress[app.id]" class="h-[34px] border px-3.5 rounded-xl bg-car-item border-car-border text-car-text font-black text-[13px] shrink-0 whitespace-nowrap inline-flex items-center shadow-sm">
-                <span :class="['w-2.5 h-2.5 rounded-full mr-2', store.downloadProgress[app.id].status === 'paused' ? 'bg-amber-400 shadow-[0_0_6px_#F59E0B]' : (store.downloadProgress[app.id].status === 'completed' ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-sky-500 shadow-[0_0_6px_#0EA5E9] animate-pulse')]"></span>
+                <StatusDot class="mr-2" size="sm" :color="store.downloadProgress[app.id].status === 'paused' ? 'warn' : (store.downloadProgress[app.id].status === 'completed' ? 'ok' : 'info')" :pulse="store.downloadProgress[app.id].status === 'downloading'" />
                 {{ store.downloadProgress[app.id].status === 'paused' ? '已暂停' : (store.downloadProgress[app.id].status === 'completed' ? '已下载' : `下载中 ${store.downloadProgress[app.id].percent || 0}%`) }}
               </span>
               <span v-else class="h-[34px] bg-car-item border-2 border-car-border px-3 rounded-xl text-car-sub font-mono font-black text-[13px] shrink-0 whitespace-nowrap flex items-center justify-center">
@@ -98,6 +98,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
+import StatusDot from '../components/StatusDot.vue';
 
 const currentCategory = ref('all');
 const categories = [

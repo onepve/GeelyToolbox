@@ -156,27 +156,11 @@
 </template>
 
 <script setup>
-import { store, bridge, showToast, openModal } from '../store';
+import { store } from '../store';
+import { useConfigModal } from '../composables/useConfigModal';
 
 const emit = defineEmits(['close']);
 
-function toggleSetting(key) {
-  const next = !store.vehicleAuto[key];
-  store.vehicleAuto[key] = next;
-  bridge.call('setVehicleAutomationSetting', key, next);
-  showToast('设置已更新: ' + (next ? '已开启' : '已关闭'));
-}
-
-function testVoice(type) {
-  bridge.call('testVehicleVoice', type);
-}
-
-function openCustomVoice(key, title, soundFile) {
-  openModal('voiceItemSettings', {
-    key,
-    title,
-    soundFile: soundFile || (key + '.mp3')
-  });
-}
+const { toggleSetting, testVoice, openCustomVoice } = useConfigModal();
 
 </script>

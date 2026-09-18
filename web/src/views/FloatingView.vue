@@ -32,7 +32,7 @@
             <span class="text-[13.5px] text-car-sub font-bold">在桌面及全屏应用上层常驻，支持自由拖拽吸附</span>
           </div>
           <div class="flex items-center space-x-2.5 shrink-0 pl-3">
-            <span :class="['w-3 h-3 rounded-full', store.deviceInfo.floating_enabled ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-slate-500']"></span>
+            <StatusDot size="md" :color="store.deviceInfo.floating_enabled ? 'ok' : 'offDim'" :glow-px="8" />
             <span :class="['text-[18px] font-black', store.deviceInfo.floating_enabled ? 'text-car-text' : 'text-car-sub']">
               {{ store.deviceInfo.floating_enabled ? '胶囊已常驻' : '胶囊已隐藏' }}
             </span>
@@ -124,7 +124,7 @@
             <span class="text-[13.5px] text-car-sub font-bold">桌面闲置达标自动息屏唤醒原生屏保，关闭零CPU消耗</span>
           </div>
           <div class="flex items-center space-x-2.5 shrink-0 pl-3">
-            <span :class="['w-3 h-3 rounded-full', ssEnabled ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-slate-500']"></span>
+            <StatusDot size="md" :color="ssEnabled ? 'ok' : 'offDim'" :glow-px="8" />
             <span :class="['text-[18px] font-black', ssEnabled ? 'text-car-text' : 'text-car-sub']">
               {{ ssEnabled ? '自动屏保已开启' : '自动屏保已关闭' }}
             </span>
@@ -190,7 +190,7 @@
                 : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
             ]"
           >
-            <span :class="['w-2.5 h-2.5 rounded-full', ssHomeOnly ? 'bg-emerald-400' : 'bg-slate-500']"></span>
+            <StatusDot size="sm" :color="ssHomeOnly ? 'okBright' : 'offDim'" :glow="false" />
             <span>{{ ssHomeOnly ? '仅主页生效 (导航避让)' : '任意界面放开' }}</span>
           </button>
           <button
@@ -208,6 +208,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { store, bridge, showToast, openModal } from '../store';
+import StatusDot from '../components/StatusDot.vue';
 
 function openFloatingHelp() {
   openModal('confirm', {
