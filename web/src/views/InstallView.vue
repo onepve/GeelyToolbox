@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col space-y-5">
     <!-- 1. 原生文件管理特权安装通道 (核心通道) -->
-    <div class="grid grid-cols-2 gap-5 items-start">
+    <div class="grid grid-cols-2 gap-5">
       <FeatureCard class="!mb-0" 
         title="车载原生文件管理 (特权安装正解通道)"
         desc="严禁直接通过 ADB 命令行 pm install 强行静默安装，底层安全策略会导致应用无法运行或白屏！"
@@ -33,7 +33,7 @@
         </div>
       </FeatureCard>
 
-      <FeatureCard class="!mb-0" 
+      <FeatureCard class="!mb-0 h-full"
         title="手机局域网无线快传 (免插线极速推包)"
         desc="无需繁琐插拔 U 盘或携带电脑，通过车机内置 HTTP 文件快传服务直接秒传安装包。"
         helpTitle="【功能指南】手机无线局域网极速推包"

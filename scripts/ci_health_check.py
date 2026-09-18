@@ -1197,11 +1197,45 @@ if _g24:
 else:
     print("[PASS] 语音前置静音+胶囊挂载防复发锁全绿！(mode_*.mp3 ≥280ms 前置静音 / onStop 挂载前台门禁 / 生成脚本 adelay 内置)")
 
+# ----------------------------------------------------------------------
+# 25. Changelog Double-Numbering Gate (发布文案双序号防复发锁)
+#     血泪教训：beta-v1.7.35.14 线上更新说明出现「1. 1.」双序号 —— 手写覆盖文件
+#     docs/changelog/*.txt 自带「N. 」前缀，构建器重编号未剥旧前缀被二次编号
+#     (2026-09-18 线上实测)。字符串级 + 真实覆盖文件动态断言，只增不减。
+# ----------------------------------------------------------------------
+log_step("25. Checking Changelog Double-Numbering (发布文案双序号防复发)")
+_g25 = []
+# 25a: 构建器必须保留旧序号前缀剥离容错（序号由构建器统一加）
+_builder_25_path = os.path.join(ROOT_DIR, "scripts", "changelog_builder.py")
+with open(_builder_25_path, encoding="utf-8") as _f25:
+    _builder_25 = _f25.read()
+if 're.sub(r"^\\d+\\s*[.、．)]\\s*", "", ln' not in _builder_25:
+    _g25.append("[25a] changelog_builder.py 缺少旧序号前缀剥离容错（手写覆盖带「N. 」会被二次编号成「1. 1.」）")
+# 25b: 用真实 docs/changelog/*.txt 覆盖文件动态跑构建器，产物严禁出现双序号
+sys.path.insert(0, os.path.join(ROOT_DIR, "scripts"))
+from changelog_builder import build_changelog as _build_changelog_25
+_chlog_dir_25 = os.path.join(ROOT_DIR, "docs", "changelog")
+for _txt_25 in sorted(os.listdir(_chlog_dir_25)):
+    if not _txt_25.endswith(".txt"):
+        continue
+    _tag_25 = _txt_25[:-4]
+    _out_25 = _build_changelog_25(_tag_25, ROOT_DIR, "")
+    for _ln_25 in _out_25.splitlines():
+        if re.match(r"^\d+\.\s*\d+\.\s", _ln_25):
+            _g25.append(f"[25b] {_txt_25} 构建产物出现双序号: {_ln_25.strip()[:60]}")
+            break
+if _g25:
+    for _v25 in _g25:
+        print(f"  [FAIL] {_v25}")
+    passed = False
+else:
+    print("[PASS] 发布文案双序号防复发锁全绿！(构建器剥前缀容错在位 / 真实覆盖文件动态构建 0 双序号)")
+
 # Final Summary Verdict
 # ----------------------------------------------------------------------
-log_step("CI 24-Gate Health Check Verdict")
+log_step("CI 25-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 24 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard all closed)")
+    print("[SUCCESS] All 25 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering all closed)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")

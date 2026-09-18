@@ -74,6 +74,9 @@ def read_override(tag_name, repo_dir):
             lines = [ln.strip() for ln in f]
     except Exception:
         return []
+    # 容错：剥离手写文件里已有的「N. 」序号前缀（序号由构建器统一加），
+    # 防止出现「1. 1. 」双序号（beta-v1.7.35.14 线上实测教训）
+    lines = [re.sub(r"^\d+\s*[.、．)]\s*", "", ln) for ln in lines]
     return [ln for ln in lines if ln and not ln.startswith("#")]
 
 

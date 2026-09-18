@@ -113,7 +113,7 @@
       </div>
     </FeatureCard>
     <!-- 2. 系统语音合成引擎 (TTS) 直通状态 (支持原厂与第三方TTS自由切换，状态直显与试听) -->
-    <div class="grid grid-cols-2 gap-5 items-start"><FeatureCard class="!mb-0"
+    <div class="grid grid-cols-2 gap-5"><FeatureCard class="!mb-0 h-full"
       title="系统语音合成引擎 (TTS) 直通状态"
       desc="系统直接通过后台 IPC 接入安卓系统语音合成服务。支持车机原厂语音引擎与第三方 TTS 自由选择，点击设置可随心切换。"
       helpTitle="【功能指南】系统语音合成引擎 (TTS) 直通"
@@ -168,7 +168,7 @@
     </FeatureCard>
 
     <!-- 3. 播报音量相对增益补偿滑条 (解决听歌低音量时听不清开门/换挡) -->
-    <FeatureCard class="!mb-0"
+    <FeatureCard class="!mb-0 h-full"
       title="播报音量动态增益补偿 (听歌低音量时自动增补)"
       desc="听歌时媒体音量调低容易听不清开门与换挡提醒。设置增益后，播报瞬间自动在当前媒体音量上动态叠加补偿，播完秒级恢复原音量！"
       helpTitle="【功能指南】播报音量动态增益补偿"

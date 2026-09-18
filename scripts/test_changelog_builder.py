@@ -85,6 +85,14 @@ def main():
         check("beta-v1.7.34.1" in text3, "任意 Tag 均生成与之匹配的标题")
         check("beta-v1.7.33.2" not in text3, "不回落到上一版本文案")
 
+        # E. 双序号容错 (beta-v1.7.35.14 线上实测教训): 手写文件已带「N. 」前缀时,
+        #    构建器必须剥离后重新统一编号, 线上正文严禁出现「1. 1.」双序号
+        with open(os.path.join(ov, "beta-v1.7.35.14.txt"), "w", encoding="utf-8") as f:
+            f.write("1. 已带序号手写文案甲\n2. 已带序号手写文案乙\n")
+        text5 = build_changelog("beta-v1.7.35.14", tmp, "")
+        check("1. 1." not in text5 and "2. 2." not in text5, "严禁双序号「N. N.」(v14 线上实测缺陷)")
+        check("1. 已带序号手写文案甲" in text5 and "2. 已带序号手写文案乙" in text5, "剥离旧前缀后统一编号且正文完整")
+
         # 空仓库极端情况
         empty = tempfile.mkdtemp(prefix="chlog-empty-")
         try:
