@@ -28,7 +28,7 @@
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">单次跃变</span>
             <button 
               @click.stop="showHelp('gear_d_360')"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
+              class="w-[34px] h-[34px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[15px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
               title="查看功能指南"
             >?</button>
           </div>
@@ -65,7 +65,7 @@
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">下车静音</span>
             <button 
               @click.stop="showHelp('door_pause')"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
+              class="w-[34px] h-[34px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[15px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
               title="查看功能指南"
             >?</button>
           </div>

@@ -249,6 +249,11 @@ for root, _, files in os.walk(WEB_SRC_DIR):
                     # 排除方控滑块等微型胶囊预设
                     if "preset in" in b or "g in gestureList" in b:
                         continue
+                    # 帮助 "?" 按钮(2026-09-18 用户定案): 非主操作件, 契约反转为「必须恰好 34px 统一尺寸」
+                    if re.search(r"@click(?:\.stop)?=\"(?:showHelp|openFloatingHelp|openScreensaverHelp)[\('\"]", b):
+                        if 'w-[34px]' not in b or 'h-[34px]' not in b:
+                            touch_violations.append((fn, "help_btn_not_34px", b.strip()))
+                        continue
                     h_m = re.search(r'h-\[(\d+)px\]', b)
                     if not h_m:
                         touch_violations.append((fn, "missing_explicit_h", b.strip()))
