@@ -1105,11 +1105,38 @@ if ui19_violations:
 else:
     print("[PASS] UI 防复发门禁全绿！(Chromium68 安全遮罩 / 只读 UID 禁选中 / 零测试标签)")
 
+# ----------------------------------------------------------------------
+# 22. Real-Device Narrow-Viewport Theme Tile Gate (真机窄视口磁贴防复发锁)
+#     血泪教训：beta-v1.7.33.10 主题卡 7 磁贴固定 150px 单行硬排，真车 4096x1844(20:9)
+#     视口比模拟器(1920x720)窄，flex 强压 -> 文字叠印/按钮压扁。修复走 flex-wrap 自适应，
+#     本门禁字符串级锁定，只增不减。
+# ----------------------------------------------------------------------
+log_step("22. Checking Real-Device Narrow-Viewport Theme Tile Safety (真机窄视口磁贴防复发)")
+_sysview_22_path = os.path.join(ROOT_DIR, "web/src/views/SystemView.vue")
+with open(_sysview_22_path, encoding="utf-8") as _f22:
+    _sysview_22 = _f22.read()
+_g22 = []
+# 22a: 主题磁贴容器必须是 flex-wrap（窄视口自动折行，严禁单行硬排）
+if "flex flex-wrap justify-center items-stretch" not in _sysview_22:
+    _g22.append("[22a] SystemView 主题磁贴容器缺少 flex-wrap（真机窄视口压扁复发风险，flex-wrap 铁律）")
+# 22b: 磁贴自带 m-2 margin 间距（flex-wrap 折行后上下行也要有间距，且严禁依赖 flex gap）
+if _sysview_22.count("'m-2 w-[150px] h-[150px]") < 2:
+    _g22.append("[22b] SystemView 主题磁贴缺少 m-2 margin 间距（昼夜档+配色两处循环都要有）")
+# 22c: 昼夜/配色分隔线窄视口必须隐藏（hidden xl:block），否则折行布局中残留竖线错位
+if "hidden xl:block w-px" not in _sysview_22:
+    _g22.append("[22c] SystemView 昼夜/配色分隔线未做窄视口隐藏（须 hidden xl:block）")
+if _g22:
+    for _v22 in _g22:
+        print(f"  [FAIL] {_v22}")
+    passed = False
+else:
+    print("[PASS] 真机窄视口磁贴防复发锁全绿！(flex-wrap 自动折行 / m-2 margin 间距 / 分隔线 hidden xl:block)")
+
 # Final Summary Verdict
 # ----------------------------------------------------------------------
-log_step("CI 18-Gate Health Check Verdict")
+log_step("CI 22-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 18 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency & HMI geometric alignment all closed)")
+    print("[SUCCESS] All 22 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero \\n changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety all closed)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")

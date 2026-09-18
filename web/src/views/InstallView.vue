@@ -9,7 +9,7 @@
         helpText="1. 为什么严禁 ADB pm install：&#10;吉利车机系统底层有签名校验安全策略，直接通过 ADB 命令行静默安装会导致第三方软件白屏或签名崩溃闪退。&#10;&#10;2. 特权正解通道：&#10;将安装包放入车机 Download 目录后，通过点击本卡片按钮调起车载原生文件管理，在系统级特权应用内点击安装，系统将自动放行安装并正常运行。"
         helpTip="下载或传到车机 Download 目录的 APK，统一通过原生文件管理点击安装。"
       >
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
           <div class="flex-1 min-w-0 pr-6 flex flex-col">
             <div class="text-[18px] font-black text-car-text mb-2">
               标准无损安装路线：
@@ -40,7 +40,7 @@
         helpText="1. 免插拔 U 盘原理：&#10;车机内置轻量级 HTTP 局域网传输服务（端口 8888）。手机连接车机 Wi-Fi 热点或同局域网后，扫码即可秒开上传页面。&#10;&#10;2. 自动落盘路径：&#10;手机上传的 APK 会自动保存到车机 /sdcard/Download/ 目录中，随后点击上方 Card 1 原生文件管理即可直接点击安装。"
         helpTip="建议手机连接车机发出的 Wi-Fi 热点，传输速度最快、延迟最低。"
       >
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
           <div class="flex-1 min-w-0 pr-6 flex flex-col">
             <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-2">
               只要手机与车机处于同一 Wi-Fi 或车机热点下，扫码即可秒开网页，将手机下载的高德地图、音乐等 APK 秒传至车机 Download 目录。
@@ -70,7 +70,7 @@
     >
       <div class="grid grid-cols-2 gap-4">
         <!-- 主流+5暗码 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
           <div>
             <div class="text-[15px] font-bold text-car-sub">主流新固件 (月份+5 算法)</div>
             <div class="text-[28px] font-black text-car-accent mt-1 tracking-wider">
@@ -87,7 +87,7 @@
         </div>
 
         <!-- 老固件+10暗码 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
           <div>
             <div class="text-[15px] font-bold text-car-sub">早期老版固件 (月份+10 算法)</div>
             <div class="text-[28px] font-black text-car-text mt-1 tracking-wider">
@@ -113,7 +113,7 @@
       helpText="1. 核心技术原理：&#10;通过重写吉利原厂桌面兔子时钟屏保卡片（com.ecarx.screensaver）实现无损系统级提权，突破第三方地图签名白名单限制。&#10;&#10;2. 高德版本兼容说明：&#10;仅高德 8.5 专车版（AE86 版）可直接安装免卡兔子主题；商城内的 9.5 版必须使用本卡兔子主题通道安装，否则无法通过签名校验。其他版本未在商城上架，请用户自行测试兼容性。&#10;&#10;3. 适用场景：&#10;当商城高德 9.5 直装失败、或想安装其它第三方地图时，请使用本专家通道完成卡兔子主题伪装注入。"
       helpTip="高德 8.5 专车版可直接安装；商城 9.5 版必须走卡兔子主题通道，其他版本请自行测试。"
     >
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between">
+      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
         <div class="flex-1 min-w-0 pr-6 flex flex-col">
           <div class="flex items-center space-x-3 mb-1">
             <span class="text-[18px] font-black text-car-text">伪装屏保注入特权</span>

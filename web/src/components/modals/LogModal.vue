@@ -1,7 +1,7 @@
 <template>
   <ModalWrapper
     :show="store.modals.log"
-    title="吉利智驾 · 运行与守护日志"
+    title="缤越助手 · 运行与守护日志"
     :badge="autoScroll ? '● 最新置顶轮转 (1.5s)' : '○ 自动置顶已暂停'"
     maxWidthClass="max-w-[1080px]"
     :showCloseButton="false"

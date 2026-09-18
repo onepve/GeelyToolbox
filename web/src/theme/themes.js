@@ -1,6 +1,6 @@
-// 液态玻璃 4 色 × 白夜主题系统 —— 配色 1:1 来自车主认可的 make_glass.py 效果图
+// 液态玻璃 4 色 + 曜石金（初代实底主题复活）× 白夜主题系统
 // 模式三档：auto（跟随时间 6:00~17:59 为白天）| day | night
-// 配色：blue / brown / green / pink，出厂默认 blue · night
+// 配色：blue / brown / green / pink / gold，出厂默认 green · night
 
 import { store } from '../store';
 
@@ -14,9 +14,9 @@ import { DAY_START, DAY_END, STORAGE_KEY, THEMES, DEFAULT_PALETTE, DEFAULT_MODE,
 // MODES / PALETTES 与默认档统一定义在 palette.js（构建期首帧引导脚本同源共用），此处只做转出。
 export { MODES, PALETTES };
 export const MODE_LABELS = { auto: '跟随时间', day: '白天', night: '黑夜' };
-export const PALETTE_LABELS = { blue: '蓝', brown: '棕', green: '绿', pink: '粉' };
+export const PALETTE_LABELS = { blue: '蓝', brown: '棕', green: '绿', pink: '粉', gold: '金' };
 // 色卡小圆点取色（各配色主色，取自认可效果图）
-export const PALETTE_DOT = { blue: '#5b8cff', brown: '#d4a04a', green: '#3fbf88', pink: '#d46a8c' };
+export const PALETTE_DOT = { blue: '#5b8cff', brown: '#d4a04a', green: '#3fbf88', pink: '#d46a8c', gold: '#d99a26' };
 
 
 function loadSaved() {

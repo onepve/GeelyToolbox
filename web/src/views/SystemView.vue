@@ -176,13 +176,13 @@
     >
       <div class="w-full flex flex-col space-y-4">
         <!-- 7 个近正方形主题方块（3 昼夜档 + 4 配色），居中等距排布，杜绝扁长拉伸 -->
-        <div class="flex justify-center items-stretch space-x-4 w-full">
+        <div class="flex flex-wrap justify-center items-stretch -m-2 w-full">
           <button
             v-for="m in MODES"
             :key="m"
             @click="onSetMode(m)"
             :class="[
-              'w-[150px] h-[150px] rounded-3xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-2.5',
+              'm-2 w-[150px] h-[150px] rounded-3xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-2.5',
               store.theme.mode === m
                 ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-lg'
                 : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
@@ -191,13 +191,13 @@
             <span class="text-[23px] font-black leading-none whitespace-nowrap">{{ MODE_LABELS[m] }}</span>
             <span class="text-[14px] font-bold text-car-sub leading-none whitespace-nowrap">{{ MODE_SUBS[m] }}</span>
           </button>
-          <div class="w-px self-stretch my-4 bg-car-border" aria-hidden="true"></div>
+          <div class="hidden xl:block w-px self-stretch m-2 bg-car-border" aria-hidden="true"></div>
           <button
             v-for="p in PALETTES"
             :key="p"
             @click="onSetPalette(p)"
             :class="[
-              'w-[150px] h-[150px] rounded-3xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-2.5',
+              'm-2 w-[150px] h-[150px] rounded-3xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-2.5',
               store.theme.palette === p
                 ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-lg'
                 : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
@@ -234,7 +234,7 @@ import { openAppstoreFlow } from '../utils/appstoreFreeze';
 
 // 方块副标题：昼夜档标注时段语义，配色卡标注主题全名
 const MODE_SUBS = { auto: '6:00~17:59', day: '常驻白天', night: '常驻黑夜' };
-const PALETTE_FULL = { blue: '清晨蓝', brown: '琥珀棕', green: '晨曦绿', pink: '樱语粉' };
+const PALETTE_FULL = { blue: '清晨蓝', brown: '琥珀棕', green: '晨曦绿', pink: '樱语粉', gold: '曜石金' };
 
 function onSetMode(v) {
   setMode(v);

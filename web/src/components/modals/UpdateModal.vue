@@ -10,7 +10,7 @@
       <!-- 版本徽标卡片 -->
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
         <div class="flex items-center">
-          <span class="text-[22px] font-black text-car-text mr-3">吉利智驾</span>
+          <span class="text-[22px] font-black text-car-text mr-3">缤越助手</span>
           <span 
             :class="[
               'text-[14px] px-3 py-1 rounded-full font-extrabold border',

@@ -1,7 +1,7 @@
 <template>
   <ModalWrapper 
     :show="store.modals.about" 
-    title="吉利智驾 · 关于" 
+    title="缤越助手 · 关于" 
     :badge="isBeta ? 'BETA 测试版' : '正式版'"
     maxWidthClass="max-w-[820px]"
     @close="closeModal('about')"
@@ -10,7 +10,7 @@
       <!-- 品牌、版本与 5 连击彩蛋区域 -->
       <div class="p-6 rounded-3xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center shadow-md relative">
         <div class="flex items-center space-x-3 mb-2">
-          <span class="text-[26px] font-black text-car-text">吉利智驾 (GeelyToolbox)</span>
+          <span class="text-[26px] font-black text-car-text">缤越助手 (GeelyToolbox)</span>
           <span 
             @click="handleVersionClick"
             class="text-[14px] px-3 py-1 rounded-full bg-car-card text-car-text font-black border border-car-border cursor-pointer hover:border-car-border-light transition-all shadow-sm select-none"
@@ -52,6 +52,19 @@
                 <line x1="1" y1="1" x2="23" y2="23"></line>
               </svg>
             </button>
+          </div>
+        </div>
+
+        <!-- 真实屏幕参数采集 (实车分辨率/DPI/视口, 消灭写死魔数; 启动自动采集, 关于页纯展示) -->
+        <div class="mt-3 pt-3 border-t border-car-border/60 w-full px-2">
+          <div class="flex flex-col items-start space-y-1">
+            <span class="text-[15.5px] text-car-sub font-bold">屏幕参数 (实车采集):</span>
+            <div class="flex flex-wrap items-center space-x-3 space-y-1 text-[14.5px] font-mono text-car-sub">
+              <span>分辨率 <b class="text-car-text">{{ screenInfo.size }}</b></span>
+              <span>DPI <b class="text-car-text">{{ screenInfo.dpi }}</b></span>
+              <span>应用边界 <b class="text-car-text">{{ screenInfo.appBounds }}</b></span>
+            </div>
+            <span v-if="screenInfo.wm" class="text-[13px] text-car-sub/80 font-mono truncate max-w-full">{{ screenInfo.wm }}</span>
           </div>
         </div>
       </div>
@@ -173,6 +186,28 @@ const isBeta = computed(() => {
   const ver = (store.deviceInfo.version || '').toLowerCase();
   return ver.includes('beta');
 });
+
+// 真实屏幕参数 (由 Java Bridge getDeviceInfo/pushDeviceInfoToWeb 启动自动采集上报, 此处纯展示)
+const screenInfo = ref({
+  size: '读取中...',
+  dpi: '读取中...',
+  appBounds: '读取中...',
+  wm: ''
+});
+
+function refreshScreenInfo() {
+  const di = store.deviceInfo || {};
+  if (di.screen_size || di.screen_real_size) {
+    screenInfo.value.size = di.screen_size && di.screen_size !== '未知'
+      ? di.screen_size
+      : (di.screen_real_size || '未知');
+    screenInfo.value.dpi = di.screen_density || (di.screen_density_dpi ? di.screen_density_dpi + ' dpi' : '未知');
+    screenInfo.value.appBounds = di.screen_app_bounds || '未知';
+    screenInfo.value.wm = di.screen_wm || '';
+  }
+}
+
+refreshScreenInfo();
 
 try {
   const uid = bridge.call('getDeviceUid');

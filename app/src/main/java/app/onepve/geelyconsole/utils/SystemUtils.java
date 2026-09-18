@@ -1669,7 +1669,26 @@ public class SystemUtils {
         if (model == null || model.trim().isEmpty()) model = "IHU516G (吉利缤越/缤瑞 COOL)";
         if (build == null || build.trim().isEmpty()) build = "SWOSX110930H116900000";
         if (density == null || density.trim().isEmpty()) density = "160";
-        return "车机型号: " + model.trim() + "\n系统版本: " + build.trim() + "\n屏幕参数: 1920x720 (" + density.trim() + " dpi)";
+        // 真实屏幕参数采集：wm size + DisplayMetrics 双通道，优先真实值，消灭写死魔数
+        String wmSize = executeShell("wm size");
+        String wmDensity = executeShell("wm density");
+        String res = "";
+        try {
+            // 用 Resources.getSystem().getDisplayMetrics() 拿真实 dpi，兼容 Android 9 (API 28)
+            android.util.DisplayMetrics metrics = android.content.res.Resources.getSystem().getDisplayMetrics();
+            String realDpi = String.valueOf(metrics.densityDpi);
+            if (wmSize != null && wmSize.contains("Physical size")) {
+                res = "屏幕参数: " + wmSize.trim().replace("Physical size: ", "")
+                    + " (" + realDpi + " dpi)"
+                    + (wmDensity != null && wmDensity.contains("Physical density")
+                        ? " / 密度 " + wmDensity.trim().replace("Physical density: ", "") : "");
+            } else {
+                res = "屏幕参数: " + realDpi + " dpi (wm 不可用)";
+            }
+        } catch (Exception e) {
+            res = "屏幕参数: 1920x720 (" + density.trim() + " dpi)";  // 极端回退，正常不会走这里
+        }
+        return "车机型号: " + model.trim() + "\n系统版本: " + build.trim() + "\n" + res;
     }
 
     public static void grantOverlayPermissionViaShell(final Context context) {

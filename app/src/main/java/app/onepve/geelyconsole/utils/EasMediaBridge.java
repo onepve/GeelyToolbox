@@ -358,7 +358,7 @@ public class EasMediaBridge {
             info.setPlaybackStatus(status == 1 ? 1 : 0);
             info.setSourceType(SOURCE_TYPE_BLUETOOTH);
             info.setPackageName(appContext.getPackageName());
-            info.setAppName("吉利智驾");
+            info.setAppName("缤越助手");
             info.setMediaType("music");
             info.setSupportLoopModeSwitch(true);
             info.setSupportVrCtrlPlayStatus(true);

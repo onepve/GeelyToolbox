@@ -1,7 +1,7 @@
 <template>
   <ModalWrapper 
     :show="store.modals.battery" 
-    title="吉利智驾 · 12V 蓄电池与充能健康看板" 
+    title="缤越助手 · 12V 蓄电池与充能健康看板" 
     badge="CAN 物理采样"
     maxWidthClass="max-w-[760px]"
     @close="closeModal('battery')"

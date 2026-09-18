@@ -28,7 +28,7 @@
           </span>
           <div class="text-[14.5px] font-bold leading-relaxed space-y-1.5 pl-1 text-car-text">
             <div>1. 点击下方<b>【打开系统升级】</b>进入车机原厂设置界面，点击一次<b>【检查更新】</b>；</div>
-            <div>2. 待车机完成联网检索后，返回吉利智驾并点击<b>【已确认运行过 · 立即抓取】</b>；</div>
+            <div>2. 待车机完成联网检索后，返回缤越助手并点击<b>【已确认运行过 · 立即抓取】</b>；</div>
             <div>3. 软件将自动检索系统日志缓冲区与 OTA 缓存，秒级提取官方完整升级包下载直链。</div>
           </div>
         </div>

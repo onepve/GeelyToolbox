@@ -253,7 +253,7 @@
           <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
             <div class="flex items-center justify-between mb-3">
               <span class="text-[19px] font-black text-car-text whitespace-nowrap">⑦ 上一曲</span>
-              <div class="flex space-x-1.5">
+              <div class="flex flex-wrap space-x-1.5">
                 <button
                   v-for="g in gestureList"
                   :key="g.id"
@@ -276,7 +276,7 @@
           <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
             <div class="flex items-center justify-between mb-3">
               <span class="text-[19px] font-black text-car-text whitespace-nowrap">④ 下一曲</span>
-              <div class="flex space-x-1.5">
+              <div class="flex flex-wrap space-x-1.5">
                 <button
                   v-for="g in gestureList"
                   :key="g.id"

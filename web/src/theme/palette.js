@@ -5,13 +5,16 @@
 // 铁律：本文件严禁 import 任何模块（store / vue / tailwind），否则构建期无法加载。
 export const DAY_START = 6;   // 06:00 起为白天
 export const DAY_END = 18;    // 18:00 起为黑夜
-export const STORAGE_KEY = 'toolbox_theme_v1';
+// 出厂默认变更为「晨曦绿 + 黑夜」时，必须同步升版存储键：
+// 老车机 localStorage 里已存过旧默认（蓝+黑夜），不改键则永不生效（等于默认值白改）。
+// 升键 = 一次性重置到新出厂默认，用户随后仍可在「系统维护」里自由改回。
+export const STORAGE_KEY = 'toolbox_theme_v2';
 // 出厂默认档 —— 运行时 initTheme() 与构建期首帧引导脚本必须共用这同一组常量，
 // 否则「首帧主题」与「挂载后主题」不一致，会出现反向闪动（先白天再跳黑夜）。
-export const DEFAULT_PALETTE = 'blue';
+export const DEFAULT_PALETTE = 'green';   // 出厂默认配色：晨曦绿
 export const DEFAULT_MODE = 'night';
 export const MODES = ['auto', 'day', 'night'];
-export const PALETTES = ['blue', 'brown', 'green', 'pink'];
+export const PALETTES = ['blue', 'brown', 'green', 'pink', 'gold'];
 
 // 弹窗专用「实底」表面 --bg-modal：二级/三级弹窗是叠在页面之上的独立层，
 // 若沿用 --bg-card（玻璃半透 0.13~0.68）会让背后页面内容透上来、正文读不清。
@@ -74,11 +77,11 @@ export const THEMES = {
       '--border-color': 'rgba(255,214,160,.24)',
       '--border-light': 'rgba(255,214,160,.38)',
       '--text-main': '#f5ecdb',
-      '--text-sub': '#b3a184',
+      '--text-sub': '#c2b49d',
       '--accent-gold': '#d4a04a',
       '--accent-gold-bg': 'rgba(212,160,74,.18)',
       '--accent-gold-text': '#ffd98a',
-      '--accent-gold-sub': '#ffd98a',
+      '--accent-gold-sub': '#ffe1a1',
       '--glass-highlight': 'rgba(255,255,255,.30)',
       '--glass-underline': 'rgba(255,255,255,.05)',
       '--glass-toplight': 'rgba(255,240,200,.60)',
@@ -162,9 +165,9 @@ export const THEMES = {
       '--border-color': 'rgba(255,255,255,.20)',
       '--border-light': 'rgba(255,255,255,.32)',
       '--text-main': '#f6e9ee',
-      '--text-sub': '#c79bad',
-      '--accent-gold': '#d46a8c',
-      '--accent-gold-bg': 'rgba(212,74,140,.16)',
+      '--text-sub': '#d3aabc',
+      '--accent-gold': '#e07e9e',
+      '--accent-gold-bg': 'rgba(224,126,158,.18)',
       '--accent-gold-text': '#f2a8c0',
       '--accent-gold-sub': '#ffd98a',
       '--glass-highlight': 'rgba(255,255,255,.30)',
@@ -191,6 +194,53 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.40)',
       '--glass-toplight': 'rgba(255,255,255,.95)',
       '--glass-shadow': 'rgba(170,80,120,.28)'
+    }
+  },
+  // 「金」= 初代【曜石黑金·暖阳琥珀】主题复活（e44db7b→6dd8c8f→4e90e38）：
+  // 夜=曜石黑+暖阳金，日=浅白底+纯白卡+金棕墨字；旧版为实底卡片，
+  // 玻璃 6 变量按同风格补齐（实底 card/item + 中性白高光），色值见 git 4e90e38。
+  gold: {
+    label: '金',
+    swatch: '#d99a26',
+    night: {
+      '--bg-main': '#12141a',
+      '--bg-panel': '#1c1f26',
+      '--bg-modal': 'rgba(28,31,38,.96)',
+      '--bg-card': '#1c1f26',
+      '--bg-item': '#262a33',
+      '--bg-item-hover': '#323742',
+      '--border-color': 'rgba(255,255,255,.10)',
+      '--border-light': 'rgba(255,255,255,.20)',
+      '--text-main': '#ffffff',
+      '--text-sub': '#94a3b8',
+      '--accent-gold': '#f59e0b',
+      '--accent-gold-bg': 'rgba(245,158,11,.14)',
+      '--accent-gold-text': '#fef3c7',
+      '--accent-gold-sub': '#fcd34d',
+      '--glass-highlight': 'rgba(255,255,255,.22)',
+      '--glass-underline': 'rgba(255,255,255,.04)',
+      '--glass-toplight': 'rgba(255,255,255,.50)',
+      '--glass-shadow': 'rgba(0,0,0,.55)'
+    },
+    day: {
+      '--bg-main': '#e2e8f0',
+      '--bg-panel': '#f8fafc',
+      '--bg-modal': 'rgba(255,255,255,.96)',
+      '--bg-card': '#ffffff',
+      '--bg-item': '#f1f5f9',
+      '--bg-item-hover': '#e2e8f0',
+      '--border-color': '#cbd5e1',
+      '--border-light': '#94a3b8',
+      '--text-main': '#0f172a',
+      '--text-sub': '#475569',
+      '--accent-gold': '#d97706',
+      '--accent-gold-bg': 'rgba(217,119,6,.12)',
+      '--accent-gold-text': '#78350f',
+      '--accent-gold-sub': '#92400e',
+      '--glass-highlight': 'rgba(255,255,255,.90)',
+      '--glass-underline': 'rgba(255,255,255,.36)',
+      '--glass-toplight': 'rgba(255,255,255,.92)',
+      '--glass-shadow': 'rgba(71,85,105,.30)'
     }
   }
 };

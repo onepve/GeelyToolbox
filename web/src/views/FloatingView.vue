@@ -87,7 +87,7 @@
 
         <!-- 底部提示信息：拉大留白 -->
         <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0 flex items-center justify-between">
-          <span class="text-[14px] text-car-sub font-bold">点击胶囊秒开吉利智驾控制台</span>
+          <span class="text-[14px] text-car-sub font-bold">点击胶囊秒开缤越助手控制台</span>
           <span class="text-[13.5px] text-car-accent font-black">支持手指自由拖拽贴边吸附</span>
         </div>
       </div>

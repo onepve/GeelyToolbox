@@ -1,8 +1,8 @@
 <template>
   <FeatureCard :title="cardTitle" :desc="cardDesc" :helpTitle="helpTitle" :helpText="helpText" :helpTip="helpTip">
     <!-- 手势切换 (单击/双击/长按) -->
-    <div class="flex items-center justify-between bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
-      <div class="flex items-center space-x-2">
+    <div class="flex flex-wrap items-center space-x-1.5 bg-car-item border border-car-border rounded-2xl p-3 mb-4 shadow-sm">
+      <div class="flex flex-wrap items-center space-x-1.5">
         <button
           v-for="g in gestureList"
           :key="g.id"

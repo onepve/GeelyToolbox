@@ -2,7 +2,7 @@
   <header class="h-[64px] min-h-[64px] border-b border-car-border px-5 flex items-center justify-between z-20 select-none transition-colors" :style="{ background: 'var(--bg-panel)' }">
     <!-- 品牌与版本 -->
     <div class="flex items-center">
-      <span class="text-[20px] font-black text-car-text tracking-wide mr-2.5">吉利智驾</span>
+      <span class="text-[20px] font-black text-car-text tracking-wide mr-2.5">缤越助手</span>
       <span class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-text font-extrabold border border-car-border">v{{ displayVersion }}</span>
     </div>
 

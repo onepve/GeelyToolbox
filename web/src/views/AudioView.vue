@@ -31,7 +31,7 @@
             <div class="text-[14.5px] font-mono text-car-sub truncate">
               设备: {{ connStatus.bluetooth_device_name || '未连接设备' }}
             </div>
-            <div class="pt-4 border-t border-car-border/50 flex items-center justify-between">
+            <div class="pt-4 border-t border-car-border/50 flex flex-wrap items-center justify-between space-x-2">
               <span class="text-[12.5px] text-car-sub font-bold">配对与连接管理</span>
               <button 
                 @click="openBluetoothSettings"
@@ -62,7 +62,7 @@
             <div class="text-[14.5px] font-mono text-car-sub truncate">
               热点: {{ connStatus.wifi_ssid || '未连接热点' }} ({{ connStatus.car_ip || '127.0.0.1' }})
             </div>
-            <div class="pt-4 border-t border-car-border/50 flex items-center justify-between">
+            <div class="pt-4 border-t border-car-border/50 flex flex-wrap items-center justify-between space-x-2">
               <span class="text-[12.5px] text-car-sub font-bold">热点连接向导</span>
               <button 
                 @click="openWifiSettings"

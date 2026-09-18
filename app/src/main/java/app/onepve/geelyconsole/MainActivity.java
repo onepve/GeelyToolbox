@@ -159,7 +159,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             pkgFilter.addDataScheme("package");
             registerReceiver(packageChangeReceiver, pkgFilter);
         } catch (Exception ignored) {}
-        AppLogger.i("应用启动", "吉利智驾界面启动完成");
+        AppLogger.i("应用启动", "缤越助手界面启动完成");
         // 启动时自动探测并开启白名单，若为真车环境且商店未冻结则自动执行安全冻结保护
         new Thread(new Runnable() {
             @Override
@@ -550,6 +550,37 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("is_car_device", isCarDevice(MainActivity.this));
                     obj.put("logPath", AppLogger.getLogFilePath());
                     obj.put("logSize", AppLogger.getLogFileSizeStr());
+                    // 真实屏幕参数采集（消灭写死魔数）：wm size/density + DisplayMetrics 真实值
+                    try {
+                        String wmSize = SystemUtils.executeShell("wm size");
+                        String wmDensity = SystemUtils.executeShell("wm density");
+                        android.graphics.Point realSize = new android.graphics.Point();
+                        android.view.Display d = ((android.view.WindowManager) getSystemService(android.content.Context.WINDOW_SERVICE)).getDefaultDisplay();
+                        d.getRealSize(realSize);
+                        android.graphics.Rect appBounds = new android.graphics.Rect();
+                        d.getRectSize(appBounds);
+                        android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+                        d.getRealMetrics(dm);
+                        String sizeStr = "未知";
+                        if (wmSize != null) {
+                            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)x(\\d+)").matcher(wmSize);
+                            if (m.find()) sizeStr = m.group(1) + "x" + m.group(2);
+                        }
+                        obj.put("screen_size", sizeStr);
+                        obj.put("screen_real_size", realSize.x + "x" + realSize.y);
+                        obj.put("screen_density", dm.densityDpi + " dpi");
+                        obj.put("screen_density_dpi", dm.densityDpi);
+                        obj.put("screen_app_bounds", appBounds.width() + "x" + appBounds.height());
+                        obj.put("screen_wm", (wmSize == null ? "" : wmSize.trim()) + (wmDensity == null ? "" : " | " + wmDensity.trim()));
+                        // 落日志：屏幕参数真实采集 (消灭写死魔数, 日志可溯源)
+                        try {
+                            AppLogger.i("屏幕采集", "wm: " + obj.optString("screen_wm")
+                                + " | 实测: " + obj.optString("screen_real_size")
+                                + " | density: " + obj.optString("screen_density")
+                                + " | appBounds: " + obj.optString("screen_app_bounds")
+                                + " | version: " + currentVer);
+                        } catch (Exception ignored) {}
+                    } catch (Exception ignored) {}
                     script = "if(window.updateDeviceInfo){window.updateDeviceInfo('" + obj.toString() + "');}";
                 } catch (Exception e) {
                     deviceInfoPushing = false;
@@ -829,6 +860,29 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
                 obj.put("multimedia_frozen", isMediaFrozen);
                 obj.put("appstore_frozen", isAppstoreFrozen);
+                // 真实屏幕参数采集（与 pushDeviceInfoToWeb 同步）
+                try {
+                    String wmSize = SystemUtils.executeShell("wm size");
+                    String wmDensity = SystemUtils.executeShell("wm density");
+                    android.graphics.Point realSize = new android.graphics.Point();
+                    android.view.Display d = ((android.view.WindowManager) getSystemService(android.content.Context.WINDOW_SERVICE)).getDefaultDisplay();
+                    d.getRealSize(realSize);
+                    android.graphics.Rect appBounds = new android.graphics.Rect();
+                    d.getRectSize(appBounds);
+                    android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+                    d.getRealMetrics(dm);
+                    String sizeStr = "未知";
+                    if (wmSize != null) {
+                        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)x(\\d+)").matcher(wmSize);
+                        if (m.find()) sizeStr = m.group(1) + "x" + m.group(2);
+                    }
+                    obj.put("screen_size", sizeStr);
+                    obj.put("screen_real_size", realSize.x + "x" + realSize.y);
+                    obj.put("screen_density", dm.densityDpi + " dpi");
+                    obj.put("screen_density_dpi", dm.densityDpi);
+                    obj.put("screen_app_bounds", appBounds.width() + "x" + appBounds.height());
+                    obj.put("screen_wm", (wmSize == null ? "" : wmSize.trim()) + (wmDensity == null ? "" : " | " + wmDensity.trim()));
+                } catch (Exception ignored) {}
                 android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                 obj.put("silent_appstore_freeze", prefs.getBoolean("silent_appstore_freeze", false));
                 boolean isBeta = ver.toLowerCase().contains("beta");
