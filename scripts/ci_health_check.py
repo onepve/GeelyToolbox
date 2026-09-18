@@ -1074,11 +1074,14 @@ for _rel in ICON_VIEW_FILES:
             ui19_violations.append(f"[19c4] {_rel}: 商城禁用应用徽标(含首字徽标) '{m.group(0)}' (2026-09-17 用户定案: 图标与徽标全不要, 卡片仅文字)")
 
 # 19d. Icon PNGs must not contain black pixel blocks (right-bottom corner sampling)
+# 2026-09-18 用户确认 Q 版车图正式 icon 后扩围: ic_launcher.png + ic_launcher_round.png 同口径检测 (只增不减)
+ICON_NAMES_19D = ("ic_launcher.png", "ic_launcher_round.png")
 try:
     from PIL import Image
     ICON_DIRS = [os.path.join(APP_SRC_DIR, f"res/mipmap-{d}") for d in ("mdpi","hdpi","xhdpi","xxhdpi","xxxhdpi")]
     for icon_dir in ICON_DIRS:
-        icon_path = os.path.join(icon_dir, "ic_launcher.png")
+      for icon_fname in ICON_NAMES_19D:
+        icon_path = os.path.join(icon_dir, icon_fname)
         if not os.path.exists(icon_path):
             continue
         im = Image.open(icon_path).convert("RGBA")
