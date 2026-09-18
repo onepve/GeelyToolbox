@@ -261,6 +261,11 @@ for root, _, files in os.walk(WEB_SRC_DIR):
                         touch_violations.append((fn, h_m.group(1), b.strip()))
                 else:
                     # 组件和模态弹窗内检查显式 h-[xx] 是否低于 50
+                    # 帮助 "?" 按钮(2026-09-18 用户定案): 契约反转, 必须恰好 34px 统一尺寸
+                    if re.search(r"@click=\"showHelp\"", b):
+                        if 'w-[34px]' not in b or 'h-[34px]' not in b:
+                            touch_violations.append((fn, "help_btn_not_34px", b.strip()))
+                        continue
                     if 'class=' in b and 'h-[' in b:
                         h_m = re.search(r'h-\[(\d+)px\]', b)
                         if h_m and int(h_m.group(1)) < 50:
