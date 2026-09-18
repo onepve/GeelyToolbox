@@ -21,7 +21,7 @@
             v-if="isBeta"
             class="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 font-black tracking-wider shadow-sm flex items-center"
           >
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5 animate-pulse"></span>
+            <StatusDot size="xxs" color="warnSoft" class="mr-1.5" :glow="false" pulse />
             BETA
           </span>
         </div>
@@ -166,6 +166,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
+import StatusDot from '../StatusDot.vue';
 import { store, bridge, closeModal, openModal, showToast } from '../../store';
 
 const autoCheckUpdateEnabled = ref(localStorage.getItem('geely_auto_check_update') !== 'false');
@@ -254,7 +255,7 @@ function handleVersionClick() {
     localStorage.setItem('geely_tester_unlocked', 'true');
     useBetaChannel.value = true;
     localStorage.setItem('geely_use_beta_channel', 'true');
-    showToast('👑 恭喜解锁内测特权！已自动开启测试通道');
+    showToast('👑 恭喜解锁内测特权！已自动开启测试通道', 'success');
   }
 }
 

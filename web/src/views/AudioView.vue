@@ -133,7 +133,7 @@
               {{ ttsInfo.name }}
             </span>
             <span class="ml-3 text-[12.5px] px-2.5 py-0.5 rounded-full font-black border bg-car-item border-car-border text-car-text inline-flex items-center shadow-sm shrink-0">
-              <span :class="['w-2 h-2 rounded-full mr-1.5', ttsInfo.connected ? 'bg-sky-500 shadow-[0_0_6px_#0EA5E9]' : 'bg-slate-400']"></span>
+              <StatusDot class="mr-1.5" size="xs" :color="ttsInfo.connected ? 'info' : 'off'" />
               {{ ttsInfo.connected ? '已成功直连' : '默认引擎' }}
             </span>
           </div>
@@ -256,7 +256,7 @@
                 <span class="text-[18px] font-black text-car-text">当前整套音效：</span>
                 <span class="text-[18px] font-black text-car-accent">{{ activeThemeName ? activeThemeName : '出厂官方原声 (晓晓温婉知性)' }}</span>
                 <span class="px-2.5 py-0.5 rounded-full bg-car-item border border-car-border text-car-text text-[12px] font-black inline-flex items-center shadow-sm">
-                  <span class="w-2 h-2 rounded-full mr-1.5 bg-emerald-500 shadow-[0_0_6px_#10B981]"></span>
+                  <StatusDot class="mr-1.5" size="xs" color="ok" />
                   {{ activeThemeName ? '自定义主题' : '系统默认' }}
                 </span>
               </div>
@@ -321,7 +321,7 @@
                 v-else
                 class="h-[52px] px-5 bg-emerald-500/15 border-2 border-emerald-500/50 text-emerald-400 font-black text-[15px] rounded-xl flex items-center justify-center space-x-1.5 shadow-sm select-none"
               >
-                <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#10B981]"></span>
+                <StatusDot size="xs" color="okBright" />
                 <span>正在生效</span>
               </div>
             </div>
@@ -365,7 +365,7 @@
                 v-else
                 class="h-[52px] px-5 bg-emerald-500/15 border-2 border-emerald-500/50 text-emerald-400 font-black text-[15px] rounded-xl flex items-center justify-center space-x-1.5 shadow-sm select-none"
               >
-                <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#10B981]"></span>
+                <StatusDot size="xs" color="okBright" />
                 <span>正在生效</span>
               </div>
               <button 
@@ -495,7 +495,7 @@ function confirmForceRestoreFactory() {
       if (typeof count === 'number' && count >= 0) {
         showToast(`已强制重装原声，更新 ${count} 个音频文件`);
       } else {
-        showToast('原声重装失败，请稍后重试');
+        showToast('原声重装失败，请稍后重试', 'error');
       }
       loadVoiceThemes();
     }

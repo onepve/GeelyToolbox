@@ -25,7 +25,7 @@ export const store = reactive({
     palette: 'blue',
     mode: 'night'
   },
-  toast: { show: false, msg: '' },
+  toast: { show: false, msg: '', kind: 'info' },
   
   // 顶栏状态
   deviceInfo: {
@@ -131,10 +131,12 @@ export function closeModal(modalName) {
   }
 }
 
-export function showToast(msg) {
+export function showToast(msg, kind = 'info') {
   store.toast.msg = msg;
+  store.toast.kind = kind;
   store.toast.show = true;
-  setTimeout(() => {
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => {
     store.toast.show = false;
   }, 2200);
 }

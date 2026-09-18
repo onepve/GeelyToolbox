@@ -47,15 +47,25 @@
     <transition name="fade">
       <div 
         v-if="store.toast.show" 
-        class="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-[var(--bg-card)] text-car-accent-text border border-car-accent/60 px-6 py-2.5 rounded-full font-black text-[16.5px] shadow-2xl shadow-black/80"
+        class="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-[var(--bg-card)] border px-6 py-2.5 rounded-full font-black text-[16.5px] shadow-2xl shadow-black/80 inline-flex items-center max-w-[86vw]"
+        :style="{ color: TOAST_SKINS[store.toast.kind]?.text, borderColor: TOAST_SKINS[store.toast.kind]?.border }"
       >
-        {{ store.toast.msg }}
+        <span class="w-2 h-2 rounded-full shrink-0 mr-2.5" :style="{ background: TOAST_SKINS[store.toast.kind]?.dot, boxShadow: `0 0 6px ${TOAST_SKINS[store.toast.kind]?.dot}` }"></span>
+        <span class="truncate">{{ store.toast.msg }}</span>
       </div>
     </transition>
   </div>
 </template>
 
 <script setup>
+// Toast 四色语义皮肤 — 提示/成功/警告/错误全站统一，颜色一律取 --status-* 变量
+const TOAST_SKINS = {
+  info:    { text: 'var(--accent-gold-text)', border: 'rgba(212, 165, 74, 0.60)', dot: 'var(--accent-gold)' },
+  success: { text: 'var(--status-ok-fg, #6EE7B7)',  border: 'rgba(110, 231, 183, 0.55)', dot: 'var(--status-ok, #10B981)' },
+  warn:    { text: 'var(--status-warn-fg, #FCD34D)', border: 'rgba(252, 211, 77, 0.55)',  dot: 'var(--status-warn, #F59E0B)' },
+  error:   { text: 'var(--status-err-fg, #FDA4AF)',  border: 'rgba(253, 164, 175, 0.55)', dot: 'var(--status-err, #EF4444)' }
+};
+
 import { ref, watch, nextTick, onMounted } from 'vue';
 import TopBar from './components/TopBar.vue';
 import Sidebar from './components/Sidebar.vue';
@@ -219,6 +229,7 @@ onMounted(() => {
   --status-warn: #F59E0B;
   --status-err: #EF4444;
   --status-info: #0EA5E9;
+  --term-bg: #0A0D12;
   /* --bg-modal 的无脚本兜底值（首帧引导脚本正常时会被 <html> 内联值覆盖）。
      仅作底色保险，绝非主题数据源——四套配色 × 昼夜的权威值一律在 theme/palette.js。 */
   --bg-modal: rgba(20, 27, 43, 0.96);

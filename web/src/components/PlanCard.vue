@@ -5,12 +5,11 @@
       <div class="flex items-center space-x-3">
         <span class="text-[21px] font-black text-car-text tracking-wide">{{ title }}</span>
         <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">{{ tag }}</span>
-        <button
+        <HelpDot
           v-if="helpText"
-          @click.stop="$emit('help')"
-          :class="helpSize === 'lg' ? HELP_LG : HELP_SM"
-          title="查看功能指南"
-        >?</button>
+          :size="helpSize"
+          @click="$emit('help')"
+        />
       </div>
     </div>
 
@@ -33,6 +32,8 @@
 // 6 颗瓦片 100% 克隆此骨架，唯一差异为文案、帮助体尺寸与底部按钮（footer 插槽）。
 // 像素级还原：类串逐字取自原手搓瓦片。
 // ============================================================================
+import HelpDot from './HelpDot.vue';
+
 defineProps({
   title: String,
   tag: String,
@@ -44,7 +45,4 @@ defineProps({
 });
 
 defineEmits(['help']);
-
-const HELP_LG = 'w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0';
-const HELP_SM = 'w-[34px] h-[34px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[15px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0';
 </script>

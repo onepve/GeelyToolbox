@@ -100,7 +100,7 @@ function checkIsMapApp(app) {
 function startAutoPilot() {
   if (!targetApp.value) return;
   if (!checkIsMapApp(targetApp.value)) {
-    showToast('安全保护：卡兔子主题功能仅限高德地图底包专用，非地图已禁止！');
+    showToast('安全保护：卡兔子主题功能仅限高德地图底包专用，非地图已禁止！', 'warn');
     return;
   }
   closeModal('rabbitInstall');
@@ -111,7 +111,7 @@ function startAutoPilot() {
 function reInjectDirectly() {
   if (!targetApp.value) return;
   if (!checkIsMapApp(targetApp.value)) {
-    showToast('安全保护：卡兔子主题功能仅限高德地图底包专用，非地图已禁止！');
+    showToast('安全保护：卡兔子主题功能仅限高德地图底包专用，非地图已禁止！', 'warn');
     return;
   }
   closeModal('rabbitInstall');

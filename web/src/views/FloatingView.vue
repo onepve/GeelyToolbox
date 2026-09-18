@@ -9,11 +9,7 @@
           <div class="flex items-center space-x-3">
             <span class="text-[22px] font-black text-car-text tracking-wide">桌面迷你悬浮胶囊</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">桌面常驻</span>
-            <button 
-              @click.stop="openFloatingHelp" 
-              class="w-[34px] h-[34px] rounded-full bg-car-item border-2 border-car-border hover:border-car-accent text-car-accent font-black text-[15px] flex items-center justify-center cursor-pointer shadow-sm shrink-0 transition-transform active:scale-95"
-              title="查看功能指南"
-            >?</button>
+            <HelpDot @click.stop="openFloatingHelp" title="查看功能指南" />
           </div>
         </div>
 
@@ -99,13 +95,9 @@
           <div class="flex items-center space-x-3">
             <span class="text-[22px] font-black text-car-text tracking-wide">闲置自动屏保</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent inline-flex items-center shrink-0">
-              <span class="w-2.5 h-2.5 rounded-full mr-2" :class="ssStatusDot"></span>{{ ssStatusText }}
+              <StatusDot class="mr-2" size="sm" :color="ssStatusDot" :glow="false" />{{ ssStatusText }}
             </span>
-            <button 
-              @click.stop="openScreensaverHelp" 
-              class="w-[34px] h-[34px] rounded-full bg-car-item border-2 border-car-border hover:border-car-accent text-car-accent font-black text-[15px] flex items-center justify-center cursor-pointer shadow-sm shrink-0 transition-transform active:scale-95"
-              title="查看自动屏保核心原理"
-            >?</button>
+            <HelpDot @click.stop="openScreensaverHelp" title="查看自动屏保核心原理" />
           </div>
         </div>
 
@@ -209,6 +201,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { store, bridge, showToast, openModal } from '../store';
 import StatusDot from '../components/StatusDot.vue';
+import HelpDot from '../components/HelpDot.vue';
 
 function openFloatingHelp() {
   openModal('confirm', {
@@ -275,10 +268,10 @@ const ssStatusText = computed(() => {
 });
 
 const ssStatusDot = computed(() => {
-  if (!ssEnabled.value) return 'bg-slate-500';
-  if (ssChannelAReady.value) return 'bg-emerald-400';
-  if (ssDegraded.value) return 'bg-rose-400';
-  return 'bg-amber-400';
+  if (!ssEnabled.value) return 'offDim';
+  if (ssChannelAReady.value) return 'okBright';
+  if (ssDegraded.value) return 'err';
+  return 'warnSoft';
 });
 
 function toggleScreensaver() {

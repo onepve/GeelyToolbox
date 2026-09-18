@@ -10,7 +10,7 @@
       <!-- 顶部存储路径与当前状态看板 -->
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
         <div class="flex items-center space-x-3.5">
-          <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10B981]"></span>
+          <StatusDot size="lg" color="ok" :glow-px="8" />
           <div class="flex flex-col">
             <span class="text-[17.5px] font-black text-car-text">目标目录: {{ dirStats.path }}</span>
             <span class="text-[14px] text-car-sub font-mono font-bold mt-0.5">当前文件统计: {{ dirStats.count }} 项 · 占用存储约 {{ dirStats.size_mb }} MB</span>
@@ -107,6 +107,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
+import StatusDot from '../StatusDot.vue';
 import { store, bridge, closeModal, openModal, showToast } from '../../store';
 
 const dirStats = ref({ count: 0, size_mb: '0.00', path: '/sdcard/Download/' });

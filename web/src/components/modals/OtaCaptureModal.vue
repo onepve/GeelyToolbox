@@ -54,7 +54,7 @@
       <div v-else class="flex flex-col space-y-4">
         <!-- 抓取中状态 -->
         <div v-if="loading" class="py-12 flex flex-col items-center justify-center space-y-3">
-          <div class="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+          <AppSpinner />
           <span class="text-[19px] font-black text-car-text">正在检索系统升级日志与缓存目录...</span>
           <span class="text-[16px] text-car-sub font-bold">正在匹配 http/https 固件下载直链</span>
         </div>
@@ -77,7 +77,7 @@
             <textarea
               readonly
               rows="4"
-              class="w-full p-4 rounded-2xl bg-[#0A0D12] border-2 border-white/10 text-emerald-400 font-mono text-[16.5px] leading-relaxed break-all resize-none select-text overflow-y-auto shadow-inner focus:outline-none"
+              class="w-full p-4 rounded-2xl bg-[var(--term-bg)] border-2 border-white/10 text-emerald-400 font-mono text-[16.5px] leading-relaxed break-all resize-none select-text overflow-y-auto shadow-inner focus:outline-none"
             >{{ captureResult.url }}</textarea>
           </div>
 
@@ -112,7 +112,7 @@
           <!-- 日志输出诊断框 -->
           <div class="flex flex-col space-y-1.5">
             <span class="text-[16px] text-car-sub font-bold">抓取日志诊断输出：</span>
-            <pre class="p-4 max-h-[180px] overflow-y-auto rounded-2xl bg-[#0A0D12] border border-white/10 text-slate-300 font-mono text-[15.5px] leading-relaxed select-text whitespace-pre-wrap">{{ captureResult.details || '当前日志缓冲区无 ecarx.upgrade / otaservice 联网记录' }}</pre>
+            <pre class="p-4 max-h-[180px] overflow-y-auto rounded-2xl bg-[var(--term-bg)] border border-white/10 text-slate-300 font-mono text-[15.5px] leading-relaxed select-text whitespace-pre-wrap">{{ captureResult.details || '当前日志缓冲区无 ecarx.upgrade / otaservice 联网记录' }}</pre>
           </div>
 
           <div class="flex items-center justify-between pt-2">
@@ -157,6 +157,7 @@
 <script setup>
 import { ref } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
+import AppSpinner from '../AppSpinner.vue';
 import { store, bridge, closeModal, showToast } from '../../store';
 
 const step = ref(1);
@@ -181,7 +182,7 @@ function openSystemUpgradeApp() {
   try {
     bridge.call('openSystemUpgrade');
   } catch (e) {
-    showToast('调起失败，请在车机设置中手动打开系统升级');
+    showToast('调起失败，请在车机设置中手动打开系统升级', 'error');
   }
 }
 
@@ -219,13 +220,13 @@ function copyUrl(url) {
   if (!url) return;
   try {
     navigator.clipboard.writeText(url);
-    showToast('直链已成功复制到剪贴板');
+    showToast('直链已成功复制到剪贴板', 'success');
   } catch (e) {
     try {
       bridge.call('copyToClipboard', url);
-      showToast('直链已成功复制到剪贴板');
+      showToast('直链已成功复制到剪贴板', 'success');
     } catch (err) {
-      showToast('复制失败，请长按手动选择');
+      showToast('复制失败，请长按手动选择', 'error');
     }
   }
 }

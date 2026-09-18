@@ -50,7 +50,7 @@
       <div v-if="currentTask" class="bg-car-item border-2 border-car-accent/40 rounded-2xl p-4 flex flex-col space-y-2.5 shadow-md">
         <div class="flex items-center justify-between text-[15px] font-bold text-car-text">
           <div class="flex items-center space-x-2">
-            <span :class="['w-2.5 h-2.5 rounded-full', currentTask.status === 'paused' ? 'bg-amber-400' : (currentTask.status === 'completed' ? 'bg-emerald-400' : 'bg-car-accent animate-pulse')]"></span>
+            <StatusDot size="sm" :color="currentTask.status === 'paused' ? 'warnSoft' : (currentTask.status === 'completed' ? 'okBright' : 'accent')" :pulse="currentTask.status !== 'paused' && currentTask.status !== 'completed'" :glow="false" />
             <span>{{ taskStatusTitle }}</span>
           </div>
           <span class="font-mono text-car-accent font-black text-[16px]">{{ currentTask.percent || 0 }}%</span>
@@ -167,6 +167,7 @@
 <script setup>
 import { computed } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
+import StatusDot from '../StatusDot.vue';
 import { store, bridge, closeModal, showToast } from '../../store';
 
 const app = computed(() => store.modals.appDetail);
@@ -248,7 +249,7 @@ function handleInstallDownloaded() {
 
 function openRabbitGuide() {
   if (!app.value || !isMapApp.value) {
-    showToast('安全保护：非地图类应用严禁使用卡兔子主题方式！');
+    showToast('安全保护：非地图类应用严禁使用卡兔子主题方式！', 'warn');
     return;
   }
   const currentApp = app.value;

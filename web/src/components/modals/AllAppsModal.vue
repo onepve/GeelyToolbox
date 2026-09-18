@@ -192,7 +192,7 @@ function loadApps(showToastMsg = false) {
     const parsed = typeof raw === 'string' ? JSON.parse(raw) : (raw || []);
     allApps.value = Array.isArray(parsed) ? parsed : [];
     if (showToastMsg) {
-      showToast(`已成功刷新整车已安装软件 (${allApps.value.length} 个)`);
+      showToast(`已成功刷新整车已安装软件 (${allApps.value.length} 个)`, 'success');
     }
   } catch (e) {
     console.error('loadApps error:', e);

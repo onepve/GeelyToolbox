@@ -4,10 +4,10 @@
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-[58%] max-w-[58%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
-          <span :class="['w-3.5 h-3.5 rounded-full shadow-md shrink-0', activeGuardCount > 0 ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-slate-400']"></span>
+          <StatusDot size="lg" :color="activeGuardCount > 0 ? 'ok' : 'off'" class="shadow-md" />
           <span class="text-[24px] font-black text-car-text tracking-wide whitespace-nowrap">车况安全守护语音</span>
           <span class="px-3 py-0.5 text-[15.5px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
-            <span :class="['w-2.5 h-2.5 rounded-full mr-2', activeGuardCount > 0 ? 'bg-emerald-500 shadow-[0_0_6px_#10B981]' : 'bg-slate-400']"></span>
+            <StatusDot class="mr-2" size="sm" :color="activeGuardCount > 0 ? 'ok' : 'off'" />
             {{ activeGuardCount }} / 2 项守护运行中
           </span>
         </div>
@@ -123,6 +123,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import StatusDot from './StatusDot.vue';
 import { store, bridge, showToast, openModal } from '../store';
 
 const activeGuardCount = computed(() => {

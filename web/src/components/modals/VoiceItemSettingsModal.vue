@@ -253,7 +253,7 @@ function testCurrentAudio() {
 
 function testTtsText() {
   if (!customText.value.trim()) {
-    showToast('请先输入自定义台词');
+    showToast('请先输入自定义台词', 'warn');
     return;
   }
   showToast('正在试听自定义台词...');
@@ -271,7 +271,7 @@ function saveCustomText() {
 
 function testAudioFile() {
   if (!customFilePath.value.trim()) {
-    showToast('请先输入音频文件路径');
+    showToast('请先输入音频文件路径', 'warn');
     return;
   }
   showToast('正在试听音频文件...');

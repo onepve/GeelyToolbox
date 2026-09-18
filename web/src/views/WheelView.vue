@@ -559,7 +559,7 @@ function applyRecommendedPreset() {
       setGestureAction('prev', 'single', 'prev_track');
       setGestureAction('custom', 'single', 'open_navi');
       setGestureAction('mode', 'single', 'open_360');
-      showToast('已成功应用车友黄金方案！');
+      showToast('已成功应用车友黄金方案！', 'success');
     }
   });
 }

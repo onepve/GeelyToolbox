@@ -82,7 +82,7 @@
 
     <!-- 纯云端拉取中状态 (彻底去除本地静态兜底，100% 动态云端加载) -->
     <div v-else class="bg-car-item border-2 border-car-border rounded-3xl p-12 flex flex-col items-center justify-center space-y-4 shadow-md min-h-[260px]">
-      <div class="w-10 h-10 rounded-full border-4 border-car-border border-t-car-accent animate-spin"></div>
+      <AppSpinner />
       <div class="text-[19px] text-car-text font-black">正在从云端获取最新应用商城清单...</div>
       <div class="text-[15px] text-car-sub font-bold">已直连 dl.onepve.com 专属源，实时拉取已实测车机软件</div>
       <button 
@@ -99,6 +99,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
 import StatusDot from '../components/StatusDot.vue';
+import AppSpinner from '../components/AppSpinner.vue';
 
 const currentCategory = ref('all');
 const categories = [

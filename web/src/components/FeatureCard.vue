@@ -9,14 +9,11 @@
               {{ title }}
             </div>
             <!-- 问号说明按钮 (若提供 helpText) -->
-            <button
+            <HelpDot
               v-if="helpText"
               @click="showHelp"
-              class="w-[34px] h-[34px] rounded-full bg-car-item border border-car-border text-car-accent hover:border-car-accent hover:bg-car-card font-black text-[15px] flex items-center justify-center cursor-pointer transition-all shadow-sm shrink-0 select-none"
               title="查看本功能详细说明与核心原理"
-            >
-              ?
-            </button>
+            />
           </div>
         </slot>
         <slot name="badge" />
@@ -35,6 +32,7 @@
 
 <script setup>
 import { openModal } from '../store';
+import HelpDot from './HelpDot.vue';
 
 const props = defineProps({
   title: String,

@@ -18,7 +18,7 @@
               手机通过无线快传或甲壳虫将 APK 推送至车机 <code class="px-2 py-0.5 rounded bg-car-card text-car-accent font-mono">/sdcard/Download/</code> 目录，点击右侧按钮进入原生文件管理器，直接点击 APK 即可调用系统原生特权打包器无损直装。
             </div>
             <div class="flex items-center text-[13.5px] text-emerald-400 font-extrabold">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 shadow-[0_0_8px_#10B981]"></span>
+              <StatusDot class="mr-2" size="sm" color="ok" :glow-px="8" />
               <span>已接入 Android 9 原生 PackageInstaller 特权证书白名单</span>
             </div>
           </div>
@@ -118,7 +118,7 @@
           <div class="flex items-center space-x-3 mb-1">
             <span class="text-[18px] font-black text-car-text">伪装屏保注入特权</span>
             <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shadow-sm">
-              <span :class="['w-2.5 h-2.5 rounded-full mr-2', store.settings.expert_rabbit ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-emerald-500 shadow-[0_0_6px_#10B981]']"></span>
+              <StatusDot class="mr-2" size="sm" :color="store.settings.expert_rabbit ? 'accent' : 'ok'" />
               {{ store.settings.expert_rabbit ? '专家模式已激活 (已解除限制)' : '安全保护已锁定' }}
             </span>
           </div>
@@ -173,6 +173,7 @@
 
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
+import StatusDot from '../components/StatusDot.vue';
 import { store, bridge, openModal, showToast } from '../store';
 
 function confirmUnlockExpert() {
@@ -217,7 +218,7 @@ function confirmUnlockExpert() {
             onConfirm: () => {
               store.settings.expert_rabbit = true;
               bridge.call('setSetting', 'expert_rabbit', true);
-              showToast('专家模式已成功激活！高级注入工具箱已解锁');
+              showToast('专家模式已成功激活！高级注入工具箱已解锁', 'success');
             }
           });
         }

@@ -9,7 +9,7 @@
     <!-- 顶部 ADB 状态胶囊 (车规大卡片) -->
     <div class="flex items-center justify-between bg-car-item border border-car-border rounded-3xl p-5 shadow-sm mb-5">
       <div class="flex items-center">
-        <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10B981] mr-3.5"></span>
+        <StatusDot size="lg" color="ok" :glow-px="10" class="mr-3.5" />
         <span class="text-[20px] font-black text-car-text">ADB 端口状态：127.0.0.1:5555 (Shell 2000 就绪)</span>
       </div>
       <button 
@@ -156,7 +156,7 @@
           placeholder="请输入 Shell / ADB 指令，如: pm list packages"
           :class="[
             'flex-1 h-[68px] border-2 border-car-border rounded-2xl px-5 font-mono text-[18px] outline-none focus:border-car-accent mr-3 transition-all',
-            store.isNight ? 'bg-[#0A0D12] text-emerald-400' : 'bg-car-item text-car-text'
+            store.isNight ? 'bg-[var(--term-bg)] text-emerald-400' : 'bg-car-item text-car-text'
           ]"
           @keyup.enter="execCmd"
         />
@@ -173,7 +173,7 @@
         ref="termContainer"
         :class="[
           'min-h-[220px] max-h-[300px] overflow-y-auto border-2 border-car-border rounded-2xl p-5 font-mono text-[15px] leading-relaxed select-text whitespace-pre-wrap shadow-inner transition-all',
-          store.isNight ? 'bg-[#0A0D12] text-emerald-400' : 'bg-car-item text-emerald-700'
+          store.isNight ? 'bg-[var(--term-bg)] text-emerald-400' : 'bg-car-item text-emerald-700'
         ]"
       >{{ outputText }}</pre>
     </div>
@@ -183,6 +183,7 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
+import StatusDot from '../StatusDot.vue';
 import { store, bridge, closeModal, openModal, showToast } from '../../store';
 import { openAppstoreFlow } from '../../utils/appstoreFreeze';
 
