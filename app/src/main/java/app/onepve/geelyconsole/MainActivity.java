@@ -350,7 +350,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         FloatingWindowService.isMainActivityInForeground = true;
         currentActivity = new WeakReference<>(this);
         hideSystemUI();
-        mainHandler.post(statusTicker);
+        // 前台恢复防抖：延后 600ms 执行状态轮询，避开 Window 渲染与 WebView Surface 重建高峰，消除切回前台的掉帧迟钝感
+        mainHandler.removeCallbacks(statusTicker);
+        mainHandler.postDelayed(statusTicker, 600);
 
         // 取消任何待弹出的悬浮窗延迟任务
         if (pendingShowPillRunnable != null) {
@@ -358,10 +360,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             pendingShowPillRunnable = null;
         }
 
-        // 检查系统当前默认 TTS 引擎是否发生变更，支持无缝热重载
-        try {
-            VehicleVoicePlayer.getInstance(this).checkAndReloadTtsIfNeeded();
-        } catch (Exception ignored) {}
+        // 检查系统当前默认 TTS 引擎是否发生变更（移入后台执行，杜绝主线程 IPC 阻塞）
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    VehicleVoicePlayer.getInstance(MainActivity.this).checkAndReloadTtsIfNeeded();
+                } catch (Exception ignored) {}
+            }
+        }, "TtsReloadCheck").start();
 
         // 前台自适应：当控制台处于前台大屏展示时，隐藏悬浮小胶囊，彻底杜绝悬浮窗遮挡顶栏与页面内闪烁
         try {

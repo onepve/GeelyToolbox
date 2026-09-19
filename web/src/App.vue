@@ -13,14 +13,16 @@
 
       <!-- 右侧专属大舞台 (切换功能时自动回顶) -->
       <section ref="mainContent" class="flex-1 h-full overflow-y-auto p-6 flex flex-col space-y-6">
-        <StoreView v-if="store.currentNav === 'store'" />
-        <WheelView v-else-if="store.currentNav === 'wheel'" />
-        <LinkView v-else-if="store.currentNav === 'link'" />
-        <BodyView v-else-if="store.currentNav === 'body'" />
-        <AudioView v-else-if="store.currentNav === 'audio'" />
-        <!-- 桌面悬浮已并入系统维护：floating 导航兼容跳转 -->
-        <SystemView v-else-if="store.currentNav === 'floating' || store.currentNav === 'system'" />
-        <InstallView v-else-if="store.currentNav === 'install'" />
+        <KeepAlive :max="8">
+          <StoreView v-if="store.currentNav === 'store'" />
+          <WheelView v-else-if="store.currentNav === 'wheel'" />
+          <LinkView v-else-if="store.currentNav === 'link'" />
+          <BodyView v-else-if="store.currentNav === 'body'" />
+          <AudioView v-else-if="store.currentNav === 'audio'" />
+          <!-- 桌面悬浮已并入系统维护：floating 导航兼容跳转 -->
+          <SystemView v-else-if="store.currentNav === 'floating' || store.currentNav === 'system'" />
+          <InstallView v-else-if="store.currentNav === 'install'" />
+        </KeepAlive>
       </section>
     </main>
     <GeekInstallModal />
