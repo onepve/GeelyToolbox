@@ -2878,6 +2878,58 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             return res.toString();
         }
 
+        private AdbClient.AdbStreamSession keyEventCaptureSession = null;
+
+        @JavascriptInterface
+        public boolean startKeyEventCapture() {
+            try {
+                stopKeyEventCapture();
+                keyEventCaptureSession = AdbClient.executeStream(context, "getevent -l", new AdbClient.AdbStreamCallback() {
+                    @Override
+                    public void onLine(final String line) {
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (webView != null) {
+                                    webView.evaluateJavascript("if(window.onKeyEventCaptured) window.onKeyEventCaptured(" + JSONObject.quote(line) + ");", null);
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onComplete(final boolean success, final String error) {
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (webView != null) {
+                                    webView.evaluateJavascript("if(window.onKeyEventCaptureCompleted) window.onKeyEventCaptureCompleted(" + success + ", " + JSONObject.quote(error != null ? error : "") + ");", null);
+                                }
+                            }
+                        });
+                    }
+                });
+                return keyEventCaptureSession != null;
+            } catch (Exception e) {
+                Log.e("GeelyConsole", "startKeyEventCapture error: " + e.getMessage(), e);
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public boolean stopKeyEventCapture() {
+            try {
+                if (keyEventCaptureSession != null) {
+                    keyEventCaptureSession.stop();
+                    keyEventCaptureSession = null;
+                }
+                return true;
+            } catch (Exception e) {
+                Log.e("GeelyConsole", "stopKeyEventCapture error: " + e.getMessage(), e);
+                return false;
+            }
+        }
+
         @JavascriptInterface
         public void exitApp() {
             mainHandler.post(new Runnable() {

@@ -116,6 +116,18 @@
         <span class="text-[21px] font-black text-car-text">ADB 交互控制台</span>
         <div class="flex items-center">
           <button 
+            @click="toggleKeyEventCapture"
+            :class="[
+              'min-h-[50px] px-5 mr-3 rounded-xl border-2 font-black text-[15.5px] cursor-pointer shadow-sm flex items-center shrink-0 transition-all',
+              isCapturingKeys
+                ? 'bg-rose-500/20 border-rose-500 text-rose-400 animate-pulse ring-2 ring-rose-500/30'
+                : 'bg-amber-500/15 border-amber-500/50 text-amber-400 hover:border-amber-400'
+            ]"
+          >
+            <span :class="['w-2.5 h-2.5 rounded-full mr-2 shrink-0', isCapturingKeys ? 'bg-rose-500 animate-ping' : 'bg-amber-400']"></span>
+            {{ isCapturingKeys ? '⏹ 停止抓取' : '抓取按键码' }}
+          </button>
+          <button 
             @click="openOtaCapture"
             class="min-h-[50px] px-5 mr-3 rounded-xl bg-amber-500/15 border-2 border-amber-500/50 text-amber-400 hover:border-amber-400 font-black text-[15.5px] cursor-pointer shadow-sm flex items-center shrink-0"
           >
@@ -195,6 +207,54 @@ const packageStates = ref({
 });
 
 const isDumping = ref(false);
+const isCapturingKeys = ref(false);
+
+function toggleKeyEventCapture() {
+  if (isCapturingKeys.value) {
+    stopKeyEventCapture();
+  } else {
+    startKeyEventCapture();
+  }
+}
+
+function startKeyEventCapture() {
+  try {
+    const success = bridge.call('startKeyEventCapture');
+    if (success) {
+      isCapturingKeys.value = true;
+      const tip = `[ADB 方控按键实时监听已启动 · 请按下方向盘任意按键]\n[说明: 屏幕将实时置顶打印捕获到的 /dev/input 节点与十六进制键值，再次点击按钮可立即停止]\n────────────────────────────────────────────────────────────\n`;
+      outputText.value = tip + outputText.value;
+      showToast('方控按键监听已开启，请按下方向盘按键');
+    } else {
+      showToast('启动按键监听失败，请检查 ADB 连接状态');
+    }
+  } catch (e) {
+    showToast(`启动按键监听异常: ${e}`);
+  }
+}
+
+function stopKeyEventCapture() {
+  try {
+    bridge.call('stopKeyEventCapture');
+  } catch (e) {}
+  isCapturingKeys.value = false;
+  const tip = `[ADB 方控按键监听已主动停止]\n────────────────────────────────────────────────────────────\n`;
+  outputText.value = tip + outputText.value;
+  showToast('方控按键监听已停止');
+}
+
+// 接收 Java 异步流式按键事件回调
+window.onKeyEventCaptured = (line) => {
+  if (!line || !line.trim()) return;
+  const now = new Date();
+  const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
+  const logLine = `[${timeStr}] ${line.trim()}\n`;
+  outputText.value = logLine + outputText.value;
+};
+
+window.onKeyEventCaptureCompleted = (success, error) => {
+  isCapturingKeys.value = false;
+};
 
 function refreshPackageStates() {
   setTimeout(() => {
@@ -210,6 +270,12 @@ function refreshPackageStates() {
 watch(() => store.modals.deepTools, (show) => {
   if (show) {
     refreshPackageStates();
+  } else if (isCapturingKeys.value) {
+    // 离开弹窗/切换Tab: 自动终止按键抓取, 防后台驻留
+    try {
+      bridge.call('stopKeyEventCapture');
+    } catch (e) {}
+    isCapturingKeys.value = false;
   }
 });
 

@@ -283,6 +283,191 @@ public class AdbClient {
         }
     }
 
+    public interface AdbStreamCallback {
+        void onLine(String line);
+        void onComplete(boolean success, String error);
+    }
+
+    public static class AdbStreamSession {
+        private final Socket socket;
+        private volatile boolean stopped = false;
+
+        public AdbStreamSession(Socket socket) {
+            this.socket = socket;
+        }
+
+        public void stop() {
+            stopped = true;
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (Exception ignored) {}
+            }
+        }
+
+        public boolean isStopped() {
+            return stopped;
+        }
+    }
+
+    public static AdbStreamSession executeStream(Context context, String command, AdbStreamCallback callback) {
+        Socket socket = null;
+        try {
+            java.util.List<String> hosts = new java.util.ArrayList<>();
+            hosts.add("127.0.0.1");
+            String carIp = SystemUtils.getCarIpAddress();
+            if (carIp != null && !carIp.trim().isEmpty() && !"127.0.0.1".equals(carIp.trim())) {
+                hosts.add(carIp.trim());
+            }
+
+            Exception lastConnectEx = null;
+            for (String host : hosts) {
+                try {
+                    socket = new Socket();
+                    socket.setTcpNoDelay(true);
+                    socket.setSoTimeout(0); // 流式监听无需超时自动断开
+                    socket.connect(new InetSocketAddress(host, ADB_PORT), 1200);
+                    break;
+                } catch (Exception e) {
+                    lastConnectEx = e;
+                    socket = null;
+                }
+            }
+
+            if (socket == null) {
+                if (callback != null) {
+                    callback.onComplete(false, "ADB 端口未开放 (5555 连接失败: " + (lastConnectEx != null ? lastConnectEx.getMessage() : "超时") + ")");
+                }
+                return null;
+            }
+
+            final Socket finalSocket = socket;
+            final AdbStreamSession session = new AdbStreamSession(finalSocket);
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        OutputStream out = finalSocket.getOutputStream();
+                        InputStream in = finalSocket.getInputStream();
+
+                        // 1. Send CNXN Handshake
+                        byte[] cnxnPayload = "host::\0".getBytes(StandardCharsets.UTF_8);
+                        sendPacket(out, A_CNXN, A_VERSION, MAX_PAYLOAD, cnxnPayload);
+
+                        // 2. Read Response (CNXN or AUTH)
+                        AdbMessage resp = readMessage(in);
+                        if (resp == null) {
+                            if (callback != null && !session.isStopped()) {
+                                callback.onComplete(false, "车机 ADB 守护进程无响应");
+                            }
+                            return;
+                        }
+
+                        if (resp.command == A_AUTH && resp.arg0 == ADB_AUTH_TOKEN) {
+                            KeyPair keyPair = getOrCreateAdbKeyPair(context);
+                            if (keyPair == null) {
+                                if (callback != null && !session.isStopped()) {
+                                    callback.onComplete(false, "无法生成 ADB RSA 密钥对");
+                                }
+                                return;
+                            }
+                            byte[] token = resp.data;
+                            byte[] signature = signToken(keyPair.getPrivate(), token);
+                            if (signature != null) {
+                                sendPacket(out, A_AUTH, ADB_AUTH_SIGNATURE, 0, signature);
+                                resp = readMessage(in);
+                            }
+                            if (resp != null && resp.command == A_AUTH && resp.arg0 == ADB_AUTH_TOKEN) {
+                                byte[] pubKeyPayload = formatAdbPublicKey((RSAPublicKey) keyPair.getPublic());
+                                sendPacket(out, A_AUTH, ADB_AUTH_RSAPUBLICKEY, 0, pubKeyPayload);
+                                resp = readMessage(in);
+                            }
+                        }
+
+                        if (resp == null || resp.command != A_CNXN) {
+                            String cmdHex = (resp != null) ? "0x" + Integer.toHexString(resp.command) : "NULL";
+                            if (callback != null && !session.isStopped()) {
+                                callback.onComplete(false, "ADB 鉴权未通过 (" + cmdHex + ")");
+                            }
+                            return;
+                        }
+
+                        // 3. Send OPEN command for shell
+                        int localId = 1;
+                        String shellCmd = "shell:" + command + "\0";
+                        byte[] openPayload = shellCmd.getBytes(StandardCharsets.UTF_8);
+                        sendPacket(out, A_OPEN, localId, 0, openPayload);
+
+                        // 4. Read Response Loop
+                        int remoteId = 0;
+                        ByteArrayOutputStream lineBuf = new ByteArrayOutputStream();
+
+                        while (!session.isStopped()) {
+                            AdbMessage msg = readMessage(in);
+                            if (msg == null) break;
+
+                            if (msg.command == A_OKAY) {
+                                remoteId = msg.arg0;
+                            } else if (msg.command == A_WRTE) {
+                                if (msg.data != null && msg.data.length > 0) {
+                                    for (byte b : msg.data) {
+                                        if (b == '\n') {
+                                            String line = lineBuf.toString("UTF-8").trim();
+                                            lineBuf.reset();
+                                            if (!line.isEmpty() && callback != null && !session.isStopped()) {
+                                                callback.onLine(line);
+                                            }
+                                        } else if (b != '\r') {
+                                            lineBuf.write(b);
+                                        }
+                                    }
+                                }
+                                sendPacket(out, A_OKAY, localId, remoteId, new byte[0]);
+                            } else if (msg.command == A_CLSE) {
+                                sendPacket(out, A_CLSE, localId, remoteId, new byte[0]);
+                                break;
+                            }
+                        }
+
+                        if (lineBuf.size() > 0 && callback != null && !session.isStopped()) {
+                            String remaining = lineBuf.toString("UTF-8").trim();
+                            if (!remaining.isEmpty()) {
+                                callback.onLine(remaining);
+                            }
+                        }
+
+                        if (callback != null && !session.isStopped()) {
+                            callback.onComplete(true, "");
+                        }
+                    } catch (Exception e) {
+                        if (!session.isStopped()) {
+                            Log.e(TAG, "ADB stream error: " + e.getMessage(), e);
+                            if (callback != null) {
+                                callback.onComplete(false, e.getMessage());
+                            }
+                        }
+                    } finally {
+                        session.stop();
+                    }
+                }
+            }, "AdbStreamThread").start();
+
+            return session;
+        } catch (Exception e) {
+            Log.e(TAG, "ADB executeStream error: " + e.getMessage(), e);
+            if (callback != null) {
+                callback.onComplete(false, e.getMessage());
+            }
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (Exception ignored) {}
+            }
+            return null;
+        }
+    }
+
     private static void sendPacket(OutputStream out, int cmd, int arg0, int arg1, byte[] data) throws Exception {
         int length = (data != null) ? data.length : 0;
         int check = 0;
