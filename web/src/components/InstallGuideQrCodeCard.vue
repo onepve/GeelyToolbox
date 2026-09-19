@@ -12,7 +12,7 @@
       <div class="flex items-center space-x-3">
         <button 
           @click="$emit('open-guide')"
-          class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border hover:border-car-accent text-car-accent font-black text-[13.5px] cursor-pointer transition-all flex items-center space-x-1.5"
+          class="h-[52px] px-4 rounded-xl bg-car-item border border-car-border hover:border-car-accent text-car-accent font-black text-[13.5px] cursor-pointer transition-all flex items-center space-x-1.5"
         >
           <span>📋 极客配置向导 (已就绪·点击复查)</span>
         </button>
@@ -20,7 +20,7 @@
     </div>
 
     <!-- 手机扫码二维码矢量卡片 -->
-    <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+    <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between">
       <div class="flex items-center space-x-5">
         <!-- 二维码矢量画布 (120x120 纯白底座高对比) -->
         <div class="p-2.5 bg-white rounded-2xl shadow-md border-2 border-car-border shrink-0 flex items-center justify-center">
@@ -69,14 +69,12 @@ const isWifiConnected = ref(false)
 
 const getWifiIp = async () => {
   try {
-    try {
-    const ip = bridge.call('getWifiIp') || bridge.call('getIpAddress')
+    const ip = bridge.call('getCarIp')
     if (ip) {
       wifiAddress.value = ip
       isWifiConnected.value = true
       return ip
     }
-  } catch (e) {}
   } catch (e) {
     console.warn('Failed to get wifi ip', e)
   }

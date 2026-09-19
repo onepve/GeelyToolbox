@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+  <div v-if="visible" class="fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center p-4 backdrop-blur-md animate-fade-in" style="background: rgba(0, 0, 0, 0.8);">
     <div class="relative w-full max-w-4xl bg-car-card border-2 border-car-accent rounded-3xl p-6 shadow-2xl flex flex-col space-y-5 text-car-text max-h-[92vh] overflow-y-auto">
       <!-- 顶部 Header -->
       <div class="flex items-center justify-between pb-4 border-b border-car-border">
