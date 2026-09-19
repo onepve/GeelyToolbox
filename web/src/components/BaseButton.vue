@@ -1,7 +1,5 @@
 <template>
-  <button :class="btnClass">
-    <slot />
-  </button>
+  <button :class="btnClass" @click="handleClick"><slot /></button>
 </template>
 
 <script setup>
