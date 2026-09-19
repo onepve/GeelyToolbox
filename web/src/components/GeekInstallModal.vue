@@ -30,7 +30,7 @@
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-2">
                 <span class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-accent text-car-accent font-black text-[13px]">
-                  Step 1
+                  第一步 (Step 1)
                 </span>
                 <span class="text-[17.5px] font-black text-car-text">车规安全与免责底线</span>
               </div>
@@ -64,7 +64,7 @@
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-2">
                 <span class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-accent text-car-accent font-black text-[13px]">
-                  Step 2
+                  第二步 (Step 2)
                 </span>
                 <span class="text-[17.5px] font-black text-car-text">原厂应用商店防护配置</span>
               </div>
@@ -94,11 +94,11 @@
             <div class="flex items-center space-x-2">
               <button 
                 @click="freezeStore"
-                :disabled="!disclaimerAgreed || actionLoading"
+                :disabled="!disclaimerAgreed || isStoreFrozen"
                 class="h-[52px] px-4 rounded-xl border-2 font-black text-[14.5px] cursor-pointer transition-all shadow-sm"
                 :class="!disclaimerAgreed ? 'opacity-50 cursor-not-allowed bg-car-card border-car-border text-car-sub' : isStoreFrozen ? 'bg-car-card border-car-border text-car-sub' : 'bg-car-item border-car-accent text-car-accent hover:bg-car-card'"
               >
-                {{ actionLoading ? '执行中...' : isStoreFrozen ? '已冻结商店' : '通道 A: 冻结商店' }}
+                {{ isStoreFrozen ? '已安全冻结' : '通道 A: 安全冻结' }}
               </button>
               <button 
                 @click="skipStore"
@@ -132,66 +132,45 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed, onMounted } from 'vue'
 import StatusDot from './StatusDot.vue'
-import { runAdbShell } from '../api/adb'
+import { isAppstoreFrozen, openAppstoreFreezeFlow } from '../utils/appstoreFreeze'
 
-const props = defineProps<{
-  modelValue?: boolean
-}>()
+const props = defineProps({
+  modelValue: {
+    type: Boolean,
+    default: false
+  }
+})
 
-const emit = defineEmits<{
-  (e: 'update:modelValue', val: boolean): void
-  (e: 'complete'): void
-}>()
+const emit = defineEmits(['update:modelValue', 'complete'])
 
 const visible = ref(false)
 const disclaimerAgreed = ref(false)
-const isStoreFrozen = ref(false)
 const step2Completed = ref(false)
-const actionLoading = ref(false)
+
+const isStoreFrozen = computed(() => {
+  return isAppstoreFrozen()
+})
 
 const canDismiss = computed(() => {
   return localStorage.getItem('geek_install_guide_completed') === 'true'
 })
 
 const canFinish = computed(() => {
-  return disclaimerAgreed.value && step2Completed.value
+  return disclaimerAgreed.value && (step2Completed.value || isStoreFrozen.value)
 })
-
-const checkStoreStatus = async () => {
-  try {
-    const res = await runAdbShell('pm list packages -d')
-    if (res && res.output) {
-      isStoreFrozen.value = res.output.includes('com.geely.appstore') || res.output.includes('com.ecarx.appstore')
-      if (isStoreFrozen.value) {
-        step2Completed.value = true
-      }
-    }
-  } catch (e) {
-    console.warn('Check store status failed', e)
-  }
-}
 
 const agreeDisclaimer = () => {
   disclaimerAgreed.value = true
   localStorage.setItem('geek_install_disclaimer_agreed', 'true')
 }
 
-const freezeStore = async () => {
-  actionLoading.value = true
-  try {
-    await runAdbShell('pm disable-user --user 0 com.geely.appstore')
-    await runAdbShell('pm disable-user --user 0 com.ecarx.appstore')
-    isStoreFrozen.value = true
+const freezeStore = () => {
+  openAppstoreFreezeFlow(() => {
     step2Completed.value = true
-  } catch (e) {
-    console.warn('Freeze store failed', e)
-    step2Completed.value = true
-  } finally {
-    actionLoading.value = false
-  }
+  })
 }
 
 const skipStore = () => {
@@ -213,7 +192,9 @@ const closeModal = () => {
 
 const open = () => {
   disclaimerAgreed.value = localStorage.getItem('geek_install_disclaimer_agreed') === 'true'
-  checkStoreStatus()
+  if (isAppstoreFrozen()) {
+    step2Completed.value = true
+  }
   visible.value = true
   emit('update:modelValue', true)
 }

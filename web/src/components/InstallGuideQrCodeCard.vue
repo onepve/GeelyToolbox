@@ -57,7 +57,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import QRCode from 'qrcode'
-import { runAdbShell } from '../api/adb'
+import { bridge } from '../store'
 
 defineEmits<{
   (e: 'open-guide'): void
@@ -69,15 +69,14 @@ const isWifiConnected = ref(false)
 
 const getWifiIp = async () => {
   try {
-    const res = await runAdbShell('ip route get 1.1.1.1')
-    if (res && res.output) {
-      const match = res.output.match(/src\s+(\d+\.\d+\.\d+\.\d+)/)
-      if (match && match[1]) {
-        wifiAddress.value = match[1]
-        isWifiConnected.value = true
-        return match[1]
-      }
+    try {
+    const ip = bridge.call('getWifiIp') || bridge.call('getIpAddress')
+    if (ip) {
+      wifiAddress.value = ip
+      isWifiConnected.value = true
+      return ip
     }
+  } catch (e) {}
   } catch (e) {
     console.warn('Failed to get wifi ip', e)
   }
