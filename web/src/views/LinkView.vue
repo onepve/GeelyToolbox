@@ -158,23 +158,23 @@
 
         <!-- 启播目标音乐应用选择 (支持自动探测、手动强刷扫描、▲/▼ 优先级排序与更多软件选择) -->
         <div class="pt-3 flex flex-col space-y-3 border-t border-car-border/60 min-w-0 flex-1 shrink-0">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-2">
+          <div class="flex items-center justify-between space-x-4">
+            <div class="flex items-center space-x-2 flex-1 min-w-0">
               <span class="text-[15.5px] font-black text-car-text">自启首选主力音乐软件，开机自动探测，点击磁贴即设为首选：</span>
             </div>
-            <div class="flex items-center space-x-2.5">
-              <button 
-                @click="refreshDetectedApps" 
-                class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-accent font-black text-[14.5px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
+            <div class="flex items-center space-x-2.5 shrink-0">
+              <button
+                @click="refreshDetectedApps"
+                class="h-[52px] px-7 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-accent font-black text-[14.5px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5 whitespace-nowrap shrink-0"
               >
-                
+
                 <span>手动重新扫描</span>
               </button>
-              <button 
+              <button
                 @click="openSelectModal('speed_autoplay')"
-                class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[14.5px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
+                class="h-[52px] px-7 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[14.5px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5 whitespace-nowrap shrink-0"
               >
-                
+
                 <span>自定义应用排序 (▲/▼) ➔</span>
               </button>
             </div>
@@ -287,7 +287,7 @@
               <button 
                 @click="setCustomActionTarget('pkg:com.autonavi.amapauto')"
                 :class="[
-                  'w-full h-[52px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
+                  'w-full h-[68px] rounded-xl font-black text-[19px] cursor-pointer transition-all border-2 whitespace-nowrap',
                   store.vehicleAuto.vehicle_speed_custom_action_target === 'pkg:com.autonavi.amapauto'
                     ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                     : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
@@ -298,7 +298,7 @@
               <button 
                 @click="openSelectModal('speed_custom_action')"
                 :class="[
-                  'w-full h-[52px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
+                  'w-full h-[68px] rounded-xl font-black text-[19px] cursor-pointer transition-all border-2 whitespace-nowrap',
                   store.vehicleAuto.vehicle_speed_custom_action_target?.startsWith('pkg:') && store.vehicleAuto.vehicle_speed_custom_action_target !== 'pkg:com.autonavi.amapauto'
                     ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                     : 'bg-car-card border-car-border text-car-sub hover:text-car-text'

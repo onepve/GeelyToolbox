@@ -36,19 +36,19 @@
 
     <!-- 系统底层维护 6 大核心功能矩阵 (3 列自适应车规排版) -->
     <div class="grid grid-cols-3 gap-4">
-      <!-- 1. 整车硬件冷重启控制台 (紧凑饱满) -->
+      <!-- 1. 运行与守护日志 -->
       <FeatureCard 
-        title="整车硬件冷重启"
-        desc="彻底掉电重置车机 MCU 与安卓核心，白名单与底层服务立即生效。"
-        helpTitle="【功能指南】整车硬件冷重启"
-        helpText="1. 冷重启原理：&#10;对整车中控硬件执行完全掉电冷启动（reboot），彻底重置 MCU 与安卓 Framework。&#10;&#10;2. 生效场景：&#10;白名单、音频通道、系统框架等底层改动需冷重启后才能真正刷新生效，杜绝开门播报延迟与系统卡顿。&#10;&#10;3. 安全铁律：&#10;严禁在行车行驶过程中执行！请确保车辆已安全停稳、挂入 P 挡后操作。"
-        helpTip="耗时约 25~35 秒，期间中控黑屏属正常，请耐心等待自动重启。"
+        title="运行与守护日志"
+        desc="实时采集车门、挡位与方控信号记录，支持独立清空与一键全量导出。"
+        helpTitle="【功能指南】运行与守护日志"
+        helpText="1. 采集内容：&#10;实时记录车门、挡位、方控按键等信号，方便排查问题。&#10;&#10;2. 存储保护：&#10;守护日志全程在内存环形缓冲区流转，默认零磁盘写入；仅按需开启模块或手动导出才落盘。&#10;&#10;3. 脱敏导出：&#10;导出 ZIP 时自动执行 5 重脱敏，手机号、GPS 经纬度、门牌地址、VIN 等敏感信息全部抹除，可放心提交排查。"
+        helpTip="导出前先在弹窗内开启对应模块开关，否则高频通道默认不采集。"
       >
         <button 
-          @click="confirmHardReboot"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border hover:border-rose-500/60 bg-car-item text-car-text font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+          @click="openLogModal"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
         >
-          <span>完整硬件冷重启 (reboot)</span>
+          <span>查看与管理守护日志</span>
         </button>
       </FeatureCard>
 
@@ -97,19 +97,19 @@
         </button>
       </FeatureCard>
 
-      <!-- 4. 运行与安全审计日志 -->
+      <!-- 4. 整车硬件冷重启控制台 (紧凑饱满) -->
       <FeatureCard 
-        title="运行与守护日志"
-        desc="实时采集车门、挡位与方控信号记录，支持独立清空与一键全量导出。"
-        helpTitle="【功能指南】运行与守护日志"
-        helpText="1. 采集内容：&#10;实时记录车门、挡位、方控按键等信号，方便排查问题。&#10;&#10;2. 存储保护：&#10;守护日志全程在内存环形缓冲区流转，默认零磁盘写入；仅按需开启模块或手动导出才落盘。&#10;&#10;3. 脱敏导出：&#10;导出 ZIP 时自动执行 5 重脱敏，手机号、GPS 经纬度、门牌地址、VIN 等敏感信息全部抹除，可放心提交排查。"
-        helpTip="导出前先在弹窗内开启对应模块开关，否则高频通道默认不采集。"
+        title="整车硬件冷重启"
+        desc="彻底掉电重置车机 MCU 与安卓核心，白名单与底层服务立即生效。"
+        helpTitle="【功能指南】整车硬件冷重启"
+        helpText="1. 冷重启原理：&#10;对整车中控硬件执行完全掉电冷启动（reboot），彻底重置 MCU 与安卓 Framework。&#10;&#10;2. 生效场景：&#10;白名单、音频通道、系统框架等底层改动需冷重启后才能真正刷新生效，杜绝开门播报延迟与系统卡顿。&#10;&#10;3. 安全铁律：&#10;严禁在行车行驶过程中执行！请确保车辆已安全停稳、挂入 P 挡后操作。"
+        helpTip="耗时约 25~35 秒，期间中控黑屏属正常，请耐心等待自动重启。"
       >
         <button 
-          @click="openLogModal"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+          @click="confirmHardReboot"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border hover:border-rose-500/60 bg-car-item text-car-text font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
         >
-          <span>查看与管理守护日志</span>
+          <span>完整硬件冷重启 (reboot)</span>
         </button>
       </FeatureCard>
 
