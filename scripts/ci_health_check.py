@@ -693,8 +693,13 @@ if "vehicle_monitor_engine_mode" in bv_code:
 voice_item_modal_path = os.path.join(WEB_SRC_DIR, "components/modals/VoiceItemSettingsModal.vue")
 with open(voice_item_modal_path, "r", encoding="utf-8") as f:
     vism_code = f.read()
-if "reverse_volume_boost" not in vism_code or "reverseBoost" not in vism_code:
-    reg_violations.append("VoiceItemSettingsModal.vue 倒车设置缺少【倒车防衰减音量额外补偿】滑块！")
+# 倒车补偿契约已按车主指令反转（2026-09：旧全局增益+倒车防衰减+写死地板全链下线，
+# 统一为每声效独立「本声效输出」卡：声道三选一 + 增益 -15~15 默认 0，offset≠0 单项接管）：
+# required（旧防衰减滑块）→ forbidden（旧键回潮即违例），新增增益卡为 required。
+if "reverse_volume_boost" in vism_code:
+    reg_violations.append("VoiceItemSettingsModal.vue 仍残留已下线的【倒车防衰减补偿】滑块（reverse_volume_boost）！")
+if "setVoiceItemChannel" not in vism_code or "setVoiceItemOffset" not in vism_code or "本声效输出" not in vism_code:
+    reg_violations.append("VoiceItemSettingsModal.vue 缺少每声效独立【本声效输出】卡（setVoiceItemChannel / setVoiceItemOffset / 本声效输出）！")
 
 # 16.4 检查手机快传避免单行双按钮溢出
 with open(MOBILE_WEB_PATH, "r", encoding="utf-8") as f:

@@ -53,7 +53,17 @@ public class VehicleVoicePlayer {
         String channel = "music";
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            channel = prefs.getString("voice_audio_channel", "music");
+            // 每声效独立声道（voice_item_channel_<key>）优先；未设置则跟随全局语音通道
+            if (voiceType != null && !voiceType.isEmpty()) {
+                String per = prefs.getString("voice_item_channel_" + voiceType, null);
+                if (per != null && !per.isEmpty()) {
+                    channel = per;
+                } else {
+                    channel = prefs.getString("voice_audio_channel", "music");
+                }
+            } else {
+                channel = prefs.getString("voice_audio_channel", "music");
+            }
         } catch (Exception ignored) {}
 
         AudioAttributes.Builder builder = new AudioAttributes.Builder()
@@ -61,6 +71,7 @@ public class VehicleVoicePlayer {
 
         // 倒车挡核心铁律：回归默认媒体声道 (USAGE_MEDIA / STREAM_MUSIC)！
         // 实车证实：挂R挡时原厂倒车雷达与AVM独占系统通知通道，若倒挡走通知流会被系统底层互斥挂起，切回N挡雷达释放瞬间才突发滞后大声爆音！
+        // 例外：用户对该声效显式选了「通知」声道（voice_item_channel_*），视为知情选择，予以放行。
         if ("notification".equals(channel)) {
             builder.setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT);
         } else if ("nav".equals(channel)) {
@@ -290,42 +301,33 @@ public class VehicleVoicePlayer {
     }
 
     private synchronized void applyVolumeOffsetBeforePlay(String voiceType) {
-        if (audioManager == null) return;
+        if (audioManager == null || voiceType == null || voiceType.isEmpty()) return;
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            String channel = prefs.getString("voice_audio_channel", "music");
-            int offset = prefs.getInt("voice_volume_offset_" + channel, prefs.getInt("voice_volume_offset", 0));
 
-            boolean isReverse = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse") || voiceType.contains("倒车")));
+            // ── 每声效独立管理（v1.7.37 起）：voice_item_channel_<key> + voice_item_offset_<key> ──
+            // 未保存过该声效 = 不接管，原厂行为零变化；保存过 = 声道/增益完全按本项设置走
+            if (!prefs.contains("voice_item_offset_" + voiceType)) return;
+            String channel = prefs.getString("voice_item_channel_" + voiceType, "music");
+            int offset = prefs.getInt("voice_item_offset_" + voiceType, 0);
+            if (offset == 0) return;
+
             int stream = ("nav".equals(channel) || "notification".equals(channel))
                     ? AudioManager.STREAM_NOTIFICATION
                     : AudioManager.STREAM_MUSIC;
-
             int currentVol = audioManager.getStreamVolume(stream);
             int maxVol = audioManager.getStreamMaxVolume(stream);
             int targetVol = Math.max(0, Math.min(maxVol, currentVol + offset));
+            if (targetVol == currentVol || restoreVolumeAfterPlay >= 0) return;
 
-            // 倒车挡防衰减智能补偿：媒体声道动态补偿 +N 格 (车主可在倒车声效弹窗自由调节，默认+6)，拉高媒体音量抵抗原厂倒车媒体衰减
-            if (isReverse) {
-                int boost = prefs.getInt("reverse_volume_boost", 6);
-                int boostedVol = Math.max((int) (maxVol * 0.70f), currentVol + boost);
-                targetVol = Math.max(1, Math.min(maxVol, boostedVol));
-            }
-
-            if (targetVol != currentVol && restoreVolumeAfterPlay < 0) {
-                restoreVolumeAfterPlay = currentVol;
-                originalStreamType = stream;
-                audioManager.setStreamVolume(stream, targetVol, 0);
-                Log.i(TAG, "Applied voice volume offset: " + offset + " (vol: " + currentVol + " -> " + targetVol + ", stream: " + stream + ")");
-                AppLogger.i("语音播报", "音量动态补偿生效: 当前=" + currentVol + " -> 目标=" + targetVol + " (" + (offset >= 0 ? "+" + offset : offset) + "格, 通道=" + (stream == AudioManager.STREAM_NOTIFICATION ? "通知/系统" : "媒体") + ")");
-            }
+            restoreVolumeAfterPlay = currentVol;
+            originalStreamType = stream;
+            audioManager.setStreamVolume(stream, targetVol, 0);
+            Log.i(TAG, "Item-managed voice gain: " + offset + " (vol: " + currentVol + " -> " + targetVol + ", stream: " + stream + ", item: " + voiceType + ")");
+            AppLogger.i("语音播报", "单项增益生效[" + voiceType + "]: " + (offset >= 0 ? "+" + offset : offset) + "格 (音量 " + currentVol + "->" + targetVol + ")");
         } catch (Exception e) {
             Log.w(TAG, "Failed to apply volume offset: " + e.getMessage());
         }
-    }
-
-    private synchronized void applyVolumeOffsetBeforePlay() {
-        applyVolumeOffsetBeforePlay(null);
     }
 
     private synchronized void restoreVolumeAfterPlay() {

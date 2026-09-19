@@ -3042,12 +3042,17 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("custom_gear_r", !prefs.getString("custom_voice_gear_r.mp3", "").isEmpty());
                 obj.put("custom_flameout", !prefs.getString("custom_voice_flameout.mp3", "").isEmpty());
 
-                obj.put("reverse_volume_boost", prefs.getInt("reverse_volume_boost", 6));
                 obj.put("wheel_long_press_ms", prefs.getInt("wheel_long_press_ms", 1500));
-                obj.put("voice_volume_offset", prefs.getInt("voice_volume_offset", 0));
-                obj.put("voice_volume_offset_music", prefs.getInt("voice_volume_offset_music", prefs.getInt("voice_volume_offset", 0)));
-                obj.put("voice_volume_offset_nav", prefs.getInt("voice_volume_offset_nav", 0));
-                obj.put("voice_volume_offset_notification", prefs.getInt("voice_volume_offset_notification", 0));
+
+                // 每声效独立声道/增益动态导出（有覆盖才导出：channel_<key> / offset_<key>；未覆盖=前端默认 普通媒体/0）
+                for (java.util.Map.Entry<String, ?> e : prefs.getAll().entrySet()) {
+                    String k = e.getKey();
+                    if (k.startsWith("voice_item_channel_")) {
+                        obj.put(k.substring("voice_item_".length()), e.getValue());
+                    } else if (k.startsWith("voice_item_offset_")) {
+                        obj.put(k.substring("voice_item_".length()), e.getValue());
+                    }
+                }
 
                 return obj.toString();
             });
@@ -3113,6 +3118,41 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         public boolean refreshInstalledApps() {
             SystemUtils.clearAppsCache();
             AppLogger.i("应用管理", "手动清除已装应用缓存，触发全仓重新扫描");
+            return true;
+        }
+
+        // ═══ 每声效独立声道/增益（音量增益专题定案：单项接管，0=不接管） ═══
+        // 契约：voice_item_channel_<key>（music/nav/notification，缺省=music）、voice_item_offset_<key>（-15~15，缺省=0=不接管）
+        // 语义：offset≠0 → 单项完全接管（音量=当前流音量+N，倒车防衰减补偿与70%地板停用）；offset=0 → 完全跟随原厂行为
+        @JavascriptInterface
+        public boolean setVoiceItemChannel(final String key, final String channel) {
+            mainHandler.post(() -> {
+                try {
+                    if (key == null || key.isEmpty()) return;
+                    String v = "notification".equals(channel) ? "notification" : ("nav".equals(channel) ? "nav" : "music");
+                    getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                            .edit().putString("voice_item_channel_" + key, v).commit();
+                    AppLogger.i("声音设置", "声道[" + key + "] -> " + v);
+                } catch (Exception e) {
+                    AppLogger.e("声音设置", "声道更新失败: " + e.getMessage());
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
+        public boolean setVoiceItemOffset(final String key, final int offset) {
+            mainHandler.post(() -> {
+                try {
+                    if (key == null || key.isEmpty()) return;
+                    int v = Math.max(-15, Math.min(15, offset));
+                    getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                            .edit().putInt("voice_item_offset_" + key, v).commit();
+                    AppLogger.i("声音设置", "增益[" + key + "] -> " + v);
+                } catch (Exception e) {
+                    AppLogger.e("声音设置", "增益更新失败: " + e.getMessage());
+                }
+            });
             return true;
         }
 
@@ -3316,66 +3356,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             });
         }
 
-        @JavascriptInterface
-        public void setVoiceVolumeOffset(final int offset) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        String channel = prefs.getString("voice_audio_channel", "music");
-                        prefs.edit()
-                                .putInt("voice_volume_offset", offset)
-                                .putInt("voice_volume_offset_" + channel, offset)
-                                .commit();
-                        String chName = "music".equals(channel) ? "媒体主声道" : ("nav".equals(channel) ? "导航引导声道" : "系统提示音通道");
-                        showToast(chName + " 动态补偿已设为: " + (offset >= 0 ? "+" + offset : offset) + " 格");
-                    } catch (Exception ignored) {}
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public void setChannelVoiceVolumeOffset(final String channel, final int offset) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        String ch = (channel != null && !channel.isEmpty()) ? channel : "music";
-                        prefs.edit().putInt("voice_volume_offset_" + ch, offset).commit();
-                        String currentChannel = prefs.getString("voice_audio_channel", "music");
-                        if (ch.equals(currentChannel)) {
-                            prefs.edit().putInt("voice_volume_offset", offset).commit();
-                        }
-                        String chName = "music".equals(ch) ? "媒体主声道" : ("nav".equals(ch) ? "导航引导声道" : "系统提示音通道");
-                        showToast(chName + " 动态补偿已设为: " + (offset >= 0 ? "+" + offset : offset) + " 格");
-                    } catch (Exception ignored) {}
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public int getChannelVoiceVolumeOffset(final String channel) {
-            try {
-                android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                String ch = (channel != null && !channel.isEmpty()) ? channel : "music";
-                return prefs.getInt("voice_volume_offset_" + ch, prefs.getInt("voice_volume_offset", 0));
-            } catch (Exception e) {
-                return 0;
-            }
-        }
-
-        @JavascriptInterface
-        public int getVoiceVolumeOffset() {
-            try {
-                android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                return prefs.getInt("voice_volume_offset", 0);
-            } catch (Exception e) {
-                return 0;
-            }
-        }
-
+        
+        
+        
+        
         @JavascriptInterface
         public String getVoiceThemesJson() {
             return VehicleVoicePlayer.listInstalledThemesJson(MainActivity.this);

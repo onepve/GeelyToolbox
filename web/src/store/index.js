@@ -77,11 +77,7 @@ export const store = reactive({
     vehicle_gear_d_360_enabled: false,
     vehicle_speed_custom_action_enabled: false,
     vehicle_speed_custom_action_threshold: 40,
-    vehicle_speed_custom_action_target: 'pkg' + ':com.autonavi.amapauto', // 默认高德车机地图
-    voice_volume_offset: 0,
-    voice_volume_offset_music: 0,
-    voice_volume_offset_nav: 0,
-    voice_volume_offset_notification: 0
+    vehicle_speed_custom_action_target: 'pkg' + ':com.autonavi.amapauto'
   },
 
   // 云端应用与下载

@@ -113,7 +113,7 @@
       </div>
     </FeatureCard>
     <!-- 2. 系统语音合成引擎 (TTS) 直通状态 (支持原厂与第三方TTS自由切换，状态直显与试听) -->
-    <div class="grid grid-cols-2 gap-5"><FeatureCard class="!mb-0 h-full"
+    <FeatureCard class="!mb-0 h-full"
       title="系统语音合成引擎 (TTS) 直通状态"
       desc="系统直接通过后台 IPC 接入安卓系统语音合成服务。支持车机原厂语音引擎与第三方 TTS 自由选择，点击设置可随心切换。"
       helpTitle="【功能指南】系统语音合成引擎 (TTS) 直通"
@@ -166,77 +166,6 @@
         </div>
       </div>
     </FeatureCard>
-
-    <!-- 3. 播报音量相对增益补偿滑条 (解决听歌低音量时听不清开门/换挡) -->
-    <FeatureCard class="!mb-0 h-full"
-      title="播报音量动态增益补偿 (听歌低音量时自动增补)"
-      desc="听歌时媒体音量调低容易听不清开门与换挡提醒。设置增益后，播报瞬间自动在当前媒体音量上动态叠加补偿，播完秒级恢复原音量！"
-      helpTitle="【功能指南】播报音量动态增益补偿"
-      helpText="1. 解决痛点：&#10;听歌时媒体音量调低，开门/换挡等安全播报容易被音乐盖过听不清。&#10;&#10;2. 增益机制：&#10;设置正增益后，每次播报瞬间会在当前媒体音量上临时叠加补偿格数，播报结束秒级恢复原音量，不影响后续听歌。&#10;&#10;3. 纯加减操控：&#10;提供 -2/-1/+1/+2 快速步进与点击中央数值归零，盲调顺手；可随时「试听当前音量增益」即时验证效果。"
-      helpTip="建议设为 +2 格，既能清晰听清播报，又不会突兀爆音。"
-    >
-      <div class="bg-car-item border border-car-border rounded-2xl p-6 flex flex-col space-y-4 shadow-sm min-w-0 flex-1">
-        <div class="flex flex-col space-y-1.5">
-          <div class="flex items-baseline">
-            <span class="text-[20px] font-black text-car-text mr-3">动态音量补偿：</span>
-            <span class="text-[34px] font-black text-car-accent font-mono">{{ volumeOffset >= 0 ? '+' + volumeOffset : volumeOffset }}</span>
-            <span class="text-[16px] text-car-sub font-bold ml-1">格</span>
-          </div>
-          <span class="text-[15px] font-bold text-car-sub">
-            {{ volumeOffset === 0 ? '跟随当前媒体音量 (不增不减)' : (volumeOffset > 0 ? `播报时临时提升 ${volumeOffset} 格，播完秒恢复` : `播报时临时降低 ${Math.abs(volumeOffset)} 格`) }}
-          </span>
-        </div>
-
-        <!-- 车规纯加减音量补偿控制器 (彻底拔除细长滑条，盲调顺手) -->
-        <div class="flex flex-col space-y-3 pt-2">
-          <div class="flex items-center space-x-3">
-            <button 
-              @click="adjustVolumeOffset(-2)"
-              class="h-[56px] px-5 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center active:scale-95"
-              title="降低 2 格"
-            >-2 格</button>
-            <button 
-              @click="adjustVolumeOffset(-1)"
-              class="h-[56px] px-5 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center active:scale-95"
-              title="降低 1 格"
-            >-1 格</button>
-            <div 
-              @click="resetVolumeOffset"
-              class="flex items-baseline px-6 py-2 bg-car-card rounded-2xl border-2 border-car-accent min-w-[140px] justify-center shadow-inner cursor-pointer hover:bg-car-item active:scale-95 transition-all"
-              title="点击重置为 0 格"
-            >
-              <span class="text-[34px] font-black text-car-accent font-mono leading-none">{{ volumeOffset >= 0 ? '+' + volumeOffset : volumeOffset }}</span>
-              <span class="text-[16px] font-bold text-car-sub ml-1.5">格</span>
-            </div>
-            <button 
-              @click="adjustVolumeOffset(1)"
-              class="h-[56px] px-5 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center active:scale-95"
-              title="增加 1 格"
-            >+1 格</button>
-            <button 
-              @click="adjustVolumeOffset(2)"
-              class="h-[56px] px-5 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center active:scale-95"
-              title="增加 2 格"
-            >+2 格</button>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <button 
-              @click="resetVolumeOffset"
-              class="h-[56px] px-6 bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[16px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
-            >
-              重置归零 (+0)
-            </button>
-            <button 
-              @click="testVolumeOffset"
-              class="h-[56px] px-8 bg-car-card border-2 border-car-accent text-car-text font-black text-[17px] rounded-2xl cursor-pointer hover:border-car-accent shadow-md ring-2 ring-car-accent/20"
-            >
-              试听当前音量增益
-            </button>
-          </div>
-        </div>
-      </div>
-    </FeatureCard></div>
 
     <!-- 4. 座舱专属语音主题包与自定义音效 (一键整套换装 · 物理隔离) -->
     <FeatureCard 
@@ -460,7 +389,6 @@ function testBluetoothAudio() {
   bridge.call('testBluetoothAudio');
 }
 
-const volumeOffset = ref(0);
 const voiceThemes = ref([]);
 const activeThemeName = ref('');
 
@@ -555,14 +483,6 @@ onMounted(() => {
       };
     }
 
-    try {
-      const off = bridge.call('getVoiceVolumeOffset');
-      if (typeof off === 'number') {
-        volumeOffset.value = off;
-        store.vehicleAuto.voice_volume_offset = off;
-      }
-    } catch (e) {}
-
     loadVoiceThemes();
     window.refreshVoiceThemes = loadVoiceThemes;
     refreshConnectivity();
@@ -601,26 +521,4 @@ function openStoreToDownload() {
   showToast('已跳转至精选商城');
 }
 
-function saveVolumeOffset() {
-  store.vehicleAuto.voice_volume_offset = volumeOffset.value;
-  bridge.call('setVoiceVolumeOffset', volumeOffset.value);
-}
-
-function adjustVolumeOffset(delta) {
-  let next = Math.max(-5, Math.min(10, volumeOffset.value + delta));
-  volumeOffset.value = next;
-  saveVolumeOffset();
-}
-
-function resetVolumeOffset() {
-  volumeOffset.value = 0;
-  saveVolumeOffset();
-  showToast('播报音量补偿已重置归零 (+0)');
-}
-
-function testVolumeOffset() {
-  saveVolumeOffset();
-  bridge.call('testVehicleVoice', 'gear_d');
-  showToast(`正在按 ${volumeOffset.value >= 0 ? '+' + volumeOffset.value : volumeOffset.value} 格补偿试听播报...`);
-}
 </script>
