@@ -1,5 +1,8 @@
 <template>
   <div class="flex flex-col space-y-5">
+    <!-- 0. 缤越 COOL 极客安装两步向导与扫码直连卡片 -->
+    <InstallGuideQrCodeCard />
+
     <!-- 1. 原生文件管理特权安装通道 (核心通道) -->
     <div class="grid grid-cols-2 gap-5">
       <FeatureCard class="!mb-0" 
@@ -174,6 +177,7 @@
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
 import StatusDot from '../components/StatusDot.vue';
+import InstallGuideQrCodeCard from '../components/InstallGuideQrCodeCard.vue';
 import { store, bridge, openModal, showToast } from '../store';
 
 function confirmUnlockExpert() {
