@@ -1000,9 +1000,12 @@ public class VehicleAutomationService extends Service {
     }
 
     private void handleGearSignal(final int gear) {
+        // 核心修复：等红绿灯发动机自动启停（Start-Stop）防御！
+        // 等红绿灯踩刹车时，发动机停转、发电机停充（电压落回12V），但车辆并未真正熄火下电（lastPowerMode仍为ON且屏幕点亮）。
+        // 若当前已经处于前进挡/行车挡，严禁重置挡位状态机，否则绿灯松刹车发动机重启会把D挡误当成点火从P起步而爆音误报！
         if (!isEngineRunning()) {
-            // 熄火断电/浅待机：TCU 信号处于心跳诊断期，强制重置状态机，绝对静音！
-            if (gearStateMachine != null) {
+            // 仅在明确处于物理P挡或真正熄火下电时，才允许重置状态机；行车挡等红灯自动启停绝对保持状态记忆！
+            if (gearStateMachine != null && (gearStateMachine.getGear() == 5 || lastPowerMode == 0)) {
                 gearStateMachine.resetState();
             }
             return;
