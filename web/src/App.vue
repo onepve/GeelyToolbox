@@ -23,6 +23,7 @@
         <InstallView v-else-if="store.currentNav === 'install'" />
       </section>
     </main>
+    <GeekInstallModal />
 
     <!-- 7 大 M3 车规级二级模态弹窗 -->
     <AboutModal />
@@ -68,7 +69,8 @@ const TOAST_SKINS = {
 
 import { ref, watch, nextTick, onMounted } from 'vue';
 import TopBar from './components/TopBar.vue';
-import Sidebar from './components/Sidebar.vue';
+import Sidebar from './components/Sidebar.vue'
+import GeekInstallModal from './components/GeekInstallModal.vue';
 import StoreView from './views/StoreView.vue';
 import WheelView from './views/WheelView.vue';
 import LinkView from './views/LinkView.vue';
