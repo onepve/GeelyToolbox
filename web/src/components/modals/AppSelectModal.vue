@@ -328,10 +328,17 @@ function selectApp(app) {
     return;
   }
   const act = `app:${app.pkg}`;
-  store.vehicleAuto[`wheel_action_${keyTarget.value}`] = act;
-  bridge.call('setWheelControlStringSetting', `wheel_action_${keyTarget.value}`, act);
+  // keyTarget 为 <键>_<手势> 全量 id（如 voice_double）；必须写带手势后缀的完整键，
+  // 否则双击/长按配置会丢失回落 default（表现为只有单击有效）——与 ActionSelect 下拉
+  // 走的 setGestureAction 通道保持一致：写 specific 键 + single 时同步 legacy 键。
+  const sep = keyTarget.value.lastIndexOf('_');
+  const wKey = sep > 0 ? keyTarget.value.slice(0, sep) : keyTarget.value;
+  const gesture = sep > 0 ? keyTarget.value.slice(sep + 1) : 'single';
+  const pKey = `wheel_action_${keyTarget.value}`;
+  store.vehicleAuto[pKey] = act;
+  bridge.call('setWheelGestureAction', wKey, gesture, act);
   // 同时保存友好的应用名称供前端展示
-  localStorage.setItem(`wheel_action_${keyTarget.value}_app_name`, app.name);
+  localStorage.setItem(`${pKey}_app_name`, app.name);
   showToast(`${keyTitle.value} 已映射为打开: ${app.name}`);
   closeModal('appSelect');
 }

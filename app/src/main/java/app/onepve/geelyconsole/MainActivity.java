@@ -43,7 +43,6 @@ import app.onepve.geelyconsole.services.VehicleAutomationService;
 import app.onepve.geelyconsole.utils.AdbClient;
 import app.onepve.geelyconsole.utils.AppLogger;
 import app.onepve.geelyconsole.utils.AutoPilotManager;
-import app.onepve.geelyconsole.utils.BatteryHealthMonitor;
 import app.onepve.geelyconsole.utils.DialogHelper;
 import app.onepve.geelyconsole.utils.DownloadManager;
 import app.onepve.geelyconsole.utils.ForegroundAppDetector;
@@ -933,13 +932,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             try {
                 task.run();
             } catch (Exception ignored) {}
-        }
-
-        @JavascriptInterface
-        public String getBatteryHealth() {
-            return safeCall("{\"error\":\"monitor_unavailable\"}", () -> {
-                return BatteryHealthMonitor.buildHealthJson(context);
-            });
         }
 
         @JavascriptInterface
