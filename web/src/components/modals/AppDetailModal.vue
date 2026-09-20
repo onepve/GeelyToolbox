@@ -23,14 +23,6 @@
         </span>
       </div>
 
-      <!-- 地图直装版说明（云端 need_theme_install=false 驱动，无任何硬编码 id） -->
-      <div 
-        v-if="isMapCategory && !isMapApp" 
-        class="bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl p-4 text-amber-500 text-[16px] font-bold leading-relaxed"
-      >
-        <b>【安装方式】</b>本版本为<strong>免卡兔子主题直装版</strong>，冻结应用商店并开启安装白名单后，可直接覆盖安装，无需卡兔子主题。<br><br>
-        <b>【惯导避坑铁律】</b>在缤越 COOL (BMA) 等车型上安装后若出现定位漂移，<b>必须进入高德设置将【惯性导航】关闭</b>，关闭后走原生 GPS 即可 100% 稳定流畅不漂移！
-      </div>
 
       <!-- 卡主题版说明（云端 need_theme_install=true 驱动） -->
       <div 
