@@ -485,9 +485,10 @@ onBeforeUnmount(() => {
   document.removeEventListener('scroll', onWheelScroll, { capture: true });
 });
 const isBeta = computed(() => {
-  const ver = (store.appVersion || '').toLowerCase();
+  // 与安装包版本号脱钩：仅由连点 11 次激活的内测特权决定显示/隐藏
+  const isTesterUnlocked = localStorage.getItem('geely_tester_unlocked') === 'true';
   const useBetaChannel = localStorage.getItem('geely_use_beta_channel') === 'true';
-  return ver.includes('beta') || useBetaChannel;
+  return isTesterUnlocked || useBetaChannel;
 });
 
 const longPressSec = computed({

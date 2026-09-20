@@ -1,10 +1,5 @@
 <template>
   <div class="flex flex-col space-y-6 shrink-0">
-    <!-- 桌面悬浮与息屏保护（原「桌面悬浮」大分类已并入系统维护） -->
-    <div class="flex items-center space-x-3 pt-1">
-      <span class="text-[18.5px] font-black text-car-sub tracking-wide whitespace-nowrap">桌面悬浮与息屏保护</span>
-      <div class="flex-1 h-px bg-car-border/70"></div>
-    </div>
     <FloatingView />
 
     <!-- 系统底层维护 4 大核心功能矩阵 (2x2 网格车规对称排版) -->

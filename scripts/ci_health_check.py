@@ -740,10 +740,8 @@ for req_voice_modal in ["GearConfigModal", "ModeConfigModal", "DoorConfigModal",
     if f"<{req_voice_modal} v-if" not in bv_full_code:
         reg_violations.append(f"BodyView.vue 缺少{req_voice_modal} 二级向导弹窗挂载！")
 
-if "整套语音主题包" not in bv_full_code:
-    reg_violations.append("BodyView.vue 顶栏缺少【整套语音主题包 ➔】车载音频直通大磁贴！")
-if "车载语音播报计划" not in bv_full_code:
-    reg_violations.append("BodyView.vue 缺少【车载语音播报计划】固定常驻卡片！")
+if "车载语音播报计划" in bv_full_code:
+    reg_violations.append("BodyView.vue 存在已废弃的【车载语音播报计划】冗余长条卡片！")
 
 # 声效设置与 VoiceItemSettingsModal 贯通已下沉至四个二级向导 ConfigModal，逐一校验其完整性与声效按钮数量
 voice_modal_contracts = {

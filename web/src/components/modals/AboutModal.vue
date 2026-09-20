@@ -257,13 +257,18 @@ function handleVersionClick() {
   lastVersionClickTime = now;
   versionClickCount++;
 
-  if (versionClickCount >= 5) {
+  const REMAIN_THRESHOLD = 5;
+  const NEED_TOTAL = 11;
+  if (versionClickCount >= NEED_TOTAL) {
     versionClickCount = 0;
     isTester.value = true;
     localStorage.setItem('geely_tester_unlocked', 'true');
     useBetaChannel.value = true;
     localStorage.setItem('geely_use_beta_channel', 'true');
-    showToast('👑 恭喜解锁内测特权！已自动开启测试通道', 'success');
+    showToast('👑 恭喜解锁内测特权！已开启高级定制手势与测试通道', 'success');
+  } else if (versionClickCount >= NEED_TOTAL - REMAIN_THRESHOLD) {
+    const left = NEED_TOTAL - versionClickCount;
+    showToast(`再点击 ${left} 次解锁内测特权`);
   }
 }
 

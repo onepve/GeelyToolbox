@@ -30,9 +30,10 @@ function getActionOptions(keyName) {
 
 export function useWheelGesture() {
   const isBeta = computed(() => {
-    const ver = (store.appVersion || '').toLowerCase();
+    // 与安装包版本号彻底脱钩：仅当在「关于」连续点击版本号 11 次解锁内测特权后才展示双击/长按
+    const isTesterUnlocked = localStorage.getItem('geely_tester_unlocked') === 'true';
     const useBetaChannel = localStorage.getItem('geely_use_beta_channel') === 'true';
-    return ver.includes('beta') || useBetaChannel;
+    return isTesterUnlocked || useBetaChannel;
   });
 
   const gestureList = computed(() => {

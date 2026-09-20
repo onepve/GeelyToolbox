@@ -1,43 +1,25 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 专区标题卡 (106px 车规标准 · 左侧标题说明 + 右侧汇总徽标) -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
-      <div class="w-[58%] max-w-[58%] flex flex-col space-y-1.5 shrink-0">
-        <div class="flex items-center space-x-3">
-          <StatusDot size="lg" :color="activeGuardCount > 0 ? 'ok' : 'off'" class="shadow-md" />
-          <span class="text-[24px] font-black text-car-text tracking-wide whitespace-nowrap">车况安全守护语音</span>
-          <span class="px-3 py-0.5 text-[15.5px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
-            <StatusDot class="mr-2" size="sm" :color="activeGuardCount > 0 ? 'ok' : 'off'" />
-            {{ activeGuardCount }} / 2 项守护运行中
-          </span>
-        </div>
-        <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-          两项底盘安全信号守护语音逐项独立开关。语音仅作辅助提醒，不能替代仪表与警示灯；未知信号不报警。
-        </div>
-      </div>
-      <div class="shrink-0 w-[230px]">
-        <button
-          @click="showArbiterHelp"
-          class="w-full h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center bg-car-item border-car-accent"
-        >
-          <span class="text-[20px] font-black text-car-text tracking-wide whitespace-nowrap">语音协同与仲裁说明</span>
-          <span class="text-[15px] font-bold mt-1 text-car-accent whitespace-nowrap">通话静默规则 · 点击查看</span>
-        </button>
-      </div>
-    </div>
-
     <!-- 行车安全守护卡片 (单列通栏自适应) -->
     <div class="grid grid-cols-1 gap-5">
       <!-- 守护项: 方向盘未回正 -->
-      <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200">
+      <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[220px] flex flex-col justify-between transition-all duration-200">
         <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
             <span class="text-[20px] font-black text-car-text tracking-wide">方向盘未回正提醒</span>
             <button
               @click.stop="showSteerHelp"
               class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
+              title="查看方向盘提醒规则"
             >
               ?
+            </button>
+            <button
+              @click.stop="showArbiterHelp"
+              class="h-[50px] px-4 rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-accent hover:border-car-accent font-bold text-[14px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
+              title="查看通话与仲裁规则"
+            >
+              仲裁说明
             </button>
           </div>
           <span :class="['px-3 py-1 rounded-full text-[13px] font-black border shrink-0', store.vehicleAuto.voice_enable_steer_angle_guard ? 'bg-emerald-500/10 border-emerald-500/40 text-car-text' : 'bg-car-item border-car-border text-car-sub']">

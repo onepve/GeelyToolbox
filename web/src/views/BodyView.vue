@@ -36,101 +36,6 @@
       </div>
     </div>
 
-    <!-- 2. 实时车身物理信号探针 (支持折叠·默认收起) -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 shadow-xl">
-      <div class="flex items-center justify-between" :class="isProbeExpanded ? 'pb-3 mb-3 border-b border-car-border/60' : ''">
-        <div class="flex items-center space-x-3">
-          <StatusDot size="md" color="accent" :glow-px="8" pulse />
-          <span class="text-[20px] font-black text-car-text whitespace-nowrap">车身全域物理信号实时探针 (实车调试专用)</span>
-          <span v-if="!isProbeExpanded" class="text-[14px] px-3.5 py-1 rounded-xl bg-car-item border border-car-border text-car-accent font-bold whitespace-nowrap">
-            {{ formatGearName(doorStatus.gear) }} · {{ formatModeName(doorStatus.mode) }} · 五门电平监听中
-          </span>
-        </div>
-        <div class="flex items-center space-x-3">
-          <span v-if="isProbeExpanded" class="text-[14px] text-car-sub font-bold whitespace-nowrap">
-            底层 MCU 串口 91 02 01、TCU 换挡与驾驶模式广播全量监听
-          </span>
-          <button 
-            @click="isProbeExpanded = !isProbeExpanded"
-            class="h-[52px] px-5 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[14.5px] transition-all whitespace-nowrap cursor-pointer shadow-sm"
-          >
-            {{ isProbeExpanded ? '收起探针 ▲' : '展开实时探针 (实车调试) ▼' }}
-          </button>
-        </div>
-      </div>
-
-      <div v-if="isProbeExpanded" class="flex flex-col space-y-4 pt-1">
-        <div class="grid grid-cols-5 gap-3">
-          <div :class="['p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all', doorStatus.fl === 1 ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/30 shadow-md' : 'bg-car-item border-car-border text-car-sub']">
-            <span class="text-[13px] font-bold">主驾车门 (FL)</span>
-            <span class="text-[16px] font-black mt-1">{{ doorStatus.fl === 1 ? '● 物理打开' : (doorStatus.fl === 0 ? '○ 已关好' : '采集中...') }}</span>
-          </div>
-          <div :class="['p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all', doorStatus.fr === 1 ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/30 shadow-md' : 'bg-car-item border-car-border text-car-sub']">
-            <span class="text-[13px] font-bold">副驾车门 (FR)</span>
-            <span class="text-[16px] font-black mt-1">{{ doorStatus.fr === 1 ? '● 物理打开' : (doorStatus.fr === 0 ? '○ 已关好' : '采集中...') }}</span>
-          </div>
-          <div :class="['p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all', doorStatus.rl === 1 ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/30 shadow-md' : 'bg-car-item border-car-border text-car-sub']">
-            <span class="text-[13px] font-bold">左后车门 (RL)</span>
-            <span class="text-[16px] font-black mt-1">{{ doorStatus.rl === 1 ? '● 物理打开' : (doorStatus.rl === 0 ? '○ 已关好' : '采集中...') }}</span>
-          </div>
-          <div :class="['p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all', doorStatus.rr === 1 ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/30 shadow-md' : 'bg-car-item border-car-border text-car-sub']">
-            <span class="text-[13px] font-bold">右后车门 (RR)</span>
-            <span class="text-[16px] font-black mt-1">{{ doorStatus.rr === 1 ? '● 物理打开' : (doorStatus.rr === 0 ? '○ 已关好' : '采集中...') }}</span>
-          </div>
-          <div :class="['p-3 rounded-2xl border-2 flex flex-col items-center justify-center transition-all', doorStatus.trunk === 1 ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/30 shadow-md' : 'bg-car-item border-car-border text-car-sub']">
-            <span class="text-[13px] font-bold">电动尾门 (Trunk)</span>
-            <span class="text-[16px] font-black mt-1">{{ doorStatus.trunk === 1 ? '● 物理开启' : (doorStatus.trunk === 0 ? '○ 锁紧关好' : '采集中...') }}</span>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div class="p-3.5 rounded-2xl border-2 bg-car-item border-car-border flex items-center justify-between px-5">
-            <div class="flex flex-col">
-              <span class="text-[13.5px] font-bold text-car-sub">实时挡位状态 (Gear)</span>
-              <span class="text-[18px] font-black text-car-text mt-0.5">{{ formatGearName(doorStatus.gear) }}</span>
-            </div>
-            <span class="px-3.5 py-1 rounded-full text-[13.5px] font-black bg-car-card border border-car-border text-car-accent">
-              {{ doorStatus.gear === 4 ? 'R 挡 (倒车状态)' : (doorStatus.gear === 2 ? 'D 挡 (前进状态)' : (doorStatus.gear === 5 ? 'P 挡 (驻车停泊)' : '实时监听中')) }}
-            </span>
-          </div>
-          <div class="p-3.5 rounded-2xl border-2 bg-car-item border-car-border flex items-center justify-between px-5">
-            <div class="flex flex-col">
-              <span class="text-[13.5px] font-bold text-car-sub">实时驾驶模式 (DriveMode)</span>
-              <span class="text-[18px] font-black text-car-text mt-0.5">{{ formatModeName(doorStatus.mode) }}</span>
-            </div>
-            <span class="px-3.5 py-1 rounded-full text-[13.5px] font-black bg-car-card border border-car-border text-car-accent">
-              AdaptAPI 9位常量直通
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3. 车载语音播报计划 (对齐方控 106px 车规标准) -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
-      <div class="w-full flex flex-col space-y-1.5">
-        <div class="flex items-center space-x-3">
-          <StatusDot size="lg" color="accent" :glow-px="10" class="shrink-0" />
-          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">车载语音播报计划</span>
-          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-accent/40 text-car-accent inline-flex items-center shrink-0 shadow-sm">
-            {{ activeVoiceTaskCount }} / 4 项运行中
-          </span>
-        </div>
-        <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-          将繁杂的二十余项播报开关收拢为四大场景计划，固定常驻支持独立开关，点击二级向导可独立试听与配置自定义台词/音效。
-        </div>
-      </div>
-      <div class="flex items-center space-x-3 shrink-0">
-        <!-- 核心打通：一键跳转车载音频语音主题包 -->
-        <button
-          @click="store.currentNav = 'audio'"
-          class="h-[60px] px-5 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text hover:text-car-accent font-black text-[15.5px] cursor-pointer shadow-sm flex items-center space-x-2 transition-all"
-        >
-          <span>整套语音主题包 ➔</span>
-        </button>
-      </div>
-    </div>
-
     <!-- 语音任务流列表 (车规双列网格 2x2 · 告别单列堆叠面条 · 一屏尽览四大场景) -->
     <div class="grid grid-cols-2 gap-5">
       <!-- 语音任务 1: 挡位安全播报计划 -->
@@ -264,12 +169,6 @@ const showGearModal = ref(false);
 const showModeModal = ref(false);
 const showDoorModal = ref(false);
 const showTrunkModal = ref(false);
-
-const isProbeExpanded = ref(false);
-const doorStatus = ref({ fl: -1, fr: -1, rl: -1, rr: -1, trunk: -1, gear: -1, mode: -1 });
-let doorPollTimer = null;
-
-
 
 const isGearVoicePlanActive = computed(() => {
   return !!(store.vehicleAuto.voice_enable_gear_d || store.vehicleAuto.voice_enable_gear_r || store.vehicleAuto.voice_enable_gear_p);
@@ -427,42 +326,10 @@ function formatModeName(mode) {
   }
 }
 
-function fetchDoorStatus() {
-  try {
-    const raw = bridge.call('getDoorStatus');
-    if (raw) {
-      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      if (data && typeof data === 'object') {
-        doorStatus.value = {
-          fl: Number(data.fl ?? -1),
-          fr: Number(data.fr ?? -1),
-          rl: Number(data.rl ?? -1),
-          rr: Number(data.rr ?? -1),
-          trunk: Number(data.trunk ?? -1),
-          gear: Number(data.gear ?? -1),
-          mode: Number(data.mode ?? -1)
-        };
-      }
-    }
-  } catch (e) {}
-}
-
-
-
 function toggleVoiceMasterSwitch() {
   const next = !store.vehicleAuto.voice_master_switch;
   store.vehicleAuto.voice_master_switch = next;
   bridge.call('setVehicleAutomationSetting', 'voice_master_switch', next);
   showToast(next ? '全车语音播报总开关: 已开启 (正常播报)' : '全车语音播报总开关: 已关闭 (全车静音)');
 }
-
-
-onMounted(() => {
-  fetchDoorStatus();
-  doorPollTimer = setInterval(fetchDoorStatus, 800);
-});
-
-onUnmounted(() => {
-  if (doorPollTimer) clearInterval(doorPollTimer);
-});
 </script>
