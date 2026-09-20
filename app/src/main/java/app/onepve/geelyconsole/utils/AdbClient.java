@@ -242,7 +242,13 @@ public class AdbClient {
 
             // 3. Send OPEN command for shell
             int localId = 1;
-            String shellCmd = "shell:" + command + "\0";
+            String cleanCmd = command != null ? command.trim() : "";
+            if (cleanCmd.startsWith("adb shell ")) {
+                cleanCmd = cleanCmd.substring("adb shell ".length()).trim();
+            } else if (cleanCmd.startsWith("adb ")) {
+                cleanCmd = cleanCmd.substring("adb ".length()).trim();
+            }
+            String shellCmd = "shell:" + cleanCmd + "\0";
             byte[] openPayload = shellCmd.getBytes(StandardCharsets.UTF_8);
             sendPacket(out, A_OPEN, localId, 0, openPayload);
 

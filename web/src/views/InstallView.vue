@@ -105,25 +105,25 @@
       </div>
     </FeatureCard>
 
-    <!-- 4. 专家模式与卡主题伪装注入 -->
+    <!-- 4. 专家模式与卡兔子主题安装 -->
     <FeatureCard 
-      title="专家级伪装与卡兔子主题注入 (专家模式)"
-      desc="解除主题防护白名单限制，支持直接将任意第三方应用伪装注入为桌面兔子时钟屏保卡片。"
-      helpTitle="【功能指南】卡兔子主题伪装注入与安全规范"
-      helpText="1. 核心技术原理：&#10;通过重写吉利原厂桌面兔子时钟屏保卡片（com.ecarx.screensaver）实现无损系统级提权，突破第三方地图签名白名单限制。&#10;&#10;2. 高德版本兼容说明：&#10;仅高德 8.5 专车版（AE86 版）可直接安装免卡兔子主题；商城内的 9.5 版必须使用本卡兔子主题通道安装，否则无法通过签名校验。其他版本未在商城上架，请用户自行测试兼容性。&#10;&#10;3. 适用场景：&#10;当商城高德 9.5 直装失败、或想安装其它第三方地图时，请使用本专家通道完成卡兔子主题伪装注入。"
-      helpTip="高德 8.5 专车版可直接安装；商城 9.5 版必须走卡兔子主题通道，其他版本请自行测试。"
+      title="卡兔子主题安装 (专家模式)"
+      desc="解除主题安装签名限制，支持通过桌面兔子时钟通道安装第三方车载地图与导航。"
+      helpTitle="【功能指南】卡兔子主题安装与安全规范"
+      helpText="1. 核心技术原理：&#10;通过原厂桌面兔子时钟屏保通道（com.ecarx.screensaver）实现系统级适配，突破第三方地图签名白名单限制。&#10;&#10;2. 高德版本兼容说明：&#10;仅高德 8.5 专车版（AE86 版）可直接安装免卡兔子主题；商城内的 9.5 版需使用本卡兔子主题通道安装。其他版本未在商城上架，请自行测试兼容性。&#10;&#10;3. 适用场景：&#10;当商城高德 9.5 直装失败、或想安装其它第三方地图时，使用本卡兔子主题专家通道即可安装。"
+      helpTip="高德 8.5 专车版可直接安装；商城 9.5 版推荐走卡兔子主题通道，其他版本请自行测试。"
     >
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
         <div class="flex-1 min-w-0 pr-6 flex flex-col">
           <div class="flex items-center space-x-3 mb-1">
-            <span class="text-[18px] font-black text-car-text">伪装屏保注入特权</span>
+            <span class="text-[18px] font-black text-car-text">卡兔子主题特权</span>
             <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shadow-sm">
               <StatusDot class="mr-2" size="sm" :color="store.settings.expert_rabbit ? 'accent' : 'ok'" />
               {{ store.settings.expert_rabbit ? '专家模式已激活 (已解除限制)' : '安全保护已锁定' }}
             </span>
           </div>
           <div class="text-[15px] text-car-sub font-bold">
-            {{ store.settings.expert_rabbit ? '已解除地图白名单限制，精选软件中心与本地应用详情均可直接调起卡兔子主题注入向导' : '默认仅限车载地图导航使用，点击右侧可解锁专家模式体验完整高级功能' }}
+            {{ store.settings.expert_rabbit ? '已解除地图安装限制，精选软件中心与本地应用详情均可直接调起卡兔子主题安装向导' : '默认仅限车载地图导航使用，点击右侧可解锁专家模式体验完整高级功能' }}
           </div>
         </div>
 

@@ -14,7 +14,7 @@
           @click="$emit('open-guide')"
           class="h-[52px] px-4 rounded-xl bg-car-item border border-car-border hover:border-car-accent text-car-accent font-black text-[13.5px] cursor-pointer transition-all flex items-center space-x-1.5"
         >
-          <span>📋 极客配置向导 (已就绪·点击复查)</span>
+          <span>📋 车机配置向导 (已就绪 · 点击重跑)</span>
         </button>
       </div>
     </div>

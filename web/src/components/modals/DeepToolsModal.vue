@@ -303,6 +303,7 @@ const INITIAL_PROMPT = '[ADB Client 127.0.0.1:5555 就绪 · 最新输出置顶�
 const outputText = ref(INITIAL_PROMPT);
 
 const quickCmds = [
+  { label: '开启白名单', cmd: 'adb shell setprop sys.jsbd.apk_verify 1' },
   { label: '查看车机型号', cmd: 'getprop ro.product.model' },
   { label: '列出全部已装应用', cmd: 'pm list packages -3' },
   { label: '查看内存占用', cmd: 'dumpsys meminfo' },
@@ -314,9 +315,16 @@ function execCmd() {
   const cmd = inputCmd.value.trim();
   inputCmd.value = '';
 
+  let actualCmd = cmd;
+  if (actualCmd.startsWith('adb shell ')) {
+    actualCmd = actualCmd.substring('adb shell '.length()).trim();
+  } else if (actualCmd.startsWith('adb ')) {
+    actualCmd = actualCmd.substring('adb '.length()).trim();
+  }
+
   let out = '';
   try {
-    const res = bridge.call('executeCustomAdbCommand', cmd);
+    const res = bridge.call('executeCustomAdbCommand', actualCmd);
     out = (res || '(执行完成，无返回输出)');
   } catch (e) {
     out = `执行错误: ${e}`;
