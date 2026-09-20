@@ -24,13 +24,7 @@
       </div>
 
 
-      <!-- 卡主题版说明（云端 need_theme_install=true 驱动） -->
-      <div 
-        v-if="isMapApp"
-        class="bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl p-4 text-amber-500 text-[16px] font-bold leading-relaxed"
-      >
-        <b>【安装方式】</b>本版本<strong>必须通过【注入兔子时钟 (卡兔子主题安装)】通道安装</strong>；直接覆盖安装无法通过签名校验。
-      </div>
+
 
       <!-- 详细特性说明卡片 -->
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-2">
