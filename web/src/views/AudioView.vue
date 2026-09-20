@@ -254,62 +254,6 @@
       </div>
     </FeatureCard>
 
-    <!-- 3. 系统语音合成引擎 (TTS) 直通状态 (支持原厂与第三方TTS自由切换，状态直显与试听) -->
-    <FeatureCard class="!mb-0 h-full"
-      title="系统语音合成引擎 (TTS) 直通状态"
-      desc="系统直接通过后台 IPC 接入安卓系统语音合成服务。支持车机原厂语音引擎与第三方 TTS 自由选择，点击设置可随心切换。"
-      helpTitle="【功能指南】系统语音合成引擎 (TTS) 直通"
-      helpText="1. 直连原理：&#10;工具箱通过后台 IPC 直接接入安卓系统级语音合成服务，可实时读取当前引擎连接状态与声线就绪情况。&#10;&#10;2. 引擎自由切换：&#10;支持在车机原厂语音引擎与第三方 TTS 之间自由选择；点击「TTS 设置」调起系统引擎选择，点击「试听语音」立即播放测试样音验证当前引擎发声是否正常。&#10;&#10;3. 缺引擎兜底：&#10;若系统无第三方 TTS 引擎，可点击「前往商城获取语音引擎」一键跳转精选商城下载安装。"
-      helpTip="推荐保持原厂晓晓温婉知性声线，端庄舒缓不刺耳。"
-    >
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-3">
-        <div class="w-full flex flex-col">
-          <div class="flex items-center mb-2">
-            <span 
-              :class="[
-                'w-3 h-3 rounded-full mr-2.5',
-                ttsInfo.connected ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-amber-500 shadow-[0_0_8px_#F59E0B]'
-              ]"
-            ></span>
-            <span class="text-[19px] font-black text-car-text truncate">
-              {{ ttsInfo.name }}
-            </span>
-            <span class="ml-3 text-[12.5px] px-2.5 py-0.5 rounded-full font-black border bg-car-item border-car-border text-car-text inline-flex items-center shadow-sm shrink-0">
-              <StatusDot class="mr-1.5" size="xs" :color="ttsInfo.connected ? 'info' : 'off'" />
-              {{ ttsInfo.connected ? '已成功直连' : '默认引擎' }}
-            </span>
-          </div>
-          <div class="text-[15px] text-car-sub font-bold leading-relaxed">
-            {{ ttsInfo.status }}
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 w-full">
-          <button 
-            @click="openTtsSettings"
-            class="min-h-[64px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[18px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
-          >
-            TTS 设置
-          </button>
-          <button 
-            v-if="ttsInfo.connected"
-            @click="testTtsEngine"
-            class="min-h-[64px] px-8 bg-car-card border-2 border-car-accent text-car-text font-black text-[19px] rounded-2xl cursor-pointer hover:border-car-accent shadow-md ring-2 ring-car-accent/20"
-          >
-            试听语音
-          </button>
-          <button 
-            v-else
-            @click="openStoreToDownload"
-            class="min-h-[64px] px-8 bg-car-card border-2 border-car-border text-car-accent font-black text-[19px] rounded-2xl cursor-pointer hover:border-car-border-light shadow-sm"
-          >
-            前往商城获取语音引擎
-          </button>
-        </div>
-      </div>
-    </FeatureCard>
-
-
   </div>
 </template>
 
@@ -469,20 +413,6 @@ let connectivityTimer = null;
 
 onMounted(() => {
   afterFirstPaint(() => {
-    try {
-      const raw = bridge.call('getTtsEngineInfo');
-      if (raw) {
-        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-        ttsInfo.value = parsed;
-      }
-    } catch (e) {
-      ttsInfo.value = {
-        connected: true,
-        name: '系统默认语音合成引擎',
-        status: '已连接系统底层默认语音引擎 · 声线就绪'
-      };
-    }
-
     loadVoiceThemes();
     window.refreshVoiceThemes = loadVoiceThemes;
     refreshConnectivity();
@@ -497,28 +427,4 @@ onBeforeUnmount(() => {
     connectivityTimer = null;
   }
 });
-
-function openTtsSettings() {
-  bridge.call('openTtsSettings');
-  showToast('正在打开系统 TTS 语音引擎设置...');
-}
-
-function testTtsEngine() {
-  bridge.call('testVehicleVoice', 'custom');
-  showToast('正在调用语音合成引擎播放测试语音...');
-  setTimeout(() => {
-    try {
-      const raw = bridge.call('getTtsEngineInfo');
-      if (raw) {
-        ttsInfo.value = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      }
-    } catch (e) {}
-  }, 1200);
-}
-
-function openStoreToDownload() {
-  store.currentNav = 'store';
-  showToast('已跳转至精选商城');
-}
-
 </script>

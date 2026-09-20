@@ -60,114 +60,44 @@
       </FeatureCard>
     </div>
 
-    <!-- 3. 今日动态工程暗码 (+10 / +5) -->
-    <FeatureCard 
-      title="今日动态工程暗码（解锁 ADB）"
-      desc="根据车载系统时钟每秒自动计算，直出高亮暗码。车机拨号界面不支持粘贴，请点击按钮打开拨号盘手动按键输入。"
-      helpTitle="【功能指南】动态工程暗码算法与拨号盘操作"
-      helpText="1. 动态暗码生成机制：&#10;吉利车机工程密码每天根据系统时间动态计算对时。主流新版固件采用「月份+5」算法，早期老固件采用「月份+10」算法。&#10;&#10;2. 拨号盘输入规范：&#10;吉利车机拨号界面原生不支持剪贴板粘贴。请点击右侧「打开拨号盘」按钮调起系统电话，在拨号键盘上照着上方高亮的暗码依次手动输入，即可秒进工程模式。"
-      helpTip="进工程模式后，找到「系统信息」或「开发者选项」即可开启无线 ADB。"
-    >
-      <div class="grid grid-cols-2 gap-4">
-        <!-- 主流+5暗码 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
-          <div>
-            <div class="text-[15px] font-bold text-car-sub">主流新固件 (月份+5 算法)</div>
-            <div class="text-[28px] font-black text-car-accent mt-1 tracking-wider">
-              {{ store.dynamicCodePlus5 }}
-            </div>
-            <div class="text-[13px] text-car-sub mt-1">适用于绝大多数 2022~2024 款吉利车机</div>
-          </div>
-          <button 
-            @click="openDialer"
-            class="h-[58px] px-6 rounded-2xl bg-car-card border-2 border-car-accent text-car-accent hover:bg-car-item font-black text-[17px] cursor-pointer shadow-md transition-all whitespace-nowrap"
-          >
-            打开工程拨号盘
-          </button>
-        </div>
-
-        <!-- 老固件+10暗码 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
-          <div>
-            <div class="text-[15px] font-bold text-car-sub">早期老版固件 (月份+10 算法)</div>
-            <div class="text-[28px] font-black text-car-text mt-1 tracking-wider">
-              {{ store.dynamicCode }}
-            </div>
-            <div class="text-[13px] text-car-sub mt-1">若加 5 暗码提示错误，请尝试此备选暗码</div>
-          </div>
-          <button 
-            @click="openDialer"
-            class="h-[58px] px-6 rounded-2xl bg-car-card border-2 border-car-border text-car-text hover:border-car-border-light font-black text-[17px] cursor-pointer shadow-md transition-all whitespace-nowrap"
-          >
-            打开工程拨号盘
-          </button>
-        </div>
-      </div>
-    </FeatureCard>
-
-    <!-- 4. 专家模式与卡兔子主题安装 -->
-    <FeatureCard 
-      title="卡兔子主题安装 (专家模式)"
-      desc="解除主题安装签名限制，支持通过桌面兔子时钟通道安装第三方车载地图与导航。"
-      helpTitle="【功能指南】卡兔子主题安装与安全规范"
-      helpText="1. 核心技术原理：&#10;通过原厂桌面兔子时钟屏保通道（com.ecarx.screensaver）实现系统级适配，突破第三方地图签名白名单限制。&#10;&#10;2. 高德版本兼容说明：&#10;仅高德 8.5 专车版（AE86 版）可直接安装免卡兔子主题；商城内的 9.5 版需使用本卡兔子主题通道安装。其他版本未在商城上架，请自行测试兼容性。&#10;&#10;3. 适用场景：&#10;当商城高德 9.5 直装失败、或想安装其它第三方地图时，使用本卡兔子主题专家通道即可安装。"
-      helpTip="高德 8.5 专车版可直接安装；商城 9.5 版推荐走卡兔子主题通道，其他版本请自行测试。"
-    >
-      <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
-        <div class="flex-1 min-w-0 pr-6 flex flex-col">
-          <div class="flex items-center space-x-3 mb-1">
-            <span class="text-[18px] font-black text-car-text">卡兔子主题特权</span>
-            <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shadow-sm">
-              <StatusDot class="mr-2" size="sm" :color="store.settings.expert_rabbit ? 'accent' : 'ok'" />
-              {{ store.settings.expert_rabbit ? '专家模式已激活 (已解除限制)' : '安全保护已锁定' }}
+    <!-- 3. 专家模式卡兔子主题安装通道 (紧凑型小卡片) -->
+    <div class="bg-car-card border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
+      <div class="flex items-center space-x-3.5 min-w-0 pr-4">
+        <StatusDot size="md" :color="store.settings.expert_rabbit ? 'accent' : 'ok'" />
+        <div class="flex flex-col min-w-0">
+          <div class="flex items-center space-x-2">
+            <span class="text-[17px] font-black text-car-text">卡兔子主题通道 (专家模式)</span>
+            <span class="px-2.5 py-0.5 text-[12px] font-bold rounded-full border bg-car-item border-car-border text-car-text">
+              {{ store.settings.expert_rabbit ? '已激活' : '已锁定' }}
             </span>
           </div>
-          <div class="text-[15px] text-car-sub font-bold">
-            {{ store.settings.expert_rabbit ? '已解除地图安装限制，精选软件中心与本地应用详情均可直接调起卡兔子主题安装向导' : '默认仅限车载地图导航使用，点击右侧可解锁专家模式体验完整高级功能' }}
+          <div class="text-[13.5px] text-car-sub font-bold truncate mt-0.5">
+            {{ store.settings.expert_rabbit ? '已解锁：支持通过桌面时钟屏保注入第三方高德或音乐' : '解除地图安装限制，用于突破第三方应用签名白名单' }}
           </div>
         </div>
+      </div>
 
+      <div class="flex items-center space-x-3 shrink-0">
+        <button 
+          v-if="store.settings.expert_rabbit"
+          @click="openRabbitGuideModal"
+          class="h-[52px] px-5 rounded-xl bg-car-item border-2 border-car-accent text-car-accent font-black text-[15.5px] cursor-pointer hover:bg-car-card transition-all shadow-sm"
+        >
+          打开卡主题向导
+        </button>
         <button 
           @click="confirmUnlockExpert"
           :class="[
-            'min-w-[220px] min-h-[72px] px-6 rounded-2xl border-2 font-black text-[19px] cursor-pointer transition-all shrink-0 shadow-sm',
+            'h-[52px] px-5 rounded-xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm',
             store.settings.expert_rabbit 
-              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
-              : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
+              ? 'bg-car-item border-car-border text-car-sub hover:text-car-text' 
+              : 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/20'
           ]"
         >
-          {{ store.settings.expert_rabbit ? '锁定安全保护' : '解锁专家模式' }}
+          {{ store.settings.expert_rabbit ? '锁定安全防护' : '解锁专家模式' }}
         </button>
       </div>
-
-      <!-- 专家模式专属工具栏 (激活后平铺直出) -->
-      <div v-if="store.settings.expert_rabbit" class="mt-4 pt-4 border-t border-car-border/60 flex flex-col space-y-3">
-        <div class="flex items-center space-x-2">
-          <span class="text-[17px] font-black text-car-accent">⚡ 专家模式专属卡兔子主题注入工具：</span>
-          <span class="text-[13.5px] text-car-sub font-bold">突破系统签名保护，半自动保姆式将高德或音乐伪装注入为桌面时钟屏保</span>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <!-- 1. 半自动保姆式卡主题安装向导 -->
-          <button 
-            @click="openRabbitGuideModal"
-            class="min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-accent flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all"
-          >
-            <span class="text-[19px] font-black text-car-text">半自动保姆式卡兔子主题向导</span>
-            <span class="text-[13.5px] font-bold text-car-sub mt-1">分步向导弹窗引导注入与重启覆盖</span>
-          </button>
-
-          <!-- 2. 原生文件管理 -->
-          <button 
-            @click="openFileManager"
-            class="min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-border-light shadow-sm transition-all"
-          >
-            <span class="text-[19px] font-black text-car-text">调起原生文件管理</span>
-            <span class="text-[13.5px] font-bold text-car-sub mt-1">直接浏览车机 Download 目录与安装包</span>
-          </button>
-        </div>
-      </div>
-    </FeatureCard>
+    </div>
   </div>
 </template>
 

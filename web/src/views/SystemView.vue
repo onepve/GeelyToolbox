@@ -113,44 +113,6 @@
         </button>
       </FeatureCard>
 
-      <!-- 5. 应用商店管理 (带二次校验) -->
-      <FeatureCard 
-        title="应用商店状态管理"
-        desc="未冻结会破坏白名单导致无法安装第三方软件，必须冻结进行锁定。"
-        helpTitle="【功能指南】应用商店状态管理"
-        helpText="1. 冻结原因：&#10;原厂应用商店运行会破坏白名单策略，直接导致第三方软件无法安装。&#10;&#10;2. 冻结效果：&#10;冻结后锁定白名单，第三方应用可稳定安装与运行。&#10;&#10;3. 解冻警告：&#10;仅在急需使用官方商店时临时解冻，解冻后会再次破坏白名单，请尽快重新冻结。"
-        helpTip="强烈建议始终保持「已冻结」状态，需要官方商店时再临时解冻。"
-      >
-        <button 
-          @click="openAppstoreFlow"
-          :class="[
-            'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
-            store.deviceInfo.appstore_frozen 
-              ? 'bg-car-item border-emerald-500/60 text-car-text ring-2 ring-emerald-500/20' 
-              : 'bg-car-item border-amber-500/70 text-car-text ring-2 ring-amber-500/20'
-          ]"
-        >
-          <span>{{ store.deviceInfo.appstore_frozen ? '商店: 已冻结 (锁定白名单)' : '商店: 未冻结 (点击安全冻结)' }}</span>
-        </button>
-
-        <!-- 启动静默冻结开关：默认关，开启后每次打开工具箱自动静默冻结应用商店 -->
-        <div class="mt-3 w-full min-h-[72px] rounded-2xl border-2 border-car-border bg-car-card flex items-center justify-between px-4 cursor-pointer transition-all hover:border-car-border-light" @click="toggleSilentFreeze">
-          <div class="flex flex-col justify-center">
-            <span class="text-[16px] font-black text-car-text leading-tight">启动静默冻结应用商店</span>
-            <span class="text-[13px] font-bold text-car-sub leading-tight mt-0.5">{{ store.settings.silent_appstore_freeze ? '已开启：每次打开工具箱自动静默冻结' : '默认关闭：仅手动冻结生效' }}</span>
-          </div>
-          <div :class="[
-            'relative w-[58px] h-[32px] rounded-full transition-all flex-shrink-0',
-            store.settings.silent_appstore_freeze ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-car-border'
-          ]">
-            <div :class="[
-              'absolute top-[3px] w-[26px] h-[26px] rounded-full shadow transition-all',
-              store.settings.silent_appstore_freeze ? 'left-[29px] bg-emerald-300' : 'left-[3px] bg-slate-300'
-            ]"></div>
-          </div>
-        </div>
-      </FeatureCard>
-
       <!-- 6. 工具箱开机自启动与后台守护 -->
       <FeatureCard 
         title="工具箱开机自启动与后台守护"
@@ -271,13 +233,6 @@ function openAllApps() {
 
 function openLogModal() {
   store.modals.log = true;
-}
-
-function toggleSilentFreeze() {
-  const next = !store.settings.silent_appstore_freeze;
-  store.settings.silent_appstore_freeze = next;
-  bridge.call('setSetting', 'silent_appstore_freeze', next);
-  showToast(next ? '启动静默冻结已开启：每次打开工具箱自动静默冻结应用商店' : '启动静默冻结已关闭：仅手动冻结生效');
 }
 
 function confirmToggleWhitelist() {
