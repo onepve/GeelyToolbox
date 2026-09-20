@@ -531,7 +531,27 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         Manifest.permission.WRITE_EXTERNAL_STORAGE,
                         Manifest.permission.READ_EXTERNAL_STORAGE
                 }, REQ_CODE_STORAGE);
+            } else {
+                notifyNativePermissionReady();
             }
+        } else {
+            notifyNativePermissionReady();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_CODE_STORAGE) {
+            notifyNativePermissionReady();
+        }
+    }
+
+    private void notifyNativePermissionReady() {
+        if (webView != null) {
+            webView.post(() -> {
+                webView.evaluateJavascript("window.dispatchEvent(new CustomEvent('native-permission-ready'));", null);
+            });
         }
     }
 

@@ -145,13 +145,21 @@ onMounted(() => {
     bridge.call('refreshCloudApps');
   } catch (e) {}
 
-  // 首次启动检测：展示车友说明与赞赏弹窗（仅弹一次，持久化到 localStorage）
+  // 首次启动检测：等待原生权限就绪后串行拉起车友说明与赞赏弹窗（仅弹一次，持久化到 localStorage）
   try {
     const hasShown = localStorage.getItem('has_shown_welcome_donate');
     if (!hasShown) {
-      setTimeout(() => {
+      let triggered = false;
+      const triggerWelcome = () => {
+        if (triggered) return;
+        triggered = true;
         openModal('welcomeDonate');
-      }, 500);
+      };
+
+      // 监听原生层权限授权完毕信号
+      window.addEventListener('native-permission-ready', triggerWelcome, { once: true });
+      // 容错兜底：若 1800ms 内未收到原生事件（如已永久授权），自动拉起
+      setTimeout(triggerWelcome, 1800);
     }
   } catch (e) {}
 

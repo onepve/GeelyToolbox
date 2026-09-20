@@ -12,42 +12,28 @@
     <div class="flex flex-col space-y-3">
       <!-- 左右车规双栏布局 (紧凑车规单屏自适应，杜绝 720P 产生滚动条) -->
       <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch">
-        <!-- 左侧：三大核心车友说明 (占 7 栏) -->
-        <div class="md:col-span-7 flex flex-col justify-between space-y-2.5">
+        <!-- 左侧：两大核心车友说明 (精简通透版，彻底无滚动条) -->
+        <div class="md:col-span-7 flex flex-col justify-around py-2 space-y-4">
           <!-- 说明 1：纯净免费承诺 -->
-          <div class="p-3 rounded-2xl bg-car-item border border-car-border flex flex-col">
-            <div class="flex items-center space-x-2 text-[16px] font-black text-car-text">
+          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col">
+            <div class="flex items-center space-x-2 text-[17px] font-black text-car-text">
               <span class="text-emerald-400">🛡️</span>
               <span>永久承诺 · 纯净免费</span>
             </div>
-            <div class="text-[13.5px] text-car-sub font-bold leading-normal mt-1">
+            <div class="text-[14px] text-car-sub font-bold leading-relaxed mt-2">
               本软件由车友业余时间独立逆向与深度开发，专为吉利车机系统量身优化。<br>
               <span class="text-car-text font-black">完全免费使用，承诺 0 广告、0 诱导充值、0 功能锁死。</span>
             </div>
           </div>
 
           <!-- 说明 2：安全与免责底线 -->
-          <div class="p-3 rounded-2xl bg-car-item border border-car-border flex flex-col">
-            <div class="flex items-center space-x-2 text-[16px] font-black text-car-text">
+          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col">
+            <div class="flex items-center space-x-2 text-[17px] font-black text-car-text">
               <span class="text-amber-400">⚠️</span>
               <span>安全与免责底线</span>
             </div>
-            <div class="text-[13.5px] text-car-sub font-bold leading-normal mt-1">
+            <div class="text-[14px] text-car-sub font-bold leading-relaxed mt-2">
               各项功能直接与底层车辆协议联动。请务必在<span class="text-car-accent font-black">安全停车（P 挡）</span>状态下进行配置；行车途中严禁分心操作屏幕。
-            </div>
-          </div>
-
-          <!-- 说明 3：开发不易与心意支持 -->
-          <div class="p-3 rounded-2xl bg-car-item border border-car-border flex flex-col">
-            <div class="flex items-center space-x-2 text-[16px] font-black text-car-text">
-              <span class="text-rose-400">☕</span>
-              <span>车友共建 · 随心支持</span>
-            </div>
-            <div class="text-[13.5px] text-car-sub font-bold leading-normal mt-1">
-              从协议破解、无损快传到逐个版本打磨凝结无数心血。若让您的爱车更好用，欢迎随心赞赏一杯咖啡！
-              <div class="text-[12px] text-car-sub/80 mt-0.5 font-semibold">
-                (不赞赏也享有 100% 完整功能，感谢每一位吉利车友的陪伴)
-              </div>
             </div>
           </div>
         </div>
