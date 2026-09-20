@@ -9,7 +9,7 @@
           <div class="flex items-center space-x-3">
             <span class="text-[22px] font-black text-car-text tracking-wide">桌面迷你悬浮胶囊</span>
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">桌面常驻</span>
-            <HelpDot @click.stop="openFloatingHelp" title="查看功能指南" />
+            <HelpDot @click="openFloatingHelp" title="查看桌面悬浮微胶囊机制" />
           </div>
         </div>
 
@@ -97,7 +97,7 @@
             <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent inline-flex items-center shrink-0">
               <StatusDot class="mr-2" size="sm" :color="ssStatusDot" :glow="false" />{{ ssStatusText }}
             </span>
-            <HelpDot @click.stop="openScreensaverHelp" title="查看自动屏保核心原理" />
+            <HelpDot @click="openScreensaverHelp" title="查看自动屏保核心原理" />
           </div>
         </div>
 
@@ -171,25 +171,33 @@
           </div>
         </div>
 
-        <!-- 底部双大操作栏：主页避让限制 + 立即测试屏保 (拉大至 pt-4，mt-auto 锁定基线) -->
-        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <button 
-            @click="toggleHomeOnly"
-            :class="[
-              'h-[52px] px-4 rounded-2xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center space-x-2',
-              ssHomeOnly 
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <StatusDot size="sm" :color="ssHomeOnly ? 'okBright' : 'offDim'" :glow="false" />
-            <span>{{ ssHomeOnly ? '仅主页生效 (导航避让)' : '任意界面放开' }}</span>
-          </button>
+        <!-- 底部操作栏：3档触发策略单选组 + 屏保测试动作 -->
+        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0 space-y-3">
+          <!-- 3 档策略分段选择组 -->
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              v-for="p in ssPolicyOptions"
+              :key="p.value"
+              @click="setPolicy(p.value)"
+              :class="[
+                'h-[50px] rounded-xl border-2 font-black text-[14.5px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center space-x-1.5',
+                ssPolicy === p.value
+                  ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20'
+                  : 'bg-car-item border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
+              ]"
+            >
+              <StatusDot size="sm" :color="ssPolicy === p.value ? 'okBright' : 'offDim'" :glow="false" />
+              <span>{{ p.label }}</span>
+            </button>
+          </div>
+
+          <!-- 独立测试屏保动作按钮 -->
           <button
             @click="testScreensaver"
-            class="h-[52px] px-4 rounded-2xl border-2 border-car-accent bg-car-item text-car-accent hover:border-car-accent font-black text-[16px] cursor-pointer shadow-md flex items-center justify-center space-x-1"
+            class="w-full h-[52px] px-4 rounded-2xl border-2 border-car-accent bg-car-item text-car-accent hover:border-car-accent active:scale-[0.99] font-black text-[16px] cursor-pointer shadow-md flex items-center justify-center space-x-1.5 transition-all"
           >
-            <span>立即测试屏保效果 ➔</span>
+            <span>屏保测试</span>
+            <span class="text-sm">➔</span>
           </button>
         </div>
       </div>
@@ -242,6 +250,12 @@ const ssSeconds = ref(30);
 const ssMinSeconds = 3;
 const ssMaxSeconds = 180;
 const ssHomeOnly = ref(true);
+const ssPolicy = ref('home');
+const ssPolicyOptions = [
+  { value: 'all', label: '全局生效' },
+  { value: 'home', label: '仅主页' },
+  { value: 'avoid_navi', label: '避让导航' }
+];
 const ssUsageAccess = ref(false);
 const ssChannel = ref('未启动');
 const ssFailReason = ref('');
@@ -298,11 +312,16 @@ function saveSeconds() {
   showToast(`屏保闲置时长已设为: ${ssSeconds.value} 秒`);
 }
 
+function setPolicy(p) {
+  ssPolicy.value = p;
+  ssHomeOnly.value = (p === 'home');
+  bridge.call('setScreensaverConfig', JSON.stringify({ policy: p, home_only: p === 'home' }));
+  const label = ssPolicyOptions.find(opt => opt.value === p)?.label || p;
+  showToast(`屏保策略已设为: ${label}`);
+}
+
 function toggleHomeOnly() {
-  const next = !ssHomeOnly.value;
-  ssHomeOnly.value = next;
-  bridge.call('setScreensaverConfig', JSON.stringify({ home_only: next }));
-  showToast('主页面限制模式: ' + (next ? '已开启' : '已放开'));
+  setPolicy(ssPolicy.value === 'home' ? 'all' : 'home');
 }
 
 function openUsageAccess() {
@@ -324,7 +343,12 @@ function fetchScreensaverState() {
       if (typeof cfg.seconds === 'number' && cfg.seconds >= ssMinSeconds) {
         ssSeconds.value = cfg.seconds;
       }
-      ssHomeOnly.value = cfg.home_only !== false;
+      if (cfg.policy) {
+        ssPolicy.value = cfg.policy;
+      } else {
+        ssPolicy.value = cfg.home_only !== false ? 'home' : 'all';
+      }
+      ssHomeOnly.value = ssPolicy.value === 'home';
       ssUsageAccess.value = !!cfg.usage_access;
       ssChannel.value = cfg.channel || '未启动';
       ssChannelAReady.value = !!cfg.channel_a_ready;

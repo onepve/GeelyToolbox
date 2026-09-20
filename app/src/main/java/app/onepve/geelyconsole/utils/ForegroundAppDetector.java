@@ -343,6 +343,25 @@ public final class ForegroundAppDetector {
         return PKG_SCREENSAVER.equals(pkg);
     }
 
+    private static final java.util.Set<String> KNOWN_NAVI_PACKAGES = new java.util.HashSet<>(java.util.Arrays.asList(
+            "com.autonavi.amapauto",
+            "com.baidu.BaiduMap.auto",
+            "com.tencent.map.auto",
+            "com.autonavi.minimap",
+            "com.baidu.BaiduMap",
+            "com.tencent.map",
+            "com.careland",
+            "com.sogou.map.android.automobile"
+    ));
+
+    /** 当前前台是否为导航应用（用于导航避让策略） */
+    public static boolean isNaviForeground(Context ctx) {
+        String pkg = getForegroundPackage(ctx);
+        if (TextUtils.isEmpty(pkg)) return false;
+        String lower = pkg.toLowerCase();
+        return KNOWN_NAVI_PACKAGES.contains(pkg) || lower.contains("map") || lower.contains("navi");
+    }
+
     /** 供调试面板展示：当前前台应用 + 判定结论 */
     public static String describe(Context ctx) {
         try {

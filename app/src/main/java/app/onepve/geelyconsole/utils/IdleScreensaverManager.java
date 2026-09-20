@@ -58,6 +58,10 @@ public final class IdleScreensaverManager {
     public static final String KEY_ENABLED = "screensaver_idle_enabled";
     public static final String KEY_SECONDS = "screensaver_idle_seconds";
     public static final String KEY_HOME_ONLY = "screensaver_home_only";
+    public static final String KEY_POLICY = "screensaver_idle_policy"; // "all" | "home" | "avoid_navi"
+    public static final String POLICY_ALL = "all";
+    public static final String POLICY_HOME = "home";
+    public static final String POLICY_AVOID_NAVI = "avoid_navi";
 
     public static final int MIN_SECONDS = 3;
     public static final int MAX_SECONDS = 600;
@@ -198,8 +202,13 @@ public final class IdleScreensaverManager {
                         if (!Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) return;
                         if (!isEnabled(context)) return;
                         if (getSeconds(context) == NEVER_SECONDS) return;
-                        if (isHomeOnly(context)
+                        String policy = getPolicy(context);
+                        if (POLICY_HOME.equals(policy)
                                 && !ForegroundAppDetector.isHomeForeground(context)) {
+                            return;
+                        }
+                        if (POLICY_AVOID_NAVI.equals(policy)
+                                && ForegroundAppDetector.isNaviForeground(context)) {
                             return;
                         }
                         channelState = "触发中(通道B熄屏兜底)";
@@ -308,13 +317,21 @@ public final class IdleScreensaverManager {
             return;
         }
 
-        // 5) 生效条件：仅主页面
-        if (isHomeOnly(ctx) && !ForegroundAppDetector.isHomeForeground(ctx)) {
-            channelState = "运行中(当前不在主页面，不计时)";
-            return;
+        // 5) 生效条件判断（策略分流）
+        String policy = getPolicy(ctx);
+        if (POLICY_HOME.equals(policy)) {
+            if (!ForegroundAppDetector.isHomeForeground(ctx)) {
+                channelState = "运行中(当前不在主页面，不计时)";
+                return;
+            }
+        } else if (POLICY_AVOID_NAVI.equals(policy)) {
+            if (ForegroundAppDetector.isNaviForeground(ctx)) {
+                channelState = "运行中(前台为导航，避让不计时)";
+                return;
+            }
         }
 
-        triggerScreensaver(ctx, "主页面闲置 " + (idle / 1000) + " 秒");
+        triggerScreensaver(ctx, "闲置 " + (idle / 1000) + " 秒");
     }
 
     // ==================================================================
@@ -533,14 +550,22 @@ public final class IdleScreensaverManager {
         }
     }
 
-    public static boolean isHomeOnly(Context ctx) {
-        if (ctx == null) return true;
+    public static String getPolicy(Context ctx) {
+        if (ctx == null) return POLICY_HOME;
         try {
-            return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                    .getBoolean(KEY_HOME_ONLY, true);
+            SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            String policy = sp.getString(KEY_POLICY, null);
+            if (policy != null) return policy;
+            // 兼容旧配置
+            boolean homeOnly = sp.getBoolean(KEY_HOME_ONLY, true);
+            return homeOnly ? POLICY_HOME : POLICY_ALL;
         } catch (Throwable e) {
-            return true;
+            return POLICY_HOME;
         }
+    }
+
+    public static boolean isHomeOnly(Context ctx) {
+        return POLICY_HOME.equals(getPolicy(ctx));
     }
 
     public static int clampSeconds(int v) {
@@ -551,18 +576,28 @@ public final class IdleScreensaverManager {
     }
 
     /** 保存配置（同步 commit 落盘，防掉电丢失） */
-    public static boolean saveConfig(Context ctx, Boolean enabled, Integer seconds, Boolean homeOnly) {
+    public static boolean saveConfig(Context ctx, Boolean enabled, Integer seconds, Boolean homeOnly, String policy) {
         if (ctx == null) return false;
         try {
             SharedPreferences.Editor ed = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit();
             if (enabled != null) ed.putBoolean(KEY_ENABLED, enabled);
             if (seconds != null) ed.putInt(KEY_SECONDS, clampSeconds(seconds));
-            if (homeOnly != null) ed.putBoolean(KEY_HOME_ONLY, homeOnly);
+            if (policy != null) {
+                ed.putString(KEY_POLICY, policy);
+                ed.putBoolean(KEY_HOME_ONLY, POLICY_HOME.equals(policy));
+            } else if (homeOnly != null) {
+                ed.putBoolean(KEY_HOME_ONLY, homeOnly);
+                ed.putString(KEY_POLICY, homeOnly ? POLICY_HOME : POLICY_ALL);
+            }
             return ed.commit();
         } catch (Throwable e) {
             AppLogger.e(LOG_MODULE, "保存闲置屏保配置失败: " + e.getMessage());
             return false;
         }
+    }
+
+    public static boolean saveConfig(Context ctx, Boolean enabled, Integer seconds, Boolean homeOnly) {
+        return saveConfig(ctx, enabled, seconds, homeOnly, null);
     }
 
     // ==================================================================

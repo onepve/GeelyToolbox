@@ -114,12 +114,19 @@ def evaluate(files):
     builder = files.get('scripts/changelog_builder.py', '')
     if not re.search(r'def build_changelog\(', builder) or not re.search(r'def read_override\(', builder):
         failures.append('changelog-builder-contract')
+    floating_vue = files.get('web/src/views/FloatingView.vue', '')
+    if re.search(r'<HelpDot\s+@click\.stop', floating_vue):
+        failures.append('helpdot-no-click-stop')
+    if not re.search(r'<HelpDot\s+@click="openFloatingHelp"', floating_vue) or not re.search(r'<HelpDot\s+@click="openScreensaverHelp"', floating_vue):
+        failures.append('helpdot-click-bound')
+    if re.search(r'立即测试屏保效果', floating_vue) or not re.search(r'<span>屏保测试</span>', floating_vue):
+        failures.append('screensaver-test-button-clean')
     return failures
 
 
 def load(root):
     root = Path(root)
-    paths = {c[1] for c in CONTRACTS} | {'web/src/App.vue', 'app/src/main/assets/toolbox_ui.html', JAVA+'utils/AppLogger.java', 'scripts/publish_r2.py', 'scripts/changelog_builder.py'}
+    paths = {c[1] for c in CONTRACTS} | {'web/src/App.vue', 'web/src/views/FloatingView.vue', 'app/src/main/assets/toolbox_ui.html', JAVA+'utils/AppLogger.java', 'scripts/publish_r2.py', 'scripts/changelog_builder.py'}
     paths.update(str(p.relative_to(root)) for p in (root/JAVA).rglob('*.java'))
     return {p:(root/p).read_text() for p in paths if (root/p).exists()}
 

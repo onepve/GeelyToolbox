@@ -1599,6 +1599,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("minSeconds", IdleScreensaverManager.MIN_SECONDS);
                 obj.put("maxSeconds", IdleScreensaverManager.MAX_SECONDS);
                 obj.put("home_only", IdleScreensaverManager.isHomeOnly(context));
+                obj.put("policy", IdleScreensaverManager.getPolicy(context));
                 obj.put("usage_access", ForegroundAppDetector.isUsageAccessGranted(context));
                 obj.put("foreground", ForegroundAppDetector.describe(context));
                 obj.put("channel", IdleScreensaverManager.getChannelState());
@@ -1623,8 +1624,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 Boolean enabled = obj.has("enabled") ? obj.getBoolean("enabled") : null;
                 Integer seconds = obj.has("seconds") ? obj.getInt("seconds") : null;
                 Boolean homeOnly = obj.has("home_only") ? obj.getBoolean("home_only") : null;
+                String policy = obj.has("policy") ? obj.getString("policy") : null;
 
-                boolean ok = IdleScreensaverManager.saveConfig(context, enabled, seconds, homeOnly);
+                boolean ok = IdleScreensaverManager.saveConfig(context, enabled, seconds, homeOnly, policy);
 
                 // 立即生效：同步拉起/停止常驻服务，并按其最新配置重启计时器
                 VehicleAutomationService.syncState(context);
