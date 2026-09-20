@@ -1306,11 +1306,13 @@ if os.path.exists(APP_VUE_PATH):
         _app_code = f.read()
     _required_views = [
         "StoreView", "WheelView", "LinkView", "BodyView",
-        "AudioView", "FloatingView", "InstallView", "SystemView"
+        "AudioView", "InstallView", "SystemView"
     ]
     for _rv in _required_views:
         if f"import {_rv} from" not in _app_code or f"<{_rv}" not in _app_code:
             _g28.append(f"App.vue 核心视图挂载缺失或被篡改: {_rv}")
+    if "FloatingView" not in _app_code:
+        _g28.append("App.vue 悬浮窗模块引入被破坏！")
     if "<TopBar" not in _app_code or "<Sidebar" not in _app_code:
         _g28.append("App.vue 核心 TopBar/Sidebar 导航骨架被破坏！")
     if "bg-[var(--bg-card)]" not in _app_code and "bg-base" not in _app_code:
