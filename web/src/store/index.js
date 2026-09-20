@@ -63,7 +63,6 @@ export const store = reactive({
     voice_enable_mode_eco: true,
     voice_enable_mode_sport: true,
     voice_enable_steer_angle_guard: true,
-    voice_enable_epb_guard: true,
     voice_enable_door_fl: true,
     voice_enable_door_fl_close: true,
     voice_enable_door_fr: true,

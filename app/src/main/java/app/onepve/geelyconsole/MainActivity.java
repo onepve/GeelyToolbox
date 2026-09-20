@@ -3045,9 +3045,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_enable_mode_eco", prefs.getBoolean("voice_enable_mode_eco", true));
                 obj.put("voice_enable_mode_sport", prefs.getBoolean("voice_enable_mode_sport", true));
 
-                // 车况感知与安全守护 (两项测试)
+                // 车况感知与安全守护
                 obj.put("voice_enable_steer_angle_guard", prefs.getBoolean("voice_enable_steer_angle_guard", true));
-                obj.put("voice_enable_epb_guard", prefs.getBoolean("voice_enable_epb_guard", true));
 
                 // 默认值：出厂统一默认控制台独立接管模式，短按 Mode 唤起 360
                 boolean hasCarMedia = SystemUtils.isPackageInstalled(MainActivity.this, "com.ecarx.carmedia");
@@ -3608,9 +3607,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     } else if ("steer_angle_guard".equals(type)) {
                         // 车况安全守护试听 (P3): 纯界面试听，与真实触发无关
                         player.play("steer_angle_guard.mp3", "请注意回正方向盘", VehicleVoicePlayer.PRIORITY_P3_ADVISORY);
-                    } else if ("epb_guard".equals(type)) {
-                        // 车况安全守护试听 (P0): 纯界面试听，与真实触发无关
-                        player.play("epb_alarm.mp3", "警告，电子手刹未拉起", VehicleVoicePlayer.PRIORITY_P0_ALARM);
                     } else {
                         if (!player.isTtsReady()) {
                             player.ensureTtsReady();

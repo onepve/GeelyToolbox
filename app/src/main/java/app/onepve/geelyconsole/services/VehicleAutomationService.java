@@ -189,20 +189,7 @@ public class VehicleAutomationService extends Service {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
         long now = android.os.SystemClock.elapsedRealtime();
 
-        // 1. 电子手刹未拉溜车报警 (P0 优先级)
-        boolean epbGuard = prefs.getBoolean("voice_enable_epb_guard", true);
-        if (epbGuard && epbSignalAt > 0 && now - epbSignalAt <= SafetySensorStateMachine.SIGNAL_FRESHNESS_MS) {
-            int r = safetySensors.checkEpbNotEngagedOnPDoorOpen(now);
-            if (r == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED) {
-                AppLogger.w("安全守护", "【P0报警】挂P挡推开主驾门，检测到电子手刹未拉起！(已确认，本行程不再重复)");
-                if (voicePlayer != null) {
-                    voicePlayer.play("epb_alarm.mp3", "警告，电子手刹未拉起", VehicleVoicePlayer.PRIORITY_P0_ALARM);
-                }
-                return; // P0 报警触发后不再报次要提醒
-            }
-        }
-
-        // 2. 方向盘未回正提醒 (P3 优先级; 阈值 60° 为测试值)
+        // 方向盘未回正提醒 (P3 优先级; 阈值 60° 为测试值)
         boolean steerGuard = prefs.getBoolean("voice_enable_steer_angle_guard", true);
         if (steerGuard && steerAngleSignalAt > 0
                 && now - steerAngleSignalAt <= SafetySensorStateMachine.SIGNAL_FRESHNESS_MS) {

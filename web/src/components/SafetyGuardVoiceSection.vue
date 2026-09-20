@@ -26,9 +26,9 @@
       </div>
     </div>
 
-    <!-- 两项守护双列等高网格 -->
-    <div class="grid grid-cols-2 gap-5">
-      <!-- 守护项 1: 方向盘未回正 -->
+    <!-- 行车安全守护卡片 (单列通栏自适应) -->
+    <div class="grid grid-cols-1 gap-5">
+      <!-- 守护项: 方向盘未回正 -->
       <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200">
         <div class="flex items-center justify-between shrink-0 mb-2">
           <div class="flex items-center space-x-3">
@@ -72,51 +72,6 @@
           </button>
         </div>
       </div>
-
-      <!-- 守护项 2: 电子手刹未拉起 -->
-      <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200">
-        <div class="flex items-center justify-between shrink-0 mb-2">
-          <div class="flex items-center space-x-3">
-            <span class="text-[20px] font-black text-car-text tracking-wide">电子手刹未拉起预警</span>
-            <button
-              @click.stop="showEpbHelp"
-              class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-accent hover:border-car-accent font-black text-[18px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-            >
-              ?
-            </button>
-          </div>
-          <span :class="['px-3 py-1 rounded-full text-[13px] font-black border shrink-0', store.vehicleAuto.voice_enable_epb_guard ? 'bg-emerald-500/10 border-emerald-500/40 text-car-text' : 'bg-car-item border-car-border text-car-sub']">
-            {{ store.vehicleAuto.voice_enable_epb_guard ? '● 已开启' : '○ 已关闭' }}
-          </span>
-        </div>
-
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">挂 P 挡推开主驾车门时，检测到电子手刹未拉起</div>
-          <div class="text-car-text font-bold">语音提示检查驻车制动，辅助防范溜车隐患</div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <button
-            @click="toggleGuard('voice_enable_epb_guard')"
-            :class="[
-              'h-[52px] px-4 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-              store.vehicleAuto.voice_enable_epb_guard
-                ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-            ]"
-          >
-            <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.voice_enable_epb_guard ? 'bg-car-accent shadow-[0_0_6px_var(--accent-gold)]' : 'bg-car-sub']"></span>
-            <span class="truncate">{{ store.vehicleAuto.voice_enable_epb_guard ? '守护已开启' : '守护已关闭' }}</span>
-          </button>
-          <button
-            @click="testVoice('epb_guard')"
-            class="h-[52px] px-4 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[16px] cursor-pointer shadow-sm transition-all flex items-center justify-center space-x-1"
-          >
-            <span>试听警报</span>
-            <span>➔</span>
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -129,7 +84,6 @@ import { store, bridge, showToast, openModal } from '../store';
 const activeGuardCount = computed(() => {
   let count = 0;
   if (store.vehicleAuto.voice_enable_steer_angle_guard) count++;
-  if (store.vehicleAuto.voice_enable_epb_guard) count++;
   return count;
 });
 
@@ -149,16 +103,6 @@ function showSteerHelp() {
   openModal('confirm', {
     title: '【功能指南】方向盘未回正提醒',
     desc: '1. 触发条件：挂入 P 挡解开安全带或推开主驾车门准备下车时，方向盘偏离中心角度较大则温婉提醒回正。\n\n2. 克制表述：偶尔停放时方向盘未完全回正属正常现象，不必然伤车；坡道停车请按驾驶规范转向车轮并拉起手刹。\n\n3. 辅助定位：本提醒仅作下车前辅助提示，不替代仪表与警示灯；未知信号不报警。',
-    tip: '语音仅作辅助提醒，不替代仪表与警示灯；未知信号不报警。',
-    showCancel: false,
-    confirmText: '我知道了'
-  });
-}
-
-function showEpbHelp() {
-  openModal('confirm', {
-    title: '【功能指南】电子手刹未拉起预警',
-    desc: '1. 触发条件：挂 P 挡推开主驾车门瞬间，检测到电子手刹未拉起时语音警报。\n\n2. 防溜车定位：纯语音提醒不遮挡视线，防止坡道溜车隐患。\n\n3. 辅助定位：仅作辅助提醒，不替代仪表与警示灯；未知信号不报警。',
     tip: '语音仅作辅助提醒，不替代仪表与警示灯；未知信号不报警。',
     showCancel: false,
     confirmText: '我知道了'
