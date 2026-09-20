@@ -68,26 +68,23 @@
         helpText="1. 为什么严禁 ADB pm install：&#10;吉利车机系统底层有签名校验安全策略，直接通过 ADB 命令行静默安装会导致第三方软件白屏或签名崩溃闪退。&#10;&#10;2. 特权正解通道：&#10;将安装包放入车机 Download 目录后，通过点击本卡片按钮调起车载原生文件管理，在系统级特权应用内点击安装，系统将自动放行安装并正常运行。"
         helpTip="下载或传到车机 Download 目录的 APK，统一通过原生文件管理点击安装。"
       >
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
-          <div class="flex-1 min-w-0 pr-6 flex flex-col">
-            <div class="text-[18px] font-black text-car-text mb-2">
-              标准无损安装路线：
+        <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex items-center justify-between space-x-4">
+          <div class="flex-1 min-w-0 flex flex-col space-y-1">
+            <div class="text-[15px] text-car-sub font-bold leading-normal">
+              推送 APK 至 <code class="px-1.5 py-0.5 rounded bg-car-card text-car-accent font-mono text-[14px]">/sdcard/Download/</code> 目录，点击进入原生管理器即可直接特权无损直装。
             </div>
-            <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-3">
-              手机通过无线快传或甲壳虫将 APK 推送至车机 <code class="px-2 py-0.5 rounded bg-car-card text-car-accent font-mono">/sdcard/Download/</code> 目录，点击右侧按钮进入原生文件管理器，直接点击 APK 即可调用系统原生特权打包器无损直装。
-            </div>
-            <div class="flex items-center text-[13.5px] text-emerald-400 font-extrabold">
-              <StatusDot class="mr-2" size="sm" color="ok" :glow-px="8" />
-              <span>已接入 Android 9 原生 PackageInstaller 特权证书白名单</span>
+            <div class="flex items-center text-[13px] text-emerald-400 font-extrabold">
+              <StatusDot class="mr-1.5" size="sm" color="ok" :glow-px="6" />
+              <span>已接入原生 PackageInstaller 特权白名单</span>
             </div>
           </div>
 
           <button 
             @click="openFileManager"
-            class="min-w-[240px] min-h-[76px] px-6 bg-car-card border-2 border-car-accent rounded-2xl flex flex-col items-center justify-center text-car-text font-black cursor-pointer hover:border-car-accent ring-2 ring-car-accent/25 shadow-lg shrink-0 transition-all"
+            class="min-w-[210px] h-[52px] px-5 bg-car-card border-2 border-car-accent rounded-xl flex items-center justify-center space-x-2 text-car-text font-black cursor-pointer hover:border-car-accent ring-2 ring-car-accent/25 shadow-md shrink-0 transition-all"
           >
-            <span class="text-[20px]">打开原生文件管理</span>
-            <span class="text-[13px] text-car-accent mt-0.5 font-extrabold">进入 Download 目录</span>
+            <span class="text-[17px]">打开文件管理</span>
+            <span class="text-[12px] text-car-accent font-extrabold bg-car-item px-2 py-0.5 rounded-md border border-car-accent/40">Download</span>
           </button>
         </div>
       </FeatureCard>
@@ -99,21 +96,21 @@
         helpText="1. 免插拔 U 盘原理：&#10;车机内置轻量级 HTTP 局域网传输服务（端口 8888）。手机连接车机 Wi-Fi 热点或同局域网后，扫码即可秒开上传页面。&#10;&#10;2. 自动落盘路径：&#10;手机上传的 APK 会自动保存到车机 /sdcard/Download/ 目录中，随后点击上方 Card 1 原生文件管理即可直接点击安装。"
         helpTip="建议手机连接车机发出的 Wi-Fi 热点，传输速度最快、延迟最低。"
       >
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
-          <div class="flex-1 min-w-0 pr-6 flex flex-col">
-            <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-2">
-              只要手机与车机处于同一 Wi-Fi 或车机热点下，扫码即可秒开网页，将手机下载的高德地图、音乐等 APK 秒传至车机 Download 目录。
+        <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex items-center justify-between space-x-4">
+          <div class="flex-1 min-w-0 flex flex-col space-y-1">
+            <div class="text-[15px] text-car-sub font-bold leading-normal">
+              手机连接同一 Wi-Fi 或热点扫码推包，APK 自动保存到车机 Download 目录。
             </div>
-            <div class="flex items-center text-[14px] text-car-sub font-mono font-bold">
-              <span class="whitespace-nowrap min-w-0 truncate">当前局域网 IP: {{ store.deviceInfo.car_ip ? store.deviceInfo.car_ip + ':8888' : '未连接热点' }}</span>
+            <div class="flex items-center text-[13px] text-car-sub font-mono font-bold">
+              <span class="whitespace-nowrap min-w-0 truncate">局域网 IP: {{ store.deviceInfo.car_ip ? store.deviceInfo.car_ip + ':8888' : '未连接热点' }}</span>
             </div>
           </div>
 
           <button 
             @click="showQrCode"
-            class="min-w-[220px] min-h-[72px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[19px] rounded-2xl cursor-pointer hover:border-car-border-light shrink-0 shadow-sm transition-all"
+            class="min-w-[190px] h-[52px] px-4 bg-car-card border-2 border-car-border text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-border-light shrink-0 shadow-sm transition-all"
           >
-            打开无线快传二维码
+            打开无线快传码
           </button>
         </div>
       </FeatureCard>

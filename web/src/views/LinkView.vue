@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col space-y-6">
+  <div class="flex flex-col space-y-5">
     <!-- 顶部计划概览与操作栏 (对齐方控 106px 车规标准) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-full flex flex-col space-y-1.5">
@@ -18,9 +18,9 @@
 
     <!-- 计划任务流列表 (车规对称双列网格 · 告别单列8层面条堆叠 · 1920宽屏黄金排布) -->
     <div class="grid grid-cols-2 gap-5">
-      <!-- 任务 2: D 挡起步联动 360 -->
+      <!-- 任务 1: D 挡起步联动 360 -->
       <PlanCard
-        title="2. 前进 D 挡起步联动 360"
+        title="1. 前进 D 挡起步联动 360"
         tag="单次跃变"
         help-text="gear_d_360"
         flow-sub="从 P 挡或 R 挡切入前进 D 挡起步 (单次跃变锁)"
@@ -35,9 +35,9 @@
         </template>
       </PlanCard>
 
-      <!-- 任务 3: P 挡开门多媒体优雅静音 -->
+      <!-- 任务 2: P 挡开门多媒体优雅静音 -->
       <PlanCard
-        title="3. 停稳推门多媒体暂停"
+        title="2. 停稳推门多媒体暂停"
         tag="下车静音"
         help-text="door_pause"
         flow-sub="挂入驻车 P 挡且推开前排车门（准备下车）"
@@ -52,130 +52,113 @@
         </template>
       </PlanCard>
 
-      <!-- 任务 4: 车速达标智能启播车载音乐 (双列网格 · 内容纵向拉宽填充) -->
+      <!-- 任务 3: 车速达标智能启播车载音乐 (紧凑车规卡片) -->
       <div
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl h-full flex flex-col space-y-3.5 transition-all duration-200"
       >
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <span class="text-[22px] font-black text-car-text tracking-wide">4. 车速达标智能启播车载音乐</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent">起步自启</span>
+        <div class="flex items-center justify-between shrink-0">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[20px] font-black text-car-text tracking-wide">3. 车速达标智能启播音乐</span>
+            <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">起步自启</span>
+            <HelpDot size="sm" @click="showHelp('speed_music')" />
           </div>
-          <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-2 shrink-0">
             <button
               @click="toggleSetting('vehicle_speed_autoplay_enabled')"
               :class="[
-                'h-[54px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center space-x-2',
+                'h-[50px] px-4 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center space-x-2 shrink-0',
                 store.vehicleAuto.vehicle_speed_autoplay_enabled
                   ? 'bg-car-item border-car-accent text-car-text shadow-md'
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
               ]"
             >
               <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_speed_autoplay_enabled ? 'bg-car-accent' : 'bg-car-sub']"></span>
-              <span>{{ store.vehicleAuto.vehicle_speed_autoplay_enabled ? '计划运行中' : '计划已暂停' }}</span>
+              <span>{{ store.vehicleAuto.vehicle_speed_autoplay_enabled ? '运行中' : '已暂停' }}</span>
             </button>
           </div>
         </div>
 
-        <!-- 任务两段流（纵向堆叠拉宽填充，根治「一宽一窄不协调」；shrink-0 防旧内核 WebView66 flex 压缩致步进器穿卡悬浮） -->
-        <div class="flex flex-col space-y-3 pt-1 min-w-0 flex-1 shrink-0">
-          <!-- 当: 车速控制器 -->
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3 min-w-0 flex-1 shrink-0">
-            <div class="flex items-center space-x-3">
-              <span class="text-[16px] font-black text-car-text">出 P 挡起步行驶，车速达到设定阈值：</span>
-            </div>
-            <!-- 纯加减数值步进器 (shrink-0: 车机 WebView66 旧内核 flex 压缩会使按钮穿出卡外悬浮) -->
-            <div class="flex items-center justify-between bg-car-card border-2 border-car-border rounded-2xl p-2.5 shrink-0">
-              <div class="flex items-center space-x-2">
-                <button 
-                  @click="adjustAutoplaySpeed(-5)"
-                  class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-                >
-                  -5
-                </button>
-                <button 
-                  @click="adjustAutoplaySpeed(-1)"
-                  class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-                >
-                  -1
-                </button>
-              </div>
-              <div class="flex items-baseline space-x-1 px-4">
-                <span class="text-[32px] font-black text-car-accent tracking-tight font-mono">
-                  {{ store.vehicleAuto.vehicle_speed_autoplay_threshold || 20 }}
-                </span>
-                <span class="text-[15px] text-car-sub font-black">km/h</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <button 
-                  @click="adjustAutoplaySpeed(1)"
-                  class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-                >
-                  +1
-                </button>
-                <button 
-                  @click="adjustAutoplaySpeed(5)"
-                  class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-                >
-                  +5
-                </button>
-              </div>
-            </div>
+        <!-- 紧凑车速步进器 (一体化设计，不再与提示语层叠) -->
+        <div class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl p-2 shrink-0">
+          <div class="flex items-center space-x-1.5">
+            <button 
+              @click="adjustAutoplaySpeed(-5)"
+              class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
+            >
+              -5
+            </button>
+            <button 
+              @click="adjustAutoplaySpeed(-1)"
+              class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
+            >
+              -1
+            </button>
           </div>
-
-          <!-- 就: 自动放歌 -->
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3">
-            <div class="flex items-center space-x-3">
-              <span class="text-[16px] font-black text-car-text">触发主力软件播放（单次行程防抖闭环，等红灯不重复放）：</span>
-            </div>
-            <!-- 形式与软件选择（两张等宽对称按钮） -->
-            <div class="grid grid-cols-2 gap-3 items-stretch">
-              <button 
-                @click="setAutoplayFullscreen(false)"
-                :class="[
-                  'w-full h-[52px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
-                  !store.vehicleAuto.vehicle_speed_autoplay_fullscreen
-                    ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                    : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-                ]"
-              >
-                后台静默放歌 (保持高德导航)
-              </button>
-              <button 
-                @click="setAutoplayFullscreen(true)"
-                :class="[
-                  'w-full h-[52px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
-                  store.vehicleAuto.vehicle_speed_autoplay_fullscreen
-                    ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                    : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-                ]"
-              >
-                前台全屏播放 (沉浸大屏)
-              </button>
-            </div>
+          <div class="flex items-baseline space-x-1 px-3">
+            <span class="text-[13.5px] font-bold text-car-sub mr-1">触发时速</span>
+            <span class="text-[28px] font-black text-car-accent tracking-tight font-mono">
+              {{ store.vehicleAuto.vehicle_speed_autoplay_threshold || 20 }}
+            </span>
+            <span class="text-[14px] text-car-sub font-black">km/h</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <button 
+              @click="adjustAutoplaySpeed(1)"
+              class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
+            >
+              +1
+            </button>
+            <button 
+              @click="adjustAutoplaySpeed(5)"
+              class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
+            >
+              +5
+            </button>
           </div>
         </div>
 
-        <!-- 启播目标音乐应用选择 (精简为核心 4 按钮，未装动态隐藏以节省空间) -->
-        <div class="pt-3 flex flex-col space-y-3 border-t border-car-border/60 min-w-0 flex-1 shrink-0">
-          <div class="flex items-center space-x-2">
-            <span class="text-[16px] font-black text-car-text">自启首选音乐软件（点击即设为首选）：</span>
-          </div>
+        <!-- 播放模式切换 (紧凑对称双按钮) -->
+        <div class="grid grid-cols-2 gap-2.5 items-stretch shrink-0">
+          <button 
+            @click="setAutoplayFullscreen(false)"
+            :class="[
+              'w-full h-[50px] rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2 whitespace-nowrap',
+              !store.vehicleAuto.vehicle_speed_autoplay_fullscreen
+                ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+                : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+            ]"
+          >
+            后台静默放歌 (保持导航)
+          </button>
+          <button 
+            @click="setAutoplayFullscreen(true)"
+            :class="[
+              'w-full h-[50px] rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2 whitespace-nowrap',
+              store.vehicleAuto.vehicle_speed_autoplay_fullscreen
+                ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+                : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+            ]"
+          >
+            前台全屏播放 (沉浸大屏)
+          </button>
+        </div>
 
-          <!-- 精选音乐磁贴 (QQ音乐 / 网易云音乐 / 手机蓝牙 / 自选车机已装软件) -->
-          <div class="grid grid-cols-2 gap-3 items-stretch">
+        <!-- 首选音乐应用矩阵 (紧凑网格) -->
+        <div class="pt-4 flex flex-col space-y-2 border-t border-car-border/60 min-w-0 flex-1 shrink-0">
+          <div class="text-[13.5px] font-bold text-car-sub">首选音乐软件：</div>
+          <div class="grid grid-cols-2 gap-2.5 items-stretch">
             <!-- QQ音乐 (未安装则动态隐藏) -->
             <button 
               v-if="hasQQMusic"
               @click="setAutoplayApp('com.tencent.qqmusiccar', 'QQ音乐')"
               :class="[
-                'h-[54px] px-4 rounded-xl text-[15.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center justify-center space-x-2 shadow-sm',
+                'h-[50px] px-3 rounded-xl text-[14.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center justify-center space-x-1.5 shadow-sm',
                 store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.tencent.qqmusiccar'
                   ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
               ]"
             >
-              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.tencent.qqmusiccar'" class="px-2 py-0.5 text-[11px] rounded bg-car-item border border-car-accent text-car-accent font-black mr-1">首选</span>
+              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.tencent.qqmusiccar'" class="px-1.5 py-0.5 text-[10.5px] rounded bg-car-item border border-car-accent text-car-accent font-black">首选</span>
               <span>QQ音乐</span>
             </button>
 
@@ -184,13 +167,13 @@
               v-if="hasNeteaseMusic"
               @click="setAutoplayApp('com.netease.cloudmusiccar', '网易云音乐')"
               :class="[
-                'h-[54px] px-4 rounded-xl text-[15.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center justify-center space-x-2 shadow-sm',
+                'h-[50px] px-3 rounded-xl text-[14.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center justify-center space-x-1.5 shadow-sm',
                 store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.netease.cloudmusiccar'
                   ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
               ]"
             >
-              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.netease.cloudmusiccar'" class="px-2 py-0.5 text-[11px] rounded bg-car-item border border-car-accent text-car-accent font-black mr-1">首选</span>
+              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.netease.cloudmusiccar'" class="px-1.5 py-0.5 text-[10.5px] rounded bg-car-item border border-car-accent text-car-accent font-black">首选</span>
               <span>网易云音乐</span>
             </button>
 
@@ -198,13 +181,13 @@
             <button 
               @click="setAutoplayApp('com.android.bluetooth', '手机蓝牙')"
               :class="[
-                'h-[54px] px-4 rounded-xl text-[15.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center justify-center space-x-2 shadow-sm',
+                'h-[50px] px-3 rounded-xl text-[14.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center justify-center space-x-1.5 shadow-sm',
                 store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.android.bluetooth'
                   ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
               ]"
             >
-              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.android.bluetooth'" class="px-2 py-0.5 text-[11px] rounded bg-car-item border border-car-accent text-car-accent font-black mr-1">首选</span>
+              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.android.bluetooth'" class="px-1.5 py-0.5 text-[10.5px] rounded bg-car-item border border-car-accent text-car-accent font-black">首选</span>
               <span>手机蓝牙</span>
             </button>
 
@@ -212,119 +195,110 @@
             <button 
               @click="openSelectModal('speed_autoplay')"
               :class="[
-                'h-[54px] px-4 rounded-xl text-[15.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center justify-center space-x-2 shadow-sm',
+                'h-[50px] px-3 rounded-xl text-[14.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center justify-center space-x-1.5 shadow-sm',
                 isCustomAutoplaySelected
                   ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-accent'
               ]"
             >
-              <span v-if="isCustomAutoplaySelected" class="px-2 py-0.5 text-[11px] rounded bg-car-item border border-car-accent text-car-accent font-black mr-1">自选</span>
-              <span>{{ customAutoplayAppName || '自选车机已装软件 ➔' }}</span>
+              <span v-if="isCustomAutoplaySelected" class="px-1.5 py-0.5 text-[10.5px] rounded bg-car-item border border-car-accent text-car-accent font-black">自选</span>
+              <span class="truncate">{{ customAutoplayAppName || '自选应用 ➔' }}</span>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- 任务 5: 车速达标自定义动作与唤起应用 (双列网格 · 内容纵向拉宽填充) -->
+      <!-- 任务 4: 车速达标自定义动作与唤起应用 (紧凑车规卡片，高度对齐左侧) -->
       <div
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col space-y-4 transition-all duration-200"
+        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl h-full flex flex-col space-y-3.5 transition-all duration-200"
       >
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <span class="text-[22px] font-black text-car-text tracking-wide">5. 车速达标自定义动作与唤起应用</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent">自定动作</span>
+        <div class="flex items-center justify-between shrink-0">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[20px] font-black text-car-text tracking-wide">4. 车速达标自定义动作</span>
+            <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">自定动作</span>
+            <HelpDot size="sm" @click="showHelp('speed_custom')" />
           </div>
-          <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-2 shrink-0">
             <button
               @click="toggleSetting('vehicle_speed_custom_action_enabled')"
               :class="[
-                'h-[54px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center space-x-2',
+                'h-[50px] px-4 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center space-x-2 shrink-0',
                 store.vehicleAuto.vehicle_speed_custom_action_enabled
                   ? 'bg-car-item border-car-accent text-car-text shadow-md'
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
               ]"
             >
               <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_speed_custom_action_enabled ? 'bg-car-accent' : 'bg-car-sub']"></span>
-              <span>{{ store.vehicleAuto.vehicle_speed_custom_action_enabled ? '计划运行中' : '计划已暂停' }}</span>
+              <span>{{ store.vehicleAuto.vehicle_speed_custom_action_enabled ? '运行中' : '已暂停' }}</span>
             </button>
           </div>
         </div>
 
-        <div class="flex flex-col pt-1 min-w-0 flex-1 shrink-0">
-          <!-- 当: 设定速度 -->
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-center space-y-3 min-w-0 flex-1 shrink-0">
-            <div class="flex items-center space-x-3">
-              <span class="text-[16px] font-black text-car-text">起步加速，当前车速达到设定阈值：</span>
-            </div>
-            <!-- 纯加减数值步进器 -->
-            <div class="flex items-center justify-between bg-car-card border-2 border-car-border rounded-2xl p-2.5 shrink-0">
-              <div class="flex items-center space-x-2">
-                <button 
-                  @click="adjustCustomActionSpeed(-5)"
-                  class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-                >
-                  -5
-                </button>
-                <button 
-                  @click="adjustCustomActionSpeed(-1)"
-                  class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-                >
-                  -1
-                </button>
-              </div>
-              <div class="flex items-baseline space-x-1 px-4">
-                <span class="text-[32px] font-black text-car-accent tracking-tight font-mono">
-                  {{ store.vehicleAuto.vehicle_speed_custom_action_threshold || 40 }}
-                </span>
-                <span class="text-[15px] text-car-sub font-black">km/h</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <button 
-                  @click="adjustCustomActionSpeed(1)"
-                  class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-                >
-                  +1
-                </button>
-                <button 
-                  @click="adjustCustomActionSpeed(5)"
-                  class="h-[52px] px-4 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
-                >
-                  +5
-                </button>
-              </div>
-            </div>
+        <!-- 紧凑车速步进器 -->
+        <div class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl p-2 shrink-0">
+          <div class="flex items-center space-x-1.5">
+            <button 
+              @click="adjustCustomActionSpeed(-5)"
+              class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
+            >
+              -5
+            </button>
+            <button 
+              @click="adjustCustomActionSpeed(-1)"
+              class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
+            >
+              -1
+            </button>
           </div>
+          <div class="flex items-baseline space-x-1 px-3">
+            <span class="text-[13.5px] font-bold text-car-sub mr-1">触发时速</span>
+            <span class="text-[28px] font-black text-car-accent tracking-tight font-mono">
+              {{ store.vehicleAuto.vehicle_speed_custom_action_threshold || 40 }}
+            </span>
+            <span class="text-[14px] text-car-sub font-black">km/h</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <button 
+              @click="adjustCustomActionSpeed(1)"
+              class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
+            >
+              +1
+            </button>
+            <button 
+              @click="adjustCustomActionSpeed(5)"
+              class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
+            >
+              +5
+            </button>
+          </div>
+        </div>
 
-          <!-- 就: 执行动作 -->
-          <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-center space-y-3 min-w-0 flex-1 mt-3 shrink-0">
-            <div class="flex items-center space-x-3">
-              <span class="text-[16px] font-black text-car-text">自动唤起预选目标（单次行程防抖，回 P 挡重置）：</span>
-            </div>
-            <!-- 动作选择（两张等宽对称按钮） -->
-            <div class="grid grid-cols-2 gap-3 items-stretch">
-              <button 
-                @click="setCustomActionTarget('pkg:com.autonavi.amapauto')"
-                :class="[
-                  'w-full h-[68px] rounded-xl font-black text-[19px] cursor-pointer transition-all border-2 whitespace-nowrap',
-                  store.vehicleAuto.vehicle_speed_custom_action_target === 'pkg:com.autonavi.amapauto'
-                    ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                    : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-                ]"
-              >
-                高德车机地图
-              </button>
-              <button 
-                @click="openSelectModal('speed_custom_action')"
-                :class="[
-                  'w-full h-[68px] rounded-xl font-black text-[19px] cursor-pointer transition-all border-2 whitespace-nowrap',
-                  store.vehicleAuto.vehicle_speed_custom_action_target?.startsWith('pkg:') && store.vehicleAuto.vehicle_speed_custom_action_target !== 'pkg:com.autonavi.amapauto'
-                    ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                    : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-                ]"
-              >
-                {{ customActionAppName ? customActionAppName : '自选应用 ➔' }}
-              </button>
-            </div>
+        <!-- 动作唤起目标选择 (紧凑对称双按钮，高度与左侧对称对齐) -->
+        <div class="pt-4 flex flex-col space-y-2 border-t border-car-border/60 min-w-0 flex-1 shrink-0">
+          <div class="text-[13.5px] font-bold text-car-sub">达标唤起目标应用：</div>
+          <div class="grid grid-cols-2 gap-2.5 items-stretch">
+            <button 
+              @click="setCustomActionTarget('pkg:com.autonavi.amapauto')"
+              :class="[
+                'w-full h-[50px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
+                store.vehicleAuto.vehicle_speed_custom_action_target === 'pkg:com.autonavi.amapauto'
+                  ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+              ]"
+            >
+              高德车机地图
+            </button>
+            <button 
+              @click="openSelectModal('speed_custom_action')"
+              :class="[
+                'w-full h-[50px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap truncate px-3',
+                store.vehicleAuto.vehicle_speed_custom_action_target?.startsWith('pkg:') && store.vehicleAuto.vehicle_speed_custom_action_target !== 'pkg:com.autonavi.amapauto'
+                  ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+              ]"
+            >
+              {{ customActionAppName ? customActionAppName : '自选应用 ➔' }}
+            </button>
           </div>
         </div>
       </div>
@@ -339,10 +313,7 @@ import { store, bridge, showToast, openModal } from '../store';
 import PlanCard from '../components/PlanCard.vue';
 import BaseButton from '../components/BaseButton.vue';
 import StatusDot from '../components/StatusDot.vue';
-
-
-
-
+import HelpDot from '../components/HelpDot.vue';
 
 const activeTaskCount = computed(() => {
   let count = 0;
@@ -352,7 +323,6 @@ const activeTaskCount = computed(() => {
   if (store.vehicleAuto.vehicle_door_pause_music_enabled) count++;
   return count;
 });
-
 
 const hasQQMusic = ref(false);
 const hasNeteaseMusic = ref(false);
@@ -396,24 +366,21 @@ function checkInstalledMusicApps() {
     hasNeteaseMusic.value = true;
   }
 
-  // 默认选择逻辑：若未设置包名
-  if (!store.vehicleAuto.vehicle_speed_autoplay_pkg) {
-    if (hasQQMusic.value) {
+  // 默认选择逻辑：若检测到安装了 QQ 音乐，默认置为 QQ 音乐且计划任务默认为运行
+  if (hasQQMusic.value) {
+    if (!store.vehicleAuto.vehicle_speed_autoplay_pkg) {
       store.vehicleAuto.vehicle_speed_autoplay_pkg = 'com.tencent.qqmusiccar';
-    } else {
+    }
+    if (store.vehicleAuto.vehicle_speed_autoplay_enabled === undefined || store.vehicleAuto.vehicle_speed_autoplay_enabled === null) {
+      store.vehicleAuto.vehicle_speed_autoplay_enabled = true;
+    }
+  } else {
+    if (!store.vehicleAuto.vehicle_speed_autoplay_pkg) {
       store.vehicleAuto.vehicle_speed_autoplay_pkg = 'com.android.bluetooth';
     }
   }
 
   loadCustomAutoplayAppName();
-}
-
-function refreshDetectedApps() {
-  try {
-    bridge.call('refreshInstalledApps');
-  } catch (e) {}
-  loadSortedMusicApps();
-  showToast('已重新扫描整车已安装音乐软件并刷新排序');
 }
 
 function toggleSetting(key) {
@@ -496,6 +463,16 @@ function showHelp(key) {
       title: '【功能指南】P 挡开门音乐暂停',
       desc: '挂入驻车 P 挡推开前门，毫秒级自动向播放器发送暂停指令，下车从容安静。（车门安全播报由【车载语音】专职管理，零冲突零重复）',
       tip: '仅在挂 P 挡停稳推门生效，行车中推门不误触。'
+    },
+    speed_music: {
+      title: '【功能指南】车速达标智能启播音乐',
+      desc: '1. 智能起步判断：挂入 D 挡起步行驶，实时车速突破设定阈值瞬间自动触发首选主力音乐软件播放。\n\n2. 单次行程防抖：单次行驶过程中仅触发一次，中途红绿灯停车或减速再次起步绝不重复触发。\n\n3. 自动待命重置：车辆停稳重新挂入 P 挡后，自动重置状态，等待下一次起步。',
+      tip: '支持后台静默播放（不抢导航视线）或前台全屏大屏沉浸播放。'
+    },
+    speed_custom: {
+      title: '【功能指南】车速达标自定义动作',
+      desc: '1. 车速阈值唤起：行驶车速达到设定阈值时，自动唤醒高德车机地图或自选软件，无需行车中分心操作屏幕。\n\n2. 行程防抖机制：单次行驶中仅触发一次，避免频繁弹窗；挂入 P 挡停稳后自动重置待命。',
+      tip: '适合将阈值设为 40~50 km/h，出地库上主路巡航时自动切回大屏导航。'
     }
   };
   const item = helpData[key];

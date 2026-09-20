@@ -1,7 +1,7 @@
 <template>
     <!-- 弹窗 2: 驾驶模式细分配置二级向导 (ModeConfigModal · 全量补齐声效设置) -->
     <div 
-      class="fixed z-[9998] flex items-center justify-center p-6" style="top:0; left:0; width:100vw; height:100vh; background: rgba(11, 15, 25, 0.85);"
+      class="fixed z-[9998] flex items-center justify-center p-6" style="top:0; left:0; width:100vw; height:100vh; background: rgba(10, 14, 23, 0.97);"
     >
       <div class="bg-car-card border-2 border-car-border rounded-3xl p-7 shadow-2xl max-w-[880px] w-full flex flex-col space-y-5 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between border-b border-car-border pb-4">

@@ -1357,13 +1357,18 @@ public class VehicleAutomationService extends Service {
             speedCustomActionArmed = true;
         }
 
-        // 1. 车速智能自启多媒体
-        boolean autoplayEnabled = prefs.getBoolean("vehicle_speed_autoplay_enabled", false);
+        // 1. 车速智能自启多媒体 (若装有 QQ 音乐，默认置为 QQ 音乐且计划任务默认为运行)
+        boolean hasQQMusic = false;
+        try {
+            getPackageManager().getPackageInfo("com.tencent.qqmusiccar", 0);
+            hasQQMusic = true;
+        } catch (Exception ignored) {}
+        boolean autoplayEnabled = prefs.getBoolean("vehicle_speed_autoplay_enabled", hasQQMusic);
         if (autoplayEnabled && speedAutoplayArmed && isEngineRunning()) {
             int threshold = prefs.getInt("vehicle_speed_autoplay_threshold", 20);
             if (speed >= threshold) {
                 speedAutoplayArmed = false; // 触发一次即锁定，等红绿灯不重复触发
-                String targetPkg = prefs.getString("vehicle_speed_autoplay_pkg", "com.luna.music");
+                String targetPkg = prefs.getString("vehicle_speed_autoplay_pkg", hasQQMusic ? "com.tencent.qqmusiccar" : "com.android.bluetooth");
                 boolean fullscreen = prefs.getBoolean("vehicle_speed_autoplay_fullscreen", false);
                 triggerMusicAutoplay(targetPkg, fullscreen);
             }

@@ -3088,10 +3088,18 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("wheel_push_playback_cluster", prefs.getBoolean("wheel_push_playback_cluster", false));
                 obj.put("wheel_push_lyrics_cluster", prefs.getBoolean("wheel_push_lyrics_cluster", false));
 
-                // 车速联动自启与行车安全
-                obj.put("vehicle_speed_autoplay_enabled", prefs.getBoolean("vehicle_speed_autoplay_enabled", false));
+                // 车速联动自启与行车安全 (若车机装有 QQ 音乐，默认优先以 QQ 音乐为默认主力并默认开启运行)
+                boolean hasQQMusicInstalled = false;
+                try {
+                    getPackageManager().getPackageInfo("com.tencent.qqmusiccar", 0);
+                    hasQQMusicInstalled = true;
+                } catch (Exception ignored) {}
+                boolean defaultSpeedAutoplayEnabled = hasQQMusicInstalled;
+                String defaultSpeedAutoplayPkg = hasQQMusicInstalled ? "com.tencent.qqmusiccar" : "com.android.bluetooth";
+
+                obj.put("vehicle_speed_autoplay_enabled", prefs.getBoolean("vehicle_speed_autoplay_enabled", defaultSpeedAutoplayEnabled));
                 obj.put("vehicle_speed_autoplay_threshold", prefs.getInt("vehicle_speed_autoplay_threshold", 20));
-                obj.put("vehicle_speed_autoplay_pkg", prefs.getString("vehicle_speed_autoplay_pkg", "com.luna.music"));
+                obj.put("vehicle_speed_autoplay_pkg", prefs.getString("vehicle_speed_autoplay_pkg", defaultSpeedAutoplayPkg));
                 obj.put("vehicle_speed_autoplay_fullscreen", prefs.getBoolean("vehicle_speed_autoplay_fullscreen", false));
                 obj.put("vehicle_door_pause_music_enabled", prefs.getBoolean("vehicle_door_pause_music_enabled", false));
                 obj.put("vehicle_rear_door_alert_enabled", prefs.getBoolean("vehicle_rear_door_alert_enabled", false));

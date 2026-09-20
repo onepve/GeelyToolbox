@@ -21,25 +21,14 @@
         <span>{{ isWifiConnected ? `局域网已就绪: ${serverUrl}` : '提示: 请让手机与车机处于同一热点/Wi-Fi' }}</span>
       </div>
 
-      <!-- 二维码展示区 (220x220 纯白高对比) -->
-      <div class="p-5 bg-white rounded-3xl shadow-xl border-4 border-car-border flex flex-col items-center justify-center mb-5">
-        <canvas ref="canvasRef" id="qrCodeCanvas" width="220" height="220" class="rounded-xl"></canvas>
-        <div class="flex items-center space-x-3 mt-3">
-          <span class="text-black font-mono font-black text-[16px] select-all">
-            {{ serverUrl }}
-          </span>
-          <button 
-            @click="copyUrl"
-            class="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 text-[13px] font-bold border border-gray-300 cursor-pointer shadow-xs"
-          >
-            复制
-          </button>
-        </div>
+      <!-- 二维码展示区 (护眼柔和对比度，已移除车机冗余复制网址) -->
+      <div class="p-4 bg-slate-200 rounded-3xl shadow-xl border-4 border-car-border flex flex-col items-center justify-center mb-5">
+        <canvas ref="canvasRef" id="qrCodeCanvas" width="220" height="220" class="rounded-xl opacity-90"></canvas>
       </div>
 
       <!-- 操作步骤指引 (向右箭头单行流) -->
       <div class="text-[17px] text-car-sub font-bold">
-        手机连接同一 Wi-Fi ➔ 微信/相机扫一扫 ➔ 极速推包到车机 Download 目录
+        📱 手机连接同一 Wi-Fi ➔ 微信/相机扫一扫 ➔ 极速推包到车机 Download 目录
       </div>
     </div>
   </ModalWrapper>
@@ -50,7 +39,7 @@ import { computed, watch, nextTick, ref } from 'vue';
 import QRCode from 'qrcode';
 import ModalWrapper from './ModalWrapper.vue';
 import StatusDot from '../StatusDot.vue';
-import { store, bridge, closeModal, showToast } from '../../store';
+import { store, bridge, closeModal } from '../../store';
 
 const canvasRef = ref(null);
 
@@ -104,14 +93,5 @@ function renderQrCode() {
   }, (error) => {
     if (error) console.error('QR code generation error:', error);
   });
-}
-
-function copyUrl() {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(serverUrl.value);
-    showToast('地址已复制到剪贴板');
-  } else {
-    showToast('快传地址: ' + serverUrl.value);
-  }
 }
 </script>

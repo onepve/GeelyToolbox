@@ -13,20 +13,9 @@
         包含缤越 COOL 双联屏原厂白名单解密、高德车机版飞屏与方控按键定制全攻略。
       </div>
 
-      <!-- 二维码高对比展示卡片 -->
-      <div class="p-5 bg-white rounded-3xl shadow-xl border-4 border-car-border flex flex-col items-center justify-center">
-        <canvas ref="canvasRef" width="220" height="220" class="rounded-xl"></canvas>
-        <div class="flex items-center space-x-3 mt-3">
-          <span class="text-black font-mono font-bold text-[14px] select-none">
-            {{ blogUrl }}
-          </span>
-          <button 
-            @click="copyUrl"
-            class="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 text-[13px] font-bold border border-gray-300 cursor-pointer shadow-xs"
-          >
-            复制
-          </button>
-        </div>
+      <!-- 二维码展示卡片 (护眼柔和对比度，已移除车机冗余复制网址) -->
+      <div class="p-4 bg-slate-200 rounded-3xl shadow-xl border-4 border-car-border flex flex-col items-center justify-center">
+        <canvas ref="canvasRef" width="220" height="220" class="rounded-xl opacity-90"></canvas>
       </div>
 
       <!-- 操作流程提示 -->
@@ -41,7 +30,7 @@
 import { ref, watch, nextTick } from 'vue';
 import QRCode from 'qrcode';
 import ModalWrapper from './ModalWrapper.vue';
-import { store, closeModal, showToast } from '../../store';
+import { store, closeModal } from '../../store';
 
 const canvasRef = ref(null);
 const blogUrl = 'https://onepve.com/geely-toolbox/';
@@ -68,12 +57,4 @@ watch(() => store.modals.blogGuide, (show) => {
     });
   }
 });
-
-function copyUrl() {
-  navigator.clipboard.writeText(blogUrl).then(() => {
-    showToast('说明文档链接已复制');
-  }).catch(() => {
-    showToast(blogUrl);
-  });
-}
 </script>
