@@ -145,7 +145,7 @@ onMounted(() => {
     bridge.call('refreshCloudApps');
   } catch (e) {}
 
-  // 首次启动检测：等待原生权限就绪后串行拉起车友说明与赞赏弹窗（仅弹一次，持久化到 localStorage）
+  // 首次启动检测：等待原生权限就绪后串行拉起作者说明与赞赏弹窗（仅弹一次，持久化到 localStorage）
   try {
     const hasShown = localStorage.getItem('has_shown_welcome_donate');
     if (!hasShown) {

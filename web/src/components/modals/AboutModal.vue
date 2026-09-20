@@ -27,7 +27,7 @@
         </div>
 
         <span class="text-[14.5px] text-car-sub font-bold">
-          专为吉利汽车 亿咖通 E02 / IHU516 (缤越 COOL / 缤瑞 / 博越) 深度定制的车机扩展助手
+          吉利缤越cool 2022款 专车打造，其他车型仅供测试
         </span>
 
         <!-- 车机硬件唯一识别码 (UID) -->

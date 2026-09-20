@@ -1,7 +1,7 @@
 <template>
   <ModalWrapper
     :show="store.modals.welcomeDonate"
-    title="欢迎体验缤越助手 · 车友说明"
+    title="欢迎体验缤越助手 · 作者说明"
     badge="车主互助"
     max-width-class="max-w-[1080px]"
     max-height-class="max-h-[92vh]"
@@ -12,7 +12,7 @@
     <div class="flex flex-col space-y-3">
       <!-- 左右车规双栏布局 (紧凑车规单屏自适应，杜绝 720P 产生滚动条) -->
       <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch">
-        <!-- 左侧：两大核心车友说明 (精简通透版，彻底无滚动条) -->
+        <!-- 左侧：两大核心说明 (精简通透版，彻底无滚动条) -->
         <div class="md:col-span-7 flex flex-col justify-around py-2 space-y-4">
           <!-- 说明 1：纯净免费承诺 -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col">
@@ -21,7 +21,7 @@
               <span>永久承诺 · 纯净免费</span>
             </div>
             <div class="text-[14px] text-car-sub font-bold leading-relaxed mt-2">
-              本软件由车友业余时间独立逆向与深度开发，专为吉利车机系统量身优化。<br>
+              本软件由迷失开发制作，吉利缤越cool 2022款 专车打造，其他车型仅供测试。<br>
               <span class="text-car-text font-black">完全免费使用，承诺 0 广告、0 诱导充值、0 功能锁死。</span>
             </div>
           </div>

@@ -18,7 +18,7 @@
         </slot>
         <slot name="badge" />
       </div>
-      <div v-if="desc || $slots.desc" class="text-[15.5px] text-car-sub font-bold leading-relaxed">
+      <div v-if="(desc || $slots.desc) && !helpText" class="text-[15.5px] text-car-sub font-bold leading-relaxed">
         <slot name="desc">{{ desc }}</slot>
       </div>
     </div>
