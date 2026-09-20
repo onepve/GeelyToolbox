@@ -28,23 +28,12 @@
             {{ item.enabled ? '●' : '○' }} {{ item.label }}
           </button>
         </div>
-        <div class="mt-3 pt-4 border-t border-car-border/40 flex flex-col space-y-2 text-[12.5px] leading-relaxed">
-          <div class="text-car-sub font-bold">
-            【导出内容说明】：导出的是<strong class="text-car-text">系统全量日志 (logcat)</strong>与按关键词分类的专属切片（方控按键 / 换挡 / 车门 / 蓝牙 / 电源 / 应用安装），来自系统底层 logcat 缓冲区实时倾倒，非本工具操作记录。
-          </div>
-          <div class="text-car-accent font-bold">
-            【存储寿命保护】：出厂默认全部关闭。守护日志全程在 RAM 内存流转，0 次磁盘擦写磨损；仅在需要排查问题时按需开启对应模块。
-          </div>
-          <div class="text-emerald-400 font-bold">
-            【隐私安全全脱敏·放心抓取】：导出时已自动执行车规级 5 重安全脱敏！手机号、实时 GPS 经纬度、门牌详细地址 100% 彻底抹除；车架号 (VIN) 与硬件码自动打码掩护 (如 LB37****2076，仅留首尾供车型区分)，绝不泄露行踪与个人隐私，可放心提交排查！
-          </div>
-        </div>
       </div>
 
-      <!-- 核心日志控制台输出屏 (固定高度，独立平滑滚动，白天/黑夜双主题护眼自适应) -->
+      <!-- 核心日志控制台输出屏 (独立平滑滚动，白天/黑夜双主题护眼自适应，消除挤压开阔视界) -->
       <pre 
         ref="logContainer"
-        class="h-[360px] overflow-y-auto rounded-2xl p-5 font-mono text-[14.5px] font-semibold leading-[1.75] select-text whitespace-pre-wrap shadow-inner transition-colors duration-200"
+        class="h-[480px] overflow-y-auto rounded-2xl p-5 font-mono text-[14.5px] font-semibold leading-[1.75] select-text whitespace-pre-wrap shadow-inner transition-colors duration-200"
         :class="[
           store.isNight 
             ? 'bg-[#0B101B] border-2 border-white/15 text-[#E2E8F0] shadow-black/80' 

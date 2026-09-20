@@ -1,7 +1,7 @@
 <template>
   <ModalWrapper 
     :show="store.modals.blogGuide" 
-    title="缤越玩车避坑指南 · 官方图文教程" 
+    title="缤越助手说明 · 官方图文指引" 
     badge="onepve.com"
     maxWidthClass="max-w-[720px]"
     @close="closeModal('blogGuide')"
@@ -71,7 +71,7 @@ watch(() => store.modals.blogGuide, (show) => {
 
 function copyUrl() {
   navigator.clipboard.writeText(blogUrl).then(() => {
-    showToast('教程直达链接已复制');
+    showToast('说明文档链接已复制');
   }).catch(() => {
     showToast(blogUrl);
   });

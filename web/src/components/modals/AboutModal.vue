@@ -142,7 +142,7 @@
             @click="handleGuideAction"
             class="min-h-[60px] px-6 rounded-xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
           >
-            {{ isBeta ? '🛠️ 重跑配置向导' : '📖 玩车避坑指南' }}
+            {{ isBeta ? '🛠️ 重跑配置向导' : '📖 缤越助手说明' }}
           </button>
         </div>
 
