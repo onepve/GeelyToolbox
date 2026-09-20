@@ -133,7 +133,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import StatusDot from './StatusDot.vue'
 import { isAppstoreFrozen, openAppstoreFreezeFlow } from '../utils/appstoreFreeze'
 import { store, openModal, closeModal as storeCloseModal } from '../store'
