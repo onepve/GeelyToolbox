@@ -679,8 +679,8 @@ if "wheel_long_press_ms" in wv_code or "longPressSec" in wv_code:
     reg_violations.append("WheelView.vue 仍残留已下线的「方控按键长按判定时长」调节卡片！")
 if "g in gestureList" in wv_code:
     reg_violations.append("WheelView.vue 仍残留已下线的手势切换选择条！")
-    if "applyRecommendedPreset" in wheel_content or "方控按键一键快速配置" in wheel_content:
-        reg_violations.append("WheelView.vue 仍残留已下线的「方控按键一键快速配置」卡片！")
+if "applyRecommendedPreset" in wv_code or "方控按键一键快速配置" in wv_code:
+    reg_violations.append("WheelView.vue 仍残留已下线的「方控按键一键快速配置」卡片！")
 if "carmedia_first" not in wv_code:
     reg_violations.append("WheelView.vue 缺少米小江方控优先模式单选卡片！")
 
@@ -1268,6 +1268,25 @@ else:
 
 # Final Summary Verdict
 # ----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
+# 27. Checking Steering Wheel Guide Dual-Asset & Zero-Teleport Gate
+#     严禁 WheelView 跨功能区泄漏 (禁 teleport)；确保折叠 webp 与悬浮 svg 齐备
+# ----------------------------------------------------------------------
+log_step("27. Checking Steering Wheel Guide Dual-Asset & Zero-Teleport Leak Gate")
+_wv_path = os.path.join(WEB_SRC_DIR, "views/WheelView.vue")
+if os.path.exists(_wv_path):
+    with open(_wv_path, "r", encoding="utf-8") as f:
+        _wv_code = f.read()
+    if "<teleport" in _wv_code.lower():
+        print("  [FAIL] WheelView.vue 包含 <teleport>，会导致悬浮卡跨功能区泄漏常驻！")
+        passed = False
+    elif "steering_wheel_guide.webp" not in _wv_code or "steering_wheel_guide_floating.svg" not in _wv_code:
+        print("  [FAIL] WheelView.vue 必须同时包含折叠高清实拍图 (webp) 与悬浮手绘矢量图 (svg)！")
+        passed = False
+    else:
+        print("[PASS] 方控图解双资源完备且生命周期局部内聚，零 Teleport 泄漏违规！")
+
 log_step("CI 26-Gate Health Check Verdict")
 if passed:
     print("[SUCCESS] All 26 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering all closed)")
