@@ -402,40 +402,44 @@ else:
 
 # 权威来源：纯云端 dl.onepve.com/GeelyToolbox/apps.json (彻底拔除本地静态兜底，100% 动态云端化)
 cloud_apps_url = f"https://dl.onepve.com/GeelyToolbox/apps.json?t={int(time.time())}"
-try:
-    req = urllib.request.Request(cloud_apps_url, headers={"User-Agent": "GeelyToolbox-CI/1.0"})
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        cloud_apps_data = json.loads(resp.read().decode("utf-8"))
-        app_urls = [a.get("download_url") or a.get("url") for a in cloud_apps_data.get("apps", []) if a.get("download_url") or a.get("url")]
-except Exception as ex:
-    print(f"[WARN] Failed to fetch cloud apps.json directly: {ex}")
-    app_urls = []
-
-print(f"Total cloud app URLs to verify: {len(app_urls)}")
-failures = []
-for url in app_urls:
-    status_code = None
-    err = None
-    for attempt in range(1, 4):
-        try:
-            req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "GeelyToolbox-CI/1.0"})
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                status_code = resp.status
-                if status_code in (200, 301, 302):
-                    break
-        except Exception as ex:
-            err = ex
-            time.sleep(1)
-    if status_code in (200, 301, 302):
-        print(f"  [OK] {status_code} -> {url}")
-    else:
-        print(f"  [FAIL] -> {url} (Error: {err})")
-        failures.append((url, str(err)))
-if failures:
-    print(f"  [FAIL] {len(failures)} asset links failed verification!")
-    passed = False
+app_urls = []
+if os.environ.get("FAST_CHECK") == "1":
+    print("[SKIP] FAST_CHECK enabled, skipping remote CDN asset availability probing.")
 else:
-    print("[PASS] All cloud app asset links verified accessible.")
+    try:
+        req = urllib.request.Request(cloud_apps_url, headers={"User-Agent": "GeelyToolbox-CI/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            cloud_apps_data = json.loads(resp.read().decode("utf-8"))
+            app_urls = [a.get("download_url") or a.get("url") for a in cloud_apps_data.get("apps", []) if a.get("download_url") or a.get("url")]
+    except Exception as ex:
+        print(f"[WARN] Failed to fetch cloud apps.json directly: {ex}")
+        app_urls = []
+
+    print(f"Total cloud app URLs to verify: {len(app_urls)}")
+    failures = []
+    for url in app_urls:
+        status_code = None
+        err = None
+        for attempt in range(1, 4):
+            try:
+                req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "GeelyToolbox-CI/1.0"})
+                with urllib.request.urlopen(req, timeout=3) as resp:
+                    status_code = resp.status
+                    if status_code in (200, 301, 302):
+                        break
+            except Exception as ex:
+                err = ex
+                time.sleep(0.5)
+        if status_code in (200, 301, 302):
+            print(f"  [OK] {status_code} -> {url}")
+        else:
+            print(f"  [FAIL] -> {url} (Error: {err})")
+            failures.append((url, str(err)))
+    if failures:
+        print(f"  [FAIL] {len(failures)} asset links failed verification!")
+        passed = False
+    else:
+        print("[PASS] All cloud app asset links verified accessible.")
 
 
 # ----------------------------------------------------------------------
@@ -732,7 +736,7 @@ with open(confirm_modal_path, "r", encoding="utf-8") as f:
 if "countdownLeft" not in cm_code or "请仔细阅读" not in cm_code:
     reg_violations.append("ConfirmModal.vue 缺少高危确认倒计时逻辑 (countdownLeft / 请仔细阅读)！")
 
-# 16.6 座舱语音计划工作台完整性与声效设置贯通防御 (Voice Workbench Defense)
+# 16.6 座舱语音场景计划完整性与声效设置贯通防御 (Voice Scene Defense)
 with open(body_view_path, "r", encoding="utf-8") as f:
     bv_full_code = f.read()
 
@@ -766,7 +770,10 @@ for modal_file, min_sfx in voice_modal_contracts.items():
     if modal_code.count("声效设置") < min_sfx:
         reg_violations.append(f"{modal_file} 二级向导内【声效设置】个性化配置按钮不足（当前 {modal_code.count('声效设置')} 处，须 >= {min_sfx}）！")
 
-# 16.7 车身智能联动工作台 8 大计划完整性与车速微调防御 (Linkage Workbench Defense)
+# 16.7 车身智能联动 8 大场景计划完整性与车速微调防御 (Linkage Scene Defense)
+# ----------------------------------------------------------------------
+# 16.7 联动场景任务完整性防御
+# ----------------------------------------------------------------------
 link_view_path = os.path.join(WEB_SRC_DIR, "views/LinkView.vue")
 with open(link_view_path, "r", encoding="utf-8") as f:
     lv_full_code = f.read()
