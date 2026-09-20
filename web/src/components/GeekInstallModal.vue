@@ -1,6 +1,10 @@
 <template>
   <div v-if="store.modals.geekInstall" class="fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center p-2 sm:p-4 backdrop-blur-md animate-fade-in" style="background: rgba(5, 8, 15, 0.88);">
-    <div class="relative w-[96vw] max-w-6xl border-2 border-car-accent rounded-3xl p-6 shadow-2xl flex flex-col space-y-5 text-car-text max-h-[95vh] overflow-y-auto" style="background: var(--bg-modal, rgba(16, 23, 38, 0.98));">
+    <div 
+      class="relative w-[96vw] border-2 border-car-accent rounded-3xl p-6 shadow-2xl flex flex-col space-y-5 text-car-text max-h-[95vh] overflow-y-auto transition-all"
+      :class="isStoreFrozen ? 'max-w-3xl' : 'max-w-6xl'"
+      style="background: var(--bg-modal, rgba(16, 23, 38, 0.98));"
+    >
       <!-- 顶部 Header -->
       <div class="flex items-center justify-between pb-4 border-b border-car-border">
         <div class="flex items-center space-x-3">
@@ -22,8 +26,39 @@
         </div>
       </div>
 
-      <!-- 说明与引导主体：若原厂商店已安全冻结，则自动隐藏第二步，仅呈现第一步车规底线 -->
-      <div class="grid gap-5" :class="isStoreFrozen ? 'grid-cols-1 max-w-2xl mx-auto w-full' : 'grid-cols-1 md:grid-cols-2'">
+      <!-- 单步通栏布局（当商店已冻结时直接平铺展开，无嵌套卡片、无“第一步”标签） -->
+      <div v-if="isStoreFrozen" class="flex flex-col space-y-4 py-1">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[18px] font-black text-car-text whitespace-nowrap">车规安全与免责底线</span>
+          </div>
+          <StatusDot size="sm" :color="disclaimerAgreed ? 'ok' : 'warn'" />
+        </div>
+
+        <div class="text-[15px] text-car-sub font-bold leading-relaxed">
+          本工具专为吉利缤越 COOL (E02 / IHU516G 双联屏) 深度定制，经实车全功能路试。安装第三方应用需调整车机系统安全防护，请确保在驻车安全状态下操作，严禁在行驶途中调试车机。
+        </div>
+
+        <div class="p-3.5 bg-car-card rounded-xl border border-car-border text-[13px] text-car-sub font-mono">
+          安全规范：严禁使用 ADB pm install 强行静默安装以免闪退；统一遵循原生特权文件通道。原厂应用商店防护已处于就绪状态。
+        </div>
+
+        <div class="pt-3 flex items-center justify-between">
+          <span class="text-[14px] font-bold text-car-sub whitespace-nowrap">
+            {{ disclaimerAgreed ? '已同意免责条款与安全底线' : '请阅读并确认安全底线' }}
+          </span>
+          <button 
+            @click="agreeDisclaimer"
+            class="h-[52px] px-6 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all shadow-sm whitespace-nowrap flex-shrink-0"
+            :class="disclaimerAgreed ? 'bg-car-card border-car-border text-car-sub' : 'bg-car-item border-car-accent text-car-accent hover:bg-car-card'"
+          >
+            {{ disclaimerAgreed ? '已同意条款' : '同意并继续' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- 双步卡片布局（仅在原厂商店尚未冻结时呈现两步指引） -->
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <!-- Step 1: 缤越实测免责声明 -->
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-4">
           <div class="flex flex-col space-y-2">
@@ -59,7 +94,7 @@
         </div>
 
         <!-- Step 2: 商店冻结 / 提权通道就绪（仅在未冻结时出现） -->
-        <div v-if="!isStoreFrozen" class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-4">
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-4">
           <div class="flex flex-col space-y-2">
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-2">
@@ -68,8 +103,8 @@
                 </span>
                 <span class="text-[17.5px] font-black text-car-text whitespace-nowrap">原厂应用商店防护配置</span>
               </div>
-              <span class="px-2 py-0.5 rounded-full text-[11.5px] font-extrabold border whitespace-nowrap flex-shrink-0" :class="isStoreFrozen ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-amber-500/15 border-amber-500/40 text-amber-400'">
-                {{ isStoreFrozen ? '已冻结(白名单已锁)' : '未冻结(运行中)' }}
+              <span class="px-2 py-0.5 rounded-full text-[11.5px] font-extrabold border whitespace-nowrap flex-shrink-0 bg-amber-500/15 border-amber-500/40 text-amber-400">
+                未冻结(运行中)
               </span>
             </div>
             <div class="text-[14px] text-car-sub font-bold leading-relaxed">
