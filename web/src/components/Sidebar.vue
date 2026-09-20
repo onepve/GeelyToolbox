@@ -24,11 +24,17 @@
         {{ item.badge }}
       </span>
     </div>
+
+    <!-- 左下角官方教程二维码微卡片 -->
+    <div class="mt-auto pt-2">
+      <SidebarQrCodeCard />
+    </div>
   </aside>
 </template>
 
 <script setup>
 import { store } from '../store';
+import SidebarQrCodeCard from './SidebarQrCodeCard.vue';
 import { playTouchFeedback } from '../utils/sound';
 
 const navItems = [

@@ -1911,6 +1911,31 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public boolean openBrowser(final String url) {
+            if (url == null || url.trim().isEmpty()) return false;
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url.trim()));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        try {
+                            ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                            if (cm != null) {
+                                ClipData clip = ClipData.newPlainText("GeelyToolbox Tutorial", url.trim());
+                                cm.setPrimaryClip(clip);
+                                Toast.makeText(context, "未找到可用浏览器，已复制链接到剪贴板", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
         public String getDeviceUid() {
             try {
                 String androidId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
