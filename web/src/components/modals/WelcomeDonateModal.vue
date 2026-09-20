@@ -69,7 +69,7 @@
       </div>
 
       <!-- 底部操作与提示栏 -->
-      <div class="pt-2.5 border-t border-car-border/60 flex items-center justify-between">
+      <div class="pt-4 border-t border-car-border/60 flex items-center justify-between">
         <div class="text-[13px] text-car-sub font-bold flex items-center">
           <span class="w-2 h-2 rounded-full bg-car-accent mr-2"></span>
           <span>本说明仅在首次启动时展示，后续可在【关于】页面随时查看赞赏与群号</span>
