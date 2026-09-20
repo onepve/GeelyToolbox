@@ -199,13 +199,32 @@ const open = () => {
   emit('update:modelValue', true)
 }
 
-onMounted(() => {
+const handleWelcomeCompleted = () => {
   const completed = localStorage.getItem('geek_install_guide_completed') === 'true'
   if (!completed) {
-    open()
+    // 延迟 200ms 等待上一个弹窗动画淡出，视觉体验更丝滑
+    setTimeout(() => {
+      open()
+    }, 200)
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('welcome-donate-completed', handleWelcomeCompleted)
+  const completed = localStorage.getItem('geek_install_guide_completed') === 'true'
+  const welcomeShown = localStorage.getItem('has_shown_welcome_donate') === 'true'
+  // 若首次赞赏弹窗尚未展示，向导主动避让，等待赞赏阅读完成事件后再串行拉起
+  if (!completed) {
+    if (welcomeShown) {
+      open()
+    }
   } else {
     visible.value = props.modelValue || false
   }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('welcome-donate-completed', handleWelcomeCompleted)
 })
 
 defineExpose({

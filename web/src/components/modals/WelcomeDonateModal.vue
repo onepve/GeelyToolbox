@@ -137,5 +137,9 @@ function handleFinish() {
     localStorage.setItem('has_shown_welcome_donate', 'true');
   } catch (e) {}
   closeModal('welcomeDonate');
+  // 顺畅串行衔接：通知极客初始化向导可以安全展示，避免层级重叠
+  try {
+    window.dispatchEvent(new CustomEvent('welcome-donate-completed'));
+  } catch (e) {}
 }
 </script>
