@@ -186,89 +186,93 @@
         <span class="ml-3 text-[13px] font-bold text-car-sub">即按即响应 · 零延迟触发</span>
       </div>
 
-      <!-- ① 右方向盘主页/返回键 -->
-      <WheelGestureCard
-        class="!mb-0"
-        key-name="back"
-        card-title="右方向盘 ① 主页/返回按键映射"
-        card-desc="对应右方向盘 ① 号返回/主页键（KeyCode 307）。支持单击自定义。可保留系统原厂返回，或映射为高德导航、360全景或自定义应用。"
-        helpTitle="【功能指南】主页 / 返回按键映射"
-        helpText="1. 原厂功能：&#10;原车默认点按返回上一级或主页。&#10;&#10;2. 自定义映射：&#10;可自由绑定为秒开 360 全景、高德地图、打开指定应用或执行控制台快捷动作。&#10;&#10;3. 恢复原厂：&#10;若希望保持吉利系统默认返回逻辑，下拉选择「恢复原厂默认」即可。"
-        helpTip="若平时习惯原车返回逻辑，建议保持「恢复原厂默认」。"
-      />
+      <!-- 双列规整网格：一排两卡，工整对齐，共三排 -->
+      <div class="grid grid-cols-2 gap-4">
+        <!-- ① 右方向盘主页/返回键 -->
+        <WheelGestureCard
+          class="!mb-0"
+          key-name="back"
+          card-title="右方向盘 ① 主页/返回按键"
+          card-desc="对应右方向盘 ① 号返回/主页键（KeyCode 307）。支持单击自定义。可保留系统原厂返回，或映射为高德导航、360全景等。"
+          helpTitle="【功能指南】主页 / 返回按键映射"
+          helpText="1. 原厂功能：&#10;原车默认点按返回上一级或主页。&#10;&#10;2. 自定义映射：&#10;可自由绑定为秒开 360 全景、高德地图、打开指定应用或执行控制台快捷动作。&#10;&#10;3. 恢复原厂：&#10;若希望保持吉利系统默认返回逻辑，下拉选择「恢复原厂默认」即可。"
+          helpTip="若平时习惯原车返回逻辑，建议保持「恢复原厂默认」。"
+        />
 
-      <!-- ② 右方向盘音量滚轮按压 -->
-      <WheelGestureCard
-        class="!mb-0"
-        key-name="ok"
-        card-title="右方向盘 ② 音量滚轮按压映射"
-        card-desc="对应右方向盘 ② 号音量滚轮垂直按压（Tasker 黄金键码 0x2d）。默认单击控制媒体暂停/播放，亦可秒开 360 或高德。"
-        helpTitle="【功能指南】音量滚轮按压映射"
-        helpText="1. 滚轮垂直按压：&#10;右方向盘音量滚轮除了上下滚动调音量外，垂直向下按压也是独立物理按键。&#10;&#10;2. 推荐用途：&#10;默认推荐设为「播放 / 暂停媒体」，开车途中一键暂停极方便；亦可设为 360 全景或高德地图。&#10;&#10;3. 纯净极速：&#10;已剥离复杂长按判断，按压即响应，不影响滚轮正常滚动调音。"
-        helpTip="推荐绑定「播放/暂停」，开车切歌听歌更顺手。"
-      />
+        <!-- ② 右方向盘音量滚轮按压 -->
+        <WheelGestureCard
+          class="!mb-0"
+          key-name="ok"
+          card-title="右方向盘 ② 音量滚轮按压"
+          card-desc="对应右方向盘 ② 号音量滚轮垂直按压（Tasker 黄金键码 0x2d）。默认单击控制媒体暂停/播放，亦可秒开 360 或高德。"
+          helpTitle="【功能指南】音量滚轮按压映射"
+          helpText="1. 滚轮垂直按压：&#10;右方向盘音量滚轮除了上下滚动调音量外，垂直向下按压也是独立物理按键。&#10;&#10;2. 推荐用途：&#10;默认推荐设为「播放 / 暂停媒体」，开车途中一键暂停极方便；亦可设为 360 全景或高德地图。&#10;&#10;3. 纯净极速：&#10;已剥离复杂长按判断，按压即响应，不影响滚轮正常滚动调音。"
+          helpTip="推荐绑定「播放/暂停」，开车切歌听歌更顺手。"
+        />
 
-      <!-- ③ 右方向盘静音键 -->
-      <WheelGestureCard
-        class="!mb-0"
-        key-name="mute"
-        card-title="右方向盘 ③ 静音按键映射"
-        card-desc="对应右方向盘 ③ 号静音键（KeyCode 300）。支持单击动作自定义；长按 10 秒依然是整车硬件冷重启，互不冲突！"
-        helpTitle="【功能指南】静音按键映射与 10 秒冷重启"
-        helpText="1. 静音键自定义：&#10;原车点按为全局静音，可改绑为打开 360 全景、高德导航、小爱同学或切歌。&#10;&#10;2. 硬件看门狗救砖：&#10;长按静音键 10 秒是吉利座舱底层的强制硬件冷重启，无论在此如何设置，该应急功能永久有效，安全无忧。"
-        helpTip="长按 10 秒强制重启是车机硬件看门狗，任何设置都不会影响它。"
-      />
+        <!-- ③ 右方向盘静音键 -->
+        <WheelGestureCard
+          class="!mb-0"
+          key-name="mute"
+          card-title="右方向盘 ③ 静音按键"
+          card-desc="对应右方向盘 ③ 号静音键（KeyCode 300）。支持单击动作自定义；长按 10 秒依然是整车硬件冷重启，互不冲突！"
+          helpTitle="【功能指南】静音按键映射与 10 秒冷重启"
+          helpText="1. 静音键自定义：&#10;原车点按为全局静音，可改绑为打开 360 全景、高德导航、小爱同学或切歌。&#10;&#10;2. 硬件看门狗救砖：&#10;长按静音键 10 秒是吉利座舱底层的强制硬件冷重启，无论在此如何设置，该应急功能永久有效，安全无忧。"
+          helpTip="长按 10 秒强制重启是车机硬件看门狗，任何设置都不会影响它。"
+        />
 
-      <!-- ④ & ⑦ 切歌双键：上一曲 / 下一曲 -->
-      <FeatureCard
-        title="右方向盘 ④ 下一曲 / ⑦ 上一曲 按键映射"
-        desc="对应右方向盘 ④（KeyCode 87）与 ⑦（KeyCode 88）切歌按键。单击即刻触发，切歌零延迟。"
-        helpTitle="【功能指南】下一曲 / 上一曲切歌按键映射"
-        helpText="1. 单击极速响应：&#10;方向盘右侧「上一曲 / 下一曲」按键按压即刻响应，零延迟跟手。&#10;&#10;2. 完美适配音乐软件：&#10;深度适配 QQ音乐车机版、网易云音乐、酷狗等，切歌稳定不冲突。&#10;&#10;3. 灵活改绑：&#10;如需由方控开 360 或调用其他功能，也可在此自由改绑。"
-        helpTip="切歌动作建议保持「切歌(官方调度)」，切歌最稳定。"
-      >
-        <div class="grid grid-cols-2 gap-4">
-          <!-- ⑦ 上一曲 -->
-          <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-[16.5px] font-black text-car-text">⑦ 向左选择键 (上一曲)</span>
-              <span class="text-[13px] text-car-accent font-bold">按压即发</span>
+        <!-- ⑥ 右方向盘 MODE 键 -->
+        <WheelGestureCard
+          class="!mb-0"
+          key-name="mode"
+          card-title="右方向盘 ⑥ MODE 模式键"
+          card-desc="对应右方向盘 ⑥ 号 MODE 模式键（KeyCode 348）。原车切换伴听/收音机。默认单击一键秒开 360 全景，亦可改绑其他功能。"
+          helpTitle="【功能指南】MODE 模式按键映射"
+          helpText="1. 摆脱原厂收音机：&#10;原车点按 MODE 会强制唤醒伴听或收音机，改绑后可彻底告别讨厌的原厂收音机打扰。&#10;&#10;2. 一键秒开 360：&#10;默认推荐设为打开「360 全景」，倒车、过狭窄路段或侧方停车时一键呼出，非常实用。&#10;&#10;3. 极速响应：&#10;按压立即触发，无任何手势等待延迟。"
+          helpTip="绝大多数车友强烈推荐绑定「360 全景影像」，过窄路神器。"
+        />
+
+        <!-- ④ & ⑦ 切歌双键：上一曲 / 下一曲 -->
+        <FeatureCard
+          class="!mb-0"
+          title="右方向盘 ④ 下一曲 / ⑦ 上一曲"
+          desc="对应右方向盘 ④（下一曲）与 ⑦（上一曲）切歌按键。单击即刻触发，切歌零延迟。"
+          helpTitle="【功能指南】下一曲 / 上一曲切歌按键映射"
+          helpText="1. 单击极速响应：&#10;方向盘右侧「上一曲 / 下一曲」按键按压即刻响应，零延迟跟手。&#10;&#10;2. 完美适配音乐软件：&#10;深度适配 QQ音乐车机版、网易云音乐、酷狗等，切歌稳定不冲突。&#10;&#10;3. 灵活改绑：&#10;如需由方控开 360 或调用其他功能，也可在此自由改绑。"
+          helpTip="切歌动作建议保持「切歌(官方调度)」，切歌最稳定。"
+        >
+          <div class="grid grid-cols-2 gap-3.5">
+            <!-- ⑦ 上一曲 -->
+            <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex flex-col space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[15.5px] font-black text-car-text">⑦ 上一曲 (向左)</span>
+                <span class="text-[12px] text-car-accent font-bold">按压即发</span>
+              </div>
+              <ActionSelect key-name="prev" gesture="single" />
             </div>
-            <ActionSelect key-name="prev" gesture="single" />
-          </div>
 
-          <!-- ④ 下一曲 -->
-          <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-[16.5px] font-black text-car-text">④ 向右选择键 (下一曲)</span>
-              <span class="text-[13px] text-car-accent font-bold">按压即发</span>
+            <!-- ④ 下一曲 -->
+            <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex flex-col space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[15.5px] font-black text-car-text">④ 下一曲 (向右)</span>
+                <span class="text-[12px] text-car-accent font-bold">按压即发</span>
+              </div>
+              <ActionSelect key-name="next" gesture="single" />
             </div>
-            <ActionSelect key-name="next" gesture="single" />
           </div>
-        </div>
-      </FeatureCard>
+        </FeatureCard>
 
-      <!-- ⑤ 左方向盘自定义键 -->
-      <WheelGestureCard
-        class="!mb-0"
-        key-name="custom"
-        card-title="左方向盘 ⑤ 自定义按键映射"
-        card-desc="对应左方向盘 ⑤ 号菱形/星号按键（KeyCode 0x37）。吉利原厂车机系统预留按键，单击秒级触发自定义功能。"
-        helpTitle="【功能指南】左方向盘自定义按键映射"
-        helpText="1. 专属自定义键：&#10;部分吉利车型方向盘左侧配备了 ★ 星号或 ◇ 菱形按键，原车用于快速功能联动。&#10;&#10;2. 全功能接管：&#10;可自由映射为秒开 360 全景、导航、静音、打开常用应用等。&#10;&#10;3. 原厂模式：&#10;如果您的车型该按键由原车仪表专属占用，选择「恢复原厂默认」即可放行。"
-        helpTip="推荐设为「360 全景影像」，行车随时查看周边盲区。"
-      />
-
-      <!-- ⑥ 右方向盘 MODE 键 -->
-      <WheelGestureCard
-        class="!mb-0"
-        key-name="mode"
-        card-title="右方向盘 ⑥ MODE 按键映射"
-        card-desc="对应右方向盘 ⑥ 号 MODE 模式键（KeyCode 348）。原车用于切换伴听/收音机。默认单击一键秒开 360 全景，亦可改绑其他功能。"
-        helpTitle="【功能指南】MODE 模式按键映射"
-        helpText="1. 摆脱原厂收音机：&#10;原车点按 MODE 会强制唤醒伴听或收音机，改绑后可彻底告别讨厌的原厂收音机打扰。&#10;&#10;2. 一键秒开 360：&#10;默认推荐设为打开「360 全景」，倒车、过狭窄路段或侧方停车时一键呼出，非常实用。&#10;&#10;3. 极速响应：&#10;按压立即触发，无任何手势等待延迟。"
-        helpTip="绝大多数车友强烈推荐绑定「360 全景影像」，过窄路神器。"
-      />
+        <!-- ⑤ 左方向盘自定义键 -->
+        <WheelGestureCard
+          class="!mb-0"
+          key-name="custom"
+          card-title="左方向盘 ⑤ 自定义按键"
+          card-desc="对应左方向盘 ⑤ 号菱形/星号按键（KeyCode 0x37）。吉利原厂车机系统预留按键，单击秒级触发自定义功能。"
+          helpTitle="【功能指南】左方向盘自定义按键映射"
+          helpText="1. 专属自定义键：&#10;部分吉利车型方向盘左侧配备了 ★ 星号或 ◇ 菱形按键，原车用于快速功能联动。&#10;&#10;2. 全功能接管：&#10;可自由映射为秒开 360 全景、导航、静音、打开常用应用等。&#10;&#10;3. 原厂模式：&#10;如果您的车型该按键由原车仪表专属占用，选择「恢复原厂默认」即可放行。"
+          helpTip="推荐设为「360 全景影像」，行车随时查看周边盲区。"
+        />
+      </div>
     </div>
 
     <!-- 悬浮方控图解（可拖动，点击临时隐藏，支持右键/双击复位） -->
