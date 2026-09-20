@@ -1,8 +1,5 @@
 <template>
   <div class="flex flex-col space-y-5">
-    <!-- 0. 缤越 COOL 极客安装两步向导与扫码直连卡片 -->
-    <InstallGuideQrCodeCard />
-
     <!-- 1. 原生文件管理特权安装通道 (核心通道) -->
     <div class="grid grid-cols-2 gap-5">
       <FeatureCard class="!mb-0" 
@@ -171,6 +168,9 @@
         </div>
       </div>
     </FeatureCard>
+
+    <!-- 5. 缤越 COOL 极客安装两步向导与扫码直连卡片 (移至底部) -->
+    <InstallGuideQrCodeCard />
   </div>
 </template>
 
