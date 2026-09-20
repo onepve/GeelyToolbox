@@ -60,7 +60,7 @@
         <!-- 原厂方向盘按键高清图示 (沉稳车规底座，绝非刺眼白底) -->
         <div class="p-3 bg-car-item rounded-2xl shadow-md border-2 border-car-border w-[320px] min-w-[320px] max-w-[320px] shrink-0">
           <img 
-            :src="wheelGuideImg" 
+            :src="wheelGuideFloatingImg" 
             alt="吉利缤越 COOL 右侧多媒体 SX-0017" 
             class="guide-img w-full h-auto rounded-xl object-contain block" 
           />
@@ -266,7 +266,7 @@
             <span role="button" class="cursor-pointer text-car-sub hover:text-car-accent px-1 inline-flex items-center justify-center text-xs select-none" @click.stop="showFloating = false" title="关闭悬浮">✕</span>
           </div>
           <img 
-            :src="wheelGuideImg" 
+            :src="wheelGuideFloatingImg" 
             alt="方向盘按键指示" 
             class="guide-img w-[160px] h-auto rounded-lg object-contain pointer-events-none block" 
           />
