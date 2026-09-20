@@ -668,15 +668,17 @@ with open(os.path.join(WEB_SRC_DIR, "App.vue"), "r", encoding="utf-8") as f:
 if "updateDownloadPaused" not in app_vue_code or "updateDownloadCancelled" not in app_vue_code or "updateDownloadSuccess" not in app_vue_code:
     reg_violations.append("App.vue 缺少全局下载状态回调 (updateDownloadPaused / updateDownloadCancelled / updateDownloadSuccess)！")
 
-# 16.2 检查方控接管模式、长按滑块与米小江兼容
-# （「HAL 纯协议直连」双轨测试通道已按车主指令下线，方控统一固定走硬件事件直连链路，故不再校验该开关）
+# 16.2 检查方控接管模式与单手势纯净模式
+# （双击与长按已按车主指令下线，统一保留单击即发极速模式；长按判定时长卡片与手势切换条下线反转为 forbidden）
 wheel_view_path = os.path.join(WEB_SRC_DIR, "views/WheelView.vue")
 with open(wheel_view_path, "r", encoding="utf-8") as f:
     wv_code = f.read()
 if "wheel_monitor_engine_mode" in wv_code:
     reg_violations.append("WheelView.vue 仍残留已下线的「方控 HAL 双轨测试」切换卡片！")
-if "wheel_long_press_ms" not in wv_code or "longPressSec" not in wv_code:
-    reg_violations.append("WheelView.vue 缺少方控按键长按判定时长自由调节滑块！")
+if "wheel_long_press_ms" in wv_code or "longPressSec" in wv_code:
+    reg_violations.append("WheelView.vue 仍残留已下线的「方控按键长按判定时长」调节卡片！")
+if "g in gestureList" in wv_code:
+    reg_violations.append("WheelView.vue 仍残留已下线的手势切换选择条！")
 if "carmedia_first" not in wv_code:
     reg_violations.append("WheelView.vue 缺少米小江方控优先模式单选卡片！")
 

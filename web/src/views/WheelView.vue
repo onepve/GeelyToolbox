@@ -12,7 +12,7 @@
           </span>
         </div>
         <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-          全面接管静音键、Mode键与上一曲/下一曲。支持单击、双击、长按三种手势。
+          全面接管静音键、Mode键、切歌键与主页返回键。单击即发，零延迟触发。
         </div>
       </div>
 
@@ -40,7 +40,7 @@
           <div class="flex flex-col">
             <span class="text-[18px] font-black text-car-text">吉利缤越 COOL (IHU516G / E02) 原厂方控图解</span>
             <span class="text-[14px] text-car-sub font-bold mt-0.5">
-              右方向盘多媒体控制区 (SX-0017)：静音、切歌、MODE、返回键全量打通多手势
+              右方向盘多媒体控制区 (SX-0017)：静音、切歌、MODE、返回键全量打通单击极速接管
             </span>
           </div>
         </div>
@@ -70,30 +70,30 @@
         <div class="flex-1 min-w-0 flex flex-col space-y-2.5 text-[14.5px] font-bold text-car-sub">
           <div class="flex space-x-3">
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">① 主页/返回键:</span> 返回车机中控主页 / 支持多手势
+              <span class="text-car-accent font-black mr-1.5">① 主页/返回键:</span> 返回车机中控主页 / 单击自定义
             </div>
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">② 音量调节键:</span> 上下调音 / 滚轮垂直下按可自定义
-            </div>
-          </div>
-          <div class="flex space-x-3">
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">③ 静音键:</span> 开关静音 (支持多手势自定义)
-            </div>
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">④ 向右选择键:</span> 下一个文件 / 下一曲 (支持多手势)
+              <span class="text-car-accent font-black mr-1.5">② 滚轮按压:</span> 媒体播放 / 暂停 (支持自定义)
             </div>
           </div>
           <div class="flex space-x-3">
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">⑤ 自定义键:</span> 0x37 硬件按键 / 默认原厂 (支持多手势)
+              <span class="text-car-accent font-black mr-1.5">③ 静音键:</span> 开关静音 (支持单击自定义)
             </div>
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">⑥ MODE键:</span> 音源切换 / 自定义 (支持多手势)
+              <span class="text-car-accent font-black mr-1.5">④ 向右选择键:</span> 下一个文件 / 下一曲 (单击自定义)
+            </div>
+          </div>
+          <div class="flex space-x-3">
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-accent font-black mr-1.5">⑤ 自定义键:</span> 0x37 硬件按键 / 默认原厂 (单击自定义)
+            </div>
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-accent font-black mr-1.5">⑥ MODE键:</span> 音源切换 / 自定义 (单击自定义)
             </div>
           </div>
           <div class="w-full p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-            <span class="text-car-accent font-black mr-1.5">⑦ 向左选择键:</span> 上一个文件 / 上一曲 (支持多手势)
+            <span class="text-car-accent font-black mr-1.5">⑦ 向左选择键:</span> 上一个文件 / 上一曲 (单击自定义)
           </div>
         </div>
       </div>
@@ -104,12 +104,13 @@
       title="方向盘方控接管模式 (兼容米小江)"
       desc="彻底屏蔽原厂收音机伴听抢占广播，支持米小江优先协同或控制台全量独立接管。若两个软件都装，选米小江优先互不冲突。"
       helpTitle="【功能指南】方控接管模式、EAS 蓝牙硬件通道与仪表投递"
-      helpText="1. 接管模式选择：&#10;• 控制台独立接管（推荐）：方向盘按键直接控制切歌与播放，自动唤醒车载喇叭，体验最流畅。&#10;• 米小江方控优先：如果车机上装了米小江 CarMedia，选这项让它优先处理切歌，两者互不打扰。&#10;• 恢复原厂默认：不拦截方向盘按键，全部交回原车控制。&#10;&#10;2. 蓝牙无声问题解决：&#10;独立接管模式下，手机连车机蓝牙放微信语音或音乐没声音时，会自动帮您接通车载喇叭。&#10;&#10;3. 仪表与屏保显示：&#10;可自由选择是否把当前歌名和歌词推送到仪表盘或屏保上显示。" helpTip="如果同时装了米小江请选「米小江方控优先」；只用本工具箱建议选「控制台独立接管」。"
+      helpText="1. 接管模式选择：&#10;• 控制台独立接管（推荐）：方向盘按键直接控制切歌与播放，自动唤醒车载喇叭，体验最流畅。&#10;• 米小江方控优先：如果车机上装了米小江 CarMedia，选这项让它优先处理切歌，两者互不打扰。&#10;• 恢复原厂默认：不拦截方向盘按键，全部交回原车控制。&#10;&#10;2. 蓝牙无声问题解决：&#10;独立接管模式下，手机连车机蓝牙放微信语音或音乐没声音时，会自动帮您接通车载喇叭。&#10;&#10;3. 仪表与屏保显示：&#10;可自由选择是否把当前歌名和歌词推送到仪表盘或屏保上显示。" 
+      helpTip="如果同时装了米小江请选「米小江方控优先」；只用本工具箱建议选「控制台独立接管」。"
     >
       <div class="grid grid-cols-3 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
         <MatrixButton 
           title="米小江方控优先"
-          subtitle="放行切歌与Mode键，工具箱补充静音键多手势接管"
+          subtitle="放行切歌与Mode键，工具箱补充静音键接管"
           :active="store.vehicleAuto.wheel_control_mode === 'carmedia_first'"
           @click="setWheelMode('carmedia_first')"
         />
@@ -151,257 +152,243 @@
       </div>
     </FeatureCard>
 
-    <!-- 3. 方控按键长按判定时长 (自定义秒数) - 仅 Beta 测试通道展示 -->
-    <FeatureCard
-      v-if="isBeta"
-      title="方控按键长按判定触发时长 (自定义秒数)"
-      desc="自由设定方向盘所有按键长按触发的判定时长 (0.8s ~ 6.0s)。达到该时长立即执行长按动作；长按 10 秒依然是整车硬件看门狗冷重启救砖，互不冲突。"
-      helpTitle="【功能指南】长按判定时长与整车硬件看门狗冷重启"
-      helpText="1. 长按手感调节：&#10;自由调节方向盘按键长按多久算长按（推荐 1.5 秒 ~ 2.0 秒），手感更顺手。&#10;&#10;2. 救砖应急保障：&#10;长按静音键 10 秒是车机原厂硬件强制重启（用于死机急救），无论这里怎么调，10 秒急救重启都不会受影响，尽可放心使用。" helpTip="建议长按时长设置为 1.5 秒或 2.0 秒，按压手感最自然。"
+    <!-- 2. 方控快捷预设方案 -->
+    <FeatureCard 
+      title="方控按键一键快速配置"
+      desc="推荐使用车友成熟配置方案：滚轮按压暂停/播放，Mode键打开360全景，返回键与静音键保持原厂。"
+      helpTitle="【功能指南】一键配置方案与恢复原厂"
+      helpText="1. 车友黄金推荐方案：&#10;一键将最常用的按键映射到黄金组合（滚轮点按暂停播放、Mode秒开360、保留原厂返回与静音），免去繁琐逐个设置。&#10;&#10;2. 恢复全车原厂：&#10;一键将所有按键动作还原为原厂直通，不拦截任何物理信号。" 
+      helpTip="首次使用推荐直接点「应用车友黄金方案」，立即可用。"
     >
-      <template #badge>
-        <span class="text-[15px] font-black text-car-accent px-3.5 py-1.5 bg-car-item rounded-xl border border-car-border">
-          当前判定: {{ longPressSec }} 秒 ({{ Math.round(longPressSec * 1000) }}ms)
-        </span>
-      </template>
-
-      <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center space-x-4 shadow-sm">
-        <span class="text-[14px] text-car-sub font-bold whitespace-nowrap">0.8 秒 (极速触发)</span>
-        <input 
-          type="range" 
-          min="0.8" 
-          max="6.0" 
-          step="0.1" 
-          v-model.number="longPressSec" 
-          @input="updateLongPressSec"
-          @change="updateLongPressSec"
-          class="flex-1 accent-car-accent h-2.5 bg-car-card rounded-lg cursor-pointer"
-        />
-        <span class="text-[14px] text-car-sub font-bold whitespace-nowrap">6.0 秒 (防误触)</span>
-        <div class="flex space-x-2 shrink-0">
-          <BaseButton
-            v-for="preset in [1.0, 1.5, 2.0, 3.0, 5.0]"
-            :key="preset"
-            variant="miniChip"
-            :active="longPressSec === preset"
-            @click="setLongPressPreset(preset)"
-          >
-            {{ preset }}s
-          </BaseButton>
-        </div>
+      <div class="grid grid-cols-2 gap-4">
+        <BaseButton
+          variant="action"
+          class="flex items-center justify-center space-x-2"
+          @click="applyRecommendedPreset"
+        >
+          <span class="text-[17px] font-black text-car-accent">★ 一键应用车友黄金推荐方案</span>
+        </BaseButton>
+        <BaseButton
+          variant="action"
+          class="flex items-center justify-center space-x-2"
+          @click="resetAllToFactory"
+        >
+          <span class="text-[17px] font-black text-car-sub">⟲ 一键恢复全车原厂默认</span>
+        </BaseButton>
       </div>
     </FeatureCard>
 
-    <!-- 3/4/5. 按键功能卡一排两个：节省纵向空间，卡片与字号尺寸全部原样保留 -->
-    <div class="grid grid-cols-2 items-start gap-3.5">
-      <!-- 3. 右方向盘 ① 主页/返回按键多手势映射 -->
+    <!-- 3. 各按键映射配置 (右方向盘多媒体 SX-0017 物理按键逐项配置) -->
+    <div class="flex flex-col space-y-4">
+      <div class="flex items-center px-2">
+        <StatusDot class="mr-3" size="md" color="accent" :glow-px="8" />
+        <span class="text-[18px] font-black text-car-text tracking-wide">按键独立映射 (单击动作设定)</span>
+        <span class="ml-3 text-[13px] font-bold text-car-sub">即按即响应 · 零延迟触发</span>
+      </div>
+
+      <!-- ① 右方向盘主页/返回键 -->
       <WheelGestureCard
         class="!mb-0"
         key-name="back"
         card-title="右方向盘 ① 主页/返回按键映射"
-        card-desc="对应右方向盘 ① 号返回/主页键（KeyCode 307）。支持【单击】、【双击】、【长按】自定义。可保留系统原厂返回，或映射为高德导航、360全景或自定义应用。"
+        card-desc="对应右方向盘 ① 号返回/主页键（KeyCode 307）。支持单击自定义。可保留系统原厂返回，或映射为高德导航、360全景或自定义应用。"
+        helpTitle="【功能指南】主页 / 返回按键映射"
+        helpText="1. 原厂功能：&#10;原车默认点按返回上一级或主页。&#10;&#10;2. 自定义映射：&#10;可自由绑定为秒开 360 全景、高德地图、打开指定应用或执行控制台快捷动作。&#10;&#10;3. 恢复原厂：&#10;若希望保持吉利系统默认返回逻辑，下拉选择「恢复原厂默认」即可。"
+        helpTip="若平时习惯原车返回逻辑，建议保持「恢复原厂默认」。"
       />
 
-      <!-- 4. 右方向盘 ② 音量滚轮按压多手势映射 -->
+      <!-- ② 右方向盘音量滚轮按压 -->
       <WheelGestureCard
         class="!mb-0"
         key-name="ok"
         card-title="右方向盘 ② 音量滚轮按压映射"
-        card-desc="对应右方向盘 ② 号音量滚轮垂直按压（Tasker 黄金键码 0x2d）。支持【单击】、【双击】、【长按】多手势；默认单击控制媒体暂停/播放，亦可秒开 360 或高德。"
+        card-desc="对应右方向盘 ② 号音量滚轮垂直按压（Tasker 黄金键码 0x2d）。默认单击控制媒体暂停/播放，亦可秒开 360 或高德。"
+        helpTitle="【功能指南】音量滚轮按压映射"
+        helpText="1. 滚轮垂直按压：&#10;右方向盘音量滚轮除了上下滚动调音量外，垂直向下按压也是独立物理按键。&#10;&#10;2. 推荐用途：&#10;默认推荐设为「播放 / 暂停媒体」，开车途中一键暂停极方便；亦可设为 360 全景或高德地图。&#10;&#10;3. 纯净极速：&#10;已剥离复杂长按判断，按压即响应，不影响滚轮正常滚动调音。"
+        helpTip="推荐绑定「播放/暂停」，开车切歌听歌更顺手。"
       />
 
-      <!-- 5. 右方向盘 ③ 静音键多手势映射 -->
+      <!-- ③ 右方向盘静音键 -->
       <WheelGestureCard
         class="!mb-0"
         key-name="mute"
         card-title="右方向盘 ③ 静音按键映射"
-        card-desc="对应右方向盘 ③ 号静音键（KeyCode 300）。支持【单击】、【双击】、【长按 1.5 秒】多手势；长按 10 秒依然是整车硬件冷重启，互不冲突！"
+        card-desc="对应右方向盘 ③ 号静音键（KeyCode 300）。支持单击动作自定义；长按 10 秒依然是整车硬件冷重启，互不冲突！"
+        helpTitle="【功能指南】静音按键映射与 10 秒冷重启"
+        helpText="1. 静音键自定义：&#10;原车点按为全局静音，可改绑为打开 360 全景、高德导航、小爱同学或切歌。&#10;&#10;2. 硬件看门狗救砖：&#10;长按静音键 10 秒是吉利座舱底层的强制硬件冷重启，无论在此如何设置，该应急功能永久有效，安全无忧。"
+        helpTip="长按 10 秒强制重启是车机硬件看门狗，任何设置都不会影响它。"
       />
 
-      <!-- 6. 右方向盘 ④ 下一曲 / ⑦ 上一曲 切歌按键映射 -->
-      <FeatureCard class="!mb-0"
-        title="右方向盘 ④ 下一曲 / ⑦ 上一曲 切歌按键映射"
-        desc="对应右方向盘 ④ 号（向右下一曲 KeyCode 305）与 ⑦ 号（向左上一曲 KeyCode 304）按键。内置官方三重通道调度，完美兼容 QQ音乐车机版、网易云等。"
+      <!-- ④ & ⑦ 切歌双键：上一曲 / 下一曲 -->
+      <FeatureCard
+        title="右方向盘 ④ 下一曲 / ⑦ 上一曲 按键映射"
+        desc="对应右方向盘 ④（KeyCode 87）与 ⑦（KeyCode 88）切歌按键。单击即刻触发，切歌零延迟。"
         helpTitle="【功能指南】下一曲 / 上一曲切歌按键映射"
-        helpText="1. 按键控制：&#10;方向盘右侧的「上一曲 / 下一曲」按键，支持单击、双击、长按分别绑定不同功能。&#10;&#10;2. 完美适配音乐软件：&#10;深度适配 QQ音乐车机版、网易云音乐等，切歌稳定不冲突。&#10;&#10;3. 自定义玩法：&#10;不仅能切歌，还能将按键绑定为打开 360 全景或暂停音乐，行车操作更方便。" helpTip="切歌动作建议保持「切歌(官方调度)」，切歌最稳定。"
+        helpText="1. 单击极速响应：&#10;方向盘右侧「上一曲 / 下一曲」按键按压即刻响应，零延迟跟手。&#10;&#10;2. 完美适配音乐软件：&#10;深度适配 QQ音乐车机版、网易云音乐、酷狗等，切歌稳定不冲突。&#10;&#10;3. 灵活改绑：&#10;如需由方控开 360 或调用其他功能，也可在此自由改绑。"
+        helpTip="切歌动作建议保持「切歌(官方调度)」，切歌最稳定。"
       >
-        <div class="grid grid-cols-2 gap-3.5">
-          <!-- 上一曲 (⑦ 号键)：与原车「向左」物理方位一致，并排置于左侧 -->
-          <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-[19px] font-black text-car-text whitespace-nowrap">⑦ 上一曲</span>
-              <div class="flex flex-wrap space-x-1.5">
-                <BaseButton
-                  v-for="g in gestureList"
-                  :key="g.id"
-                  variant="gestureChip"
-                  :active="activeGesture.prev === g.id"
-                  @click="activeGesture.prev = g.id"
-                >
-                  {{ g.shortName }}
-                </BaseButton>
-              </div>
+        <div class="grid grid-cols-2 gap-4">
+          <!-- ⑦ 上一曲 -->
+          <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[16.5px] font-black text-car-text">⑦ 向左选择键 (上一曲)</span>
+              <span class="text-[13px] text-car-accent font-bold">按压即发</span>
             </div>
-            <ActionSelect key-name="prev" :gesture="activeGesture.prev" />
+            <ActionSelect key-name="prev" gesture="single" />
           </div>
 
-          <!-- 下一曲 (④ 号键)：与原车「向右」物理方位一致，并排置于右侧 -->
-          <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-[19px] font-black text-car-text whitespace-nowrap">④ 下一曲</span>
-              <div class="flex flex-wrap space-x-1.5">
-                <BaseButton
-                  v-for="g in gestureList"
-                  :key="g.id"
-                  variant="gestureChip"
-                  :active="activeGesture.next === g.id"
-                  @click="activeGesture.next = g.id"
-                >
-                  {{ g.shortName }}
-                </BaseButton>
-              </div>
+          <!-- ④ 下一曲 -->
+          <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[16.5px] font-black text-car-text">④ 向右选择键 (下一曲)</span>
+              <span class="text-[13px] text-car-accent font-bold">按压即发</span>
             </div>
-            <ActionSelect key-name="next" :gesture="activeGesture.next" />
+            <ActionSelect key-name="next" gesture="single" />
           </div>
         </div>
       </FeatureCard>
-    </div>
 
-    <!-- 7/8. 按键功能卡一排两个：节省纵向空间，卡片与字号尺寸全部原样保留 -->
-    <div class="grid grid-cols-2 items-start gap-3.5">
-      <!-- 7. 右方向盘 ⑤ 自定义按键多手势映射 (原厂模式 / 高德 / 360 / 自定义) -->
+      <!-- ⑤ 左方向盘自定义键 -->
       <WheelGestureCard
         class="!mb-0"
         key-name="custom"
-        card-title="右方向盘 ⑤ 自定义按键映射"
-        card-desc="对应右方向盘 ⑤ 号自定义按键（Tasker 黄金键码 0x37）。中高配车型原车中控已具备自定义设置，默认保持原厂模式直通；亦支持多手势选配高德、360或自定义App。"
+        card-title="左方向盘 ⑤ 自定义按键映射"
+        card-desc="对应左方向盘 ⑤ 号菱形/星号按键（KeyCode 0x37）。吉利原厂车机系统预留按键，单击秒级触发自定义功能。"
+        helpTitle="【功能指南】左方向盘自定义按键映射"
+        helpText="1. 专属自定义键：&#10;部分吉利车型方向盘左侧配备了 ★ 星号或 ◇ 菱形按键，原车用于快速功能联动。&#10;&#10;2. 全功能接管：&#10;可自由映射为秒开 360 全景、导航、静音、打开常用应用等。&#10;&#10;3. 原厂模式：&#10;如果您的车型该按键由原车仪表专属占用，选择「恢复原厂默认」即可放行。"
+        helpTip="推荐设为「360 全景影像」，行车随时查看周边盲区。"
       />
 
-      <!-- 8. 右方向盘 ⑥ MODE 键多手势映射 -->
+      <!-- ⑥ 右方向盘 MODE 键 -->
       <WheelGestureCard
         class="!mb-0"
         key-name="mode"
         card-title="右方向盘 ⑥ MODE 按键映射"
-        card-desc="对应右方向盘 ⑥ 号 MODE 模式键（KeyCode 348）。原车用于切换伴听/收音机。默认单击一键秒开 360 全景，同时支持双击与长按个性化定制。"
+        card-desc="对应右方向盘 ⑥ 号 MODE 模式键（KeyCode 348）。原车用于切换伴听/收音机。默认单击一键秒开 360 全景，亦可改绑其他功能。"
+        helpTitle="【功能指南】MODE 模式按键映射"
+        helpText="1. 摆脱原厂收音机：&#10;原车点按 MODE 会强制唤醒伴听或收音机，改绑后可彻底告别讨厌的原厂收音机打扰。&#10;&#10;2. 一键秒开 360：&#10;默认推荐设为打开「360 全景」，倒车、过狭窄路段或侧方停车时一键呼出，非常实用。&#10;&#10;3. 极速响应：&#10;按压立即触发，无任何手势等待延迟。"
+        helpTip="绝大多数车友强烈推荐绑定「360 全景影像」，过窄路神器。"
       />
     </div>
 
-    <!-- 方向盘图解悬浮对照卡：滚动设键位时默认悬浮于内容区右上角（绝不遮挡下方功能菜单）；
-         支持拖放自定义位置并本地记忆，下次同位显示；原地点按隐藏 -->
-    <transition name="floating-fade">
-      <div
-        v-if="showFloating"
-        ref="floatingGuideEl"
-        @pointerdown="startFloatingDrag"
-        class="fixed z-30 cursor-move select-none"
-        :style="{ left: floatingPos.x + 'px', top: floatingPos.y + 'px', width: '168px', touchAction: 'none' }"
-        title="方向盘图解对照：拖动到任意位置，点一下隐藏"
-      >
-        <img
-          :src="wheelGuideFloatingImg"
-          alt="方控图解悬浮对照"
-          class="w-full h-auto object-contain block pointer-events-none select-none"
-        />
-      </div>
-    </transition>
+    <!-- 悬浮方控图解（可拖动，点击临时隐藏，支持右键/双击复位） -->
+    <teleport to="body">
+      <transition name="floating-fade">
+        <div 
+          v-if="floatingEnabled && showFloating"
+          ref="floatingEl"
+          class="fixed z-50 select-none shadow-2xl rounded-2xl border-2 border-car-border bg-car-card/95 backdrop-blur-md p-2.5 flex flex-col items-center cursor-move transition-shadow"
+          :style="{ left: floatingPos.x + 'px', top: floatingPos.y + 'px', touchAction: 'none' }"
+          @pointerdown="onPointerDown"
+          @dblclick="resetFloatingPos"
+          title="按住可拖拽移动，原地点按临时收起，双击复位"
+        >
+          <div class="flex items-center justify-between w-full pb-1 mb-1 border-b border-car-border/60 text-[11.5px] font-bold text-car-sub">
+            <span>方控按键指示</span>
+            <span role="button" class="cursor-pointer text-car-sub hover:text-car-accent px-1 inline-flex items-center justify-center text-xs select-none" @click.stop="showFloating = false" title="关闭悬浮">✕</span>
+          </div>
+          <img 
+            :src="wheelGuideImg" 
+            alt="方向盘按键指示" 
+            class="guide-img w-[160px] h-auto rounded-lg object-contain pointer-events-none block" 
+          />
+        </div>
+      </transition>
+    </teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
+import { store, bridge, openModal, showToast } from '../store';
+import { useWheelGesture } from '../composables/useWheelGesture';
+import StatusDot from '../components/StatusDot.vue';
+import BaseButton from '../components/BaseButton.vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
-import BaseButton from '../components/BaseButton.vue';
-import StatusDot from '../components/StatusDot.vue';
-import WheelGestureCard from '../components/WheelGestureCard.vue';
 import ActionSelect from '../components/ActionSelect.vue';
-import { store, bridge, showToast, openModal } from '../store';
-import { useWheelGesture } from '../composables/useWheelGesture';
-import wheelGuideImg from '../assets/steering_wheel_guide.webp';
-import wheelGuideFloatingImg from '../assets/steering_wheel_guide_floating.svg';
+import WheelGestureCard from '../components/WheelGestureCard.vue';
 
-// 原厂方控图解：默认折叠，并记忆展开状态
-const DIAGRAM_KEY = 'wheel_diagram_expanded';
-const showDiagram = ref(localStorage.getItem(DIAGRAM_KEY) === 'true');
+// 缤越 COOL 专车原厂 SX-0017 多媒体按键图解（深色车规，柔和不刺眼）
+const wheelGuideImg = 'https://dl.onepve.com/GeelyToolbox/guide/sx11_cool_wheel_buttons.webp';
+
+const showDiagram = ref(false);
+const floatingEnabled = ref(localStorage.getItem('wheel_floating_diagram') === 'true');
+const showFloating = ref(floatingEnabled.value);
+
+const FLOAT_POS_KEY = 'wheel_floating_diagram_pos';
+const savedPos = (() => {
+  try {
+    const raw = localStorage.getItem(FLOAT_POS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+})();
+const floatingPos = reactive(savedPos || { x: 24, y: 120 });
+const floatingEl = ref(null);
 
 function toggleDiagram() {
   showDiagram.value = !showDiagram.value;
-  localStorage.setItem(DIAGRAM_KEY, String(showDiagram.value));
 }
-
-// 方向盘图解悬浮对照卡：下滑设键位时悬浮显示，回顶自动收起；点按临时隐藏。
-// 默认出现在内容区右上角（绝不遮挡自下而上展开的功能菜单），支持拖放自定义位置并本地记忆，下次同位显示
-const FLOAT_POS_KEY = 'wheel_floating_guide_pos';
-const showFloating = ref(false);
-
-// 悬浮图解总开关：展卡内显式控制悬浮图显示/不显示，持久记忆（默认开，保留老用户既有体验）
-const FLOAT_TOGGLE_KEY = 'wheel_floating_guide_enabled';
-const floatingEnabled = ref(localStorage.getItem(FLOAT_TOGGLE_KEY) !== 'false');
 
 function toggleFloating() {
   floatingEnabled.value = !floatingEnabled.value;
-  localStorage.setItem(FLOAT_TOGGLE_KEY, String(floatingEnabled.value));
-  if (!floatingEnabled.value) {
-    showFloating.value = false;
-  } else {
-    const st = document.documentElement.scrollTop || document.body.scrollTop || 0;
-    showFloating.value = st > 40;
+  showFloating.value = floatingEnabled.value;
+  localStorage.setItem('wheel_floating_diagram', floatingEnabled.value ? 'true' : 'false');
+  showToast(floatingEnabled.value ? '已开启悬浮方控图解 (可自由拖拽)' : '已关闭悬浮图解');
+}
+
+function resetFloatingPos() {
+  floatingPos.x = 24;
+  floatingPos.y = 120;
+  localStorage.removeItem(FLOAT_POS_KEY);
+  showToast('悬浮图解位置已复位');
+}
+
+function onWheelScroll() {
+  if (floatingEnabled.value && !showFloating.value) {
+    showFloating.value = true;
   }
 }
 
-const floatingGuideEl = ref(null);
-const floatingPos = reactive(loadFloatingPos());
+let isDragging = false;
+let startX = 0;
+let startY = 0;
+let origX = 0;
+let origY = 0;
+let moved = false;
 
-function loadFloatingPos() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(FLOAT_POS_KEY));
-    if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) return saved;
-  } catch (e) {}
-  // 默认初始值：内容区右上角（右侧留白 38px：卡片边距 28px + 呼吸间隙 10px），顶部 88px
-  return { x: window.innerWidth - 168 - 38, y: 88 };
-}
-
-function onWheelScroll(e) {
-  // document 级 capture 捕获任意滚动源，读取实际滚动元素的 scrollTop
-  const el = e && e.target;
-  const st = el && el.scrollTop ? el.scrollTop : (document.documentElement.scrollTop || document.body.scrollTop || 0);
-  // 回到顶端收起悬浮卡；下滑则浮现（开关开启时，隐藏后再滚动即重新浮现于记忆位置）
-  showFloating.value = floatingEnabled.value && st > 40;
-}
-
-// 拖放自定义位置：pointer 事件触摸/鼠标通吃；拖动即位移，松手记忆位置；原地松手（未拖动）视为点按隐藏
-function startFloatingDrag(e) {
-  if (!e || e.button === 2) return;
-  const card = floatingGuideEl.value;
-  if (!card) return;
-  const w = card.offsetWidth || 168;
-  const h = card.offsetHeight || 120;
-  const startX = e.clientX;
-  const startY = e.clientY;
-  const origX = floatingPos.x;
-  const origY = floatingPos.y;
-  let moved = false;
-
-  // 位置钳制：绝不拖出屏幕可视区
-  const clamp = (x, y) => ({
-    x: Math.min(Math.max(8, x), window.innerWidth - w - 8),
-    y: Math.min(Math.max(8, y), window.innerHeight - h - 8)
-  });
+function onPointerDown(e) {
+  if (e.target && e.target.tagName === 'BUTTON') return;
+  isDragging = true;
+  moved = false;
+  startX = e.clientX;
+  startY = e.clientY;
+  origX = floatingPos.x;
+  origY = floatingPos.y;
 
   const onMove = (ev) => {
-    if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) > 6) moved = true;
-    const next = clamp(origX + ev.clientX - startX, origY + ev.clientY - startY);
-    floatingPos.x = next.x;
-    floatingPos.y = next.y;
+    if (!isDragging) return;
+    const dx = ev.clientX - startX;
+    const dy = ev.clientY - startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      moved = true;
+    }
+    const maxW = window.innerWidth - 184;
+    const maxH = window.innerHeight - 140;
+    floatingPos.x = Math.min(Math.max(8, origX + dx), Math.max(8, maxW));
+    floatingPos.y = Math.min(Math.max(8, origY + dy), Math.max(8, maxH));
   };
+
   const onUp = () => {
+    isDragging = false;
     document.removeEventListener('pointermove', onMove);
     document.removeEventListener('pointerup', onUp);
     if (moved) {
-      // 拖放结束：记忆位置，下次滚动浮现时仍在同位显示
       localStorage.setItem(FLOAT_POS_KEY, JSON.stringify({ x: floatingPos.x, y: floatingPos.y }));
     } else {
-      showFloating.value = false; // 原地点按：临时隐藏
+      showFloating.value = false;
     }
   };
   document.addEventListener('pointermove', onMove);
@@ -409,7 +396,6 @@ function startFloatingDrag(e) {
 }
 
 onMounted(() => {
-  // 视口兜底：记忆位置或默认值超界（如分辨率/朝向变化）时拉回可视区内
   floatingPos.x = Math.min(Math.max(8, floatingPos.x), Math.max(8, window.innerWidth - 184));
   floatingPos.y = Math.min(Math.max(8, floatingPos.y), Math.max(8, window.innerHeight - 140));
   document.addEventListener('scroll', onWheelScroll, { passive: true, capture: true });
@@ -418,48 +404,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('scroll', onWheelScroll, { capture: true });
 });
-const isBeta = computed(() => {
-  // 与安装包版本号脱钩：仅由连点 11 次激活的内测特权决定显示/隐藏
-  const isTesterUnlocked = localStorage.getItem('geely_tester_unlocked') === 'true';
-  const useBetaChannel = localStorage.getItem('geely_use_beta_channel') === 'true';
-  return isTesterUnlocked || useBetaChannel;
-});
 
-const longPressSec = computed({
-  get: () => {
-    const ms = store.vehicleAuto.wheel_long_press_ms || 1500;
-    return parseFloat((ms / 1000).toFixed(1));
-  },
-  set: (val) => {
-    const ms = Math.round(val * 1000);
-    store.vehicleAuto.wheel_long_press_ms = ms;
-    bridge.call('setVehicleAutomationIntSetting', 'wheel_long_press_ms', ms);
-  }
-});
-
-function updateLongPressSec() {
-  const ms = Math.round(longPressSec.value * 1000);
-  store.vehicleAuto.wheel_long_press_ms = ms;
-  bridge.call('setVehicleAutomationIntSetting', 'wheel_long_press_ms', ms);
-}
-
-function setLongPressPreset(sec) {
-  longPressSec.value = sec;
-  showToast(`长按判定时长已设定为: ${sec} 秒`);
-}
-
-const { gestureList, getActionName, getGestureAction, setGestureAction } = useWheelGesture();
-
-const activeGesture = reactive({
-  next: 'single',
-  prev: 'single'
-});
-
-
-
-
-
-
+const { setGestureAction } = useWheelGesture();
 
 function toggleWheelMasterSwitch() {
   const next = !store.vehicleAuto.wheel_master_switch;
@@ -491,7 +437,7 @@ function toggleClusterLyrics() {
 function applyRecommendedPreset() {
   openModal('confirm', {
     title: '一键应用车友黄金推荐方案',
-    desc: '即将应用最受车友喜爱的成熟按键配置：\n• 右方向盘 ① 返回键 ➔ 保持原厂返回\n• 右方向盘 ② 滚轮按压 ➔ 播放 / 暂停多媒体\n• 右方向盘 ③ 静音键 ➔ 保持原厂静音\n• 右方向盘 ④/⑦ 切歌键 ➔ 官方调度切歌\n• 右方向盘 ⑤ 自定义键 ➔ 高德 ↔ 桌面双向往返\n• 右方向盘 ⑥ MODE 键 ➔ 单击秒开 360 全景',
+    desc: '即将应用最受车友喜爱的成熟按键配置：\n• 右方向盘 ① 返回键 ➔ 保持原厂返回\n• 右方向盘 ② 滚轮按压 ➔ 播放 / 暂停多媒体\n• 右方向盘 ③ 静音键 ➔ 保持原厂静音\n• 右方向盘 ④/⑦ 切歌键 ➔ 官方调度切歌\n• 右方向盘 ⑤ 自定义键 ➔ 打开高德地图\n• 右方向盘 ⑥ MODE 键 ➔ 单击秒开 360 全景',
     confirmText: '确认应用方案',
     onConfirm: () => {
       setGestureAction('back', 'single', 'default');
@@ -509,7 +455,7 @@ function applyRecommendedPreset() {
 function resetAllToFactory() {
   openModal('confirm', {
     title: '一键恢复全车原厂默认',
-    desc: '将方向盘所有按键手势全部恢复为系统原厂默认动作，工具箱将不拦截任何物理按键。是否确认？',
+    desc: '将方向盘所有按键全部恢复为系统原厂默认动作，工具箱将不拦截任何物理按键。是否确认？',
     isDanger: true,
     confirmText: '确认恢复原厂',
     onConfirm: () => {
