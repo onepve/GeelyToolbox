@@ -1,6 +1,6 @@
 <template>
   <ModalWrapper
-    :show="store.activeModal === 'welcomeDonate'"
+    :show="store.modals.welcomeDonate"
     title="欢迎体验缤越助手 · 车友说明"
     badge="车主互助"
     max-width-class="max-w-[1080px]"
