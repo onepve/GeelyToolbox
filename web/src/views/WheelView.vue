@@ -152,33 +152,7 @@
       </div>
     </FeatureCard>
 
-    <!-- 2. 方控快捷预设方案 -->
-    <FeatureCard 
-      title="方控按键一键快速配置"
-      desc="推荐使用车友成熟配置方案：滚轮按压暂停/播放，Mode键打开360全景，返回键与静音键保持原厂。"
-      helpTitle="【功能指南】一键配置方案与恢复原厂"
-      helpText="1. 车友黄金推荐方案：&#10;一键将最常用的按键映射到黄金组合（滚轮点按暂停播放、Mode秒开360、保留原厂返回与静音），免去繁琐逐个设置。&#10;&#10;2. 恢复全车原厂：&#10;一键将所有按键动作还原为原厂直通，不拦截任何物理信号。" 
-      helpTip="首次使用推荐直接点「应用车友黄金方案」，立即可用。"
-    >
-      <div class="grid grid-cols-2 gap-4">
-        <BaseButton
-          variant="action"
-          class="flex items-center justify-center space-x-2"
-          @click="applyRecommendedPreset"
-        >
-          <span class="text-[17px] font-black text-car-accent">★ 一键应用车友黄金推荐方案</span>
-        </BaseButton>
-        <BaseButton
-          variant="action"
-          class="flex items-center justify-center space-x-2"
-          @click="resetAllToFactory"
-        >
-          <span class="text-[17px] font-black text-car-sub">⟲ 一键恢复全车原厂默认</span>
-        </BaseButton>
-      </div>
-    </FeatureCard>
-
-    <!-- 3. 各按键映射配置 (右方向盘多媒体 SX-0017 物理按键逐项配置) -->
+    <!-- 2. 各按键映射配置 (右方向盘多媒体 SX-0017 物理按键逐项配置) -->
     <div class="flex flex-col space-y-4">
       <div class="flex items-center px-2">
         <StatusDot class="mr-3" size="md" color="accent" :glow-px="8" />
@@ -436,43 +410,6 @@ function toggleClusterLyrics() {
   store.vehicleAuto.wheel_push_lyrics_cluster = next;
   bridge.call('setVehicleAutomationSetting', 'wheel_push_lyrics_cluster', next);
   showToast(next ? '已开启仪表盘歌词投递' : '已关闭歌词投递，保持仪表盘纯净');
-}
-
-function applyRecommendedPreset() {
-  openModal('confirm', {
-    title: '一键应用车友黄金推荐方案',
-    desc: '即将应用最受车友喜爱的成熟按键配置：\n• 右方向盘 ① 返回键 ➔ 保持原厂返回\n• 右方向盘 ② 滚轮按压 ➔ 播放 / 暂停多媒体\n• 右方向盘 ③ 静音键 ➔ 保持原厂静音\n• 右方向盘 ④/⑦ 切歌键 ➔ 官方调度切歌\n• 右方向盘 ⑤ 自定义键 ➔ 打开高德地图\n• 右方向盘 ⑥ MODE 键 ➔ 单击秒开 360 全景',
-    confirmText: '确认应用方案',
-    onConfirm: () => {
-      setGestureAction('back', 'single', 'default');
-      setGestureAction('ok', 'single', 'play_pause');
-      setGestureAction('mute', 'single', 'default');
-      setGestureAction('next', 'single', 'next_track');
-      setGestureAction('prev', 'single', 'prev_track');
-      setGestureAction('custom', 'single', 'open_navi');
-      setGestureAction('mode', 'single', 'open_360');
-      showToast('已成功应用车友黄金方案！', 'success');
-    }
-  });
-}
-
-function resetAllToFactory() {
-  openModal('confirm', {
-    title: '一键恢复全车原厂默认',
-    desc: '将方向盘所有按键全部恢复为系统原厂默认动作，工具箱将不拦截任何物理按键。是否确认？',
-    isDanger: true,
-    confirmText: '确认恢复原厂',
-    onConfirm: () => {
-      const keys = ['ok', 'mute', 'mode', 'next', 'prev', 'back', 'call', 'voice', 'home', 'custom'];
-      const gestures = ['single', 'double', 'long'];
-      for (const k of keys) {
-        for (const g of gestures) {
-          setGestureAction(k, g, 'default');
-        }
-      }
-      showToast('所有方向盘按键已恢复原厂默认直通！');
-    }
-  });
 }
 </script>
 

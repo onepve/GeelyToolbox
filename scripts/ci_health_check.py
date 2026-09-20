@@ -679,6 +679,8 @@ if "wheel_long_press_ms" in wv_code or "longPressSec" in wv_code:
     reg_violations.append("WheelView.vue 仍残留已下线的「方控按键长按判定时长」调节卡片！")
 if "g in gestureList" in wv_code:
     reg_violations.append("WheelView.vue 仍残留已下线的手势切换选择条！")
+    if "applyRecommendedPreset" in wheel_content or "方控按键一键快速配置" in wheel_content:
+        reg_violations.append("WheelView.vue 仍残留已下线的「方控按键一键快速配置」卡片！")
 if "carmedia_first" not in wv_code:
     reg_violations.append("WheelView.vue 缺少米小江方控优先模式单选卡片！")
 
