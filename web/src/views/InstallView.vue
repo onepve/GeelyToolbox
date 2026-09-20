@@ -1,6 +1,54 @@
 <template>
   <div class="flex flex-col space-y-5">
-    <!-- 1. 原生文件管理特权安装通道 (核心通道) -->
+    <!-- 0. 仅在应用商店未冻结时展示的警示横幅 (已冻结时自动隐藏，保持界面清爽) -->
+    <div 
+      v-if="!store.deviceInfo.appstore_frozen" 
+      class="bg-car-card border-2 border-amber-500/70 rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all"
+    >
+      <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
+        <div class="flex items-center space-x-3">
+          <StatusDot size="lg" color="warn" :glow-px="10" class="shadow-md" />
+          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">检测到吉利应用商店处于未冻结状态</span>
+          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm"><StatusDot class="mr-2" size="sm" color="warn" />建议处置</span>
+        </div>
+        <div class="text-[14.5px] text-car-sub font-bold leading-normal">
+          原厂商店运行会破坏白名单策略，直接导致第三方软件无法安装，强烈建议立即冻结锁定！
+        </div>
+      </div>
+
+      <div class="shrink-0 w-[230px]">
+        <button
+          @click="openAppstoreFlow"
+          class="w-full h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center bg-car-item border-amber-500/80 hover:border-amber-400 ring-2 ring-amber-500/20"
+        >
+          <span class="text-[18.5px] font-black text-car-text tracking-wide whitespace-nowrap">一键安全冻结</span>
+          <span class="text-[12.5px] font-bold mt-1 whitespace-nowrap text-amber-400">点击锁定商店防破坏</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 1. 前置安装环境与白名单放行卡片 -->
+    <FeatureCard 
+      title="第三方 APK 放行白名单"
+      desc="注入 sys.jsbd.apk_verify=1 属性，解除系统级安装包签名校验限制。"
+      helpTitle="【功能指南】第三方 APK 放行白名单"
+      helpText="1. 核心原理：&#10;注入 sys.jsbd.apk_verify=1 属性，解除车机原生 PackageInstaller 的签名校验限制。&#10;&#10;2. 效果：&#10;开启后即可自由安装第三方 APK 软件；关闭后恢复系统原生限制，第三方包可能报解析失败。&#10;&#10;3. 建议：&#10;始终保持开启状态，这是安装高德、音乐等第三方应用的基础前提。"
+      helpTip="白名单需配合「应用商店冻结」一起生效，两者都开才能稳定装第三方软件。"
+    >
+      <button 
+        @click="confirmToggleWhitelist"
+        :class="[
+          'w-full min-h-[68px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
+          store.deviceInfo.whitelist 
+            ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
+            : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+        ]"
+      >
+        <span>{{ store.deviceInfo.whitelist ? '白名单: 已放行 (安装环境就绪)' : '白名单: 未放行 (点击立即开启)' }}</span>
+      </button>
+    </FeatureCard>
+
+    <!-- 2. 原生文件管理特权安装通道与无线快传 (核心通道 2 列对称) -->
     <div class="grid grid-cols-2 gap-5">
       <FeatureCard class="!mb-0" 
         title="车载原生文件管理 (特权安装正解通道)"
@@ -60,43 +108,89 @@
       </FeatureCard>
     </div>
 
-    <!-- 3. 专家模式卡兔子主题安装通道 (紧凑型小卡片) -->
-    <div class="bg-car-card border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
-      <div class="flex items-center space-x-3.5 min-w-0 pr-4">
-        <StatusDot size="md" :color="store.settings.expert_rabbit ? 'accent' : 'ok'" />
-        <div class="flex flex-col min-w-0">
-          <div class="flex items-center space-x-2">
-            <span class="text-[17px] font-black text-car-text">卡兔子主题通道 (专家模式)</span>
-            <span class="px-2.5 py-0.5 text-[12px] font-bold rounded-full border bg-car-item border-car-border text-car-text">
-              {{ store.settings.expert_rabbit ? '已激活' : '已锁定' }}
-            </span>
+    <!-- 3. 整车应用高级管理与专家通道 (2 列对称卡片) -->
+    <div class="grid grid-cols-2 gap-5">
+      <!-- 应用高级管理 (原系统维护移至此处，形成安装与卸载管理闭环) -->
+      <FeatureCard class="!mb-0"
+        title="整车应用高级管理"
+        desc="内置整车应用分类管理，支持系统应用与第三方应用分类查看、冻结、卸载与清理数据。"
+        helpTitle="【功能指南】整车应用高级管理"
+        helpText="1. 应用分类：&#10;清晰区分「系统预装」与「第三方安装」应用，防止误动系统核心组件。&#10;&#10;2. 冻结与解冻：&#10;无需卸载即可快速停用车载预装冗余软件，释放车机后台运存。&#10;&#10;3. 一键卸载：&#10;支持对已安装的第三方 APK 进行一键无残留卸载与清理缓存数据。"
+        helpTip="建议在安装新版高德或音乐前，在此处清理旧版本或冲突组件。"
+      >
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
+          <div class="flex-1 min-w-0 pr-6 flex flex-col">
+            <div class="text-[15.5px] text-car-sub font-bold leading-relaxed mb-2">
+              查看整车已装应用，支持一键卸载残留、冻结预装软件与清理运行缓存。
+            </div>
+            <div class="flex items-center text-[13.5px] text-emerald-400 font-extrabold">
+              <StatusDot class="mr-2" size="sm" color="ok" :glow-px="8" />
+              <span>支持系统/用户应用智能分类与状态管控</span>
+            </div>
           </div>
-          <div class="text-[13.5px] text-car-sub font-bold truncate mt-0.5">
-            {{ store.settings.expert_rabbit ? '已解锁：支持通过桌面时钟屏保注入第三方高德或音乐' : '解除地图安装限制，用于突破第三方应用签名白名单' }}
+
+          <button 
+            @click="openAllApps"
+            class="min-w-[200px] min-h-[72px] px-6 bg-car-card border-2 border-car-accent text-car-text font-black text-[18px] rounded-2xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shrink-0 shadow-md transition-all whitespace-nowrap"
+          >
+            打开应用高级管理
+          </button>
+        </div>
+      </FeatureCard>
+
+      <!-- 专家模式卡兔子主题安装通道 -->
+      <FeatureCard class="!mb-0"
+        title="卡兔子主题通道 (专家模式)"
+        desc="解除地图与音乐安装签名限制，用于通过原厂时钟屏保注入第三方软件。"
+        helpTitle="【功能指南】卡兔子主题通道 (专家模式)"
+        helpText="1. 专家模式说明：&#10;解除系统原生安全边界，开放向底层时钟屏保主题注入任意第三方应用的高阶权限。&#10;&#10;2. 安全防护：&#10;默认处于安全锁定状态；非玩车专业人员建议优先使用上方原生文件管理通道。"
+        helpTip="如需体验全自动免电脑注入高德地图屏保，可点击解锁专家模式。"
+      >
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
+          <div class="flex-1 min-w-0 pr-4 flex flex-col">
+            <div class="flex items-center space-x-2 mb-1">
+              <StatusDot size="md" :color="store.settings.expert_rabbit ? 'accent' : 'ok'" />
+              <span class="text-[16.5px] font-black text-car-text">
+                {{ store.settings.expert_rabbit ? '专家模式已激活 (已解锁)' : '专家模式安全锁定中' }}
+              </span>
+            </div>
+            <div class="text-[14px] text-car-sub font-bold leading-relaxed">
+              {{ store.settings.expert_rabbit ? '已解锁：支持向原厂时钟屏保注入第三方高德或音乐' : '用于突破特定机型白名单，普通安装请优先使用左侧正解通道' }}
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2 shrink-0">
+            <button 
+              v-if="store.settings.expert_rabbit"
+              @click="openRabbitGuideModal"
+              class="h-[64px] px-4 rounded-xl bg-car-card border-2 border-car-accent text-car-accent font-black text-[15px] cursor-pointer hover:border-car-accent transition-all shadow-sm whitespace-nowrap"
+            >
+              打开向导
+            </button>
+            <button 
+              @click="confirmUnlockExpert"
+              :class="[
+                'h-[64px] px-4 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all shadow-sm whitespace-nowrap',
+                store.settings.expert_rabbit 
+                  ? 'bg-car-card border-car-border text-car-sub hover:text-car-text' 
+                  : 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/20'
+              ]"
+            >
+              {{ store.settings.expert_rabbit ? '恢复锁定' : '解锁专家模式' }}
+            </button>
           </div>
         </div>
-      </div>
+      </FeatureCard>
+    </div>
 
-      <div class="flex items-center space-x-3 shrink-0">
-        <button 
-          v-if="store.settings.expert_rabbit"
-          @click="openRabbitGuideModal"
-          class="h-[52px] px-5 rounded-xl bg-car-item border-2 border-car-accent text-car-accent font-black text-[15.5px] cursor-pointer hover:bg-car-card transition-all shadow-sm"
-        >
-          打开卡主题向导
-        </button>
-        <button 
-          @click="confirmUnlockExpert"
-          :class="[
-            'h-[52px] px-5 rounded-xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm',
-            store.settings.expert_rabbit 
-              ? 'bg-car-item border-car-border text-car-sub hover:text-car-text' 
-              : 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/20'
-          ]"
-        >
-          {{ store.settings.expert_rabbit ? '锁定安全防护' : '解锁专家模式' }}
-        </button>
+    <!-- 底部运维与避坑指引 -->
+    <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
+      <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
+        车载应用安装与白名单管理规范说明：
       </div>
+      <div>• <b>白名单与应用商店</b>：原厂应用商店运行会重置校验属性导致第三方软件安装失败，必须保持冻结锁定；</div>
+      <div>• <b>原生文件管理正解</b>：严禁通过 ADB 命令行 pm install 强装，统一将 APK 放入 Download 目录后由原生文件管理直装；</div>
+      <div>• <b>应用全生命周期闭环</b>：在此页面即可完成「环境准备 ➔ 文件传输 ➔ 特权安装 ➔ 卸载与冻结」全套操作。</div>
     </div>
   </div>
 </template>
@@ -105,6 +199,31 @@
 import FeatureCard from '../components/FeatureCard.vue';
 import StatusDot from '../components/StatusDot.vue';
 import { store, bridge, openModal, showToast } from '../store';
+import { openAppstoreFlow } from '../utils/appstoreFreeze';
+
+
+
+function confirmToggleWhitelist() {
+  const next = !store.deviceInfo.whitelist;
+  openModal('confirm', {
+    title: next ? '开启第三方 APK 放行白名单' : '关闭第三方 APK 放行白名单',
+    desc: next 
+      ? '系统将写入 sys.jsbd.apk_verify=1 属性，解除系统原生对第三方软件签名的限制。开启后请配合整车冷重启确保生效。'
+      : '关闭后车机将恢复出厂严格签名校验限制，已安装的第三方软件可能出现无法打开或签名报错。确认关闭？',
+    tip: '日常使用建议始终保持放行状态。',
+    isDanger: !next,
+    confirmText: next ? '确认开启白名单' : '确认关闭限制',
+    onConfirm: () => {
+      bridge.call('toggleWhitelist');
+      store.deviceInfo.whitelist = next;
+      showToast(next ? '第三方白名单已开启' : '第三方白名单已关闭', 'success');
+    }
+  });
+}
+
+function openAllApps() {
+  store.modals.allApps = true;
+}
 
 function confirmUnlockExpert() {
   if (store.settings.expert_rabbit) {
@@ -114,12 +233,10 @@ function confirmUnlockExpert() {
     return;
   }
 
-  // 提前在后台触发原车主题提取与 R2 静默缓存（在 20s 倒计时期间完成准备）
   try {
     bridge.call('prepareThemeAssets');
   } catch (e) {}
 
-  // 第 1 次确认：高危警告 (10s 倒计时防盲点)
   openModal('confirm', {
     title: '【高危警告】解锁专家模式 (第 1/3 次确认)',
     desc: '【专家模式】解除系统原生安全边界，开放直接向车机底层屏保主题注入任意第三方应用的高级权限。非玩车专业人员误操作可能导致屏保黑屏或组件冲突。是否确认继续？',
@@ -128,7 +245,6 @@ function confirmUnlockExpert() {
     countdown: 10,
     confirmText: '我已知晓风险，下一步',
     onConfirm: () => {
-      // 第 2 次确认：技术原理与行车安全 (5s 倒计时)
       openModal('confirm', {
         title: '【安全确认】卡兔子主题屏保注入规范 (第 2/3 次确认)',
         desc: '卡兔子主题注入通过重写原厂兔子时钟屏保包名（com.ecarx.screensaver）实现无损系统级提权。在执行主题注入或整车重启前，请务必保证车辆安全停稳并挂入 P 挡。严禁在行驶途中操作！',
@@ -137,7 +253,6 @@ function confirmUnlockExpert() {
         countdown: 5,
         confirmText: '确认环境安全，下一步',
         onConfirm: () => {
-          // 第 3 次确认：最终特权授权 (5s 倒计时)
           openModal('confirm', {
             title: '【最终授权】正式激活专家模式 (第 3/3 次确认)',
             desc: '确认正式激活专家模式？激活后，下方将立即解锁【半自动保姆式卡兔子主题向导】与【调起原生文件管理】两大高阶工具。',
@@ -157,20 +272,6 @@ function confirmUnlockExpert() {
   });
 }
 
-function openAutoPilotDirectly() {
-  openModal('confirm', {
-    title: '全自动免电脑卡屏保注入',
-    desc: '系统将自动扫描车机 Download 目录中的高德地图安装包，深度伪装重写进兔子时钟屏保，并自动拉起主题中心引导应用。注入完成后请执行整车冷重启。',
-    tip: '请确保车辆已安全停稳且电瓶电量充足。',
-    isDanger: false,
-    confirmText: '开始全自动注入',
-    onConfirm: () => {
-      showToast('正在启动免电脑卡屏保全自动注入...');
-      bridge.call('startAutoPilotInject', 'AutoMap_9.5.13_FullFeatures_TrafficLight.apk');
-    }
-  });
-}
-
 function openRabbitGuideModal() {
   store.modals.rabbitInstall = {
     name: '高德地图车机版 (默认推荐)',
@@ -185,9 +286,5 @@ function openFileManager() {
 
 function showQrCode() {
   openModal('qrCode');
-}
-
-function openDialer() {
-  openModal('dialer');
 }
 </script>

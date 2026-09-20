@@ -1,32 +1,5 @@
 <template>
   <div class="flex flex-col space-y-6 shrink-0">
-    <!-- 仅在应用商店未冻结时展示的警示横幅 (已冻结时自动隐藏，保持界面清爽) - 布局完全复刻 WheelView 方控总开关黄金分栏 -->
-    <div 
-      v-if="!store.deviceInfo.appstore_frozen" 
-      class="bg-car-card border-2 border-amber-500/70 rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all"
-    >
-      <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
-        <div class="flex items-center space-x-3">
-          <StatusDot size="lg" color="warn" :glow-px="10" class="shadow-md" />
-          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">检测到吉利应用商店处于未冻结状态</span>
-          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm"><StatusDot class="mr-2" size="sm" color="warn" />建议处置</span>
-        </div>
-        <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-          原厂商店运行会破坏白名单策略，直接导致第三方软件无法安装，强烈建议立即冻结锁定！
-        </div>
-      </div>
-
-      <div class="shrink-0 w-[230px]">
-        <button
-          @click="openAppstoreFlow"
-          class="w-full h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center bg-car-item border-amber-500/80 hover:border-amber-400 ring-2 ring-amber-500/20"
-        >
-          <span class="text-[18.5px] font-black text-car-text tracking-wide whitespace-nowrap">一键安全冻结</span>
-          <span class="text-[12.5px] font-bold mt-1 whitespace-nowrap text-amber-400">点击锁定商店防破坏</span>
-        </button>
-      </div>
-    </div>
-
     <!-- 桌面悬浮与息屏保护（原「桌面悬浮」大分类已并入系统维护） -->
     <div class="flex items-center space-x-3 pt-1">
       <span class="text-[18.5px] font-black text-car-sub tracking-wide whitespace-nowrap">桌面悬浮与息屏保护</span>
@@ -34,8 +7,8 @@
     </div>
     <FloatingView />
 
-    <!-- 系统底层维护 6 大核心功能矩阵 (3 列自适应车规排版) -->
-    <div class="grid grid-cols-3 gap-4">
+    <!-- 系统底层维护 4 大核心功能矩阵 (2x2 网格车规对称排版) -->
+    <div class="grid grid-cols-2 gap-4">
       <!-- 1. 运行与守护日志 -->
       <FeatureCard 
         title="运行与守护日志"
@@ -52,52 +25,23 @@
         </button>
       </FeatureCard>
 
-      <!-- 2. 车机深度工具箱 & ADB 控制台 (从顶栏移至此处) -->
+      <!-- 2. 车机 ADB 交互终端 (原应用高级管理已移至应用安装) -->
       <FeatureCard 
-        title="车机深度工具箱 & ADB"
-        desc="内置本地 ADB 与整车应用管理，支持系统/用户分类、冻结与卸载。"
-        helpTitle="【功能指南】车机深度工具箱 & ADB"
-        helpText="1. 应用高级管理：&#10;内置整车应用管理，支持系统/用户应用分类、冻结、卸载与清数据。&#10;&#10;2. ADB 交互终端：&#10;本地 ADB 终端支持执行 Shell 指令，用于进阶调试与抓取日志。&#10;&#10;3. 安全边界：&#10;深度终端已做系统核心保护，严禁自行卸载系统 Framework 核心组件。"
-        helpTip="ADB 终端仅建议进阶玩家使用，普通用户优先使用「应用高级管理」。"
-      >
-        <div class="flex space-x-2.5 w-full">
-          <button 
-            @click="openAllApps"
-            class="flex-1 min-h-[72px] rounded-2xl border-2 border-car-border hover:border-car-border-light bg-car-item text-car-text font-black text-[16.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
-          >
-            <span>应用高级管理</span>
-          </button>
-          <button 
-            @click="openDeepTools"
-            class="flex-1 min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[16.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center justify-center whitespace-nowrap"
-          >
-            <span>ADB 交互终端</span>
-          </button>
-        </div>
-      </FeatureCard>
-
-      <!-- 3. 安装白名单属性放行 -->
-      <FeatureCard 
-        title="第三方 APK 放行白名单"
-        desc="注入 sys.jsbd.apk_verify=1 属性，解除系统级安装包签名校验限制。"
-        helpTitle="【功能指南】第三方 APK 放行白名单"
-        helpText="1. 核心原理：&#10;注入 sys.jsbd.apk_verify=1 属性，解除车机原生 PackageInstaller 的签名校验限制。&#10;&#10;2. 效果：&#10;开启后即可自由安装第三方 APK 软件；关闭后恢复系统原生限制，第三方包可能报解析失败。&#10;&#10;3. 建议：&#10;始终保持开启状态，这是安装高德、音乐等第三方应用的基础前提。"
-        helpTip="白名单需配合「应用商店冻结」一起生效，两者都开才能稳定装第三方软件。"
+        title="车机 ADB 交互终端"
+        desc="本地 ADB 交互终端，支持执行系统 Shell 指令，用于进阶调试与底层诊断。"
+        helpTitle="【功能指南】车机 ADB 交互终端"
+        helpText="1. ADB 交互终端：&#10;本地 ADB 终端支持直接执行 Shell 指令，用于进阶排查底层进程与抓取日志。&#10;&#10;2. 安全边界：&#10;深度终端已做系统核心保护，严禁自行卸载系统 Framework 核心组件。&#10;&#10;3. 应用管理通道：&#10;整车应用分类、冻结与卸载管理已全面收拢至「应用安装」页面。"
+        helpTip="ADB 终端仅建议熟悉安卓调试的进阶用户使用。"
       >
         <button 
-          @click="confirmToggleWhitelist"
-          :class="[
-            'w-full min-h-[72px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
-            store.deviceInfo.whitelist 
-              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
-              : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-          ]"
+          @click="openDeepTools"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center justify-center whitespace-nowrap"
         >
-          <span>{{ store.deviceInfo.whitelist ? '白名单: 已放行' : '白名单: 未放行 (点击开启)' }}</span>
+          <span>打开 ADB 交互终端</span>
         </button>
       </FeatureCard>
 
-      <!-- 4. 整车硬件冷重启控制台 (紧凑饱满) -->
+      <!-- 3. 整车硬件冷重启控制台 (紧凑饱满) -->
       <FeatureCard 
         title="整车硬件冷重启"
         desc="彻底掉电重置车机 MCU 与安卓核心，白名单与底层服务立即生效。"
@@ -113,7 +57,7 @@
         </button>
       </FeatureCard>
 
-      <!-- 6. 工具箱开机自启动与后台守护 -->
+      <!-- 4. 工具箱开机自启动与后台守护 -->
       <FeatureCard 
         title="工具箱开机自启动与后台守护"
         desc="控制车机上电开机后在后台静默运行工具箱。出厂默认常驻开启，各联动项由各自开关独立管控。"
@@ -227,29 +171,11 @@ function openDeepTools() {
   openModal('deepTools');
 }
 
-function openAllApps() {
-  store.modals.allApps = true;
-}
 
 function openLogModal() {
   store.modals.log = true;
 }
 
-function confirmToggleWhitelist() {
-  const next = !store.deviceInfo.whitelist;
-  openModal('confirm', {
-    title: next ? '开启第三方 APK 放行白名单' : '关闭第三方 APK 放行白名单',
-    desc: next 
-      ? '即将注入 sys.jsbd.apk_verify=1 属性，解除车机原生 PackageInstaller 的签名校验限制，允许自由安装第三方软件。'
-      : '关闭白名单后，安装第三方 APK 将恢复系统原生限制并可能报解析包失败。',
-    tip: '建议始终保持开启状态。',
-    isDanger: !next,
-    onConfirm: () => {
-      bridge.call('toggleWhitelist');
-      showToast(next ? '正在开启第三方白名单...' : '正在关闭第三方白名单...');
-    }
-  });
-}
 
 function toggleAutostart() {
   const next = !store.deviceInfo.autostart;

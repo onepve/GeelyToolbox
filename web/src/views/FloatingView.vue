@@ -171,16 +171,15 @@
           </div>
         </div>
 
-        <!-- 底部操作栏：3档触发策略单选组 + 屏保测试动作 -->
-        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0 space-y-3">
-          <!-- 3 档策略分段选择组 -->
-          <div class="grid grid-cols-3 gap-2">
+        <!-- 底部操作栏：4 个按钮一排显示 (3 档触发策略单选 + 独立屏保测试动作) -->
+        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
+          <div class="grid grid-cols-4 gap-2 w-full">
             <button
               v-for="p in ssPolicyOptions"
               :key="p.value"
               @click="setPolicy(p.value)"
               :class="[
-                'h-[50px] rounded-xl border-2 font-black text-[14.5px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center space-x-1.5',
+                'h-[50px] px-1 rounded-xl border-2 font-black text-[14px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center space-x-1.5',
                 ssPolicy === p.value
                   ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20'
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
@@ -189,16 +188,16 @@
               <StatusDot size="sm" :color="ssPolicy === p.value ? 'okBright' : 'offDim'" :glow="false" />
               <span>{{ p.label }}</span>
             </button>
-          </div>
 
-          <!-- 独立测试屏保动作按钮 -->
-          <button
-            @click="testScreensaver"
-            class="w-full h-[52px] px-4 rounded-2xl border-2 border-car-accent bg-car-item text-car-accent hover:border-car-accent active:scale-[0.99] font-black text-[16px] cursor-pointer shadow-md flex items-center justify-center space-x-1.5 transition-all"
-          >
-            <span>屏保测试</span>
-            <span class="text-sm">➔</span>
-          </button>
+            <!-- 独立测试屏保动作按钮 (第 4 按钮) -->
+            <button
+              @click="testScreensaver"
+              class="h-[50px] px-1 rounded-xl border-2 border-car-accent bg-car-item text-car-accent hover:border-car-accent active:scale-[0.99] font-black text-[14px] cursor-pointer shadow-md flex items-center justify-center space-x-1 transition-all whitespace-nowrap"
+            >
+              <span>屏保测试</span>
+              <span class="text-xs">➔</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
