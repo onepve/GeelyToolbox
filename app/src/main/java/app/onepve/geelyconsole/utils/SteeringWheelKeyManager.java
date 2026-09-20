@@ -98,9 +98,9 @@ public class SteeringWheelKeyManager {
         DOWN_2               // 第 2 次物理按下中，等待第 2 次松开
     }
 
-    private static final long DOUBLE_CLICK_WINDOW_MS = 380L; // 双击有效窗口期（380ms，自然贴合人类按键节奏）
-    private static final long MIN_CLICK_INTERVAL_MS = 60L;   // 两次物理按下间的最小有效间隔（过滤多源重复日志）
-    private static final long MIN_PRESS_DURATION_MS = 35L;   // 单次按压最小有效持续时长（防触点毛刺）
+    private static final long DOUBLE_CLICK_WINDOW_MS = 420L; // 双击有效窗口期（420ms，贴合车规方向盘机械滚轮物理回弹与连击节奏）
+    private static final long MIN_CLICK_INTERVAL_MS = 30L;   // 两次物理按下间的最小有效间隔（调低防误杀实车 40ms 极速连击）
+    private static final long MIN_PRESS_DURATION_MS = 30L;   // 单次按压最小有效持续时长（防触点毛刺）
 
     private final Map<Integer, KeyPhase> keyPhases = new HashMap<>();
     private final Map<Integer, Long> phaseDownTime1 = new HashMap<>();

@@ -152,8 +152,9 @@
       </div>
     </FeatureCard>
 
-    <!-- 3. 方控按键长按判定时长 (自定义秒数) -->
-    <FeatureCard 
+    <!-- 3. 方控按键长按判定时长 (自定义秒数) - 仅 Beta 测试通道展示 -->
+    <FeatureCard
+      v-if="isBeta"
       title="方控按键长按判定触发时长 (自定义秒数)"
       desc="自由设定方向盘所有按键长按触发的判定时长 (0.8s ~ 6.0s)。达到该时长立即执行长按动作；长按 10 秒依然是整车硬件看门狗冷重启救砖，互不冲突。"
       helpTitle="【功能指南】长按判定时长与整车硬件看门狗冷重启"
@@ -483,6 +484,12 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('scroll', onWheelScroll, { capture: true });
 });
+const isBeta = computed(() => {
+  const ver = (store.appVersion || '').toLowerCase();
+  const useBetaChannel = localStorage.getItem('geely_use_beta_channel') === 'true';
+  return ver.includes('beta') || useBetaChannel;
+});
+
 const longPressSec = computed({
   get: () => {
     const ms = store.vehicleAuto.wheel_long_press_ms || 1500;

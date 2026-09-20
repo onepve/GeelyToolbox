@@ -220,6 +220,17 @@ onMounted(() => {
       window.updateDeviceInfo(rawDev);
     }
   } catch (e) {}
+
+  // 开机与前台自动检测更新：依设置项执行，默认开启，静默不打扰
+  try {
+    const autoCheck = localStorage.getItem('geely_auto_check_update');
+    if (autoCheck !== 'false') {
+      const isBetaChannel = localStorage.getItem('geely_use_beta_channel') === 'true';
+      setTimeout(() => {
+        bridge.call('checkUpdateSilently', isBetaChannel);
+      }, 3000);
+    }
+  } catch (e) {}
 });
 </script>
 

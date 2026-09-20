@@ -1929,6 +1929,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             checkUpdateInternal(true, false, false);
         }
 
+        @JavascriptInterface
+        public void checkUpdateSilently(final boolean isBetaChannel) {
+            checkUpdateInternal(true, isBetaChannel, false);
+        }
+
         private void checkUpdateInternal(final boolean silent) {
             checkUpdateInternal(silent, false, false);
         }

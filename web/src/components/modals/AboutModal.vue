@@ -3,7 +3,7 @@
     :show="store.modals.about" 
     title="缤越助手 · 关于" 
     :badge="isBeta ? 'BETA 测试版' : '正式版'"
-    maxWidthClass="max-w-[820px]"
+    maxWidthClass="max-w-[960px]"
     @close="closeModal('about')"
   >
     <div class="flex flex-col space-y-5">
@@ -131,37 +131,37 @@
 
     <template #footer>
       <div class="flex items-center justify-between w-full">
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-2.5">
           <button 
             @click="openReward"
-            class="min-h-[60px] px-8 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[17.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+            class="min-h-[54px] px-5 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm"
           >
             💖 赞赏支持
           </button>
           <button 
             @click="handleGuideAction"
-            class="min-h-[60px] px-6 rounded-xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+            class="min-h-[54px] px-5 rounded-xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
           >
             {{ isBeta ? '🛠️ 重跑配置向导' : '📖 缤越助手说明' }}
           </button>
         </div>
 
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-2.5">
           <button 
             @click="forceDownloadCurrent"
-            class="min-h-[60px] px-6 bg-car-item border-2 border-car-border rounded-xl text-car-sub hover:text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+            class="min-h-[54px] px-5 bg-car-item border-2 border-car-border rounded-xl text-car-sub hover:text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
           >
             强制重新下载
           </button>
           <button 
             @click="checkUpdate"
-            class="min-h-[60px] px-8 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[18.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md"
+            class="min-h-[54px] px-6 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[16.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md"
           >
             检查版本更新
           </button>
           <button 
             @click="closeModal('about')"
-            class="min-h-[60px] px-8 bg-car-card border-2 border-car-border rounded-xl text-car-sub hover:text-car-text font-black text-[17.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+            class="min-h-[54px] px-6 bg-car-card border-2 border-car-border rounded-xl text-car-sub hover:text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm"
           >
             关闭
           </button>

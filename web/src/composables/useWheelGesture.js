@@ -29,13 +29,22 @@ function getActionOptions(keyName) {
 }
 
 export function useWheelGesture() {
+  const isBeta = computed(() => {
+    const ver = (store.appVersion || '').toLowerCase();
+    const useBetaChannel = localStorage.getItem('geely_use_beta_channel') === 'true';
+    return ver.includes('beta') || useBetaChannel;
+  });
+
   const gestureList = computed(() => {
-    const sec = parseFloat(((store.vehicleAuto.wheel_long_press_ms || 1500) / 1000).toFixed(1));
-    return [
+    const list = [
       { id: 'single', name: '单击', shortName: '单击' },
-      { id: 'double', name: '双击', shortName: '双击' },
-      { id: 'long', name: `长按 (${sec}s)`, shortName: `长按${sec}s` }
+      { id: 'double', name: '双击', shortName: '双击' }
     ];
+    if (isBeta.value) {
+      const sec = parseFloat(((store.vehicleAuto.wheel_long_press_ms || 1500) / 1000).toFixed(1));
+      list.push({ id: 'long', name: `长按 (${sec}s)`, shortName: `长按${sec}s` });
+    }
+    return list;
   });
 
   function isCustomApp(actionVal) {
