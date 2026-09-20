@@ -1,6 +1,6 @@
 <template>
-  <div v-if="store.modals.geekInstall" class="fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center p-2 sm:p-4 backdrop-blur-md animate-fade-in" style="background: rgba(0, 0, 0, 0.8);">
-    <div class="relative w-[96vw] max-w-6xl bg-car-card border-2 border-car-accent rounded-3xl p-6 shadow-2xl flex flex-col space-y-5 text-car-text max-h-[95vh] overflow-y-auto">
+  <div v-if="store.modals.geekInstall" class="fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center p-2 sm:p-4 backdrop-blur-md animate-fade-in" style="background: rgba(5, 8, 15, 0.88);">
+    <div class="relative w-[96vw] max-w-6xl border-2 border-car-accent rounded-3xl p-6 shadow-2xl flex flex-col space-y-5 text-car-text max-h-[95vh] overflow-y-auto" style="background: var(--bg-modal, rgba(16, 23, 38, 0.98));">
       <!-- 顶部 Header -->
       <div class="flex items-center justify-between pb-4 border-b border-car-border">
         <div class="flex items-center space-x-3">
