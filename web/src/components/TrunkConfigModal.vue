@@ -1,23 +1,14 @@
+<!-- 原厂电动尾门细分配置二级向导 (TrunkConfigModal · 补齐开闭与声效设置) -->
 <template>
-    <!-- 弹窗 4: 原厂电动尾门细分配置二级向导 (TrunkConfigModal · 补齐开闭与声效设置) -->
-    <div 
-      class="fixed z-[9998] flex items-center justify-center p-6" style="top:0; left:0; width:100vw; height:100vh; background: rgba(10, 14, 23, 0.97);"
-    >
-      <div class="bg-car-card border-2 border-car-border rounded-3xl p-7 shadow-2xl max-w-[880px] w-full flex flex-col space-y-5 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between border-b border-car-border pb-4">
-          <div class="flex items-center space-x-3">
-            <span class="w-3 h-3 rounded-full bg-car-accent"></span>
-            <span class="text-[22px] font-black text-car-text">原厂电动尾门安全播报详细配置</span>
-          </div>
-          <button 
-            @click="$emit('close')"
-            class="w-[50px] h-[50px] rounded-full border-2 border-car-border bg-car-item text-car-sub hover:text-car-text font-black text-[20px] flex items-center justify-center cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div class="flex flex-col space-y-3.5">
+  <ModalWrapper
+    :show="true"
+    title="原厂电动尾门安全播报详细配置"
+    badge="尾门细分"
+    maxWidthClass="max-w-[880px]"
+    zIndexClass="z-[9998]"
+    @close="$emit('close')"
+  >
+    <div class="flex flex-col space-y-3.5">
           <!-- 尾门升起提醒 -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-center justify-between">
             <div class="flex flex-col space-y-1">
@@ -87,19 +78,19 @@
           </div>
         </div>
 
-        <div class="flex justify-end pt-3 border-t border-car-border">
-          <button 
+    <template #footer>
+      <button 
             @click="$emit('close')"
             class="h-[52px] px-8 rounded-xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[16px] cursor-pointer"
           >
             完成配置
           </button>
-        </div>
-      </div>
-    </div>
+    </template>
+  </ModalWrapper>
 </template>
 
 <script setup>
+import ModalWrapper from './modals/ModalWrapper.vue';
 import { store } from '../store';
 import { useConfigModal } from '../composables/useConfigModal';
 

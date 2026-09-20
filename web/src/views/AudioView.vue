@@ -8,11 +8,11 @@
       helpText="1. 蓝牙/Wi-Fi 直控：&#10;一键开关车机蓝牙与 Wi-Fi，实时呈现连接设备、热点与局域网 IP。&#10;&#10;2. EAS 6 号物理声道仲裁：&#10;手机蓝牙播放微信语音或音乐无声时，点击「一键强制选通蓝牙声道」可向 EAS 下发切换指令激活喇叭，解决原厂多媒体冻结后的无声痛点。&#10;&#10;3. 发声调试：&#10;「测试发声」立即验证当前蓝牙声道选通是否成功。"
       helpTip="手机无声时先点「测试发声」确认喇叭，再点「一键强制选通蓝牙声道」。"
     >
-      <div class="bg-car-item border border-car-border rounded-2xl p-6 flex flex-col space-y-4 shadow-sm">
+      <div class="flex flex-col space-y-4">
         <!-- 上层：蓝牙与 Wi-Fi 硬件连接看板 (双列对称大卡片) -->
         <div class="grid grid-cols-2 gap-4">
           <!-- 蓝牙控制看板 -->
-          <div class="bg-car-card border border-car-border rounded-2xl p-4 flex flex-col justify-between space-y-3">
+          <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-3 shadow-sm">
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-2.5">
                 <StatusDot size="md" :color="connStatus.bluetooth_enabled ? 'ok' : 'off'" :glow-px="8" />
@@ -43,7 +43,7 @@
           </div>
 
           <!-- Wi-Fi 控制看板 -->
-          <div class="bg-car-card border border-car-border rounded-2xl p-4 flex flex-col justify-between space-y-3">
+          <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-3 shadow-sm">
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-2.5">
                 <StatusDot size="md" :color="connStatus.wifi_enabled ? 'ok' : 'off'" :glow-px="8" />
@@ -75,7 +75,7 @@
         </div>
 
         <!-- 下层：EAS 6 号蓝牙物理声道与调试操作条 -->
-        <div class="bg-car-card border border-car-border rounded-2xl p-4 flex items-center justify-between">
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
           <div class="flex flex-col space-y-1 min-w-0 pr-4">
             <div class="flex items-center space-x-2.5">
               <span class="text-[17.5px] font-black text-car-text">EAS 6 号蓝牙物理声道仲裁</span>
