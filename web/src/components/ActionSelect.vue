@@ -22,23 +22,26 @@
     <transition name="drop">
       <div
         v-if="open"
-        class="absolute z-50 w-full min-w-[280px] overflow-y-auto rounded-2xl border-2 border-car-border bg-[var(--bg-modal)] shadow-2xl p-2 space-y-1.5"
-        :class="dropUp ? 'bottom-full mb-2' : 'top-full mt-2'"
+        class="absolute z-50 w-full min-w-[340px] overflow-y-auto rounded-2xl border-2 border-car-border bg-[var(--bg-modal)] shadow-2xl p-2 space-y-2"
+        :class="[dropUp ? 'bottom-full mb-2' : 'top-full mt-2', alignRight ? 'right-0' : 'left-0']"
         :style="{ maxHeight: maxPanelH + 'px' }"
       >
-        <div class="grid grid-cols-3 gap-2">
+        <div class="space-y-2">
           <button
             v-for="opt in options"
             :key="opt.action"
             @click="pick(opt.action)"
-            class="rounded-xl flex flex-col items-start justify-center cursor-pointer transition-all text-left px-3 py-2"
+            class="w-full rounded-xl flex items-center justify-between cursor-pointer transition-all text-left px-4 py-3"
             :class="currentAction === opt.action
-              ? 'bg-car-item border-2 border-car-accent text-car-text'
+              ? 'bg-car-item border-2 border-car-accent text-car-text shadow-sm'
               : 'bg-car-item border-2 border-car-border text-car-text hover:border-car-border-light'"
-            style="min-height: 72px; box-sizing: border-box;"
+            style="min-height: 64px; box-sizing: border-box;"
           >
-            <span class="text-[18px] font-black leading-tight truncate w-full">{{ opt.name }}</span>
-            <span class="text-[14px] font-bold text-car-sub mt-0.5 truncate w-full">{{ opt.sub }}</span>
+            <span class="flex flex-col min-w-0 pr-2">
+              <span class="text-[18px] font-black leading-tight text-car-text">{{ opt.name }}</span>
+              <span class="text-[13.5px] font-bold text-car-sub mt-0.5">{{ opt.sub }}</span>
+            </span>
+            <span v-if="currentAction === opt.action" class="text-[20px] text-car-accent font-black ml-2 shrink-0">✓</span>
           </button>
         </div>
 
@@ -75,6 +78,7 @@ const props = defineProps({
 const open = ref(false);
 const rootEl = ref(null);
 const dropUp = ref(false);
+const alignRight = ref(false);
 const maxPanelH = ref(320);
 
 const { getActionOptions, getGestureAction, setGestureAction, isCustomApp, getCustomAppName, openAppSelectModal, getActionName } = useWheelGesture();
@@ -107,6 +111,7 @@ function toggle() {
       const spaceUp = rect.top;
       const spaceDown = window.innerHeight - rect.bottom;
       dropUp.value = spaceUp > spaceDown;
+      alignRight.value = (rect.left + 350) > window.innerWidth;
       const margin = 16;
       maxPanelH.value = Math.max(200, Math.floor((dropUp.value ? spaceUp : spaceDown) - margin));
     }

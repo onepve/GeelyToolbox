@@ -1159,6 +1159,10 @@ _g23 = []
 if "bg-[var(--bg-card)]" in _actionselect_23:
     _g23.append("[23a] ActionSelect 面板使用半透 --bg-card（浮层实底铁律：叠层浮层严禁玻璃半透，文字会与底层重叠）")
 # 23b: 下拉面板必须使用 96% 实底 --bg-modal
+# 23c: 下拉面板严禁 grid-cols-3 压缩宽度导致文字截断防复发锁（车规文字完整性铁律）
+if "grid-cols-3" in _actionselect_23:
+    _g23.append("[23c] ActionSelect 面板包含 grid-cols-3 压缩按钮宽度（选项严禁 3 列网格挤压，必须保持单列全宽清晰展示）")
+
 if "bg-[var(--bg-modal)]" not in _actionselect_23:
     _g23.append("[23b] ActionSelect 面板缺少实底 --bg-modal（须与 ModalWrapper 同规：浮层一律 96% 实底）")
 if _g23:
