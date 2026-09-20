@@ -10,12 +10,10 @@
 
 | 项目 | 说明与链接 |
 |---|---|
-| **最新正式版** | `v1.7.35` (versionCode `1073599`) |
+| **最新正式版** | `v1.7.38` (versionCode `1073899`) |
 | **测试尝鲜版** | `beta-v1.7.37.31` (versionCode `1073731`) |
 | **测试版直装** | [GeelyToolbox-beta.apk](https://dl.onepve.com/GeelyToolbox/GeelyToolbox-beta.apk?v=1.7.37-beta.31) |
-| **APK 直装下载** | [GeelyToolbox.apk](https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.7.35) |
-| **版本检测接口** | [version.json](https://dl.onepve.com/GeelyToolbox/version.json) |
-| **精选软件源** | [apps.json](https://dl.onepve.com/GeelyToolbox/apps.json) |
+| **APK 直装下载** | [GeelyToolbox.apk](https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.7.38) |
 | **完整图文教程** | [onepve.com/geely-toolbox](https://onepve.com/geely-toolbox/) |
 | **车友交流群** | QQ 群 `564654011` |
 
