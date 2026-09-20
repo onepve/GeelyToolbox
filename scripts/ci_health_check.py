@@ -1287,9 +1287,54 @@ if os.path.exists(_wv_path):
     else:
         print("[PASS] 方控图解双资源完备且生命周期局部内聚，零 Teleport 泄漏违规！")
 
-log_step("CI 26-Gate Health Check Verdict")
+# ----------------------------------------------------------------------
+# 28. Frozen Cockpit Framework, Navigation & Background Architecture Gate
+#     前端框架、背景渲染、主导航体系全面冻结锁定，未来仅允许修改底层功能性逻辑
+# ----------------------------------------------------------------------
+log_step("28. Checking Frozen Cockpit Framework & Background Architecture")
+_g28 = []
+# 28a: 验证 App.vue 核心骨架、TopBar/Sidebar/MainContent 及全功能视图挂载完备
+if os.path.exists(APP_VUE_PATH):
+    with open(APP_VUE_PATH, "r", encoding="utf-8") as f:
+        _app_code = f.read()
+    _required_views = [
+        "StoreView", "WheelView", "LinkView", "BodyView",
+        "AudioView", "FloatingView", "InstallView", "SystemView"
+    ]
+    for _rv in _required_views:
+        if f"import {_rv} from" not in _app_code or f"<{_rv}" not in _app_code:
+            _g28.append(f"App.vue 核心视图挂载缺失或被篡改: {_rv}")
+    if "<TopBar" not in _app_code or "<Sidebar" not in _app_code:
+        _g28.append("App.vue 核心 TopBar/Sidebar 导航骨架被破坏！")
+    if "bg-[var(--bg-card)]" not in _app_code and "bg-base" not in _app_code:
+        _g28.append("App.vue 背景样式变量体系被破坏！")
+else:
+    _g28.append(f"App.vue 不存在: {APP_VUE_PATH}")
+
+# 28b: 验证全局 CSS 背景变量与暗黑座舱基础调色盘冻结契约
+_main_css_path = os.path.join(WEB_SRC_DIR, "assets/main.css")
+if not os.path.exists(_main_css_path):
+    _main_css_path = os.path.join(WEB_SRC_DIR, "style.css")
+if os.path.exists(_main_css_path):
+    with open(_main_css_path, "r", encoding="utf-8") as f:
+        _css_code = f.read()
+    _essential_css_tokens = ["--bg-main", "--bg-card", "--accent-gold"]
+    for _token in _essential_css_tokens:
+        if _token not in _css_code:
+            _g28.append(f"全局样式表缺失核心座舱背景/主题色彩变量: {_token}")
+
+if _g28:
+    for _v28 in _g28:
+        print(f"  [FAIL] {_v28}")
+    passed = False
+else:
+    print("[PASS] 车机前端框架骨架、8大功能主视图、侧边栏/顶部栏与背景样式体系全面冻结锁定，严禁非预期改动！")
+
+# Final Summary Verdict
+# ----------------------------------------------------------------------
+log_step("CI 28-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 26 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering all closed)")
+    print("[SUCCESS] All 28 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering closed, framework & background architecture frozen)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")
