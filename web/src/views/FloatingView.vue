@@ -2,8 +2,8 @@
   <div class="flex flex-col space-y-7 shrink-0">
     <!-- 双列对称：左列【桌面悬浮微胶囊】 + 右列【闲置自动息屏保护】 -->
     <div class="grid grid-cols-2 gap-5 items-stretch">
-      <!-- 左列：桌面迷你悬浮胶囊 (强制等高 h-full min-h-[460px]) -->
-      <div class="rounded-3xl border-2 border-car-border bg-car-card p-6 shadow-xl h-full min-h-[460px] flex flex-col justify-between transition-all duration-200">
+      <!-- 左列：桌面迷你悬浮胶囊 (紧凑自适应车规排布) -->
+      <div class="rounded-3xl border-2 border-car-border bg-car-card p-5 shadow-xl h-full flex flex-col justify-between transition-all duration-200">
         <!-- 头部标题 + 帮助 -->
         <div class="flex items-center justify-between shrink-0 mb-4">
           <div class="flex items-center space-x-3">
@@ -88,8 +88,8 @@
         </div>
       </div>
 
-      <!-- 右列：闲置自动屏保息屏 (强制等高 h-full min-h-[460px]) -->
-      <div class="rounded-3xl border-2 border-car-border bg-car-card p-6 shadow-xl h-full min-h-[460px] flex flex-col justify-between transition-all duration-200">
+      <!-- 右列：闲置自动屏保息屏 (紧凑自适应车规排布) -->
+      <div class="rounded-3xl border-2 border-car-border bg-car-card p-5 shadow-xl h-full flex flex-col justify-between transition-all duration-200">
         <!-- 头部标题 + 帮助 -->
         <div class="flex items-center justify-between shrink-0 mb-4">
           <div class="flex items-center space-x-3">
