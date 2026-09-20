@@ -1,14 +1,14 @@
 <template>
   <ModalWrapper 
     :show="store.modals.reward" 
-    title="赞赏支持 · 纯净座舱生态开源" 
+    title="赞赏支持 · 纯净开源无广告" 
     badge="开发者致谢"
     maxWidthClass="max-w-[620px]"
     @close="closeModal('reward')"
   >
     <div class="flex flex-col items-center text-center space-y-3">
       <div class="text-[15.5px] text-car-sub font-bold">
-        感谢你对《缤越助手 (GeelyToolbox)》独立座舱生态与开源改装的支持与喜爱！
+        感谢你对《缤越助手 (GeelyToolbox)》爱车改装与开源功能的支持与喜爱！
       </div>
 
       <!-- 赞赏卡片展示区 -->
@@ -29,7 +29,7 @@
 
       <!-- 提示语 -->
       <div class="text-[14px] text-car-sub font-bold leading-relaxed px-2">
-        本软件由车友利用业余时间纯手工打造，永久承诺 0 广告、0 商业捆绑、100% 免费开源，你的每一次鼓励都是我们持续演进座舱的动力！
+        本软件由车友利用业余时间纯手工打造，永久承诺 0 广告、0 商业捆绑、100% 免费开源，你的每一次鼓励都是我们持续完善车机助手的动力！
       </div>
     </div>
   </ModalWrapper>

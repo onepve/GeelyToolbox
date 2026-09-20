@@ -96,6 +96,7 @@ export const store = reactive({
     confirm: null,
     update: false,
     reward: false,
+    welcomeDonate: false,
     log: false,
     voiceItemSettings: null,
     otaCapture: false,

@@ -45,6 +45,7 @@
     <CleanDownloadModal />
     <VoiceThemeImportModal />
     <AllAppsModal />
+    <WelcomeDonateModal />
 
     <!-- 极简 Toast 提示 -->
     <transition name="fade">
@@ -111,8 +112,9 @@ import AppSelectModal from './components/modals/AppSelectModal.vue';
 import CleanDownloadModal from './components/modals/CleanDownloadModal.vue';
 import VoiceThemeImportModal from './components/modals/VoiceThemeImportModal.vue';
 import AllAppsModal from './components/modals/AllAppsModal.vue';
+import WelcomeDonateModal from './components/modals/WelcomeDonateModal.vue';
 
-import { store, bridge } from './store';
+import { store, bridge, openModal } from './store';
 import { initTheme, quickToggleDayNight } from './theme/themes';
 
 onMounted(() => {
@@ -139,6 +141,16 @@ onMounted(() => {
   // 启动即主动从云端异步拉取最新商城应用配置 (纯云端无本地硬编码兜底)
   try {
     bridge.call('refreshCloudApps');
+  } catch (e) {}
+
+  // 首次启动检测：展示车友说明与赞赏弹窗（仅弹一次，持久化到 localStorage）
+  try {
+    const hasShown = localStorage.getItem('has_shown_welcome_donate');
+    if (!hasShown) {
+      setTimeout(() => {
+        openModal('welcomeDonate');
+      }, 500);
+    }
   } catch (e) {}
 
   // 挂载 Java 状态与下载推送监听

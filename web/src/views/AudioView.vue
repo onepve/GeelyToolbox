@@ -112,11 +112,11 @@
         </div>
       </div>
     </FeatureCard>
-    <!-- 2. 座舱专属语音主题包与自定义音效 (一键整套换装 · 物理隔离) -->
+    <!-- 2. 车载专属语音主题包与自定义音效 (一键整套换装 · 物理隔离) -->
     <FeatureCard 
-      title="座舱专属语音主题包 (一键整套换装 · 物理隔离)"
-      desc="支持导入车规级 ZIP 语音包。所有语音主题物理隔离保存在 /sdcard/GeelyPilot/voices/ 专属目录中，清空下载目录绝不受任何影响！"
-      helpTitle="【功能指南】座舱专属语音主题包"
+      title="车载专属语音主题包 (一键整套换装 · 物理隔离)"
+      helpId="voice_theme_mgr"
+      helpTitle="【功能指南】车载专属语音主题包"
       helpText="1. 整套换装：&#10;支持导入车规级 ZIP 语音包，一键整套替换全车播报音色与音效。注意：包内每个音频开头必须自带 ≥280ms 静音（否则车机功放建立通道会吞掉第一个字），详见模板包 README。&#10;&#10;2. 物理隔离：&#10;所有语音主题独立保存在 /sdcard/GeelyPilot/voices/ 专属目录，与下载目录完全隔离，清空 Download 目录绝不影响已导入主题。&#10;&#10;3. 出厂兜底：&#10;未导入任何主题时自动使用出厂官方晓晓原声；导入的主题若有音频缺失项，自动补齐兜底，确保零丢失。&#10;&#10;4. 强制重装原声：&#10;App 升级后如果听到的还是旧声音，点一下「强制重装原声」，就会把车上旧的原声文件全部删掉，用车机里最新版的原声重新覆盖一遍，并自动切回出厂官方原声。"
       helpTip="导入前请确认 ZIP 为车规语音包结构，删除主题会自动恢复出厂原声；升级后声音没换成新的，点「强制重装原声」即可。"
     >
@@ -167,7 +167,7 @@
                 <span v-if="!activeThemeName" class="px-2.5 py-0.5 rounded-md bg-car-item border border-car-border text-car-text text-[12px] font-black inline-flex items-center shadow-sm"><span class="w-2 h-2 rounded-full mr-1.5 bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>正在生效</span>
               </div>
               <span class="text-[14.5px] text-car-sub font-bold">
-                吉利座舱温婉知性原声，端庄舒缓温润。零音频丢失，全场景兜底保障。
+                吉利原车温婉知性原声，端庄舒缓温润。零音频丢失，全场景兜底保障。
               </span>
             </div>
 

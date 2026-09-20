@@ -201,7 +201,7 @@ for root, _, files in os.walk(WEB_SRC_DIR):
                         slash_opacity_violations.append((fn, idx + 1, line.strip()))
 
                     # 3. 车载夜间深色模式下未经脱敏的刺眼纯白底座检测 (排除二维码与微信赞赏码实体卡片)
-                    if "bg-white" in line and not any(x in fn for x in ["QrCode", "Reward"]) and not line.strip().startswith("//") and not line.strip().startswith("<!--"):
+                    if "bg-white" in line and not any(x in fn for x in ["QrCode", "Reward", "WelcomeDonate"]) and not line.strip().startswith("//") and not line.strip().startswith("<!--"):
                         white_bg_violations.append((fn, idx + 1, line.strip()))
 
 if tombstone_violations:
@@ -742,8 +742,8 @@ for req_voice_modal in ["GearConfigModal", "ModeConfigModal", "DoorConfigModal",
 
 if "整套语音主题包" not in bv_full_code:
     reg_violations.append("BodyView.vue 顶栏缺少【整套语音主题包 ➔】车载音频直通大磁贴！")
-if "座舱语音播报计划" not in bv_full_code:
-    reg_violations.append("BodyView.vue 缺少【座舱语音播报计划】固定常驻卡片！")
+if "车载语音播报计划" not in bv_full_code:
+    reg_violations.append("BodyView.vue 缺少【车载语音播报计划】固定常驻卡片！")
 
 # 声效设置与 VoiceItemSettingsModal 贯通已下沉至四个二级向导 ConfigModal，逐一校验其完整性与声效按钮数量
 voice_modal_contracts = {

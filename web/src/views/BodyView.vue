@@ -1,11 +1,11 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 核心：座舱车身语音播报总开关 - 提权置顶首屏 (左右分栏车规黄金磁贴 · 完全对齐方控总开关标准) -->
+    <!-- 核心：全车语音播报总开关 - 提权置顶首屏 (左右分栏车规黄金磁贴 · 完全对齐方控总开关标准) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
           <StatusDot size="lg" :color="store.vehicleAuto.voice_master_switch ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
-          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">座舱车身语音播报总开关</span>
+          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">全车语音播报总开关</span>
           <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
             <StatusDot class="mr-2" size="sm" :color="store.vehicleAuto.voice_master_switch ? 'ok' : 'off'" />
             {{ store.vehicleAuto.voice_master_switch ? '全车播报已启用' : '全车已彻底静音 (全车总闸)' }}
@@ -106,12 +106,12 @@
       </div>
     </div>
 
-    <!-- 3. 座舱语音播报计划 (对齐方控 106px 车规标准) -->
+    <!-- 3. 车载语音播报计划 (对齐方控 106px 车规标准) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-full flex flex-col space-y-1.5">
         <div class="flex items-center space-x-3">
           <StatusDot size="lg" color="accent" :glow-px="10" class="shrink-0" />
-          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">座舱语音播报计划</span>
+          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">车载语音播报计划</span>
           <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-accent/40 text-car-accent inline-flex items-center shrink-0 shadow-sm">
             {{ activeVoiceTaskCount }} / 4 项运行中
           </span>
@@ -453,7 +453,7 @@ function toggleVoiceMasterSwitch() {
   const next = !store.vehicleAuto.voice_master_switch;
   store.vehicleAuto.voice_master_switch = next;
   bridge.call('setVehicleAutomationSetting', 'voice_master_switch', next);
-  showToast(next ? '座舱车身语音总开关: 已开启 (正常播报)' : '座舱车身语音总开关: 已关闭 (全车静音)');
+  showToast(next ? '全车语音播报总开关: 已开启 (正常播报)' : '全车语音播报总开关: 已关闭 (全车静音)');
 }
 
 
