@@ -11,6 +11,8 @@
 | 项目 | 说明与链接 |
 |---|---|
 | **最新正式版** | `v1.7.35` (versionCode `1073599`) |
+| **测试尝鲜版** | `beta-v1.7.37.31` (versionCode `1073731`) |
+| **测试版直装** | [GeelyToolbox-beta.apk](https://dl.onepve.com/GeelyToolbox/GeelyToolbox-beta.apk?v=1.7.37-beta.31) |
 | **APK 直装下载** | [GeelyToolbox.apk](https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v=1.7.35) |
 | **版本检测接口** | [version.json](https://dl.onepve.com/GeelyToolbox/version.json) |
 | **精选软件源** | [apps.json](https://dl.onepve.com/GeelyToolbox/apps.json) |
@@ -41,6 +43,7 @@
 
 ### 5. 精选云端商城与应用防还原
 * **云端精选应用库**：内置经过吉利车机屏幕比例与横屏实测优化的应用软件源（高德车机版、车载音乐、浏览器、必备工具等）。
+* **100% 纯云端动态下发**：商城架构全面解耦，安装指引、特定应用避坑提醒（如高德惯导设置）、版本警告均由云端 `apps.json` 动态驱动，前端零硬编码，实现即时热更维护。
 * **应用安装免还原**：一键安全冻结系统自带拦截机制与白名单验证，防止重启后第三方应用被系统静默清除。
 * **本地应用包管理**：支持一键清理安装包缓存、导出已安装应用列表与应用批量管理。
 
