@@ -125,49 +125,32 @@
 
         <!-- 中部：纯加减时长控制器 + 5档预设 (彻底拉开安全间距，杜绝贴脸) -->
         <div class="flex-1 min-w-0 flex flex-col justify-center space-y-4 py-2">
-          <!-- 纯加减微调器 -->
-          <div class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl p-2.5">
-            <div class="flex items-center space-x-2">
+          <!-- 纯加减微调器 (取消下方5档预设后，微调器居中展现更通透，上下留白充足) -->
+          <div class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl p-3 my-auto">
+            <div class="flex items-center space-x-2.5">
               <button 
                 @click="adjustSeconds(-15)"
-                class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="h-[52px] px-5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
               >-15s</button>
               <button 
                 @click="adjustSeconds(-5)"
-                class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="h-[52px] px-5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
               >-5s</button>
             </div>
-            <div class="flex items-baseline space-x-1.5 px-4">
-              <span class="text-[30px] font-black text-car-accent font-mono leading-none">{{ ssSeconds }}</span>
-              <span class="text-[14px] text-car-sub font-bold font-mono">秒 ({{ ssSeconds >= 60 ? (ssSeconds / 60).toFixed(1) + '分' : '息屏' }})</span>
+            <div class="flex items-baseline space-x-2 px-4">
+              <span class="text-[34px] font-black text-car-accent font-mono leading-none">{{ ssSeconds }}</span>
+              <span class="text-[15px] text-car-sub font-bold font-mono">秒 ({{ ssSeconds >= 60 ? (ssSeconds / 60).toFixed(1) + '分' : '息屏' }})</span>
             </div>
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-2.5">
               <button 
                 @click="adjustSeconds(5)"
-                class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="h-[52px] px-5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
               >+5s</button>
               <button 
                 @click="adjustSeconds(15)"
-                class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="h-[52px] px-5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
               >+15s</button>
             </div>
-          </div>
-
-          <!-- 5 档快捷车规预设 (上下间距舒展) -->
-          <div class="grid grid-cols-5 gap-2">
-            <button
-              v-for="preset in ssPresets"
-              :key="preset.value"
-              @click="setSecondsPreset(preset.value)"
-              :class="[
-                'h-[50px] rounded-xl border-2 font-black text-[14.5px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center',
-                ssSeconds === preset.value
-                  ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20 shadow-sm'
-                  : 'bg-car-item border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
-              ]"
-            >
-              {{ preset.label }}
-            </button>
           </div>
         </div>
 

@@ -1,54 +1,65 @@
 <template>
   <div class="flex flex-col space-y-5">
-    <!-- 0. 仅在应用商店未冻结时展示的警示横幅 (已冻结时自动隐藏，保持界面清爽) -->
-    <div 
-      v-if="!store.deviceInfo.appstore_frozen" 
-      class="bg-car-card border-2 border-amber-500/70 rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all"
-    >
-      <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
-        <div class="flex items-center space-x-3">
-          <StatusDot size="lg" color="warn" :glow-px="10" class="shadow-md" />
-          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">检测到吉利应用商店处于未冻结状态</span>
-          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm"><StatusDot class="mr-2" size="sm" color="warn" />建议处置</span>
-        </div>
-        <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-          原厂商店运行会破坏白名单策略，直接导致第三方软件无法安装，强烈建议立即冻结锁定！
-        </div>
-      </div>
-
-      <div class="shrink-0 w-[230px]">
+    <!-- 0. 前置环境安装管控（一左一右双列对称网格：吉利应用商店状态与第三方 APK 放行白名单） -->
+    <div class="grid grid-cols-2 gap-5">
+      <!-- 左侧：吉利应用商店安全冻结防护 -->
+      <FeatureCard 
+        class="!mb-0"
+        title="吉利应用商店防护"
+        :desc="store.deviceInfo.appstore_frozen ? '原厂商店已安全锁定，已彻底阻断第三方安装环境破坏。' : '检测到原厂商店未冻结，会破坏白名单导致软件无法安装！'"
+        helpTitle="【功能指南】吉利应用商店防护"
+        helpText="1. 为什么必须冻结原厂商店：&#10;原厂应用商店在后台运行或被唤醒时，会重置 sys.jsbd.apk_verify 属性并清空第三方证书白名单，导致刚刚装好的软件无法打开或后续安装报错。&#10;&#10;2. 冻结后影响：&#10;安全冻结仅暂停原厂自带商城的运行，车机其他所有自带功能、原厂地图与设置均完全正常，需要使用原厂商店时随时可以一键解冻恢复。&#10;&#10;3. 操作规范：&#10;安装任何第三方软件前，务必保持应用商店处于冻结锁定状态。"
+        helpTip="建议始终保持冻结，安装第三方软件必开。"
+      >
         <button
           @click="openAppstoreFlow"
-          class="w-full h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center bg-car-item border-amber-500/80 hover:border-amber-400 ring-2 ring-amber-500/20"
+          :class="[
+            'w-full min-h-[68px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-sm flex flex-col items-center justify-center text-center',
+            store.deviceInfo.appstore_frozen
+              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20'
+              : 'bg-car-item border-amber-500/80 hover:border-amber-400 ring-2 ring-amber-500/20 text-car-text'
+          ]"
         >
-          <span class="text-[18.5px] font-black text-car-text tracking-wide whitespace-nowrap">一键安全冻结</span>
-          <span class="text-[12.5px] font-bold mt-1 whitespace-nowrap text-amber-400">点击锁定商店防破坏</span>
+          <div class="flex items-center space-x-2">
+            <StatusDot size="sm" :color="store.deviceInfo.appstore_frozen ? 'ok' : 'warn'" />
+            <span class="text-[18px]">{{ store.deviceInfo.appstore_frozen ? '商店状态: 已安全冻结' : '商店状态: 未冻结 (建议处置)' }}</span>
+          </div>
+          <span class="text-[13px] font-bold mt-1 text-car-sub">
+            {{ store.deviceInfo.appstore_frozen ? '已阻断策略重置 · 点击可解冻管理' : '点击立即一键安全冻结商店' }}
+          </span>
         </button>
-      </div>
+      </FeatureCard>
+
+      <!-- 右侧：第三方 APK 放行白名单 -->
+      <FeatureCard 
+        class="!mb-0"
+        title="第三方 APK 放行白名单"
+        desc="注入 sys.jsbd.apk_verify=1 属性，解除系统级安装包签名校验限制。"
+        helpTitle="【功能指南】第三方 APK 放行白名单"
+        helpText="1. 核心原理：&#10;注入 sys.jsbd.apk_verify=1 属性，解除车机原生 PackageInstaller 的签名校验限制。&#10;&#10;2. 效果：&#10;开启后即可自由安装第三方 APK 软件；关闭后恢复系统原生限制，第三方包可能报解析失败。&#10;&#10;3. 建议：&#10;始终保持开启状态，这是安装高德、音乐等第三方应用的基础前提。"
+        helpTip="白名单需配合「应用商店冻结」一起生效，两者都开才能稳定装第三方软件。"
+      >
+        <button 
+          @click="confirmToggleWhitelist"
+          :class="[
+            'w-full min-h-[68px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-sm flex flex-col items-center justify-center text-center',
+            store.deviceInfo.whitelist 
+              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
+              : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+          ]"
+        >
+          <div class="flex items-center space-x-2">
+            <StatusDot size="sm" :color="store.deviceInfo.whitelist ? 'ok' : 'warn'" />
+            <span class="text-[18px]">{{ store.deviceInfo.whitelist ? '白名单: 已放行 (环境就绪)' : '白名单: 未放行 (已限制)' }}</span>
+          </div>
+          <span class="text-[13px] font-bold mt-1 text-car-sub">
+            {{ store.deviceInfo.whitelist ? '签名校验已解除 · 点击可关闭' : '点击立即放行第三方签名' }}
+          </span>
+        </button>
+      </FeatureCard>
     </div>
 
-    <!-- 1. 前置安装环境与白名单放行卡片 -->
-    <FeatureCard 
-      title="第三方 APK 放行白名单"
-      desc="注入 sys.jsbd.apk_verify=1 属性，解除系统级安装包签名校验限制。"
-      helpTitle="【功能指南】第三方 APK 放行白名单"
-      helpText="1. 核心原理：&#10;注入 sys.jsbd.apk_verify=1 属性，解除车机原生 PackageInstaller 的签名校验限制。&#10;&#10;2. 效果：&#10;开启后即可自由安装第三方 APK 软件；关闭后恢复系统原生限制，第三方包可能报解析失败。&#10;&#10;3. 建议：&#10;始终保持开启状态，这是安装高德、音乐等第三方应用的基础前提。"
-      helpTip="白名单需配合「应用商店冻结」一起生效，两者都开才能稳定装第三方软件。"
-    >
-      <button 
-        @click="confirmToggleWhitelist"
-        :class="[
-          'w-full min-h-[68px] rounded-2xl border-2 font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap',
-          store.deviceInfo.whitelist 
-            ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
-            : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-        ]"
-      >
-        <span>{{ store.deviceInfo.whitelist ? '白名单: 已放行 (安装环境就绪)' : '白名单: 未放行 (点击立即开启)' }}</span>
-      </button>
-    </FeatureCard>
-
-    <!-- 2. 原生文件管理特权安装通道与无线快传 (核心通道 2 列对称) -->
+    <!-- 1. 原生文件管理特权安装通道与无线快传 (核心通道 2 列对称) -->
     <div class="grid grid-cols-2 gap-5">
       <FeatureCard class="!mb-0" 
         title="车载原生文件管理 (特权安装正解通道)"
@@ -148,7 +159,7 @@
       >
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-wrap items-center justify-between space-x-3">
           <div class="flex-1 min-w-0 pr-4 flex flex-col">
-            <div class="flex items-center space-x-2 mb-1">
+            <div class="bg-car-item border-car-border text-car-text inline-flex items-center space-x-2 mb-1 px-3 py-1 rounded-xl border border-car-border">
               <StatusDot size="md" :color="store.settings.expert_rabbit ? 'accent' : 'ok'" />
               <span class="text-[16.5px] font-black text-car-text">
                 {{ store.settings.expert_rabbit ? '专家模式已激活 (已解锁)' : '专家模式安全锁定中' }}
