@@ -194,7 +194,7 @@
       </FeatureCard>
     </div>
 
-    <!-- 底部运维与避坑指引 -->
+    <!-- 底部运维与安装说明 -->
     <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
       <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
         车载应用安装与白名单管理规范说明：
@@ -257,9 +257,9 @@ function confirmUnlockExpert() {
     confirmText: '我已知晓风险，下一步',
     onConfirm: () => {
       openModal('confirm', {
-        title: '【安全确认】卡兔子主题屏保注入规范 (第 2/3 次确认)',
-        desc: '卡兔子主题注入通过重写原厂兔子时钟屏保包名（com.ecarx.screensaver）实现无损系统级提权。在执行主题注入或整车重启前，请务必保证车辆安全停稳并挂入 P 挡。严禁在行驶途中操作！',
-        tip: '【操作铁律】严禁在行车行驶过程中执行注入或冷重启！',
+        title: '【安全确认】卡兔子主题屏保配置规范 (第 2/3 次确认)',
+        desc: '卡兔子主题配置通过重写原厂兔子时钟屏保包名（com.ecarx.screensaver）实现车机原生级适配。在执行主题配置或整车重启前，请务必保证车辆安全停稳并挂入 P 挡。严禁在行驶途中操作！',
+        tip: '【操作铁律】严禁在行车行驶过程中执行配置或冷重启！',
         isDanger: true,
         countdown: 5,
         confirmText: '确认环境安全，下一步',

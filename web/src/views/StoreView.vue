@@ -71,7 +71,7 @@
         </div>
 
         <div class="h-[52px] px-5 rounded-2xl bg-car-item border-2 border-car-border group-hover:border-car-accent/60 flex items-center justify-between transition-all mt-auto shrink-0">
-          <span class="text-[14.5px] text-car-sub font-bold">点击查看版本详情与避坑实测</span>
+          <span class="text-[14.5px] text-car-sub font-bold">点击查看版本详情与适配说明</span>
           <span class="text-[15px] text-car-accent font-black group-hover:translate-x-1 transition-transform flex items-center space-x-1">
             <span>查看详情与安装</span>
             <span>➔</span>

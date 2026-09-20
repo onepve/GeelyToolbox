@@ -93,7 +93,7 @@
           </div>
         </div>
 
-        <!-- Step 2: 商店冻结 / 提权通道就绪（仅在未冻结时出现） -->
+        <!-- Step 2: 商店冻结 / 服务通道就绪（仅在未冻结时出现） -->
         <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-4">
           <div class="flex flex-col space-y-2">
             <div class="flex items-center justify-between">

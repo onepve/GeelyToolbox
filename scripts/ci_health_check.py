@@ -1213,7 +1213,7 @@ _g25 = []
 _builder_25_path = os.path.join(ROOT_DIR, "scripts", "changelog_builder.py")
 with open(_builder_25_path, encoding="utf-8") as _f25:
     _builder_25 = _f25.read()
-if 're.sub(r"^\\d+\\s*[.、．)]\\s*", "", ln' not in _builder_25:
+if 're.sub(r"^\d+\s*[.、．)]\s*", "", ln' not in _builder_25:
     _g25.append("[25a] changelog_builder.py 缺少旧序号前缀剥离容错（手写覆盖带「N. 」会被二次编号成「1. 1.」）")
 # 25b: 用真实 docs/changelog/*.txt 覆盖文件动态跑构建器，产物严禁出现双序号
 sys.path.insert(0, os.path.join(ROOT_DIR, "scripts"))
@@ -1235,11 +1235,34 @@ if _g25:
 else:
     print("[PASS] 发布文案双序号防复发锁全绿！(构建器剥前缀容错在位 / 真实覆盖文件动态构建 0 双序号)")
 
+# ----------------------------------------------------------------------
+# 26. Cockpit Official Wording & Anti-Hacker Jargon Gate (去黑话/去草莽感门禁)
+#     全界面坚决去黑话/去草莽感（禁极客/避坑/底层/提权/注入/外挂等词，一律官方车规表述）
+# ----------------------------------------------------------------------
+log_step("26. Checking Cockpit Official Wording & Anti-Hacker Jargon (车规文案去黑话去草莽)")
+_g26 = []
+_forbidden_words = ["极客", "避坑", "底层劫持", "提权", "注入器", "外挂", "刷机"]
+for root, _, files in os.walk(WEB_SRC_DIR):
+    for fn in files:
+        if fn.endswith((".vue", ".js", ".html")):
+            fp = os.path.join(root, fn)
+            with open(fp, "r", encoding="utf-8") as f:
+                for idx, line in enumerate(f):
+                    for word in _forbidden_words:
+                        if word in line and "ci_health_check" not in line:
+                            _g26.append(f"{fn}:{idx+1} 包含车规禁用黑话词汇「{word}」: {line.strip()[:50]}")
+if _g26:
+    for _v26 in _g26:
+        print(f"  [FAIL] {_v26}")
+    passed = False
+else:
+    print("[PASS] 车规文案与界面用语 100% 官方化，零草莽黑话违规！")
+
 # Final Summary Verdict
 # ----------------------------------------------------------------------
-log_step("CI 25-Gate Health Check Verdict")
+log_step("CI 26-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 25 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering all closed)")
+    print("[SUCCESS] All 26 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering all closed)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")

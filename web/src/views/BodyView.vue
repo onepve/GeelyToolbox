@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col space-y-6">
-    <!-- 核心：全车语音播报总开关 - 提权置顶首屏 (左右分栏车规黄金磁贴 · 完全对齐方控总开关标准) -->
+    <!-- 核心：全车语音播报总开关 - 核心功能首屏 (左右分栏车规黄金磁贴 · 完全对齐方控总开关) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">

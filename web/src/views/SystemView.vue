@@ -112,7 +112,7 @@
       </div>
     </FeatureCard>
 
-    <!-- 底部运维与避坑指引 -->
+    <!-- 底部运维与安装说明 -->
     <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
       <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
         车机底层维护铁律与核心原理说明：
