@@ -211,6 +211,7 @@ const handleWelcomeCompleted = () => {
 
 onMounted(() => {
   window.addEventListener('welcome-donate-completed', handleWelcomeCompleted)
+  window.addEventListener('open-geek-install-guide', open)
   const completed = localStorage.getItem('geek_install_guide_completed') === 'true'
   const welcomeShown = localStorage.getItem('has_shown_welcome_donate') === 'true'
   // 若首次赞赏弹窗尚未展示，向导主动避让，等待赞赏阅读完成事件后再串行拉起
@@ -225,6 +226,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('welcome-donate-completed', handleWelcomeCompleted)
+  window.removeEventListener('open-geek-install-guide', open)
 })
 
 defineExpose({

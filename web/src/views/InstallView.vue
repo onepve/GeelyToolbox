@@ -168,16 +168,12 @@
         </div>
       </div>
     </FeatureCard>
-
-    <!-- 5. 缤越 COOL 极客安装两步向导与扫码直连卡片 (移至底部) -->
-    <InstallGuideQrCodeCard />
   </div>
 </template>
 
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
 import StatusDot from '../components/StatusDot.vue';
-import InstallGuideQrCodeCard from '../components/InstallGuideQrCodeCard.vue';
 import { store, bridge, openModal, showToast } from '../store';
 
 function confirmUnlockExpert() {

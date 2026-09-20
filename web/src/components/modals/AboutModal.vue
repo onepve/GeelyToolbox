@@ -131,12 +131,20 @@
 
     <template #footer>
       <div class="flex items-center justify-between w-full">
-        <button 
-          @click="openReward"
-          class="min-h-[60px] px-8 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[17.5px] cursor-pointer hover:border-car-border-light shadow-sm"
-        >
-          💖 赞赏支持
-        </button>
+        <div class="flex items-center space-x-3">
+          <button 
+            @click="openReward"
+            class="min-h-[60px] px-8 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[17.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+          >
+            💖 赞赏支持
+          </button>
+          <button 
+            @click="reopenGuide"
+            class="min-h-[60px] px-6 rounded-xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
+          >
+            📋 极客初始化向导
+          </button>
+        </div>
 
         <div class="flex items-center space-x-3">
           <button 
@@ -306,5 +314,12 @@ function toggleAutoCheckUpdate() {
 
 function openReward() {
   openModal('reward');
+}
+
+function reopenGuide() {
+  closeModal('about');
+  try {
+    window.dispatchEvent(new CustomEvent('open-geek-install-guide'));
+  } catch (e) {}
 }
 </script>
