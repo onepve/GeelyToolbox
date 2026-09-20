@@ -37,10 +37,10 @@ export function useWheelGesture() {
 
   const gestureList = computed(() => {
     const list = [
-      { id: 'single', name: '单击', shortName: '单击' },
-      { id: 'double', name: '双击', shortName: '双击' }
+      { id: 'single', name: '单击', shortName: '单击' }
     ];
     if (isBeta.value) {
+      list.push({ id: 'double', name: '双击', shortName: '双击' });
       const sec = parseFloat(((store.vehicleAuto.wheel_long_press_ms || 1500) / 1000).toFixed(1));
       list.push({ id: 'long', name: `长按 (${sec}s)`, shortName: `长按${sec}s` });
     }
