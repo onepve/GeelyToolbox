@@ -16,50 +16,49 @@
       <span class="text-[20px] text-car-sub font-black ml-3 shrink-0">▾</span>
     </button>
 
-    <!-- 下拉面板：大磁贴选项列表（浮动弹出：动态方向+高度钳制，永不撑破页面/超出视口）
-         铁律：浮层叠在页面内容之上，必须用弹窗实底 --bg-modal(96%)，严禁 --bg-card(玻璃半透 .13~.68)
-         —— 半透会让底下页面文字透上来与选项重叠（2026-09-18 用户实测反馈，门禁23 锁定） -->
+    <!-- 下拉面板：双列车规磁贴列表（宽度 520px，双列并排，避免单列纵向撑破屏幕导致显示不全）
+         铁律：浮层叠在页面内容之上，必须用弹窗实底 --bg-modal(96%)，严禁 --bg-card -->
     <transition name="drop">
       <div
         v-if="open"
-        class="absolute z-50 w-full min-w-[340px] overflow-y-auto rounded-2xl border-2 border-car-border bg-[var(--bg-modal)] shadow-2xl p-2 space-y-2"
+        class="absolute z-50 w-[520px] max-w-[90vw] overflow-y-auto rounded-2xl border-2 border-car-border bg-[var(--bg-modal)] shadow-2xl p-2.5 space-y-2"
         :class="[dropUp ? 'bottom-full mb-2' : 'top-full mt-2', alignRight ? 'right-0' : 'left-0']"
         :style="{ maxHeight: maxPanelH + 'px' }"
       >
-        <div class="space-y-2">
+        <div class="grid grid-cols-2 gap-2">
           <button
             v-for="opt in options"
             :key="opt.action"
             @click="pick(opt.action)"
-            class="w-full rounded-xl flex items-center justify-between cursor-pointer transition-all text-left px-4 py-3"
+            class="rounded-xl flex items-center justify-between cursor-pointer transition-all text-left px-3 py-2.5"
             :class="currentAction === opt.action
               ? 'bg-car-item border-2 border-car-accent text-car-text shadow-sm'
               : 'bg-car-item border-2 border-car-border text-car-text hover:border-car-border-light'"
-            style="min-height: 64px; box-sizing: border-box;"
+            style="min-height: 60px; box-sizing: border-box;"
           >
-            <span class="flex flex-col min-w-0 pr-2">
-              <span class="text-[18px] font-black leading-tight text-car-text">{{ opt.name }}</span>
-              <span class="text-[13.5px] font-bold text-car-sub mt-0.5">{{ opt.sub }}</span>
+            <span class="flex flex-col min-w-0 pr-1.5">
+              <span class="text-[16px] font-black leading-tight text-car-text whitespace-nowrap">{{ opt.name }}</span>
+              <span class="text-[12.5px] font-bold text-car-sub mt-0.5 whitespace-nowrap">{{ opt.sub }}</span>
             </span>
-            <span v-if="currentAction === opt.action" class="text-[20px] text-car-accent font-black ml-2 shrink-0">✓</span>
+            <span v-if="currentAction === opt.action" class="text-[18px] text-car-accent font-black ml-1.5 shrink-0">✓</span>
+          </button>
+
+          <!-- 自定义第三方应用入口：占满双列 -->
+          <button
+            @click="pickCustom"
+            class="col-span-2 rounded-xl flex items-center justify-between cursor-pointer transition-all text-left px-3.5 py-2.5"
+            :class="isCustom
+              ? 'bg-car-item border-2 border-car-accent text-car-text'
+              : 'bg-car-item border-2 border-car-border text-car-text hover:border-car-border-light'"
+            style="min-height: 60px; box-sizing: border-box;"
+          >
+            <span class="flex flex-col min-w-0">
+              <span class="text-[16px] font-black">{{ isCustom ? (customName || '自定义应用') : '自定义打开应用' }}</span>
+              <span class="text-[12.5px] font-bold text-car-sub mt-0.5">{{ isCustom ? '点击重新更换应用' : '挑选车机第三方应用' }}</span>
+            </span>
+            <span v-if="isCustom" class="text-[18px] text-car-accent font-black ml-2 shrink-0">✓</span>
           </button>
         </div>
-
-        <!-- 自定义应用入口：双列网格整行 -->
-        <button
-          @click="pickCustom"
-          class="w-full rounded-xl flex items-center justify-between cursor-pointer transition-all text-left"
-          :class="isCustom
-            ? 'bg-car-item border-2 border-car-accent text-car-text'
-            : 'bg-car-item border-2 border-car-border text-car-text hover:border-car-border-light'"
-          style="min-height: 64px; padding: 10px 16px; box-sizing: border-box;"
-        >
-          <span class="flex flex-col min-w-0">
-            <span class="text-[18px] font-black">{{ isCustom ? (customName || '自定义应用') : '自定义打开应用' }}</span>
-            <span class="text-[13.5px] font-bold text-car-sub mt-0.5">{{ isCustom ? '点击重新更换应用' : '挑选车机第三方应用' }}</span>
-          </span>
-          <span v-if="isCustom" class="text-[20px] text-car-accent font-black ml-2 shrink-0">✓</span>
-        </button>
       </div>
     </transition>
   </div>
@@ -79,7 +78,7 @@ const open = ref(false);
 const rootEl = ref(null);
 const dropUp = ref(false);
 const alignRight = ref(false);
-const maxPanelH = ref(320);
+const maxPanelH = ref(360);
 
 const { getActionOptions, getGestureAction, setGestureAction, isCustomApp, getCustomAppName, openAppSelectModal, getActionName } = useWheelGesture();
 
@@ -105,15 +104,14 @@ const displaySub = computed(() => {
 function toggle() {
   playTouchFeedback();
   if (!open.value) {
-    // 量测按钮在视口中的位置，动态决定弹出方向与最大高度，保证面板完整可见
     const rect = rootEl.value?.getBoundingClientRect();
     if (rect) {
       const spaceUp = rect.top;
       const spaceDown = window.innerHeight - rect.bottom;
       dropUp.value = spaceUp > spaceDown;
-      alignRight.value = (rect.left + 350) > window.innerWidth;
+      alignRight.value = (rect.left + 520) > window.innerWidth;
       const margin = 16;
-      maxPanelH.value = Math.max(200, Math.floor((dropUp.value ? spaceUp : spaceDown) - margin));
+      maxPanelH.value = Math.max(220, Math.floor((dropUp.value ? spaceUp : spaceDown) - margin));
     }
   }
   open.value = !open.value;
@@ -126,21 +124,32 @@ function pick(action) {
 }
 
 function pickCustom() {
+  playTouchFeedback();
   open.value = false;
-  openAppSelectModal(props.keyName + '_' + props.gesture);
+  openAppSelectModal(props.keyName, props.gesture);
 }
 
-function onClickOutside(e) {
-  if (rootEl.value && !rootEl.value.contains(e.target)) {
+function onDocClick(e) {
+  if (open.value && rootEl.value && !rootEl.value.contains(e.target)) {
     open.value = false;
   }
 }
 
-onMounted(() => document.addEventListener('click', onClickOutside));
-onUnmounted(() => document.removeEventListener('click', onClickOutside));
+onMounted(() => {
+  document.addEventListener('click', onDocClick);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', onDocClick);
+});
 </script>
 
 <style scoped>
-.drop-enter-active, .drop-leave-active { transition: opacity 0.15s ease, transform 0.15s ease; }
-.drop-enter-from, .drop-leave-to { opacity: 0; transform: translateY(6px); }
+.drop-enter-active, .drop-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.drop-enter-from, .drop-leave-to {
+  opacity: 0;
+  transform: scaleY(0.95);
+}
 </style>

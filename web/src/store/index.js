@@ -73,7 +73,7 @@ export const store = reactive({
     voice_enable_door_rr_close: true,
     voice_enable_trunk_open: true,
     voice_enable_trunk_close: true,
-    vehicle_gear_d_360_enabled: false,
+    vehicle_gear_d_360_enabled: true,
     vehicle_speed_custom_action_enabled: false,
     vehicle_speed_custom_action_threshold: 40,
     vehicle_speed_custom_action_target: 'pkg' + ':com.autonavi.amapauto'

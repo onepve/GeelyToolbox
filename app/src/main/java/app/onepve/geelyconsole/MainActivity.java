@@ -3033,7 +3033,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("wheel_master_switch", prefs.getBoolean("wheel_master_switch", true));
 
                 // 360 与熄火提醒联动
-                obj.put("vehicle_gear_d_360_enabled", prefs.getBoolean("vehicle_gear_d_360_enabled", false));
+                obj.put("vehicle_gear_d_360_enabled", prefs.getBoolean("vehicle_gear_d_360_enabled", true));
                 obj.put("vehicle_flameout_voice_enabled", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
                 obj.put("vehicle_speed_custom_action_enabled", prefs.getBoolean("vehicle_speed_custom_action_enabled", false));
                 obj.put("vehicle_speed_custom_action_threshold", prefs.getInt("vehicle_speed_custom_action_threshold", 40));

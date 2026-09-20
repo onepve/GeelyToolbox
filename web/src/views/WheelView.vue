@@ -288,7 +288,7 @@ import ActionSelect from '../components/ActionSelect.vue';
 import WheelGestureCard from '../components/WheelGestureCard.vue';
 
 // 缤越 COOL 专车原厂 SX-0017 多媒体按键图解（深色车规，柔和不刺眼）
-const wheelGuideImg = 'https://dl.onepve.com/GeelyToolbox/guide/sx11_cool_wheel_buttons.webp';
+import wheelGuideImg from '../assets/steering_wheel_guide.webp';
 
 const showDiagram = ref(false);
 const floatingEnabled = ref(localStorage.getItem('wheel_floating_diagram') === 'true');

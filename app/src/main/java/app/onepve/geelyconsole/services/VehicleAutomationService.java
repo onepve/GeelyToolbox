@@ -1006,7 +1006,7 @@ public class VehicleAutomationService extends Service {
             if (gearD360Armed) {
                 gearD360Armed = false; // 触发后立即闭锁，车主手动退出360绝不反复调起！
                 boolean gearD360 = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
-                        .getBoolean("vehicle_gear_d_360_enabled", false);
+                        .getBoolean("vehicle_gear_d_360_enabled", true);
                 if (gearD360 && currentSpeedKmH <= 30) {
                     AppLogger.i("车身联动", "【D挡起步联动360】挂入前进挡 D，秒级唤起 360 全景盲区影像 (单次跃变闭环)");
                     open360Camera();
