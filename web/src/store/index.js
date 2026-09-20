@@ -104,7 +104,8 @@ export const store = reactive({
     appSelect: null,
     cleanDownload: false,
     voiceThemeImport: false,
-    allApps: false
+    allApps: false,
+    geekInstall: false
   },
   
   // 系统设置持久态

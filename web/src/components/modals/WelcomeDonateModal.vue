@@ -127,6 +127,7 @@ function handleFinish() {
   closeModal('welcomeDonate');
   // 顺畅串行衔接：通知极客初始化向导可以安全展示，避免层级重叠
   try {
+    openModal('geekInstall');
     window.dispatchEvent(new CustomEvent('welcome-donate-completed'));
   } catch (e) {}
 }
