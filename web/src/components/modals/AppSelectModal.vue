@@ -76,26 +76,6 @@
           </div>
 
           <div class="flex items-center space-x-2 shrink-0">
-            <!-- 优先级上移/下移 (仅在 speed_autoplay 且未处于搜索时可用) -->
-            <div v-if="keyTarget === 'speed_autoplay' && !searchQuery.trim()" class="flex items-center space-x-2 mr-2">
-              <button 
-                @click.stop="moveMusicPriority(app.pkg, -1)" 
-                class="h-[52px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[14px] cursor-pointer flex items-center space-x-1 shadow-sm active:scale-95 whitespace-nowrap"
-                title="优先级上移"
-              >
-                <span>▲</span>
-                <span>上移</span>
-              </button>
-              <button 
-                @click.stop="moveMusicPriority(app.pkg, 1)" 
-                class="h-[52px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[14px] cursor-pointer flex items-center space-x-1 shadow-sm active:scale-95 whitespace-nowrap"
-                title="优先级下移"
-              >
-                <span>▼</span>
-                <span>下移</span>
-              </button>
-            </div>
-
             <button
               class="px-5 py-2.5 rounded-xl font-black text-[15px] transition-all shadow-sm shrink-0"
               :class="isCurrentSelected(app.pkg) ? 'bg-car-accent text-slate-950 shadow-md' : 'bg-car-card border border-car-border text-car-text hover:border-car-accent'"
@@ -300,11 +280,7 @@ function selectApp(app) {
     store.vehicleAuto.vehicle_speed_autoplay_pkg = app.pkg;
     bridge.call('setWheelControlStringSetting', 'vehicle_speed_autoplay_pkg', app.pkg);
     localStorage.setItem('vehicle_speed_autoplay_app_name', app.name);
-    // 选为首选主力时，自动将它置顶为优先级第 1 位
-    let order = getMusicOrder();
-    order = order.filter(p => p !== app.pkg);
-    order.unshift(app.pkg);
-    saveMusicOrder(order);
+    window.dispatchEvent(new CustomEvent('music-order-updated'));
     showToast(`车速自启首选主力已设为: ${app.name}`);
     closeModal('appSelect');
     return;

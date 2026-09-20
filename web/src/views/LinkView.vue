@@ -156,52 +156,70 @@
           </div>
         </div>
 
-        <!-- 启播目标音乐应用选择 (支持自动探测、手动强刷扫描、▲/▼ 优先级排序与更多软件选择) -->
+        <!-- 启播目标音乐应用选择 (精简为核心 4 按钮，未装动态隐藏以节省空间) -->
         <div class="pt-3 flex flex-col space-y-3 border-t border-car-border/60 min-w-0 flex-1 shrink-0">
-          <div class="flex items-center justify-between space-x-4">
-            <div class="flex items-center space-x-2 flex-1 min-w-0">
-              <span class="text-[15.5px] font-black text-car-text">自启首选主力音乐软件，开机自动探测，点击磁贴即设为首选：</span>
-            </div>
-            <div class="flex items-center space-x-2.5 shrink-0">
-              <button
-                @click="refreshDetectedApps"
-                class="h-[52px] px-7 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-accent font-black text-[14.5px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5 whitespace-nowrap shrink-0"
-              >
-
-                <span>手动重新扫描</span>
-              </button>
-              <button
-                @click="openSelectModal('speed_autoplay')"
-                class="h-[52px] px-7 rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-text font-black text-[14.5px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5 whitespace-nowrap shrink-0"
-              >
-
-                <span>自定义应用排序 (▲/▼) ➔</span>
-              </button>
-            </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-[16px] font-black text-car-text">自启首选音乐软件（点击即设为首选）：</span>
           </div>
 
-          <!-- 常用音乐软件磁贴 (按用户优先级动态排序) -->
-          <div class="flex flex-wrap -m-1">
+          <!-- 精选音乐磁贴 (QQ音乐 / 网易云音乐 / 手机蓝牙 / 自选车机已装软件) -->
+          <div class="grid grid-cols-2 gap-3 items-stretch">
+            <!-- QQ音乐 (未安装则动态隐藏) -->
             <button 
-              v-for="app in sortedMusicApps" 
-              :key="app.pkg"
-              @click="setAutoplayApp(app.pkg, app.name)"
+              v-if="hasQQMusic"
+              @click="setAutoplayApp('com.tencent.qqmusiccar', 'QQ音乐')"
               :class="[
-                'h-[54px] px-5 rounded-xl text-[15.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center space-x-2 m-1 shadow-sm',
-                store.vehicleAuto.vehicle_speed_autoplay_pkg === app.pkg
+                'h-[54px] px-4 rounded-xl text-[15.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center justify-center space-x-2 shadow-sm',
+                store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.tencent.qqmusiccar'
                   ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
               ]"
             >
-              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === app.pkg" class="px-2 py-0.5 text-[11px] rounded bg-car-item border border-car-accent text-car-accent font-black mr-1">首选</span>
-              <span>{{ app.name }}</span>
+              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.tencent.qqmusiccar'" class="px-2 py-0.5 text-[11px] rounded bg-car-item border border-car-accent text-car-accent font-black mr-1">首选</span>
+              <span>QQ音乐</span>
             </button>
+
+            <!-- 网易云音乐 (未安装则动态隐藏) -->
+            <button 
+              v-if="hasNeteaseMusic"
+              @click="setAutoplayApp('com.netease.cloudmusiccar', '网易云音乐')"
+              :class="[
+                'h-[54px] px-4 rounded-xl text-[15.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center justify-center space-x-2 shadow-sm',
+                store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.netease.cloudmusiccar'
+                  ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
+                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
+              ]"
+            >
+              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.netease.cloudmusiccar'" class="px-2 py-0.5 text-[11px] rounded bg-car-item border border-car-accent text-car-accent font-black mr-1">首选</span>
+              <span>网易云音乐</span>
+            </button>
+
+            <!-- 手机蓝牙 (始终常驻) -->
+            <button 
+              @click="setAutoplayApp('com.android.bluetooth', '手机蓝牙')"
+              :class="[
+                'h-[54px] px-4 rounded-xl text-[15.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center justify-center space-x-2 shadow-sm',
+                store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.android.bluetooth'
+                  ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
+                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
+              ]"
+            >
+              <span v-if="store.vehicleAuto.vehicle_speed_autoplay_pkg === 'com.android.bluetooth'" class="px-2 py-0.5 text-[11px] rounded bg-car-item border border-car-accent text-car-accent font-black mr-1">首选</span>
+              <span>手机蓝牙</span>
+            </button>
+
+            <!-- 自选车机已装软件 (自选后显示名称并高亮) -->
             <button 
               @click="openSelectModal('speed_autoplay')"
-              class="h-[54px] px-5 rounded-xl text-[15.5px] font-black cursor-pointer transition-all border-2 border-car-border bg-car-card hover:border-car-accent text-car-accent whitespace-nowrap flex items-center space-x-2 m-1 shadow-sm"
+              :class="[
+                'h-[54px] px-4 rounded-xl text-[15.5px] font-black cursor-pointer transition-all border-2 whitespace-nowrap flex items-center justify-center space-x-2 shadow-sm',
+                isCustomAutoplaySelected
+                  ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
+                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-accent'
+              ]"
             >
-              
-              <span>自选整车已装软件 ➔</span>
+              <span v-if="isCustomAutoplaySelected" class="px-2 py-0.5 text-[11px] rounded bg-car-item border border-car-accent text-car-accent font-black mr-1">自选</span>
+              <span>{{ customAutoplayAppName || '自选车机已装软件 ➔' }}</span>
             </button>
           </div>
         </div>
@@ -336,66 +354,58 @@ const activeTaskCount = computed(() => {
 });
 
 
-const sortedMusicApps = ref([]);
+const hasQQMusic = ref(false);
+const hasNeteaseMusic = ref(false);
+const customAutoplayAppName = ref('');
 const customActionAppName = ref('');
+
+const isCustomAutoplaySelected = computed(() => {
+  const currentPkg = store.vehicleAuto.vehicle_speed_autoplay_pkg;
+  if (!currentPkg) return false;
+  return currentPkg !== 'com.tencent.qqmusiccar' && 
+         currentPkg !== 'com.netease.cloudmusiccar' && 
+         currentPkg !== 'com.android.bluetooth';
+});
 
 function loadCustomActionAppName() {
   customActionAppName.value = localStorage.getItem('vehicle_speed_custom_action_app_name') || '';
 }
 
-function getMusicOrder() {
-  try {
-    const raw = localStorage.getItem('preferred_music_apps_order');
-    if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  return [];
+function loadCustomAutoplayAppName() {
+  const currentPkg = store.vehicleAuto.vehicle_speed_autoplay_pkg;
+  if (currentPkg && isCustomAutoplaySelected.value) {
+    const savedName = localStorage.getItem('vehicle_speed_autoplay_app_name');
+    customAutoplayAppName.value = savedName ? `自选: ${savedName}` : '自选应用 ➔';
+  } else {
+    customAutoplayAppName.value = '';
+  }
 }
 
-function loadSortedMusicApps() {
-  let list = [];
+function checkInstalledMusicApps() {
   try {
     const raw = bridge.call('getInstalledMusicAppsJson');
     if (raw) {
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      list = parsed.map(item => ({
-        name: item.name || item.appName,
-        pkg: item.pkg || item.packageName
-      }));
+      const pkgs = parsed.map(item => item.pkg || item.packageName);
+      hasQQMusic.value = pkgs.includes('com.tencent.qqmusiccar');
+      hasNeteaseMusic.value = pkgs.includes('com.netease.cloudmusiccar');
     }
-  } catch (e) {}
-
-  if (!list.some(a => a.pkg === 'com.android.bluetooth')) {
-    list.push({ name: '手机蓝牙', pkg: 'com.android.bluetooth' });
+  } catch (e) {
+    // 降级兜底：默认置 true 供前端调试/兜底
+    hasQQMusic.value = true;
+    hasNeteaseMusic.value = true;
   }
 
-  if (list.length === 1 && list[0].pkg === 'com.android.bluetooth') {
-    list.unshift({ name: '汽水音乐', pkg: 'com.luna.music' });
-    list.push({ name: 'QQ音乐', pkg: 'com.tencent.qqmusiccar' });
-    list.push({ name: '酷我音乐', pkg: 'cn.kuwo.kwmusiccar' });
+  // 默认选择逻辑：若未设置包名
+  if (!store.vehicleAuto.vehicle_speed_autoplay_pkg) {
+    if (hasQQMusic.value) {
+      store.vehicleAuto.vehicle_speed_autoplay_pkg = 'com.tencent.qqmusiccar';
+    } else {
+      store.vehicleAuto.vehicle_speed_autoplay_pkg = 'com.android.bluetooth';
+    }
   }
 
-  const order = getMusicOrder();
-  if (order.length > 0) {
-    list.sort((a, b) => {
-      let ia = order.indexOf(a.pkg);
-      let ib = order.indexOf(b.pkg);
-      if (ia === -1) ia = 999;
-      if (ib === -1) ib = 999;
-      return ia - ib;
-    });
-  }
-
-  const currentPkg = store.vehicleAuto.vehicle_speed_autoplay_pkg;
-  const currentName = localStorage.getItem('vehicle_speed_autoplay_app_name');
-  if (currentPkg && !list.some(a => a.pkg === currentPkg)) {
-    list.unshift({ name: currentName || '自选应用', pkg: currentPkg });
-  }
-
-  sortedMusicApps.value = list;
-
-  if (!store.vehicleAuto.vehicle_speed_autoplay_pkg && sortedMusicApps.value.length > 0) {
-    store.vehicleAuto.vehicle_speed_autoplay_pkg = sortedMusicApps.value[0].pkg;
-  }
+  loadCustomAutoplayAppName();
 }
 
 function refreshDetectedApps() {
@@ -458,13 +468,11 @@ function setCustomActionTarget(target) {
 function setAutoplayApp(pkg, name) {
   store.vehicleAuto.vehicle_speed_autoplay_pkg = pkg;
   bridge.call('setWheelControlStringSetting', 'vehicle_speed_autoplay_pkg', pkg);
-  localStorage.setItem('vehicle_speed_autoplay_app_name', name);
-  let order = getMusicOrder();
-  order = order.filter(p => p !== pkg);
-  order.unshift(pkg);
-  localStorage.setItem('preferred_music_apps_order', JSON.stringify(order));
-  loadSortedMusicApps();
-  showToast(`自启首选主力已设为: ${name}`);
+  if (name) {
+    localStorage.setItem('vehicle_speed_autoplay_app_name', name);
+  }
+  loadCustomAutoplayAppName();
+  showToast(`自启首选主力已设为: ${name || pkg}`);
 }
 
 function setAutoplayFullscreen(fullscreen) {
@@ -506,14 +514,14 @@ onMounted(() => {
   if (store.vehicleAuto.vehicle_gear_d_360_enabled !== undefined) {
     store.vehicleAuto.vehicle_d_gear_360_enabled = store.vehicleAuto.vehicle_gear_d_360_enabled;
   }
-  loadSortedMusicApps();
+  checkInstalledMusicApps();
   loadCustomActionAppName();
-  window.addEventListener('music-order-updated', loadSortedMusicApps);
+  window.addEventListener('music-order-updated', checkInstalledMusicApps);
   window.addEventListener('custom-action-target-updated', loadCustomActionAppName);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('music-order-updated', loadSortedMusicApps);
+  window.removeEventListener('music-order-updated', checkInstalledMusicApps);
   window.removeEventListener('custom-action-target-updated', loadCustomActionAppName);
 });
 </script>
