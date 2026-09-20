@@ -90,6 +90,7 @@ export const store = reactive({
     battery: false,
     deepTools: false,
     qrCode: false,
+    blogGuide: false,
     dialer: false,
     appDetail: null,
     rabbitInstall: null,

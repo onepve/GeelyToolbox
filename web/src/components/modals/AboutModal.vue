@@ -139,10 +139,10 @@
             💖 赞赏支持
           </button>
           <button 
-            @click="reopenGuide"
+            @click="handleGuideAction"
             class="min-h-[60px] px-6 rounded-xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
           >
-            📋 极客初始化向导
+            {{ isBeta ? '🛠️ 重跑配置向导' : '📖 玩车避坑指南' }}
           </button>
         </div>
 
@@ -316,10 +316,14 @@ function openReward() {
   openModal('reward');
 }
 
-function reopenGuide() {
+function handleGuideAction() {
   closeModal('about');
-  try {
-    window.dispatchEvent(new CustomEvent('open-geek-install-guide'));
-  } catch (e) {}
+  if (isBeta.value) {
+    try {
+      window.dispatchEvent(new CustomEvent('open-geek-install-guide'));
+    } catch (e) {}
+  } else {
+    openModal('blogGuide');
+  }
 }
 </script>

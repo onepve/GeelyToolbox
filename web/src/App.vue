@@ -33,6 +33,7 @@
     <RewardModal />
     <DeepToolsModal />
     <QrCodeModal />
+    <BlogGuideModal />
     <DialerModal />
     <AppDetailModal />
     <ConfirmModal />
@@ -100,6 +101,7 @@ import BatteryModal from './components/modals/BatteryModal.vue';
 import RewardModal from './components/modals/RewardModal.vue';
 import DeepToolsModal from './components/modals/DeepToolsModal.vue';
 import QrCodeModal from './components/modals/QrCodeModal.vue';
+import BlogGuideModal from './components/modals/BlogGuideModal.vue';
 import DialerModal from './components/modals/DialerModal.vue';
 import AppDetailModal from './components/modals/AppDetailModal.vue';
 import ConfirmModal from './components/modals/ConfirmModal.vue';

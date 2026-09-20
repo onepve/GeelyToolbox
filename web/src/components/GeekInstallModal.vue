@@ -5,7 +5,7 @@
       <div class="flex items-center justify-between pb-4 border-b border-car-border">
         <div class="flex items-center space-x-3">
           <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_10px_var(--accent-gold)] flex-shrink-0"></span>
-          <span class="text-[22px] font-black tracking-wide whitespace-nowrap">缤越 COOL 极客初始化配置向导</span>
+          <span class="text-[22px] font-black tracking-wide whitespace-nowrap">缤越 COOL 首次配置与安全向导</span>
           <span class="px-3 py-1 rounded-full text-[12.5px] font-black bg-car-item border border-car-accent text-car-accent whitespace-nowrap flex-shrink-0">
             SX11-A3 / E02 / IHU516G 专属
           </span>
@@ -37,7 +37,7 @@
               <StatusDot size="sm" :color="disclaimerAgreed ? 'ok' : 'warn'" />
             </div>
             <div class="text-[14px] text-car-sub font-bold leading-relaxed">
-              本工具专为吉利缤越 COOL (E02 / IHU516G 双联屏) 深度定制，经实车全功能路试。安装第三方应用属于极客提权操作，请确保在驻车安全状态下操作，严禁在行驶途中调试车机。
+              本工具专为吉利缤越 COOL (E02 / IHU516G 双联屏) 深度定制，经实车全功能路试。安装第三方应用需调整车机系统安全防护，请确保在驻车安全状态下操作，严禁在行驶途中调试车机。
             </div>
             <div class="p-3 bg-car-card rounded-xl border border-car-border text-[12.5px] text-car-sub font-mono">
               安全规范：严禁使用 ADB pm install 强行静默安装以免闪退；统一遵循原生特权文件通道。
