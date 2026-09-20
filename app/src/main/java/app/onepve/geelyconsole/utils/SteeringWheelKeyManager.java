@@ -876,8 +876,7 @@ public class SteeringWheelKeyManager {
 
     private void turnScreenOff() {
         try {
-            Intent intent = new Intent("android.intent.action.SCREEN_OFF");
-            context.sendBroadcast(intent);
+            IdleScreensaverManager.triggerNow(context);
         } catch (Exception ignored) {}
     }
 

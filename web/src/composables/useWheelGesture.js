@@ -11,7 +11,7 @@ const ACTION_DEFS = {
   open_360: { name: '打开 360 全景', sub: '一键秒看盲区' },
   play_pause: { name: '播放 / 暂停', sub: '媒体暂停或继续' },
   mute_toggle: { name: '静音切换', sub: '音乐声道静音/恢复' },
-  screen_off: { name: '息屏休眠', sub: '一键息屏防眩目' }
+  screen_off: { name: '息屏屏保', sub: '唤起内部息屏屏保' }
 };
 
 // 各键下拉选项（统一顺序：原厂/切歌 → 高德 → 360 → 播放暂停 → 静音 → 息屏，彻底消除顺序不一致）
@@ -69,7 +69,7 @@ export function useWheelGesture() {
       next_track: '下一曲',
       prev_track: '上一曲',
       mute_toggle: '静音切换',
-      screen_off: '息屏休眠'
+      screen_off: '息屏屏保'
     };
     if (isCustomApp(act)) return '自定义App';
     return map[act] || act;

@@ -289,69 +289,6 @@
       />
     </div>
 
-    <!-- 9. 新手按键能力指引与一键方案配置 -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-2xl mb-5">
-      <div class="flex items-center justify-between pb-4 mb-4 border-b border-car-border/60">
-        <div class="flex items-center space-x-3">
-          <StatusDot size="lg" color="accent" :glow-px="8" />
-          <span class="text-[20px] font-black text-car-text">新手功能指引 & 常用方案一键配置</span>
-        </div>
-        <div class="flex items-center space-x-3">
-          <BaseButton variant="cta" @click="applyRecommendedPreset">
-            一键应用车友黄金方案
-          </BaseButton>
-          <BaseButton variant="ghostSoft" @click="resetAllToFactory">
-            一键恢复全车原厂默认
-          </BaseButton>
-        </div>
-      </div>
-
-      <!-- 功能介绍与玩法说明 -->
-      <div class="grid grid-cols-3 gap-3.5 text-[14px]">
-        <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-between shadow-sm">
-          <div>
-            <div class="font-black text-car-text text-[16px] mb-1.5 flex items-center">
-              <span class="text-car-accent mr-2">●</span> 环视 360 全景盲区
-            </div>
-            <div class="text-car-sub font-bold text-[13.5px] leading-relaxed">
-              将原厂闲置的右侧 MODE 键映射为 360 全景，行车路遇窄路盲区随时方向盘盲操秒开，无需低头在中控大屏上找按键。
-            </div>
-          </div>
-          <div class="mt-3 pt-2.5 border-t border-car-border/50 text-[12.5px] text-car-accent font-black">
-            推荐键位：右方向盘 ⑥ MODE 键
-          </div>
-        </div>
-
-        <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-between shadow-sm">
-          <div>
-            <div class="font-black text-car-text text-[16px] mb-1.5 flex items-center">
-              <span class="text-car-accent mr-2">●</span> 高德 ↔ 桌面双向往返
-            </div>
-            <div class="text-car-sub font-bold text-[13.5px] leading-relaxed">
-              将左方向盘 ⑦ 号自定义键映射为往返高德：按第 1 下切出导航，按第 2 下最小化退回桌面，两端无感双向盲操切换。
-            </div>
-          </div>
-          <div class="mt-3 pt-2.5 border-t border-car-border/50 text-[12.5px] text-car-accent font-black">
-            推荐键位：左方向盘 ⑦ 自定义键
-          </div>
-        </div>
-
-        <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col justify-between shadow-sm">
-          <div>
-            <div class="font-black text-car-text text-[16px] mb-1.5 flex items-center">
-              <span class="text-car-accent mr-2">●</span> 音量暂停 / 息屏休眠
-            </div>
-            <div class="text-car-sub font-bold text-[13.5px] leading-relaxed">
-              支持将按键映射为媒体播放暂停或屏幕一键休眠，夜间行车防眩目或接打电话时，方向盘轻点一下即可物理静音关屏。
-            </div>
-          </div>
-          <div class="mt-3 pt-2.5 border-t border-car-border/50 text-[12.5px] text-car-accent font-black">
-            推荐键位：右方向盘 ③ 静音键 / ① 返回键
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- 方向盘图解悬浮对照卡：滚动设键位时默认悬浮于内容区右上角（绝不遮挡下方功能菜单）；
          支持拖放自定义位置并本地记忆，下次同位显示；原地点按隐藏 -->
     <transition name="floating-fade">

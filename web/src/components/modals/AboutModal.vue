@@ -138,12 +138,7 @@
           >
             💖 赞赏支持
           </button>
-          <button 
-            @click="handleGuideAction"
-            class="min-h-[54px] px-5 rounded-xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
-          >
-            {{ isBeta ? '🛠️ 重跑配置向导' : '📖 缤越助手说明' }}
-          </button>
+          
         </div>
 
         <div class="flex items-center space-x-2.5">
