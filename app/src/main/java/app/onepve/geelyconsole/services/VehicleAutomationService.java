@@ -159,44 +159,40 @@ public class VehicleAutomationService extends Service {
     private static volatile VehicleAutomationService instance;
 
     /**
-     * P挡开门安全守护 (证据不足安全静默):
-     * - EPB: 仅当 EPB 信号在新鲜窗口内且确知为「释放」才告警 (P0)；
-     * - 方向盘: 仅当角度信号新鲜且 |角度|>60° 才提醒 (P3)；
-     * - 任何 unknown/过期信号一律静默，绝不误警。
+     * 推开主驾门安全守护:
+     * - P0 溜车高危告警: 仅当未挂 P 挡推开主驾门且处于点火运转中时告警。
      */
-    private void checkEpbAndSteerAngleOnDriverDoorOpen() {
+    private void checkParkGearOnDriverDoorOpen() {
         if (gearStateMachine == null) {
             return;
         }
-
         int gear = gearStateMachine.getGear();
-
-        // 【最高优先级 P0】挡位与电子手刹双维度驻车安全守护：
-        //   停车状态下推开车门前，必须确认「已挂 P 挡」且「电子手刹已拉起」，
-        //   任一项不满足车辆都可能溜车（P 挡与手刹既关联又独立，两者都要检测）。
         if (gear != 5) {
-            // 未挂驻车挡(P挡)就推开车门 → 溜车高危，最高优先级警告。
-            // 仅当车辆点火运行时才告警；熄火下电或 ACC 只开车机时证据不足安全静默。
             if (isEngineRunning()) {
                 AppLogger.w("安全守护", "【P0报警】挡位[" + gear + "]未挂驻车挡就推开车门，车辆可能溜车！");
                 if (voicePlayer != null) {
                     voicePlayer.play("gear_park_alarm.mp3", "请挂入驻车挡", VehicleVoicePlayer.PRIORITY_P0_ALARM);
                 }
             }
-            return; // 非驻车挡：不再检查手刹与方向盘
         }
+    }
 
+    /**
+     * 挂入 P 挡驻停即时触发方向盘偏角检测:
+     * 此时整车处于未熄火状态，车机功放处于最佳供电与发声状态，驾驶员在座可顺手一把回正方向盘。
+     * (彻底避免熄火后开门整机断电无声的物理死穴)
+     */
+    private void checkSteerAngleOnPark() {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
         long now = android.os.SystemClock.elapsedRealtime();
 
-        // 方向盘未回正提醒 (P3 优先级; 阈值 60° 为测试值)
         boolean steerGuard = prefs.getBoolean("voice_enable_steer_angle_guard", true);
         if (steerGuard && steerAngleSignalAt > 0
                 && now - steerAngleSignalAt <= SafetySensorStateMachine.SIGNAL_FRESHNESS_MS) {
             int r = safetySensors.checkSteerAngleNotCentered(now);
             if (r == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED) {
                 double deg = safetySensors.getKnownValue(SafetySensorStateMachine.SENSOR_STEER_ANGLE);
-                AppLogger.i("安全守护", "【P3关怀】挂P挡推开主驾门，方向盘未回正 (偏角=" + (int) deg + "°，测试阈值60°)");
+                AppLogger.i("安全守护", "【P2关怀】挂入P挡驻车，方向盘未回正 (偏角=" + (int) deg + "°)");
                 if (voicePlayer != null) {
                     voicePlayer.play("steer_angle_guard.mp3", "请注意回正方向盘", VehicleVoicePlayer.PRIORITY_P2_DOOR);
                 }
@@ -293,7 +289,7 @@ public class VehicleAutomationService extends Service {
         doorStateManager = new DoorStateManager(this, voicePlayer);
         doorStateManager.setListener((fl, fr, rl, rr) -> {
             if (fl == 1 && currentDoorFL == 0) {
-                checkEpbAndSteerAngleOnDriverDoorOpen();
+                checkParkGearOnDriverDoorOpen();
             }
             currentDoorFL = fl;
             currentDoorFR = fr;
@@ -309,6 +305,9 @@ public class VehicleAutomationService extends Service {
         gearStateMachine = new GearStateMachine(this, voicePlayer);
         gearStateMachine.setListener(gear -> {
             lastGearPos = gear;
+            if (gear == 5) {
+                checkSteerAngleOnPark();
+            }
         });
 
         driveModeManager = new DriveModeManager(this, voicePlayer);
