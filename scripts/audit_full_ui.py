@@ -27,6 +27,9 @@ HTML_FILE = "file:///data/projects/GeelyToolbox/app/src/main/assets/toolbox_ui.h
 PORT = 9240
 
 def start_edge():
+    # 清理残留进程防止端口冲突
+    subprocess.run(["pkill", "-f", f"--remote-debugging-port={PORT}"], stderr=subprocess.DEVNULL)
+    time.sleep(0.5)
     proc = subprocess.Popen([
         "/usr/bin/microsoft-edge",
         "--headless=new",
@@ -36,7 +39,16 @@ def start_edge():
         "--window-size=1920,720",
         HTML_FILE
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(2.0)
+    
+    # 轮询等待端口就绪，最长等待 10 秒
+    start_t = time.time()
+    while time.time() - start_t < 10:
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{PORT}/json/list", timeout=1) as resp:
+                if resp.status == 200:
+                    break
+        except Exception:
+            time.sleep(0.3)
     return proc
 
 async def run_audit():
@@ -304,4 +316,9 @@ if __name__ == "__main__":
     try:
         asyncio.run(run_audit())
     finally:
-        edge_proc.terminate()
+        try:
+            edge_proc.terminate()
+            edge_proc.wait(timeout=2)
+        except Exception:
+            edge_proc.kill()
+        subprocess.run(["pkill", "-f", f"--remote-debugging-port={PORT}"], stderr=subprocess.DEVNULL)
