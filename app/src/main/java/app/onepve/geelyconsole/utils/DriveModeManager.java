@@ -38,6 +38,7 @@ public class DriveModeManager {
     private int lastDriveMode = -1; // 初始未定态 (-1)，开机首包静默确立基准
     private boolean isSmartModeArmed = false; // 智能模式闭锁标志：默认锁定(false)，切到其他模式时武装(true)，切回智能并播报一次后立即恢复锁定值(false)，彻底杜绝驻车循环播报
     private Runnable pendingModeTask = null;
+    private int pendingTargetMode = -1; // 防抖期目标模式：同目标信号不重置计时器
     private static final long MODE_DEBOUNCE_MS = 160; // 模式切换防抖滤波窗口 (160ms 滤除旋钮极速滑动过渡态)
 
     public DriveModeManager(Context context, VehicleVoicePlayer voicePlayer) {
@@ -105,11 +106,15 @@ public class DriveModeManager {
             voicePlayer.stopCurrentVoice();
         }
 
-        // 取消上一次正在防抖中的模式任务 (滤除旋钮快速连切的瞬态，如快速划过经济直接切入舒适)
+        // 防抖核心铁律：同目标模式信号直接忽略，不重置计时器
+        if (mode == pendingTargetMode && pendingModeTask != null) {
+            return;
+        }
         if (pendingModeTask != null) {
             mainHandler.removeCallbacks(pendingModeTask);
             pendingModeTask = null;
         }
+        pendingTargetMode = mode;
 
         final int targetMode = mode;
         pendingModeTask = new Runnable() {
@@ -117,6 +122,7 @@ public class DriveModeManager {
             public void run() {
                 synchronized (DriveModeManager.this) {
                     pendingModeTask = null;
+                    pendingTargetMode = -1;
                     if (targetMode == lastDriveMode) return;
 
                     AppLogger.i("驾驶模式", "模式确认切换: " + getModeName(lastDriveMode) + " -> " + getModeName(targetMode) + ", smartArmed=" + isSmartModeArmed);
