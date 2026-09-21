@@ -894,8 +894,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             }
                         }
                     }).start();
+                } else if (file.getName().toLowerCase().endsWith(".apk")) {
+                    Toast.makeText(MainActivity.this, "收到安装包: " + file.getName() + " (" + SystemUtils.formatFileSize(file.length()) + ")，已保存至 Download", Toast.LENGTH_LONG).show();
                 } else {
-                    Toast.makeText(MainActivity.this, "收到手机快传文件: " + file.getName(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "收到手机快传文件: " + file.getName() + " (" + SystemUtils.formatFileSize(file.length()) + ")", Toast.LENGTH_LONG).show();
                 }
             }
         });

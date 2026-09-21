@@ -67,16 +67,16 @@
             <button class="btn btn-primary" style="background:#059669;" onclick="copyOtaUrl()">📋 复制 OTA 直链</button>
         </div>
 
-        <!-- 卡片 2: 手机本地 APK 上传 -->
+        <!-- 卡片 2: 手机全格式文件秒传到车机 -->
         <div class="card">
-            <div class="card-title"><span>📁 手机本地 APK 秒传到车机</span></div>
+            <div class="card-title"><span>📁 手机全格式文件秒传到车机</span></div>
             <div class="input-group">
-                <label class="input-label">选择手机中的 APK 安装包或语音包 ZIP：</label>
-                <input type="file" id="file-input" accept=".apk,.zip,.xtz">
+                <label class="input-label">选择任意文件（APK安装包/语音包ZIP/音视频/地图/文档等）：</label>
+                <input type="file" id="file-input">
             </div>
-            <button class="btn btn-primary" onclick="uploadFile()">开始局域网高速传输</button>
+            <button class="btn btn-primary" id="btn-upload" onclick="uploadFile()">开始局域网高速传输</button>
             <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-            <div id="upload-status" style="font-size:12px; color:#64748b; margin-top:6px; text-align:center;"></div>
+            <div id="upload-status" style="font-size:12px; color:#64748b; margin-top:6px; text-align:center; word-break:break-all;"></div>
         </div>
 
         <!-- 卡片 3: 推送 ADB 命令 -->
@@ -264,36 +264,128 @@
             const fileInput = document.getElementById('file-input');
             if (!fileInput.files.length) { alert('请先选择文件'); return; }
             const file = fileInput.files[0];
-            const chunkSize = 2 * 1024 * 1024; // 2MB chunks
+
+            // 动态分片：<=16MB 使用 2MB 分片；16MB~128MB 使用 4MB；>128MB 使用 8MB，大幅降低弱网握手次数
+            let chunkSize = 2 * 1024 * 1024;
+            if (file.size > 128 * 1024 * 1024) {
+                chunkSize = 8 * 1024 * 1024;
+            } else if (file.size > 16 * 1024 * 1024) {
+                chunkSize = 4 * 1024 * 1024;
+            }
+
             const totalChunks = Math.ceil(file.size / chunkSize);
             const pBar = document.getElementById('progress-bar');
             const pFill = document.getElementById('progress-fill');
             const pStatus = document.getElementById('upload-status');
-            pBar.style.display = 'block';
-            let resolvedName = file.name;
-            for (let i = 0; i < totalChunks; i++) {
-                const start = i * chunkSize;
-                const end = Math.min(file.size, start + chunkSize);
-                const chunk = file.slice(start, end);
-                const isLast = (i === totalChunks - 1);
-                pStatus.innerText = '正在传输: ' + Math.round((i / totalChunks) * 100) + '% (' + (start / 1024 / 1024).toFixed(1) + 'MB / ' + (file.size / 1024 / 1024).toFixed(1) + 'MB)';
-                const res = await fetch('/api/upload_chunk', {
-                    method: 'POST',
-                    headers: {
-                        'x-file-name': encodeURIComponent(resolvedName),
-                        'x-chunk-offset': start.toString(),
-                        'x-name-resolved': (i > 0 ? 'true' : 'false'),
-                        'x-last-chunk': isLast ? 'true' : 'false'
-                    },
-                    body: chunk
-                });
-                try {
-                    const chunkJson = await res.json();
-                    if (chunkJson && chunkJson.savedName) resolvedName = chunkJson.savedName;
-                } catch(e) {}
-                pFill.style.width = Math.round(((i + 1) / totalChunks) * 100) + '%';
+            const btnUpload = document.getElementById('btn-upload');
+
+            if (btnUpload) {
+                btnUpload.disabled = true;
+                btnUpload.innerText = '正在高速传输中...';
             }
-            pStatus.innerText = '✅ 传输完成！已保存至车机 /sdcard/Download/' + resolvedName;
+            pBar.style.display = 'block';
+            pFill.style.width = '0%';
+            let resolvedName = file.name;
+
+            // 申请保持手机屏幕常亮，防止手机息屏休眠切断网络
+            let wakeLock = null;
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (e) {}
+            }
+
+            const startTime = Date.now();
+            try {
+                for (let i = 0; i < totalChunks; i++) {
+                    const start = i * chunkSize;
+                    const end = Math.min(file.size, start + chunkSize);
+                    const chunk = file.slice(start, end);
+                    const isLast = (i === totalChunks - 1);
+
+                    const elapsedSec = Math.max(0.1, (Date.now() - startTime) / 1000);
+                    const speedMB = (start / 1024 / 1024 / elapsedSec).toFixed(1);
+                    const percent = Math.round((i / totalChunks) * 100);
+                    pStatus.innerText = `正在传输: ${percent}% (${(start / 1024 / 1024).toFixed(1)}MB / ${(file.size / 1024 / 1024).toFixed(1)}MB, ${speedMB}MB/s)`;
+
+                    const queryParams = new URLSearchParams({
+                        fileName: encodeURIComponent(resolvedName),
+                        chunkOffset: start.toString(),
+                        nameResolved: (i > 0 ? 'true' : 'false'),
+                        lastChunk: isLast ? 'true' : 'false',
+                        fileSize: file.size.toString()
+                    });
+                    const uploadUrl = '/api/upload_chunk?' + queryParams.toString();
+
+                    let chunkSuccess = false;
+                    let lastErr = '';
+
+                    // 单分片自动重试机制（最多 3 次指数退避）
+                    for (let retry = 0; retry < 3; retry++) {
+                        try {
+                            if (retry > 0) {
+                                pStatus.innerText = `网络波动，正在重试分片 ${i + 1}/${totalChunks} (第 ${retry}/3 次)...`;
+                                await new Promise(r => setTimeout(r, 1000 * retry));
+                            }
+                            const res = await fetch(uploadUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/octet-stream',
+                                    'x-file-name': encodeURIComponent(resolvedName),
+                                    'x-chunk-offset': start.toString(),
+                                    'x-name-resolved': (i > 0 ? 'true' : 'false'),
+                                    'x-last-chunk': isLast ? 'true' : 'false'
+                                },
+                                body: chunk
+                            });
+                            if (!res.ok) {
+                                throw new Error('HTTP ' + res.status);
+                            }
+                            const chunkJson = await res.json();
+                            if (chunkJson && chunkJson.success) {
+                                if (chunkJson.savedName) resolvedName = chunkJson.savedName;
+                                chunkSuccess = true;
+                                break;
+                            } else {
+                                throw new Error((chunkJson && chunkJson.error) || '服务端分片校验失败');
+                            }
+                        } catch (err) {
+                            lastErr = err.message || '网络连接异常';
+                        }
+                    }
+
+                    if (!chunkSuccess) {
+                        throw new Error(`分片 ${i + 1}/${totalChunks} 传输失败 (${lastErr})，请保持Wi-Fi连接`);
+                    }
+
+                    pFill.style.width = Math.round(((i + 1) / totalChunks) * 100) + '%';
+                }
+
+                pFill.style.width = '100%';
+                const totalSec = Math.max(0.1, (Date.now() - startTime) / 1000);
+                const avgSpeed = (file.size / 1024 / 1024 / totalSec).toFixed(1);
+
+                const lowerName = resolvedName.toLowerCase();
+                let tipMsg = '🎉 传输成功！已保存至车机 /sdcard/Download/' + resolvedName;
+                if (lowerName.endsWith('.apk')) {
+                    tipMsg = '🎉 安装包已传至车机！可前往车机「文件管理」点击安装：' + resolvedName;
+                } else if (lowerName.endsWith('.zip')) {
+                    tipMsg = '🎉 压缩包传输成功！车机已接收（若为语音包将自动就绪）';
+                }
+                pStatus.innerText = tipMsg + ` (耗时 ${totalSec.toFixed(1)}s, 平均 ${avgSpeed}MB/s)`;
+                if (typeof loadCarFiles === 'function') loadCarFiles();
+            } catch (err) {
+                pStatus.innerText = '❌ 传输中断: ' + err.message;
+                alert('传输中断: ' + err.message);
+            } finally {
+                if (wakeLock) {
+                    try { await wakeLock.release(); } catch (e) {}
+                }
+                if (btnUpload) {
+                    btnUpload.disabled = false;
+                    btnUpload.innerText = '开始局域网高速传输';
+                }
+            }
         }
 
         async function sendAction(act) {

@@ -38,6 +38,10 @@ CONTRACTS = [
  ('tts-ready-flush', JAVA+'utils/VehicleVoicePlayer.java', 'private void initTts()', [r'ttsReady\s*=\s*true', r'flushPendingSpeech\(\)'], []),
  ('tts-expiry', JAVA+'utils/VehicleVoicePlayer.java', 'private void flushPendingSpeech()',
   [r'System.currentTimeMillis\(\)\s*-\s*at\s*>\s*PENDING_TTL_MS', r'pendingText\s*=\s*null',r'speakText\(text,\s*voiceType\)'], []),
+ ('webserver-options-preflight', JAVA+'server/WebServer.java', 'private void handleOptions(OutputStream out)',
+  [r'HTTP/1\.1 204 No Content', r'Access-Control-Allow-Origin', r'Access-Control-Allow-Methods'], []),
+ ('webserver-incomplete-data-check', JAVA+'server/WebServer.java', 'private void handleApiUploadChunk(InputStream in, int length, Map<String, String> headers, String queryString, OutputStream out)',
+  [r'totalWritten\s*<\s*length', r'incomplete_data'], []),
  ('tts-retry', JAVA+'utils/VehicleVoicePlayer.java', 'public void ensureTtsReady()',
   [r'mainHandler.post\(', r'now\s*-\s*lastInitAttemptAt\s*<\s*INIT_RETRY_INTERVAL_MS',r'initTts\(\)'], []),
  ('unlock-prewarm', JAVA+'services/VehicleAutomationService.java', 'if (bootReason == 0 || bootReason == 1)', [r'voicePlayer.ensureTtsReady\(\)'], []),
@@ -124,12 +128,17 @@ def evaluate(files):
         failures.append('helpdot-click-bound')
     if re.search(r'立即测试屏保效果', floating_vue) or not re.search(r'<span>屏保测试</span>', floating_vue):
         failures.append('screensaver-test-button-clean')
+    mweb = files.get('app/src/main/assets/mobile_web.html', '')
+    if re.search(r'accept=[\'"][^\'"]*apk[^\'"]*[\'"]', mweb):
+        failures.append('mobile-web-unrestricted-transfer')
+    if not re.search(r'retry\s*<\s*3', mweb) or not re.search(r'wakeLock', mweb):
+        failures.append('mobile-web-transfer-reliability')
     return failures
 
 
 def load(root):
     root = Path(root)
-    paths = {c[1] for c in CONTRACTS} | {'web/src/App.vue', 'web/src/views/FloatingView.vue', 'app/src/main/assets/toolbox_ui.html', JAVA+'utils/AppLogger.java', 'scripts/publish_r2.py', 'scripts/changelog_builder.py'}
+    paths = {c[1] for c in CONTRACTS} | {'web/src/App.vue', 'web/src/views/FloatingView.vue', 'app/src/main/assets/toolbox_ui.html', 'app/src/main/assets/mobile_web.html', JAVA+'utils/AppLogger.java', 'scripts/publish_r2.py', 'scripts/changelog_builder.py'}
     paths.update(str(p.relative_to(root)) for p in (root/JAVA).rglob('*.java'))
     return {p:(root/p).read_text() for p in paths if (root/p).exists()}
 

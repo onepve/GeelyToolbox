@@ -125,7 +125,14 @@ public class WebServer {
 
                     String[] reqParts = lines[0].split(" ");
                     String method = reqParts[0];
-                    String path = reqParts.length > 1 ? reqParts[1] : "/";
+                    String fullPath = reqParts.length > 1 ? reqParts[1] : "/";
+                    String path = fullPath;
+                    String queryString = "";
+                    int qIdx = fullPath.indexOf('?');
+                    if (qIdx != -1) {
+                        path = fullPath.substring(0, qIdx);
+                        queryString = fullPath.substring(qIdx + 1);
+                    }
 
                     Map<String, String> headers = new HashMap<>();
                     for (int i = 1; i < lines.length; i++) {
@@ -143,16 +150,18 @@ public class WebServer {
                         }
                     }
 
-                    if ("/api/status".equals(path) && "GET".equalsIgnoreCase(method)) {
+                    if ("OPTIONS".equalsIgnoreCase(method)) {
+                        handleOptions(out);
+                    } else if ("/api/status".equals(path) && "GET".equalsIgnoreCase(method)) {
                         handleApiStatus(out);
                     } else if ("/api/list_downloads".equals(path) && "GET".equalsIgnoreCase(method)) {
                         handleApiListDownloads(out);
                     } else if (path.startsWith("/api/download") && "GET".equalsIgnoreCase(method)) {
-                        handleApiDownloadFile(path, out);
+                        handleApiDownloadFile(fullPath, out);
                     } else if ("/api/push_url".equals(path) && "POST".equalsIgnoreCase(method)) {
                         handleApiPushUrl(in, contentLength, out);
                     } else if ("/api/upload_chunk".equals(path) && "POST".equalsIgnoreCase(method)) {
-                        handleApiUploadChunk(in, contentLength, headers, out);
+                        handleApiUploadChunk(in, contentLength, headers, queryString, out);
                     } else if ("/api/action".equals(path) && "POST".equalsIgnoreCase(method)) {
                         handleApiAction(in, contentLength, out);
                     } else if ("/api/push_cmd".equals(path) && "POST".equalsIgnoreCase(method)) {
@@ -380,29 +389,81 @@ public class WebServer {
         return file.getName();
     }
 
-    private void handleApiUploadChunk(InputStream in, int length, Map<String, String> headers, OutputStream out) throws IOException {
-        String fileName = headers.get("x-file-name");
-        if (fileName != null) {
-            fileName = URLDecoder.decode(fileName, "UTF-8");
-        } else {
-            fileName = "upload_" + System.currentTimeMillis() + ".apk";
-        }
+    private void handleOptions(OutputStream out) throws IOException {
+        String header = "HTTP/1.1 204 No Content\r\n" +
+                "Access-Control-Allow-Origin: *\r\n" +
+                "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n" +
+                "Access-Control-Allow-Headers: Content-Type, x-file-name, x-chunk-offset, x-last-chunk, x-name-resolved, x-file-size, *\r\n" +
+                "Access-Control-Max-Age: 86400\r\n" +
+                "Content-Length: 0\r\n" +
+                "Connection: close\r\n\r\n";
+        out.write(header.getBytes(StandardCharsets.UTF_8));
+    }
 
-        long chunkOffset = 0;
-        if (headers.containsKey("x-chunk-offset")) {
-            try {
-                chunkOffset = Long.parseLong(headers.get("x-chunk-offset"));
-            } catch (Exception ignored) {
+    private Map<String, String> parseQueryParams(String query) {
+        Map<String, String> map = new HashMap<>();
+        if (query == null || query.isEmpty()) return map;
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            int idx = pair.indexOf("=");
+            if (idx > 0) {
+                String k = pair.substring(0, idx).trim();
+                String v = pair.substring(idx + 1).trim();
+                try {
+                    v = URLDecoder.decode(v, "UTF-8");
+                } catch (Exception ignored) {}
+                map.put(k, v);
             }
         }
+        return map;
+    }
 
-        boolean isLastChunk = "true".equalsIgnoreCase(headers.get("x-last-chunk"));
+    private void handleApiUploadChunk(InputStream in, int length, Map<String, String> headers, String queryString, OutputStream out) throws IOException {
+        Map<String, String> queryParams = parseQueryParams(queryString);
+
+        String fileName = headers.get("x-file-name");
+        if (fileName == null || fileName.isEmpty()) {
+            fileName = queryParams.get("fileName");
+        }
+        if (fileName != null && !fileName.isEmpty()) {
+            try {
+                fileName = URLDecoder.decode(fileName, "UTF-8");
+            } catch (Exception ignored) {}
+        } else {
+            fileName = "upload_" + System.currentTimeMillis();
+        }
+
+        // 仅保留文件名本身，严防路径穿越
+        fileName = new File(fileName).getName();
+
+        long chunkOffset = 0;
+        String offsetStr = headers.get("x-chunk-offset");
+        if (offsetStr == null || offsetStr.isEmpty()) {
+            offsetStr = queryParams.get("chunkOffset");
+        }
+        if (offsetStr != null) {
+            try {
+                chunkOffset = Long.parseLong(offsetStr);
+            } catch (Exception ignored) {}
+        }
+
+        String lastChunkStr = headers.get("x-last-chunk");
+        if (lastChunkStr == null || lastChunkStr.isEmpty()) {
+            lastChunkStr = queryParams.get("lastChunk");
+        }
+        boolean isLastChunk = "true".equalsIgnoreCase(lastChunkStr);
+
+        String nameResolvedStr = headers.get("x-name-resolved");
+        if (nameResolvedStr == null || nameResolvedStr.isEmpty()) {
+            nameResolvedStr = queryParams.get("nameResolved");
+        }
+        boolean isNameResolved = "true".equalsIgnoreCase(nameResolvedStr);
 
         File downloadDir = SystemUtils.getAppDownloadDir();
         if (!downloadDir.exists()) downloadDir.mkdirs();
 
         // 仅在分片 offset == 0 且未经过重命名处理时检测同名冲突并自动重命名
-        if (chunkOffset == 0 && !"true".equalsIgnoreCase(headers.get("x-name-resolved"))) {
+        if (chunkOffset == 0 && !isNameResolved) {
             fileName = getUniqueFileName(downloadDir, fileName);
         }
 
@@ -411,16 +472,24 @@ public class WebServer {
         RandomAccessFile raf = new RandomAccessFile(targetFile, "rw");
         raf.seek(chunkOffset);
 
-        byte[] buf = new byte[16 * 1024];
+        byte[] buf = new byte[32 * 1024];
         int remaining = length;
+        int totalWritten = 0;
         while (remaining > 0) {
             int toRead = Math.min(buf.length, remaining);
             int read = in.read(buf, 0, toRead);
             if (read == -1) break;
             raf.write(buf, 0, read);
             remaining -= read;
+            totalWritten += read;
         }
         raf.close();
+
+        if (totalWritten < length) {
+            String errResp = "{\"success\":false,\"error\":\"incomplete_data\",\"written\":" + totalWritten + ",\"expected\":" + length + "}";
+            sendJsonResponse(out, errResp);
+            return;
+        }
 
         if (isLastChunk) {
             mainHandler.post(new Runnable() {

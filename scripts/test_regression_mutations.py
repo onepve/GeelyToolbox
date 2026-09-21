@@ -37,6 +37,10 @@ mutated['scripts/publish_r2.py']=files['scripts/publish_r2.py']+'\nHARDCODED = "
 results.append({'id':'changelog-no-hardcoded-version','caught':'changelog-no-hardcoded-version' in evaluate(mutated)})
 mutated=dict(files);mutated['scripts/changelog_builder.py']=files['scripts/changelog_builder.py'].replace('def read_override(','def read_override_removed(')
 results.append({'id':'changelog-builder-contract','caught':'changelog-builder-contract' in evaluate(mutated)})
+mutated=dict(files);mutated['app/src/main/assets/mobile_web.html']=files['app/src/main/assets/mobile_web.html'].replace('id="file-input"', 'id="file-input" accept=".apk"')
+results.append({'id':'mobile-web-unrestricted-transfer','caught':'mobile-web-unrestricted-transfer' in evaluate(mutated)})
+mutated=dict(files);mutated['app/src/main/assets/mobile_web.html']=files['app/src/main/assets/mobile_web.html'].replace('retry < 3', 'retry < 0')
+results.append({'id':'mobile-web-transfer-reliability','caught':'mobile-web-transfer-reliability' in evaluate(mutated)})
 print(json.dumps(results,ensure_ascii=False,indent=2))
 assert all(r['caught'] for r in results), 'Some mutations escaped'
 print(f'PASS {len(results)}/{len(results)} targeted mutations rejected')
