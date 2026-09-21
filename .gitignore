@@ -1,0 +1,19 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+/app/build/
+node_modules/
+web/node_modules/
+web/dist/
+__pycache__/
+.shots/
+
+# probe screenshots
+scripts/shots/
