@@ -401,11 +401,15 @@ else:
     passed = False
 
 # 权威来源：纯云端 dl.onepve.com/GeelyToolbox/apps.json (彻底拔除本地静态兜底，100% 动态云端化)
-cloud_apps_url = f"https://dl.onepve.com/GeelyToolbox/apps.json?t={int(time.time())}"
-app_urls = []
-if os.environ.get("FAST_CHECK") == "1":
-    print("[SKIP] FAST_CHECK enabled, skipping remote CDN asset availability probing.")
+# 架构解耦：日常 CI 编译与发版门禁不再强制全量探测数十个第三方 APK 下载外链，
+# 彻底消除因外部网络抖动或第三方链接临时异常误杀主线 CI 与发版的问题。
+# 商店外链探测转为按需执行 (CHECK_STORE_ASSETS=1)，且即便探测有异常也作为非阻断警告输出。
+check_store = os.environ.get("CHECK_STORE_ASSETS") == "1"
+if not check_store:
+    print("[SKIP] Remote CDN store asset link probing skipped in CI (set CHECK_STORE_ASSETS=1 for manual audit).")
 else:
+    cloud_apps_url = f"https://dl.onepve.com/GeelyToolbox/apps.json?t={int(time.time())}"
+    app_urls = []
     try:
         req = urllib.request.Request(cloud_apps_url, headers={"User-Agent": "GeelyToolbox-CI/1.0"})
         with urllib.request.urlopen(req, timeout=5) as resp:
@@ -433,11 +437,10 @@ else:
         if status_code in (200, 301, 302):
             print(f"  [OK] {status_code} -> {url}")
         else:
-            print(f"  [FAIL] -> {url} (Error: {err})")
+            print(f"  [WARN] -> {url} (Error: {err})")
             failures.append((url, str(err)))
     if failures:
-        print(f"  [FAIL] {len(failures)} asset links failed verification!")
-        passed = False
+        print(f"  [WARN] {len(failures)} asset links had issues during verification (non-blocking).")
     else:
         print("[PASS] All cloud app asset links verified accessible.")
 

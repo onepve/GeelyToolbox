@@ -155,12 +155,17 @@ def evaluate(files):
         failures.append('mobile-web-unrestricted-transfer')
     if not re.search(r'retry\s*<\s*3', mweb) or not re.search(r'wakeLock', mweb):
         failures.append('mobile-web-transfer-reliability')
+    ci_health = files.get('scripts/ci_health_check.py', '')
+    if not re.search(r'CHECK_STORE_ASSETS', ci_health):
+        failures.append('ci-store-probe-decoupled')
+    if re.search(r'failures\.append\(\(url,\s*str\(err\)\)\)\s*\n\s*if failures:\s*\n\s*passed\s*=\s*False', ci_health):
+        failures.append('ci-store-probe-non-blocking')
     return failures
 
 
 def load(root):
     root = Path(root)
-    paths = {c[1] for c in CONTRACTS} | {'web/src/App.vue', 'web/src/views/FloatingView.vue', 'app/src/main/assets/toolbox_ui.html', 'app/src/main/assets/mobile_web.html', JAVA+'utils/AppLogger.java', 'scripts/publish_r2.py', 'scripts/changelog_builder.py'}
+    paths = {c[1] for c in CONTRACTS} | {'web/src/App.vue', 'web/src/views/FloatingView.vue', 'app/src/main/assets/toolbox_ui.html', 'app/src/main/assets/mobile_web.html', JAVA+'utils/AppLogger.java', 'scripts/publish_r2.py', 'scripts/changelog_builder.py', 'scripts/ci_health_check.py'}
     paths.update(str(p.relative_to(root)) for p in (root/JAVA).rglob('*.java'))
     paths.update(str(p.relative_to(root)) for p in (root/'web/src').rglob('*.vue'))
     paths.update(str(p.relative_to(root)) for p in (root/'web/src').rglob('*.js'))

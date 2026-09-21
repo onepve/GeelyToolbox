@@ -51,6 +51,14 @@ mutated=dict(files);mutated['app/src/main/assets/mobile_web.html']=files['app/sr
 results.append({'id':'mobile-web-unrestricted-transfer','caught':'mobile-web-unrestricted-transfer' in evaluate(mutated)})
 mutated=dict(files);mutated['app/src/main/assets/mobile_web.html']=files['app/src/main/assets/mobile_web.html'].replace('retry < 3', 'retry < 0')
 results.append({'id':'mobile-web-transfer-reliability','caught':'mobile-web-transfer-reliability' in evaluate(mutated)})
+# CI 商店外链探测解耦：回退为无条件必跑或阻断 CI 必须被拦截
+mutated=dict(files);mutated['scripts/ci_health_check.py']=files['scripts/ci_health_check.py'].replace('CHECK_STORE_ASSETS', 'CHECK_STORE_REMOVED')
+results.append({'id':'ci-store-probe-decoupled','caught':'ci-store-probe-decoupled' in evaluate(mutated)})
+mutated=dict(files);mutated['scripts/ci_health_check.py']=files['scripts/ci_health_check.py'].replace(
+    'print(f"  [WARN] {len(failures)} asset links had issues during verification (non-blocking).")',
+    'failures.append((url, str(err)))\n    if failures:\n        passed = False'
+)
+results.append({'id':'ci-store-probe-non-blocking','caught':'ci-store-probe-non-blocking' in evaluate(mutated)})
 print(json.dumps(results,ensure_ascii=False,indent=2))
 assert all(r['caught'] for r in results), 'Some mutations escaped'
 print(f'PASS {len(results)}/{len(results)} targeted mutations rejected')
