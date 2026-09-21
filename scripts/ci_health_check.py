@@ -795,8 +795,8 @@ if "vehicle_d_gear_360_enabled" not in lv_full_code and "vehicle_gear_d_360_enab
 
 if "adjustAutoplaySpeed" not in lv_full_code or "adjustCustomActionSpeed" not in lv_full_code:
     reg_violations.append("LinkView.vue 缺少车速纯加减微调控制器，不得回退为死板预设！")
-if "车身智能联动" not in lv_full_code:
-    reg_violations.append("LinkView.vue 缺少【车身智能联动】功能卡片！")
+if "车身智能联动" in lv_full_code:
+    reg_violations.append("LinkView.vue 严禁残留冗余无交互的【车身智能联动】概览卡片，必须保持 4 大联动场景顶格呈现！")
 
 # 16.8 死代码与孤岛弹窗防御 (Dead Code & Modal Orphan Defense)
 with open(os.path.join(WEB_SRC_DIR, "App.vue"), "r", encoding="utf-8") as f:

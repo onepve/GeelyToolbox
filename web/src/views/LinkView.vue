@@ -1,21 +1,5 @@
 <template>
   <div class="flex flex-col space-y-5">
-    <!-- 顶部联动概览与操作栏 -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
-      <div class="w-full flex flex-col space-y-1.5">
-        <div class="flex items-center space-x-3">
-          <StatusDot size="lg" color="accent" :glow-px="10" class="shrink-0" />
-          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">车身智能联动</span>
-          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-accent/40 text-car-accent inline-flex items-center shrink-0 shadow-sm">
-            {{ activeTaskCount }} / 4 项已开启
-          </span>
-        </div>
-        <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-          基于车载 CAN 总线与 MCU 传感器事件自动响应。每项功能可独立开关，并可微调触发阈值。
-        </div>
-      </div>
-    </div>
-
     <!-- 联动功能列表 -->
     <div class="grid grid-cols-2 gap-5">
       <!-- 任务 1: D 挡起步联动 360 -->
@@ -314,15 +298,6 @@ import PlanCard from '../components/PlanCard.vue';
 import BaseButton from '../components/BaseButton.vue';
 import StatusDot from '../components/StatusDot.vue';
 import HelpDot from '../components/HelpDot.vue';
-
-const activeTaskCount = computed(() => {
-  let count = 0;
-  if (store.vehicleAuto.vehicle_d_gear_360_enabled) count++;
-  if (store.vehicleAuto.vehicle_speed_autoplay_enabled) count++;
-  if (store.vehicleAuto.vehicle_speed_custom_action_enabled) count++;
-  if (store.vehicleAuto.vehicle_door_pause_music_enabled) count++;
-  return count;
-});
 
 const hasQQMusic = ref(false);
 const hasNeteaseMusic = ref(false);
