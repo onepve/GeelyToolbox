@@ -123,7 +123,7 @@ public class VoiceArbiterRegressionTest {
         check(a.submit(p2), "prepare-occupy: p2 enqueued");
         check(a.queueSize() == 1, "prepare-occupy: p2 waits in queue");
         // 高优先级在准备阶段也照常抢占
-        VoiceArbiter.Request p0 = req("epb_alarm.mp3", VoiceArbiter.PRIORITY_P0_ALARM, clock);
+        VoiceArbiter.Request p0 = req("gear_park_alarm.mp3", VoiceArbiter.PRIORITY_P0_ALARM, clock);
         check(a.submit(p0), "prepare-occupy: p0 preempts preparing");
         check(a.getCurrentPriority() == VoiceArbiter.PRIORITY_P0_ALARM,
                 "prepare-occupy: current is p0");
@@ -146,7 +146,7 @@ public class VoiceArbiterRegressionTest {
         long gen1 = a.currentGeneration();
 
         // P0 抢占 -> generation 推进
-        VoiceArbiter.Request second = req("epb_alarm.mp3", VoiceArbiter.PRIORITY_P0_ALARM, clock);
+        VoiceArbiter.Request second = req("gear_park_alarm.mp3", VoiceArbiter.PRIORITY_P0_ALARM, clock);
         a.submit(second);
         long gen2 = a.currentGeneration();
         check(gen2 > gen1, "stale: generation advanced on preempt");
@@ -256,7 +256,7 @@ public class VoiceArbiterRegressionTest {
         RecordingListener l = new RecordingListener();
         VoiceArbiter a = new VoiceArbiter(engine, env, clock, l);
 
-        VoiceArbiter.Request p0 = req("epb_alarm.mp3", VoiceArbiter.PRIORITY_P0_ALARM, clock);
+        VoiceArbiter.Request p0 = req("gear_park_alarm.mp3", VoiceArbiter.PRIORITY_P0_ALARM, clock);
         a.submit(p0);
         long gen0 = a.currentGeneration();
         a.onEngineStarted(gen0); // P0 正在播
@@ -264,7 +264,7 @@ public class VoiceArbiterRegressionTest {
         // 低优先级全部拒绝：绝不打断 P0 (旧代码 else 分支会 stopCurrentVoice 打断！)
         VoiceArbiter.Request p1 = req("gear_d.mp3", VoiceArbiter.PRIORITY_P1_ACTION, clock);
         VoiceArbiter.Request p2 = req("door_open.mp3", VoiceArbiter.PRIORITY_P2_DOOR, clock);
-        VoiceArbiter.Request p3 = req("steer_angle_guard.mp3", VoiceArbiter.PRIORITY_P3_ADVISORY, clock);
+        VoiceArbiter.Request p3 = req("flameout.mp3", VoiceArbiter.PRIORITY_P3_ADVISORY, clock);
 
         a.submit(p1);
         a.submit(p2);
@@ -494,7 +494,7 @@ public class VoiceArbiterRegressionTest {
         check(!a.isBusy(), "external: channel untouched during call");
 
         // P0 best-effort 穿透 (已允许通道内尽力播报，不强制抢通话路由)
-        boolean p0 = a.submit(req("epb_alarm.mp3", VoiceArbiter.PRIORITY_P0_ALARM, clock));
+        boolean p0 = a.submit(req("gear_park_alarm.mp3", VoiceArbiter.PRIORITY_P0_ALARM, clock));
         check(p0, "external: p0 best-effort passes through");
         check(engine.plays.size() == 1, "external: p0 played best-effort");
     }

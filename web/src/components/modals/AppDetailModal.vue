@@ -62,9 +62,9 @@
     <!-- 底部 66px 巨型车规大触控操作栏 (操作按钮全覆盖) -->
     <template #footer>
       <div class="flex items-center justify-between w-full">
-        <!-- 专家模式卡主题通道按键 (严密安全限制：仅限高德地图底包，非地图坚决禁止卡主题) -->
+        <!-- 专家模式卡主题通道按键 (双重限制：必须开启专业模式 + 仅限高德地图底包) -->
         <button
-          v-if="isMapApp"
+          v-if="canUseRabbitTheme"
           @click="openRabbitGuide"
           class="h-[60px] px-6 bg-amber-500/15 border-2 border-amber-500/50 rounded-2xl text-amber-300 font-black text-[17.5px] cursor-pointer hover:bg-amber-500/25 ring-2 ring-amber-500/20 shadow-md flex items-center"
         >
@@ -110,7 +110,7 @@
           <!-- 3. 下载完成：提供卡主题注入/直接覆盖安装与重新下载按钮 -->
           <template v-else-if="currentTask?.status === 'completed'">
             <button 
-              v-if="isMapApp"
+              v-if="canUseRabbitTheme"
               @click="openRabbitGuide"
               class="min-h-[66px] px-8 bg-amber-500/20 border-2 border-amber-500 text-amber-300 rounded-2xl font-black text-[19px] cursor-pointer hover:bg-amber-500/30 shadow-lg ring-2 ring-amber-500/20 transition-all flex items-center"
             >
@@ -182,6 +182,10 @@ const isMapApp = computed(() => {
   return pkg.includes('autonavi') || filename.startsWith('automap') || name.includes('高德') || name.includes('地图');
 });
 
+// 卡兔子主题通道可见性：必须同时满足「已开启专业/专家模式」+「目标是地图底包」
+// (历史缺陷: 只判 isMapApp 导致未开专业模式也会露出卡主题按钮)
+const canUseRabbitTheme = computed(() => isMapApp.value && store.settings.expert_rabbit === true);
+
 // 地图类应用判定（与云端 category=navigation 对齐）：用于区分「直装版/卡主题版」说明框
 const isMapCategory = computed(() => {
   if (!app.value) return false;
@@ -236,6 +240,10 @@ function handleInstallDownloaded() {
 function openRabbitGuide() {
   if (!app.value || !isMapApp.value) {
     showToast('安全保护：非地图类应用严禁使用卡兔子主题方式！', 'warn');
+    return;
+  }
+  if (store.settings.expert_rabbit !== true) {
+    showToast('请先在设置中开启专业模式，再使用卡兔子主题通道', 'warn');
     return;
   }
   const currentApp = app.value;

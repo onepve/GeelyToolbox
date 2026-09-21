@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 生成车机语音 mp3，对齐 app/src/main/assets/audio/ 现有参数（24kHz / 单声道 / 48kbps，参考 epb_alarm.mp3）。
+# 生成车机语音 mp3，对齐 app/src/main/assets/audio/ 现有参数（24kHz / 单声道 / 48kbps，参考 gear_park_alarm.mp3）。
 # 用法: VOICE=zh-CN-XiaoxiaoNeural ./generate_voice.sh "<台词>" <输出文件名.mp3>
 set -euo pipefail
 

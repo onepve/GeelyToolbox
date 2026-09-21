@@ -29,6 +29,16 @@ mutated=dict(files);mutated[JAVA+'utils/AppLogger.java']=files[JAVA+'utils/AppLo
 results.append({'id':'log-dedup-bounded','caught':'log-dedup-bounded' in evaluate(mutated)})
 mutated=dict(files);mutated[JAVA+'utils/CarGearHALMonitor.java']='class CarGearHALMonitor {}'
 results.append({'id':'retired-hal-listeners','caught':'retired-hal-listeners' in evaluate(mutated)})
+# 方向盘未回正 / EPB 未拉起提醒已整体删除：任何形式复活 (Java 或前端) 必须被拦截
+mutated=dict(files);mutated[JAVA+'utils/SafetySensorStateMachine.java']='class SafetySensorStateMachine {}'
+results.append({'id':'retired-safety-guard-card/java','caught':'retired-safety-guard-card' in evaluate(mutated)})
+mutated=dict(files);mutated['web/src/components/SafetyGuardVoiceSection.vue']='<template><div>voice_enable_steer_angle_guard</div></template>'
+results.append({'id':'retired-safety-guard-card/web','caught':'retired-safety-guard-card' in evaluate(mutated)})
+# 卡兔子主题按钮：回退成只判 isMapApp (漏掉专业模式) 必须被拦截
+mutated=dict(files);mutated['web/src/components/modals/AppDetailModal.vue']=files['web/src/components/modals/AppDetailModal.vue'].replace('v-if="canUseRabbitTheme"','v-if="isMapApp"')
+results.append({'id':'rabbit-theme-button-expert-gate','caught':'rabbit-theme-button-expert-gate' in evaluate(mutated)})
+mutated=dict(files);mutated['web/src/components/modals/AppDetailModal.vue']=files['web/src/components/modals/AppDetailModal.vue'].replace('const canUseRabbitTheme = computed(() => isMapApp.value && store.settings.expert_rabbit === true)','const canUseRabbitTheme = computed(() => isMapApp.value)')
+results.append({'id':'rabbit-theme-computed-gate','caught':'rabbit-theme-computed-gate' in evaluate(mutated)})
 # 发布说明：回退成硬编码固定文案必须被拦截
 mutated=dict(files);mutated['scripts/publish_r2.py']=files['scripts/publish_r2.py'].replace('build_changelog(','hardcoded_changelog(')
 results.append({'id':'changelog-from-vcs','caught':'changelog-from-vcs' in evaluate(mutated)})

@@ -62,8 +62,6 @@ export const store = reactive({
     voice_enable_mode_comfort: true,
     voice_enable_mode_eco: true,
     voice_enable_mode_sport: true,
-    voice_enable_steer_angle_guard: true,
-    voice_steer_angle_threshold_deg: 60,
     voice_enable_door_fl: true,
     voice_enable_door_fl_close: true,
     voice_enable_door_fr: true,

@@ -146,9 +146,6 @@
 
     <!-- 原厂电动尾门细分配置二级向导 → 独立组件（二级向导） -->
     <TrunkConfigModal v-if="showTrunkModal" @close="showTrunkModal = false" />
-
-    <!-- 底部独立专区: 车况安全守护语音两项测试卡 (双列等高 · 独立组件防膨胀) -->
-    <SafetyGuardVoiceSection />
   </div>
 </template>
 
@@ -158,7 +155,6 @@ import { store, bridge, showToast, openModal } from '../store';
 import PlanCard from '../components/PlanCard.vue';
 import BaseButton from '../components/BaseButton.vue';
 import StatusDot from '../components/StatusDot.vue';
-import SafetyGuardVoiceSection from '../components/SafetyGuardVoiceSection.vue';
 import GearConfigModal from '../components/GearConfigModal.vue';
 import ModeConfigModal from '../components/ModeConfigModal.vue';
 import DoorConfigModal from '../components/DoorConfigModal.vue';

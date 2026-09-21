@@ -67,6 +67,9 @@ CONTRACTS = [
  ('idle-ui-adjust', 'web/src/views/FloatingView.vue', 'function adjustSeconds(delta)', [r'ssSeconds\.value\s*\+\s*delta', r'saveSeconds\(\)'], []),
  ('theme-install-flag', 'web/src/components/modals/AppDetailModal.vue', 'const isMapApp = computed',
   [r'if\s*\(typeof app.value.need_theme_install === .boolean.\)\s*\{\s*return app.value.need_theme_install;'], [r'category\s*===\s*.navigation.']),
+ # 卡主题按钮必须同时受「专业模式」门禁约束 (历史缺陷: 仅判 isMapApp 导致未开专业模式也露出按钮)
+ ('rabbit-theme-entry-gate', 'web/src/components/modals/AppDetailModal.vue', 'function openRabbitGuide',
+  [r'store\.settings\.expert_rabbit\s*!==\s*true'], []),
  ('appselect-gesture-channel', 'web/src/components/modals/AppSelectModal.vue', 'function selectApp(app)',
   [r"setWheelGestureAction", r"lastIndexOf\('_'\)"], [r'setWheelControlStringSetting[^;]*wheel_action_']),
  ('pkg-query-no-shell', JAVA+'utils/SystemUtils.java', 'public static int getAppDetailedState',
@@ -96,20 +99,6 @@ CONTRACTS = [
   [r'STREAM_NAVI', r'STREAM_SYSTEM', r'STREAM_MUSIC'], [r'STREAM_NOTIFICATION']),
  ('voice-gain-playback-applies-resolver', JAVA+'utils/VehicleVoicePlayer.java', 'private synchronized void applyVolumeOffsetBeforePlay',
   [r'VoiceGainResolver\.normalizeVoiceKey', r'VoiceGainResolver\.resolveStreamForChannel'], [r'STREAM_NOTIFICATION']),
- ('steer-park-snapshot', JAVA+'services/VehicleAutomationService.java', 'private void checkSteerAngleOnPark()',
-  [r'PARK_STEER_SNAPSHOT_FRESHNESS_MS', r'checkSteerAngleNotCentered\(now,', r'PRIORITY_P2_DOOR'], [r'checkSteerAngleNotCentered\(now\)']),
- ('steer-user-threshold', JAVA+'services/VehicleAutomationService.java', 'private void checkSteerAngleOnPark()',
-  [r'getInt\("voice_steer_angle_threshold_deg"', r'clampSteerAngleThreshold',
-   r'checkSteerAngleNotCentered\(now, steerThreshold,', r'PARK_STEER_SNAPSHOT_FRESHNESS_MS'], []),
- ('steer-threshold-bridge', JAVA+'MainActivity.java', 'public boolean setVehicleAutomationIntSetting(final String key, final int value)',
-  [r'voice_steer_angle_threshold_deg', r'clampSteerAngleThreshold', r'putInt\(key, normalized\)'], []),
- ('steer-threshold-ui', 'web/src/components/SafetyGuardVoiceSection.vue', 'function adjustSteerThreshold',
-  [r'Math\.max\(15, Math\.min\(180, current \+ delta\)\)',
-   r'setVehicleAutomationIntSetting.*voice_steer_angle_threshold_deg'], []),
- ('steer-signed-angle', JAVA+'services/VehicleAutomationService.java', 'INFO_ID_VSTEERWHEELINFO_ANGLE_VALUE',
-  [r'decodeSignedSteerAngle', r'feedSteerAngleDegrees'], [r'feedSteerAngle\(raw']),
- ('steer-signed-decoder', JAVA+'utils/SafetySensorStateMachine.java', 'public static int decodeSignedSteerAngle',
-  [r'0x7FFF', r'0x10000', r'extractLow16'], []),
 ]
 
 
@@ -128,6 +117,19 @@ def evaluate(files):
     all_java = '\n'.join(clean(v) for k,v in files.items() if k.endswith('.java'))
     if re.search(r'\b(?:CarGearHALMonitor|CarPropertyKeyMonitor)\b', all_java):
         failures.append('retired-hal-listeners')
+    # 方向盘未回正提醒 + EPB 未拉起提醒: 用户判定"不重要且不稳定"，已整体删除 (含状态机/服务/桥接/前端/语音资源)。
+    # 严禁任何形式复活 —— 出现即视为回归，不接受注释规避。
+    all_web = '\n'.join(v for k, v in files.items() if k.startswith('web/src/'))
+    retired_safety_guard_pattern = r'SafetySensorStateMachine|checkSteerAngleOnPark|checkEpbNotEngagedOnPDoorOpen|voice_enable_steer_angle_guard|voice_steer_angle_threshold_deg|voice_enable_epb_guard|steer_angle_guard\.mp3|epb_alarm\.mp3|SafetyGuardVoiceSection'
+    if re.search(retired_safety_guard_pattern, all_java) or re.search(retired_safety_guard_pattern, all_web):
+        failures.append('retired-safety-guard-card')
+    # 卡兔子主题按钮可见性必须同时受「专业模式」约束
+    # (历史缺陷: v-if 仅判 isMapApp，未开专业模式也会露出卡主题按钮)
+    appdetail = files.get('web/src/components/modals/AppDetailModal.vue', '')
+    if re.search(r'v-if="isMapApp"', appdetail):
+        failures.append('rabbit-theme-button-expert-gate')
+    if not re.search(r'const canUseRabbitTheme = computed\(\(\) => isMapApp\.value && store\.settings\.expert_rabbit === true\)', appdetail):
+        failures.append('rabbit-theme-computed-gate')
     logger = clean(files.get(JAVA+'utils/AppLogger.java', ''))
     if not re.search(r'if\s*\(lastLogTime\.size\(\) > 500\)\s*\{\s*lastLogTime\.clear\(\);', logger):
         failures.append('log-dedup-bounded')
@@ -160,6 +162,8 @@ def load(root):
     root = Path(root)
     paths = {c[1] for c in CONTRACTS} | {'web/src/App.vue', 'web/src/views/FloatingView.vue', 'app/src/main/assets/toolbox_ui.html', 'app/src/main/assets/mobile_web.html', JAVA+'utils/AppLogger.java', 'scripts/publish_r2.py', 'scripts/changelog_builder.py'}
     paths.update(str(p.relative_to(root)) for p in (root/JAVA).rglob('*.java'))
+    paths.update(str(p.relative_to(root)) for p in (root/'web/src').rglob('*.vue'))
+    paths.update(str(p.relative_to(root)) for p in (root/'web/src').rglob('*.js'))
     return {p:(root/p).read_text() for p in paths if (root/p).exists()}
 
 

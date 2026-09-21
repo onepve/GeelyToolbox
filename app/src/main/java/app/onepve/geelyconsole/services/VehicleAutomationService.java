@@ -38,7 +38,6 @@ import app.onepve.geelyconsole.utils.EasMediaBridge;
 import app.onepve.geelyconsole.utils.GearStateMachine;
 import app.onepve.geelyconsole.utils.IdleScreensaverManager;
 import app.onepve.geelyconsole.utils.PrefsCompat;
-import app.onepve.geelyconsole.utils.SafetySensorStateMachine;
 import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
 import app.onepve.geelyconsole.utils.SystemUtils;
 import app.onepve.geelyconsole.utils.TrunkStateManager;
@@ -86,8 +85,6 @@ public class VehicleAutomationService extends Service {
     private boolean enableModeEco = true;
     private boolean enableModeSport = true;
     private boolean enableFlameoutVoice = false;
-    // 车况安全守护两项测试开关聚合 (shouldRun 门控)
-    private boolean enableSafetyGuards = true;
 
     // 驾驶模式标准解耦枚举 (100% 根绝底层各协议数值冲突)
     public static final int MODE_COMFORT = 1; // 舒适模式
@@ -133,12 +130,6 @@ public class VehicleAutomationService extends Service {
     private GearStateMachine gearStateMachine;
     private DriveModeManager driveModeManager;
 
-    // 车况感知与安全守护状态变量 (判定逻辑收敛进 SafetySensorStateMachine 纯 Java 状态机)
-    private final app.onepve.geelyconsole.utils.SafetySensorStateMachine safetySensors =
-            new SafetySensorStateMachine(null);
-    /** 信号时间戳 (单调 SystemClock) */
-    private long steerAngleSignalAt = 0L;
-    private long epbSignalAt = 0L;
     /** 桥接只读快照 (供 MainActivity 同步读取，不加锁只写 volatile) */
     private volatile boolean lastEngineRunningSnapshot = false;
 
@@ -173,42 +164,6 @@ public class VehicleAutomationService extends Service {
                 if (voicePlayer != null) {
                     voicePlayer.play("gear_park_alarm.mp3", "请挂入驻车挡", VehicleVoicePlayer.PRIORITY_P0_ALARM);
                 }
-            }
-        }
-    }
-
-    /**
-     * 挂入 P 挡驻停即时触发方向盘偏角检测:
-     * 此时整车处于未熄火状态，车机功放处于最佳供电与发声状态，驾驶员在座可顺手一把回正方向盘。
-     * (彻底避免熄火后开门整机断电无声的物理死穴)
-     */
-    private void checkSteerAngleOnPark() {
-        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-        long now = android.os.SystemClock.elapsedRealtime();
-
-        boolean steerGuard = prefs.getBoolean("voice_enable_steer_angle_guard", true);
-        int steerThreshold = SafetySensorStateMachine.clampSteerAngleThreshold(
-                prefs.getInt("voice_steer_angle_threshold_deg",
-                        SafetySensorStateMachine.STEER_ANGLE_THRESHOLD_DEG));
-        if (!steerGuard) return;
-        if (steerAngleSignalAt <= 0) {
-            AppLogger.i("安全守护", "挂入P挡：未收到有效方向盘转角，跳过回正提醒");
-            return;
-        }
-        long signalAge = now - steerAngleSignalAt;
-        if (signalAge > SafetySensorStateMachine.PARK_STEER_SNAPSHOT_FRESHNESS_MS) {
-            AppLogger.i("安全守护", "挂入P挡：方向盘转角快照过期 " + signalAge + "ms，跳过回正提醒");
-            return;
-        }
-        int r = safetySensors.checkSteerAngleNotCentered(now, steerThreshold,
-                SafetySensorStateMachine.PARK_STEER_SNAPSHOT_FRESHNESS_MS);
-        if (r == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED) {
-            double deg = safetySensors.getKnownValue(SafetySensorStateMachine.SENSOR_STEER_ANGLE);
-            AppLogger.i("安全守护", "【P2关怀】挂入P挡驻车，方向盘未回正 (偏角=" + (int) deg
-                    + "°，设定=" + steerThreshold + "°，快照=" + signalAge + "ms)");
-            if (voicePlayer != null) {
-                // P挡确认是P1，P2会单条排队：先说“已挂入驻车挡”，随后提示回正，不抢断。
-                voicePlayer.play("steer_angle_guard.mp3", "请注意回正方向盘", VehicleVoicePlayer.PRIORITY_P2_DOOR);
             }
         }
     }
@@ -254,15 +209,11 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Throwable ignored) {}
 
-            boolean guardSteer = prefs.getBoolean("voice_enable_steer_angle_guard", true);
-            boolean guardEpb = prefs.getBoolean("voice_enable_epb_guard", true);
-            boolean anySafetyGuardEnabled = voiceMaster && (guardSteer || guardEpb);
-
             boolean anyVoiceEnabled = voiceMaster && (doorFl || doorFlClose || doorFr || doorFrClose ||
                                 doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
                                 trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
                                 modeSmart || modeComfort || modeEco || modeSport ||
-                                flameout || anySafetyGuardEnabled);
+                                flameout);
 
             boolean shouldRun = anyVoiceEnabled || wheelEnabled
                     || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
@@ -318,9 +269,6 @@ public class VehicleAutomationService extends Service {
         gearStateMachine = new GearStateMachine(this, voicePlayer);
         gearStateMachine.setListener(gear -> {
             lastGearPos = gear;
-            if (gear == 5) {
-                checkSteerAngleOnPark();
-            }
         });
 
         driveModeManager = new DriveModeManager(this, voicePlayer);
@@ -409,11 +357,6 @@ public class VehicleAutomationService extends Service {
         enableModeSport = prefs.getBoolean("voice_enable_mode_sport", true);
         enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
 
-        // 车况安全守护两项测试开关 (同步进 shouldRun 门控)
-        enableSafetyGuards = voiceMasterSwitch && (
-                prefs.getBoolean("voice_enable_steer_angle_guard", true)
-                        || prefs.getBoolean("voice_enable_epb_guard", true));
-
         // 若服务在行车中启动，立即建立主驾已就坐基准，避免车门语音误判为上车
         if (lastPowerMode > 0 && doorStateManager != null) {
             doorStateManager.markDriverInside();
@@ -426,7 +369,7 @@ public class VehicleAutomationService extends Service {
                              enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
                              enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN || enableGearS ||
                              enableModeSmart || enableModeComfort || enableModeEco || enableModeSport ||
-                             enableFlameoutVoice || enableSafetyGuards);
+                             enableFlameoutVoice);
         boolean anyEnabled = anyVoiceEnabled || wheelEnabled
                 || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
@@ -848,48 +791,6 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 4.5 解析方向盘物理转角 (INFO_ID_VSTEERWHEELINFO_ANGLE_VALUE)
-        // 强匹配: 必须同时含属性名与 funValue；数值在低16位 (实车采样 0x0000002c=44°)；
-        // 0 或超量程 (±540°) 一律 unknown 静默。
-        if (line.contains("INFO_ID_VSTEERWHEELINFO_ANGLE_VALUE")) {
-            try {
-                Matcher m = P_FUNVALUE.matcher(line);
-                if (m.find()) {
-                    int raw = (int) Long.parseLong(m.group(1), 16);
-                    int degrees = SafetySensorStateMachine.decodeSignedSteerAngle(raw);
-                    long now = android.os.SystemClock.elapsedRealtime();
-                    if (degrees != 0 && Math.abs(degrees) <= SafetySensorStateMachine.STEER_ANGLE_MAX_DEG) {
-                        // 左负右正：必须以有符号角度写入，不能将补码 raw 当无符号值。
-                        safetySensors.feedSteerAngleDegrees(degrees, now);
-                        steerAngleSignalAt = now;
-                    } else {
-                        steerAngleSignalAt = 0L; // 0 / 超量程: unknown，失去快照资格
-                    }
-                }
-            } catch (Exception ignored) {}
-        }
-
-        // 4.6 解析电子手刹 EPB 状态 (INFO_ID_VDRIVEINFO_EPB_STATE)
-        // 强匹配 + 已知枚举 (0=释放 1=拉起, 实车采样)；其余值 unknown 静默。
-        if (line.contains("INFO_ID_VDRIVEINFO_EPB_STATE")) {
-            try {
-                Matcher m = P_FUNVALUE.matcher(line);
-                if (m.find()) {
-                    int raw = (int) Long.parseLong(m.group(1), 16);
-                    int state = raw & 0xFFFF;
-                    long now = android.os.SystemClock.elapsedRealtime();
-                    if (state == SafetySensorStateMachine.EPB_RELEASED
-                            || state == SafetySensorStateMachine.EPB_ENGAGED) {
-                        safetySensors.feedEpbState(state, now);
-                        epbSignalAt = now;
-                    } else {
-                        // 未知枚举: 证据不足安全静默，标记信号不新鲜
-                        epbSignalAt = 0L;
-                    }
-                }
-            } catch (Exception ignored) {}
-        }
-
         // 4.1 解析驾驶模式切换信号 (严格收敛对齐 Tasker 实车验证黄金法则: 纯净收敛于 ECarXCarConfigService 与 AdaptAPI 权威常量)
         int modeVal = -1;
 
@@ -1247,10 +1148,6 @@ public class VehicleAutomationService extends Service {
         if (gearStateMachine != null) gearStateMachine.resetState();
         if (driveModeManager != null) driveModeManager.resetState();
         if (doorStateManager != null) doorStateManager.resetState();
-        // 熄火下电: 安全传感器一次触发锁复位
-        if (safetySensors != null) {
-            safetySensors.powerOff(android.os.SystemClock.elapsedRealtime());
-        }
         if (flameout && enableFlameoutVoice && voicePlayer != null) {
             voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品", VehicleVoicePlayer.PRIORITY_P3_ADVISORY);
         }
