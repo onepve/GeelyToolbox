@@ -142,7 +142,7 @@ public class VehicleVoicePlayer {
         if (fn.contains("gear") || fn.contains("mode")) {
             return PRIORITY_P1_ACTION;
         }
-        if (fn.contains("steer") || fn.contains("fuel") || fn.contains("flameout")) {
+        if (fn.contains("fuel") || fn.contains("flameout")) {
             return PRIORITY_P3_ADVISORY;
         }
         return PRIORITY_P2_DOOR;

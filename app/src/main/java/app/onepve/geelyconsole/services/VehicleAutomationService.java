@@ -198,7 +198,7 @@ public class VehicleAutomationService extends Service {
                 double deg = safetySensors.getKnownValue(SafetySensorStateMachine.SENSOR_STEER_ANGLE);
                 AppLogger.i("安全守护", "【P3关怀】挂P挡推开主驾门，方向盘未回正 (偏角=" + (int) deg + "°，测试阈值60°)");
                 if (voicePlayer != null) {
-                    voicePlayer.play("steer_angle_guard.mp3", "请注意回正方向盘", VehicleVoicePlayer.PRIORITY_P3_ADVISORY);
+                    voicePlayer.play("steer_angle_guard.mp3", "请注意回正方向盘", VehicleVoicePlayer.PRIORITY_P2_DOOR);
                 }
             }
         }

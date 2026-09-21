@@ -99,7 +99,7 @@ final class VoiceArbiter {
     private long generation = 0L;           // 单调递增代数
     private boolean externalBlocked = false;
 
-    static final long P2_TTL_MS = 3000L;
+    static final long P2_TTL_MS = 5000L;
     static final long DEQUEUE_GAP_MS = 150L; // 出队自然间隔
     static final long TTS_PLAY_TIMEOUT_MS = 6000L;
 
