@@ -828,6 +828,7 @@ regression_scripts = [
     "test_update_filename.py",
     "test_screen_collect_once.py",
     "test_regression_mutations.py",
+    "test_voice_gain_resolver.py",
 ]
 for regression_script in regression_scripts:
     try:

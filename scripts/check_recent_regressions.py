@@ -90,6 +90,12 @@ CONTRACTS = [
  ('gear-reset-quiet', JAVA+'utils/GearStateMachine.java', 'public synchronized void resetState()', [r'if\s*\(changed\)\s*\{\s*AppLogger.i\('], []),
  ('mode-reset-quiet', JAVA+'utils/DriveModeManager.java', 'public synchronized void resetState()', [r'if\s*\(changed\)\s*\{\s*AppLogger.i\('], []),
  ('door-reset-quiet', JAVA+'utils/DoorStateManager.java', 'public synchronized void resetState()', [r'if\s*\(changed\)\s*\{\s*AppLogger.i\('], []),
+ ('voice-gain-key-normalize', JAVA+'utils/VoiceGainResolver.java', 'public static String normalizeVoiceKey',
+  [r'\.mp3', r'\.wav', r'\.ogg', r'endsWith', r'substring'], []),
+ ('voice-gain-stream-map', JAVA+'utils/VoiceGainResolver.java', 'public static int resolveStreamForChannel',
+  [r'STREAM_NAVI', r'STREAM_SYSTEM', r'STREAM_MUSIC'], [r'STREAM_NOTIFICATION']),
+ ('voice-gain-playback-applies-resolver', JAVA+'utils/VehicleVoicePlayer.java', 'private synchronized void applyVolumeOffsetBeforePlay',
+  [r'VoiceGainResolver\.normalizeVoiceKey', r'VoiceGainResolver\.resolveStreamForChannel'], [r'STREAM_NOTIFICATION']),
 ]
 
 

@@ -54,8 +54,10 @@ public class VehicleVoicePlayer {
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             // 每声效独立声道（voice_item_channel_<key>）优先；未设置则跟随全局语音通道
-            if (voiceType != null && !voiceType.isEmpty()) {
-                String per = prefs.getString("voice_item_channel_" + voiceType, null);
+            // 归一化：voiceType 可能是文件名（gear_r.mp3），配置端存裸 key（gear_r），需先归一化才能命中。
+            String key = VoiceGainResolver.normalizeVoiceKey(voiceType);
+            if (key != null && !key.isEmpty()) {
+                String per = prefs.getString("voice_item_channel_" + key, null);
                 if (per != null && !per.isEmpty()) {
                     channel = per;
                 } else {
@@ -305,16 +307,20 @@ public class VehicleVoicePlayer {
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
 
+            // 归一化：播放侧传的是文件名（如 gear_r.mp3），配置端存的是裸 key（gear_r）。
+            // 未归一化时 voice_item_offset_gear_r.mp3 永远查不到，导致单项增益从未生效（核心缺陷）。
+            String key = VoiceGainResolver.normalizeVoiceKey(voiceType);
+
             // ── 每声效独立管理（v1.7.37 起）：voice_item_channel_<key> + voice_item_offset_<key> ──
             // 未保存过该声效 = 不接管，原厂行为零变化；保存过 = 声道/增益完全按本项设置走
-            if (!prefs.contains("voice_item_offset_" + voiceType)) return;
-            String channel = prefs.getString("voice_item_channel_" + voiceType, "music");
-            int offset = prefs.getInt("voice_item_offset_" + voiceType, 0);
+            if (!prefs.contains("voice_item_offset_" + key)) return;
+            String channel = prefs.getString("voice_item_channel_" + key, "music");
+            int offset = prefs.getInt("voice_item_offset_" + key, 0);
             if (offset == 0) return;
 
-            int stream = ("nav".equals(channel) || "notification".equals(channel))
-                    ? AudioManager.STREAM_NOTIFICATION
-                    : AudioManager.STREAM_MUSIC;
+            // 三通道 → 原厂音量流（IHU516G 实测）：music→3、nav→12(私有 STREAM_NAVI)、notification→1(STREAM_SYSTEM)。
+            // 历史缺陷：nav/notification 被统一调成 STREAM_NOTIFICATION(5)，导航档实际改错对象、增益无法精准命中。
+            int stream = VoiceGainResolver.resolveStreamForChannel(channel);
             int currentVol = audioManager.getStreamVolume(stream);
             int maxVol = audioManager.getStreamMaxVolume(stream);
             int targetVol = Math.max(0, Math.min(maxVol, currentVol + offset));
@@ -323,8 +329,8 @@ public class VehicleVoicePlayer {
             restoreVolumeAfterPlay = currentVol;
             originalStreamType = stream;
             audioManager.setStreamVolume(stream, targetVol, 0);
-            Log.i(TAG, "Item-managed voice gain: " + offset + " (vol: " + currentVol + " -> " + targetVol + ", stream: " + stream + ", item: " + voiceType + ")");
-            AppLogger.i("语音播报", "单项增益生效[" + voiceType + "]: " + (offset >= 0 ? "+" + offset : offset) + "格 (音量 " + currentVol + "->" + targetVol + ")");
+            Log.i(TAG, "Item-managed voice gain: " + offset + " (vol: " + currentVol + " -> " + targetVol + ", stream: " + stream + ", item: " + voiceType + ", key: " + key + ")");
+            AppLogger.i("语音播报", "单项增益生效[" + voiceType + "]: " + (offset >= 0 ? "+" + offset : offset) + "格 (音量 " + currentVol + "->" + targetVol + ", 流 " + stream + ")");
         } catch (Exception e) {
             Log.w(TAG, "Failed to apply volume offset: " + e.getMessage());
         }
@@ -751,24 +757,28 @@ public class VehicleVoicePlayer {
             focusReleaseRunnable = null;
         }
         requestAudioFocus(arbiterKey);
-        applyVolumeOffsetBeforePlay(null);
+        applyVolumeOffsetBeforePlay(arbiterKey);
         SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
         if (tts != null && ttsReady) {
             try {
                 float speed = prefs.getFloat("voice_playback_speed", 1.0f);
                 tts.setSpeechRate(speed);
             } catch (Exception ignored) {}
-            String channel = prefs.getString("voice_audio_channel", "music");
-            int streamType = ("nav".equals(channel) || "notification".equals(channel))
-                    ? AudioManager.STREAM_NOTIFICATION
-                    : AudioManager.STREAM_MUSIC;
+            // 每声效独立声道优先（与 getVoiceAudioAttributes 一致，键名归一化），否则跟随全局通道
+            String key = VoiceGainResolver.normalizeVoiceKey(arbiterKey);
+            String channel = prefs.getString("voice_item_channel_" + key, null);
+            if (channel == null || channel.isEmpty()) {
+                channel = prefs.getString("voice_audio_channel", "music");
+            }
+            // 三通道 → 原厂音量流：music→3、nav→12(私有 STREAM_NAVI)、notification→1(STREAM_SYSTEM)
+            int streamType = VoiceGainResolver.resolveStreamForChannel(channel);
             android.os.Bundle ttsParams = new android.os.Bundle();
             ttsParams.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, streamType);
             ttsParams.putBoolean("skipTtsCta", true);
             ttsParams.putBoolean("onlyoffline", false);
             // utteranceId 携带仲裁代数：onDone 只在代数匹配时释放焦点
             String uttId = "tts_" + arbiterCurrentGeneration() + "_" + System.currentTimeMillis();
-            AppLogger.i("语音播报", "发起TTS朗读: \"" + text + "\" (引擎=" + getActiveTtsEngine() + ", 声道=" + (streamType == AudioManager.STREAM_MUSIC ? "媒体" : "通知") + ")");
+            AppLogger.i("语音播报", "发起TTS朗读: \"" + text + "\" (引擎=" + getActiveTtsEngine() + ", 声道=" + channel + ", 流=" + streamType + ")");
 
             int speakRes;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
