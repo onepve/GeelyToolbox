@@ -28,6 +28,7 @@ public class GearStateMachine {
     private int lastGearPos = -1;
     private int isGearVoiceArmed = 0; // 0=P挡静默休眠态, 1=车主激活态
     private Runnable pendingGearTask = null;
+    private int pendingTargetGear = -1; // 防抖期目标挡位：同目标心跳不重置计时器
     private static final long GEAR_DEBOUNCE_MS = 160; // 换挡防抖滤波窗口 (160ms 滤除快切瞬态，保证最终挡位干脆秒出)
 
     public static int normalizeGear(int rawGear) {
@@ -129,11 +130,17 @@ public class GearStateMachine {
             voicePlayer.stopCurrentVoice();
         }
 
-        // 取消上一次正在防抖中的换挡任务 (滤除极速连切的中间过渡态，如快速从P划过N进入D)
+        // 防抖核心铁律：同目标挡位的 CAN 心跳直接忽略，绝不重置计时器
+        // 否则心跳间隔<160ms 时防抖任务永远无法到期，首次换挡永久无声
+        if (gear == pendingTargetGear && pendingGearTask != null) {
+            return; // 同目标，让已投递的防抖任务自然到期
+        }
+        // 目标挡位变了（如快速连切 P->N->D），才取消旧任务重新计时
         if (pendingGearTask != null) {
             mainHandler.removeCallbacks(pendingGearTask);
             pendingGearTask = null;
         }
+        pendingTargetGear = gear;
 
         final int prevGear = lastGearPos;
         pendingGearTask = new Runnable() {
@@ -141,6 +148,7 @@ public class GearStateMachine {
             public void run() {
                 synchronized (GearStateMachine.this) {
                     pendingGearTask = null;
+                    pendingTargetGear = -1;
                     if (gear == lastGearPos) return;
 
                     AppLogger.i("挡位状态", "挡位确认跃变: " + getGearName(lastGearPos) + " -> " + getGearName(gear) + ", armed=" + isGearVoiceArmed);
