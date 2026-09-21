@@ -360,6 +360,18 @@ public class VehicleAutomationService extends Service {
 
     private void reloadPreferences() {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+
+        // 启动兜底：读上次缓存电压，防热更新/崩溃重启后 latestBatteryVoltage=0 导致门控误判熄火
+        // 铁律：只在当前 latestBatteryVoltage 还未被 logcat 更新时才用缓存值（避免覆盖已读到的实时值）
+        if (latestBatteryVoltage < 9.0f) {
+            float cachedVolt = prefs.getFloat("vehicle_real_battery_volt", 0f);
+            if (cachedVolt >= 13.0f) {
+                latestBatteryVoltage = cachedVolt;
+                if (lastPowerMode < 0) lastPowerMode = 1; // 上次是运行状态，保守视为仍在运行
+                AppLogger.i("电源状态", "启动兜底：读缓存电压=" + cachedVolt + "V，lastPowerMode→1");
+            }
+        }
+
         voiceMasterSwitch = prefs.getBoolean("voice_master_switch", true);
         wheelMasterSwitch = prefs.getBoolean("wheel_master_switch", true);
 
@@ -957,7 +969,7 @@ public class VehicleAutomationService extends Service {
                             if (Math.abs(volt - lastSavedBatteryVoltage) >= 0.2f) {
                                 lastSavedBatteryVoltage = volt;
                                 getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
-                                        .edit().putFloat("vehicle_real_battery_volt", volt).apply();
+                                        .edit().putFloat("vehicle_real_battery_volt", volt).commit(); // 铁律：防掉电丢失，禁用 apply
                             }
                         }
                     }
@@ -979,8 +991,10 @@ public class VehicleAutomationService extends Service {
         if (latestBatteryVoltage >= 13.2f) return true;
         // 4. 明确检测到电源点火处于就绪状态 (lastPowerMode == 1 或钥匙 ON 信号)
         if (lastPowerMode == 1 || lastKeyState == 2) return true;
-        // 5. 其余静止无充电状态（蓄电池自然静置电压 9.0V~13.0V 且零车速）：判定为熄火未启动状态，绝对静默！
+        // 5. 其余静止无充电状态（蓄电池自然静置电压 9.0V~13.0V 且零车速）：谨慎判熄火
+        // 铁律：已有明确点火信号时，上电瞬间压降绝不误判为熄火（热更新/服务重启兜底）
         if (latestBatteryVoltage >= 9.0f && latestBatteryVoltage < 13.0f && currentSpeedKmH == 0) {
+            if (lastPowerMode == 1 || lastKeyState >= 2) return true;
             return false;
         }
         return true;
@@ -1027,7 +1041,7 @@ public class VehicleAutomationService extends Service {
         if (lastKeyState == 0 || lastKeyState == 1) return false; // 0=关, 1=ACC (熄火只开车机听歌)
         if (lastEngineState == 0 && currentSpeedKmH == 0) return false; // 发动机明确停止且零车速
         if (currentSpeedKmH > 0) return true; // 行驶中，必然处于运转工况
-        if (latestBatteryVoltage >= 13.0f) return true; // 发电机发电中，发动机必然运转中
+        if (latestBatteryVoltage >= 13.0f) return true; // 发电机在充电，引擎必转（与isEngineRunning阈值统一）
         if (lastEngineState == 3) return true; // 发动机明确处于运行状态
         // 蓄电池自然静置电压 (9.0V~12.9V) 且零车速：属于熄火未点火驻车状态，旋钮无法切换模式
         if (latestBatteryVoltage >= 9.0f && latestBatteryVoltage < 12.9f && currentSpeedKmH == 0) {
@@ -1122,6 +1136,20 @@ public class VehicleAutomationService extends Service {
                 if (m.find()) return Integer.parseInt(m.group(1));
             }
             if (l.contains("info_id_vpowerinfo_key_state") || l.contains("key_state")) {
+                // 优先匹配真实 SensorModule 格式：funValue(0x00200105)，低字节=状态
+                // 日志实测：0x002001xx，高位固定，低字节: 0x00=OFF 0x01=ACC 0x05=ON/点火就绪
+                Matcher mFun = java.util.regex.Pattern
+                    .compile("funvalue\\(0x([0-9a-f]{6,8})\\)")
+                    .matcher(l);
+                if (mFun.find()) {
+                    int raw = (int) Long.parseLong(mFun.group(1), 16);
+                    int low = raw & 0xFF;
+                    if (low == 0x05 || low == 0x06 || low == 0x04) return 2; // ON/引擎运行
+                    if (low == 0x01) return 1; // ACC
+                    if (low == 0x00) return 0; // 下电
+                    return 2; // 其他非零值保守视为上电
+                }
+                // 兜底：直接裸数字格式（如 key_state=2）
                 Matcher m = P_KEY_STATE.matcher(l);
                 if (m.find()) {
                     int raw = Integer.parseInt(m.group(1), 16);
