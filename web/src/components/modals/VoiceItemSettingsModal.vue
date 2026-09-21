@@ -98,23 +98,20 @@
 
           <!-- 快捷台词套用 -->
           <div class="flex flex-col space-y-1.5">
-            <span class="text-[13px] text-car-sub font-bold">快捷范例台词：</span>
-            <div class="flex flex-wrap space-x-2">
+            <span class="text-[13px] text-car-sub font-bold">快捷范例台词（点击一键填入）：</span>
+            <div class="flex flex-wrap -mr-2 -mb-2">
               <button
-                @click="customText = '已挂入前进挡，祝你一路顺风'"
-                class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-text text-[13px] font-bold hover:border-car-accent cursor-pointer mb-1 shadow-sm transition-all"
+                v-for="item in presetPhrases"
+                :key="item.text"
+                @click="customText = item.text"
+                class="px-3 py-1.5 mr-2 mb-2 rounded-lg bg-car-card border border-car-border text-car-text text-[13px] font-bold hover:border-car-accent cursor-pointer shadow-sm transition-all"
+                :title="item.text"
               >
-                一路顺风
-              </button>
-              <button
-                @click="customText = '已完成就绪，注意安全行车'"
-                class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-text text-[13px] font-bold hover:border-car-accent cursor-pointer mb-1 shadow-sm transition-all"
-              >
-                安全行车
+                {{ item.label }}
               </button>
               <button
                 @click="customText = ''"
-                class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-text hover:border-car-border-light text-[13px] font-bold cursor-pointer mb-1 shadow-sm transition-all"
+                class="px-3 py-1.5 mr-2 mb-2 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-text hover:border-car-border-light text-[13px] font-bold cursor-pointer shadow-sm transition-all"
               >
                 清空台词
               </button>
@@ -227,6 +224,104 @@ const channelHint = computed(() => {
   if (itemChannel.value === 'nav') return '导航引导：走导航音量流，可与媒体音量分开调。';
   if (itemChannel.value === 'notification') return '系统提示：走通知音量流（倒车挡慎选，倒车雷达通道与其互斥可能滞后爆音）。';
   return '普通媒体：跟随车机主音量（听歌那条），默认推荐。';
+});
+
+const presetPhrases = computed(() => {
+  if (!targetItem.value) return [];
+  const key = targetItem.value.key || '';
+
+  // 1. 副驾车门 (开/关专属台词)
+  if (key === 'door_fr') {
+    return [
+      { label: '欢迎就座', text: '欢迎乘车，副驾请注意安全' },
+      { label: '领导就座', text: '欢迎副驾领导就座，请系好安全带' },
+      { label: '女王专座', text: '欢迎女王大人就座，请系好安全带' },
+      { label: '防开门杀', text: '副驾车门已打开，请注意后方来车' }
+    ];
+  }
+  if (key === 'door_fr_close') {
+    return [
+      { label: '专属副驾', text: '专属副驾已就座，准备出发' },
+      { label: '老婆就座', text: '副驾老婆已就座，车门已关好' },
+      { label: '贵宾就位', text: '副驾贵宾已就位，祝您旅途愉快' },
+      { label: '标准关好', text: '副驾车门已关好' }
+    ];
+  }
+  // 2. 主驾车门
+  if (key === 'door_fl') {
+    return [
+      { label: '防开门杀', text: '开门请注意后方来车，带好随身物品' },
+      { label: '车门打开', text: '主驾驶车门已打开' }
+    ];
+  }
+  if (key === 'door_fl_close') {
+    return [
+      { label: '一路顺风', text: '主驾车门已关好，祝您一路顺风' },
+      { label: '准备出发', text: '车门已关好，系好安全带准备出发' },
+      { label: '标准关好', text: '主驾驶车门已关好' }
+    ];
+  }
+  // 3. 后排车门
+  if (key === 'door_rl' || key === 'door_rr') {
+    return [
+      { label: '防开门杀', text: '后排车门打开，请注意后方来车' },
+      { label: '后排开门', text: '后排车门已打开' }
+    ];
+  }
+  if (key === 'door_rl_close' || key === 'door_rr_close') {
+    return [
+      { label: '后排关好', text: '后排车门已关好' },
+      { label: '乘客就位', text: '后排乘客已就位，车门已关好' }
+    ];
+  }
+  // 4. 挡位播报
+  if (key === 'gear_d') {
+    return [
+      { label: '一路平安', text: '已挂入前进挡，系好安全带，祝您一路平安' },
+      { label: '注意路况', text: '前进挡已就绪，注意观察周围路况' }
+    ];
+  }
+  if (key === 'gear_r') {
+    return [
+      { label: '注意后方', text: '已挂入倒车挡，请注意观察后方安全' },
+      { label: '倒车防撞', text: '倒车请注意后方行人和障碍物' }
+    ];
+  }
+  if (key === 'gear_p') {
+    return [
+      { label: '随身物品', text: '已挂入驻车挡，请带好随身物品' },
+      { label: '标准驻车', text: '已挂入驻车挡' }
+    ];
+  }
+  // 5. 后备箱
+  if (key === 'trunk_open') {
+    return [
+      { label: '拿取物品', text: '后备箱已打开，请注意拿取物品' },
+      { label: '标准打开', text: '后备箱已打开' }
+    ];
+  }
+  if (key === 'trunk_close') {
+    return [
+      { label: '确认锁好', text: '后备箱已关闭，请确认锁好' },
+      { label: '标准关闭', text: '后备箱已关闭' }
+    ];
+  }
+  // 6. 通用开闭
+  if (key === 'door_open') {
+    return [
+      { label: '防开门杀', text: '请注意后方来车，带好随身物品' },
+      { label: '车门打开', text: '车门已打开' }
+    ];
+  }
+  if (key === 'door_close') {
+    return [
+      { label: '关好出发', text: '车门已关好，准备出发' },
+      { label: '标准关好', text: '车门已关好' }
+    ];
+  }
+  return [
+    { label: '一路平安', text: '祝您一路顺风，平安出行' }
+  ];
 });
 
 const gainStateText = computed(() => {
