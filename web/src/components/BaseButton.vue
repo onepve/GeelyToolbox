@@ -31,11 +31,11 @@ const BASE = {
   cta: 'h-[52px] px-6 rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center whitespace-nowrap',
   // 柔和次级按钮（恢复默认）
   ghostSoft: 'h-[52px] px-6 rounded-2xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center whitespace-nowrap',
-  // 计划瓦片全宽 toggle（LinkView）
+  // 功能卡片全宽开关（LinkView）
   planToggle: 'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-  // 计划瓦片半宽 toggle（BodyView 双按钮 grid）
+  // 功能卡片半宽开关（BodyView 双按钮网格）
   planToggleGrid: 'h-[52px] px-4 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
-  // 计划瓦片「细分配置」金色入口
+  // 功能卡片「细分配置」入口
   configCta: 'h-[52px] px-4 rounded-2xl bg-car-item border-2 border-car-accent hover:border-car-accent text-car-accent font-black text-[16px] cursor-pointer shadow-sm transition-all flex items-center justify-center space-x-1'
 };
 

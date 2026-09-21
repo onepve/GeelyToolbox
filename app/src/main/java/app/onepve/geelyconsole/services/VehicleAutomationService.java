@@ -187,15 +187,28 @@ public class VehicleAutomationService extends Service {
         long now = android.os.SystemClock.elapsedRealtime();
 
         boolean steerGuard = prefs.getBoolean("voice_enable_steer_angle_guard", true);
-        if (steerGuard && steerAngleSignalAt > 0
-                && now - steerAngleSignalAt <= SafetySensorStateMachine.SIGNAL_FRESHNESS_MS) {
-            int r = safetySensors.checkSteerAngleNotCentered(now);
-            if (r == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED) {
-                double deg = safetySensors.getKnownValue(SafetySensorStateMachine.SENSOR_STEER_ANGLE);
-                AppLogger.i("安全守护", "【P2关怀】挂入P挡驻车，方向盘未回正 (偏角=" + (int) deg + "°)");
-                if (voicePlayer != null) {
-                    voicePlayer.play("steer_angle_guard.mp3", "请注意回正方向盘", VehicleVoicePlayer.PRIORITY_P2_DOOR);
-                }
+        int steerThreshold = SafetySensorStateMachine.clampSteerAngleThreshold(
+                prefs.getInt("voice_steer_angle_threshold_deg",
+                        SafetySensorStateMachine.STEER_ANGLE_THRESHOLD_DEG));
+        if (!steerGuard) return;
+        if (steerAngleSignalAt <= 0) {
+            AppLogger.i("安全守护", "挂入P挡：未收到有效方向盘转角，跳过回正提醒");
+            return;
+        }
+        long signalAge = now - steerAngleSignalAt;
+        if (signalAge > SafetySensorStateMachine.PARK_STEER_SNAPSHOT_FRESHNESS_MS) {
+            AppLogger.i("安全守护", "挂入P挡：方向盘转角快照过期 " + signalAge + "ms，跳过回正提醒");
+            return;
+        }
+        int r = safetySensors.checkSteerAngleNotCentered(now, steerThreshold,
+                SafetySensorStateMachine.PARK_STEER_SNAPSHOT_FRESHNESS_MS);
+        if (r == SafetySensorStateMachine.RESULT_ALARM_CONFIRMED) {
+            double deg = safetySensors.getKnownValue(SafetySensorStateMachine.SENSOR_STEER_ANGLE);
+            AppLogger.i("安全守护", "【P2关怀】挂入P挡驻车，方向盘未回正 (偏角=" + (int) deg
+                    + "°，设定=" + steerThreshold + "°，快照=" + signalAge + "ms)");
+            if (voicePlayer != null) {
+                // P挡确认是P1，P2会单条排队：先说“已挂入驻车挡”，随后提示回正，不抢断。
+                voicePlayer.play("steer_angle_guard.mp3", "请注意回正方向盘", VehicleVoicePlayer.PRIORITY_P2_DOOR);
             }
         }
     }
@@ -843,14 +856,14 @@ public class VehicleAutomationService extends Service {
                 Matcher m = P_FUNVALUE.matcher(line);
                 if (m.find()) {
                     int raw = (int) Long.parseLong(m.group(1), 16);
-                    int low16 = raw & 0xFFFF;
-                    // 低16位按有符号解释 (左负右正, 16位补码)
-                    if (low16 > 32767) low16 -= 65536;
+                    int degrees = SafetySensorStateMachine.decodeSignedSteerAngle(raw);
                     long now = android.os.SystemClock.elapsedRealtime();
-                    if (safetySensors.feedSteerAngle(raw, now)) {
+                    if (degrees != 0 && Math.abs(degrees) <= SafetySensorStateMachine.STEER_ANGLE_MAX_DEG) {
+                        // 左负右正：必须以有符号角度写入，不能将补码 raw 当无符号值。
+                        safetySensors.feedSteerAngleDegrees(degrees, now);
                         steerAngleSignalAt = now;
                     } else {
-                        steerAngleSignalAt = 0L; // unknown: 失去新鲜度资格
+                        steerAngleSignalAt = 0L; // 0 / 超量程: unknown，失去快照资格
                     }
                 }
             } catch (Exception ignored) {}

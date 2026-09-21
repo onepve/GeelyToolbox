@@ -52,6 +52,7 @@ import app.onepve.geelyconsole.utils.SystemUtils;
 import app.onepve.geelyconsole.utils.SystemUtils.LogDumpProgressListener;
 import app.onepve.geelyconsole.utils.ThemePatcher;
 import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
+import app.onepve.geelyconsole.utils.SafetySensorStateMachine;
 import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
 import app.onepve.geelyconsole.utils.DriveModeManager;
 
@@ -3076,6 +3077,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
                 // 车况感知与安全守护
                 obj.put("voice_enable_steer_angle_guard", prefs.getBoolean("voice_enable_steer_angle_guard", true));
+                obj.put("voice_steer_angle_threshold_deg", SafetySensorStateMachine.clampSteerAngleThreshold(
+                        prefs.getInt("voice_steer_angle_threshold_deg",
+                                SafetySensorStateMachine.STEER_ANGLE_THRESHOLD_DEG)));
 
                 // 默认值：出厂统一默认控制台独立接管模式，短按 Mode 唤起 360
                 boolean hasCarMedia = SystemUtils.isPackageInstalled(MainActivity.this, "com.ecarx.carmedia");
@@ -3307,9 +3311,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putInt(key, value).commit();
+                        int normalized = value;
+                        if ("voice_steer_angle_threshold_deg".equals(key)) {
+                            normalized = SafetySensorStateMachine.clampSteerAngleThreshold(value);
+                        }
+                        prefs.edit().putInt(key, normalized).commit();
                         VehicleAutomationService.syncState(MainActivity.this);
-                        AppLogger.i("座舱自动化", "更新数值设置: " + key + " -> " + value);
+                        AppLogger.i("座舱自动化", "更新数值设置: " + key + " -> " + normalized);
                     } catch (Exception e) {
                         AppLogger.e("座舱自动化", "更新设置失败: " + e.getMessage());
                     }

@@ -1,22 +1,22 @@
 <template>
   <div class="flex flex-col space-y-5">
-    <!-- 顶部计划概览与操作栏 (对齐方控 106px 车规标准) -->
+    <!-- 顶部联动概览与操作栏 -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-full flex flex-col space-y-1.5">
         <div class="flex items-center space-x-3">
           <StatusDot size="lg" color="accent" :glow-px="10" class="shrink-0" />
-          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">车身智能联动计划</span>
+          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">车身智能联动</span>
           <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-accent/40 text-car-accent inline-flex items-center shrink-0 shadow-sm">
-            {{ activeTaskCount }} / 4 项运行中
+            {{ activeTaskCount }} / 4 项已开启
           </span>
         </div>
         <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-          基于车载 CAN 总线与 MCU 底层传感器事件驱动。四大联动计划固定常驻，支持独立开关与加减微调触发阈值。
+          基于车载 CAN 总线与 MCU 传感器事件自动响应。每项功能可独立开关，并可微调触发阈值。
         </div>
       </div>
     </div>
 
-    <!-- 计划任务流列表 (车规对称双列网格 · 告别单列8层面条堆叠 · 1920宽屏黄金排布) -->
+    <!-- 联动功能列表 -->
     <div class="grid grid-cols-2 gap-5">
       <!-- 任务 1: D 挡起步联动 360 -->
       <PlanCard
@@ -30,7 +30,7 @@
         <template #footer>
           <BaseButton variant="planToggle" :active="store.vehicleAuto.vehicle_d_gear_360_enabled" @click="toggleSetting('vehicle_d_gear_360_enabled')">
             <StatusDot size="sm" :color="store.vehicleAuto.vehicle_d_gear_360_enabled ? 'accent' : 'sub'" :glow-px="6" />
-            <span>{{ store.vehicleAuto.vehicle_d_gear_360_enabled ? 'D 挡起步 360 运行中' : 'D 挡起步 360 已暂停' }}</span>
+            <span>{{ store.vehicleAuto.vehicle_d_gear_360_enabled ? 'D 挡起步 360 已开启' : 'D 挡起步 360 已关闭' }}</span>
           </BaseButton>
         </template>
       </PlanCard>
@@ -47,7 +47,7 @@
         <template #footer>
           <BaseButton variant="planToggle" :active="store.vehicleAuto.vehicle_door_pause_music_enabled" @click="toggleSetting('vehicle_door_pause_music_enabled')">
             <StatusDot size="sm" :color="store.vehicleAuto.vehicle_door_pause_music_enabled ? 'accent' : 'sub'" :glow-px="6" />
-            <span>{{ store.vehicleAuto.vehicle_door_pause_music_enabled ? '推门暂停音乐运行中' : '推门暂停音乐已暂停' }}</span>
+            <span>{{ store.vehicleAuto.vehicle_door_pause_music_enabled ? '推门暂停音乐已开启' : '推门暂停音乐已关闭' }}</span>
           </BaseButton>
         </template>
       </PlanCard>
@@ -73,7 +73,7 @@
               ]"
             >
               <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_speed_autoplay_enabled ? 'bg-car-accent' : 'bg-car-sub']"></span>
-              <span>{{ store.vehicleAuto.vehicle_speed_autoplay_enabled ? '运行中' : '已暂停' }}</span>
+              <span>{{ store.vehicleAuto.vehicle_speed_autoplay_enabled ? '已开启' : '已关闭' }}</span>
             </button>
           </div>
         </div>
@@ -229,7 +229,7 @@
               ]"
             >
               <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_speed_custom_action_enabled ? 'bg-car-accent' : 'bg-car-sub']"></span>
-              <span>{{ store.vehicleAuto.vehicle_speed_custom_action_enabled ? '运行中' : '已暂停' }}</span>
+              <span>{{ store.vehicleAuto.vehicle_speed_custom_action_enabled ? '已开启' : '已关闭' }}</span>
             </button>
           </div>
         </div>
@@ -366,7 +366,7 @@ function checkInstalledMusicApps() {
     hasNeteaseMusic.value = true;
   }
 
-  // 默认选择逻辑：若检测到安装了 QQ 音乐，默认置为 QQ 音乐且计划任务默认为运行
+  // 默认选择逻辑：若检测到安装了 QQ 音乐，默认置为 QQ 音乐并默认开启自动播放
   if (hasQQMusic.value) {
     if (!store.vehicleAuto.vehicle_speed_autoplay_pkg) {
       store.vehicleAuto.vehicle_speed_autoplay_pkg = 'com.tencent.qqmusiccar';
@@ -397,7 +397,7 @@ function toggleSetting(key) {
     store.vehicleAuto[aliasMap[key]] = next;
     bridge.call('setVehicleAutomationSetting', aliasMap[key], next);
   }
-  showToast('计划状态已更新: ' + (next ? '已开启执行' : '已暂停'));
+  showToast('联动设置已更新: ' + (next ? '已开启' : '已关闭'));
 }
 
 function setAutoplaySpeed(speed) {

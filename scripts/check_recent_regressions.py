@@ -96,6 +96,20 @@ CONTRACTS = [
   [r'STREAM_NAVI', r'STREAM_SYSTEM', r'STREAM_MUSIC'], [r'STREAM_NOTIFICATION']),
  ('voice-gain-playback-applies-resolver', JAVA+'utils/VehicleVoicePlayer.java', 'private synchronized void applyVolumeOffsetBeforePlay',
   [r'VoiceGainResolver\.normalizeVoiceKey', r'VoiceGainResolver\.resolveStreamForChannel'], [r'STREAM_NOTIFICATION']),
+ ('steer-park-snapshot', JAVA+'services/VehicleAutomationService.java', 'private void checkSteerAngleOnPark()',
+  [r'PARK_STEER_SNAPSHOT_FRESHNESS_MS', r'checkSteerAngleNotCentered\(now,', r'PRIORITY_P2_DOOR'], [r'checkSteerAngleNotCentered\(now\)']),
+ ('steer-user-threshold', JAVA+'services/VehicleAutomationService.java', 'private void checkSteerAngleOnPark()',
+  [r'getInt\("voice_steer_angle_threshold_deg"', r'clampSteerAngleThreshold',
+   r'checkSteerAngleNotCentered\(now, steerThreshold,', r'PARK_STEER_SNAPSHOT_FRESHNESS_MS'], []),
+ ('steer-threshold-bridge', JAVA+'MainActivity.java', 'public boolean setVehicleAutomationIntSetting(final String key, final int value)',
+  [r'voice_steer_angle_threshold_deg', r'clampSteerAngleThreshold', r'putInt\(key, normalized\)'], []),
+ ('steer-threshold-ui', 'web/src/components/SafetyGuardVoiceSection.vue', 'function adjustSteerThreshold',
+  [r'Math\.max\(15, Math\.min\(180, current \+ delta\)\)',
+   r'setVehicleAutomationIntSetting.*voice_steer_angle_threshold_deg'], []),
+ ('steer-signed-angle', JAVA+'services/VehicleAutomationService.java', 'INFO_ID_VSTEERWHEELINFO_ANGLE_VALUE',
+  [r'decodeSignedSteerAngle', r'feedSteerAngleDegrees'], [r'feedSteerAngle\(raw']),
+ ('steer-signed-decoder', JAVA+'utils/SafetySensorStateMachine.java', 'public static int decodeSignedSteerAngle',
+  [r'0x7FFF', r'0x10000', r'extractLow16'], []),
 ]
 
 

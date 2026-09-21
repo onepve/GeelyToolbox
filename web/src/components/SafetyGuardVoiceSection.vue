@@ -17,9 +17,9 @@
             <button
               @click.stop="showArbiterHelp"
               class="h-[50px] px-4 rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-accent hover:border-car-accent font-bold text-[14px] flex items-center justify-center cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-              title="查看通话与仲裁规则"
+              title="查看语音播放说明"
             >
-              仲裁说明
+              播放说明
             </button>
           </div>
           <span :class="['px-3 py-1 rounded-full text-[13px] font-black border shrink-0', store.vehicleAuto.voice_enable_steer_angle_guard ? 'bg-emerald-500/10 border-emerald-500/40 text-car-text' : 'bg-car-item border-car-border text-car-sub']">
@@ -27,9 +27,18 @@
           </span>
         </div>
 
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 py-3 text-[15px] leading-relaxed">
-          <div class="text-car-sub font-bold">挂 P 挡解开安全带或推门下车时，方向盘偏离中心较大</div>
-          <div class="text-car-text font-bold">温婉提醒回正方向盘，坡道停车请按规范转向车轮</div>
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-2 py-3 text-[15px] leading-relaxed">
+          <div class="text-car-sub font-bold">挂 P 挡解开安全带或推门下车时，方向盘偏角超过你设定的提醒角度就会播报</div>
+          <div class="text-car-text font-bold">默认 60°；可按自己的停车习惯调整。坡道停车请按驾驶规范转向车轮</div>
+          <div class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl p-2 mt-1">
+            <button @click="adjustSteerThreshold(-5)" class="h-[50px] min-w-[56px] rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[17px] cursor-pointer active:scale-95 transition-all">−5°</button>
+            <div class="flex items-baseline space-x-1 px-3 min-w-0">
+              <span class="text-[13.5px] font-bold text-car-sub whitespace-nowrap">提醒角度</span>
+              <span class="text-[28px] font-black text-car-accent tracking-tight font-mono">{{ store.vehicleAuto.voice_steer_angle_threshold_deg || 60 }}</span>
+              <span class="text-[14px] text-car-sub font-black">°</span>
+            </div>
+            <button @click="adjustSteerThreshold(5)" class="h-[50px] min-w-[56px] rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[17px] cursor-pointer active:scale-95 transition-all">+5°</button>
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3 pt-4 border-t border-car-border/60 mt-auto shrink-0">
@@ -76,6 +85,14 @@ function toggleGuard(key) {
   showToast('守护设置已更新: ' + (next ? '已开启' : '已关闭'));
 }
 
+function adjustSteerThreshold(delta) {
+  const current = Number(store.vehicleAuto.voice_steer_angle_threshold_deg) || 60;
+  const next = Math.max(15, Math.min(180, current + delta));
+  if (next === current) return;
+  store.vehicleAuto.voice_steer_angle_threshold_deg = next;
+  bridge.call('setVehicleAutomationIntSetting', 'voice_steer_angle_threshold_deg', next);
+  showToast(`回正提醒角度已设为 ${next}°`);
+}
 function testVoice(type) {
   // 使用原生守护语音试听分支；不模拟车辆传感器触发。
   bridge.call('testVehicleVoice', type);
@@ -84,8 +101,8 @@ function testVoice(type) {
 function showSteerHelp() {
   openModal('confirm', {
     title: '【功能指南】方向盘未回正提醒',
-    desc: '1. 触发条件：挂入 P 挡解开安全带或推开主驾车门准备下车时，方向盘偏离中心角度较大则温婉提醒回正。\n\n2. 克制表述：偶尔停放时方向盘未完全回正属正常现象，不必然伤车；坡道停车请按驾驶规范转向车轮并拉起手刹。\n\n3. 辅助定位：本提醒仅作下车前辅助提示，不替代仪表与警示灯；未知信号不报警。',
-    tip: '语音仅作辅助提醒，不替代仪表与警示灯；未知信号不报警。',
+    desc: '1. 触发条件：挂入 P 挡解开安全带或推开主驾车门准备下车时，方向盘偏角严格超过当前设定值才会提醒；默认 60°，可按自己的停车习惯在 15° 至 180° 间调整。\n\n2. 克制表述：偶尔停放时方向盘未完全回正属正常现象，不必然伤车；坡道停车请按驾驶规范转向车轮并拉起手刹。\n\n3. 辅助定位：本提醒仅作下车前辅助提示，不替代仪表与警示灯；没有有效转角数据时不会误报。',
+    tip: '语音仅作辅助提醒，不替代仪表与警示灯。',
     showCancel: false,
     confirmText: '我知道了'
   });
@@ -93,8 +110,8 @@ function showSteerHelp() {
 
 function showArbiterHelp() {
   openModal('confirm', {
-    title: '【语音协同与音频仲裁说明】',
-    desc: '通话进行中：普通车载语音保持静默避让，仅高危守护语音可插播。\n\n蓝牙媒体：微信语音、手机音乐等蓝牙媒体场景下，系统可能无法逐条识别当前播放内容；工具箱播报与蓝牙媒体走底层混音共存。\n\n混音承诺边界：不承诺固定压低比率或绝对混音效果，实际闪避与恢复由原厂音频仲裁决定。',
+    title: '【语音播放说明】',
+    desc: '通话进行中：普通车载语音会暂不播放，仅高优先级安全提醒可能插播。\n\n蓝牙媒体：微信语音、手机音乐等场景下，车机无法逐条识别手机正在播放的内容；工具箱语音会与蓝牙媒体同时输出。\n\n音量效果：实际闪避与恢复由原厂车机音频系统决定。',
     tip: '安全提醒仅辅助不替代仪表，未知信号不报警。',
     showCancel: false,
     confirmText: '我知道了'

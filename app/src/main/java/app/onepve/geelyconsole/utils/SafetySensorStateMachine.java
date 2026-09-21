@@ -31,12 +31,23 @@ public final class SafetySensorStateMachine {
     public static final int EPB_RELEASED = 0;
     public static final int EPB_ENGAGED = 1;
 
-    /** 方向盘未回正测试阈值 (度，测试值未实车标定) */
+    /**
+     * 默认方向盘偏角提醒阈值（度）。首次使用的默认偏好，用户可在界面自行调整。
+     */
     public static final int STEER_ANGLE_THRESHOLD_DEG = 60;
+    /** 用户可设的方向盘偏角提醒阈值范围（度）。 */
+    public static final int STEER_ANGLE_THRESHOLD_MIN_DEG = 15;
+    public static final int STEER_ANGLE_THRESHOLD_MAX_DEG = 180;
     /** 方向盘角度合理量程上限 (度) */
     public static final int STEER_ANGLE_MAX_DEG = 540;
     /** 信号新鲜度窗口 (ms): 超过视为过期 unknown */
     public static final long SIGNAL_FRESHNESS_MS = 5000L;
+    /**
+     * 挂入 P 挡时允许读取的方向盘位置快照窗口 (ms)。
+     * 方向盘转角是静态位置量，车辆停稳后不会因为数秒未变化而失效；
+     * 但仍限制在 30 秒内，避免用久远读数做提示。
+     */
+    public static final long PARK_STEER_SNAPSHOT_FRESHNESS_MS = 30000L;
     /** 告警确认去抖窗口 (ms): 持续非零值超过该时长才确认 */
     public static final long ALARM_DEBOUNCE_MS = 1200L;
 
@@ -95,6 +106,15 @@ public final class SafetySensorStateMachine {
      */
     public static int extractLow16(int funValueRaw) {
         return funValueRaw & 0xFFFF;
+    }
+
+    /**
+     * 从 AdaptAPI funValue 低 16 位解码方向盘有符号角度（16 位补码）。
+     * 右打为正、左打为负，例如 0x002c -> +44°、0xffa6 -> -90°。
+     */
+    public static int decodeSignedSteerAngle(int funValueRaw) {
+        int low16 = extractLow16(funValueRaw);
+        return low16 > 0x7FFF ? low16 - 0x10000 : low16;
     }
 
     // ---------------- 各传感器喂入 ----------------
@@ -179,16 +199,47 @@ public final class SafetySensorStateMachine {
         return RESULT_ALARM_CONFIRMED;
     }
 
-    /** 方向盘未回正判定: |角度| > 60° 且信号新鲜 */
-    public synchronized int checkSteerAngleNotCentered(long now) {
+    /** 将用户设置收敛到安全且可理解的有效阈值范围。 */
+    public static int clampSteerAngleThreshold(int thresholdDeg) {
+        return Math.max(STEER_ANGLE_THRESHOLD_MIN_DEG,
+                Math.min(STEER_ANGLE_THRESHOLD_MAX_DEG, thresholdDeg));
+    }
+
+    /**
+     * 方向盘未回正判定: |角度| 必须严格超过用户设置的阈值且信号新鲜。
+     * 参数越界时统一收敛到允许范围，避免异常配置造成过度或永久静默。
+     */
+    public synchronized int checkSteerAngleNotCentered(long now, int thresholdDeg) {
         if (!isFresh(SENSOR_STEER_ANGLE, now)) {
             return RESULT_SILENT;
         }
-        double deg = currentKnownValue[SENSOR_STEER_ANGLE];
-        if (Double.isNaN(deg) || Math.abs(deg) <= STEER_ANGLE_THRESHOLD_DEG) {
+        return checkSteerAngleNotCenteredWithFreshness(now,
+                clampSteerAngleThreshold(thresholdDeg), SIGNAL_FRESHNESS_MS);
+    }
+
+    /** 方向盘未回正判定: 默认采用 60° 用户默认值与实时信号窗口。 */
+    public synchronized int checkSteerAngleNotCentered(long now) {
+        return checkSteerAngleNotCentered(now, STEER_ANGLE_THRESHOLD_DEG);
+    }
+
+    /**
+     * 方向盘未回正判定：调用方可指定用户阈值和允许读取的位置快照时长。
+     * 仅挂 P 场景使用 30 秒快照窗口；其他场景仍保持 5 秒实时信号门槛。
+     */
+    public synchronized int checkSteerAngleNotCentered(long now, int thresholdDeg, long freshnessMs) {
+        return checkSteerAngleNotCenteredWithFreshness(now,
+                clampSteerAngleThreshold(thresholdDeg), freshnessMs);
+    }
+
+    private int checkSteerAngleNotCenteredWithFreshness(long now, int thresholdDeg, long freshnessMs) {
+        if (!isFresh(SENSOR_STEER_ANGLE, now, freshnessMs)) {
             return RESULT_SILENT;
         }
-        // P3 关怀无需持续去抖 (开门瞬间的瞬时快照即可)，但保留一次触发锁
+        double deg = currentKnownValue[SENSOR_STEER_ANGLE];
+        if (Double.isNaN(deg) || Math.abs(deg) <= thresholdDeg) {
+            return RESULT_SILENT;
+        }
+        // P3 关怀无需持续去抖 (挂 P 时的最后位置快照即可)，但保留一次触发锁
         if (trippedThisCycle[SENSOR_STEER_ANGLE]) {
             return RESULT_ALARM_ONGOING;
         }
@@ -199,8 +250,12 @@ public final class SafetySensorStateMachine {
     // ---------------- 内部 ----------------
 
     private boolean isFresh(int sensor, long now) {
+        return isFresh(sensor, now, SIGNAL_FRESHNESS_MS);
+    }
+
+    private boolean isFresh(int sensor, long now, long freshnessMs) {
         long at = lastSignalAt[sensor];
-        return at > 0 && (now - at) <= SIGNAL_FRESHNESS_MS;
+        return at > 0 && freshnessMs >= 0 && now >= at && (now - at) <= freshnessMs;
     }
 
     /** 诊断: 当前已知值 (NaN=unknown)，仅测试与状态回显用 */

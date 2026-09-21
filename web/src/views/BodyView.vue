@@ -36,11 +36,11 @@
       </div>
     </div>
 
-    <!-- 语音任务流列表 (车规双列网格 2x2 · 告别单列堆叠面条 · 一屏尽览四大场景) -->
+    <!-- 语音提示列表：车规双列网格，一屏尽览四大场景 -->
     <div class="grid grid-cols-2 gap-5">
-      <!-- 语音任务 1: 挡位安全播报计划 -->
+      <!-- 语音提示 1：换挡安全播报 -->
       <PlanCard
-        title="1. 换挡有人感知语音计划"
+        title="1. 换挡语音提示"
         tag="换挡安全"
         help-size="lg"
         help-text="gear"
@@ -52,7 +52,7 @@
           <div class="grid grid-cols-2 gap-3">
             <BaseButton variant="planToggleGrid" :active="isGearVoicePlanActive" @click="toggleAllGearVoice">
               <StatusDot size="sm" :color="isGearVoicePlanActive ? 'accent' : 'sub'" :glow-px="6" />
-              <span class="truncate">{{ isGearVoicePlanActive ? '计划运行中' : '计划已暂停' }}</span>
+              <span class="truncate">{{ isGearVoicePlanActive ? '已开启' : '已关闭' }}</span>
             </BaseButton>
             <BaseButton variant="configCta" @click="openGearConfigModal">
               <span>挡位细分配置</span>
@@ -62,9 +62,9 @@
         </template>
       </PlanCard>
 
-      <!-- 语音任务 2: 驾驶模式旋钮播报计划 -->
+      <!-- 语音提示 2：驾驶模式播报 -->
       <PlanCard
-        title="2. 驾驶模式旋钮切换计划"
+        title="2. 驾驶模式播报"
         tag="旋钮激擎"
         help-size="lg"
         help-text="mode"
@@ -76,7 +76,7 @@
           <div class="grid grid-cols-2 gap-3">
             <BaseButton variant="planToggleGrid" :active="isModeVoicePlanActive" @click="toggleAllModeVoice">
               <StatusDot size="sm" :color="isModeVoicePlanActive ? 'accent' : 'sub'" :glow-px="6" />
-              <span class="truncate">{{ isModeVoicePlanActive ? '模式计划运行中' : '模式计划已暂停' }}</span>
+              <span class="truncate">{{ isModeVoicePlanActive ? '已开启' : '已关闭' }}</span>
             </BaseButton>
             <BaseButton variant="configCta" @click="openModeConfigModal">
               <span>模式细分配置</span>
@@ -86,9 +86,9 @@
         </template>
       </PlanCard>
 
-      <!-- 语音任务 3: 四门迎宾与关门安全播报计划 -->
+      <!-- 语音提示 3：车门迎宾与关门安全播报 -->
       <PlanCard
-        title="3. 四门迎宾与关门安全计划"
+        title="3. 车门迎宾与安全提示"
         tag="五门防抖"
         help-size="lg"
         help-text="door"
@@ -100,7 +100,7 @@
           <div class="grid grid-cols-2 gap-3">
             <BaseButton variant="planToggleGrid" :active="isDoorVoicePlanActive" @click="toggleAllDoorVoice">
               <StatusDot size="sm" :color="isDoorVoicePlanActive ? 'accent' : 'sub'" :glow-px="6" />
-              <span class="truncate">{{ isDoorVoicePlanActive ? '车门计划运行中' : '车门计划已暂停' }}</span>
+              <span class="truncate">{{ isDoorVoicePlanActive ? '已开启' : '已关闭' }}</span>
             </BaseButton>
             <BaseButton variant="configCta" @click="openDoorConfigModal">
               <span>车门详细配置</span>
@@ -110,9 +110,9 @@
         </template>
       </PlanCard>
 
-      <!-- 语音任务 4: 原厂电动尾门安全播报计划 -->
+      <!-- 语音提示 4：电动尾门安全播报 -->
       <PlanCard
-        title="4. 原厂电动尾门安全计划"
+        title="4. 尾门安全提示"
         tag="尾门防碰"
         help-size="lg"
         help-text="trunk"
@@ -124,7 +124,7 @@
           <div class="grid grid-cols-2 gap-3">
             <BaseButton variant="planToggleGrid" :active="isTrunkVoicePlanActive" @click="toggleAllTrunkVoice">
               <StatusDot size="sm" :color="isTrunkVoicePlanActive ? 'accent' : 'sub'" :glow-px="6" />
-              <span class="truncate">{{ isTrunkVoicePlanActive ? '尾门计划运行中' : '尾门计划已暂停' }}</span>
+              <span class="truncate">{{ isTrunkVoicePlanActive ? '已开启' : '已关闭' }}</span>
             </BaseButton>
             <BaseButton variant="configCta" @click="openTrunkConfigModal">
               <span>尾门详细配置</span>
@@ -206,7 +206,7 @@ function toggleAllGearVoice() {
   bridge.call('setVehicleAutomationSetting', 'voice_enable_gear_d', next);
   bridge.call('setVehicleAutomationSetting', 'voice_enable_gear_r', next);
   bridge.call('setVehicleAutomationSetting', 'voice_enable_gear_p', next);
-  showToast(next ? '换挡播报计划已开启 (D/R/P)' : '换挡播报计划已暂停');
+  showToast(next ? '换挡播报已开启 (D/R/P)' : '换挡播报已关闭');
 }
 
 function toggleAllModeVoice() {
@@ -219,7 +219,7 @@ function toggleAllModeVoice() {
   bridge.call('setVehicleAutomationSetting', 'voice_enable_mode_eco', next);
   bridge.call('setVehicleAutomationSetting', 'voice_enable_mode_sport', next);
   bridge.call('setVehicleAutomationSetting', 'voice_enable_mode_smart', next);
-  showToast(next ? '驾驶模式播报计划已开启' : '驾驶模式播报计划已暂停');
+  showToast(next ? '驾驶模式播报已开启' : '驾驶模式播报已关闭');
 }
 
 function toggleAllDoorVoice() {
@@ -236,7 +236,7 @@ function toggleAllDoorVoice() {
   bridge.call('setVehicleAutomationSetting', 'voice_enable_door_fr', next);
   bridge.call('setVehicleAutomationSetting', 'voice_enable_door_rl', next);
   bridge.call('setVehicleAutomationSetting', 'voice_enable_door_rr', next);
-  showToast(next ? '车门播报计划已开启' : '车门播报计划已暂停');
+  showToast(next ? '车门播报已开启' : '车门播报已关闭');
 }
 
 function toggleAllTrunkVoice() {
@@ -245,7 +245,7 @@ function toggleAllTrunkVoice() {
   store.vehicleAuto.voice_enable_trunk_close = next;
   bridge.call('setVehicleAutomationSetting', 'voice_enable_trunk_open', next);
   bridge.call('setVehicleAutomationSetting', 'voice_enable_trunk_close', next);
-  showToast(next ? '电动尾门播报计划已开启' : '电动尾门播报计划已暂停');
+  showToast(next ? '电动尾门播报已开启' : '电动尾门播报已关闭');
 }
 
 
