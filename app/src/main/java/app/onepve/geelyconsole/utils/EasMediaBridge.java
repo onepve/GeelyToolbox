@@ -196,13 +196,11 @@ public class EasMediaBridge {
     }
 
     /**
-     * 选通原车蓝牙音频硬件通道并申请焦点
+     * 选通原车蓝牙音频硬件通道 (EAS 6 号物理通道)
+     * 职责极其纯粹：仅负责打通 DSP 硬件功放的蓝牙声道与解除静音，
+     * 严禁在选通时向手机回灌 play() 播歌指令，坚决杜绝把手机微信语音掐断！
      */
     public synchronized void activateBluetoothChannel() {
-        // 2026-09-17 修复：抑制窗口内严禁通道选通。
-        // 真车日志 17:59:20.900：用户刚暂停（17:59:19.465）后 updateCurrentSourceType(6)
-        // 仍被下发，选通动作会触发原车 EAS 重新仲裁音频源，把用户暂停顶回播放。
-        // 仅跳过 play() 唤醒不够，通道选通本身也要在抑制窗口内拦截。
         if (isAutoWakeSuppressed()) {
             AppLogger.i("蓝牙音频", "处于用户暂停抑制窗口内，跳过蓝牙通道选通 (尊重用户暂停意图)");
             return;
@@ -213,17 +211,29 @@ public class EasMediaBridge {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
                 AppLogger.i("蓝牙音频", "已下发 updateCurrentSourceType(6)，原车蓝牙音频物理通道已选通！");
             }
-            // 关键：通知底层 com.android.bluetooth A2dpSink 激活音频焦点，解除 MT8666 音量为 0 与被动暂停限制
-            wakeBluetoothAudioSink();
-
-            // 申请系统音频焦点，采用车规闪避属性，与高德导航及车身播报混音共存
+            
+            // 确保系统媒体音量正常，杜绝为0导致微信或音乐不出声
             AudioManager am = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
             if (am != null) {
-                am.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+                int curVol = am.getStreamVolume(AudioManager.STREAM_MUSIC);
+                if (curVol == 0) {
+                    int maxVol = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+                    am.setStreamVolume(AudioManager.STREAM_MUSIC, Math.max(1, maxVol / 2), 0);
+                    AppLogger.i("蓝牙音频", "检测到媒体音量为0，已自动恢复适中音量以保障放声");
+                }
             }
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "选通蓝牙音频物理通道失败: " + t.getMessage());
         }
+    }
+
+    /**
+     * 主动唤醒手机蓝牙开始播放音乐 (仅在用户主动按方控播放或车速自启明确要放歌时调用)
+     */
+    public void playBluetoothMusic() {
+        clearAutoWakeSuppression();
+        activateBluetoothChannel();
+        wakeBluetoothAudioSink();
     }
 
     /**

@@ -1280,6 +1280,8 @@ public class VehicleAutomationService extends Service {
         if (speed <= 5) {
             speedAutoplayArmed = true;
             speedCustomActionArmed = true;
+            // 车辆停车或等红绿灯 (车速回落至近停) 时重置手动暂停标记，恢复起步自动播歌武装
+            prefs.edit().putBoolean("user_manually_paused_media", false).apply();
         }
 
         // 1. 车速智能自启多媒体 (若装有 QQ 音乐，默认置为 QQ 音乐且计划任务默认为运行)
@@ -1328,14 +1330,9 @@ public class VehicleAutomationService extends Service {
         }
     }
 
-    private void triggerMusicAutoplay(final String pkg, boolean fullscreen) {
+    private void triggerMusicAutoplay(final String pkg, final boolean fullscreen) {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-        if (prefs.getBoolean("user_manually_paused_media", false)) {
-            AppLogger.i("车身联动", "车速达到阈值，但检测到用户此前主动按下了暂停，绝对尊重用户意图，禁止自动恢复播放");
-            return;
-        }
-        // 用户主动暂停守卫：方控2/车门联动等主动暂停会开启 8 秒自动唤醒抑制窗口，
-        // 车速联动不得在窗口内把用户刚按下的暂停强行顶回播放（「暂停后又自动续播」同源病灶）。
+        // 用户主动暂停守卫：仅当处于用户主动暂停抑制窗口内（8秒内）才跳过，绝不能被历史标记永久阻断起步放歌
         if (EasMediaBridge.getInstance(this).isAutoWakeSuppressed()) {
             AppLogger.i("车身联动", "车速达到阈值，但处于用户主动暂停抑制窗口内，跳过自动播放（尊重用户暂停意图）");
             return;
@@ -1345,7 +1342,21 @@ public class VehicleAutomationService extends Service {
             return;
         }
         AppLogger.i("车身联动", "车速达到阈值，触发智能多媒体自启: " + pkg + " (全屏=" + fullscreen + ")");
-        if (fullscreen && pkg != null && !pkg.isEmpty()) {
+
+        // 分支 1：目标为手机蓝牙
+        if ("com.android.bluetooth".equals(pkg)) {
+            EasMediaBridge.getInstance(this).clearAutoWakeSuppression();
+            EasMediaBridge.getInstance(this).playBluetoothMusic();
+            return;
+        }
+
+        // 分支 2：目标为本地音乐软件（QQ音乐、网易云等）
+        // 核心痛点根治：如果用户设置了后台静默放歌，原逻辑根本没拉起 App 进程，导致发按键石沉大海，车主必须手动点出来。
+        // 现在：无论是否全屏，必须拉活目标音乐应用进程！
+        final String curFgPkg = ForegroundAppDetector.getForegroundPackage(this);
+        final boolean wasNavigating = "com.autonavi.amapauto".equals(curFgPkg) || (curFgPkg != null && curFgPkg.contains("map"));
+
+        if (pkg != null && !pkg.isEmpty()) {
             try {
                 Intent launch = getPackageManager().getLaunchIntentForPackage(pkg);
                 if (launch != null) {
@@ -1353,17 +1364,39 @@ public class VehicleAutomationService extends Service {
                     startActivity(launch);
                 }
             } catch (Throwable t) {
-                AppLogger.w("车身联动", "唤起前台媒体应用失败: " + t.getMessage());
+                AppLogger.w("车身联动", "唤起媒体应用失败: " + t.getMessage());
             }
         }
+
+        // QQ音乐车机版专有唤醒与播放广播
+        if ("com.tencent.qqmusiccar".equals(pkg)) {
+            try {
+                Intent qqPlay = new Intent("com.tencent.qqmusiccar.action.PLAY");
+                qqPlay.setPackage("com.tencent.qqmusiccar");
+                sendBroadcast(qqPlay);
+            } catch (Throwable ignored) {}
+        }
+
         mainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 try {
                     new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
                 } catch (Throwable ignored) {}
+
+                // 若为后台静默放歌且车主此前正在导航，1.2秒后无缝将高德地图带回前台，实现完美的「后台放歌、不挡导航」！
+                if (!fullscreen && wasNavigating) {
+                    try {
+                        Intent naviIntent = getPackageManager().getLaunchIntentForPackage("com.autonavi.amapauto");
+                        if (naviIntent != null) {
+                            naviIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                            startActivity(naviIntent);
+                            AppLogger.i("车身联动", "后台静默放歌已就绪，已无缝将高德地图带回前台导航界面");
+                        }
+                    } catch (Throwable ignored) {}
+                }
             }
-        }, 800);
+        }, 1000);
     }
 
     private boolean isAnyMediaPlaying() {
