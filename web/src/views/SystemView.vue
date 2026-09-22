@@ -1,69 +1,6 @@
 <template>
   <div class="flex flex-col space-y-6 shrink-0">
-    <FloatingView />
-
-    <!-- 系统底层维护 4 大核心功能矩阵 (2x2 网格车规对称排版) -->
-    <div class="grid grid-cols-2 gap-4">
-      <!-- 1. 运行与守护日志 -->
-      <FeatureCard 
-        title="运行与守护日志"
-        desc="实时采集车门、挡位与方控信号记录，支持独立清空与一键全量导出。"
-        helpTitle="【功能指南】运行与守护日志"
-        helpText="1. 运行记录：&#10;自动记录车门、挡位、方向盘按键等状态，遇到功能异常时可一键导出给作者排查。&#10;&#10;2. 隐私安全保护：&#10;日志导出时会自动抹除车牌、手机号、行车轨迹等敏感信息，充分保护车主隐私。&#10;&#10;3. 不占存储：&#10;平时仅保存在临时运行内存中，不占车机存储空间，重启后自动释放。" helpTip="日常无需理会，只有在排查问题时按需导出即可。"
-      >
-        <button 
-          @click="openLogModal"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
-        >
-          <span>查看与管理守护日志</span>
-        </button>
-      </FeatureCard>
-
-      <!-- 2. 车机 ADB 交互终端 (原应用高级管理已移至应用安装) -->
-      <FeatureCard 
-        title="车机 ADB 交互终端"
-        desc="本地 ADB 交互终端，支持执行系统 Shell 指令，用于进阶调试与底层诊断。"
-        helpTitle="【功能指南】车机 ADB 交互终端"
-        helpText="1. 调试终端：&#10;为高级玩车用户提供的系统命令行窗口，方便输入指令调试系统。&#10;&#10;2. 核心防护：&#10;已开启系统级安全保护，防止误删车机核心系统组件。&#10;&#10;3. 应用管理：&#10;普通软件的安装、卸载和冻结，建议直接在「应用安装」页面操作。" helpTip="仅建议熟悉安卓命令行的进阶车主使用。"
-      >
-        <button 
-          @click="openDeepTools"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center justify-center whitespace-nowrap"
-        >
-          <span>打开 ADB 交互终端</span>
-        </button>
-      </FeatureCard>
-
-      <!-- 3. 整车硬件冷重启控制台 (紧凑饱满) -->
-      <FeatureCard 
-        title="整车硬件冷重启"
-        desc="彻底掉电重置车机 MCU 与安卓核心，白名单与底层服务立即生效。"
-        helpTitle="【功能指南】整车硬件冷重启"
-        helpText="1. 彻底重启车机：&#10;像拔插钥匙一样彻底断电重启中控屏幕和底层系统，解决系统卡顿或刚改的配置没生效的问题。&#10;&#10;2. 安全提醒：&#10;行车过程中严禁操作！请在车辆安全停稳、挂入 P 挡后再点击重启。&#10;&#10;3. 重启耗时：&#10;整个过程大约 25~35 秒，期间屏幕暂时黑屏属于正常现象，请耐心等待重新点亮。" helpTip="车辆停稳挂 P 挡后再点重启，期间黑屏请耐心等待。"
-      >
-        <button 
-          @click="confirmHardReboot"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border hover:border-rose-500/60 bg-car-item text-car-text font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
-        >
-          <span>完整硬件冷重启 (reboot)</span>
-        </button>
-      </FeatureCard>
-
-      <!-- 4. 工具箱开机自启动与后台守护 -->
-      <FeatureCard 
-        title="工具箱开机自启动与后台守护"
-        desc="控制车机上电开机后在后台静默运行工具箱。出厂默认常驻开启，各联动项由各自开关独立管控。"
-        helpTitle="【功能指南】工具箱开机自启动与后台守护"
-        helpText="1. 开机后台自启：&#10;车辆打火通电后，工具箱自动在后台安静启动，让各项自动化联动功能上车就能直接用。&#10;&#10;2. 独立控制：&#10;开机自启开启后，各个联动功能（如 D 挡 360、开门关门播报等）依然由各自的开关独立决定是否工作。&#10;&#10;3. 推荐常开：&#10;默认保持常开，确保上车后一切功能运转顺畅。" helpTip="这是自动化功能的基础开关，建议保持开启。"
-      >
-        <div class="w-full min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[18px] shadow-sm flex items-center justify-center space-x-2">
-          <StatusDot size="md" color="ok" :glow-px="8" />
-          <span>开机自启静默守护: 已默认常驻启用</span>
-        </div>
-      </FeatureCard>
-    </div>
-
-    <!-- 全国实时油价与调价日历 -->
+    <!-- 全国实时油价与调价日历 (置顶首位，车主进入系统维护秒查油价，免滑动翻页) -->
     <FeatureCard 
       title="全国实时油价与调价日历"
       desc="监测各省发改委最新最高零售限价，提供调价周期倒计时与加油算账建议。"
@@ -130,6 +67,69 @@
         </div>
       </div>
     </FeatureCard>
+
+    <FloatingView />
+
+    <!-- 系统底层维护 4 大核心功能矩阵 (2x2 网格车规对称排版) -->
+    <div class="grid grid-cols-2 gap-4">
+      <!-- 1. 运行与守护日志 -->
+      <FeatureCard 
+        title="运行与守护日志"
+        desc="实时采集车门、挡位与方控信号记录，支持独立清空与一键全量导出。"
+        helpTitle="【功能指南】运行与守护日志"
+        helpText="1. 运行记录：&#10;自动记录车门、挡位、方向盘按键等状态，遇到功能异常时可一键导出给作者排查。&#10;&#10;2. 隐私安全保护：&#10;日志导出时会自动抹除车牌、手机号、行车轨迹等敏感信息，充分保护车主隐私。&#10;&#10;3. 不占存储：&#10;平时仅保存在临时运行内存中，不占车机存储空间，重启后自动释放。" helpTip="日常无需理会，只有在排查问题时按需导出即可。"
+      >
+        <button 
+          @click="openLogModal"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+        >
+          <span>查看与管理守护日志</span>
+        </button>
+      </FeatureCard>
+
+      <!-- 2. 车机 ADB 交互终端 (原应用高级管理已移至应用安装) -->
+      <FeatureCard 
+        title="车机 ADB 交互终端"
+        desc="本地 ADB 交互终端，支持执行系统 Shell 指令，用于进阶调试与底层诊断。"
+        helpTitle="【功能指南】车机 ADB 交互终端"
+        helpText="1. 调试终端：&#10;为高级玩车用户提供的系统命令行窗口，方便输入指令调试系统。&#10;&#10;2. 核心防护：&#10;已开启系统级安全保护，防止误删车机核心系统组件。&#10;&#10;3. 应用管理：&#10;普通软件的安装、卸载和冻结，建议直接在「应用安装」页面操作。" helpTip="仅建议熟悉安卓命令行的进阶车主使用。"
+      >
+        <button 
+          @click="openDeepTools"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center justify-center whitespace-nowrap"
+        >
+          <span>打开 ADB 交互终端</span>
+        </button>
+      </FeatureCard>
+
+      <!-- 3. 整车硬件冷重启控制台 (紧凑饱满) -->
+      <FeatureCard 
+        title="整车硬件冷重启"
+        desc="彻底掉电重置车机 MCU 与安卓核心，白名单与底层服务立即生效。"
+        helpTitle="【功能指南】整车硬件冷重启"
+        helpText="1. 彻底重启车机：&#10;像拔插钥匙一样彻底断电重启中控屏幕和底层系统，解决系统卡顿或刚改的配置没生效的问题。&#10;&#10;2. 安全提醒：&#10;行车过程中严禁操作！请在车辆安全停稳、挂入 P 挡后再点击重启。&#10;&#10;3. 重启耗时：&#10;整个过程大约 25~35 秒，期间屏幕暂时黑屏属于正常现象，请耐心等待重新点亮。" helpTip="车辆停稳挂 P 挡后再点重启，期间黑屏请耐心等待。"
+      >
+        <button 
+          @click="confirmHardReboot"
+          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border hover:border-rose-500/60 bg-car-item text-car-text font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+        >
+          <span>完整硬件冷重启 (reboot)</span>
+        </button>
+      </FeatureCard>
+
+      <!-- 4. 工具箱开机自启动与后台守护 -->
+      <FeatureCard 
+        title="工具箱开机自启动与后台守护"
+        desc="控制车机上电开机后在后台静默运行工具箱。出厂默认常驻开启，各联动项由各自开关独立管控。"
+        helpTitle="【功能指南】工具箱开机自启动与后台守护"
+        helpText="1. 开机后台自启：&#10;车辆打火通电后，工具箱自动在后台安静启动，让各项自动化联动功能上车就能直接用。&#10;&#10;2. 独立控制：&#10;开机自启开启后，各个联动功能（如 D 挡 360、开门关门播报等）依然由各自的开关独立决定是否工作。&#10;&#10;3. 推荐常开：&#10;默认保持常开，确保上车后一切功能运转顺畅。" helpTip="这是自动化功能的基础开关，建议保持开启。"
+      >
+        <div class="w-full min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[18px] shadow-sm flex items-center justify-center space-x-2">
+          <StatusDot size="md" color="ok" :glow-px="8" />
+          <span>开机自启静默守护: 已默认常驻启用</span>
+        </div>
+      </FeatureCard>
+    </div>
 
     <!-- 7. 主题外观与昼夜模式 (液态玻璃 4 色 × 白夜三档) -->
     <FeatureCard 

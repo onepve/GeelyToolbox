@@ -123,8 +123,8 @@ const statusPills = computed(() => {
     },
     {
       text: (() => {
-        const prov = store.oilPrice.selectedProvince || '浙江';
-        const p = store.oilPrice.regionalPrices[prov] || store.oilPrice.regionalPrices['浙江'];
+        const prov = store.oilPrice.selectedProvince || '北京';
+        const p = store.oilPrice.regionalPrices[prov] || store.oilPrice.regionalPrices['北京'];
         const p92 = (p && p.p92) ? p.p92.toFixed(2) : '8.26';
         const days = getDaysToAdjustment(store.oilPrice.nextAdjustment.date);
         return `油价: ${prov} 92# ¥${p92} (${days}天后调价)`;

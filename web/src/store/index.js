@@ -112,9 +112,9 @@ export const store = reactive({
   oilPrice: {
     selectedProvince: (() => {
       try {
-        return localStorage.getItem('geely_oil_selected_province') || '浙江';
+        return localStorage.getItem('geely_oil_selected_province') || '北京';
       } catch (e) {
-        return '浙江';
+        return '北京';
       }
     })(),
     favProvinces: (() => {
@@ -122,10 +122,13 @@ export const store = reactive({
         const raw = localStorage.getItem('geely_oil_fav_provinces');
         if (raw) {
           const list = JSON.parse(raw);
-          if (Array.isArray(list) && list.length > 0) return list;
+          if (Array.isArray(list) && list.length > 0) {
+            const withoutBeijing = list.filter(p => p !== '北京');
+            return ['北京', ...withoutBeijing];
+          }
         }
       } catch (e) {}
-      return ['浙江', '上海', '江苏'];
+      return ['北京', '浙江', '上海', '江苏'];
     })(),
     nextAdjustment: { ...DEFAULT_NEXT_ADJUSTMENT },
     regionalPrices: { ...REGIONAL_PRICES },
