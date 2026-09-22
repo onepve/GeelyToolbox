@@ -1,7 +1,7 @@
 {
   "voice_version": 2,
   "updated_at": "2026-09-22",
-  "description": "吉利智驾车规级内置音频资产版本清单与哈希校验索引",
+  "description": "缤越助手车规级内置音频资产版本清单与哈希校验索引",
   "total_files": 22,
   "files": {
     "door_close.mp3": {

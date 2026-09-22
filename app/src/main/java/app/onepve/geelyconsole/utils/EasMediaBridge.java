@@ -278,6 +278,18 @@ public class EasMediaBridge {
         AppLogger.i("蓝牙音频", "用户主动暂停，已开启 " + (ms / 1000) + " 秒自动唤醒抑制窗口 (已落盘)");
     }
 
+    /**
+     * 用户主动恢复播放后，立即解除自动唤醒抑制窗口。
+     */
+    public synchronized void clearAutoWakeSuppression() {
+        autoWakeSuppressUntil = 0L;
+        try {
+            appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit().remove(PREFS_AUTO_WAKE_SUPPRESS).apply();
+        } catch (Throwable ignored) {}
+        AppLogger.i("蓝牙音频", "用户主动恢复播放，已立即解除自动唤醒抑制窗口");
+    }
+
     /** 当前是否处于「用户主动暂停后的自动唤醒抑制窗口」内（供车身联动等自动 play() 前守卫查询） */
     public synchronized boolean isAutoWakeSuppressed() {
         // 合并内存态与落盘态：启动时从 SharedPreferences 恢复，重启后窗口依然有效
