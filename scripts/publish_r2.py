@@ -129,5 +129,42 @@ def main():
                 json.dump(apps_data, f, ensure_ascii=False, indent=4)
             print(">> /tmp/apps.json updated.")
 
+    # 无论测试版还是正式版，统一生成全国实时油价权威基准 /tmp/oil-price.json
+    export_oil_prices()
+
+def export_oil_prices():
+    try:
+        js_file = os.path.join(REPO_DIR, "web/src/utils/oilPriceData.js")
+        if not os.path.exists(js_file):
+            return
+        with open(js_file, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # 提取并在 /tmp 下生成标准油价 JSON
+        import re
+        m_adj = re.search(r'export const DEFAULT_NEXT_ADJUSTMENT = ({[\s\S]*?});', content)
+        m_reg = re.search(r'export const REGIONAL_PRICES = ({[\s\S]*?});', content)
+        if m_adj and m_reg:
+            # 极简安全转换成标准 json
+            import ast
+            raw_adj = re.sub(r'//.*', '', m_adj.group(1))
+            raw_reg = re.sub(r'//.*', '', m_reg.group(1))
+            # 补全键名双引号
+            norm_adj = re.sub(r'(\w+):', r'"\1":', raw_adj)
+            norm_reg = re.sub(r'(\w+):', r'"\1":', raw_reg)
+            norm_adj = re.sub(r',\s*([}\]])', r'\1', norm_adj)
+            norm_reg = re.sub(r',\s*([}\]])', r'\1', norm_reg)
+            
+            payload = {
+                "nextAdjustment": json.loads(norm_adj),
+                "regionalPrices": json.loads(norm_reg),
+                "updatedAt": date.today().isoformat()
+            }
+            with open("/tmp/oil-price.json", "w", encoding="utf-8") as out:
+                json.dump(payload, out, ensure_ascii=False, indent=2)
+            print(">> /tmp/oil-price.json exported successfully.")
+    except Exception as e:
+        print(f"Warning: export_oil_prices failed: {e}")
+
 if __name__ == "__main__":
     main()

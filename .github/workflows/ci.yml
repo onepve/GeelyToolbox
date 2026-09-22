@@ -156,6 +156,12 @@ jobs:
             fi
           fi
 
+          if [ -f /tmp/oil-price.json ]; then
+            echo "⚡ 正在同步全国油价元数据至 R2..."
+            aws s3 cp /tmp/oil-price.json "${BUCKET}oil-price.json" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+          fi
+
       - name: Publish Official Release on Tag
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2

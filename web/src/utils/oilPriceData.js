@@ -73,3 +73,46 @@ export function getDaysToAdjustment(targetDateStr = DEFAULT_NEXT_ADJUSTMENT.date
     return 2;
   }
 }
+
+// 默认 4 小时后台静默同步周期（发改委每10个工作日调价，平时每天价格固定，4小时巡检一次最省流量且最敏锐）
+export const OIL_SYNC_INTERVAL_MS = 4 * 60 * 60 * 1000;
+export const OIL_PRICE_API_URL = 'https://dl.onepve.com/GeelyToolbox/oil-price.json';
+
+/**
+ * 获取或同步最新全国油价与调价预测
+ * @param {boolean} force 是否强制忽略 4 小时本地缓存限制
+ */
+export async function syncOilPrices(force = false) {
+  try {
+    const now = Date.now();
+    const lastSync = parseInt(localStorage.getItem('geely_oil_last_sync_time') || '0', 10);
+    
+    if (!force && (now - lastSync < OIL_SYNC_INTERVAL_MS)) {
+      const cached = localStorage.getItem('geely_oil_cached_data');
+      if (cached) {
+        return { success: true, fromCache: true, data: JSON.parse(cached) };
+      }
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+    const res = await fetch(`${OIL_PRICE_API_URL}?t=${now}`, {
+      signal: controller.signal,
+      cache: 'no-store'
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json && (json.regionalPrices || json.nextAdjustment)) {
+        localStorage.setItem('geely_oil_cached_data', JSON.stringify(json));
+        localStorage.setItem('geely_oil_last_sync_time', String(now));
+        return { success: true, fromCache: false, data: json };
+      }
+    }
+    return { success: false, reason: 'invalid_response' };
+  } catch (err) {
+    return { success: false, reason: err.message };
+  }
+}

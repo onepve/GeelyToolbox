@@ -109,12 +109,25 @@
           </div>
         </div>
 
-        <button 
-          @click="openModal('oilPrice')"
-          class="min-h-[56px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center whitespace-nowrap"
-        >
-          <span>查看全国油价与调价详情 ➔</span>
-        </button>
+        <div class="flex items-center space-x-3 shrink-0">
+          <button 
+            @click="onRefreshOilPrice"
+            :disabled="store.oilPrice.isSyncing"
+            class="min-h-[56px] px-5 rounded-xl border-2 border-car-border bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light transition-all shadow-md flex items-center space-x-2 whitespace-nowrap"
+          >
+            <svg class="w-4 h-4 text-car-sub" :class="{'animate-spin text-car-accent': store.oilPrice.isSyncing}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            <span>{{ store.oilPrice.isSyncing ? '同步中...' : '刷新油价' }}</span>
+          </button>
+
+          <button 
+            @click="openModal('oilPrice')"
+            class="min-h-[56px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center whitespace-nowrap"
+          >
+            <span>全国详情 ➔</span>
+          </button>
+        </div>
       </div>
     </FeatureCard>
 
@@ -227,7 +240,7 @@
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
 import StatusDot from '../components/StatusDot.vue';
-import { store, bridge, openModal, showToast, setStartupNav } from '../store';
+import { store, bridge, openModal, showToast, setStartupNav, refreshOilPrices } from '../store';
 import { ref, computed } from 'vue';
 import FloatingView from './FloatingView.vue';
 import { MODES, MODE_LABELS, PALETTES, PALETTE_LABELS, PALETTE_DOT, setMode, setPalette } from '../theme/themes';
@@ -315,5 +328,9 @@ function getNavName(id) {
 
 function onSelectStartupNav(navId) {
   setStartupNav(navId);
+}
+
+function onRefreshOilPrice() {
+  refreshOilPrices(true);
 }
 </script>

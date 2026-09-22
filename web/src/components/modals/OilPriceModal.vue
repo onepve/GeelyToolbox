@@ -31,8 +31,18 @@
             </div>
           </div>
 
-          <!-- 右侧动作：收藏当前 / 展开更多 -->
+          <!-- 右侧动作：收藏当前 / 展开更多 / 刷新 -->
           <div class="flex items-center space-x-2">
+            <button
+              @click="onRefresh"
+              :disabled="store.oilPrice.isSyncing"
+              class="min-h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[14px] cursor-pointer hover:border-car-border-light transition-all flex items-center shadow-sm whitespace-nowrap space-x-1.5"
+            >
+              <svg class="w-3.5 h-3.5 text-car-sub" :class="{'animate-spin text-car-accent': store.oilPrice.isSyncing}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+              </svg>
+              <span>{{ store.oilPrice.isSyncing ? '同步中' : '刷新' }}</span>
+            </button>
             <button
               @click="onToggleFav"
               class="min-h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] cursor-pointer hover:border-car-border-light transition-all flex items-center shadow-sm whitespace-nowrap"
@@ -188,7 +198,8 @@ import {
   store,
   closeModal,
   setOilSelectedProvince,
-  toggleOilFavProvince
+  toggleOilFavProvince,
+  refreshOilPrices
 } from '../../store';
 import { PROVINCE_LIST, getDaysToAdjustment } from '../../utils/oilPriceData';
 
@@ -218,5 +229,9 @@ function onSelectProvince(prov, closeDropdown = false) {
 function onToggleFav() {
   const prov = store.oilPrice.selectedProvince || '浙江';
   toggleOilFavProvince(prov);
+}
+
+function onRefresh() {
+  refreshOilPrices(true);
 }
 </script>

@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { DEFAULT_NEXT_ADJUSTMENT, REGIONAL_PRICES } from '../utils/oilPriceData';
+import { DEFAULT_NEXT_ADJUSTMENT, REGIONAL_PRICES, syncOilPrices } from '../utils/oilPriceData';
 
 // 安全调用 JSBridge
 export const bridge = {
@@ -128,7 +128,15 @@ export const store = reactive({
       return ['浙江', '上海', '江苏'];
     })(),
     nextAdjustment: { ...DEFAULT_NEXT_ADJUSTMENT },
-    regionalPrices: { ...REGIONAL_PRICES }
+    regionalPrices: { ...REGIONAL_PRICES },
+    isSyncing: false,
+    lastSyncTime: (() => {
+      try {
+        return parseInt(localStorage.getItem('geely_oil_last_sync_time') || '0', 10);
+      } catch (e) {
+        return 0;
+      }
+    })()
   },
 
   // 系统设置持久态
@@ -224,4 +232,30 @@ export function recordActiveNav(navId) {
   try {
     localStorage.setItem('geely_last_active_nav', navId);
   } catch (e) {}
+}
+
+export async function refreshOilPrices(force = false) {
+  if (store.oilPrice.isSyncing) return;
+  store.oilPrice.isSyncing = true;
+  try {
+    const res = await syncOilPrices(force);
+    if (res.success && res.data) {
+      if (res.data.regionalPrices) {
+        Object.assign(store.oilPrice.regionalPrices, res.data.regionalPrices);
+      }
+      if (res.data.nextAdjustment) {
+        Object.assign(store.oilPrice.nextAdjustment, res.data.nextAdjustment);
+      }
+      store.oilPrice.lastSyncTime = Date.now();
+      if (force) {
+        showToast('已同步最新全国油价与调价预测', 'success');
+      }
+    } else if (force) {
+      showToast('网络离线，当前呈现本地权威发改委限价', 'info');
+    }
+  } catch (e) {
+    if (force) showToast('同步请求超时，已保留现有数据', 'warn');
+  } finally {
+    store.oilPrice.isSyncing = false;
+  }
 }

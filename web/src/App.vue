@@ -119,7 +119,7 @@ import AllAppsModal from './components/modals/AllAppsModal.vue';
 import WelcomeDonateModal from './components/modals/WelcomeDonateModal.vue';
 import OilPriceModal from './components/modals/OilPriceModal.vue';
 
-import { store, bridge, openModal, recordActiveNav } from './store';
+import { store, bridge, openModal, recordActiveNav, refreshOilPrices } from './store';
 import { initTheme, quickToggleDayNight } from './theme/themes';
 
 onMounted(() => {
@@ -255,6 +255,13 @@ onMounted(() => {
         bridge.call('checkUpdateSilently', isBetaChannel);
       }, 3000);
     }
+  } catch (e) {}
+
+  // 启动后异步静默巡检油价更新（4小时缓存，超期静默更新）
+  try {
+    setTimeout(() => {
+      refreshOilPrices(false);
+    }, 1500);
   } catch (e) {}
 });
 </script>
