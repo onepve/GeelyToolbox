@@ -515,8 +515,7 @@ public class WebServer {
             "door_rl", "door_rl_close", "door_rr", "door_rr_close",
             "trunk_open", "trunk_close",
             "gear_d", "gear_r", "gear_p", "gear_n",
-            "mode_smart", "mode_comfort", "mode_eco", "mode_sport",
-            "flameout"
+            "mode_smart", "mode_comfort", "mode_eco", "mode_sport"
         };
         try {
             for (String k : keys) {

@@ -247,9 +247,9 @@
 
                 <!-- TTS 二级子分类 Tab -->
                 <div class="sub-segmented-nav">
-                    <button class="sub-nav-btn active" id="sub-btn-gear" onclick="switchTtsSubTab('gear')">🚗 挡位状态 (4)</button>
+                    <button class="sub-nav-btn active" id="sub-btn-gear" onclick="switchTtsSubTab('gear')">🚗 挡位状态</button>
                     <button class="sub-nav-btn" id="sub-btn-door" onclick="switchTtsSubTab('door')">🚪 车门迎宾</button>
-                    <button class="sub-nav-btn" id="sub-btn-trunk" onclick="switchTtsSubTab('trunk')">📦 尾门/熄火 (3)</button>
+                    <button class="sub-nav-btn" id="sub-btn-trunk" onclick="switchTtsSubTab('trunk')">📦 智能尾门</button>
                 </div>
 
                 <!-- 子视图 1: 挡位状态 -->
@@ -331,7 +331,7 @@
                     </div>
                 </div>
 
-                <!-- 子视图 3: 尾门与熄火 -->
+                <!-- 子视图 3: 智能尾门 -->
                 <div id="tts-sub-trunk" class="tts-sub-pane" style="display:none;">
                     <div style="display:flex; flex-direction:column; gap:8px;">
                         <div>
@@ -341,10 +341,6 @@
                         <div>
                             <label class="input-label">📦 电动尾门关闭台词：</label>
                             <input type="text" id="tts-trunk_close" class="input-box" placeholder="默认: 后备箱已关闭">
-                        </div>
-                        <div>
-                            <label class="input-label">🔑 车辆熄火离车提醒台词：</label>
-                            <input type="text" id="tts-flameout" class="input-box" placeholder="默认: 车辆已熄火，请带好随身物品">
                         </div>
                     </div>
                 </div>
@@ -440,8 +436,7 @@
             'door_fl', 'door_fl_close', 'door_fr', 'door_fr_close',
             'door_rl', 'door_rr',
             'trunk_open', 'trunk_close',
-            'gear_d', 'gear_r', 'gear_p', 'gear_n',
-            'flameout'
+            'gear_d', 'gear_r', 'gear_p', 'gear_n'
         ];
 
         async function loadTtsSettings() {
