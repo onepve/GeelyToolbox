@@ -1,4 +1,5 @@
 import { reactive } from 'vue';
+import { DEFAULT_NEXT_ADJUSTMENT, REGIONAL_PRICES } from '../utils/oilPriceData';
 
 // 安全调用 JSBridge
 export const bridge = {
@@ -103,16 +104,54 @@ export const store = reactive({
     cleanDownload: false,
     voiceThemeImport: false,
     allApps: false,
-    geekInstall: false
+    geekInstall: false,
+    oilPrice: false
   },
   
+  // 全国实时油价与调价窗口状态
+  oilPrice: {
+    selectedProvince: (() => {
+      try {
+        return localStorage.getItem('geely_oil_selected_province') || '浙江';
+      } catch (e) {
+        return '浙江';
+      }
+    })(),
+    favProvinces: (() => {
+      try {
+        const raw = localStorage.getItem('geely_oil_fav_provinces');
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) return list;
+        }
+      } catch (e) {}
+      return ['浙江', '上海', '江苏'];
+    })(),
+    nextAdjustment: { ...DEFAULT_NEXT_ADJUSTMENT },
+    regionalPrices: { ...REGIONAL_PRICES }
+  },
+
   // 系统设置持久态
   settings: {
     autostart: true,
     floating_pill: false,
     floating_mode: 'battery', // 'name' | 'code' | 'battery'
     expert_rabbit: false,
-    silent_appstore_freeze: false
+    silent_appstore_freeze: false,
+    startup_nav: (() => {
+      try {
+        return localStorage.getItem('geely_startup_nav') || 'wheel';
+      } catch (e) {
+        return 'wheel';
+      }
+    })(),
+    last_active_nav: (() => {
+      try {
+        return localStorage.getItem('geely_last_active_nav') || 'wheel';
+      } catch (e) {
+        return 'wheel';
+      }
+    })()
   }
 });
 
@@ -136,4 +175,53 @@ export function showToast(msg, kind = 'info') {
   showToast._t = setTimeout(() => {
     store.toast.show = false;
   }, 2200);
+}
+
+export function setOilSelectedProvince(prov) {
+  if (!prov) return;
+  store.oilPrice.selectedProvince = prov;
+  try {
+    localStorage.setItem('geely_oil_selected_province', prov);
+  } catch (e) {}
+}
+
+export function toggleOilFavProvince(prov) {
+  if (!prov) return;
+  const list = [...store.oilPrice.favProvinces];
+  const idx = list.indexOf(prov);
+  if (idx >= 0) {
+    if (list.length <= 1) {
+      showToast('至少保留 1 个常用省份', 'warn');
+      return;
+    }
+    list.splice(idx, 1);
+    showToast(`已将 ${prov} 移出常用省份`, 'info');
+  } else {
+    if (list.length >= 4) {
+      showToast('常用省份最多收藏 4 个', 'warn');
+      return;
+    }
+    list.push(prov);
+    showToast(`已将 ${prov} 设为常用省份`, 'success');
+  }
+  store.oilPrice.favProvinces = list;
+  try {
+    localStorage.setItem('geely_oil_fav_provinces', JSON.stringify(list));
+  } catch (e) {}
+}
+
+export function setStartupNav(navId) {
+  store.settings.startup_nav = navId;
+  try {
+    localStorage.setItem('geely_startup_nav', navId);
+  } catch (e) {}
+  showToast('已更新启动首屏落地页', 'success');
+}
+
+export function recordActiveNav(navId) {
+  if (!navId || navId === 'floating') return;
+  store.settings.last_active_nav = navId;
+  try {
+    localStorage.setItem('geely_last_active_nav', navId);
+  } catch (e) {}
 }

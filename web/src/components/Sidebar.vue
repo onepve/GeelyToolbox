@@ -33,7 +33,7 @@
 </template>
 
 <script setup>
-import { store } from '../store';
+import { store, recordActiveNav } from '../store';
 import SidebarQrCodeCard from './SidebarQrCodeCard.vue';
 import { playTouchFeedback } from '../utils/sound';
 
@@ -50,5 +50,6 @@ const navItems = [
 function selectNav(id) {
   playTouchFeedback();
   store.currentNav = id;
+  recordActiveNav(id);
 }
 </script>

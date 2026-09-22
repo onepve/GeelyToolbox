@@ -63,6 +63,61 @@
       </FeatureCard>
     </div>
 
+    <!-- 全国实时油价与调价日历 -->
+    <FeatureCard 
+      title="全国实时油价与调价日历"
+      desc="监测各省发改委最新最高零售限价，提供调价周期倒计时与加油算账建议。"
+      helpTitle="【功能指南】全国实时油价与调价日历"
+      helpText="1. 官方限价：&#10;基于国家发改委最新发布的各省成品油最高零售限价，同省同价。&#10;&#10;2. 调价倒计时：&#10;按照国家发改委 10 个工作日调价周期倒计时，提前提供涨跌预期预警。&#10;&#10;3. 省钱算账：&#10;结合缤越 COOL 45L 油箱容积自动折算加满一箱所需成本变动。" helpTip="点击可查看全国 31 省份 92#/95#/98#/柴油价格及调价详情。"
+    >
+      <div class="w-full flex items-center justify-between p-4 rounded-2xl bg-car-item border border-car-border">
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-2">
+            <span class="text-[26px]">⛽</span>
+            <div class="flex flex-col">
+              <div class="flex items-center space-x-2">
+                <span class="text-[19px] font-black text-car-text">{{ currentProvinceName }}</span>
+                <span class="text-[13px] px-2 py-0.5 rounded bg-car-card text-amber-300 font-extrabold border border-car-border">当前地区</span>
+              </div>
+              <span class="text-[13px] text-car-sub font-bold mt-0.5">发改委限价 · {{ store.oilPrice.nextAdjustment.lastAdjustmentDate }} 生效</span>
+            </div>
+          </div>
+
+          <div class="h-10 w-px bg-car-border"></div>
+
+          <div class="flex items-center space-x-3">
+            <div class="flex flex-col">
+              <span class="text-[12.5px] text-car-sub font-bold">92# 汽油</span>
+              <span class="text-[20px] font-black text-car-text font-mono leading-none">¥{{ currentOilP92 }}<span class="text-[13px] font-normal text-car-sub">/L</span></span>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-[12.5px] text-car-sub font-bold">95# 汽油</span>
+              <span class="text-[20px] font-black text-car-text font-mono leading-none">¥{{ currentOilP95 }}<span class="text-[13px] font-normal text-car-sub">/L</span></span>
+            </div>
+          </div>
+
+          <div class="h-10 w-px bg-car-border"></div>
+
+          <div class="flex flex-col">
+            <div class="flex items-center space-x-1.5">
+              <span class="text-[13px] text-rose-400 font-black">下轮预期: {{ store.oilPrice.nextAdjustment.predictedLiter }}元/L</span>
+              <span class="text-[12px] px-2 py-0.5 rounded-full bg-car-card text-rose-300 font-extrabold border border-car-border">
+                距调价仅剩 {{ oilDaysLeft }} 天
+              </span>
+            </div>
+            <span class="text-[12.5px] text-car-sub font-bold mt-0.5">调价日: {{ store.oilPrice.nextAdjustment.dateLabel }}</span>
+          </div>
+        </div>
+
+        <button 
+          @click="openModal('oilPrice')"
+          class="min-h-[56px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center whitespace-nowrap"
+        >
+          <span>查看全国油价与调价详情 ➔</span>
+        </button>
+      </div>
+    </FeatureCard>
+
     <!-- 7. 主题外观与昼夜模式 (液态玻璃 4 色 × 白夜三档) -->
     <FeatureCard 
       title="主题外观与昼夜模式"
@@ -107,6 +162,55 @@
       </div>
     </FeatureCard>
 
+    <!-- 启动首屏默认视图 -->
+    <FeatureCard 
+      title="启动首屏默认视图"
+      desc="设置缤越助手每次启动时默认呈现的主功能页。配置后立即生效并持久记忆。"
+      helpTitle="【功能指南】启动首屏默认视图"
+      helpText="1. 智能跟随：&#10;选择「记忆上次退出时页面」后，每次启动自动恢复到您上次停留的功能页。&#10;&#10;2. 固定主菜单：&#10;也可以固定为方控按键、车身联动、车载语音、精选商城、车载音频、特权安装或系统维护等任意页面。&#10;&#10;3. 立即生效：&#10;点击相应项即刻完成设置并永久记忆，下次打开软件直接进入该页面。" helpTip="建议经常传歌/装软件的车主设置为「特权安装」，常玩车机设为「精选商城」。"
+    >
+      <div class="w-full flex flex-col space-y-3">
+        <!-- 智能跟随选项 -->
+        <button
+          @click="onSelectStartupNav('remember')"
+          :class="[
+            'w-full min-h-[58px] px-6 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between shadow-sm',
+            store.settings.startup_nav === 'remember'
+              ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/30 shadow-md font-black'
+              : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
+          ]"
+        >
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[17px] text-amber-400">★</span>
+            <span class="text-[17px]">记忆上次退出时页面 (智能跟随)</span>
+          </div>
+          <span class="text-[13.5px] text-car-sub">上次停留: {{ getNavName(store.settings.last_active_nav) }}</span>
+        </button>
+
+        <!-- 7 个固定主菜单网格 -->
+        <div class="flex flex-wrap -m-1.5">
+          <div
+            v-for="item in STARTUP_NAV_ITEMS"
+            :key="item.id"
+            class="p-1.5 w-1/4"
+          >
+            <button
+              @click="onSelectStartupNav(item.id)"
+              :class="[
+                'w-full min-h-[62px] rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm',
+                store.settings.startup_nav === item.id
+                  ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-md'
+                  : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
+              ]"
+            >
+              <span class="text-[16.5px] font-black leading-none">{{ item.name }}</span>
+              <span class="text-[12.5px] font-bold text-car-sub leading-none">{{ item.desc }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </FeatureCard>
+
     <!-- 底部运维与安装说明 -->
     <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
       <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
@@ -123,11 +227,12 @@
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
 import StatusDot from '../components/StatusDot.vue';
-import { store, bridge, openModal, showToast } from '../store';
-import { ref } from 'vue';
+import { store, bridge, openModal, showToast, setStartupNav } from '../store';
+import { ref, computed } from 'vue';
 import FloatingView from './FloatingView.vue';
 import { MODES, MODE_LABELS, PALETTES, PALETTE_LABELS, PALETTE_DOT, setMode, setPalette } from '../theme/themes';
 import { openAppstoreFlow } from '../utils/appstoreFreeze';
+import { getDaysToAdjustment } from '../utils/oilPriceData';
 
 // 方块副标题：昼夜档标注时段语义，配色卡标注主题全名
 const MODE_SUBS = { auto: '6:00~17:59', day: '常驻白天', night: '常驻黑夜' };
@@ -172,5 +277,43 @@ function toggleAutostart() {
   store.deviceInfo.autostart = next;
   bridge.call('setAutostartEnabled', next);
   showToast(next ? '已开启车辆启动自动运行' : '已关闭车辆启动自动运行');
+}
+
+// 油价概览卡片状态
+const currentProvinceName = computed(() => store.oilPrice.selectedProvince || '浙江');
+const currentOilData = computed(() => {
+  const p = currentProvinceName.value;
+  return store.oilPrice.regionalPrices[p] || store.oilPrice.regionalPrices['浙江'];
+});
+const currentOilP92 = computed(() => currentOilData.value?.p92 ? currentOilData.value.p92.toFixed(2) : '8.26');
+const currentOilP95 = computed(() => currentOilData.value?.p95 ? currentOilData.value.p95.toFixed(2) : '8.79');
+const oilDaysLeft = computed(() => getDaysToAdjustment(store.oilPrice.nextAdjustment.date));
+
+// 启动首屏默认视图配置
+const STARTUP_NAV_ITEMS = [
+  { id: 'wheel', name: '方控按键', desc: '核心改装 (默认)' },
+  { id: 'link', name: '车身联动', desc: '360/车速' },
+  { id: 'body', name: '车载语音', desc: '语音播报' },
+  { id: 'store', name: '精选商城', desc: '专车应用' },
+  { id: 'audio', name: '车载音频', desc: '语音/蓝牙' },
+  { id: 'install', name: '特权安装', desc: '暗码/快传' },
+  { id: 'system', name: '系统维护', desc: '维护/油价' }
+];
+
+function getNavName(id) {
+  const map = {
+    wheel: '方控按键',
+    link: '车身联动',
+    body: '车载语音',
+    store: '精选商城',
+    audio: '车载音频',
+    install: '特权安装',
+    system: '系统维护'
+  };
+  return map[id] || '方控按键';
+}
+
+function onSelectStartupNav(navId) {
+  setStartupNav(navId);
 }
 </script>

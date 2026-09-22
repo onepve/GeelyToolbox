@@ -47,6 +47,7 @@
     <VoiceThemeImportModal />
     <AllAppsModal />
     <WelcomeDonateModal />
+    <OilPriceModal />
 
     <!-- 极简 Toast 提示 -->
     <transition name="fade">
@@ -87,7 +88,8 @@ import SystemView from './views/SystemView.vue';
 const mainContent = ref(null);
 
 // 切换左侧功能导航时，右侧主舞台无条件强制自动回顶，彻底消除翻页位置继承
-watch(() => store.currentNav, () => {
+watch(() => store.currentNav, (nav) => {
+  recordActiveNav(nav);
   nextTick(() => {
     if (mainContent.value) {
       mainContent.value.scrollTop = 0;
@@ -115,11 +117,26 @@ import CleanDownloadModal from './components/modals/CleanDownloadModal.vue';
 import VoiceThemeImportModal from './components/modals/VoiceThemeImportModal.vue';
 import AllAppsModal from './components/modals/AllAppsModal.vue';
 import WelcomeDonateModal from './components/modals/WelcomeDonateModal.vue';
+import OilPriceModal from './components/modals/OilPriceModal.vue';
 
-import { store, bridge, openModal } from './store';
+import { store, bridge, openModal, recordActiveNav } from './store';
 import { initTheme, quickToggleDayNight } from './theme/themes';
 
 onMounted(() => {
+  // 根据配置恢复启动首屏落地页
+  try {
+    const startup = store.settings.startup_nav || 'wheel';
+    const validNavs = ['wheel', 'link', 'body', 'store', 'audio', 'install', 'system'];
+    if (startup === 'remember') {
+      const last = store.settings.last_active_nav;
+      if (last && validNavs.includes(last)) {
+        store.currentNav = last;
+      }
+    } else if (validNavs.includes(startup)) {
+      store.currentNav = startup;
+    }
+  } catch (e) {}
+
   // 初始化液态玻璃主题（读持久化偏好 → 应用变量 → auto 模式每分钟跟随昼夜）
   try { initTheme(); } catch (e) {}
 
