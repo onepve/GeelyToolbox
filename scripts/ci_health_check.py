@@ -327,7 +327,42 @@ else:
                 print("  [FAIL] 通用智能车门音频与主驾分门音频哈希重合！严禁复制主驾音频充当四门通用音频。")
                 passed = False
             else:
-                print("[PASS] 100% of referenced voice audio assets physically exist, non-empty, and anti-collision verified.")
+                # 7c. Voice Asset Version Manifest Gate: 校验 voice_version.json 存在性、版本号及哈希一致性
+                manifest_path = os.path.join(AUDIO_DIR, "voice_version.json")
+                if not os.path.exists(manifest_path):
+                    print(f"  [FAIL] Missing voice asset manifest: {manifest_path}")
+                    passed = False
+                else:
+                    try:
+                        with open(manifest_path, "r", encoding="utf-8") as f:
+                            vmanifest = json.load(f)
+                        vver = vmanifest.get("voice_version", 0)
+                        if vver < 1:
+                            print(f"  [FAIL] Invalid voice_version in manifest: {vver}")
+                            passed = False
+                        mfiles = vmanifest.get("files", {})
+                        all_mp3s = {f for f in os.listdir(AUDIO_DIR) if f.endswith(".mp3")}
+                        if set(mfiles.keys()) != all_mp3s:
+                            diff = all_mp3s.symmetric_difference(set(mfiles.keys()))
+                            print(f"  [FAIL] Manifest files do not match assets/audio/*.mp3: diff={diff}")
+                            passed = False
+                        else:
+                            mismatched = []
+                            for fn in all_mp3s:
+                                meta = mfiles[fn]
+                                real_path = os.path.join(AUDIO_DIR, fn)
+                                real_size = os.path.getsize(real_path)
+                                real_md5 = file_md5(real_path)
+                                if meta.get("size") != real_size or meta.get("md5") != real_md5:
+                                    mismatched.append(fn)
+                            if mismatched:
+                                print(f"  [FAIL] Audio files md5/size mismatch with manifest: {mismatched}")
+                                passed = False
+                            else:
+                                print(f"[PASS] 100% voice audio assets exist, anti-collision verified, and manifest (v{vver}) matches disk.")
+                    except Exception as ex:
+                        print(f"  [FAIL] Exception parsing voice_version.json: {ex}")
+                        passed = False
 
 
 # ----------------------------------------------------------------------

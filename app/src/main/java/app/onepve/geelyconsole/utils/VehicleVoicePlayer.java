@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -386,47 +387,131 @@ public class VehicleVoicePlayer {
         }
     }
 
+    public static final String PREF_LAST_VOICE_ASSET_VER = "last_voice_asset_version";
+    public static final String PREF_LAST_ASSET_EXTRACTED_CODE = "last_asset_extracted_code";
+
+    private static JSONObject loadVoiceManifest(Context context) {
+        try (InputStream in = context.getAssets().open("audio/voice_version.json")) {
+            byte[] buf = new byte[in.available() > 0 ? in.available() : 32 * 1024];
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                baos.write(buf, 0, len);
+            }
+            return new JSONObject(baos.toString("UTF-8"));
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static String getFileMd5(File file) {
+        if (file == null || !file.exists() || !file.isFile()) return "";
+        try (InputStream fis = new FileInputStream(file)) {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = fis.read(buffer)) > 0) {
+                md.update(buffer, 0, read);
+            }
+            byte[] digest = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     /**
      * 把 assets/audio 里的内置原声同步到私有目录。
      *
-     * 旧版只在「目标文件不存在」时复制，App 升级换了新原声也不覆盖，
-     * 车上听到的一直是旧声音 —— 这里改为版本号驱动：
-     *   force=false：版本号变化时全量覆盖（升级自动换新原声）
-     *   force=true ：无视版本号强制全量覆盖（「强制重装原声」按钮调用）
+     * 支持双轨版本驱动 + 单文件哈希自愈：
+     *   1. 检查 App 版本号 (versionCode) 与 语音资产版本号 (voice_version)；
+     *   2. 对比各文件期望 MD5 与大小，若发现本地文件缺失、截断或为旧录音残留，即刻就地覆盖自愈；
+     *   3. force=true 时无视版本号强制全量覆盖（「强制重装原声」调用）。
      *
-     * @return 实际写入的文件数；-1 表示当前版本无需刷新或执行失败
+     * @return 实际写入或修复的文件数；-1 表示当前版本无需刷新且资产完备
      */
     public static int syncBuiltinAssets(Context context, boolean force) {
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             int code = currentVersionCode(context);
-            int lastCode = prefs.getInt("last_asset_extracted_code", 0);
-            if (!force && code != 0 && code == lastCode) {
-                return -1; // 当前版本已刷新过，无需重复拷贝
-            }
+            int lastCode = prefs.getInt(PREF_LAST_ASSET_EXTRACTED_CODE, 0);
+            int lastVoiceVer = prefs.getInt(PREF_LAST_VOICE_ASSET_VER, 0);
+
+            JSONObject manifest = loadVoiceManifest(context);
+            int targetVoiceVer = (manifest != null) ? manifest.optInt("voice_version", 1) : 1;
+            JSONObject filesMap = (manifest != null) ? manifest.optJSONObject("files") : null;
+
+            boolean versionChanged = (code != 0 && code != lastCode) || (targetVoiceVer != lastVoiceVer);
 
             File voiceDir = new File(context.getFilesDir(), "voices");
             if (!voiceDir.exists()) voiceDir.mkdirs();
 
+            if (!force && !versionChanged) {
+                // 快速自愈检查：确保关键文件存在且大小非空
+                boolean needHeal = false;
+                if (filesMap != null) {
+                    java.util.Iterator<String> keys = filesMap.keys();
+                    while (keys.hasNext()) {
+                        String fn = keys.next();
+                        File dest = new File(voiceDir, fn);
+                        JSONObject meta = filesMap.optJSONObject(fn);
+                        long expectedSize = (meta != null) ? meta.optLong("size", -1) : -1;
+                        if (!dest.exists() || dest.length() == 0 || (expectedSize > 0 && dest.length() != expectedSize)) {
+                            needHeal = true;
+                            break;
+                        }
+                    }
+                }
+                if (!needHeal) {
+                    return -1; // 资产完备无需重复提取
+                }
+            }
+
+            // 执行写入/自愈
             String[] list = context.getAssets().list("audio");
             int count = 0;
             if (list != null) {
                 for (String f : list) {
+                    if ("voice_version.json".equals(f)) continue;
                     File dest = new File(voiceDir, f);
-                    try (InputStream in = context.getAssets().open("audio/" + f);
-                         FileOutputStream out = new FileOutputStream(dest)) {
-                        byte[] buf = new byte[16 * 1024];
-                        int len;
-                        while ((len = in.read(buf)) > 0) {
-                            out.write(buf, 0, len);
+                    JSONObject meta = (filesMap != null) ? filesMap.optJSONObject(f) : null;
+                    String expectedMd5 = (meta != null) ? meta.optString("md5", "") : "";
+                    long expectedSize = (meta != null) ? meta.optLong("size", -1) : -1;
+
+                    boolean shouldExtract = force || versionChanged || !dest.exists() || dest.length() == 0;
+                    if (!shouldExtract && expectedSize > 0 && dest.length() != expectedSize) {
+                        shouldExtract = true;
+                    }
+                    if (!shouldExtract && !expectedMd5.isEmpty()) {
+                        String currentMd5 = getFileMd5(dest);
+                        if (!expectedMd5.equalsIgnoreCase(currentMd5)) {
+                            shouldExtract = true;
                         }
                     }
-                    count++;
+
+                    if (shouldExtract) {
+                        try (InputStream in = context.getAssets().open("audio/" + f);
+                             FileOutputStream out = new FileOutputStream(dest)) {
+                            byte[] buf = new byte[16 * 1024];
+                            int len;
+                            while ((len = in.read(buf)) > 0) {
+                                out.write(buf, 0, len);
+                            }
+                        }
+                        count++;
+                    }
                 }
             }
-            // 全量覆盖完成后才写入版本戳：中途写会让后续文件永远不再刷新
-            prefs.edit().putInt("last_asset_extracted_code", code).apply();
-            Log.i(TAG, "Builtin voice assets synced (force=" + force + "), files=" + count + ", ver=" + code);
+            prefs.edit()
+                    .putInt(PREF_LAST_ASSET_EXTRACTED_CODE, code)
+                    .putInt(PREF_LAST_VOICE_ASSET_VER, targetVoiceVer)
+                    .apply();
+            Log.i(TAG, "Builtin voice assets synced (force=" + force + ", verChanged=" + versionChanged + "), updated=" + count + ", voiceVer=" + targetVoiceVer);
+            AppLogger.i("语音资产", "内置语音同步校验完成: 覆写更新=" + count + "个, 语音版本=" + targetVoiceVer);
             return count;
         } catch (Exception e) {
             Log.w(TAG, "syncBuiltinAssets error: " + e.getMessage());
@@ -911,18 +996,36 @@ public class VehicleVoicePlayer {
             if (!voiceDir.exists()) voiceDir.mkdirs();
             File target = new File(voiceDir, voiceFileName);
 
-            // 版本戳只在 syncBuiltinAssets() 全量覆盖完成后统一写入。
-            // 旧版在这里就地写戳，导致首个播放的文件把版本号拉满，
-            // 其余文件永远不再刷新（升级后「半新半旧」的元凶）。
+            JSONObject manifest = loadVoiceManifest(context);
+            int targetVoiceVer = (manifest != null) ? manifest.optInt("voice_version", 1) : 1;
+            JSONObject filesMap = (manifest != null) ? manifest.optJSONObject("files") : null;
+            JSONObject meta = (filesMap != null) ? filesMap.optJSONObject(voiceFileName) : null;
+            long expectedSize = (meta != null) ? meta.optLong("size", -1) : -1;
+            String expectedMd5 = (meta != null) ? meta.optString("md5", "") : "";
+
             int currentCode = currentVersionCode(context);
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            int lastExtractedCode = prefs.getInt("last_asset_extracted_code", 0);
+            int lastExtractedCode = prefs.getInt(PREF_LAST_ASSET_EXTRACTED_CODE, 0);
+            int lastVoiceVer = prefs.getInt(PREF_LAST_VOICE_ASSET_VER, 0);
 
-            if (target.exists() && target.length() > 0 && currentCode != 0 && currentCode == lastExtractedCode) {
+            boolean versionMatch = (currentCode != 0 && currentCode == lastExtractedCode) && (targetVoiceVer == lastVoiceVer);
+
+            boolean valid = target.exists() && target.length() > 0;
+            if (valid && expectedSize > 0 && target.length() != expectedSize) {
+                valid = false;
+            }
+            if (valid && !versionMatch && !expectedMd5.isEmpty()) {
+                String actualMd5 = getFileMd5(target);
+                if (!expectedMd5.equalsIgnoreCase(actualMd5)) {
+                    valid = false;
+                }
+            }
+
+            if (valid) {
                 return target;
             }
 
-            // 版本不一致（App 刚升级）或文件缺失：就地覆盖成当前版本的新音频
+            // 版本不一致、文件缺失、大小异常或哈希不匹配：就地从 assets 覆盖成最新音频
             try (InputStream in = context.getAssets().open("audio/" + voiceFileName);
                  FileOutputStream out = new FileOutputStream(target)) {
                 byte[] buf = new byte[16 * 1024];
@@ -932,6 +1035,7 @@ public class VehicleVoicePlayer {
                 }
             }
             if (target.exists() && target.length() > 0) {
+                AppLogger.i("语音资产", "按需就地自愈更新音频: " + voiceFileName + " (ver=" + targetVoiceVer + ")");
                 return target;
             }
         } catch (Exception ignored) {}

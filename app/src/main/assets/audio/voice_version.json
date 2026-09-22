@@ -1,0 +1,100 @@
+{
+  "voice_version": 2,
+  "updated_at": "2026-09-22",
+  "description": "吉利智驾车规级内置音频资产版本清单与哈希校验索引",
+  "total_files": 23,
+  "files": {
+    "door_close.mp3": {
+      "size": 13916,
+      "md5": "4c1be08b707b151a6325e0ef6b3ea5a6"
+    },
+    "door_fl.mp3": {
+      "size": 22320,
+      "md5": "25619aaac2a8fcb3adda92a3359b0709"
+    },
+    "door_fl_close.mp3": {
+      "size": 22176,
+      "md5": "9ffd9f94a15d690de77f9729f3e9506e"
+    },
+    "door_fr.mp3": {
+      "size": 17568,
+      "md5": "06d958b50398b7c58674b3790a98414b"
+    },
+    "door_fr_close.mp3": {
+      "size": 22320,
+      "md5": "29ffe265d09cff36af9ba9df03165bc7"
+    },
+    "door_open.mp3": {
+      "size": 13772,
+      "md5": "0241c37772f4ed896bfbbb0185842381"
+    },
+    "door_rl.mp3": {
+      "size": 22032,
+      "md5": "bbcaaa0d483461fb270f6d8887d3ec3d"
+    },
+    "door_rl_close.mp3": {
+      "size": 13968,
+      "md5": "99095aa76d966f529fdad9bc7b6b9283"
+    },
+    "door_rr.mp3": {
+      "size": 22032,
+      "md5": "e40c94a9eca8d314fe6d43703eac5e4f"
+    },
+    "door_rr_close.mp3": {
+      "size": 13968,
+      "md5": "78769590b8809b0d616c51960fdd8bb3"
+    },
+    "flameout.mp3": {
+      "size": 31968,
+      "md5": "9847bcc46c5d86a14e826268a4feb039"
+    },
+    "gear_d.mp3": {
+      "size": 17424,
+      "md5": "e61f4687c9ea048bbd5ab5febc78cce5"
+    },
+    "gear_n.mp3": {
+      "size": 7776,
+      "md5": "ece19bba6a5c927117dbf2a5028e6a60"
+    },
+    "gear_p.mp3": {
+      "size": 12096,
+      "md5": "e28d8c5db4ef7a780b91988525fab38b"
+    },
+    "gear_park_alarm.mp3": {
+      "size": 12764,
+      "md5": "76668b00c67ac5dcae10b046ee664e8b"
+    },
+    "gear_r.mp3": {
+      "size": 5612,
+      "md5": "a8b6df53fe031f9c1797cc3e68de8acf"
+    },
+    "gear_s.mp3": {
+      "size": 10080,
+      "md5": "f8e180da3f9433beef43b38fea12c913"
+    },
+    "mode_comfort.mp3": {
+      "size": 5852,
+      "md5": "bc9ff3a24ec154ab2e66da04bad2de0a"
+    },
+    "mode_eco.mp3": {
+      "size": 5420,
+      "md5": "8419acbc9c5f609ed41cd151d86cc5fa"
+    },
+    "mode_smart.mp3": {
+      "size": 5420,
+      "md5": "860db3e37a0438871874fb4a4347e8e5"
+    },
+    "mode_sport.mp3": {
+      "size": 5132,
+      "md5": "17c1ba13ff62619fca279cc13a9137ce"
+    },
+    "trunk_close.mp3": {
+      "size": 19440,
+      "md5": "5154536541cda36e4134ba45771f9341"
+    },
+    "trunk_open.mp3": {
+      "size": 12672,
+      "md5": "88d315c51c6b3bc58208cf686baedeff"
+    }
+  }
+}
