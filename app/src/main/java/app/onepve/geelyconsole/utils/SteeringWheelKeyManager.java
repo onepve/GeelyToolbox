@@ -452,6 +452,8 @@ public class SteeringWheelKeyManager {
                         ? SOURCE_BLUETOOTH : SOURCE_LOCAL;
 
                 if (playingNow) {
+                    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                            .edit().putBoolean("user_manually_paused_media", true).apply();
                     // 蓝牙开关分入口（2026-09-17 用户真车口径：蓝牙关时暂停/播放正常，蓝牙开时才异常）：
                     // - 蓝牙关：走纯原厂直发入口，不武装抑制窗口（蓝牙链路不存在，无需抑制），
                     //   行为与「蓝牙修复前」完全一致，绝不被蓝牙修复牵连；
@@ -462,6 +464,8 @@ public class SteeringWheelKeyManager {
                     }
                     sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PAUSE, targetSource);
                 } else {
+                    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                            .edit().putBoolean("user_manually_paused_media", false).apply();
                     if (targetSource == SOURCE_BLUETOOTH) {
                         // 核心：用户主动恢复播放时，立即解除暂停抑制窗口，并重新激活选通蓝牙物理通道
                         EasMediaBridge.getInstance(context).clearAutoWakeSuppression();

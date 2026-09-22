@@ -920,6 +920,12 @@ public class VehicleAutomationService extends Service {
             gearStateMachine.updateGear(gear, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
         }
 
+        if (gear == 5) {
+            // 挂入 P 挡驻车：重置本次行程用户手动暂停标记，以便下次出行重新生效起步自启
+            getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                    .edit().putBoolean("user_manually_paused_media", false).apply();
+        }
+
         // D挡起步联动 360 严格单次跃变状态机：切入D挡仅触发1次，锁死不循环调起；切出D挡重新武装
         if (gear == 2) {
             if (gearD360Armed) {
@@ -1327,6 +1333,11 @@ public class VehicleAutomationService extends Service {
     }
 
     private void triggerMusicAutoplay(final String pkg, boolean fullscreen) {
+        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        if (prefs.getBoolean("user_manually_paused_media", false)) {
+            AppLogger.i("车身联动", "车速达到阈值，但检测到用户此前主动按下了暂停，绝对尊重用户意图，禁止自动恢复播放");
+            return;
+        }
         // 用户主动暂停守卫：方控2/车门联动等主动暂停会开启 8 秒自动唤醒抑制窗口，
         // 车速联动不得在窗口内把用户刚按下的暂停强行顶回播放（「暂停后又自动续播」同源病灶）。
         if (EasMediaBridge.getInstance(this).isAutoWakeSuppressed()) {

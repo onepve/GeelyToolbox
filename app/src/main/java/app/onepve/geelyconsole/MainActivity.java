@@ -934,6 +934,55 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 } else if ("clean_memory".equals(action)) {
                     int killed = SystemUtils.cleanBackgroundProcesses(MainActivity.this);
                     Toast.makeText(MainActivity.this, "后台已清理，释放运行内存 (关闭非核心后台: " + killed + "个)", Toast.LENGTH_SHORT).show();
+                } else if ("freeze_appstore".equals(action)) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            SystemUtils.setPackageEnabled(MainActivity.this, "com.ecarx.appstore", false);
+                            SystemUtils.clearAppsCache();
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(MainActivity.this, "已成功冻结吉利应用商店，白名单永久锁定！(๑•̀ㅂ•́)و", Toast.LENGTH_LONG).show();
+                                    pushDeviceInfoToWeb();
+                                }
+                            });
+                        }
+                    }).start();
+                } else if ("unfreeze_appstore".equals(action)) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            SystemUtils.setPackageEnabled(MainActivity.this, "com.ecarx.appstore", true);
+                            SystemUtils.clearAppsCache();
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(MainActivity.this, "已解冻恢复吉利应用商店", Toast.LENGTH_LONG).show();
+                                    pushDeviceInfoToWeb();
+                                }
+                            });
+                        }
+                    }).start();
+                } else if ("enable_whitelist".equals(action)) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            boolean ok = SystemUtils.enableApkVerifyWhitelist(MainActivity.this);
+                            isWhitelistEnabled = ok;
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (ok) {
+                                        Toast.makeText(MainActivity.this, "车机安装白名单已成功放行 (sys.jsbd.apk_verify = 1) (๑•̀ㅂ•́)و", Toast.LENGTH_LONG).show();
+                                    } else {
+                                        Toast.makeText(MainActivity.this, "放行白名单执行完毕，请核对状态", Toast.LENGTH_SHORT).show();
+                                    }
+                                    pushDeviceInfoToWeb();
+                                }
+                            });
+                        }
+                    }).start();
                 }
             }
         });

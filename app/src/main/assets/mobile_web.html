@@ -190,17 +190,20 @@
 
         <!-- ==================== 场景 2: 远程运维 ==================== -->
         <div class="tab-content" id="tab-ops">
-            <!-- 卡片 2.1: 车机远程快捷指令 (6 大常用运维动作) -->
+            <!-- 卡片 2.1: 车机远程快捷指令 (9 大常用运维动作) -->
             <div class="card">
-                <div class="card-title"><span>⚡ 车机远程快捷指令</span><span class="status-badge" style="background:#f1f5f9; color:#475569;">6项快捷运维</span></div>
-                <div style="font-size:12px; color:#64748b; margin-bottom:10px;">手机点击直达车机底层，免在车机屏幕上翻找或手动输入命令行：</div>
+                <div class="card-title"><span>⚡ 车机远程快捷指令</span><span class="status-badge" style="background:#f1f5f9; color:#475569;">9项快捷运维</span></div>
+                <div style="font-size:12px; color:#64748b; margin-bottom:10px;">手机点击直达车机底层，带二次确认防误触，免在车机屏幕上手动输入：</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_files')">📁 原生文件管理</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_settings')">⚙️ 安卓系统设置</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_apps')">📦 应用管理列表</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_accessibility')">♿ 无障碍辅助设置</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('clean_memory')">🧹 释放后台内存</button>
-                    <button class="btn btn-danger" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="confirmHardReboot()">⚡ 安全重启车机</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('open_files', '打开车机原生文件管理', '将在车机大屏调起原生文件管理器界面。', '已通知车机打开原生文件管理！')">📁 原生文件管理</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('open_settings', '打开安卓系统设置', '将在车机大屏调起安卓原生设置菜单。', '已通知车机打开系统设置！')">⚙️ 安卓系统设置</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('open_apps', '打开应用管理列表', '将在车机大屏调起已安装应用列表。', '已通知车机打开应用列表！')">📦 应用管理列表</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('open_accessibility', '打开无障碍辅助设置', '将在车机大屏调起无障碍服务配置菜单。', '已通知车机打开无障碍设置！')">♿ 无障碍辅助设置</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('freeze_appstore', '冻结吉利应用商店', '将通过系统底层禁用 com.ecarx.appstore，锁定系统白名单，防止第三方应用被官方商店自动卸载或覆盖。', '已发送冻结吉利应用商店指令！')">❄️ 冻结应用商店</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('unfreeze_appstore', '解冻恢复应用商店', '将恢复 com.ecarx.appstore 正常启用状态，车机可重新打开官方应用商店。', '已发送解冻吉利应用商店指令！')">☀️ 解冻应用商店</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('enable_whitelist', '放行系统安装白名单', '将写入 sys.jsbd.apk_verify=1 突破车机原生 APK 安装校验限制，允许自由安装第三方软件。', '已发送放行安装白名单指令！')">🔓 放行安装白名单</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('clean_memory', '释放车机后台内存', '将清理非核心后台缓存进程，腾出空闲运行内存。', '已通知车机释放后台内存！')">🧹 释放后台内存</button>
+                    <button class="btn btn-danger" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600; grid-column: span 2;" onclick="confirmHardReboot()">⚡ 安全重启车机系统</button>
                 </div>
             </div>
 
@@ -663,16 +666,32 @@
             }
         }
 
-        async function sendAction(act) {
+        async function sendAction(act, successMsg) {
             try {
-                await fetch('/api/action', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: act }) });
-                alert('指令已执行！');
-            } catch(e) { alert('执行失败: ' + e.message); }
+                const res = await fetch('/api/action', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: act })
+                });
+                const data = await res.json();
+                alert(successMsg || '指令已成功发送至车机执行！');
+            } catch(e) {
+                alert('执行失败: ' + e.message);
+            }
+        }
+
+        function confirmAction(act, title, desc, successMsg) {
+            let msg = '【确认执行】' + title;
+            if (desc) msg += '\n\n' + desc;
+            msg += '\n\n是否确认立即下发执行？';
+            if (confirm(msg)) {
+                sendAction(act, successMsg);
+            }
         }
 
         function confirmHardReboot() {
-            if (confirm('【安全提示】确认远程重启车机系统？\n请确保车辆已安全停稳！')) {
-                sendAction('hard_reboot');
+            if (confirm('【高危确认】确认远程重启车机系统？\n\n请确保车辆已安全停稳并挂入P挡！\n车机屏幕将立即黑屏重启。')) {
+                sendAction('hard_reboot', '重启指令已下发，车机正在重启中...');
             }
         }
 

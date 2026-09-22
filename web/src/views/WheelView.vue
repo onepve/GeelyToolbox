@@ -288,6 +288,10 @@ import wheelGuideImg from '../assets/steering_wheel_guide.webp';
 import wheelGuideFloatingImg from '../assets/steering_wheel_guide_floating.svg';
 
 const showDiagram = ref(false);
+
+function toggleDiagram() {
+  showDiagram.value = !showDiagram.value;
+}
 const FLOAT_TOGGLE_KEY = 'wheel_floating_guide_enabled';
 const floatingEnabled = ref(localStorage.getItem(FLOAT_TOGGLE_KEY) !== 'false');
 const showFloating = ref(false);
