@@ -30,8 +30,8 @@
           吉利缤越cool 2022款 专车打造，其他车型仅供测试
         </span>
 
-        <!-- 真实屏幕参数采集 (实车分辨率/DPI/视口, 消灭写死魔数; 启动自动采集, 关于页纯展示) -->
-        <div class="mt-3 pt-3 border-t border-car-border/60 w-full px-2">
+        <!-- 真实屏幕参数采集与是否检测更新开关 -->
+        <div class="mt-3 pt-3 border-t border-car-border/60 w-full px-2 flex items-center justify-between">
           <div class="flex flex-col items-start space-y-1">
             <span class="text-[15.5px] text-car-sub font-bold">屏幕参数 (实车采集):</span>
             <div class="flex flex-wrap items-center space-x-3 space-y-1 text-[14.5px] font-mono text-car-sub">
@@ -40,6 +40,23 @@
               <span>应用边界 <b class="text-car-text">{{ screenInfo.appBounds }}</b></span>
             </div>
             <span v-if="screenInfo.wm" class="text-[13px] text-car-sub/80 font-mono truncate max-w-full">{{ screenInfo.wm }}</span>
+          </div>
+
+          <!-- 是否检测更新开关 (放置在屏幕参数右侧空位) -->
+          <div class="flex items-center space-x-2.5 pl-4 shrink-0">
+            <span class="text-[14.5px] font-bold text-car-text whitespace-nowrap">是否检测更新:</span>
+            <button 
+              @click="toggleAutoCheckUpdate"
+              :class="[
+                'h-[50px] px-5 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all shadow-sm flex items-center',
+                autoCheckUpdateEnabled 
+                  ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/20' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
+            >
+              <StatusDot size="xs" :color="autoCheckUpdateEnabled ? 'success' : 'neutral'" class="mr-1.5" />
+              {{ autoCheckUpdateEnabled ? '开' : '关' }}
+            </button>
           </div>
         </div>
       </div>
@@ -82,25 +99,6 @@
             检查测试通道更新
           </button>
         </div>
-      </div>
-
-      <!-- 更新策略与开关设置 -->
-      <div class="p-5 rounded-2xl bg-car-card border border-car-border flex items-center justify-between">
-        <div class="flex flex-col">
-          <span class="text-[16px] font-black text-car-text">开机与前台自动检测更新</span>
-          <span class="text-[13.5px] text-car-sub font-bold mt-0.5">关闭后前台将不再自动弹出升级提示，完全由你手动控制</span>
-        </div>
-        <button 
-          @click="toggleAutoCheckUpdate"
-          :class="[
-            'h-[50px] px-6 rounded-xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm',
-            autoCheckUpdateEnabled 
-              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
-              : 'bg-car-item border-car-border text-car-sub'
-          ]"
-        >
-          {{ autoCheckUpdateEnabled ? '已开启' : '已关闭' }}
-        </button>
       </div>
 
       <!-- 赞赏与车友交流支持 (移入关于页直观展示) -->
