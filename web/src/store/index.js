@@ -52,8 +52,8 @@ export const store = reactive({
     wheel_master_switch: true, // 方向盘方控接管总开关 (独立生效，放行米小江)
     voice_audio_channel: 'music', // 'music' | 'nav' | 'notification'
     wheel_control_mode: 'toolbox_alone', // 出厂默认控制台独立接管
-    wheel_action_mute: 'open_360',
-    wheel_action_mode: 'open_360',
+    wheel_action_mute: 'default',
+    wheel_action_mode: 'default',
     wheel_action_ok: 'default',
     voice_enable_gear_d: true,
     voice_enable_gear_r: true,
