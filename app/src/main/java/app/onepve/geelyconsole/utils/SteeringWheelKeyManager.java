@@ -447,19 +447,14 @@ public class SteeringWheelKeyManager {
                 lastToggleActionAt = toggleNow;
                 lastToggleWasPause = playingNow;
 
-                boolean btConnected = isBluetoothDeviceConnected();
-                int targetSource = (btConnected && (sLastActiveAudioSource == SOURCE_BLUETOOTH || EasMediaBridge.getInstance(context).isBluetoothChannelActive()))
-                        ? SOURCE_BLUETOOTH : SOURCE_LOCAL;
+                int targetSource = resolveCurrentAudioSource();
+                AppLogger.i("方控按键", "play_pause 仲裁目标: targetSource=" + (targetSource == SOURCE_BLUETOOTH ? "BLUETOOTH" : "LOCAL") + ", playingNow=" + playingNow);
 
                 if (playingNow) {
                     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                             .edit().putBoolean("user_manually_paused_media", true).apply();
-                    // 蓝牙开关分入口（2026-09-17 用户真车口径：蓝牙关时暂停/播放正常，蓝牙开时才异常）：
-                    // - 蓝牙关：走纯原厂直发入口，不武装抑制窗口（蓝牙链路不存在，无需抑制），
-                    //   行为与「蓝牙修复前」完全一致，绝不被蓝牙修复牵连；
-                    // - 蓝牙开：武装抑制窗口 15 秒（原 8 秒太短，原车 EAS 仲裁链可能超时），
-                    //   拦截 A2DP 晚到事件与 EAS 重新仲裁把暂停顶回播放。
-                    if (targetSource == SOURCE_BLUETOOTH || isBluetoothEnabled()) {
+                    // 仅当目标源为手机蓝牙时，才武装 15 秒抑制窗口防反弹；本地音乐绝不抑制蓝牙！
+                    if (targetSource == SOURCE_BLUETOOTH) {
                         EasMediaBridge.getInstance(context).suppressAutoWakeAfterUserPause(15000);
                     }
                     sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PAUSE, targetSource);
@@ -475,12 +470,10 @@ public class SteeringWheelKeyManager {
                 }
                 break;
             case ACTION_NEXT_TRACK:
-                sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_NEXT,
-                        (isBluetoothDeviceConnected() && sLastActiveAudioSource == SOURCE_BLUETOOTH) ? SOURCE_BLUETOOTH : SOURCE_LOCAL);
+                sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_NEXT, resolveCurrentAudioSource());
                 break;
             case ACTION_PREV_TRACK:
-                sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PREVIOUS,
-                        (isBluetoothDeviceConnected() && sLastActiveAudioSource == SOURCE_BLUETOOTH) ? SOURCE_BLUETOOTH : SOURCE_LOCAL);
+                sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PREVIOUS, resolveCurrentAudioSource());
                 break;
             case ACTION_MUTE_TOGGLE:
                 toggleMute();
@@ -521,36 +514,104 @@ public class SteeringWheelKeyManager {
     }
 
     /**
-     * 当前是否有第三方媒体会话正在播放（用于判定本次 play_pause 究竟会「暂停」还是「恢复」）。
-     * 与 sendMediaKeyEvent 的会话过滤保持一致：跳过车机原厂多媒体与自身，避免误判。
+     * 获取系统底层当前持有音频焦点的包名（吉利系统权威真源）
+     */
+    private String getSystemAudioFocusPackage() {
+        try {
+            String focus = android.provider.Settings.System.getString(context.getContentResolver(), "audio_focus");
+            if (focus != null) {
+                return focus.trim();
+            }
+        } catch (Throwable ignored) {}
+        return "";
+    }
+
+    /**
+     * 判定当前活跃音源：SOURCE_BLUETOOTH 还是 SOURCE_LOCAL
+     * 覆盖开启蓝牙前、开启蓝牙后、以及多音源共存时的权威真源仲裁
+     */
+    private int resolveCurrentAudioSource() {
+        try {
+            String focusPkg = getSystemAudioFocusPackage();
+            if ("com.android.bluetooth".equals(focusPkg)) {
+                sLastActiveAudioSource = SOURCE_BLUETOOTH;
+                return SOURCE_BLUETOOTH;
+            }
+            if (!focusPkg.isEmpty() && !"app.onepve.geelyconsole".equals(focusPkg)) {
+                // 本地应用（如 com.tencent.qqmusiccar、ecarx.xsf.mediacenter 等）明确持有焦点
+                sLastActiveAudioSource = SOURCE_LOCAL;
+                return SOURCE_LOCAL;
+            }
+
+            // 若 focus 为空或自身：通过底层推流与系统音乐状态辅助判定
+            if (EasMediaBridge.getInstance(context).isBluetoothChannelActive()) {
+                sLastActiveAudioSource = SOURCE_BLUETOOTH;
+                return SOURCE_BLUETOOTH;
+            }
+
+            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            if (am != null && am.isMusicActive()) {
+                sLastActiveAudioSource = SOURCE_LOCAL;
+                return SOURCE_LOCAL;
+            }
+
+            if (isBluetoothDeviceConnected() && sLastActiveAudioSource == SOURCE_BLUETOOTH) {
+                return SOURCE_BLUETOOTH;
+            }
+        } catch (Throwable ignored) {}
+        return SOURCE_LOCAL;
+    }
+
+    /**
+     * 当前是否有媒体正在播放（用于判定本次 play_pause 究竟会「暂停」还是「恢复」）。
+     * 结合吉利系统底层音频焦点、A2DP推流、AudioManager与MediaSession进行权威综合仲裁。
      */
     private boolean isAnyMediaPlaying() {
         try {
+            String focusPkg = getSystemAudioFocusPackage();
+            if ("com.android.bluetooth".equals(focusPkg)) {
+                sLastActiveAudioSource = SOURCE_BLUETOOTH;
+                return EasMediaBridge.getInstance(context).isBluetoothChannelActive();
+            }
+            if (!focusPkg.isEmpty() && !"app.onepve.geelyconsole".equals(focusPkg)) {
+                sLastActiveAudioSource = SOURCE_LOCAL;
+                AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                if (am != null && am.isMusicActive()) {
+                    return true;
+                }
+            }
+
             if (EasMediaBridge.getInstance(context).isBluetoothChannelActive()) {
                 sLastActiveAudioSource = SOURCE_BLUETOOTH;
                 return true;
             }
+
+            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            if (am != null && am.isMusicActive()) {
+                sLastActiveAudioSource = SOURCE_LOCAL;
+                return true;
+            }
+
             MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
-            if (msm == null) return false;
-            java.util.List<MediaController> controllers = msm.getActiveSessions(null);
-            if (controllers == null) return false;
-            for (MediaController mc : controllers) {
-                if (mc == null) continue;
-                String pkg = mc.getPackageName();
-                // 2026-09-16 修复：原厂多媒体会话必须纳入播放判定。此前被排除导致原厂音乐
-                // 在放时误判「不在放」→ EAS 唤醒抑制窗口不武装 → 暂停约 1.5 秒后被原车
-                // 重新仲裁顶回播放（用户真车复现「单击暂停却又自动续播」）。
-                if (context.getPackageName().equals(pkg)) {
-                    continue;
-                }
-                android.media.session.PlaybackState st = mc.getPlaybackState();
-                if (st != null && st.getState() == android.media.session.PlaybackState.STATE_PLAYING) {
-                    if ("com.android.bluetooth".equals(pkg)) {
-                        sLastActiveAudioSource = SOURCE_BLUETOOTH;
-                    } else if (!"ecarx.xsf.mediacenter".equals(pkg) && !"com.ecarx.multimedia".equals(pkg)) {
-                        sLastActiveAudioSource = SOURCE_LOCAL;
+            if (msm != null) {
+                java.util.List<MediaController> controllers = msm.getActiveSessions(null);
+                if (controllers != null) {
+                    for (MediaController mc : controllers) {
+                        if (mc == null) continue;
+                        String pkg = mc.getPackageName();
+                        if (context.getPackageName().equals(pkg)) {
+                            continue;
+                        }
+                        android.media.session.PlaybackState st = mc.getPlaybackState();
+                        if (st != null && st.getState() == android.media.session.PlaybackState.STATE_PLAYING) {
+                            if ("com.android.bluetooth".equals(pkg)) {
+                                sLastActiveAudioSource = SOURCE_BLUETOOTH;
+                            } else if (!"ecarx.xsf.mediacenter".equals(pkg) && !"com.ecarx.multimedia".equals(pkg)) {
+                                sLastActiveAudioSource = SOURCE_LOCAL;
+                            }
+                            return true;
+                        }
                     }
-                    return true;
                 }
             }
         } catch (Throwable ignored) {}
@@ -664,8 +725,7 @@ public class SteeringWheelKeyManager {
      * 媒体按键分发机制 (支持蓝牙通道独占直发与本地播放器分发)
      */
     public void sendMediaKeyEventPublic(int keyCode) {
-        int target = (isBluetoothDeviceConnected() && (sLastActiveAudioSource == SOURCE_BLUETOOTH || EasMediaBridge.getInstance(context).isBluetoothChannelActive()))
-                ? SOURCE_BLUETOOTH : SOURCE_LOCAL;
+        int target = resolveCurrentAudioSource();
         sendMediaKeyEvent(keyCode, target);
     }
 
