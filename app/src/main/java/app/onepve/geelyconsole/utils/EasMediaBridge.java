@@ -96,11 +96,11 @@ public class EasMediaBridge {
 
         AppLogger.i("音频通道", "同步 EAS 桥接配置: 模式=" + mode + " 投递状态=" + pushPlayback + " 投递歌词=" + pushLyrics);
 
-        if ("toolbox_alone".equals(mode)) {
-            // 控制台独立接管：确保 EAS 初始化并注册
+        if ("toolbox_alone".equals(mode) || a2dpSinkConnected) {
+            // 控制台独立接管或手机蓝牙已连接：确保 EAS 初始化并注册选通蓝牙通道
             ensureEasReady();
         } else {
-            // 米小江优先或原厂默认：注销 EAS 释放焦点，退让给米小江或原厂多媒体
+            // 未连接蓝牙且非独立接管：注销 EAS 释放焦点，退让给米小江或原厂多媒体
             releaseEasRegistration();
         }
     }
@@ -208,6 +208,7 @@ public class EasMediaBridge {
             return;
         }
         try {
+            ensureEasReady();
             if (mApi != null && mRegistered && mToken != null) {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
                 AppLogger.i("蓝牙音频", "已下发 updateCurrentSourceType(6)，原车蓝牙音频物理通道已选通！");

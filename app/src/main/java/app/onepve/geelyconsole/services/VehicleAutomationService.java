@@ -200,11 +200,7 @@ public class VehicleAutomationService extends Service {
             boolean pushPlayback = prefs.getBoolean("wheel_push_playback_cluster", false);
             boolean pushLyrics = prefs.getBoolean("wheel_push_lyrics_cluster", false);
             try {
-                if (wheelMaster && "toolbox_alone".equals(wheelMode)) {
-                    EasMediaBridge.getInstance(context).syncConfig(wheelMode, pushPlayback, pushLyrics);
-                } else {
-                    EasMediaBridge.getInstance(context).releaseEasRegistration();
-                }
+                EasMediaBridge.getInstance(context).syncConfig(wheelMode, pushPlayback, pushLyrics);
             } catch (Throwable ignored) {}
 
             boolean anyVoiceEnabled = voiceMaster && (doorFl || doorFlClose || doorFr || doorFrClose ||
