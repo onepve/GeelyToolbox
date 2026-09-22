@@ -30,31 +30,6 @@
           吉利缤越cool 2022款 专车打造，其他车型仅供测试
         </span>
 
-        <!-- 车机硬件唯一识别码 (UID) -->
-        <div class="mt-4 pt-3 border-t border-car-border/60 w-full flex items-center justify-between px-2">
-          <span class="text-[14px] text-car-sub font-bold">车机硬件唯一识别码 (UID):</span>
-          <div class="flex items-center space-x-2">
-            <span class="text-[15px] text-car-text font-mono font-black bg-car-card px-3 py-1 rounded-lg border border-car-border select-none" :class="uidVisible ? '' : 'tracking-[0.15em]'">
-              {{ uidVisible ? deviceUid : uidMask }}
-            </span>
-            <button
-              @click="uidVisible = !uidVisible"
-              class="shrink-0 w-9 h-9 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-text hover:border-car-border-light cursor-pointer transition-all flex items-center justify-center select-none"
-              :aria-label="uidVisible ? '隐藏识别码' : '显示识别码'"
-              :title="uidVisible ? '隐藏识别码' : '显示识别码'"
-            >
-              <svg v-if="uidVisible" viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-              <svg v-else viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                <line x1="1" y1="1" x2="23" y2="23"></line>
-              </svg>
-            </button>
-          </div>
-        </div>
-
         <!-- 真实屏幕参数采集 (实车分辨率/DPI/视口, 消灭写死魔数; 启动自动采集, 关于页纯展示) -->
         <div class="mt-3 pt-3 border-t border-car-border/60 w-full px-2">
           <div class="flex flex-col items-start space-y-1">
@@ -109,7 +84,7 @@
         </div>
       </div>
 
-      <!-- 更新策略与开源信息 -->
+      <!-- 更新策略与开关设置 -->
       <div class="p-5 rounded-2xl bg-car-card border border-car-border flex items-center justify-between">
         <div class="flex flex-col">
           <span class="text-[16px] font-black text-car-text">开机与前台自动检测更新</span>
@@ -127,20 +102,31 @@
           {{ autoCheckUpdateEnabled ? '已开启' : '已关闭' }}
         </button>
       </div>
+
+      <!-- 赞赏与车友交流支持 (移入关于页直观展示) -->
+      <div class="p-5 rounded-2xl bg-car-card border border-car-border flex items-center justify-between">
+        <div class="flex items-center space-x-5">
+          <div class="p-2 bg-white rounded-2xl shadow-md border border-car-border/40 shrink-0">
+            <img :src="rewardQrImg" alt="微信赞赏码" class="w-24 h-24 rounded-lg object-contain block" />
+          </div>
+          <div class="flex flex-col space-y-1">
+            <span class="text-[17px] font-black text-car-text flex items-center">
+              💖 赞赏支持与交流
+            </span>
+            <span class="text-[13.5px] text-car-sub font-bold">
+              个人业余开发与长期维护不易，若缤越助手对您有帮助，欢迎微信扫码赞赏支持！
+            </span>
+            <div class="flex items-center space-x-4 pt-1 text-[13.5px] text-car-sub">
+              <span>作者: <b class="text-car-text">迷失</b></span>
+              <span>车友交流群: <b class="text-car-accent font-mono font-bold">564654011</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <template #footer>
-      <div class="flex items-center justify-between w-full">
-        <div class="flex items-center space-x-2.5">
-          <button 
-            @click="openReward"
-            class="min-h-[54px] px-5 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm"
-          >
-            💖 赞赏支持
-          </button>
-          
-        </div>
-
+      <div class="flex items-center justify-end w-full">
         <div class="flex items-center space-x-2.5">
           <button 
             @click="forceDownloadCurrent"
@@ -170,17 +156,12 @@
 import { ref, computed, watch } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
 import StatusDot from '../StatusDot.vue';
+import rewardQrImg from '../../assets/img_reward_code.webp';
 import { store, bridge, closeModal, openModal, showToast } from '../../store';
 
 const autoCheckUpdateEnabled = ref(localStorage.getItem('geely_auto_check_update') !== 'false');
 const isTester = ref(localStorage.getItem('geely_tester_unlocked') === 'true');
 const useBetaChannel = ref(localStorage.getItem('geely_use_beta_channel') === 'true');
-const deviceUid = ref('读取中...');
-const uidVisible = ref(false);
-const uidMask = computed(() => {
-  const chars = deviceUid.value.replace(/\s/g, '');
-  return chars.replace(/./g, '●').slice(0, Math.max(6, Math.min(chars.length, 12)));
-});
 
 let versionClickCount = 0;
 let lastVersionClickTime = 0;
@@ -235,14 +216,6 @@ watch(
   () => [store.deviceInfo.screen_size, store.deviceInfo.screen_real_size, store.deviceInfo.screen_density, store.deviceInfo.screen_app_bounds],
   () => { applyScreenInfo(store.deviceInfo || {}); }
 );
-
-try {
-  const uid = bridge.call('getDeviceUid');
-  if (uid) deviceUid.value = uid;
-  else deviceUid.value = 'E02_' + (Math.random().toString(16).substring(2, 10).toUpperCase());
-} catch (e) {
-  deviceUid.value = 'E02_7814B4FF';
-}
 
 function handleVersionClick() {
   const now = Date.now();

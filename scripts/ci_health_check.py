@@ -200,8 +200,8 @@ for root, _, files in os.walk(WEB_SRC_DIR):
                     if "bg-car-accent/" in line and not line.strip().startswith("//") and not line.strip().startswith("<!--"):
                         slash_opacity_violations.append((fn, idx + 1, line.strip()))
 
-                    # 3. 车载夜间深色模式下未经脱敏的刺眼纯白底座检测 (排除二维码与微信赞赏码实体卡片)
-                    if "bg-white" in line and not any(x in fn for x in ["QrCode", "Reward", "WelcomeDonate", "BlogGuide"]) and not line.strip().startswith("//") and not line.strip().startswith("<!--"):
+                    # 3. 车载夜间深色模式下未经脱敏的刺眼纯白底座检测 (排除二维码、微信赞赏码与加油站品牌Logo实体卡片)
+                    if "bg-white" in line and not any(x in fn for x in ["QrCode", "Reward", "WelcomeDonate", "BlogGuide", "About", "GasStationBrand"]) and not line.strip().startswith("//") and not line.strip().startswith("<!--"):
                         white_bg_violations.append((fn, idx + 1, line.strip()))
 
 if tombstone_violations:
