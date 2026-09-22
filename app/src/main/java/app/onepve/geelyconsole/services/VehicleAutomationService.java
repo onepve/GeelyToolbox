@@ -84,7 +84,6 @@ public class VehicleAutomationService extends Service {
     private boolean enableModeComfort = true;
     private boolean enableModeEco = true;
     private boolean enableModeSport = true;
-    private boolean enableFlameoutVoice = false;
 
     // 驾驶模式标准解耦枚举 (100% 根绝底层各协议数值冲突)
     public static final int MODE_COMFORT = 1; // 舒适模式
@@ -196,7 +195,6 @@ public class VehicleAutomationService extends Service {
             boolean modeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
             boolean modeEco = prefs.getBoolean("voice_enable_mode_eco", true);
             boolean modeSport = prefs.getBoolean("voice_enable_mode_sport", true);
-            boolean flameout = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
             String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
             boolean wheelEnabled = wheelMaster && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
             boolean pushPlayback = prefs.getBoolean("wheel_push_playback_cluster", false);
@@ -212,8 +210,7 @@ public class VehicleAutomationService extends Service {
             boolean anyVoiceEnabled = voiceMaster && (doorFl || doorFlClose || doorFr || doorFrClose ||
                                 doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
                                 trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
-                                modeSmart || modeComfort || modeEco || modeSport ||
-                                flameout);
+                                modeSmart || modeComfort || modeEco || modeSport);
 
             boolean shouldRun = anyVoiceEnabled || wheelEnabled
                     || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
@@ -355,7 +352,6 @@ public class VehicleAutomationService extends Service {
         enableModeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
         enableModeEco = prefs.getBoolean("voice_enable_mode_eco", true);
         enableModeSport = prefs.getBoolean("voice_enable_mode_sport", true);
-        enableFlameoutVoice = prefs.getBoolean("vehicle_flameout_voice_enabled", false);
 
         // 若服务在行车中启动，立即建立主驾已就坐基准，避免车门语音误判为上车
         if (lastPowerMode > 0 && doorStateManager != null) {
@@ -368,8 +364,7 @@ public class VehicleAutomationService extends Service {
         boolean anyVoiceEnabled = voiceMasterSwitch && (enableDoorFl || enableDoorFlClose || enableDoorFr || enableDoorFrClose ||
                              enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
                              enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN || enableGearS ||
-                             enableModeSmart || enableModeComfort || enableModeEco || enableModeSport ||
-                             enableFlameoutVoice);
+                             enableModeSmart || enableModeComfort || enableModeEco || enableModeSport);
         boolean anyEnabled = anyVoiceEnabled || wheelEnabled
                 || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
@@ -464,9 +459,6 @@ public class VehicleAutomationService extends Service {
                     if (gearStateMachine != null) gearStateMachine.resetState();
                     if (driveModeManager != null) driveModeManager.resetState();
                     if (doorStateManager != null) doorStateManager.resetState();
-                    if (enableFlameoutVoice && voicePlayer != null) {
-                        voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品");
-                    }
                 } else if (screenOff) {
                     // 息屏 ≠ 熄火：车机息屏待机时发动机可能仍在运行（发电机充电电压仍 ≥13.2V）。
                     // 此处坚决不碰 lastPowerMode，交由电压权威判定兜底，杜绝「息屏误判锁死后永久静音」。
@@ -1024,9 +1016,6 @@ public class VehicleAutomationService extends Service {
                 if (gearStateMachine != null) gearStateMachine.resetState();
                 if (driveModeManager != null) driveModeManager.resetState();
                 if (doorStateManager != null) doorStateManager.resetState();
-                if (enableFlameoutVoice && lastPowerMode > 0 && voicePlayer != null) {
-                    voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品");
-                }
             }
             lastPowerMode = val;
         }
@@ -1148,9 +1137,6 @@ public class VehicleAutomationService extends Service {
         if (gearStateMachine != null) gearStateMachine.resetState();
         if (driveModeManager != null) driveModeManager.resetState();
         if (doorStateManager != null) doorStateManager.resetState();
-        if (flameout && enableFlameoutVoice && voicePlayer != null) {
-            voicePlayer.play("flameout.mp3", "车辆已熄火，请带好随身物品", VehicleVoicePlayer.PRIORITY_P3_ADVISORY);
-        }
     }
 
     private void open360Camera() {

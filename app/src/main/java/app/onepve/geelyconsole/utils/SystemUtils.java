@@ -925,6 +925,70 @@ public class SystemUtils {
         return false;
     }
 
+    public static boolean openSystemSettings(Context context) {
+        try {
+            Intent intent = new Intent(Settings.ACTION_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static boolean openApplicationSettings(Context context) {
+        try {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            return true;
+        } catch (Exception e) {
+            try {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_APPLICATIONS_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+                return true;
+            } catch (Exception ignored) {
+                return false;
+            }
+        }
+    }
+
+    public static boolean openAccessibilitySettings(Context context) {
+        try {
+            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static int cleanBackgroundProcesses(Context context) {
+        int count = 0;
+        try {
+            android.app.ActivityManager am = (android.app.ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            if (am != null) {
+                List<android.app.ActivityManager.RunningAppProcessInfo> list = am.getRunningAppProcesses();
+                if (list != null) {
+                    String myPkg = context.getPackageName();
+                    for (android.app.ActivityManager.RunningAppProcessInfo info : list) {
+                        if (info.pkgList != null) {
+                            for (String pkg : info.pkgList) {
+                                if (!pkg.equals(myPkg) && !pkg.contains("geely") && !pkg.contains("android") && !pkg.contains("system") && !pkg.contains("ecarx")) {
+                                    am.killBackgroundProcesses(pkg);
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return count;
+    }
+
     /** 依次尝试 candidates 里的 pkg/activity，首个启动成功即返回 true（供原厂入口探测共用） */
     private static boolean startFirstAvailable(Context context, String[][] candidates) {
         for (String[] comp : candidates) {

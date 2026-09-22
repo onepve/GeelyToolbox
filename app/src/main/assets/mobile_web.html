@@ -190,11 +190,18 @@
 
         <!-- ==================== 场景 2: 远程运维 ==================== -->
         <div class="tab-content" id="tab-ops">
-            <!-- 卡片 2.1: 车机远程快捷指令 -->
+            <!-- 卡片 2.1: 车机远程快捷指令 (6 大常用运维动作) -->
             <div class="card">
-                <div class="card-title"><span>⚡ 车机远程快捷指令</span></div>
-                <button class="btn btn-secondary" style="margin-top:0;" onclick="sendAction('open_files')">📁 调起车机原生文件管理</button>
-                <button class="btn btn-danger" onclick="confirmHardReboot()">⚡ 一键安全重启车机</button>
+                <div class="card-title"><span>⚡ 车机远程快捷指令</span><span class="status-badge" style="background:#f1f5f9; color:#475569;">6项快捷运维</span></div>
+                <div style="font-size:12px; color:#64748b; margin-bottom:10px;">手机点击直达车机底层，免在车机屏幕上翻找或手动输入命令行：</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_files')">📁 原生文件管理</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_settings')">⚙️ 安卓系统设置</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_apps')">📦 应用管理列表</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_accessibility')">♿ 无障碍辅助设置</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('clean_memory')">🧹 释放后台内存</button>
+                    <button class="btn btn-danger" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="confirmHardReboot()">⚡ 安全重启车机</button>
+                </div>
             </div>
 
             <!-- 卡片 2.2: OTA 官方升级直链（车机捕获到时展示） -->

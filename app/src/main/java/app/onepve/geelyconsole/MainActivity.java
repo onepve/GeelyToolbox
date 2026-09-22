@@ -913,6 +913,27 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 } else if ("hard_reboot".equals(action)) {
                     Toast.makeText(MainActivity.this, "收到手机端远程重启指令，正在执行...", Toast.LENGTH_SHORT).show();
                     SystemUtils.executeReboot(MainActivity.this);
+                } else if ("open_settings".equals(action)) {
+                    if (SystemUtils.openSystemSettings(MainActivity.this)) {
+                        Toast.makeText(MainActivity.this, "已调起安卓原生系统设置", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "调起安卓原生设置失败", Toast.LENGTH_SHORT).show();
+                    }
+                } else if ("open_apps".equals(action)) {
+                    if (SystemUtils.openApplicationSettings(MainActivity.this)) {
+                        Toast.makeText(MainActivity.this, "已调起应用管理列表", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "调起应用管理列表失败", Toast.LENGTH_SHORT).show();
+                    }
+                } else if ("open_accessibility".equals(action)) {
+                    if (SystemUtils.openAccessibilitySettings(MainActivity.this)) {
+                        Toast.makeText(MainActivity.this, "已调起无障碍辅助设置", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "调起无障碍辅助设置失败", Toast.LENGTH_SHORT).show();
+                    }
+                } else if ("clean_memory".equals(action)) {
+                    int killed = SystemUtils.cleanBackgroundProcesses(MainActivity.this);
+                    Toast.makeText(MainActivity.this, "后台已清理，释放运行内存 (关闭非核心后台: " + killed + "个)", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -3034,9 +3055,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("voice_master_switch", prefs.getBoolean("voice_master_switch", true));
                 obj.put("wheel_master_switch", prefs.getBoolean("wheel_master_switch", true));
 
-                // 360 与熄火提醒联动
+                // 360 联动
                 obj.put("vehicle_gear_d_360_enabled", prefs.getBoolean("vehicle_gear_d_360_enabled", true));
-                obj.put("vehicle_flameout_voice_enabled", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
                 obj.put("vehicle_speed_custom_action_enabled", prefs.getBoolean("vehicle_speed_custom_action_enabled", false));
                 obj.put("vehicle_speed_custom_action_threshold", prefs.getInt("vehicle_speed_custom_action_threshold", 40));
                 obj.put("vehicle_speed_custom_action_target", prefs.getString("vehicle_speed_custom_action_target", "pkg:com.autonavi.amapauto"));
@@ -3121,7 +3141,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
 
                 // 兼容历史老 Key 别名
-                obj.put("flameout_voice", prefs.getBoolean("vehicle_flameout_voice_enabled", false));
                 obj.put("voice_door_fl", prefs.getBoolean("voice_enable_door_fl", true));
                 obj.put("voice_door_fl_close", prefs.getBoolean("voice_enable_door_fl_close", true));
                 obj.put("voice_door_fr", prefs.getBoolean("voice_enable_door_fr", false));
@@ -3149,7 +3168,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("custom_trunk_close", !prefs.getString("custom_voice_trunk_close.mp3", "").isEmpty());
                 obj.put("custom_gear_d", !prefs.getString("custom_voice_gear_d.mp3", "").isEmpty());
                 obj.put("custom_gear_r", !prefs.getString("custom_voice_gear_r.mp3", "").isEmpty());
-                obj.put("custom_flameout", !prefs.getString("custom_voice_flameout.mp3", "").isEmpty());
 
                 obj.put("wheel_long_press_ms", prefs.getInt("wheel_long_press_ms", 1500));
 
@@ -3634,8 +3652,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         player.play("mode_eco.mp3", "经济");
                     } else if ("mode_sport".equals(type)) {
                         player.play("mode_sport.mp3", "运动");
-                    } else if ("flameout".equals(type)) {
-                        player.play("flameout.mp3", "车辆已熄火，请带好随身物品");
                     } else if ("seatbelt".equals(type)) {
                         player.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
                     } else {
