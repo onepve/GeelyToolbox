@@ -53,7 +53,7 @@ export const store = reactive({
     voice_audio_channel: 'music', // 'music' | 'nav' | 'notification'
     wheel_control_mode: 'toolbox_alone', // 出厂默认控制台独立接管
     wheel_action_mute: 'default',
-    wheel_action_mode: 'default',
+    wheel_action_mode: 'open_360',
     wheel_action_ok: 'default',
     voice_enable_gear_d: true,
     voice_enable_gear_r: true,
