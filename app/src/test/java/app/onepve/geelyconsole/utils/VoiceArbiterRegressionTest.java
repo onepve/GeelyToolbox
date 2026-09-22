@@ -264,7 +264,7 @@ public class VoiceArbiterRegressionTest {
         // 低优先级全部拒绝：绝不打断 P0 (旧代码 else 分支会 stopCurrentVoice 打断！)
         VoiceArbiter.Request p1 = req("gear_d.mp3", VoiceArbiter.PRIORITY_P1_ACTION, clock);
         VoiceArbiter.Request p2 = req("door_open.mp3", VoiceArbiter.PRIORITY_P2_DOOR, clock);
-        VoiceArbiter.Request p3 = req("flameout.mp3", VoiceArbiter.PRIORITY_P3_ADVISORY, clock);
+        VoiceArbiter.Request p3 = req("fuel_alarm.mp3", VoiceArbiter.PRIORITY_P3_ADVISORY, clock);
 
         a.submit(p1);
         a.submit(p2);

@@ -1121,7 +1121,7 @@ public class VehicleAutomationService extends Service {
             if (val > 0) {
                 doorStateManager.markDriverInside();
             } else {
-                resetAllStateMachines(true);
+                resetAllStateMachines();
             }
         }
 
@@ -1133,7 +1133,7 @@ public class VehicleAutomationService extends Service {
         }
     }
 
-    private void resetAllStateMachines(boolean flameout) {
+    private void resetAllStateMachines() {
         if (gearStateMachine != null) gearStateMachine.resetState();
         if (driveModeManager != null) driveModeManager.resetState();
         if (doorStateManager != null) doorStateManager.resetState();
