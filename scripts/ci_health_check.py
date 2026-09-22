@@ -314,17 +314,24 @@ else:
             print(f"  [FAIL] Empty 0-byte audio files detected: {empty_audios}")
             passed = False
         else:
-            # 7b. Anti-Collision Gate: 通用车门语音绝对不能与分门特定语音哈希重叠（防粗心复制导致副驾播报主驾台词）
+            # 7b. Anti-Collision Gate: 全量音频 MD5 唯一性刚性门禁（杜绝任何两个音频错配或复制相同内容）
             import hashlib
             def file_md5(p):
                 with open(p, "rb") as f:
                     return hashlib.md5(f.read()).hexdigest()
-            open_md5 = file_md5(os.path.join(AUDIO_DIR, "door_open.mp3"))
-            fl_open_md5 = file_md5(os.path.join(AUDIO_DIR, "door_fl.mp3"))
-            close_md5 = file_md5(os.path.join(AUDIO_DIR, "door_close.mp3"))
-            fl_close_md5 = file_md5(os.path.join(AUDIO_DIR, "door_fl_close.mp3"))
-            if open_md5 == fl_open_md5 or close_md5 == fl_close_md5:
-                print("  [FAIL] 通用智能车门音频与主驾分门音频哈希重合！严禁复制主驾音频充当四门通用音频。")
+
+            all_mp3_files = sorted([f for f in existing_audios if f.endswith(".mp3")])
+            md5_seen = {}
+            dup_errors = []
+            for fn in all_mp3_files:
+                h = file_md5(os.path.join(AUDIO_DIR, fn))
+                if h in md5_seen:
+                    dup_errors.append(f"{fn} 与 {md5_seen[h]} 哈希完全相同 (md5={h})")
+                else:
+                    md5_seen[h] = fn
+
+            if dup_errors:
+                print(f"  [FAIL] 发现音频资产哈希重复冲突！每个语音必须具备独立专属录音:\n" + "\n".join(dup_errors))
                 passed = False
             else:
                 # 7c. Voice Asset Version Manifest Gate: 校验 voice_version.json 存在性、版本号及哈希一致性
