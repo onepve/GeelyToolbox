@@ -177,9 +177,12 @@
 
     <template #footer>
       <div class="flex items-center justify-between w-full">
-        <span class="text-[13.5px] text-car-sub font-bold">
-          上轮生效: {{ store.oilPrice.nextAdjustment.lastAdjustmentDate }} (当前地区: {{ store.oilPrice.selectedProvince }})
-        </span>
+        <div class="flex items-center space-x-3">
+          <span class="text-[13.5px] text-car-sub font-bold">
+            上轮生效: {{ store.oilPrice.nextAdjustment.lastAdjustmentDate }} (当前: {{ store.oilPrice.selectedProvince }})
+          </span>
+          <GasStationBrand />
+        </div>
         <button
           @click="closeModal('oilPrice')"
           class="min-h-[52px] px-10 bg-car-item border-2 border-car-border rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm"
@@ -194,6 +197,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
+import GasStationBrand from '../GasStationBrand.vue';
 import {
   store,
   closeModal,

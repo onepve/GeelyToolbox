@@ -15,6 +15,7 @@
               <div class="flex items-center space-x-2">
                 <span class="text-[19px] font-black text-car-text">{{ currentProvinceName }}</span>
                 <span class="text-[13px] px-2 py-0.5 rounded bg-car-card text-car-accent font-extrabold border border-car-accent/30">当前地区</span>
+                <GasStationBrand class="ml-1" />
               </div>
               <span class="text-[13px] text-car-sub font-bold mt-0.5">发改委限价 · {{ store.oilPrice.nextAdjustment.lastAdjustmentDate }} 生效</span>
             </div>
@@ -180,28 +181,11 @@
       title="启动首屏默认视图"
       desc="设置缤越助手每次启动时默认呈现的主功能页。配置后立即生效并持久记忆。"
       helpTitle="【功能指南】启动首屏默认视图"
-      helpText="1. 智能跟随：&#10;选择「记忆上次退出时页面」后，每次启动自动恢复到您上次停留的功能页。&#10;&#10;2. 固定主菜单：&#10;也可以固定为方控按键、车身联动、车载语音、精选商城、车载音频、特权安装或系统维护等任意页面。&#10;&#10;3. 立即生效：&#10;点击相应项即刻完成设置并永久记忆，下次打开软件直接进入该页面。" helpTip="建议经常传歌/装软件的车主设置为「特权安装」，常玩车机设为「精选商城」。"
+      helpText="1. 智能跟随：&#10;选择「智能跟随」后，每次启动自动恢复到您上次退出时停留的功能页。&#10;&#10;2. 固定主菜单：&#10;也可以固定为方控按键、车身联动、车载语音、精选商城、车载音频、特权安装或系统维护等任意页面。&#10;&#10;3. 立即生效：&#10;点击相应项即刻完成设置并永久记忆，下次打开软件直接进入该页面。" helpTip="建议经常传歌/装软件的车主设置为「特权安装」，常玩车机设为「精选商城」。"
     >
-      <div class="w-full flex flex-col space-y-3 overflow-hidden">
-        <!-- 智能跟随选项 -->
-        <button
-          @click="onSelectStartupNav('remember')"
-          :class="[
-            'w-full min-h-[58px] px-6 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between shadow-sm',
-            store.settings.startup_nav === 'remember'
-              ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/30 shadow-md font-black'
-              : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
-          ]"
-        >
-          <div class="flex items-center space-x-2.5">
-            <span class="text-[17px] text-car-accent">★</span>
-            <span class="text-[17px]">记忆上次退出时页面 (智能跟随)</span>
-          </div>
-          <span class="text-[13.5px] text-car-sub">上次停留: {{ getNavName(store.settings.last_active_nav) }}</span>
-        </button>
-
-        <!-- 7 个固定主菜单网格 -->
-        <div class="w-full flex flex-wrap">
+      <div class="w-full">
+        <!-- 8 宫格严丝合缝车规对称矩阵 (2行 x 4列，彻底消除缺角空缺) -->
+        <div class="w-full flex flex-wrap -m-1">
           <div
             v-for="item in STARTUP_NAV_ITEMS"
             :key="item.id"
@@ -210,14 +194,19 @@
             <button
               @click="onSelectStartupNav(item.id)"
               :class="[
-                'w-full min-h-[62px] rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm',
+                'w-full min-h-[64px] p-2 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm',
                 store.settings.startup_nav === item.id
-                  ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/30 shadow-md'
-                  : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
+                  ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/30 shadow-md font-black'
+                  : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
               ]"
             >
-              <span class="text-[16.5px] font-black leading-none">{{ item.name }}</span>
-              <span class="text-[12.5px] font-bold text-car-sub leading-none">{{ item.desc }}</span>
+              <div class="flex items-center space-x-1.5 leading-none">
+                <span v-if="item.id === 'remember'" class="text-[14.5px] text-car-accent">★</span>
+                <span class="text-[16.5px] font-black leading-none">{{ item.name }}</span>
+              </div>
+              <span class="text-[12px] font-bold text-car-sub leading-none truncate max-w-full">
+                {{ item.id === 'remember' ? (store.settings.startup_nav === 'remember' ? `上次: ${getNavName(store.settings.last_active_nav)}` : '记忆上次停留') : item.desc }}
+              </span>
             </button>
           </div>
         </div>
@@ -240,6 +229,7 @@
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
 import StatusDot from '../components/StatusDot.vue';
+import GasStationBrand from '../components/GasStationBrand.vue';
 import { store, bridge, openModal, showToast, setStartupNav, refreshOilPrices } from '../store';
 import { ref, computed } from 'vue';
 import FloatingView from './FloatingView.vue';
@@ -302,9 +292,10 @@ const currentOilP92 = computed(() => currentOilData.value?.p92 ? currentOilData.
 const currentOilP95 = computed(() => currentOilData.value?.p95 ? currentOilData.value.p95.toFixed(2) : '8.79');
 const oilDaysLeft = computed(() => getDaysToAdjustment(store.oilPrice.nextAdjustment.date));
 
-// 启动首屏默认视图配置
+// 启动首屏默认视图配置 (8 宫格：1 个智能跟随 + 7 个核心业务菜单，严丝合缝对称 2x4)
 const STARTUP_NAV_ITEMS = [
-  { id: 'wheel', name: '方控按键', desc: '核心改装 (默认)' },
+  { id: 'remember', name: '智能跟随', desc: '记忆上次停留' },
+  { id: 'wheel', name: '方控按键', desc: '核心改装·默认' },
   { id: 'link', name: '车身联动', desc: '360/车速' },
   { id: 'body', name: '车载语音', desc: '语音播报' },
   { id: 'store', name: '精选商城', desc: '专车应用' },
