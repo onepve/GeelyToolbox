@@ -35,6 +35,7 @@ import app.onepve.geelyconsole.utils.AppLogger;
 import app.onepve.geelyconsole.utils.DoorStateManager;
 import app.onepve.geelyconsole.utils.DriveModeManager;
 import app.onepve.geelyconsole.utils.EasMediaBridge;
+import app.onepve.geelyconsole.utils.ForegroundAppDetector;
 import app.onepve.geelyconsole.utils.GearStateMachine;
 import app.onepve.geelyconsole.utils.IdleScreensaverManager;
 import app.onepve.geelyconsole.utils.PrefsCompat;
