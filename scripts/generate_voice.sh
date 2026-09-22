@@ -13,7 +13,7 @@ EDGE_TTS="$(command -v edge-tts || echo /usr/local/lib/hermes-agent/venv/bin/edg
 TMP="$(mktemp --suffix=.mp3)"
 trap 'rm -f "$TMP"' EXIT
 
-"$EDGE_TTS" --voice "$VOICE" --rate "$RATE" --pitch "$PITCH" --text "$TEXT" --write-media "$TMP"
+"$EDGE_TTS" --voice "$VOICE" --rate="$RATE" --pitch="$PITCH" --text "$TEXT" --write-media "$TMP"
 # 前置 280ms 绝对静音（车机功放建立通道会吃掉开头，零静音直录必吞首字 —— 门禁 24a/24c 锁定）
 ffmpeg -y -loglevel error -i "$TMP" -af "adelay=280" -ar 24000 -ac 1 -b:a 48k "$OUT"
 echo "已生成: $OUT"

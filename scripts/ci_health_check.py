@@ -314,7 +314,20 @@ else:
             print(f"  [FAIL] Empty 0-byte audio files detected: {empty_audios}")
             passed = False
         else:
-            print("[PASS] 100% of referenced voice audio assets physically exist and are non-empty.")
+            # 7b. Anti-Collision Gate: 通用车门语音绝对不能与分门特定语音哈希重叠（防粗心复制导致副驾播报主驾台词）
+            import hashlib
+            def file_md5(p):
+                with open(p, "rb") as f:
+                    return hashlib.md5(f.read()).hexdigest()
+            open_md5 = file_md5(os.path.join(AUDIO_DIR, "door_open.mp3"))
+            fl_open_md5 = file_md5(os.path.join(AUDIO_DIR, "door_fl.mp3"))
+            close_md5 = file_md5(os.path.join(AUDIO_DIR, "door_close.mp3"))
+            fl_close_md5 = file_md5(os.path.join(AUDIO_DIR, "door_fl_close.mp3"))
+            if open_md5 == fl_open_md5 or close_md5 == fl_close_md5:
+                print("  [FAIL] 通用智能车门音频与主驾分门音频哈希重合！严禁复制主驾音频充当四门通用音频。")
+                passed = False
+            else:
+                print("[PASS] 100% of referenced voice audio assets physically exist, non-empty, and anti-collision verified.")
 
 
 # ----------------------------------------------------------------------
