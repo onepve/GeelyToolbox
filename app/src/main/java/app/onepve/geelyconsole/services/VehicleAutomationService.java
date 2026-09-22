@@ -294,6 +294,7 @@ public class VehicleAutomationService extends Service {
         startLogcatReader();
         registerEcarxKeyReceiver();
         startMediaMonitor();
+        EasMediaBridge.getInstance(this); // 确保蓝牙 A2DP 连接/推流监听与原车音频通道常驻就绪
         SystemUtils.warmDisabledPackagesCache();
         AppLogger.i("系统日志", "车辆启动自动运行守护服务已启动 -> 开启底层门控、挡位与方控全量监听");
         Log.i(TAG, "VehicleAutomationService started successfully");
@@ -1338,8 +1339,8 @@ public class VehicleAutomationService extends Service {
             AppLogger.i("车身联动", "车速达到阈值，但处于用户主动暂停抑制窗口内，跳过自动播放（尊重用户暂停意图）");
             return;
         }
-        if (isAnyMediaPlaying()) {
-            AppLogger.i("车身联动", "车速达到阈值，但检测到当前已有媒体在播放，静默放行防打断");
+        if (isTargetMediaPlaying(pkg)) {
+            AppLogger.i("车身联动", "车速达到阈值，目标媒体已在正常播放中，静默放行防打断: " + pkg);
             return;
         }
         AppLogger.i("车身联动", "车速达到阈值，触发智能多媒体自启: " + pkg + " (全屏=" + fullscreen + ")");
@@ -1357,7 +1358,9 @@ public class VehicleAutomationService extends Service {
         final String curFgPkg = ForegroundAppDetector.getForegroundPackage(this);
         final boolean wasNavigating = "com.autonavi.amapauto".equals(curFgPkg) || (curFgPkg != null && curFgPkg.contains("map"));
 
-        if (pkg != null && !pkg.isEmpty()) {
+        // 核心修复：仅当用户明确开启「全屏沉浸大屏」时，才允许拉起前台 Activity！
+        // 若为「后台静默放歌」，坚决严禁调用 startActivity，绝对不弹窗、不遮挡导航！
+        if (fullscreen && pkg != null && !pkg.isEmpty()) {
             try {
                 Intent launch = getPackageManager().getLaunchIntentForPackage(pkg);
                 if (launch != null) {
@@ -1365,16 +1368,32 @@ public class VehicleAutomationService extends Service {
                     startActivity(launch);
                 }
             } catch (Throwable t) {
-                AppLogger.w("车身联动", "唤起媒体应用失败: " + t.getMessage());
+                AppLogger.w("车身联动", "唤起前台媒体应用失败: " + t.getMessage());
             }
         }
 
-        // QQ音乐车机版专有唤醒与播放广播
+        // 后台静默播歌专有触发链 (QQ音乐车机版与通用媒体)
         if ("com.tencent.qqmusiccar".equals(pkg)) {
             try {
+                // 1. 发送标准车机播放广播
                 Intent qqPlay = new Intent("com.tencent.qqmusiccar.action.PLAY");
                 qqPlay.setPackage("com.tencent.qqmusiccar");
                 sendBroadcast(qqPlay);
+
+                Intent qqPlayOld = new Intent("com.tencent.qqmusic.action.PLAY");
+                qqPlayOld.setPackage("com.tencent.qqmusiccar");
+                sendBroadcast(qqPlayOld);
+
+                // 2. 发送定向媒体按键广播至 QQ 音乐车机版接收器
+                Intent btnDown = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                btnDown.setPackage("com.tencent.qqmusiccar");
+                btnDown.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY));
+                sendOrderedBroadcast(btnDown, null);
+
+                Intent btnUp = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                btnUp.setPackage("com.tencent.qqmusiccar");
+                btnUp.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY));
+                sendOrderedBroadcast(btnUp, null);
             } catch (Throwable ignored) {}
         }
 
@@ -1400,11 +1419,28 @@ public class VehicleAutomationService extends Service {
         }, 1000);
     }
 
+    private boolean isTargetMediaPlaying(String targetPkg) {
+        if (targetPkg == null || targetPkg.isEmpty()) return false;
+        try {
+            MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (msm != null) {
+                List<MediaController> controllers = msm.getActiveSessions(null);
+                if (controllers != null) {
+                    for (MediaController mc : controllers) {
+                        if (mc != null && targetPkg.equals(mc.getPackageName())) {
+                            if (mc.getPlaybackState() != null && mc.getPlaybackState().getState() == PlaybackState.STATE_PLAYING) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        return false;
+    }
+
     private boolean isAnyMediaPlaying() {
         try {
-            // 只认 MediaSession 真实播放态；禁用 AudioManager.isMusicActive() 兜底——
-            // 它把「系统有任何音频在播」（导航播报/提示音）也当媒体在播，导致车速达标
-            // 联动被永久静默放行（防打断分支误判），多媒体永远无法自动拉起。
             MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
             if (msm != null) {
                 List<MediaController> controllers = msm.getActiveSessions(null);

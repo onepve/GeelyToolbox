@@ -211,10 +211,22 @@ public class EasMediaBridge {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
                 AppLogger.i("蓝牙音频", "已下发 updateCurrentSourceType(6)，原车蓝牙音频物理通道已选通！");
             }
-            
-            // 确保系统媒体音量正常，杜绝为0导致微信或音乐不出声
+            // 核心补充：发送吉利原车系统底层切源广播，触发原厂多媒体 MediaCtrlByKeyCb 切到 6 号蓝牙通道，硬件功放硬件通路彻底打通！
+            try {
+                Intent rsrcIntent = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
+                rsrcIntent.putExtra("source_type", SOURCE_TYPE_BLUETOOTH);
+                appContext.sendBroadcast(rsrcIntent);
+            } catch (Throwable ignored) {}
+
             AudioManager am = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
             if (am != null) {
+                // 核心大杀器：清洗 FocusStack 栈顶死锁！
+                // 真车日志铁证：com.tencent.qqmusiccar 死死持有 AUDIOFOCUS_GAIN(priority=10)，
+                // 导致系统拒绝给蓝牙分配焦点，底层 gocsdk 触发 AT#VF0 (音量=0) 与 sendAvrcpPause 掐死微信。
+                // 通过申请一次永久焦点将 QQ 音乐彻底踢出栈顶 (AUDIOFOCUS_LOSS)，再立即放弃腾空栈，让蓝牙畅通发声！
+                releaseLocalMediaFocus(am);
+
+                // 确保系统媒体音量正常，杜绝为0导致微信或音乐不出声
                 int curVol = am.getStreamVolume(AudioManager.STREAM_MUSIC);
                 if (curVol == 0) {
                     int maxVol = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -224,6 +236,50 @@ public class EasMediaBridge {
             }
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "选通蓝牙音频物理通道失败: " + t.getMessage());
+        }
+    }
+
+    /**
+     * 驱逐本地第三方媒体 (如 QQ 音乐车机版) 对系统音频焦点的死占，释放音频通道给手机蓝牙与微信
+     */
+    private void releaseLocalMediaFocus(AudioManager am) {
+        if (am == null) return;
+        try {
+            // 1. 先向本地 QQ 音乐等媒体下发停止指令
+            try {
+                Intent stopIntent = new Intent("com.tencent.qqmusiccar.action.STOP");
+                stopIntent.setPackage("com.tencent.qqmusiccar");
+                appContext.sendBroadcast(stopIntent);
+            } catch (Throwable ignored) {}
+
+            MediaSessionManager mm = (MediaSessionManager) appContext.getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (mm != null) {
+                List<MediaController> controllers = mm.getActiveSessions(null);
+                if (controllers != null) {
+                    for (MediaController mc : controllers) {
+                        String pkg = mc.getPackageName();
+                        if (pkg != null && !pkg.equals("com.android.bluetooth") && !pkg.equals(appContext.getPackageName())) {
+                            try {
+                                mc.getTransportControls().pause();
+                            } catch (Throwable ignored) {}
+                        }
+                    }
+                }
+            }
+
+            // 2. 核心大杀器：申请永久独占焦点 (AUDIOFOCUS_GAIN)，迫使系统 MediaFocusControl 向 com.tencent.qqmusiccar
+            // 下发 AUDIOFOCUS_LOSS 并将其彻底从 FocusStack 栈顶物理移除；随后立即 abandonAudioFocus 腾空整个音频通道！
+            AudioManager.OnAudioFocusChangeListener dummyListener = new AudioManager.OnAudioFocusChangeListener() {
+                @Override
+                public void onAudioFocusChange(int focusChange) {}
+            };
+            int ret = am.requestAudioFocus(dummyListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+            if (ret == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                am.abandonAudioFocus(dummyListener);
+                AppLogger.i("蓝牙音频", "已成功清洗 FocusStack 栈顶死锁，系统音频栈已腾空让渡给车载蓝牙！");
+            }
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "清洗音频焦点栈顶异常: " + t.getMessage());
         }
     }
 
