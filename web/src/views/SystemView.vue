@@ -37,8 +37,8 @@
 
           <div class="flex flex-col">
             <div class="flex items-center space-x-1.5">
-              <span class="text-[13px] text-rose-400 font-black">下轮预期: {{ store.oilPrice.nextAdjustment.predictedLiter }}元/L</span>
-              <span class="text-[12px] px-2 py-0.5 rounded-full bg-car-card text-rose-300 font-extrabold border border-car-border">
+              <span class="text-[13px] text-rose-500 dark:text-rose-400 font-black">下轮预期: {{ store.oilPrice.nextAdjustment.predictedLiter }}元/L</span>
+              <span class="text-[12px] px-2 py-0.5 rounded-full bg-car-card text-rose-600 dark:text-rose-300 font-extrabold border border-car-border">
                 距调价仅剩 {{ oilDaysLeft }} 天
               </span>
             </div>
@@ -194,7 +194,7 @@
           ]"
         >
           <div class="flex items-center space-x-2.5">
-            <span class="text-[17px] text-amber-400">★</span>
+            <span class="text-[17px] text-car-accent">★</span>
             <span class="text-[17px]">记忆上次退出时页面 (智能跟随)</span>
           </div>
           <span class="text-[13.5px] text-car-sub">上次停留: {{ getNavName(store.settings.last_active_nav) }}</span>
@@ -212,7 +212,7 @@
               :class="[
                 'w-full min-h-[62px] rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm',
                 store.settings.startup_nav === item.id
-                  ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-md'
+                  ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/30 shadow-md'
                   : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
               ]"
             >

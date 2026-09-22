@@ -25,7 +25,7 @@
                     : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
                 ]"
               >
-                <span class="mr-1.5 text-[14px] text-amber-400">★</span>
+                <span class="mr-1.5 text-[14px] text-car-accent">★</span>
                 <span>{{ prov }}</span>
               </button>
             </div>
@@ -47,7 +47,7 @@
               @click="onToggleFav"
               class="min-h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] cursor-pointer hover:border-car-border-light transition-all flex items-center shadow-sm whitespace-nowrap"
             >
-              <span class="mr-1.5 text-[15px]" :class="isCurrentFav ? 'text-amber-400' : 'text-car-sub'">
+              <span class="mr-1.5 text-[15px]" :class="isCurrentFav ? 'text-car-accent' : 'text-car-sub'">
                 {{ isCurrentFav ? '★ 已收藏' : '☆ 收藏当前' }}
               </span>
             </button>
@@ -153,8 +153,8 @@
           <div class="flex items-center space-x-2">
             <span class="text-[18px]">📅</span>
             <span class="text-[16px] font-black text-car-text">下轮调价窗口:</span>
-            <span class="text-[16px] font-black text-amber-400">{{ store.oilPrice.nextAdjustment.dateLabel }}</span>
-            <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-item text-rose-300 font-extrabold border border-car-border">
+            <span class="text-[16px] font-black text-car-accent">{{ store.oilPrice.nextAdjustment.dateLabel }}</span>
+            <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-item text-rose-600 dark:text-rose-300 font-extrabold border border-car-border">
               仅剩 {{ daysLeft }} 天
             </span>
           </div>
