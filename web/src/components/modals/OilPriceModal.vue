@@ -92,7 +92,7 @@
         <!-- 92# 汽油 -->
         <div class="flex-1 p-4 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
           <div class="flex items-center space-x-1.5 mb-1.5">
-            <span class="text-[12.5px] px-2 py-0.5 rounded bg-car-card text-amber-300 font-extrabold border border-car-border">缤越推荐</span>
+            <span class="text-[12.5px] px-2 py-0.5 rounded bg-car-card text-car-accent font-extrabold border border-car-accent/30">缤越推荐</span>
             <span class="text-[16px] font-black text-car-text">92# 汽油</span>
           </div>
           <div class="flex items-baseline justify-center my-0.5">

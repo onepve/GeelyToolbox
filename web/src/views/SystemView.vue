@@ -14,7 +14,7 @@
             <div class="flex flex-col">
               <div class="flex items-center space-x-2">
                 <span class="text-[19px] font-black text-car-text">{{ currentProvinceName }}</span>
-                <span class="text-[13px] px-2 py-0.5 rounded bg-car-card text-amber-300 font-extrabold border border-car-border">当前地区</span>
+                <span class="text-[13px] px-2 py-0.5 rounded bg-car-card text-car-accent font-extrabold border border-car-accent/30">当前地区</span>
               </div>
               <span class="text-[13px] text-car-sub font-bold mt-0.5">发改委限价 · {{ store.oilPrice.nextAdjustment.lastAdjustmentDate }} 生效</span>
             </div>
