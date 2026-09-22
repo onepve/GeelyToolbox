@@ -3,31 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>吉利智驾 · 手机无线快传</title>
+    <title>吉利智驾 · 手机无线快传与控制台</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
-        body { background: #ebeff4; color: #1e293b; padding: 16px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 480px; background: #ffffff; border-radius: 16px; border: 1px solid #d1d8e2; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
-        .header { text-align: center; margin-bottom: 20px; }
-        .title { font-size: 20px; font-weight: bold; color: #0284c7; }
-        .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
-        .card { background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 14px; margin-bottom: 16px; }
+        body { background: #ebeff4; color: #1e293b; padding: 14px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 480px; background: #ffffff; border-radius: 16px; border: 1px solid #d1d8e2; padding: 18px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+        .header { text-align: center; margin-bottom: 16px; }
+        .title { font-size: 20px; font-weight: 800; color: #0284c7; letter-spacing: -0.5px; }
+        .subtitle { font-size: 12.5px; color: #64748b; margin-top: 3px; }
+
+        /* 顶部一级主导航 Tab (3 大场景) */
+        .main-nav {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border: 1px solid #e2e8f0;
+            gap: 4px;
+        }
+        .main-nav-btn {
+            flex: 1;
+            padding: 9px 4px;
+            border: none;
+            border-radius: 9px;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #64748b;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            white-space: nowrap;
+        }
+        .main-nav-btn.active {
+            background: #ffffff;
+            color: #0284c7;
+            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.12), 0 1px 2px rgba(0,0,0,0.06);
+        }
+
+        /* 选项卡内容区 */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* 卡片标准规范 */
+        .card { background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 14px; margin-bottom: 14px; }
         .card-title { font-size: 14px; font-weight: bold; color: #334155; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
         .input-group { margin-bottom: 12px; }
-        .input-label { font-size: 12px; color: #64748b; margin-bottom: 6px; display: block; }
+        .input-label { font-size: 12px; color: #64748b; margin-bottom: 6px; display: block; font-weight: 600; }
         input[type="text"], input[type="file"], textarea, .input-box {
             width: 100%;
-            padding: 10px 12px;
+            padding: 9px 12px;
             border: 1.5px solid #cbd5e1;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13.5px;
             background: #ffffff;
             outline: none;
             box-sizing: border-box;
             display: block;
+            color: #1e293b;
         }
         input[type="text"]:focus, textarea:focus, .input-box:focus { border-color: #0284c7; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; white-space: nowrap; transition: 0.2s; box-sizing: border-box; }
+        .btn { width: 100%; padding: 11px; border: none; border-radius: 8px; font-size: 13.5px; font-weight: bold; cursor: pointer; text-align: center; white-space: nowrap; transition: 0.2s; box-sizing: border-box; }
         .btn-primary { background: #0284c7; color: #ffffff; }
         .btn-primary:active { background: #0369a1; }
         .btn-secondary { background: #ffffff; color: #1e293b; border: 1.5px solid #cbd5e1; margin-top: 8px; }
@@ -36,120 +73,348 @@
         .btn-danger:active { background: #dc2626; }
         .progress-bar { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 10px; display: none; }
         .progress-fill { height: 100%; width: 0%; background: #10b981; transition: width 0.2s; }
-        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; background: #e0f2fe; color: #0284c7; }
-        .tip-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px; font-size: 12px; color: #d97706; line-height: 1.5; margin-top: 12px; }
+        .status-badge { display: inline-block; padding: 3px 7px; border-radius: 6px; font-size: 11px; font-weight: bold; background: #e0f2fe; color: #0284c7; }
+        .tip-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 9px 11px; font-size: 11.5px; color: #d97706; line-height: 1.5; margin-top: 10px; }
+
+        /* TTS 专用二级子分类胶囊导航 */
+        .sub-segmented-nav {
+            display: flex;
+            background: #f1f5f9;
+            padding: 3px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+            gap: 3px;
+        }
+        .sub-nav-btn {
+            flex: 1;
+            padding: 7px 4px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #64748b;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .sub-nav-btn.active {
+            background: #ffffff;
+            color: #0f766e;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+
+        /* 车门二级单选模式切换 */
+        .door-mode-pill {
+            display: flex;
+            background: #e2e8f0;
+            padding: 2.5px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            gap: 2px;
+        }
+        .door-pill-btn {
+            flex: 1;
+            padding: 5px;
+            border: none;
+            border-radius: 5px;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #475569;
+            background: transparent;
+            cursor: pointer;
+            text-align: center;
+        }
+        .door-pill-btn.active {
+            background: #ffffff;
+            color: #0284c7;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="title">吉利车机无线快传</div>
-            <div class="subtitle">免车机打字 · 极速直传至 /sdcard/Download/</div>
+            <div class="title">吉利智驾 · 手机无线快传</div>
+            <div class="subtitle">免车机打字 · 极速直传与车载功能配置中枢</div>
         </div>
 
-        <!-- 卡片 1: 推送 URL -->
-        <div class="card">
-            <div class="card-title"><span>🚀 推送下载链接到车机</span><span class="status-badge" id="car-status">车机在线</span></div>
-            <div class="input-group">
-                <label class="input-label">直接粘贴外部 APK 直链下载地址：</label>
-                <input type="text" id="push-url" placeholder="https://example.com/app.apk">
-            </div>
-            <button class="btn btn-primary" onclick="pushUrl()">一键推送车机下载</button>
+        <!-- 顶级一级导航：3 大核心场景 -->
+        <div class="main-nav">
+            <button class="main-nav-btn active" id="btn-tab-transfer" onclick="switchMainTab('transfer')">🚀 极速快传</button>
+            <button class="main-nav-btn" id="btn-tab-ops" onclick="switchMainTab('ops')">⚡ 远程运维</button>
+            <button class="main-nav-btn" id="btn-tab-voice" onclick="switchMainTab('voice')">🎙️ 语音台词</button>
         </div>
 
-        <!-- 卡片 1.5: OTA 官方升级直链（车机捕获到时显示，手机可复制） -->
-        <div class="card" id="ota-card" style="display:none;">
-            <div class="card-title"><span>📡 OTA 官方升级直链（车机已捕获）</span></div>
-            <div class="input-group">
-                <label class="input-label">车机从升级日志中捕获到的官方升级包直链：</label>
-                <input type="text" id="ota-url" class="input-box" style="font-size:12px; color:#059669;" readonly onclick="this.select();">
+        <!-- ==================== 场景 1: 极速快传 ==================== -->
+        <div class="tab-content active" id="tab-transfer">
+            <!-- 卡片 1.1: 手机全格式文件秒传到车机 -->
+            <div class="card">
+                <div class="card-title"><span>📁 手机全格式文件秒传车机</span><span class="status-badge" id="car-status">车机在线</span></div>
+                <div class="input-group">
+                    <label class="input-label">选择任意文件（APK安装包/语音包ZIP/音视频/地图/文档等）：</label>
+                    <input type="file" id="file-input">
+                </div>
+                <button class="btn btn-primary" id="btn-upload" onclick="uploadFile()">开始局域网高速传输</button>
+                <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+                <div id="upload-status" style="font-size:12px; color:#64748b; margin-top:6px; text-align:center; word-break:break-all;"></div>
             </div>
-            <button class="btn btn-primary" style="background:#059669;" onclick="copyOtaUrl()">📋 复制 OTA 直链</button>
-        </div>
 
-        <!-- 卡片 2: 手机全格式文件秒传到车机 -->
-        <div class="card">
-            <div class="card-title"><span>📁 手机全格式文件秒传到车机</span></div>
-            <div class="input-group">
-                <label class="input-label">选择任意文件（APK安装包/语音包ZIP/音视频/地图/文档等）：</label>
-                <input type="file" id="file-input">
+            <!-- 卡片 1.2: 推送外部下载链接 -->
+            <div class="card">
+                <div class="card-title"><span>🚀 推送下载链接到车机</span></div>
+                <div class="input-group">
+                    <label class="input-label">直接粘贴外部 APK 直链下载地址：</label>
+                    <input type="text" id="push-url" placeholder="https://example.com/app.apk">
+                </div>
+                <button class="btn btn-primary" onclick="pushUrl()">一键推送车机下载</button>
             </div>
-            <button class="btn btn-primary" id="btn-upload" onclick="uploadFile()">开始局域网高速传输</button>
-            <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-            <div id="upload-status" style="font-size:12px; color:#64748b; margin-top:6px; text-align:center; word-break:break-all;"></div>
-        </div>
 
-        <!-- 卡片 3: 推送 ADB 命令 -->
-        <div class="card">
-            <div class="card-title"><span>💻 手机推送 ADB 命令到车机</span></div>
-            <div class="input-group">
-                <label class="input-label">输入或粘贴 Shell / ADB 指令：</label>
-                <textarea id="adb-cmd" rows="3" placeholder="例如: pm list packages -3"></textarea>
+            <!-- 卡片 1.3: 车机已存文件库 -->
+            <div class="card">
+                <div class="card-title">
+                    <span>📦 车机已存文件库 (/sdcard/Download/)</span>
+                    <button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:11.5px; margin-top:0;" onclick="loadCarFiles()">🔄 刷新列表</button>
+                </div>
+                <div id="car-files-box" style="max-height: 240px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+                    <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 16px;">正在加载车机文件列表...</div>
+                </div>
             </div>
-            <button class="btn btn-primary" onclick="pushAdbCmd()">📡 推送命令到车机屏幕</button>
-            <div style="font-size: 11.5px; color: #64748b; margin-top: 6px; line-height: 1.45;">
-                🛡️ <b>安全机制</b>：指令仅推送到车机【ADB 终端】输入框中，不会自动静默执行。请在车机大屏上人工核验后点击【▶️ 执行】确认！
-            </div>
-        </div>
 
-        <!-- 卡片 4: 反向导出 -->
-        <div class="card">
-            <div class="card-title"><span>📥 车机文件反向导出到手机</span><button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin-top:0;" onclick="loadCarFiles()">🔄 刷新列表</button></div>
-            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">点击即可将车机 /sdcard/Download/ 下的日志与 APK 下回到手机：</div>
-            <div id="car-files-box" style="max-height: 220px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
-                <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 16px;">正在加载车机文件列表...</div>
+            <div class="tip-box">
+                🛡️ 安全提示：传输完成后，请在车机端打开原生文件管理直接点击安装，严禁使用 ADB 直装破坏空调界面。
             </div>
         </div>
 
-        <!-- 卡片 5: 快捷指令 -->
-        <div class="card">
-            <div class="card-title"><span>⚡ 车机远程快捷指令</span></div>
-            <button class="btn btn-secondary" onclick="sendAction('open_files')">📁 调起车机原生文件管理</button>
-            <button class="btn btn-danger" onclick="confirmHardReboot()">⚡ 一键重启车机</button>
+        <!-- ==================== 场景 2: 远程运维 ==================== -->
+        <div class="tab-content" id="tab-ops">
+            <!-- 卡片 2.1: 车机远程快捷指令 -->
+            <div class="card">
+                <div class="card-title"><span>⚡ 车机远程快捷指令</span></div>
+                <button class="btn btn-secondary" style="margin-top:0;" onclick="sendAction('open_files')">📁 调起车机原生文件管理</button>
+                <button class="btn btn-danger" onclick="confirmHardReboot()">⚡ 一键安全重启车机</button>
+            </div>
+
+            <!-- 卡片 2.2: OTA 官方升级直链（车机捕获到时展示） -->
+            <div class="card" id="ota-card" style="display:none;">
+                <div class="card-title"><span>📡 OTA 官方升级直链（车机已捕获）</span></div>
+                <div class="input-group">
+                    <label class="input-label">车机从升级日志中捕获到的官方升级包直链：</label>
+                    <input type="text" id="ota-url" class="input-box" style="font-size:12px; color:#059669;" readonly onclick="this.select();">
+                </div>
+                <button class="btn btn-primary" style="background:#059669;" onclick="copyOtaUrl()">📋 复制 OTA 直链</button>
+            </div>
+
+            <!-- 卡片 2.3: 远程 Shell 调试指令 -->
+            <div class="card">
+                <div class="card-title"><span>💻 远程调试指令推送</span></div>
+                <div class="input-group">
+                    <label class="input-label">输入要推送至车机屏幕核对的 ADB / Shell 命令：</label>
+                    <input type="text" id="adb-cmd" placeholder="例如: am start -n ...">
+                </div>
+                <button class="btn btn-secondary" style="margin-top:0;" onclick="pushAdbCmd()">📤 推送指令到车机核对</button>
+            </div>
         </div>
 
-        <!-- 卡片 5.5: 🎙️ 自定义车载语音制作与导入中枢 (下移) -->
-        <div class="card" style="border-left: 4px solid #f59e0b;">
-            <div class="card-title"><span>🎙️ 自定义车载语音制作中枢</span><span class="status-badge" style="background:#fef3c7; color:#b45309;">专属主题</span></div>
-            <div style="font-size: 12px; color: #64748b; margin-bottom: 10px; line-height: 1.5;">
-                免电脑制作！手机扫码直接下载官方空模板与制作指南，替换为你的 MP3 音频后打包为 <b>.zip</b> 上传，车机自动解压部署到 <code>/sdcard/GeelyPilot/voices/</code> 专属目录！
+        <!-- ==================== 场景 3: 语音台词 ==================== -->
+        <div class="tab-content" id="tab-voice">
+            <!-- 卡片 3.1: 自定义车载语音制作中枢 (专属主题) -->
+            <div class="card" style="border-left: 4px solid #f59e0b;">
+                <div class="card-title"><span>🎙️ 自定义车载语音制作中枢</span><span class="status-badge" style="background:#fef3c7; color:#b45309;">专属主题</span></div>
+                <div style="font-size: 12px; color: #64748b; margin-bottom: 10px; line-height: 1.5;">
+                    免电脑制作！手机扫码直接下载官方空模板与制作指南，替换为你的 MP3 音频后打包为 <b>.zip</b> 上传，车机自动解压部署到 <code>/sdcard/GeelyPilot/voices/</code> 专属目录！
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 8px;">
+                    <a href="/api/voice_template" download="voice_template.zip" style="text-decoration:none; width:100%; display:block;">
+                        <button class="btn btn-primary" style="background:#f59e0b; border-color:#d97706; margin-top:0; width:100%;">📥 下载官方语音模板 (ZIP)</button>
+                    </a>
+                    <button class="btn btn-secondary" style="width:100%; margin-top:0;" onclick="showVoiceReadme()">📖 查看制作说明 (README)</button>
+                </div>
+                <div class="tip-box" style="margin-top:4px; font-size:11.5px;">
+                    💡 <b>贴心提示</b>：语音包名字支持中文（如“我的专属语音.zip”），解压后会自动以压缩包名字命名。未包含的音频会自动以出厂晓晓原声兜底，绝不静音！
+                </div>
             </div>
-            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 8px;">
-                <a href="/api/voice_template" download="voice_template.zip" style="text-decoration:none; width:100%; display:block;">
-                    <button class="btn btn-primary" style="background:#f59e0b; border-color:#d97706; margin-top:0; width:100%;">📥 下载官方语音模板 (ZIP)</button>
-                </a>
-                <button class="btn btn-secondary" style="width:100%; margin-top:0;" onclick="showVoiceReadme()">📖 查看制作说明 (README)</button>
-            </div>
-            <div class="tip-box" style="margin-top:4px; font-size:11.5px;">
-                💡 <b>贴心提示</b>：语音包名字支持中文（如“我的专属语音.zip”），解压后会自动以压缩包名字命名。未包含的音频会自动以出厂晓晓原声兜底，绝不静音！
-            </div>
-        </div>
 
-        <!-- 卡片 6: 远程编辑 TTS 台词 (置底) -->
-        <div class="card">
-            <div class="card-title"><span>🗣️ 手机远程编辑车身播报台词</span><button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin-top:0;" onclick="loadTtsSettings()">🔄 刷新</button></div>
-            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">在手机上打字更便捷，输入后保存将直接同步并生效至车机系统：</div>
-            <div style="display:grid; grid-template-columns: 1fr; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 4px;">
-                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🚗 前进挡(D挡)播报台词：</label><input type="text" id="tts-gear_d" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 已挂入前进挡，系好安全带，祝你一路平安"></div>
-                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🔙 倒车挡(R挡)播报台词：</label><input type="text" id="tts-gear_r" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 已挂入倒车挡，请注意观察后方安全"></div>
-                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🅿️ 驻车挡(P挡)播报台词：</label><input type="text" id="tts-gear_p" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 已挂入驻车挡"></div>
-                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🚪 主驾开门播报台词：</label><input type="text" id="tts-door_fl" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 主驾车门打开，请注意后方来车"></div>
-                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🚪 主驾关门播报台词：</label><input type="text" id="tts-door_fl_close" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 主驾车门已关好"></div>
-                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🚪 副驾开门播报台词：</label><input type="text" id="tts-door_fr" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 欢迎乘车，副驾请注意安全"></div>
-                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🚪 副驾关门播报台词：</label><input type="text" id="tts-door_fr_close" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 副驾车门已关好"></div>
-                <div><label style="font-size:12px; font-weight:bold; color:#334155;">📦 后备箱打开台词：</label><input type="text" id="tts-trunk_open" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 后备箱已打开"></div>
-                <div><label style="font-size:12px; font-weight:bold; color:#334155;">📦 后备箱关闭台词：</label><input type="text" id="tts-trunk_close" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 后备箱已关闭"></div>
-                <div><label style="font-size:12px; font-weight:bold; color:#334155;">🔑 车辆熄火提醒台词：</label><input type="text" id="tts-flameout" class="input-box" style="margin-top:2px; font-size:13px;" placeholder="默认: 车辆已熄火，请带好随身物品"></div>
-            </div>
-            <button class="btn btn-primary" style="margin-top:12px;" onclick=\"saveTtsSettings()\">💾 保存台词并推送至车机</button>
-        </div>
+            <!-- 卡片 3.2: 手机远程编辑车身播报台词 (分段 Tab 选项卡) -->
+            <div class="card">
+                <div class="card-title">
+                    <span>🗣️ 手机远程编辑车身播报台词</span>
+                    <button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:11.5px; margin-top:0;" onclick="loadTtsSettings()">🔄 从车机同步</button>
+                </div>
+                <div style="font-size: 12px; color: #64748b; margin-bottom: 10px;">在手机上打字更便捷，输入后保存将直接同步并生效至车机系统：</div>
 
-        <div class="tip-box">
-            🛡️ 安全提示：传输完成后，请在车机端打开原生文件管理直接点击安装，严禁使用 ADB 直装破坏空调界面。
+                <!-- TTS 二级子分类 Tab -->
+                <div class="sub-segmented-nav">
+                    <button class="sub-nav-btn active" id="sub-btn-gear" onclick="switchTtsSubTab('gear')">🚗 挡位状态 (4)</button>
+                    <button class="sub-nav-btn" id="sub-btn-door" onclick="switchTtsSubTab('door')">🚪 车门迎宾</button>
+                    <button class="sub-nav-btn" id="sub-btn-trunk" onclick="switchTtsSubTab('trunk')">📦 尾门/熄火 (3)</button>
+                </div>
+
+                <!-- 子视图 1: 挡位状态 -->
+                <div id="tts-sub-gear" class="tts-sub-pane">
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div>
+                            <label class="input-label">🚗 前进挡(D挡)播报台词：</label>
+                            <input type="text" id="tts-gear_d" class="input-box" placeholder="默认: 已挂入前进挡，系好安全带，祝你一路平安">
+                        </div>
+                        <div>
+                            <label class="input-label">🔙 倒车挡(R挡)播报台词：</label>
+                            <input type="text" id="tts-gear_r" class="input-box" placeholder="默认: 已挂入倒车挡，请注意观察后方安全">
+                        </div>
+                        <div>
+                            <label class="input-label">🅿️ 驻车挡(P挡)播报台词：</label>
+                            <input type="text" id="tts-gear_p" class="input-box" placeholder="默认: 已挂入驻车挡">
+                        </div>
+                        <div>
+                            <label class="input-label">⚪ 空挡(N挡)播报台词：</label>
+                            <input type="text" id="tts-gear_n" class="input-box" placeholder="默认: 已挂入空挡">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 子视图 2: 车门迎宾 (通用智能 vs 独立分门) -->
+                <div id="tts-sub-door" class="tts-sub-pane" style="display:none;">
+                    <div class="door-mode-pill">
+                        <button class="door-pill-btn active" id="pill-door-universal" onclick="switchDoorSubMode('universal')">通用智能车门 (推荐)</button>
+                        <button class="door-pill-btn" id="pill-door-split" onclick="switchDoorSubMode('split')">独立分门专属台词</button>
+                    </div>
+
+                    <!-- 模式 A: 通用智能车门 -->
+                    <div id="door-pane-universal" style="display:flex; flex-direction:column; gap:8px;">
+                        <div>
+                            <label class="input-label">🚪 通用开门播报台词 (四门通用)：</label>
+                            <input type="text" id="tts-door_open" class="input-box" placeholder="默认: 车门已打开">
+                        </div>
+                        <div>
+                            <label class="input-label">🚪 通用关门播报台词 (四门通用)：</label>
+                            <input type="text" id="tts-door_close" class="input-box" placeholder="默认: 车门已关好">
+                        </div>
+                        <div class="tip-box" style="margin-top:4px;">
+                            💡 <b>智能合并防抖</b>：任意车门打开/关闭均触发通用播报；多门同时开关时自动防抖合并，不再吵闹。
+                        </div>
+                    </div>
+
+                    <!-- 模式 B: 独立分门专属台词 -->
+                    <div id="door-pane-split" style="display:none; flex-direction:column; gap:8px;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                            <div>
+                                <label class="input-label">🚪 主驾开门 (FL)：</label>
+                                <input type="text" id="tts-door_fl" class="input-box" placeholder="主驾车门打开，请注意来车">
+                            </div>
+                            <div>
+                                <label class="input-label">🚪 主驾关门 (FL)：</label>
+                                <input type="text" id="tts-door_fl_close" class="input-box" placeholder="主驾车门已关好">
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                            <div>
+                                <label class="input-label">🚪 副驾开门 (FR)：</label>
+                                <input type="text" id="tts-door_fr" class="input-box" placeholder="欢迎乘车，副驾请注意安全">
+                            </div>
+                            <div>
+                                <label class="input-label">🚪 副驾关门 (FR)：</label>
+                                <input type="text" id="tts-door_fr_close" class="input-box" placeholder="副驾车门已关好">
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                            <div>
+                                <label class="input-label">🚪 左后门 (RL)：</label>
+                                <input type="text" id="tts-door_rl" class="input-box" placeholder="左后门已打开">
+                            </div>
+                            <div>
+                                <label class="input-label">🚪 右后门 (RR)：</label>
+                                <input type="text" id="tts-door_rr" class="input-box" placeholder="右后门已打开">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 子视图 3: 尾门与熄火 -->
+                <div id="tts-sub-trunk" class="tts-sub-pane" style="display:none;">
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div>
+                            <label class="input-label">📦 电动尾门打开台词：</label>
+                            <input type="text" id="tts-trunk_open" class="input-box" placeholder="默认: 后备箱已打开">
+                        </div>
+                        <div>
+                            <label class="input-label">📦 电动尾门关闭台词：</label>
+                            <input type="text" id="tts-trunk_close" class="input-box" placeholder="默认: 后备箱已关闭">
+                        </div>
+                        <div>
+                            <label class="input-label">🔑 车辆熄火离车提醒台词：</label>
+                            <input type="text" id="tts-flameout" class="input-box" placeholder="默认: 车辆已熄火，请带好随身物品">
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" style="margin-top:12px;" onclick="saveTtsSettings()">💾 保存台词并推送至车机</button>
+            </div>
         </div>
     </div>
 
     <script>
+        // ---- 顶级 Tab 切换逻辑 ----
+        function switchMainTab(tabKey) {
+            const tabs = ['transfer', 'ops', 'voice'];
+            tabs.forEach(t => {
+                const btn = document.getElementById('btn-tab-' + t);
+                const content = document.getElementById('tab-' + t);
+                if (btn && content) {
+                    if (t === tabKey) {
+                        btn.classList.add('active');
+                        content.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                        content.classList.remove('active');
+                    }
+                }
+            });
+            if (tabKey === 'transfer') {
+                loadCarFiles();
+            } else if (tabKey === 'voice') {
+                loadTtsSettings();
+            }
+        }
+
+        // ---- TTS 二级子 Tab 切换逻辑 ----
+        function switchTtsSubTab(subKey) {
+            const subTabs = ['gear', 'door', 'trunk'];
+            subTabs.forEach(s => {
+                const btn = document.getElementById('sub-btn-' + s);
+                const pane = document.getElementById('tts-sub-' + s);
+                if (btn && pane) {
+                    if (s === subKey) {
+                        btn.classList.add('active');
+                        pane.style.display = 'block';
+                    } else {
+                        btn.classList.remove('active');
+                        pane.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // ---- 车门模式单选切换 ----
+        function switchDoorSubMode(mode) {
+            const btnUniv = document.getElementById('pill-door-universal');
+            const btnSplit = document.getElementById('pill-door-split');
+            const paneUniv = document.getElementById('door-pane-universal');
+            const paneSplit = document.getElementById('door-pane-split');
+            if (mode === 'universal') {
+                if (btnUniv) btnUniv.classList.add('active');
+                if (btnSplit) btnSplit.classList.remove('active');
+                if (paneUniv) paneUniv.style.display = 'flex';
+                if (paneSplit) paneSplit.style.display = 'none';
+            } else {
+                if (btnUniv) btnUniv.classList.remove('active');
+                if (btnSplit) btnSplit.classList.add('active');
+                if (paneUniv) paneUniv.style.display = 'none';
+                if (paneSplit) paneSplit.style.display = 'flex';
+            }
+        }
+
         // ---- OTA 直链卡片（车机捕获到地址时显示；__OTA_HAS_URL__ 由车机注入 1/0）----
         const OTA_HAS_URL = "__OTA_HAS_URL__" === "1";
         const OTA_URL = "__OTA_CAPTURE_URL__";
@@ -169,7 +434,15 @@
             }
         }
 
-        const ttsKeys = ['gear_d', 'gear_r', 'gear_p', 'door_fl', 'door_fl_close', 'door_fr', 'door_fr_close', 'trunk_open', 'trunk_close', 'flameout'];
+        // ---- 全量 TTS 键值清单 (涵盖通用车门与分门) ----
+        const ttsKeys = [
+            'door_open', 'door_close',
+            'door_fl', 'door_fl_close', 'door_fr', 'door_fr_close',
+            'door_rl', 'door_rr',
+            'trunk_open', 'trunk_close',
+            'gear_d', 'gear_r', 'gear_p', 'gear_n',
+            'flameout'
+        ];
 
         async function loadTtsSettings() {
             try {
@@ -198,6 +471,7 @@
 
         async function loadCarFiles() {
             const box = document.getElementById('car-files-box');
+            if (!box) return;
             box.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 16px;">正在加载车机文件列表...</div>';
             try {
                 const res = await fetch('/api/list_downloads');
@@ -251,7 +525,7 @@
 
         async function pushAdbCmd() {
             const cmd = document.getElementById('adb-cmd').value.trim();
-            if (!cmd) { alert('请输入 ADB 指令'); return; }
+            if (!cmd) { alert('请输入指令'); return; }
             try {
                 const res = await fetch('/api/push_cmd', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ cmd: cmd }) });
                 const data = await res.json();
@@ -265,7 +539,6 @@
             if (!fileInput.files.length) { alert('请先选择文件'); return; }
             const file = fileInput.files[0];
 
-            // 动态分片：<=16MB 使用 2MB 分片；16MB~128MB 使用 4MB；>128MB 使用 8MB，大幅降低弱网握手次数
             let chunkSize = 2 * 1024 * 1024;
             if (file.size > 128 * 1024 * 1024) {
                 chunkSize = 8 * 1024 * 1024;
@@ -287,7 +560,6 @@
             pFill.style.width = '0%';
             let resolvedName = file.name;
 
-            // 申请保持手机屏幕常亮，防止手机息屏休眠切断网络
             let wakeLock = null;
             if ('wakeLock' in navigator) {
                 try {
@@ -320,7 +592,6 @@
                     let chunkSuccess = false;
                     let lastErr = '';
 
-                    // 单分片自动重试机制（最多 3 次指数退避）
                     for (let retry = 0; retry < 3; retry++) {
                         try {
                             if (retry > 0) {

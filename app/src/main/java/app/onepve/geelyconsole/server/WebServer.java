@@ -510,6 +510,7 @@ public class WebServer {
         android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
         JSONObject root = new JSONObject();
         String[] keys = {
+            "door_open", "door_close",
             "door_fl", "door_fl_close", "door_fr", "door_fr_close",
             "door_rl", "door_rl_close", "door_rr", "door_rr_close",
             "trunk_open", "trunk_close",
