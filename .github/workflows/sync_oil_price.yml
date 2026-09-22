@@ -1,0 +1,67 @@
+name: Auto Sync National Oil Prices
+
+on:
+  schedule:
+    # 每天北京时间 09:00 (01:00 UTC) 与 18:00 (10:00 UTC，发改委17点调价窗口后) 自动巡检
+    - cron: '0 1,10 * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/sync_oil_price.py'
+      - '.github/workflows/sync_oil_price.yml'
+
+jobs:
+  sync:
+    name: Fetch & Sync National Oil Prices
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+
+      - name: Run National Oil Price Sync
+        run: |
+          python3 scripts/sync_oil_price.py
+
+      - name: Sync Oil Price Metadata to Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          if ! command -v aws &>/dev/null; then
+            curl -sL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/awscliv2.zip
+            unzip -qo /tmp/awscliv2.zip -d /tmp/awscli
+            sudo /tmp/awscli/aws/install --update
+          fi
+
+          if [ -f /tmp/oil-price.json ]; then
+            echo ">> 正在同步 oil-price.json 至 Cloudflare R2 存储桶..."
+            aws s3 cp /tmp/oil-price.json "s3://downloads/GeelyToolbox/oil-price.json" \
+              --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
+          else
+            echo "Error: /tmp/oil-price.json not found"
+            exit 1
+          fi
+
+      - name: Purge Cloudflare CDN Cache
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$CF_API_TOKEN" ]; then
+            echo ">> 正在强刷 Cloudflare CDN 边缘节点缓存..."
+            curl -s -X POST "https://api.cloudflare.com/client/v4/zones/11e721ee98e46e59da3e50fe90eef7ce/purge_cache" \
+              -H "Authorization: Bearer $CF_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data '{"files":["https://dl.onepve.com/GeelyToolbox/oil-price.json"]}' || true
+            echo ">> Cloudflare CDN 刷新指令已下发！"
+          fi
