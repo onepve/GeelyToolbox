@@ -169,7 +169,7 @@
       helpTitle="【功能指南】启动首屏默认视图"
       helpText="1. 智能跟随：&#10;选择「记忆上次退出时页面」后，每次启动自动恢复到您上次停留的功能页。&#10;&#10;2. 固定主菜单：&#10;也可以固定为方控按键、车身联动、车载语音、精选商城、车载音频、特权安装或系统维护等任意页面。&#10;&#10;3. 立即生效：&#10;点击相应项即刻完成设置并永久记忆，下次打开软件直接进入该页面。" helpTip="建议经常传歌/装软件的车主设置为「特权安装」，常玩车机设为「精选商城」。"
     >
-      <div class="w-full flex flex-col space-y-3">
+      <div class="w-full flex flex-col space-y-3 overflow-hidden">
         <!-- 智能跟随选项 -->
         <button
           @click="onSelectStartupNav('remember')"
@@ -188,11 +188,11 @@
         </button>
 
         <!-- 7 个固定主菜单网格 -->
-        <div class="flex flex-wrap -m-1.5">
+        <div class="w-full flex flex-wrap">
           <div
             v-for="item in STARTUP_NAV_ITEMS"
             :key="item.id"
-            class="p-1.5 w-1/4"
+            class="p-1 w-1/4"
           >
             <button
               @click="onSelectStartupNav(item.id)"
