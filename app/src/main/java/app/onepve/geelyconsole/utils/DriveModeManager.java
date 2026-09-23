@@ -76,24 +76,15 @@ public class DriveModeManager {
     public synchronized void updateDriveMode(int mode, final boolean voiceMasterSwitch, final SharedPreferences prefs) {
         if (mode <= 0) return;
 
-        // 1. 开机首包基准处理：车辆熄火后硬件固定归位为智能模式 (MODE_SMART)
+        // 1. 开机首包基准处理：一律静默确立基准，开机/熄火复位后绝不误播任何语音！
         if (lastDriveMode == -1) {
-            if (mode == MODE_SMART) {
-                // 车主点火后未旋转旋钮，保持原厂默认智能模式：静默确立基准，开机绝不误播
-                lastDriveMode = MODE_SMART;
-                isSmartModeArmed = false;
-                AppLogger.i("驾驶模式", "开机基准初始化: 当前保持出厂默认【智能模式】(静默建立基准，开机绝不误播，智能模式锁定)");
-                if (listener != null) {
-                    listener.onDriveModeChanged(lastDriveMode);
-                }
-                return;
-            } else {
-                // 首包即为非智能模式（舒适/运动/经济）：说明车主点火后已手动拨动旋钮！
-                // 必须以原厂默认智能模式为前置基准，正常触发模式切换与语音播报，绝不吞掉车主的主动操作
-                AppLogger.i("驾驶模式", "开机检测到手动切挡: 车主已手动拨动旋钮从【智能模式】->【" + getModeName(mode) + "】，立即执行模式切换播报！");
-                lastDriveMode = MODE_SMART; // 前置基准确立为出厂智能模式
-                // 继续往下执行常规切换播报与武装逻辑
+            lastDriveMode = mode;
+            isSmartModeArmed = false;
+            AppLogger.i("驾驶模式", "首包基准初始化: 当前模式【" + getModeName(mode) + "】(静默建立基准，开机绝不误播，智能模式闭锁)");
+            if (listener != null) {
+                listener.onDriveModeChanged(lastDriveMode);
             }
+            return;
         }
 
         if (mode == lastDriveMode) {

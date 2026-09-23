@@ -959,11 +959,8 @@ public class VehicleAutomationService extends Service {
         if (currentSpeedKmH > 0) return true; // 行驶中，必然处于运转工况
         if (latestBatteryVoltage >= 13.0f) return true; // 发电机在充电，引擎必转（与isEngineRunning阈值统一）
         if (lastEngineState == 3) return true; // 发动机明确处于运行状态
-        // 蓄电池自然静置电压 (9.0V~12.9V) 且零车速：属于熄火未点火驻车状态，旋钮无法切换模式
-        if (latestBatteryVoltage >= 9.0f && latestBatteryVoltage < 12.9f && currentSpeedKmH == 0) {
-            return false;
-        }
-        return true;
+        // 蓄电池自然静置电压 (<13.0V) 且零车速：属于熄火未点火驻车状态，旋钮无法切换模式，一律静默
+        return false;
     }
 
     /**
@@ -972,9 +969,9 @@ public class VehicleAutomationService extends Service {
      */
     private void handleDriveModeSignal(int mode) {
         if (!isDrivingModeAllowed()) {
-            // 明确熄火/未启动/ACC状态：强制重置状态机，绝对静音
+            // 明确熄火/未启动/ACC状态：仅静默确立/跟踪当前模式基准，绝对静音，严禁清除基准导致误播
             if (driveModeManager != null) {
-                driveModeManager.resetState();
+                driveModeManager.updateDriveMode(mode, false, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
             }
             return;
         }

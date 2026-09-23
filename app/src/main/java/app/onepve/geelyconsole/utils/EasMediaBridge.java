@@ -41,7 +41,8 @@ import java.util.List;
 public class EasMediaBridge {
     private static final String TAG = "EasMediaBridge";
     public static final String PKG_BLUETOOTH = "com.android.bluetooth";
-    public static final int SOURCE_TYPE_BLUETOOTH = 6;
+    // 经吉利多媒体源码与实车日志确证：吉利 E02 / SX11-A3 平台 SOURCE_TYPE_BT = 2，SOURCE_TYPE_ONLINE = 6
+    public static final int SOURCE_TYPE_BLUETOOTH = 2;
 
     /** A2DP Sink 音频流状态广播中的真实推流态 (STATE_STARTED) */
     private static final int A2DP_AUDIO_STATE_STARTED = 1;
@@ -586,17 +587,39 @@ public class EasMediaBridge {
                             activateBluetoothChannel();
                         }
                     }
+                } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
+                    // 吉利实车专属：国承 GOC 模组上报播放事件，提取 PlaybackState
+                    try {
+                        android.media.session.PlaybackState pbState = intent.getParcelableExtra("android.bluetooth.avrcp-controller.profile.extra.PLAYBACK");
+                        if (pbState != null) {
+                            int pState = pbState.getState();
+                            boolean isPlaying = (pState == android.media.session.PlaybackState.STATE_PLAYING);
+                            if (isPlaying && !a2dpStreaming) {
+                                a2dpStreaming = true;
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP TRACK_EVENT 推流起播 (STATE_PLAYING)，毫秒级唤醒蓝牙通道");
+                                requestBluetoothFocusIfNeeded();
+                                long now = System.currentTimeMillis();
+                                if (now - lastA2dpWakeTime > 2000) {
+                                    lastA2dpWakeTime = now;
+                                    activateBluetoothChannel();
+                                }
+                            } else if (!isPlaying && a2dpStreaming) {
+                                a2dpStreaming = false;
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP TRACK_EVENT 停止推流 (state=" + pState + ")");
+                            }
+                        }
+                    } catch (Throwable t) {
+                        AppLogger.w("蓝牙音频", "解析 TRACK_EVENT 失败: " + t.getMessage());
+                    }
                 }
-                // 已移除 AVRCP TRACK_EVENT 触发的通道选通：
-                // 该事件在「暂停 / 切歌 / 播放」时都会下发，据此无条件唤醒会在用户按下暂停
-                // 后立刻把播放顶回来。真正的「手机端开始推流」已由上面 AUDIO_STATE_CHANGED
-                // 的 STATE_STARTED (streaming=true) 分支覆盖，无需重复触发。
             }
         };
 
         IntentFilter filter = new IntentFilter();
         filter.addAction("android.bluetooth.a2dp-sink.profile.action.CONNECTION_STATE_CHANGED");
+        filter.addAction("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED");
         filter.addAction("android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED");
+        filter.addAction("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT");
         try {
             appContext.registerReceiver(a2dpReceiver, filter);
         } catch (Throwable ignored) {}
