@@ -44,6 +44,8 @@ import app.onepve.geelyconsole.utils.AutoPilotManager;
 import app.onepve.geelyconsole.utils.DownloadManager;
 import app.onepve.geelyconsole.utils.ForegroundAppDetector;
 import app.onepve.geelyconsole.utils.IdleScreensaverManager;
+import app.onepve.geelyconsole.utils.VehicleConfigHelper;
+import app.onepve.geelyconsole.utils.AppFilterUtils;
 import app.onepve.geelyconsole.utils.SystemUtils;
 import app.onepve.geelyconsole.utils.SystemUtils.LogDumpProgressListener;
 import app.onepve.geelyconsole.utils.ThemePatcher;
@@ -3091,142 +3093,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String getVehicleAutomationSettings() {
-            return safeCall("{}", () -> {
-                android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                org.json.JSONObject obj = new org.json.JSONObject();
-                
-                // 核心三大物理独立总开关：语音总开关、方控接管总开关 (自启动由 deviceInfo.autostart 独立管控)
-                obj.put("voice_master_switch", prefs.getBoolean("voice_master_switch", true));
-                obj.put("wheel_master_switch", prefs.getBoolean("wheel_master_switch", true));
-
-                // 360 联动
-                obj.put("vehicle_gear_d_360_enabled", prefs.getBoolean("vehicle_gear_d_360_enabled", true));
-                obj.put("vehicle_speed_custom_action_enabled", prefs.getBoolean("vehicle_speed_custom_action_enabled", false));
-                obj.put("vehicle_speed_custom_action_threshold", prefs.getInt("vehicle_speed_custom_action_threshold", 40));
-                obj.put("vehicle_speed_custom_action_target", prefs.getString("vehicle_speed_custom_action_target", "pkg:com.autonavi.amapauto"));
-
-                // 播报音频输出通道 (music | nav | notification)
-                obj.put("voice_audio_channel", prefs.getString("voice_audio_channel", "music"));
-
-                // 四门通用与分门配置 (默认启用通用智能车门语音)
-                obj.put("voice_door_mode_universal", prefs.getBoolean("voice_door_mode_universal", true));
-                obj.put("voice_enable_door_universal_open", prefs.getBoolean("voice_enable_door_universal_open", true));
-                obj.put("voice_enable_door_universal_close", prefs.getBoolean("voice_enable_door_universal_close", true));
-
-                // 四门与尾门迎宾与关门 (默认全开)
-                obj.put("voice_enable_door_fl", prefs.getBoolean("voice_enable_door_fl", true));
-                obj.put("voice_enable_door_fl_close", prefs.getBoolean("voice_enable_door_fl_close", true));
-                obj.put("voice_enable_door_fr", prefs.getBoolean("voice_enable_door_fr", true));
-                obj.put("voice_enable_door_fr_close", prefs.getBoolean("voice_enable_door_fr_close", true));
-                obj.put("voice_enable_door_rl", prefs.getBoolean("voice_enable_door_rl", true));
-                obj.put("voice_enable_door_rl_close", prefs.getBoolean("voice_enable_door_rl_close", true));
-                obj.put("voice_enable_door_rr", prefs.getBoolean("voice_enable_door_rr", true));
-                obj.put("voice_enable_door_rr_close", prefs.getBoolean("voice_enable_door_rr_close", true));
-                obj.put("voice_enable_door_rear", prefs.getBoolean("voice_enable_door_rear", true));
-                obj.put("voice_enable_trunk_open", prefs.getBoolean("voice_enable_trunk_open", true));
-                obj.put("voice_enable_trunk_close", prefs.getBoolean("voice_enable_trunk_close", true));
-
-                // 4 大挡位播报 (D/R/P 默认开启，N 挡空挡默认关闭防频报)
-                obj.put("voice_enable_gear_d", prefs.getBoolean("voice_enable_gear_d", true));
-                obj.put("voice_enable_gear_r", prefs.getBoolean("voice_enable_gear_r", true));
-                obj.put("voice_enable_gear_p", prefs.getBoolean("voice_enable_gear_p", true));
-                obj.put("voice_enable_gear_n", prefs.getBoolean("voice_enable_gear_n", false));
-
-                // 4 大功能模式播报 (智能/舒适/经济/运动 默认均开启)
-                obj.put("voice_enable_mode_smart", prefs.getBoolean("voice_enable_mode_smart", true));
-                obj.put("voice_enable_mode_comfort", prefs.getBoolean("voice_enable_mode_comfort", true));
-                obj.put("voice_enable_mode_eco", prefs.getBoolean("voice_enable_mode_eco", true));
-                obj.put("voice_enable_mode_sport", prefs.getBoolean("voice_enable_mode_sport", true));
-
-                // 默认值：出厂统一默认控制台独立接管模式，短按 Mode 唤起 360
-                boolean hasCarMedia = SystemUtils.isPackageInstalled(MainActivity.this, "com.ecarx.carmedia");
-                String defaultWheelMode = "toolbox_alone";
-                String defaultModeAction = "open_360";
-
-                obj.put("wheel_control_mode", prefs.getString("wheel_control_mode", defaultWheelMode));
-                obj.put("wheel_action_mute", prefs.getString("wheel_action_mute", "default"));
-                obj.put("wheel_action_mode", prefs.getString("wheel_action_mode", defaultModeAction));
-                obj.put("wheel_action_ok", prefs.getString("wheel_action_ok", "default"));
-                obj.put("has_carmedia_installed", hasCarMedia);
-                obj.put("wheel_push_playback_cluster", prefs.getBoolean("wheel_push_playback_cluster", false));
-                obj.put("wheel_push_lyrics_cluster", prefs.getBoolean("wheel_push_lyrics_cluster", false));
-
-                // 车速联动自启与行车安全 (若车机装有 QQ 音乐，默认优先以 QQ 音乐为默认主力并默认开启运行)
-                boolean hasQQMusicInstalled = false;
-                try {
-                    getPackageManager().getPackageInfo("com.tencent.qqmusiccar", 0);
-                    hasQQMusicInstalled = true;
-                } catch (Exception ignored) {}
-                boolean defaultSpeedAutoplayEnabled = hasQQMusicInstalled;
-                String defaultSpeedAutoplayPkg = hasQQMusicInstalled ? "com.tencent.qqmusiccar" : "com.android.bluetooth";
-
-                obj.put("vehicle_speed_autoplay_enabled", prefs.getBoolean("vehicle_speed_autoplay_enabled", defaultSpeedAutoplayEnabled));
-                obj.put("vehicle_speed_autoplay_threshold", prefs.getInt("vehicle_speed_autoplay_threshold", 20));
-                obj.put("vehicle_speed_autoplay_pkg", prefs.getString("vehicle_speed_autoplay_pkg", defaultSpeedAutoplayPkg));
-                obj.put("vehicle_speed_autoplay_fullscreen", prefs.getBoolean("vehicle_speed_autoplay_fullscreen", false));
-                obj.put("vehicle_door_pause_music_enabled", prefs.getBoolean("vehicle_door_pause_music_enabled", false));
-                obj.put("vehicle_rear_door_alert_enabled", prefs.getBoolean("vehicle_rear_door_alert_enabled", false));
-                obj.put("preferred_navi_pkg", prefs.getString("preferred_navi_pkg", "com.autonavi.amapauto"));
-
-                // 方控多手势映射 (单击/双击/长按)
-                String[] gestureKeys = {"ok", "mute", "mode", "next", "prev", "back", "call", "voice", "home", "custom"};
-                String[] gestures = {"single", "double", "long"};
-                for (String k : gestureKeys) {
-                    for (String g : gestures) {
-                        String pKey = "wheel_action_" + k + "_" + g;
-                        String def = "default";
-                        if ("single".equals(g)) {
-                            if ("mode".equals(k)) def = "open_360";
-                            else if ("next".equals(k)) def = "next_track";
-                            else if ("prev".equals(k)) def = "prev_track";
-                        }
-                        obj.put(pKey, prefs.getString(pKey, prefs.getString("wheel_action_" + k, def)));
-                    }
-                }
-
-                // 兼容历史老 Key 别名
-                obj.put("voice_door_fl", prefs.getBoolean("voice_enable_door_fl", true));
-                obj.put("voice_door_fl_close", prefs.getBoolean("voice_enable_door_fl_close", true));
-                obj.put("voice_door_fr", prefs.getBoolean("voice_enable_door_fr", false));
-                obj.put("voice_door_fr_close", prefs.getBoolean("voice_enable_door_fr_close", false));
-                obj.put("voice_door_rl", prefs.getBoolean("voice_enable_door_rl", false));
-                obj.put("voice_door_rl_close", prefs.getBoolean("voice_enable_door_rl_close", false));
-                obj.put("voice_door_rr", prefs.getBoolean("voice_enable_door_rr", false));
-                obj.put("voice_door_rr_close", prefs.getBoolean("voice_enable_door_rr_close", false));
-                obj.put("voice_door_rear", prefs.getBoolean("voice_enable_door_rear", false));
-                obj.put("voice_trunk_open", prefs.getBoolean("voice_enable_trunk_open", false));
-                obj.put("voice_trunk_close", prefs.getBoolean("voice_enable_trunk_close", false));
-                obj.put("voice_gear_d", prefs.getBoolean("voice_enable_gear_d", true));
-                obj.put("voice_gear_r", prefs.getBoolean("voice_enable_gear_r", true));
-
-                obj.put("custom_door_fl", !prefs.getString("custom_voice_door_fl.mp3", "").isEmpty());
-                obj.put("custom_door_fl_close", !prefs.getString("custom_voice_door_fl_close.mp3", "").isEmpty());
-                obj.put("custom_door_fr", !prefs.getString("custom_voice_door_fr.mp3", "").isEmpty());
-                obj.put("custom_door_fr_close", !prefs.getString("custom_voice_door_fr_close.mp3", "").isEmpty());
-                obj.put("custom_door_rl", !prefs.getString("custom_voice_door_rl.mp3", "").isEmpty());
-                obj.put("custom_door_rl_close", !prefs.getString("custom_voice_door_rl_close.mp3", "").isEmpty());
-                obj.put("custom_door_rr", !prefs.getString("custom_voice_door_rr.mp3", "").isEmpty());
-                obj.put("custom_door_rr_close", !prefs.getString("custom_voice_door_rr_close.mp3", "").isEmpty());
-                obj.put("custom_door_rear", !prefs.getString("custom_voice_door_rl.mp3", "").isEmpty());
-                obj.put("custom_trunk_open", !prefs.getString("custom_voice_trunk_open.mp3", "").isEmpty());
-                obj.put("custom_trunk_close", !prefs.getString("custom_voice_trunk_close.mp3", "").isEmpty());
-                obj.put("custom_gear_d", !prefs.getString("custom_voice_gear_d.mp3", "").isEmpty());
-                obj.put("custom_gear_r", !prefs.getString("custom_voice_gear_r.mp3", "").isEmpty());
-
-                obj.put("wheel_long_press_ms", prefs.getInt("wheel_long_press_ms", 1500));
-
-                // 每声效独立声道/增益动态导出（有覆盖才导出：channel_<key> / offset_<key>；未覆盖=前端默认 普通媒体/0）
-                for (java.util.Map.Entry<String, ?> e : prefs.getAll().entrySet()) {
-                    String k = e.getKey();
-                    if (k.startsWith("voice_item_channel_")) {
-                        obj.put(k.substring("voice_item_".length()), e.getValue());
-                    } else if (k.startsWith("voice_item_offset_")) {
-                        obj.put(k.substring("voice_item_".length()), e.getValue());
-                    }
-                }
-
-                return obj.toString();
-            });
+            return safeCall("{}", () -> VehicleConfigHelper.getVehicleAutomationSettingsJson(MainActivity.this));
         }
 
         @JavascriptInterface
@@ -3853,98 +3720,23 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String getInstalledNavigationApps() {
-            JSONArray arr = new JSONArray();
-            try {
-                PackageManager pm = context.getPackageManager();
-                List<PackageInfo> installed = pm.getInstalledPackages(0);
-                for (PackageInfo pi : installed) {
-                    if (pi.packageName == null) continue;
-                    String pkg = pi.packageName.toLowerCase();
-                    if (isNavigationApp(pkg, null) || pkg.equals("com.autonavi.amapauto")) {
-                        JSONObject item = new JSONObject();
-                        item.put("pkg", pi.packageName);
-                        String label = pi.applicationInfo != null ? pm.getApplicationLabel(pi.applicationInfo).toString() : pi.packageName;
-                        item.put("name", label);
-                        item.put("version", pi.versionName != null ? pi.versionName : "");
-                        boolean isSys = (pi.applicationInfo != null && (pi.applicationInfo.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0);
-                        item.put("isSystem", isSys);
-                        arr.put(item);
-                    }
-                }
-            } catch (Exception ignored) {}
-            return arr.toString();
+            return AppFilterUtils.getInstalledNavigationApps(MainActivity.this);
         }
     }
 
     public static boolean isCarDevice(Context context) {
-        String model = Build.MODEL != null ? Build.MODEL.toUpperCase() : "";
-        String brand = Build.BRAND != null ? Build.BRAND.toUpperCase() : "";
-        String finger = Build.FINGERPRINT != null ? Build.FINGERPRINT.toUpperCase() : "";
-        if (model.contains("IHU") || model.contains("E02") || model.contains("GEELY") || model.contains("ECARX")
-                || brand.contains("GEELY") || brand.contains("ECARX") || finger.contains("GEELY") || finger.contains("ECARX")) {
-            return true;
-        }
-        if (context != null) {
-            PackageManager pm = context.getPackageManager();
-            try {
-                if (pm.getPackageInfo("com.ecarx.carservice", 0) != null) return true;
-            } catch (Exception ignored) {}
-            try {
-                if (pm.getPackageInfo("com.ecarx.launcher", 0) != null) return true;
-            } catch (Exception ignored) {}
-        }
-        return false;
+        return AppFilterUtils.isCarDevice(context);
     }
 
     public static boolean isNavigationApp(String pkg, String filename) {
-        if (pkg != null) {
-            String p = pkg.toLowerCase().trim();
-            if (p.contains("autonavi") || p.contains("amap") || p.contains("baidu.nav") || p.contains("baidu.map") || p.contains("cauto") || p.contains("tencent.map") || p.contains("tencent.nav") || p.contains("petalmaps")) {
-                return true;
-            }
-        }
-        if (filename != null) {
-            String fn = filename.toLowerCase().trim();
-            if (fn.contains("amap") || fn.contains("gaode") || fn.contains("高德") || fn.contains("baidu") || fn.contains("百度") || fn.contains("map") || fn.contains("地图") || fn.contains("navi") || fn.contains("tencent") || fn.contains("腾讯")) {
-                return true;
-            }
-        }
-        return false;
+        return AppFilterUtils.isNavigationApp(pkg, filename);
     }
 
     public static boolean isProtectedCriticalPackage(String pkg) {
-        if (pkg == null) return false;
-        String p = pkg.toLowerCase().trim();
-        return p.equals("android")
-                || p.equals("com.android.settings")
-                || p.equals("com.android.systemui")
-                || p.equals("com.android.packageinstaller")
-                || p.equals("com.android.permissioncontroller")
-                || p.equals("com.android.server.telecom")
-                || p.equals("com.android.providers.settings")
-                || p.equals("com.android.keyguard")
-                || p.equals("com.android.shell")
-                || p.equals("app.onepve.geelyconsole")
-                || p.contains("inputmethod")
-                || p.equals("com.ecarx.carservice")
-                || p.equals("com.ecarx.launcher")
-                || p.equals("com.ecarx.systemui")
-                || p.equals("com.ecarx.service")
-                || p.equals("com.ecarx.btphone")
-                || p.equals("com.ecarx.carsetting")
-                || p.equals("com.ecarx.hvac")
-                || p.equals("com.ecarx.sound")
-                || p.equals("com.ecarx.policy")
-                || p.equals("com.ecarx.ipcamera")
-                || p.equals("com.ecarx.dvr");
+        return AppFilterUtils.isProtectedCriticalPackage(pkg);
     }
 
     public static boolean isDangerousSystemPackage(String pkg) {
-        if (pkg == null) return false;
-        String p = pkg.toLowerCase().trim();
-        return isProtectedCriticalPackage(p)
-                || p.equals("com.android.settings")
-                || p.equals("com.android.systemui")
-                || (p.startsWith("com.ecarx.") && !p.contains("appstore") && !p.contains("xcmedia") && !p.contains("multimedia") && !p.contains("carmedia") && !p.contains("upgrade"));
+        return AppFilterUtils.isDangerousSystemPackage(pkg);
     }
 }

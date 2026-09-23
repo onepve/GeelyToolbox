@@ -414,7 +414,16 @@ store_auto_keys = set(re.findall(r'([a-zA-Z0-9_]+)\s*:', auto_m.group(1))) if au
 
 with open(JAVA_MAIN_PATH, "r", encoding="utf-8") as f:
     java_content = f.read()
-get_auto_m = re.search(r'public String getVehicleAutomationSettings\(\)\s*\{([\s\S]+?return obj\.toString\(\);)', java_content)
+
+# 支持模块化架构：若已抽取 VehicleConfigHelper，从 helper 读取状态定义
+CONFIG_HELPER_PATH = os.path.join(JAVA_SRC_DIR, "app/onepve/geelyconsole/utils/VehicleConfigHelper.java")
+if os.path.exists(CONFIG_HELPER_PATH):
+    with open(CONFIG_HELPER_PATH, "r", encoding="utf-8") as f:
+        target_java = f.read()
+else:
+    target_java = java_content
+
+get_auto_m = re.search(r'public\s+(?:static\s+)?String\s+getVehicleAutomationSettings[^\(]*\([^\)]*\)\s*\{([\s\S]+?return obj\.toString\(\);)', target_java)
 java_auto_keys = set(re.findall(r'obj\.put\(\"([a-zA-Z0-9_]+)\"', get_auto_m.group(1))) if get_auto_m else set()
 
 missing_auto_keys = store_auto_keys - java_auto_keys
