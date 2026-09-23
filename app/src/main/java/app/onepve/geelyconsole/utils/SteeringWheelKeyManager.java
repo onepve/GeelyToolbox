@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.media.AudioManager;
 import android.media.session.MediaController;
 import android.media.session.MediaSessionManager;
@@ -15,6 +16,7 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.view.KeyEvent;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -791,10 +793,11 @@ public class SteeringWheelKeyManager {
         }
 
         // ════════════════════════════════════════════════════════════
-        // 分支 B：车机本地播放器分发（QQ音乐/网易云/酷狗/本地会话）
-        // 原有成熟逻辑完全保留，不受任何影响
         // ════════════════════════════════════════════════════════════
-        // 1. Android 原生官方推荐通道: AudioManager.dispatchMediaKeyEvent
+        // 分支 B：车机本地播放器 / HiCar / 互联盒子分发
+        // 采用动态单点锁定 + MediaSession + 定向显式广播三级精准调度（彻底杜绝多播放器串音）
+        // ════════════════════════════════════════════════════════════
+        // 1. Android 原生官方推荐通道: AudioManager.dispatchMediaKeyEvent (系统层全局尝试)
         try {
             AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
             if (am != null) {
@@ -806,7 +809,11 @@ public class SteeringWheelKeyManager {
             Log.w(TAG, "AudioManager.dispatchMediaKeyEvent error: " + e.getMessage());
         }
 
-        // 2. MediaSessionManager 传输控制通道 (直接调用当前第三方活跃会话的 skipToNext / skipToPrevious / 播放暂停)
+        // 2. 动态解析本次控制的目标应用（防串音核心真源）
+        String targetPkg = resolveTargetMediaPackage();
+        Log.i(TAG, "Resolved target media package: " + (targetPkg.isEmpty() ? "NONE" : targetPkg) + " (code=" + keyCode + ")");
+
+        // 3. MediaSessionManager 传输控制通道 (直接调用目标或活跃会话的 skipToNext / skipToPrevious / 播放暂停)
         try {
             MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
             if (msm != null) {
@@ -818,9 +825,11 @@ public class SteeringWheelKeyManager {
                     for (MediaController mc : controllers) {
                         if (mc != null && mc.getTransportControls() != null) {
                             String pkg = mc.getPackageName();
-                            // 关键保护：跳过车机原厂多媒体、蓝牙与自身，严禁向原厂下发 TransportControls 导致 EAS 回调触发死循环
-                            if ("ecarx.xsf.mediacenter".equals(pkg) || "com.ecarx.multimedia".equals(pkg)
-                                    || "com.android.bluetooth".equals(pkg) || context.getPackageName().equals(pkg)) {
+                            if (isIgnoredMediaPackage(pkg)) {
+                                continue;
+                            }
+                            // 防串音铁律：若已明确锁定目标应用，只对该应用执行 TransportControls！
+                            if (!targetPkg.isEmpty() && !targetPkg.equals(pkg)) {
                                 continue;
                             }
                             if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT) {
@@ -845,6 +854,9 @@ public class SteeringWheelKeyManager {
                                 }
                             }
                             Log.i(TAG, "TransportControls dispatched to " + pkg);
+                            if (!targetPkg.isEmpty()) {
+                                break; // 目标已命中，跳出避免多发
+                            }
                         }
                     }
                 }
@@ -853,9 +865,16 @@ public class SteeringWheelKeyManager {
             Log.w(TAG, "MediaSession transportControls error: " + e.getMessage());
         }
 
-        // 3. 定向广播直达 (针对 QQ音乐车机版 / 网易云车机版 / 酷狗车机版 发送显式 Intent)
-        String[] targetPkgs = {"com.tencent.qqmusiccar", "com.netease.cloudmusiccar", "com.kugou.androidCar"};
-        for (String pkg : targetPkgs) {
+        // 4. 定向显式广播直达 (针对目标应用或已安装媒体库发送显式 Intent，穿透 Android 9 后台广播限制)
+        List<String> broadcastTargets = new ArrayList<>();
+        if (!targetPkg.isEmpty()) {
+            broadcastTargets.add(targetPkg);
+        } else {
+            // 未锁定具体单一应用时，向整车已安装的媒体应用广播兜底
+            broadcastTargets.addAll(getInstalledMediaPackages());
+        }
+
+        for (String pkg : broadcastTargets) {
             try {
                 Intent down = new Intent(Intent.ACTION_MEDIA_BUTTON);
                 down.setPackage(pkg);
@@ -866,7 +885,169 @@ public class SteeringWheelKeyManager {
                 up.setPackage(pkg);
                 up.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
                 context.sendOrderedBroadcast(up, null);
+                Log.d(TAG, "Directed media broadcast sent to " + pkg + " (code=" + keyCode + ")");
             } catch (Exception ignored) {}
         }
+    }
+
+    /**
+     * 静态已知主流互联与媒体播放器包名兜底库（覆盖 HiCar、互联盒子、汽水、酷我、QQ、网易云等）
+     */
+    public static final String[] KNOWN_MEDIA_PKGS = {
+        // 手机互联 / 投屏
+        "com.huawei.hicar",              // 华为官方 HiCar 车机端
+        "com.huawei.cvd",                // 华为 HiCar 车载协同服务
+        "cn.manstep.phonemirrorBox",     // 车连易 / AutoKit 互联盒子
+        "cn.manstep.phonemirror",        // AutoKit 系列
+        "net.easyconn",                  // 亿连车机端 (EasyConn)
+        "com.baidu.carlife",             // 百度 CarLife
+        "com.suding.speedplay",          // 速顶 CarPlay / HiCar
+        "com.zjinnova.zlink",            // ZLink 互联
+        // 主流本地与在线音乐播放器
+        "com.luna.music",                // 汽水音乐 (抖音车载/手机版)
+        "cn.kuwo.kwmusiccar",            // 酷我音乐车机版
+        "cn.kuwo.player",                // 酷我音乐手机版/HD
+        "com.tencent.qqmusiccar",        // QQ音乐车机版
+        "com.tencent.qqmusic",           // QQ音乐手机版
+        "com.netease.cloudmusiccar",     // 网易云音乐车机版
+        "com.netease.cloudmusic",        // 网易云音乐手机版
+        "com.kugou.androidCar",          // 酷狗音乐车机版
+        "com.kugou.player",              // 酷狗音乐手机版
+        "com.ximalaya.ting.androidCar",  // 喜马拉雅车机版
+        "com.ximalaya.ting.android",     // 喜马拉雅手机版
+        "cn.toside.music.mobile",        // 洛雪音乐 (LX Music)
+        "com.kyant.music",               // 椒盐音乐 (Salt Player)
+        "remix.myplayer"                 // 经典本地播放器
+    };
+
+    /**
+     * 判断是否为需要排除的系统/原厂或自身包名（严禁打扰或下发播控以免死循环）
+     */
+    private boolean isIgnoredMediaPackage(String pkg) {
+        if (pkg == null || pkg.isEmpty()) return true;
+        return "ecarx.xsf.mediacenter".equals(pkg)
+                || "com.ecarx.multimedia".equals(pkg)
+                || "com.android.bluetooth".equals(pkg)
+                || context.getPackageName().equals(pkg)
+                || "android".equals(pkg)
+                || "com.android.systemui".equals(pkg)
+                || "com.ecarx.xsf.mediacenter".equals(pkg);
+    }
+
+    /**
+     * 动态探测整车已安装的声明了媒体控制特性的应用包名（合并系统广播扫描与已知兜底库）
+     */
+    public List<String> getInstalledMediaPackages() {
+        List<String> pkgs = new ArrayList<>();
+        try {
+            PackageManager pm = context.getPackageManager();
+            if (pm != null) {
+                // 1. 查询声明接收 ACTION_MEDIA_BUTTON 的广播接收器
+                Intent mediaIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                List<ResolveInfo> receivers = pm.queryBroadcastReceivers(mediaIntent, 0);
+                if (receivers != null) {
+                    for (ResolveInfo ri : receivers) {
+                        if (ri != null && ri.activityInfo != null && ri.activityInfo.packageName != null) {
+                            String p = ri.activityInfo.packageName;
+                            if (!isIgnoredMediaPackage(p) && !pkgs.contains(p)) {
+                                pkgs.add(p);
+                            }
+                        }
+                    }
+                }
+
+                // 2. 将静态已知库中已安装的应用合并入列表
+                for (String known : KNOWN_MEDIA_PKGS) {
+                    if (!pkgs.contains(known)) {
+                        try {
+                            pm.getPackageInfo(known, 0);
+                            pkgs.add(known);
+                        } catch (PackageManager.NameNotFoundException ignored) {}
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        return pkgs;
+    }
+
+    /**
+     * 权威解析当前媒体播控的目标单一包名（防串音核心）：
+     * 1. 优先读取系统底层音频焦点持有者；
+     * 2. 其次查询当前正在播放 (STATE_PLAYING) 的 MediaSession；
+     * 3. 再次读取上次发声应用的记忆 (last_active_media_pkg)；
+     * 4. 再次取任意活跃的 MediaSession；
+     * 5. 若均未命中，取整车已安装媒体应用中的首选。
+     */
+    public String resolveTargetMediaPackage() {
+        // 1. 优先读取系统底层音频焦点持有者
+        String focusPkg = getSystemAudioFocusPackage();
+        if (!focusPkg.isEmpty() && !isIgnoredMediaPackage(focusPkg)) {
+            try {
+                context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                        .edit().putString("last_active_media_pkg", focusPkg).apply();
+            } catch (Throwable ignored) {}
+            return focusPkg;
+        }
+
+        // 2. 检查是否有活跃且正在播放 (STATE_PLAYING) 的 MediaSession
+        try {
+            MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (msm != null) {
+                List<MediaController> controllers = msm.getActiveSessions(null);
+                if (controllers != null) {
+                    for (MediaController mc : controllers) {
+                        if (mc != null && mc.getPlaybackState() != null
+                                && mc.getPlaybackState().getState() == android.media.session.PlaybackState.STATE_PLAYING) {
+                            String pkg = mc.getPackageName();
+                            if (!isIgnoredMediaPackage(pkg)) {
+                                try {
+                                    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                                            .edit().putString("last_active_media_pkg", pkg).apply();
+                                } catch (Throwable ignored) {}
+                                return pkg;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        // 3. 读取上次发声的记忆应用（若当前仍安装）
+        try {
+            String lastPkg = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    .getString("last_active_media_pkg", "");
+            if (!lastPkg.isEmpty() && !isIgnoredMediaPackage(lastPkg)) {
+                try {
+                    context.getPackageManager().getPackageInfo(lastPkg, 0);
+                    return lastPkg;
+                } catch (PackageManager.NameNotFoundException ignored) {}
+            }
+        } catch (Throwable ignored) {}
+
+        // 4. 若无记忆，检查是否有任意活跃的非空 MediaSession
+        try {
+            MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (msm != null) {
+                List<MediaController> controllers = msm.getActiveSessions(null);
+                if (controllers != null) {
+                    for (MediaController mc : controllers) {
+                        if (mc != null) {
+                            String pkg = mc.getPackageName();
+                            if (!isIgnoredMediaPackage(pkg)) {
+                                return pkg;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        // 5. 若均未命中，返回已安装列表中的首选媒体应用
+        List<String> installed = getInstalledMediaPackages();
+        if (!installed.isEmpty()) {
+            return installed.get(0);
+        }
+
+        return "";
     }
 }

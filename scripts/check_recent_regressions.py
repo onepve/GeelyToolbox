@@ -88,6 +88,8 @@ CONTRACTS = [
   [r'wheelMasterCached', r'0x37', r'0x2d'], [r'prefs.get', r'getSharedPreferences\(', r'syntheticFallbackDisabled']),
  ('wheel-screen-off', JAVA+'utils/SteeringWheelKeyManager.java', 'private void turnScreenOff',
   [r'Somnambulator', r'context.startActivity\(intent\)'], []),
+ ('wheel-media-dispatch', JAVA+'utils/SteeringWheelKeyManager.java', 'private void sendMediaKeyEvent(int keyCode, int targetSource)',
+  [r'resolveTargetMediaPackage', r'isIgnoredMediaPackage', r'getInstalledMediaPackages', r'ACTION_MEDIA_BUTTON'], [r'String\[\]\s+targetPkgs\s*=\s*\{\s*"com\.tencent\.qqmusiccar"']),
  ('ecarx-no-wrong-key', JAVA+'services/VehicleAutomationService.java', 'private void registerEcarxKeyReceiver',
   [r'KEY_MUTE',r'KEY_PREV',r'KEY_NEXT'], [r'mappedKey\s*=\s*SteeringWheelKeyManager.KEY_OK']),
  ('gear-reset-quiet', JAVA+'utils/GearStateMachine.java', 'public synchronized void resetState()', [r'if\s*\(changed\)\s*\{\s*AppLogger.i\('], []),
