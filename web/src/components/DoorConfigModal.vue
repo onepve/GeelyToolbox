@@ -18,7 +18,7 @@
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
-            通用智能车门语音 (极简合并防抖)
+            极简合并播报
           </button>
           <button 
             @click="setDoorMode(false)"
@@ -29,7 +29,7 @@
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
-            独立分门专属台词模式 (推荐 · 详细播报)
+            详细分门播报
           </button>
         </div>
 

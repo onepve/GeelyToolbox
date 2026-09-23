@@ -1,7 +1,7 @@
 <template>
   <ModalWrapper 
     :show="store.modals.qrCode" 
-    title="手机无线快传 (免插线极速推包)" 
+    title="局域网无线快传" 
     badge="HTTP: 8888"
     maxWidthClass="max-w-[760px]"
     @close="closeModal('qrCode')"

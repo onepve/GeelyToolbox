@@ -113,7 +113,7 @@
           @click="confirmHardReboot"
           class="w-full min-h-[72px] rounded-2xl border-2 border-car-border hover:border-rose-500/60 bg-car-item text-car-text font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
         >
-          <span>完整硬件冷重启 (reboot)</span>
+          <span>车机硬件冷重启</span>
         </button>
       </FeatureCard>
 
@@ -251,7 +251,7 @@ function onSetPalette(v) {
 
 function confirmHardReboot() {
   openModal('confirm', {
-    title: '整车完整硬件冷重启 (reboot)',
+    title: '车机硬件冷重启',
     desc: '即将对整车中控硬件执行完全掉电冷启动 (reboot)，耗时约 25~35 秒。白名单、音频通道与系统框架将彻底刷新生效。',
     tip: '【安全警示】严禁在行车行驶过程中执行整车冷重启操作！请确保车辆已安全停稳。',
     isDanger: true,

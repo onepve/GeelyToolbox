@@ -112,7 +112,7 @@
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
-            后台静默放歌 (保持导航)
+            后台静默播放
           </button>
           <button 
             @click="setAutoplayFullscreen(true)"
@@ -123,7 +123,7 @@
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
-            前台全屏播放 (沉浸大屏)
+            前台全屏播放
           </button>
         </div>
 

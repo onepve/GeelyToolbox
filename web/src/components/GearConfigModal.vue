@@ -2,7 +2,7 @@
 <template>
   <ModalWrapper
     :show="true"
-    title="换挡语音详细配置 (四大标准挡位)"
+    title="换挡语音配置"
     badge="挡位细分"
     maxWidthClass="max-w-[880px]"
     zIndexClass="z-[9998]"

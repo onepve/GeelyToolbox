@@ -16,7 +16,7 @@
         @click="openLogModalFromAdb"
         class="min-h-[66px] px-8 rounded-2xl border-2 border-car-border bg-car-card text-car-text hover:border-car-border-light font-black text-[17.5px] shadow-sm transition-all flex items-center justify-center cursor-pointer"
       >
-        <span>📋 系统日志查看与导出 (ZIP) ➔</span>
+        <span>📋 系统日志导出 ➔</span>
       </button>
     </div>
 
@@ -28,7 +28,7 @@
           @click="openAllAppsFromAdb"
           class="text-[14.5px] font-black text-car-accent hover:text-amber-400 cursor-pointer flex items-center space-x-1"
         >
-          <span>查看整车所有已安装软件清单 (卸载/冻结/清数据) ➔</span>
+          <span>已安装应用管理 ➔</span>
         </button>
       </div>
       <div class="grid grid-cols-4 gap-3.5">
