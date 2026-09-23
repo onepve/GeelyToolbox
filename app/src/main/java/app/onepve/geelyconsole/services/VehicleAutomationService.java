@@ -294,6 +294,15 @@ public class VehicleAutomationService extends Service {
         startMediaMonitor();
         EasMediaBridge.getInstance(this); // 确保蓝牙 A2DP 连接/推流监听与原车音频通道常驻就绪
         SystemUtils.warmDisabledPackagesCache();
+
+        // 开机与自动化启动兜底：若用户开启了悬浮小胶囊，确保悬浮服务伴随启动
+        try {
+            SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            if (prefs.getBoolean("floating_enabled", false)) {
+                FloatingWindowService.ensureServiceStarted(this);
+            }
+        } catch (Throwable ignored) {}
+
         AppLogger.i("系统日志", "车辆启动自动运行守护服务已启动 -> 开启底层门控、挡位与方控全量监听");
         Log.i(TAG, "VehicleAutomationService started successfully");
     }

@@ -90,16 +90,16 @@ public class BootReceiver extends BroadcastReceiver {
                         } catch (Exception e) {
                             Log.w(TAG, "Failed to enable whitelist on boot: " + e.getMessage());
                         }
+                    }
 
-                        // 2. 自动启动桌面悬浮小胶囊（严格遵从用户开关：默认 false，只有开启才启动）
-                        boolean floatingEnabled = prefs.getBoolean("floating_enabled", false);
-                        if (floatingEnabled) {
-                            try {
-                                FloatingWindowService.ensureServiceStarted(context);
-                                Log.i(TAG, "FloatingWindowService started on boot");
-                            } catch (Exception e) {
-                                Log.w(TAG, "Failed to start FloatingWindowService: " + e.getMessage());
-                            }
+                    // 2. 自动启动桌面悬浮小胶囊（独立遵循用户开关：只要开启了悬浮胶囊，开机/重启即自动挂载）
+                    boolean floatingEnabled = prefs.getBoolean("floating_enabled", false);
+                    if (floatingEnabled) {
+                        try {
+                            FloatingWindowService.ensureServiceStarted(context);
+                            Log.i(TAG, "FloatingWindowService started on boot");
+                        } catch (Exception e) {
+                            Log.w(TAG, "Failed to start FloatingWindowService: " + e.getMessage());
                         }
                     }
 

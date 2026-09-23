@@ -68,6 +68,37 @@ public class FloatingWindowService extends Service {
         }
     };
 
+    /** 悬浮胶囊常驻挂载与电瓶电压定时刷新任务 (3秒周期) */
+    private final Runnable periodicRefreshRunnable = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                boolean floatingEnabled = prefs.getBoolean("floating_enabled", false);
+                if (floatingEnabled || currentDynamicCode != null) {
+                    if (!isMainActivityInForeground) {
+                        if (pillView == null || !visible) {
+                            showPill();
+                        } else {
+                            updatePillContent();
+                        }
+                    } else {
+                        if (pillView != null && visible) {
+                            hidePill();
+                        }
+                    }
+                } else {
+                    if (pillView != null && visible) {
+                        hidePill();
+                    }
+                }
+            } catch (Throwable ignored) {
+            } finally {
+                handler.postDelayed(this, 3000);
+            }
+        }
+    };
+
     public static void ensureServiceStarted(Context context) {
         if (context == null) return;
         try {
@@ -137,6 +168,7 @@ public class FloatingWindowService extends Service {
         if (prefs.getBoolean("floating_enabled", false)) {
             showPill();
         }
+        handler.postDelayed(periodicRefreshRunnable, 2000);
     }
 
     @Override
@@ -469,6 +501,7 @@ public class FloatingWindowService extends Service {
     public void onDestroy() {
         super.onDestroy();
         isRunning = false;
+        handler.removeCallbacks(periodicRefreshRunnable);
         handler.removeCallbacksAndMessages(null);
         hidePill();
     }

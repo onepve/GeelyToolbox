@@ -399,8 +399,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     @Override
     protected void onPause() {
         super.onPause();
-        // 关键修复：坚决禁止在 onPause 中恢复悬浮胶囊！
-        // 在应用内部切换页面、打开弹窗或输入焦点变化时均会触发 onPause，在此处恢复胶囊会导致胶囊疯狂闪现！
+        // 关键修复：离开前台时解除前台锁，允许后台悬浮服务在需要时挂载胶囊
+        FloatingWindowService.isMainActivityInForeground = false;
         mainHandler.removeCallbacks(statusTicker);
     }
 

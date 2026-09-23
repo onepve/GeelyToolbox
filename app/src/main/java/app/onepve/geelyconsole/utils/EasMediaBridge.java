@@ -1,6 +1,8 @@
 package app.onepve.geelyconsole.utils;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +19,7 @@ import com.ecarx.eas.sdk.mediacenter.MediaCenterAPI;
 import com.ecarx.eas.sdk.mediacenter.MusicClient;
 import com.ecarx.eas.sdk.mediacenter.MusicPlaybackInfo;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 /**
@@ -298,6 +301,9 @@ public class EasMediaBridge {
             // 2. 核心大杀器：常驻持有 MAY_DUCK 蓝牙闪避焦点，保障微信秒级发声且支持与本地音乐同时播报
             requestBluetoothFocusIfNeeded();
 
+            // 核心唤醒：唤醒底层 com.android.bluetooth A2DP 链路，使其主动向系统申请 AudioFocus 并解除国承静音！
+            wakeBluetoothAudioSink();
+
             // 3. 确保系统媒体音量正常，杜绝为0导致微信或音乐不出声
             AudioManager am = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
             if (am != null) {
@@ -341,13 +347,45 @@ public class EasMediaBridge {
                             }
                             AppLogger.i("蓝牙音频", "命中蓝牙 MediaSession，下发 play() 唤醒底层 A2DP AudioFocus！");
                             mc.getTransportControls().play();
-                            return;
+                            break;
                         }
                     }
                 }
             }
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "通过 MediaSession 唤醒蓝牙音频焦点异常: " + t.getMessage());
+        }
+
+        // 尝试通过 BluetoothProfile.A2DP_SINK 反射直接通知底层 requestAudioFocus
+        try {
+            BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+            if (adapter != null && adapter.isEnabled()) {
+                adapter.getProfileProxy(appContext, new BluetoothProfile.ServiceListener() {
+                    @Override
+                    public void onServiceConnected(int profile, BluetoothProfile proxy) {
+                        try {
+                            if (profile == 11 /* BluetoothProfile.A2DP_SINK */) {
+                                List<BluetoothDevice> devices = proxy.getConnectedDevices();
+                                if (devices != null && !devices.isEmpty()) {
+                                    BluetoothDevice dev = devices.get(0);
+                                    Method m = proxy.getClass().getMethod("requestAudioFocus", BluetoothDevice.class, boolean.class);
+                                    m.invoke(proxy, dev, true);
+                                    AppLogger.i("蓝牙音频", "通过 BluetoothA2dpSink 反射下发 requestAudioFocus(true) 成功！");
+                                }
+                            }
+                        } catch (Throwable ignored) {
+                        } finally {
+                            try {
+                                adapter.closeProfileProxy(profile, proxy);
+                            } catch (Throwable ignored) {}
+                        }
+                    }
+                    @Override
+                    public void onServiceDisconnected(int profile) {}
+                }, 11);
+            }
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "通过 BluetoothProfile 代理请求焦点异常: " + t.getMessage());
         }
     }
 
