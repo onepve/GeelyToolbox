@@ -6,16 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.media.AudioAttributes;
 import android.media.AudioManager;
-import android.media.MediaMetadata;
 import android.media.session.MediaController;
 import android.media.session.MediaSessionManager;
-import android.media.session.PlaybackState;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.KeyEvent;
 
 import com.ecarx.eas.sdk.ECarXApiClient;
 import com.ecarx.eas.sdk.mediacenter.MediaCenterAPI;
