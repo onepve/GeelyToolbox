@@ -175,7 +175,7 @@ const isModeVoicePlanActive = computed(() => {
 });
 
 const isDoorVoicePlanActive = computed(() => {
-  if (store.vehicleAuto.voice_door_mode_universal !== false) {
+  if (store.vehicleAuto.voice_door_mode_universal === true) {
     return !!(store.vehicleAuto.voice_enable_door_universal_open !== false || store.vehicleAuto.voice_enable_door_universal_close !== false);
   }
   return !!(store.vehicleAuto.voice_enable_door_fl || store.vehicleAuto.voice_enable_door_fr || store.vehicleAuto.voice_enable_door_rl || store.vehicleAuto.voice_enable_door_rr);

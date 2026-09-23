@@ -13,28 +13,28 @@
             @click="setDoorMode(true)"
             :class="[
               'flex-1 h-[52px] rounded-xl font-black text-[15.5px] cursor-pointer transition-all border-2',
-              store.vehicleAuto.voice_door_mode_universal !== false
+              store.vehicleAuto.voice_door_mode_universal === true
                 ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
-            通用智能车门语音 (推荐 · 合并防抖)
+            通用智能车门语音 (极简合并防抖)
           </button>
           <button 
             @click="setDoorMode(false)"
             :class="[
               'flex-1 h-[52px] rounded-xl font-black text-[15.5px] cursor-pointer transition-all border-2',
-              store.vehicleAuto.voice_door_mode_universal === false
+              store.vehicleAuto.voice_door_mode_universal !== true
                 ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
-            独立分门专属台词模式
+            独立分门专属台词模式 (推荐 · 详细播报)
           </button>
         </div>
 
-        <!-- 模式 1: 通用智能车门语音 (推荐 · 合并防抖) -->
-        <div v-if="store.vehicleAuto.voice_door_mode_universal !== false" class="flex flex-col space-y-3.5">
+        <!-- 模式 1: 通用智能车门语音 (合并防抖) -->
+        <div v-if="store.vehicleAuto.voice_door_mode_universal === true" class="flex flex-col space-y-3.5">
           <!-- 通用开门提醒 -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex items-center justify-between">
             <div class="flex flex-col space-y-1">

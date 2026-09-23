@@ -62,8 +62,8 @@ public final class VehicleConfigHelper {
             // 播报音频输出通道 (music | nav | notification)
             obj.put("voice_audio_channel", prefs.getString("voice_audio_channel", "music"));
 
-            // 四门通用与分门配置 (默认启用通用智能车门语音)
-            obj.put("voice_door_mode_universal", prefs.getBoolean("voice_door_mode_universal", true));
+            // 四门通用与分门配置 (默认启用独立分门专属详细车门语音)
+            obj.put("voice_door_mode_universal", prefs.getBoolean("voice_door_mode_universal", false));
             obj.put("voice_enable_door_universal_open", prefs.getBoolean("voice_enable_door_universal_open", true));
             obj.put("voice_enable_door_universal_close", prefs.getBoolean("voice_enable_door_universal_close", true));
 

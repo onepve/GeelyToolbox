@@ -153,7 +153,7 @@ public class DoorStateManager {
             return;
         }
 
-        boolean universalMode = prefs.getBoolean("voice_door_mode_universal", true);
+        boolean universalMode = prefs.getBoolean("voice_door_mode_universal", false);
         boolean changed = false;
 
         // 2. 主驾驶门 (FL) 独立状态判定
