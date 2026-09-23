@@ -92,16 +92,18 @@ public class BinyueCoolPlatform implements IVehiclePlatform {
         @Override
         public void startListening(Context context, final OnVehicleSensorListener listener) {
             Log.i(TAG, "BinyueSensorAdapter started listening");
-            this.gearStateMachine = new GearStateMachine(context, new GearStateMachine.GearStateListener() {
+            this.gearStateMachine = new GearStateMachine(context, null);
+            this.gearStateMachine.setListener(new GearStateMachine.GearStateListener() {
                 @Override
-                public void onGearChanged(GearStateMachine.Gear gear, float speed) {
+                public void onGearChanged(int gear) {
                     if (listener != null) {
-                        int g = 0;
-                        if (gear == GearStateMachine.Gear.R) g = 1;
-                        else if (gear == GearStateMachine.Gear.N) g = 2;
-                        else if (gear == GearStateMachine.Gear.D) g = 3;
-                        listener.onGearChanged(g);
-                        listener.onSpeedChanged(speed);
+                        // 统一 HAL 挡位映射: 0=P, 1=R, 2=N, 3=D
+                        int halGear = 0;
+                        if (gear == 4) halGear = 1;      // R
+                        else if (gear == 3) halGear = 2; // N
+                        else if (gear == 2) halGear = 3; // D
+                        else if (gear == 5) halGear = 0; // P
+                        listener.onGearChanged(halGear);
                     }
                 }
             });
@@ -116,17 +118,18 @@ public class BinyueCoolPlatform implements IVehiclePlatform {
         @Override
         public int getCurrentGear() {
             if (gearStateMachine != null) {
-                GearStateMachine.Gear g = gearStateMachine.getCurrentGear();
-                if (g == GearStateMachine.Gear.R) return 1;
-                if (g == GearStateMachine.Gear.N) return 2;
-                if (g == GearStateMachine.Gear.D) return 3;
+                int g = gearStateMachine.getGear();
+                if (g == 4) return 1; // R
+                if (g == 3) return 2; // N
+                if (g == 2) return 3; // D
+                if (g == 5) return 0; // P
             }
             return 0;
         }
 
         @Override
         public float getCurrentSpeed() {
-            return gearStateMachine != null ? gearStateMachine.getCurrentSpeed() : 0.0f;
+            return 0.0f;
         }
     }
 }
