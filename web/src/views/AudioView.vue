@@ -97,16 +97,10 @@
 
           <div class="flex items-center space-x-3 shrink-0">
             <button 
-              @click="testBluetoothAudio"
-              class="min-h-[52px] px-5 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text font-black text-[15px] cursor-pointer shadow-sm"
+              @click="showChannelModal = true"
+              class="min-h-[50px] px-5 rounded-xl border border-car-border bg-car-item hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer shadow-sm active:scale-95 transition-all"
             >
-              测试发声
-            </button>
-            <button 
-              @click="forceActivateBluetooth"
-              class="min-h-[52px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-text hover:border-car-accent font-black text-[15.5px] cursor-pointer shadow-md ring-2 ring-car-accent/20"
-            >
-              一键强制选通蓝牙声道
+              蓝牙音频排查调试
             </button>
           </div>
         </div>
@@ -254,6 +248,12 @@
       </div>
     </FeatureCard>
 
+    <!-- 蓝牙音频 1~13 号全声道排查调试弹窗 -->
+    <AudioChannelDebugModal
+      v-if="showChannelModal"
+      :show="showChannelModal"
+      @close="showChannelModal = false"
+    />
   </div>
 </template>
 
@@ -261,7 +261,10 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import StatusDot from '../components/StatusDot.vue';
+import AudioChannelDebugModal from '../components/modals/AudioChannelDebugModal.vue';
 import { store, bridge, openModal, showToast } from '../store';
+
+const showChannelModal = ref(false);
 
 const ttsInfo = ref({
   connected: true,

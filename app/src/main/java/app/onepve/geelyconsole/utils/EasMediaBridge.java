@@ -624,4 +624,25 @@ public class EasMediaBridge {
             appContext.registerReceiver(a2dpReceiver, filter);
         } catch (Throwable ignored) {}
     }
+
+    /**
+     * 手动切换底层硬件音源（用于声道排查与调试）
+     * @param sourceType 1=RADIO, 2=BT, 3=USB, 6=ONLINE/EAS
+     */
+    public synchronized void switchSourceTypeManually(int sourceType) {
+        try {
+            ensureEasReady();
+            if (mApi != null && mRegistered && mToken != null) {
+                mApi.updateCurrentSourceType(mToken, sourceType);
+                AppLogger.i("音频通道", "手动下发 updateCurrentSourceType(" + sourceType + ")");
+            }
+            try {
+                Intent rsrcIntent = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
+                rsrcIntent.putExtra("source_type", sourceType);
+                appContext.sendBroadcast(rsrcIntent);
+            } catch (Throwable ignored) {}
+        } catch (Throwable t) {
+            AppLogger.e("音频通道", "手动切换音源异常: " + t.getMessage());
+        }
+    }
 }

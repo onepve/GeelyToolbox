@@ -2893,6 +2893,54 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public void playAudioUsageChannel(final int usageChannel) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        app.onepve.geelyconsole.utils.ChannelAudioTester.playChannelBeep(MainActivity.this, usageChannel);
+                        showToast("正在向通道 " + usageChannel + " 播放微信测试音...");
+                    } catch (Throwable t) {
+                        showToast("播放通道 " + usageChannel + " 失败: " + t.getMessage());
+                    }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public boolean setPreferredAudioUsageChannel(final int usageChannel) {
+            try {
+                android.content.SharedPreferences sp = getSharedPreferences("app_config", Context.MODE_PRIVATE);
+                sp.edit().putInt("preferred_audio_usage_channel", usageChannel).apply();
+                showToast("已将通道 " + usageChannel + " 保存为微信语音首选通道");
+                return true;
+            } catch (Throwable t) {
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public int getPreferredAudioUsageChannel() {
+            try {
+                android.content.SharedPreferences sp = getSharedPreferences("app_config", Context.MODE_PRIVATE);
+                return sp.getInt("preferred_audio_usage_channel", 2); // 默认 2 (USAGE_VOICE_COMMUNICATION 通话/独立喇叭)
+            } catch (Throwable t) {
+                return 2;
+            }
+        }
+
+        @JavascriptInterface
+        public boolean switchEcarxSourceType(final int sourceType) {
+            try {
+                EasMediaBridge.getInstance(MainActivity.this).switchSourceTypeManually(sourceType);
+                showToast("已下发底层切源指令: " + sourceType);
+                return true;
+            } catch (Throwable t) {
+                return false;
+            }
+        }
+
+        @JavascriptInterface
         public void refreshCloudApps() {
             fetchCloudAppsAsync(true);
         }
