@@ -99,6 +99,10 @@ CONTRACTS = [
   [r'STREAM_NAVI', r'STREAM_SYSTEM', r'STREAM_MUSIC'], [r'STREAM_NOTIFICATION']),
  ('voice-gain-playback-applies-resolver', JAVA+'utils/VehicleVoicePlayer.java', 'private synchronized void applyVolumeOffsetBeforePlay',
   [r'VoiceGainResolver\.normalizeVoiceKey', r'VoiceGainResolver\.resolveStreamForChannel'], [r'STREAM_NOTIFICATION']),
+ ('eas-bluetooth-duck-guard', JAVA+'utils/EasMediaBridge.java', 'public synchronized void activateBluetoothChannel',
+  [r'requestBluetoothFocusIfNeeded', r'keepXcmediaOnBluetoothSource', r'updateCurrentSourceType'], [r'am\.abandonAudioFocus', r'dummyListener']),
+ ('eas-bluetooth-may-duck', JAVA+'utils/EasMediaBridge.java', 'public synchronized void requestBluetoothFocusIfNeeded',
+  [r'AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK', r'btFocusHeld'], []),
 ]
 
 
