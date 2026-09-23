@@ -71,9 +71,34 @@ public final class AppFilterUtils {
         return p.equals("android")
                 || p.equals("com.android.settings")
                 || p.equals("com.android.systemui")
+                || p.equals("com.android.packageinstaller")
+                || p.equals("com.android.permissioncontroller")
+                || p.equals("com.android.server.telecom")
+                || p.equals("com.android.providers.settings")
+                || p.equals("com.android.keyguard")
+                || p.equals("com.android.shell")
+                || p.equals("app.onepve.geelyconsole")
+                || p.contains("inputmethod")
                 || p.equals("com.ecarx.carservice")
                 || p.equals("com.ecarx.launcher")
-                || p.equals("app.onepve.geelyconsole");
+                || p.equals("com.ecarx.systemui")
+                || p.equals("com.ecarx.service")
+                || p.equals("com.ecarx.btphone")
+                || p.equals("com.ecarx.carsetting")
+                || p.equals("com.ecarx.hvac")
+                || p.equals("com.ecarx.sound")
+                || p.equals("com.ecarx.policy")
+                || p.equals("com.ecarx.ipcamera")
+                || p.equals("com.ecarx.dvr");
+    }
+
+    public static boolean isDangerousSystemPackage(String pkg) {
+        if (pkg == null) return false;
+        String p = pkg.toLowerCase().trim();
+        return isProtectedCriticalPackage(p)
+                || p.equals("com.android.settings")
+                || p.equals("com.android.systemui")
+                || (p.startsWith("com.ecarx.") && !p.contains("appstore") && !p.contains("xcmedia") && !p.contains("multimedia") && !p.contains("carmedia") && !p.contains("upgrade"));
     }
 
     /**
