@@ -90,6 +90,8 @@ CONTRACTS = [
   [r'Somnambulator', r'context.startActivity\(intent\)'], []),
  ('wheel-media-dispatch', JAVA+'utils/SteeringWheelKeyManager.java', 'private void sendMediaKeyEvent(int keyCode, int targetSource)',
   [r'resolveTargetMediaPackage', r'isIgnoredMediaPackage', r'getInstalledMediaPackages', r'ACTION_MEDIA_BUTTON'], [r'String\[\]\s+targetPkgs\s*=\s*\{\s*"com\.tencent\.qqmusiccar"']),
+ ('vehicle-hal-platform', JAVA+'hal/VehiclePlatformFactory.java', 'private static IVehiclePlatform detectPlatform',
+  [r'BinyueCoolPlatform', r'GenericAospPlatform', r'SX11'], []),
  ('ecarx-no-wrong-key', JAVA+'services/VehicleAutomationService.java', 'private void registerEcarxKeyReceiver',
   [r'KEY_MUTE',r'KEY_PREV',r'KEY_NEXT'], [r'mappedKey\s*=\s*SteeringWheelKeyManager.KEY_OK']),
  ('gear-reset-quiet', JAVA+'utils/GearStateMachine.java', 'public synchronized void resetState()', [r'if\s*\(changed\)\s*\{\s*AppLogger.i\('], []),
