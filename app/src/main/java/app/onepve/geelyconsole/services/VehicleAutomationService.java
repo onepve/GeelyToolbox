@@ -906,12 +906,9 @@ public class VehicleAutomationService extends Service {
         if (latestBatteryVoltage >= 13.2f) return true;
         // 4. 明确检测到电源点火处于就绪状态 (lastPowerMode == 1 或钥匙 ON 信号)
         if (lastPowerMode == 1 || lastKeyState == 2) return true;
-        // 5. 其余静止无充电状态（蓄电池自然静置电压 9.0V~13.0V 且零车速）：谨慎判熄火
-        // 铁律：已有明确点火信号时，上电瞬间压降绝不误判为熄火（热更新/服务重启兜底）
-        if (latestBatteryVoltage >= 9.0f && latestBatteryVoltage < 13.0f && currentSpeedKmH == 0) {
-            if (lastPowerMode == 1 || lastKeyState >= 2) return true;
-            return false;
-        }
+        // 5. 熄火锁定：若电压明确低于 12.8V 且静止，判定熄火
+        if (latestBatteryVoltage > 0 && latestBatteryVoltage < 12.8f && currentSpeedKmH == 0) return false;
+        // 6. 默认回退：电压为 0（未读取到）或未知状态时保守视为开机运行中
         return true;
     }
 
@@ -1059,10 +1056,14 @@ public class VehicleAutomationService extends Service {
                 if (mFun.find()) {
                     int raw = (int) Long.parseLong(mFun.group(1), 16);
                     int low = raw & 0xFF;
-                    if (low == 0x05 || low == 0x06 || low == 0x04) return 2; // ON/引擎运行
-                    if (low == 0x01) return 1; // ACC
-                    if (low == 0x00) return 0; // 下电
-                    return 2; // 其他非零值保守视为上电
+                    // 吉利缤越COOL (SX11-A3) 车机真实 SensorModule/FaceIdService 电源协议：
+                    // 0x00200105 = ON (点火行驶中)
+                    // 0x00200104 = ACC (仅通电)
+                    // 0x00200103 / 0x00200100 = OFF (熄火下电)
+                    if (low == 0x05 || low == 0x06) return 2; // ON 点火就绪
+                    if (low == 0x04 || low == 0x01) return 1; // ACC 通电
+                    if (low == 0x03 || low == 0x00) return 0; // OFF 熄火下电
+                    return (low > 0x04) ? 2 : 0;
                 }
                 // 兜底：直接裸数字格式（如 key_state=2）
                 Matcher m = P_KEY_STATE.matcher(l);
@@ -1070,8 +1071,8 @@ public class VehicleAutomationService extends Service {
                     int raw = Integer.parseInt(m.group(1), 16);
                     int low = raw & 0xFF;
                     if (low == 0x05 || low == 2) return 2; // ON 点火就绪
-                    if (low == 0x02 || low == 1) return 1; // ACC 通电
-                    if (low == 0) return 0; // 熄火下电
+                    if (low == 0x04 || low == 0x02 || low == 1) return 1; // ACC 通电
+                    if (low == 0x03 || low == 0) return 0; // 熄火下电
                     return low;
                 }
             }
@@ -1114,11 +1115,14 @@ public class VehicleAutomationService extends Service {
                     warmUpTargetMediaService();
                 }
             } else if (val == 0) {
-                // 若发电机正在以 >=13.2V 充电，或车速非零，绝不可因偶发性按键释放日志误置熄火
-                if (latestBatteryVoltage < 13.2f && currentSpeedKmH == 0) {
+                // 车速为0或处于P挡驻车时，收到 key=0 坚决下电，绝不可因电瓶刚熄火的浮充电压(13.2V~13.8V)误判为未熄火
+                if (currentSpeedKmH == 0 || (gearStateMachine != null && gearStateMachine.getGear() == 5)) {
+                    lastPowerMode = 0;
+                    AppLogger.i("电源状态", "检测到钥匙 OFF (key=0)，确认下电熄火");
+                } else if (latestBatteryVoltage < 13.0f) {
                     lastPowerMode = 0;
                 } else {
-                    AppLogger.i("电源状态", "忽略疑似按键释放噪音 key=0 (当前电压=" + latestBatteryVoltage + "V)");
+                    AppLogger.i("电源状态", "行车中忽略疑似偶发按键释放噪音 key=0 (当前电压=" + latestBatteryVoltage + "V)");
                 }
             }
         }
@@ -1431,8 +1435,8 @@ public class VehicleAutomationService extends Service {
                 tryStartComponentService(pkg, "com.kugou.framework.service.MediaService");
             }
 
-            // 3. 通用机制：向目标包名注册的所有 MediaButtonReceiver 派发显式定向按键唤醒冷态进程
-            sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
+            // 3. 通用机制：仅唤醒冷态 Service 进程以常驻响应方控，严禁盲目派发 MEDIA_PLAY 抢占音频焦点与通话通道
+            // sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
         } catch (Throwable t) {
             AppLogger.w("车身联动", "通用音源服务拉活异常: " + pkg + ", " + t.getMessage());
         }
@@ -1590,6 +1594,14 @@ public class VehicleAutomationService extends Service {
             @Override
             public void run() {
                 try {
+                    // 若正处于通话（蓝牙电话/微信语音）或已下电，坚决禁止预热媒体服务抢占音频焦点
+                    if (VehicleVoicePlayer.isInPhoneCall(VehicleAutomationService.this) || !isEngineRunning()) {
+                        return;
+                    }
+                    // 若处于 P 挡驻车静止状态，不主动唤醒第三方媒体应用，避免截断车机蓝牙电话
+                    if (gearStateMachine != null && gearStateMachine.getGear() == 5 && currentSpeedKmH == 0) {
+                        return;
+                    }
                     SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                     boolean autoplayEnabled = prefs.getBoolean("vehicle_speed_autoplay_enabled", true);
                     if (!autoplayEnabled) return;

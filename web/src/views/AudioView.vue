@@ -480,11 +480,21 @@ function loadMediaApps() {
     let installedList = [];
     if (raw) {
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      const isSystemBlacklist = (p) => {
+        if (!p) return true;
+        const low = p.toLowerCase().trim();
+        return low === 'android' || 
+               (low.startsWith('com.android.') && low !== 'com.android.bluetooth') ||
+               low.startsWith('com.google.') ||
+               low.includes('launcher') || 
+               low.includes('settings') || 
+               low.includes('inputmethod');
+      };
       installedList = parsed.map(item => ({
         name: item.name || item.appName || item.pkg,
         pkg: item.pkg || item.packageName,
         isBluetooth: false
-      })).filter(item => item.pkg !== 'com.android.bluetooth');
+      })).filter(item => item.pkg && item.pkg !== 'com.android.bluetooth' && !isSystemBlacklist(item.pkg));
     }
 
     const savedOrder = getSavedMusicOrder();

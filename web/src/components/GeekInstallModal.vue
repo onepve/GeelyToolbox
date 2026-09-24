@@ -1,5 +1,5 @@
 <template>
-  <div v-if="store.modals.geekInstall" class="fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center p-2 sm:p-4 animate-fade-in" style="background: rgba(5, 9, 18, 0.45); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+  <div v-if="store.modals.geekInstall" class="fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center p-2 sm:p-4 animate-fade-in" style="background: rgba(0, 0, 0, 0.25);">
     <div 
       class="relative w-[96vw] border-2 border-car-accent rounded-3xl p-6 shadow-2xl flex flex-col space-y-5 text-car-text max-h-[95vh] overflow-y-auto transition-all"
       :class="isStoreFrozen ? 'max-w-3xl' : 'max-w-6xl'"

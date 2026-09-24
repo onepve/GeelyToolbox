@@ -366,9 +366,22 @@ function loadInstalledThemes() {
 
 function selectThemeSound(themeName) {
   if (!targetItem.value) return;
-  const fileName = targetItem.value.soundFile || (targetItem.value.key + '.mp3');
-  customFilePath.value = `/sdcard/GeelyPilot/voices/${themeName}/${fileName}`;
-  showToast(`已快捷填入【${themeName}】的 ${fileName}`);
+  const th = installedThemes.value.find(t => t.name === themeName);
+  let matchedFile = null;
+  const baseKey = targetItem.value.key;
+  const soundFile = targetItem.value.soundFile || (baseKey + '.mp3');
+  const baseName = soundFile.includes('.') ? soundFile.substring(0, soundFile.lastIndexOf('.')) : soundFile;
+
+  if (th && th.audioFiles && th.audioFiles.length > 0) {
+    matchedFile = th.audioFiles.find(f => {
+      const fBase = f.includes('.') ? f.substring(0, f.lastIndexOf('.')) : f;
+      return fBase.toLowerCase() === baseName.toLowerCase() || f.toLowerCase() === soundFile.toLowerCase();
+    });
+  }
+  const finalName = matchedFile || soundFile;
+  customFilePath.value = `/sdcard/GeelyPilot/voices/${themeName}/${finalName}`;
+  saveAudioFilePath();
+  showToast(`已快捷绑定【${themeName}】的 ${finalName}`);
 }
 
 watch(() => store.modals.voiceItemSettings, (item) => {
@@ -434,9 +447,21 @@ function testAudioFile() {
 function saveAudioFilePath() {
   if (!targetItem.value) return;
   const key = targetItem.value.key;
-  localStorage.setItem(`geely_voice_file_${key}`, customFilePath.value.trim());
-  bridge.call('setVehicleAutomationStringSetting', `custom_voice_${targetItem.value.soundFile || key + '.mp3'}`, customFilePath.value.trim());
-  showToast('自定义音频文件路径已绑定');
+  const path = customFilePath.value.trim();
+  localStorage.setItem(`geely_voice_file_${key}`, path);
+  const soundFile = targetItem.value.soundFile || (key + '.mp3');
+  // 双键兼容：带 .mp3 与不带后缀双写，保证底层所有查找逻辑均可直接命中
+  bridge.call('setVehicleAutomationStringSetting', `custom_voice_${soundFile}`, path);
+  bridge.call('setVehicleAutomationStringSetting', `custom_voice_${key}`, path);
+  // 车门模式互通兜底：极简模式下触发 door_open，分门模式触发 door_fl，双向联动绑定
+  if (key === 'door_fl') {
+    bridge.call('setVehicleAutomationStringSetting', 'custom_voice_door_open.mp3', path);
+    bridge.call('setVehicleAutomationStringSetting', 'custom_voice_door_open', path);
+  } else if (key === 'door_open') {
+    bridge.call('setVehicleAutomationStringSetting', 'custom_voice_door_fl.mp3', path);
+    bridge.call('setVehicleAutomationStringSetting', 'custom_voice_door_fl', path);
+  }
+  showToast('自定义音频文件已成功绑定并生效');
 }
 
 function resetToDefault() {
@@ -447,6 +472,12 @@ function resetToDefault() {
   localStorage.removeItem(`geely_voice_text_${key}`);
   localStorage.removeItem(`geely_voice_file_${key}`);
   bridge.call('resetCustomVoice', key);
+  bridge.call('setVehicleAutomationStringSetting', `custom_voice_${targetItem.value.soundFile || key + '.mp3'}`, '');
+  bridge.call('setVehicleAutomationStringSetting', `custom_voice_${key}`, '');
+  if (key === 'door_fl') {
+    bridge.call('setVehicleAutomationStringSetting', 'custom_voice_door_open.mp3', '');
+    bridge.call('setVehicleAutomationStringSetting', 'custom_voice_door_open', '');
+  }
   showToast('已恢复为出厂默认晓晓温婉知性原声');
 }
 </script>

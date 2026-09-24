@@ -243,13 +243,115 @@ public class VehicleVoicePlayer {
         return a;
     }
 
-    /** 测试专用：注入仲裁器与事件监听 (生产不可用) */
-    VoiceArbiter injectArbiterForTest(VoiceArbiter a) {
-        synchronized (arbiterLock) {
-            this.arbiter = a;
-            this.arbiterReady = true;
-            return a;
+    /**
+     * 智能解析并探测物理存在的音频文件：
+     * 1. 容错 /sdcard 与 /storage/emulated/0 挂载路径差异
+     * 2. 容错 Linux ext4 大小写敏感（如 Door_FL.mp3 vs door_fl.mp3）
+     * 3. 容错常见音频格式后缀（.mp3, .wav, .ogg, .m4a, .aac 及大写变体）
+     */
+    public static File resolveExistingAudioFile(String path) {
+        if (path == null || path.trim().isEmpty()) return null;
+        String cleanPath = path.trim();
+        File direct = new File(cleanPath);
+        if (direct.exists() && direct.isFile() && direct.length() > 0) return direct;
+
+        String altPath = null;
+        if (cleanPath.startsWith("/sdcard/")) {
+            altPath = Environment.getExternalStorageDirectory().getAbsolutePath() + cleanPath.substring(7);
+        } else if (cleanPath.startsWith("/storage/emulated/0/")) {
+            altPath = "/sdcard" + cleanPath.substring(19);
         }
+        if (altPath != null) {
+            File altFile = new File(altPath);
+            if (altFile.exists() && altFile.isFile() && altFile.length() > 0) return altFile;
+        }
+
+        File parentDir = direct.getParentFile();
+        if (parentDir == null || !parentDir.exists() || !parentDir.isDirectory()) {
+            if (altPath != null) {
+                parentDir = new File(altPath).getParentFile();
+            }
+        }
+        if (parentDir != null && parentDir.exists() && parentDir.isDirectory()) {
+            String targetName = direct.getName();
+            String baseName = targetName.contains(".") ? targetName.substring(0, targetName.lastIndexOf('.')) : targetName;
+            File[] files = parentDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isFile() && f.length() > 0) {
+                        String fn = f.getName();
+                        String fBase = fn.contains(".") ? fn.substring(0, fn.lastIndexOf('.')) : fn;
+                        if (fBase.equalsIgnoreCase(baseName)) {
+                            return f;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /** 在指定目录下模糊查找匹配的音频文件（支持同名不同后缀、大小写不敏感及中文别名） */
+    private static File findAudioInDir(File dir, String voiceFileName) {
+        if (dir == null || !dir.exists() || !dir.isDirectory()) return null;
+        // 1. 直连精确命中
+        File exact = new File(dir, voiceFileName);
+        if (exact.exists() && exact.isFile() && exact.length() > 0) return exact;
+
+        String baseName = voiceFileName.contains(".") ? voiceFileName.substring(0, voiceFileName.lastIndexOf('.')) : voiceFileName;
+        File[] files = dir.listFiles();
+        if (files == null) return null;
+
+        // 2. 大小写不敏感及多后缀命中
+        for (File f : files) {
+            if (f.isFile() && f.length() > 0) {
+                String fn = f.getName();
+                String fBase = fn.contains(".") ? fn.substring(0, fn.lastIndexOf('.')) : fn;
+                if (fBase.equalsIgnoreCase(baseName)) {
+                    return f;
+                }
+            }
+        }
+
+        // 3. 常见中文别名匹配
+        String[] aliases = getChineseAliases(baseName);
+        if (aliases != null) {
+            for (String alias : aliases) {
+                for (File f : files) {
+                    if (f.isFile() && f.length() > 0) {
+                        String fn = f.getName();
+                        String fBase = fn.contains(".") ? fn.substring(0, fn.lastIndexOf('.')) : fn;
+                        if (fBase.equalsIgnoreCase(alias) || fBase.contains(alias) || alias.contains(fBase)) {
+                            return f;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String[] getChineseAliases(String baseName) {
+        if ("door_fl".equalsIgnoreCase(baseName) || "door_open".equalsIgnoreCase(baseName)) {
+            return new String[]{"主驾开门", "开门", "车门打开", "迎宾", "door_open", "door_fl"};
+        } else if ("door_fl_close".equalsIgnoreCase(baseName) || "door_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"主驾关门", "关门", "车门已关好", "door_close", "door_fl_close"};
+        } else if ("gear_p".equalsIgnoreCase(baseName)) {
+            return new String[]{"P挡", "驻车", "挂入P挡", "驻车挡"};
+        } else if ("gear_d".equalsIgnoreCase(baseName)) {
+            return new String[]{"D挡", "前进", "前进挡", "挂入D挡"};
+        } else if ("gear_r".equalsIgnoreCase(baseName)) {
+            return new String[]{"R挡", "倒车", "倒车挡", "挂入R挡"};
+        } else if ("gear_n".equalsIgnoreCase(baseName)) {
+            return new String[]{"N挡", "空挡", "挂入N挡"};
+        } else if ("drive_mode_sport".equalsIgnoreCase(baseName)) {
+            return new String[]{"运动模式", "sport"};
+        } else if ("drive_mode_comfort".equalsIgnoreCase(baseName)) {
+            return new String[]{"舒适模式", "comfort"};
+        } else if ("drive_mode_eco".equalsIgnoreCase(baseName)) {
+            return new String[]{"经济模式", "eco"};
+        }
+        return null;
     }
 
     // ------------------------------------------------------------------
@@ -782,8 +884,9 @@ public class VehicleVoicePlayer {
     public void playCustomFile(final String path) {
         if (path == null || path.trim().isEmpty()) return;
         // 试听/自定义文件按 P1 即时反馈处理 (用户主动操作，最高即时响应)
-        final String name = new File(path.trim()).getName();
-        play(name, "[[" + path.trim() + "]]", PRIORITY_P1_ACTION);
+        final String clean = path.trim();
+        final String name = new File(clean).getName();
+        play("[[" + clean + "]]", name, PRIORITY_P1_ACTION);
     }
 
     public void speakText(final String text) {
@@ -804,13 +907,15 @@ public class VehicleVoicePlayer {
         if (voiceFileName != null && voiceFileName.startsWith("[[") && voiceFileName.endsWith("]]")) {
             // playCustomFile 的显式文件路径直达分支
             String path = voiceFileName.substring(2, voiceFileName.length() - 2);
-            File f = new File(path);
-            if (f.exists() && f.length() > 0) {
+            File f = resolveExistingAudioFile(path);
+            if (f != null && f.exists() && f.length() > 0) {
                 Log.i(TAG, "Playing explicit custom audio file: " + f.getAbsolutePath());
+                AppLogger.i("语音播报", "试听用户指定文件: " + f.getAbsolutePath());
                 playAudioFile(f, f.getName());
                 return;
             }
             Log.w(TAG, "Custom audio file missing: " + path);
+            AppLogger.w("语音播报", "用户指定试听文件不存在: " + path);
             speakTextInternal("指定自定义音频文件不存在", voiceFileName);
             return;
         }
@@ -927,44 +1032,98 @@ public class VehicleVoicePlayer {
             }
         } catch (Exception ignored) {}
 
-        // 1. 用户指定自定义音频文件路径
+        // 1. 用户指定自定义音频文件路径 (深度智能解析与车门模式兜底继承)
         try {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            String rawName = voiceFileName.endsWith(".mp3") ? voiceFileName.substring(0, voiceFileName.length() - 4) : voiceFileName;
             String customPath = prefs.getString("custom_voice_" + voiceFileName, "");
-            if (customPath != null && !customPath.isEmpty()) {
-                File customPrefFile = new File(customPath);
-                if (customPrefFile.exists() && customPrefFile.length() > 0) {
-                    Log.i(TAG, "Playing custom user audio file: " + customPath);
-                    playAudioFile(customPrefFile, voiceFileName);
-                    return;
+            if (customPath == null || customPath.trim().isEmpty()) {
+                customPath = prefs.getString("custom_voice_" + rawName, "");
+            }
+            // 核心互通: 通用开门与主驾开门相互继承兜底
+            if ((customPath == null || customPath.trim().isEmpty())) {
+                if ("door_open.mp3".equals(voiceFileName) || "door_open".equals(rawName)) {
+                    customPath = prefs.getString("custom_voice_door_fl.mp3", "");
+                    if (customPath == null || customPath.trim().isEmpty()) {
+                        customPath = prefs.getString("custom_voice_door_fl", "");
+                    }
+                } else if ("door_fl.mp3".equals(voiceFileName) || "door_fl".equals(rawName)) {
+                    customPath = prefs.getString("custom_voice_door_open.mp3", "");
+                    if (customPath == null || customPath.trim().isEmpty()) {
+                        customPath = prefs.getString("custom_voice_door_open", "");
+                    }
+                } else if ("door_close.mp3".equals(voiceFileName) || "door_close".equals(rawName)) {
+                    customPath = prefs.getString("custom_voice_door_fl_close.mp3", "");
+                    if (customPath == null || customPath.trim().isEmpty()) {
+                        customPath = prefs.getString("custom_voice_door_fl_close", "");
+                    }
+                } else if ("door_fl_close.mp3".equals(voiceFileName) || "door_fl_close".equals(rawName)) {
+                    customPath = prefs.getString("custom_voice_door_close.mp3", "");
+                    if (customPath == null || customPath.trim().isEmpty()) {
+                        customPath = prefs.getString("custom_voice_door_close", "");
+                    }
                 }
             }
-        } catch (Exception ignored) {}
+
+            if (customPath != null && !customPath.trim().isEmpty()) {
+                File customPrefFile = resolveExistingAudioFile(customPath);
+                if (customPrefFile != null && customPrefFile.exists() && customPrefFile.length() > 0) {
+                    Log.i(TAG, "Playing resolved custom user audio file: " + customPrefFile.getAbsolutePath());
+                    AppLogger.i("语音播报", "触发播放[自定义绑定]: " + customPrefFile.getName() + " (" + fallbackText + ")");
+                    playAudioFile(customPrefFile, voiceFileName);
+                    return;
+                } else {
+                    AppLogger.w("语音播报", "用户绑定的自定义音频物理文件未找到: " + customPath);
+                }
+            }
+        } catch (Exception e) {
+            AppLogger.w("语音播报", "解析用户自定义音频异常: " + e.getMessage());
+        }
 
         // 2. 外部独立专属座舱语音目录优先 (/sdcard/GeelyPilot/voices/ 物理隔离，永不受 Download 清空影响)
         File pilotVoicesDir = new File(Environment.getExternalStorageDirectory(), "GeelyPilot/voices");
         if (!pilotVoicesDir.exists()) {
             try { pilotVoicesDir.mkdirs(); } catch (Exception ignored) {}
         }
-        File customFilePilot = new File(pilotVoicesDir, voiceFileName);
         String activeTheme = "";
         try {
             SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             activeTheme = sp.getString("active_voice_theme", "");
         } catch (Exception ignored) {}
-        File customFileThemeAudio = (!activeTheme.isEmpty()) ? new File(pilotVoicesDir, activeTheme + "/audio/" + voiceFileName) : null;
-        File customFileTheme = (!activeTheme.isEmpty()) ? new File(pilotVoicesDir, activeTheme + "/" + voiceFileName) : null;
 
-        File customFile0 = new File(SystemUtils.getAppDownloadDir(), "语音主题包/" + voiceFileName);
-        File customFile1 = new File(SystemUtils.getAppDownloadDir(), voiceFileName);
-        File customFile2 = new File("/sdcard/Music/" + voiceFileName);
+        File targetFile = null;
+        if (!activeTheme.isEmpty()) {
+            File themeDir = new File(pilotVoicesDir, activeTheme);
+            targetFile = findAudioInDir(new File(themeDir, "audio"), voiceFileName);
+            if (targetFile == null) {
+                targetFile = findAudioInDir(themeDir, voiceFileName);
+            }
+            // 核心互通: 通用开门与主驾开门在主题包内回退互认
+            if (targetFile == null) {
+                if ("door_open.mp3".equalsIgnoreCase(voiceFileName) || "door_open".equalsIgnoreCase(voiceFileName)) {
+                    targetFile = findAudioInDir(themeDir, "door_fl.mp3");
+                } else if ("door_fl.mp3".equalsIgnoreCase(voiceFileName) || "door_fl".equalsIgnoreCase(voiceFileName)) {
+                    targetFile = findAudioInDir(themeDir, "door_open.mp3");
+                } else if ("door_close.mp3".equalsIgnoreCase(voiceFileName) || "door_close".equalsIgnoreCase(voiceFileName)) {
+                    targetFile = findAudioInDir(themeDir, "door_fl_close.mp3");
+                } else if ("door_fl_close.mp3".equalsIgnoreCase(voiceFileName) || "door_fl_close".equalsIgnoreCase(voiceFileName)) {
+                    targetFile = findAudioInDir(themeDir, "door_close.mp3");
+                }
+            }
+        }
 
-        File targetFile = (customFileThemeAudio != null && customFileThemeAudio.exists() && customFileThemeAudio.length() > 0) ? customFileThemeAudio :
-                          ((customFileTheme != null && customFileTheme.exists() && customFileTheme.length() > 0) ? customFileTheme :
-                          ((customFilePilot.exists() && customFilePilot.length() > 0) ? customFilePilot :
-                          ((customFile0.exists() && customFile0.length() > 0) ? customFile0 :
-                          ((customFile1.exists() && customFile1.length() > 0) ? customFile1 :
-                          ((customFile2.exists() && customFile2.length() > 0) ? customFile2 : null)))));
+        if (targetFile == null) {
+            targetFile = findAudioInDir(pilotVoicesDir, voiceFileName);
+        }
+        if (targetFile == null) {
+            targetFile = findAudioInDir(new File(SystemUtils.getAppDownloadDir(), "语音主题包"), voiceFileName);
+        }
+        if (targetFile == null) {
+            targetFile = findAudioInDir(SystemUtils.getAppDownloadDir(), voiceFileName);
+        }
+        if (targetFile == null) {
+            targetFile = findAudioInDir(new File("/sdcard/Music"), voiceFileName);
+        }
 
         if (targetFile != null && targetFile.length() > 0) {
             Log.i(TAG, "Playing external audio file: " + targetFile.getAbsolutePath());

@@ -2172,32 +2172,44 @@ public class SystemUtils {
         }
     }
 
-    /** 动态探测整车已安装的音乐与音频软件 */
+    /** 动态探测整车已安装的音乐与音频软件 (严禁误判系统框架与非音频应用) */
     public static List<DetailedAppInfo> getInstalledMusicApps(Context context) {
         List<DetailedAppInfo> musicApps = new ArrayList<>();
         List<DetailedAppInfo> all = getAllInstalledApps(context);
         String[] knownMusicPkgs = {
-            "com.luna.music", "com.tencent.qqmusiccar", "cn.kuwo.kwmusiccar",
-            "com.netease.cloudmusiccar", "com.kugou.androidCar", "cn.toside.music.mobile",
-            "com.ecarx.carmedia", "com.netease.cloudmusic", "com.tencent.qqmusic",
-            "cn.kuwo.player", "com.kugou.player", "com.ximalaya.ting.android",
-            "com.edog.car", "remix.myplayer", "com.sds.android.ttpod"
+            "com.luna.music.car", "com.luna.music", "com.qishi.music",
+            "com.tencent.qqmusiccar", "com.tencent.qqmusic",
+            "com.netease.cloudmusic.car", "com.netease.cloudmusiccar", "com.netease.cloudmusic",
+            "cn.kuwo.kwmusiccar", "cn.kuwo.player",
+            "com.kugou.androidCar", "com.kugou.android", "com.kugou.player",
+            "cn.toside.music.mobile", "com.ecarx.carmedia",
+            "com.ximalaya.ting.android", "com.ximalaya.ting.androidcar",
+            "com.edog.car", "remix.myplayer", "com.sds.android.ttpod",
+            "com.kugou.viper"
         };
         for (DetailedAppInfo app : all) {
             if (!app.enabled) continue;
+            String pkgLower = app.packageName.toLowerCase(Locale.ROOT).trim();
+            // 核心安全防线：严禁将 Android 核心系统框架、设置、桌面误判为多媒体
+            if ("android".equals(pkgLower) || pkgLower.startsWith("com.android.") ||
+                pkgLower.startsWith("com.google.") || pkgLower.contains("launcher") ||
+                pkgLower.contains("settings") || pkgLower.contains("inputmethod")) {
+                continue;
+            }
             boolean matched = false;
-            String pkgLower = app.packageName.toLowerCase(Locale.ROOT);
-            String nameLower = app.appName.toLowerCase(Locale.ROOT);
+            String nameLower = app.appName.toLowerCase(Locale.ROOT).trim();
             for (String kp : knownMusicPkgs) {
-                if (pkgLower.contains(kp) || kp.contains(pkgLower)) {
+                if (pkgLower.equals(kp) || pkgLower.startsWith(kp + ".")) {
                     matched = true;
                     break;
                 }
             }
             if (!matched) {
+                // 名称特征匹配（排除系统级干扰词）
                 if (nameLower.contains("音乐") || nameLower.contains("电台") || nameLower.contains("听书") ||
-                    nameLower.contains("music") || nameLower.contains("audio") || nameLower.contains("player") ||
-                    nameLower.contains("收音机") || nameLower.contains("伴听") || nameLower.contains("洛雪")) {
+                    nameLower.contains("伴听") || nameLower.contains("洛雪") || nameLower.contains("网易云") ||
+                    nameLower.contains("qq音乐") || nameLower.contains("汽水音乐") || nameLower.contains("酷狗") ||
+                    nameLower.contains("酷我") || nameLower.contains("喜马拉雅")) {
                     matched = true;
                 }
             }
