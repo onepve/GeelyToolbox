@@ -554,9 +554,8 @@ public class SteeringWheelKeyManager {
                 return SOURCE_LOCAL;
             }
 
-            if (isBluetoothDeviceConnected() && sLastActiveAudioSource == SOURCE_BLUETOOTH) {
-                return SOURCE_BLUETOOTH;
-            }
+            // 核心铁律：若蓝牙仅物理连接但并未在推流 (手机未播歌)，绝不能盲目判定为蓝牙切歌源！
+            // 彻底杜绝上次蓝牙记忆导致未推流时方控切歌打入黑洞，未推流时恒定回退本地源
         } catch (Throwable ignored) {}
         return SOURCE_LOCAL;
     }
@@ -745,55 +744,61 @@ public class SteeringWheelKeyManager {
         // 彻底杜绝本地音乐抢占系统音频焦点导致原生蓝牙协议栈下发 AVRCP PAUSE(70) 秒停手机！
         // ════════════════════════════════════════════════════════════
         if (targetSource == SOURCE_BLUETOOTH) {
-            boolean dispatchedToBt = false;
-            try {
-                MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
-                if (msm != null) {
-                    List<MediaController> controllers = msm.getActiveSessions(null);
-                    if (controllers != null) {
-                        for (MediaController mc : controllers) {
-                            if (mc != null && "com.android.bluetooth".equals(mc.getPackageName())) {
-                                if (mc.getTransportControls() != null) {
-                                    if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT) {
-                                        mc.getTransportControls().skipToNext();
-                                    } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
-                                        mc.getTransportControls().skipToPrevious();
-                                    } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
-                                        mc.getTransportControls().pause();
-                                    } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
-                                        mc.getTransportControls().play();
-                                    } else {
-                                        mc.dispatchMediaButtonEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
-                                        mc.dispatchMediaButtonEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
+            // 核心安全闭环：仅当蓝牙外部音频流真正活跃 (手机端正在推流) 时，才执行蓝牙独占直发
+            // 若手机蓝牙仅连接但未在推流 (手机未播歌)，坚决不把按键送入黑洞，平滑回退至本地媒体分发！
+            if (EasMediaBridge.getInstance(context).isBluetoothChannelActive()) {
+                boolean dispatchedToBt = false;
+                try {
+                    MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
+                    if (msm != null) {
+                        List<MediaController> controllers = msm.getActiveSessions(null);
+                        if (controllers != null) {
+                            for (MediaController mc : controllers) {
+                                if (mc != null && "com.android.bluetooth".equals(mc.getPackageName())) {
+                                    if (mc.getTransportControls() != null) {
+                                        if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT) {
+                                            mc.getTransportControls().skipToNext();
+                                        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
+                                            mc.getTransportControls().skipToPrevious();
+                                        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
+                                            mc.getTransportControls().pause();
+                                        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
+                                            mc.getTransportControls().play();
+                                        } else {
+                                            mc.dispatchMediaButtonEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
+                                            mc.dispatchMediaButtonEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
+                                        }
+                                        dispatchedToBt = true;
+                                        Log.i(TAG, "Exclusive TransportControls dispatched to com.android.bluetooth (code=" + keyCode + ")");
                                     }
-                                    dispatchedToBt = true;
-                                    Log.i(TAG, "Exclusive TransportControls dispatched to com.android.bluetooth (code=" + keyCode + ")");
+                                    break;
                                 }
-                                break;
                             }
                         }
                     }
+                } catch (Exception e) {
+                    Log.w(TAG, "Exclusive Bluetooth TransportControls error: " + e.getMessage());
                 }
-            } catch (Exception e) {
-                Log.w(TAG, "Exclusive Bluetooth TransportControls error: " + e.getMessage());
-            }
 
-            // 若 MediaSession 未命中（极端情况），定向显式广播仅发给 com.android.bluetooth
-            if (!dispatchedToBt) {
-                try {
-                    Intent down = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                    down.setPackage("com.android.bluetooth");
-                    down.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
-                    context.sendOrderedBroadcast(down, null);
+                // 若 MediaSession 未命中（极端情况），定向显式广播仅发给 com.android.bluetooth
+                if (!dispatchedToBt) {
+                    try {
+                        Intent down = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                        down.setPackage("com.android.bluetooth");
+                        down.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
+                        context.sendOrderedBroadcast(down, null);
 
-                    Intent up = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                    up.setPackage("com.android.bluetooth");
-                    up.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
-                    context.sendOrderedBroadcast(up, null);
-                    Log.i(TAG, "Exclusive directed broadcast sent to com.android.bluetooth (code=" + keyCode + ")");
-                } catch (Exception ignored) {}
+                        Intent up = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                        up.setPackage("com.android.bluetooth");
+                        up.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
+                        context.sendOrderedBroadcast(up, null);
+                        Log.i(TAG, "Exclusive directed broadcast sent to com.android.bluetooth (code=" + keyCode + ")");
+                    } catch (Exception ignored) {}
+                }
+                return; // 蓝牙真正推流时独占直发，直接返回！
+            } else {
+                Log.i(TAG, "Bluetooth connected but not streaming, fallback to local media distribution for keyCode=" + keyCode);
             }
-            return; // 蓝牙独占，直接返回！绝不走本地广播与全局分发！
         }
 
         // ════════════════════════════════════════════════════════════
@@ -817,6 +822,9 @@ public class SteeringWheelKeyManager {
         String targetPkg = resolveTargetMediaPackage();
         Log.i(TAG, "Resolved target media package: " + (targetPkg.isEmpty() ? "NONE" : targetPkg) + " (code=" + keyCode + ")");
 
+        boolean isPlaying = isAnyMediaPlaying();
+        boolean isTrackSkip = (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT || keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS);
+
         // 3. MediaSessionManager 传输控制通道 (直接调用目标或活跃会话的 skipToNext / skipToPrevious / 播放暂停)
         try {
             MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
@@ -838,8 +846,14 @@ public class SteeringWheelKeyManager {
                             }
                             if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT) {
                                 mc.getTransportControls().skipToNext();
+                                if (!isPlaying) {
+                                    mc.getTransportControls().play();
+                                }
                             } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
                                 mc.getTransportControls().skipToPrevious();
+                                if (!isPlaying) {
+                                    mc.getTransportControls().play();
+                                }
                             } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
                                 // 幂等暂停：无论状态广播是否滞后，pause() 语义恒定为暂停
                                 mc.getTransportControls().pause();
@@ -882,6 +896,23 @@ public class SteeringWheelKeyManager {
         } else {
             // 未锁定具体单一应用时，向整车已安装的媒体应用广播兜底
             broadcastTargets.addAll(getInstalledMediaPackages());
+        }
+
+        // 若当前处于未播放状态且车主执行上一首/下一首切歌，必须主动调起播放并起播
+        if (!isPlaying && isTrackSkip) {
+            for (String pkg : broadcastTargets) {
+                try {
+                    Intent playDown = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                    playDown.setPackage(pkg);
+                    playDown.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY, 0));
+                    context.sendOrderedBroadcast(playDown, null);
+
+                    Intent playUp = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                    playUp.setPackage(pkg);
+                    playUp.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY, 0));
+                    context.sendOrderedBroadcast(playUp, null);
+                } catch (Exception ignored) {}
+            }
         }
 
         for (String pkg : broadcastTargets) {

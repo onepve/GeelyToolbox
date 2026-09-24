@@ -242,9 +242,48 @@ public class EasMediaBridge {
     }
 
     /**
-     * 申请常驻 MAY_DUCK 闪避音频焦点 (移植米小江车规级核心逻辑)
-     * 1. 底层吉利蓝牙堆栈 (A2dpSinkStreamHandler) 永远感知到 audioFocus != 0，绝不会触发 stopFluorideStreaming 与 sendAvrcpPause 掐死微信！
-     * 2. MAY_DUCK 告知系统此焦点可与其他媒体混音，本地播放音乐时仅轻微压低音量，手机微信语音、手机导航与本地音乐可完美同时放声！
+     * 为底层 A2DP Sink 链路申请音频焦点，打通 JNI 音频通道并解除 GOC 硬件静音
+     * 核心铁律：仅通知车机系统的 A2dpSinkService 申请焦点 (SNK_PLAY)，
+     * 严禁向手机下发 AVRCP play() 播歌指令，坚决杜绝把手机微信语音掐断！
+     */
+    public void grantSinkAudioFocusViaProxy() {
+        try {
+            BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+            if (adapter != null && adapter.isEnabled()) {
+                adapter.getProfileProxy(appContext, new BluetoothProfile.ServiceListener() {
+                    @Override
+                    public void onServiceConnected(int profile, BluetoothProfile proxy) {
+                        try {
+                            if (profile == 11 /* BluetoothProfile.A2DP_SINK */) {
+                                List<BluetoothDevice> devices = proxy.getConnectedDevices();
+                                if (devices != null && !devices.isEmpty()) {
+                                    BluetoothDevice dev = devices.get(0);
+                                    Method m = proxy.getClass().getMethod("requestAudioFocus", BluetoothDevice.class, boolean.class);
+                                    m.invoke(proxy, dev, true);
+                                    AppLogger.i("蓝牙音频", "通过 BluetoothA2dpSink 反射下发 requestAudioFocus(true) 成功！解除 GOC 硬件静音");
+                                }
+                            }
+                        } catch (Throwable t) {
+                            AppLogger.w("蓝牙音频", "反射 BluetoothA2dpSink 请求焦点异常: " + t.getMessage());
+                        } finally {
+                            try {
+                                adapter.closeProfileProxy(profile, proxy);
+                            } catch (Throwable ignored) {}
+                        }
+                    }
+                    @Override
+                    public void onServiceDisconnected(int profile) {}
+                }, 11);
+            }
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "通过 BluetoothProfile 代理请求焦点异常: " + t.getMessage());
+        }
+    }
+
+    /**
+     * 申请常驻 MAY_DUCK 闪避音频焦点 (原子契约锁死)
+     * 1. 申请 MAY_DUCK 瞬态闪避焦点，告知系统此焦点可与其他媒体混音，本地播放音乐时仅轻微压低音量；
+     * 2. 紧随其后为底层 A2DP Sink 协议栈反射申请专属音频焦点，通知 JNI informAudioFocusStateNative:1，解除 GOC val:0.000000 硬件静音死锁！
      */
     public synchronized void requestBluetoothFocusIfNeeded() {
         if (audioManager == null) {
@@ -260,6 +299,8 @@ public class EasMediaBridge {
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "requestBluetoothFocusIfNeeded 异常: " + t.getMessage());
         }
+        // 同时为底层 A2DP Sink 链路申请音频焦点，彻底解除 MT8666 GOC 0.000000 硬件静音
+        grantSinkAudioFocusViaProxy();
     }
 
     /**
@@ -290,23 +331,24 @@ public class EasMediaBridge {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
                 AppLogger.i("蓝牙音频", "已下发 updateCurrentSourceType(2)，原车 2 号蓝牙音频物理通道已选通！");
             }
-            // 1. 发送吉利原车系统底层切源广播与原厂部件保持广播
+            // 1. 发送吉利原车系统底层切源广播与原厂部件保持广播 (穿透 Android 9 后台广播限制)
             try {
                 Intent rsrcIntent = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
                 rsrcIntent.putExtra("source_type", SOURCE_TYPE_BLUETOOTH); // 2
                 rsrcIntent.putExtra("ecarx.intent.extra.KEY_RSRC_TYPE", SOURCE_TYPE_BLUETOOTH); // 2
                 rsrcIntent.putExtra("ecarx.intent.extra.KEY_RSRC_MODE", 1);
+                rsrcIntent.addFlags(0x01000000); // Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND
                 appContext.sendBroadcast(rsrcIntent);
+
+                Intent direct = new Intent(rsrcIntent);
+                direct.setComponent(new ComponentName("ecarx.xsf.mediacenter", "ecarx.xsf.mediacenter.MediaKeyReceiver"));
+                appContext.sendBroadcast(direct);
             } catch (Throwable ignored) {}
 
             keepXcmediaOnBluetoothSource();
 
-            // 2. 核心大杀器：常驻持有 MAY_DUCK 蓝牙闪避焦点，保障微信秒级发声且支持与本地音乐同时播报
+            // 2. 核心大杀器：持有 MAY_DUCK 瞬态闪避焦点并为底层 A2DP Sink 链路赋权焦点，解除静音
             requestBluetoothFocusIfNeeded();
-
-            // 铁律：选通蓝牙硬件声道时坚决不调用 wakeBluetoothAudioSink()/play()！
-            // 防止车主点开微信语音或上车时手机被误下发播放键导致音乐抢占/切歌掐死微信。
-            // wakeBluetoothAudioSink() 仅由 playBluetoothMusic() 在用户明确要播歌时主动触发。
 
             // 3. 确保系统媒体音量正常，杜绝为0导致微信或音乐不出声
             AudioManager am = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
@@ -360,37 +402,8 @@ public class EasMediaBridge {
             AppLogger.w("蓝牙音频", "通过 MediaSession 唤醒蓝牙音频焦点异常: " + t.getMessage());
         }
 
-        // 尝试通过 BluetoothProfile.A2DP_SINK 反射直接通知底层 requestAudioFocus
-        try {
-            BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-            if (adapter != null && adapter.isEnabled()) {
-                adapter.getProfileProxy(appContext, new BluetoothProfile.ServiceListener() {
-                    @Override
-                    public void onServiceConnected(int profile, BluetoothProfile proxy) {
-                        try {
-                            if (profile == 11 /* BluetoothProfile.A2DP_SINK */) {
-                                List<BluetoothDevice> devices = proxy.getConnectedDevices();
-                                if (devices != null && !devices.isEmpty()) {
-                                    BluetoothDevice dev = devices.get(0);
-                                    Method m = proxy.getClass().getMethod("requestAudioFocus", BluetoothDevice.class, boolean.class);
-                                    m.invoke(proxy, dev, true);
-                                    AppLogger.i("蓝牙音频", "通过 BluetoothA2dpSink 反射下发 requestAudioFocus(true) 成功！");
-                                }
-                            }
-                        } catch (Throwable ignored) {
-                        } finally {
-                            try {
-                                adapter.closeProfileProxy(profile, proxy);
-                            } catch (Throwable ignored) {}
-                        }
-                    }
-                    @Override
-                    public void onServiceDisconnected(int profile) {}
-                }, 11);
-            }
-        } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "通过 BluetoothProfile 代理请求焦点异常: " + t.getMessage());
-        }
+        // 通知 A2DP Sink 代理向系统申请焦点并解除底层静音
+        grantSinkAudioFocusViaProxy();
     }
 
     /** 用户主动暂停后的自动唤醒抑制截止时间戳 (ms)，期间严禁任何自动 play() */
@@ -571,13 +584,14 @@ public class EasMediaBridge {
                     int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
                     if (state == 2) {
                         a2dpSinkConnected = true;
-                        AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已连接 (connected)，选通音频通道并建立 MAY_DUCK 焦点守护");
+                        AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已连接 (connected)，选通音频通道并解除底层静音");
                         activateBluetoothChannel();
+                        grantSinkAudioFocusViaProxy();
                     } else if (state == 0) {
                         a2dpSinkConnected = false;
                         a2dpStreaming = false; // 断开必然不再推流
                         abandonBluetoothFocus();
-                        AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已断开，释放 MAY_DUCK 焦点并复位推流态");
+                        AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已断开，复位推流态");
                     }
                 } else if ("android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED".equals(action)) {
                     // 真实推流状态：只有 STATE_STARTED 才认为蓝牙音频流活跃 (connected != streaming)
