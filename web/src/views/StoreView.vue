@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col space-y-4">
     <!-- 实测机型声明 (安全实测认证标识：翠绿圆环徽标与流线说明，彻底告别伪按钮误触) -->
-    <div class="bg-car-item border-2 border-car-border rounded-3xl py-7 px-7 min-h-[106px] flex items-center shadow-md">
+    <div class="bg-car-item border-2 border-car-border rounded-3xl p-6 min-h-[96px] flex items-center shadow-md">
       <div class="w-[52px] h-[52px] rounded-full bg-emerald-500/15 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center mr-6 shrink-0 shadow-sm">
         <svg class="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
@@ -50,7 +50,7 @@
         v-for="app in filteredApps" 
         :key="app.id"
         @click="openModal('appDetail', app)"
-        class="bg-car-card border-2 border-car-border hover:border-car-accent rounded-3xl p-6 flex flex-col justify-between cursor-pointer transition-all shadow-md group h-full min-h-[190px]"
+        class="bg-car-card border-2 border-car-border hover:border-car-accent rounded-2xl p-5 flex flex-col justify-between cursor-pointer transition-all shadow-md group h-full min-h-[190px]"
       >
         <div class="flex-1 min-w-0 flex items-center space-x-4 py-2">
           <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5">
