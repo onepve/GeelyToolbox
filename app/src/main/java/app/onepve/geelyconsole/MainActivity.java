@@ -2879,7 +2879,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public String forceActivateBluetoothChannel() {
             EasMediaBridge.getInstance(MainActivity.this).activateBluetoothChannel();
-            showToast("已强制选通 6 号蓝牙物理声道并申请焦点");
+            showToast("已强制选通 2 号蓝牙物理声道");
             return "{\"success\":true}";
         }
 
