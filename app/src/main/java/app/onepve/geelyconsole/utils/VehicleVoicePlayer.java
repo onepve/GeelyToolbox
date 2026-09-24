@@ -372,13 +372,13 @@ public class VehicleVoicePlayer {
         } else if ("gear_n".equalsIgnoreCase(baseName)) {
             return new String[]{"N挡", "当前空挡，注意溜车【N】", "挂入N挡", "空挡"};
         } else if ("drive_mode_sport".equalsIgnoreCase(baseName) || "mode_sport".equalsIgnoreCase(baseName)) {
-            return new String[]{"运动模式", "sport"};
+            return new String[]{"运动模式", "运动", "sport"};
         } else if ("drive_mode_comfort".equalsIgnoreCase(baseName) || "mode_comfort".equalsIgnoreCase(baseName)) {
-            return new String[]{"舒适模式", "comfort"};
+            return new String[]{"舒适模式", "舒适", "comfort"};
         } else if ("drive_mode_eco".equalsIgnoreCase(baseName) || "mode_eco".equalsIgnoreCase(baseName)) {
-            return new String[]{"经济模式", "eco"};
-        } else if ("drive_mode_snow".equalsIgnoreCase(baseName) || "mode_snow".equalsIgnoreCase(baseName)) {
-            return new String[]{"雪地模式", "snow"};
+            return new String[]{"经济模式", "经济", "eco"};
+        } else if ("drive_mode_smart".equalsIgnoreCase(baseName) || "mode_smart".equalsIgnoreCase(baseName)) {
+            return new String[]{"智能模式", "智能", "smart"};
         } else if ("engine_start".equalsIgnoreCase(baseName) || "start".equalsIgnoreCase(baseName)) {
             return new String[]{"车辆已启动系统自检正常【启动】", "启动", "点火", "欢迎乘坐量子号飞船【启动】"};
         } else if ("engine_stop".equalsIgnoreCase(baseName) || "stop".equalsIgnoreCase(baseName)) {
