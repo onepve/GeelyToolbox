@@ -5,7 +5,7 @@
       title="多媒体"
       desc="整车默认多媒体音源与智能回退调度中枢，统一管控方向盘切歌与起步车速放歌。"
       helpTitle="【功能指南】整车多媒体与优先级回退"
-      helpText="1. 统一调度：&#10;方向盘切歌/播放与起步车速达标放歌，均以此处的排序链为唯一真源。&#10;&#10;2. 依次顺位回退：&#10;当首选音源不可用时（例如首选设为蓝牙，但上车未带手机或手机蓝牙断开），系统将自动按列表顺序顺位唤醒下一个已安装的播放器，避免按键打空或随机调起。&#10;&#10;3. 刷新扫描：&#10;新装了音乐软件后，点击「刷新扫描应用」即可自动收录进列表；点击「调整排序」可自由调整优先级。"
+      helpText="1. 快捷选择：&#10;卡片展示当前优先级最高的前 4 款多媒体音源，点击任一按钮可直接设为当前首选。&#10;&#10;2. 依次顺位回退：&#10;当首选音源不可用时（例如首选设为蓝牙，但上车未带手机或手机蓝牙断开），系统将自动按排序链顺序顺位唤醒下一个已安装的播放器，避免按键打空或随机调起。&#10;&#10;3. 调整排序与刷新：&#10;点击「调整排序」可在完整列表中通过上下移动微调优先级；新装了音乐软件后，点击「刷新扫描应用」即可自动收录进列表。"
       helpTip="默认首选为手机蓝牙；若手机蓝牙未连接，按方向盘切歌或车速达标将自动顺位拉活已安装的本地音乐。"
     >
       <div class="flex flex-col space-y-4">
@@ -17,22 +17,17 @@
               <span class="text-[17px] font-black text-car-text">当前首选音源：</span>
               <span class="text-[17px] font-black text-car-accent">{{ primaryMediaName }}</span>
               <span class="px-2 py-0.5 text-[11.5px] font-black rounded-full bg-car-card border border-car-border text-car-sub">
-                {{ isReordering ? '正在调整排序' : '依次回退调度' }}
+                依次回退调度
               </span>
             </div>
           </div>
 
           <div class="flex items-center space-x-2.5">
             <button 
-              @click="toggleReordering"
-              :class="[
-                'min-h-[50px] px-4 rounded-xl border-2 font-black text-[14px] cursor-pointer transition-all flex items-center space-x-1.5 shadow-sm',
-                isReordering
-                  ? 'border-car-accent bg-car-item text-car-accent ring-2 ring-car-accent/20'
-                  : 'border-car-border bg-car-card hover:border-car-border-light text-car-text'
-              ]"
+              @click="openReorderModal"
+              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text font-black text-[14px] cursor-pointer transition-all flex items-center space-x-1.5 shadow-sm"
             >
-              <span>{{ isReordering ? '完成排序' : '调整排序' }}</span>
+              <span>调整排序</span>
             </button>
             <button 
               @click="rescanMediaApps"
@@ -45,94 +40,33 @@
           </div>
         </div>
 
-        <!-- 多媒体应用优先级流列表 -->
-        <div class="space-y-2.5">
-          <div 
-            v-for="(item, index) in mediaAppsList" 
+        <!-- 一排横向音源胶囊按键 (展示前 4 项核心音源，排在最前为首选) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-stretch">
+          <button 
+            v-for="(item, index) in topMediaApps" 
             :key="item.pkg"
-            class="p-4 rounded-2xl bg-car-item border transition-all flex items-center justify-between shadow-sm"
+            @click="setAsPrimary(item)"
             :class="[
+              'h-[52px] px-3 rounded-2xl font-black text-[14.5px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-1.5 shadow-sm whitespace-nowrap min-w-0',
               item.pkg === currentPrimaryPkg
-                ? 'border-car-accent/80 bg-car-card ring-1 ring-car-accent/30'
-                : 'border-car-border hover:border-car-border-light'
+                ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
+                : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
             ]"
           >
-            <!-- 左侧：序号与应用信息 -->
-            <div class="flex items-center space-x-3.5 min-w-0">
-              <div 
-                class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-[15px] shrink-0 border shadow-sm"
-                :class="[
-                  index === 0
-                    ? 'bg-car-accent text-slate-950 border-car-accent'
-                    : 'bg-car-card text-car-sub border-car-border'
-                ]"
-              >
-                No.{{ index + 1 }}
-              </div>
-              <div class="flex flex-col min-w-0">
-                <div class="flex items-center space-x-2">
-                  <span class="text-[17px] font-black text-car-text truncate">{{ item.name }}</span>
-                  <span 
-                    v-if="item.pkg === 'com.android.bluetooth'" 
-                    class="px-2 py-0.5 text-[11px] rounded bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-bold shrink-0"
-                  >
-                    手机无线推流
-                  </span>
-                  <span 
-                    v-else 
-                    class="px-2 py-0.5 text-[11px] rounded bg-car-card border border-car-border text-car-sub font-bold shrink-0"
-                  >
-                    车机本地应用
-                  </span>
-                </div>
-                <span class="text-[12.5px] font-mono text-car-sub truncate mt-0.5">{{ item.pkg }}</span>
-              </div>
-            </div>
-
-            <!-- 右侧操作区 -->
-            <div class="flex items-center space-x-2 shrink-0">
-              <!-- 排序模式下：上移 / 下移按钮 -->
-              <template v-if="isReordering">
-                <button 
-                  @click="movePriority(index, -1)"
-                  :disabled="index === 0"
-                  class="h-[50px] px-3.5 rounded-xl border border-car-border bg-car-card text-car-text font-black text-[13px] disabled:opacity-30 disabled:cursor-not-allowed hover:border-car-accent cursor-pointer transition-all shadow-sm"
-                >
-                  ↑ 上移
-                </button>
-                <button 
-                  @click="movePriority(index, 1)"
-                  :disabled="index === mediaAppsList.length - 1"
-                  class="h-[50px] px-3.5 rounded-xl border border-car-border bg-car-card text-car-text font-black text-[13px] disabled:opacity-30 disabled:cursor-not-allowed hover:border-car-accent cursor-pointer transition-all shadow-sm"
-                >
-                  ↓ 下移
-                </button>
-              </template>
-
-              <!-- 正常模式下：设为首选 / 首选标签 -->
-              <template v-else>
-                <div 
-                  v-if="item.pkg === currentPrimaryPkg" 
-                  class="h-[50px] px-4 rounded-xl bg-car-item border border-car-accent text-car-accent font-black text-[13.5px] flex items-center space-x-1 shadow-sm select-none"
-                >
-                  <span>✓ 默认首选</span>
-                </div>
-                <button 
-                  v-else 
-                  @click="setAsPrimary(item)"
-                  class="h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-accent text-car-sub hover:text-car-text font-black text-[13.5px] cursor-pointer transition-all shadow-sm"
-                >
-                  设为首选
-                </button>
-              </template>
-            </div>
-          </div>
+            <span 
+              v-if="item.pkg === currentPrimaryPkg" 
+              class="px-1.5 py-0.5 text-[10.5px] rounded bg-car-card border border-car-accent text-car-accent font-black shrink-0"
+            >
+              首选
+            </span>
+            <span class="truncate">{{ item.name }}</span>
+          </button>
         </div>
 
         <!-- 底部提示 -->
         <div class="pt-3 border-t border-car-border/50 flex flex-wrap items-center justify-between text-car-sub">
           <div class="text-[13px] font-bold">
-            调度策略：车速达标或按方向盘切歌时，依次尝试上述列表中的音源；若手机蓝牙未连接，毫秒级顺位唤醒本地播放器。
+            调度策略：车速达标或方向盘切歌时优先播放首选；蓝牙未连时自动顺位唤醒后续本地播放器。超出 4 款或调整次序请点击右上角「调整排序」。
           </div>
         </div>
       </div>
@@ -357,7 +291,93 @@
       </div>
     </FeatureCard>
 
+    <!-- 调整排序模态框 (管理全部已安装播放器与完整优先级回退链) -->
+    <div 
+      v-if="showReorderModal" 
+      class="fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center p-4 backdrop-blur-md"
+      style="background: rgba(5, 8, 15, 0.88);"
+    >
+      <div 
+        class="w-full max-w-2xl bg-car-card border-2 border-car-accent rounded-3xl p-6 shadow-2xl flex flex-col space-y-4 text-car-text max-h-[85vh] overflow-y-auto"
+        style="background: var(--bg-modal, rgba(16, 23, 38, 0.98));"
+      >
+        <!-- 弹窗顶栏 -->
+        <div class="flex items-center justify-between pb-3 border-b border-car-border">
+          <div class="flex items-center space-x-3">
+            <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)]"></span>
+            <span class="text-[20px] font-black tracking-wide">多媒体音源优先级排序</span>
+            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full bg-car-item border border-car-accent text-car-accent">
+              依次回退调度
+            </span>
+          </div>
+          <button 
+            @click="closeReorderModal" 
+            class="w-[50px] h-[50px] min-h-[50px] rounded-xl bg-car-item border border-car-border flex items-center justify-center hover:bg-car-card text-car-sub hover:text-car-text text-2xl font-bold cursor-pointer transition-colors"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="text-[13.5px] text-car-sub font-bold">
+          整车按下方顺序依次回退尝试播放；排在最前方的应用将同步呈现在外层面板。
+        </div>
+
+        <!-- 应用排序列表 -->
+        <div class="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
+          <div 
+            v-for="(item, index) in mediaAppsList" 
+            :key="item.pkg"
+            class="p-3.5 rounded-2xl bg-car-item border border-car-border flex items-center justify-between shadow-sm"
+          >
+            <div class="flex items-center space-x-3 min-w-0">
+              <span class="w-8 h-8 rounded-lg bg-car-card border border-car-border flex items-center justify-center text-[13px] font-mono font-black text-car-accent shrink-0">
+                {{ index + 1 }}
+              </span>
+              <div class="flex flex-col min-w-0">
+                <span class="text-[15.5px] font-black text-car-text truncate">{{ item.name }}</span>
+                <span class="text-[11.5px] font-mono text-car-sub truncate">{{ item.pkg }}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-2 shrink-0">
+              <button 
+                @click="movePriority(index, -1)"
+                :disabled="index === 0"
+                class="h-[50px] min-h-[50px] px-3.5 rounded-xl border border-car-border bg-car-card text-car-text font-black text-[13px] disabled:opacity-30 disabled:cursor-not-allowed hover:border-car-accent cursor-pointer transition-all shadow-sm"
+              >
+                ↑ 上移
+              </button>
+              <button 
+                @click="movePriority(index, 1)"
+                :disabled="index === mediaAppsList.length - 1"
+                class="h-[50px] min-h-[50px] px-3.5 rounded-xl border border-car-border bg-car-card text-car-text font-black text-[13px] disabled:opacity-30 disabled:cursor-not-allowed hover:border-car-accent cursor-pointer transition-all shadow-sm"
+              >
+                ↓ 下移
+              </button>
+              <button 
+                v-if="index !== 0"
+                @click="setAsPrimary(item)"
+                class="h-[50px] min-h-[50px] px-3.5 rounded-xl border border-car-border bg-car-card hover:border-car-accent text-car-accent font-black text-[13px] cursor-pointer transition-all shadow-sm"
+              >
+                置顶首选
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部确定按钮 -->
+        <div class="pt-3 border-t border-car-border flex justify-end">
+          <button 
+            @click="closeReorderModal" 
+            class="h-[50px] min-h-[50px] px-6 rounded-xl bg-car-accent text-slate-950 font-black text-[15px] cursor-pointer transition-all shadow-md hover:opacity-90 active:scale-95"
+          >
+            完成排序并保存
+          </button>
+        </div>
+      </div>
     </div>
+
+  </div>
 </template>
 
 <script setup>
@@ -376,6 +396,7 @@ const ttsInfo = ref({
 });
 
 // ================= 多媒体音源管理与优先级调度 =================
+const showReorderModal = ref(false);
 const isReordering = ref(false);
 const mediaScanning = ref(false);
 const mediaAppsList = ref([
@@ -385,6 +406,34 @@ const mediaAppsList = ref([
 const currentPrimaryPkg = computed(() => {
   return store.vehicleAuto.vehicle_speed_autoplay_pkg || 'com.android.bluetooth';
 });
+
+const topMediaApps = computed(() => {
+  const list = [...mediaAppsList.value];
+  if (list.length >= 4) {
+    return list.slice(0, 4);
+  }
+  const defaults = [
+    { name: 'QQ音乐车机版', pkg: 'com.tencent.qqmusiccar', isBluetooth: false },
+    { name: '网易云音乐车机版', pkg: 'com.netease.cloudmusiccar', isBluetooth: false },
+    { name: '汽水音乐', pkg: 'com.qishi.music', isBluetooth: false }
+  ];
+  for (const def of defaults) {
+    if (list.length >= 4) break;
+    if (!list.some(x => x.pkg === def.pkg)) {
+      list.push(def);
+    }
+  }
+  return list.slice(0, 4);
+});
+
+function openReorderModal() {
+  showReorderModal.value = true;
+}
+
+function closeReorderModal() {
+  showReorderModal.value = false;
+  showToast('多媒体排序已更新生效');
+}
 
 const primaryMediaName = computed(() => {
   const target = mediaAppsList.value.find(item => item.pkg === currentPrimaryPkg.value);
