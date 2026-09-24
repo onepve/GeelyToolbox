@@ -1,6 +1,144 @@
 <template>
   <div class="flex flex-col space-y-4">
-    <!-- 1. 车载蓝牙音频与网络互联 -->
+    <!-- 1. 整车多媒体音源与智能回退调度 (首选置顶卡片) -->
+    <FeatureCard 
+      title="多媒体"
+      desc="整车默认多媒体音源与智能回退调度中枢，统一管控方向盘切歌与起步车速放歌。"
+      helpTitle="【功能指南】整车多媒体与优先级回退"
+      helpText="1. 统一调度：&#10;方向盘切歌/播放与起步车速达标放歌，均以此处的排序链为唯一真源。&#10;&#10;2. 依次顺位回退：&#10;当首选音源不可用时（例如首选设为蓝牙，但上车未带手机或手机蓝牙断开），系统将自动按列表顺序顺位唤醒下一个已安装的播放器，避免按键打空或随机调起。&#10;&#10;3. 刷新扫描：&#10;新装了音乐软件后，点击「刷新扫描应用」即可自动收录进列表；点击「调整排序」可自由调整优先级。"
+      helpTip="默认首选为手机蓝牙；若手机蓝牙未连接，按方向盘切歌或车速达标将自动顺位拉活已安装的本地音乐。"
+    >
+      <div class="flex flex-col space-y-4">
+        <!-- 顶栏状态与控制 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-wrap items-center justify-between shadow-sm">
+          <div class="flex items-center space-x-3">
+            <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)]"></span>
+            <div class="flex items-center space-x-2">
+              <span class="text-[17px] font-black text-car-text">当前首选音源：</span>
+              <span class="text-[17px] font-black text-car-accent">{{ primaryMediaName }}</span>
+              <span class="px-2 py-0.5 text-[11.5px] font-black rounded-full bg-car-card border border-car-border text-car-sub">
+                {{ isReordering ? '正在调整排序' : '依次回退调度' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2.5">
+            <button 
+              @click="toggleReordering"
+              :class="[
+                'min-h-[50px] px-4 rounded-xl border-2 font-black text-[14px] cursor-pointer transition-all flex items-center space-x-1.5 shadow-sm',
+                isReordering
+                  ? 'border-car-accent bg-car-item text-car-accent ring-2 ring-car-accent/20'
+                  : 'border-car-border bg-car-card hover:border-car-border-light text-car-text'
+              ]"
+            >
+              <span>{{ isReordering ? '完成排序' : '调整排序' }}</span>
+            </button>
+            <button 
+              @click="rescanMediaApps"
+              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text font-black text-[14px] cursor-pointer transition-all flex items-center space-x-1.5 shadow-sm"
+              :disabled="mediaScanning"
+            >
+              <span v-if="mediaScanning">扫描中...</span>
+              <span v-else>刷新扫描应用</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 多媒体应用优先级流列表 -->
+        <div class="space-y-2.5">
+          <div 
+            v-for="(item, index) in mediaAppsList" 
+            :key="item.pkg"
+            class="p-4 rounded-2xl bg-car-item border transition-all flex items-center justify-between shadow-sm"
+            :class="[
+              item.pkg === currentPrimaryPkg
+                ? 'border-car-accent/80 bg-car-card ring-1 ring-car-accent/30'
+                : 'border-car-border hover:border-car-border-light'
+            ]"
+          >
+            <!-- 左侧：序号与应用信息 -->
+            <div class="flex items-center space-x-3.5 min-w-0">
+              <div 
+                class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-[15px] shrink-0 border shadow-sm"
+                :class="[
+                  index === 0
+                    ? 'bg-car-accent text-slate-950 border-car-accent'
+                    : 'bg-car-card text-car-sub border-car-border'
+                ]"
+              >
+                No.{{ index + 1 }}
+              </div>
+              <div class="flex flex-col min-w-0">
+                <div class="flex items-center space-x-2">
+                  <span class="text-[17px] font-black text-car-text truncate">{{ item.name }}</span>
+                  <span 
+                    v-if="item.pkg === 'com.android.bluetooth'" 
+                    class="px-2 py-0.5 text-[11px] rounded bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-bold shrink-0"
+                  >
+                    手机无线推流
+                  </span>
+                  <span 
+                    v-else 
+                    class="px-2 py-0.5 text-[11px] rounded bg-car-card border border-car-border text-car-sub font-bold shrink-0"
+                  >
+                    车机本地应用
+                  </span>
+                </div>
+                <span class="text-[12.5px] font-mono text-car-sub truncate mt-0.5">{{ item.pkg }}</span>
+              </div>
+            </div>
+
+            <!-- 右侧操作区 -->
+            <div class="flex items-center space-x-2 shrink-0">
+              <!-- 排序模式下：上移 / 下移按钮 -->
+              <template v-if="isReordering">
+                <button 
+                  @click="movePriority(index, -1)"
+                  :disabled="index === 0"
+                  class="h-[50px] px-3.5 rounded-xl border border-car-border bg-car-card text-car-text font-black text-[13px] disabled:opacity-30 disabled:cursor-not-allowed hover:border-car-accent cursor-pointer transition-all shadow-sm"
+                >
+                  ↑ 上移
+                </button>
+                <button 
+                  @click="movePriority(index, 1)"
+                  :disabled="index === mediaAppsList.length - 1"
+                  class="h-[50px] px-3.5 rounded-xl border border-car-border bg-car-card text-car-text font-black text-[13px] disabled:opacity-30 disabled:cursor-not-allowed hover:border-car-accent cursor-pointer transition-all shadow-sm"
+                >
+                  ↓ 下移
+                </button>
+              </template>
+
+              <!-- 正常模式下：设为首选 / 首选标签 -->
+              <template v-else>
+                <div 
+                  v-if="item.pkg === currentPrimaryPkg" 
+                  class="h-[50px] px-4 rounded-xl bg-car-item border border-car-accent text-car-accent font-black text-[13.5px] flex items-center space-x-1 shadow-sm select-none"
+                >
+                  <span>✓ 默认首选</span>
+                </div>
+                <button 
+                  v-else 
+                  @click="setAsPrimary(item)"
+                  class="h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-accent text-car-sub hover:text-car-text font-black text-[13.5px] cursor-pointer transition-all shadow-sm"
+                >
+                  设为首选
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部提示 -->
+        <div class="pt-3 border-t border-car-border/50 flex flex-wrap items-center justify-between text-car-sub">
+          <div class="text-[13px] font-bold">
+            调度策略：车速达标或按方向盘切歌时，依次尝试上述列表中的音源；若手机蓝牙未连接，毫秒级顺位唤醒本地播放器。
+          </div>
+        </div>
+      </div>
+    </FeatureCard>
+
+    <!-- 2. 车载蓝牙音频与网络互联 (原卡片向下顺移) -->
     <FeatureCard 
       title="车载音频与网络通道"
       desc="直控车机蓝牙与 Wi-Fi 开关，实时呈现 6 号蓝牙硬件声道仲裁与推流状态，提供一键强制声道选通与发声调试。"
@@ -237,6 +375,144 @@ const ttsInfo = ref({
   status: '已连接系统底层默认语音引擎 · 声线就绪'
 });
 
+// ================= 多媒体音源管理与优先级调度 =================
+const isReordering = ref(false);
+const mediaScanning = ref(false);
+const mediaAppsList = ref([
+  { name: '手机蓝牙', pkg: 'com.android.bluetooth', isBluetooth: true }
+]);
+
+const currentPrimaryPkg = computed(() => {
+  return store.vehicleAuto.vehicle_speed_autoplay_pkg || 'com.android.bluetooth';
+});
+
+const primaryMediaName = computed(() => {
+  const target = mediaAppsList.value.find(item => item.pkg === currentPrimaryPkg.value);
+  if (target) return target.name;
+  if (currentPrimaryPkg.value === 'com.android.bluetooth') return '手机蓝牙';
+  if (currentPrimaryPkg.value === 'com.tencent.qqmusiccar') return 'QQ音乐车机版';
+  if (currentPrimaryPkg.value === 'com.netease.cloudmusiccar') return '网易云音乐车机版';
+  return currentPrimaryPkg.value || '手机蓝牙';
+});
+
+function getSavedMusicOrder() {
+  try {
+    const raw = localStorage.getItem('preferred_music_apps_order');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return [];
+}
+
+function saveCurrentOrder(order) {
+  localStorage.setItem('preferred_music_apps_order', JSON.stringify(order));
+  try {
+    bridge.call('setWheelControlStringSetting', 'preferred_music_apps_order', JSON.stringify(order));
+  } catch (e) {}
+  window.dispatchEvent(new CustomEvent('music-order-updated'));
+}
+
+function loadMediaApps() {
+  mediaScanning.value = true;
+  try {
+    let raw = bridge.call('getInstalledMusicAppsJson');
+    if (!raw || raw === '[]') {
+      raw = bridge.call('getInstalledLaunchableApps');
+    }
+    let list = [];
+    if (raw) {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      list = parsed.map(item => ({
+        name: item.name || item.appName || item.pkg,
+        pkg: item.pkg || item.packageName,
+        isBluetooth: false
+      })).filter(item => item.pkg !== 'com.android.bluetooth');
+    }
+    
+    // 手机蓝牙常驻候选池
+    const all = [{ name: '手机蓝牙', pkg: 'com.android.bluetooth', isBluetooth: true }, ...list];
+    
+    // 依据用户自定义顺序排序
+    const savedOrder = getSavedMusicOrder();
+    if (savedOrder && savedOrder.length > 0) {
+      all.sort((a, b) => {
+        let ia = savedOrder.indexOf(a.pkg);
+        let ib = savedOrder.indexOf(b.pkg);
+        if (ia === -1) ia = 999;
+        if (ib === -1) ib = 999;
+        return ia - ib;
+      });
+    }
+    mediaAppsList.value = all;
+    
+    // 若当前未配置首选，自动同步第一项（默认手机蓝牙）
+    if (!store.vehicleAuto.vehicle_speed_autoplay_pkg && all.length > 0) {
+      store.vehicleAuto.vehicle_speed_autoplay_pkg = all[0].pkg;
+    }
+  } catch (e) {
+    mediaAppsList.value = [{ name: '手机蓝牙', pkg: 'com.android.bluetooth', isBluetooth: true }];
+  } finally {
+    mediaScanning.value = false;
+  }
+}
+
+function rescanMediaApps() {
+  mediaScanning.value = true;
+  try {
+    bridge.call('refreshInstalledApps');
+  } catch (e) {}
+  showToast('正在全仓重新扫描整车媒体应用...');
+  setTimeout(() => {
+    loadMediaApps();
+    showToast('媒体应用列表与音源已更新');
+  }, 400);
+}
+
+function toggleReordering() {
+  isReordering.value = !isReordering.value;
+  if (!isReordering.value) {
+    showToast('多媒体音源优先级已保存生效');
+  }
+}
+
+function movePriority(index, delta) {
+  const targetIndex = index + delta;
+  if (targetIndex < 0 || targetIndex >= mediaAppsList.value.length) return;
+  const list = [...mediaAppsList.value];
+  const temp = list[index];
+  list[index] = list[targetIndex];
+  list[targetIndex] = temp;
+  mediaAppsList.value = list;
+
+  const newOrder = list.map(item => item.pkg);
+  saveCurrentOrder(newOrder);
+
+  // 第一项自动同步为整车首选
+  if (list.length > 0) {
+    const first = list[0];
+    store.vehicleAuto.vehicle_speed_autoplay_pkg = first.pkg;
+    try {
+      bridge.call('setWheelControlStringSetting', 'vehicle_speed_autoplay_pkg', first.pkg);
+      localStorage.setItem('vehicle_speed_autoplay_app_name', first.name);
+    } catch (e) {}
+  }
+}
+
+function setAsPrimary(item) {
+  const list = mediaAppsList.value.filter(a => a.pkg !== item.pkg);
+  list.unshift(item);
+  mediaAppsList.value = list;
+
+  store.vehicleAuto.vehicle_speed_autoplay_pkg = item.pkg;
+  try {
+    bridge.call('setWheelControlStringSetting', 'vehicle_speed_autoplay_pkg', item.pkg);
+    localStorage.setItem('vehicle_speed_autoplay_app_name', item.name);
+  } catch (e) {}
+
+  const newOrder = list.map(a => a.pkg);
+  saveCurrentOrder(newOrder);
+  showToast(`整车首选音源已设为: ${item.name}`);
+}
+
 const connStatus = ref({
   bluetooth_enabled: false,
   bluetooth_connected: false,
@@ -381,6 +657,7 @@ let connectivityTimer = null;
 
 onMounted(() => {
   afterFirstPaint(() => {
+    loadMediaApps();
     loadVoiceThemes();
     window.refreshVoiceThemes = loadVoiceThemes;
     refreshConnectivity();
