@@ -219,12 +219,22 @@ public class EasMediaBridge {
     }
 
     /**
-     * 发送原厂小部件广播保持蓝牙音源 (已重构：剔除侵入式广播，防止误唤醒原厂仪表盘卡片)
+     * 发送原厂小部件广播保持蓝牙音源 (恢复今天上午实车验证正常的关键广播)
      */
     public void keepXcmediaOnBluetoothSource() {
-        // 底层 EAS 音频通道已在 activateBluetoothChannel() 中通过 updateCurrentSourceType(SOURCE_TYPE_BLUETOOTH) 权威选通。
-        // 彻底移除向原厂多媒体广播 ECARX_WIDGET_BLUETOOTH_PLAY，杜绝抢占仪表盘卡片焦点，100% 遵从用户的推流开关配置。
-        if (mApi == null) return;
+        long now = System.currentTimeMillis();
+        if (now - lastBtSourceKeepMs < 3000) {
+            return;
+        }
+        lastBtSourceKeepMs = now;
+        try {
+            Intent i = new Intent("ecarx.intent.broadcast.action.ECARX_WIDGET_BLUETOOTH_PLAY");
+            i.setPackage("com.ecarx.multimedia");
+            appContext.sendBroadcast(i);
+            AppLogger.i("蓝牙音频", "已下发 ECARX_WIDGET_BLUETOOTH_PLAY 广播保持原厂多媒体在蓝牙音源");
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "keepXcmediaOnBluetoothSource 失败: " + t.getMessage());
+        }
     }
 
     /**
@@ -273,10 +283,6 @@ public class EasMediaBridge {
      * 严禁在选通时向手机回灌 play() 播歌指令，坚决杜绝把手机微信语音掐断！
      */
     public synchronized void activateBluetoothChannel() {
-        if (isAutoWakeSuppressed()) {
-            AppLogger.i("蓝牙音频", "处于用户暂停抑制窗口内，跳过蓝牙通道选通 (尊重用户暂停意图)");
-            return;
-        }
         try {
             ensureEasReady();
             if (mApi != null && mRegistered && mToken != null) {
@@ -586,17 +592,28 @@ public class EasMediaBridge {
                             }
                         } else {
                             if (wasLocalPlayingBeforeA2dp) {
-                                wasLocalPlayingBeforeA2dp = false;
-                                AppLogger.i("蓝牙音频", "手机蓝牙推流结束，延时 400ms 触发车机音乐断点续播");
+                                // 微信语音多条连续播放或断续播放时，留出 2500ms 充裕防抖窗口，严禁 400ms 盲目拉起音乐掐死微信
                                 new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
-                                        VehicleAutomationService vas = VehicleAutomationService.getInstance();
-                                        if (vas != null) {
-                                            vas.resumeMediaPlaybackAfterAudioInterruption();
+                                        if (a2dpStreaming) {
+                                            AppLogger.i("蓝牙音频", "防抖期内手机重新推流(如连续点开微信语音)，取消恢复本地播放");
+                                            return;
+                                        }
+                                        if (VehicleVoicePlayer.isInPhoneCall(appContext)) {
+                                            AppLogger.i("蓝牙音频", "检测到微信通话/电话中，禁止恢复本地音乐以防抢焦点");
+                                            return;
+                                        }
+                                        if (wasLocalPlayingBeforeA2dp) {
+                                            wasLocalPlayingBeforeA2dp = false;
+                                            AppLogger.i("蓝牙音频", "手机蓝牙推流彻底结束，触发车机音乐断点续播");
+                                            VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                                            if (vas != null) {
+                                                vas.resumeMediaPlaybackAfterAudioInterruption();
+                                            }
                                         }
                                     }
-                                }, 400);
+                                }, 2500);
                             }
                         }
                     }
@@ -604,22 +621,24 @@ public class EasMediaBridge {
                     if (streaming) {
                         requestBluetoothFocusIfNeeded();
                         long now = System.currentTimeMillis();
-                        if (now - lastA2dpWakeTime > 4000) {
+                        if (now - lastA2dpWakeTime > 3000) {
                             lastA2dpWakeTime = now;
                             activateBluetoothChannel();
                         }
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
                     // 吉利实车专属：国承 GOC 模组上报元数据/控制事件
-                    // ⚠️ 注意：AVRCP 是控制信令层，绝不能单凭待机残留信令误将底层音频判定为推流中（坚决杜绝误判）
+                    // ⚠️ 注意：微信语音不是音乐播放器，AVRCP 不会上报 STATE_PLAYING，绝不能单凭 AVRCP 停播信号误杀 a2dpStreaming
                     try {
                         android.media.session.PlaybackState pbState = intent.getParcelableExtra("android.bluetooth.avrcp-controller.profile.extra.PLAYBACK");
                         if (pbState != null) {
                             int pState = pbState.getState();
                             boolean isPlaying = (pState == android.media.session.PlaybackState.STATE_PLAYING);
-                            if (!isPlaying && a2dpStreaming) {
-                                a2dpStreaming = false;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP 明确停止状态 (state=" + pState + ")");
+                            if (isPlaying && !a2dpStreaming) {
+                                a2dpStreaming = true;
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 播放事件起播 (STATE_PLAYING)，辅助选通蓝牙通道");
+                                requestBluetoothFocusIfNeeded();
+                                activateBluetoothChannel();
                             }
                         }
                     } catch (Throwable t) {
