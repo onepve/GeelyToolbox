@@ -897,6 +897,7 @@ if "查看详情与安装" not in store_vue_code:
 # 在本地与 tag CI 中均执行；任何失败阻断 APK 编译和上传。
 regression_scripts = [
     "check_recent_regressions.py",
+    "check_card_and_button_contracts.py",
     "test_button_focus_gate.py",
     "test_recent_decisions.py",
     "test_update_filename.py",
