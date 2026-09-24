@@ -673,6 +673,10 @@ public class SteeringWheelKeyManager {
                     pauseIntent.setPackage("com.ecarx.multimedia");
                     context.sendBroadcast(pauseIntent);
                 } catch (Throwable ignored) {}
+                try {
+                    // 特权清理原厂多媒体任务栈，杜绝退出 360 环视后原厂多媒体界面冒出
+                    SystemUtils.executePrivileged(context, "am force-stop com.ecarx.multimedia");
+                } catch (Throwable ignored) {}
             }
         }).start();
     }

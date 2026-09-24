@@ -22,6 +22,8 @@ import com.ecarx.eas.sdk.mediacenter.MusicPlaybackInfo;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import app.onepve.geelyconsole.services.VehicleAutomationService;
+
 /**
  * 吉利 ECARX EAS 多媒体中心轻量桥接器
  * 核心职责：
@@ -58,6 +60,7 @@ public class EasMediaBridge {
 
     private boolean a2dpSinkConnected = false;   // 物理连接态 (connected != active!)
     private volatile boolean a2dpStreaming = false; // 底层真实推流态 (AUDIO_STATE_CHANGED STATE_STARTED)
+    private volatile boolean wasLocalPlayingBeforeA2dp = false; // 手机蓝牙推流前车机本地是否有音乐正在播放
     private BroadcastReceiver a2dpReceiver;
     private long lastA2dpWakeTime = 0;
     private volatile long lastBtSourceKeepMs = 0;
@@ -216,22 +219,12 @@ public class EasMediaBridge {
     }
 
     /**
-     * 发送原厂小部件广播保持蓝牙音源 (移植原厂与米小江核心逻辑)
+     * 发送原厂小部件广播保持蓝牙音源 (已重构：剔除侵入式广播，防止误唤醒原厂仪表盘卡片)
      */
     public void keepXcmediaOnBluetoothSource() {
-        long now = System.currentTimeMillis();
-        if (now - lastBtSourceKeepMs < 4000) {
-            return;
-        }
-        lastBtSourceKeepMs = now;
-        try {
-            Intent i = new Intent("ecarx.intent.broadcast.action.ECARX_WIDGET_BLUETOOTH_PLAY");
-            i.setPackage("com.ecarx.multimedia");
-            appContext.sendBroadcast(i);
-            AppLogger.i("蓝牙音频", "已下发 ECARX_WIDGET_BLUETOOTH_PLAY 广播保持原厂多媒体在蓝牙音源");
-        } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "keepXcmediaOnBluetoothSource 失败: " + t.getMessage());
-        }
+        // 底层 EAS 音频通道已在 activateBluetoothChannel() 中通过 updateCurrentSourceType(SOURCE_TYPE_BLUETOOTH) 权威选通。
+        // 彻底移除向原厂多媒体广播 ECARX_WIDGET_BLUETOOTH_PLAY，杜绝抢占仪表盘卡片焦点，100% 遵从用户的推流开关配置。
+        if (mApi == null) return;
     }
 
     /**
@@ -585,6 +578,27 @@ public class EasMediaBridge {
                         a2dpStreaming = streaming;
                         AppLogger.i("蓝牙音频", "蓝牙 A2DP 推流状态跃变: streaming=" + streaming
                                 + " (connected=" + a2dpSinkConnected + ")");
+                        if (streaming) {
+                            VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                            if (vas != null && vas.isAnyMediaPlaying()) {
+                                wasLocalPlayingBeforeA2dp = true;
+                                AppLogger.i("蓝牙音频", "手机蓝牙推流开始，记录本地正在播放标记 wasLocalPlayingBeforeA2dp=true");
+                            }
+                        } else {
+                            if (wasLocalPlayingBeforeA2dp) {
+                                wasLocalPlayingBeforeA2dp = false;
+                                AppLogger.i("蓝牙音频", "手机蓝牙推流结束，延时 400ms 触发车机音乐断点续播");
+                                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                                        if (vas != null) {
+                                            vas.resumeMediaPlaybackAfterAudioInterruption();
+                                        }
+                                    }
+                                }, 400);
+                            }
+                        }
                     }
                     // 当手机端点开微信语音或音乐开始推流瞬间，毫秒级持有 MAY_DUCK 焦点与选通通道，杜绝无声与被动暂停
                     if (streaming) {

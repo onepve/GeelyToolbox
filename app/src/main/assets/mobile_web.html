@@ -48,7 +48,7 @@
 
         /* 卡片标准规范 */
         .card { background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 14px; margin-bottom: 14px; }
-        .card-title { font-size: 14px; font-weight: bold; color: #334155; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .card-title { font-size: 14px; font-weight: bold; color: #334155; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
         .input-group { margin-bottom: 12px; }
         .input-label { font-size: 12px; color: #64748b; margin-bottom: 6px; display: block; font-weight: 600; }
         input[type="text"], input[type="file"], textarea, .input-box {
@@ -176,7 +176,7 @@
             <div class="card">
                 <div class="card-title">
                     <span>📦 车机已存文件库 (/sdcard/Download/)</span>
-                    <div style="display:flex; gap:6px; align-items:center;">
+                    <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
                         <button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:11.5px; margin-top:0;" onclick="cleanCarFiles()">🧹 清理下载目录</button>
                         <button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:11.5px; margin-top:0;" onclick="loadCarFiles()">🔄 刷新列表</button>
                     </div>

@@ -50,7 +50,7 @@ CONTRACTS = [
  ('screen-no-reset', JAVA+'services/VehicleAutomationService.java', 'else if (screenOff)', [], [r'lastPowerMode\s*=',r'resetState\(',r'voicePlayer.play\(']),
  ('engine-state', JAVA+'services/VehicleAutomationService.java', 'public boolean isEngineRunning()',
   [r'if\s*\(lastPowerMode == 0\) return false',r'latestBatteryVoltage >= 13.2f',r'currentSpeedKmH == 0'], []),
- ('media-playing-no-audio-fallback', JAVA+'services/VehicleAutomationService.java', 'private boolean isAnyMediaPlaying()',
+ ('media-playing-no-audio-fallback', JAVA+'services/VehicleAutomationService.java', 'public boolean isAnyMediaPlaying()',
   [r'MEDIA_SESSION_SERVICE',r'STATE_PLAYING'], [r'isMusicActive']),
  ('idle-clamp', JAVA+'utils/IdleScreensaverManager.java', 'public static int clampSeconds(int v)',
   [r'if\s*\(v == NEVER_SECONDS\) return NEVER_SECONDS',r'MIN_SECONDS',r'MAX_SECONDS'], []),
@@ -109,6 +109,14 @@ CONTRACTS = [
   [r'requestBluetoothFocusIfNeeded', r'keepXcmediaOnBluetoothSource', r'updateCurrentSourceType'], [r'am\.abandonAudioFocus', r'dummyListener']),
  ('eas-bluetooth-may-duck', JAVA+'utils/EasMediaBridge.java', 'public synchronized void requestBluetoothFocusIfNeeded',
   [r'AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK', r'btFocusHeld'], []),
+ ('eas-no-ecarx-widget-bluetooth-play', JAVA+'utils/EasMediaBridge.java', 'public void keepXcmediaOnBluetoothSource()',
+  [r'if\s*\(\s*mApi\s*==\s*null\s*\)\s*return'], [r'ECARX_WIDGET_BLUETOOTH_PLAY']),
+ ('eas-a2dp-stream-resume', JAVA+'utils/EasMediaBridge.java', 'private void registerA2dpReceiver()',
+  [r'wasLocalPlayingBeforeA2dp', r'resumeMediaPlaybackAfterAudioInterruption'], []),
+ ('mode-360-suppress-multimedia', JAVA+'utils/SteeringWheelKeyManager.java', 'public void suppressOriginalMultimedia()',
+  [r'am force-stop com\.ecarx\.multimedia'], []),
+ ('music-cold-start-service', JAVA+'services/VehicleAutomationService.java', 'void triggerMusicAutoplay(final String pkg, final boolean fullscreen)',
+  [r'QQPlayerServiceNew', r'startForegroundService|startService'], []),
 ]
 
 
@@ -165,6 +173,8 @@ def evaluate(files):
         failures.append('mobile-web-unrestricted-transfer')
     if not re.search(r'retry\s*<\s*3', mweb) or not re.search(r'wakeLock', mweb):
         failures.append('mobile-web-transfer-reliability')
+    if not re.search(r'\.card-title\s*\{[^}]*flex-wrap:\s*wrap', mweb):
+        failures.append('mobile-web-card-title-wrap')
     ci_health = files.get('scripts/ci_health_check.py', '')
     if not re.search(r'CHECK_STORE_ASSETS', ci_health):
         failures.append('ci-store-probe-decoupled')
