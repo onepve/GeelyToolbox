@@ -364,27 +364,77 @@ function loadInstalledThemes() {
   }
 }
 
-function selectThemeSound(themeName) {
-  if (!targetItem.value) return;
-  const th = installedThemes.value.find(t => t.name === themeName);
-  let matchedFile = null;
-  const baseKey = targetItem.value.key;
-  const soundFile = targetItem.value.soundFile || (baseKey + '.mp3');
-  const baseName = soundFile.includes('.') ? soundFile.substring(0, soundFile.lastIndexOf('.')) : soundFile;
+const VOICE_ALIAS_MAP = {
+    door_fl: ['主驾车门开启', '主驾开门', '主驾驶开门', '主驾门开', '通用开门', '开门', '车门开启'],
+    door_fl_close: ['主驾开门关闭', '主驾车门关闭', '主驾关门', '主驾驶关门', '关门', '车门关闭'],
+    door_fr: ['副驾车门开启', '副驾开门', '副驾驶开门', '副驾门开'],
+    door_fr_close: ['副驾车门关闭', '副驾关门', '副驾驶关门'],
+    door_rl: ['左后车门开启', '左后开门', '左后门开'],
+    door_rl_close: ['左后车门关闭', '左后关门'],
+    door_rr: ['右后车门开启', '右后开门', '右后门开'],
+    door_rr_close: ['右后车门关闭', '右后关门'],
+    door_open: ['主驾车门开启', '开门', '车门开启', '车门打开', '主驾开门'],
+    door_close: ['主驾车门关闭', '主驾开门关闭', '关门', '车门关闭'],
+    gear_p: ['P挡', '动力已锁止【P】', '挂入P挡', '驻车挡'],
+    gear_d: ['D挡', '前进挡【D】', '挂入D挡', '前进挡'],
+    gear_r: ['R挡', '倒车挡注意安全【R】', '挂入R挡', '倒车挡', '倒挡'],
+    gear_n: ['N挡', '当前空挡，注意溜车【N】', '挂入N挡', '空挡'],
+    mode_comfort: ['舒适模式'],
+    mode_sport: ['运动模式'],
+    mode_eco: ['经济模式'],
+    mode_snow: ['雪地模式'],
+    mode_offroad: ['越野模式'],
+    mode_mud: ['泥地模式'],
+    mode_sand: ['沙地模式'],
+    start: ['车辆已启动系统自检正常【启动】', '启动', '点火', '欢迎乘坐量子号飞船【启动】'],
+    stop: ['车辆已熄火下次再见【熄火】', '熄火', '下电'],
+    trunk_open: ['后备箱开启', '尾门开启'],
+    trunk_close: ['后备箱关闭', '尾门关闭']
+  };
 
-  if (th && th.audioFiles && th.audioFiles.length > 0) {
-    matchedFile = th.audioFiles.find(f => {
-      const fBase = f.includes('.') ? f.substring(0, f.lastIndexOf('.')) : f;
-      return fBase.toLowerCase() === baseName.toLowerCase() || f.toLowerCase() === soundFile.toLowerCase();
-    });
+  function selectThemeSound(themeName) {
+    if (!targetItem.value) return;
+    const th = installedThemes.value.find(t => t.name === themeName);
+    const baseKey = targetItem.value.key;
+    const soundFile = targetItem.value.soundFile || (baseKey + '.mp3');
+    let finalName = soundFile;
+
+    if (th && th.audioFiles && th.audioFiles.length > 0) {
+      // 1. 尝试英文原名
+      const exact = th.audioFiles.find(f => f.toLowerCase() === soundFile.toLowerCase());
+      if (exact) {
+        finalName = exact;
+      } else {
+        // 2. 尝试别名字典精准匹配
+        const aliases = VOICE_ALIAS_MAP[baseKey] || [];
+        let found = null;
+        for (const alias of aliases) {
+          found = th.audioFiles.find(f => {
+            const base = f.includes('.') ? f.substring(0, f.lastIndexOf('.')) : f;
+            return base === alias;
+          });
+          if (found) break;
+        }
+        // 3. 尝试模糊包含别名
+        if (!found) {
+          for (const alias of aliases) {
+            found = th.audioFiles.find(f => {
+              const base = f.includes('.') ? f.substring(0, f.lastIndexOf('.')) : f;
+              return base.includes(alias);
+            });
+            if (found) break;
+          }
+        }
+        if (found) finalName = found;
+      }
+    }
+
+    customFilePath.value = `/sdcard/GeelyPilot/voices/${themeName}/${finalName}`;
+    saveAudioFilePath();
+    showToast(`已快捷绑定【${themeName}】的 ${finalName}`);
   }
-  const finalName = matchedFile || soundFile;
-  customFilePath.value = `/sdcard/GeelyPilot/voices/${themeName}/${finalName}`;
-  saveAudioFilePath();
-  showToast(`已快捷绑定【${themeName}】的 ${finalName}`);
-}
 
-watch(() => store.modals.voiceItemSettings, (item) => {
+  watch(() => store.modals.voiceItemSettings, (item) => {
   if (item && item.key) {
     customText.value = localStorage.getItem(`geely_voice_text_${item.key}`) || '';
     customFilePath.value = localStorage.getItem(`geely_voice_file_${item.key}`) || '';

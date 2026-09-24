@@ -313,7 +313,7 @@ public class VehicleVoicePlayer {
             }
         }
 
-        // 3. 常见中文别名匹配
+        // 3. 常见中文别名匹配：先全字精准命中，未命中再尝试包含匹配
         String[] aliases = getChineseAliases(baseName);
         if (aliases != null) {
             for (String alias : aliases) {
@@ -321,7 +321,18 @@ public class VehicleVoicePlayer {
                     if (f.isFile() && f.length() > 0) {
                         String fn = f.getName();
                         String fBase = fn.contains(".") ? fn.substring(0, fn.lastIndexOf('.')) : fn;
-                        if (fBase.equalsIgnoreCase(alias) || fBase.contains(alias) || alias.contains(fBase)) {
+                        if (fBase.equalsIgnoreCase(alias)) {
+                            return f;
+                        }
+                    }
+                }
+            }
+            for (String alias : aliases) {
+                for (File f : files) {
+                    if (f.isFile() && f.length() > 0) {
+                        String fn = f.getName();
+                        String fBase = fn.contains(".") ? fn.substring(0, fn.lastIndexOf('.')) : fn;
+                        if (fBase.contains(alias) || alias.contains(fBase)) {
                             return f;
                         }
                     }
@@ -332,24 +343,50 @@ public class VehicleVoicePlayer {
     }
 
     private static String[] getChineseAliases(String baseName) {
-        if ("door_fl".equalsIgnoreCase(baseName) || "door_open".equalsIgnoreCase(baseName)) {
-            return new String[]{"主驾开门", "开门", "车门打开", "迎宾", "door_open", "door_fl"};
-        } else if ("door_fl_close".equalsIgnoreCase(baseName) || "door_close".equalsIgnoreCase(baseName)) {
-            return new String[]{"主驾关门", "关门", "车门已关好", "door_close", "door_fl_close"};
+        if ("door_fl".equalsIgnoreCase(baseName)) {
+            return new String[]{"主驾车门开启", "主驾开门", "主驾驶开门", "主驾门开", "通用开门", "开门", "车门开启"};
+        } else if ("door_fl_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"主驾开门关闭", "主驾车门关闭", "主驾关门", "主驾驶关门", "关门", "车门关闭"};
+        } else if ("door_fr".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾车门开启", "副驾开门", "副驾驶开门", "副驾门开"};
+        } else if ("door_fr_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾车门关闭", "副驾关门", "副驾驶关门"};
+        } else if ("door_rl".equalsIgnoreCase(baseName)) {
+            return new String[]{"左后车门开启", "左后开门", "左后门开"};
+        } else if ("door_rl_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"左后车门关闭", "左后关门"};
+        } else if ("door_rr".equalsIgnoreCase(baseName)) {
+            return new String[]{"右后车门开启", "右后开门", "右后门开"};
+        } else if ("door_rr_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"右后车门关闭", "右后关门"};
+        } else if ("door_open".equalsIgnoreCase(baseName)) {
+            return new String[]{"开门", "车门开启", "车门打开", "主驾车门开启", "主驾开门", "迎宾"};
+        } else if ("door_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"关门", "车门关闭", "车门已关好", "主驾车门关闭", "主驾开门关闭"};
         } else if ("gear_p".equalsIgnoreCase(baseName)) {
-            return new String[]{"P挡", "驻车", "挂入P挡", "驻车挡"};
+            return new String[]{"P挡", "动力已锁止【P】", "挂入P挡", "驻车挡", "驻车"};
         } else if ("gear_d".equalsIgnoreCase(baseName)) {
-            return new String[]{"D挡", "前进", "前进挡", "挂入D挡"};
+            return new String[]{"D挡", "前进挡【D】", "挂入D挡", "前进挡", "前进"};
         } else if ("gear_r".equalsIgnoreCase(baseName)) {
-            return new String[]{"R挡", "倒车", "倒车挡", "挂入R挡"};
+            return new String[]{"R挡", "倒车挡注意安全【R】", "挂入R挡", "倒车挡", "倒车", "倒挡"};
         } else if ("gear_n".equalsIgnoreCase(baseName)) {
-            return new String[]{"N挡", "空挡", "挂入N挡"};
-        } else if ("drive_mode_sport".equalsIgnoreCase(baseName)) {
+            return new String[]{"N挡", "当前空挡，注意溜车【N】", "挂入N挡", "空挡"};
+        } else if ("drive_mode_sport".equalsIgnoreCase(baseName) || "mode_sport".equalsIgnoreCase(baseName)) {
             return new String[]{"运动模式", "sport"};
-        } else if ("drive_mode_comfort".equalsIgnoreCase(baseName)) {
+        } else if ("drive_mode_comfort".equalsIgnoreCase(baseName) || "mode_comfort".equalsIgnoreCase(baseName)) {
             return new String[]{"舒适模式", "comfort"};
-        } else if ("drive_mode_eco".equalsIgnoreCase(baseName)) {
+        } else if ("drive_mode_eco".equalsIgnoreCase(baseName) || "mode_eco".equalsIgnoreCase(baseName)) {
             return new String[]{"经济模式", "eco"};
+        } else if ("drive_mode_snow".equalsIgnoreCase(baseName) || "mode_snow".equalsIgnoreCase(baseName)) {
+            return new String[]{"雪地模式", "snow"};
+        } else if ("engine_start".equalsIgnoreCase(baseName) || "start".equalsIgnoreCase(baseName)) {
+            return new String[]{"车辆已启动系统自检正常【启动】", "启动", "点火", "欢迎乘坐量子号飞船【启动】"};
+        } else if ("engine_stop".equalsIgnoreCase(baseName) || "stop".equalsIgnoreCase(baseName)) {
+            return new String[]{"车辆已熄火下次再见【熄火】", "熄火", "下电"};
+        } else if ("handbrake_on".equalsIgnoreCase(baseName)) {
+            return new String[]{"拉起手刹", "手刹拉起"};
+        } else if ("handbrake_off".equalsIgnoreCase(baseName)) {
+            return new String[]{"松开手刹", "手刹松开"};
         }
         return null;
     }
