@@ -459,6 +459,13 @@ public class EasMediaBridge {
     }
 
     /**
+     * A2DP Sink 底层推流态 (手机端音频正在播放推流中)
+     */
+    public boolean isA2dpStreaming() {
+        return a2dpStreaming;
+    }
+
+    /**
      * 释放 EAS 注册 (退让焦点给米小江或原厂)
      */
     public synchronized void releaseEasRegistration() {
