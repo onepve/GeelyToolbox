@@ -9,9 +9,9 @@
     zIndexClass="z-[9998]"
     @close="$emit('close')"
   >
-    <div class="flex flex-col space-y-2.5 select-none -mt-3">
+    <div class="flex flex-col space-y-2 select-none -mt-4">
       <!-- 1. 顶部多功能综合诊断与自动巡检条 -->
-      <div class="bg-car-item border border-car-border rounded-xl px-3.5 py-2 flex items-center justify-between shadow-sm">
+      <div class="bg-car-item border border-car-border rounded-xl px-3.5 py-1.5 flex items-center justify-between shadow-sm">
         <div class="flex items-center space-x-3 min-w-0">
           <button
             v-if="!isInspecting"
@@ -51,7 +51,7 @@
       </div>
 
       <!-- 2. 急救发声与底层切源一体化工具条 -->
-      <div class="bg-car-item border border-car-border rounded-xl px-3.5 py-1.5 flex items-center justify-between shadow-sm text-[12px]">
+      <div class="bg-car-item border border-car-border rounded-xl px-3.5 py-1 flex items-center justify-between shadow-sm text-[12px]">
         <div class="flex items-center space-x-2 min-w-0">
           <span class="font-black text-car-text shrink-0 whitespace-nowrap">急救排查:</span>
           <button
@@ -91,14 +91,14 @@
         </div>
       </div>
 
-      <!-- 3. 1~12 车规声道 4列等宽对称网格 -->
+      <!-- 3. 1~12 车规声道 4列等宽对称网格 (3 行 × 4 列) -->
       <div class="grid grid-cols-4 gap-2">
         <div
           v-for="ch in channelList.slice(0, 12)"
           :key="ch.id"
           @click="selectChannel(ch.id)"
           :class="[
-            'p-2.5 rounded-xl border transition-all cursor-pointer relative flex flex-col justify-between shadow-xs',
+            'p-2 rounded-xl border transition-all cursor-pointer relative flex flex-col justify-between shadow-xs',
             selectedChannel === ch.id
               ? 'bg-car-card border-car-accent ring-2 ring-car-accent/30 shadow-md'
               : 'bg-car-item border-car-border hover:border-car-border-light hover:bg-car-hover'
@@ -107,35 +107,35 @@
           <!-- 默认徽章 (右上角绝对定位) -->
           <div
             v-if="preferredChannel === ch.id"
-            class="absolute top-2 right-2 px-1.5 py-0.2 rounded bg-emerald-950/50 border border-car-accent text-car-accent text-[10px] font-black tracking-wider leading-none"
+            class="absolute top-1.5 right-1.5 px-1 py-0.2 rounded bg-emerald-950/50 border border-car-accent text-car-accent text-[9.5px] font-black tracking-wider leading-none"
           >
             默认
           </div>
 
           <!-- 卡片头部：编号与名称 -->
-          <div class="flex items-center space-x-1.5 pr-8">
-            <span class="text-[12px] font-mono font-black text-car-sub leading-none">
+          <div class="flex items-center space-x-1.5 pr-6">
+            <span class="text-[11.5px] font-mono font-black text-car-sub leading-none">
               {{ ch.id.toString().padStart(2, '0') }}
             </span>
-            <span class="text-[13px] font-black text-car-text leading-tight truncate">
+            <span class="text-[12.5px] font-black text-car-text leading-tight truncate">
               {{ ch.name }}
             </span>
           </div>
 
           <!-- 卡片说明 -->
-          <div class="text-[11px] text-car-sub my-1 leading-snug line-clamp-1">
+          <div class="text-[10.5px] text-car-sub my-0.5 leading-snug line-clamp-1">
             {{ ch.desc }}
           </div>
 
           <!-- 卡片底栏：喇叭位置与试听按钮 -->
           <div class="flex items-center justify-between pt-4 border-t border-car-border/40">
-            <span class="text-[10.5px] px-1.5 py-0.5 rounded bg-car-base/60 text-car-sub font-mono truncate max-w-[90px]">
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-car-base/60 text-car-sub font-mono truncate max-w-[85px]">
               {{ ch.pos }}
             </span>
             <button
               @click.stop="playChannel(ch.id)"
               :class="[
-                'h-[26px] px-2.5 rounded-md font-black text-[11px] cursor-pointer shadow-xs active:scale-95 transition-all flex items-center space-x-1 shrink-0',
+                'h-[24px] px-2 rounded-md font-black text-[10.5px] cursor-pointer shadow-xs active:scale-95 transition-all flex items-center space-x-1 shrink-0',
                 currentPlayingChannel === ch.id
                   ? 'bg-emerald-500 text-white animate-pulse'
                   : 'bg-car-base border border-car-border hover:border-car-accent text-car-text'
@@ -145,61 +145,61 @@
             </button>
           </div>
         </div>
+      </div>
 
-        <!-- 4. 13号车身提示声道：全宽宽幅横幅（横跨 4 列），彻底消除孤立卡片与空缺黑洞 -->
-        <div
-          v-if="channelList[12]"
-          @click="selectChannel(channelList[12].id)"
-          :class="[
-            'col-span-4 px-3.5 py-2 rounded-xl border transition-all cursor-pointer flex items-center justify-between shadow-xs',
-            selectedChannel === channelList[12].id
-              ? 'bg-car-card border-car-accent ring-2 ring-car-accent/30 shadow-md'
-              : 'bg-car-item border-car-border hover:border-car-border-light hover:bg-car-hover'
-          ]"
-        >
-          <div class="flex items-center space-x-3 min-w-0">
-            <div class="flex items-center space-x-1.5 shrink-0">
-              <span class="text-[12px] font-mono font-black text-car-sub">13</span>
-              <span class="text-[13px] font-black text-car-text">车身提示</span>
-              <span class="text-[10.5px] px-2 py-0.5 rounded bg-emerald-950/40 border border-car-accent text-car-accent font-black">
-                安全混音总线
-              </span>
-            </div>
-            <span class="text-[11.5px] text-car-sub truncate">
-              雷达倒车与安全音效独立硬件混音总线 · 物理直通，不受任何应用媒体音量或静音策略拦截
+      <!-- 4. 13号车身提示声道：独立全宽宽幅横幅（移出 grid，100% 容器宽度，彻底消灭孤立卡片和空缺黑洞） -->
+      <div
+        v-if="channelList[12]"
+        @click="selectChannel(channelList[12].id)"
+        :class="[
+          'w-full px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between shadow-xs',
+          selectedChannel === channelList[12].id
+            ? 'bg-car-card border-car-accent ring-2 ring-car-accent/30 shadow-md'
+            : 'bg-car-item border-car-border hover:border-car-border-light hover:bg-car-hover'
+        ]"
+      >
+        <div class="flex items-center space-x-3 min-w-0">
+          <div class="flex items-center space-x-1.5 shrink-0">
+            <span class="text-[11.5px] font-mono font-black text-car-sub">13</span>
+            <span class="text-[12.5px] font-black text-car-text">车身提示</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/40 border border-car-accent text-car-accent font-black">
+              安全混音总线
             </span>
           </div>
+          <span class="text-[11px] text-car-sub truncate">
+            雷达倒车与安全音效独立硬件混音总线 · 物理直通，不受任何应用媒体音量或静音策略拦截
+          </span>
+        </div>
 
-          <div class="flex items-center space-x-2 shrink-0 pl-3">
-            <div
-              v-if="preferredChannel === channelList[12].id"
-              class="px-2 py-0.5 rounded bg-emerald-950/50 border border-car-accent text-car-accent text-[11px] font-black"
-            >
-              当前默认
-            </div>
-            <button
-              @click.stop="playChannel(channelList[12].id)"
-              :class="[
-                'h-[28px] px-3.5 rounded-lg font-black text-[11.5px] cursor-pointer shadow-xs active:scale-95 transition-all flex items-center space-x-1 shrink-0',
-                currentPlayingChannel === channelList[12].id
-                  ? 'bg-emerald-500 text-white animate-pulse'
-                  : 'bg-car-base border border-car-border hover:border-car-accent text-car-text'
-              ]"
-            >
-              <span>{{ currentPlayingChannel === channelList[12].id ? '🔊 发声中' : '测试发声' }}</span>
-            </button>
+        <div class="flex items-center space-x-2 shrink-0 pl-3">
+          <div
+            v-if="preferredChannel === channelList[12].id"
+            class="px-2 py-0.5 rounded bg-emerald-950/50 border border-car-accent text-car-accent text-[10.5px] font-black"
+          >
+            当前默认
           </div>
+          <button
+            @click.stop="playChannel(channelList[12].id)"
+            :class="[
+              'h-[26px] px-3 rounded-lg font-black text-[11px] cursor-pointer shadow-xs active:scale-95 transition-all flex items-center space-x-1 shrink-0',
+              currentPlayingChannel === channelList[12].id
+                ? 'bg-emerald-500 text-white animate-pulse'
+                : 'bg-car-base border border-car-border hover:border-car-accent text-car-text'
+            ]"
+          >
+            <span>{{ currentPlayingChannel === channelList[12].id ? '🔊 发声中' : '测试发声' }}</span>
+          </button>
         </div>
       </div>
 
       <!-- 5. 底部选定通道操作与保存栏 -->
-      <div class="bg-car-item border border-car-border rounded-xl px-4 py-2 flex items-center justify-between shadow-sm">
+      <div class="bg-car-item border border-car-border rounded-xl px-4 py-1.5 flex items-center justify-between shadow-sm">
         <div class="flex items-center space-x-2 min-w-0">
-          <span class="text-[13px] font-bold text-car-sub whitespace-nowrap">当前选定:</span>
-          <span class="text-[13.5px] font-black text-car-accent">
+          <span class="text-[12.5px] font-bold text-car-sub whitespace-nowrap">当前选定:</span>
+          <span class="text-[13px] font-black text-car-accent">
             通道 {{ selectedChannel.toString().padStart(2, '0') }} · {{ getChannelName(selectedChannel) }}
           </span>
-          <span class="text-[11.5px] text-car-sub/80 truncate">
+          <span class="text-[11px] text-car-sub/80 truncate">
             (试听仅临时发声，点击右侧确认才会保存)
           </span>
         </div>
