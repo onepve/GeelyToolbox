@@ -5,7 +5,7 @@
       title="车载音频与网络通道"
       desc="直控车机蓝牙与 Wi-Fi 开关，实时呈现 6 号蓝牙硬件声道仲裁与推流状态，提供一键强制声道选通与发声调试。"
       helpTitle="【功能指南】车载蓝牙音频与网络互联"
-      helpText="1. 蓝牙/Wi-Fi 直控：&#10;一键开关车机蓝牙与 Wi-Fi，实时呈现连接设备、热点与局域网 IP。&#10;&#10;2. EAS 6 号物理声道仲裁：&#10;手机蓝牙播放微信语音或音乐无声时，点击「一键强制选通蓝牙声道」可向 EAS 下发切换指令激活喇叭，解决原厂多媒体冻结后的无声痛点。&#10;&#10;3. 发声调试：&#10;「测试发声」立即验证当前蓝牙声道选通是否成功。"
+      helpText="1. 蓝牙与 Wi-Fi 车规直控：&#10;一键启闭车机蓝牙与 Wi-Fi 无线网络，实时呈现连接设备状态、热点名称与局域网 IP 分配信息。&#10;&#10;2. 原厂硬件无缝联动：&#10;底层已全面固化缤越 COOL 最佳车规音频路由（通话优先与硬件级压音），手机蓝牙音乐与微信语音并发时自动智能避让。"
       helpTip="手机无声时先点「测试发声」确认喇叭，再点「一键强制选通蓝牙声道」。"
     >
       <div class="flex flex-col space-y-4">
@@ -74,51 +74,7 @@
           </div>
         </div>
 
-        <!-- 下层：EAS 6 号蓝牙物理声道与调试操作条 (仅测试版或启用测试通道时平滑展开呈现，正式版自动缩起隐藏防误触) -->
-        <transition
-          enter-active-class="transition-all duration-300 ease-out"
-          enter-from-class="opacity-0 scale-95 max-h-0 overflow-hidden"
-          enter-to-class="opacity-100 scale-100 max-h-[160px]"
-          leave-active-class="transition-all duration-200 ease-in"
-          leave-from-class="opacity-100 scale-100 max-h-[160px]"
-          leave-to-class="opacity-0 scale-95 max-h-0 overflow-hidden"
-        >
-          <div 
-            v-if="isBetaChannel" 
-            class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm"
-          >
-            <div class="flex flex-col space-y-1 min-w-0 pr-4">
-              <div class="flex items-center space-x-2.5">
-                <span class="text-[17.5px] font-black text-car-text">EAS 6 号蓝牙物理声道仲裁</span>
-                <span 
-                  :class="[
-                    'text-[12px] px-2.5 py-0.5 rounded-md font-black border',
-                    connStatus.eas_channel_active
-                      ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-400'
-                      : 'border-car-border bg-car-item text-car-sub'
-                  ]"
-                >
-                  {{ connStatus.eas_channel_active ? '物理声道已选通' : '声道待机中' }}
-                </span>
-                <span class="text-[11px] px-2 py-0.5 rounded bg-car-card border border-car-border text-car-accent font-bold">
-                  内测实验专属
-                </span>
-              </div>
-              <div class="text-[13px] text-car-sub font-bold">
-                深度声道排查诊断中枢，支持 1~13 号全量车规声道发声测试与音频路由复位
-              </div>
-            </div>
-
-            <div class="flex items-center space-x-3 shrink-0">
-              <button 
-                @click="showChannelModal = true"
-                class="min-h-[50px] px-5 rounded-xl border border-car-border bg-car-item hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer shadow-sm active:scale-95 transition-all"
-              >
-                蓝牙音频排查调试
-              </button>
-            </div>
-          </div>
-        </transition>
+        
       </div>
     </FeatureCard>
     <!-- 2. 车载专属语音主题包与自定义音效 -->
@@ -263,30 +219,17 @@
       </div>
     </FeatureCard>
 
-    <!-- 蓝牙音频 1~13 号全声道排查调试弹窗 -->
-    <AudioChannelDebugModal
-      v-if="showChannelModal"
-      :show="showChannelModal"
-      @close="showChannelModal = false"
-    />
-  </div>
+    </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import StatusDot from '../components/StatusDot.vue';
-import AudioChannelDebugModal from '../components/modals/AudioChannelDebugModal.vue';
 import { store, bridge, openModal, showToast } from '../store';
 
-const showChannelModal = ref(false);
 
-const isBetaChannel = computed(() => {
-  const ver = (store.deviceInfo?.version || '').toLowerCase();
-  const isBetaBuild = ver.includes('beta');
-  const useBetaSetting = localStorage.getItem('geely_use_beta_channel') === 'true';
-  return isBetaBuild || useBetaSetting;
-});
+
 
 const ttsInfo = ref({
   connected: true,
