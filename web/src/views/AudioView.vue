@@ -294,11 +294,12 @@
     <!-- 调整排序模态框 (管理全部已安装播放器与完整优先级回退链) -->
     <div 
       v-if="showReorderModal" 
-      class="fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center p-4 backdrop-blur-md"
-      style="background: rgba(5, 8, 15, 0.88);"
+      class="fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center p-4 transition-all"
+      style="background: rgba(0, 0, 0, 0.22);"
+      @click.self="closeReorderModal"
     >
       <div 
-        class="w-full max-w-2xl bg-car-card border-2 border-car-accent rounded-3xl p-6 shadow-2xl flex flex-col space-y-4 text-car-text max-h-[85vh] overflow-y-auto"
+        class="w-full max-w-2xl bg-car-card border-2 border-car-accent rounded-3xl p-6 shadow-[0_25px_60px_-10px_rgba(0,0,0,0.9)] flex flex-col space-y-4 text-car-text max-h-[85vh] overflow-y-auto"
         style="background: var(--bg-modal, rgba(16, 23, 38, 0.98));"
       >
         <!-- 弹窗顶栏 -->

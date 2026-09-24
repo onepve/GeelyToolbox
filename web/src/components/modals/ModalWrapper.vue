@@ -4,7 +4,7 @@
     <div 
       v-if="show" 
       :class="['fixed top-0 left-0 w-screen h-screen flex items-center justify-center p-6 select-none', zIndexClass || 'z-50']"
-      style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background-color: #060910; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);"
+      style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.25);"
       @click.self="handleBackdropClick"
     >
       <div 
