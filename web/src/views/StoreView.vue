@@ -12,16 +12,16 @@
       </div>
     </div>
 
-    <!-- 分类过滤与工具菜单 (车规标准大按钮：统一 h-[52px]、大号触控靶区、纯净无Emoji) -->
-    <div class="flex items-center justify-between pt-1">
-      <div class="text-[23px] font-black text-car-text tracking-wide">精选车机应用列表</div>
+    <!-- 分类过滤与工具菜单卡片 (车规标准大按钮容器：独立卡片封装，消除悬空与挤压重叠) -->
+    <div class="bg-car-card border-2 border-car-border rounded-2xl p-4 flex items-center justify-between shadow-md">
+      <div class="text-[20px] font-black text-car-text tracking-wide shrink-0 mr-4">精选车机应用列表</div>
       <div class="flex items-center space-x-3">
         <button 
           v-for="cat in categories" 
           :key="cat.id"
           @click="currentCategory = cat.id"
           :class="[
-            'h-[52px] px-6 rounded-2xl font-black text-[16.5px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center',
+            'h-[50px] px-5 rounded-xl font-black text-[15.5px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center',
             currentCategory === cat.id 
               ? 'bg-car-item border-2 border-car-accent text-car-text shadow-md' 
               : 'bg-car-item text-car-sub border-2 border-car-border hover:border-car-border-light hover:text-car-text'
@@ -31,13 +31,13 @@
         </button>
         <button 
           @click="refreshApps"
-          class="h-[52px] px-6 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[16.5px] cursor-pointer shadow-sm transition-all whitespace-nowrap flex items-center justify-center"
+          class="h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-sm transition-all whitespace-nowrap flex items-center justify-center"
         >
           刷新清单
         </button>
         <button 
           @click="openModal('cleanDownload')"
-          class="h-[52px] px-6 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[16.5px] cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
+          class="h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
         >
           <span>清理下载目录</span>
         </button>
