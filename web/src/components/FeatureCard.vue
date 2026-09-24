@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-3xl border-2 border-car-border p-6 shadow-2xl transition-all bg-car-card mb-5">
+  <div class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card">
     <!-- 头部标题与说明：内嵌在卡片顶端 -->
     <div class="flex flex-col pb-4 mb-4 border-b border-car-border/60">
       <div class="flex items-center justify-between mb-1">
