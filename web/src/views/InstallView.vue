@@ -76,19 +76,18 @@
             </div>
           </div>
 
-          <div class="flex items-center space-x-2.5 shrink-0">
+          <div class="flex items-center space-x-3 shrink-0">
             <button 
               @click="openModal('cleanDownload')"
-              class="h-[52px] px-4.5 bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[15.5px] rounded-xl cursor-pointer shadow-sm transition-all whitespace-nowrap flex items-center space-x-1.5"
+              class="h-[50px] px-5 bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[16px] rounded-xl cursor-pointer shadow-sm transition-all whitespace-nowrap"
             >
-              <span>清理下载目录</span>
+              清理下载目录
             </button>
             <button 
               @click="openFileManager"
-              class="h-[52px] px-4.5 bg-car-card border-2 border-car-accent rounded-xl flex items-center justify-center space-x-1.5 text-car-text font-black cursor-pointer hover:border-car-accent ring-2 ring-car-accent/25 shadow-md transition-all whitespace-nowrap"
+              class="h-[50px] px-5 bg-car-item border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all whitespace-nowrap"
             >
-              <span class="text-[16px]">打开文件管理</span>
-              <span class="text-[11.5px] text-car-accent font-extrabold bg-car-item px-1.5 py-0.5 rounded border border-car-accent/40">Download</span>
+              打开文件管理
             </button>
           </div>
         </div>
