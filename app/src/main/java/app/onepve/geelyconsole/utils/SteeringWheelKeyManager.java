@@ -889,7 +889,10 @@ public class SteeringWheelKeyManager {
             broadcastTargets.add(targetPkg);
             // 若目标应用当前处于冷态无会话，通过特权通道辅助拉活播放核心，确保按键即时响应
             try {
-                if ("com.tencent.qqmusiccar".equals(targetPkg)) {
+                VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                if (vas != null) {
+                    vas.wakeUpTargetMediaService(targetPkg);
+                } else if ("com.tencent.qqmusiccar".equals(targetPkg)) {
                     SystemUtils.executePrivileged(context, "am startservice -n com.tencent.qqmusiccar/com.tencent.qqmusicplayerprocess.service.QQPlayerServiceNew");
                 }
             } catch (Throwable ignored) {}

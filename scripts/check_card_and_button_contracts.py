@@ -158,7 +158,7 @@ CARD_BUTTON_CONTRACTS = [
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public synchronized void requestBluetoothFocusIfNeeded",
         [r"AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK", r"btFocusHeld"],
-        [r"if\s*\(\s*btFocusHeld\s*\)\s*return"]
+        []
     ),
     (
         "多媒体接管卡片", "原厂部件蓝牙声道保持广播 (ECARX_WIDGET_BLUETOOTH_PLAY)",
