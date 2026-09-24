@@ -1,6 +1,7 @@
 package app.onepve.geelyconsole.server;
 
 import android.content.Context;
+import android.widget.Toast;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -156,6 +157,8 @@ public class WebServer {
                         handleApiPushUrl(in, contentLength, out);
                     } else if ("/api/upload_chunk".equals(path) && "POST".equalsIgnoreCase(method)) {
                         handleApiUploadChunk(in, contentLength, headers, queryString, out);
+                    } else if ("/api/clean_download".equals(path) && "POST".equalsIgnoreCase(method)) {
+                        handleApiCleanDownload(in, contentLength, out);
                     } else if ("/api/action".equals(path) && "POST".equalsIgnoreCase(method)) {
                         handleApiAction(in, contentLength, out);
                     } else if ("/api/push_cmd".equals(path) && "POST".equalsIgnoreCase(method)) {
@@ -589,6 +592,35 @@ public class WebServer {
         } catch (Exception e) {
             sendJsonResponse(out, "{\"error\":\"" + e.getMessage() + "\"}");
         }
+    }
+
+    private void handleApiCleanDownload(InputStream in, int length, OutputStream out) throws IOException {
+        byte[] body = readExactBytes(in, length);
+        String bodyStr = new String(body, java.nio.charset.StandardCharsets.UTF_8);
+        int mode = 2; // 默认智能安全清理
+        try {
+            String modeStr = extractJsonValue(bodyStr, "mode");
+            if (modeStr != null && !modeStr.isEmpty()) {
+                mode = Integer.parseInt(modeStr.trim());
+            }
+        } catch (Exception ignored) {}
+
+        final int finalMode = mode;
+        final SystemUtils.CleanDownloadResult res = SystemUtils.cleanDownloadDirectory(finalMode);
+        final double freedMb = (double) res.freedBytes / (1024 * 1024);
+        final String freedMbStr = String.format(Locale.CHINA, "%.1f", freedMb);
+
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (context != null) {
+                    Toast.makeText(context, String.format(Locale.CHINA, "手机端远程清理完成！共清除 %d 项，释放 %s MB 存储空间", res.deletedFiles, freedMbStr), Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+
+        String resp = String.format(Locale.CHINA, "{\"success\":true,\"deleted\":%d,\"freed_mb\":\"%s\"}", res.deletedFiles, freedMbStr);
+        sendJsonResponse(out, resp);
     }
 
     private void handleApiAction(InputStream in, int length, OutputStream out) throws IOException {

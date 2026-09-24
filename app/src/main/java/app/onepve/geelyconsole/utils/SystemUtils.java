@@ -753,6 +753,80 @@ public class SystemUtils {
         return String.format(Locale.CHINA, "%.2f MB", bytes / (1024.0 * 1024.0));
     }
 
+    public static long getDirSizeBytes(File dir) {
+        if (dir == null || !dir.exists()) return 0;
+        if (dir.isFile()) return dir.length();
+        long size = 0;
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                size += (f.isFile() ? f.length() : getDirSizeBytes(f));
+            }
+        }
+        return size;
+    }
+
+    public static class CleanDownloadResult {
+        public int deletedFiles = 0;
+        public long freedBytes = 0;
+    }
+
+    public static CleanDownloadResult cleanDownloadDirectory(int mode) {
+        CleanDownloadResult result = new CleanDownloadResult();
+        try {
+            File downloadDir = getAppDownloadDir();
+            if (downloadDir == null || !downloadDir.exists()) return result;
+            File[] list = downloadDir.listFiles();
+            if (list != null) {
+                for (File file : list) {
+                    if (mode == 1) {
+                        result.freedBytes += (file.isFile() ? file.length() : getDirSizeBytes(file));
+                        if (deleteRecursiveBool(file)) result.deletedFiles++;
+                    } else if (mode == 2) {
+                        if (file.isDirectory()) {
+                            File[] sub = file.listFiles();
+                            if (sub == null || sub.length == 0) {
+                                if (file.delete()) result.deletedFiles++;
+                            } else {
+                                String lower = file.getName().toLowerCase();
+                                if (lower.contains("voice") || lower.contains("audio") || lower.contains("sound") || lower.contains("语音")) {
+                                    continue;
+                                }
+                                for (File sf : sub) {
+                                    if (sf.isFile() && (sf.getName().endsWith(".apk") || sf.getName().endsWith(".zip") || sf.getName().endsWith(".tmp"))) {
+                                        result.freedBytes += sf.length();
+                                        if (sf.delete()) result.deletedFiles++;
+                                    }
+                                }
+                            }
+                        } else if (file.isFile()) {
+                            result.freedBytes += file.length();
+                            if (file.delete()) result.deletedFiles++;
+                        }
+                    } else if (mode == 3) {
+                        if (file.isFile()) {
+                            result.freedBytes += file.length();
+                            if (file.delete()) result.deletedFiles++;
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return result;
+    }
+
+    private static boolean deleteRecursiveBool(File fileOrDirectory) {
+        if (fileOrDirectory.isDirectory()) {
+            File[] children = fileOrDirectory.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    deleteRecursiveBool(child);
+                }
+            }
+        }
+        return fileOrDirectory.delete();
+    }
+
     public static File getAppDownloadDir() {
         File dir = new File(Environment.getExternalStorageDirectory(), "Download");
         if (!dir.exists()) {

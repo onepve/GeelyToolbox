@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col space-y-4">
-    <!-- 实测机型声明 (安全实测认证标识：翠绿圆环徽标与流线说明，彻底告别伪按钮误触) -->
+    <!-- 1. 实测机型声明 (安全实测认证标识：翠绿圆环徽标与流线说明，彻底告别伪按钮误触) -->
     <div class="bg-car-item border-2 border-car-border rounded-3xl p-6 min-h-[96px] flex items-center shadow-md">
       <div class="w-[52px] h-[52px] rounded-full bg-emerald-500/15 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center mr-6 shrink-0 shadow-sm">
         <svg class="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -12,132 +12,122 @@
       </div>
     </div>
 
-    <!-- 分类过滤与工具菜单卡片 (车规标准大按钮容器：独立卡片封装，消除悬空与挤压重叠) -->
-    <div class="bg-car-card border-2 border-car-border rounded-2xl p-4 flex items-center justify-between shadow-md">
-      <div class="text-[20px] font-black text-car-text tracking-wide shrink-0 mr-4">精选车机应用列表</div>
-      <div class="flex items-center space-x-3">
-        <button 
-          v-for="cat in categories" 
-          :key="cat.id"
-          @click="currentCategory = cat.id"
-          :class="[
-            'h-[50px] px-5 rounded-xl font-black text-[15.5px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center',
-            currentCategory === cat.id 
-              ? 'bg-car-item border-2 border-car-accent text-car-text shadow-md' 
-              : 'bg-car-item text-car-sub border-2 border-car-border hover:border-car-border-light hover:text-car-text'
-          ]"
-        >
-          {{ cat.name }}
-        </button>
-        <button 
-          @click="refreshApps"
-          class="h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-sm transition-all whitespace-nowrap flex items-center justify-center"
-        >
-          刷新清单
-        </button>
-        <button 
-          @click="openModal('cleanDownload')"
-          class="h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
-        >
-          <span>清理下载目录</span>
-        </button>
+    <!-- 2. 精选车机应用大卡片 (包含内置分类工具头部与双列应用网格，彻底做进卡片内部！) -->
+    <div class="bg-car-card border-2 border-car-border rounded-3xl p-6 shadow-md flex flex-col space-y-5">
+      <!-- 卡片内置 Header：分类与操作工具栏 -->
+      <div class="flex items-center justify-between border-b border-car-border/40 pb-4">
+        <div class="text-[21px] font-black text-car-text tracking-wide shrink-0 mr-4">精选车机应用列表</div>
+        <div class="flex items-center space-x-3">
+          <button 
+            v-for="cat in categories" 
+            :key="cat.id"
+            @click="currentCategory = cat.id"
+            :class="[
+              'h-[50px] px-5 rounded-xl font-black text-[15.5px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center',
+              currentCategory === cat.id 
+                ? 'bg-car-item border-2 border-car-accent text-car-text shadow-md' 
+                : 'bg-car-item text-car-sub border-2 border-car-border hover:border-car-border-light hover:text-car-text'
+            ]"
+          >
+            {{ cat.name }}
+          </button>
+          <button 
+            @click="refreshApps"
+            class="h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-sm transition-all whitespace-nowrap flex items-center justify-center"
+          >
+            刷新清单
+          </button>
+          <button 
+            @click="openModal('cleanDownload')"
+            class="h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
+          >
+            <span>清理下载目录</span>
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- 应用流 (双列网格 · 强制等高 h-full 对齐基准线) -->
-    <div v-if="filteredApps.length > 0" class="grid grid-cols-2 gap-4 items-stretch">
-      <div 
-        v-for="app in filteredApps" 
-        :key="app.id"
-        @click="openModal('appDetail', app)"
-        class="bg-car-card border-2 border-car-border hover:border-car-accent rounded-2xl p-5 flex flex-col justify-between cursor-pointer transition-all shadow-md group h-full min-h-[190px]"
-      >
-        <div class="flex-1 min-w-0 flex items-center space-x-4 py-2">
-          <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5">
-            <div class="flex items-center justify-between space-x-3">
-              <span class="text-[20px] font-black text-car-text group-hover:text-car-accent transition-colors truncate" :title="app.name">
-                {{ app.name }}
-              </span>
-              <span v-if="store.downloadProgress[app.id]" class="h-[34px] border px-3.5 rounded-xl bg-car-item border-car-border text-car-text font-black text-[13px] shrink-0 whitespace-nowrap inline-flex items-center shadow-sm">
-                <StatusDot class="mr-2" size="sm" :color="store.downloadProgress[app.id].status === 'paused' ? 'warn' : (store.downloadProgress[app.id].status === 'completed' ? 'ok' : 'info')" :pulse="store.downloadProgress[app.id].status === 'downloading'" />
-                {{ store.downloadProgress[app.id].status === 'paused' ? '已暂停' : (store.downloadProgress[app.id].status === 'completed' ? '已下载' : `下载中 ${store.downloadProgress[app.id].percent || 0}%`) }}
-              </span>
-              <span v-else class="h-[34px] bg-car-item border-2 border-car-border px-3 rounded-xl text-car-sub font-mono font-black text-[13px] shrink-0 whitespace-nowrap flex items-center justify-center">
-                {{ app.size }}
-              </span>
+      <!-- 卡片内置 Body：应用流 (双列网格 · 强制等高 h-full 对齐基准线) -->
+      <div v-if="filteredApps.length > 0" class="grid grid-cols-2 gap-4 items-stretch">
+        <div 
+          v-for="app in filteredApps" 
+          :key="app.id"
+          @click="openModal('appDetail', app)"
+          class="bg-car-item border-2 border-car-border hover:border-car-accent rounded-2xl p-5 flex flex-col justify-between cursor-pointer transition-all shadow-md group h-full min-h-[190px]"
+        >
+          <div class="flex-1 min-w-0 flex items-center space-x-4 py-2">
+            <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5">
+              <div class="flex items-center justify-between space-x-3">
+                <span class="text-[20px] font-black text-car-text group-hover:text-car-accent transition-colors truncate" :title="app.name">
+                  {{ app.name }}
+                </span>
+                <span v-if="store.downloadProgress[app.id]" class="h-[34px] border px-3.5 rounded-xl bg-car-card border-car-border text-car-text font-black text-[13px] shrink-0 whitespace-nowrap inline-flex items-center shadow-sm">
+                  <StatusDot class="mr-2" size="sm" :color="store.downloadProgress[app.id].status === 'paused' ? 'warn' : (store.downloadProgress[app.id].status === 'completed' ? 'ok' : 'info')" :pulse="store.downloadProgress[app.id].status === 'downloading'" />
+                  {{ store.downloadProgress[app.id].status === 'paused' ? '已暂停' : (store.downloadProgress[app.id].status === 'completed' ? '已下载' : `下载中 ${store.downloadProgress[app.id].percent || 0}%`) }}
+                </span>
+                <span v-else class="h-[34px] bg-car-card border-2 border-car-border px-3 rounded-xl text-car-sub font-mono font-black text-[13px] shrink-0 whitespace-nowrap flex items-center justify-center">
+                  {{ app.size }}
+                </span>
+              </div>
+              <p class="text-[15px] text-car-sub font-medium leading-relaxed line-clamp-2">{{ getBriefDesc(app) }}</p>
             </div>
-            <p class="text-[15px] text-car-sub font-medium leading-relaxed line-clamp-2">{{ getBriefDesc(app) }}</p>
+          </div>
+
+          <div class="h-[52px] px-5 rounded-2xl bg-car-card border-2 border-car-border group-hover:border-car-accent/60 flex items-center justify-between transition-all mt-auto shrink-0">
+            <span class="text-[14.5px] text-car-sub font-bold">点击查看版本详情与适配说明</span>
+            <span class="text-[15px] text-car-accent font-black group-hover:translate-x-1 transition-transform flex items-center space-x-1">
+              <span>查看详情与安装</span>
+              <span>➔</span>
+            </span>
           </div>
         </div>
-
-        <div class="h-[52px] px-5 rounded-2xl bg-car-item border-2 border-car-border group-hover:border-car-accent/60 flex items-center justify-between transition-all mt-auto shrink-0">
-          <span class="text-[14.5px] text-car-sub font-bold">点击查看版本详情与适配说明</span>
-          <span class="text-[15px] text-car-accent font-black group-hover:translate-x-1 transition-transform flex items-center space-x-1">
-            <span>查看详情与安装</span>
-            <span>➔</span>
-          </span>
-        </div>
       </div>
-    </div>
 
-    <!-- 纯云端拉取中状态 (彻底去除本地静态兜底，100% 动态云端加载) -->
-    <div v-else class="bg-car-item border-2 border-car-border rounded-3xl p-12 flex flex-col items-center justify-center space-y-4 shadow-md min-h-[260px]">
-      <AppSpinner />
-      <div class="text-[19px] text-car-text font-black">正在从云端获取最新应用商城清单...</div>
-      <div class="text-[15px] text-car-sub font-bold">已直连 dl.onepve.com 专属源，实时拉取已实测车机软件</div>
-      <button 
-        @click="refreshApps"
-        class="mt-3 h-[52px] px-8 rounded-2xl bg-car-card border-2 border-car-accent text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-md active:scale-95"
-      >
-        重新拉取云端清单
-      </button>
+      <!-- 纯云端拉取中状态 (彻底去除本地静态兜底，100% 动态云端加载) -->
+      <div v-else class="bg-car-item border-2 border-car-border rounded-2xl p-12 flex flex-col items-center justify-center space-y-4 shadow-sm min-h-[220px]">
+        <AppSpinner />
+        <div class="text-[19px] text-car-text font-black">正在从云端获取最新应用商城清单...</div>
+        <div class="text-[15px] text-car-sub font-bold">已直连 dl.onepve.com 专属源，实时拉取已实测车机软件</div>
+        <button 
+          @click="refreshApps"
+          class="mt-3 h-[50px] px-8 rounded-2xl bg-car-card border-2 border-car-accent text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-md active:scale-95"
+        >
+          重新拉取云端清单
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { store, bridge, openModal, showToast } from '../store';
+import { ref, computed } from 'vue';
 import StatusDot from '../components/StatusDot.vue';
 import AppSpinner from '../components/AppSpinner.vue';
+import { store, openModal } from '../store';
 
 const currentCategory = ref('all');
+
 const categories = [
   { id: 'all', name: '全部' },
-  { id: 'navigation', name: '车载导航' },
+  { id: 'navi', name: '车载导航' },
   { id: 'music', name: '音乐应用' },
-  { id: 'tools', name: '车机工具' }
+  { id: 'tool', name: '车机工具' }
 ];
 
-const allApps = computed(() => {
-  return store.apps || [];
-});
-
 const filteredApps = computed(() => {
-  if (currentCategory.value === 'all') return allApps.value;
-  return allApps.value.filter(a => a.category === currentCategory.value);
+  if (!store.apps || store.apps.length === 0) return [];
+  if (currentCategory.value === 'all') return store.apps;
+  return store.apps.filter(app => app.category === currentCategory.value);
 });
-
-onMounted(() => {
-  // 进入商城视图时，若未加载或需更新，立即主动从云端异步拉取最新 apps.json
-  if (!store.apps || store.apps.length === 0) {
-    bridge.call('refreshCloudApps');
-  }
-});
-
-function getBriefDesc(app) {
-  const raw = app?.desc || app?.description || '';
-  return raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-}
 
 function refreshApps() {
-  bridge.call('refreshCloudApps');
-  showToast('正在从云端拉取最新应用清单...');
+  store.refreshApps();
 }
 
-function handleDownload(app) {
-  const url = app.download_url || app.url;
-  bridge.call('downloadApp', app.id, url, app.filename);
-  showToast('已下发下载任务: ' + app.name);
+function getBriefDesc(app) {
+  if (app.desc) {
+    const lines = app.desc.split('\n');
+    return lines[0];
+  }
+  return '吉利车机深度优化版本';
 }
 </script>
