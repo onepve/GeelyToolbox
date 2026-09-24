@@ -106,16 +106,24 @@ public final class VehicleConfigHelper {
             obj.put("wheel_push_lyrics_cluster", prefs.getBoolean("wheel_push_lyrics_cluster", false));
 
             // 车速联动自启与行车安全 (若车机装有 QQ 音乐，默认优先以 QQ 音乐为默认主力并默认开启运行)
-            boolean hasQQMusicInstalled = false;
-            try {
-                context.getPackageManager().getPackageInfo("com.tencent.qqmusiccar", 0);
-                hasQQMusicInstalled = true;
-            } catch (Exception ignored) {}
+            String defaultSpeedAutoplayPkg = "com.android.bluetooth";
+            boolean hasMusicInstalled = false;
+            String[] commonPkgs = new String[] {
+                "com.tencent.qqmusiccar",
+                "com.netease.cloudmusiccar",
+                "cn.kuwo.kwmusiccar",
+                "com.kugou.android.auto"
+            };
+            for (String cPkg : commonPkgs) {
+                try {
+                    context.getPackageManager().getPackageInfo(cPkg, 0);
+                    defaultSpeedAutoplayPkg = cPkg;
+                    hasMusicInstalled = true;
+                    break;
+                } catch (Throwable ignored) {}
+            }
 
-            boolean defaultSpeedAutoplayEnabled = hasQQMusicInstalled;
-            String defaultSpeedAutoplayPkg = hasQQMusicInstalled ? "com.tencent.qqmusiccar" : "com.android.bluetooth";
-
-            obj.put("vehicle_speed_autoplay_enabled", prefs.getBoolean("vehicle_speed_autoplay_enabled", defaultSpeedAutoplayEnabled));
+            obj.put("vehicle_speed_autoplay_enabled", prefs.getBoolean("vehicle_speed_autoplay_enabled", hasMusicInstalled));
             obj.put("vehicle_speed_autoplay_threshold", prefs.getInt("vehicle_speed_autoplay_threshold", 20));
             obj.put("vehicle_speed_autoplay_pkg", prefs.getString("vehicle_speed_autoplay_pkg", defaultSpeedAutoplayPkg));
             obj.put("vehicle_speed_autoplay_fullscreen", prefs.getBoolean("vehicle_speed_autoplay_fullscreen", false));

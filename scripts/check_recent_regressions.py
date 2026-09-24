@@ -115,8 +115,12 @@ CONTRACTS = [
   [r'wasLocalPlayingBeforeA2dp', r'resumeMediaPlaybackAfterAudioInterruption'], []),
  ('mode-360-suppress-multimedia', JAVA+'utils/SteeringWheelKeyManager.java', 'public void suppressOriginalMultimedia()',
   [r'am force-stop com\.ecarx\.multimedia'], []),
- ('music-cold-start-service', JAVA+'services/VehicleAutomationService.java', 'void triggerMusicAutoplay(final String pkg, final boolean fullscreen)',
-  [r'QQPlayerServiceNew', r'startForegroundService|startService'], []),
+ ('music-cold-start-service', JAVA+'services/VehicleAutomationService.java', 'public void wakeUpTargetMediaService(final String pkg)',
+  [r'tryStartComponentService', r'MediaBrowserService'], []),
+ ('speed-autoplay-dynamic-pkg', JAVA+'services/VehicleAutomationService.java', 'private void triggerMusicAutoplay(final String pkg, final boolean fullscreen)',
+  [r'wakeUpTargetMediaService', r'ACTION_MEDIA_BUTTON'], []),
+ ('speed-autoplay-call-guard', JAVA+'services/VehicleAutomationService.java', 'private void triggerMusicAutoplay(final String pkg, final boolean fullscreen)',
+  [r'isInPhoneCall'], []),
 ]
 
 

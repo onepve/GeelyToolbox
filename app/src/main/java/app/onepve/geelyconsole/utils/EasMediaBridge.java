@@ -610,28 +610,20 @@ public class EasMediaBridge {
                         }
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
-                    // 吉利实车专属：国承 GOC 模组上报播放事件，提取 PlaybackState
+                    // 吉利实车专属：国承 GOC 模组上报元数据/控制事件
+                    // ⚠️ 注意：AVRCP 是控制信令层，绝不能单凭待机残留信令误将底层音频判定为推流中（坚决杜绝误判）
                     try {
                         android.media.session.PlaybackState pbState = intent.getParcelableExtra("android.bluetooth.avrcp-controller.profile.extra.PLAYBACK");
                         if (pbState != null) {
                             int pState = pbState.getState();
                             boolean isPlaying = (pState == android.media.session.PlaybackState.STATE_PLAYING);
-                            if (isPlaying && !a2dpStreaming) {
-                                a2dpStreaming = true;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP TRACK_EVENT 推流起播 (STATE_PLAYING)，毫秒级唤醒蓝牙通道");
-                                requestBluetoothFocusIfNeeded();
-                                long now = System.currentTimeMillis();
-                                if (now - lastA2dpWakeTime > 2000) {
-                                    lastA2dpWakeTime = now;
-                                    activateBluetoothChannel();
-                                }
-                            } else if (!isPlaying && a2dpStreaming) {
+                            if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP TRACK_EVENT 停止推流 (state=" + pState + ")");
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 明确停止状态 (state=" + pState + ")");
                             }
                         }
                     } catch (Throwable t) {
-                        AppLogger.w("蓝牙音频", "解析 TRACK_EVENT 失败: " + t.getMessage());
+                        AppLogger.w("蓝牙音频", "解析 TRACK_EVENT 异常: " + t.getMessage());
                     }
                 }
             }

@@ -93,18 +93,19 @@ public class AdbClient {
     /** 带缓存的端口探测（供 executePrivileged 等高频调用使用） */
     public static boolean isAdbPortOpenCached() {
         long now = System.currentTimeMillis();
-        if (probeCachedAt > 0 && (now - probeCachedAt) < PROBE_CACHE_TTL_MS) {
-            return probeCachedResult;
+        if (probeCachedResult && (now - probeCachedAt) < 5_000L) {
+            return true;
         }
         boolean r = isAdbPortOpen(null);
         probeCachedResult = r;
-        probeCachedAt = now;
+        probeCachedAt = r ? now : 0L;
         return r;
     }
 
     /** 立即失效探测缓存（ADB 授权状态变化后调用） */
     public static void clearProbeCache() {
         probeCachedAt = 0L;
+        probeCachedResult = false;
     }
 
     public static boolean isAdbPortOpen(Context context) {
@@ -117,7 +118,7 @@ public class AdbClient {
 
         for (String host : hosts) {
             try (Socket socket = new Socket()) {
-                socket.connect(new InetSocketAddress(host, ADB_PORT), 400);
+                socket.connect(new InetSocketAddress(host, ADB_PORT), 1000);
                 probeCachedResult = true;
                 probeCachedAt = System.currentTimeMillis();
                 return true;
@@ -125,7 +126,7 @@ public class AdbClient {
             }
         }
         probeCachedResult = false;
-        probeCachedAt = System.currentTimeMillis();
+        probeCachedAt = 0L;
         return false;
     }
 

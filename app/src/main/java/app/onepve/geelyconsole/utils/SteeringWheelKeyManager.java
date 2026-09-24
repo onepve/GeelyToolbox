@@ -873,6 +873,12 @@ public class SteeringWheelKeyManager {
         List<String> broadcastTargets = new ArrayList<>();
         if (!targetPkg.isEmpty()) {
             broadcastTargets.add(targetPkg);
+            // 若目标应用当前处于冷态无会话，通过特权通道辅助拉活播放核心，确保按键即时响应
+            try {
+                if ("com.tencent.qqmusiccar".equals(targetPkg)) {
+                    SystemUtils.executePrivileged(context, "am startservice -n com.tencent.qqmusiccar/com.tencent.qqmusicplayerprocess.service.QQPlayerServiceNew");
+                }
+            } catch (Throwable ignored) {}
         } else {
             // 未锁定具体单一应用时，向整车已安装的媒体应用广播兜底
             broadcastTargets.addAll(getInstalledMediaPackages());
@@ -1024,6 +1030,18 @@ public class SteeringWheelKeyManager {
                 try {
                     context.getPackageManager().getPackageInfo(lastPkg, 0);
                     return lastPkg;
+                } catch (PackageManager.NameNotFoundException ignored) {}
+            }
+        } catch (Throwable ignored) {}
+
+        // 3.5 优先读取车主在“车速自启音乐软件”中选定的默认音源应用
+        try {
+            SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            String configuredPkg = sp.getString("vehicle_speed_autoplay_pkg", null);
+            if (configuredPkg != null && !configuredPkg.trim().isEmpty() && !isIgnoredMediaPackage(configuredPkg.trim())) {
+                try {
+                    context.getPackageManager().getPackageInfo(configuredPkg.trim(), 0);
+                    return configuredPkg.trim();
                 } catch (PackageManager.NameNotFoundException ignored) {}
             }
         } catch (Throwable ignored) {}

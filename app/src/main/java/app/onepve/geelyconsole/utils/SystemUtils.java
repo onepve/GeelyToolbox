@@ -656,6 +656,30 @@ public class SystemUtils {
         return sb.toString().trim();
     }
 
+    /**
+     * 强特权执行通道：必须且只能走 uid 2000 本地 ADB 特权管道！
+     * 坚决严禁降级回退到无权限的普通 shell，支持自动重试确保高可靠执行。
+     */
+    public static String executeStrictPrivileged(Context ctx, String cmd, int maxRetries) {
+        if (cmd == null || cmd.trim().isEmpty()) return null;
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                if (AdbClient.isAdbPortOpen(ctx)) {
+                    AdbClient.AdbResult adbRes = AdbClient.execute(ctx, cmd);
+                    if (adbRes != null && adbRes.success && adbRes.output != null) {
+                        return adbRes.output;
+                    }
+                }
+            } catch (Exception ignored) {}
+            if (i < maxRetries - 1) {
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException ignored) {}
+            }
+        }
+        return null;
+    }
+
     public static OpResult setPackageEnabled(Context ctx, String pkg, boolean enable) {
         OpResult result;
         // 关键：立即清空禁用包名内存缓存，强制回读底层真实状态
@@ -663,11 +687,23 @@ public class SystemUtils {
         disabledPkgsCacheAt = 0L;
         try {
             String cmd = enable ? ("pm enable " + pkg + " || pm unhide " + pkg) : ("pm disable-user --user 0 " + pkg + " || pm disable " + pkg + " || pm hide " + pkg);
-            String out = executePrivileged(ctx, cmd);
+            // 严禁普通 shell 兜底，必须且只能通过 ADB 特权管道执行，自动重试 3 次！
+            String out = executeStrictPrivileged(ctx, cmd, 3);
+            if (out == null) {
+                result = new OpResult(false, "ADB 特权服务未就绪或未响应，操作未生效，请稍后重试", "");
+                AppLogger.action("应用冻结", (enable ? "解冻: " : "冻结: ") + pkg, false, result.message);
+                return result;
+            }
+
+            if (!enable) {
+                try {
+                    executeStrictPrivileged(ctx, "am force-stop " + pkg, 2);
+                } catch (Throwable ignored) {}
+            }
             disabledPkgsCache = null;
             disabledPkgsCacheAt = 0L;
             
-            if (out != null && (out.contains("new state") || out.contains("enabled") || out.contains("disabled") || out.contains("Success") || out.contains("Package " + pkg))) {
+            if (out.contains("new state") || out.contains("enabled") || out.contains("disabled") || out.contains("Success") || out.contains("Package " + pkg)) {
                 result = new OpResult(true, enable ? "已成功解冻恢复" : "已成功安全冻结", out);
             } else {
                 int state = getAppDetailedState(ctx, pkg);
@@ -675,14 +711,13 @@ public class SystemUtils {
                 if (ok) {
                     result = new OpResult(true, enable ? "已成功解冻恢复" : "已成功安全冻结", out);
                 } else {
-                    String errMsg = (out != null && !out.isEmpty()) ? out : "ADB 端口未响应或权限受限";
-                    result = new OpResult(false, errMsg, out);
+                    result = new OpResult(false, "ADB 指令已发送但底层未生效: " + out.trim(), out);
                 }
             }
         } catch (Exception e) {
-            result = new OpResult(false, e.getMessage(), "");
+            result = new OpResult(false, "操作异常: " + e.getMessage(), "");
         }
-        AppLogger.action("应用管理", (enable ? "解冻应用: " : "冻结应用: ") + pkg, result.success, result.message);
+        AppLogger.action("应用冻结", (enable ? "解冻: " : "冻结: ") + pkg, result.success, result.message);
         return result;
     }
 
