@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col space-y-6">
     <!-- 1. 精选商城总控中枢大卡片 (工业级车规工整布局：p-7 px-8 豪华呼吸留白，水平中轴绝对对齐，彻底告别贴边与悬浮) -->
-    <div class="bg-car-item border-2 border-car-border rounded-2xl p-7 px-8 shadow-xl flex flex-col justify-between">
+    <div class="bg-car-item border-2 border-car-border rounded-2xl p-7 px-8 shadow-xl block">
       <!-- 1.1 上半区：实测机型声明与全域快捷工具 (垂直绝对居中，留白对称) -->
       <div class="flex items-center justify-between min-h-[58px]">
         <!-- 左侧：安全实测认证标识与说明 -->
