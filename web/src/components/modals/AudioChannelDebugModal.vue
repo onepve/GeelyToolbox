@@ -56,7 +56,7 @@
           <span class="font-black text-car-text shrink-0 whitespace-nowrap">急救排查:</span>
           <button
             @click="testVoiceDefault"
-            class="h-[30px] px-3 rounded-lg border border-car-border bg-car-card hover:border-car-border-light text-car-text font-bold text-[11.5px] cursor-pointer shadow-xs active:scale-95 transition-all whitespace-nowrap"
+            class="h-[30px] px-3 rounded-lg border border-car-border bg-[#121a24] hover:border-car-accent text-gray-200 hover:text-car-accent font-bold text-[11.5px] cursor-pointer shadow-xs active:scale-95 transition-all whitespace-nowrap"
           >
             快速发声测试
           </button>
@@ -72,19 +72,19 @@
           <span class="text-car-sub font-bold whitespace-nowrap">底层切源:</span>
           <button
             @click="switchSource(2)"
-            class="h-[28px] px-2.5 rounded-md border border-car-border bg-car-card hover:border-car-accent text-car-text font-bold text-[11px] cursor-pointer shadow-xs active:scale-95 transition-all whitespace-nowrap"
+            class="h-[28px] px-2.5 rounded-md border border-car-border bg-[#121a24] hover:border-car-accent text-gray-300 hover:text-car-accent font-bold text-[11px] cursor-pointer shadow-xs active:scale-95 transition-all whitespace-nowrap"
           >
             2号蓝牙音源
           </button>
           <button
             @click="switchSource(6)"
-            class="h-[28px] px-2.5 rounded-md border border-car-border bg-car-card hover:border-car-accent text-car-text font-bold text-[11px] cursor-pointer shadow-xs active:scale-95 transition-all whitespace-nowrap"
+            class="h-[28px] px-2.5 rounded-md border border-car-border bg-[#121a24] hover:border-car-accent text-gray-300 hover:text-car-accent font-bold text-[11px] cursor-pointer shadow-xs active:scale-95 transition-all whitespace-nowrap"
           >
             6号在线EAS
           </button>
           <button
             @click="switchSource(1)"
-            class="h-[28px] px-2.5 rounded-md border border-car-border bg-car-card hover:border-car-accent text-car-text font-bold text-[11px] cursor-pointer shadow-xs active:scale-95 transition-all whitespace-nowrap"
+            class="h-[28px] px-2.5 rounded-md border border-car-border bg-[#121a24] hover:border-car-accent text-gray-300 hover:text-car-accent font-bold text-[11px] cursor-pointer shadow-xs active:scale-95 transition-all whitespace-nowrap"
           >
             1号收音FM
           </button>
@@ -138,7 +138,7 @@
                 'h-[24px] px-2 rounded-md font-black text-[10.5px] cursor-pointer shadow-xs active:scale-95 transition-all flex items-center space-x-1 shrink-0',
                 currentPlayingChannel === ch.id
                   ? 'bg-emerald-500 text-white animate-pulse'
-                  : 'bg-car-base border border-car-border hover:border-car-accent text-car-text'
+                  : 'bg-[#121a24] border border-emerald-500/30 hover:border-car-accent text-emerald-400 font-bold hover:bg-emerald-950/30'
               ]"
             >
               <span>{{ currentPlayingChannel === ch.id ? '🔊 发声' : '试听' }}</span>
@@ -184,7 +184,7 @@
               'h-[26px] px-3 rounded-lg font-black text-[11px] cursor-pointer shadow-xs active:scale-95 transition-all flex items-center space-x-1 shrink-0',
               currentPlayingChannel === channelList[12].id
                 ? 'bg-emerald-500 text-white animate-pulse'
-                : 'bg-car-base border border-car-border hover:border-car-accent text-car-text'
+                : 'bg-[#121a24] border border-emerald-500/30 hover:border-car-accent text-emerald-400 font-bold hover:bg-emerald-950/30'
             ]"
           >
             <span>{{ currentPlayingChannel === channelList[12].id ? '🔊 发声中' : '测试发声' }}</span>
