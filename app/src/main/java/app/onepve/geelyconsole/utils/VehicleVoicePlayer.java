@@ -1316,7 +1316,12 @@ public class VehicleVoicePlayer {
                     }
                     fos.close();
                     if (lower.endsWith(".mp3") || lower.endsWith(".wav")) {
-                        count++;
+                        if (outFile.length() > 0) {
+                            count++;
+                        } else {
+                            // 0 字节空占位模板文件，自动丢弃防污染，绝不覆盖已有单项配置与出厂原声
+                            try { outFile.delete(); } catch (Exception ignored) {}
+                        }
                     }
                 }
                 zis.closeEntry();
@@ -1356,7 +1361,7 @@ public class VehicleVoicePlayer {
                         if (audios != null) {
                             for (File af : audios) {
                                 String n = af.getName().toLowerCase();
-                                if (n.endsWith(".mp3") || n.endsWith(".wav")) {
+                                if ((n.endsWith(".mp3") || n.endsWith(".wav")) && af.length() > 0) {
                                     audioCount++;
                                     audioNames.put(af.getName());
                                     if (n.equals("preview" + ".mp3") || n.equals("sample" + ".mp3")) {

@@ -631,6 +631,8 @@ readme_path = os.path.join(ASSETS_DIR, "voice_readme.txt")
 
 if not os.path.exists(template_zip_path) or os.path.getsize(template_zip_path) == 0:
     voice_violations.append("assets/voice_template.zip 不存在或为空！")
+elif os.path.getsize(template_zip_path) > 15 * 1024:
+    voice_violations.append(f"assets/voice_template.zip 异常膨胀（{os.path.getsize(template_zip_path)} 字节 > 15KB），必须保持 0 字节骨架轻量化！")
 else:
     import zipfile
     try:
@@ -665,6 +667,8 @@ if "GeelyPilot/voices" not in vvp_code:
     voice_violations.append("VehicleVoicePlayer 未确立 GeelyPilot/voices 专属物理隔离目录！")
 if "extractVoiceZip" not in vvp_code or "isVoicePackZip" not in vvp_code:
     voice_violations.append("VehicleVoicePlayer 缺少 ZIP 自动识别与穿透解压引擎！")
+if "outFile.delete()" not in vvp_code:
+    voice_violations.append("VehicleVoicePlayer 缺少 0 字节模板音频自动丢弃防污染防覆盖机制！")
 
 with open(MOBILE_WEB_PATH, "r", encoding="utf-8") as f:
     mweb_code = f.read()
