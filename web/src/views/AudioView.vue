@@ -356,7 +356,7 @@
               </button>
               <button 
                 v-if="index !== 0"
-                @click="setAsPrimary(item)"
+                @click="pinToTop(item)"
                 class="h-[50px] min-h-[50px] px-3.5 rounded-xl border border-car-border bg-car-card hover:border-car-accent text-car-accent font-black text-[13px] cursor-pointer transition-all shadow-sm"
               >
                 置顶首选
@@ -460,6 +460,15 @@ function saveCurrentOrder(order) {
   window.dispatchEvent(new CustomEvent('music-order-updated'));
 }
 
+// 官方主流车机音乐应用标准识别顺位 (QQ音乐 -> 网易云 -> 汽水 -> 酷我 -> 酷狗)
+const OFFICIAL_MUSIC_SPECS = [
+  { name: 'QQ音乐', pkgs: ['com.tencent.qqmusiccar', 'com.tencent.qqmusic'], defaultPkg: 'com.tencent.qqmusiccar' },
+  { name: '网易云音乐', pkgs: ['com.netease.cloudmusiccar', 'com.netease.cloudmusic', 'com.netease.cloudmusic.iot'], defaultPkg: 'com.netease.cloudmusiccar' },
+  { name: '汽水音乐', pkgs: ['com.qishi.music'], defaultPkg: 'com.qishi.music' },
+  { name: '酷我音乐', pkgs: ['cn.kuwo.kwmusiccar', 'cn.kuwo.player'], defaultPkg: 'cn.kuwo.kwmusiccar' },
+  { name: '酷狗音乐', pkgs: ['com.kugou.androidCar', 'com.kugou.android'], defaultPkg: 'com.kugou.androidCar' },
+];
+
 function loadMediaApps() {
   mediaScanning.value = true;
   try {
@@ -467,36 +476,84 @@ function loadMediaApps() {
     if (!raw || raw === '[]') {
       raw = bridge.call('getInstalledLaunchableApps');
     }
-    let list = [];
+    let installedList = [];
     if (raw) {
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      list = parsed.map(item => ({
+      installedList = parsed.map(item => ({
         name: item.name || item.appName || item.pkg,
         pkg: item.pkg || item.packageName,
         isBluetooth: false
       })).filter(item => item.pkg !== 'com.android.bluetooth');
     }
-    
-    // 手机蓝牙常驻候选池
-    const all = [{ name: '手机蓝牙', pkg: 'com.android.bluetooth', isBluetooth: true }, ...list];
-    
-    // 依据用户自定义顺序排序
+
     const savedOrder = getSavedMusicOrder();
+    const bluetoothItem = { name: '手机蓝牙', pkg: 'com.android.bluetooth', isBluetooth: true };
+    let orderedList = [];
+
     if (savedOrder && savedOrder.length > 0) {
-      all.sort((a, b) => {
-        let ia = savedOrder.indexOf(a.pkg);
-        let ib = savedOrder.indexOf(b.pkg);
-        if (ia === -1) ia = 999;
-        if (ib === -1) ib = 999;
-        return ia - ib;
-      });
+      // 1. 若车主之前已手动调整并保存过顺序，严格遵从车主保存的历史偏好
+      const map = new Map();
+      map.set(bluetoothItem.pkg, bluetoothItem);
+      for (const item of installedList) {
+        map.set(item.pkg, item);
+      }
+      for (const pkg of savedOrder) {
+        if (map.has(pkg)) {
+          orderedList.push(map.get(pkg));
+          map.delete(pkg);
+        }
+      }
+      // 将新装但不在历史排序里的应用追加到末尾
+      for (const item of map.values()) {
+        orderedList.push(item);
+      }
+    } else {
+      // 2. 首次使用/无自定义顺序：按车主规则智能全仓扫描排序
+      // 步骤 A: 优先按官方顺位 (QQ音乐 -> 网易云 -> 汽水 -> 酷我 -> 酷狗) 匹配已装应用
+      const detectedOfficial = [];
+      for (const spec of OFFICIAL_MUSIC_SPECS) {
+        const found = installedList.find(app => spec.pkgs.includes(app.pkg));
+        if (found) {
+          detectedOfficial.push({
+            name: found.name || spec.name,
+            pkg: found.pkg,
+            isBluetooth: false
+          });
+        }
+      }
+      // 步骤 B: 收集其他未在官方顺位里的第三方媒体播放器
+      const otherApps = installedList.filter(app => !detectedOfficial.some(x => x.pkg === app.pkg));
+
+      const allDetectedMusic = [...detectedOfficial, ...otherApps];
+
+      if (allDetectedMusic.length > 0) {
+        // 扫到音乐应用：第 1 个音乐排在第 1 位作为默认首选，手机蓝牙排在第 2 位，其余音乐排在后面
+        orderedList.push(allDetectedMusic[0]);
+        orderedList.push(bluetoothItem);
+        orderedList.push(...allDetectedMusic.slice(1));
+
+        // 默认将扫到的第 1 个音乐置为激活首选（若当前未配置过）
+        if (!store.vehicleAuto.vehicle_speed_autoplay_pkg) {
+          store.vehicleAuto.vehicle_speed_autoplay_pkg = allDetectedMusic[0].pkg;
+          try {
+            bridge.call('setWheelControlStringSetting', 'vehicle_speed_autoplay_pkg', allDetectedMusic[0].pkg);
+            localStorage.setItem('vehicle_speed_autoplay_app_name', allDetectedMusic[0].name);
+          } catch (e) {}
+        }
+      } else {
+        // 完全没有扫到音乐应用（毛坯车机）：手机蓝牙排第一位作为默认首选
+        orderedList.push(bluetoothItem);
+        if (!store.vehicleAuto.vehicle_speed_autoplay_pkg) {
+          store.vehicleAuto.vehicle_speed_autoplay_pkg = bluetoothItem.pkg;
+          try {
+            bridge.call('setWheelControlStringSetting', 'vehicle_speed_autoplay_pkg', bluetoothItem.pkg);
+            localStorage.setItem('vehicle_speed_autoplay_app_name', bluetoothItem.name);
+          } catch (e) {}
+        }
+      }
     }
-    mediaAppsList.value = all;
-    
-    // 若当前未配置首选，自动同步第一项（默认手机蓝牙）
-    if (!store.vehicleAuto.vehicle_speed_autoplay_pkg && all.length > 0) {
-      store.vehicleAuto.vehicle_speed_autoplay_pkg = all[0].pkg;
-    }
+
+    mediaAppsList.value = orderedList;
   } catch (e) {
     mediaAppsList.value = [{ name: '手机蓝牙', pkg: 'com.android.bluetooth', isBluetooth: true }];
   } finally {
@@ -547,19 +604,28 @@ function movePriority(index, delta) {
 }
 
 function setAsPrimary(item) {
+  store.vehicleAuto.vehicle_speed_autoplay_pkg = item.pkg;
+  try {
+    bridge.call('setWheelControlStringSetting', 'vehicle_speed_autoplay_pkg', item.pkg);
+    localStorage.setItem('vehicle_speed_autoplay_app_name', item.name);
+  } catch (e) {}
+  showToast(`已将「${item.name}」设为当前首选音源`);
+}
+
+function pinToTop(item) {
   const list = mediaAppsList.value.filter(a => a.pkg !== item.pkg);
   list.unshift(item);
   mediaAppsList.value = list;
+
+  const newOrder = list.map(a => a.pkg);
+  saveCurrentOrder(newOrder);
 
   store.vehicleAuto.vehicle_speed_autoplay_pkg = item.pkg;
   try {
     bridge.call('setWheelControlStringSetting', 'vehicle_speed_autoplay_pkg', item.pkg);
     localStorage.setItem('vehicle_speed_autoplay_app_name', item.name);
   } catch (e) {}
-
-  const newOrder = list.map(a => a.pkg);
-  saveCurrentOrder(newOrder);
-  showToast(`整车首选音源已设为: ${item.name}`);
+  showToast(`已将「${item.name}」置顶并设为首选音源`);
 }
 
 const connStatus = ref({
