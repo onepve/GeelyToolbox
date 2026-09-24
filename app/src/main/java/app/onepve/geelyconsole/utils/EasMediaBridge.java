@@ -71,8 +71,12 @@ public class EasMediaBridge {
         @Override
         public void onAudioFocusChange(int focusChange) {
             AppLogger.i("蓝牙音频", "蓝牙 MAY_DUCK 音频焦点状态变更: " + focusChange);
-            if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+            if (focusChange == AudioManager.AUDIOFOCUS_LOSS
+                    || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
+                    || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
                 btFocusHeld = false;
+            } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+                btFocusHeld = true;
             }
         }
     };
@@ -243,9 +247,6 @@ public class EasMediaBridge {
      * 2. MAY_DUCK 告知系统此焦点可与其他媒体混音，本地播放音乐时仅轻微压低音量，手机微信语音、手机导航与本地音乐可完美同时放声！
      */
     public synchronized void requestBluetoothFocusIfNeeded() {
-        if (btFocusHeld) {
-            return;
-        }
         if (audioManager == null) {
             audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
         }
