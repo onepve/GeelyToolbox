@@ -27,7 +27,7 @@ import app.onepve.geelyconsole.services.VehicleAutomationService;
 /**
  * 吉利 ECARX EAS 多媒体中心轻量桥接器
  * 核心职责：
- * 1. 蓝牙物理声道仲裁 (A2DP Sink 接管)：在【控制台独立接管】模式下，当手机蓝牙连入时主动选通 6 号蓝牙硬件通道并申请音频焦点，
+ * 1. 蓝牙物理声道仲裁 (A2DP Sink 接管)：在【控制台独立接管】模式下，当手机蓝牙连入时主动选通 2 号蓝牙硬件通道 (SOURCE_TYPE_BT=2) 并申请音频焦点，
  *    解决冻结原厂多媒体后手机蓝牙/微信语音无声的死锁痛点；在【米小江优先】模式下主动退让，零冲突。
  * 2. 仪表/屏保播放状态投递开关 (wheel_push_playback_cluster，默认 false)：开启时向 EAS 投递歌名歌手，息屏唤起音乐卡片。
  * 3. 仪表盘实时歌词投递开关 (wheel_push_lyrics_cluster，默认 false)：开启时向仪表盘/HUD 投递当前歌词。
@@ -202,12 +202,12 @@ public class EasMediaBridge {
             mToken = mApi.registerMusic(appContext.getPackageName(), client);
             if (mToken != null) {
                 mRegistered = true;
-                // 声明支持 6 号蓝牙物理声道并立即宣告选通
+                // 声明支持 2 号蓝牙物理声道并立即宣告选通
                 mApi.updateMediaSourceTypeList(mToken, new int[]{SOURCE_TYPE_BLUETOOTH});
                 mApi.declareMediaCenterCapability(mToken, new int[]{0, 2, 3});
                 mApi.declareSupportCollectTypes(mToken, new int[]{0, 3, 4});
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
-                AppLogger.i("音频通道", "EAS 注册成功，已声明并选通 6 号蓝牙物理声道");
+                AppLogger.i("音频通道", "EAS 注册成功，已声明并选通 2 号蓝牙物理声道");
 
                 // 发送原厂小部件广播保持蓝牙源
                 keepXcmediaOnBluetoothSource();
@@ -288,12 +288,14 @@ public class EasMediaBridge {
             ensureEasReady();
             if (mApi != null && mRegistered && mToken != null) {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
-                AppLogger.i("蓝牙音频", "已下发 updateCurrentSourceType(6)，原车蓝牙音频物理通道已选通！");
+                AppLogger.i("蓝牙音频", "已下发 updateCurrentSourceType(2)，原车 2 号蓝牙音频物理通道已选通！");
             }
             // 1. 发送吉利原车系统底层切源广播与原厂部件保持广播
             try {
                 Intent rsrcIntent = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
-                rsrcIntent.putExtra("source_type", SOURCE_TYPE_BLUETOOTH);
+                rsrcIntent.putExtra("source_type", SOURCE_TYPE_BLUETOOTH); // 2
+                rsrcIntent.putExtra("ecarx.intent.extra.KEY_RSRC_TYPE", SOURCE_TYPE_BLUETOOTH); // 2
+                rsrcIntent.putExtra("ecarx.intent.extra.KEY_RSRC_MODE", 1);
                 appContext.sendBroadcast(rsrcIntent);
             } catch (Throwable ignored) {}
 
