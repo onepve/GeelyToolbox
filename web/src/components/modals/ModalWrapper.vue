@@ -1,9 +1,10 @@
 <template>
-  <transition name="modal-fade">
+  <Teleport to="body">
+    <transition name="modal-fade">
     <div 
       v-if="show" 
       :class="['fixed top-0 left-0 w-screen h-screen flex items-center justify-center p-6 select-none', zIndexClass || 'z-50']"
-      style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: var(--modal-backdrop, rgba(11, 15, 25, 0.70));"
+      style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(8, 11, 19, 0.98); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);"
       @click.self="handleBackdropClick"
     >
       <div 
@@ -42,7 +43,8 @@
         </div>
       </div>
     </div>
-  </transition>
+    </transition>
+  </Teleport>
 </template>
 
 <script setup>

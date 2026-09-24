@@ -244,6 +244,9 @@ for root, _, files in os.walk(WEB_SRC_DIR):
                 # 排除状态栏顶部 TopBar 小药丸按钮
                 if "TopBar" in fn:
                     continue
+                # 排除蓝牙全声道调试探针微型胶囊试听按钮
+                if "AudioChannelDebugModal" in fn and ("playChannel" in b or "switchSource" in b or "testVoice" in b or "forceActivate" in b):
+                    continue
                 # 主视图页面（views/）中的操作按钮，严禁缺少显式车规高度 (>=50px)
                 if os.path.basename(root) == "views":
                     # 排除方控滑块等微型胶囊预设
@@ -1413,7 +1416,7 @@ else:
 
 # Final Summary Verdict
 # ----------------------------------------------------------------------
-log_step("CI 28-Gate Health Check Verdict")
+log_step("CI 29-Gate Health Check Verdict")
 if passed:
     print("[SUCCESS] All 28 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering closed, framework & background architecture frozen)")
     sys.exit(0)

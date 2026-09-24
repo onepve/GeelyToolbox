@@ -1343,6 +1343,16 @@ public class VehicleAutomationService extends Service {
             AppLogger.i("车身联动", "车速达到阈值，但处于用户主动暂停抑制窗口内，跳过自动播放（尊重用户暂停意图）");
             return;
         }
+        // 核心互斥守卫 1：若当前系统已有任意媒体在播放，绝对不重复触发，静默放行防冲突
+        if (isAnyMediaPlaying()) {
+            AppLogger.i("车身联动", "车速达到阈值，但系统已有媒体在播放中，静默跳过自启防冲突");
+            return;
+        }
+        // 核心互斥守卫 2：若手机蓝牙当前正处于推流播放态，绝不自启车机本地媒体，坚决杜绝双音并发
+        if (EasMediaBridge.getInstance(this).isA2dpStreaming()) {
+            AppLogger.i("车身联动", "车速达到阈值，手机蓝牙音频正在推流播放中，跳过车机本地音乐自启");
+            return;
+        }
         if (isTargetMediaPlaying(pkg)) {
             AppLogger.i("车身联动", "车速达到阈值，目标媒体已在正常播放中，静默放行防打断: " + pkg);
             return;
@@ -1405,7 +1415,11 @@ public class VehicleAutomationService extends Service {
             @Override
             public void run() {
                 try {
-                    new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
+                    // 仅当目标未指定具体应用，或显式配置为通用媒体按键时，才发送全局按键
+                    // 若目标已明确绑定为具体车机应用（如 QQ音乐车机版），严禁发送全局按键，防止穿透到手机蓝牙 AVRCP 导致双音并发
+                    if (pkg == null || pkg.isEmpty() || "media_button".equals(pkg)) {
+                        new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
+                    }
                 } catch (Throwable ignored) {}
 
                 // 若为后台静默放歌且车主此前正在导航，1.2秒后无缝将高德地图带回前台，实现完美的「后台放歌、不挡导航」！

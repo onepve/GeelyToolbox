@@ -302,8 +302,9 @@ public class EasMediaBridge {
             // 2. 核心大杀器：常驻持有 MAY_DUCK 蓝牙闪避焦点，保障微信秒级发声且支持与本地音乐同时播报
             requestBluetoothFocusIfNeeded();
 
-            // 核心唤醒：唤醒底层 com.android.bluetooth A2DP 链路，使其主动向系统申请 AudioFocus 并解除国承静音！
-            wakeBluetoothAudioSink();
+            // 铁律：选通蓝牙硬件声道时坚决不调用 wakeBluetoothAudioSink()/play()！
+            // 防止车主点开微信语音或上车时手机被误下发播放键导致音乐抢占/切歌掐死微信。
+            // wakeBluetoothAudioSink() 仅由 playBluetoothMusic() 在用户明确要播歌时主动触发。
 
             // 3. 确保系统媒体音量正常，杜绝为0导致微信或音乐不出声
             AudioManager am = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
