@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col space-y-7">
+  <div class="flex flex-col space-y-4">
     <!-- 实测机型声明 (安全实测认证标识：翠绿圆环徽标与流线说明，彻底告别伪按钮误触) -->
     <div class="bg-car-item border-2 border-car-border rounded-3xl py-7 px-7 min-h-[106px] flex items-center shadow-md">
       <div class="w-[52px] h-[52px] rounded-full bg-emerald-500/15 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center mr-6 shrink-0 shadow-sm">
@@ -45,7 +45,7 @@
     </div>
 
     <!-- 应用流 (双列网格 · 强制等高 h-full 对齐基准线) -->
-    <div v-if="filteredApps.length > 0" class="grid grid-cols-2 gap-5 items-stretch">
+    <div v-if="filteredApps.length > 0" class="grid grid-cols-2 gap-4 items-stretch">
       <div 
         v-for="app in filteredApps" 
         :key="app.id"

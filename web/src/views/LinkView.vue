@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col space-y-5">
+  <div class="flex flex-col space-y-4">
     <!-- 联动功能列表 -->
-    <div class="grid grid-cols-2 gap-5">
+    <div class="grid grid-cols-2 gap-4">
       <!-- 任务 1: D 挡起步联动 360 -->
       <PlanCard
         title="1. 前进 D 挡起步联动 360"

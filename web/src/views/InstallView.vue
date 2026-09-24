@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col space-y-5">
+  <div class="flex flex-col space-y-4">
     <!-- 0. 前置环境安装管控（一左一右双列对称网格：吉利应用商店状态与第三方 APK 放行白名单） -->
-    <div class="grid grid-cols-2 gap-5">
+    <div class="grid grid-cols-2 gap-4">
       <!-- 左侧：吉利应用商店安全冻结防护 -->
       <FeatureCard 
         class="!mb-0"
@@ -58,7 +58,7 @@
     </div>
 
     <!-- 1. 原生文件管理特权安装通道与无线快传 (核心通道 2 列对称) -->
-    <div class="grid grid-cols-2 gap-5">
+    <div class="grid grid-cols-2 gap-4">
       <FeatureCard class="!mb-0" 
         title="车载原生文件管理"
         desc="严禁直接通过 ADB 命令行 pm install 强行静默安装，底层安全策略会导致应用无法运行或白屏！"
@@ -113,7 +113,7 @@
     </div>
 
     <!-- 3. 整车应用高级管理与专家通道 (2 列对称卡片) -->
-    <div class="grid grid-cols-2 gap-5">
+    <div class="grid grid-cols-2 gap-4">
       <!-- 应用高级管理 (原系统维护移至此处，形成安装与卸载管理闭环) -->
       <FeatureCard class="!mb-0"
         title="整车应用高级管理"

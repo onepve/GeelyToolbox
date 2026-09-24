@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col space-y-6">
+  <div class="flex flex-col space-y-4">
     <!-- 核心：方向盘按键方控接管总开关 - 核心功能首屏 (左右分栏车规黄金磁贴) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
@@ -107,7 +107,7 @@
       helpText="1. 接管模式选择：&#10;• 控制台独立接管（推荐）：方向盘按键直接控制切歌与播放，自动唤醒车载喇叭，体验最流畅。&#10;• 米小江方控优先：如果车机上装了米小江 CarMedia，选这项让它优先处理切歌，两者互不打扰。&#10;• 恢复原厂默认：不拦截方向盘按键，全部交回原车控制。&#10;&#10;2. 蓝牙无声问题解决：&#10;独立接管模式下，手机连车机蓝牙放微信语音或音乐没声音时，会自动帮您接通车载喇叭。&#10;&#10;3. 仪表与屏保显示：&#10;可自由选择是否把当前歌名和歌词推送到仪表盘或屏保上显示。" 
       helpTip="如果同时装了米小江请选「米小江方控优先」；只用本工具箱建议选「控制台独立接管」。"
     >
-      <div class="grid grid-cols-3 gap-3.5" style="grid-gap: 14px; -webkit-column-gap: 14px;">
+      <div class="grid grid-cols-3 gap-4" style="grid-gap: 14px; -webkit-column-gap: 14px;">
         <MatrixButton 
           title="米小江方控优先"
           subtitle="放行切歌与Mode键，工具箱补充静音键接管"
@@ -129,7 +129,7 @@
       </div>
 
       <!-- 仪表盘与屏保显示扩展 (独立开关·默认关闭) -->
-      <div class="mt-5 pt-5 border-t border-car-border/60 flex flex-col space-y-4">
+      <div class="mt-4 pt-4 border-t border-car-border/60 flex flex-col space-y-4">
         <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border-2 border-car-border">
           <div class="flex flex-col space-y-1">
             <span class="text-[17px] font-black text-car-text">投递播放状态至仪表盘与息屏时钟</span>

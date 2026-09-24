@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col space-y-6">
+  <div class="flex flex-col space-y-4">
     <!-- 核心：全车语音播报总开关 - 核心功能首屏 (左右分栏车规黄金磁贴 · 完全对齐方控总开关) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
@@ -37,7 +37,7 @@
     </div>
 
     <!-- 语音提示列表：车规双列网格，一屏尽览四大场景 -->
-    <div class="grid grid-cols-2 gap-5">
+    <div class="grid grid-cols-2 gap-4">
       <!-- 语音提示 1：换挡安全播报 -->
       <PlanCard
         title="1. 换挡语音提示"

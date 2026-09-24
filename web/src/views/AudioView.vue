@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col space-y-6">
+  <div class="flex flex-col space-y-4">
     <!-- 1. 车载蓝牙音频与网络互联 -->
     <FeatureCard 
       title="车载音频与网络通道"

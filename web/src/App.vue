@@ -12,7 +12,7 @@
       <Sidebar />
 
       <!-- 右侧专属大舞台 (切换功能时自动回顶) -->
-      <section ref="mainContent" class="flex-1 h-full overflow-y-auto p-6 flex flex-col space-y-6">
+      <section ref="mainContent" class="flex-1 h-full overflow-y-auto p-5 flex flex-col">
         <KeepAlive :max="8">
           <StoreView v-if="store.currentNav === 'store'" />
           <WheelView v-else-if="store.currentNav === 'wheel'" />

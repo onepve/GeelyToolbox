@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col space-y-6 shrink-0">
+  <div class="flex flex-col space-y-4 shrink-0">
     <!-- 全国实时油价与调价日历 (置顶首位，车主进入系统维护秒查油价，免滑动翻页) -->
     <FeatureCard 
       title="全国实时油价与调价日历"
