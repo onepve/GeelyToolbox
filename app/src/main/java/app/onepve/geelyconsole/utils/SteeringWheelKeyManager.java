@@ -3,6 +3,7 @@ package app.onepve.geelyconsole.utils;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
+import app.onepve.geelyconsole.services.VehicleAutomationService;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
