@@ -135,24 +135,13 @@ def main():
 
 def export_oil_prices():
     try:
-        js_file = os.path.join(REPO_DIR, "web/src/utils/oilPriceData.js")
-        if not os.path.exists(js_file):
-            return
-        node_script = (
-            'import("./web/src/utils/oilPriceData.js").then(m => { '
-            'const fs = require("fs"); '
-            'fs.writeFileSync("/tmp/oil-price.json", JSON.stringify({'
-            'nextAdjustment: m.DEFAULT_NEXT_ADJUSTMENT, '
-            'regionalPrices: m.REGIONAL_PRICES, '
-            'updatedAt: new Date().toISOString().split("T")[0]'
-            '}, null, 2)); '
-            'console.log(">> /tmp/oil-price.json exported successfully via Node.js."); '
-            '}).catch(e => { console.error(e); process.exit(1); })'
-        )
-        cmd = ["node", "-e", node_script]
-        subprocess.run(cmd, cwd=REPO_DIR, check=True)
+        sync_script = os.path.join(REPO_DIR, "scripts/sync_oil_price.py")
+        if os.path.exists(sync_script):
+            cmd = ["python3", sync_script]
+            subprocess.run(cmd, cwd=REPO_DIR, check=True)
+            print(">> 成功通过 sync_oil_price.py 动态同步国家发改委最新油价至 /tmp/oil-price.json")
     except Exception as e:
-        print(f"Warning: export_oil_prices failed: {e}")
+        print(f"Warning: dynamic export_oil_prices failed: {e}")
 
 if __name__ == "__main__":
     main()

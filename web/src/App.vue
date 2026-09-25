@@ -157,9 +157,12 @@ onMounted(() => {
     }
   } catch (e) {}
 
-  // 启动即主动从云端异步拉取最新商城应用配置 (纯云端无本地硬编码兜底)
+  // 启动即主动从云端异步拉取最新商城应用配置与全国实时油价 (纯云端无本地硬编码兜底)
   try {
     bridge.call('refreshCloudApps');
+  } catch (e) {}
+  try {
+    refreshOilPrices(false);
   } catch (e) {}
 
   // 首次启动检测：等待原生权限就绪后串行拉起作者说明与赞赏弹窗（仅弹一次，持久化到 localStorage）

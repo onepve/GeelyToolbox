@@ -88,7 +88,7 @@
       </div>
 
       <!-- 四大标号油价核心矩阵 (4 列并列卡片) -->
-      <div class="flex space-x-3">
+      <div v-if="currentPrice" class="flex space-x-3">
         <!-- 92# 汽油 -->
         <div class="flex-1 p-4 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
           <div class="flex items-center space-x-1.5 mb-1.5">
@@ -147,15 +147,20 @@
         </div>
       </div>
 
+      <div v-else class="p-8 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center space-y-2">
+        <span class="text-[17px] font-black text-car-text">正在从云端获取最新全国油价数据...</span>
+        <span class="text-[13px] font-bold text-car-sub">100% 动态直连云端 R2 实时源，严禁本地伪造兜底</span>
+      </div>
+
       <!-- 下轮调价周期与预测算账 -->
-      <div class="p-4 rounded-2xl bg-car-card border border-car-border flex flex-col space-y-2">
+      <div v-if="store.oilPrice.nextAdjustment" class="p-4 rounded-2xl bg-car-card border border-car-border flex flex-col space-y-2">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-2">
-            <span class="text-[18px]">📅</span>
+            
             <span class="text-[16px] font-black text-car-text">下轮调价窗口:</span>
             <span class="text-[16px] font-black text-car-accent">{{ store.oilPrice.nextAdjustment.dateLabel }}</span>
             <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-item text-rose-600 dark:text-rose-300 font-extrabold border border-car-border">
-              仅剩 {{ daysLeft }} 天
+              仅剩 {{ daysLeft.days }} 天
             </span>
           </div>
           <div class="text-[14px] font-black text-rose-400">
@@ -164,12 +169,12 @@
         </div>
 
         <div class="text-[14.5px] text-car-sub font-bold flex items-center leading-relaxed">
-          <span class="mr-1.5">📈</span>
+          
           <span>预测变动幅度：每升预计上调约 <b class="text-rose-400">{{ store.oilPrice.nextAdjustment.predictedLiter }} 元</b>。</span>
         </div>
 
         <div class="p-3 rounded-xl bg-car-item border border-car-border text-[14px] text-car-text font-bold flex items-center">
-          <span class="mr-2 text-[16px]">💡</span>
+          
           <span>{{ store.oilPrice.nextAdjustment.tip }}</span>
         </div>
       </div>
@@ -179,9 +184,9 @@
       <div class="flex items-center justify-between w-full">
         <div class="flex items-center space-x-3">
           <span class="text-[13.5px] text-car-sub font-bold">
-            上轮生效: {{ store.oilPrice.nextAdjustment.lastAdjustmentDate }} (当前: {{ store.oilPrice.selectedProvince }})
+            {{ store.oilPrice.nextAdjustment ? '上轮生效: ' + store.oilPrice.nextAdjustment.lastAdjustmentDate + ' (' + store.oilPrice.selectedProvince + ')' : '正在同步最新调价周期...' }}
           </span>
-          <GasStationBrand />
+          
         </div>
         <button
           @click="closeModal('oilPrice')"
@@ -210,12 +215,15 @@ import { PROVINCE_LIST, getDaysToAdjustment } from '../../utils/oilPriceData';
 const showPicker = ref(false);
 
 const daysLeft = computed(() => {
+  if (!store.oilPrice.nextAdjustment || !store.oilPrice.nextAdjustment.date) {
+    return { days: 0, hours: 0, isPassed: false };
+  }
   return getDaysToAdjustment(store.oilPrice.nextAdjustment.date);
 });
 
 const currentPrice = computed(() => {
   const prov = store.oilPrice.selectedProvince || '浙江';
-  return store.oilPrice.regionalPrices[prov] || store.oilPrice.regionalPrices['浙江'];
+  return store.oilPrice.regionalPrices[prov] || store.oilPrice.regionalPrices['浙江'] || null;
 });
 
 const isCurrentFav = computed(() => {

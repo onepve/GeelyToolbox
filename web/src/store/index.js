@@ -137,8 +137,26 @@ export const store = reactive({
       } catch (e) {}
       return ['浙江', '上海', '江苏', '北京'];
     })(),
-    nextAdjustment: { ...DEFAULT_NEXT_ADJUSTMENT },
-    regionalPrices: { ...REGIONAL_PRICES },
+    nextAdjustment: (() => {
+      try {
+        const cached = localStorage.getItem('geely_oil_cached_data');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && parsed.nextAdjustment) return parsed.nextAdjustment;
+        }
+      } catch (e) {}
+      return null;
+    })(),
+    regionalPrices: (() => {
+      try {
+        const cached = localStorage.getItem('geely_oil_cached_data');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && parsed.regionalPrices) return parsed.regionalPrices;
+        }
+      } catch (e) {}
+      return {};
+    })(),
     isSyncing: false,
     lastSyncTime: (() => {
       try {

@@ -77,23 +77,8 @@
         @click="openModal('appDetail', app)"
         class="bg-car-item border-2 border-car-border hover:border-car-accent rounded-2xl p-5 flex flex-col justify-between cursor-pointer transition-all shadow-md group h-full min-h-[190px]"
       >
-        <div class="flex items-start space-x-4">
-          <!-- 应用图标 -->
-          <div class="w-16 h-16 rounded-2xl bg-car-card border border-car-border p-2 shrink-0 flex items-center justify-center shadow-inner overflow-hidden">
-            <img 
-              v-if="app.icon" 
-              :src="app.icon" 
-              :alt="app.name" 
-              class="w-full h-full object-contain rounded-xl"
-              @error="(e) => e.target.style.display = 'none'"
-            />
-            <svg v-else class="w-8 h-8 text-car-sub" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-              <line x1="12" y1="18" x2="12.01" y2="18"/>
-            </svg>
-          </div>
-
-          <!-- 应用基本信息 -->
+        <div class="flex items-start">
+          <!-- 应用基本信息 (无冗余图标，极简车规沉浸布局) -->
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between">
               <div class="text-[19px] font-black text-car-text truncate group-hover:text-car-accent transition-colors">
