@@ -792,6 +792,32 @@ public class EasMediaBridge {
                             }
                         }
                     } catch (Throwable ignored) {}
+                } else if ("android.bluetooth.headsetclient.profile.action.AUDIO_STATE_CHANGED".equals(action)) {
+                    // 场景二：微信按住发语音给别人（手机开启蓝牙麦克风录音通道 SCO）
+                    int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
+                    if (state == 2) {
+                        AppLogger.i("蓝牙音频", "监听到微信发语音/通话建立 (SCO Connected)，暂停音乐静音环境");
+                        VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                        if (vas != null) {
+                            String activePkg = vas.getCurrentlyPlayingMediaPackage();
+                            if (activePkg != null && !activePkg.isEmpty()) {
+                                wasLocalPlayingBeforeA2dp = true;
+                                lastPlayingPackageBeforeVoice = activePkg;
+                                vas.pauseMediaPlaybackForAudioInterruption();
+                            }
+                        }
+                    } else if (state == 0) {
+                        AppLogger.i("蓝牙音频", "监听到微信发语音结束 (SCO Disconnected)，恢复此前音乐");
+                        if (wasLocalPlayingBeforeA2dp && lastPlayingPackageBeforeVoice != null) {
+                            final String targetPkg = lastPlayingPackageBeforeVoice;
+                            VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                            if (vas != null) {
+                                vas.resumeSpecificMediaPackage(targetPkg);
+                            }
+                            wasLocalPlayingBeforeA2dp = false;
+                            lastPlayingPackageBeforeVoice = null;
+                        }
+                    }
                 }
             }
         };
@@ -800,6 +826,7 @@ public class EasMediaBridge {
         filter.addAction("android.bluetooth.a2dp-sink.profile.action.CONNECTION_STATE_CHANGED");
         filter.addAction("android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED");
         filter.addAction("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT");
+        filter.addAction("android.bluetooth.headsetclient.profile.action.AUDIO_STATE_CHANGED");
         appContext.registerReceiver(a2dpReceiver, filter);
     }
     /**

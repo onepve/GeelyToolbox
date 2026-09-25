@@ -1616,34 +1616,57 @@ public class VehicleAutomationService extends Service {
     public void resumeSpecificMediaPackage(String targetPkg) {
         if (targetPkg == null || targetPkg.isEmpty()) return;
         try {
-            MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
-            if (msm != null) {
-                List<MediaController> controllers = msm.getActiveSessions(null);
-                if (controllers != null) {
-                    for (MediaController mc : controllers) {
-                        if (mc != null && targetPkg.equals(mc.getPackageName())) {
-                            mc.getTransportControls().play();
-                            AppLogger.i("音频通道", "方案A: 已通过 MediaController 定向恢复播放: " + targetPkg);
-                            return;
+            AppLogger.i("音频通道", "正在定向恢复此前播放的媒体应用: " + targetPkg);
+            // 1. 尝试 MediaController.play()
+            try {
+                MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
+                if (msm != null) {
+                    List<MediaController> controllers = msm.getActiveSessions(null);
+                    if (controllers != null) {
+                        for (MediaController mc : controllers) {
+                            if (mc != null && targetPkg.equals(mc.getPackageName())) {
+                                mc.getTransportControls().play();
+                                AppLogger.i("音频通道", "已通过 MediaController 下发 play(): " + targetPkg);
+                                break;
+                            }
                         }
                     }
                 }
+            } catch (Throwable t) {
+                AppLogger.w("音频通道", "MediaController play 异常: " + t.getMessage());
             }
+
+            // 2. 针对第三方播放器（如 QQ 音乐车机版）下发专属广播，确保 100% 成功起播
             if ("com.tencent.qqmusiccar".equals(targetPkg)) {
-                Intent playIntent = new Intent("com.tencent.qqmusiccar.action.PLAY");
-                playIntent.setPackage("com.tencent.qqmusiccar");
-                sendBroadcast(playIntent);
-            } else {
-                new SteeringWheelKeyManager(this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
+                try {
+                    Intent playIntent = new Intent("com.tencent.qqmusiccar.action.PLAY");
+                    playIntent.setPackage("com.tencent.qqmusiccar");
+                    sendBroadcast(playIntent);
+                    AppLogger.i("音频通道", "已向 QQ 音乐发送 com.tencent.qqmusiccar.action.PLAY 专属播放广播");
+                } catch (Throwable t) {
+                    AppLogger.w("音频通道", "发送 QQ 音乐播放广播异常: " + t.getMessage());
+                }
             }
-            AppLogger.i("音频通道", "方案A: 已定向通知目标播放器恢复: " + targetPkg);
+
+            // 3. 通用兜底：下发 KEYCODE_MEDIA_PLAY 播放按键
+            try {
+                new SteeringWheelKeyManager(this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
+                AppLogger.i("音频通道", "已向系统下发 KEYCODE_MEDIA_PLAY 确认播放恢复");
+            } catch (Throwable t) {
+                AppLogger.w("音频通道", "下发 KEYCODE_MEDIA_PLAY 异常: " + t.getMessage());
+            }
         } catch (Throwable t) {
             AppLogger.w("音频通道", "定向恢复异常: " + t.getMessage());
         }
     }
 
     public void pauseMediaPlaybackForAudioInterruption() {
-        AppLogger.i("音频通道", "微信语音开始，不强制暂停第三方音乐");
+        try {
+            new SteeringWheelKeyManager(this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PAUSE);
+            AppLogger.i("音频通道", "微信发语音/录音建立，已下发 KEYCODE_MEDIA_PAUSE 保证环境安静");
+        } catch (Throwable t) {
+            AppLogger.w("音频通道", "pauseMediaPlaybackForAudioInterruption 异常: " + t.getMessage());
+        }
     }
 
     public void resumeMediaPlaybackAfterAudioInterruption() {
