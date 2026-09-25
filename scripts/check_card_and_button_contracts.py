@@ -174,6 +174,20 @@ CARD_BUTTON_CONTRACTS = [
         [r"a2dpStreaming", r"resumeMediaPlaybackAfterAudioInterruption"],
         []
     ),
+    (
+        "多媒体接管卡片", "微信语音自动压低音量 (Ducking 刚性锁死)",
+        os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
+        "public synchronized void duckMediaVolume()",
+        [r"savedMediaVolume", r"isMediaDucked", r"STREAM_MUSIC", r"Math\.round"],
+        []
+    ),
+    (
+        "多媒体接管卡片", "微信语音自动恢复音量与防抖 (Restore & Debounce 刚性锁死)",
+        os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
+        "private void registerA2dpReceiver",
+        [r"duckMediaVolume", r"restoreMediaVolume", r"streamStopDebounceRunnable", r"resumeMediaPlaybackAfterAudioInterruption"],
+        []
+    ),
 
     # ==========================================
     # 5. 【多媒体接管卡片】(音乐拉活与安全续播)

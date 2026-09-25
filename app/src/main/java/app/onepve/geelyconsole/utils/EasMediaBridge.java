@@ -67,12 +67,17 @@ public class EasMediaBridge {
     private volatile boolean btFocusHeld = false;
     private AudioManager audioManager;
 
+    private volatile boolean isMediaDucked = false;
+    private volatile int savedMediaVolume = -1;
+
     private final AudioManager.OnAudioFocusChangeListener btFocusListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
         public void onAudioFocusChange(int focusChange) {
             AppLogger.i("蓝牙音频", "蓝牙 MAY_DUCK 音频焦点状态变更: " + focusChange);
-            if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+            if (focusChange < 0) {
                 btFocusHeld = false;
+            } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+                btFocusHeld = true;
             }
         }
     };
@@ -242,10 +247,59 @@ public class EasMediaBridge {
      * 1. 底层吉利蓝牙堆栈 (A2dpSinkStreamHandler) 永远感知到 audioFocus != 0，绝不会触发 stopFluorideStreaming 与 sendAvrcpPause 掐死微信！
      * 2. MAY_DUCK 告知系统此焦点可与其他媒体混音，本地播放音乐时仅轻微压低音量，手机微信语音、手机导航与本地音乐可完美同时放声！
      */
-    public synchronized void requestBluetoothFocusIfNeeded() {
-        if (btFocusHeld) {
-            return;
+    /**
+     * 自动压低媒体音量 (微信语音/手机导航播放时车机音乐闪避 Ducking)
+     * 车规级双保险：系统 MAY_DUCK 焦点通知 + 物理级平滑压低音量至原音量的 25%~30%，
+     * 彻底解决部分车载播放器不响应系统 CAN_DUCK 的痛点，确保微信语音清晰响亮。
+     */
+    public synchronized void duckMediaVolume() {
+        if (audioManager == null) {
+            audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
         }
+        if (audioManager == null) return;
+        try {
+            if (!isMediaDucked) {
+                int curVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                if (curVol > 0) {
+                    savedMediaVolume = curVol;
+                    int duckVol = Math.max(1, (int) Math.round(curVol * 0.25));
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, duckVol, 0);
+                    isMediaDucked = true;
+                    AppLogger.i("蓝牙音频", "【微信语音压低】已自动压低媒体音量: " + curVol + " -> " + duckVol);
+                }
+            }
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "duckMediaVolume 异常: " + t.getMessage());
+        }
+    }
+
+    /**
+     * 自动恢复媒体音量 (微信语音播放完毕后车机音乐平滑恢复)
+     */
+    public synchronized void restoreMediaVolume() {
+        if (audioManager == null) {
+            audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
+        }
+        if (audioManager == null) return;
+        try {
+            if (isMediaDucked && savedMediaVolume >= 0) {
+                int curVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, savedMediaVolume, 0);
+                AppLogger.i("蓝牙音频", "【微信语音恢复】已自动恢复媒体音量: " + curVol + " -> " + savedMediaVolume);
+                isMediaDucked = false;
+                savedMediaVolume = -1;
+            }
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "restoreMediaVolume 异常: " + t.getMessage());
+        }
+    }
+
+    /**
+     * 申请 MAY_DUCK 闪避音频焦点
+     * 1. 底层吉利蓝牙堆栈 (A2dpSinkStreamHandler) 永远感知到 audioFocus != 0，绝不会触发 stopFluorideStreaming 与 sendAvrcpPause 掐死微信！
+     * 2. MAY_DUCK 告知系统此焦点可与其他媒体混音，本地播放音乐时自动压低音量，微信语音放完自动恢复！
+     */
+    public synchronized void requestBluetoothFocusIfNeeded() {
         if (audioManager == null) {
             audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
         }
@@ -255,7 +309,7 @@ public class EasMediaBridge {
         try {
             int r = audioManager.requestAudioFocus(btFocusListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
             btFocusHeld = (r == AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
-            AppLogger.i("蓝牙音频", "已申请常驻 MAY_DUCK 蓝牙闪避焦点，result=" + r + " held=" + btFocusHeld);
+            AppLogger.i("蓝牙音频", "已申请 MAY_DUCK 蓝牙闪避焦点，result=" + r + " held=" + btFocusHeld);
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "requestBluetoothFocusIfNeeded 异常: " + t.getMessage());
         }
@@ -553,104 +607,113 @@ public class EasMediaBridge {
     private void registerA2dpReceiver() {
         if (a2dpReceiver != null) return;
         try {
-            BluetoothAdapter ba = BluetoothAdapter.getDefaultAdapter();
-            if (ba != null) {
-                // 11 代表 BluetoothProfile.A2DP_SINK，2 代表 STATE_CONNECTED
-                this.a2dpSinkConnected = (ba.getProfileConnectionState(11) == 2);
-            }
-        } catch (Throwable ignored) {}
+            IntentFilter filter = new IntentFilter();
+            filter.addAction("android.bluetooth.a2dp-sink.profile.action.CONNECTION_STATE_CHANGED");
+            filter.addAction("android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED");
+            filter.addAction("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT");
 
-        a2dpReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (intent == null) return;
-                String action = intent.getAction();
-                if ("android.bluetooth.a2dp-sink.profile.action.CONNECTION_STATE_CHANGED".equals(action)) {
-                    int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
-                    if (state == 2) {
-                        a2dpSinkConnected = true;
-                        AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已连接 (connected)，选通音频通道并建立 MAY_DUCK 焦点守护");
-                        activateBluetoothChannel();
-                    } else if (state == 0) {
-                        a2dpSinkConnected = false;
-                        a2dpStreaming = false; // 断开必然不再推流
-                        abandonBluetoothFocus();
-                        AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已断开，释放 MAY_DUCK 焦点并复位推流态");
-                    }
-                } else if ("android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED".equals(action)) {
-                    // 真实推流状态：只有 STATE_STARTED 才认为蓝牙音频流活跃 (connected != streaming)
-                    int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
-                    boolean streaming = (state == A2DP_AUDIO_STATE_STARTED);
-                    if (streaming != a2dpStreaming) {
-                        a2dpStreaming = streaming;
-                        AppLogger.i("蓝牙音频", "蓝牙 A2DP 推流状态跃变: streaming=" + streaming
-                                + " (connected=" + a2dpSinkConnected + ")");
-                        if (streaming) {
-                            VehicleAutomationService vas = VehicleAutomationService.getInstance();
-                            if (vas != null && vas.isAnyMediaPlaying()) {
-                                wasLocalPlayingBeforeA2dp = true;
-                                AppLogger.i("蓝牙音频", "手机蓝牙推流开始，记录本地正在播放标记 wasLocalPlayingBeforeA2dp=true");
-                            }
-                        } else {
-                            if (wasLocalPlayingBeforeA2dp) {
-                                wasLocalPlayingBeforeA2dp = false;
-                                AppLogger.i("蓝牙音频", "手机蓝牙推流结束，延时 400ms 触发车机音乐断点续播");
-                                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        VehicleAutomationService vas = VehicleAutomationService.getInstance();
-                                        if (vas != null) {
-                                            vas.resumeMediaPlaybackAfterAudioInterruption();
+            a2dpReceiver = new BroadcastReceiver() {
+                private final Runnable streamStopDebounceRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        synchronized (EasMediaBridge.this) {
+                            if (!a2dpStreaming) {
+                                AppLogger.i("蓝牙音频", "手机蓝牙推流彻底停止 (微信语音播放完毕，通过 500ms 防抖)");
+                                abandonBluetoothFocus();
+                                restoreMediaVolume();
+                                if (wasLocalPlayingBeforeA2dp) {
+                                    wasLocalPlayingBeforeA2dp = false;
+                                    AppLogger.i("蓝牙音频", "微信语音结束，延时 300ms 触发车机音乐断点续播/音量完全恢复");
+                                    mainHandler.postDelayed(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                                            if (vas != null) {
+                                                vas.resumeMediaPlaybackAfterAudioInterruption();
+                                            }
                                         }
-                                    }
-                                }, 400);
-                            }
-                        }
-                    }
-                    // 当手机端点开微信语音或音乐开始推流瞬间，毫秒级持有 MAY_DUCK 焦点与选通通道，杜绝无声与被动暂停
-                    if (streaming) {
-                        requestBluetoothFocusIfNeeded();
-                        long now = System.currentTimeMillis();
-                        if (now - lastA2dpWakeTime > 4000) {
-                            lastA2dpWakeTime = now;
-                            activateBluetoothChannel();
-                        }
-                    }
-                } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
-                    // 吉利实车专属：国承 GOC 模组上报播放事件，提取 PlaybackState
-                    try {
-                        android.media.session.PlaybackState pbState = intent.getParcelableExtra("android.bluetooth.avrcp-controller.profile.extra.PLAYBACK");
-                        if (pbState != null) {
-                            int pState = pbState.getState();
-                            boolean isPlaying = (pState == android.media.session.PlaybackState.STATE_PLAYING);
-                            if (isPlaying && !a2dpStreaming) {
-                                a2dpStreaming = true;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP TRACK_EVENT 推流起播 (STATE_PLAYING)，毫秒级唤醒蓝牙通道");
-                                requestBluetoothFocusIfNeeded();
-                                long now = System.currentTimeMillis();
-                                if (now - lastA2dpWakeTime > 2000) {
-                                    lastA2dpWakeTime = now;
-                                    activateBluetoothChannel();
+                                    }, 300);
                                 }
-                            } else if (!isPlaying && a2dpStreaming) {
-                                a2dpStreaming = false;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP TRACK_EVENT 停止推流 (state=" + pState + ")");
                             }
                         }
-                    } catch (Throwable t) {
-                        AppLogger.w("蓝牙音频", "解析 TRACK_EVENT 失败: " + t.getMessage());
+                    }
+                };
+
+                private void handleStreamStarted() {
+                    a2dpStreaming = true;
+                    mainHandler.removeCallbacks(streamStopDebounceRunnable);
+                    AppLogger.i("蓝牙音频", "手机蓝牙推流开始 (微信语音/音频播放)");
+                    VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                    if (vas != null && vas.isAnyMediaPlaying()) {
+                        wasLocalPlayingBeforeA2dp = true;
+                        AppLogger.i("蓝牙音频", "检测到本地音乐正在播放，记录 wasLocalPlayingBeforeA2dp=true");
+                    }
+                    // 1. 自动压低媒体音量 (Ducking 闪避)
+                    duckMediaVolume();
+                    // 2. 申请 MAY_DUCK 瞬态闪避焦点
+                    requestBluetoothFocusIfNeeded();
+                    // 3. 选通 2 号物理声道
+                    long now = System.currentTimeMillis();
+                    if (now - lastA2dpWakeTime > 2000) {
+                        lastA2dpWakeTime = now;
+                        activateBluetoothChannel();
                     }
                 }
-            }
-        };
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction("android.bluetooth.a2dp-sink.profile.action.CONNECTION_STATE_CHANGED");
-        filter.addAction("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED");
-        filter.addAction("android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED");
-        filter.addAction("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT");
-        try {
+                private void handleStreamStopped() {
+                    if (a2dpStreaming) {
+                        a2dpStreaming = false;
+                        AppLogger.i("蓝牙音频", "监听到蓝牙推流停止事件，进入 500ms 恢复防抖窗口");
+                        mainHandler.removeCallbacks(streamStopDebounceRunnable);
+                        mainHandler.postDelayed(streamStopDebounceRunnable, 500);
+                    }
+                }
+
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (intent == null || intent.getAction() == null) return;
+                    String action = intent.getAction();
+
+                    if ("android.bluetooth.a2dp-sink.profile.action.CONNECTION_STATE_CHANGED".equals(action)) {
+                        int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
+                        if (state == 2 /* STATE_CONNECTED */) {
+                            a2dpSinkConnected = true;
+                            AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已连接 (connected)，选通音频通道并建立 MAY_DUCK 焦点守护");
+                            activateBluetoothChannel();
+                        } else if (state == 0 /* STATE_DISCONNECTED */) {
+                            a2dpSinkConnected = false;
+                            a2dpStreaming = false; // 断开必然不再推流
+                            abandonBluetoothFocus();
+                            restoreMediaVolume();
+                            AppLogger.i("蓝牙音频", "监听到蓝牙 A2DP-Sink 已断开，释放 MAY_DUCK 焦点并复位推流态");
+                        }
+                    } else if ("android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED".equals(action)) {
+                        int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
+                        boolean streaming = (state == A2DP_AUDIO_STATE_STARTED);
+                        if (streaming) {
+                            handleStreamStarted();
+                        } else {
+                            handleStreamStopped();
+                        }
+                    } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
+                        try {
+                            android.media.session.PlaybackState pbState = intent.getParcelableExtra("android.bluetooth.avrcp-controller.profile.extra.PLAYBACK");
+                            int pState = pbState != null ? pbState.getState() : -1;
+                            boolean isPlaying = (pState == android.media.session.PlaybackState.STATE_PLAYING);
+                            if (isPlaying) {
+                                handleStreamStarted();
+                            } else {
+                                handleStreamStopped();
+                            }
+                        } catch (Throwable t) {
+                            AppLogger.w("蓝牙音频", "解析 TRACK_EVENT 失败: " + t.getMessage());
+                        }
+                    }
+                }
+            };
+
             appContext.registerReceiver(a2dpReceiver, filter);
+            AppLogger.i("蓝牙音频", "已注册 A2DP-Sink 状态监听器 (含微信语音自动压低与恢复)");
         } catch (Throwable ignored) {}
     }
 
