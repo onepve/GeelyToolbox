@@ -10,6 +10,9 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.session.MediaController;
+import android.content.ComponentName;
+import android.media.browse.MediaBrowser;
+import android.media.session.MediaSession;
 import android.media.session.MediaSessionManager;
 import android.os.Handler;
 import android.os.Looper;
@@ -66,6 +69,11 @@ public class EasMediaBridge {
     private volatile long lastBtSourceKeepMs = 0;
     private volatile boolean btFocusHeld = false;
     private AudioManager audioManager;
+    private MediaBrowser btMediaBrowser;
+    private MediaController btMediaController;
+    private volatile boolean btMediaBrowserConnected = false;
+    private volatile boolean isDucked = false;
+    private volatile int preDuckVolume = -1;
 
 
     private final AudioManager.OnAudioFocusChangeListener btFocusListener = new AudioManager.OnAudioFocusChangeListener() {
@@ -288,31 +296,122 @@ public class EasMediaBridge {
      * 职责极其纯粹：仅负责打通 DSP 硬件功放的蓝牙声道与解除静音，
      * 严禁在选通时向手机回灌 play() 播歌指令，坚决杜绝把手机微信语音掐断！
      */
-    public synchronized void activateBluetoothChannel() {
+    /**
+     * 连接系统底层蓝牙 MediaBrowser 服务 (对齐原厂多媒体 XCMedia2 架构)
+     * 底层组件: com.android.bluetooth.a2dpsink.mbs.A2dpMediaBrowserService
+     */
+    private synchronized void connectBtMediaBrowser() {
+        if (btMediaBrowser != null && btMediaBrowserConnected) {
+            return;
+        }
+        try {
+            if (btMediaBrowser != null) {
+                try {
+                    btMediaBrowser.disconnect();
+                } catch (Throwable ignored) {}
+                btMediaBrowser = null;
+                btMediaController = null;
+                btMediaBrowserConnected = false;
+            }
+            ComponentName componentName = new ComponentName("com.android.bluetooth", "com.android.bluetooth.a2dpsink.mbs.A2dpMediaBrowserService");
+            btMediaBrowser = new MediaBrowser(appContext, componentName, new MediaBrowser.ConnectionCallback() {
+                @Override
+                public void onConnected() {
+                    try {
+                        btMediaBrowserConnected = true;
+                        MediaSession.Token token = btMediaBrowser.getSessionToken();
+                        if (token != null) {
+                            btMediaController = new MediaController(appContext, token);
+                            AppLogger.i("蓝牙音频", "成功连接 A2dpMediaBrowserService 并获取 MediaController!");
+                        }
+                    } catch (Throwable t) {
+                        AppLogger.w("蓝牙音频", "初始化 MediaController 异常: " + t.getMessage());
+                    }
+                }
 
+                @Override
+                public void onConnectionFailed() {
+                    btMediaBrowserConnected = false;
+                    AppLogger.w("蓝牙音频", "连接 A2dpMediaBrowserService 失败");
+                }
+            }, null);
+            btMediaBrowser.connect();
+            AppLogger.i("蓝牙音频", "发起连接系统蓝牙 A2dpMediaBrowserService...");
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "connectBtMediaBrowser 异常: " + t.getMessage());
+        }
+    }
+
+    /**
+     * 自动平滑压低媒体背景音量 (ducking)
+     * 微信语音推流时调用：平滑压低当前音乐音量至原音量的 25%~30%，保证微信语音清晰可辨
+     */
+    public synchronized void duckMediaVolume() {
+        try {
+            if (audioManager == null) {
+                audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
+            }
+            if (audioManager == null || isDucked) {
+                return;
+            }
+            int currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+            if (currentVol <= 2) {
+                return;
+            }
+            preDuckVolume = currentVol;
+            int duckedVol = Math.max(2, (int) Math.round(currentVol * 0.3));
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, duckedVol, 0);
+            isDucked = true;
+            AppLogger.i("蓝牙音频", "微信发声: 自动平滑压低媒体背景音量: " + currentVol + " -> " + duckedVol);
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "duckMediaVolume 异常: " + t.getMessage());
+        }
+    }
+
+    /**
+     * 微信发声完毕后自动平滑恢复媒体背景音量
+     */
+    public synchronized void restoreMediaVolume() {
+        try {
+            if (audioManager == null) {
+                audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
+            }
+            if (audioManager == null || !isDucked || preDuckVolume <= 0) {
+                isDucked = false;
+                return;
+            }
+            int targetVol = preDuckVolume;
+            preDuckVolume = -1;
+            isDucked = false;
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVol, 0);
+            AppLogger.i("蓝牙音频", "微信结束: 自动平滑恢复媒体背景音量 -> " + targetVol);
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "restoreMediaVolume 异常: " + t.getMessage());
+        }
+    }
+
+    public synchronized void activateBluetoothChannel() {
         try {
             ensureEasReady();
             if (mApi != null && mRegistered && mToken != null) {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
                 AppLogger.i("蓝牙音频", "已下发 updateCurrentSourceType(2)，原车 2 号蓝牙音频物理通道已选通！");
             }
-            // 1. 发送吉利原车系统底层切源广播与原厂部件保持广播
+            // 1. 发送吉利原车系统底层切源广播 (显式指定 com.ecarx.multimedia 杜绝后台拦截) 与保持广播
             try {
                 Intent rsrcIntent = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
                 rsrcIntent.putExtra("source_type", SOURCE_TYPE_BLUETOOTH);
+                rsrcIntent.setPackage("com.ecarx.multimedia");
                 appContext.sendBroadcast(rsrcIntent);
             } catch (Throwable ignored) {}
 
             keepXcmediaOnBluetoothSource();
+            connectBtMediaBrowser();
 
-            // 2. 核心大杀器：常驻持有 MAY_DUCK 蓝牙闪避焦点，保障微信秒级发声且支持与本地音乐同时播报
+            // 2. 持有 MAY_DUCK 闪避焦点
             requestBluetoothFocusIfNeeded();
 
-            // 铁律：选通蓝牙硬件声道时坚决不调用 wakeBluetoothAudioSink()/play()！
-            // 防止车主点开微信语音或上车时手机被误下发播放键导致音乐抢占/切歌掐死微信。
-            // wakeBluetoothAudioSink() 仅由 playBluetoothMusic() 在用户明确要播歌时主动触发。
-
-            // 3. 确保系统媒体音量正常，杜绝为0导致微信或音乐不出声
+            // 3. 确保系统媒体音量正常
             AudioManager am = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
             if (am != null) {
                 int curVol = am.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -341,60 +440,15 @@ public class EasMediaBridge {
      */
     public void wakeBluetoothAudioSink() {
         try {
-            MediaSessionManager mm = (MediaSessionManager) appContext.getSystemService(Context.MEDIA_SESSION_SERVICE);
-            if (mm != null) {
-                List<MediaController> controllers = mm.getActiveSessions(null);
-                if (controllers != null) {
-                    for (MediaController mc : controllers) {
-                        String pkg = mc.getPackageName();
-                        if ("com.android.bluetooth".equals(pkg)) {
-                            // 铁律：用户刚主动暂停 → 严禁自动 play() 顶回播放
-                            if (System.currentTimeMillis() < autoWakeSuppressUntil) {
-                                AppLogger.i("蓝牙音频", "处于用户暂停抑制窗口内，跳过 play() 唤醒（尊重用户暂停意图）");
-                                return;
-                            }
-                            AppLogger.i("蓝牙音频", "命中蓝牙 MediaSession，下发 play() 唤醒底层 A2DP AudioFocus！");
-                            mc.getTransportControls().play();
-                            break;
-                        }
-                    }
-                }
+            if (btMediaController != null) {
+                AppLogger.i("蓝牙音频", "通过 A2dpMediaBrowserService MediaController 下发 play() 解除硬件静音！");
+                btMediaController.getTransportControls().play();
+                return;
             }
         } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "通过 MediaSession 唤醒蓝牙音频焦点异常: " + t.getMessage());
+            AppLogger.w("蓝牙音频", "btMediaController play 异常: " + t.getMessage());
         }
-
-        // 尝试通过 BluetoothProfile.A2DP_SINK 反射直接通知底层 requestAudioFocus
-        try {
-            BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-            if (adapter != null && adapter.isEnabled()) {
-                adapter.getProfileProxy(appContext, new BluetoothProfile.ServiceListener() {
-                    @Override
-                    public void onServiceConnected(int profile, BluetoothProfile proxy) {
-                        try {
-                            if (profile == 11 /* BluetoothProfile.A2DP_SINK */) {
-                                List<BluetoothDevice> devices = proxy.getConnectedDevices();
-                                if (devices != null && !devices.isEmpty()) {
-                                    BluetoothDevice dev = devices.get(0);
-                                    Method m = proxy.getClass().getMethod("requestAudioFocus", BluetoothDevice.class, boolean.class);
-                                    m.invoke(proxy, dev, true);
-                                    AppLogger.i("蓝牙音频", "通过 BluetoothA2dpSink 反射下发 requestAudioFocus(true) 成功！");
-                                }
-                            }
-                        } catch (Throwable ignored) {
-                        } finally {
-                            try {
-                                adapter.closeProfileProxy(profile, proxy);
-                            } catch (Throwable ignored) {}
-                        }
-                    }
-                    @Override
-                    public void onServiceDisconnected(int profile) {}
-                }, 11);
-            }
-        } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "通过 BluetoothProfile 代理请求焦点异常: " + t.getMessage());
-        }
+        connectBtMediaBrowser();
     }
 
     /** 用户主动暂停后的自动唤醒抑制截止时间戳 (ms)，期间严禁任何自动 play() */
@@ -594,8 +648,13 @@ public class EasMediaBridge {
                             if (vas != null && vas.isAnyMediaPlaying()) {
                                 wasLocalPlayingBeforeA2dp = true;
                             }
+                            // 微信开始发声：平滑压低媒体音量，选通 2 号物理通道并解除硬件静音
+                            duckMediaVolume();
                             activateBluetoothChannel();
+                            wakeBluetoothAudioSink();
                         } else {
+                            // 微信发声结束：平滑恢复媒体音量
+                            restoreMediaVolume();
                             if (wasLocalPlayingBeforeA2dp) {
                                 wasLocalPlayingBeforeA2dp = false;
                                 new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
@@ -606,7 +665,7 @@ public class EasMediaBridge {
                                             vas.resumeMediaPlaybackAfterAudioInterruption();
                                         }
                                     }
-                                }, 400);
+                                }, 300);
                             }
                         }
                     }
