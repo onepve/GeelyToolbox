@@ -260,6 +260,12 @@ public class EasMediaBridge {
      * 2. MAY_DUCK 告知系统此焦点可与其他媒体混音，本地播放音乐时自动压低音量，微信语音放完自动恢复！
      */
     public synchronized void requestBluetoothFocusIfNeeded() {
+        // 当已直连系统底层蓝牙 A2dpMediaBrowserService 时，焦点必须留给底层 com.android.bluetooth 自主向系统申请并维持
+        // 工具箱自身严禁向系统抢占 AudioFocus，否则底层 A2dpSinkStreamHandler 判定 audioFocus=0 立即触发硬件静音与 sendAvrcpPause
+        if (btMediaBrowserConnected || btMediaController != null) {
+            AppLogger.d("蓝牙音频", "底层蓝牙协议栈已直连接管，跳过外部抢占焦点，由协议栈自主申请并维持");
+            return;
+        }
         if (audioManager == null) {
             audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
         }
@@ -408,7 +414,7 @@ public class EasMediaBridge {
             keepXcmediaOnBluetoothSource();
             connectBtMediaBrowser();
 
-            // 2. 持有 MAY_DUCK 闪避焦点
+            // 2. 尝试持有 MAY_DUCK 闪避焦点 (若底层蓝牙已接管则自动跳过外部争抢)
             requestBluetoothFocusIfNeeded();
 
             // 3. 确保系统媒体音量正常
@@ -676,10 +682,30 @@ public class EasMediaBridge {
                             boolean isPlaying = (pbState.getState() == android.media.session.PlaybackState.STATE_PLAYING);
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，选通 2 号物理通道");
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，压低媒体音量并唤醒底层解除静音");
+                                VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                                if (vas != null && vas.isAnyMediaPlaying()) {
+                                    wasLocalPlayingBeforeA2dp = true;
+                                }
+                                duckMediaVolume();
                                 activateBluetoothChannel();
+                                wakeBluetoothAudioSink();
                             } else if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，恢复媒体音量");
+                                restoreMediaVolume();
+                                if (wasLocalPlayingBeforeA2dp) {
+                                    wasLocalPlayingBeforeA2dp = false;
+                                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                                            if (vas != null) {
+                                                vas.resumeMediaPlaybackAfterAudioInterruption();
+                                            }
+                                        }
+                                    }, 300);
+                                }
                             }
                         }
                     } catch (Throwable ignored) {}
