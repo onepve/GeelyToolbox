@@ -207,6 +207,12 @@ public class VehicleAutomationService extends Service {
                 EasMediaBridge.getInstance(context).syncConfig(wheelMode, pushPlayback, pushLyrics);
             } catch (Throwable ignored) {}
 
+            boolean voiceCompEnabled = prefs.getBoolean("voice_gain_compensation_enabled", true);
+            int voiceCompOffset = prefs.getInt("voice_gain_compensation_offset", 3);
+            try {
+                EasMediaBridge.getInstance(context).syncVoiceCompensationConfig(voiceCompEnabled, voiceCompOffset);
+            } catch (Throwable ignored) {}
+
             boolean anyVoiceEnabled = voiceMaster && (doorFl || doorFlClose || doorFr || doorFrClose ||
                                 doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
                                 trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||

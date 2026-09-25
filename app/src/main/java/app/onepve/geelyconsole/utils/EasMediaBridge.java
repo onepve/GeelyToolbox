@@ -77,6 +77,8 @@ public class EasMediaBridge {
     private volatile boolean btMediaBrowserConnected = false;
     private volatile boolean isDucked = false;
     private volatile int preDuckVolume = -1;
+    private volatile boolean voiceCompensationEnabled = true;
+    private volatile int voiceCompensationOffset = 3;
     private String lastPlayingPackageBeforeVoice = null;
     private final Handler voiceResumeHandler = new Handler(Looper.getMainLooper());
     private Runnable voiceResumeRunnable = null;
@@ -115,7 +117,21 @@ public class EasMediaBridge {
 
     private EasMediaBridge(Context context) {
         this.appContext = context;
+        try {
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            this.voiceCompensationEnabled = prefs.getBoolean("voice_gain_compensation_enabled", true);
+            this.voiceCompensationOffset = prefs.getInt("voice_gain_compensation_offset", 3);
+        } catch (Throwable ignored) {}
         registerA2dpReceiver();
+    }
+
+    /**
+     * 同步微信/蓝牙语音音量智能补偿配置
+     */
+    public synchronized void syncVoiceCompensationConfig(boolean enabled, int offset) {
+        this.voiceCompensationEnabled = enabled;
+        this.voiceCompensationOffset = Math.max(-10, Math.min(10, offset));
+        AppLogger.i("蓝牙音频", "同步微信语音补偿配置: enabled=" + enabled + ", offset=" + this.voiceCompensationOffset);
     }
 
     /**
@@ -423,8 +439,19 @@ public class EasMediaBridge {
             // 保持车主设定的真实硬件媒体音量 (13~18)，仅在异常静音(0)时安全兜底
             if (currentVol == 0) {
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 12, 0);
+                currentVol = 12;
             }
-            // 方案B：申请系统原生导航语音 MAY_DUCK 焦点，自动压低本地音乐 (QQ 音乐) 自身增益
+            // 微信/蓝牙语音音量智能补偿（支持 -10 ~ +10 格动态微调）
+            if (voiceCompensationEnabled && voiceCompensationOffset != 0) {
+                int targetVol = currentVol + voiceCompensationOffset;
+                // 安全钳位，防止静音(最低3格)与破音(最高28格)
+                targetVol = Math.max(3, Math.min(28, targetVol));
+                if (targetVol != currentVol) {
+                    preDuckVolume = currentVol;
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVol, 0);
+                    AppLogger.i("蓝牙音频", "微信语音音量补偿生效: 原音量=" + currentVol + ", 偏移=" + (voiceCompensationOffset > 0 ? "+" + voiceCompensationOffset : voiceCompensationOffset) + ", 调整为=" + targetVol);
+                }
+            }
             requestDuckingFocusForIncomingVoice();
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "duckMediaVolume 异常: " + t.getMessage());
@@ -436,8 +463,13 @@ public class EasMediaBridge {
      */
     public synchronized void restoreMediaVolume() {
         try {
-            // 方案B：释放 MAY_DUCK 焦点，本地音乐自动平滑恢复原本音量
             abandonDuckingFocus();
+            // 恢复车机原本听歌音量
+            if (preDuckVolume > 0 && audioManager != null) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, preDuckVolume, 0);
+                AppLogger.i("蓝牙音频", "微信语音结束，恢复车机原听歌音量: " + preDuckVolume);
+                preDuckVolume = -1;
+            }
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "restoreMediaVolume 异常: " + t.getMessage());
         }

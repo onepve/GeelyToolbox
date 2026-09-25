@@ -62,6 +62,10 @@ public final class VehicleConfigHelper {
             // 播报音频输出通道 (music | nav | notification)
             obj.put("voice_audio_channel", prefs.getString("voice_audio_channel", "music"));
 
+            // 微信/蓝牙语音音量补偿配置 (支持 -10 ~ +10 格正负增益与实时回弹)
+            obj.put("voice_gain_compensation_enabled", prefs.getBoolean("voice_gain_compensation_enabled", true));
+            obj.put("voice_gain_compensation_offset", prefs.getInt("voice_gain_compensation_offset", 3));
+
             // 四门通用与分门配置 (默认启用独立分门专属详细车门语音)
             obj.put("voice_door_mode_universal", prefs.getBoolean("voice_door_mode_universal", false));
             obj.put("voice_enable_door_universal_open", prefs.getBoolean("voice_enable_door_universal_open", true));

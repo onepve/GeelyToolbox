@@ -146,7 +146,80 @@
           </div>
         </div>
 
-        
+        <!-- 微信/蓝牙语音音量智能补偿（支持 -10 ~ +10 格动态微调） -->
+        <div class="mt-4 bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-4 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-[15px] font-black px-2 py-0.5 rounded bg-car-sub/10 text-emerald-400">增益</span>
+              <div>
+                <div class="text-[17px] font-black text-car-text">微信与蓝牙语音音量补偿</div>
+                <div class="text-[12.5px] text-car-sub mt-0.5">微信推流时瞬时微调音量，播完秒级恢复原车听歌音量</div>
+              </div>
+            </div>
+            <button 
+              @click="toggleVoiceComp"
+              :class="[
+                'h-[50px] px-4 rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all',
+                voiceCompEnabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-item text-car-sub'
+              ]"
+            >
+              {{ voiceCompEnabled ? '已开启' : '已关闭' }}
+            </button>
+          </div>
+
+          <div v-if="voiceCompEnabled" class="pt-3 border-t border-car-border/50 flex flex-col space-y-3">
+            <div class="flex items-center justify-between text-[13.5px]">
+              <span class="text-car-sub font-bold">补偿增益偏移量</span>
+              <span class="font-mono font-black text-[15px] px-2.5 py-1 rounded-lg bg-car-sub/10 text-emerald-400">
+                {{ voiceCompOffset > 0 ? '+' + voiceCompOffset : voiceCompOffset }} 格
+                <span class="text-car-sub text-[12px] font-normal ml-1">
+                  (放歌 15 ➔ 微信 {{ Math.max(3, Math.min(28, 15 + voiceCompOffset)) }})
+                </span>
+              </span>
+            </div>
+
+            <!-- 滑动条与大触控步进按钮 -->
+            <div class="flex items-center space-x-4">
+              <button 
+                @click="adjustVoiceOffset(-1)"
+                :disabled="voiceCompOffset === -10"
+                class="h-[50px] w-[56px] rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[18px] font-black cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                －
+              </button>
+
+              <div class="flex-1 px-2">
+                <input 
+                  type="range" 
+                  min="-10" 
+                  max="10" 
+                  step="1"
+                  v-model.number="voiceCompOffset"
+                  @change="saveVoiceCompOffset"
+                  class="w-full h-2.5 bg-car-border rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                />
+                <div class="flex justify-between text-[11px] font-mono text-car-sub/70 mt-1 px-1">
+                  <span>-10 (极柔和)</span>
+                  <span>0 (原车平衡)</span>
+                  <span>+10 (极洪亮)</span>
+                </div>
+              </div>
+
+              <button 
+                @click="adjustVoiceOffset(1)"
+                :disabled="voiceCompOffset === 10"
+                class="h-[50px] w-[56px] rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[18px] font-black cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                ＋
+              </button>
+            </div>
+
+            <div class="text-[12px] text-car-sub/80 bg-car-sub/5 p-2.5 rounded-xl leading-relaxed">
+              提示：负值更轻柔防爆音惊吓；正值专治手机蓝牙音量偏小听不清；0 为与当前放歌完全同等音量。
+            </div>
+          </div>
+        </div>
+
       </div>
     </FeatureCard>
     <!-- 2. 车载专属语音主题包与自定义音效 -->
@@ -781,10 +854,51 @@ function afterFirstPaint(fn) {
 // 每进一次「语音」页就永久多留一条 4 秒同步跨端轮询（越用越卡的实测铁证）。
 let connectivityTimer = null;
 
+// 微信/蓝牙语音音量补偿设置
+const voiceCompEnabled = ref(true);
+const voiceCompOffset = ref(3);
+
+function loadVoiceCompSettings() {
+  try {
+    const raw = bridge.call('getVehicleAutomationSettings');
+    if (raw) {
+      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (typeof data.voice_gain_compensation_enabled === 'boolean') {
+        voiceCompEnabled.value = data.voice_gain_compensation_enabled;
+      }
+      if (typeof data.voice_gain_compensation_offset === 'number') {
+        voiceCompOffset.value = data.voice_gain_compensation_offset;
+      }
+    }
+  } catch (e) {}
+}
+
+function toggleVoiceComp() {
+  voiceCompEnabled.value = !voiceCompEnabled.value;
+  try {
+    bridge.call('setVehicleAutomationSetting', 'voice_gain_compensation_enabled', voiceCompEnabled.value);
+  } catch (e) {}
+}
+
+function adjustVoiceOffset(delta) {
+  const next = Math.max(-10, Math.min(10, voiceCompOffset.value + delta));
+  if (next !== voiceCompOffset.value) {
+    voiceCompOffset.value = next;
+    saveVoiceCompOffset();
+  }
+}
+
+function saveVoiceCompOffset() {
+  try {
+    bridge.call('setVehicleAutomationSettingInt', 'voice_gain_compensation_offset', voiceCompOffset.value);
+  } catch (e) {}
+}
+
 onMounted(() => {
   afterFirstPaint(() => {
     loadMediaApps();
     loadVoiceThemes();
+    loadVoiceCompSettings();
     window.refreshVoiceThemes = loadVoiceThemes;
     refreshConnectivity();
     if (connectivityTimer) clearInterval(connectivityTimer);
