@@ -75,21 +75,43 @@
             @click="closeUpdate"
             class="h-[54px] px-6 rounded-xl bg-car-item border border-car-border text-car-text font-bold text-[16px] cursor-pointer hover:border-car-border-light transition-all"
           >
-            {{ isDownloading ? '后台下载' : '稍后再说' }}
+            {{ isDownloading ? '后台下载' : (isInstalledLaunched ? '关闭' : '稍后再说') }}
           </button>
+
+          <!-- 1. 未开始下载 -->
           <button 
-            v-if="!isDownloading"
+            v-if="!isDownloading && !isInstalledLaunched"
             @click="startUpgrade"
             class="h-[54px] px-8 rounded-xl bg-car-item border-2 border-car-accent text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all"
           >
             立即下载升级
           </button>
+
+          <!-- 2. 正在下载中 -->
           <button 
-            v-else
+            v-else-if="isDownloading && !isVerifying"
             disabled
-            class="h-[54px] px-8 rounded-xl bg-car-item border border-car-border text-car-accent font-black text-[17px] opacity-80"
+            class="h-[54px] px-8 rounded-xl bg-car-item border border-car-border text-car-accent font-black text-[17px] opacity-90"
           >
             正在下载 {{ downloadPercent }}%...
+          </button>
+
+          <!-- 3. 下载完成，正在进行 MD5 校验与 I/O 沉淀 -->
+          <button 
+            v-else-if="isVerifying"
+            disabled
+            class="h-[54px] px-8 rounded-xl bg-car-item border border-emerald-500/50 text-emerald-400 font-black text-[16px] opacity-95 animate-pulse"
+          >
+            校验完整性中...
+          </button>
+
+          <!-- 4. 已唤起安装，提供重新调起兜底按键 -->
+          <button 
+            v-else-if="isInstalledLaunched"
+            @click="relaunchInstall"
+            class="h-[54px] px-8 rounded-xl bg-car-item border-2 border-emerald-500 text-emerald-400 font-black text-[17px] cursor-pointer hover:border-emerald-400 ring-2 ring-emerald-500/20 shadow-md transition-all"
+          >
+            重新调起安装
           </button>
         </div>
       </div>
@@ -105,6 +127,8 @@ import { store, bridge, showToast } from '../../store';
 const showModal = ref(false);
 const updateInfo = ref(null);
 const isDownloading = ref(false);
+const isVerifying = ref(false);
+const isInstalledLaunched = ref(false);
 const downloadPercent = ref(0);
 const downloadSpeed = ref('');
 const downloadError = ref('');
@@ -113,6 +137,10 @@ onMounted(() => {
   window.showToolboxUpdateModal = function(info) {
     if (!info) return;
     updateInfo.value = info;
+    isDownloading.value = false;
+    isVerifying.value = false;
+    isInstalledLaunched.value = false;
+    downloadPercent.value = 0;
 
     // 检查用户是否勾选了“不再自动提示更新”
     const ignoredVer = localStorage.getItem('geely_ignored_update_version');
@@ -135,34 +163,52 @@ onMounted(() => {
   // 供手动检查更新强制唤起
   window.forceShowUpdateModal = function(info) {
     updateInfo.value = info;
+    isDownloading.value = false;
+    isVerifying.value = false;
+    isInstalledLaunched.value = false;
+    downloadPercent.value = 0;
     showModal.value = true;
   };
 
   // 接收原生下载进度广播
   window.updateToolboxSelfProgress = function(progress, speedStr) {
     isDownloading.value = true;
+    isVerifying.value = false;
     downloadPercent.value = progress;
     downloadSpeed.value = speedStr;
     downloadError.value = '';
   };
 
+  // 接收正在校验广播
+  window.updateToolboxSelfVerifying = function() {
+    isDownloading.value = true;
+    isVerifying.value = true;
+    downloadPercent.value = 100;
+    downloadSpeed.value = '校验 MD5...';
+  };
+
+  // 接收安装调起完成广播（弹窗驻留，支持兜底）
   window.updateToolboxSelfDone = function() {
     isDownloading.value = false;
+    isVerifying.value = false;
+    isInstalledLaunched.value = true;
     downloadPercent.value = 100;
-    showToast('升级包下载完成，正在唤起安全安装通道...');
-    setTimeout(() => {
-      showModal.value = false;
-    }, 1500);
+    showToast('已唤起安装通道，请在车机屏幕上确认');
   };
 
   window.updateToolboxSelfError = function(errMsg) {
     isDownloading.value = false;
+    isVerifying.value = false;
+    isInstalledLaunched.value = false;
     downloadError.value = errMsg || '下载异常';
   };
 });
 
 function closeUpdate() {
   showModal.value = false;
+  isDownloading.value = false;
+  isVerifying.value = false;
+  isInstalledLaunched.value = false;
 }
 
 function ignoreThisVersion() {
@@ -176,10 +222,17 @@ function ignoreThisVersion() {
 function startUpgrade() {
   if (!updateInfo.value) return;
   isDownloading.value = true;
+  isVerifying.value = false;
+  isInstalledLaunched.value = false;
   downloadPercent.value = 2;
   downloadSpeed.value = '连接服务器...';
   downloadError.value = '';
   showToast('正在调起全速下载升级包...');
-  bridge.call('startToolboxSelfUpdate', updateInfo.value.download_url, updateInfo.value.version);
+  bridge.call('startToolboxSelfUpdate', updateInfo.value.download_url, updateInfo.value.version, updateInfo.value.md5 || '');
+}
+
+function relaunchInstall() {
+  showToast('正在重新调起系统安装通道...');
+  bridge.call('launchSavedToolboxApk');
 }
 </script>

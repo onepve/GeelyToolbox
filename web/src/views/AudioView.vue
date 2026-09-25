@@ -949,6 +949,11 @@ onMounted(() => {
     loadVoiceThemes();
     loadVoiceCompSettings();
     window.refreshVoiceThemes = loadVoiceThemes;
+    window.onSystemVolumeChanged = (vol) => {
+      if (typeof vol === 'number' && vol >= 0) {
+        currentMusicVol.value = vol;
+      }
+    };
     refreshConnectivity();
     if (connectivityTimer) clearInterval(connectivityTimer);
     connectivityTimer = setInterval(refreshConnectivity, 4000);
@@ -959,6 +964,9 @@ onBeforeUnmount(() => {
   if (connectivityTimer) {
     clearInterval(connectivityTimer);
     connectivityTimer = null;
+  }
+  if (window.onSystemVolumeChanged) {
+    delete window.onSystemVolumeChanged;
   }
 });
 </script>

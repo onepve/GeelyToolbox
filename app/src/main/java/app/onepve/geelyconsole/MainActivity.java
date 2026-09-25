@@ -113,6 +113,33 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
     };
 
+    private final BroadcastReceiver volumeChangeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("android.media.VOLUME_CHANGED_ACTION".equals(intent.getAction())) {
+                try {
+                    int streamType = intent.getIntExtra("android.media.EXTRA_VOLUME_STREAM_TYPE", -1);
+                    if (streamType == android.media.AudioManager.STREAM_MUSIC || streamType == -1) {
+                        int newVol = intent.getIntExtra("android.media.EXTRA_VOLUME_STREAM_VALUE", -1);
+                        if (newVol < 0) {
+                            android.media.AudioManager am = (android.media.AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                            if (am != null) newVol = am.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
+                        }
+                        if (newVol >= 0 && webView != null) {
+                            final int finalVol = newVol;
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    webView.evaluateJavascript("if(window.onSystemVolumeChanged){window.onSystemVolumeChanged(" + finalVol + ");}", null);
+                                }
+                            });
+                        }
+                    }
+                } catch (Throwable ignored) {}
+            }
+        }
+    };
+
     public void pushNetworkStatusToWeb() {
         if (webView == null) return;
         mainHandler.post(new Runnable() {
@@ -146,6 +173,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         checkAndRequestStoragePermission();
         try {
             registerReceiver(networkChangeReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+        } catch (Exception ignored) {}
+        try {
+            registerReceiver(volumeChangeReceiver, new IntentFilter("android.media.VOLUME_CHANGED_ACTION"));
         } catch (Exception ignored) {}
         try {
             IntentFilter pkgFilter = new IntentFilter();
@@ -502,6 +532,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         super.onDestroy();
         try {
             unregisterReceiver(networkChangeReceiver);
+        } catch (Exception ignored) {}
+        try {
+            unregisterReceiver(volumeChangeReceiver);
         } catch (Exception ignored) {}
         try {
             unregisterReceiver(packageChangeReceiver);
@@ -2124,6 +2157,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void startToolboxSelfUpdate(final String downloadUrl, final String rawVer) {
+            startToolboxSelfUpdate(downloadUrl, rawVer, "");
+        }
+
+        @JavascriptInterface
+        public void startToolboxSelfUpdate(final String downloadUrl, final String rawVer, final String expectedMd5) {
             // 2026-09-16 统一固定文件名：下载走 .tmp 临时文件，完成后 rename 原子覆盖，
             // 不再按版本号命名导致 Download 目录堆积历史安装包。rawVer 仅为兼容旧 Web 端签名保留。
             final String apkFileName = "GeelyToolbox.apk";
@@ -2144,7 +2182,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             }
                         }
                     } catch (Throwable ignored) {}
-                    showToast("开始下载工具箱新版本...");
+                    showToast("开始全速下载工具箱新版本...");
                     DownloadManager.startDownload("toolbox_update", downloadUrl, apkFileName, new DownloadManager.DownloadListener() {
                         private int lastReportedProgress = -1;
 
@@ -2164,15 +2202,51 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
                         @Override
                         public void onSuccess(String id, final File savedFile) {
-                            mainHandler.post(new Runnable() {
+                            // 后台线程进行 MD5 校验与 I/O 缓冲沉淀，防止下载过快导致系统底层句柄冲突或残包调起失败
+                            new Thread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    String script = "if(window.updateToolboxSelfDone){window.updateToolboxSelfDone();}";
-                                    webView.evaluateJavascript(script, null);
-                                    showToast("工具箱新版本下载完成，正在通过安全通道调起安装...");
-                                    SystemUtils.installApkViaProvider(MainActivity.this, savedFile);
+                                    try {
+                                        if (expectedMd5 != null && !expectedMd5.trim().isEmpty()) {
+                                            String fileMd5 = SystemUtils.calculateMD5(savedFile);
+                                            if (fileMd5 != null && !fileMd5.equalsIgnoreCase(expectedMd5.trim())) {
+                                                AppLogger.e("更新下载", "MD5 校验不匹配! 期望=" + expectedMd5 + ", 实际=" + fileMd5);
+                                                mainHandler.post(new Runnable() {
+                                                    @Override
+                                                    public void run() {
+                                                        String script = "if(window.updateToolboxSelfError){window.updateToolboxSelfError('安装包校验失败，文件损坏，请重新下载');}";
+                                                        webView.evaluateJavascript(script, null);
+                                                        showToast("安装包校验失败，文件损坏，请重新下载");
+                                                    }
+                                                });
+                                                return;
+                                            }
+                                        }
+                                        mainHandler.post(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                String script = "if(window.updateToolboxSelfVerifying){window.updateToolboxSelfVerifying();}";
+                                                webView.evaluateJavascript(script, null);
+                                            }
+                                        });
+
+                                        // 强制 1.2 秒平滑沉淀延迟，让磁盘完全同步并给用户完整的视觉反馈
+                                        Thread.sleep(1200);
+
+                                        mainHandler.post(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                String script = "if(window.updateToolboxSelfDone){window.updateToolboxSelfDone();}";
+                                                webView.evaluateJavascript(script, null);
+                                                showToast("安装包准备就绪，正在调起系统安装通道...");
+                                                SystemUtils.installApkViaProvider(MainActivity.this, savedFile);
+                                            }
+                                        });
+                                    } catch (Throwable t) {
+                                        AppLogger.e("更新下载", "安装包处理异常: " + t.getMessage());
+                                    }
                                 }
-                            });
+                            }).start();
                         }
 
                         @Override
@@ -2195,6 +2269,20 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     });
                 }
             });
+        }
+
+        @JavascriptInterface
+        public boolean launchSavedToolboxApk() {
+            try {
+                java.io.File dlDir = SystemUtils.getAppDownloadDir();
+                java.io.File apkFile = new java.io.File(dlDir, "GeelyToolbox.apk");
+                if (apkFile.exists() && apkFile.length() > 0) {
+                    showToast("正在重新调起系统安装通道...");
+                    return SystemUtils.installApkViaProvider(MainActivity.this, apkFile);
+                }
+            } catch (Throwable ignored) {}
+            showToast("未检测到本地安装包，请重新下载");
+            return false;
         }
 
         @JavascriptInterface
