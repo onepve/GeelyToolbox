@@ -1,10 +1,9 @@
 <template>
   <div
     @click="handleClick"
-    class="h-10 px-3 mx-1.5 rounded-xl bg-car-card border border-car-border flex items-center justify-center space-x-2 cursor-pointer hover:bg-car-hover hover:border-car-accent transition active:scale-95 group shadow-sm text-car-text"
+    class="h-10 px-3 mx-1.5 rounded-xl bg-car-card border border-car-border flex items-center justify-center cursor-pointer hover:bg-car-hover hover:border-car-accent transition active:scale-95 group shadow-sm text-car-text"
     title="点击查看关于与软件信息"
   >
-    <span class="text-sm">ℹ️</span>
     <span class="text-[14px] font-black tracking-wide group-hover:text-car-accent transition">关于助手</span>
   </div>
 </template>
