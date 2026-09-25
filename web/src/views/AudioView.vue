@@ -167,76 +167,23 @@
             </button>
           </div>
 
-          <div v-if="voiceCompEnabled" class="pt-3 border-t border-car-border/50 flex flex-col space-y-3">
-            <div class="flex items-center justify-between text-[13.5px]">
-              <span class="text-car-sub font-bold">补偿增益偏移量</span>
-              <span class="font-mono font-black text-[15px] px-2.5 py-1 rounded-lg bg-car-sub/10 text-emerald-400">
-                {{ voiceCompOffset > 0 ? '+' + voiceCompOffset : voiceCompOffset }} 格
-                <span class="text-car-sub text-[12px] font-normal ml-1">
-                  (微调范围 -10 ~ +10 格)
-                </span>
-              </span>
-            </div>
-
-            <!-- 实时音量计算公式看板 -->
-            <div class="bg-car-sub/5 border border-car-border/60 rounded-xl p-4 flex flex-col space-y-2.5">
-              <div class="flex items-center justify-between text-[12.5px] font-bold text-car-sub">
-                <span>实时音量补偿公式</span>
-                <span class="font-mono text-emerald-400 font-black text-[13.5px]">
-                  实际播报音量 = {{ calculatedVoiceVol }} 格
-                </span>
-              </div>
-
-              <!-- 公式拆解框 -->
-              <div class="bg-car-item border border-car-border/80 rounded-xl p-3 flex items-center justify-center space-x-2 text-[14px] font-mono">
-                <div class="flex flex-col items-center">
-                  <span class="text-[11px] text-car-sub font-sans">当前听歌音量</span>
-                  <span class="text-car-text font-black text-[16px]">{{ currentMusicVol }}</span>
-                </div>
-
-                <span class="text-[16px] font-black text-car-sub px-1">{{ voiceCompOffset >= 0 ? '＋' : '－' }}</span>
-
-                <div class="flex flex-col items-center">
-                  <span class="text-[11px] text-car-sub font-sans">设定增益</span>
-                  <span class="text-emerald-400 font-black text-[16px]">{{ Math.abs(voiceCompOffset) }}</span>
-                </div>
-
-                <span class="text-[16px] font-black text-car-sub px-1">＝</span>
-
-                <div class="flex flex-col items-center">
-                  <span class="text-[11px] text-emerald-400 font-bold font-sans">实际播报音量</span>
-                  <span class="text-emerald-400 font-black text-[18px]">{{ calculatedVoiceVol }} 格</span>
-                </div>
-              </div>
-
-              <!-- 核心逻辑与手机音量关键说明 -->
-              <div class="space-y-1.5 text-[11.5px] text-car-sub/90 text-center leading-relaxed pt-1 border-t border-car-border/40">
-                <div>
-                  <span class="text-amber-400 font-bold">使用建议：</span>
-                  公式基于车机物理媒体音量测算（车机无法获取手机内部音量）。建议将<span class="text-car-text font-bold">手机端蓝牙媒体音量调至最大 (100%)</span>，以获得最饱满音质与精准补偿效果。
-                </div>
-                <div class="text-[11px] text-car-sub/70">
-                  座舱双向安全限幅：最低保底 3 格防静音漏听，最高限幅 28 格防爆音破音
-                </div>
-              </div>
-            </div>
-
-            <!-- 滑动条与大触控步进按钮 -->
-            <div class="flex items-center space-x-4">
+          <div v-if="voiceCompEnabled" class="pt-3 border-t border-car-border/40 flex flex-col space-y-3.5">
+            <!-- 调节区域：大触控加减按键 + 滑块 -->
+            <div class="flex items-center space-x-3.5">
               <button 
                 @click="adjustVoiceOffset(-1)"
                 :disabled="voiceCompOffset === -10"
-                class="h-[50px] w-[56px] rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[18px] font-black cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                class="h-[50px] w-[54px] rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[20px] font-black cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all"
               >
                 －
               </button>
 
-              <div class="flex-1 px-2">
+              <div class="flex-1 px-1">
                 <input 
                   type="range" 
                   min="-10" 
                   max="10" 
-                  step="1"
+                  step="1" 
                   v-model.number="voiceCompOffset"
                   @change="saveVoiceCompOffset"
                   class="w-full h-2.5 bg-car-border rounded-lg appearance-none cursor-pointer accent-emerald-500"
@@ -251,14 +198,30 @@
               <button 
                 @click="adjustVoiceOffset(1)"
                 :disabled="voiceCompOffset === 10"
-                class="h-[50px] w-[56px] rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[18px] font-black cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                class="h-[50px] w-[54px] rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[20px] font-black cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all"
               >
                 ＋
               </button>
             </div>
 
-            <div class="text-[12px] text-car-sub/80 bg-car-sub/5 p-2.5 rounded-xl leading-relaxed">
-              提示：负值更轻柔防爆音惊吓；正值专治手机蓝牙音量偏小听不清；0 为与当前放歌完全同等音量。
+            <!-- 扁平无边框公式条：轻透背景，极简通透 -->
+            <div class="bg-car-sub/5 rounded-xl px-4 py-3 flex items-center justify-between">
+              <div class="flex items-center space-x-2 font-mono text-[14px]">
+                <span class="text-car-sub font-sans text-[12.5px]">实时计算:</span>
+                <span class="text-car-text font-bold">听歌 {{ currentMusicVol }}</span>
+                <span class="text-car-sub">{{ voiceCompOffset >= 0 ? '＋' : '－' }}</span>
+                <span class="text-emerald-400 font-bold">增益 {{ Math.abs(voiceCompOffset) }}</span>
+                <span class="text-car-sub">＝</span>
+                <span class="text-emerald-400 font-black text-[16px]">播报 {{ calculatedVoiceVol }} 格</span>
+              </div>
+              <span class="text-[12px] text-car-sub/70">
+                限幅 3~28 格
+              </span>
+            </div>
+
+            <!-- 手机端建议说明 -->
+            <div class="text-[11.5px] text-car-sub/70 px-1 leading-relaxed">
+              建议将<span class="text-car-text font-bold">手机端蓝牙媒体音量调至最大 (100%)</span>，以获得最饱满音质与精准补偿效果。
             </div>
           </div>
         </div>
