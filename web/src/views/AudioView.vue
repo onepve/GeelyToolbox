@@ -209,8 +209,15 @@
                 </div>
               </div>
 
-              <div class="text-[11.5px] text-car-sub/80 text-center leading-relaxed">
-                座舱双向安全限幅：最低保底 3 格防静音漏听，最高限幅 28 格防爆音惊吓
+              <!-- 核心逻辑与手机音量关键说明 -->
+              <div class="space-y-1.5 text-[11.5px] text-car-sub/90 text-center leading-relaxed pt-1 border-t border-car-border/40">
+                <div>
+                  <span class="text-amber-400 font-bold">使用建议：</span>
+                  公式基于车机物理媒体音量测算（车机无法获取手机内部音量）。建议将<span class="text-car-text font-bold">手机端蓝牙媒体音量调至最大 (100%)</span>，以获得最饱满音质与精准补偿效果。
+                </div>
+                <div class="text-[11px] text-car-sub/70">
+                  座舱双向安全限幅：最低保底 3 格防静音漏听，最高限幅 28 格防爆音破音
+                </div>
               </div>
             </div>
 
