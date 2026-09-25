@@ -130,7 +130,7 @@ public class EasMediaBridge {
      */
     public synchronized void syncVoiceCompensationConfig(boolean enabled, int offset) {
         this.voiceCompensationEnabled = enabled;
-        this.voiceCompensationOffset = Math.max(-10, Math.min(10, offset));
+        this.voiceCompensationOffset = Math.max(-10, Math.min(25, offset));
         AppLogger.i("蓝牙音频", "同步微信语音补偿配置: enabled=" + enabled + ", offset=" + this.voiceCompensationOffset);
     }
 
@@ -277,34 +277,18 @@ public class EasMediaBridge {
      */
 
     /**
-     * 申请 MAY_DUCK 闪避音频焦点
-     * 1. 底层吉利蓝牙堆栈 (A2dpSinkStreamHandler) 永远感知到 audioFocus != 0，绝不会触发 stopFluorideStreaming 与 sendAvrcpPause 掐死微信！
-     * 2. MAY_DUCK 告知系统此焦点可与其他媒体混音，本地播放音乐时自动压低音量，微信语音放完自动恢复！
+     * 严禁第三方应用抢占 AudioFocus (规避系统 AudioPolicy 对 A2DP 蓝牙实施硬件级 70% Ducking 衰减)
+     * 底层吉利蓝牙堆栈 (A2dpMediaBrowserService / A2dpSinkStreamHandler) 会自主申请并维持主焦点。
      */
     public synchronized void requestBluetoothFocusIfNeeded() {
-        // 当已直连系统底层蓝牙 A2dpMediaBrowserService 时，焦点必须留给底层 com.android.bluetooth 自主向系统申请并维持
-        // 工具箱自身严禁向系统抢占 AudioFocus，否则底层 A2dpSinkStreamHandler 判定 audioFocus=0 立即触发硬件静音与 sendAvrcpPause
-        if (btMediaBrowserConnected || btMediaController != null) {
-            AppLogger.i("蓝牙音频", "底层蓝牙协议栈已直连接管，跳过外部抢占焦点，由协议栈自主申请并维持");
-            return;
-        }
-        if (audioManager == null) {
-            audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
-        }
-        if (audioManager == null) {
-            return;
-        }
-        try {
-            int r = audioManager.requestAudioFocus(btFocusListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
-            btFocusHeld = (r == AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
-            AppLogger.i("蓝牙音频", "已申请 MAY_DUCK 蓝牙闪避焦点，result=" + r + " held=" + btFocusHeld);
-        } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "requestBluetoothFocusIfNeeded 异常: " + t.getMessage());
+        // 彻底杜绝抢占焦点：任何 MAY_DUCK 都会导致系统将蓝牙音乐强制压低为蚊子叫
+        if (btFocusHeld) {
+            abandonBluetoothFocus();
         }
     }
 
     /**
-     * 释放蓝牙 MAY_DUCK 焦点
+     * 释放蓝牙焦点
      */
     public synchronized void abandonBluetoothFocus() {
         if (!btFocusHeld || audioManager == null) {
@@ -312,7 +296,7 @@ public class EasMediaBridge {
         }
         try {
             audioManager.abandonAudioFocus(btFocusListener);
-            AppLogger.i("蓝牙音频", "已释放蓝牙 MAY_DUCK 焦点");
+            AppLogger.i("蓝牙音频", "已释放蓝牙残留焦点");
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "abandonBluetoothFocus 异常: " + t.getMessage());
         }
@@ -387,27 +371,9 @@ public class EasMediaBridge {
      * 4. 微信播完后释放焦点，QQ 音乐自动恢复 100% 满音量。
      */
     public synchronized void requestDuckingFocusForIncomingVoice() {
-        if (audioManager == null) {
-            audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
-        }
-        if (audioManager == null) return;
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                AudioAttributes attrs = new AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                        .build();
-                voiceDuckingFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                        .setAudioAttributes(attrs)
-                        .setAcceptsDelayedFocusGain(false)
-                        .setWillPauseWhenDucked(false)
-                        .setOnAudioFocusChangeListener(voiceDuckingListener)
-                        .build();
-                int res = audioManager.requestAudioFocus(voiceDuckingFocusRequest);
-                AppLogger.i("蓝牙音频", "方案B: 已申请系统级导航语音 MAY_DUCK 焦点，通知正在放歌的应用自动压低音乐背景声，res=" + res);
-            }
-        } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "requestDuckingFocusForIncomingVoice 异常: " + t.getMessage());
+        // 彻底杜绝抢占焦点：严禁向系统申请任何 MAY_DUCK，避免系统 AudioPolicy 强行将蓝牙 A2DP 硬件压低 70%
+        if (voiceDuckingFocusRequest != null) {
+            abandonDuckingFocus();
         }
     }
 
@@ -417,7 +383,7 @@ public class EasMediaBridge {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && voiceDuckingFocusRequest != null) {
                 audioManager.abandonAudioFocusRequest(voiceDuckingFocusRequest);
                 voiceDuckingFocusRequest = null;
-                AppLogger.i("蓝牙音频", "方案B: 微信语音结束，已释放 MAY_DUCK 焦点，本地音乐音量自动回弹恢复");
+                AppLogger.i("蓝牙音频", "已释放残留 MAY_DUCK 焦点");
             }
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "abandonDuckingFocus 异常: " + t.getMessage());
@@ -441,18 +407,17 @@ public class EasMediaBridge {
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 12, 0);
                 currentVol = 12;
             }
-            // 微信/蓝牙语音音量智能补偿（支持 -10 ~ +10 格动态微调）
+            // 微信/蓝牙语音音量智能补偿（支持 -10 ~ +25 格动态微调）
             if (voiceCompensationEnabled && voiceCompensationOffset != 0) {
                 int targetVol = currentVol + voiceCompensationOffset;
-                // 安全钳位，防止静音(最低3格)与破音(最高28格)
-                targetVol = Math.max(3, Math.min(28, targetVol));
+                // 安全钳位，防止静音(最低3格)与超频破音(最高30格硬件满格)
+                targetVol = Math.max(3, Math.min(30, targetVol));
                 if (targetVol != currentVol) {
                     preDuckVolume = currentVol;
                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVol, 0);
                     AppLogger.i("蓝牙音频", "微信语音音量补偿生效: 原音量=" + currentVol + ", 偏移=" + (voiceCompensationOffset > 0 ? "+" + voiceCompensationOffset : voiceCompensationOffset) + ", 调整为=" + targetVol);
                 }
             }
-            requestDuckingFocusForIncomingVoice();
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "duckMediaVolume 异常: " + t.getMessage());
         }

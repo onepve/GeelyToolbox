@@ -182,7 +182,7 @@
                 <input 
                   type="range" 
                   min="-10" 
-                  max="10" 
+                  max="25" 
                   step="1" 
                   v-model.number="voiceCompOffset"
                   @change="saveVoiceCompOffset"
@@ -191,13 +191,14 @@
                 <div class="flex justify-between text-[11px] font-mono text-car-sub/70 mt-1 px-1">
                   <span>-10 (极柔和)</span>
                   <span>0 (原车平衡)</span>
-                  <span>+10 (极洪亮)</span>
+                  <span>+10</span>
+                  <span>+25 (专治手机低音量)</span>
                 </div>
               </div>
 
               <button 
                 @click="adjustVoiceOffset(1)"
-                :disabled="voiceCompOffset === 10"
+                :disabled="voiceCompOffset === 25"
                 class="h-[50px] w-[54px] rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[20px] font-black cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all"
               >
                 ＋
@@ -215,7 +216,7 @@
                 <span class="text-emerald-400 font-black text-[16px]">播报 {{ calculatedVoiceVol }} 格</span>
               </div>
               <span class="text-[12px] text-car-sub/70">
-                限幅 3~28 格
+                限幅 3~30 格
               </span>
             </div>
 
@@ -864,7 +865,7 @@ const currentMusicVol = ref(15);
 
 const calculatedVoiceVol = computed(() => {
   const target = currentMusicVol.value + voiceCompOffset.value;
-  return Math.max(3, Math.min(28, target));
+  return Math.max(3, Math.min(30, target));
 });
 
 function refreshCurrentVolume() {
@@ -900,7 +901,7 @@ function toggleVoiceComp() {
 }
 
 function adjustVoiceOffset(delta) {
-  const next = Math.max(-10, Math.min(10, voiceCompOffset.value + delta));
+  const next = Math.max(-10, Math.min(25, voiceCompOffset.value + delta));
   if (next !== voiceCompOffset.value) {
     voiceCompOffset.value = next;
     saveVoiceCompOffset();

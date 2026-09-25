@@ -1391,33 +1391,10 @@ public class VehicleVoicePlayer {
     }
 
     private void requestAudioFocus(String voiceType) {
-        if (audioManager == null) return;
-        try {
-            // 核心铁律：当车载蓝牙音频通道处于活跃连接态时，严禁申请 AudioFocus！
-            // 吉利原厂蓝牙协议栈收到焦点退让广播 (-3) 后，会反向向手机下发 AVRCP 指令，
-            // 其中十进制 keyCode 68 = 0x44 = PLAY，keyCode 70 = 0x46 = PAUSE；
-            // 误触发 PAUSE 会导致微信语音或手机音乐被强制暂停掐断。
-            // 直接走 AudioFlinger PCM 底层硬件混音即可完美共存！
-            try {
-                if (EasMediaBridge.getInstance(context).isBluetoothChannelActive()) {
-                    Log.i(TAG, "Bluetooth channel active, bypassing requestAudioFocus to prevent AVRCP PAUSE(0x46/70) to phone.");
-                    return;
-                }
-            } catch (Throwable ignored) {}
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                AudioAttributes attrs = getVoiceAudioAttributes(context, voiceType);
-                AudioFocusRequest req = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                        .setAudioAttributes(attrs)
-                        .build();
-                audioManager.requestAudioFocus(req);
-                activeFocusRequest = req;
-            } else {
-                boolean isRev = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse")));
-                int stream = isRev ? AudioManager.STREAM_NOTIFICATION : AudioManager.STREAM_MUSIC;
-                audioManager.requestAudioFocus(null, stream, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
-            }
-        } catch (Exception ignored) {}
+        // 彻底杜绝向系统申请任何 AudioFocus (严禁触发系统 AudioPolicy 的 vh=0.100000 衰减压制)
+        // Android 9 第三方应用申请焦点会导致蓝牙被系统 Duck 砍掉 90% 音量，甚至诱发 AVRCP PAUSE。
+        // 工具箱语音一律走底层 PCM / AudioTrack 硬件混音，与原车及蓝牙原生共存。
+        return;
     }
 
     private void requestAudioFocus() {
