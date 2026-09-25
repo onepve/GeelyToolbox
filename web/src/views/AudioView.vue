@@ -480,7 +480,20 @@ const ttsInfo = ref({
 const showReorderModal = ref(false);
 const isReordering = ref(false);
 const mediaScanning = ref(false);
-const mediaAppsList = ref([
+
+// 模块级极速缓存：切页时 0 毫秒瞬间恢复，彻底告别白屏与卡顿等待
+let _globalMediaAppsCache = null;
+try {
+  const local = localStorage.getItem('geely_cached_media_apps_list');
+  if (local) {
+    const parsed = JSON.parse(local);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      _globalMediaAppsCache = parsed;
+    }
+  }
+} catch (e) {}
+
+const mediaAppsList = ref(_globalMediaAppsCache || [
   { name: '手机蓝牙', pkg: 'com.android.bluetooth', isBluetooth: true }
 ]);
 
@@ -642,6 +655,10 @@ function loadMediaApps() {
     }
 
     mediaAppsList.value = orderedList;
+    _globalMediaAppsCache = orderedList;
+    try {
+      localStorage.setItem('geely_cached_media_apps_list', JSON.stringify(orderedList));
+    } catch (e) {}
   } catch (e) {
     mediaAppsList.value = [{ name: '手机蓝牙', pkg: 'com.android.bluetooth', isBluetooth: true }];
   } finally {
@@ -915,20 +932,29 @@ function saveVoiceCompOffset() {
 }
 
 onMounted(() => {
-  afterFirstPaint(() => {
-    loadMediaApps();
+  // 1. 同步加载轻量内存设置：0ms 瞬间把开关和音量看板渲染就绪
+  loadVoiceCompSettings();
+  window.refreshVoiceThemes = loadVoiceThemes;
+  window.onSystemVolumeChanged = (vol) => {
+    if (typeof vol === 'number' && vol >= 0) {
+      currentMusicVol.value = vol;
+    }
+  };
+
+  // 2. 异步分片调度：延后 30ms 执行，彻底不阻断组件首帧挂载与绘制
+  setTimeout(() => {
     loadVoiceThemes();
-    loadVoiceCompSettings();
-    window.refreshVoiceThemes = loadVoiceThemes;
-    window.onSystemVolumeChanged = (vol) => {
-      if (typeof vol === 'number' && vol >= 0) {
-        currentMusicVol.value = vol;
-      }
-    };
+    if (!_globalMediaAppsCache || _globalMediaAppsCache.length <= 1) {
+      loadMediaApps();
+    }
+  }, 30);
+
+  // 3. 蓝牙/WiFi 连接状态是昂贵 Binder IPC，进一步错峰延后 100ms
+  setTimeout(() => {
     refreshConnectivity();
     if (connectivityTimer) clearInterval(connectivityTimer);
-    connectivityTimer = setInterval(refreshConnectivity, 4000);
-  });
+    connectivityTimer = setInterval(refreshConnectivity, 5000);
+  }, 100);
 });
 
 onBeforeUnmount(() => {

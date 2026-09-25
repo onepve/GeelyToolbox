@@ -2157,11 +2157,21 @@ public class SystemUtils {
     }
 
     /** 清除应用列表缓存（冻结/解冻后调用） */
+    private static List<DetailedAppInfo> musicAppsCache = null;
+    private static long musicAppsCacheTime = 0L;
+    private static List<DetailedAppInfo> naviAppsCache = null;
+    private static long naviAppsCacheTime = 0L;
+    private static final long MUSIC_APPS_CACHE_TTL = 60_000L;
+
     public static void clearAppsCache() {
         appsCache = null;
         appsCacheTime = 0;
         disabledPkgsCache = null;
         disabledPkgsCacheAt = 0L;
+        musicAppsCache = null;
+        musicAppsCacheTime = 0L;
+        naviAppsCache = null;
+        naviAppsCacheTime = 0L;
     }
 
     public static String getInstalledVersionName(Context context, String pkg) {
@@ -2177,6 +2187,9 @@ public class SystemUtils {
 
     /** 动态探测整车已安装的音乐与音频软件 (严禁误判系统框架与非音频应用) */
     public static List<DetailedAppInfo> getInstalledMusicApps(Context context) {
+        if (musicAppsCache != null && (System.currentTimeMillis() - musicAppsCacheTime < MUSIC_APPS_CACHE_TTL)) {
+            return musicAppsCache;
+        }
         List<DetailedAppInfo> musicApps = new ArrayList<>();
         List<DetailedAppInfo> all = getAllInstalledApps(context);
         PackageManager pm = context.getPackageManager();
@@ -2272,11 +2285,16 @@ public class SystemUtils {
                 musicApps.add(app);
             }
         }
+        musicAppsCache = musicApps;
+        musicAppsCacheTime = System.currentTimeMillis();
         return musicApps;
     }
 
     /** 动态探测整车已安装的地图与导航软件 */
     public static List<DetailedAppInfo> getInstalledNaviApps(Context context) {
+        if (naviAppsCache != null && (System.currentTimeMillis() - naviAppsCacheTime < MUSIC_APPS_CACHE_TTL)) {
+            return naviAppsCache;
+        }
         List<DetailedAppInfo> naviApps = new ArrayList<>();
         List<DetailedAppInfo> all = getAllInstalledApps(context);
         String[] knownNaviPkgs = {
@@ -2305,6 +2323,8 @@ public class SystemUtils {
                 naviApps.add(app);
             }
         }
+        naviAppsCache = naviApps;
+        naviAppsCacheTime = System.currentTimeMillis();
         return naviApps;
     }
 }
