@@ -136,11 +136,12 @@ public class AdbClient {
             boolean portOpen = isAdbPortOpen(context);
             AdbResult adbRes = execute(context, "id");
             if (adbRes != null && adbRes.success && (adbRes.output.contains("uid=") || adbRes.output.contains("shell") || adbRes.output.contains("root"))) {
+                boolean isRoot = adbRes.output.contains("uid=0");
                 res.put("ready", true);
                 res.put("status", "ready");
                 res.put("title", "ADB 已就绪");
-                res.put("details", "已直连车机 127.0.0.1:5555 (" + adbRes.output.trim() + ")");
-                res.put("privilege", adbRes.output.contains("uid=0") ? "ROOT 特权" : "Shell 2000 特权");
+                res.put("details", isRoot ? "已直连车机 127.0.0.1:5555 (系统 Root 权限)" : "已直连车机 127.0.0.1:5555 (车机特权 UID 2000)");
+                res.put("privilege", isRoot ? "ROOT 特权" : "Shell 2000 特权");
                 return res;
             }
 

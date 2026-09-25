@@ -4,7 +4,7 @@
     <div 
       v-if="show" 
       :class="['fixed top-0 left-0 w-screen h-screen flex items-center justify-center p-6 select-none', zIndexClass || 'z-50']"
-      style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.25);"
+      style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.65);"
       @click.self="handleBackdropClick"
     >
       <div 
@@ -32,8 +32,8 @@
           </div>
         </div>
 
-        <!-- 弹窗主体内容 (独立平滑滚动，采用 space-y-6 实体隔离彻底杜绝 Android 9 gap 塌陷) -->
-        <div class="flex-1 overflow-y-auto p-8 space-y-6">
+        <!-- 弹窗主体内容 (独立平滑滚动，实体隔离彻底杜绝 Android 9 gap 塌陷与透视穿帮) -->
+        <div class="flex-1 overflow-y-auto p-8 space-y-6 tb-modal-surface">
           <slot />
         </div>
 

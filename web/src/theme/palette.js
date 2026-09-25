@@ -26,7 +26,7 @@ export const THEMES = {
     night: {
       '--bg-main': '#090d18',
       '--bg-panel': '#101728',
-      '--bg-modal': 'rgba(17,24,40,.96)',
+      '--bg-modal': 'rgba(17,24,40,1)',
       '--bg-card': 'rgba(255,255,255,.13)',
       '--bg-item': 'rgba(255,255,255,.07)',
       '--bg-item-hover': 'rgba(255,255,255,.13)',
@@ -46,7 +46,7 @@ export const THEMES = {
     day: {
       '--bg-main': '#e9eef8',
       '--bg-panel': '#f8fafd',
-      '--bg-modal': 'rgba(250,252,255,.96)',
+      '--bg-modal': 'rgba(250,252,255,1)',
       '--bg-card': 'rgba(255,255,255,.68)',
       '--bg-item': 'rgba(255,255,255,.46)',
       '--bg-item-hover': 'rgba(255,255,255,.60)',
@@ -70,7 +70,7 @@ export const THEMES = {
     night: {
       '--bg-main': '#141008',
       '--bg-panel': '#241b0e',
-      '--bg-modal': 'rgba(33,25,14,.96)',
+      '--bg-modal': 'rgba(33,25,14,1)',
       '--bg-card': 'rgba(255,255,255,.14)',
       '--bg-item': 'rgba(255,255,255,.08)',
       '--bg-item-hover': 'rgba(255,255,255,.14)',
@@ -90,7 +90,7 @@ export const THEMES = {
     day: {
       '--bg-main': '#f2ece0',
       '--bg-panel': '#fbf7ef',
-      '--bg-modal': 'rgba(252,249,242,.96)',
+      '--bg-modal': 'rgba(252,249,242,1)',
       '--bg-card': 'rgba(255,255,255,.68)',
       '--bg-item': 'rgba(255,255,255,.48)',
       '--bg-item-hover': 'rgba(255,255,255,.60)',
@@ -114,7 +114,7 @@ export const THEMES = {
     night: {
       '--bg-main': '#06120c',
       '--bg-panel': '#0b1f15',
-      '--bg-modal': 'rgba(12,32,22,.96)',
+      '--bg-modal': 'rgba(12,32,22,1)',
       '--bg-card': 'rgba(255,255,255,.13)',
       '--bg-item': 'rgba(255,255,255,.07)',
       '--bg-item-hover': 'rgba(255,255,255,.13)',
@@ -134,7 +134,7 @@ export const THEMES = {
     day: {
       '--bg-main': '#e8f2ec',
       '--bg-panel': '#f3faf5',
-      '--bg-modal': 'rgba(245,251,247,.96)',
+      '--bg-modal': 'rgba(245,251,247,1)',
       '--bg-card': 'rgba(255,255,255,.68)',
       '--bg-item': 'rgba(255,255,255,.48)',
       '--bg-item-hover': 'rgba(255,255,255,.60)',
@@ -158,7 +158,7 @@ export const THEMES = {
     night: {
       '--bg-main': '#160d12',
       '--bg-panel': '#251319',
-      '--bg-modal': 'rgba(36,19,25,.96)',
+      '--bg-modal': 'rgba(36,19,25,1)',
       '--bg-card': 'rgba(255,255,255,.13)',
       '--bg-item': 'rgba(255,255,255,.07)',
       '--bg-item-hover': 'rgba(255,255,255,.13)',
@@ -178,7 +178,7 @@ export const THEMES = {
     day: {
       '--bg-main': '#f6e9ee',
       '--bg-panel': '#fdf2f6',
-      '--bg-modal': 'rgba(253,245,249,.96)',
+      '--bg-modal': 'rgba(253,245,249,1)',
       '--bg-card': 'rgba(255,255,255,.68)',
       '--bg-item': 'rgba(255,255,255,.48)',
       '--bg-item-hover': 'rgba(255,255,255,.60)',
@@ -205,7 +205,7 @@ export const THEMES = {
     night: {
       '--bg-main': '#12141a',
       '--bg-panel': '#1c1f26',
-      '--bg-modal': 'rgba(28,31,38,.96)',
+      '--bg-modal': 'rgba(28,31,38,1)',
       '--bg-card': '#1c1f26',
       '--bg-item': '#262a33',
       '--bg-item-hover': '#323742',
@@ -225,7 +225,7 @@ export const THEMES = {
     day: {
       '--bg-main': '#e2e8f0',
       '--bg-panel': '#f8fafc',
-      '--bg-modal': 'rgba(255,255,255,.96)',
+      '--bg-modal': 'rgba(255,255,255,1)',
       '--bg-card': '#ffffff',
       '--bg-item': '#f1f5f9',
       '--bg-item-hover': '#e2e8f0',
