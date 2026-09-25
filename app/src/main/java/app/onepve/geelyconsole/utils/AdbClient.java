@@ -144,14 +144,14 @@ public class AdbClient {
                 return res;
             }
 
-            // 本地 Runtime Shell 兼容
+            // 仅在真实获取 ROOT (uid=0) 时兼容本地 Shell，普通应用沙盒 (app_xxx) 绝不冒充 ADB 就绪
             String shRes = SystemUtils.executeShell("id");
-            if (shRes != null && (shRes.contains("uid=") || shRes.contains("shell") || shRes.contains("app_"))) {
+            if (shRes != null && shRes.contains("uid=0")) {
                 res.put("ready", true);
-                res.put("status", "local_shell");
-                res.put("title", "ADB/Shell 已就绪");
-                res.put("details", "Runtime 本地环境就绪 (" + shRes.trim() + ")");
-                res.put("privilege", "本地执行特权");
+                res.put("status", "root_shell");
+                res.put("title", "ROOT 特权已就绪");
+                res.put("details", "本地 Root 环境就绪 (" + shRes.trim() + ")");
+                res.put("privilege", "ROOT 特权");
                 return res;
             }
 

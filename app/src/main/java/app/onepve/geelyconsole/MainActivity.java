@@ -1889,7 +1889,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                 Toast.makeText(context, "操作未生效: " + msg + " (请检查本地 5555 ADB 授权)", Toast.LENGTH_LONG).show();
                             }
                             if (webView != null) {
-                                webView.evaluateJavascript("if(window.refreshPackageStates) window.refreshPackageStates();", null);
+                                boolean isOk = (res != null && res.success);
+                                String errMsg = (res != null && res.message != null) ? res.message.replace("'", "\\'") : "";
+                                webView.evaluateJavascript("if(window.onPackageFreezeFinished) window.onPackageFreezeFinished('" + pkg + "', " + isOk + ", '" + errMsg + "'); if(window.refreshPackageStates) window.refreshPackageStates();", null);
                             }
                         }
                     });
