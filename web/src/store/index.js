@@ -110,6 +110,7 @@ export const store = reactive({
   },
   
   // 全国实时油价与调价窗口状态
+  pushedAdbCmd: '',
   oilPrice: {
     selectedProvince: (() => {
       try {
@@ -286,4 +287,14 @@ export async function refreshOilPrices(force = false) {
   } finally {
     store.oilPrice.isSyncing = false;
   }
+}
+
+// 全局注册接收手机闪传推送 ADB 命令 (防漏挂载)
+if (typeof window !== 'undefined') {
+  window.onAdbCommandPushedFromPhone = (cmd) => {
+    if (!cmd) return;
+    store.pushedAdbCmd = cmd;
+    openModal('deepTools');
+    showToast('已接收手机推送的 ADB 指令，正在打开控制台...', 'info');
+  };
 }

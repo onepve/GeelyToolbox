@@ -6,17 +6,20 @@
     maxWidthClass="max-w-[1080px]"
     @close="closeModal('deepTools')"
   >
-    <!-- 顶部 ADB 状态胶囊 (车规大卡片 · 真实动态探测 · 纯净车规文案) -->
+    <!-- 顶部 ADB 状态胶囊 (车规大卡片 · 动态连接动效 · 纯净车规文案) -->
     <div class="flex items-center justify-between bg-car-item border border-car-border rounded-3xl p-5 shadow-sm mb-5">
       <div class="flex items-center space-x-3.5">
-        <StatusDot size="lg" :color="adbStatus.ready ? 'ok' : 'off'" :glow-px="adbStatus.ready ? 10 : 0" />
+        <!-- 连接中动态旋转动效 vs 就绪/未连接圆点 -->
+        <div v-if="isCheckingAdb" class="w-8 h-8 rounded-full border-2 border-car-accent border-t-transparent animate-spin shrink-0"></div>
+        <StatusDot v-else size="lg" :color="adbStatus.ready ? 'ok' : 'off'" :glow-px="adbStatus.ready ? 10 : 0" />
+        
         <div class="flex flex-col">
           <div class="flex items-center space-x-2">
             <span class="text-[19px] font-black text-car-text">{{ adbStatus.title }}</span>
             <span 
               :class="[
                 'px-2 py-0.5 text-[11.5px] font-black rounded-full border',
-                adbStatus.ready ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-400' : 'bg-car-card border-car-border text-car-sub'
+                isCheckingAdb ? 'bg-amber-500/15 border-amber-500/50 text-amber-400 animate-pulse' : (adbStatus.ready ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-400' : 'bg-car-card border-car-border text-car-sub')
               ]"
             >
               {{ adbStatus.privilege }}
@@ -29,9 +32,9 @@
         <button 
           @click="checkAdbStatus(true)"
           :disabled="isCheckingAdb"
-          class="min-h-[56px] px-5 rounded-2xl border border-car-border bg-car-card text-car-text hover:border-car-border-light font-black text-[14.5px] shadow-sm transition-all flex items-center justify-center cursor-pointer"
+          class="min-h-[56px] px-5 rounded-2xl border border-car-border bg-car-card text-car-text hover:border-car-border-light font-black text-[14.5px] shadow-sm transition-all flex items-center justify-center cursor-pointer disabled:opacity-50"
         >
-          <span>{{ isCheckingAdb ? '探测中...' : '重新检测 ADB' }}</span>
+          <span>{{ isCheckingAdb ? '连接中...' : '重新检测 ADB' }}</span>
         </button>
         <button 
           @click="openLogModalFromAdb"
@@ -42,15 +45,30 @@
       </div>
     </div>
 
-    <!-- 独立终端控制台 (大触控输入 + 大按键 · 纯粹系统交互中枢) -->
-    <div class="flex flex-col">
+    <!-- 连接中过渡占位 (避免未就绪时误操作) -->
+    <div v-if="isCheckingAdb" class="p-12 rounded-3xl bg-car-item border border-car-border flex flex-col items-center justify-center space-y-4 shadow-sm text-center">
+      <div class="w-14 h-14 rounded-full border-4 border-car-accent border-t-transparent animate-spin shadow-[0_0_20px_var(--accent-gold)]"></div>
+      <div class="text-[20px] font-black text-car-text">正在建立 ADB 5555 特权安全调试信道...</div>
+      <div class="text-[14px] font-bold text-car-sub max-w-md">
+        握手成功后将自动解锁全套控制台与常用指令；未就绪前已主动锁定功能按键，避免误操作打空。
+      </div>
+    </div>
+
+    <!-- 独立终端控制台 (连接成功就绪后展示) -->
+    <div v-else class="flex flex-col">
       <div class="flex items-center justify-between mb-3">
-        <span class="text-[21px] font-black text-car-text">ADB 交互控制台</span>
+        <div class="flex items-center space-x-3">
+          <span class="text-[21px] font-black text-car-text">ADB 交互控制台</span>
+          <span v-if="hasPushedCmd" class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/50 text-emerald-400 text-[12px] font-black animate-pulse">
+            已填入手机推送指令
+          </span>
+        </div>
         <div class="flex items-center">
           <button 
             @click="toggleKeyEventCapture"
+            :disabled="!adbStatus.ready"
             :class="[
-              'min-h-[50px] px-5 mr-3 rounded-xl border-2 font-black text-[15.5px] cursor-pointer shadow-sm flex items-center shrink-0 transition-all',
+              'min-h-[50px] px-5 mr-3 rounded-xl border-2 font-black text-[15.5px] cursor-pointer shadow-sm flex items-center shrink-0 transition-all disabled:opacity-40 disabled:cursor-not-allowed',
               isCapturingKeys
                 ? 'bg-rose-500/20 border-rose-500 text-rose-400 animate-pulse ring-2 ring-rose-500/30'
                 : 'bg-amber-500/15 border-amber-500/50 text-amber-400 hover:border-amber-400'
@@ -133,50 +151,83 @@ import { store, bridge, closeModal, openModal, showToast } from '../../store';
 // 真实 ADB 状态对象 (绝不硬编码假数据)
 const adbStatus = ref({
   ready: false,
-  title: 'ADB 端口检测中...',
-  details: '正在探测本地 127.0.0.1:5555 与特权状态...',
-  privilege: '检测中'
+  title: '正在连接 ADB 5555 调试端口...',
+  details: '正在握手 127.0.0.1:5555 本地特权通道，请稍候...',
+  privilege: '连接中'
 });
 const isCheckingAdb = ref(false);
+const hasPushedCmd = ref(false);
 
 function checkAdbStatus(userTriggered = false) {
   if (isCheckingAdb.value) return;
   isCheckingAdb.value = true;
+  adbStatus.value = {
+    ready: false,
+    title: '正在连接 ADB 5555 调试端口...',
+    details: '正在握手 127.0.0.1:5555 本地特权通道，请稍候...',
+    privilege: '连接中'
+  };
   if (userTriggered) showToast('正在重新探测车机 5555 调试端口...');
   
-  try {
-    const raw = bridge.call('probeAdbStatus');
-    if (raw) {
-      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      adbStatus.value = {
-        ready: !!data.ready,
-        title: data.title || (data.ready ? 'ADB 端口已就绪' : 'ADB 端口未连接'),
-        details: data.details || (data.ready ? '已连接 127.0.0.1:5555' : '127.0.0.1:5555 离线/未授权'),
-        privilege: data.privilege || (data.ready ? 'Shell 2000' : '未连接')
-      };
-      if (userTriggered) {
-        showToast(adbStatus.value.ready ? 'ADB 探测成功：已就绪' : 'ADB 端口未连接：' + adbStatus.value.details);
+  // 使用 setTimeout 异步执行，确保弹窗能够以 60fps 瞬间展开，不被底层 Binder 同步阻塞卡顿
+  setTimeout(() => {
+    try {
+      const raw = bridge.call('probeAdbStatus');
+      if (raw) {
+        const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        adbStatus.value = {
+          ready: !!data.ready,
+          title: data.title || (data.ready ? 'ADB 特权终端已就绪' : 'ADB 端口未连接'),
+          details: data.details || (data.ready ? '已连接 127.0.0.1:5555' : '127.0.0.1:5555 离线/未授权'),
+          privilege: data.privilege || (data.ready ? 'Shell 2000' : '未连接')
+        };
+        if (userTriggered) {
+          showToast(adbStatus.value.ready ? 'ADB 探测成功：已就绪' : 'ADB 端口未连接：' + adbStatus.value.details);
+        }
+      } else {
+        adbStatus.value = {
+          ready: false,
+          title: 'ADB 端口未连接',
+          details: '127.0.0.1:5555 离线或模拟器环境无 ADB 端口',
+          privilege: '未连接'
+        };
       }
-    } else {
+    } catch (e) {
       adbStatus.value = {
         ready: false,
-        title: 'ADB 端口未连接',
-        details: '127.0.0.1:5555 离线或模拟器环境无 ADB 端口',
+        title: 'ADB 探测异常',
+        details: '桥接异常或模拟器无直连端口: ' + e,
         privilege: '未连接'
       };
+    } finally {
+      isCheckingAdb.value = false;
+      updateTerminalPrompt();
     }
-  } catch (e) {
-    adbStatus.value = {
-      ready: false,
-      title: 'ADB 探测异常',
-      details: '桥接异常或模拟器无直连端口: ' + e,
-      privilege: '未连接'
-    };
-  } finally {
-    isCheckingAdb.value = false;
-    updateTerminalPrompt();
-  }
+  }, 60);
 }
+
+// 接收手机闪传推送 ADB 命令接口
+window.onAdbCommandPushedFromPhone = (cmd) => {
+  if (!cmd) return;
+  if (!store.modals.deepTools) {
+    openModal('deepTools');
+  }
+  inputCmd.value = cmd;
+  hasPushedCmd.value = true;
+  showToast('已自动填入手机推送的 ADB 指令，核验后点击执行即可');
+};
+
+watch(() => store.modals.deepTools, (show) => {
+  if (show) {
+    if (store.pushedAdbCmd) {
+      inputCmd.value = store.pushedAdbCmd;
+      hasPushedCmd.value = true;
+      store.pushedAdbCmd = '';
+      showToast('已填入手机推送的 ADB 指令');
+    }
+    checkAdbStatus(false);
+  }
+});
 
 const isCapturingKeys = ref(false);
 

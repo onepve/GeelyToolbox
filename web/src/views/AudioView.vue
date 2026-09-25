@@ -1,46 +1,50 @@
 <template>
   <div class="flex flex-col space-y-4">
-    <!-- 1. 整车多媒体音源与智能回退调度 (沉浸式卡片，去除多余'多媒体'标题头) -->
+    <!-- 1. 整车多媒体音源与智能回退调度 (车规分栏 · 纯净通透 · 刚性防堆叠) -->
     <div class="bg-car-card border border-car-border rounded-3xl p-5 flex flex-col space-y-4 shadow-sm">
-      <!-- 顶栏状态与控制 -->
-      <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-wrap items-center justify-between shadow-sm">
-        <div class="flex items-center space-x-3">
-          <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)]"></span>
-          <div class="flex items-center space-x-2">
-            <span class="text-[17px] font-black text-car-text">当前首选音源：</span>
-            <span class="text-[17px] font-black text-car-accent">{{ primaryMediaName }}</span>
-            <span class="px-2 py-0.5 text-[11.5px] font-black rounded-full bg-car-card border border-car-border text-car-sub">
-              依次回退调度
+      <!-- 顶栏状态与快捷控制 -->
+      <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-3 min-w-0 pr-4">
+          <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)] shrink-0"></span>
+          <div class="flex flex-col min-w-0">
+            <div class="flex items-center space-x-2">
+              <span class="text-[17px] font-black text-car-text shrink-0">首选音源：</span>
+              <span class="text-[18px] font-black text-car-accent truncate">{{ primaryMediaName }}</span>
+              <span class="px-2 py-0.5 text-[11.5px] font-black rounded-full bg-car-card border border-car-border text-car-sub shrink-0">
+                自动回退
+              </span>
+            </div>
+            <span class="text-[12.5px] text-car-sub font-bold truncate mt-0.5">
+              切歌或蓝牙未推流时，系统优先拉起首选音源播放
             </span>
           </div>
         </div>
 
-        <div class="flex items-center space-x-2.5">
+        <div class="flex items-center space-x-2.5 shrink-0">
           <button 
             @click="openReorderModal"
-            class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text font-black text-[14px] cursor-pointer transition-all flex items-center space-x-1.5 shadow-sm"
+            class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text font-black text-[14.5px] cursor-pointer transition-all flex items-center space-x-1.5 shadow-sm whitespace-nowrap"
           >
-            <span>调整排序</span>
+            <span>调整优先级</span>
           </button>
           <button 
             @click="rescanMediaApps"
-            class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text font-black text-[14px] cursor-pointer transition-all flex items-center space-x-1.5 shadow-sm"
+            class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text font-black text-[14.5px] cursor-pointer transition-all flex items-center space-x-1.5 shadow-sm whitespace-nowrap disabled:opacity-50"
             :disabled="mediaScanning"
           >
-            <span v-if="mediaScanning">扫描中...</span>
-            <span v-else>刷新扫描应用</span>
+            <span>{{ mediaScanning ? '扫描中...' : '刷新应用' }}</span>
           </button>
         </div>
       </div>
 
-      <!-- 一排横向音源胶囊按键 (展示前 4 项核心音源，排在最前为首选) -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-stretch">
+      <!-- 4 联等宽横向音源胶囊按键 (固定 1 行 4 列，彻底杜绝折行堆叠) -->
+      <div class="grid grid-cols-4 gap-3 items-stretch">
         <button 
           v-for="(item, index) in topMediaApps" 
           :key="item.pkg"
           @click="setAsPrimary(item)"
           :class="[
-            'h-[52px] px-3 rounded-2xl font-black text-[14.5px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-1.5 shadow-sm whitespace-nowrap min-w-0',
+            'min-h-[50px] px-3 rounded-2xl font-black text-[14px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-1.5 shadow-sm whitespace-nowrap min-w-0',
             item.pkg === currentPrimaryPkg
               ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
               : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
@@ -48,7 +52,7 @@
         >
           <span 
             v-if="item.pkg === currentPrimaryPkg" 
-            class="px-1.5 py-0.5 text-[10.5px] rounded bg-car-card border border-car-accent text-car-accent font-black shrink-0"
+            class="px-1.5 py-0.5 text-[10px] rounded bg-car-card border border-car-accent text-car-accent font-black shrink-0"
           >
             首选
           </span>
@@ -56,20 +60,19 @@
         </button>
       </div>
 
-      <!-- 底部提示 -->
-      <div class="pt-3 border-t border-car-border/50 flex flex-wrap items-center justify-between text-car-sub">
-        <div class="text-[13px] font-bold">
-          调度策略：车速达标或方向盘切歌时优先播放首选；蓝牙未连时自动顺位唤醒后续本地播放器。超出 4 款或调整次序请点击右上角「调整排序」。
+      <!-- 底部辅助说明 -->
+      <div class="pt-3 border-t border-car-border/50 flex items-center justify-between text-car-sub">
+        <div class="text-[12.5px] font-bold">
+          调度策略：行车车速达标或方向盘切歌时优先播放首选音源；若需新增或调整音源次序，请点击右上角「调整优先级」。
         </div>
       </div>
     </div>
 
-    <!-- 2. 车载蓝牙音频与网络互联 (已按要求删掉'车载音频与网络通道'卡片标题行，直接沉浸呈现) -->
+    <!-- 2. 车载蓝牙音频与网络互联 (双列规整大卡片 · 高度对称防挤压) -->
     <div class="bg-car-card border border-car-border rounded-3xl p-5 flex flex-col space-y-4 shadow-sm">
-      <!-- 上层：蓝牙与 Wi-Fi 硬件连接看板 (双列对称大卡片) -->
       <div class="grid grid-cols-2 gap-4">
         <!-- 蓝牙控制看板 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-3 shadow-sm">
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-sm">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2.5">
               <StatusDot size="md" :color="connStatus.bluetooth_enabled ? 'ok' : 'off'" :glow-px="8" />
@@ -79,21 +82,21 @@
             <button 
               @click="toggleBluetooth"
               :class="[
-                'min-h-[50px] px-4 rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all',
-                connStatus.bluetooth_enabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-item text-car-sub'
+                'min-h-[50px] w-[100px] rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all flex items-center justify-center',
+                connStatus.bluetooth_enabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-card text-car-sub'
               ]"
             >
               {{ connStatus.bluetooth_enabled ? '已开启' : '已关闭' }}
             </button>
           </div>
-          <div class="text-[14.5px] font-mono text-car-sub truncate">
+          <div class="text-[14px] font-mono text-car-sub truncate">
             设备: {{ connStatus.bluetooth_device_name || '未连接设备' }}
           </div>
-          <div class="pt-4 border-t border-car-border/50 flex flex-wrap items-center justify-between space-x-2">
+          <div class="pt-3 border-t border-car-border/50 flex items-center justify-between">
             <span class="text-[12.5px] text-car-sub font-bold">配对与连接管理</span>
             <button 
               @click="openBluetoothSettings"
-              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer"
+              class="min-h-[50px] w-[160px] rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer transition-all flex items-center justify-center shrink-0"
             >
               打开蓝牙设置 ➔
             </button>
@@ -101,7 +104,7 @@
         </div>
 
         <!-- Wi-Fi 控制看板 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-3 shadow-sm">
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-sm">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2.5">
               <StatusDot size="md" :color="connStatus.wifi_enabled ? 'ok' : 'off'" :glow-px="8" />
@@ -110,21 +113,21 @@
             <button 
               @click="toggleWifi"
               :class="[
-                'min-h-[50px] px-4 rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all',
-                connStatus.wifi_enabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-item text-car-sub'
+                'min-h-[50px] w-[100px] rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all flex items-center justify-center',
+                connStatus.wifi_enabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-card text-car-sub'
               ]"
             >
               {{ connStatus.wifi_enabled ? '已开启' : '已关闭' }}
             </button>
           </div>
-          <div class="text-[14.5px] font-mono text-car-sub truncate">
+          <div class="text-[14px] font-mono text-car-sub truncate">
             网络: {{ connStatus.wifi_ssid || '未连接热点' }}
           </div>
-          <div class="pt-4 border-t border-car-border/50 flex flex-wrap items-center justify-between space-x-2">
+          <div class="pt-3 border-t border-car-border/50 flex items-center justify-between">
             <span class="text-[12.5px] text-car-sub font-bold">热点连接向导</span>
             <button 
               @click="openWifiSettings"
-              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer"
+              class="min-h-[50px] w-[160px] rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer transition-all flex items-center justify-center shrink-0"
             >
               打开 Wi-Fi 设置 ➔
             </button>
@@ -132,7 +135,8 @@
         </div>
       </div>
     </div>
-    <!-- 2. 车载专属语音主题包与自定义音效 -->
+
+    <!-- 3. 车载专属语音主题包与自定义音效 (彻底消除横向多按钮挤压与折行堆叠) -->
     <FeatureCard 
       title="车载语音主题包"
       helpId="voice_theme_mgr"
@@ -142,34 +146,34 @@
     >
       <div class="flex flex-col space-y-4">
         <!-- 状态与快捷操作顶栏 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
-          <div class="flex items-center space-x-3.5">
-            <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)]"></span>
-            <div class="flex flex-col">
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
+          <div class="flex items-center space-x-3.5 min-w-0 pr-4">
+            <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)] shrink-0"></span>
+            <div class="flex flex-col min-w-0">
               <div class="flex items-center space-x-2">
-                <span class="text-[18px] font-black text-car-text">当前整套音效：</span>
-                <span class="text-[18px] font-black text-car-accent">{{ activeThemeName ? activeThemeName : '出厂官方原声 (晓晓温婉知性)' }}</span>
-                <span class="px-2.5 py-0.5 rounded-full bg-car-item border border-car-border text-car-text text-[12px] font-black inline-flex items-center shadow-sm">
+                <span class="text-[17px] font-black text-car-text shrink-0">当前整套音效：</span>
+                <span class="text-[17px] font-black text-car-accent">{{ activeThemeName ? activeThemeName : '出厂官方原声 (晓晓温婉知性)' }}</span>
+                <span class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-car-text text-[11.5px] font-black inline-flex items-center shadow-sm shrink-0">
                   <StatusDot class="mr-1.5" size="xs" color="ok" />
                   {{ activeThemeName ? '自定义主题' : '系统默认' }}
                 </span>
               </div>
-              <span class="text-[14px] text-car-sub font-bold mt-1">
+              <span class="text-[12.5px] text-car-sub font-bold mt-0.5">
                 {{ activeThemeName ? `专属目录: /sdcard/GeelyPilot/voices/${activeThemeName}/` : '吉利智驾出厂原声 · 未包含项自动补齐兜底' }}
               </span>
             </div>
           </div>
 
-          <div class="flex items-center space-x-3 shrink-0">
+          <div class="flex items-center space-x-2.5 shrink-0">
             <button 
               @click="openModal('voiceThemeImport')"
-              class="min-h-[56px] px-6 bg-car-card border-2 border-car-accent text-car-text font-black text-[17px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center space-x-2"
+              class="min-h-[50px] px-4 bg-car-card border-2 border-car-accent text-car-text font-black text-[15px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center space-x-1.5 whitespace-nowrap"
             >
               <span>导入语音包 (.zip)</span>
             </button>
             <button 
               @click="loadVoiceThemes"
-              class="min-h-[56px] px-5 bg-car-card border-2 border-car-border text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm transition-all"
+              class="min-h-[50px] px-3.5 bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm transition-all whitespace-nowrap"
             >
               刷新列表
             </button>
@@ -178,46 +182,42 @@
 
         <!-- 主题包列表卡片流 -->
         <div class="flex flex-col space-y-3">
-          <!-- 默认出厂主题卡片 -->
-          <div class="bg-car-item border-2 border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
-            <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
-              <div class="flex items-center space-x-2.5">
-                <span class="text-[19px] font-black text-car-text">出厂官方原声 (晓晓温婉知性)</span>
-                <span class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[12px] font-black">系统内置</span>
-                <span v-if="!activeThemeName" class="px-2.5 py-0.5 rounded-md bg-car-item border border-car-border text-car-text text-[12px] font-black inline-flex items-center shadow-sm"><span class="w-2 h-2 rounded-full mr-1.5 bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>正在生效</span>
+          <!-- 默认出厂主题卡片 (定宽规整按钮组，避免横向撑爆) -->
+          <div class="bg-car-item border-2 border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
+            <div class="flex-1 min-w-0 pr-4 flex flex-col space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="text-[18px] font-black text-car-text">出厂官方原声 (晓晓温婉知性)</span>
+                <span class="px-2 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[11.5px] font-black shrink-0">系统内置</span>
+                <span v-if="!activeThemeName" class="px-2.5 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/50 text-emerald-400 text-[12px] font-black inline-flex items-center shadow-sm shrink-0">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-emerald-400"></span>正在生效
+                </span>
               </div>
-              <span class="text-[14.5px] text-car-sub font-bold">
+              <span class="text-[13px] text-car-sub font-bold">
                 吉利原车温婉知性原声，端庄舒缓温润。零音频丢失，全场景兜底保障。
               </span>
             </div>
 
-            <div class="flex items-center space-x-3 shrink-0">
+            <div class="flex items-center space-x-2.5 shrink-0">
               <button 
                 @click="testThemeVoice('')"
-                class="h-[52px] px-6 bg-car-card border-2 border-car-border text-car-text font-black text-[16px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all"
+                class="min-h-[50px] w-[100px] bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
               >
                 试听样音
               </button>
               <button
-                @click="confirmForceRestoreFactory"
-                class="h-[52px] px-6 bg-car-card border-2 border-car-border text-car-accent font-black text-[16px] rounded-xl hover:border-car-accent cursor-pointer shadow-sm transition-all"
-              >
-                强制重装原声
-              </button>
-              <button
                 v-if="activeThemeName"
                 @click="applyVoiceTheme('')"
-                class="h-[52px] px-6 bg-car-card border-2 border-car-accent text-car-accent font-black text-[16px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md transition-all"
+                class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-accent text-car-accent font-black text-[14.5px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md transition-all flex items-center justify-center whitespace-nowrap"
               >
-                恢复此原声
+                恢复原声
               </button>
-              <div 
+              <button
                 v-else
-                class="h-[52px] px-5 bg-emerald-500/15 border-2 border-emerald-500/50 text-emerald-400 font-black text-[15px] rounded-xl flex items-center justify-center space-x-1.5 shadow-sm select-none"
+                @click="confirmForceRestoreFactory"
+                class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-border text-car-accent font-black text-[14.5px] rounded-xl hover:border-car-accent cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
               >
-                <StatusDot size="xs" color="okBright" />
-                <span>正在生效</span>
-              </div>
+                重装原声
+              </button>
             </div>
           </div>
 
@@ -225,46 +225,39 @@
           <div 
             v-for="theme in voiceThemes" 
             :key="theme.id"
-            class="bg-car-item border-2 rounded-2xl p-5 flex items-center justify-between shadow-sm transition-all"
+            class="bg-car-item border-2 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all"
             :class="activeThemeName === theme.name ? 'border-car-accent ring-2 ring-car-accent/20' : 'border-car-border'"
           >
-            <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
-              <div class="flex items-center space-x-2.5">
-                <span class="text-[19px] font-black text-car-text truncate">{{ theme.name }}</span>
-                <span class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-border text-car-accent text-[12px] font-black shrink-0">
-                  包含 {{ theme.count }} 个音频
+            <div class="flex-1 min-w-0 pr-4 flex flex-col space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="text-[18px] font-black text-car-text">{{ theme.name }}</span>
+                <span v-if="activeThemeName === theme.name" class="px-2.5 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/50 text-emerald-400 text-[12px] font-black inline-flex items-center shadow-sm shrink-0">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-emerald-400"></span>正在生效
                 </span>
-                <span v-if="activeThemeName === theme.name" class="px-2.5 py-0.5 rounded-md bg-car-item border border-car-border text-car-text text-[12px] font-black shrink-0 inline-flex items-center shadow-sm"><span class="w-2 h-2 rounded-full mr-1.5 bg-car-accent shadow-[0_0_6px_var(--accent-gold)]"></span>正在整套生效</span>
+                <span v-else class="px-2 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[11.5px] font-black shrink-0">已导入</span>
               </div>
-              <span class="text-[14.5px] text-car-sub font-mono font-bold truncate">
-                目录: {{ theme.path }}
+              <span class="text-[13px] text-car-sub font-mono truncate">
+                /sdcard/GeelyPilot/voices/{{ theme.name }}/
               </span>
             </div>
 
-            <div class="flex items-center space-x-3 shrink-0">
+            <div class="flex items-center space-x-2.5 shrink-0">
               <button 
                 @click="testThemeVoice(theme.name)"
-                class="h-[52px] px-5 bg-car-card border-2 border-car-border text-car-text font-black text-[16px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all"
+                class="min-h-[50px] w-[100px] bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
               >
                 试听样音
               </button>
               <button 
                 v-if="activeThemeName !== theme.name"
                 @click="applyVoiceTheme(theme.name)"
-                class="h-[52px] px-6 bg-car-card border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md transition-all"
+                class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-accent text-car-text font-black text-[14.5px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md transition-all flex items-center justify-center whitespace-nowrap"
               >
                 整套启用
               </button>
-              <div 
-                v-else
-                class="h-[52px] px-5 bg-emerald-500/15 border-2 border-emerald-500/50 text-emerald-400 font-black text-[15px] rounded-xl flex items-center justify-center space-x-1.5 shadow-sm select-none"
-              >
-                <StatusDot size="xs" color="okBright" />
-                <span>正在生效</span>
-              </div>
               <button 
                 @click="confirmDeleteTheme(theme.name)"
-                class="h-[52px] px-4 bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text hover:text-rose-400 font-black text-[15px] rounded-xl cursor-pointer shadow-sm transition-all"
+                class="min-h-[50px] w-[80px] bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text hover:text-rose-400 font-black text-[14.5px] rounded-xl cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
               >
                 删除
               </button>
