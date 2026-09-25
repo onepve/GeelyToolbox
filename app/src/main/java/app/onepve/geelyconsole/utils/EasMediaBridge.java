@@ -265,19 +265,29 @@ public class EasMediaBridge {
     }
 
     /**
-     * 申请常驻 MAY_DUCK 闪避音频焦点 (移植米小江车规级核心逻辑)
-     * 1. 底层吉利蓝牙堆栈 (A2dpSinkStreamHandler) 永远感知到 audioFocus != 0，绝不会触发 stopFluorideStreaming 与 sendAvrcpPause 掐死微信！
-     * 2. MAY_DUCK 告知系统此焦点可与其他媒体混音，本地播放音乐时仅轻微压低音量，手机微信语音、手机导航与本地音乐可完美同时放声！
-     */
-
-    /**
-     * 严禁第三方应用抢占 AudioFocus (规避系统 AudioPolicy 对 A2DP 蓝牙实施硬件级 70% Ducking 衰减)
-     * 底层吉利蓝牙堆栈 (A2dpMediaBrowserService / A2dpSinkStreamHandler) 会自主申请并维持主焦点。
+     * 申请常驻 MAY_DUCK 闪避音频焦点 (完整对齐 1.7.47 正式版车规核心逻辑)
+     * 1. 彻底解决原厂多媒体被冻结后蓝牙无声的物理死穴：
+     *    当车主冻结原厂多媒体后，原厂不再向系统申请焦点。若助手不申请焦点，系统 AudioPolicy 会判定
+     *    无活动音频源并彻底关闭功放通道 (硬件静音 val:0.000000)！
+     * 2. 缤越助手主动申请 STREAM_MUSIC + MAY_DUCK 闪避常驻焦点，告知系统音频就绪，
+     *    同时由于是 MAY_DUCK，手机微信语音、手机导航与第三方本地音乐可安全共存，绝不掐断微信！
      */
     public synchronized void requestBluetoothFocusIfNeeded() {
-        // 彻底杜绝抢占焦点：任何 MAY_DUCK 都会导致系统将蓝牙音乐强制压低为蚊子叫
         if (btFocusHeld) {
-            abandonBluetoothFocus();
+            return;
+        }
+        if (audioManager == null) {
+            audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
+        }
+        if (audioManager == null) {
+            return;
+        }
+        try {
+            int r = audioManager.requestAudioFocus(btFocusListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+            btFocusHeld = (r == AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
+            AppLogger.i("蓝牙音频", "已申请常驻 MAY_DUCK 蓝牙闪避焦点 (保障多媒体冻结时功放选通)，result=" + r + " held=" + btFocusHeld);
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "requestBluetoothFocusIfNeeded 异常: " + t.getMessage());
         }
     }
 

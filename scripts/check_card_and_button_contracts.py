@@ -154,11 +154,11 @@ CARD_BUTTON_CONTRACTS = [
         [r"isAutoWakeSuppressed", r"dummyListener"]
     ),
     (
-        "多媒体接管卡片", "严禁抢占焦点防 AudioPolicy 90% Ducking 衰减守护 (经车主实测日志授权更新)",
+        "多媒体接管卡片", "常驻 MAY_DUCK 蓝牙闪避焦点守护 (经车主授权对齐 1.7.47 正式版，保障多媒体冻结后硬件声卡选通)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public synchronized void requestBluetoothFocusIfNeeded",
-        [r"abandonBluetoothFocus"],
-        [r"AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK"]
+        [r"AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK", r"requestAudioFocus"],
+        [r"abandonBluetoothFocus"]
     ),
     (
         "多媒体接管卡片", "原厂部件蓝牙声道保持广播 (ECARX_WIDGET_BLUETOOTH_PLAY)",

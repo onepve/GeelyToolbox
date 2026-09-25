@@ -559,8 +559,23 @@ public class SteeringWheelKeyManager {
                 return SOURCE_LOCAL;
             }
 
-            // 核心铁律：若蓝牙仅物理连接但并未在推流 (手机未播歌)，绝不能盲目判定为蓝牙切歌源！
-            // 彻底杜绝上次蓝牙记忆导致未推流时方控切歌打入黑洞，未推流时恒定回退本地源
+            // 核心仲裁：检查车主配置的【首选音源】(尊重车主设置，完美消除蓝牙与本地音乐冲突)
+            try {
+                SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                String primaryPkg = sp.getString("vehicle_speed_autoplay_pkg", "com.android.bluetooth");
+                boolean primaryIsBt = "com.android.bluetooth".equals(primaryPkg) || (primaryPkg != null && primaryPkg.contains("bluetooth"));
+
+                if (isBluetoothDeviceConnected()) {
+                    if (primaryIsBt) {
+                        // 车主首选音源即手机蓝牙：即使处于暂停(未推流)，按键也直接唤醒手机蓝牙播放！
+                        sLastActiveAudioSource = SOURCE_BLUETOOTH;
+                        return SOURCE_BLUETOOTH;
+                    } else if (sLastActiveAudioSource == SOURCE_BLUETOOTH) {
+                        // 上次活跃的是蓝牙且蓝牙仍保持物理连接
+                        return SOURCE_BLUETOOTH;
+                    }
+                }
+            } catch (Throwable ignored) {}
         } catch (Throwable ignored) {}
         return SOURCE_LOCAL;
     }
@@ -664,9 +679,65 @@ public class SteeringWheelKeyManager {
             AppLogger.i("方控按键", "已下发指令秒级唤起 360 全景环视");
 
             suppressOriginalMultimedia();
+            watch360ExitAndCleanTaskStack();
         } catch (Exception e) {
             AppLogger.w("方控按键", "唤起 360 失败: " + e.getMessage());
         }
+    }
+
+    private static volatile boolean sWatching360Exit = false;
+
+    /**
+     * 360 全景退出生命周期后置守护 (彻底根除退出 360 原厂多媒体冒头)
+     * 事实依据：原车系统收到 MODE 键会启动伴听多媒体，车主倒车或看 360 时多媒体被压在任务栈第二层。
+     * 若仅靠静态毫秒延时，车主倒车数十秒后退出 360，多媒体必定露头。
+     * 本守护实时跟踪 360 生命周期，在 360 退出的毫秒级瞬间核验前台，
+     * 若多媒体冒头立即强杀并干净返回系统桌面！
+     */
+    public void watch360ExitAndCleanTaskStack() {
+        if (sWatching360Exit) return;
+        sWatching360Exit = true;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // 1. 前置双重清栈，消灭原车系统滞后拉起的伴听
+                    Thread.sleep(300);
+                    SystemUtils.executePrivileged(context, "am force-stop com.ecarx.multimedia");
+                    Thread.sleep(500);
+                    SystemUtils.executePrivileged(context, "am force-stop com.ecarx.multimedia");
+
+                    // 2. 动态轮询守护，等待 360 退出
+                    long start = System.currentTimeMillis();
+                    boolean entered360 = false;
+                    while (System.currentTimeMillis() - start < 120_000L) { // 最长守护 2 分钟 (覆盖倒车与看全景)
+                        Thread.sleep(250);
+                        String fg = ForegroundAppDetector.getForegroundPackage(context);
+                        if ("ecarx.camera.calibration".equals(fg)) {
+                            entered360 = true;
+                        } else if (entered360) {
+                            // 360 已退出！
+                            AppLogger.i("方控按键", "检测到 360 环视已退出，当前前台应用: " + fg);
+                            if ("com.ecarx.multimedia".equals(fg)) {
+                                AppLogger.i("方控按键", "捕获到原厂多媒体在 360 退出后试图冒头，毫秒级强杀并回退桌面！");
+                                SystemUtils.executePrivileged(context, "am force-stop com.ecarx.multimedia");
+                                try {
+                                    Intent homeIntent = new Intent(Intent.ACTION_MAIN);
+                                    homeIntent.addCategory(Intent.CATEGORY_HOME);
+                                    homeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    context.startActivity(homeIntent);
+                                } catch (Throwable ignored) {}
+                            }
+                            break;
+                        }
+                    }
+                } catch (Throwable t) {
+                    AppLogger.w("方控按键", "watch360Exit 异常: " + t.getMessage());
+                } finally {
+                    sWatching360Exit = false;
+                }
+            }
+        }).start();
     }
 
     public void suppressOriginalMultimedia() {
@@ -746,66 +817,66 @@ public class SteeringWheelKeyManager {
         long now = SystemClock.uptimeMillis();
 
         // ════════════════════════════════════════════════════════════
-        // 分支 A：蓝牙通道独占直发（当目标源为手机蓝牙时）
+        // 分支 A：蓝牙通道独占直发（当目标源为手机蓝牙时，100% 对齐 1.7.47 正式版精髓）
         // 核心铁律：严禁向 QQ音乐/本地播放器广播媒体键，严禁调用 AudioManager 全局分发，
         // 彻底杜绝本地音乐抢占系统音频焦点导致原生蓝牙协议栈下发 AVRCP PAUSE(70) 秒停手机！
+        // 允许在暂停时按播放键唤醒手机蓝牙恢复播放！
         // ════════════════════════════════════════════════════════════
         if (targetSource == SOURCE_BLUETOOTH) {
-            // 核心安全闭环：仅当蓝牙外部音频流真正活跃 (手机端正在推流) 时，才执行蓝牙独占直发
-            // 若手机蓝牙仅连接但未在推流 (手机未播歌)，坚决不把按键送入黑洞，平滑回退至本地媒体分发！
-            if (EasMediaBridge.getInstance(context).isBluetoothChannelActive()) {
-                boolean dispatchedToBt = false;
-                try {
-                    MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
-                    if (msm != null) {
-                        List<MediaController> controllers = msm.getActiveSessions(null);
-                        if (controllers != null) {
-                            for (MediaController mc : controllers) {
-                                if (mc != null && "com.android.bluetooth".equals(mc.getPackageName())) {
-                                    if (mc.getTransportControls() != null) {
-                                        if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT) {
-                                            mc.getTransportControls().skipToNext();
-                                        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
-                                            mc.getTransportControls().skipToPrevious();
-                                        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
-                                            mc.getTransportControls().pause();
-                                        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
-                                            mc.getTransportControls().play();
-                                        } else {
-                                            mc.dispatchMediaButtonEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
-                                            mc.dispatchMediaButtonEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
-                                        }
-                                        dispatchedToBt = true;
-                                        Log.i(TAG, "Exclusive TransportControls dispatched to com.android.bluetooth (code=" + keyCode + ")");
+            boolean dispatchedToBt = false;
+            try {
+                if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
+                    EasMediaBridge.getInstance(context).clearAutoWakeSuppression();
+                    EasMediaBridge.getInstance(context).activateBluetoothChannel();
+                }
+
+                MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
+                if (msm != null) {
+                    List<MediaController> controllers = msm.getActiveSessions(null);
+                    if (controllers != null) {
+                        for (MediaController mc : controllers) {
+                            if (mc != null && "com.android.bluetooth".equals(mc.getPackageName())) {
+                                if (mc.getTransportControls() != null) {
+                                    if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT) {
+                                        mc.getTransportControls().skipToNext();
+                                    } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
+                                        mc.getTransportControls().skipToPrevious();
+                                    } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
+                                        mc.getTransportControls().pause();
+                                    } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
+                                        mc.getTransportControls().play();
+                                    } else {
+                                        mc.dispatchMediaButtonEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
+                                        mc.dispatchMediaButtonEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
                                     }
-                                    break;
+                                    dispatchedToBt = true;
+                                    Log.i(TAG, "Exclusive TransportControls dispatched to com.android.bluetooth (code=" + keyCode + ")");
                                 }
+                                break;
                             }
                         }
                     }
-                } catch (Exception e) {
-                    Log.w(TAG, "Exclusive Bluetooth TransportControls error: " + e.getMessage());
                 }
-
-                // 若 MediaSession 未命中（极端情况），定向显式广播仅发给 com.android.bluetooth
-                if (!dispatchedToBt) {
-                    try {
-                        Intent down = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                        down.setPackage("com.android.bluetooth");
-                        down.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
-                        context.sendOrderedBroadcast(down, null);
-
-                        Intent up = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                        up.setPackage("com.android.bluetooth");
-                        up.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
-                        context.sendOrderedBroadcast(up, null);
-                        Log.i(TAG, "Exclusive directed broadcast sent to com.android.bluetooth (code=" + keyCode + ")");
-                    } catch (Exception ignored) {}
-                }
-                return; // 蓝牙真正推流时独占直发，直接返回！
-            } else {
-                Log.i(TAG, "Bluetooth connected but not streaming, fallback to local media distribution for keyCode=" + keyCode);
+            } catch (Exception e) {
+                Log.w(TAG, "Exclusive Bluetooth TransportControls error: " + e.getMessage());
             }
+
+            // 若 MediaSession 未命中（极端情况），定向显式广播仅发给 com.android.bluetooth
+            if (!dispatchedToBt) {
+                try {
+                    Intent down = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                    down.setPackage("com.android.bluetooth");
+                    down.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
+                    context.sendOrderedBroadcast(down, null);
+
+                    Intent up = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                    up.setPackage("com.android.bluetooth");
+                    up.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
+                    context.sendOrderedBroadcast(up, null);
+                    Log.i(TAG, "Exclusive directed broadcast sent to com.android.bluetooth (code=" + keyCode + ")");
+                } catch (Exception ignored) {}
+            }
+            return; // 蓝牙独占直发完毕，直接返回，绝不进入本地播放器逻辑！
         }
 
         // ════════════════════════════════════════════════════════════

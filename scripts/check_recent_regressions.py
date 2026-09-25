@@ -108,7 +108,7 @@ CONTRACTS = [
  ('eas-bluetooth-duck-guard', JAVA+'utils/EasMediaBridge.java', 'public synchronized void activateBluetoothChannel',
   [r'requestBluetoothFocusIfNeeded', r'keepXcmediaOnBluetoothSource', r'updateCurrentSourceType'], [r'am\.abandonAudioFocus', r'dummyListener', r'isAutoWakeSuppressed']),
  ('eas-bluetooth-anti-duck', JAVA+'utils/EasMediaBridge.java', 'public synchronized void requestBluetoothFocusIfNeeded',
-  [r'abandonBluetoothFocus'], [r'AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK']),
+  [r'AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK', r'requestAudioFocus'], [r'abandonBluetoothFocus']),
  ('eas-bluetooth-keep-source', JAVA+'utils/EasMediaBridge.java', 'public void keepXcmediaOnBluetoothSource()',
   [r'ECARX_WIDGET_BLUETOOTH_PLAY', r'com\.ecarx\.multimedia'], []),
  ('cool-drive-mode-smart-lock', JAVA+'utils/VehicleVoicePlayer.java', 'private static String[] getChineseAliases(String baseName)',
