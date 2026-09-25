@@ -245,15 +245,10 @@ public class EasMediaBridge {
         }
     }
 
-    private volatile boolean isExplicitBluetoothPlayRequest = false;
-
     /**
      * 发送原厂小部件广播保持蓝牙音源 (移植原厂与米小江核心逻辑)
      */
     public void keepXcmediaOnBluetoothSource() {
-        if (!isExplicitBluetoothPlayRequest) {
-            return;
-        }
         long now = System.currentTimeMillis();
         if (now - lastBtSourceKeepMs < 4000) {
             return;
@@ -266,8 +261,6 @@ public class EasMediaBridge {
             AppLogger.i("蓝牙音频", "已下发 ECARX_WIDGET_BLUETOOTH_PLAY 广播保持原厂多媒体在蓝牙音源");
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "keepXcmediaOnBluetoothSource 失败: " + t.getMessage());
-        } finally {
-            isExplicitBluetoothPlayRequest = false;
         }
     }
 
@@ -426,12 +419,17 @@ public class EasMediaBridge {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
                 AppLogger.i("蓝牙音频", "已下发 updateCurrentSourceType(2)，原车 2 号蓝牙音频物理通道已选通！");
             }
-            // 1. 发送吉利原车系统底层切源广播 (显式指定 com.ecarx.multimedia 杜绝后台拦截) 与保持广播
+            // 1. 发送吉利原车系统底层切源广播 (显式指定 + 全局广播双保险) 与保持广播
             try {
                 Intent rsrcIntent = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
                 rsrcIntent.putExtra("source_type", SOURCE_TYPE_BLUETOOTH);
                 rsrcIntent.setPackage("com.ecarx.multimedia");
                 appContext.sendBroadcast(rsrcIntent);
+            } catch (Throwable ignored) {}
+            try {
+                Intent rsrcIntentGlobal = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
+                rsrcIntentGlobal.putExtra("source_type", SOURCE_TYPE_BLUETOOTH);
+                appContext.sendBroadcast(rsrcIntentGlobal);
             } catch (Throwable ignored) {}
 
             keepXcmediaOnBluetoothSource();
@@ -460,7 +458,6 @@ public class EasMediaBridge {
      */
     public void playBluetoothMusic() {
         clearAutoWakeSuppression();
-        isExplicitBluetoothPlayRequest = true;
         activateBluetoothChannel();
         keepXcmediaOnBluetoothSource();
         wakeBluetoothAudioSink();

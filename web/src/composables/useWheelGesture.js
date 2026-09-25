@@ -9,6 +9,7 @@ const ACTION_DEFS = {
   prev_track: { name: '上一曲', sub: '切歌 (官方调度)' },
   open_navi: { name: '打开高德地图', sub: '一键秒切导航' },
   open_360: { name: '打开 360 全景', sub: '一键秒看盲区' },
+  open_toolbox: { name: '唤醒缤越助手', sub: '一键呼出控制台' },
   play_pause: { name: '播放 / 暂停', sub: '媒体暂停或继续' },
   mute_toggle: { name: '静音切换', sub: '音乐声道静音/恢复' },
   screen_off: { name: '息屏屏保', sub: '唤起内部息屏屏保' }
@@ -19,6 +20,7 @@ function getActionOptions(keyName) {
   const tail = [
     { action: 'open_navi', ...ACTION_DEFS.open_navi },
     { action: 'open_360', ...ACTION_DEFS.open_360 },
+    { action: 'open_toolbox', ...ACTION_DEFS.open_toolbox },
     { action: 'play_pause', ...ACTION_DEFS.play_pause },
     { action: 'mute_toggle', ...ACTION_DEFS.mute_toggle },
     { action: 'screen_off', ...ACTION_DEFS.screen_off }
@@ -65,6 +67,7 @@ export function useWheelGesture() {
       default: '原厂默认',
       open_360: '360全景',
       open_navi: '高德地图',
+      open_toolbox: '唤醒助手',
       play_pause: '播放/暂停',
       next_track: '下一曲',
       prev_track: '上一曲',

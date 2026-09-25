@@ -61,6 +61,7 @@ public class SteeringWheelKeyManager {
     // 按键功能选项
     public static final String ACTION_OPEN_360 = "open_360";
     public static final String ACTION_OPEN_NAVI = "open_navi";
+    public static final String ACTION_OPEN_TOOLBOX = "open_toolbox";
     public static final String ACTION_PLAY_PAUSE = "play_pause";
     public static final String ACTION_NEXT_TRACK = "next_track";
     public static final String ACTION_PREV_TRACK = "prev_track";
@@ -311,7 +312,7 @@ public class SteeringWheelKeyManager {
                 Matcher m = Pattern.compile("cmd_data\\[1\\]\\s*=\\s*(\\d+)").matcher(line);
                 if (m.find()) {
                     final int code = Integer.parseInt(m.group(1));
-                    if (code == KEY_PREV || code == KEY_NEXT || code == KEY_MUTE || code == KEY_BACK) {
+                    if (code == KEY_PREV || code == KEY_NEXT || code == KEY_MUTE || code == KEY_BACK || code == KEY_WMODE) {
                         Matcher m0 = Pattern.compile("cmd_data\\[0\\]\\s*=\\s*(0[xX][0-9a-fA-F]+|\\d+)").matcher(line);
                         if (m0.find()) {
                             if (parseCmdKeyStateIsPress(m0.group(1))) {
@@ -425,6 +426,9 @@ public class SteeringWheelKeyManager {
                 break;
             case ACTION_OPEN_NAVI:
                 openAmapNavi();
+                break;
+            case ACTION_OPEN_TOOLBOX:
+                openToolbox();
                 break;
             case ACTION_PLAY_PAUSE:
                 // 根治「单击暂停后音乐又自动续播」（2026-09-16 用户真车复现）：
@@ -645,6 +649,22 @@ public class SteeringWheelKeyManager {
                 } catch (Exception ignored) {}
             }
         }, 150);
+    }
+
+    private void openToolbox() {
+        try {
+            Intent intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+            if (intent == null) {
+                intent = new Intent(Intent.ACTION_MAIN);
+                intent.setComponent(new ComponentName(context.getPackageName(), "app.onepve.geelyconsole.MainActivity"));
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            context.startActivity(intent);
+            AppLogger.i("方控按键", "已唤醒缤越助手主界面");
+            suppressOriginalMultimedia();
+        } catch (Throwable t) {
+            AppLogger.w("方控按键", "唤醒缤越助手失败: " + t.getMessage());
+        }
     }
 
     private void open360Camera() {

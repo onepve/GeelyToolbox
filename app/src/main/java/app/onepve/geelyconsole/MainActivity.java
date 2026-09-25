@@ -528,6 +528,20 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     };
 
     @Override
+    public void onBackPressed() {
+        try {
+            AppLogger.i("系统导航", "按返回键安全退回桌面，避免任务栈回弹原厂多媒体");
+            moveTaskToBack(true);
+            Intent home = new Intent(Intent.ACTION_MAIN);
+            home.addCategory(Intent.CATEGORY_HOME);
+            home.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(home);
+        } catch (Throwable t) {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         try {
@@ -3202,26 +3216,17 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     try {
-                        AppLogger.i("系统退出", "车主点击右上角退出，显式停止所有后台守护服务与胶囊悬浮窗");
-                    } catch (Throwable ignored) {}
-                    try {
-                        stopService(new Intent(MainActivity.this, FloatingWindowService.class));
-                    } catch (Exception ignored) {}
-                    try {
-                        stopService(new Intent(MainActivity.this, VehicleAutomationService.class));
-                    } catch (Exception ignored) {}
-                    try {
-                        finishAffinity();
-                    } catch (Exception ignored) {}
-                    mainHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                android.os.Process.killProcess(android.os.Process.myPid());
-                            } catch (Exception ignored) {}
-                            System.exit(0);
-                        }
-                    }, 300);
+                        AppLogger.i("系统退出", "车主点击退出，安全退入后台并返回系统桌面，彻底杜绝回弹原厂多媒体");
+                        moveTaskToBack(true);
+                        Intent home = new Intent(Intent.ACTION_MAIN);
+                        home.addCategory(Intent.CATEGORY_HOME);
+                        home.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(home);
+                    } catch (Throwable t) {
+                        try {
+                            moveTaskToBack(true);
+                        } catch (Throwable ignored) {}
+                    }
                 }
             });
         }
