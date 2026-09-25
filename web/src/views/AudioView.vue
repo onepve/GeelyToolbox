@@ -1,155 +1,137 @@
 <template>
   <div class="flex flex-col space-y-4">
-    <!-- 1. 整车多媒体音源与智能回退调度 (首选置顶卡片) -->
-    <FeatureCard 
-      title="多媒体"
-      desc="整车默认多媒体音源与智能回退调度中枢，统一管控方向盘切歌与起步车速放歌。"
-      helpTitle="【功能指南】整车多媒体调度与手机蓝牙语音共存机制"
-      helpText="1. 快捷选择与智能调度：&#10;卡片展示当前优先级最高的前 4 款多媒体音源，点击任一按钮可直接设为当前首选。车速达标或方向盘切歌时优先播放首选音源。&#10;&#10;2. 【重要】车载音乐与手机微信语音共存机制：&#10;・为什么播完微信语音后，车机自带音乐不会自动继续唱？&#10;手机微信放语音时，蓝牙推流会向车机申请独占声道，车机自带音乐会被系统自动暂停；但微信播完后，手机蓝牙不会通知车机已结束，车机无法得知何时恢复。此时只需随手按一下方向盘切歌/播放键，或在屏幕上轻触播放即可继续。&#10;・⚠️ 特别注意：若手机后台驻留了音乐软件，微信播完后手机系统会自动判定唤醒手机自带音乐继续播放，而绝不会自动切回车机之前放的歌。若只想听车机音乐，建议把手机后台音乐划掉。&#10;・推荐使用手机蓝牙播放音乐：直接在手机上听歌 + 听微信语音，手机系统内部自动完成暂停与续播，无跨端冲突、体验最丝滑！&#10;&#10;3. 依次顺位回退：&#10;当首选音源不可用时（例如首选设为蓝牙，但上车未带手机或蓝牙断开），系统自动顺位唤醒下一个已安装的本地音乐播放器，避免按键打空。"
-      helpTip="听完手机微信语音想继续听车机自带音乐，随手按一下方向盘切歌键即可继续播放。"
-    >
-      <div class="flex flex-col space-y-4">
-        <!-- 顶栏状态与控制 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-wrap items-center justify-between shadow-sm">
-          <div class="flex items-center space-x-3">
-            <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)]"></span>
-            <div class="flex items-center space-x-2">
-              <span class="text-[17px] font-black text-car-text">当前首选音源：</span>
-              <span class="text-[17px] font-black text-car-accent">{{ primaryMediaName }}</span>
-              <span class="px-2 py-0.5 text-[11.5px] font-black rounded-full bg-car-card border border-car-border text-car-sub">
-                依次回退调度
-              </span>
-              <HelpDot @click="showBluetoothCoexistHelp" title="车载音乐与手机蓝牙语音共存机制说明" />
-            </div>
-          </div>
-
-          <div class="flex items-center space-x-2.5">
-            <button 
-              @click="openReorderModal"
-              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text font-black text-[14px] cursor-pointer transition-all flex items-center space-x-1.5 shadow-sm"
-            >
-              <span>调整排序</span>
-            </button>
-            <button 
-              @click="rescanMediaApps"
-              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text font-black text-[14px] cursor-pointer transition-all flex items-center space-x-1.5 shadow-sm"
-              :disabled="mediaScanning"
-            >
-              <span v-if="mediaScanning">扫描中...</span>
-              <span v-else>刷新扫描应用</span>
-            </button>
+    <!-- 1. 整车多媒体音源与智能回退调度 (沉浸式卡片，去除多余'多媒体'标题头) -->
+    <div class="bg-car-card border border-car-border rounded-3xl p-5 flex flex-col space-y-4 shadow-sm">
+      <!-- 顶栏状态与控制 -->
+      <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-wrap items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-3">
+          <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)]"></span>
+          <div class="flex items-center space-x-2">
+            <span class="text-[17px] font-black text-car-text">当前首选音源：</span>
+            <span class="text-[17px] font-black text-car-accent">{{ primaryMediaName }}</span>
+            <span class="px-2 py-0.5 text-[11.5px] font-black rounded-full bg-car-card border border-car-border text-car-sub">
+              依次回退调度
+            </span>
           </div>
         </div>
 
-        <!-- 一排横向音源胶囊按键 (展示前 4 项核心音源，排在最前为首选) -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-stretch">
+        <div class="flex items-center space-x-2.5">
           <button 
-            v-for="(item, index) in topMediaApps" 
-            :key="item.pkg"
-            @click="setAsPrimary(item)"
-            :class="[
-              'h-[52px] px-3 rounded-2xl font-black text-[14.5px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-1.5 shadow-sm whitespace-nowrap min-w-0',
-              item.pkg === currentPrimaryPkg
-                ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
-                : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
-            ]"
+            @click="openReorderModal"
+            class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text font-black text-[14px] cursor-pointer transition-all flex items-center space-x-1.5 shadow-sm"
           >
-            <span 
-              v-if="item.pkg === currentPrimaryPkg" 
-              class="px-1.5 py-0.5 text-[10.5px] rounded bg-car-card border border-car-accent text-car-accent font-black shrink-0"
-            >
-              首选
-            </span>
-            <span class="truncate">{{ item.name }}</span>
+            <span>调整排序</span>
+          </button>
+          <button 
+            @click="rescanMediaApps"
+            class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text font-black text-[14px] cursor-pointer transition-all flex items-center space-x-1.5 shadow-sm"
+            :disabled="mediaScanning"
+          >
+            <span v-if="mediaScanning">扫描中...</span>
+            <span v-else>刷新扫描应用</span>
           </button>
         </div>
+      </div>
 
-        <!-- 底部提示 -->
-        <div class="pt-3 border-t border-car-border/50 flex flex-wrap items-center justify-between text-car-sub">
-          <div class="text-[13px] font-bold">
-            调度策略：车速达标或方向盘切歌时优先播放首选；蓝牙未连时自动顺位唤醒后续本地播放器。超出 4 款或调整次序请点击右上角「调整排序」。
-          </div>
+      <!-- 一排横向音源胶囊按键 (展示前 4 项核心音源，排在最前为首选) -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-stretch">
+        <button 
+          v-for="(item, index) in topMediaApps" 
+          :key="item.pkg"
+          @click="setAsPrimary(item)"
+          :class="[
+            'h-[52px] px-3 rounded-2xl font-black text-[14.5px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-1.5 shadow-sm whitespace-nowrap min-w-0',
+            item.pkg === currentPrimaryPkg
+              ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
+              : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
+          ]"
+        >
+          <span 
+            v-if="item.pkg === currentPrimaryPkg" 
+            class="px-1.5 py-0.5 text-[10.5px] rounded bg-car-card border border-car-accent text-car-accent font-black shrink-0"
+          >
+            首选
+          </span>
+          <span class="truncate">{{ item.name }}</span>
+        </button>
+      </div>
+
+      <!-- 底部提示 -->
+      <div class="pt-3 border-t border-car-border/50 flex flex-wrap items-center justify-between text-car-sub">
+        <div class="text-[13px] font-bold">
+          调度策略：车速达标或方向盘切歌时优先播放首选；蓝牙未连时自动顺位唤醒后续本地播放器。超出 4 款或调整次序请点击右上角「调整排序」。
         </div>
       </div>
-    </FeatureCard>
+    </div>
 
-    <!-- 2. 车载蓝牙音频与网络互联 (原卡片向下顺移) -->
-    <FeatureCard 
-      title="车载音频与网络通道"
-      desc="直控车机蓝牙与 Wi-Fi 开关，实时呈现 6 号蓝牙硬件声道仲裁与推流状态，提供一键强制声道选通与发声调试。"
-      helpTitle="【使用说明】车载音乐与手机蓝牙语音共存机制"
-      helpText="1. 为什么播完微信语音后，车机自带音乐不会自动继续唱？&#10;・跨设备通道互斥：车机自带音乐（如车机 QQ音乐/网易云）与手机微信分别运行在车机和手机两个独立设备上。&#10;・手机微信放语音时，蓝牙推流会向车机申请独占声道，车机自带音乐会被系统自动暂停；但微信播完后，手机蓝牙不会通知车机已结束，车机无法得知何时恢复。&#10;&#10;2. ⚠️ 特别注意：为什么语音播完后突然唱起了「手机里的歌」？&#10;・手机系统优先机制：如果您的手机后台驻留了音乐软件（哪怕处于暂停状态），手机微信放完语音后，手机系统会自动判定优先唤醒手机自带的音乐继续播放，并持续通过蓝牙推流给车机，而绝不会自动切回车机之前放的歌。&#10;・若您当前只想听车机自带音乐，建议将手机后台的音乐 App 彻底划掉关闭。&#10;&#10;3. 听完手机语音后，如何继续听车机自带音乐？&#10;・听完微信/导航语音后，若想继续听车机自带音乐，只需随手按一下方向盘上的切歌/播放键，或在车机屏幕上轻触一下播放即可继续。&#10;&#10;4. 如何获得「语音播完自动无缝续播」的完美体验？&#10;・推荐使用手机蓝牙播放音乐：直接在手机上听歌 + 听微信语音，手机系统内部自动完成暂停与续播，无跨端冲突、体验最丝滑！"
-      helpTip="听完手机语音想继续听车机音乐，随手按一下方向盘切歌键即可继续播放。"
-    >
-      <div class="flex flex-col space-y-4">
-        <!-- 上层：蓝牙与 Wi-Fi 硬件连接看板 (双列对称大卡片) -->
-        <div class="grid grid-cols-2 gap-4">
-          <!-- 蓝牙控制看板 -->
-          <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-3 shadow-sm">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2.5">
-                <StatusDot size="md" :color="connStatus.bluetooth_enabled ? 'ok' : 'off'" :glow-px="8" />
-                <span class="text-[18px] font-black text-car-text">车机蓝牙</span>
-                <HelpDot @click="showBluetoothCoexistHelp" title="车载音乐与手机蓝牙语音共存机制说明" />
-              </div>
-              <button 
-                @click="toggleBluetooth"
-                :class="[
-                  'min-h-[50px] px-4 rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all',
-                  connStatus.bluetooth_enabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-item text-car-sub'
-                ]"
-              >
-                {{ connStatus.bluetooth_enabled ? '已开启' : '已关闭' }}
-              </button>
+    <!-- 2. 车载蓝牙音频与网络互联 (已按要求删掉'车载音频与网络通道'卡片标题行，直接沉浸呈现) -->
+    <div class="bg-car-card border border-car-border rounded-3xl p-5 flex flex-col space-y-4 shadow-sm">
+      <!-- 上层：蓝牙与 Wi-Fi 硬件连接看板 (双列对称大卡片) -->
+      <div class="grid grid-cols-2 gap-4">
+        <!-- 蓝牙控制看板 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-3 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <StatusDot size="md" :color="connStatus.bluetooth_enabled ? 'ok' : 'off'" :glow-px="8" />
+              <span class="text-[18px] font-black text-car-text">车机蓝牙</span>
+              <HelpDot @click="showBluetoothCoexistHelp" title="车载音乐与手机蓝牙语音共存机制说明" />
             </div>
-            <div class="text-[14.5px] font-mono text-car-sub truncate">
-              设备: {{ connStatus.bluetooth_device_name || '未连接设备' }}
-            </div>
-            <div class="pt-4 border-t border-car-border/50 flex flex-wrap items-center justify-between space-x-2">
-              <span class="text-[12.5px] text-car-sub font-bold">配对与连接管理</span>
-              <button 
-                @click="openBluetoothSettings"
-                class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer"
-              >
-                打开蓝牙设置 ➔
-              </button>
-            </div>
+            <button 
+              @click="toggleBluetooth"
+              :class="[
+                'min-h-[50px] px-4 rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all',
+                connStatus.bluetooth_enabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-item text-car-sub'
+              ]"
+            >
+              {{ connStatus.bluetooth_enabled ? '已开启' : '已关闭' }}
+            </button>
           </div>
-
-          <!-- Wi-Fi 控制看板 -->
-          <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-3 shadow-sm">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2.5">
-                <StatusDot size="md" :color="connStatus.wifi_enabled ? 'ok' : 'off'" :glow-px="8" />
-                <span class="text-[18px] font-black text-car-text">车机 Wi-Fi</span>
-              </div>
-              <button 
-                @click="toggleWifi"
-                :class="[
-                  'min-h-[50px] px-4 rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all',
-                  connStatus.wifi_enabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-item text-car-sub'
-                ]"
-              >
-                {{ connStatus.wifi_enabled ? '已开启' : '已关闭' }}
-              </button>
-            </div>
-            <div class="text-[14.5px] font-mono text-car-sub truncate">
-              热点: {{ connStatus.wifi_ssid || '未连接热点' }} ({{ connStatus.car_ip || '127.0.0.1' }})
-            </div>
-            <div class="pt-4 border-t border-car-border/50 flex flex-wrap items-center justify-between space-x-2">
-              <span class="text-[12.5px] text-car-sub font-bold">热点连接向导</span>
-              <button 
-                @click="openWifiSettings"
-                class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer"
-              >
-                打开 Wi-Fi 设置 ➔
-              </button>
-            </div>
+          <div class="text-[14.5px] font-mono text-car-sub truncate">
+            设备: {{ connStatus.bluetooth_device_name || '未连接设备' }}
+          </div>
+          <div class="pt-4 border-t border-car-border/50 flex flex-wrap items-center justify-between space-x-2">
+            <span class="text-[12.5px] text-car-sub font-bold">配对与连接管理</span>
+            <button 
+              @click="openBluetoothSettings"
+              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer"
+            >
+              打开蓝牙设置 ➔
+            </button>
           </div>
         </div>
 
+        <!-- Wi-Fi 控制看板 -->
+        <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-3 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <StatusDot size="md" :color="connStatus.wifi_enabled ? 'ok' : 'off'" :glow-px="8" />
+              <span class="text-[18px] font-black text-car-text">Wi-Fi 网络</span>
+            </div>
+            <button 
+              @click="toggleWifi"
+              :class="[
+                'min-h-[50px] px-4 rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all',
+                connStatus.wifi_enabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-item text-car-sub'
+              ]"
+            >
+              {{ connStatus.wifi_enabled ? '已开启' : '已关闭' }}
+            </button>
+          </div>
+          <div class="text-[14.5px] font-mono text-car-sub truncate">
+            网络: {{ connStatus.wifi_ssid || '未连接热点' }}
+          </div>
+          <div class="pt-4 border-t border-car-border/50 flex flex-wrap items-center justify-between space-x-2">
+            <span class="text-[12.5px] text-car-sub font-bold">热点连接向导</span>
+            <button 
+              @click="openWifiSettings"
+              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer"
+            >
+              打开 Wi-Fi 设置 ➔
+            </button>
+          </div>
+        </div>
       </div>
-    </FeatureCard>
+    </div>
     <!-- 2. 车载专属语音主题包与自定义音效 -->
     <FeatureCard 
       title="车载语音主题包"
