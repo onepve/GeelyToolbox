@@ -146,87 +146,6 @@
           </div>
         </div>
 
-        <!-- 微信/蓝牙语音音量智能补偿（支持 -10 ~ +10 格动态微调） -->
-        <div class="mt-4 bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-4 shadow-sm">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-2.5">
-              <StatusDot size="md" :color="voiceCompEnabled ? 'ok' : 'off'" :glow-px="8" />
-              <div>
-                <div class="text-[17px] font-black text-car-text">微信与蓝牙语音音量补偿</div>
-                <div class="text-[12.5px] text-car-sub mt-0.5">微信推流时瞬时微调音量，播完秒级恢复原车听歌音量</div>
-              </div>
-            </div>
-            <button 
-              @click="toggleVoiceComp"
-              :class="[
-                'h-[50px] px-4 rounded-xl border-2 text-[14px] font-black cursor-pointer transition-all',
-                voiceCompEnabled ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-400' : 'border-car-border bg-car-item text-car-sub'
-              ]"
-            >
-              {{ voiceCompEnabled ? '已开启' : '已关闭' }}
-            </button>
-          </div>
-
-          <div v-if="voiceCompEnabled" class="pt-3 border-t border-car-border/40 flex flex-col space-y-3.5">
-            <!-- 调节区域：大触控加减按键 + 滑块 -->
-            <div class="flex items-center space-x-3.5">
-              <button 
-                @click="adjustVoiceOffset(-1)"
-                :disabled="voiceCompOffset === -10"
-                class="h-[50px] w-[54px] rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[20px] font-black cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all"
-              >
-                －
-              </button>
-
-              <div class="flex-1 px-1">
-                <input 
-                  type="range" 
-                  min="-10" 
-                  max="25" 
-                  step="1" 
-                  v-model.number="voiceCompOffset"
-                  @change="saveVoiceCompOffset"
-                  class="w-full h-2.5 bg-car-border rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                />
-                <div class="flex justify-between text-[11px] font-mono text-car-sub/70 mt-1 px-1">
-                  <span>-10 (极柔和)</span>
-                  <span>0 (原车平衡)</span>
-                  <span>+10</span>
-                  <span>+25 (专治手机低音量)</span>
-                </div>
-              </div>
-
-              <button 
-                @click="adjustVoiceOffset(1)"
-                :disabled="voiceCompOffset === 25"
-                class="h-[50px] w-[54px] rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text text-[20px] font-black cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all"
-              >
-                ＋
-              </button>
-            </div>
-
-            <!-- 扁平无边框公式条：轻透背景，极简通透 -->
-            <div class="bg-car-sub/5 rounded-xl px-4 py-3 flex items-center justify-between">
-              <div class="flex items-center space-x-2 font-mono text-[14px]">
-                <span class="text-car-sub font-sans text-[12.5px]">实时计算:</span>
-                <span class="text-car-text font-bold">听歌 {{ currentMusicVol }}</span>
-                <span class="text-car-sub">{{ voiceCompOffset >= 0 ? '＋' : '－' }}</span>
-                <span class="text-emerald-400 font-bold">增益 {{ Math.abs(voiceCompOffset) }}</span>
-                <span class="text-car-sub">＝</span>
-                <span class="text-emerald-400 font-black text-[16px]">播报 {{ calculatedVoiceVol }} 格</span>
-              </div>
-              <span class="text-[12px] text-car-sub/70">
-                限幅 3~30 格
-              </span>
-            </div>
-
-            <!-- 手机端建议说明 -->
-            <div class="text-[11.5px] text-car-sub/70 px-1 leading-relaxed">
-              建议将<span class="text-car-text font-bold">手机端蓝牙媒体音量调至最大 (100%)</span>，以获得最饱满音质与精准补偿效果。
-            </div>
-          </div>
-        </div>
-
       </div>
     </FeatureCard>
     <!-- 2. 车载专属语音主题包与自定义音效 -->
@@ -875,71 +794,8 @@ function afterFirstPaint(fn) {
 // 每进一次「语音」页就永久多留一条 4 秒同步跨端轮询（越用越卡的实测铁证）。
 let connectivityTimer = null;
 
-// 微信/蓝牙语音音量补偿设置
-const voiceCompEnabled = ref(true);
-const voiceCompOffset = ref(3);
-const currentMusicVol = ref(15);
-
-const calculatedVoiceVol = computed(() => {
-  const target = currentMusicVol.value + voiceCompOffset.value;
-  return Math.max(3, Math.min(30, target));
-});
-
-function refreshCurrentVolume() {
-  try {
-    const vol = bridge.call('getCurrentMusicVolume');
-    if (typeof vol === 'number' && vol > 0) {
-      currentMusicVol.value = vol;
-    }
-  } catch (e) {}
-}
-
-function loadVoiceCompSettings() {
-  try {
-    refreshCurrentVolume();
-    const raw = bridge.call('getVehicleAutomationSettings');
-    if (raw) {
-      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      if (typeof data.voice_gain_compensation_enabled === 'boolean') {
-        voiceCompEnabled.value = data.voice_gain_compensation_enabled;
-      }
-      if (typeof data.voice_gain_compensation_offset === 'number') {
-        voiceCompOffset.value = data.voice_gain_compensation_offset;
-      }
-    }
-  } catch (e) {}
-}
-
-function toggleVoiceComp() {
-  voiceCompEnabled.value = !voiceCompEnabled.value;
-  try {
-    bridge.call('setVehicleAutomationSetting', 'voice_gain_compensation_enabled', voiceCompEnabled.value);
-  } catch (e) {}
-}
-
-function adjustVoiceOffset(delta) {
-  const next = Math.max(-10, Math.min(25, voiceCompOffset.value + delta));
-  if (next !== voiceCompOffset.value) {
-    voiceCompOffset.value = next;
-    saveVoiceCompOffset();
-  }
-}
-
-function saveVoiceCompOffset() {
-  try {
-    bridge.call('setVehicleAutomationSettingInt', 'voice_gain_compensation_offset', voiceCompOffset.value);
-  } catch (e) {}
-}
-
 onMounted(() => {
-  // 1. 同步加载轻量内存设置：0ms 瞬间把开关和音量看板渲染就绪
-  loadVoiceCompSettings();
   window.refreshVoiceThemes = loadVoiceThemes;
-  window.onSystemVolumeChanged = (vol) => {
-    if (typeof vol === 'number' && vol >= 0) {
-      currentMusicVol.value = vol;
-    }
-  };
 
   // 2. 异步分片调度：延后 30ms 执行，彻底不阻断组件首帧挂载与绘制
   setTimeout(() => {

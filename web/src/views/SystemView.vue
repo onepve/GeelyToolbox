@@ -120,14 +120,24 @@
       <!-- 4. 工具箱开机自启动与后台守护 -->
       <FeatureCard 
         title="工具箱开机自启动与后台守护"
-        desc="控制车机上电开机后在后台静默运行工具箱。出厂默认常驻开启，各联动项由各自开关独立管控。"
+        desc="控制车机上电打火后是否在后台静默运行工具箱。开启后各联动项上车即用；关闭后完全不占后台。"
         helpTitle="【功能指南】工具箱开机自启动与后台守护"
-        helpText="1. 开机后台自启：&#10;车辆打火通电后，工具箱自动在后台安静启动，让各项自动化联动功能上车就能直接用。&#10;&#10;2. 独立控制：&#10;开机自启开启后，各个联动功能（如 D 挡 360、开门关门播报等）依然由各自的开关独立决定是否工作。&#10;&#10;3. 推荐常开：&#10;默认保持常开，确保上车后一切功能运转顺畅。" helpTip="这是自动化功能的基础开关，建议保持开启。"
+        helpText="1. 开机后台自启：&#10;车辆打火通电后，工具箱自动在后台安静启动，让各项自动化联动功能上车就能直接用。&#10;&#10;2. 关闭说明：&#10;关闭后车辆通电将不再自启工具箱，完全不占用后台资源；仅在您桌面主动打开时运行。&#10;&#10;3. 推荐常开：&#10;默认保持常开，确保上车后一切功能运转顺畅。" helpTip="这是自动化功能的基础开关，可按需开启或关闭。"
       >
-        <div class="w-full min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[18px] shadow-sm flex items-center justify-center space-x-2">
-          <StatusDot size="md" color="ok" :glow-px="8" />
-          <span>开机自启静默守护: 已默认常驻启用</span>
-        </div>
+        <button
+          @click="toggleAutostart"
+          :class="[
+            'w-full min-h-[72px] rounded-2xl border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center space-x-3 px-4',
+            store.deviceInfo.autostart
+              ? 'border-car-accent bg-car-item text-car-accent'
+              : 'border-car-border bg-car-card text-car-sub hover:border-car-border-light'
+          ]"
+        >
+          <StatusDot size="md" :color="store.deviceInfo.autostart ? 'ok' : 'idle'" :glow-px="store.deviceInfo.autostart ? 8 : 0" />
+          <span class="font-black text-[18px]">
+            {{ store.deviceInfo.autostart ? '开机自启静默守护: 已启用 (点击关闭)' : '开机自启静默守护: 已关闭 (点击开启)' }}
+          </span>
+        </button>
       </FeatureCard>
     </div>
 

@@ -57,6 +57,14 @@ public class BootReceiver extends BroadcastReceiver {
         // 场景 B：开机/点火/休眠恢复广播 (BOOT_COMPLETED / POWER_RESUME / QUICKBOOT)
         AppLogger.i("开机守护", "收到系统开机/唤醒广播: " + action);
 
+        SharedPreferences bootPrefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        boolean autostartEnabled = bootPrefs.getBoolean("autostart_enabled", true);
+        boolean tempAutostartForRabbit = bootPrefs.getBoolean("temp_autostart_for_rabbit", false);
+        if (!autostartEnabled && !tempAutostartForRabbit) {
+            AppLogger.i("开机守护", "车主已关闭开机自启动守护，车辆启动时不自动拉起工具箱后台服务");
+            return;
+        }
+
         // 核心服务 0ms 秒级拉起常驻守护 (绝不延迟，防系统在 onReceive 结束前杀进程)
         try {
             VehicleAutomationService.syncState(context);
