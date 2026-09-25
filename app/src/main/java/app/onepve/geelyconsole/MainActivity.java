@@ -3200,19 +3200,26 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     try {
-                        if (FloatingWindowService.isRunning) {
-                            Intent floatIntent = new Intent(MainActivity.this, FloatingWindowService.class);
-                            floatIntent.setAction(FloatingWindowService.ACTION_HIDE);
-                            startService(floatIntent);
-                        }
+                        AppLogger.i("系统退出", "车主点击右上角退出，显式停止所有后台守护服务与胶囊悬浮窗");
+                    } catch (Throwable ignored) {}
+                    try {
+                        stopService(new Intent(MainActivity.this, FloatingWindowService.class));
+                    } catch (Exception ignored) {}
+                    try {
+                        stopService(new Intent(MainActivity.this, VehicleAutomationService.class));
                     } catch (Exception ignored) {}
                     try {
                         finishAffinity();
                     } catch (Exception ignored) {}
-                    try {
-                        android.os.Process.killProcess(android.os.Process.myPid());
-                    } catch (Exception ignored) {}
-                    System.exit(0);
+                    mainHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                android.os.Process.killProcess(android.os.Process.myPid());
+                            } catch (Exception ignored) {}
+                            System.exit(0);
+                        }
+                    }, 300);
                 }
             });
         }

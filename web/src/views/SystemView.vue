@@ -133,7 +133,7 @@
               : 'border-car-border bg-car-card text-car-sub hover:border-car-border-light'
           ]"
         >
-          <StatusDot size="md" :color="store.deviceInfo.autostart ? 'ok' : 'idle'" :glow-px="store.deviceInfo.autostart ? 8 : 0" />
+          <StatusDot size="md" :color="store.deviceInfo.autostart ? 'ok' : 'off'" :glow="store.deviceInfo.autostart" :glow-px="store.deviceInfo.autostart ? 8 : 0" />
           <span class="font-black text-[18px]">
             {{ store.deviceInfo.autostart ? '开机自启静默守护: 已启用 (点击关闭)' : '开机自启静默守护: 已关闭 (点击开启)' }}
           </span>

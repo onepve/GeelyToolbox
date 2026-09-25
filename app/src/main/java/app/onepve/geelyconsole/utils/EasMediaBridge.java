@@ -235,10 +235,7 @@ public class EasMediaBridge {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
                 AppLogger.i("音频通道", "EAS 注册成功，已声明并选通 2 号蓝牙物理声道");
 
-                // 发送原厂小部件广播保持蓝牙源
-                keepXcmediaOnBluetoothSource();
-
-                // 若手机蓝牙处于连接或推流状态，立即激活蓝牙音频通路与 MAY_DUCK 焦点
+                // 若手机蓝牙处于连接或推流状态，仅选通声道，严禁主动下发播放指令
                 if (a2dpSinkConnected) {
                     activateBluetoothChannel();
                 }
@@ -248,10 +245,15 @@ public class EasMediaBridge {
         }
     }
 
+    private volatile boolean isExplicitBluetoothPlayRequest = false;
+
     /**
      * 发送原厂小部件广播保持蓝牙音源 (移植原厂与米小江核心逻辑)
      */
     public void keepXcmediaOnBluetoothSource() {
+        if (!isExplicitBluetoothPlayRequest) {
+            return;
+        }
         long now = System.currentTimeMillis();
         if (now - lastBtSourceKeepMs < 4000) {
             return;
@@ -264,6 +266,8 @@ public class EasMediaBridge {
             AppLogger.i("蓝牙音频", "已下发 ECARX_WIDGET_BLUETOOTH_PLAY 广播保持原厂多媒体在蓝牙音源");
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "keepXcmediaOnBluetoothSource 失败: " + t.getMessage());
+        } finally {
+            isExplicitBluetoothPlayRequest = false;
         }
     }
 
@@ -456,7 +460,9 @@ public class EasMediaBridge {
      */
     public void playBluetoothMusic() {
         clearAutoWakeSuppression();
+        isExplicitBluetoothPlayRequest = true;
         activateBluetoothChannel();
+        keepXcmediaOnBluetoothSource();
         wakeBluetoothAudioSink();
     }
 
