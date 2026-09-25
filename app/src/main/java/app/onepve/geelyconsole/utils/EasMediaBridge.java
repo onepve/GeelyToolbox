@@ -8,7 +8,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.os.Build;
 import android.media.session.MediaController;
 import android.content.ComponentName;
 import android.media.browse.MediaBrowser;
@@ -348,9 +351,62 @@ public class EasMediaBridge {
         }
     }
 
+    private AudioFocusRequest voiceDuckingFocusRequest;
+    private final AudioManager.OnAudioFocusChangeListener voiceDuckingListener = new AudioManager.OnAudioFocusChangeListener() {
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+            AppLogger.i("蓝牙音频", "方案B: voiceDuckingListener 焦点状态变更: " + focusChange);
+        }
+    };
+
+    /**
+     * 方案 B：系统原生 AudioFocus 压低本地音乐 (Ducking)
+     * 使用 USAGE_ASSISTANCE_NAVIGATION_GUIDANCE 请求 MAY_DUCK 瞬态焦点：
+     * 1. 让正在播放的 QQ 音乐 / 媒体软件接收到 AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK 并自动把自身音量降低到 20%~30%；
+     * 2. 严禁改动硬件媒体总音量 (STREAM_MUSIC 保持 13~18)，确保微信声音清晰洪亮；
+     * 3. 严禁向音乐软件发送 Play/Pause，避免引起状态机抽搐；
+     * 4. 微信播完后释放焦点，QQ 音乐自动恢复 100% 满音量。
+     */
+    public synchronized void requestDuckingFocusForIncomingVoice() {
+        if (audioManager == null) {
+            audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
+        }
+        if (audioManager == null) return;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                AudioAttributes attrs = new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build();
+                voiceDuckingFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                        .setAudioAttributes(attrs)
+                        .setAcceptsDelayedFocusGain(false)
+                        .setWillPauseWhenDucked(false)
+                        .setOnAudioFocusChangeListener(voiceDuckingListener)
+                        .build();
+                int res = audioManager.requestAudioFocus(voiceDuckingFocusRequest);
+                AppLogger.i("蓝牙音频", "方案B: 已申请系统级导航语音 MAY_DUCK 焦点，通知正在放歌的应用自动压低音乐背景声，res=" + res);
+            }
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "requestDuckingFocusForIncomingVoice 异常: " + t.getMessage());
+        }
+    }
+
+    public synchronized void abandonDuckingFocus() {
+        if (audioManager == null) return;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && voiceDuckingFocusRequest != null) {
+                audioManager.abandonAudioFocusRequest(voiceDuckingFocusRequest);
+                voiceDuckingFocusRequest = null;
+                AppLogger.i("蓝牙音频", "方案B: 微信语音结束，已释放 MAY_DUCK 焦点，本地音乐音量自动回弹恢复");
+            }
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "abandonDuckingFocus 异常: " + t.getMessage());
+        }
+    }
+
     /**
      * 自动平滑压低媒体背景音量 (ducking)
-     * 微信语音推流时调用：平滑压低当前音乐音量至原音量的 25%~30%，保证微信语音清晰可辨
      */
     public synchronized void duckMediaVolume() {
         try {
@@ -361,29 +417,24 @@ public class EasMediaBridge {
                 return;
             }
             int currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-            // 严禁将正常车机音量压成 5！保持车主设定的真实音量 (13~18)，确保微信声音清晰饱满
-            AppLogger.i("蓝牙音频", "微信发声: 保持车主当前设定媒体音量(" + currentVol + ")，保障语音清晰发声");
-            // 兜底契约守卫：仅在系统音量为 0 异常静音时安全恢复
+            // 保持车主设定的真实硬件媒体音量 (13~18)，仅在异常静音(0)时安全兜底
             if (currentVol == 0) {
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 12, 0);
             }
+            // 方案B：申请系统原生导航语音 MAY_DUCK 焦点，自动压低本地音乐 (QQ 音乐) 自身增益
+            requestDuckingFocusForIncomingVoice();
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "duckMediaVolume 异常: " + t.getMessage());
         }
     }
 
     /**
-     * 微信发声完毕后保持车主设定音量
+     * 恢复媒体背景音量
      */
     public synchronized void restoreMediaVolume() {
         try {
-            if (audioManager == null) {
-                audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
-            }
-            if (audioManager == null) {
-                return;
-            }
-            AppLogger.i("蓝牙音频", "微信发声结束: 保持车主媒体音量不变");
+            // 方案B：释放 MAY_DUCK 焦点，本地音乐自动平滑恢复原本音量
+            abandonDuckingFocus();
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "restoreMediaVolume 异常: " + t.getMessage());
         }
