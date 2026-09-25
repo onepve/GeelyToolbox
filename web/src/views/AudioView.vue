@@ -150,7 +150,7 @@
         <div class="mt-4 bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2.5">
-              <span class="text-[15px] font-black px-2 py-0.5 rounded bg-car-sub/10 text-emerald-400">增益</span>
+              <StatusDot size="md" :color="voiceCompEnabled ? 'ok' : 'off'" :glow-px="8" />
               <div>
                 <div class="text-[17px] font-black text-car-text">微信与蓝牙语音音量补偿</div>
                 <div class="text-[12.5px] text-car-sub mt-0.5">微信推流时瞬时微调音量，播完秒级恢复原车听歌音量</div>
