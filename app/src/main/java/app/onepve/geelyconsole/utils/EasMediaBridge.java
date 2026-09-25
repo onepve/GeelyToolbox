@@ -77,6 +77,9 @@ public class EasMediaBridge {
     private volatile boolean btMediaBrowserConnected = false;
     private volatile boolean isDucked = false;
     private volatile int preDuckVolume = -1;
+    private String lastPlayingPackageBeforeVoice = null;
+    private final Handler voiceResumeHandler = new Handler(Looper.getMainLooper());
+    private Runnable voiceResumeRunnable = null;
 
 
     private final AudioManager.OnAudioFocusChangeListener btFocusListener = new AudioManager.OnAudioFocusChangeListener() {
@@ -694,17 +697,46 @@ public class EasMediaBridge {
                         a2dpStreaming = streaming;
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                         if (streaming) {
-                            wasLocalPlayingBeforeA2dp = false;
-                            // 微信开始发声：保持车主音量，选通 2 号物理通道并解除硬件静音
+                            // 微信开始发声：立即取消任何在途的恢复任务（防止语音短暂停顿误触发）
+                            voiceResumeHandler.removeCallbacksAndMessages(null);
+                            VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                            if (vas != null) {
+                                String activePkg = vas.getCurrentlyPlayingMediaPackage();
+                                if (activePkg != null && !activePkg.isEmpty()) {
+                                    wasLocalPlayingBeforeA2dp = true;
+                                    lastPlayingPackageBeforeVoice = activePkg;
+                                    AppLogger.i("蓝牙音频", "方案A: 微信发声前检测到本地正在放歌: " + activePkg + "，记录以便播完后定向恢复");
+                                } else {
+                                    wasLocalPlayingBeforeA2dp = false;
+                                    lastPlayingPackageBeforeVoice = null;
+                                    AppLogger.i("蓝牙音频", "方案A: 微信发声前未放歌或处于暂停，播完后保持静默");
+                                }
+                            }
                             duckMediaVolume();
                             activateBluetoothChannel();
                             wakeBluetoothAudioSink();
                         } else {
-                            // 微信发声结束：平滑恢复，绝不干涉第三方音乐播放态
                             restoreMediaVolume();
-                            VehicleAutomationService vas = VehicleAutomationService.getInstance();
-                            if (vas != null) {
-                                vas.resumeMediaPlaybackAfterAudioInterruption();
+                            if (wasLocalPlayingBeforeA2dp && lastPlayingPackageBeforeVoice != null) {
+                                final String targetPkg = lastPlayingPackageBeforeVoice;
+                                AppLogger.i("蓝牙音频", "方案A: 监听到推流停止，启动 800ms 防抖守卫...");
+                                voiceResumeHandler.removeCallbacksAndMessages(null);
+                                voiceResumeRunnable = new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        AppLogger.i("蓝牙音频", "方案A: 微信语音防抖通过(800ms无新推流)，定向恢复播放器: " + targetPkg);
+                                        VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                                        if (vas != null) {
+                                            vas.resumeSpecificMediaPackage(targetPkg);
+                                            vas.resumeMediaPlaybackAfterAudioInterruption();
+                                        }
+                                        wasLocalPlayingBeforeA2dp = false;
+                                        lastPlayingPackageBeforeVoice = null;
+                                    }
+                                };
+                                voiceResumeHandler.postDelayed(voiceResumeRunnable, 800);
+                            } else {
+                                AppLogger.i("蓝牙音频", "方案A: 微信前无音乐播放，微信结束后保持安静");
                             }
                         }
                     }
@@ -716,7 +748,19 @@ public class EasMediaBridge {
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，保持车主音量并唤醒底层解除静音");
-                                wasLocalPlayingBeforeA2dp = false;
+                                voiceResumeHandler.removeCallbacksAndMessages(null);
+                                VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                                if (vas != null) {
+                                    String activePkg = vas.getCurrentlyPlayingMediaPackage();
+                                    if (activePkg != null && !activePkg.isEmpty()) {
+                                        wasLocalPlayingBeforeA2dp = true;
+                                        lastPlayingPackageBeforeVoice = activePkg;
+                                        AppLogger.i("蓝牙音频", "方案A: 微信发声前检测到正在放歌: " + activePkg + "，记录以便播完后定向恢复");
+                                    } else {
+                                        wasLocalPlayingBeforeA2dp = false;
+                                        lastPlayingPackageBeforeVoice = null;
+                                    }
+                                }
                                 duckMediaVolume();
                                 activateBluetoothChannel();
                                 wakeBluetoothAudioSink();
@@ -724,9 +768,26 @@ public class EasMediaBridge {
                                 a2dpStreaming = false;
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，恢复媒体音量");
                                 restoreMediaVolume();
-                                VehicleAutomationService vas = VehicleAutomationService.getInstance();
-                                if (vas != null) {
-                                    vas.resumeMediaPlaybackAfterAudioInterruption();
+                                if (wasLocalPlayingBeforeA2dp && lastPlayingPackageBeforeVoice != null) {
+                                    final String targetPkg = lastPlayingPackageBeforeVoice;
+                                    AppLogger.i("蓝牙音频", "方案A: 监听到推流停止，启动 800ms 防抖守卫...");
+                                    voiceResumeHandler.removeCallbacksAndMessages(null);
+                                    voiceResumeRunnable = new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            AppLogger.i("蓝牙音频", "方案A: 微信语音防抖通过(800ms无新推流)，定向恢复播放器: " + targetPkg);
+                                            VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                                            if (vas != null) {
+                                                vas.resumeSpecificMediaPackage(targetPkg);
+                                                vas.resumeMediaPlaybackAfterAudioInterruption();
+                                            }
+                                            wasLocalPlayingBeforeA2dp = false;
+                                            lastPlayingPackageBeforeVoice = null;
+                                        }
+                                    };
+                                    voiceResumeHandler.postDelayed(voiceResumeRunnable, 800);
+                                } else {
+                                    AppLogger.i("蓝牙音频", "方案A: 微信前无音乐播放，微信结束后保持安静");
                                 }
                             }
                         }

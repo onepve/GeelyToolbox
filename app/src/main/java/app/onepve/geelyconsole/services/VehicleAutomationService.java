@@ -1590,13 +1590,63 @@ public class VehicleAutomationService extends Service {
         return false;
     }
 
+    public String getCurrentlyPlayingMediaPackage() {
+        try {
+            MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (msm != null) {
+                List<MediaController> controllers = msm.getActiveSessions(null);
+                if (controllers != null) {
+                    for (MediaController mc : controllers) {
+                        if (mc != null) {
+                            String pkg = mc.getPackageName();
+                            if ("com.android.bluetooth".equals(pkg) || "app.onepve.geelyconsole".equals(pkg)) {
+                                continue;
+                            }
+                            if (mc.getPlaybackState() != null && mc.getPlaybackState().getState() == PlaybackState.STATE_PLAYING) {
+                                return pkg;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        return null;
+    }
+
+    public void resumeSpecificMediaPackage(String targetPkg) {
+        if (targetPkg == null || targetPkg.isEmpty()) return;
+        try {
+            MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (msm != null) {
+                List<MediaController> controllers = msm.getActiveSessions(null);
+                if (controllers != null) {
+                    for (MediaController mc : controllers) {
+                        if (mc != null && targetPkg.equals(mc.getPackageName())) {
+                            mc.getTransportControls().play();
+                            AppLogger.i("音频通道", "方案A: 已通过 MediaController 定向恢复播放: " + targetPkg);
+                            return;
+                        }
+                    }
+                }
+            }
+            if ("com.tencent.qqmusiccar".equals(targetPkg)) {
+                Intent playIntent = new Intent("com.tencent.qqmusiccar.action.PLAY");
+                playIntent.setPackage("com.tencent.qqmusiccar");
+                sendBroadcast(playIntent);
+            } else {
+                new SteeringWheelKeyManager(this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
+            }
+            AppLogger.i("音频通道", "方案A: 已定向通知目标播放器恢复: " + targetPkg);
+        } catch (Throwable t) {
+            AppLogger.w("音频通道", "定向恢复异常: " + t.getMessage());
+        }
+    }
+
     public void pauseMediaPlaybackForAudioInterruption() {
-        // 铁律：遵照车主决策，不强制暂停第三方音乐，仅依靠音频通道避让
         AppLogger.i("音频通道", "微信语音开始，不强制暂停第三方音乐");
     }
 
     public void resumeMediaPlaybackAfterAudioInterruption() {
-        // 铁律：遵照车主最新决策，严禁向任何第三方播放器下发 Play 广播或 KEYCODE_MEDIA_PLAY，彻底杜绝误自启
         AppLogger.i("音频通道", "微信语音结束，保持当前播放器既有状态，绝不强行起播");
     }
 
