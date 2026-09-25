@@ -44,8 +44,16 @@
         <div v-if="activeTab === 'all'" class="text-[13px] text-car-sub font-bold">
           默认优先展示用户自装软件 · 支持按名称/包名全局检索
         </div>
-        <div v-else class="text-[13px] text-car-sub font-bold">
-          低频调优操作 · 彻底切断开机自启偷跑 · 支持一键安全解冻
+        <div v-else class="flex items-center space-x-3">
+          <span class="text-[13px] text-car-sub font-bold">
+            一键切断偷跑与抢占 · 支持无缝解冻
+          </span>
+          <button 
+            @click="refreshPresetStates"
+            class="min-h-[50px] px-4 rounded-xl border-2 border-car-border bg-car-item text-car-text hover:border-car-border-light text-[13.5px] font-black cursor-pointer shadow-sm transition-all"
+          >
+            刷新状态
+          </button>
         </div>
       </div>
 
@@ -189,150 +197,144 @@
         </div>
       </div>
 
-      <!-- ==================== TAB 2: 原厂推荐冻结 ==================== -->
-      <div v-else class="flex flex-col space-y-4">
-        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between text-car-sub">
-          <div class="text-[14px] font-bold text-car-text">
-            ⚡ 原厂预装组件冻结专区：针对吉利车机开机后台偷跑、抢占蓝牙与多媒体焦点的 4 款核心组件。
-          </div>
-          <button 
-            @click="refreshPresetStates"
-            class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-card text-car-text hover:border-car-border-light text-[13.5px] font-black cursor-pointer shadow-sm"
-          >
-            刷新状态
-          </button>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <!-- 1. 吉利应用商店 -->
-          <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-3 shadow-sm">
-            <div class="flex flex-col">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-[18px] font-black text-car-text">吉利应用商店</span>
-                <span :class="['text-[12px] px-2 py-0.5 rounded font-extrabold border', presetStates['com.ecarx.appstore'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
-                  {{ presetStates['com.ecarx.appstore'] ? '已安全冻结' : '活跃运行中' }}
-                </span>
+            <!-- ==================== TAB 2: 原厂推荐冻结 (2x2 网格一屏全览零滚动) ==================== -->
+            <div v-else class="grid grid-cols-2 gap-3.5">
+              <!-- 1. 吉利应用商店 -->
+              <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex items-center justify-between shadow-sm min-h-[80px]">
+                <div class="flex items-center space-x-3 min-w-0 flex-1 pr-3">
+                  <StatusDot size="sm" :color="presetStates['com.ecarx.appstore'] ? 'ok' : 'off'" />
+                  <div class="flex flex-col min-w-0 flex-1">
+                    <div class="flex items-center space-x-2">
+                      <span class="text-[16.5px] font-black text-car-text whitespace-nowrap">吉利应用商店</span>
+                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['com.ecarx.appstore'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
+                        {{ presetStates['com.ecarx.appstore'] ? '已安全冻结' : '活跃运行中' }}
+                      </span>
+                    </div>
+                    <div class="text-[12px] text-car-sub font-bold truncate mt-1">
+                      彻底锁定第三方白名单常开，防止自装软件被原厂关闭
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  @click="confirmPresetFreeze('com.ecarx.appstore', '吉利应用商店')"
+                  :disabled="!!freezingPackages['com.ecarx.appstore']"
+                  :class="[
+                    'w-[155px] min-h-[50px] px-2 rounded-xl border-2 font-black text-[13.5px] shrink-0 transition-all flex items-center justify-center shadow-sm',
+                    freezingPackages['com.ecarx.appstore']
+                      ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
+                      : (presetStates['com.ecarx.appstore'] 
+                          ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
+                          : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer')
+                  ]"
+                >
+                  {{ freezingPackages['com.ecarx.appstore'] 
+                      ? (presetStates['com.ecarx.appstore'] ? '正在解冻中...' : '正在冻结中...') 
+                      : (presetStates['com.ecarx.appstore'] ? '已冻结 · 点击解冻' : '运行中 · 安全冻结') }}
+                </button>
               </div>
-              <span class="text-[12px] text-car-sub font-mono truncate mb-2">com.ecarx.appstore</span>
-              <span class="text-[13px] text-car-sub font-bold leading-relaxed">
-                冻结后车机白名单将刚性常驻开启，不再被原厂商店自动关闭，防止已装软件闪退。
-              </span>
-            </div>
-            <button 
-              @click="confirmPresetFreeze('com.ecarx.appstore', '吉利应用商店')"
-              :disabled="!!freezingPackages['com.ecarx.appstore']"
-              :class="[
-                'min-h-[58px] px-4 rounded-xl border-2 font-black text-[16px] transition-all',
-                freezingPackages['com.ecarx.appstore']
-                  ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
-                  : (presetStates['com.ecarx.appstore'] 
-                      ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
-                      : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer')
-              ]"
-            >
-              {{ freezingPackages['com.ecarx.appstore'] 
-                  ? (presetStates['com.ecarx.appstore'] ? '正在解冻恢复中...' : '正在安全冻结中...') 
-                  : (presetStates['com.ecarx.appstore'] ? '已安全冻结 · 点击解冻恢复' : '运行中 · 点击安全冻结') }}
-            </button>
-          </div>
 
-          <!-- 2. 原厂多媒体伴听 -->
-          <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-3 shadow-sm">
-            <div class="flex flex-col">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-[18px] font-black text-car-text">原厂多媒体伴听</span>
-                <span :class="['text-[12px] px-2 py-0.5 rounded font-extrabold border', presetStates['com.ecarx.multimedia'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
-                  {{ presetStates['com.ecarx.multimedia'] ? '已安全冻结' : '活跃运行中' }}
-                </span>
+              <!-- 2. 原厂多媒体伴听 -->
+              <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex items-center justify-between shadow-sm min-h-[80px]">
+                <div class="flex items-center space-x-3 min-w-0 flex-1 pr-3">
+                  <StatusDot size="sm" :color="presetStates['com.ecarx.multimedia'] ? 'ok' : 'off'" />
+                  <div class="flex flex-col min-w-0 flex-1">
+                    <div class="flex items-center space-x-2">
+                      <span class="text-[16.5px] font-black text-car-text whitespace-nowrap">原厂多媒体伴听</span>
+                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['com.ecarx.multimedia'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
+                        {{ presetStates['com.ecarx.multimedia'] ? '已安全冻结' : '活跃运行中' }}
+                      </span>
+                    </div>
+                    <div class="text-[12px] text-car-sub font-bold truncate mt-1">
+                      彻底屏蔽广播与电台抢占，切歌键纯净交给第三方音乐
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  @click="confirmPresetFreeze('com.ecarx.multimedia', '原厂多媒体伴听')"
+                  :disabled="!!freezingPackages['com.ecarx.multimedia']"
+                  :class="[
+                    'w-[155px] min-h-[50px] px-2 rounded-xl border-2 font-black text-[13.5px] shrink-0 transition-all flex items-center justify-center shadow-sm',
+                    freezingPackages['com.ecarx.multimedia']
+                      ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
+                      : (presetStates['com.ecarx.multimedia'] 
+                          ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
+                          : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer')
+                  ]"
+                >
+                  {{ freezingPackages['com.ecarx.multimedia'] 
+                      ? (presetStates['com.ecarx.multimedia'] ? '正在解冻中...' : '正在冻结中...') 
+                      : (presetStates['com.ecarx.multimedia'] ? '已冻结 · 点击解冻' : '运行中 · 安全冻结') }}
+                </button>
               </div>
-              <span class="text-[12px] text-car-sub font-mono truncate mb-2">com.ecarx.multimedia</span>
-              <span class="text-[13px] text-car-sub font-bold leading-relaxed">
-                冻结后彻底屏蔽原厂广播与广告电台抢占，方向盘切歌键纯净交给第三方音乐播放器。
-              </span>
-            </div>
-            <button 
-              @click="confirmPresetFreeze('com.ecarx.multimedia', '原厂多媒体伴听')"
-              :disabled="!!freezingPackages['com.ecarx.multimedia']"
-              :class="[
-                'min-h-[58px] px-4 rounded-xl border-2 font-black text-[16px] transition-all',
-                freezingPackages['com.ecarx.multimedia']
-                  ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
-                  : (presetStates['com.ecarx.multimedia'] 
-                      ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
-                      : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer')
-              ]"
-            >
-              {{ freezingPackages['com.ecarx.multimedia'] 
-                  ? (presetStates['com.ecarx.multimedia'] ? '正在解冻恢复中...' : '正在安全冻结中...') 
-                  : (presetStates['com.ecarx.multimedia'] ? '已安全冻结 · 点击解冻恢复' : '运行中 · 点击安全冻结') }}
-            </button>
-          </div>
 
-          <!-- 3. 原厂云听车机版 -->
-          <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-3 shadow-sm">
-            <div class="flex flex-col">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-[18px] font-black text-car-text">原厂云听车机版</span>
-                <span :class="['text-[12px] px-2 py-0.5 rounded font-extrabold border', presetStates['com.edog.car'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
-                  {{ presetStates['com.edog.car'] ? '已安全冻结' : '活跃运行中' }}
-                </span>
+              <!-- 3. 原厂云听车机版 -->
+              <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex items-center justify-between shadow-sm min-h-[80px]">
+                <div class="flex items-center space-x-3 min-w-0 flex-1 pr-3">
+                  <StatusDot size="sm" :color="presetStates['com.ecarx.xsf'] ? 'ok' : 'off'" />
+                  <div class="flex flex-col min-w-0 flex-1">
+                    <div class="flex items-center space-x-2">
+                      <span class="text-[16.5px] font-black text-car-text whitespace-nowrap">原厂云听车机版</span>
+                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['com.ecarx.xsf'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
+                        {{ presetStates['com.ecarx.xsf'] ? '已安全冻结' : '活跃运行中' }}
+                      </span>
+                    </div>
+                    <div class="text-[12px] text-car-sub font-bold truncate mt-1">
+                      吉利定制广播音频，冻结后彻底根除系统通知栏弹窗干扰
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  @click="confirmPresetFreeze('com.ecarx.xsf', '原厂云听车机版')"
+                  :disabled="!!freezingPackages['com.ecarx.xsf']"
+                  :class="[
+                    'w-[155px] min-h-[50px] px-2 rounded-xl border-2 font-black text-[13.5px] shrink-0 transition-all flex items-center justify-center shadow-sm',
+                    freezingPackages['com.ecarx.xsf']
+                      ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
+                      : (presetStates['com.ecarx.xsf'] 
+                          ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
+                          : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer')
+                  ]"
+                >
+                  {{ freezingPackages['com.ecarx.xsf'] 
+                      ? (presetStates['com.ecarx.xsf'] ? '正在解冻中...' : '正在冻结中...') 
+                      : (presetStates['com.ecarx.xsf'] ? '已冻结 · 点击解冻' : '运行中 · 安全冻结') }}
+                </button>
               </div>
-              <span class="text-[12px] text-car-sub font-mono truncate mb-2">com.edog.car</span>
-              <span class="text-[13px] text-car-sub font-bold leading-relaxed">
-                原厂捆绑网络音频，日常使用率极低。冻结后可为车机释放约 36MB 宝贵运行内存。
-              </span>
-            </div>
-            <button 
-              @click="confirmPresetFreeze('com.edog.car', '原厂云听车机版')"
-              :disabled="!!freezingPackages['com.edog.car']"
-              :class="[
-                'min-h-[58px] px-4 rounded-xl border-2 font-black text-[16px] transition-all',
-                freezingPackages['com.edog.car']
-                  ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
-                  : (presetStates['com.edog.car'] 
-                      ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
-                      : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer')
-              ]"
-            >
-              {{ freezingPackages['com.edog.car'] 
-                  ? (presetStates['com.edog.car'] ? '正在解冻恢复中...' : '正在安全冻结中...') 
-                  : (presetStates['com.edog.car'] ? '已安全冻结 · 点击解冻恢复' : '运行中 · 点击安全冻结') }}
-            </button>
-          </div>
 
-          <!-- 4. 火山车娱 -->
-          <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col justify-between space-y-3 shadow-sm">
-            <div class="flex flex-col">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-[18px] font-black text-car-text">火山车娱</span>
-                <span :class="['text-[12px] px-2 py-0.5 rounded font-extrabold border', presetStates['com.bytedance.byteautoservice'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
-                  {{ presetStates['com.bytedance.byteautoservice'] ? '已安全冻结' : '活跃运行中' }}
-                </span>
+              <!-- 4. 火山车娱 (抖音车机版) -->
+              <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex items-center justify-between shadow-sm min-h-[80px]">
+                <div class="flex items-center space-x-3 min-w-0 flex-1 pr-3">
+                  <StatusDot size="sm" :color="presetStates['com.bytedance.byteautoservice'] ? 'ok' : 'off'" />
+                  <div class="flex flex-col min-w-0 flex-1">
+                    <div class="flex items-center space-x-2">
+                      <span class="text-[16.5px] font-black text-car-text whitespace-nowrap">火山车娱</span>
+                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['com.bytedance.byteautoservice'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
+                        {{ presetStates['com.bytedance.byteautoservice'] ? '已安全冻结' : '活跃运行中' }}
+                      </span>
+                    </div>
+                    <div class="text-[12px] text-car-sub font-bold truncate mt-1">
+                      原厂短视频后台常驻进程，冻结后大幅降低开机内存占用
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  @click="confirmPresetFreeze('com.bytedance.byteautoservice', '火山车娱')"
+                  :disabled="!!freezingPackages['com.bytedance.byteautoservice']"
+                  :class="[
+                    'w-[155px] min-h-[50px] px-2 rounded-xl border-2 font-black text-[13.5px] shrink-0 transition-all flex items-center justify-center shadow-sm',
+                    freezingPackages['com.bytedance.byteautoservice']
+                      ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
+                      : (presetStates['com.bytedance.byteautoservice'] 
+                          ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
+                          : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer')
+                  ]"
+                >
+                  {{ freezingPackages['com.bytedance.byteautoservice'] 
+                      ? (presetStates['com.bytedance.byteautoservice'] ? '正在解冻中...' : '正在冻结中...') 
+                      : (presetStates['com.bytedance.byteautoservice'] ? '已冻结 · 点击解冻' : '运行中 · 安全冻结') }}
+                </button>
               </div>
-              <span class="text-[12px] text-car-sub font-mono truncate mb-2">com.bytedance.byteautoservice</span>
-              <span class="text-[13px] text-car-sub font-bold leading-relaxed">
-                原厂短视频后台服务。冻结后彻底防止开机自动加载视频流，节约整车热点与流量。
-              </span>
             </div>
-            <button 
-              @click="confirmPresetFreeze('com.bytedance.byteautoservice', '火山车娱')"
-              :disabled="!!freezingPackages['com.bytedance.byteautoservice']"
-              :class="[
-                'min-h-[58px] px-4 rounded-xl border-2 font-black text-[16px] transition-all',
-                freezingPackages['com.bytedance.byteautoservice']
-                  ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
-                  : (presetStates['com.bytedance.byteautoservice'] 
-                      ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
-                      : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer')
-              ]"
-            >
-              {{ freezingPackages['com.bytedance.byteautoservice'] 
-                  ? (presetStates['com.bytedance.byteautoservice'] ? '正在解冻恢复中...' : '正在安全冻结中...') 
-                  : (presetStates['com.bytedance.byteautoservice'] ? '已安全冻结 · 点击解冻恢复' : '运行中 · 点击安全冻结') }}
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- 底部操作栏 -->

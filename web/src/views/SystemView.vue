@@ -74,75 +74,119 @@
 
     <FloatingView />
 
-    <!-- 系统底层维护 4 大核心功能矩阵 (2x2 网格车规对称排版) -->
+    <!-- 系统底层维护 4 大核心功能矩阵 (2x2 网格车规左右紧凑排版，按钮上移置右加高加宽统一规格) -->
     <div class="grid grid-cols-2 gap-4">
       <!-- 1. 运行与守护日志 -->
-      <FeatureCard 
-        title="运行与守护日志"
-        desc="实时采集车门、挡位与方控信号记录，支持独立清空与一键全量导出。"
-        helpTitle="【功能指南】运行与守护日志"
-        helpText="1. 运行记录：&#10;自动记录车门、挡位、方向盘按键等状态，遇到功能异常时可一键导出给作者排查。&#10;&#10;2. 隐私安全保护：&#10;日志导出时会自动抹除车牌、手机号、行车轨迹等敏感信息，充分保护车主隐私。&#10;&#10;3. 不占存储：&#10;平时仅保存在临时运行内存中，不占车机存储空间，重启后自动释放。" helpTip="日常无需理会，只有在排查问题时按需导出即可。"
-      >
+      <div class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card flex items-center justify-between space-x-4">
+        <div class="flex-1 min-w-0 flex flex-col space-y-1.5">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[20px] font-black text-car-text tracking-wide truncate">运行与守护日志</span>
+            <HelpDot @click="openModal('confirm', {
+              title: '【功能指南】运行与守护日志',
+              desc: '1. 运行记录：\n自动记录车门、挡位、方向盘按键等状态，遇到功能异常时可一键导出给作者排查。\n\n2. 隐私安全保护：\n日志导出时会自动抹除车牌、手机号、行车轨迹等敏感信息，充分保护车主隐私。\n\n3. 不占存储：\n平时仅保存在临时运行内存中，不占车机存储空间，重启后自动释放。',
+              tip: '日常无需理会，只有在排查问题时按需导出即可。',
+              showCancel: false,
+              confirmText: '我知道了'
+            })" title="查看运行与守护日志说明" />
+          </div>
+          <div class="text-[13.5px] text-car-sub font-bold leading-relaxed line-clamp-2">
+            实时采集挡位与方控信号，支持一键导出排查
+          </div>
+        </div>
+
         <button 
           @click="openLogModal"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+          class="w-[185px] h-[58px] rounded-2xl border-2 border-car-border bg-car-item text-car-text hover:border-car-border-light font-black text-[15.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center shrink-0 whitespace-nowrap"
         >
-          <span>查看与管理守护日志</span>
+          <span>查看守护日志 ➔</span>
         </button>
-      </FeatureCard>
+      </div>
 
-      <!-- 2. 车机 ADB 交互终端 (原应用高级管理已移至应用安装) -->
-      <FeatureCard 
-        title="车机 ADB 交互终端"
-        desc="本地 ADB 交互终端，支持执行系统 Shell 指令，用于进阶调试与底层诊断。"
-        helpTitle="【功能指南】车机 ADB 交互终端"
-        helpText="1. 调试终端：&#10;为高级玩车用户提供的系统命令行窗口，方便输入指令调试系统。&#10;&#10;2. 核心防护：&#10;已开启系统级安全保护，防止误删车机核心系统组件。&#10;&#10;3. 应用管理：&#10;普通软件的安装、卸载和冻结，建议直接在「应用安装」页面操作。" helpTip="仅建议熟悉安卓命令行的进阶车主使用。"
-      >
+      <!-- 2. 车机 ADB 交互终端 -->
+      <div class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card flex items-center justify-between space-x-4">
+        <div class="flex-1 min-w-0 flex flex-col space-y-1.5">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[20px] font-black text-car-text tracking-wide truncate">车机 ADB 终端</span>
+            <HelpDot @click="openModal('confirm', {
+              title: '【功能指南】车机 ADB 交互终端',
+              desc: '1. 调试终端：\n为高级玩车用户提供的系统命令行窗口，方便输入指令调试系统。\n\n2. 核心防护：\n已开启系统级安全保护，防止误删车机核心系统组件。\n\n3. 应用管理：\n普通软件的安装、卸载和冻结，建议直接在「应用安装」页面操作。',
+              tip: '仅建议熟悉安卓命令行的进阶车主使用。',
+              showCancel: false,
+              confirmText: '我知道了'
+            })" title="查看车机 ADB 交互终端说明" />
+          </div>
+          <div class="text-[13.5px] text-car-sub font-bold leading-relaxed line-clamp-2">
+            本地特权调试交互终端，支持执行底层 Shell 调试指令
+          </div>
+        </div>
+
         <button 
           @click="openDeepTools"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center justify-center whitespace-nowrap"
+          class="w-[185px] h-[58px] rounded-2xl border-2 border-car-border bg-car-item text-car-text hover:border-car-accent font-black text-[15.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center shrink-0 whitespace-nowrap"
         >
-          <span>打开 ADB 交互终端</span>
+          <span>打开 ADB 终端 ➔</span>
         </button>
-      </FeatureCard>
+      </div>
 
-      <!-- 3. 整车硬件冷重启控制台 (紧凑饱满) -->
-      <FeatureCard 
-        title="整车硬件冷重启"
-        desc="彻底掉电重置车机 MCU 与安卓核心，白名单与底层服务立即生效。"
-        helpTitle="【功能指南】整车硬件冷重启"
-        helpText="1. 彻底重启车机：&#10;像拔插钥匙一样彻底断电重启中控屏幕和底层系统，解决系统卡顿或刚改的配置没生效的问题。&#10;&#10;2. 安全提醒：&#10;行车过程中严禁操作！请在车辆安全停稳、挂入 P 挡后再点击重启。&#10;&#10;3. 重启耗时：&#10;整个过程大约 25~35 秒，期间屏幕暂时黑屏属于正常现象，请耐心等待重新点亮。" helpTip="车辆停稳挂 P 挡后再点重启，期间黑屏请耐心等待。"
-      >
+      <!-- 3. 整车硬件冷重启控制台 -->
+      <div class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card flex items-center justify-between space-x-4">
+        <div class="flex-1 min-w-0 flex flex-col space-y-1.5">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[20px] font-black text-car-text tracking-wide truncate">整车硬件冷重启</span>
+            <HelpDot @click="openModal('confirm', {
+              title: '【功能指南】整车硬件冷重启',
+              desc: '1. 彻底重启车机：\n像拔插钥匙一样彻底断电重启中控屏幕和底层系统，解决系统卡顿或刚改的配置没生效的问题。\n\n2. 安全提醒：\n行车过程中严禁操作！请在车辆安全停稳、挂入 P 挡后再点击重启。\n\n3. 重启耗时：\n整个过程大约 25~35 秒，期间屏幕暂时黑屏属于正常现象，请耐心等待重新点亮。',
+              tip: '车辆停稳挂 P 挡后再点重启，期间黑屏请耐心等待。',
+              showCancel: false,
+              confirmText: '我知道了'
+            })" title="查看整车硬件冷重启说明" />
+          </div>
+          <div class="text-[13.5px] text-car-sub font-bold leading-relaxed line-clamp-2">
+            彻底断电重置 MCU 与系统，安全保护需停稳挂 P 挡
+          </div>
+        </div>
+
         <button 
           @click="confirmHardReboot"
-          class="w-full min-h-[72px] rounded-2xl border-2 border-car-border hover:border-rose-500/60 bg-car-item text-car-text font-black text-[18px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+          class="w-[185px] h-[58px] rounded-2xl border-2 border-car-border hover:border-rose-500/80 hover:text-rose-400 bg-car-item text-car-text font-black text-[15.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center shrink-0 whitespace-nowrap"
         >
-          <span>车机硬件冷重启</span>
+          <span>车机硬件冷重启 ➔</span>
         </button>
-      </FeatureCard>
+      </div>
 
       <!-- 4. 工具箱开机自启动与后台守护 -->
-      <FeatureCard 
-        title="工具箱开机自启动与后台守护"
-        desc="控制车机上电打火后是否在后台静默运行工具箱。开启后各联动项上车即用；关闭后完全不占后台。"
-        helpTitle="【功能指南】工具箱开机自启动与后台守护"
-        helpText="1. 开机后台自启：&#10;车辆打火通电后，工具箱自动在后台安静启动，让各项自动化联动功能上车就能直接用。&#10;&#10;2. 关闭说明：&#10;关闭后车辆通电将不再自启工具箱，完全不占用后台资源；仅在您桌面主动打开时运行。&#10;&#10;3. 推荐常开：&#10;默认保持常开，确保上车后一切功能运转顺畅。" helpTip="这是自动化功能的基础开关，可按需开启或关闭。"
-      >
+      <div class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card flex items-center justify-between space-x-4">
+        <div class="flex-1 min-w-0 flex flex-col space-y-1.5">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[20px] font-black text-car-text tracking-wide truncate">开机自启静默守护</span>
+            <HelpDot @click="openModal('confirm', {
+              title: '【功能指南】工具箱开机自启动与后台守护',
+              desc: '1. 开机后台自启：\n车辆打火通电后，工具箱自动在后台安静启动，让各项自动化联动功能上车就能直接用。\n\n2. 关闭说明：\n关闭后车辆通电将不再自启工具箱，完全不占用后台资源；仅在您桌面主动打开时运行。\n\n3. 推荐常开：\n默认保持常开，确保上车后一切功能运转顺畅。',
+              tip: '这是自动化功能的基础开关，可按需开启或关闭。',
+              showCancel: false,
+              confirmText: '我知道了'
+            })" title="查看开机自启守护说明" />
+          </div>
+          <div class="text-[13.5px] text-car-sub font-bold leading-relaxed line-clamp-2">
+            通电静默运行 · 联动项上车即用；关闭不占用后台
+          </div>
+        </div>
+
         <button
           @click="toggleAutostart"
           :class="[
-            'w-full min-h-[72px] rounded-2xl border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center space-x-3 px-4',
+            'w-[185px] h-[58px] px-2 rounded-2xl border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center space-x-1.5 shrink-0 whitespace-nowrap',
             store.deviceInfo.autostart
               ? 'border-car-accent bg-car-item text-car-accent'
-              : 'border-car-border bg-car-card text-car-sub hover:border-car-border-light'
+              : 'border-car-border bg-car-item text-car-text hover:border-car-border-light'
           ]"
         >
-          <StatusDot size="md" :color="store.deviceInfo.autostart ? 'ok' : 'off'" :glow="store.deviceInfo.autostart" :glow-px="store.deviceInfo.autostart ? 8 : 0" />
-          <span class="font-black text-[18px]">
-            {{ store.deviceInfo.autostart ? '开机自启静默守护: 已启用 (点击关闭)' : '开机自启静默守护: 已关闭 (点击开启)' }}
+          <StatusDot size="sm" :color="store.deviceInfo.autostart ? 'ok' : 'off'" :glow="store.deviceInfo.autostart" :glow-px="store.deviceInfo.autostart ? 6 : 0" />
+          <span class="font-black text-[14px]">
+            {{ store.deviceInfo.autostart ? '已启用·点击关闭' : '已关闭·点击开启' }}
           </span>
         </button>
-      </FeatureCard>
+      </div>
     </div>
 
     <!-- 7. 主题外观与昼夜模式 (液态玻璃 4 色 × 白夜三档) -->
@@ -242,6 +286,7 @@
 <script setup>
 import FeatureCard from '../components/FeatureCard.vue';
 import StatusDot from '../components/StatusDot.vue';
+import HelpDot from '../components/HelpDot.vue';
 import { store, bridge, openModal, showToast, setStartupNav, refreshOilPrices } from '../store';
 import { ref, computed } from 'vue';
 import FloatingView from './FloatingView.vue';
