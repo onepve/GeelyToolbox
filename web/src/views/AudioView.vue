@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col space-y-4">
+  <div class="flex flex-col space-y-6 pb-10">
     <!-- 1. 整车多媒体音源与智能回退调度 (车规分栏 · 纯净通透 · 刚性防堆叠) -->
     <div class="bg-car-card border border-car-border rounded-3xl p-5 flex flex-col space-y-4 shadow-sm">
       <!-- 顶栏状态与快捷控制 -->
@@ -70,9 +70,22 @@
 
     <!-- 2. 车载蓝牙音频与网络互联 (双列规整大卡片 · 高度对称防挤压) -->
     <div class="bg-car-card border border-car-border rounded-3xl p-5 flex flex-col space-y-4 shadow-sm">
+      <!-- 顶栏状态与说明 -->
+      <div class="flex items-center justify-between pb-3 border-b border-car-border/50">
+        <div class="flex items-center space-x-2.5">
+          <span class="text-[17px] font-black text-car-text tracking-wide">车载互联通道</span>
+          <span class="px-2 py-0.5 text-[11px] font-black rounded-full bg-car-item border border-car-border text-car-sub">
+            系统原生通信
+          </span>
+        </div>
+        <span class="text-[12.5px] text-car-sub font-bold">
+          蓝牙音频链路与无线热点快连
+        </span>
+      </div>
+
       <div class="grid grid-cols-2 gap-4">
         <!-- 蓝牙控制看板 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-sm">
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col space-y-3.5 shadow-sm min-h-[155px]">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2.5">
               <StatusDot size="md" :color="connStatus.bluetooth_enabled ? 'ok' : 'off'" :glow-px="8" />
@@ -96,7 +109,7 @@
             <span class="text-[12.5px] text-car-sub font-bold">配对与连接管理</span>
             <button 
               @click="openBluetoothSettings"
-              class="min-h-[50px] w-[160px] rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer transition-all flex items-center justify-center shrink-0"
+              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer transition-all flex items-center justify-center shrink-0"
             >
               打开蓝牙设置 ➔
             </button>
@@ -104,7 +117,7 @@
         </div>
 
         <!-- Wi-Fi 控制看板 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-sm">
+        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col space-y-3.5 shadow-sm min-h-[155px]">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2.5">
               <StatusDot size="md" :color="connStatus.wifi_enabled ? 'ok' : 'off'" :glow-px="8" />
@@ -127,7 +140,7 @@
             <span class="text-[12.5px] text-car-sub font-bold">热点连接向导</span>
             <button 
               @click="openWifiSettings"
-              class="min-h-[50px] w-[160px] rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer transition-all flex items-center justify-center shrink-0"
+              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-card hover:border-car-border-light text-car-text text-[13.5px] font-bold cursor-pointer transition-all flex items-center justify-center shrink-0"
             >
               打开 Wi-Fi 设置 ➔
             </button>
