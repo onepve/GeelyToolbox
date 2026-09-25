@@ -669,11 +669,8 @@ public class EasMediaBridge {
                         a2dpStreaming = streaming;
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                         if (streaming) {
-                            cancelMediaResumeWatchdog();
                             activateBluetoothChannel();
                             wakeBluetoothAudioSink();
-                        } else {
-                            scheduleMediaResumeWatchdog(1500);
                         }
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
@@ -683,14 +680,12 @@ public class EasMediaBridge {
                             boolean isPlaying = (pbState.getState() == android.media.session.PlaybackState.STATE_PLAYING);
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
-                                cancelMediaResumeWatchdog();
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，选通蓝牙声道并唤醒防静音");
                                 activateBluetoothChannel();
                                 wakeBluetoothAudioSink();
                             } else if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止");
-                                scheduleMediaResumeWatchdog(1500);
                             }
                         }
                     } catch (Throwable ignored) {}
@@ -730,51 +725,6 @@ public class EasMediaBridge {
             } catch (Throwable ignored) {}
         } catch (Throwable t) {
             AppLogger.e("音频通道", "手动切换音源异常: " + t.getMessage());
-        }
-    }
-
-    private final Handler voiceWatchdogHandler = new Handler(Looper.getMainLooper());
-    private final Runnable voiceWatchdogRunnable = new Runnable() {
-        @Override
-        public void run() {
-            triggerMediaResumeAfterVoice();
-        }
-    };
-
-    private void scheduleMediaResumeWatchdog(long delayMs) {
-        voiceWatchdogHandler.removeCallbacks(voiceWatchdogRunnable);
-        voiceWatchdogHandler.postDelayed(voiceWatchdogRunnable, delayMs);
-        AppLogger.i("蓝牙音频", "已设置微信语音静默看门狗，将于 " + delayMs + "ms 后无感恢复车机多媒体");
-    }
-
-    private void cancelMediaResumeWatchdog() {
-        voiceWatchdogHandler.removeCallbacks(voiceWatchdogRunnable);
-    }
-
-    private void triggerMediaResumeAfterVoice() {
-        try {
-            AppLogger.i("蓝牙音频", "微信语音断流静默达 1.5 秒，向系统下发标准 KEYCODE_MEDIA_PLAY 恢复车机播放并释放蓝牙焦点");
-            abandonBluetoothFocus();
-
-            long eventTime = SystemClock.uptimeMillis();
-            KeyEvent down = new KeyEvent(eventTime, eventTime, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY, 0);
-            KeyEvent up = new KeyEvent(eventTime, eventTime, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY, 0);
-
-            if (audioManager == null) {
-                audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
-            }
-            if (audioManager != null) {
-                audioManager.dispatchMediaKeyEvent(down);
-                audioManager.dispatchMediaKeyEvent(up);
-            }
-
-            Intent playIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
-            playIntent.putExtra(Intent.EXTRA_KEY_EVENT, down);
-            appContext.sendOrderedBroadcast(playIntent, null);
-            playIntent.putExtra(Intent.EXTRA_KEY_EVENT, up);
-            appContext.sendOrderedBroadcast(playIntent, null);
-        } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "triggerMediaResumeAfterVoice 异常: " + t.getMessage());
         }
     }
 }

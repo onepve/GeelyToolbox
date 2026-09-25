@@ -45,12 +45,12 @@
         </svg>
       </button>
 
-      <!-- 关于按键 -->
+      <!-- 使用说明按键 (移至右上角) -->
       <button 
-        @click="openModal('about')"
+        @click="openModal('blogGuide')"
         class="h-[44px] px-4 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light transition-all shadow-sm whitespace-nowrap"
       >
-        关于
+        使用说明
       </button>
 
       <!-- 退出按键 -->
