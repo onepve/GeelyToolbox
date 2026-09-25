@@ -174,6 +174,34 @@ CARD_BUTTON_CONTRACTS = [
         [r"a2dpStreaming", r"resumeMediaPlaybackAfterAudioInterruption"],
         []
     ),
+    (
+        "多媒体接管卡片", "底层 A2dpMediaBrowserService 直连通道锁死",
+        os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
+        "private synchronized void connectBtMediaBrowser",
+        [r"A2dpMediaBrowserService", r"com\.android\.bluetooth"],
+        []
+    ),
+    (
+        "多媒体接管卡片", "国科 GOC 驱动解静音唤醒锁死 (wakeBluetoothAudioSink)",
+        os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
+        "public void wakeBluetoothAudioSink",
+        [r"btMediaController\.getTransportControls\(\)\.play\(\)"],
+        []
+    ),
+    (
+        "多媒体接管卡片", "微信音频平滑压低与自动恢复音量锁死 (duckMediaVolume)",
+        os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
+        "public synchronized void duckMediaVolume",
+        [r"setStreamVolume", r"STREAM_MUSIC"],
+        []
+    ),
+    (
+        "多媒体接管卡片", "微信播放前静音/暂停状态机守卫锁死 (严禁误自启音乐)",
+        os.path.join(JAVA_BASE, "services/VehicleAutomationService.java"),
+        "public boolean isAnyMediaPlaying",
+        [r"com\.android\.bluetooth", r"STATE_PLAYING"],
+        []
+    ),
 
     # ==========================================
     # 5. 【多媒体接管卡片】(音乐拉活与安全续播)

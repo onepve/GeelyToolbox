@@ -1573,8 +1573,15 @@ public class VehicleAutomationService extends Service {
                 List<MediaController> controllers = msm.getActiveSessions(null);
                 if (controllers != null) {
                     for (MediaController mc : controllers) {
-                        if (mc != null && mc.getPlaybackState() != null && mc.getPlaybackState().getState() == PlaybackState.STATE_PLAYING) {
-                            return true;
+                        if (mc != null) {
+                            String pkg = mc.getPackageName();
+                            // 严禁将蓝牙推流自身或工具箱自身作为本地正在播放的音乐！
+                            if ("com.android.bluetooth".equals(pkg) || "app.onepve.geelyconsole".equals(pkg)) {
+                                continue;
+                            }
+                            if (mc.getPlaybackState() != null && mc.getPlaybackState().getState() == PlaybackState.STATE_PLAYING) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -1585,8 +1592,18 @@ public class VehicleAutomationService extends Service {
 
     public void resumeMediaPlaybackAfterAudioInterruption() {
         String targetPkg = getDefaultAutoplayPkg();
-        AppLogger.i("音频通道", "微信语音/音频闪避结束，按软件默认音源恢复播放: " + targetPkg);
-        triggerMusicAutoplay(targetPkg, false);
+        AppLogger.i("音频通道", "微信语音结束，恢复之前正在播放的音乐: " + targetPkg);
+        try {
+            if ("com.tencent.qqmusiccar".equals(targetPkg)) {
+                Intent qqPlay = new Intent("com.tencent.qqmusiccar.action.PLAY");
+                qqPlay.setPackage("com.tencent.qqmusiccar");
+                sendBroadcast(qqPlay);
+            } else if (targetPkg != null && !targetPkg.isEmpty()) {
+                sendExplicitMediaButtonToPackage(targetPkg, KeyEvent.KEYCODE_MEDIA_PLAY);
+            }
+        } catch (Throwable t) {
+            AppLogger.w("音频通道", "恢复媒体播放异常: " + t.getMessage());
+        }
     }
 
     public void warmUpTargetMediaService() {

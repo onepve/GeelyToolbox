@@ -653,6 +653,9 @@ public class EasMediaBridge {
                             VehicleAutomationService vas = VehicleAutomationService.getInstance();
                             if (vas != null && vas.isAnyMediaPlaying()) {
                                 wasLocalPlayingBeforeA2dp = true;
+                                AppLogger.i("蓝牙音频", "检测到微信前本地正在播放音乐，记录状态以便微信结束后恢复");
+                            } else {
+                                wasLocalPlayingBeforeA2dp = false;
                             }
                             // 微信开始发声：平滑压低媒体音量，选通 2 号物理通道并解除硬件静音
                             duckMediaVolume();
@@ -672,6 +675,8 @@ public class EasMediaBridge {
                                         }
                                     }
                                 }, 300);
+                            } else {
+                                AppLogger.i("蓝牙音频", "微信前本地未放歌或处于暂停，保持静默，不触发自动播放");
                             }
                         }
                     }
@@ -686,6 +691,9 @@ public class EasMediaBridge {
                                 VehicleAutomationService vas = VehicleAutomationService.getInstance();
                                 if (vas != null && vas.isAnyMediaPlaying()) {
                                     wasLocalPlayingBeforeA2dp = true;
+                                    AppLogger.i("蓝牙音频", "检测到微信前本地正在播放音乐，记录状态以便微信结束后恢复");
+                                } else {
+                                    wasLocalPlayingBeforeA2dp = false;
                                 }
                                 duckMediaVolume();
                                 activateBluetoothChannel();
@@ -705,6 +713,8 @@ public class EasMediaBridge {
                                             }
                                         }
                                     }, 300);
+                                } else {
+                                    AppLogger.i("蓝牙音频", "微信前本地未放歌或处于暂停，保持静默，不触发自动播放");
                                 }
                             }
                         }
