@@ -670,7 +670,6 @@ public class EasMediaBridge {
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                         if (streaming) {
                             activateBluetoothChannel();
-                            wakeBluetoothAudioSink();
                         }
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
@@ -680,9 +679,8 @@ public class EasMediaBridge {
                             boolean isPlaying = (pbState.getState() == android.media.session.PlaybackState.STATE_PLAYING);
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，选通蓝牙声道并唤醒防静音");
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，选通蓝牙物理声道");
                                 activateBluetoothChannel();
-                                wakeBluetoothAudioSink();
                             } else if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止");
