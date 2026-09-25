@@ -263,7 +263,7 @@ public class EasMediaBridge {
         // 当已直连系统底层蓝牙 A2dpMediaBrowserService 时，焦点必须留给底层 com.android.bluetooth 自主向系统申请并维持
         // 工具箱自身严禁向系统抢占 AudioFocus，否则底层 A2dpSinkStreamHandler 判定 audioFocus=0 立即触发硬件静音与 sendAvrcpPause
         if (btMediaBrowserConnected || btMediaController != null) {
-            AppLogger.d("蓝牙音频", "底层蓝牙协议栈已直连接管，跳过外部抢占焦点，由协议栈自主申请并维持");
+            AppLogger.i("蓝牙音频", "底层蓝牙协议栈已直连接管，跳过外部抢占焦点，由协议栈自主申请并维持");
             return;
         }
         if (audioManager == null) {
