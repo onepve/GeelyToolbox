@@ -357,40 +357,33 @@ public class EasMediaBridge {
             if (audioManager == null) {
                 audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
             }
-            if (audioManager == null || isDucked) {
+            if (audioManager == null) {
                 return;
             }
             int currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-            if (currentVol <= 2) {
-                return;
+            // 严禁将正常车机音量压成 5！保持车主设定的真实音量 (13~18)，确保微信声音清晰饱满
+            AppLogger.i("蓝牙音频", "微信发声: 保持车主当前设定媒体音量(" + currentVol + ")，保障语音清晰发声");
+            // 兜底契约守卫：仅在系统音量为 0 异常静音时安全恢复
+            if (currentVol == 0) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 12, 0);
             }
-            preDuckVolume = currentVol;
-            int duckedVol = Math.max(2, (int) Math.round(currentVol * 0.3));
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, duckedVol, 0);
-            isDucked = true;
-            AppLogger.i("蓝牙音频", "微信发声: 自动平滑压低媒体背景音量: " + currentVol + " -> " + duckedVol);
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "duckMediaVolume 异常: " + t.getMessage());
         }
     }
 
     /**
-     * 微信发声完毕后自动平滑恢复媒体背景音量
+     * 微信发声完毕后保持车主设定音量
      */
     public synchronized void restoreMediaVolume() {
         try {
             if (audioManager == null) {
                 audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
             }
-            if (audioManager == null || !isDucked || preDuckVolume <= 0) {
-                isDucked = false;
+            if (audioManager == null) {
                 return;
             }
-            int targetVol = preDuckVolume;
-            preDuckVolume = -1;
-            isDucked = false;
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVol, 0);
-            AppLogger.i("蓝牙音频", "微信结束: 自动平滑恢复媒体背景音量 -> " + targetVol);
+            AppLogger.i("蓝牙音频", "微信发声结束: 保持车主媒体音量不变");
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "restoreMediaVolume 异常: " + t.getMessage());
         }
@@ -653,11 +646,12 @@ public class EasMediaBridge {
                             VehicleAutomationService vas = VehicleAutomationService.getInstance();
                             if (vas != null && vas.isAnyMediaPlaying()) {
                                 wasLocalPlayingBeforeA2dp = true;
-                                AppLogger.i("蓝牙音频", "检测到微信前本地正在播放音乐，记录状态以便微信结束后恢复");
+                                AppLogger.i("蓝牙音频", "检测到微信前本地正在播放音乐，临时暂停音乐避让微信");
+                                vas.pauseMediaPlaybackForAudioInterruption();
                             } else {
                                 wasLocalPlayingBeforeA2dp = false;
                             }
-                            // 微信开始发声：平滑压低媒体音量，选通 2 号物理通道并解除硬件静音
+                            // 微信开始发声：保持车主音量，选通 2 号物理通道并解除硬件静音
                             duckMediaVolume();
                             activateBluetoothChannel();
                             wakeBluetoothAudioSink();
@@ -687,11 +681,12 @@ public class EasMediaBridge {
                             boolean isPlaying = (pbState.getState() == android.media.session.PlaybackState.STATE_PLAYING);
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，压低媒体音量并唤醒底层解除静音");
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，保持车主音量并唤醒底层解除静音");
                                 VehicleAutomationService vas = VehicleAutomationService.getInstance();
                                 if (vas != null && vas.isAnyMediaPlaying()) {
                                     wasLocalPlayingBeforeA2dp = true;
-                                    AppLogger.i("蓝牙音频", "检测到微信前本地正在播放音乐，记录状态以便微信结束后恢复");
+                                    AppLogger.i("蓝牙音频", "检测到微信前本地正在播放音乐，临时暂停音乐避让微信");
+                                    vas.pauseMediaPlaybackForAudioInterruption();
                                 } else {
                                     wasLocalPlayingBeforeA2dp = false;
                                 }

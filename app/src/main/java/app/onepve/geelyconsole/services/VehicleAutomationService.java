@@ -1590,6 +1590,15 @@ public class VehicleAutomationService extends Service {
         return false;
     }
 
+    public void pauseMediaPlaybackForAudioInterruption() {
+        try {
+            new SteeringWheelKeyManager(this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PAUSE);
+            AppLogger.i("音频通道", "微信语音开始，已临时暂停正在播放的音乐避让微信");
+        } catch (Throwable t) {
+            AppLogger.w("音频通道", "临时暂停媒体异常: " + t.getMessage());
+        }
+    }
+
     public void resumeMediaPlaybackAfterAudioInterruption() {
         String targetPkg = getDefaultAutoplayPkg();
         AppLogger.i("音频通道", "微信语音结束，恢复之前正在播放的音乐: " + targetPkg);
