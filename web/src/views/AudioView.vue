@@ -173,9 +173,45 @@
               <span class="font-mono font-black text-[15px] px-2.5 py-1 rounded-lg bg-car-sub/10 text-emerald-400">
                 {{ voiceCompOffset > 0 ? '+' + voiceCompOffset : voiceCompOffset }} 格
                 <span class="text-car-sub text-[12px] font-normal ml-1">
-                  (放歌 15 ➔ 微信 {{ Math.max(3, Math.min(28, 15 + voiceCompOffset)) }})
+                  (微调范围 -10 ~ +10 格)
                 </span>
               </span>
+            </div>
+
+            <!-- 实时音量计算公式看板 -->
+            <div class="bg-car-sub/5 border border-car-border/60 rounded-xl p-4 flex flex-col space-y-2.5">
+              <div class="flex items-center justify-between text-[12.5px] font-bold text-car-sub">
+                <span>实时音量补偿公式</span>
+                <span class="font-mono text-emerald-400 font-black text-[13.5px]">
+                  实际播报音量 = {{ calculatedVoiceVol }} 格
+                </span>
+              </div>
+
+              <!-- 公式拆解框 -->
+              <div class="bg-car-item border border-car-border/80 rounded-xl p-3 flex items-center justify-center space-x-2 text-[14px] font-mono">
+                <div class="flex flex-col items-center">
+                  <span class="text-[11px] text-car-sub font-sans">当前听歌音量</span>
+                  <span class="text-car-text font-black text-[16px]">{{ currentMusicVol }}</span>
+                </div>
+
+                <span class="text-[16px] font-black text-car-sub px-1">{{ voiceCompOffset >= 0 ? '＋' : '－' }}</span>
+
+                <div class="flex flex-col items-center">
+                  <span class="text-[11px] text-car-sub font-sans">设定增益</span>
+                  <span class="text-emerald-400 font-black text-[16px]">{{ Math.abs(voiceCompOffset) }}</span>
+                </div>
+
+                <span class="text-[16px] font-black text-car-sub px-1">＝</span>
+
+                <div class="flex flex-col items-center">
+                  <span class="text-[11px] text-emerald-400 font-bold font-sans">实际播报音量</span>
+                  <span class="text-emerald-400 font-black text-[18px]">{{ calculatedVoiceVol }} 格</span>
+                </div>
+              </div>
+
+              <div class="text-[11.5px] text-car-sub/80 text-center leading-relaxed">
+                座舱双向安全限幅：最低保底 3 格防静音漏听，最高限幅 28 格防爆音惊吓
+              </div>
             </div>
 
             <!-- 滑动条与大触控步进按钮 -->
@@ -547,9 +583,6 @@ function loadMediaApps() {
   mediaScanning.value = true;
   try {
     let raw = bridge.call('getInstalledMusicAppsJson');
-    if (!raw || raw === '[]') {
-      raw = bridge.call('getInstalledLaunchableApps');
-    }
     let installedList = [];
     if (raw) {
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -857,9 +890,25 @@ let connectivityTimer = null;
 // 微信/蓝牙语音音量补偿设置
 const voiceCompEnabled = ref(true);
 const voiceCompOffset = ref(3);
+const currentMusicVol = ref(15);
+
+const calculatedVoiceVol = computed(() => {
+  const target = currentMusicVol.value + voiceCompOffset.value;
+  return Math.max(3, Math.min(28, target));
+});
+
+function refreshCurrentVolume() {
+  try {
+    const vol = bridge.call('getCurrentMusicVolume');
+    if (typeof vol === 'number' && vol > 0) {
+      currentMusicVol.value = vol;
+    }
+  } catch (e) {}
+}
 
 function loadVoiceCompSettings() {
   try {
+    refreshCurrentVolume();
     const raw = bridge.call('getVehicleAutomationSettings');
     if (raw) {
       const data = typeof raw === 'string' ? JSON.parse(raw) : raw;

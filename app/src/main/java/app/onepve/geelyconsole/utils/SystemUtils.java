@@ -2176,6 +2176,36 @@ public class SystemUtils {
     public static List<DetailedAppInfo> getInstalledMusicApps(Context context) {
         List<DetailedAppInfo> musicApps = new ArrayList<>();
         List<DetailedAppInfo> all = getAllInstalledApps(context);
+        PackageManager pm = context.getPackageManager();
+
+        // 1. 动态探测系统车规媒体服务 (MediaBrowserService)
+        Set<String> mediaBrowserPkgs = new HashSet<>();
+        try {
+            Intent browserIntent = new Intent("android.media.browse.MediaBrowserService");
+            List<ResolveInfo> services = pm.queryIntentServices(browserIntent, 0);
+            if (services != null) {
+                for (ResolveInfo ri : services) {
+                    if (ri.serviceInfo != null && ri.serviceInfo.packageName != null) {
+                        mediaBrowserPkgs.add(ri.serviceInfo.packageName.toLowerCase(Locale.ROOT));
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        // 2. 动态探测物理按键与方控切歌广播 (MEDIA_BUTTON)
+        Set<String> mediaButtonPkgs = new HashSet<>();
+        try {
+            Intent buttonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+            List<ResolveInfo> receivers = pm.queryBroadcastReceivers(buttonIntent, 0);
+            if (receivers != null) {
+                for (ResolveInfo ri : receivers) {
+                    if (ri.activityInfo != null && ri.activityInfo.packageName != null) {
+                        mediaButtonPkgs.add(ri.activityInfo.packageName.toLowerCase(Locale.ROOT));
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
         String[] knownMusicPkgs = {
             "com.luna.music.car", "com.luna.music", "com.qishi.music",
             "com.tencent.qqmusiccar", "com.tencent.qqmusic",
@@ -2190,29 +2220,51 @@ public class SystemUtils {
         for (DetailedAppInfo app : all) {
             if (!app.enabled) continue;
             String pkgLower = app.packageName.toLowerCase(Locale.ROOT).trim();
-            // 核心安全防线：严禁将 Android 核心系统框架、设置、桌面误判为多媒体
+            // 核心安全防线：严禁将 Android 核心系统框架、设置、桌面、输入法误判为多媒体
             if ("android".equals(pkgLower) || pkgLower.startsWith("com.android.") ||
                 pkgLower.startsWith("com.google.") || pkgLower.contains("launcher") ||
-                pkgLower.contains("settings") || pkgLower.contains("inputmethod")) {
+                pkgLower.contains("settings") || pkgLower.contains("inputmethod") ||
+                pkgLower.contains("keyboard") || pkgLower.contains("systemui")) {
                 continue;
             }
+
+            // 过滤系统标记的游戏应用 (Android 8.0+ CATEGORY_GAME)
+            try {
+                ApplicationInfo ai = pm.getApplicationInfo(app.packageName, 0);
+                if (ai != null && ai.category == ApplicationInfo.CATEGORY_GAME) {
+                    continue;
+                }
+            } catch (Throwable ignored) {}
+
             boolean matched = false;
-            String nameLower = app.appName.toLowerCase(Locale.ROOT).trim();
-            for (String kp : knownMusicPkgs) {
-                if (pkgLower.equals(kp) || pkgLower.startsWith(kp + ".")) {
-                    matched = true;
-                    break;
+
+            // 准入规则 1: 注册了车规级 MediaBrowserService
+            if (mediaBrowserPkgs.contains(pkgLower)) {
+                matched = true;
+            }
+
+            // 准入规则 2: 知名音乐应用白名单
+            if (!matched) {
+                for (String kp : knownMusicPkgs) {
+                    if (pkgLower.equals(kp) || pkgLower.startsWith(kp + ".")) {
+                        matched = true;
+                        break;
+                    }
                 }
             }
-            if (!matched) {
-                // 名称特征匹配（排除系统级干扰词）
+
+            // 准入规则 3: 注册了 MEDIA_BUTTON 物理切歌广播且具有明确音频特征
+            if (!matched && mediaButtonPkgs.contains(pkgLower)) {
+                String nameLower = app.appName.toLowerCase(Locale.ROOT).trim();
                 if (nameLower.contains("音乐") || nameLower.contains("电台") || nameLower.contains("听书") ||
                     nameLower.contains("伴听") || nameLower.contains("洛雪") || nameLower.contains("网易云") ||
                     nameLower.contains("qq音乐") || nameLower.contains("汽水音乐") || nameLower.contains("酷狗") ||
-                    nameLower.contains("酷我") || nameLower.contains("喜马拉雅")) {
+                    nameLower.contains("酷我") || nameLower.contains("喜马拉雅") || nameLower.contains("player") ||
+                    nameLower.contains("audio") || nameLower.contains("music")) {
                     matched = true;
                 }
             }
+
             if (matched) {
                 musicApps.add(app);
             }

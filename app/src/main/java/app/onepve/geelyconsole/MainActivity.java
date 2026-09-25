@@ -3268,6 +3268,17 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public int getCurrentMusicVolume() {
+            try {
+                android.media.AudioManager am = (android.media.AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                if (am != null) {
+                    return am.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
+                }
+            } catch (Throwable ignored) {}
+            return 15;
+        }
+
+        @JavascriptInterface
         public String getInstalledNaviAppsJson() {
             return safeCall("[]", () -> {
                 return appsToJson(SystemUtils.getInstalledNaviApps(MainActivity.this));
