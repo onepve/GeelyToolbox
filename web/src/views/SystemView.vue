@@ -37,12 +37,16 @@
 
           <div class="flex flex-col">
             <div class="flex items-center space-x-1.5">
-              <span class="text-[13px] text-rose-500 dark:text-rose-400 font-black">下轮预期: {{ store.oilPrice.nextAdjustment.predictedLiter }}元/L</span>
-              <span class="text-[12px] px-2 py-0.5 rounded-full bg-car-card text-rose-600 dark:text-rose-300 font-extrabold border border-car-border">
-                距调价仅剩 {{ oilDaysLeft }} 天
+              <span class="text-[13px] text-rose-500 dark:text-rose-400 font-black">
+                下轮预期: {{ store.oilPrice.nextAdjustment ? store.oilPrice.nextAdjustment.predictedLiter + '元/L' : '获取中...' }}
+              </span>
+              <span class="text-[12px] px-2 py-0.5 rounded-full bg-car-card text-rose-600 dark:text-rose-300 font-extrabold border border-car-border whitespace-nowrap">
+                {{ oilDaysText }}
               </span>
             </div>
-            <span class="text-[12.5px] text-car-sub font-bold mt-0.5">调价日: {{ store.oilPrice.nextAdjustment.dateLabel }}</span>
+            <span class="text-[12.5px] text-car-sub font-bold mt-0.5">
+              调价日: {{ store.oilPrice.nextAdjustment ? store.oilPrice.nextAdjustment.dateLabel : '同步中...' }}
+            </span>
           </div>
         </div>
 
@@ -296,9 +300,16 @@ const currentOilData = computed(() => {
   const p = currentProvinceName.value;
   return store.oilPrice.regionalPrices[p] || store.oilPrice.regionalPrices['浙江'];
 });
-const currentOilP92 = computed(() => currentOilData.value?.p92 ? currentOilData.value.p92.toFixed(2) : '8.26');
-const currentOilP95 = computed(() => currentOilData.value?.p95 ? currentOilData.value.p95.toFixed(2) : '8.79');
-const oilDaysLeft = computed(() => getDaysToAdjustment(store.oilPrice.nextAdjustment.date));
+const currentOilP92 = computed(() => currentOilData.value?.p92 ? currentOilData.value.p92.toFixed(2) : '--');
+const currentOilP95 = computed(() => currentOilData.value?.p95 ? currentOilData.value.p95.toFixed(2) : '--');
+const oilDaysText = computed(() => {
+  if (!store.oilPrice.nextAdjustment?.date) return '同步中';
+  const res = getDaysToAdjustment(store.oilPrice.nextAdjustment.date);
+  if (res.isPassed) return '今日调价';
+  if (res.days > 0) return `距调价仅剩 ${res.days} 天`;
+  if (res.hours > 0) return `距调价仅剩 ${res.hours} 小时`;
+  return '今晚调价';
+});
 
 // 启动首屏默认视图配置 (8 宫格：1 个智能跟随 + 7 个核心业务菜单，严丝合缝对称 2x4)
 const STARTUP_NAV_ITEMS = [
