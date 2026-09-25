@@ -61,7 +61,6 @@ public class SteeringWheelKeyManager {
     // 按键功能选项
     public static final String ACTION_OPEN_360 = "open_360";
     public static final String ACTION_OPEN_NAVI = "open_navi";
-    public static final String ACTION_OPEN_TOOLBOX = "open_toolbox";
     public static final String ACTION_PLAY_PAUSE = "play_pause";
     public static final String ACTION_NEXT_TRACK = "next_track";
     public static final String ACTION_PREV_TRACK = "prev_track";
@@ -354,6 +353,10 @@ public class SteeringWheelKeyManager {
 
         AppLogger.i("方控按键", getKeyName(keyCode) + " -> 触发【单击】(0ms极速): " + singleAction);
         executeAction(singleAction);
+        if (keyCode == KEY_WMODE) {
+            // MODE 键接管铁律：无论绑定什么自定义功能（360/高德/App/切歌等），执行后均严格执行防唤醒多媒体门禁
+            suppressOriginalMultimedia();
+        }
     }
 
     /**
@@ -426,9 +429,6 @@ public class SteeringWheelKeyManager {
                 break;
             case ACTION_OPEN_NAVI:
                 openAmapNavi();
-                break;
-            case ACTION_OPEN_TOOLBOX:
-                openToolbox();
                 break;
             case ACTION_PLAY_PAUSE:
                 // 根治「单击暂停后音乐又自动续播」（2026-09-16 用户真车复现）：
@@ -629,6 +629,7 @@ public class SteeringWheelKeyManager {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
                 context.startActivity(intent);
                 AppLogger.i("方控按键", "已成功调起自定义应用: " + pkg);
+                suppressOriginalMultimedia();
             } else {
                 AppLogger.w("方控按键", "未找到应用启动入口: " + pkg);
             }
@@ -649,22 +650,6 @@ public class SteeringWheelKeyManager {
                 } catch (Exception ignored) {}
             }
         }, 150);
-    }
-
-    private void openToolbox() {
-        try {
-            Intent intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-            if (intent == null) {
-                intent = new Intent(Intent.ACTION_MAIN);
-                intent.setComponent(new ComponentName(context.getPackageName(), "app.onepve.geelyconsole.MainActivity"));
-            }
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-            context.startActivity(intent);
-            AppLogger.i("方控按键", "已唤醒缤越助手主界面");
-            suppressOriginalMultimedia();
-        } catch (Throwable t) {
-            AppLogger.w("方控按键", "唤醒缤越助手失败: " + t.getMessage());
-        }
     }
 
     private void open360Camera() {
@@ -712,6 +697,7 @@ public class SteeringWheelKeyManager {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
                 context.startActivity(intent);
                 AppLogger.i("方控按键", "已唤起当前主力导航: " + (intent.getPackage() != null ? intent.getPackage() : naviPkg));
+                suppressOriginalMultimedia();
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to launch Navigation: " + e.getMessage());
