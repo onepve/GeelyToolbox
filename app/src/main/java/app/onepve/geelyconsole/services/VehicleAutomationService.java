@@ -1591,28 +1591,13 @@ public class VehicleAutomationService extends Service {
     }
 
     public void pauseMediaPlaybackForAudioInterruption() {
-        try {
-            new SteeringWheelKeyManager(this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PAUSE);
-            AppLogger.i("音频通道", "微信语音开始，已临时暂停正在播放的音乐避让微信");
-        } catch (Throwable t) {
-            AppLogger.w("音频通道", "临时暂停媒体异常: " + t.getMessage());
-        }
+        // 铁律：遵照车主决策，不强制暂停第三方音乐，仅依靠音频通道避让
+        AppLogger.i("音频通道", "微信语音开始，不强制暂停第三方音乐");
     }
 
     public void resumeMediaPlaybackAfterAudioInterruption() {
-        String targetPkg = getDefaultAutoplayPkg();
-        AppLogger.i("音频通道", "微信语音结束，恢复之前正在播放的音乐: " + targetPkg);
-        try {
-            if ("com.tencent.qqmusiccar".equals(targetPkg)) {
-                Intent qqPlay = new Intent("com.tencent.qqmusiccar.action.PLAY");
-                qqPlay.setPackage("com.tencent.qqmusiccar");
-                sendBroadcast(qqPlay);
-            } else if (targetPkg != null && !targetPkg.isEmpty()) {
-                sendExplicitMediaButtonToPackage(targetPkg, KeyEvent.KEYCODE_MEDIA_PLAY);
-            }
-        } catch (Throwable t) {
-            AppLogger.w("音频通道", "恢复媒体播放异常: " + t.getMessage());
-        }
+        // 铁律：遵照车主最新决策，严禁向任何第三方播放器下发 Play 广播或 KEYCODE_MEDIA_PLAY，彻底杜绝误自启
+        AppLogger.i("音频通道", "微信语音结束，保持当前播放器既有状态，绝不强行起播");
     }
 
     public void warmUpTargetMediaService() {

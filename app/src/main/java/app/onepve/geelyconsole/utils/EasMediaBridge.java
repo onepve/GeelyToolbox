@@ -643,34 +643,17 @@ public class EasMediaBridge {
                         a2dpStreaming = streaming;
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                         if (streaming) {
-                            VehicleAutomationService vas = VehicleAutomationService.getInstance();
-                            if (vas != null && vas.isAnyMediaPlaying()) {
-                                wasLocalPlayingBeforeA2dp = true;
-                                AppLogger.i("蓝牙音频", "检测到微信前本地正在播放音乐，临时暂停音乐避让微信");
-                                vas.pauseMediaPlaybackForAudioInterruption();
-                            } else {
-                                wasLocalPlayingBeforeA2dp = false;
-                            }
+                            wasLocalPlayingBeforeA2dp = false;
                             // 微信开始发声：保持车主音量，选通 2 号物理通道并解除硬件静音
                             duckMediaVolume();
                             activateBluetoothChannel();
                             wakeBluetoothAudioSink();
                         } else {
-                            // 微信发声结束：平滑恢复媒体音量
+                            // 微信发声结束：平滑恢复，绝不干涉第三方音乐播放态
                             restoreMediaVolume();
-                            if (wasLocalPlayingBeforeA2dp) {
-                                wasLocalPlayingBeforeA2dp = false;
-                                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        VehicleAutomationService vas = VehicleAutomationService.getInstance();
-                                        if (vas != null) {
-                                            vas.resumeMediaPlaybackAfterAudioInterruption();
-                                        }
-                                    }
-                                }, 300);
-                            } else {
-                                AppLogger.i("蓝牙音频", "微信前本地未放歌或处于暂停，保持静默，不触发自动播放");
+                            VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                            if (vas != null) {
+                                vas.resumeMediaPlaybackAfterAudioInterruption();
                             }
                         }
                     }
@@ -682,14 +665,7 @@ public class EasMediaBridge {
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，保持车主音量并唤醒底层解除静音");
-                                VehicleAutomationService vas = VehicleAutomationService.getInstance();
-                                if (vas != null && vas.isAnyMediaPlaying()) {
-                                    wasLocalPlayingBeforeA2dp = true;
-                                    AppLogger.i("蓝牙音频", "检测到微信前本地正在播放音乐，临时暂停音乐避让微信");
-                                    vas.pauseMediaPlaybackForAudioInterruption();
-                                } else {
-                                    wasLocalPlayingBeforeA2dp = false;
-                                }
+                                wasLocalPlayingBeforeA2dp = false;
                                 duckMediaVolume();
                                 activateBluetoothChannel();
                                 wakeBluetoothAudioSink();
@@ -697,19 +673,9 @@ public class EasMediaBridge {
                                 a2dpStreaming = false;
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，恢复媒体音量");
                                 restoreMediaVolume();
-                                if (wasLocalPlayingBeforeA2dp) {
-                                    wasLocalPlayingBeforeA2dp = false;
-                                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            VehicleAutomationService vas = VehicleAutomationService.getInstance();
-                                            if (vas != null) {
-                                                vas.resumeMediaPlaybackAfterAudioInterruption();
-                                            }
-                                        }
-                                    }, 300);
-                                } else {
-                                    AppLogger.i("蓝牙音频", "微信前本地未放歌或处于暂停，保持静默，不触发自动播放");
+                                VehicleAutomationService vas = VehicleAutomationService.getInstance();
+                                if (vas != null) {
+                                    vas.resumeMediaPlaybackAfterAudioInterruption();
                                 }
                             }
                         }
