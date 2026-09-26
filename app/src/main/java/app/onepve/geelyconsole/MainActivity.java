@@ -707,6 +707,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                     obj.put("autostart", prefs.getBoolean("autostart_enabled", true));
                     obj.put("floating_enabled", prefs.getBoolean("floating_enabled", false));
+                    obj.put("adb_master_switch", prefs.getBoolean(SystemUtils.KEY_ADB_MASTER_SWITCH, true));
                     obj.put("floating_display_mode", prefs.getString("floating_display_mode", "battery"));
                     obj.put("rabbit_safe_mode", prefs.getBoolean("rabbit_safe_mode_enabled", true));
                     obj.put("expert_rabbit_enabled", prefs.getBoolean("expert_rabbit_theme_enabled", false));
@@ -1117,6 +1118,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("is_beta", isBeta);
                 obj.put("autostart", prefs.getBoolean("autostart_enabled", true));
                 obj.put("floating_enabled", prefs.getBoolean("floating_enabled", false));
+                obj.put("adb_master_switch", prefs.getBoolean(SystemUtils.KEY_ADB_MASTER_SWITCH, true));
                 obj.put("floating_display_mode", prefs.getString("floating_display_mode", "battery"));
                 obj.put("expert_rabbit_enabled", prefs.getBoolean("expert_rabbit_theme_enabled", false));
                 float batteryVolt = VehicleAutomationService.latestBatteryVoltage;
@@ -1797,6 +1799,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void hardReboot() {
+            if (!SystemUtils.isAdbMasterSwitchEnabled(context)) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        showToast("ADB 总开关已关闭，该功能无法使用");
+                    }
+                });
+                return;
+            }
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -1881,11 +1892,26 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void togglePackageFreeze(final String pkg, final boolean freeze) {
+            if (!SystemUtils.isAdbMasterSwitchEnabled(context)) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        showToast("ADB 总开关已关闭，该功能无法使用");
+                        if (webView != null) {
+                            webView.evaluateJavascript("if(window.onPackageFreezeFinished) window.onPackageFreezeFinished('" + pkg + "', false, 'ADB 总开关已关闭');", null);
+                        }
+                    }
+                });
+                return;
+            }
             if (freeze && isProtectedCriticalPackage(pkg)) {
                 mainHandler.post(new Runnable() {
                     @Override
                     public void run() {
                         showToast("【安全保护】应用【" + pkg + "】为车机底层核心运行组件，禁止冻结！");
+                        if (webView != null) {
+                            webView.evaluateJavascript("if(window.onPackageFreezeFinished) window.onPackageFreezeFinished('" + pkg + "', false, '核心组件禁止冻结');", null);
+                        }
                     }
                 });
                 return;
@@ -1901,7 +1927,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                 Toast.makeText(context, (freeze ? "已成功安全冻结: " : "已成功解冻恢复: ") + pkg, Toast.LENGTH_SHORT).show();
                             } else {
                                 String msg = (res != null && res.message != null && !res.message.isEmpty()) ? res.message : "ADB 指令未生效";
-                                Toast.makeText(context, "操作未生效: " + msg + " (请检查本地 5555 ADB 授权)", Toast.LENGTH_LONG).show();
+                                Toast.makeText(context, "操作未生效: " + msg, Toast.LENGTH_LONG).show();
                             }
                             if (webView != null) {
                                 boolean isOk = (res != null && res.success);
@@ -1931,6 +1957,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void clearAppData(final String pkg) {
+            if (!SystemUtils.isAdbMasterSwitchEnabled(context)) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        showToast("ADB 总开关已关闭，该功能无法使用");
+                    }
+                });
+                return;
+            }
             if (isProtectedCriticalPackage(pkg)) {
                 mainHandler.post(new Runnable() {
                     @Override
@@ -1956,6 +1991,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void uninstallApp(final String pkg) {
+            if (!SystemUtils.isAdbMasterSwitchEnabled(context)) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        showToast("ADB 总开关已关闭，该功能无法使用");
+                    }
+                });
+                return;
+            }
             if (isProtectedCriticalPackage(pkg)) {
                 mainHandler.post(new Runnable() {
                     @Override
@@ -2472,6 +2516,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public boolean setApkVerifyWhitelist(final boolean enable) {
+            if (!SystemUtils.isAdbMasterSwitchEnabled(context)) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        showToast("ADB 总开关已关闭，该功能无法使用");
+                    }
+                });
+                return false;
+            }
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -2490,6 +2543,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void toggleWhitelist() {
+            if (!SystemUtils.isAdbMasterSwitchEnabled(context)) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        showToast("ADB 总开关已关闭，该功能无法使用");
+                    }
+                });
+                return;
+            }
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -2509,6 +2571,25 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             pushDeviceInfoToWeb();
                         }
                     }).start();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public boolean isAdbMasterSwitchEnabled() {
+            return SystemUtils.isAdbMasterSwitchEnabled(context);
+        }
+
+        @JavascriptInterface
+        public void setAdbMasterSwitchEnabled(final boolean enabled) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    SystemUtils.setAdbMasterSwitchEnabled(context, enabled);
+                    pushDeviceInfoToWeb();
+                    if (webView != null) {
+                        webView.evaluateJavascript("if(window.onAdbMasterSwitchChanged) window.onAdbMasterSwitchChanged(" + enabled + ");", null);
+                    }
                 }
             });
         }
@@ -3547,6 +3628,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             setFloatingDisplayMode(value);
                         } else if ("expert_rabbit".equals(key)) {
                             setExpertRabbitThemeEnabled(Boolean.parseBoolean(value));
+                        } else if ("adb_master_switch".equals(key) || SystemUtils.KEY_ADB_MASTER_SWITCH.equals(key)) {
+                            setAdbMasterSwitchEnabled(Boolean.parseBoolean(value));
                         }
                     } catch (Exception ignored) {}
                 }

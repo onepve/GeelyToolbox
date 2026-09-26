@@ -107,25 +107,36 @@
         <div class="flex-1 min-w-0 flex flex-col space-y-1.5">
           <div class="flex items-center space-x-2.5">
             <span class="text-[20px] font-black text-car-text tracking-wide truncate">车机 ADB 终端</span>
-            <HelpDot @click="openModal('confirm', {
-              title: '【功能指南】车机 ADB 交互终端',
-              desc: '1. 调试终端：\n为高级玩车用户提供的系统命令行窗口，方便输入指令调试系统。\n\n2. 核心防护：\n已开启系统级安全保护，防止误删车机核心系统组件。\n\n3. 应用管理：\n普通软件的安装、卸载和冻结，建议直接在「应用安装」页面操作。',
-              tip: '仅建议熟悉安卓命令行的进阶车主使用。',
-              showCancel: false,
-              confirmText: '我知道了'
-            })" title="查看车机 ADB 交互终端说明" />
+            <HelpDot @click="showAdbHelp" title="查看 ADB 总开关与失效功能说明" />
           </div>
           <div class="text-[13.5px] text-car-sub font-bold leading-relaxed line-clamp-2">
-            本地特权调试交互终端，支持执行底层 Shell 调试指令
+            本地特权调试交互终端；若遇其他车型无限弹调试授权窗，请关闭 ADB 总开关
           </div>
         </div>
 
-        <button 
-          @click="openDeepTools"
-          class="w-[185px] h-[58px] rounded-2xl border-2 border-car-border bg-car-item text-car-text hover:border-car-accent font-black text-[15.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center shrink-0 whitespace-nowrap"
-        >
-          <span>打开 ADB 终端 ➔</span>
-        </button>
+        <div class="flex items-center space-x-2.5 shrink-0">
+          <button
+            @click="toggleAdbMasterSwitch"
+            :class="[
+              'min-h-[58px] px-3.5 rounded-2xl border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center space-x-1.5 whitespace-nowrap',
+              store.deviceInfo.adb_master_switch !== false
+                ? 'border-car-accent bg-car-item text-car-accent'
+                : 'border-amber-500/60 bg-car-item text-amber-400 hover:border-amber-400'
+            ]"
+          >
+            <StatusDot size="sm" :color="store.deviceInfo.adb_master_switch !== false ? 'ok' : 'off'" />
+            <span class="font-black text-[14px]">
+              {{ store.deviceInfo.adb_master_switch !== false ? '总开关已开启' : '总开关已关闭' }}
+            </span>
+          </button>
+
+          <button 
+            @click="openDeepTools"
+            class="min-h-[58px] px-4 rounded-2xl border-2 border-car-border bg-car-item text-car-text hover:border-car-accent font-black text-[14.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+          >
+            <span>打开终端 ➔</span>
+          </button>
+        </div>
       </div>
 
       <!-- 3. 整车硬件冷重启控制台 -->
@@ -309,6 +320,10 @@ function onSetPalette(v) {
 }
 
 function confirmHardReboot() {
+  if (store.deviceInfo.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   openModal('confirm', {
     title: '车机硬件冷重启',
     desc: '即将对整车中控硬件执行完全掉电冷启动 (reboot)，耗时约 25~35 秒。白名单、音频通道与系统框架将彻底刷新生效。',
@@ -323,7 +338,28 @@ function confirmHardReboot() {
 }
 
 function openDeepTools() {
+  if (store.deviceInfo.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   openModal('deepTools');
+}
+
+function toggleAdbMasterSwitch() {
+  const next = !(store.deviceInfo.adb_master_switch !== false);
+  store.deviceInfo.adb_master_switch = next;
+  bridge.call('setAdbMasterSwitchEnabled', next);
+  showToast(next ? '已开启 ADB 特权服务总开关' : '已关闭 ADB 总开关 (彻底切断 ADB 探测与连接)');
+}
+
+function showAdbHelp() {
+  openModal('confirm', {
+    title: '【功能指南】ADB 特权总开关与防弹窗说明',
+    desc: `1. 为什么需要总开关：\n部分车型（或特定车机固件）底层 ADB 鉴权存在异常，连接 5555 端口会导致中控屏无限次、反复弹出“允许 USB 调试”授权弹窗，严重干扰正常行车。关闭此开关可彻底切断 ADB 探测与通信，从根源消除弹窗。\n\n2. ⚠️ 关闭后将失效的功能清单：\n• 车机全量应用高级管理（应用安全冻结/解冻/清空数据/静默卸载）\n• 第三方应用免签白名单（apk_verify 签名放行）\n• 整车硬件冷重启（底层掉电 reboot）\n• 车机 ADB 交互终端（命令行调试与方控按键码抓取）\n• 悬浮窗最高权限/日志读取权限一键授权\n• 倒车/切歌退出时强力终止原厂抢声音频\n\n3. ✅ 不受影响的基础核心功能：\n方控按键监听与切歌、原生蓝牙伴随播放与焦点守护、D挡/低速调起360影像、开机自启动守护、全国实时油价等均完全正常可用。`,
+    tip: '日常建议保持开启；若遇车机无限弹窗请关闭此开关。',
+    showCancel: false,
+    confirmText: '我知道了'
+  });
 }
 
 

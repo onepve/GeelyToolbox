@@ -170,14 +170,17 @@
               </button>
               <button 
                 @click="handleToggleFreeze(app)"
+                :disabled="!!freezingPackages[app.pkg]"
                 :class="[
-                  'min-h-[50px] px-4 rounded-xl border-2 text-[14.5px] font-black cursor-pointer shadow-sm transition-all',
-                  app.frozen
-                    ? 'border-emerald-500/60 text-emerald-400 bg-car-card hover:border-emerald-400'
-                    : 'border-amber-500/60 text-amber-400 bg-car-card hover:border-amber-400'
+                  'min-h-[50px] px-4 rounded-xl border-2 text-[14.5px] font-black cursor-pointer shadow-sm transition-all flex items-center justify-center',
+                  freezingPackages[app.pkg]
+                    ? 'border-car-border text-car-sub bg-car-card opacity-50 cursor-not-allowed'
+                    : (app.frozen
+                        ? 'border-emerald-500/60 text-emerald-400 bg-car-card hover:border-emerald-400'
+                        : 'border-amber-500/60 text-amber-400 bg-car-card hover:border-amber-400')
                 ]"
               >
-                {{ app.frozen ? '解冻' : '冻结' }}
+                {{ freezingPackages[app.pkg] ? '处理中...' : (app.frozen ? '解冻' : '冻结') }}
               </button>
               <button 
                 @click="handleClearData(app)"
@@ -413,9 +416,18 @@ window.onPackageFreezeFinished = (pkg, success, errorMsg) => {
   if (store.modals.allApps) {
     loadApps(false);
   }
+  if (success) {
+    showToast('应用操作已成功生效', 'success');
+  } else if (errorMsg) {
+    showToast('操作未生效: ' + errorMsg, 'danger');
+  }
 };
 
 function confirmPresetFreeze(pkg, pkgName) {
+  if (store.deviceInfo.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   if (freezingPackages.value[pkg]) {
     showToast('该应用正在执行操作中，请勿重复点击');
     return;
@@ -543,6 +555,14 @@ function handleLaunch(app) {
 }
 
 function handleToggleFreeze(app) {
+  if (store.deviceInfo.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
+  if (freezingPackages.value[app.pkg]) {
+    showToast('该应用正在执行操作中，请稍候...');
+    return;
+  }
   const nextFreeze = !app.frozen;
   openModal('confirm', {
     title: nextFreeze ? `冻结应用：${app.name}` : `解冻应用：${app.name}`,
@@ -550,16 +570,34 @@ function handleToggleFreeze(app) {
       ? `冻结后应用将彻底停止运行、不再自启偷跑并从系统桌面隐藏，随时可在此解冻恢复。`
       : `解冻后应用将恢复正常可用状态并重新出现在桌面。`,
     isDanger: nextFreeze,
+    confirmText: `确认${nextFreeze ? '冻结' : '解冻'}`,
+    cancelText: '取消',
     onConfirm: () => {
-      bridge.call('togglePackageFreeze', app.pkg, nextFreeze);
-      app.frozen = nextFreeze;
-      showToast(nextFreeze ? `已冻结: ${app.name}` : `已解冻: ${app.name}`);
-      setTimeout(() => loadApps(false), 600);
+      freezingPackages.value[app.pkg] = true;
+      showToast(`正在下发${nextFreeze ? '冻结' : '解冻'}指令，请稍候...`);
+      try {
+        bridge.call('togglePackageFreeze', app.pkg, nextFreeze);
+      } catch (e) {
+        freezingPackages.value[app.pkg] = false;
+        showToast('指令下发失败: ' + e, 'danger');
+        return;
+      }
+      setTimeout(() => {
+        if (freezingPackages.value[app.pkg]) {
+          freezingPackages.value[app.pkg] = false;
+          refreshPresetStates();
+          loadApps(false);
+        }
+      }, 6000);
     }
   });
 }
 
 function handleClearData(app) {
+  if (store.deviceInfo.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   openModal('confirm', {
     title: `清除数据：${app.name}`,
     desc: `即将清空【${app.name}】(${app.pkg}) 的全部本地缓存与用户数据，相当于应用刚安装状态。此操作不可逆，是否继续？`,
@@ -573,6 +611,10 @@ function handleClearData(app) {
 }
 
 function handleUninstall(app) {
+  if (store.deviceInfo.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   openModal('confirm', {
     title: `卸载应用：${app.name}`,
     desc: `确认彻底从车机卸载第三方应用【${app.name}】(${app.pkg}) 吗？卸载后所有本地配置将被清空。`,

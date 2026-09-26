@@ -108,7 +108,22 @@ public class AdbClient {
         probeCachedResult = false;
     }
 
+    public static void closeAllConnections() {
+        synchronized (sConnLock) {
+            if (sConnectionHolder != null) {
+                sConnectionHolder.close();
+                sConnectionHolder = null;
+            }
+            clearProbeCache();
+        }
+    }
+
     public static boolean isAdbPortOpen(Context context) {
+        if (context != null && !SystemUtils.isAdbMasterSwitchEnabled(context)) {
+            probeCachedResult = false;
+            probeCachedAt = 0L;
+            return false;
+        }
         java.util.List<String> hosts = new java.util.ArrayList<>();
         hosts.add("127.0.0.1");
         String carIp = SystemUtils.getCarIpAddress();
@@ -133,6 +148,14 @@ public class AdbClient {
     public static JSONObject probeAdbStatus(Context context) {
         JSONObject res = new JSONObject();
         try {
+            if (context != null && !SystemUtils.isAdbMasterSwitchEnabled(context)) {
+                res.put("ready", false);
+                res.put("status", "disabled");
+                res.put("title", "ADB 特权已停用");
+                res.put("details", "ADB 总开关已关闭 (防弹窗保护中)");
+                res.put("privilege", "已关闭");
+                return res;
+            }
             boolean portOpen = isAdbPortOpen(context);
             AdbResult adbRes = execute(context, "id");
             if (adbRes != null && adbRes.success && (adbRes.output.contains("uid=") || adbRes.output.contains("shell") || adbRes.output.contains("root"))) {
@@ -203,6 +226,9 @@ public class AdbClient {
     private static final Object sConnLock = new Object();
 
     private static AdbConnectionHolder getOrCreateConnection(Context context) throws Exception {
+        if (context != null && !SystemUtils.isAdbMasterSwitchEnabled(context)) {
+            throw new Exception("ADB 总开关已关闭");
+        }
         if (sConnectionHolder != null && sConnectionHolder.isHealthy()) {
             return sConnectionHolder;
         }
@@ -291,6 +317,9 @@ public class AdbClient {
     }
 
     public static AdbResult execute(Context context, String command) {
+        if (context != null && !SystemUtils.isAdbMasterSwitchEnabled(context)) {
+            return new AdbResult(false, "", "ADB 总开关已关闭");
+        }
         synchronized (sConnLock) {
             try {
                 return executeInternal(context, command);
@@ -378,6 +407,12 @@ public class AdbClient {
     }
 
     public static AdbStreamSession executeStream(Context context, String command, AdbStreamCallback callback) {
+        if (context != null && !SystemUtils.isAdbMasterSwitchEnabled(context)) {
+            if (callback != null) {
+                callback.onComplete(false, "ADB 总开关已关闭");
+            }
+            return null;
+        }
         Socket socket = null;
         try {
             java.util.List<String> hosts = new java.util.ArrayList<>();

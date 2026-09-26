@@ -202,6 +202,7 @@ onMounted(() => {
       if (data.floating_display_mode) store.settings.floating_mode = data.floating_display_mode === 'code' ? 'code' : 'title';
       if (typeof data.expert_rabbit_enabled === 'boolean') store.settings.expert_rabbit = data.expert_rabbit_enabled;
       if (typeof data.silent_appstore_freeze === 'boolean') store.settings.silent_appstore_freeze = data.silent_appstore_freeze;
+      if (typeof data.adb_master_switch === 'boolean') store.deviceInfo.adb_master_switch = data.adb_master_switch;
     } catch (e) {}
   };
 

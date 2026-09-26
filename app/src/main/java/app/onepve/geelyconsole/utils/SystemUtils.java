@@ -77,6 +77,29 @@ public class SystemUtils {
             "com.desaysv.mcuupdate.mcuupdat"
     };
 
+    public static final String KEY_ADB_MASTER_SWITCH = "adb_master_switch";
+
+    public static boolean isAdbMasterSwitchEnabled(Context ctx) {
+        if (ctx == null) return true;
+        try {
+            android.content.SharedPreferences sp = ctx.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            return sp.getBoolean(KEY_ADB_MASTER_SWITCH, true);
+        } catch (Throwable t) {
+            return true;
+        }
+    }
+
+    public static void setAdbMasterSwitchEnabled(Context ctx, boolean enabled) {
+        if (ctx == null) return;
+        try {
+            android.content.SharedPreferences sp = ctx.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            sp.edit().putBoolean(KEY_ADB_MASTER_SWITCH, enabled).apply();
+            if (!enabled) {
+                AdbClient.closeAllConnections();
+            }
+        } catch (Throwable ignored) {}
+    }
+
     public static MemInfo getMemInfo() {
         return getMemoryInfo();
     }
@@ -561,7 +584,7 @@ public class SystemUtils {
         // ⚠️ 用「带缓存」的端口探测：旧实现每次都要对 127.0.0.1/localhost/车机IP 各做一次 1 秒探测，
         //    在 ADB 未开启的车机上等于每次调用先白等 3 秒 —— 常驻服务 3 秒一次轮询时直接卡死主链路。
         try {
-            if (AdbClient.isAdbPortOpenCached()) {
+            if (isAdbMasterSwitchEnabled(ctx) && AdbClient.isAdbPortOpenCached()) {
                 AdbClient.AdbResult adbRes = AdbClient.execute(ctx, cmd);
                 if (adbRes != null && adbRes.success && adbRes.output != null) {
                     return adbRes.output;
@@ -665,9 +688,10 @@ public class SystemUtils {
      */
     public static String executeStrictPrivileged(Context ctx, String cmd, int maxRetries) {
         if (cmd == null || cmd.trim().isEmpty()) return null;
+        if (!isAdbMasterSwitchEnabled(ctx)) return null;
         for (int i = 0; i < maxRetries; i++) {
             try {
-                if (AdbClient.isAdbPortOpen(ctx)) {
+                if (AdbClient.isAdbPortOpenCached()) {
                     AdbClient.AdbResult adbRes = AdbClient.execute(ctx, cmd);
                     if (adbRes != null && adbRes.success && adbRes.output != null) {
                         return adbRes.output;
@@ -676,7 +700,7 @@ public class SystemUtils {
             } catch (Exception ignored) {}
             if (i < maxRetries - 1) {
                 try {
-                    Thread.sleep(200);
+                    Thread.sleep(150);
                 } catch (InterruptedException ignored) {}
             }
         }
@@ -685,6 +709,11 @@ public class SystemUtils {
 
     public static OpResult setPackageEnabled(Context ctx, String pkg, boolean enable) {
         OpResult result;
+        if (!isAdbMasterSwitchEnabled(ctx)) {
+            result = new OpResult(false, "ADB 总开关已关闭，功能无法使用", "");
+            AppLogger.action("应用冻结", (enable ? "解冻: " : "冻结: ") + pkg, false, result.message);
+            return result;
+        }
         // 关键：立即清空禁用包名内存缓存，强制回读底层真实状态
         disabledPkgsCache = null;
         disabledPkgsCacheAt = 0L;
@@ -693,7 +722,7 @@ public class SystemUtils {
             // 严禁普通 shell 兜底，必须且只能通过 ADB 特权管道执行，自动重试 3 次！
             String out = executeStrictPrivileged(ctx, cmd, 3);
             if (out == null) {
-                result = new OpResult(false, "ADB 特权服务未就绪或未响应，操作未生效，请稍后重试", "");
+                result = new OpResult(false, "ADB 特权服务未就绪或未响应，操作未生效，请稍后重试 (请检查本地 5555 ADB 授权)", "");
                 AppLogger.action("应用冻结", (enable ? "解冻: " : "冻结: ") + pkg, false, result.message);
                 return result;
             }
@@ -706,9 +735,14 @@ public class SystemUtils {
             disabledPkgsCache = null;
             disabledPkgsCacheAt = 0L;
             
-            if (out.contains("new state") || out.contains("enabled") || out.contains("disabled") || out.contains("Success") || out.contains("Package " + pkg)) {
+            if (out.contains("new state") || out.contains("enabled") || out.contains("disabled") || out.contains("Success") || out.contains("unhidden") || out.contains("hidden") || out.contains("Package " + pkg)) {
                 result = new OpResult(true, enable ? "已成功解冻恢复" : "已成功安全冻结", out);
             } else {
+                try {
+                    Thread.sleep(80);
+                } catch (InterruptedException ignored) {}
+                disabledPkgsCache = null;
+                disabledPkgsCacheAt = 0L;
                 int state = getAppDetailedState(ctx, pkg);
                 boolean ok = enable ? (state == APP_STATE_ENABLED) : (state == APP_STATE_DISABLED);
                 if (ok) {

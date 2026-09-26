@@ -183,6 +183,18 @@ const isCheckingAdb = ref(false);
 const hasPushedCmd = ref(false);
 
 function checkAdbStatus(userTriggered = false) {
+  if (store.deviceInfo.adb_master_switch === false) {
+    adbStatus.value = {
+      ready: false,
+      title: 'ADB 服务已停用',
+      details: 'ADB 总开关已关闭 (防弹窗保护中)',
+      privilege: '已关闭'
+    };
+    isCheckingAdb.value = false;
+    updateTerminalPrompt();
+    if (userTriggered) showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   if (isCheckingAdb.value) return;
   isCheckingAdb.value = true;
   adbStatus.value = {
@@ -280,6 +292,10 @@ function toggleKeyEventCapture() {
 }
 
 function startKeyEventCapture() {
+  if (store.deviceInfo.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   if (!adbStatus.value.ready) {
     showToast('ADB 端口未就绪，无法监听物理按键码');
     return;
@@ -422,6 +438,10 @@ const quickCmds = [
 ];
 
 function execCmd() {
+  if (store.deviceInfo.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   if (!inputCmd.value.trim()) return;
   const cmd = inputCmd.value.trim();
   pushHistory(cmd);

@@ -34,7 +34,8 @@ export const store = reactive({
     multimedia_frozen: false,
     appstore_frozen: false,
     battery_volt: 0,
-    car_ip: '127.0.0.1'
+    car_ip: '127.0.0.1',
+    adb_master_switch: true
   },
   doors: {
     fl: -1,
@@ -291,8 +292,15 @@ export async function refreshOilPrices(force = false) {
 
 // 全局注册接收手机闪传推送 ADB 命令 (防漏挂载)
 if (typeof window !== 'undefined') {
+  window.onAdbMasterSwitchChanged = (enabled) => {
+    store.deviceInfo.adb_master_switch = !!enabled;
+  };
   window.onAdbCommandPushedFromPhone = (cmd, autoExec = false) => {
     if (!cmd) return;
+    if (store.deviceInfo.adb_master_switch === false) {
+      showToast('ADB 总开关已关闭，无法执行推送指令');
+      return;
+    }
     store.pushedAdbCmd = cmd;
     store.pushedAdbAutoExec = !!autoExec;
     openModal('deepTools');

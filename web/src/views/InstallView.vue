@@ -223,6 +223,10 @@ import { openAppstoreFlow } from '../utils/appstoreFreeze';
 
 
 function confirmToggleWhitelist() {
+  if (store.deviceInfo.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   const next = !store.deviceInfo.whitelist;
   openModal('confirm', {
     title: next ? '开启第三方 APK 放行白名单' : '关闭第三方 APK 放行白名单',
@@ -241,6 +245,10 @@ function confirmToggleWhitelist() {
 }
 
 function openAllApps() {
+  if (store.deviceInfo.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   store.modals.allApps = true;
 }
 
