@@ -367,14 +367,6 @@ public class VehicleVoicePlayer {
             return new String[]{"女王殿下请慢走请带好随身贵重物品注意后方来车", "女王殿下请慢走注意后方来车", "女王殿下请慢走", "女王请下车", "女王下车"};
         } else if ("door_fr_queen_leave".equalsIgnoreCase(baseName)) {
             return new String[]{"恭送女王殿下期待下次为您服务", "恭送女王殿下", "女王再见", "女王下车关门", "女王关门"};
-        } else if ("door_fr_male_enter".equalsIgnoreCase(baseName)) {
-            return new String[]{"副驾欢迎乘车男声", "副驾上车男声", "欢迎乘车男声"};
-        } else if ("door_fr_male_ready".equalsIgnoreCase(baseName)) {
-            return new String[]{"副驾关门系好安全带男声", "副驾系好安全带男声", "关门系好安全带男声"};
-        } else if ("door_fr_male_exit".equalsIgnoreCase(baseName)) {
-            return new String[]{"下车请注意后方来车别忘了随身物品", "副驾下车注意来车男声", "副驾开门注意来车男声", "下车注意来车男声"};
-        } else if ("door_fr_male_leave".equalsIgnoreCase(baseName)) {
-            return new String[]{"副驾车门已关好再见祝您生活愉快", "副驾离车关门男声", "副驾下车关门男声", "副驾关门男声"};
         } else if ("door_fr_enter".equalsIgnoreCase(baseName)) {
             return new String[]{"副驾欢迎乘车女声", "副驾欢迎乘车", "副驾上车女声", "欢迎乘车女声", "副驾车门开启", "副驾开门", "副驾驶开门"};
         } else if ("door_fr_ready".equalsIgnoreCase(baseName)) {

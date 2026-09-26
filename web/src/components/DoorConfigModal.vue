@@ -167,32 +167,9 @@
 
           <!-- 副驾 FR -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3">
-            <div class="flex flex-col border-b border-car-border/50 pb-2 space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-[18px] font-black text-car-text">副驾车门 (FR · 进出完整4态)</span>
-                <span class="text-[12px] text-car-accent font-bold">出厂实体语音直切</span>
-              </div>
-              <!-- 原车 / 公主 / 女王 3 大专属实体音效一键直切 -->
-              <div class="grid grid-cols-3 gap-2">
-                <button
-                  v-for="r in [
-                    { id: 'female', name: '原车语音', desc: '原厂晓晓' },
-                    { id: 'princess', name: '公主语音', desc: '温润男声' },
-                    { id: 'queen', name: '女王语音', desc: '绅士男声' }
-                  ]"
-                  :key="r.id"
-                  @click="switchPassengerRole(r.id, r.name)"
-                  :class="[
-                    'h-[52px] px-1 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all',
-                    (store.vehicleAuto.passenger_voice_role === r.id || (!store.vehicleAuto.passenger_voice_role && r.id === 'princess'))
-                      ? 'bg-car-item border-car-accent text-car-accent shadow-sm'
-                      : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-                  ]"
-                >
-                  <span class="text-[14px] font-black leading-tight">{{ r.name }}</span>
-                  <span class="text-[11px] opacity-80 leading-tight">{{ r.desc }}</span>
-                </button>
-              </div>
+            <div class="flex items-center justify-between border-b border-car-border/50 pb-2">
+              <span class="text-[18px] font-black text-car-text">副驾车门 (FR · 进出完整4态)</span>
+              <span class="text-[14px] text-car-sub font-bold">登车 / 启程 / 推门 / 离车 独立控制</span>
             </div>
 
             <!-- 1. 登车迎宾 -->

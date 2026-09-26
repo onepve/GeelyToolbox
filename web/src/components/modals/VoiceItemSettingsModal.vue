@@ -8,22 +8,49 @@
     @close="closeModal('voiceItemSettings')"
   >
     <div v-if="targetItem" class="flex flex-col space-y-4">
-      <!-- 当前生效音源状态大卡片 -->
-      <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
-        <div class="flex items-center">
-          <span class="w-3 h-3 rounded-full bg-car-accent mr-3 shadow-[0_0_8px_var(--accent-gold)]"></span>
-          <div class="flex flex-col">
-            <span class="text-[17.5px] font-black text-car-text">当前生效音源：{{ activeVoiceTypeLabel }}</span>
-            <span class="text-[14px] text-car-sub font-bold mt-0.5">{{ activeVoiceDesc }}</span>
+      <!-- 当前生效音源状态大卡片 (包含副驾3套出厂实体语音一键直切与边上的试听) -->
+      <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col space-y-3 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <span class="w-3 h-3 rounded-full bg-car-accent mr-3 shadow-[0_0_8px_var(--accent-gold)]"></span>
+            <div class="flex flex-col">
+              <span class="text-[17.5px] font-black text-car-text">当前生效音源：{{ activeVoiceTypeLabel }}</span>
+              <span class="text-[14px] text-car-sub font-bold mt-0.5">{{ activeVoiceDesc }}</span>
+            </div>
           </div>
+
+          <button 
+            @click="testCurrentAudio"
+            class="min-h-[50px] px-6 bg-car-card border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md shrink-0"
+          >
+            试听生效语音
+          </button>
         </div>
 
-        <button 
-          @click="testCurrentAudio"
-          class="min-h-[50px] px-6 bg-car-card border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md shrink-0"
-        >
-          试听生效语音
-        </button>
+        <!-- 副驾出厂 3 套实体语音一键直切 (在当前生效音源下方一排3个，边上就是试听生效语音) -->
+        <div v-if="isFrDoorItem" class="pt-3 border-t border-car-border/60 flex items-center space-x-3">
+          <span class="text-[14px] font-black text-car-text shrink-0">出厂音色直切：</span>
+          <div class="flex space-x-2.5 flex-1">
+            <button
+              v-for="opt in [
+                { role: 'female', name: '原车语音', speaker: '原厂晓晓' },
+                { role: 'princess', name: '公主语音', speaker: '温润男声' },
+                { role: 'queen', name: '女王语音', speaker: '绅士男声' }
+              ]"
+              :key="opt.role"
+              @click="selectFrEntityRole(opt.role)"
+              :class="[
+                'h-[52px] flex-1 px-2 rounded-xl border-2 flex items-center justify-center space-x-1.5 cursor-pointer transition-all',
+                (store.vehicleAuto.passenger_voice_role === opt.role || (!store.vehicleAuto.passenger_voice_role && opt.role === 'princess'))
+                  ? 'bg-car-item border-car-accent text-car-accent font-black shadow-sm'
+                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text font-bold'
+              ]"
+            >
+              <span class="text-[15px] font-black">{{ opt.name }}</span>
+              <span class="text-[12px] opacity-80 font-bold">({{ opt.speaker }})</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- 本声效输出：独立声道 + 音量增益 (每声效独立管理 · 增益0=原厂音量) -->
@@ -150,30 +177,6 @@
             🎙️ 规格要求：音频开头请保留 ≥280ms 静音（车机功放建立通道需 0.2~0.3 秒，零静音直录会吞掉第一个字）。ffmpeg 一条命令补齐：<span class="font-mono">ffmpeg -i in.mp3 -af "adelay=280" out.mp3</span>，详见语音包模板 README。
           </div>
 
-          <!-- 副驾出厂 3 套实体语音一键直选 -->
-          <div v-if="frEntityOptions.length > 0" class="flex flex-col space-y-2 bg-car-card p-2.5 rounded-xl border border-car-border">
-            <div class="flex items-center justify-between">
-              <span class="text-[13px] text-car-accent font-bold">出厂 3 套实体语音一键直选：</span>
-              <span class="text-[11px] text-car-sub">点击自动套用并试听</span>
-            </div>
-            <div class="grid grid-cols-3 gap-2">
-              <button
-                v-for="opt in frEntityOptions"
-                :key="opt.role"
-                @click="selectFrEntityRole(opt.role)"
-                :class="[
-                  'h-[52px] px-2 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all',
-                  (store.vehicleAuto.passenger_voice_role === opt.role || (!store.vehicleAuto.passenger_voice_role && opt.role === 'princess'))
-                    ? 'bg-car-item border-car-accent text-car-accent shadow-sm'
-                    : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-                ]"
-              >
-                <span class="text-[13px] font-black leading-tight">{{ opt.name }}</span>
-                <span class="text-[11px] opacity-80 leading-tight">{{ opt.speaker }}</span>
-              </button>
-            </div>
-          </div>
-
           <!-- 快速从已安装语音包中点选混搭 -->
           <div v-if="installedThemes.length > 0" class="flex flex-col space-y-1.5">
             <span class="text-[13px] text-car-sub font-bold">快速从已导入语音包选取此音效：</span>
@@ -244,17 +247,8 @@ const channelOptions = [
   { value: 'notification', label: '系统提示' }
 ];
 
-const frEntityOptions = computed(() => {
-  if (!targetItem.value) return [];
-  const key = targetItem.value.key || '';
-  if (key.startsWith('door_fr')) {
-    return [
-      { role: 'female', name: '原车语音', speaker: '原厂晓晓' },
-      { role: 'princess', name: '公主语音', speaker: '温润男声' },
-      { role: 'queen', name: '女王语音', speaker: '绅士男声' }
-    ];
-  }
-  return [];
+const isFrDoorItem = computed(() => {
+  return (targetItem.value?.key || '').startsWith('door_fr');
 });
 
 function selectFrEntityRole(role) {

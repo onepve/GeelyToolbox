@@ -72,7 +72,7 @@
          官方英文：door_fl_leave.mp3 (兼容: door_fl_close.mp3)
          支持中文：主驾车门已关好请锁车.mp3、主驾关门.mp3、主驾车门关闭.mp3
 
-   (2) 副驾驶席 (FR · 4大角色专属进出音色)：
+   (2) 副驾驶席 (FR · 3大出厂实体音色)：
        【角色 1：公主专属 · 温润男声】
        - 欢迎公主上车：door_fr_princess_enter.mp3 (中文: 欢迎公主上车.mp3、公主请上车.mp3)
        - 公主系好安全带：door_fr_princess_ready.mp3 (中文: 公主请系好安全带.mp3)
@@ -85,13 +85,7 @@
        - 女王推门下车(提醒贵重物品)：door_fr_queen_exit.mp3 (中文: 女王殿下请慢走.mp3、女王请下车.mp3)
        - 恭送女王殿下：door_fr_queen_leave.mp3 (中文: 恭送女王殿下.mp3)
 
-       【角色 3：通用标准 · 清爽男声】
-       - 欢迎乘车(男声)：door_fr_male_enter.mp3 (中文: 副驾欢迎乘车男声.mp3)
-       - 关好系安全带(男声)：door_fr_male_ready.mp3 (中文: 副驾关门系好安全带男声.mp3)
-       - 推门下车提醒物品(男声)：door_fr_male_exit.mp3 (中文: 下车请注意后方来车别忘了随身物品.mp3、副驾下车注意来车男声.mp3)
-       - 离车关门祝愿(男声)：door_fr_male_leave.mp3 (中文: 副驾车门已关好再见祝您生活愉快.mp3、副驾关门男声.mp3)
-
-       【角色 4：通用标准 · 知性女声】
+       【角色 3：原车官方 · 知性女声 (出厂晓晓)】
        - 欢迎乘车(女声)：door_fr_enter.mp3 (兼容: door_fr.mp3)
        - 关好系安全带(女声)：door_fr_ready.mp3
        - 推门下车提醒物品(女声)：door_fr_exit.mp3 (中文: 开门请注意后方来车请带好随身物品.mp3、副驾下车注意来车.mp3)
