@@ -150,6 +150,30 @@
             🎙️ 规格要求：音频开头请保留 ≥280ms 静音（车机功放建立通道需 0.2~0.3 秒，零静音直录会吞掉第一个字）。ffmpeg 一条命令补齐：<span class="font-mono">ffmpeg -i in.mp3 -af "adelay=280" out.mp3</span>，详见语音包模板 README。
           </div>
 
+          <!-- 副驾出厂 3 套实体语音一键直选 -->
+          <div v-if="frEntityOptions.length > 0" class="flex flex-col space-y-2 bg-car-card p-2.5 rounded-xl border border-car-border">
+            <div class="flex items-center justify-between">
+              <span class="text-[13px] text-car-accent font-bold">出厂 3 套实体语音一键直选：</span>
+              <span class="text-[11px] text-car-sub">点击自动套用并试听</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                v-for="opt in frEntityOptions"
+                :key="opt.role"
+                @click="selectFrEntityRole(opt.role)"
+                :class="[
+                  'h-[52px] px-2 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all',
+                  (store.vehicleAuto.passenger_voice_role === opt.role || (!store.vehicleAuto.passenger_voice_role && opt.role === 'princess'))
+                    ? 'bg-car-item border-car-accent text-car-accent shadow-sm'
+                    : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+                ]"
+              >
+                <span class="text-[13px] font-black leading-tight">{{ opt.name }}</span>
+                <span class="text-[11px] opacity-80 leading-tight">{{ opt.speaker }}</span>
+              </button>
+            </div>
+          </div>
+
           <!-- 快速从已安装语音包中点选混搭 -->
           <div v-if="installedThemes.length > 0" class="flex flex-col space-y-1.5">
             <span class="text-[13px] text-car-sub font-bold">快速从已导入语音包选取此音效：</span>
@@ -219,6 +243,30 @@ const channelOptions = [
   { value: 'nav', label: '导航引导' },
   { value: 'notification', label: '系统提示' }
 ];
+
+const frEntityOptions = computed(() => {
+  if (!targetItem.value) return [];
+  const key = targetItem.value.key || '';
+  if (key.startsWith('door_fr')) {
+    return [
+      { role: 'female', name: '原车语音', speaker: '原厂晓晓' },
+      { role: 'princess', name: '公主语音', speaker: '温润男声' },
+      { role: 'queen', name: '女王语音', speaker: '绅士男声' }
+    ];
+  }
+  return [];
+});
+
+function selectFrEntityRole(role) {
+  store.vehicleAuto.passenger_voice_role = role;
+  bridge.call('setVehicleAutomationSetting', 'passenger_voice_role', role);
+  // 清空针对该项的自定义路径与台词覆盖，使出厂实体直接生效
+  resetToDefault();
+  showToast(`已切换为【${role === 'queen' ? '女王语音' : (role === 'female' ? '原车语音' : '公主语音')}】实体文件`);
+  if (targetItem.value) {
+    bridge.call('testVehicleVoice', targetItem.value.key || 'door_fr_enter');
+  }
+}
 
 const channelHint = computed(() => {
   if (itemChannel.value === 'nav') return '导航引导：走导航音量流，可与媒体音量分开调。';

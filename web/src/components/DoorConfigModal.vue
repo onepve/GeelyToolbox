@@ -167,15 +167,39 @@
 
           <!-- 副驾 FR -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3">
-            <div class="flex items-center justify-between border-b border-car-border/50 pb-2">
-              <span class="text-[18px] font-black text-car-text">副驾车门 (FR · 进出完整4态)</span>
+            <div class="flex flex-col border-b border-car-border/50 pb-2 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[18px] font-black text-car-text">副驾车门 (FR · 进出完整4态)</span>
+                <span class="text-[12px] text-car-accent font-bold">出厂实体语音直切</span>
+              </div>
+              <!-- 原车 / 公主 / 女王 3 大专属实体音效一键直切 -->
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  v-for="r in [
+                    { id: 'female', name: '原车语音', desc: '原厂晓晓' },
+                    { id: 'princess', name: '公主语音', desc: '温润男声' },
+                    { id: 'queen', name: '女王语音', desc: '绅士男声' }
+                  ]"
+                  :key="r.id"
+                  @click="switchPassengerRole(r.id, r.name)"
+                  :class="[
+                    'h-[52px] px-1 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all',
+                    (store.vehicleAuto.passenger_voice_role === r.id || (!store.vehicleAuto.passenger_voice_role && r.id === 'princess'))
+                      ? 'bg-car-item border-car-accent text-car-accent shadow-sm'
+                      : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+                  ]"
+                >
+                  <span class="text-[14px] font-black leading-tight">{{ r.name }}</span>
+                  <span class="text-[11px] opacity-80 leading-tight">{{ r.desc }}</span>
+                </button>
+              </div>
             </div>
 
             <!-- 1. 登车迎宾 -->
             <div class="flex items-center justify-between">
               <div class="flex flex-col">
                 <span class="text-[14px] text-car-text font-bold">登车迎宾 (上车开门)</span>
-                <span class="text-[12px] text-car-sub">专属迎宾 (如: 欢迎公主上车)</span>
+                <span class="text-[12px] text-car-sub">{{ passengerPhrases.enter }}</span>
               </div>
               <div class="flex items-center space-x-2">
                 <button @click="openCustomVoice('door_fr_enter', '副驾登车迎宾', 'door_fr_enter.mp3')" class="h-[52px] px-3 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-text font-bold text-[13px] cursor-pointer">声效设置</button>
@@ -188,7 +212,7 @@
             <div class="flex items-center justify-between">
               <div class="flex flex-col">
                 <span class="text-[14px] text-car-text font-bold">就座系带 (就座关门)</span>
-                <span class="text-[12px] text-car-sub">关门就绪安全带提醒</span>
+                <span class="text-[12px] text-car-sub">{{ passengerPhrases.ready }}</span>
               </div>
               <div class="flex items-center space-x-2">
                 <button @click="openCustomVoice('door_fr_ready', '副驾就座系带', 'door_fr_ready.mp3')" class="h-[52px] px-3 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-text font-bold text-[13px] cursor-pointer">声效设置</button>
@@ -201,7 +225,7 @@
             <div class="flex items-center justify-between">
               <div class="flex flex-col">
                 <span class="text-[14px] text-car-text font-bold">推门下车 (推门下车)</span>
-                <span class="text-[12px] text-car-sub">带好包包手机，注意后方来车</span>
+                <span class="text-[12px] text-car-sub">{{ passengerPhrases.exit }}</span>
               </div>
               <div class="flex items-center space-x-2">
                 <button @click="openCustomVoice('door_fr_exit', '副驾推门下车', 'door_fr_exit.mp3')" class="h-[52px] px-3 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-text font-bold text-[13px] cursor-pointer">声效设置</button>
@@ -214,7 +238,7 @@
             <div class="flex items-center justify-between">
               <div class="flex flex-col">
                 <span class="text-[14px] text-car-text font-bold">离车告别 (下车关门)</span>
-                <span class="text-[12px] text-car-sub">暖心道别祝福</span>
+                <span class="text-[12px] text-car-sub">{{ passengerPhrases.leave }}</span>
               </div>
               <div class="flex items-center space-x-2">
                 <button @click="openCustomVoice('door_fr_leave', '副驾离车告别', 'door_fr_leave.mp3')" class="h-[52px] px-3 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-text font-bold text-[13px] cursor-pointer">声效设置</button>
@@ -283,6 +307,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import ModalWrapper from './modals/ModalWrapper.vue';
 import { store } from '../store';
 import { useConfigModal } from '../composables/useConfigModal';
@@ -290,6 +315,41 @@ import { useConfigModal } from '../composables/useConfigModal';
 const emit = defineEmits(['close']);
 
 const { toggleSetting, testVoice, openCustomVoice, setSetting } = useConfigModal();
+
+const currentPassengerRole = computed(() => {
+  return store.vehicleAuto.passenger_voice_role || 'princess';
+});
+
+const passengerPhrases = computed(() => {
+  const role = currentPassengerRole.value;
+  if (role === 'queen') {
+    return {
+      enter: '恭迎女王殿下',
+      ready: '女王殿下请系好安全带',
+      exit: '女王殿下请慢走，带好贵重物品',
+      leave: '恭送女王殿下'
+    };
+  } else if (role === 'female' || role === 'original' || role === 'standard') {
+    return {
+      enter: '欢迎乘车 (知性原车女声)',
+      ready: '请系好安全带',
+      exit: '开门请注意后方来车',
+      leave: '车门已关好'
+    };
+  } else {
+    return {
+      enter: '欢迎公主上车 (温润男声)',
+      ready: '公主请系好安全带',
+      exit: '公主请下车，小包包和手机别落下哦',
+      leave: '公主再见，今天也要开心哦'
+    };
+  }
+});
+
+function switchPassengerRole(roleId, roleName) {
+  setSetting('passenger_voice_role', roleId, '已切换副驾语音为: ' + roleName);
+  testVoice('door_fr_enter');
+}
 
 /** 车门语音双模式切换：key 与 toast 固定，仅布尔值可变 */
 function setDoorMode(isUniversal) {

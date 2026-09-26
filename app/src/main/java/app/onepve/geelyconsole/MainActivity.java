@@ -3509,6 +3509,24 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public boolean setVehicleAutomationSetting(final String key, final String value) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        prefs.edit().putString(key, value).commit();
+                        VehicleAutomationService.syncState(MainActivity.this);
+                        AppLogger.i("座舱自动化", "更新字符串设置项: " + key + " -> " + value);
+                    } catch (Exception e) {
+                        AppLogger.e("座舱自动化", "更新字符串设置失败: " + e.getMessage());
+                    }
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
         public boolean setVehicleAutomationSettingInt(final String key, final int value) {
             mainHandler.post(new Runnable() {
                 @Override

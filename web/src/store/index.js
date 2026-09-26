@@ -65,6 +65,7 @@ export const store = reactive({
     voice_enable_mode_eco: true,
     voice_enable_mode_sport: true,
     voice_door_mode_universal: false, // 车门语音模式 (出厂默认详细分门播报)
+    passenger_voice_role: 'princess', // 副驾角色音色: princess(公主) / queen(女王) / male(男声) / female(女声)
     voice_enable_door_fl: true,
     voice_enable_door_fl_close: true,
     voice_enable_door_fl_enter: true,
