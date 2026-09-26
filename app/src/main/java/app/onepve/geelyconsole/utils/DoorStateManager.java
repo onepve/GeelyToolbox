@@ -233,87 +233,41 @@ public class DoorStateManager {
                 return;
             }
 
-            boolean isSeated = getSeatState(doorCode);
+            AppLogger.i("车门状态", doorName + "门 打开");
 
-            if (isSeated) {
-                // 乘员原本在车内，推开门准备下车 -> 标记意图为 EXITING
-                doorActionIntent.put(doorCode, INTENT_EXITING);
-                AppLogger.i("车门状态", "【下车感知】" + doorName + "门 打开 -> 人员准备下车离去");
-
-                if (universalMode) {
-                    boolean enableOpen = PrefUtils.getBoolean(prefs, "voice_enable_door_universal_open", true);
-                    if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
-                        voicePlayer.play("door_open.mp3", "请注意后方来车，带好随身物品");
-                    }
-                } else {
-                    String openKey = "voice_enable_door_" + doorCode.toLowerCase();
-                    boolean enableOpen = PrefUtils.getBoolean(prefs, openKey, true) && PrefUtils.getBoolean(prefs, "enable_door_" + doorCode.toLowerCase(), true);
-                    if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
-                        String soundFile = "door_fl.mp3";
-                        String text = doorName + "车门打开，请注意后方来车";
-                        if ("FR".equals(doorCode)) {
-                            soundFile = "door_fr.mp3";
-                        } else if ("RL".equals(doorCode)) {
-                            soundFile = "door_rl.mp3";
-                        } else if ("RR".equals(doorCode)) {
-                            soundFile = "door_rr.mp3";
-                        }
-                        voicePlayer.play(soundFile, text);
-                    }
+            if (universalMode) {
+                boolean enableOpen = PrefUtils.getBoolean(prefs, "voice_enable_door_universal_open", true);
+                if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
+                    voicePlayer.play("door_open.mp3", "车门已打开");
                 }
             } else {
-                // 乘员原本在车外，拉开车门准备登车 -> 标记意图为 ENTERING
-                doorActionIntent.put(doorCode, INTENT_ENTERING);
-                AppLogger.i("车门状态", "【登车感知】" + doorName + "门 打开 -> 准备登车入座");
-
-                if (universalMode) {
-                    boolean enableOpen = PrefUtils.getBoolean(prefs, "voice_enable_door_universal_open", true);
-                    if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
-                        voicePlayer.play("door_open.mp3", "车门已打开");
-                    }
-                } else {
-                    String openKey = "voice_enable_door_" + doorCode.toLowerCase();
-                    boolean enableOpen = PrefUtils.getBoolean(prefs, openKey, true) && PrefUtils.getBoolean(prefs, "enable_door_" + doorCode.toLowerCase(), true);
-                    if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
-                        String soundFile = "door_fl.mp3";
-                        String text = doorName + "车门已打开";
-                        if ("FR".equals(doorCode)) {
-                            String role = prefs.getString("passenger_voice_role", "female");
-                            if ("queen".equals(role)) {
-                                soundFile = "door_fr_queen_enter.mp3";
-                                text = "恭迎女王殿下";
-                            } else if ("princess".equals(role)) {
-                                soundFile = "door_fr_princess_enter.mp3";
-                                text = "欢迎公主上车";
-                            } else {
-                                soundFile = "door_fr.mp3";
-                                text = "欢迎乘车";
-                            }
-                        } else if ("RL".equals(doorCode)) {
-                            soundFile = "door_rl.mp3";
-                        } else if ("RR".equals(doorCode)) {
-                            soundFile = "door_rr.mp3";
+                String openKey = "voice_enable_door_" + doorCode.toLowerCase();
+                boolean enableOpen = PrefUtils.getBoolean(prefs, openKey, true) && PrefUtils.getBoolean(prefs, "enable_door_" + doorCode.toLowerCase(), true);
+                if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
+                    String soundFile = "door_fl.mp3";
+                    String text = doorName + "车门已打开";
+                    if ("FR".equals(doorCode)) {
+                        String role = prefs.getString("passenger_voice_role", "female");
+                        if ("queen".equals(role)) {
+                            soundFile = "door_fr_queen_enter.mp3";
+                            text = "恭迎女王殿下";
+                        } else if ("princess".equals(role)) {
+                            soundFile = "door_fr_princess_enter.mp3";
+                            text = "欢迎公主上车";
+                        } else {
+                            soundFile = "door_fr.mp3";
+                            text = "欢迎乘车";
                         }
-                        voicePlayer.play(soundFile, text);
+                    } else if ("RL".equals(doorCode)) {
+                        soundFile = "door_rl.mp3";
+                    } else if ("RR".equals(doorCode)) {
+                        soundFile = "door_rr.mp3";
                     }
+                    voicePlayer.play(soundFile, text);
                 }
             }
         } else { // ============ 【关门动作】 ============
-            Integer intent = doorActionIntent.get(doorCode);
-            int currentIntent = (intent != null) ? intent : INTENT_NONE;
-
-            if (currentIntent == INTENT_ENTERING) {
-                // 从车外进入关门 -> 确定乘员已在车内就位
-                setSeatState(doorCode, true);
-                AppLogger.i("车门状态", "【就坐就绪】" + doorName + "门 关好 -> 乘员已在车内就位");
-            } else if (currentIntent == INTENT_EXITING) {
-                // 从车内下车后关门 -> 确定乘员已离车空座
-                setSeatState(doorCode, false);
-                AppLogger.i("车门状态", "【下车完成】" + doorName + "门 关好 -> 乘员已离车空座");
-            } else {
-                AppLogger.i("车门状态", doorName + "门 关好");
-            }
-            doorActionIntent.put(doorCode, INTENT_NONE);
+            AppLogger.i("车门状态", doorName + "门 关好");
 
             if (universalMode) {
                 boolean enableClose = PrefUtils.getBoolean(prefs, "voice_enable_door_universal_close", true);
