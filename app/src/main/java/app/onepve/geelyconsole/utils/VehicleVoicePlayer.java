@@ -1391,10 +1391,24 @@ public class VehicleVoicePlayer {
     }
 
     private void requestAudioFocus(String voiceType) {
-        // 彻底杜绝向系统申请任何 AudioFocus (严禁触发系统 AudioPolicy 的 vh=0.100000 衰减压制)
-        // Android 9 第三方应用申请焦点会导致蓝牙被系统 Duck 砍掉 90% 音量，甚至诱发 AVRCP PAUSE。
-        // 工具箱语音一律走底层 PCM / AudioTrack 硬件混音，与原车及蓝牙原生共存。
-        return;
+        if (audioManager == null) return;
+        try {
+            // 车载瞬态伴随播报核心铁律：统一申请 AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK！
+            // 1. 向系统声明合法发声权，彻底杜绝底层 AudioFlinger 将未获焦流音量压死为 0.011220 (彻底根除静音无声 bug)；
+            // 2. MAY_DUCK 明确声明允许原车多媒体/蓝牙音乐混音共存，严禁申请独占焦点，绝不会触发手机 AVRCP PAUSE。
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                AudioAttributes attrs = getVoiceAudioAttributes(context, voiceType);
+                AudioFocusRequest req = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                        .setAudioAttributes(attrs)
+                        .build();
+                audioManager.requestAudioFocus(req);
+                activeFocusRequest = req;
+            } else {
+                boolean isRev = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse")));
+                int stream = isRev ? AudioManager.STREAM_NOTIFICATION : AudioManager.STREAM_MUSIC;
+                audioManager.requestAudioFocus(null, stream, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+            }
+        } catch (Exception ignored) {}
     }
 
     private void requestAudioFocus() {

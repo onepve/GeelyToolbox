@@ -132,6 +132,63 @@
             color: #0284c7;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
+        /* 清理下载目录模式选择模态弹窗 (3个大触控按钮) */
+        .clean-modal-mask {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .clean-modal-card {
+            background: #ffffff;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 360px;
+            padding: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .clean-option-btn {
+            width: 100%;
+            text-align: left;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .clean-option-btn:active {
+            background: #f1f5f9;
+            transform: scale(0.98);
+        }
+        .clean-option-btn.danger {
+            border-color: #fecaca;
+            background: #fff5f5;
+        }
+        .clean-option-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 2px;
+        }
+        .clean-option-btn.danger .clean-option-title {
+            color: #ef4444;
+        }
+        .clean-option-desc {
+            font-size: 11.5px;
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
@@ -485,26 +542,20 @@
             } catch(e) { alert('保存失败: ' + e.message); }
         }
 
-        async function cleanCarFiles() {
-            const mode = prompt(
-                '【清理车机 Download 目录】\n\n' +
-                '请选择清理模式：\n' +
-                '2 - 智能安全清理（推荐：清理旧APK/临时压缩包，保留音频素材）\n' +
-                '1 - 彻底全量清空（强制清空整个 Download 目录）\n' +
-                '3 - 仅清理散落单体文件（保留所有子文件夹）\n\n' +
-                '请输入模式数字 (1/2/3)：', '2'
-            );
-            if (!mode) return;
-            const modeInt = parseInt(mode.trim());
-            if (![1, 2, 3].includes(modeInt)) {
-                alert('输入的模式序号无效，已取消操作。');
-                return;
-            }
-            let confirmMsg = '确认执行智能安全清理？';
-            if (modeInt === 1) confirmMsg = '【高危警告】确认彻底清空车机 Download 目录？此操作不可逆！';
-            if (modeInt === 3) confirmMsg = '确认仅清理车机 Download 目录下的散落普通文件？';
-            if (!confirm(confirmMsg)) return;
+        // 清理下载目录模式选择弹窗管理与执行 (3个大按钮模态交互)
+        function cleanCarFiles() {
+            var modal = document.getElementById('clean-modal-mask');
+            if (modal) modal.style.display = 'flex';
+        }
 
+        function closeCleanModal() {
+            var modal = document.getElementById('clean-modal-mask');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function executeCleanMode(modeInt) {
+            closeCleanModal();
+            showMobileToast('⏳ 正在请求车机清理下载目录...');
             try {
                 const res = await fetch('/api/clean_download', {
                     method: 'POST',
@@ -513,13 +564,13 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert(`清理完成！共清除 ${data.deleted || 0} 项，释放 ${data.freed_mb || '0.0'} MB 存储空间。`);
+                    showMobileToast(`🧹 清理完成！共清除 ${data.deleted || 0} 项，释放 ${data.freed_mb || '0.0'} MB 存储空间`);
                     loadCarFiles();
                 } else {
-                    alert('清理失败：' + (data.error || '未知错误'));
+                    showMobileToast('❌ 清理失败：' + (data.error || '未知错误'), false);
                 }
             } catch(e) {
-                alert('请求车机清理接口失败: ' + e.message);
+                showMobileToast('❌ 请求车机清理接口失败: ' + e.message, false);
             }
         }
 
@@ -830,6 +881,30 @@ async function loadCarFiles() {
             <div style="padding:10px 16px; background:#f8fafc; border-top:1px solid #e2e8f0; text-align:right;">
                 <button class="btn btn-primary" style="width:auto; padding:6px 22px; margin-top:0;" onclick="closeVoiceReadme()">我知道了</button>
             </div>
+        </div>
+    </div>
+    <!-- 清理下载目录模式选择弹窗 (3个大按钮模态选择框) -->
+    <div id="clean-modal-mask" class="clean-modal-mask" onclick="closeCleanModal()">
+        <div class="clean-modal-card" onclick="event.stopPropagation()">
+            <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">🧹 清理车机 Download 目录</div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 16px;">请选择清理策略，清理后将即时释放车机存储：</div>
+            
+            <div class="clean-option-btn" onclick="executeCleanMode(2)">
+                <div class="clean-option-title">🧹 智能安全清理 (推荐)</div>
+                <div class="clean-option-desc">清理旧 APK 安装包与临时压缩包，保留音频素材</div>
+            </div>
+
+            <div class="clean-option-btn" onclick="executeCleanMode(3)">
+                <div class="clean-option-title">📦 仅清理散落普通文件</div>
+                <div class="clean-option-desc">仅删除 Download 根目录散落单体文件，保留所有子文件夹</div>
+            </div>
+
+            <div class="clean-option-btn danger" onclick="executeCleanMode(1)">
+                <div class="clean-option-title">⚠️ 彻底全量清空 (慎用)</div>
+                <div class="clean-option-desc">强制清空整个 Download 目录所有文件，不可恢复</div>
+            </div>
+
+            <button class="btn btn-secondary" style="margin-top: 6px; width: 100%; padding: 10px; font-size: 13px; font-weight: 700;" onclick="closeCleanModal()">取消</button>
         </div>
     </div>
 </body>
