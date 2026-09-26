@@ -1032,14 +1032,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         });
     }
     @Override
-    public void onAdbCommandPushed(final String command) {
+    public void onAdbCommandPushed(final String command, final boolean autoExec) {
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
                 if (webView != null) {
-                    webView.evaluateJavascript("if(window.onAdbCommandPushedFromPhone) window.onAdbCommandPushedFromPhone(" + JSONObject.quote(command) + ");", null);
+                    webView.evaluateJavascript("if(window.onAdbCommandPushedFromPhone) window.onAdbCommandPushedFromPhone(" + JSONObject.quote(command) + ", " + autoExec + ");", null);
                 }
-                Toast.makeText(MainActivity.this, "收到手机推送的 ADB 指令，已自动填入，请核对后执行！", Toast.LENGTH_LONG).show();
+                String tip = autoExec ? "收到手机推送的 ADB 指令，已立即自动执行！" : "收到手机推送的 ADB 指令，已自动填入，请核对后执行！";
+                Toast.makeText(MainActivity.this, tip, Toast.LENGTH_SHORT).show();
             }
         });
     }

@@ -227,7 +227,13 @@
                     <label class="input-label">输入要推送至车机屏幕核对的 ADB / Shell 命令：</label>
                     <input type="text" id="adb-cmd" placeholder="例如: am start -n ...">
                 </div>
-                <button class="btn btn-secondary" style="margin-top:0;" onclick="pushAdbCmd()">📤 推送指令到车机核对</button>
+                <div style="display:flex; align-items:center; margin-bottom:12px; gap:8px;">
+                    <input type="checkbox" id="adb-auto-exec" style="width:18px; height:18px; accent-color:#059669; cursor:pointer;">
+                    <label for="adb-auto-exec" style="font-size:13.5px; font-weight:600; color:#334155; cursor:pointer; user-select:none;">
+                        ⚡ 发送后自动在车机执行 (默认不勾选，需在车机端核对)
+                    </label>
+                </div>
+                <button class="btn btn-secondary" style="margin-top:0;" onclick="pushAdbCmd()">📤 推送指令到车机</button>
             </div>
         </div>
 
@@ -571,15 +577,73 @@ async function loadCarFiles() {
             } catch(e) { alert('推送失败: ' + e.message); }
         }
 
+        // 优雅免点击顶部浮动文字提示 (Toast · 顶端居中防遮挡操作区)
+        function showMobileToast(msg, isSuccess = true) {
+            var existing = document.getElementById('mobile-toast');
+            if (existing) existing.remove();
+
+            var toast = document.createElement('div');
+            toast.id = 'mobile-toast';
+            toast.innerText = msg;
+            toast.style.position = 'fixed';
+            toast.style.top = '36px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%) translateY(-20px)';
+            toast.style.background = isSuccess ? 'rgba(15, 23, 42, 0.94)' : 'rgba(220, 38, 38, 0.94)';
+            toast.style.backdropFilter = 'blur(10px)';
+            toast.style.webkitBackdropFilter = 'blur(10px)';
+            toast.style.color = '#ffffff';
+            toast.style.padding = '12px 24px';
+            toast.style.borderRadius = '9999px';
+            toast.style.fontSize = '14.5px';
+            toast.style.fontWeight = '700';
+            toast.style.letterSpacing = '0.3px';
+            toast.style.boxShadow = '0 12px 30px -4px rgba(0, 0, 0, 0.4)';
+            toast.style.zIndex = '99999';
+            toast.style.opacity = '0';
+            toast.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+            toast.style.pointerEvents = 'none';
+            toast.style.whiteSpace = 'nowrap';
+
+            document.body.appendChild(toast);
+
+            requestAnimationFrame(function() {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateX(-50%) translateY(0)';
+            });
+
+            setTimeout(function() {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(-15px)';
+                setTimeout(function() {
+                    if (toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 300);
+            }, 2300);
+        }
+
         async function pushAdbCmd() {
             const cmd = document.getElementById('adb-cmd').value.trim();
-            if (!cmd) { alert('请输入指令'); return; }
+            if (!cmd) {
+                showMobileToast('⚠️ 请输入指令内容', false);
+                return;
+            }
+            const autoExec = document.getElementById('adb-auto-exec') ? document.getElementById('adb-auto-exec').checked : false;
             try {
-                const res = await fetch('/api/push_cmd', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ cmd: cmd }) });
+                const res = await fetch('/api/push_cmd', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ cmd: cmd, auto_exec: autoExec })
+                });
                 const data = await res.json();
-                alert(data.message || '✅ 指令已推送至车机屏幕待核对！');
+                if (data.success) {
+                    showMobileToast(autoExec ? '⚡ 指令已推送至车机并自动执行' : '📤 指令已推送至车机待核对');
+                } else {
+                    showMobileToast('❌ 推送失败: ' + (data.message || '未知错误'), false);
+                }
                 document.getElementById('adb-cmd').value = '';
-            } catch(e) { alert('推送失败: ' + e.message); }
+            } catch(e) {
+                showMobileToast('❌ 网络异常: ' + e.message, false);
+            }
         }
 
         async function uploadFile() {

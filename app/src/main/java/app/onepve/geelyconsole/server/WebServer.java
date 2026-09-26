@@ -38,7 +38,7 @@ public class WebServer {
         void onUrlPushed(String url, String fileName);
         void onFileUploaded(File file);
         void onActionRequested(String action);
-        void onAdbCommandPushed(String command);
+        void onAdbCommandPushed(String command, boolean autoExec);
     }
 
     private static final int PORT = 8888;
@@ -645,8 +645,13 @@ public class WebServer {
         String bodyStr = new String(body, StandardCharsets.UTF_8);
 
         String cmd = "";
+        boolean autoExec = false;
         if (bodyStr.startsWith("{")) {
             cmd = extractJsonValue(bodyStr, "cmd");
+            String autoStr = extractJsonValue(bodyStr, "auto_exec");
+            if ("true".equalsIgnoreCase(autoStr)) {
+                autoExec = true;
+            }
         } else {
             String[] pairs = bodyStr.split("&");
             for (String pair : pairs) {
@@ -655,23 +660,26 @@ public class WebServer {
                     String k = URLDecoder.decode(kv[0], "UTF-8");
                     String v = URLDecoder.decode(kv[1], "UTF-8");
                     if ("cmd".equals(k)) cmd = v;
+                    if ("auto_exec".equals(k) && "true".equalsIgnoreCase(v)) autoExec = true;
                 }
             }
         }
 
         final String finalCmd = cmd.trim();
+        final boolean finalAutoExec = autoExec;
         if (!finalCmd.isEmpty()) {
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     if (callback != null) {
-                        callback.onAdbCommandPushed(finalCmd);
+                        callback.onAdbCommandPushed(finalCmd, finalAutoExec);
                     }
                 }
             });
         }
 
-        String resp = "{\"success\":true,\"message\":\"ADB 指令已推送至车机屏幕，请在车机大屏核对后点击执行\"}";
+        String msg = finalAutoExec ? "ADB 指令已推送至车机并正在自动执行" : "ADB 指令已推送至车机屏幕，请在车机大屏核对后点击执行";
+        String resp = "{\"success\":true,\"message\":\"" + msg + "\"}";
         sendJsonResponse(out, resp);
     }
 

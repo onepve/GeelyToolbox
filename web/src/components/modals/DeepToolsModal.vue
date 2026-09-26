@@ -110,21 +110,45 @@
         </button>
       </div>
 
-      <!-- 命令行输入栏 (68px 车规大高度) -->
-      <div class="flex mb-4">
+      <!-- 命令行输入栏 (68px 车规大高度 · 历史分组与主操作清晰分隔) -->
+      <div class="flex items-center space-x-3 mb-4">
         <input 
           v-model="inputCmd"
           type="text"
           placeholder="请输入 Shell / ADB 指令，如: pm list packages"
           :class="[
-            'flex-1 h-[68px] border-2 border-car-border rounded-2xl px-5 font-mono text-[18px] outline-none focus:border-car-accent mr-3 transition-all',
+            'flex-1 h-[68px] border-2 border-car-border rounded-2xl px-5 font-mono text-[18px] outline-none focus:border-car-accent transition-all',
             store.isNight ? 'bg-[var(--term-bg)] text-emerald-400' : 'bg-car-item text-car-text'
           ]"
           @keyup.enter="execCmd"
+          @keydown.up.prevent="historyPrev"
+          @keydown.down.prevent="historyNext"
         />
+        <!-- 历史指令调出按钮组: 上一条 (↑) 与 下一条 (↓) (8px 内聚间距) -->
+        <div class="flex items-center space-x-2 shrink-0">
+          <button 
+            @click="historyPrev"
+            title="调出上一条历史指令 (↑)"
+            :disabled="cmdHistory.length === 0"
+            class="min-h-[68px] h-[68px] min-w-[120px] px-4 bg-car-item border-2 border-car-border hover:border-car-accent rounded-2xl text-car-text font-black text-[15.5px] flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95 shadow-sm"
+          >
+            <span class="text-[20px] font-black">↑</span>
+            <span class="whitespace-nowrap">上一条</span>
+          </button>
+          <button 
+            @click="historyNext"
+            title="调出下一条历史指令 (↓)"
+            :disabled="cmdHistory.length === 0 || historyIndex === -1"
+            class="min-h-[68px] h-[68px] min-w-[120px] px-4 bg-car-item border-2 border-car-border hover:border-car-accent rounded-2xl text-car-text font-black text-[15.5px] flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95 shadow-sm"
+          >
+            <span class="text-[20px] font-black">↓</span>
+            <span class="whitespace-nowrap">下一条</span>
+          </button>
+        </div>
+        <!-- 执行指令主操作按钮 (独立分区留白 ml-2 · 加宽至 150px) -->
         <button 
           @click="execCmd"
-          class="min-h-[68px] px-10 bg-car-item border-2 border-car-accent rounded-2xl text-car-text font-black text-[20px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md shrink-0"
+          class="min-h-[68px] h-[68px] min-w-[150px] px-7 bg-car-item border-2 border-car-accent rounded-2xl text-car-text font-black text-[19px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md shrink-0 active:scale-95 ml-2"
         >
           执行指令
         </button>
@@ -206,15 +230,22 @@ function checkAdbStatus(userTriggered = false) {
   }, 60);
 }
 
-// 接收手机闪传推送 ADB 命令接口
-window.onAdbCommandPushedFromPhone = (cmd) => {
+// 接收手机闪传推送 ADB 命令接口 (支持自动执行参数 autoExec)
+window.onAdbCommandPushedFromPhone = (cmd, autoExec = false) => {
   if (!cmd) return;
   if (!store.modals.deepTools) {
     openModal('deepTools');
   }
   inputCmd.value = cmd;
   hasPushedCmd.value = true;
-  showToast('已自动填入手机推送的 ADB 指令，核验后点击执行即可');
+  if (autoExec) {
+    showToast('已接收手机推送指令并立即执行');
+    nextTick(() => {
+      execCmd();
+    });
+  } else {
+    showToast('已自动填入手机推送的 ADB 指令，核验后点击执行即可');
+  }
 };
 
 watch(() => store.modals.deepTools, (show) => {
@@ -222,8 +253,17 @@ watch(() => store.modals.deepTools, (show) => {
     if (store.pushedAdbCmd) {
       inputCmd.value = store.pushedAdbCmd;
       hasPushedCmd.value = true;
+      const shouldAuto = !!store.pushedAdbAutoExec;
       store.pushedAdbCmd = '';
-      showToast('已填入手机推送的 ADB 指令');
+      store.pushedAdbAutoExec = false;
+      if (shouldAuto) {
+        showToast('已接收手机指令并立即执行');
+        nextTick(() => {
+          execCmd();
+        });
+      } else {
+        showToast('已填入手机推送的 ADB 指令');
+      }
     }
     checkAdbStatus(false);
   }
@@ -309,6 +349,62 @@ const termContainer = ref(null);
 const inputCmd = ref('');
 const outputText = ref('');
 
+// ADB 终端执行历史记录 (持久化至 localStorage，最大保留50条)
+const cmdHistory = ref([]);
+const historyIndex = ref(-1);
+
+try {
+  const saved = localStorage.getItem('geely_adb_cmd_history');
+  if (saved) {
+    const list = JSON.parse(saved);
+    if (Array.isArray(list)) {
+      cmdHistory.value = list;
+    }
+  }
+} catch (e) {}
+
+function pushHistory(cmd) {
+  if (!cmd || !cmd.trim()) return;
+  const trimmed = cmd.trim();
+  // 避免与最近一条完全相同
+  if (cmdHistory.value.length === 0 || cmdHistory.value[cmdHistory.value.length - 1] !== trimmed) {
+    cmdHistory.value.push(trimmed);
+    if (cmdHistory.value.length > 50) {
+      cmdHistory.value.shift();
+    }
+    try {
+      localStorage.setItem('geely_adb_cmd_history', JSON.stringify(cmdHistory.value));
+    } catch (e) {}
+  }
+  historyIndex.value = -1;
+}
+
+function historyPrev() {
+  if (cmdHistory.value.length === 0) {
+    showToast('暂无历史指令记录');
+    return;
+  }
+  if (historyIndex.value === -1) {
+    historyIndex.value = cmdHistory.value.length - 1;
+  } else if (historyIndex.value > 0) {
+    historyIndex.value--;
+  }
+  inputCmd.value = cmdHistory.value[historyIndex.value];
+}
+
+function historyNext() {
+  if (cmdHistory.value.length === 0 || historyIndex.value === -1) {
+    return;
+  }
+  if (historyIndex.value < cmdHistory.value.length - 1) {
+    historyIndex.value++;
+    inputCmd.value = cmdHistory.value[historyIndex.value];
+  } else {
+    historyIndex.value = -1;
+    inputCmd.value = '';
+  }
+}
+
 function updateTerminalPrompt() {
   if (adbStatus.value.ready) {
     outputText.value = `[ADB Client 127.0.0.1:5555 就绪 (${adbStatus.value.privilege}) · 最新输出置顶显示]\n$ `;
@@ -328,6 +424,7 @@ const quickCmds = [
 function execCmd() {
   if (!inputCmd.value.trim()) return;
   const cmd = inputCmd.value.trim();
+  pushHistory(cmd);
   inputCmd.value = '';
 
   let actualCmd = cmd;

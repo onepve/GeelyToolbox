@@ -291,10 +291,11 @@ export async function refreshOilPrices(force = false) {
 
 // 全局注册接收手机闪传推送 ADB 命令 (防漏挂载)
 if (typeof window !== 'undefined') {
-  window.onAdbCommandPushedFromPhone = (cmd) => {
+  window.onAdbCommandPushedFromPhone = (cmd, autoExec = false) => {
     if (!cmd) return;
     store.pushedAdbCmd = cmd;
+    store.pushedAdbAutoExec = !!autoExec;
     openModal('deepTools');
-    showToast('已接收手机推送的 ADB 指令，正在打开控制台...', 'info');
+    showToast(autoExec ? '已接收手机指令并立即自动执行...' : '已接收手机推送的 ADB 指令，正在打开控制台...', 'info');
   };
 }
