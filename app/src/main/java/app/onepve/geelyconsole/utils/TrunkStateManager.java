@@ -63,8 +63,8 @@ public class TrunkStateManager {
         }
 
         if (trunk != currentTrunk) {
-            boolean enableOpen = prefs.getBoolean("voice_enable_trunk_open", true) && prefs.getBoolean("enable_trunk_open", true);
-            boolean enableClose = prefs.getBoolean("voice_enable_trunk_close", true) && prefs.getBoolean("enable_trunk_close", true);
+            boolean enableOpen = PrefUtils.getBoolean(prefs, "voice_enable_trunk_open", true) && PrefUtils.getBoolean(prefs, "enable_trunk_open", true);
+            boolean enableClose = PrefUtils.getBoolean(prefs, "voice_enable_trunk_close", true) && PrefUtils.getBoolean(prefs, "enable_trunk_close", true);
 
             if (trunk == 1) {
                 AppLogger.i("车门状态", "捕获物理跃变: 后备箱打开 -> voiceMaster=" + voiceMasterSwitch + ", enableOpen=" + enableOpen);

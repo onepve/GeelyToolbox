@@ -87,6 +87,10 @@ public class DoorStateManager {
     public DoorStateManager(Context context, VehicleVoicePlayer voicePlayer) {
         this.context = context.getApplicationContext();
         this.voicePlayer = voicePlayer;
+        if (this.context != null) {
+            SharedPreferences prefs = this.context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            PrefUtils.sanitizeDoorPreferences(prefs);
+        }
     }
 
     public void setListener(DoorStateListener listener) {
@@ -143,6 +147,7 @@ public class DoorStateManager {
 
         // 1. 首次开机物理基准建立 (绝不盲目播报，精准校准初始状态)
         if (currentFL == -1) {
+            PrefUtils.sanitizeDoorPreferences(prefs);
             currentFL = (fl >= 0) ? fl : 0;
             currentFR = (fr >= 0) ? fr : 0;
             currentRL = (rl >= 0) ? rl : 0;
@@ -158,7 +163,7 @@ public class DoorStateManager {
             return;
         }
 
-        boolean universalMode = prefs.getBoolean("voice_door_mode_universal", false);
+        boolean universalMode = PrefUtils.getBoolean(prefs, "voice_door_mode_universal", false);
         boolean changed = false;
 
         // 2. 主驾驶门 (FL) 独立状态判定
@@ -236,13 +241,13 @@ public class DoorStateManager {
                 AppLogger.i("车门状态", "【下车感知】" + doorName + "门 打开 -> 人员准备下车离去");
 
                 if (universalMode) {
-                    boolean enableOpen = prefs.getBoolean("voice_enable_door_universal_open", true);
+                    boolean enableOpen = PrefUtils.getBoolean(prefs, "voice_enable_door_universal_open", true);
                     if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
                         voicePlayer.play("door_open.mp3", "请注意后方来车，带好随身物品");
                     }
                 } else {
                     String openKey = "voice_enable_door_" + doorCode.toLowerCase();
-                    boolean enableOpen = prefs.getBoolean(openKey, true) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase(), true);
+                    boolean enableOpen = PrefUtils.getBoolean(prefs, openKey, true) && PrefUtils.getBoolean(prefs, "enable_door_" + doorCode.toLowerCase(), true);
                     if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
                         String soundFile = "door_fl.mp3";
                         String text = doorName + "车门打开，请注意后方来车";
@@ -262,13 +267,13 @@ public class DoorStateManager {
                 AppLogger.i("车门状态", "【登车感知】" + doorName + "门 打开 -> 准备登车入座");
 
                 if (universalMode) {
-                    boolean enableOpen = prefs.getBoolean("voice_enable_door_universal_open", true);
+                    boolean enableOpen = PrefUtils.getBoolean(prefs, "voice_enable_door_universal_open", true);
                     if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
                         voicePlayer.play("door_open.mp3", "车门已打开");
                     }
                 } else {
                     String openKey = "voice_enable_door_" + doorCode.toLowerCase();
-                    boolean enableOpen = prefs.getBoolean(openKey, true) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase(), true);
+                    boolean enableOpen = PrefUtils.getBoolean(prefs, openKey, true) && PrefUtils.getBoolean(prefs, "enable_door_" + doorCode.toLowerCase(), true);
                     if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
                         String soundFile = "door_fl.mp3";
                         String text = doorName + "车门已打开";
@@ -311,14 +316,14 @@ public class DoorStateManager {
             doorActionIntent.put(doorCode, INTENT_NONE);
 
             if (universalMode) {
-                boolean enableClose = prefs.getBoolean("voice_enable_door_universal_close", true);
+                boolean enableClose = PrefUtils.getBoolean(prefs, "voice_enable_door_universal_close", true);
                 if (voiceMasterSwitch && enableClose && voicePlayer != null) {
                     voicePlayer.play("door_close.mp3", "车门已关好");
                 }
             } else {
                 // 独立分门模式
                 String closeKey = "voice_enable_door_" + doorCode.toLowerCase() + "_close";
-                boolean enableClose = prefs.getBoolean(closeKey, true) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase() + "_close", true);
+                boolean enableClose = PrefUtils.getBoolean(prefs, closeKey, true) && PrefUtils.getBoolean(prefs, "enable_door_" + doorCode.toLowerCase() + "_close", true);
                 if (voiceMasterSwitch && enableClose && voicePlayer != null) {
                     String soundFile = "door_fl_close.mp3";
                     String text = doorName + "车门已关好";

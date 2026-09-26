@@ -50,6 +50,7 @@ import app.onepve.geelyconsole.utils.SystemUtils;
 import app.onepve.geelyconsole.utils.SystemUtils.LogDumpProgressListener;
 import app.onepve.geelyconsole.utils.ThemePatcher;
 import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
+import app.onepve.geelyconsole.utils.PrefUtils;
 import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
 
 import org.json.JSONArray;
@@ -166,6 +167,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         super.onCreate(savedInstanceState);
         currentActivity = new WeakReference<>(this);
         AppLogger.init(this);
+        PrefUtils.sanitizeDoorPreferences(getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
         hideSystemUI();
         setContentView(R.layout.activity_main);
 
@@ -3523,7 +3525,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putBoolean(key, enabled).commit();
+                        prefs.edit().remove(key).putBoolean(key, enabled).commit();
                         VehicleAutomationService.syncState(MainActivity.this);
                         if ("wheel_master_switch".equals(key)) {
                             new SteeringWheelKeyManager(MainActivity.this).syncMediaKeyReceiverState();
@@ -3544,7 +3546,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putString(key, value).commit();
+                        if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
+                            prefs.edit().remove(key).putBoolean(key, Boolean.parseBoolean(value)).commit();
+                        } else {
+                            prefs.edit().remove(key).putString(key, value).commit();
+                        }
                         VehicleAutomationService.syncState(MainActivity.this);
                         AppLogger.i("座舱自动化", "更新字符串设置项: " + key + " -> " + value);
                     } catch (Exception e) {
