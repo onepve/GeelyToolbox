@@ -20,9 +20,14 @@ def clean_code(source: str) -> str:
     pattern = r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|//[^\n]*|/\*.*?\*/'
     return re.sub(pattern, lambda m: '' if m.group(0).startswith(('//', '/*')) else m.group(0), source, flags=re.S)
 
-def extract_region(source: str, marker: str) -> str:
+def extract_region(source: str, marker: str, is_vue: bool = False) -> str:
     if marker not in source:
         raise ValueError(f"Marker not found: {marker}")
+    if is_vue:
+        start = source.index(marker)
+        left = max(0, start - 600)
+        right = min(len(source), start + 2500)
+        return source[left:right]
     start = source.index(marker)
     opening = source.find('{', start)
     if opening == -1:
@@ -294,6 +299,49 @@ CARD_BUTTON_CONTRACTS = [
         "private static String[] getChineseAliases",
         [r"drive_mode_smart", r"智能模式"],
         [r"雪地模式"]
+    ),
+
+    # ==========================================
+    # 9. 【车身联动卡片】(转向灯联动 360 与自适应退出)
+    # ==========================================
+    (
+        "车身联动卡片", "转向灯回正自动退出 360 底层状态机锁死",
+        os.path.join(JAVA_BASE, "services/VehicleAutomationService.java"),
+        "private void handleTurnSignalState",
+        [r"vehicle_turn_signal_360_auto_exit", r"close360Camera"],
+        []
+    ),
+    (
+        "车身联动卡片", "转向灯回正按键车规级双行架构锁死 (dual 换行排版)",
+        os.path.join(WEB_BASE, "views/LinkView.vue"),
+        "toggleTurnSignal360AutoExit",
+        [r'variant="dual"', r'回正自动退出', r'回正持续保持'],
+        []
+    ),
+
+    # ==========================================
+    # 10. 【系统底座与体验】(昼夜无感适配与避峰引擎)
+    # ==========================================
+    (
+        "系统底座", "昼夜深色模式平滑切换防重建锁死 (uiMode 无感通知)",
+        os.path.join(JAVA_BASE, "MainActivity.java"),
+        "public void onConfigurationChanged",
+        [r"UI_MODE_NIGHT_MASK", r"onSystemNightModeChanged"],
+        []
+    ),
+    (
+        "系统底座", "商城更新后台静默与手动点击彻底隔离 (杜绝静默弹窗打扰)",
+        os.path.join(JAVA_BASE, "MainActivity.java"),
+        "public void refreshCloudApps()",
+        [r"fetchCloudAppsAsync\(false\)"],
+        [r"fetchCloudAppsAsync\(true\)"]
+    ),
+    (
+        "系统底座", "行车巡航 6 分钟避峰单次静默同步引擎锁死",
+        os.path.join(WEB_BASE, "App.vue"),
+        "CRUISING_SYNC_DELAY",
+        [r"6\s*\*\s*60\s*\*\s*1000", r"refreshCloudApps", r"refreshOilPrices\(false\)"],
+        []
     )
 ]
 
@@ -315,7 +363,7 @@ def main():
         clean = clean_code(content) if file_path.endswith(".java") else content
         
         try:
-            target_region = extract_region(clean, marker)
+            target_region = extract_region(clean, marker, is_vue=file_path.endswith(".vue"))
         except Exception as e:
             failures.append((card, button, f"方法签名已被破坏或删除: {e}"))
             continue
