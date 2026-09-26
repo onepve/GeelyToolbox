@@ -76,26 +76,26 @@
        【角色 1：公主专属 · 阳光男声】
        - 公主请上车：door_fr_princess_enter.mp3 (中文: 公主请上车.mp3)
        - 公主系好安全带：door_fr_princess_ready.mp3 (中文: 公主请系好安全带.mp3)
-       - 公主请下车：door_fr_princess_exit.mp3 (中文: 公主请下车.mp3)
-       - 公主再见：door_fr_princess_leave.mp3 (中文: 公主再见.mp3)
+       - 公主推门下车(提醒带物品)：door_fr_princess_exit.mp3 (中文: 公主请下车.mp3、公主下车.mp3)
+       - 公主离车关门(暖心告别)：door_fr_princess_leave.mp3 (中文: 公主再见.mp3)
 
        【角色 2：女王专属 · 绅士男声】
        - 恭迎女王殿下：door_fr_queen_enter.mp3 (中文: 恭迎女王殿下.mp3、女王请上车.mp3)
        - 女王已就座：door_fr_queen_ready.mp3 (中文: 女王殿下已就座.mp3)
-       - 女王请慢走：door_fr_queen_exit.mp3 (中文: 女王殿下请慢走.mp3、女王请下车.mp3)
+       - 女王推门下车(提醒贵重物品)：door_fr_queen_exit.mp3 (中文: 女王殿下请慢走.mp3、女王请下车.mp3)
        - 恭送女王殿下：door_fr_queen_leave.mp3 (中文: 恭送女王殿下.mp3)
 
        【角色 3：通用标准 · 清爽男声】
        - 欢迎乘车(男声)：door_fr_male_enter.mp3 (中文: 副驾欢迎乘车男声.mp3)
        - 关好系安全带(男声)：door_fr_male_ready.mp3 (中文: 副驾关门系好安全带男声.mp3)
-       - 开门注意来车(男声)：door_fr_male_exit.mp3 (中文: 副驾开门注意来车男声.mp3)
-       - 关好带齐物品(男声)：door_fr_male_leave.mp3 (中文: 副驾关门带齐物品男声.mp3)
+       - 推门下车提醒物品(男声)：door_fr_male_exit.mp3 (中文: 下车请注意后方来车别忘了随身物品.mp3、副驾下车注意来车男声.mp3)
+       - 离车关门祝愿(男声)：door_fr_male_leave.mp3 (中文: 副驾车门已关好再见祝您生活愉快.mp3、副驾关门男声.mp3)
 
        【角色 4：通用标准 · 知性女声】
        - 欢迎乘车(女声)：door_fr_enter.mp3 (兼容: door_fr.mp3)
        - 关好系安全带(女声)：door_fr_ready.mp3
-       - 开门注意来车(女声)：door_fr_exit.mp3
-       - 关好带齐物品(女声)：door_fr_leave.mp3 (兼容: door_fr_close.mp3)
+       - 推门下车提醒物品(女声)：door_fr_exit.mp3 (中文: 开门请注意后方来车请带好随身物品.mp3、副驾下车注意来车.mp3)
+       - 离车关门祝愿(女声)：door_fr_leave.mp3 (兼容: door_fr_close.mp3，中文: 副驾车门已关好再见祝您一路顺风.mp3)
 
    (3) 后排车门 (RL / RR)：
        - 左后车门开启：door_rl.mp3 (中文: 左后车门开启.mp3、左后开门.mp3)

@@ -10,7 +10,7 @@
       <!-- 提示卡片 -->
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex flex-col space-y-2 shadow-sm">
         <div class="text-[19px] font-black text-car-text flex items-center">
-          <span class="mr-2 text-car-accent">⚠️</span>
+          
           <span>半自动系统签名伪装与覆盖原理</span>
         </div>
         <p class="text-[15.5px] text-car-text font-bold leading-relaxed">
@@ -58,7 +58,7 @@
           @click="openFileManager"
           class="h-[54px] px-6 rounded-xl bg-car-item border border-car-border text-car-sub hover:text-car-text font-bold text-[16px] cursor-pointer hover:border-car-border-light transition-all"
         >
-          📁 调起原生文件管理
+          调起原生文件管理
         </button>
         <button 
           @click="closeModal('rabbitInstall')"

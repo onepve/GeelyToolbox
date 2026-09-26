@@ -10,7 +10,7 @@
       <div class="w-full flex items-center justify-between p-4 rounded-2xl bg-car-item border border-car-border">
         <div class="flex items-center space-x-4">
           <div class="flex items-center space-x-2">
-            <span class="text-[26px]">⛽</span>
+            
             <div class="flex flex-col">
               <div class="flex items-center space-x-2">
                 <span class="text-[19px] font-black text-car-text">{{ currentProvinceName }}</span>

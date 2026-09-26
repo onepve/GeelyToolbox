@@ -66,7 +66,7 @@
         <div class="flex items-center justify-between">
           <div class="flex flex-col">
             <span class="text-[16.5px] font-black text-car-text flex items-center">
-              <span class="mr-2">👑</span> 开发者与内测特权身份
+              开发者与内测特权身份
             </span>
             <span class="text-[13.5px] text-car-sub font-bold mt-0.5">
               已激活内测特权：支持在测试通道 (Beta) 与正式通道 (Release) 之间自由切换
@@ -83,7 +83,7 @@
                 : 'bg-car-item border-car-border text-car-sub'
             ]"
           >
-            <span>{{ useBetaChannel ? '⚡ 测试通道 (Beta)' : '🚀 正式通道 (Release)' }}</span>
+            <span>{{ useBetaChannel ? '测试通道 (Beta)' : '正式通道 (Release)' }}</span>
           </button>
         </div>
 
@@ -109,7 +109,7 @@
           </div>
           <div class="flex flex-col space-y-1">
             <span class="text-[17px] font-black text-car-text flex items-center">
-              💖 赞赏支持与交流
+              赞赏支持与交流
             </span>
             <span class="text-[13.5px] text-car-sub font-bold">
               个人业余开发与长期维护不易，若缤越助手对您有帮助，欢迎微信扫码赞赏支持！

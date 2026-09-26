@@ -46,7 +46,7 @@
             class="w-44 h-44 object-contain rounded-2xl shadow-sm"
           />
           <div class="text-slate-900 font-black text-[16.5px] mt-2 flex items-center">
-            <span class="mr-1 text-rose-500">💖</span> 微信扫码赞赏支持 · 迷失
+             微信扫码赞赏支持 · 迷失
           </div>
           <div class="text-slate-500 font-bold text-[13px] mt-0.5">
             吉利车友交流 QQ 群：564654011

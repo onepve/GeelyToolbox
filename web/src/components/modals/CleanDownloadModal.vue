@@ -33,7 +33,7 @@
         >
           <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
             <div class="flex items-center space-x-2.5">
-              <span class="text-[19px] font-black text-car-text">🔥 彻底全量清空</span>
+              <span class="text-[19px] font-black text-car-text">彻底全量清空</span>
               <span class="px-2.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[12.5px] font-black">强力排障</span>
             </div>
             <span class="text-[14.5px] text-car-sub font-bold leading-relaxed">
@@ -52,7 +52,7 @@
         >
           <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
             <div class="flex items-center space-x-2.5">
-              <span class="text-[19px] font-black text-car-text group-hover:text-car-accent">🛡️ 智能安全清理</span>
+              <span class="text-[19px] font-black text-car-text group-hover:text-car-accent">智能安全清理</span>
               <span class="px-2.5 py-0.5 rounded-md bg-car-item border border-car-accent text-car-accent text-[12.5px] font-black">官方推荐</span>
             </div>
             <span class="text-[14.5px] text-car-sub font-bold leading-relaxed">
@@ -71,7 +71,7 @@
         >
           <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
             <div class="flex items-center space-x-2.5">
-              <span class="text-[19px] font-black text-car-text group-hover:text-car-accent">📁 仅清理散落普通文件</span>
+              <span class="text-[19px] font-black text-car-text group-hover:text-car-accent">仅清理散落普通文件</span>
               <span class="px-2.5 py-0.5 rounded-md bg-car-item border border-car-border text-car-sub text-[12.5px] font-black">保留所有文件夹</span>
             </div>
             <span class="text-[14.5px] text-car-sub font-bold leading-relaxed">
@@ -91,7 +91,7 @@
           @click="openFileManager"
           class="h-[52px] px-6 rounded-xl bg-car-item border border-car-border text-car-sub hover:text-car-text font-bold text-[15.5px] cursor-pointer hover:border-car-border-light transition-all"
         >
-          📁 查看 Download 目录
+          查看 Download 目录
         </button>
         <button 
           @click="closeModal('cleanDownload')"

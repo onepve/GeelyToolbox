@@ -20,7 +20,7 @@
       </div>
 
       <div v-if="confirmData.tip" class="text-[15.5px] text-car-sub font-bold bg-car-item p-4 rounded-xl border border-car-border leading-relaxed">
-        💡 {{ confirmData.tip }}
+        {{ confirmData.tip }}
       </div>
     </div>
 
@@ -45,7 +45,7 @@
                   : 'bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25 cursor-pointer')
           ]"
         >
-          {{ countdownLeft > 0 ? `⏳ 请仔细阅读 (${countdownLeft}s)` : (confirmData?.confirmText || (confirmData?.showCancel === false ? '我知道了' : '确认执行')) }}
+          {{ countdownLeft > 0 ? `请仔细阅读 (${countdownLeft}s)` : (confirmData?.confirmText || (confirmData?.showCancel === false ? '我知道了' : '确认执行')) }}
         </button>
       </div>
     </template>

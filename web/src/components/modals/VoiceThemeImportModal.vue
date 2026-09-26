@@ -22,7 +22,7 @@
           @click="scanZips"
           class="h-[52px] px-6 rounded-2xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all shrink-0"
         >
-          🔄 重新扫描
+          重新扫描
         </button>
       </div>
 
@@ -61,7 +61,7 @@
               @click="importZip(zip.name)"
               class="h-[52px] px-6 bg-car-item border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md shrink-0 transition-all"
             >
-              📥 一键解压导入
+              一键解压导入
             </button>
           </div>
         </div>
@@ -83,7 +83,7 @@
           @click="openQrCodeModal"
           class="h-[52px] px-6 bg-car-card border-2 border-car-border text-car-accent font-black text-[16px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm shrink-0 transition-all"
         >
-          📡 打开快传二维码
+          打开快传二维码
         </button>
       </div>
     </div>

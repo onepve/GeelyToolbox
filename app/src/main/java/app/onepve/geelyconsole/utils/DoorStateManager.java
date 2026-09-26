@@ -260,16 +260,16 @@ public class DoorStateManager {
                             String role = prefs.getString("passenger_voice_role", "princess");
                             if ("female".equals(role)) {
                                 soundFile = "door_fr_exit.mp3";
-                                text = "开门请注意后方来车";
+                                text = "开门请注意后方来车，请带好随身物品";
                             } else if ("male".equals(role)) {
                                 soundFile = "door_fr_male_exit.mp3";
-                                text = "开门请注意后方来车";
+                                text = "下车请注意后方来车，别忘了随身物品";
                             } else if ("queen".equals(role)) {
                                 soundFile = "door_fr_queen_exit.mp3";
-                                text = "女王殿下请慢走，注意后方来车";
+                                text = "女王殿下请慢走，请带好随身贵重物品，注意后方来车";
                             } else {
                                 soundFile = "door_fr_princess_exit.mp3";
-                                text = "公主请下车";
+                                text = "公主请下车，小包包和手机别落下哦，注意后方来车";
                             }
                         } else if ("RL".equals(doorCode)) {
                             soundFile = "door_rl.mp3";
@@ -376,7 +376,7 @@ public class DoorStateManager {
                                 text = "车门已关好，请系好安全带";
                             } else if (currentIntent == INTENT_EXITING) {
                                 soundFile = "door_fr_leave.mp3";
-                                text = "副驾车门已关好，带好随身物品";
+                                text = "副驾车门已关好，再见，祝您一路顺风";
                             } else {
                                 soundFile = "door_fr_close.mp3";
                                 text = "副驾车门已关好";
@@ -387,7 +387,7 @@ public class DoorStateManager {
                                 text = "车门已关好，请系好安全带";
                             } else if (currentIntent == INTENT_EXITING) {
                                 soundFile = "door_fr_male_leave.mp3";
-                                text = "副驾车门已关好，带好随身物品";
+                                text = "副驾车门已关好，再见，祝您生活愉快";
                             } else {
                                 soundFile = "door_fr_close.mp3";
                                 text = "副驾车门已关好";
@@ -409,7 +409,7 @@ public class DoorStateManager {
                                 text = "公主请系好安全带";
                             } else if (currentIntent == INTENT_EXITING) {
                                 soundFile = "door_fr_princess_leave.mp3";
-                                text = "公主再见，随身小包包别落下啦";
+                                text = "公主再见，今天也要开心哦";
                             } else {
                                 soundFile = "door_fr_close.mp3";
                                 text = "副驾车门已关好";

@@ -189,7 +189,7 @@
           @click="resetToDefault"
           class="h-[56px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-text hover:text-car-accent font-black text-[17px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center"
         >
-          <span class="mr-1.5 opacity-80">🔄</span> 恢复出厂原声
+          恢复出厂原声
         </button>
         <button 
           @click="closeModal('voiceItemSettings')"

@@ -11,7 +11,7 @@
       <div v-if="step === 1" class="flex flex-col space-y-4">
         <div class="p-5 rounded-2xl bg-car-card border border-car-border flex flex-col space-y-3">
           <div class="flex items-center space-x-3">
-            <span class="text-[26px]">⚠️</span>
+            
             <div class="flex flex-col">
               <span class="text-[19.5px] font-black text-car-text">请确认：车机自带【系统升级】是否已经运行过？</span>
               <span class="text-[16px] text-car-sub font-bold mt-0.5">
@@ -24,7 +24,7 @@
         <!-- 详细操作指引卡片 (支持日间黑字/夜间白字高对比度) -->
         <div class="p-5 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-2.5 shadow-sm">
           <span class="text-[16px] font-black text-car-accent flex items-center">
-            <span class="mr-1.5">💡</span> 标准操作流程向导：
+             标准操作流程向导：
           </span>
           <div class="text-[14.5px] font-bold leading-relaxed space-y-1.5 pl-1 text-car-text">
             <div>1. 点击下方<b>【打开系统升级】</b>进入车机原厂设置界面，点击一次<b>【检查更新】</b>；</div>
@@ -39,7 +39,7 @@
             @click="openSystemUpgradeApp"
             class="min-h-[58px] px-6 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm flex items-center"
           >
-            <span class="mr-2">⚡</span> 打开系统升级
+            打开系统升级
           </button>
           <button 
             @click="startCapture"
@@ -92,7 +92,7 @@
               @click="copyUrl(captureResult.url)"
               class="min-h-[54px] px-8 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md flex items-center"
             >
-              <span class="mr-2">📋</span> 一键复制下载直链
+              一键复制下载直链
             </button>
           </div>
         </div>

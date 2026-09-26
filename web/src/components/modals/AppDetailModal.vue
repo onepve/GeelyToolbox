@@ -68,7 +68,7 @@
           @click="openRabbitGuide"
           class="h-[60px] px-6 bg-amber-500/15 border-2 border-amber-500/50 rounded-2xl text-amber-300 font-black text-[17.5px] cursor-pointer hover:bg-amber-500/25 ring-2 ring-amber-500/20 shadow-md flex items-center"
         >
-          <span class="mr-2">⚡</span>
+          
           <span>卡兔子主题安装向导</span>
         </button>
         <div v-else></div>
@@ -81,13 +81,13 @@
               @click="pauseDownload"
               class="min-h-[66px] px-8 bg-car-item border-2 border-amber-500/60 text-amber-400 hover:border-amber-400 rounded-2xl font-black text-[19px] cursor-pointer shadow-md transition-all flex items-center"
             >
-              <span class="mr-2">⏸️</span> 暂停下载
+               暂停下载
             </button>
             <button 
               @click="cancelDownload"
               class="min-h-[66px] px-8 bg-car-item border-2 border-rose-500/60 text-rose-400 hover:border-rose-400 rounded-2xl font-black text-[19px] cursor-pointer shadow-md transition-all flex items-center"
             >
-              <span class="mr-2">🛑</span> 取消下载
+               取消下载
             </button>
           </template>
 
@@ -97,13 +97,13 @@
               @click="resumeDownload"
               class="min-h-[66px] px-8 bg-car-item border-2 border-car-accent text-car-text hover:border-car-accent rounded-2xl font-black text-[19px] cursor-pointer shadow-md ring-2 ring-car-accent/20 transition-all flex items-center"
             >
-              <span class="mr-2">▶️</span> 继续下载
+               继续下载
             </button>
             <button 
               @click="cancelDownload"
               class="min-h-[66px] px-8 bg-car-item border-2 border-rose-500/60 text-rose-400 hover:border-rose-400 rounded-2xl font-black text-[19px] cursor-pointer shadow-md transition-all flex items-center"
             >
-              <span class="mr-2">🛑</span> 取消下载
+               取消下载
             </button>
           </template>
 
@@ -114,7 +114,7 @@
               @click="openRabbitGuide"
               class="min-h-[66px] px-8 bg-amber-500/20 border-2 border-amber-500 text-amber-300 rounded-2xl font-black text-[19px] cursor-pointer hover:bg-amber-500/30 shadow-lg ring-2 ring-amber-500/20 transition-all flex items-center"
             >
-              <span class="mr-2">⚡</span> 注入兔子时钟 (卡兔子主题安装)
+               注入兔子时钟 (卡兔子主题安装)
             </button>
             <button 
               @click="handleInstallDownloaded"
@@ -125,13 +125,13 @@
                   : 'px-10 bg-car-item border-2 border-emerald-500 text-emerald-400 hover:border-emerald-400 text-[20px] ring-2 ring-emerald-500/20'
               ]"
             >
-              <span class="mr-2">✅</span> {{ isMapApp ? '尝试直接覆盖安装' : '立即安装应用' }}
+               {{ isMapApp ? '尝试直接覆盖安装' : '立即安装应用' }}
             </button>
             <button 
               @click="handleInstallAction"
               class="min-h-[66px] px-6 bg-car-card border border-car-border text-car-sub hover:text-car-text rounded-2xl font-bold text-[16px] cursor-pointer shadow-sm transition-all"
             >
-              🔄 重新下载
+              重新下载
             </button>
           </template>
 
