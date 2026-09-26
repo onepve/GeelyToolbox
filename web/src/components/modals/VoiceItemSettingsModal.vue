@@ -27,9 +27,9 @@
           </button>
         </div>
 
-        <!-- 副驾出厂 3 套实体语音一键直切 (在当前生效音源下方一排3个，边上就是试听生效语音) -->
+        <!-- 副驾出厂 3 套实体语音选择器（与上面当前生效状态浑然一体） -->
         <div v-if="isFrDoorItem" class="pt-3 border-t border-car-border/60 flex items-center space-x-3">
-          <span class="text-[14px] font-black text-car-text shrink-0">出厂音色直切：</span>
+          <span class="text-[14px] font-black text-car-text shrink-0">副驾出厂音色：</span>
           <div class="flex space-x-2.5 flex-1">
             <button
               v-for="opt in [
@@ -41,7 +41,7 @@
               @click="selectFrEntityRole(opt.role)"
               :class="[
                 'h-[52px] flex-1 px-2 rounded-xl border-2 flex items-center justify-center space-x-1.5 cursor-pointer transition-all',
-                (store.vehicleAuto.passenger_voice_role === opt.role || (!store.vehicleAuto.passenger_voice_role && opt.role === 'princess'))
+                isRoleActive(opt.role)
                   ? 'bg-car-item border-car-accent text-car-accent font-black shadow-sm'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text font-bold'
               ]"
@@ -251,12 +251,20 @@ const isFrDoorItem = computed(() => {
   return (targetItem.value?.key || '').startsWith('door_fr');
 });
 
+function isRoleActive(role) {
+  if (customText.value.trim() || customFilePath.value.trim()) return false;
+  const currentRole = store.vehicleAuto.passenger_voice_role || 'princess';
+  return currentRole === role;
+}
+
 function selectFrEntityRole(role) {
   store.vehicleAuto.passenger_voice_role = role;
   bridge.call('setVehicleAutomationSetting', 'passenger_voice_role', role);
   // 清空针对该项的自定义路径与台词覆盖，使出厂实体直接生效
+  customFilePath.value = '';
+  customText.value = '';
   resetToDefault();
-  showToast(`已切换为【${role === 'queen' ? '女王语音' : (role === 'female' ? '原车语音' : '公主语音')}】实体文件`);
+  showToast(`已切回出厂【${role === 'queen' ? '女王语音' : (role === 'female' ? '原车语音' : '公主语音')}】`);
   if (targetItem.value) {
     bridge.call('testVehicleVoice', targetItem.value.key || 'door_fr_enter');
   }
@@ -520,14 +528,26 @@ const VOICE_ALIAS_MAP = {
 });
 
 const activeVoiceTypeLabel = computed(() => {
-  if (customText.value.trim()) return '自定义台词 TTS';
-  if (customFilePath.value.trim()) return '自定义本地音频文件';
+  if (customText.value.trim()) return '自定义台词 TTS (已覆盖出厂)';
+  if (customFilePath.value.trim()) return '自定义本地音频 (已覆盖出厂)';
+  if (isFrDoorItem.value) {
+    const role = store.vehicleAuto.passenger_voice_role || 'princess';
+    if (role === 'queen') return '👑 女王专属语音 (绅士男声 · 出厂)';
+    if (role === 'female') return '🚗 原车官方语音 (知性女声 · 原厂)';
+    return '👸 公主专属语音 (温润男声 · 出厂)';
+  }
   return '出厂默认原声 (晓晓温婉知性原声)';
 });
 
 const activeVoiceDesc = computed(() => {
-  if (customText.value.trim()) return `台词: “${customText.value.trim()}” (TTS 语音合成)`;
-  if (customFilePath.value.trim()) return `文件: ${customFilePath.value.trim()}`;
+  if (customText.value.trim()) return `台词: “${customText.value.trim()}” (点下方出厂音色可一键还原)`;
+  if (customFilePath.value.trim()) return `文件: ${customFilePath.value.trim()} (点下方出厂音色可一键还原)`;
+  if (isFrDoorItem.value) {
+    const role = store.vehicleAuto.passenger_voice_role || 'princess';
+    if (role === 'queen') return '端庄绅士男声 (云扬) · 专属高雅礼遇';
+    if (role === 'female') return '吉利原车官方系统内置晓晓知性女声';
+    return '温润自然男声 (云哲) · 专属宠溺台词';
+  }
   return '吉利智驾内置官方精调晓晓知性女声';
 });
 
