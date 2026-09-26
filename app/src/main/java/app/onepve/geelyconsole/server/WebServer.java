@@ -522,7 +522,7 @@ public class WebServer {
                 }
                 root.put(k, val);
             }
-            root.put("passenger_voice_role", prefs.getString("passenger_voice_role", "princess"));
+            root.put("passenger_voice_role", prefs.getString("passenger_voice_role", "female"));
         } catch (Exception ignored) {}
         sendJsonResponse(out, root.toString());
     }
@@ -538,7 +538,7 @@ public class WebServer {
             while (it.hasNext()) {
                 String k = it.next();
                 if ("passenger_voice_role".equals(k)) {
-                    editor.putString("passenger_voice_role", json.optString("passenger_voice_role", "princess"));
+                    editor.putString("passenger_voice_role", json.optString("passenger_voice_role", "female"));
                     continue;
                 }
                 String text = json.optString(k, "").trim();

@@ -258,7 +258,7 @@ public class DoorStateManager {
                         String soundFile = "door_fl_exit.mp3";
                         String text = "请注意后方来车，带好随身物品";
                         if ("FR".equals(doorCode)) {
-                            String role = prefs.getString("passenger_voice_role", "princess");
+                            String role = prefs.getString("passenger_voice_role", "female");
                             if ("queen".equals(role)) {
                                 soundFile = "door_fr_queen_exit.mp3";
                                 text = "女王殿下请慢走，请带好随身贵重物品，注意后方来车";
@@ -297,7 +297,7 @@ public class DoorStateManager {
                         String soundFile = "door_fl_enter.mp3";
                         String text = "车主您好，欢迎回来";
                         if ("FR".equals(doorCode)) {
-                            String role = prefs.getString("passenger_voice_role", "princess");
+                            String role = prefs.getString("passenger_voice_role", "female");
                             if ("queen".equals(role)) {
                                 soundFile = "door_fr_queen_enter.mp3";
                                 text = "恭迎女王殿下";
@@ -368,7 +368,7 @@ public class DoorStateManager {
                             text = "主驾车门已关好";
                         }
                     } else if ("FR".equals(doorCode)) {
-                        String role = prefs.getString("passenger_voice_role", "princess");
+                        String role = prefs.getString("passenger_voice_role", "female");
                         if ("queen".equals(role)) {
                             if (currentIntent == INTENT_ENTERING) {
                                 soundFile = "door_fr_queen_ready.mp3";

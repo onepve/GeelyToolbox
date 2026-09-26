@@ -269,7 +269,7 @@ const emit = defineEmits(['close']);
 const { toggleSetting, testVoice, openCustomVoice, setSetting } = useConfigModal();
 
 const currentPassengerRole = computed(() => {
-  return store.vehicleAuto.passenger_voice_role || 'princess';
+  return store.vehicleAuto.passenger_voice_role || 'female';
 });
 
 const passengerPhrases = computed(() => {

@@ -253,7 +253,7 @@ const isFrDoorItem = computed(() => {
 
 function isRoleActive(role) {
   if (customText.value.trim() || customFilePath.value.trim()) return false;
-  const currentRole = store.vehicleAuto.passenger_voice_role || 'princess';
+  const currentRole = store.vehicleAuto.passenger_voice_role || 'female';
   return currentRole === role;
 }
 
@@ -531,7 +531,7 @@ const activeVoiceTypeLabel = computed(() => {
   if (customText.value.trim()) return '自定义台词 TTS (已覆盖出厂)';
   if (customFilePath.value.trim()) return '自定义本地音频 (已覆盖出厂)';
   if (isFrDoorItem.value) {
-    const role = store.vehicleAuto.passenger_voice_role || 'princess';
+    const role = store.vehicleAuto.passenger_voice_role || 'female';
     if (role === 'queen') return '👑 女王专属语音 (绅士男声 · 出厂)';
     if (role === 'female') return '🚗 原车官方语音 (知性女声 · 原厂)';
     return '👸 公主专属语音 (温润男声 · 出厂)';
@@ -543,7 +543,7 @@ const activeVoiceDesc = computed(() => {
   if (customText.value.trim()) return `台词: “${customText.value.trim()}” (点下方出厂音色可一键还原)`;
   if (customFilePath.value.trim()) return `文件: ${customFilePath.value.trim()} (点下方出厂音色可一键还原)`;
   if (isFrDoorItem.value) {
-    const role = store.vehicleAuto.passenger_voice_role || 'princess';
+    const role = store.vehicleAuto.passenger_voice_role || 'female';
     if (role === 'queen') return '端庄绅士男声 (云扬) · 专属高雅礼遇';
     if (role === 'female') return '吉利原车官方系统内置晓晓知性女声';
     return '温润自然男声 (云哲) · 专属宠溺台词';

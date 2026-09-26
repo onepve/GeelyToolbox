@@ -71,8 +71,8 @@ public final class VehicleConfigHelper {
             obj.put("voice_enable_door_universal_open", prefs.getBoolean("voice_enable_door_universal_open", true));
             obj.put("voice_enable_door_universal_close", prefs.getBoolean("voice_enable_door_universal_close", true));
 
-            // 副驾迎宾角色音色 (princess, queen, male, female)
-            obj.put("passenger_voice_role", prefs.getString("passenger_voice_role", "princess"));
+            // 副驾迎宾角色音色 (female: 原厂晓晓, princess: 公主, queen: 女王)
+            obj.put("passenger_voice_role", prefs.getString("passenger_voice_role", "female"));
 
             // 四门与尾门迎宾与关门 (默认全开)
             obj.put("voice_enable_door_fl", prefs.getBoolean("voice_enable_door_fl", true));
