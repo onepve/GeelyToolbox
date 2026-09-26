@@ -115,6 +115,12 @@ export const store = reactive({
   oilPrice: {
     selectedProvince: (() => {
       try {
+        if (typeof window !== 'undefined' && window.AndroidBridge && window.AndroidBridge.getOilSelectedProvince) {
+          const p = window.AndroidBridge.getOilSelectedProvince();
+          if (p && p.trim()) return p.trim();
+        }
+      } catch (e) {}
+      try {
         const saved = localStorage.getItem('geely_oil_selected_province');
         if (saved) return saved;
         const raw = localStorage.getItem('geely_oil_fav_provinces');
@@ -128,6 +134,15 @@ export const store = reactive({
       }
     })(),
     favProvinces: (() => {
+      try {
+        if (typeof window !== 'undefined' && window.AndroidBridge && window.AndroidBridge.getOilFavProvinces) {
+          const raw = window.AndroidBridge.getOilFavProvinces();
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list) && list.length > 0) return list;
+          }
+        }
+      } catch (e) {}
       try {
         const raw = localStorage.getItem('geely_oil_fav_provinces');
         if (raw) {
@@ -215,9 +230,32 @@ export function showToast(msg, kind = 'info') {
   }, 2200);
 }
 
+export function initOilPersistentSettings() {
+  try {
+    const rawFavs = bridge.call('getOilFavProvinces');
+    if (rawFavs) {
+      const list = JSON.parse(rawFavs);
+      if (Array.isArray(list) && list.length > 0) {
+        store.oilPrice.favProvinces = list;
+        try { localStorage.setItem('geely_oil_fav_provinces', rawFavs); } catch (e) {}
+      }
+    }
+  } catch (e) {}
+  try {
+    const sel = bridge.call('getOilSelectedProvince');
+    if (sel && sel.trim()) {
+      store.oilPrice.selectedProvince = sel.trim();
+      try { localStorage.setItem('geely_oil_selected_province', sel.trim()); } catch (e) {}
+    }
+  } catch (e) {}
+}
+
 export function setOilSelectedProvince(prov) {
   if (!prov) return;
   store.oilPrice.selectedProvince = prov;
+  try {
+    bridge.call('setOilSelectedProvince', prov);
+  } catch (e) {}
   try {
     localStorage.setItem('geely_oil_selected_province', prov);
   } catch (e) {}
@@ -243,6 +281,9 @@ export function toggleOilFavProvince(prov) {
     showToast(`已将 ${prov} 设为常用省份`, 'success');
   }
   store.oilPrice.favProvinces = list;
+  try {
+    bridge.call('setOilFavProvinces', JSON.stringify(list));
+  } catch (e) {}
   try {
     localStorage.setItem('geely_oil_fav_provinces', JSON.stringify(list));
   } catch (e) {}

@@ -8,7 +8,7 @@ const ACTION_DEFS = {
   next_track: { name: '下一曲', sub: '切歌 (官方调度)' },
   prev_track: { name: '上一曲', sub: '切歌 (官方调度)' },
   open_navi: { name: '打开高德地图', sub: '一键秒切导航' },
-  open_360: { name: '打开 360 全景', sub: '一键秒看盲区' },
+  open_360: { name: '360 全景 (循环开关)', sub: '未开则开·已开则退' },
   play_pause: { name: '播放 / 暂停', sub: '媒体暂停或继续' },
   mute_toggle: { name: '静音切换', sub: '音乐声道静音/恢复' },
   screen_off: { name: '息屏屏保', sub: '唤起内部息屏屏保' }

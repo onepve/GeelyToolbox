@@ -119,10 +119,13 @@ import AllAppsModal from './components/modals/AllAppsModal.vue';
 import WelcomeDonateModal from './components/modals/WelcomeDonateModal.vue';
 import OilPriceModal from './components/modals/OilPriceModal.vue';
 
-import { store, bridge, openModal, recordActiveNav, refreshOilPrices } from './store';
+import { store, bridge, openModal, recordActiveNav, refreshOilPrices, initOilPersistentSettings } from './store';
 import { initTheme, quickToggleDayNight } from './theme/themes';
 
 onMounted(() => {
+  // 从原生 SharedPreferences 同步油价常用省份持久化设置 (防覆盖升级丢失)
+  try { initOilPersistentSettings(); } catch (e) {}
+
   // 根据配置恢复启动首屏落地页
   try {
     const startup = store.settings.startup_nav || 'wheel';

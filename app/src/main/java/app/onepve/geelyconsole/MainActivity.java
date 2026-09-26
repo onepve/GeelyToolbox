@@ -3956,6 +3956,59 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public String getOilFavProvinces() {
+            try {
+                android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                if (!prefs.contains("geely_oil_fav_provinces")) {
+                    String defaultFavs = "[\"浙江\",\"上海\",\"江苏\",\"北京\"]";
+                    prefs.edit().putString("geely_oil_fav_provinces", defaultFavs).apply();
+                    return defaultFavs;
+                }
+                return prefs.getString("geely_oil_fav_provinces", "[\"浙江\"]");
+            } catch (Exception e) {
+                return "[\"浙江\"]";
+            }
+        }
+
+        @JavascriptInterface
+        public void setOilFavProvinces(final String favsJson) {
+            if (favsJson == null || favsJson.trim().isEmpty()) return;
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        prefs.edit().putString("geely_oil_fav_provinces", favsJson).apply();
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public String getOilSelectedProvince() {
+            try {
+                android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                return prefs.getString("geely_oil_selected_province", "");
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        @JavascriptInterface
+        public void setOilSelectedProvince(final String province) {
+            if (province == null || province.trim().isEmpty()) return;
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        prefs.edit().putString("geely_oil_selected_province", province).apply();
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+
+        @JavascriptInterface
         public String getInstalledLaunchableApps() {
             JSONArray arr = new JSONArray();
             try {

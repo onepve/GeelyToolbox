@@ -3,6 +3,7 @@ package app.onepve.geelyconsole.utils;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
+import android.net.Uri;
 import app.onepve.geelyconsole.services.VehicleAutomationService;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -425,7 +426,7 @@ public class SteeringWheelKeyManager {
         }
         switch (action) {
             case ACTION_OPEN_360:
-                open360Camera();
+                toggle360Camera();
                 break;
             case ACTION_OPEN_NAVI:
                 openAmapNavi();
@@ -665,6 +666,53 @@ public class SteeringWheelKeyManager {
                 } catch (Exception ignored) {}
             }
         }, 150);
+    }
+
+    public boolean is360CameraActive() {
+        try {
+            String fg = ForegroundAppDetector.getForegroundPackage(context);
+            if ("ecarx.camera.calibration".equals(fg)) {
+                return true;
+            }
+        } catch (Throwable ignored) {}
+        return false;
+    }
+
+    private void toggle360Camera() {
+        if (is360CameraActive()) {
+            AppLogger.i("方控按键", "检测到 360 全景正处于前台运行，按键执行【退出 360】");
+            close360Camera();
+        } else {
+            AppLogger.i("方控按键", "检测到 360 全景未在前台，按键执行【打开 360】");
+            open360Camera();
+        }
+    }
+
+    private void close360Camera() {
+        try {
+            // 1. 发送吉利官方原厂 VR 退出广播
+            Intent closeIntent = new Intent("ecarx.intent.broadcast.action.ECARX_VR_APP_CLOSE");
+            closeIntent.setData(Uri.parse("ecarx://vr.com/360全景"));
+            closeIntent.setPackage("ecarx.camera.calibration");
+            context.sendBroadcast(closeIntent);
+            AppLogger.i("方控按键", "已下发吉利原厂 VR 指令退出 360 全景界面");
+
+            // 2. 延迟 300ms 检查：若 360 仍在前台，注入返回键兜底退出
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String fg = ForegroundAppDetector.getForegroundPackage(context);
+                        if ("ecarx.camera.calibration".equals(fg)) {
+                            AppLogger.i("方控按键", "360 仍处于前台，下发返回键完成退出");
+                            SystemUtils.executePrivileged(context, "input keyevent 4");
+                        }
+                    } catch (Throwable ignored) {}
+                }
+            }, 300);
+        } catch (Exception e) {
+            AppLogger.w("方控按键", "退出 360 失败: " + e.getMessage());
+        }
     }
 
     private void open360Camera() {
