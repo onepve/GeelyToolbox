@@ -270,12 +270,12 @@
               <!-- 3. 原厂云听车机版 -->
               <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex items-center justify-between shadow-sm min-h-[80px]">
                 <div class="flex items-center space-x-3 min-w-0 flex-1 pr-3">
-                  <StatusDot size="sm" :color="presetStates['com.ecarx.xsf'] ? 'ok' : 'off'" />
+                  <StatusDot size="sm" :color="presetStates['ecarx.xsf.mediacenter'] ? 'ok' : 'off'" />
                   <div class="flex flex-col min-w-0 flex-1">
                     <div class="flex items-center space-x-2">
                       <span class="text-[16.5px] font-black text-car-text whitespace-nowrap">原厂云听车机版</span>
-                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['com.ecarx.xsf'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
-                        {{ presetStates['com.ecarx.xsf'] ? '已安全冻结' : '活跃运行中' }}
+                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['ecarx.xsf.mediacenter'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
+                        {{ presetStates['ecarx.xsf.mediacenter'] ? '已安全冻结' : '活跃运行中' }}
                       </span>
                     </div>
                     <div class="text-[12px] text-car-sub font-bold truncate mt-1">
@@ -284,20 +284,20 @@
                   </div>
                 </div>
                 <button 
-                  @click="confirmPresetFreeze('com.ecarx.xsf', '原厂云听车机版')"
-                  :disabled="!!freezingPackages['com.ecarx.xsf']"
+                  @click="confirmPresetFreeze('ecarx.xsf.mediacenter', '原厂云听车机版')"
+                  :disabled="!!freezingPackages['ecarx.xsf.mediacenter']"
                   :class="[
                     'w-[155px] min-h-[50px] px-2 rounded-xl border-2 font-black text-[13.5px] shrink-0 transition-all flex items-center justify-center shadow-sm',
-                    freezingPackages['com.ecarx.xsf']
+                    freezingPackages['ecarx.xsf.mediacenter']
                       ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
-                      : (presetStates['com.ecarx.xsf'] 
+                      : (presetStates['ecarx.xsf.mediacenter'] 
                           ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
                           : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer')
                   ]"
                 >
-                  {{ freezingPackages['com.ecarx.xsf'] 
-                      ? (presetStates['com.ecarx.xsf'] ? '正在解冻中...' : '正在冻结中...') 
-                      : (presetStates['com.ecarx.xsf'] ? '已冻结 · 点击解冻' : '运行中 · 安全冻结') }}
+                  {{ freezingPackages['ecarx.xsf.mediacenter'] 
+                      ? (presetStates['ecarx.xsf.mediacenter'] ? '正在解冻中...' : '正在冻结中...') 
+                      : (presetStates['ecarx.xsf.mediacenter'] ? '已冻结 · 点击解冻' : '运行中 · 安全冻结') }}
                 </button>
               </div>
 
@@ -384,7 +384,7 @@ const stateFilters = [
 const presetStates = ref({
   'com.ecarx.appstore': false,
   'com.ecarx.multimedia': false,
-  'com.edog.car': false,
+  'ecarx.xsf.mediacenter': false,
   'com.bytedance.byteautoservice': false
 });
 const freezingPackages = ref({}); // 防呆置灰防狂点
@@ -393,7 +393,7 @@ function refreshPresetStates() {
   try {
     presetStates.value['com.ecarx.appstore'] = !!bridge.call('isPackageFrozen', 'com.ecarx.appstore');
     presetStates.value['com.ecarx.multimedia'] = !!bridge.call('isPackageFrozen', 'com.ecarx.multimedia');
-    presetStates.value['com.edog.car'] = !!bridge.call('isPackageFrozen', 'com.edog.car');
+    presetStates.value['ecarx.xsf.mediacenter'] = !!bridge.call('isPackageFrozen', 'ecarx.xsf.mediacenter');
     presetStates.value['com.bytedance.byteautoservice'] = !!bridge.call('isPackageFrozen', 'com.bytedance.byteautoservice');
   } catch (e) {}
 }
