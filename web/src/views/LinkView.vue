@@ -236,33 +236,33 @@
       </div>
     </div>
 
-    <!-- 5. 转向灯开启联动 360 - 核心车身联动 (左右分栏车规黄金磁贴) -->
-    <div class="bg-car-card border-2 border-car-border rounded-2xl p-4 min-h-[88px] shadow-xl flex items-center justify-between transition-all">
-      <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
+    <!-- 5. 转向灯开启联动 360 - 核心车身联动 (左右分栏车规黄金磁贴，充盈大磁贴设计) -->
+    <div class="bg-car-card border-2 border-car-border rounded-2xl py-7 px-6 min-h-[148px] shadow-xl flex items-center justify-between transition-all">
+      <div class="w-[62%] max-w-[62%] flex flex-col space-y-3 shrink-0">
         <div class="flex items-center space-x-3">
           <StatusDot size="lg" :color="store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
-          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">转向灯开启联动 360 全景</span>
-          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
+          <span class="text-[22px] font-black text-car-text tracking-wide whitespace-nowrap">转向灯开启联动 360 全景</span>
+          <span class="px-3 py-1 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
             <StatusDot class="mr-2" size="sm" :color="store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'ok' : 'off'" />
             {{ store.vehicleAuto.vehicle_turn_signal_360_enabled ? '转向灯联动已启用' : '转向灯联动已关闭 (不干涉)' }}
           </span>
           <HelpDot size="sm" @click="showHelp('turn_signal_360')" />
         </div>
-        <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-          打左/右转向灯时自动唤起 360 全景环视，消除变道与盲区；转向灯回正关闭后自动退出（R 挡倒车不打扰）。
+        <div class="text-[15px] text-car-sub font-bold leading-relaxed">
+          打左/右转向灯时自动唤起 360 全景环视，消除变道与侧向盲区；转向灯回正关闭后自动退出（R 挡倒车不打扰）。
         </div>
       </div>
 
-      <div class="shrink-0 w-[230px]">
+      <div class="shrink-0 w-[240px]">
         <BaseButton
           variant="master"
           :active="store.vehicleAuto.vehicle_turn_signal_360_enabled"
           @click="toggleTurnSignal360"
         >
-          <span class="text-[18.5px] font-black text-car-text tracking-wide whitespace-nowrap">
+          <span class="text-[19px] font-black text-car-text tracking-wide whitespace-nowrap">
             {{ store.vehicleAuto.vehicle_turn_signal_360_enabled ? '转向灯联动已开启' : '转向灯联动已关闭' }}
           </span>
-          <span :class="['text-[12.5px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'text-car-accent' : 'text-car-sub']">
+          <span :class="['text-[13px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'text-car-accent' : 'text-car-sub']">
             {{ store.vehicleAuto.vehicle_turn_signal_360_enabled ? '点击关闭转向灯联动' : '点击开启转向灯联动' }}
           </span>
         </BaseButton>
@@ -285,10 +285,10 @@ const hasNeteaseMusic = ref(false);
 const customAutoplayAppName = ref('');
 const customActionAppName = ref('');
 
-const toggleTurnSignal360 = async () => {
+const toggleTurnSignal360 = () => {
   const nextVal = !store.vehicleAuto.vehicle_turn_signal_360_enabled;
   store.vehicleAuto.vehicle_turn_signal_360_enabled = nextVal;
-  await bridge.setVehicleAutomationSetting('vehicle_turn_signal_360_enabled', nextVal);
+  bridge.call('setVehicleAutomationSetting', 'vehicle_turn_signal_360_enabled', nextVal);
   showToast(nextVal ? '转向灯联动 360 已开启' : '转向灯联动 360 已关闭');
 };
 

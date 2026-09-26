@@ -871,13 +871,23 @@ public class VehicleAutomationService extends Service {
             } catch (Exception ignored) {}
         }
 
-        // 5.1 解析 ga10 架构转向灯报文 (paramVehicleTurnLight ... turnLight=1/2/0)
-        if (enableTurnSignal360 && (line.contains("paramVehicleTurnLight") || line.contains("turnLight="))) {
+        // 5.1 解析 ga10 / E02 架构转向灯报文 (paramVehicleTurnLight ... turnLight=1/2/0 与 VehId=Vehicle_TurnLight)
+        if (enableTurnSignal360 && (line.contains("paramVehicleTurnLight") || line.contains("turnLight=") || line.contains("Vehicle_TurnLight"))) {
             try {
-                Matcher m = P_TURN_LIGHT.matcher(line);
-                if (m.find()) {
-                    int turnVal = Integer.parseInt(m.group(1));
-                    handleTurnSignalState(turnVal);
+                if (line.contains("turnLight=")) {
+                    Matcher m = P_TURN_LIGHT.matcher(line);
+                    if (m.find()) {
+                        int turnVal = Integer.parseInt(m.group(1));
+                        handleTurnSignalState(turnVal);
+                    }
+                } else if (line.contains("Vehicle_TurnLight")) {
+                    int idx = line.indexOf("Vehicle_TurnLight");
+                    int vIdx = line.indexOf("value=", idx);
+                    if (vIdx != -1) {
+                        String sub = line.substring(vIdx + 6).trim();
+                        int turnVal = sub.startsWith("0x") ? Integer.parseInt(sub.substring(2, 4), 16) : Integer.parseInt(sub.substring(0, 1));
+                        handleTurnSignalState(turnVal);
+                    }
                 }
             } catch (Exception ignored) {}
         }
