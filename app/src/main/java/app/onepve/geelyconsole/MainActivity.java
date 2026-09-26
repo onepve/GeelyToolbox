@@ -2348,7 +2348,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public boolean toggleFreezeAppStore(final boolean freeze) {
-            if (!prefs.getBoolean(SystemUtils.KEY_ADB_MASTER_SWITCH, true)) {
+            if (!SystemUtils.isAdbMasterSwitchEnabled(MainActivity.this)) {
                 showToast("ADB 总开关已关闭，该功能无法使用");
                 return false;
             }
