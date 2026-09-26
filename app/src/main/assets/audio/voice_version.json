@@ -1,174 +1,174 @@
 {
-    "voice_version": 4,
-    "updated_at": "2026-09-26T12:00:00+08:00",
-    "files": {
-        "door_close.mp3": {
-            "size": 13916,
-            "md5": "4c1be08b707b151a6325e0ef6b3ea5a6"
-        },
-        "door_fl.mp3": {
-            "size": 22320,
-            "md5": "25619aaac2a8fcb3adda92a3359b0709"
-        },
-        "door_fl_close.mp3": {
-            "size": 22176,
-            "md5": "9ffd9f94a15d690de77f9729f3e9506e"
-        },
-        "door_fl_enter.mp3": {
-            "size": 17228,
-            "md5": "084eb640ed0882a0c8e8f9a116a12b0e"
-        },
-        "door_fl_exit.mp3": {
-            "size": 23420,
-            "md5": "313a2c446f7cf553cc5b57d2117a5583"
-        },
-        "door_fl_leave.mp3": {
-            "size": 19964,
-            "md5": "b20b0c69bf14a6e9c87cf63f4f603efe"
-        },
-        "door_fl_ready.mp3": {
-            "size": 19820,
-            "md5": "643b06f6c74dbc842a985917960c0533"
-        },
-        "door_fr.mp3": {
-            "size": 17568,
-            "md5": "06d958b50398b7c58674b3790a98414b"
-        },
-        "door_fr_close.mp3": {
-            "size": 22320,
-            "md5": "29ffe265d09cff36af9ba9df03165bc7"
-        },
-        "door_fr_enter.mp3": {
-            "size": 12044,
-            "md5": "14ce9f35c0ff02ac2a4ae2f88cbd8158"
-        },
-        "door_fr_exit.mp3": {
-            "size": 26876,
-            "md5": "718b295589108de261119450124b7d56"
-        },
-        "door_fr_leave.mp3": {
-            "size": 27596,
-            "md5": "48273bbbc0d94ccd3261231f91589a2c"
-        },
-        "door_fr_male_enter.mp3": {
-            "size": 14060,
-            "md5": "5583b975ae8402e3ad689295cf75dfd4"
-        },
-        "door_fr_male_exit.mp3": {
-            "size": 26732,
-            "md5": "5bbf2a40bb36e508c248d9d0387c9710"
-        },
-        "door_fr_male_leave.mp3": {
-            "size": 29468,
-            "md5": "6a053f88d1fee00c9d55d065f9169325"
-        },
-        "door_fr_male_ready.mp3": {
-            "size": 22412,
-            "md5": "e17d0c491ecb43a2b475fdba0f2dcd78"
-        },
-        "door_fr_princess_enter.mp3": {
-            "size": 15068,
-            "md5": "e8f71e7318fe8c04499f8623d4e7b236"
-        },
-        "door_fr_princess_exit.mp3": {
-            "size": 32060,
-            "md5": "8062c8655dfd86174d5f486f5c2d2243"
-        },
-        "door_fr_princess_leave.mp3": {
-            "size": 21404,
-            "md5": "d8ca1c494f04d1b30da7aa42423e0120"
-        },
-        "door_fr_princess_ready.mp3": {
-            "size": 18092,
-            "md5": "7f947e7b2413120f21b539824b0599f7"
-        },
-        "door_fr_queen_enter.mp3": {
-            "size": 17804,
-            "md5": "96834e86f98f23b1c9fefd143c42292d"
-        },
-        "door_fr_queen_exit.mp3": {
-            "size": 32204,
-            "md5": "09ff3e4d4ba90c040a40f8e4fcc13f22"
-        },
-        "door_fr_queen_leave.mp3": {
-            "size": 22988,
-            "md5": "25091be364e6d55ec3aebf9edcb5635c"
-        },
-        "door_fr_queen_ready.mp3": {
-            "size": 22124,
-            "md5": "21655ad14da143acbac804fa08d7af3a"
-        },
-        "door_fr_ready.mp3": {
-            "size": 21116,
-            "md5": "4f5b81522f143babf9557b21a9ae702f"
-        },
-        "door_open.mp3": {
-            "size": 13772,
-            "md5": "0241c37772f4ed896bfbbb0185842381"
-        },
-        "door_rl.mp3": {
-            "size": 22032,
-            "md5": "bbcaaa0d483461fb270f6d8887d3ec3d"
-        },
-        "door_rl_close.mp3": {
-            "size": 13968,
-            "md5": "99095aa76d966f529fdad9bc7b6b9283"
-        },
-        "door_rr.mp3": {
-            "size": 22032,
-            "md5": "e40c94a9eca8d314fe6d43703eac5e4f"
-        },
-        "door_rr_close.mp3": {
-            "size": 13968,
-            "md5": "78769590b8809b0d616c51960fdd8bb3"
-        },
-        "gear_d.mp3": {
-            "size": 17424,
-            "md5": "e61f4687c9ea048bbd5ab5febc78cce5"
-        },
-        "gear_n.mp3": {
-            "size": 7776,
-            "md5": "ece19bba6a5c927117dbf2a5028e6a60"
-        },
-        "gear_p.mp3": {
-            "size": 12096,
-            "md5": "e28d8c5db4ef7a780b91988525fab38b"
-        },
-        "gear_park_alarm.mp3": {
-            "size": 12764,
-            "md5": "76668b00c67ac5dcae10b046ee664e8b"
-        },
-        "gear_r.mp3": {
-            "size": 5612,
-            "md5": "a8b6df53fe031f9c1797cc3e68de8acf"
-        },
-        "gear_s.mp3": {
-            "size": 10080,
-            "md5": "f8e180da3f9433beef43b38fea12c913"
-        },
-        "mode_comfort.mp3": {
-            "size": 5852,
-            "md5": "bc9ff3a24ec154ab2e66da04bad2de0a"
-        },
-        "mode_eco.mp3": {
-            "size": 5420,
-            "md5": "8419acbc9c5f609ed41cd151d86cc5fa"
-        },
-        "mode_smart.mp3": {
-            "size": 5420,
-            "md5": "860db3e37a0438871874fb4a4347e8e5"
-        },
-        "mode_sport.mp3": {
-            "size": 5132,
-            "md5": "17c1ba13ff62619fca279cc13a9137ce"
-        },
-        "trunk_close.mp3": {
-            "size": 19440,
-            "md5": "5154536541cda36e4134ba45771f9341"
-        },
-        "trunk_open.mp3": {
-            "size": 12672,
-            "md5": "88d315c51c6b3bc58208cf686baedeff"
-        }
+  "voice_version": 2026092605,
+  "total_files": 42,
+  "files": {
+    "door_close.mp3": {
+      "size": 13916,
+      "md5": "4c1be08b707b151a6325e0ef6b3ea5a6"
+    },
+    "door_fl.mp3": {
+      "size": 22320,
+      "md5": "25619aaac2a8fcb3adda92a3359b0709"
+    },
+    "door_fl_close.mp3": {
+      "size": 22176,
+      "md5": "9ffd9f94a15d690de77f9729f3e9506e"
+    },
+    "door_fl_enter.mp3": {
+      "size": 17228,
+      "md5": "084eb640ed0882a0c8e8f9a116a12b0e"
+    },
+    "door_fl_exit.mp3": {
+      "size": 23420,
+      "md5": "313a2c446f7cf553cc5b57d2117a5583"
+    },
+    "door_fl_leave.mp3": {
+      "size": 19964,
+      "md5": "b20b0c69bf14a6e9c87cf63f4f603efe"
+    },
+    "door_fl_ready.mp3": {
+      "size": 19820,
+      "md5": "643b06f6c74dbc842a985917960c0533"
+    },
+    "door_fr.mp3": {
+      "size": 17568,
+      "md5": "06d958b50398b7c58674b3790a98414b"
+    },
+    "door_fr_close.mp3": {
+      "size": 22320,
+      "md5": "29ffe265d09cff36af9ba9df03165bc7"
+    },
+    "door_fr_enter.mp3": {
+      "size": 12044,
+      "md5": "14ce9f35c0ff02ac2a4ae2f88cbd8158"
+    },
+    "door_fr_exit.mp3": {
+      "size": 26876,
+      "md5": "718b295589108de261119450124b7d56"
+    },
+    "door_fr_leave.mp3": {
+      "size": 27596,
+      "md5": "48273bbbc0d94ccd3261231f91589a2c"
+    },
+    "door_fr_male_enter.mp3": {
+      "size": 14060,
+      "md5": "5583b975ae8402e3ad689295cf75dfd4"
+    },
+    "door_fr_male_exit.mp3": {
+      "size": 26732,
+      "md5": "5bbf2a40bb36e508c248d9d0387c9710"
+    },
+    "door_fr_male_leave.mp3": {
+      "size": 29468,
+      "md5": "6a053f88d1fee00c9d55d065f9169325"
+    },
+    "door_fr_male_ready.mp3": {
+      "size": 22412,
+      "md5": "e17d0c491ecb43a2b475fdba0f2dcd78"
+    },
+    "door_fr_princess_enter.mp3": {
+      "size": 18236,
+      "md5": "baa6aa9e782c768f8e26c980b0741c03"
+    },
+    "door_fr_princess_exit.mp3": {
+      "size": 32348,
+      "md5": "5a5d32301d1defaa7cdec63e131feb1a"
+    },
+    "door_fr_princess_leave.mp3": {
+      "size": 22268,
+      "md5": "c3da462adb593dd05c81016529d9a616"
+    },
+    "door_fr_princess_ready.mp3": {
+      "size": 20828,
+      "md5": "13616af89f6688e3f813a59469695f1b"
+    },
+    "door_fr_queen_enter.mp3": {
+      "size": 17804,
+      "md5": "96834e86f98f23b1c9fefd143c42292d"
+    },
+    "door_fr_queen_exit.mp3": {
+      "size": 32204,
+      "md5": "09ff3e4d4ba90c040a40f8e4fcc13f22"
+    },
+    "door_fr_queen_leave.mp3": {
+      "size": 22988,
+      "md5": "25091be364e6d55ec3aebf9edcb5635c"
+    },
+    "door_fr_queen_ready.mp3": {
+      "size": 22124,
+      "md5": "21655ad14da143acbac804fa08d7af3a"
+    },
+    "door_fr_ready.mp3": {
+      "size": 21116,
+      "md5": "4f5b81522f143babf9557b21a9ae702f"
+    },
+    "door_open.mp3": {
+      "size": 13772,
+      "md5": "0241c37772f4ed896bfbbb0185842381"
+    },
+    "door_rl.mp3": {
+      "size": 22032,
+      "md5": "bbcaaa0d483461fb270f6d8887d3ec3d"
+    },
+    "door_rl_close.mp3": {
+      "size": 13968,
+      "md5": "99095aa76d966f529fdad9bc7b6b9283"
+    },
+    "door_rr.mp3": {
+      "size": 22032,
+      "md5": "e40c94a9eca8d314fe6d43703eac5e4f"
+    },
+    "door_rr_close.mp3": {
+      "size": 13968,
+      "md5": "78769590b8809b0d616c51960fdd8bb3"
+    },
+    "gear_d.mp3": {
+      "size": 17424,
+      "md5": "e61f4687c9ea048bbd5ab5febc78cce5"
+    },
+    "gear_n.mp3": {
+      "size": 7776,
+      "md5": "ece19bba6a5c927117dbf2a5028e6a60"
+    },
+    "gear_p.mp3": {
+      "size": 12096,
+      "md5": "e28d8c5db4ef7a780b91988525fab38b"
+    },
+    "gear_park_alarm.mp3": {
+      "size": 12764,
+      "md5": "76668b00c67ac5dcae10b046ee664e8b"
+    },
+    "gear_r.mp3": {
+      "size": 5612,
+      "md5": "a8b6df53fe031f9c1797cc3e68de8acf"
+    },
+    "gear_s.mp3": {
+      "size": 10080,
+      "md5": "f8e180da3f9433beef43b38fea12c913"
+    },
+    "mode_comfort.mp3": {
+      "size": 5852,
+      "md5": "bc9ff3a24ec154ab2e66da04bad2de0a"
+    },
+    "mode_eco.mp3": {
+      "size": 5420,
+      "md5": "8419acbc9c5f609ed41cd151d86cc5fa"
+    },
+    "mode_smart.mp3": {
+      "size": 5420,
+      "md5": "860db3e37a0438871874fb4a4347e8e5"
+    },
+    "mode_sport.mp3": {
+      "size": 5132,
+      "md5": "17c1ba13ff62619fca279cc13a9137ce"
+    },
+    "trunk_close.mp3": {
+      "size": 19440,
+      "md5": "5154536541cda36e4134ba45771f9341"
+    },
+    "trunk_open.mp3": {
+      "size": 12672,
+      "md5": "88d315c51c6b3bc58208cf686baedeff"
     }
+  }
 }
