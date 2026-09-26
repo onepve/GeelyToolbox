@@ -231,34 +231,64 @@ const presetPhrases = computed(() => {
   const key = targetItem.value.key || '';
 
   // 1. 副驾车门 (开/关专属台词)
-  if (key === 'door_fr') {
+  if (key === 'door_fr' || key === 'door_fr_enter') {
     return [
-      { label: '通用标准 (清爽男声)', text: '欢迎乘车', role: 'male' },
-      { label: '通用标准 (知性女声)', text: '欢迎乘车', role: 'female' },
       { label: '公主专属 (温润男声)', text: '欢迎公主上车', role: 'princess' },
-      { label: '女王专属 (绅士男声)', text: '恭迎女王殿下', role: 'queen' }
+      { label: '女王专属 (绅士男声)', text: '恭迎女王殿下', role: 'queen' },
+      { label: '通用标准 (清爽男声)', text: '欢迎乘车', role: 'male' },
+      { label: '通用标准 (知性女声)', text: '欢迎乘车', role: 'female' }
     ];
   }
-  if (key === 'door_fr_close') {
+  if (key === 'door_fr_ready' || key === 'door_fr_close') {
     return [
-      { label: '通用标准 (清爽男声)', text: '车门已关好，请系好安全带', role: 'male' },
-      { label: '通用标准 (知性女声)', text: '车门已关好，请系好安全带', role: 'female' },
       { label: '公主专属 (温润男声)', text: '公主请系好安全带', role: 'princess' },
-      { label: '女王专属 (绅士男声)', text: '女王殿下已就座，请系好安全带', role: 'queen' }
+      { label: '女王专属 (绅士男声)', text: '女王殿下已就座，请系好安全带', role: 'queen' },
+      { label: '通用标准 (清爽男声)', text: '车门已关好，请系好安全带', role: 'male' },
+      { label: '通用标准 (知性女声)', text: '车门已关好，请系好安全带', role: 'female' }
+    ];
+  }
+  if (key === 'door_fr_exit') {
+    return [
+      { label: '公主下车提醒', text: '公主请下车，小包包和手机别落下哦，注意后方来车', role: 'princess' },
+      { label: '女王慢走提醒', text: '女王殿下请慢走，请带好随身贵重物品，注意后方来车', role: 'queen' },
+      { label: '清爽男声提醒', text: '下车请注意后方来车，别忘了随身物品', role: 'male' },
+      { label: '知性女声提醒', text: '开门请注意后方来车，请带好随身物品', role: 'female' }
+    ];
+  }
+  if (key === 'door_fr_leave') {
+    return [
+      { label: '公主暖心告别', text: '公主再见，今天也要开心哦', role: 'princess' },
+      { label: '女王典雅恭送', text: '恭送女王殿下，期待下次为您服务', role: 'queen' },
+      { label: '男声祝愿', text: '副驾车门已关好，再见，祝您生活愉快', role: 'male' },
+      { label: '女声祝愿', text: '副驾车门已关好，再见，祝您一路顺风', role: 'female' }
     ];
   }
   // 2. 主驾车门
-  if (key === 'door_fl') {
+  if (key === 'door_fl' || key === 'door_fl_enter') {
     return [
       { label: '登车迎宾', text: '车主您好，欢迎回来' },
-      { label: '离车提示', text: '请注意后方来车，带好随身物品' },
-      { label: '防开门杀', text: '开门请注意后方来车' }
+      { label: '准备出发', text: '车主您好，欢迎出发' },
+      { label: '清爽迎宾', text: '车主您好，很高兴为您服务' }
     ];
   }
-  if (key === 'door_fl_close') {
+  if (key === 'door_fl_ready') {
     return [
       { label: '准备启程', text: '准备启程，请系好安全带' },
+      { label: '就座就绪', text: '车门已关好，系好安全带出发吧' },
+      { label: '标准关好', text: '主驾车门已关好' }
+    ];
+  }
+  if (key === 'door_fl_exit') {
+    return [
+      { label: '离车安全提示', text: '请注意后方来车，带好随身物品' },
+      { label: '防开门杀', text: '开门请注意后方来车' },
+      { label: '防遗落提醒', text: '下车请带好手机与随身物品' }
+    ];
+  }
+  if (key === 'door_fl_leave' || key === 'door_fl_close') {
+    return [
       { label: '离车锁车', text: '车门已关好，请记得锁车' },
+      { label: '锁车提醒', text: '主驾已关闭，别忘了锁车哦' },
       { label: '标准关好', text: '主驾车门已关好' }
     ];
   }

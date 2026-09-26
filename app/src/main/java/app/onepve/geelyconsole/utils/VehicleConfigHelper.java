@@ -74,8 +74,17 @@ public final class VehicleConfigHelper {
             // 四门与尾门迎宾与关门 (默认全开)
             obj.put("voice_enable_door_fl", prefs.getBoolean("voice_enable_door_fl", true));
             obj.put("voice_enable_door_fl_close", prefs.getBoolean("voice_enable_door_fl_close", true));
+            obj.put("voice_enable_door_fl_enter", prefs.getBoolean("voice_enable_door_fl_enter", prefs.getBoolean("voice_enable_door_fl", true)));
+            obj.put("voice_enable_door_fl_ready", prefs.getBoolean("voice_enable_door_fl_ready", prefs.getBoolean("voice_enable_door_fl_close", true)));
+            obj.put("voice_enable_door_fl_exit", prefs.getBoolean("voice_enable_door_fl_exit", prefs.getBoolean("voice_enable_door_fl", true)));
+            obj.put("voice_enable_door_fl_leave", prefs.getBoolean("voice_enable_door_fl_leave", prefs.getBoolean("voice_enable_door_fl_close", true)));
+
             obj.put("voice_enable_door_fr", prefs.getBoolean("voice_enable_door_fr", true));
             obj.put("voice_enable_door_fr_close", prefs.getBoolean("voice_enable_door_fr_close", true));
+            obj.put("voice_enable_door_fr_enter", prefs.getBoolean("voice_enable_door_fr_enter", prefs.getBoolean("voice_enable_door_fr", true)));
+            obj.put("voice_enable_door_fr_ready", prefs.getBoolean("voice_enable_door_fr_ready", prefs.getBoolean("voice_enable_door_fr_close", true)));
+            obj.put("voice_enable_door_fr_exit", prefs.getBoolean("voice_enable_door_fr_exit", prefs.getBoolean("voice_enable_door_fr", true)));
+            obj.put("voice_enable_door_fr_leave", prefs.getBoolean("voice_enable_door_fr_leave", prefs.getBoolean("voice_enable_door_fr_close", true)));
             obj.put("voice_enable_door_rl", prefs.getBoolean("voice_enable_door_rl", true));
             obj.put("voice_enable_door_rl_close", prefs.getBoolean("voice_enable_door_rl_close", true));
             obj.put("voice_enable_door_rr", prefs.getBoolean("voice_enable_door_rr", true));

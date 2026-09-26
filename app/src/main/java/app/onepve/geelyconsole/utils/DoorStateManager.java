@@ -252,7 +252,8 @@ public class DoorStateManager {
                     }
                 } else {
                     String openKey = "voice_enable_door_" + doorCode.toLowerCase();
-                    boolean enableOpen = prefs.getBoolean(openKey, true) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase(), true);
+                    String exitKey = "voice_enable_door_" + doorCode.toLowerCase() + "_exit";
+                    boolean enableOpen = prefs.getBoolean(exitKey, prefs.getBoolean(openKey, true)) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase(), true);
                     if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
                         String soundFile = "door_fl_exit.mp3";
                         String text = "请注意后方来车，带好随身物品";
@@ -293,7 +294,8 @@ public class DoorStateManager {
                     }
                 } else {
                     String openKey = "voice_enable_door_" + doorCode.toLowerCase();
-                    boolean enableOpen = prefs.getBoolean(openKey, true) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase(), true);
+                    String enterKey = "voice_enable_door_" + doorCode.toLowerCase() + "_enter";
+                    boolean enableOpen = prefs.getBoolean(enterKey, prefs.getBoolean(openKey, true)) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase(), true);
                     if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
                         String soundFile = "door_fl_enter.mp3";
                         String text = "车主您好，欢迎回来";
@@ -352,7 +354,10 @@ public class DoorStateManager {
             } else {
                 // 独立分门模式
                 String closeKey = "voice_enable_door_" + doorCode.toLowerCase() + "_close";
-                boolean enableClose = prefs.getBoolean(closeKey, true) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase() + "_close", true);
+                String subCloseKey = (currentIntent == INTENT_EXITING)
+                        ? ("voice_enable_door_" + doorCode.toLowerCase() + "_leave")
+                        : ("voice_enable_door_" + doorCode.toLowerCase() + "_ready");
+                boolean enableClose = prefs.getBoolean(subCloseKey, prefs.getBoolean(closeKey, true)) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase() + "_close", true);
                 if (voiceMasterSwitch && enableClose && voicePlayer != null) {
                     String soundFile = "door_fl_close.mp3";
                     String text = doorName + "车门已关好";
