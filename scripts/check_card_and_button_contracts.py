@@ -150,7 +150,7 @@ CARD_BUTTON_CONTRACTS = [
         "多媒体接管卡片", "2号蓝牙物理通道硬选通广播 (SOURCE_TYPE_BLUETOOTH=2)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public synchronized void activateBluetoothChannel",
-        [r"SOURCE_TYPE_BLUETOOTH", r"ECARX_KEY_RSRC_EVENT", r"updateCurrentSourceType"],
+        [r"SOURCE_TYPE_BLUETOOTH", r"ECARX_KEY_RSRC_EVENT", r"updateCurrentSourceType", r"if\s*\(\s*a2dpStreaming\s*\)\s*\{\s*wakeBluetoothAudioSink"],
         [r"isAutoWakeSuppressed", r"dummyListener"]
     ),
     (
@@ -168,10 +168,10 @@ CARD_BUTTON_CONTRACTS = [
         []
     ),
     (
-        "多媒体接管卡片", "微信语音推流防误杀 (A2DP Streaming 保护)",
+        "多媒体接管卡片", "微信语音推流防误杀与停流即时掐灭 (A2DP Streaming 保护与 pauseBluetoothAudioSink)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "private void registerA2dpReceiver",
-        [r"a2dpStreaming", r"activateBluetoothChannel"],
+        [r"a2dpStreaming", r"activateBluetoothChannel", r"pauseBluetoothAudioSink", r"connectBtMediaBrowser"],
         []
     ),
     (
@@ -189,10 +189,24 @@ CARD_BUTTON_CONTRACTS = [
         []
     ),
     (
+        "多媒体接管卡片", "推流停止即时掐灭手机排队播放锁死 (pauseBluetoothAudioSink)",
+        os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
+        "public void pauseBluetoothAudioSink",
+        [r"btMediaController\.getTransportControls\(\)\.pause\(\)", r"mc\.getTransportControls\(\)\.pause\(\)"],
+        []
+    ),
+    (
         "多媒体接管卡片", "微信音频平滑压低与自动恢复音量锁死 (duckMediaVolume)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public synchronized void duckMediaVolume",
         [r"setStreamVolume", r"STREAM_MUSIC"],
+        []
+    ),
+    (
+        "多媒体接管卡片", "微信语音音量智能动态补偿锁死 (syncVoiceCompensationConfig)",
+        os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
+        "public synchronized void syncVoiceCompensationConfig",
+        [r"voiceCompensationEnabled", r"voiceCompensationOffset"],
         []
     ),
     (
@@ -247,6 +261,13 @@ CARD_BUTTON_CONTRACTS = [
         os.path.join(JAVA_BASE, "utils/SteeringWheelKeyManager.java"),
         "public void suppressOriginalMultimedia",
         [r"am force-stop com\.ecarx\.multimedia"],
+        []
+    ),
+    (
+        "方向盘自定义卡片", "首选蓝牙MediaSession独占直发锁死 (方控切歌/播放直通)",
+        os.path.join(JAVA_BASE, "utils/SteeringWheelKeyManager.java"),
+        "private void sendMediaKeyEvent(int keyCode, int targetSource)",
+        [r"com\.android\.bluetooth", r"dispatchedToBt", r"mc\.getTransportControls\(\)"],
         []
     ),
 
