@@ -3781,19 +3781,28 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
+                    android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                     VehicleVoicePlayer player = VehicleVoicePlayer.getInstance(MainActivity.this);
                     if ("door_open".equals(type)) {
                         player.play("door_open.mp3", "车门已打开");
                     } else if ("door_close".equals(type)) {
                         player.play("door_close.mp3", "车门已关好");
                     } else if ("door".equals(type) || "door_fl".equals(type)) {
-                        player.play("door_fl.mp3", "主驾车门已打开，请注意后方来车");
+                        player.play("door_fl_enter.mp3", "车主您好，请上车");
                     } else if ("door_fl_close".equals(type)) {
-                        player.play("door_fl_close.mp3", "主驾车门已关好");
+                        player.play("door_fl_ready.mp3", "准备启程，请系好安全带");
                     } else if ("door_fr".equals(type)) {
-                        player.play("door_fr.mp3", "欢迎乘车，副驾请注意安全");
+                        String role = prefs.getString("passenger_voice_role", "princess");
+                        if ("female".equals(role)) player.play("door_fr_enter.mp3", "欢迎乘车");
+                        else if ("male".equals(role)) player.play("door_fr_male_enter.mp3", "欢迎乘车");
+                        else if ("queen".equals(role)) player.play("door_fr_queen_enter.mp3", "恭迎女王殿下，请上车");
+                        else player.play("door_fr_princess_enter.mp3", "公主请上车");
                     } else if ("door_fr_close".equals(type)) {
-                        player.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
+                        String role = prefs.getString("passenger_voice_role", "princess");
+                        if ("female".equals(role)) player.play("door_fr_ready.mp3", "车门已关好，请系好安全带");
+                        else if ("male".equals(role)) player.play("door_fr_male_ready.mp3", "车门已关好，请系好安全带");
+                        else if ("queen".equals(role)) player.play("door_fr_queen_ready.mp3", "女王殿下已就座，请系好安全带");
+                        else player.play("door_fr_princess_ready.mp3", "公主请系好安全带");
                     } else if ("door_rl".equals(type)) {
                         player.play("door_rl.mp3", "左后车门已打开，请注意车外环境");
                     } else if ("door_rl_close".equals(type)) {

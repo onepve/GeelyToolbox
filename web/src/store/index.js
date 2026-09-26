@@ -218,6 +218,13 @@ export function closeModal(modalName) {
   if (modalName in store.modals) {
     store.modals[modalName] = typeof store.modals[modalName] === 'boolean' ? false : null;
   }
+  if (modalName === 'oilPrice') {
+    if (store.oilPrice.favProvinces && store.oilPrice.favProvinces.length > 0) {
+      if (!store.oilPrice.favProvinces.includes(store.oilPrice.selectedProvince)) {
+        setOilSelectedProvince(store.oilPrice.favProvinces[0]);
+      }
+    }
+  }
 }
 
 export function showToast(msg, kind = 'info') {
@@ -248,6 +255,11 @@ export function initOilPersistentSettings() {
       try { localStorage.setItem('geely_oil_selected_province', sel.trim()); } catch (e) {}
     }
   } catch (e) {}
+  if (store.oilPrice.favProvinces && store.oilPrice.favProvinces.length > 0) {
+    if (!store.oilPrice.favProvinces.includes(store.oilPrice.selectedProvince)) {
+      setOilSelectedProvince(store.oilPrice.favProvinces[0]);
+    }
+  }
 }
 
 export function setOilSelectedProvince(prov) {
@@ -272,6 +284,10 @@ export function toggleOilFavProvince(prov) {
     }
     list.splice(idx, 1);
     showToast(`已将 ${prov} 移出常用省份`, 'info');
+    // 取消收藏项若为当前预览地区，则自动切至剩余常用省份第一位
+    if (store.oilPrice.selectedProvince === prov && list.length > 0) {
+      setOilSelectedProvince(list[0]);
+    }
   } else {
     if (list.length >= 4) {
       showToast('常用省份最多收藏 4 个', 'warn');

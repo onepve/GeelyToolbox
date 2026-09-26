@@ -102,8 +102,8 @@
             <div class="flex flex-wrap -mr-2 -mb-2">
               <button
                 v-for="item in presetPhrases"
-                :key="item.text"
-                @click="customText = item.text"
+                :key="item.label"
+                @click="onSelectPreset(item)"
                 class="px-3 py-1.5 mr-2 mb-2 rounded-lg bg-car-card border border-car-border text-car-text text-[13px] font-bold hover:border-car-accent cursor-pointer shadow-sm transition-all"
                 :title="item.text"
               >
@@ -233,32 +233,33 @@ const presetPhrases = computed(() => {
   // 1. 副驾车门 (开/关专属台词)
   if (key === 'door_fr') {
     return [
-      { label: '欢迎就座', text: '欢迎乘车，副驾请注意安全' },
-      { label: '领导就座', text: '欢迎副驾领导就座，请系好安全带' },
-      { label: '女王专座', text: '欢迎女王大人就座，请系好安全带' },
-      { label: '防开门杀', text: '副驾车门已打开，请注意后方来车' }
+      { label: '通用标准 (清爽男声)', text: '欢迎乘车', role: 'male' },
+      { label: '通用标准 (知性女声)', text: '欢迎乘车', role: 'female' },
+      { label: '公主专属 (阳光男声)', text: '公主请上车', role: 'princess' },
+      { label: '女王专属 (绅士男声)', text: '恭迎女王殿下，请上车', role: 'queen' }
     ];
   }
   if (key === 'door_fr_close') {
     return [
-      { label: '专属副驾', text: '专属副驾已就座，准备出发' },
-      { label: '老婆就座', text: '副驾老婆已就座，车门已关好' },
-      { label: '贵宾就位', text: '副驾贵宾已就位，祝您旅途愉快' },
-      { label: '标准关好', text: '副驾车门已关好' }
+      { label: '通用标准 (清爽男声)', text: '车门已关好，请系好安全带', role: 'male' },
+      { label: '通用标准 (知性女声)', text: '车门已关好，请系好安全带', role: 'female' },
+      { label: '公主专属 (阳光男声)', text: '公主请系好安全带', role: 'princess' },
+      { label: '女王专属 (绅士男声)', text: '女王殿下已就座，请系好安全带', role: 'queen' }
     ];
   }
   // 2. 主驾车门
   if (key === 'door_fl') {
     return [
-      { label: '防开门杀', text: '开门请注意后方来车，带好随身物品' },
-      { label: '车门打开', text: '主驾驶车门已打开' }
+      { label: '登车迎宾', text: '车主您好，请上车' },
+      { label: '离车提示', text: '请注意后方来车，带好随身物品' },
+      { label: '防开门杀', text: '开门请注意后方来车' }
     ];
   }
   if (key === 'door_fl_close') {
     return [
-      { label: '一路顺风', text: '主驾车门已关好，祝您一路顺风' },
-      { label: '准备出发', text: '车门已关好，系好安全带准备出发' },
-      { label: '标准关好', text: '主驾驶车门已关好' }
+      { label: '准备启程', text: '准备启程，请系好安全带' },
+      { label: '离车锁车', text: '车门已关好，请记得锁车' },
+      { label: '标准关好', text: '主驾车门已关好' }
     ];
   }
   // 3. 后排车门
@@ -471,6 +472,15 @@ function testTtsText() {
   }
   showToast('正在试听自定义台词...');
   bridge.call('testVehicleVoiceText', customText.value.trim());
+}
+
+function onSelectPreset(item) {
+  customText.value = item.text || '';
+  if (item.role) {
+    bridge.call('setVehicleAutomationStringSetting', 'passenger_voice_role', item.role);
+    localStorage.setItem('geely_passenger_voice_role', item.role);
+    showToast(`已应用副驾专属角色：${item.label}`);
+  }
 }
 
 function saveCustomText() {

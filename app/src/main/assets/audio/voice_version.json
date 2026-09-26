@@ -1,8 +1,8 @@
 {
-  "voice_version": 2,
-  "updated_at": "2026-09-22",
-  "description": "缤越助手车规级内置音频资产版本清单与哈希校验索引",
-  "total_files": 22,
+  "voice_version": 3,
+  "updated_at": "2026-09-26",
+  "description": "缤越助手车规级内置音频资产版本清单与哈希校验索引 (含主副驾全套进出迎宾及公主/女王专属语音)",
+  "total_files": 42,
   "files": {
     "door_close.mp3": {
       "size": 13916,
@@ -16,6 +16,22 @@
       "size": 22176,
       "md5": "9ffd9f94a15d690de77f9729f3e9506e"
     },
+    "door_fl_enter.mp3": {
+      "size": 17948,
+      "md5": "5047ce6f1fb220979cd9e0aab0e5f0be"
+    },
+    "door_fl_exit.mp3": {
+      "size": 24428,
+      "md5": "a607c00c40fcd435335d6479db2d0a87"
+    },
+    "door_fl_leave.mp3": {
+      "size": 20828,
+      "md5": "9a3ffee77344981515736cef91d2d589"
+    },
+    "door_fl_ready.mp3": {
+      "size": 20684,
+      "md5": "633df770ea40c6bfecf3e99db56a458e"
+    },
     "door_fr.mp3": {
       "size": 17568,
       "md5": "06d958b50398b7c58674b3790a98414b"
@@ -23,6 +39,70 @@
     "door_fr_close.mp3": {
       "size": 22320,
       "md5": "29ffe265d09cff36af9ba9df03165bc7"
+    },
+    "door_fr_enter.mp3": {
+      "size": 12620,
+      "md5": "e645529537f723fa93ce7f51e188ed8f"
+    },
+    "door_fr_exit.mp3": {
+      "size": 17516,
+      "md5": "2a7a0273d30be5ea27948f821a140619"
+    },
+    "door_fr_leave.mp3": {
+      "size": 25004,
+      "md5": "1af7013bb92d32f557081b1da077d01a"
+    },
+    "door_fr_male_enter.mp3": {
+      "size": 14060,
+      "md5": "5583b975ae8402e3ad689295cf75dfd4"
+    },
+    "door_fr_male_exit.mp3": {
+      "size": 18668,
+      "md5": "020e49527f4ca785dd25eaebd7be6ff5"
+    },
+    "door_fr_male_leave.mp3": {
+      "size": 24716,
+      "md5": "cab7c7b7d1a38bda5423aba8fec602c3"
+    },
+    "door_fr_male_ready.mp3": {
+      "size": 22412,
+      "md5": "e17d0c491ecb43a2b475fdba0f2dcd78"
+    },
+    "door_fr_princess_enter.mp3": {
+      "size": 15068,
+      "md5": "e8f71e7318fe8c04499f8623d4e7b236"
+    },
+    "door_fr_princess_exit.mp3": {
+      "size": 14924,
+      "md5": "c5020022b7259e0e2f26a8c9fbdc95d4"
+    },
+    "door_fr_princess_leave.mp3": {
+      "size": 23132,
+      "md5": "31b35b4918ef52782ad4a0e49824253b"
+    },
+    "door_fr_princess_ready.mp3": {
+      "size": 18092,
+      "md5": "7f947e7b2413120f21b539824b0599f7"
+    },
+    "door_fr_queen_enter.mp3": {
+      "size": 18524,
+      "md5": "2ae850fced23d74dc9dd2d75f160794b"
+    },
+    "door_fr_queen_exit.mp3": {
+      "size": 22700,
+      "md5": "8a82510fb77510fdde3111e0b068287b"
+    },
+    "door_fr_queen_leave.mp3": {
+      "size": 23852,
+      "md5": "788bbae714b973caae247dce4fcf6ffa"
+    },
+    "door_fr_queen_ready.mp3": {
+      "size": 22988,
+      "md5": "7803f36cadac25fd7a563ec75a78be57"
+    },
+    "door_fr_ready.mp3": {
+      "size": 22124,
+      "md5": "39216c1619286e58d3eab897b29c18f3"
     },
     "door_open.mp3": {
       "size": 13772,

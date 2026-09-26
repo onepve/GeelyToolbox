@@ -67,6 +67,10 @@ public class DoorStateManager {
         if (buckled) {
             this.isDriverInside = true;
             this.doorActionIntent.put("FL", INTENT_NONE);
+        } else {
+            if (this.isDriverInside) {
+                AppLogger.i("车门状态", "主驾安全带解开 -> 标记预备下车");
+            }
         }
     }
 
@@ -76,6 +80,13 @@ public class DoorStateManager {
         if (seated) {
             this.isFRInside = true;
             this.doorActionIntent.put("FR", INTENT_NONE);
+        } else {
+            if (this.isFRInside) {
+                AppLogger.i("车门状态", "副驾安全带解开/乘员离座 -> 标记预备离车");
+                if (currentFR == 1) {
+                    this.isFRInside = false;
+                }
+            }
         }
     }
 
@@ -237,17 +248,36 @@ public class DoorStateManager {
                 if (universalMode) {
                     boolean enableOpen = prefs.getBoolean("voice_enable_door_universal_open", true);
                     if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
-                        voicePlayer.play("door_open.mp3", "请注意后方来车，带好随身物品");
+                        voicePlayer.play("door_fl_exit.mp3", "请注意后方来车，带好随身物品");
                     }
                 } else {
                     String openKey = "voice_enable_door_" + doorCode.toLowerCase();
                     boolean enableOpen = prefs.getBoolean(openKey, true) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase(), true);
                     if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
-                        String soundFile = "door_fl.mp3";
-                        if ("FR".equals(doorCode)) soundFile = "door_fr.mp3";
-                        else if ("RL".equals(doorCode)) soundFile = "door_rl.mp3";
-                        else if ("RR".equals(doorCode)) soundFile = "door_rr.mp3";
-                        String text = doorName + "车门打开，请注意后方来车";
+                        String soundFile = "door_fl_exit.mp3";
+                        String text = "请注意后方来车，带好随身物品";
+                        if ("FR".equals(doorCode)) {
+                            String role = prefs.getString("passenger_voice_role", "princess");
+                            if ("female".equals(role)) {
+                                soundFile = "door_fr_exit.mp3";
+                                text = "开门请注意后方来车";
+                            } else if ("male".equals(role)) {
+                                soundFile = "door_fr_male_exit.mp3";
+                                text = "开门请注意后方来车";
+                            } else if ("queen".equals(role)) {
+                                soundFile = "door_fr_queen_exit.mp3";
+                                text = "女王殿下请慢走，注意后方来车";
+                            } else {
+                                soundFile = "door_fr_princess_exit.mp3";
+                                text = "公主请下车";
+                            }
+                        } else if ("RL".equals(doorCode)) {
+                            soundFile = "door_rl.mp3";
+                            text = doorName + "车门打开，请注意后方来车";
+                        } else if ("RR".equals(doorCode)) {
+                            soundFile = "door_rr.mp3";
+                            text = doorName + "车门打开，请注意后方来车";
+                        }
                         voicePlayer.play(soundFile, text);
                     }
                 }
@@ -265,11 +295,30 @@ public class DoorStateManager {
                     String openKey = "voice_enable_door_" + doorCode.toLowerCase();
                     boolean enableOpen = prefs.getBoolean(openKey, true) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase(), true);
                     if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
-                        String soundFile = "door_fl.mp3";
-                        if ("FR".equals(doorCode)) soundFile = "door_fr.mp3";
-                        else if ("RL".equals(doorCode)) soundFile = "door_rl.mp3";
-                        else if ("RR".equals(doorCode)) soundFile = "door_rr.mp3";
-                        String text = doorName + "车门已打开";
+                        String soundFile = "door_fl_enter.mp3";
+                        String text = "车主您好，请上车";
+                        if ("FR".equals(doorCode)) {
+                            String role = prefs.getString("passenger_voice_role", "princess");
+                            if ("female".equals(role)) {
+                                soundFile = "door_fr_enter.mp3";
+                                text = "欢迎乘车";
+                            } else if ("male".equals(role)) {
+                                soundFile = "door_fr_male_enter.mp3";
+                                text = "欢迎乘车";
+                            } else if ("queen".equals(role)) {
+                                soundFile = "door_fr_queen_enter.mp3";
+                                text = "恭迎女王殿下，请上车";
+                            } else {
+                                soundFile = "door_fr_princess_enter.mp3";
+                                text = "公主请上车";
+                            }
+                        } else if ("RL".equals(doorCode)) {
+                            soundFile = "door_rl.mp3";
+                            text = doorName + "车门已打开";
+                        } else if ("RR".equals(doorCode)) {
+                            soundFile = "door_rr.mp3";
+                            text = doorName + "车门已打开";
+                        }
                         voicePlayer.play(soundFile, text);
                     }
                 }
@@ -294,7 +343,11 @@ public class DoorStateManager {
             if (universalMode) {
                 boolean enableClose = prefs.getBoolean("voice_enable_door_universal_close", true);
                 if (voiceMasterSwitch && enableClose && voicePlayer != null) {
-                    voicePlayer.play("door_close.mp3", "车门已关好");
+                    if (currentIntent == INTENT_EXITING) {
+                        voicePlayer.play("door_fl_leave.mp3", "车门已关好，请记得锁车");
+                    } else {
+                        voicePlayer.play("door_close.mp3", "车门已关好");
+                    }
                 }
             } else {
                 // 独立分门模式
@@ -302,10 +355,74 @@ public class DoorStateManager {
                 boolean enableClose = prefs.getBoolean(closeKey, true) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase() + "_close", true);
                 if (voiceMasterSwitch && enableClose && voicePlayer != null) {
                     String soundFile = "door_fl_close.mp3";
-                    if ("FR".equals(doorCode)) soundFile = "door_fr_close.mp3";
-                    else if ("RL".equals(doorCode)) soundFile = "door_rl_close.mp3";
-                    else if ("RR".equals(doorCode)) soundFile = "door_rr_close.mp3";
                     String text = doorName + "车门已关好";
+
+                    if ("FL".equals(doorCode)) {
+                        if (currentIntent == INTENT_ENTERING) {
+                            soundFile = "door_fl_ready.mp3";
+                            text = "准备启程，请系好安全带";
+                        } else if (currentIntent == INTENT_EXITING) {
+                            soundFile = "door_fl_leave.mp3";
+                            text = "车门已关好，请记得锁车";
+                        } else {
+                            soundFile = "door_fl_close.mp3";
+                            text = "主驾车门已关好";
+                        }
+                    } else if ("FR".equals(doorCode)) {
+                        String role = prefs.getString("passenger_voice_role", "princess");
+                        if ("female".equals(role)) {
+                            if (currentIntent == INTENT_ENTERING) {
+                                soundFile = "door_fr_ready.mp3";
+                                text = "车门已关好，请系好安全带";
+                            } else if (currentIntent == INTENT_EXITING) {
+                                soundFile = "door_fr_leave.mp3";
+                                text = "副驾车门已关好，带好随身物品";
+                            } else {
+                                soundFile = "door_fr_close.mp3";
+                                text = "副驾车门已关好";
+                            }
+                        } else if ("male".equals(role)) {
+                            if (currentIntent == INTENT_ENTERING) {
+                                soundFile = "door_fr_male_ready.mp3";
+                                text = "车门已关好，请系好安全带";
+                            } else if (currentIntent == INTENT_EXITING) {
+                                soundFile = "door_fr_male_leave.mp3";
+                                text = "副驾车门已关好，带好随身物品";
+                            } else {
+                                soundFile = "door_fr_close.mp3";
+                                text = "副驾车门已关好";
+                            }
+                        } else if ("queen".equals(role)) {
+                            if (currentIntent == INTENT_ENTERING) {
+                                soundFile = "door_fr_queen_ready.mp3";
+                                text = "女王殿下已就座，请系好安全带";
+                            } else if (currentIntent == INTENT_EXITING) {
+                                soundFile = "door_fr_queen_leave.mp3";
+                                text = "恭送女王殿下，期待下次为您服务";
+                            } else {
+                                soundFile = "door_fr_close.mp3";
+                                text = "副驾车门已关好";
+                            }
+                        } else { // princess
+                            if (currentIntent == INTENT_ENTERING) {
+                                soundFile = "door_fr_princess_ready.mp3";
+                                text = "公主请系好安全带";
+                            } else if (currentIntent == INTENT_EXITING) {
+                                soundFile = "door_fr_princess_leave.mp3";
+                                text = "公主再见，随身小包包别落下啦";
+                            } else {
+                                soundFile = "door_fr_close.mp3";
+                                text = "副驾车门已关好";
+                            }
+                        }
+                    } else if ("RL".equals(doorCode)) {
+                        soundFile = "door_rl_close.mp3";
+                        text = "左后车门已关好";
+                    } else if ("RR".equals(doorCode)) {
+                        soundFile = "door_rr_close.mp3";
+                        text = "右后车门已关好";
+                    }
+
                     voicePlayer.play(soundFile, text);
                 }
             }
