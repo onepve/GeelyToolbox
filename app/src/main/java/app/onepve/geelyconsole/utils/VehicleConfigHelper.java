@@ -57,6 +57,7 @@ public final class VehicleConfigHelper {
             obj.put("vehicle_gear_d_360_enabled", PrefUtils.getBoolean(prefs, "vehicle_gear_d_360_enabled", true));
             obj.put("vehicle_d_gear_360_enabled", PrefUtils.getBoolean(prefs, "vehicle_d_gear_360_enabled", PrefUtils.getBoolean(prefs, "vehicle_gear_d_360_enabled", true)));
             obj.put("vehicle_turn_signal_360_enabled", PrefUtils.getBoolean(prefs, "vehicle_turn_signal_360_enabled", false));
+            obj.put("vehicle_turn_signal_360_auto_exit", PrefUtils.getBoolean(prefs, "vehicle_turn_signal_360_auto_exit", true));
             obj.put("vehicle_speed_custom_action_enabled", PrefUtils.getBoolean(prefs, "vehicle_speed_custom_action_enabled", false));
             obj.put("vehicle_speed_custom_action_threshold", prefs.getInt("vehicle_speed_custom_action_threshold", 40));
             obj.put("vehicle_speed_custom_action_target", prefs.getString("vehicle_speed_custom_action_target", "pkg:com.autonavi.amapauto"));

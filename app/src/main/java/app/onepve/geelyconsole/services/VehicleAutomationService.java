@@ -871,23 +871,14 @@ public class VehicleAutomationService extends Service {
             } catch (Exception ignored) {}
         }
 
-        // 5.1 解析 ga10 / E02 架构转向灯报文 (paramVehicleTurnLight ... turnLight=1/2/0 与 VehId=Vehicle_TurnLight)
-        if (enableTurnSignal360 && (line.contains("paramVehicleTurnLight") || line.contains("turnLight=") || line.contains("Vehicle_TurnLight"))) {
+        // 5.1 解析 ga10 / E02 架构转向灯报文 (paramVehicleTurnLight ... turnLight=1/2/0)
+        // 权威硬件驱动输出，只在打灯(1/2)与回正(0)时跳变；严禁监听 ecarx_avm_state 的常驻心跳 Vehicle_TurnLight 防秒退
+        if (enableTurnSignal360 && line.contains("turnLight=")) {
             try {
-                if (line.contains("turnLight=")) {
-                    Matcher m = P_TURN_LIGHT.matcher(line);
-                    if (m.find()) {
-                        int turnVal = Integer.parseInt(m.group(1));
-                        handleTurnSignalState(turnVal);
-                    }
-                } else if (line.contains("Vehicle_TurnLight")) {
-                    int idx = line.indexOf("Vehicle_TurnLight");
-                    int vIdx = line.indexOf("value=", idx);
-                    if (vIdx != -1) {
-                        String sub = line.substring(vIdx + 6).trim();
-                        int turnVal = sub.startsWith("0x") ? Integer.parseInt(sub.substring(2, 4), 16) : Integer.parseInt(sub.substring(0, 1));
-                        handleTurnSignalState(turnVal);
-                    }
+                Matcher m = P_TURN_LIGHT.matcher(line);
+                if (m.find()) {
+                    int turnVal = Integer.parseInt(m.group(1));
+                    handleTurnSignalState(turnVal);
                 }
             } catch (Exception ignored) {}
         }
@@ -1096,8 +1087,14 @@ public class VehicleAutomationService extends Service {
         } else if (turnLight == 0) {
             if (isTurnSignal360Active) {
                 isTurnSignal360Active = false;
-                close360Camera();
-                AppLogger.i("车身联动", "【转向灯联动360】检测到转向灯回正关闭，自动退出 360 全景影像");
+                SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                boolean autoExit = PrefUtils.getBoolean(prefs, "vehicle_turn_signal_360_auto_exit", true);
+                if (autoExit) {
+                    close360Camera();
+                    AppLogger.i("车身联动", "【转向灯联动360】检测到转向灯回正关闭，自动退出 360 全景影像");
+                } else {
+                    AppLogger.i("车身联动", "【转向灯联动360】检测到转向灯回正，已设置保持 360 界面不自动退出");
+                }
             }
         }
     }
@@ -1253,6 +1250,11 @@ public class VehicleAutomationService extends Service {
             closeIntent.setData(Uri.parse("ecarx://vr.com/360全景"));
             closeIntent.setPackage("ecarx.camera.calibration");
             sendBroadcast(closeIntent);
+
+            Intent closeIntentGlobal = new Intent("ecarx.intent.broadcast.action.ECARX_VR_APP_CLOSE");
+            closeIntentGlobal.setData(Uri.parse("ecarx://vr.com/360全景"));
+            sendBroadcast(closeIntentGlobal);
+
             AppLogger.i("车身联动", "已下发指令退出 360 全景界面");
         } catch (Exception e) {
             Log.w(TAG, "Failed to close 360: " + e.getMessage());
