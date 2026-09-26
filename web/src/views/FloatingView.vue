@@ -154,9 +154,9 @@
           </div>
         </div>
 
-        <!-- 底部操作栏：4 个按钮一排显示 (3 档触发策略单选 + 独立屏保测试动作) -->
+        <!-- 底部操作栏：按钮一排显示 (3 档触发策略单选 + 独立屏保测试动作) -->
         <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <div class="grid grid-cols-4 gap-2 w-full">
+          <div :class="['grid gap-2 w-full', isBeta ? 'grid-cols-4' : 'grid-cols-3']">
             <button
               v-for="p in ssPolicyOptions"
               :key="p.value"
@@ -172,8 +172,9 @@
               <span>{{ p.label }}</span>
             </button>
 
-            <!-- 独立测试屏保动作按钮 (第 4 按钮) -->
+            <!-- 独立测试屏保动作按钮 (第 4 按钮，仅在测试版中呈现供调试体验，正式版保持极简不展示) -->
             <button
+              v-if="isBeta"
               @click="testScreensaver"
               class="h-[50px] px-1 rounded-xl border-2 border-car-accent bg-car-item text-car-accent hover:border-car-accent active:scale-[0.99] font-black text-[14px] cursor-pointer shadow-md flex items-center justify-center space-x-1 transition-all whitespace-nowrap"
             >
@@ -231,13 +232,18 @@ const ssEnabled = ref(false);
 const ssSeconds = ref(30);
 const ssMinSeconds = 3;
 const ssMaxSeconds = 180;
-const ssHomeOnly = ref(true);
-const ssPolicy = ref('home');
+const ssHomeOnly = ref(false);
+const ssPolicy = ref('avoid_navi');
 const ssPolicyOptions = [
   { value: 'all', label: '全局生效' },
   { value: 'home', label: '仅主页' },
   { value: 'avoid_navi', label: '避让导航' }
 ];
+
+const isBeta = computed(() => {
+  const ver = (store.deviceInfo.version || '').toLowerCase();
+  return ver.includes('beta') || localStorage.getItem('geely_use_beta_channel') === 'true';
+});
 const ssUsageAccess = ref(false);
 const ssChannel = ref('未启动');
 const ssFailReason = ref('');

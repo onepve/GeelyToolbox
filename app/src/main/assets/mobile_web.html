@@ -253,16 +253,16 @@
             <!-- 卡片 2.1: 车机远程快捷指令 (9 大常用运维动作) -->
             <div class="card">
                 <div class="card-title"><span>⚡ 车机远程快捷指令</span><span class="status-badge" style="background:#f1f5f9; color:#475569;">9项快捷运维</span></div>
-                <div style="font-size:12px; color:#64748b; margin-bottom:10px;">手机点击直达车机底层，带二次确认防误触，免在车机屏幕上手动输入：</div>
+                <div style="font-size:12px; color:#64748b; margin-bottom:10px;">手机点击直达车机底层，即点即发伴随顶部浮动反馈，免在车机屏幕上手动输入：</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('open_files', '打开车机原生文件管理', '将在车机大屏调起原生文件管理器界面。', '已通知车机打开原生文件管理！')">📁 原生文件管理</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('open_settings', '打开安卓系统设置', '将在车机大屏调起安卓原生设置菜单。', '已通知车机打开系统设置！')">⚙️ 安卓系统设置</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('open_apps', '打开应用管理列表', '将在车机大屏调起已安装应用列表。', '已通知车机打开应用列表！')">📦 应用管理列表</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('open_accessibility', '打开无障碍辅助设置', '将在车机大屏调起无障碍服务配置菜单。', '已通知车机打开无障碍设置！')">♿ 无障碍辅助设置</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('freeze_appstore', '冻结吉利应用商店', '将通过系统底层禁用 com.ecarx.appstore，锁定系统白名单，防止第三方应用被官方商店自动卸载或覆盖。', '已发送冻结吉利应用商店指令！')">❄️ 冻结应用商店</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('unfreeze_appstore', '解冻恢复应用商店', '将恢复 com.ecarx.appstore 正常启用状态，车机可重新打开官方应用商店。', '已发送解冻吉利应用商店指令！')">☀️ 解冻应用商店</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('enable_whitelist', '放行系统安装白名单', '将写入 sys.jsbd.apk_verify=1 突破车机原生 APK 安装校验限制，允许自由安装第三方软件。', '已发送放行安装白名单指令！')">🔓 放行安装白名单</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="confirmAction('clean_memory', '释放车机后台内存', '将清理非核心后台缓存进程，腾出空闲运行内存。', '已通知车机释放后台内存！')">🧹 释放后台内存</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="sendAction('open_files', '📁 已通知车机打开原生文件管理')">📁 原生文件管理</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="sendAction('open_settings', '⚙️ 已通知车机打开系统设置')">⚙️ 安卓系统设置</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="sendAction('open_apps', '📦 已通知车机打开应用列表')">📦 应用管理列表</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="sendAction('open_accessibility', '♿ 已通知车机打开无障碍设置')">♿ 无障碍辅助设置</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="sendAction('freeze_appstore', '❄️ 已发送冻结应用商店指令')">❄️ 冻结应用商店</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="sendAction('unfreeze_appstore', '☀️ 已发送解冻应用商店指令')">☀️ 解冻应用商店</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="sendAction('enable_whitelist', '🔓 已发送放行安装白名单指令')">🔓 放行安装白名单</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12px; font-weight:600;" onclick="sendAction('clean_memory', '🧹 已通知车机释放后台内存')">🧹 释放后台内存</button>
                     <button class="btn btn-danger" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600; grid-column: span 2;" onclick="confirmHardReboot()">⚡ 安全重启车机系统</button>
                 </div>
             </div>
@@ -375,20 +375,40 @@
                     <!-- 模式 B: 独立分门专属台词 -->
                     <div id="door-pane-split" style="display:none; flex-direction:column; gap:8px;">
                         <div>
-                            <label class="input-label">🚪 主驾开门播报 (FL)：</label>
-                            <input type="text" id="tts-door_fl" class="input-box" placeholder="默认: 主驾车门打开，请注意来车">
+                            <label class="input-label">🚪 主驾开门迎宾 (登车迎宾/离车安全提示)：</label>
+                            <input type="text" id="tts-door_fl" class="input-box" placeholder="默认: 车主您好，请上车 (离车: 请注意后方来车)">
                         </div>
                         <div>
-                            <label class="input-label">🚪 主驾关门播报 (FL)：</label>
-                            <input type="text" id="tts-door_fl_close" class="input-box" placeholder="默认: 主驾车门已关好">
+                            <label class="input-label">🚪 主驾关门提示 (准备启程/离车锁车提示)：</label>
+                            <input type="text" id="tts-door_fl_close" class="input-box" placeholder="默认: 准备启程，请系好安全带 (离车: 车门已关好，请记得锁车)">
+                        </div>
+
+                        <!-- 副驾专属角色与台词 -->
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px; margin:4px 0;">
+                            <label class="input-label" style="font-weight:700; color:#0f172a; margin-bottom:6px;">👑 副驾专属音效角色 (一键设定整套进出音色)：</label>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                                <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; cursor:pointer;">
+                                    <input type="radio" name="passenger_role" value="princess" onchange="onPassengerRoleChange('princess')"> 👸 公主专属 (阳光男声)
+                                </label>
+                                <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; cursor:pointer;">
+                                    <input type="radio" name="passenger_role" value="queen" onchange="onPassengerRoleChange('queen')"> 👑 女王专属 (绅士男声)
+                                </label>
+                                <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; cursor:pointer;">
+                                    <input type="radio" name="passenger_role" value="male" onchange="onPassengerRoleChange('male')"> 👨 通用标准 (清爽男声)
+                                </label>
+                                <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; cursor:pointer;">
+                                    <input type="radio" name="passenger_role" value="female" onchange="onPassengerRoleChange('female')"> 👩 通用标准 (知性女声)
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="input-label">🚪 副驾开门台词 (拉门上车/推门下车)：</label>
+                            <input type="text" id="tts-door_fr" class="input-box" placeholder="例如: 公主请上车 / 恭迎女王殿下，请上车 / 欢迎乘车">
                         </div>
                         <div>
-                            <label class="input-label">🚪 副驾开门播报 (FR)：</label>
-                            <input type="text" id="tts-door_fr" class="input-box" placeholder="默认: 欢迎乘车，副驾请注意安全">
-                        </div>
-                        <div>
-                            <label class="input-label">🚪 副驾关门播报 (FR)：</label>
-                            <input type="text" id="tts-door_fr_close" class="input-box" placeholder="默认: 副驾车门已关好">
+                            <label class="input-label">🚪 副驾关门台词 (就坐关门/下车离车)：</label>
+                            <input type="text" id="tts-door_fr_close" class="input-box" placeholder="例如: 公主请系好安全带 / 女王殿下已就座，请系好安全带">
                         </div>
                         <div>
                             <label class="input-label">🚪 左后开门播报 (RL)：</label>
@@ -517,6 +537,22 @@
             'gear_d', 'gear_r', 'gear_p', 'gear_n'
         ];
 
+        function onPassengerRoleChange(role) {
+            const frOpen = document.getElementById('tts-door_fr');
+            const frClose = document.getElementById('tts-door_fr_close');
+            if (role === 'princess') {
+                if (frOpen && !frOpen.value) frOpen.placeholder = '默认: 公主请上车 (推门: 公主请下车)';
+                if (frClose && !frClose.value) frClose.placeholder = '默认: 公主请系好安全带 (下车: 公主再见)';
+            } else if (role === 'queen') {
+                if (frOpen && !frOpen.value) frOpen.placeholder = '默认: 恭迎女王殿下，请上车 (推门: 女王殿下请慢走)';
+                if (frClose && !frClose.value) frClose.placeholder = '默认: 女王殿下已就座，请系好安全带';
+            } else {
+                if (frOpen && !frOpen.value) frOpen.placeholder = '默认: 欢迎乘车 (推门: 开门请注意后方来车)';
+                if (frClose && !frClose.value) frClose.placeholder = '默认: 车门已关好，请系好安全带';
+            }
+            showMobileToast('✨ 已切换副驾角色，点击保存后生效');
+        }
+
         async function loadTtsSettings() {
             try {
                 const res = await fetch('/api/get_tts');
@@ -525,6 +561,15 @@
                     const el = document.getElementById('tts-' + k);
                     if (el && data[k] !== undefined) el.value = data[k];
                 });
+                if (data.passenger_voice_role) {
+                    const radios = document.getElementsByName('passenger_role');
+                    for (let r of radios) {
+                        if (r.value === data.passenger_voice_role) {
+                            r.checked = true;
+                            break;
+                        }
+                    }
+                }
             } catch(e) {}
         }
         loadTtsSettings();
@@ -535,11 +580,18 @@
                 const el = document.getElementById('tts-' + k);
                 if (el) payload[k] = el.value.trim();
             });
+            const radios = document.getElementsByName('passenger_role');
+            for (let r of radios) {
+                if (r.checked) {
+                    payload['passenger_voice_role'] = r.value;
+                    break;
+                }
+            }
             try {
                 const res = await fetch('/api/save_tts', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
                 const data = await res.json();
-                alert(data.message || '台词已成功保存！');
-            } catch(e) { alert('保存失败: ' + e.message); }
+                showMobileToast(data.message || '✨ 播报台词与副驾角色已成功保存至车机！');
+            } catch(e) { showMobileToast('❌ 保存失败: ' + e.message, false); }
         }
 
         // 清理下载目录模式选择弹窗管理与执行 (3个大按钮模态交互)
@@ -824,30 +876,30 @@ async function loadCarFiles() {
 
         async function sendAction(act, successMsg) {
             try {
+                showMobileToast('⏳ 正在下发指令...');
                 const res = await fetch('/api/action', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ action: act })
                 });
                 const data = await res.json();
-                alert(successMsg || '指令已成功发送至车机执行！');
+                if (data && data.success === false) {
+                    showMobileToast('❌ 执行失败: ' + (data.error || data.message || '未知错误'), false);
+                } else {
+                    showMobileToast(successMsg || '⚡ 指令已成功发送至车机执行！');
+                }
             } catch(e) {
-                alert('执行失败: ' + e.message);
+                showMobileToast('❌ 请求失败: ' + e.message, false);
             }
         }
 
         function confirmAction(act, title, desc, successMsg) {
-            let msg = '【确认执行】' + title;
-            if (desc) msg += '\n\n' + desc;
-            msg += '\n\n是否确认立即下发执行？';
-            if (confirm(msg)) {
-                sendAction(act, successMsg);
-            }
+            sendAction(act, successMsg || title);
         }
 
         function confirmHardReboot() {
             if (confirm('【高危确认】确认远程重启车机系统？\n\n请确保车辆已安全停稳并挂入P挡！\n车机屏幕将立即黑屏重启。')) {
-                sendAction('hard_reboot', '重启指令已下发，车机正在重启中...');
+                sendAction('hard_reboot', '⚡ 重启指令已下发，车机正在重启中...');
             }
         }
 

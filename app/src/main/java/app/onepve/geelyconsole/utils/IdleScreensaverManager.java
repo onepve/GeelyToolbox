@@ -551,16 +551,15 @@ public final class IdleScreensaverManager {
     }
 
     public static String getPolicy(Context ctx) {
-        if (ctx == null) return POLICY_HOME;
+        if (ctx == null) return POLICY_AVOID_NAVI;
         try {
             SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
             String policy = sp.getString(KEY_POLICY, null);
             if (policy != null) return policy;
-            // 兼容旧配置
-            boolean homeOnly = sp.getBoolean(KEY_HOME_ONLY, true);
-            return homeOnly ? POLICY_HOME : POLICY_ALL;
+            // 默认避让导航
+            return POLICY_AVOID_NAVI;
         } catch (Throwable e) {
-            return POLICY_HOME;
+            return POLICY_AVOID_NAVI;
         }
     }
 

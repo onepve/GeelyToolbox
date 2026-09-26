@@ -522,6 +522,7 @@ public class WebServer {
                 }
                 root.put(k, val);
             }
+            root.put("passenger_voice_role", prefs.getString("passenger_voice_role", "princess"));
         } catch (Exception ignored) {}
         sendJsonResponse(out, root.toString());
     }
@@ -536,6 +537,10 @@ public class WebServer {
             java.util.Iterator<String> it = json.keys();
             while (it.hasNext()) {
                 String k = it.next();
+                if ("passenger_voice_role".equals(k)) {
+                    editor.putString("passenger_voice_role", json.optString("passenger_voice_role", "princess"));
+                    continue;
+                }
                 String text = json.optString(k, "").trim();
                 editor.putString("custom_voice_text_" + k, text);
                 editor.putString("custom_text_" + k + ".mp3", text);
