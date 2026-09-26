@@ -8,49 +8,45 @@
     @close="closeModal('voiceItemSettings')"
   >
     <div v-if="targetItem" class="flex flex-col space-y-4">
-      <!-- 当前生效音源状态大卡片 (包含副驾3套出厂实体语音一键直切与边上的试听) -->
-      <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col space-y-3 shadow-sm">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <span class="w-3 h-3 rounded-full bg-car-accent mr-3 shadow-[0_0_8px_var(--accent-gold)]"></span>
-            <div class="flex flex-col">
-              <span class="text-[17.5px] font-black text-car-text">当前生效音源：{{ activeVoiceTypeLabel }}</span>
-              <span class="text-[14px] text-car-sub font-bold mt-0.5">{{ activeVoiceDesc }}</span>
-            </div>
+      <!-- 当前生效音源状态大卡片 (单行自适应排版，副驾3套音色直切平铺在右侧，点击自动试听) -->
+      <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div class="flex items-center min-w-0 mr-4">
+          <span class="w-3 h-3 rounded-full bg-car-accent mr-3 shrink-0 shadow-[0_0_8px_var(--accent-gold)]"></span>
+          <div class="flex flex-col min-w-0">
+            <span class="text-[17.5px] font-black text-car-text truncate">当前生效音源：{{ activeVoiceTypeLabel }}</span>
+            <span class="text-[14px] text-car-sub font-bold mt-0.5 truncate">{{ activeVoiceDesc }}</span>
           </div>
+        </div>
 
-          <button 
-            @click="testCurrentAudio"
-            class="min-h-[50px] px-6 bg-car-card border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md shrink-0"
+        <!-- 针对副驾车门项：直接在右侧平铺 3 个切换按钮！点击自动试听！ -->
+        <div v-if="isFrDoorItem" class="flex space-x-2 shrink-0">
+          <button
+            v-for="opt in [
+              { role: 'female', name: '原车 (晓晓)' },
+              { role: 'princess', name: '公主 (温润男声)' },
+              { role: 'queen', name: '女王 (绅士男声)' }
+            ]"
+            :key="opt.role"
+            @click="selectFrEntityRole(opt.role)"
+            :class="[
+              'h-[52px] px-3.5 rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all',
+              isRoleActive(opt.role)
+                ? 'bg-car-item border-car-accent text-car-accent font-black shadow-sm'
+                : 'bg-car-card border-car-border text-car-sub hover:text-car-text font-bold'
+            ]"
           >
-            试听生效语音
+            <span class="text-[14.5px] whitespace-nowrap">{{ opt.name }}</span>
           </button>
         </div>
 
-        <!-- 副驾出厂 3 套实体语音选择器（与上面当前生效状态浑然一体） -->
-        <div v-if="isFrDoorItem" class="pt-3 border-t border-car-border/60 flex items-center space-x-3">
-          <span class="text-[14px] font-black text-car-text shrink-0">副驾出厂音色：</span>
-          <div class="flex space-x-2.5 flex-1">
-            <button
-              v-for="opt in [
-                { role: 'female', name: '原车语音', speaker: '原厂晓晓' },
-                { role: 'princess', name: '公主语音', speaker: '温润男声' },
-                { role: 'queen', name: '女王语音', speaker: '绅士男声' }
-              ]"
-              :key="opt.role"
-              @click="selectFrEntityRole(opt.role)"
-              :class="[
-                'h-[52px] flex-1 px-2 rounded-xl border-2 flex items-center justify-center space-x-1.5 cursor-pointer transition-all',
-                isRoleActive(opt.role)
-                  ? 'bg-car-item border-car-accent text-car-accent font-black shadow-sm'
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text font-bold'
-              ]"
-            >
-              <span class="text-[15px] font-black">{{ opt.name }}</span>
-              <span class="text-[12px] opacity-80 font-bold">({{ opt.speaker }})</span>
-            </button>
-          </div>
-        </div>
+        <!-- 非副驾项：保留试听生效语音按钮 -->
+        <button 
+          v-else
+          @click="testCurrentAudio"
+          class="min-h-[50px] px-6 bg-car-card border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md shrink-0"
+        >
+          试听生效语音
+        </button>
       </div>
 
       <!-- 本声效输出：独立声道 + 音量增益 (每声效独立管理 · 增益0=原厂音量) -->
@@ -119,33 +115,18 @@
           <input
             v-model="customText"
             type="text"
-            placeholder="例如: 已挂入前进挡，系好安全带出发啦！"
-            class="w-full h-[54px] bg-car-card border-2 border-car-border rounded-xl px-3 text-car-text text-[15px] font-black outline-none focus:border-car-accent shadow-inner placeholder-car-sub"
+            placeholder="输入个性化台词，留空保存则使用出厂音频"
+            class="w-full h-[54px] bg-car-card border-2 border-car-border rounded-xl px-3.5 text-car-text text-[15px] font-black outline-none focus:border-car-accent shadow-inner placeholder-car-sub"
           />
 
-          <!-- 快捷台词套用 -->
-          <div class="flex flex-col space-y-1.5">
-            <span class="text-[13px] text-car-sub font-bold">快捷范例台词（点击一键填入）：</span>
-            <div class="flex flex-wrap -mr-2 -mb-2">
-              <button
-                v-for="item in presetPhrases"
-                :key="item.label"
-                @click="onSelectPreset(item)"
-                class="px-3 py-1.5 mr-2 mb-2 rounded-lg bg-car-card border border-car-border text-car-text text-[13px] font-bold hover:border-car-accent cursor-pointer shadow-sm transition-all"
-                :title="item.text"
-              >
-                {{ item.label }}
-              </button>
-              <button
-                @click="customText = ''"
-                class="px-3 py-1.5 mr-2 mb-2 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-text hover:border-car-border-light text-[13px] font-bold cursor-pointer shadow-sm transition-all"
-              >
-                清空台词
-              </button>
-            </div>
-          </div>
-
-          <div class="flex space-x-2.5">
+          <div class="flex space-x-2.5 pt-2">
+            <button
+              v-if="customText"
+              @click="customText = ''"
+              class="min-h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+            >
+              清空
+            </button>
             <button
               @click="testTtsText"
               class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
@@ -274,135 +255,6 @@ const channelHint = computed(() => {
   if (itemChannel.value === 'nav') return '导航引导：走导航音量流，可与媒体音量分开调。';
   if (itemChannel.value === 'notification') return '系统提示：走通知音量流（倒车挡慎选，倒车雷达通道与其互斥可能滞后爆音）。';
   return '普通媒体：跟随车机主音量（听歌那条），默认推荐。';
-});
-
-const presetPhrases = computed(() => {
-  if (!targetItem.value) return [];
-  const key = targetItem.value.key || '';
-
-  // 1. 副驾车门 (开/关专属台词)
-  if (key === 'door_fr' || key === 'door_fr_enter') {
-    return [
-      { label: '公主专属 (温润男声)', text: '欢迎公主上车', role: 'princess' },
-      { label: '女王专属 (绅士男声)', text: '恭迎女王殿下', role: 'queen' },
-      { label: '通用标准 (清爽男声)', text: '欢迎乘车', role: 'male' },
-      { label: '通用标准 (知性女声)', text: '欢迎乘车', role: 'female' }
-    ];
-  }
-  if (key === 'door_fr_ready' || key === 'door_fr_close') {
-    return [
-      { label: '公主专属 (温润男声)', text: '公主请系好安全带', role: 'princess' },
-      { label: '女王专属 (绅士男声)', text: '女王殿下已就座，请系好安全带', role: 'queen' },
-      { label: '通用标准 (清爽男声)', text: '车门已关好，请系好安全带', role: 'male' },
-      { label: '通用标准 (知性女声)', text: '车门已关好，请系好安全带', role: 'female' }
-    ];
-  }
-  if (key === 'door_fr_exit') {
-    return [
-      { label: '公主下车提醒', text: '公主请下车，小包包和手机别落下哦，注意后方来车', role: 'princess' },
-      { label: '女王慢走提醒', text: '女王殿下请慢走，请带好随身贵重物品，注意后方来车', role: 'queen' },
-      { label: '清爽男声提醒', text: '下车请注意后方来车，别忘了随身物品', role: 'male' },
-      { label: '知性女声提醒', text: '开门请注意后方来车，请带好随身物品', role: 'female' }
-    ];
-  }
-  if (key === 'door_fr_leave') {
-    return [
-      { label: '公主暖心告别', text: '公主再见，今天也要开心哦', role: 'princess' },
-      { label: '女王典雅恭送', text: '恭送女王殿下，期待下次为您服务', role: 'queen' },
-      { label: '男声祝愿', text: '副驾车门已关好，再见，祝您生活愉快', role: 'male' },
-      { label: '女声祝愿', text: '副驾车门已关好，再见，祝您一路顺风', role: 'female' }
-    ];
-  }
-  // 2. 主驾车门
-  if (key === 'door_fl' || key === 'door_fl_enter') {
-    return [
-      { label: '登车迎宾', text: '车主您好，欢迎回来' },
-      { label: '准备出发', text: '车主您好，欢迎出发' },
-      { label: '清爽迎宾', text: '车主您好，很高兴为您服务' }
-    ];
-  }
-  if (key === 'door_fl_ready') {
-    return [
-      { label: '准备启程', text: '准备启程，请系好安全带' },
-      { label: '就座就绪', text: '车门已关好，系好安全带出发吧' },
-      { label: '标准关好', text: '主驾车门已关好' }
-    ];
-  }
-  if (key === 'door_fl_exit') {
-    return [
-      { label: '离车安全提示', text: '请注意后方来车，带好随身物品' },
-      { label: '防开门杀', text: '开门请注意后方来车' },
-      { label: '防遗落提醒', text: '下车请带好手机与随身物品' }
-    ];
-  }
-  if (key === 'door_fl_leave' || key === 'door_fl_close') {
-    return [
-      { label: '离车锁车', text: '车门已关好，请记得锁车' },
-      { label: '锁车提醒', text: '主驾已关闭，别忘了锁车哦' },
-      { label: '标准关好', text: '主驾车门已关好' }
-    ];
-  }
-  // 3. 后排车门
-  if (key === 'door_rl' || key === 'door_rr') {
-    return [
-      { label: '防开门杀', text: '后排车门打开，请注意后方来车' },
-      { label: '后排开门', text: '后排车门已打开' }
-    ];
-  }
-  if (key === 'door_rl_close' || key === 'door_rr_close') {
-    return [
-      { label: '后排关好', text: '后排车门已关好' },
-      { label: '乘客就位', text: '后排乘客已就位，车门已关好' }
-    ];
-  }
-  // 4. 挡位播报
-  if (key === 'gear_d') {
-    return [
-      { label: '一路平安', text: '已挂入前进挡，系好安全带，祝您一路平安' },
-      { label: '注意路况', text: '前进挡已就绪，注意观察周围路况' }
-    ];
-  }
-  if (key === 'gear_r') {
-    return [
-      { label: '注意后方', text: '已挂入倒车挡，请注意观察后方安全' },
-      { label: '倒车防撞', text: '倒车请注意后方行人和障碍物' }
-    ];
-  }
-  if (key === 'gear_p') {
-    return [
-      { label: '随身物品', text: '已挂入驻车挡，请带好随身物品' },
-      { label: '标准驻车', text: '已挂入驻车挡' }
-    ];
-  }
-  // 5. 后备箱
-  if (key === 'trunk_open') {
-    return [
-      { label: '拿取物品', text: '后备箱已打开，请注意拿取物品' },
-      { label: '标准打开', text: '后备箱已打开' }
-    ];
-  }
-  if (key === 'trunk_close') {
-    return [
-      { label: '确认锁好', text: '后备箱已关闭，请确认锁好' },
-      { label: '标准关闭', text: '后备箱已关闭' }
-    ];
-  }
-  // 6. 通用开闭
-  if (key === 'door_open') {
-    return [
-      { label: '防开门杀', text: '请注意后方来车，带好随身物品' },
-      { label: '车门打开', text: '车门已打开' }
-    ];
-  }
-  if (key === 'door_close') {
-    return [
-      { label: '关好出发', text: '车门已关好，准备出发' },
-      { label: '标准关好', text: '车门已关好' }
-    ];
-  }
-  return [
-    { label: '一路平安', text: '祝您一路顺风，平安出行' }
-  ];
 });
 
 const gainStateText = computed(() => {
@@ -564,15 +416,6 @@ function testTtsText() {
   }
   showToast('正在试听自定义台词...');
   bridge.call('testVehicleVoiceText', customText.value.trim());
-}
-
-function onSelectPreset(item) {
-  customText.value = item.text || '';
-  if (item.role) {
-    bridge.call('setVehicleAutomationStringSetting', 'passenger_voice_role', item.role);
-    localStorage.setItem('geely_passenger_voice_role', item.role);
-    showToast(`已应用副驾专属角色：${item.label}`);
-  }
 }
 
 function saveCustomText() {
