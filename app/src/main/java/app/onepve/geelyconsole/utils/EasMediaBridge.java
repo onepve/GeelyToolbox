@@ -459,8 +459,10 @@ public class EasMediaBridge {
                 }
             }
 
-            // 4. 唤醒底层 com.android.bluetooth A2DP 链路，使其向系统申请 AudioFocus 建立压低链路
-            wakeBluetoothAudioSink();
+            // 4. 仅在真正处于推流状态时唤醒底层 com.android.bluetooth A2DP 链路开闸，未推流时保持静默
+            if (a2dpStreaming) {
+                wakeBluetoothAudioSink();
+            }
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "选通蓝牙音频物理通道失败: " + t.getMessage());
         }
@@ -508,6 +510,34 @@ public class EasMediaBridge {
             AppLogger.w("蓝牙音频", "唤醒底层 A2DP AudioFocus 异常: " + t.getMessage());
         }
         connectBtMediaBrowser();
+    }
+
+    /**
+     * 推流停止或防抢播守护：下发 pause() 掐灭可能排队的手机音乐播放
+     */
+    public void pauseBluetoothAudioSink() {
+        try {
+            if (btMediaController != null) {
+                AppLogger.i("蓝牙音频", "推流停止，通过 btMediaController 下发 pause() 掐灭手机排队播放");
+                btMediaController.getTransportControls().pause();
+            } else {
+                MediaSessionManager mm = (MediaSessionManager) appContext.getSystemService(Context.MEDIA_SESSION_SERVICE);
+                if (mm != null) {
+                    List<MediaController> controllers = mm.getActiveSessions(null);
+                    if (controllers != null) {
+                        for (MediaController mc : controllers) {
+                            if ("com.android.bluetooth".equals(mc.getPackageName())) {
+                                AppLogger.i("蓝牙音频", "推流停止，命中系统蓝牙 MediaSession，下发 pause() 掐灭手机排队播放");
+                                mc.getTransportControls().pause();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "下发 pause 异常: " + t.getMessage());
+        }
     }
 
     /** 用户主动暂停后的自动唤醒抑制截止时间戳 (ms)，期间严禁任何自动 play() */
@@ -704,6 +734,8 @@ public class EasMediaBridge {
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                         if (streaming) {
                             activateBluetoothChannel();
+                        } else {
+                            pauseBluetoothAudioSink();
                         }
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
@@ -718,6 +750,7 @@ public class EasMediaBridge {
                             } else if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止");
+                                pauseBluetoothAudioSink();
                             }
                         }
                     } catch (Throwable ignored) {}
