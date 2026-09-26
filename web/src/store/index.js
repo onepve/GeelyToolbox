@@ -128,9 +128,9 @@ export const store = reactive({
           const list = JSON.parse(raw);
           if (Array.isArray(list) && list.length > 0) return list[0];
         }
-        return '浙江';
+        return '北京';
       } catch (e) {
-        return '浙江';
+        return '北京';
       }
     })(),
     favProvinces: (() => {
@@ -152,7 +152,7 @@ export const store = reactive({
           }
         }
       } catch (e) {}
-      return ['浙江', '上海', '江苏', '北京'];
+      return ['北京'];
     })(),
     nextAdjustment: (() => {
       try {

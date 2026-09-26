@@ -376,10 +376,10 @@ function toggleAutostart() {
 }
 
 // 油价概览卡片状态
-const currentProvinceName = computed(() => store.oilPrice.selectedProvince || '浙江');
+const currentProvinceName = computed(() => store.oilPrice.selectedProvince || '北京');
 const currentOilData = computed(() => {
   const p = currentProvinceName.value;
-  return store.oilPrice.regionalPrices[p] || store.oilPrice.regionalPrices['浙江'];
+  return store.oilPrice.regionalPrices[p] || store.oilPrice.regionalPrices['北京'];
 });
 const currentOilP92 = computed(() => currentOilData.value?.p92 ? currentOilData.value.p92.toFixed(2) : '--');
 const currentOilP95 = computed(() => currentOilData.value?.p95 ? currentOilData.value.p95.toFixed(2) : '--');

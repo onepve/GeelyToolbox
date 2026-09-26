@@ -126,8 +126,8 @@ const statusPills = computed(() => {
         if (!store.oilPrice.nextAdjustment || !store.oilPrice.nextAdjustment.date) {
           return '油价: 获取中...';
         }
-        const prov = store.oilPrice.selectedProvince || '浙江';
-        const p = store.oilPrice.regionalPrices[prov] || store.oilPrice.regionalPrices['浙江'];
+        const prov = store.oilPrice.selectedProvince || '北京';
+        const p = store.oilPrice.regionalPrices[prov] || store.oilPrice.regionalPrices['北京'];
         if (!p || !p.p92) return '油价: 获取中...';
         const p92 = p.p92.toFixed(2);
         const days = getDaysToAdjustment(store.oilPrice.nextAdjustment.date);

@@ -222,12 +222,12 @@ const daysLeft = computed(() => {
 });
 
 const currentPrice = computed(() => {
-  const prov = store.oilPrice.selectedProvince || '浙江';
-  return store.oilPrice.regionalPrices[prov] || store.oilPrice.regionalPrices['浙江'] || null;
+  const prov = store.oilPrice.selectedProvince || '北京';
+  return store.oilPrice.regionalPrices[prov] || store.oilPrice.regionalPrices['北京'] || null;
 });
 
 const isCurrentFav = computed(() => {
-  const prov = store.oilPrice.selectedProvince || '浙江';
+  const prov = store.oilPrice.selectedProvince || '北京';
   return store.oilPrice.favProvinces.includes(prov);
 });
 
@@ -239,7 +239,7 @@ function onSelectProvince(prov, closeDropdown = false) {
 }
 
 function onToggleFav() {
-  const prov = store.oilPrice.selectedProvince || '浙江';
+  const prov = store.oilPrice.selectedProvince || '北京';
   toggleOilFavProvince(prov);
 }
 

@@ -3960,13 +3960,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             try {
                 android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                 if (!prefs.contains("geely_oil_fav_provinces")) {
-                    String defaultFavs = "[\"浙江\",\"上海\",\"江苏\",\"北京\"]";
+                    String defaultFavs = "[\"北京\"]";
                     prefs.edit().putString("geely_oil_fav_provinces", defaultFavs).apply();
                     return defaultFavs;
                 }
-                return prefs.getString("geely_oil_fav_provinces", "[\"浙江\"]");
+                return prefs.getString("geely_oil_fav_provinces", "[\"北京\"]");
             } catch (Exception e) {
-                return "[\"浙江\"]";
+                return "[\"北京\"]";
             }
         }
 
@@ -3988,9 +3988,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         public String getOilSelectedProvince() {
             try {
                 android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                return prefs.getString("geely_oil_selected_province", "");
+                return prefs.getString("geely_oil_selected_province", "北京");
             } catch (Exception e) {
-                return "";
+                return "北京";
             }
         }
 
