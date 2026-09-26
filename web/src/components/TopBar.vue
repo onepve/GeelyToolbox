@@ -211,6 +211,10 @@ onUnmounted(() => {
 });
 
 function handleStoreCapsuleClick() {
+  if (store.deviceInfo?.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   // 顶部胶囊仅显示状态，点击统一走共享主控（与系统维护/ADB 冻结卡同源同文案）
   openAppstoreFlow();
 }

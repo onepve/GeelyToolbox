@@ -27,6 +27,10 @@ function execFreeze(freeze, onDone) {
 
 // 统一冻结流程：已冻结 → 状态提示；未冻结 → 二次确认后执行
 export function openAppstoreFreezeFlow(onDone) {
+  if (store.deviceInfo?.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   if (isAppstoreFrozen()) {
     showToast('吉利应用商店当前处于安全冻结状态，白名单已锁定 (๑•̀ㅂ•́)و');
     return;
@@ -44,6 +48,10 @@ export function openAppstoreFreezeFlow(onDone) {
 
 // 统一解冻流程：高危二次警告后执行
 export function openAppstoreUnfreezeFlow(onDone) {
+  if (store.deviceInfo?.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   openModal('confirm', {
     title: '解冻恢复吉利应用商店',
     desc: '解冻原厂应用商店后，商店将破坏系统白名单策略，直接导致第三方软件无法安装，且已有软件可能被后台静默拦截。',
@@ -57,6 +65,10 @@ export function openAppstoreUnfreezeFlow(onDone) {
 
 // 统一双向入口：按当前状态自动分流（冻结/解冻）
 export function openAppstoreFlow(onDone) {
+  if (store.deviceInfo?.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   if (isAppstoreFrozen()) {
     openAppstoreUnfreezeFlow(onDone);
   } else {
