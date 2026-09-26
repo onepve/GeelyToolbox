@@ -179,10 +179,11 @@ public class AdbClient {
                 return res;
             }
 
-            res.put("ready", portOpen);
+            // 仅在真实执行通 ADB 或 Shell ROOT 时才标为 ready
+            res.put("ready", false);
             res.put("status", portOpen ? "port_open" : "offline");
             res.put("title", portOpen ? "ADB 端口已开放" : "ADB 未就绪");
-            res.put("details", portOpen ? "5555 端口响应中" : "端口未开放或未授权");
+            res.put("details", portOpen ? "5555 端口响应中 (未授权/受限模式)" : "端口未开放或未授权");
             res.put("privilege", "受限模式");
         } catch (Exception e) {
             try {
@@ -329,6 +330,9 @@ public class AdbClient {
                     sConnectionHolder.close();
                     sConnectionHolder = null;
                 }
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ignored) {}
                 try {
                     return executeInternal(context, command);
                 } catch (Exception retryEx) {

@@ -409,12 +409,13 @@ const presetStates = ref({
 const freezingPackages = ref({}); // 防呆置灰防狂点
 
 function parseAppDetailedState(val) {
-  // -1: APP_STATE_NOT_INSTALLED, 0: APP_STATE_DISABLED, 1: APP_STATE_ENABLED
+  // Java SystemUtils: 0: APP_STATE_NOT_INSTALLED, 1: APP_STATE_DISABLED, 2: APP_STATE_ENABLED
   const num = Number(val);
-  if (num === -1) return 'not_installed';
-  if (num === 0) return 'frozen';
-  if (num === 1) return 'active';
+  if (num === 0) return 'not_installed';
+  if (num === 1) return 'frozen';
+  if (num === 2) return 'active';
   if (val === true) return 'frozen';
+  if (val === false) return 'active';
   return 'not_installed';
 }
 
