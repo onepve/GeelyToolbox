@@ -1,6 +1,6 @@
 {
-  "voice_version": 12,
-  "version": "1.7.48-beta.88",
+  "voice_version": 13,
+  "version": "1.7.48-beta.94",
   "updated_at": "2026-09-26",
   "files": {
     "door_close.mp3": {
@@ -63,6 +63,11 @@
       "md5": "48273bbbc0d94ccd3261231f91589a2c",
       "sha256": "15580f5db9d29c3172db8f6a2821b707a1fd7c0b66b51fbcb4036f6b4f926281"
     },
+    "door_fr_princess_close.mp3": {
+      "size": 16796,
+      "md5": "b23d2e0857e4e3e4925fb78ae5ce0c5c",
+      "sha256": "496e162652b9eb80f43114c10daa5edd377eedae392ceffbc95608ab3ad1f396"
+    },
     "door_fr_princess_enter.mp3": {
       "size": 16364,
       "md5": "eca3f45178e4fb2681f3141ee3d2aff8",
@@ -82,6 +87,11 @@
       "size": 20828,
       "md5": "13616af89f6688e3f813a59469695f1b",
       "sha256": "ed23e8ddd38dc0ebbc47cd61b42aa45c5d686e86661b270898167336fe215bd0"
+    },
+    "door_fr_queen_close.mp3": {
+      "size": 14924,
+      "md5": "f80f795814ea01c1bebfe58dd9c57a12",
+      "sha256": "352de43777dc8ca58daa5967db9d6815ce28860bdc5ed6c99fea4387bc16c12a"
     },
     "door_fr_queen_enter.mp3": {
       "size": 13196,

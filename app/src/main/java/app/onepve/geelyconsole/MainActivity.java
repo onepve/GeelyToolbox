@@ -3208,6 +3208,22 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String executeCustomAdbCommand(final String command) {
+            if (!SystemUtils.isAdbMasterSwitchEnabled(context)) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        showToast("ADB 总开关已关闭，该功能无法使用");
+                    }
+                });
+                JSONObject res = new JSONObject();
+                try {
+                    res.put("success", false);
+                    res.put("output", "ADB 总开关已关闭，该功能无法使用");
+                    res.put("error", "ADB_DISABLED");
+                    res.put("durationMs", 0);
+                } catch (Exception ignored) {}
+                return res.toString();
+            }
             long startTime = System.currentTimeMillis();
             JSONObject res = new JSONObject();
             try {
@@ -3248,6 +3264,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public boolean startKeyEventCapture() {
+            if (!SystemUtils.isAdbMasterSwitchEnabled(context)) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        showToast("ADB 总开关已关闭，该功能无法使用");
+                    }
+                });
+                return false;
+            }
             try {
                 stopKeyEventCapture();
                 keyEventCaptureSession = AdbClient.executeStream(context, "getevent -l", new AdbClient.AdbStreamCallback() {
@@ -3822,11 +3847,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         if ("queen".equals(role)) player.play("door_fr_queen_enter.mp3", "恭迎女王殿下");
                         else if ("female".equals(role) || "original".equals(role) || "standard".equals(role)) player.play("door_fr_enter.mp3", "欢迎乘车");
                         else player.play("door_fr_princess_enter.mp3", "欢迎公主上车");
-                    } else if ("door_fr_ready".equals(type) || "door_fr_close".equals(type)) {
+                    } else if ("door_fr_ready".equals(type) || "door_fr_close".equals(type) || "door_fr_leave".equals(type)) {
                         String role = prefs.getString("passenger_voice_role", "female");
-                        if ("queen".equals(role)) player.play("door_fr_queen_ready.mp3", "女王殿下已就座，请系好安全带");
-                        else if ("female".equals(role) || "original".equals(role) || "standard".equals(role)) player.play("door_fr_ready.mp3", "车门已关好，请系好安全带");
-                        else player.play("door_fr_princess_ready.mp3", "公主请系好安全带");
+                        if ("queen".equals(role)) player.play("door_fr_queen_close.mp3", "副驾车门已关好");
+                        else if ("female".equals(role) || "original".equals(role) || "standard".equals(role)) player.play("door_fr_close.mp3", "副驾车门已关好");
+                        else player.play("door_fr_princess_close.mp3", "副驾车门已关好");
                     } else if ("door_fr_exit".equals(type)) {
                         String role = prefs.getString("passenger_voice_role", "female");
                         if ("queen".equals(role)) player.play("door_fr_queen_exit.mp3", "女王殿下请慢走，请带好随身贵重物品，注意后方来车");

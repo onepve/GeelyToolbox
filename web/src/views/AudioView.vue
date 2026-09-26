@@ -661,6 +661,10 @@ function refreshConnectivity() {
 }
 
 function toggleBluetooth() {
+  if (store.deviceInfo?.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   const next = !connStatus.value.bluetooth_enabled;
   connStatus.value.bluetooth_enabled = next;
   bridge.call('toggleBluetooth', next);
@@ -685,6 +689,10 @@ function openBluetoothSettings() {
 }
 
 function toggleWifi() {
+  if (store.deviceInfo?.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   const next = !connStatus.value.wifi_enabled;
   connStatus.value.wifi_enabled = next;
   bridge.call('toggleWifi', next);

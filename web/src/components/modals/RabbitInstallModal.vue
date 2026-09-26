@@ -98,6 +98,10 @@ function checkIsMapApp(app) {
 }
 
 function startAutoPilot() {
+  if (store.deviceInfo?.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   if (!targetApp.value) return;
   if (!checkIsMapApp(targetApp.value)) {
     showToast('安全保护：卡兔子主题功能仅限高德地图底包专用，非地图已禁止！', 'warn');
@@ -109,6 +113,10 @@ function startAutoPilot() {
 }
 
 function reInjectDirectly() {
+  if (store.deviceInfo?.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
   if (!targetApp.value) return;
   if (!checkIsMapApp(targetApp.value)) {
     showToast('安全保护：卡兔子主题功能仅限高德地图底包专用，非地图已禁止！', 'warn');

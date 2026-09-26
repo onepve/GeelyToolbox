@@ -48,6 +48,24 @@ import android.util.Log;
  */
 public class VehicleVoicePlayer {
 
+    private static String resolveConfigKeyFallback(SharedPreferences prefs, String key, String prefix) {
+        if (prefs == null || key == null || key.isEmpty()) return key;
+        if (prefs.contains(prefix + key)) return key;
+        // 衍生副驾音色继承副驾主配置 (开门继承 enter/主项，关门继承 close)
+        if (key.startsWith("door_fr_")) {
+            if (key.contains("close") && prefs.contains(prefix + "door_fr_close")) {
+                return "door_fr_close";
+            }
+            if (prefs.contains(prefix + "door_fr_enter")) {
+                return "door_fr_enter";
+            }
+            if (prefs.contains(prefix + "door_fr")) {
+                return "door_fr";
+            }
+        }
+        return key;
+    }
+
     public static AudioAttributes getVoiceAudioAttributes(Context context, String voiceType) {
         String channel = "music";
         try {
@@ -56,7 +74,8 @@ public class VehicleVoicePlayer {
             // 归一化：voiceType 可能是文件名（gear_r.mp3），配置端存裸 key（gear_r），需先归一化才能命中。
             String key = VoiceGainResolver.normalizeVoiceKey(voiceType);
             if (key != null && !key.isEmpty()) {
-                String per = prefs.getString("voice_item_channel_" + key, null);
+                String lookupKey = resolveConfigKeyFallback(prefs, key, "voice_item_channel_");
+                String per = prefs.getString("voice_item_channel_" + lookupKey, null);
                 if (per != null && !per.isEmpty()) {
                     channel = per;
                 } else {
@@ -484,12 +503,14 @@ public class VehicleVoicePlayer {
             // 归一化：播放侧传的是文件名（如 gear_r.mp3），配置端存的是裸 key（gear_r）。
             // 未归一化时 voice_item_offset_gear_r.mp3 永远查不到，导致单项增益从未生效（核心缺陷）。
             String key = VoiceGainResolver.normalizeVoiceKey(voiceType);
+            String lookupKey = resolveConfigKeyFallback(prefs, key, "voice_item_offset_");
 
             // ── 每声效独立管理（v1.7.37 起）：voice_item_channel_<key> + voice_item_offset_<key> ──
-            // 未保存过该声效 = 不接管，原厂行为零变化；保存过 = 声道/增益完全按本项设置走
-            if (!prefs.contains("voice_item_offset_" + key)) return;
-            String channel = prefs.getString("voice_item_channel_" + key, "music");
-            int offset = prefs.getInt("voice_item_offset_" + key, 0);
+            // 未保存过该声效 = 不接管，原厂行为零变化；保存过 = 声道/增益完全按本项设置走 (副驾衍生音效自动继承主项)
+            if (!prefs.contains("voice_item_offset_" + lookupKey)) return;
+            String channelLookupKey = resolveConfigKeyFallback(prefs, key, "voice_item_channel_");
+            String channel = prefs.getString("voice_item_channel_" + channelLookupKey, "music");
+            int offset = prefs.getInt("voice_item_offset_" + lookupKey, 0);
             if (offset == 0) return;
 
             // 三通道 → 原厂音量流（IHU516G 实测）：music→3、nav→12(私有 STREAM_NAVI)、notification→1(STREAM_SYSTEM)。
