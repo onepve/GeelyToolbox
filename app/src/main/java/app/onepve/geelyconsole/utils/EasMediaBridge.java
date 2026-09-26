@@ -51,8 +51,8 @@ import java.util.List;
 public class EasMediaBridge {
     private static final String TAG = "EasMediaBridge";
     public static final String PKG_BLUETOOTH = "com.android.bluetooth";
-    // 经吉利多媒体源码与实车日志确证：吉利 E02 / SX11-A3 平台 SOURCE_TYPE_BT = 2，SOURCE_TYPE_ONLINE = 6
-    public static final int SOURCE_TYPE_BLUETOOTH = 6;
+    // 经吉利官方 EAS SDK (SourceType.java) 源码级确证：SOURCE_TYPE_BT = 2，SOURCE_TYPE_ONLINE = 6
+    public static final int SOURCE_TYPE_BLUETOOTH = 2;
 
     /** A2DP Sink 音频流状态广播中的真实推流态 (STATE_STARTED) */
     private static final int A2DP_AUDIO_STATE_STARTED = 1;
