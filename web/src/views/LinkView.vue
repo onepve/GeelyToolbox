@@ -236,8 +236,11 @@
       </div>
     </div>
 
-    <!-- 5. 转向灯开启联动 360 - 核心车身联动 (左右分栏车规黄金磁贴，充盈大磁贴设计) -->
-    <div class="bg-car-card border-2 border-car-border rounded-2xl py-6 px-6 min-h-[148px] shadow-xl flex flex-col justify-between transition-all space-y-4">
+    <!-- 5. 转向灯开启联动 360 - 核心车身联动 (左右分栏车规黄金磁贴，展开自适应充盈大磁贴) -->
+    <div
+      class="bg-car-card border-2 border-car-border rounded-2xl px-6 shadow-xl flex flex-col justify-between transition-all"
+      :class="store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'py-8 min-h-[240px] space-y-6' : 'py-7 min-h-[148px] space-y-0'"
+    >
       <div class="flex items-center justify-between">
         <div class="w-[62%] max-w-[62%] flex flex-col space-y-2 shrink-0">
           <div class="flex items-center space-x-3">
@@ -270,28 +273,28 @@
         </div>
       </div>
 
-      <!-- 转向灯复位自动退出 360 子配置 (联动开启时显示) -->
-      <div v-if="store.vehicleAuto.vehicle_turn_signal_360_enabled" class="pt-4 border-t border-car-border/60 flex items-center justify-between">
+      <!-- 转向灯复位自动退出 360 子配置 (联动开启时展开，充裕纵深呼吸空间) -->
+      <div v-if="store.vehicleAuto.vehicle_turn_signal_360_enabled" class="pt-6 border-t border-car-border/60 flex items-center justify-between">
         <div class="flex items-center space-x-3">
           <StatusDot size="sm" :color="store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? 'ok' : 'off'" />
           <div>
             <div class="text-[17px] font-black text-car-text tracking-wide">转向灯回正复位后自动退出 360</div>
-            <div class="text-[13.5px] text-car-sub font-bold mt-0.5">
+            <div class="text-[13.5px] text-car-sub font-bold mt-1">
               {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '开启：转向灯打回关闭后自动退出 360 画面还原大屏' : '关闭：转向灯回正后 360 持续保持在屏幕上，不自动退出' }}
             </div>
           </div>
         </div>
-        <div class="shrink-0 w-[240px]">
+        <div class="shrink-0 w-[200px]">
           <BaseButton
             variant="standard"
             :active="store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false"
             @click="toggleTurnSignal360AutoExit"
           >
-            <span class="text-[16px] font-black text-car-text tracking-wide whitespace-nowrap">
-              {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '复位自动退出: 已开启' : '复位自动退出: 已关闭' }}
+            <span class="text-[17px] font-black text-car-text tracking-wide whitespace-nowrap">
+              {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '已开启' : '已关闭' }}
             </span>
-            <span class="text-[12px] font-bold text-car-sub mt-0.5 whitespace-nowrap">
-              {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '回正后自动退出' : '回正后持续保持' }}
+            <span :class="['text-[12px] font-bold mt-0.5 whitespace-nowrap', store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? 'text-car-accent' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '回正自动退出' : '回正持续保持' }}
             </span>
           </BaseButton>
         </div>
