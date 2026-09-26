@@ -284,9 +284,9 @@
             </div>
           </div>
         </div>
-        <div class="shrink-0 w-[200px]">
+        <div class="shrink-0 w-[170px]">
           <BaseButton
-            variant="standard"
+            variant="dual"
             :active="store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false"
             @click="toggleTurnSignal360AutoExit"
           >

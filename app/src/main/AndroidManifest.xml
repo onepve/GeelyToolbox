@@ -49,7 +49,7 @@
             android:launchMode="singleTask"
             android:theme="@style/AppTheme.FullScreen"
             android:windowSoftInputMode="adjustPan"
-            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
             android:screenOrientation="sensorLandscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

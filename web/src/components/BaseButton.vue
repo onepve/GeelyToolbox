@@ -31,6 +31,8 @@ const BASE = {
   cta: 'h-[52px] px-6 rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center whitespace-nowrap',
   // 柔和次级按钮（恢复默认）
   ghostSoft: 'h-[52px] px-6 rounded-2xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center whitespace-nowrap',
+  // 纵向双行紧凑按钮（标题+小字说明，如回正自动退出）
+  dual: 'w-full h-[62px] px-4 py-1.5 rounded-2xl border-2 cursor-pointer transition-all shadow-sm flex flex-col items-center justify-center text-center',
   // 功能卡片全宽开关（LinkView）
   planToggle: 'w-full h-[52px] px-6 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2 shadow-sm',
   // 功能卡片半宽开关（BodyView 双按钮网格）
@@ -47,6 +49,7 @@ const ACTIVE = {
   miniChip: 'bg-car-card border-2 border-car-accent text-car-accent',
   gestureChip: 'bg-car-card border-2 border-car-accent text-car-text shadow-sm',
   gestureChipLg: 'bg-car-card border-2 border-car-accent text-car-text shadow-sm',
+  dual: 'bg-car-item border-car-accent text-car-text shadow-md',
   planToggle: 'bg-car-item border-car-accent text-car-text shadow-md',
   planToggleGrid: 'bg-car-item border-car-accent text-car-text shadow-md'
 };
@@ -59,6 +62,7 @@ const INACTIVE = {
   miniChip: 'bg-car-card border border-car-border text-car-sub',
   gestureChip: 'bg-car-card border border-car-border text-car-sub',
   gestureChipLg: 'bg-car-card border border-car-border text-car-sub hover:border-car-border-light',
+  dual: 'bg-car-card border-car-border text-car-sub hover:border-car-border-light',
   planToggle: 'bg-car-item border-car-border text-car-sub hover:text-car-text',
   planToggleGrid: 'bg-car-item border-car-border text-car-sub hover:text-car-text'
 };

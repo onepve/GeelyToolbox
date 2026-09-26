@@ -280,13 +280,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 pushDeviceInfoToWeb();
-                // 页面加载就绪后，避开开机前4秒交互黄金期，延迟至系统空闲时低优先级静默拉取，确保用户点击绝对丝滑零卡顿
-                mainHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        fetchCloudAppsAsync(false);
-                    }
-                }, 4000);
                 if (getIntent() != null && getIntent().hasExtra("eval_js")) {
                     mainHandler.postDelayed(() -> callJs(getIntent().getStringExtra("eval_js")), 300);
                 }
@@ -548,6 +541,28 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             startActivity(home);
         } catch (Throwable t) {
             super.onBackPressed();
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        try {
+            int currentNightMode = newConfig.uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+            final boolean isNight = currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+            AppLogger.i("系统状态", "昼夜模式平滑切换: isNight=" + isNight + "，无感刷新无需重启 Activity");
+            if (webView != null) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (webView != null) {
+                            webView.evaluateJavascript("if(window.onSystemNightModeChanged) window.onSystemNightModeChanged(" + isNight + ");", null);
+                        }
+                    }
+                });
+            }
+        } catch (Throwable t) {
+            AppLogger.e("系统状态", "onConfigurationChanged 异常", t);
         }
     }
 
@@ -3142,6 +3157,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void refreshCloudApps() {
+            fetchCloudAppsAsync(false);
+        }
+
+        @JavascriptInterface
+        public void refreshCloudAppsManual() {
             fetchCloudAppsAsync(true);
         }
 

@@ -151,6 +151,12 @@ onMounted(() => {
     }
   } catch (e) {}
 
+  window.onSystemNightModeChanged = (isNight) => {
+    if (typeof isNight === 'boolean' && store.theme.mode === 'auto') {
+      store.isNight = isNight;
+    }
+  };
+
   // 从 Java 原生拉取初始配置
   try {
     const rawAuto = bridge.call('getVehicleAutomationSettings');
@@ -160,12 +166,23 @@ onMounted(() => {
     }
   } catch (e) {}
 
-  // 启动即主动从云端异步拉取最新商城应用配置与全国实时油价 (纯云端无本地硬编码兜底)
+  // 本地首次冷启动防护：仅当本地没有任何应用数据或油价缓存时，才在启动后轻量静默兜底拉取
   try {
-    bridge.call('refreshCloudApps');
+    const hasCachedApps = !!localStorage.getItem('geely_cached_apps_json');
+    if (!hasCachedApps) {
+      setTimeout(() => {
+        try { bridge.call('refreshCloudApps'); } catch (e) {}
+      }, 4000);
+    }
   } catch (e) {}
+
   try {
-    refreshOilPrices(false);
+    const hasCachedOil = !!localStorage.getItem('geely_oil_cached_data');
+    if (!hasCachedOil) {
+      setTimeout(() => {
+        try { refreshOilPrices(false); } catch (e) {}
+      }, 4500);
+    }
   } catch (e) {}
 
   // 首次启动检测：等待原生权限就绪后串行拉起作者说明与赞赏弹窗（仅弹一次，持久化到 localStorage）
@@ -278,17 +295,24 @@ onMounted(() => {
     const autoCheck = localStorage.getItem('geely_auto_check_update');
     if (autoCheck !== 'false') {
       const isBetaChannel = localStorage.getItem('geely_use_beta_channel') === 'true';
+      // 延迟至开机 30 秒网络与系统完全稳定后再静默检测更新，避开前台初始化黄金期
       setTimeout(() => {
         bridge.call('checkUpdateSilently', isBetaChannel);
-      }, 3000);
+      }, 30000);
     }
   } catch (e) {}
 
-  // 启动后异步静默巡检油价更新（4小时缓存，超期静默更新）
+  // 行车巡航避峰静默同步：开机运行 6 分钟后（车主已平稳巡航，彻底避开上车操作与启动高峰），在后台单次静默同步最新商城应用与全国油价
   try {
+    const CRUISING_SYNC_DELAY = 6 * 60 * 1000; // 6 分钟避峰单次静默同步
     setTimeout(() => {
-      refreshOilPrices(false);
-    }, 1500);
+      try {
+        bridge.call('refreshCloudApps');
+      } catch (e) {}
+      try {
+        refreshOilPrices(false);
+      } catch (e) {}
+    }, CRUISING_SYNC_DELAY);
   } catch (e) {}
 });
 </script>

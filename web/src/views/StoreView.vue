@@ -164,7 +164,7 @@ function getBriefDesc(app) {
 }
 
 function refreshApps() {
-  bridge.call('refreshCloudApps');
+  bridge.call('refreshCloudAppsManual');
   showToast('正在从云端拉取最新应用清单...');
 }
 
