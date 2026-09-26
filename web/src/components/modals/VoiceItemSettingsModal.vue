@@ -247,7 +247,7 @@ function selectFrEntityRole(role) {
   resetToDefault();
   showToast(`已切回出厂【${role === 'queen' ? '女王语音' : (role === 'female' ? '原车语音' : '公主语音')}】`);
   if (targetItem.value) {
-    bridge.call('testVehicleVoice', targetItem.value.key || 'door_fr_enter');
+    bridge.call('testVehicleVoice', targetItem.value.key || 'door_fr');
   }
 }
 

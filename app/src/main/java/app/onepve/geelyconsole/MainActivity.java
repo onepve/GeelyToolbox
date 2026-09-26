@@ -3878,33 +3878,19 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     } else if ("door_close".equals(type)) {
                         player.play("door_close.mp3", "车门已关好");
                     } else if ("door".equals(type) || "door_fl".equals(type) || "door_fl_enter".equals(type)) {
-                        player.play("door_fl_enter.mp3", "车主您好，欢迎回来");
-                    } else if ("door_fl_ready".equals(type)) {
-                        player.play("door_fl_ready.mp3", "准备启程，请系好安全带");
-                    } else if ("door_fl_exit".equals(type)) {
-                        player.play("door_fl_exit.mp3", "开门请注意后方来车");
-                    } else if ("door_fl_leave".equals(type) || "door_fl_close".equals(type)) {
-                        player.play("door_fl_leave.mp3", "车门已关好，请锁车");
+                        player.play("door_fl.mp3", "车主您好，欢迎回来");
+                    } else if ("door_fl_close".equals(type) || "door_fl_leave".equals(type) || "door_fl_ready".equals(type) || "door_fl_exit".equals(type)) {
+                        player.play("door_fl_close.mp3", "主驾车门已关好");
                     } else if ("door_fr".equals(type) || "door_fr_enter".equals(type)) {
                         String role = prefs.getString("passenger_voice_role", "female");
                         if ("queen".equals(role)) player.play("door_fr_queen_enter.mp3", "恭迎女王殿下");
-                        else if ("female".equals(role) || "original".equals(role) || "standard".equals(role)) player.play("door_fr_enter.mp3", "欢迎乘车");
-                        else player.play("door_fr_princess_enter.mp3", "欢迎公主上车");
-                    } else if ("door_fr_ready".equals(type) || "door_fr_close".equals(type) || "door_fr_leave".equals(type)) {
+                        else if ("princess".equals(role)) player.play("door_fr_princess_enter.mp3", "欢迎公主上车");
+                        else player.play("door_fr.mp3", "欢迎乘车");
+                    } else if ("door_fr_close".equals(type) || "door_fr_ready".equals(type) || "door_fr_leave".equals(type) || "door_fr_exit".equals(type)) {
                         String role = prefs.getString("passenger_voice_role", "female");
                         if ("queen".equals(role)) player.play("door_fr_queen_close.mp3", "副驾车门已关好");
-                        else if ("female".equals(role) || "original".equals(role) || "standard".equals(role)) player.play("door_fr_close.mp3", "副驾车门已关好");
-                        else player.play("door_fr_princess_close.mp3", "副驾车门已关好");
-                    } else if ("door_fr_exit".equals(type)) {
-                        String role = prefs.getString("passenger_voice_role", "female");
-                        if ("queen".equals(role)) player.play("door_fr_queen_exit.mp3", "女王殿下请慢走，请带好随身贵重物品，注意后方来车");
-                        else if ("female".equals(role) || "original".equals(role) || "standard".equals(role)) player.play("door_fr_exit.mp3", "开门请注意后方来车，请带好随身物品");
-                        else player.play("door_fr_princess_exit.mp3", "公主请下车，小包包和手机别落下哦，注意后方来车");
-                    } else if ("door_fr_leave".equals(type)) {
-                        String role = prefs.getString("passenger_voice_role", "female");
-                        if ("queen".equals(role)) player.play("door_fr_queen_leave.mp3", "恭送女王殿下，期待下次为您服务");
-                        else if ("female".equals(role) || "original".equals(role) || "standard".equals(role)) player.play("door_fr_leave.mp3", "副驾车门已关好，再见，祝您一路顺风");
-                        else player.play("door_fr_princess_leave.mp3", "公主再见，今天也要开心哦");
+                        else if ("princess".equals(role)) player.play("door_fr_princess_close.mp3", "副驾车门已关好");
+                        else player.play("door_fr_close.mp3", "副驾车门已关好");
                     } else if ("door_rl".equals(type)) {
                         player.play("door_rl.mp3", "左后车门已打开，请注意车外环境");
                     } else if ("door_rl_close".equals(type)) {

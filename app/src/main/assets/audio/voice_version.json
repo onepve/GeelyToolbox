@@ -1,207 +1,112 @@
 {
-  "voice_version": 13,
-  "version": "1.7.48-beta.94",
-  "updated_at": "2026-09-26",
+  "voice_version": 14,
+  "updated_at": "2026-09-22",
+  "description": "吉利智驾车规级内置音频资产版本清单与哈希校验索引",
+  "total_files": 26,
   "files": {
     "door_close.mp3": {
       "size": 13916,
-      "md5": "4c1be08b707b151a6325e0ef6b3ea5a6",
-      "sha256": "f76ca39f2c4d1916f5e02592b221bf93c31fe300e39dc23d6ca155f0cc29b381"
+      "md5": "4c1be08b707b151a6325e0ef6b3ea5a6"
     },
     "door_fl.mp3": {
       "size": 22320,
-      "md5": "25619aaac2a8fcb3adda92a3359b0709",
-      "sha256": "9322a633e41381517dad0e8f43dedfc9d6cdb0328c186e0947bfafedb4ce91ba"
+      "md5": "25619aaac2a8fcb3adda92a3359b0709"
     },
     "door_fl_close.mp3": {
       "size": 22176,
-      "md5": "9ffd9f94a15d690de77f9729f3e9506e",
-      "sha256": "425f5b152f7ff03a3cd382ec410cf74d2726a750757c34a70ef8f63c07e1a9d5"
-    },
-    "door_fl_enter.mp3": {
-      "size": 17660,
-      "md5": "9e9d78c2d482944f6590f24f05bd3bd2",
-      "sha256": "edc35cfedd28b66965cbc45237d00c868d562ca95835d7bac1e33978810000b1"
-    },
-    "door_fl_exit.mp3": {
-      "size": 23420,
-      "md5": "313a2c446f7cf553cc5b57d2117a5583",
-      "sha256": "cece88980c71ed6ecb198f250fdfb58d5361ae7b1b63961c7df2ecc196f5bf74"
-    },
-    "door_fl_leave.mp3": {
-      "size": 19964,
-      "md5": "b20b0c69bf14a6e9c87cf63f4f603efe",
-      "sha256": "e356e3d9efbc3e571eb26536480520cd32f2ebc75c2d9ffffbf06fd76165f27c"
-    },
-    "door_fl_ready.mp3": {
-      "size": 19820,
-      "md5": "643b06f6c74dbc842a985917960c0533",
-      "sha256": "a874b1487a31c5b131db74b29db22201de131a1a9d3f491445601ed0ef761d57"
+      "md5": "9ffd9f94a15d690de77f9729f3e9506e"
     },
     "door_fr.mp3": {
       "size": 17568,
-      "md5": "06d958b50398b7c58674b3790a98414b",
-      "sha256": "31db05248c5e3c2c63ede24e9d5233b6efa5da1fe008c62f01fb615c5136227c"
+      "md5": "06d958b50398b7c58674b3790a98414b"
     },
     "door_fr_close.mp3": {
       "size": 22320,
-      "md5": "29ffe265d09cff36af9ba9df03165bc7",
-      "sha256": "7dfa59ccc5acb03cebe2c28ebb7264832cd5c7e0c0fe4c4a03483eccaae6b375"
-    },
-    "door_fr_enter.mp3": {
-      "size": 12044,
-      "md5": "14ce9f35c0ff02ac2a4ae2f88cbd8158",
-      "sha256": "b87b9418369e44b4d167741b0a76c411a0f34fd1c5f059d39554a4bff2283e46"
-    },
-    "door_fr_exit.mp3": {
-      "size": 26876,
-      "md5": "718b295589108de261119450124b7d56",
-      "sha256": "45c24eb30403ef1619eb7cbfaa55ba7fcfd52b1595654bf203f54a16137bec78"
-    },
-    "door_fr_leave.mp3": {
-      "size": 27596,
-      "md5": "48273bbbc0d94ccd3261231f91589a2c",
-      "sha256": "15580f5db9d29c3172db8f6a2821b707a1fd7c0b66b51fbcb4036f6b4f926281"
+      "md5": "29ffe265d09cff36af9ba9df03165bc7"
     },
     "door_fr_princess_close.mp3": {
       "size": 16796,
-      "md5": "b23d2e0857e4e3e4925fb78ae5ce0c5c",
-      "sha256": "496e162652b9eb80f43114c10daa5edd377eedae392ceffbc95608ab3ad1f396"
+      "md5": "b23d2e0857e4e3e4925fb78ae5ce0c5c"
     },
     "door_fr_princess_enter.mp3": {
       "size": 16364,
-      "md5": "eca3f45178e4fb2681f3141ee3d2aff8",
-      "sha256": "972031a51e3d8be4de082a38b272ec1f170be2be299962a4996ca38da57e60f8"
-    },
-    "door_fr_princess_exit.mp3": {
-      "size": 32348,
-      "md5": "5a5d32301d1defaa7cdec63e131feb1a",
-      "sha256": "e076906d35afec9beecfad0333e32c1c9f7cd90f6aad252facbc487e02634fb4"
-    },
-    "door_fr_princess_leave.mp3": {
-      "size": 22268,
-      "md5": "c3da462adb593dd05c81016529d9a616",
-      "sha256": "50599877547145c27688d89276c19c318e8ed5c11582b3714af3f0bc6b9fda4a"
-    },
-    "door_fr_princess_ready.mp3": {
-      "size": 20828,
-      "md5": "13616af89f6688e3f813a59469695f1b",
-      "sha256": "ed23e8ddd38dc0ebbc47cd61b42aa45c5d686e86661b270898167336fe215bd0"
+      "md5": "eca3f45178e4fb2681f3141ee3d2aff8"
     },
     "door_fr_queen_close.mp3": {
       "size": 14924,
-      "md5": "f80f795814ea01c1bebfe58dd9c57a12",
-      "sha256": "352de43777dc8ca58daa5967db9d6815ce28860bdc5ed6c99fea4387bc16c12a"
+      "md5": "f80f795814ea01c1bebfe58dd9c57a12"
     },
     "door_fr_queen_enter.mp3": {
       "size": 13196,
-      "md5": "f491a61b02951564be76ba5bd5c7fb90",
-      "sha256": "b63f1c06c087c7940a1162827c6c3e9344d6e4418c0ec4e572fb096eced88d46"
-    },
-    "door_fr_queen_exit.mp3": {
-      "size": 32204,
-      "md5": "09ff3e4d4ba90c040a40f8e4fcc13f22",
-      "sha256": "eba1d63b1d15595ae7bd158b29ac3533d6e668f640db799483e7c31ea0ede9c4"
-    },
-    "door_fr_queen_leave.mp3": {
-      "size": 22988,
-      "md5": "25091be364e6d55ec3aebf9edcb5635c",
-      "sha256": "2741c23911cd33036cfcac5c1da363737aff7f732bd7f66d85e2c02004d63f99"
-    },
-    "door_fr_queen_ready.mp3": {
-      "size": 22124,
-      "md5": "21655ad14da143acbac804fa08d7af3a",
-      "sha256": "1951e26eeb00f5a091f0babd95a1f72f4850bc97b0305c2b6c2bc2c2c27592c2"
-    },
-    "door_fr_ready.mp3": {
-      "size": 21116,
-      "md5": "4f5b81522f143babf9557b21a9ae702f",
-      "sha256": "89e00141fcfcf4ef4bf81335e7ee976125a36a90a302ee9a33ff7e737dbced27"
+      "md5": "f491a61b02951564be76ba5bd5c7fb90"
     },
     "door_open.mp3": {
       "size": 13772,
-      "md5": "0241c37772f4ed896bfbbb0185842381",
-      "sha256": "868130acb32eb47d5cfe097e58d838f43de039d1e9c334fc9d74fea70c1afe1c"
+      "md5": "0241c37772f4ed896bfbbb0185842381"
     },
     "door_rl.mp3": {
       "size": 22032,
-      "md5": "bbcaaa0d483461fb270f6d8887d3ec3d",
-      "sha256": "acac30dc7cd17d7c6b9b51aaa1a5d7f8ab5205b2c819c7119d76ec8a7fea1004"
+      "md5": "bbcaaa0d483461fb270f6d8887d3ec3d"
     },
     "door_rl_close.mp3": {
       "size": 13968,
-      "md5": "99095aa76d966f529fdad9bc7b6b9283",
-      "sha256": "7509b3e22584b62f9e232792d2e4b09658c5e2ea8109ec1d738d7b51fbf1613e"
+      "md5": "99095aa76d966f529fdad9bc7b6b9283"
     },
     "door_rr.mp3": {
       "size": 22032,
-      "md5": "e40c94a9eca8d314fe6d43703eac5e4f",
-      "sha256": "03106850658c4b1713db4cb62038daef11469d0f2084b68229babc8633099ea7"
+      "md5": "e40c94a9eca8d314fe6d43703eac5e4f"
     },
     "door_rr_close.mp3": {
       "size": 13968,
-      "md5": "78769590b8809b0d616c51960fdd8bb3",
-      "sha256": "271610a96ab882a58679d03b4004380d002b1dab9ccdd41d7f16e449a9237e04"
+      "md5": "78769590b8809b0d616c51960fdd8bb3"
     },
     "gear_d.mp3": {
       "size": 17424,
-      "md5": "e61f4687c9ea048bbd5ab5febc78cce5",
-      "sha256": "6295e767c66c4dd610372e3b6e1d022ae6842141a22b87ce43b719c7d34fc63c"
+      "md5": "e61f4687c9ea048bbd5ab5febc78cce5"
     },
     "gear_n.mp3": {
       "size": 7776,
-      "md5": "ece19bba6a5c927117dbf2a5028e6a60",
-      "sha256": "0591d4ed16974d6a32c57df5376b2476dbc8c9aa030ff6704ccbd17448c9b144"
+      "md5": "ece19bba6a5c927117dbf2a5028e6a60"
     },
     "gear_p.mp3": {
       "size": 12096,
-      "md5": "e28d8c5db4ef7a780b91988525fab38b",
-      "sha256": "7550c9a38425f1d663591d9a99ac0b5ff4c97d65b54ae06899fc52e05bbcb8cb"
+      "md5": "e28d8c5db4ef7a780b91988525fab38b"
     },
     "gear_park_alarm.mp3": {
       "size": 12764,
-      "md5": "76668b00c67ac5dcae10b046ee664e8b",
-      "sha256": "4527cc4cd2eb11ef41c0fadccbfa02a4dddda0c99c45ee1c424f6f74e51131bc"
+      "md5": "76668b00c67ac5dcae10b046ee664e8b"
     },
     "gear_r.mp3": {
       "size": 5612,
-      "md5": "a8b6df53fe031f9c1797cc3e68de8acf",
-      "sha256": "7bd6153aa6ce8163bd4d42497810d0ce88cc4d6c0ee34dfca5b7e1f978779fd0"
+      "md5": "a8b6df53fe031f9c1797cc3e68de8acf"
     },
     "gear_s.mp3": {
       "size": 10080,
-      "md5": "f8e180da3f9433beef43b38fea12c913",
-      "sha256": "67b406b872408ff03062184ced4d87b7a4897b564591a5d37c106ded6bf8b5c4"
+      "md5": "f8e180da3f9433beef43b38fea12c913"
     },
     "mode_comfort.mp3": {
       "size": 5852,
-      "md5": "bc9ff3a24ec154ab2e66da04bad2de0a",
-      "sha256": "5bd9b4d6a4a5eba566834b30e5958987139f35d225b43e5e30e41f1b175302f4"
+      "md5": "bc9ff3a24ec154ab2e66da04bad2de0a"
     },
     "mode_eco.mp3": {
       "size": 5420,
-      "md5": "8419acbc9c5f609ed41cd151d86cc5fa",
-      "sha256": "9eea991368c37341228a857ef67188d3255ee53e9f71fb5acb75a02f0243ab85"
+      "md5": "8419acbc9c5f609ed41cd151d86cc5fa"
     },
     "mode_smart.mp3": {
       "size": 5420,
-      "md5": "860db3e37a0438871874fb4a4347e8e5",
-      "sha256": "e6ad79d4d8875c5060380b675192ae8ae7b0e5031fb9a173fbff2839f0153e22"
+      "md5": "860db3e37a0438871874fb4a4347e8e5"
     },
     "mode_sport.mp3": {
       "size": 5132,
-      "md5": "17c1ba13ff62619fca279cc13a9137ce",
-      "sha256": "e7ed4358afb4bc65513f0f6212c7d46c08b40bc0864a6d4993305800dffe6205"
+      "md5": "17c1ba13ff62619fca279cc13a9137ce"
     },
     "trunk_close.mp3": {
       "size": 19440,
-      "md5": "5154536541cda36e4134ba45771f9341",
-      "sha256": "11c4c16ace7551c23d209ac3135101de9312c3cbc51c08309f818eef64235f84"
+      "md5": "5154536541cda36e4134ba45771f9341"
     },
     "trunk_open.mp3": {
       "size": 12672,
-      "md5": "88d315c51c6b3bc58208cf686baedeff",
-      "sha256": "268a4458fd053bdbda09d2c756ecad4abb6aaeebc6ea038602290f9b7e591204"
+      "md5": "88d315c51c6b3bc58208cf686baedeff"
     }
   }
 }

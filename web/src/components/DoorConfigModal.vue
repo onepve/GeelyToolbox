@@ -143,7 +143,7 @@
             <div class="flex items-center justify-between">
               <span class="text-[14px] text-car-sub font-bold">开门迎宾</span>
               <div class="flex items-center space-x-2">
-                <button @click="openCustomVoice('door_fr', '副驾开门迎宾', 'door_fr_enter.mp3')" class="h-[52px] px-3 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-text font-bold text-[14px] cursor-pointer">声效设置</button>
+                <button @click="openCustomVoice('door_fr', '副驾开门迎宾', 'door_fr.mp3')" class="h-[52px] px-3 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-text font-bold text-[14px] cursor-pointer">声效设置</button>
                 <button @click="testVoice('door_fr')" class="h-[52px] px-3.5 rounded-lg bg-car-card border border-car-border text-car-text font-bold text-[16px] cursor-pointer">试听</button>
                 <button @click="toggleSetting('voice_enable_door_fr')" :class="['h-[52px] px-3.5 rounded-lg border-2 font-black text-[16px] cursor-pointer', store.vehicleAuto.voice_enable_door_fr !== false ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub']">{{ store.vehicleAuto.voice_enable_door_fr !== false ? '开启' : '关闭' }}</button>
               </div>
@@ -260,7 +260,7 @@ const passengerPhrases = computed(() => {
 
 function switchPassengerRole(roleId, roleName) {
   setSetting('passenger_voice_role', roleId, '已切换副驾语音为: ' + roleName);
-  testVoice('door_fr_enter');
+  testVoice('door_fr');
 }
 
 /** 车门语音双模式切换：key 与 toast 固定，仅布尔值可变 */
