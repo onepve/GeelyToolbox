@@ -50,6 +50,10 @@ public class PrefUtils {
      */
     public static void sanitizeDoorPreferences(SharedPreferences prefs) {
         if (prefs == null) return;
+        // 1. 物理清理所有历史旧版残留的幽灵配置键 (如旧版衍生音效独立 offset/channel)
+        cleanupStaleVoicePreferences(prefs);
+
+        // 2. 批量纠偏布尔配置项类型冲突
         String[] boolKeys = {
             "voice_door_mode_universal", "voice_enable_door_universal_open", "voice_enable_door_universal_close",
             "voice_enable_door_fl", "voice_enable_door_fl_close",
@@ -67,5 +71,41 @@ public class PrefUtils {
         for (String k : boolKeys) {
             getBoolean(prefs, k, true);
         }
+    }
+
+    /**
+     * 物理清理历史残留旧版键，消除幽灵增益与声道异常
+     */
+    public static void cleanupStaleVoicePreferences(SharedPreferences prefs) {
+        if (prefs == null) return;
+        try {
+            SharedPreferences.Editor editor = prefs.edit();
+            String[] staleKeys = {
+                "voice_item_offset_door_fr_enter",
+                "voice_item_offset_door_fr_queen_enter",
+                "voice_item_offset_door_fr_princess_enter",
+                "voice_item_offset_door_fr_queen_close",
+                "voice_item_offset_door_fr_princess_close",
+                "voice_item_channel_door_fr_enter",
+                "voice_item_channel_door_fr_queen_enter",
+                "voice_item_channel_door_fr_princess_enter",
+                "voice_item_channel_door_fr_queen_close",
+                "voice_item_channel_door_fr_princess_close",
+                "voice_item_offset_door_fl_enter",
+                "voice_item_offset_door_fl_close_enter",
+                "voice_item_channel_door_fl_enter"
+            };
+            boolean changed = false;
+            for (String key : staleKeys) {
+                if (prefs.contains(key)) {
+                    editor.remove(key);
+                    changed = true;
+                }
+            }
+            if (changed) {
+                editor.apply();
+                AppLogger.i("座舱自动化", "【自愈防护】已成功物理清除历史残留旧版语音增益/声道键，恢复权威主项管控");
+            }
+        } catch (Exception ignored) {}
     }
 }

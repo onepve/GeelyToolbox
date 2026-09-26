@@ -236,6 +236,32 @@
       </div>
     </div>
 
+    <!-- 任务 5: 转向灯联动 360 全景环视 (最底部) -->
+    <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl flex flex-col space-y-3.5 transition-all duration-200">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <span class="text-[20px] font-black text-car-text tracking-wide">5. 转向灯开启联动 360</span>
+          <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">盲区辅助</span>
+          <HelpDot size="sm" @click="showHelp('turn_signal_360')" />
+        </div>
+        <button
+          @click="toggleTurnSignal360"
+          :class="[
+            'h-[50px] px-5 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center space-x-2 shrink-0',
+            store.vehicleAuto.vehicle_turn_signal_360_enabled
+              ? 'bg-car-item border-car-accent text-car-text shadow-md'
+              : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
+          ]"
+        >
+          <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'bg-car-accent' : 'bg-car-sub']"></span>
+          <span>{{ store.vehicleAuto.vehicle_turn_signal_360_enabled ? '转向灯联动 360 已开启' : '转向灯联动 360 已关闭' }}</span>
+        </button>
+      </div>
+      <div class="text-[13.5px] text-car-sub font-bold leading-relaxed">
+        打左/右转向灯时自动唤起 360 全景环视影像，消除后视镜盲区；转向灯回正关闭后自动退出 360 还原原界面（倒车 R 挡状态下不打扰原厂倒车影像）。
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -251,6 +277,13 @@ const hasQQMusic = ref(false);
 const hasNeteaseMusic = ref(false);
 const customAutoplayAppName = ref('');
 const customActionAppName = ref('');
+
+const toggleTurnSignal360 = async () => {
+  const nextVal = !store.vehicleAuto.vehicle_turn_signal_360_enabled;
+  store.vehicleAuto.vehicle_turn_signal_360_enabled = nextVal;
+  await bridge.setVehicleAutomationSetting('vehicle_turn_signal_360_enabled', nextVal);
+  showToast(nextVal ? '转向灯联动 360 已开启' : '转向灯联动 360 已关闭');
+};
 
 const isCustomAutoplaySelected = computed(() => {
   const currentPkg = store.vehicleAuto.vehicle_speed_autoplay_pkg;
@@ -405,6 +438,11 @@ function showHelp(key) {
       title: '【功能指南】车速达标自定义动作',
       desc: '1. 车速阈值唤起：行驶车速达到设定阈值时，自动唤醒高德车机地图或自选软件，无需行车中分心操作屏幕。\n\n2. 行程防抖机制：单次行驶中仅触发一次，避免频繁弹窗；挂入 P 挡停稳后自动重置待命。',
       tip: '适合将阈值设为 40~50 km/h，出地库上主路巡航时自动切回大屏导航。'
+    },
+    turn_signal_360: {
+      title: '【功能指南】转向灯开启联动 360',
+      desc: '1. 盲区辅助：打左或右转向灯时，自动唤醒 360 全景环视影像，消除后视镜与侧向盲区。\n\n2. 自动退出：转向灯拨杆回正关闭后，360 全景自动退出并还原原屏幕界面。\n\n3. 倒车避让：倒车 R 挡状态下不打扰原厂倒车影像。',
+      tip: '适合原厂未配备转向灯联动 360 的车型开启。'
     }
   };
   const item = helpData[key];

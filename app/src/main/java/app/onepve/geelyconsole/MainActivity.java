@@ -9,6 +9,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -3447,8 +3448,17 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 try {
                     if (key == null || key.isEmpty()) return;
                     int v = Math.max(-15, Math.min(15, offset));
-                    getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
-                            .edit().putInt("voice_item_offset_" + key, v).commit();
+                    SharedPreferences.Editor ed = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE).edit();
+                    ed.putInt("voice_item_offset_" + key, v);
+                    if ("door_fr".equals(key)) {
+                        ed.remove("voice_item_offset_door_fr_enter");
+                        ed.remove("voice_item_offset_door_fr_queen_enter");
+                        ed.remove("voice_item_offset_door_fr_princess_enter");
+                    } else if ("door_fr_close".equals(key)) {
+                        ed.remove("voice_item_offset_door_fr_queen_close");
+                        ed.remove("voice_item_offset_door_fr_princess_close");
+                    }
+                    ed.commit();
                     AppLogger.i("声音设置", "增益[" + key + "] -> " + v);
                 } catch (Exception e) {
                     AppLogger.e("声音设置", "增益更新失败: " + e.getMessage());

@@ -50,19 +50,16 @@ public class VehicleVoicePlayer {
 
     private static String resolveConfigKeyFallback(SharedPreferences prefs, String key, String prefix) {
         if (prefs == null || key == null || key.isEmpty()) return key;
-        if (prefs.contains(prefix + key)) return key;
-        // 衍生副驾音色继承副驾主配置 (开门继承 enter/主项，关门继承 close)
-        if (key.startsWith("door_fr_")) {
-            if (key.contains("close") && prefs.contains(prefix + "door_fr_close")) {
-                return "door_fr_close";
-            }
-            if (prefs.contains(prefix + "door_fr_enter")) {
-                return "door_fr_enter";
-            }
-            if (prefs.contains(prefix + "door_fr")) {
-                return "door_fr";
-            }
+        // 1. 副驾衍生音效一律收敛至前端绑定的权威主项 (开门统一指向 door_fr，关门统一指向 door_fr_close)
+        // 彻底杜绝命中历史残留的 door_fr_enter / door_fr_queen_* / door_fr_princess_* 等幽灵配置
+        if (key.startsWith("door_fr_") || key.equals("door_fr")) {
+            return key.contains("close") ? "door_fr_close" : "door_fr";
         }
+        // 2. 主驾通用开门关门别名收敛
+        if (key.startsWith("door_fl_") || key.equals("door_fl")) {
+            return key.contains("close") ? "door_fl_close" : "door_fl";
+        }
+        if (prefs.contains(prefix + key)) return key;
         return key;
     }
 

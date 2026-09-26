@@ -130,6 +130,10 @@ public class VehicleAutomationService extends Service {
     private GearStateMachine gearStateMachine;
     private DriveModeManager driveModeManager;
 
+    // 转向灯联动 360 状态
+    private boolean enableTurnSignal360 = false;
+    private boolean isTurnSignal360Active = false;
+
     /** 桥接只读快照 (供 MainActivity 同步读取，不加锁只写 volatile) */
     private volatile boolean lastEngineRunningSnapshot = false;
 
@@ -214,12 +218,17 @@ public class VehicleAutomationService extends Service {
                 EasMediaBridge.getInstance(context).syncVoiceCompensationConfig(voiceCompEnabled, voiceCompOffset);
             } catch (Throwable ignored) {}
 
+            boolean turn360 = PrefUtils.getBoolean(prefs, "vehicle_turn_signal_360_enabled", false);
+            if (instance != null) {
+                instance.enableTurnSignal360 = turn360;
+            }
+
             boolean anyVoiceEnabled = voiceMaster && (doorFl || doorFlClose || doorFr || doorFrClose ||
                                 doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
                                 trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
                                 modeSmart || modeComfort || modeEco || modeSport);
 
-            boolean shouldRun = anyVoiceEnabled || wheelEnabled
+            boolean shouldRun = anyVoiceEnabled || wheelEnabled || turn360
                     || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
             Intent intent = new Intent(context, VehicleAutomationService.class);
@@ -370,6 +379,8 @@ public class VehicleAutomationService extends Service {
         enableModeEco = prefs.getBoolean("voice_enable_mode_eco", true);
         enableModeSport = prefs.getBoolean("voice_enable_mode_sport", true);
 
+        enableTurnSignal360 = PrefUtils.getBoolean(prefs, "vehicle_turn_signal_360_enabled", false);
+
         // 若服务在行车中启动，立即建立主驾已就坐基准，避免车门语音误判为上车
         if (lastPowerMode > 0 && doorStateManager != null) {
             doorStateManager.markDriverInside();
@@ -382,7 +393,7 @@ public class VehicleAutomationService extends Service {
                              enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
                              enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN || enableGearS ||
                              enableModeSmart || enableModeComfort || enableModeEco || enableModeSport);
-        boolean anyEnabled = anyVoiceEnabled || wheelEnabled
+        boolean anyEnabled = anyVoiceEnabled || wheelEnabled || enableTurnSignal360
                 || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
         if (!anyEnabled) {
@@ -520,6 +531,8 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("(?:info_id_vpowerinfo_engine_state|engine_state)[^0-9]*(\\d+)");
     private static final Pattern P_BOOTUP_REASON =
             Pattern.compile("ap_power_bootup_reason[^0-9]*(\\d+)");
+    private static final Pattern P_TURN_LIGHT =
+            Pattern.compile("turnLight\\s*=\\s*(\\d+)");
 
     private void startLogcatReader() {
         if (logcatThread != null && logcatThread.isAlive()) return;
@@ -858,6 +871,17 @@ public class VehicleAutomationService extends Service {
             } catch (Exception ignored) {}
         }
 
+        // 5.1 解析 ga10 架构转向灯报文 (paramVehicleTurnLight ... turnLight=1/2/0)
+        if (enableTurnSignal360 && (line.contains("paramVehicleTurnLight") || line.contains("turnLight="))) {
+            try {
+                Matcher m = P_TURN_LIGHT.matcher(line);
+                if (m.find()) {
+                    int turnVal = Integer.parseInt(m.group(1));
+                    handleTurnSignalState(turnVal);
+                }
+            } catch (Exception ignored) {}
+        }
+
         // 6. 解析 12V 蓄电池物理电压报文 (ecarx_core_server: vehicledata----callbacks---mModelBatteryVolt = 125)
         if (line.contains("mModelBatteryVolt =")) {
             try {
@@ -1033,8 +1057,38 @@ public class VehicleAutomationService extends Service {
                 if (gearStateMachine != null) gearStateMachine.resetState();
                 if (driveModeManager != null) driveModeManager.resetState();
                 if (doorStateManager != null) doorStateManager.resetState();
+                isTurnSignal360Active = false;
             }
             lastPowerMode = val;
+        }
+
+        // 转向灯联动 360 (TCM_Req_TurnIndicationAct: 1=左转, 2=右转, 0=回正/复位)
+        if ("TCM_Req_TurnIndicationAct".equals(key)) {
+            handleTurnSignalState(val);
+        }
+    }
+
+    /**
+     * 转向灯联动 360 核心处理逻辑
+     * @param turnLight 1=左转, 2=右转, 0=回正/复位
+     */
+    private void handleTurnSignalState(int turnLight) {
+        if (!enableTurnSignal360) return;
+        // 1=左转, 2=右转
+        if (turnLight == 1 || turnLight == 2) {
+            // 倒车 R 挡 (4) 时避让原厂倒车影像，不打扰
+            if (lastGearPos == 4) return;
+            if (!isTurnSignal360Active) {
+                isTurnSignal360Active = true;
+                open360Camera();
+                AppLogger.i("车身联动", "【转向灯联动360】检测到" + (turnLight == 1 ? "左" : "右") + "转向灯开启，唤起 360 全景影像");
+            }
+        } else if (turnLight == 0) {
+            if (isTurnSignal360Active) {
+                isTurnSignal360Active = false;
+                close360Camera();
+                AppLogger.i("车身联动", "【转向灯联动360】检测到转向灯回正关闭，自动退出 360 全景影像");
+            }
         }
     }
 
