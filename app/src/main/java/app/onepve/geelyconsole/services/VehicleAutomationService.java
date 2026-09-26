@@ -734,7 +734,7 @@ public class VehicleAutomationService extends Service {
                     return;
                 }
             } catch (Exception e) {
-                AppLogger.w("车门状态", "解析串口车门报文异常: " + e.getMessage());
+                AppLogger.w("车门状态", "解析串口车门报文异常: " + e.getMessage() + " | line=" + line);
             }
         }
 
