@@ -1,5 +1,5 @@
 {
-  "voice_version": 2026092605,
+  "voice_version": 2026092606,
   "total_files": 42,
   "files": {
     "door_close.mp3": {
@@ -15,8 +15,8 @@
       "md5": "9ffd9f94a15d690de77f9729f3e9506e"
     },
     "door_fl_enter.mp3": {
-      "size": 17228,
-      "md5": "084eb640ed0882a0c8e8f9a116a12b0e"
+      "size": 17660,
+      "md5": "9e9d78c2d482944f6590f24f05bd3bd2"
     },
     "door_fl_exit.mp3": {
       "size": 23420,
@@ -67,8 +67,8 @@
       "md5": "e17d0c491ecb43a2b475fdba0f2dcd78"
     },
     "door_fr_princess_enter.mp3": {
-      "size": 18236,
-      "md5": "baa6aa9e782c768f8e26c980b0741c03"
+      "size": 16364,
+      "md5": "eca3f45178e4fb2681f3141ee3d2aff8"
     },
     "door_fr_princess_exit.mp3": {
       "size": 32348,
@@ -83,8 +83,8 @@
       "md5": "13616af89f6688e3f813a59469695f1b"
     },
     "door_fr_queen_enter.mp3": {
-      "size": 17804,
-      "md5": "96834e86f98f23b1c9fefd143c42292d"
+      "size": 13196,
+      "md5": "f491a61b02951564be76ba5bd5c7fb90"
     },
     "door_fr_queen_exit.mp3": {
       "size": 32204,

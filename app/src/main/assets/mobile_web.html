@@ -376,7 +376,7 @@
                     <div id="door-pane-split" style="display:none; flex-direction:column; gap:8px;">
                         <div>
                             <label class="input-label">🚪 主驾开门迎宾 (登车迎宾/离车安全提示)：</label>
-                            <input type="text" id="tts-door_fl" class="input-box" placeholder="默认: 车主您好，请上车 (离车: 请注意后方来车)">
+                            <input type="text" id="tts-door_fl" class="input-box" placeholder="默认: 车主您好，欢迎回来 (离车: 请注意后方来车)">
                         </div>
                         <div>
                             <label class="input-label">🚪 主驾关门提示 (准备启程/离车锁车提示)：</label>
@@ -388,7 +388,7 @@
                             <label class="input-label" style="font-weight:700; color:#0f172a; margin-bottom:6px;">👑 副驾专属音效角色 (一键设定整套进出音色)：</label>
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                                 <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; cursor:pointer;">
-                                    <input type="radio" name="passenger_role" value="princess" onchange="onPassengerRoleChange('princess')"> 👸 公主专属 (阳光男声)
+                                    <input type="radio" name="passenger_role" value="princess" onchange="onPassengerRoleChange('princess')"> 👸 公主专属 (温润男声)
                                 </label>
                                 <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; cursor:pointer;">
                                     <input type="radio" name="passenger_role" value="queen" onchange="onPassengerRoleChange('queen')"> 👑 女王专属 (绅士男声)
@@ -404,7 +404,7 @@
 
                         <div>
                             <label class="input-label">🚪 副驾开门台词 (拉门上车/推门下车)：</label>
-                            <input type="text" id="tts-door_fr" class="input-box" placeholder="例如: 公主请上车 / 恭迎女王殿下，请上车 / 欢迎乘车">
+                            <input type="text" id="tts-door_fr" class="input-box" placeholder="例如: 欢迎公主上车 / 恭迎女王殿下 / 欢迎乘车">
                         </div>
                         <div>
                             <label class="input-label">🚪 副驾关门台词 (就坐关门/下车离车)：</label>
@@ -541,10 +541,10 @@
             const frOpen = document.getElementById('tts-door_fr');
             const frClose = document.getElementById('tts-door_fr_close');
             if (role === 'princess') {
-                if (frOpen && !frOpen.value) frOpen.placeholder = '默认: 公主请上车 (推门: 公主请下车)';
+                if (frOpen && !frOpen.value) frOpen.placeholder = '默认: 欢迎公主上车 (推门: 公主请下车)';
                 if (frClose && !frClose.value) frClose.placeholder = '默认: 公主请系好安全带 (下车: 公主再见)';
             } else if (role === 'queen') {
-                if (frOpen && !frOpen.value) frOpen.placeholder = '默认: 恭迎女王殿下，请上车 (推门: 女王殿下请慢走)';
+                if (frOpen && !frOpen.value) frOpen.placeholder = '默认: 恭迎女王殿下 (推门: 女王殿下请慢走)';
                 if (frClose && !frClose.value) frClose.placeholder = '默认: 女王殿下已就座，请系好安全带';
             } else {
                 if (frOpen && !frOpen.value) frOpen.placeholder = '默认: 欢迎乘车 (推门: 开门请注意后方来车)';

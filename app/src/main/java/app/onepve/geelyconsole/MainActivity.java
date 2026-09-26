@@ -3788,15 +3788,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     } else if ("door_close".equals(type)) {
                         player.play("door_close.mp3", "车门已关好");
                     } else if ("door".equals(type) || "door_fl".equals(type)) {
-                        player.play("door_fl_enter.mp3", "车主您好，请上车");
+                        player.play("door_fl_enter.mp3", "车主您好，欢迎回来");
                     } else if ("door_fl_close".equals(type)) {
                         player.play("door_fl_ready.mp3", "准备启程，请系好安全带");
                     } else if ("door_fr".equals(type)) {
                         String role = prefs.getString("passenger_voice_role", "princess");
                         if ("female".equals(role)) player.play("door_fr_enter.mp3", "欢迎乘车");
                         else if ("male".equals(role)) player.play("door_fr_male_enter.mp3", "欢迎乘车");
-                        else if ("queen".equals(role)) player.play("door_fr_queen_enter.mp3", "恭迎女王殿下，请上车");
-                        else player.play("door_fr_princess_enter.mp3", "公主请上车");
+                        else if ("queen".equals(role)) player.play("door_fr_queen_enter.mp3", "恭迎女王殿下");
+                        else player.play("door_fr_princess_enter.mp3", "欢迎公主上车");
                     } else if ("door_fr_close".equals(type)) {
                         String role = prefs.getString("passenger_voice_role", "princess");
                         if ("female".equals(role)) player.play("door_fr_ready.mp3", "车门已关好，请系好安全带");

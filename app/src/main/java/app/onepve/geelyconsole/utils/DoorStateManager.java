@@ -296,7 +296,7 @@ public class DoorStateManager {
                     boolean enableOpen = prefs.getBoolean(openKey, true) && prefs.getBoolean("enable_door_" + doorCode.toLowerCase(), true);
                     if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
                         String soundFile = "door_fl_enter.mp3";
-                        String text = "车主您好，请上车";
+                        String text = "车主您好，欢迎回来";
                         if ("FR".equals(doorCode)) {
                             String role = prefs.getString("passenger_voice_role", "princess");
                             if ("female".equals(role)) {
@@ -307,10 +307,10 @@ public class DoorStateManager {
                                 text = "欢迎乘车";
                             } else if ("queen".equals(role)) {
                                 soundFile = "door_fr_queen_enter.mp3";
-                                text = "恭迎女王殿下，请上车";
+                                text = "恭迎女王殿下";
                             } else {
                                 soundFile = "door_fr_princess_enter.mp3";
-                                text = "公主请上车";
+                                text = "欢迎公主上车";
                             }
                         } else if ("RL".equals(doorCode)) {
                             soundFile = "door_rl.mp3";

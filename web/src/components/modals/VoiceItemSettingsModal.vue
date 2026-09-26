@@ -235,22 +235,22 @@ const presetPhrases = computed(() => {
     return [
       { label: '通用标准 (清爽男声)', text: '欢迎乘车', role: 'male' },
       { label: '通用标准 (知性女声)', text: '欢迎乘车', role: 'female' },
-      { label: '公主专属 (阳光男声)', text: '公主请上车', role: 'princess' },
-      { label: '女王专属 (绅士男声)', text: '恭迎女王殿下，请上车', role: 'queen' }
+      { label: '公主专属 (温润男声)', text: '欢迎公主上车', role: 'princess' },
+      { label: '女王专属 (绅士男声)', text: '恭迎女王殿下', role: 'queen' }
     ];
   }
   if (key === 'door_fr_close') {
     return [
       { label: '通用标准 (清爽男声)', text: '车门已关好，请系好安全带', role: 'male' },
       { label: '通用标准 (知性女声)', text: '车门已关好，请系好安全带', role: 'female' },
-      { label: '公主专属 (阳光男声)', text: '公主请系好安全带', role: 'princess' },
+      { label: '公主专属 (温润男声)', text: '公主请系好安全带', role: 'princess' },
       { label: '女王专属 (绅士男声)', text: '女王殿下已就座，请系好安全带', role: 'queen' }
     ];
   }
   // 2. 主驾车门
   if (key === 'door_fl') {
     return [
-      { label: '登车迎宾', text: '车主您好，请上车' },
+      { label: '登车迎宾', text: '车主您好，欢迎回来' },
       { label: '离车提示', text: '请注意后方来车，带好随身物品' },
       { label: '防开门杀', text: '开门请注意后方来车' }
     ];

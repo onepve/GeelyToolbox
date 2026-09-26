@@ -61,11 +61,11 @@
    (1) 主驾驶席 (FL · 进出闭环)：
        - 主驾登车迎宾：
          官方英文：door_fl_enter.mp3 (兼容: door_fl.mp3)
-         支持中文：主驾上车迎宾.mp3、车主上车.mp3、主驾开门.mp3、主驾车门开启.mp3
-       - 主驾就绪启程：
+         支持中文：车主您好欢迎回来.mp3、主驾上车迎宾.mp3、车主上车.mp3、主驾开门.mp3
+       - 主驾准备启程：
          官方英文：door_fl_ready.mp3
-         支持中文：准备启程.mp3、主驾系好安全带.mp3
-       - 主驾下车提示：
+         支持中文：准备启程.mp3、主驾就绪.mp3、主驾系好安全带.mp3
+       - 主驾离车提示：
          官方英文：door_fl_exit.mp3
          支持中文：主驾离车注意来车.mp3、主驾开门注意后方.mp3
        - 主驾离车锁车：
@@ -73,14 +73,14 @@
          支持中文：主驾车门已关好请锁车.mp3、主驾关门.mp3、主驾车门关闭.mp3
 
    (2) 副驾驶席 (FR · 4大角色专属进出音色)：
-       【角色 1：公主专属 · 阳光男声】
-       - 公主请上车：door_fr_princess_enter.mp3 (中文: 公主请上车.mp3)
+       【角色 1：公主专属 · 温润男声】
+       - 欢迎公主上车：door_fr_princess_enter.mp3 (中文: 欢迎公主上车.mp3、公主请上车.mp3)
        - 公主系好安全带：door_fr_princess_ready.mp3 (中文: 公主请系好安全带.mp3)
        - 公主推门下车(提醒带物品)：door_fr_princess_exit.mp3 (中文: 公主请下车.mp3、公主下车.mp3)
        - 公主离车关门(暖心告别)：door_fr_princess_leave.mp3 (中文: 公主再见.mp3)
 
        【角色 2：女王专属 · 绅士男声】
-       - 恭迎女王殿下：door_fr_queen_enter.mp3 (中文: 恭迎女王殿下.mp3、女王请上车.mp3)
+       - 恭迎女王殿下：door_fr_queen_enter.mp3 (中文: 恭迎女王殿下.mp3)
        - 女王已就座：door_fr_queen_ready.mp3 (中文: 女王殿下已就座.mp3)
        - 女王推门下车(提醒贵重物品)：door_fr_queen_exit.mp3 (中文: 女王殿下请慢走.mp3、女王请下车.mp3)
        - 恭送女王殿下：door_fr_queen_leave.mp3 (中文: 恭送女王殿下.mp3)

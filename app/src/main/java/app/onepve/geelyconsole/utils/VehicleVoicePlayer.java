@@ -344,7 +344,7 @@ public class VehicleVoicePlayer {
 
     private static String[] getChineseAliases(String baseName) {
         if ("door_fl_enter".equalsIgnoreCase(baseName)) {
-            return new String[]{"主驾上车迎宾", "主驾登车迎宾", "车主上车", "主驾上车", "主驾迎宾", "主驾开门", "主驾车门开启", "迎宾"};
+            return new String[]{"车主您好欢迎回来", "欢迎回来", "主驾上车迎宾", "主驾登车迎宾", "车主上车", "主驾上车", "主驾迎宾", "主驾开门", "主驾车门开启", "迎宾"};
         } else if ("door_fl_ready".equalsIgnoreCase(baseName)) {
             return new String[]{"准备启程", "主驾就绪", "主驾准备启程", "主驾系好安全带", "主驾安全带", "系好安全带"};
         } else if ("door_fl_exit".equalsIgnoreCase(baseName)) {
@@ -352,7 +352,7 @@ public class VehicleVoicePlayer {
         } else if ("door_fl_leave".equalsIgnoreCase(baseName)) {
             return new String[]{"主驾离车锁车", "主驾车门已关好请锁车", "主驾关门", "主驾车门关闭", "主驾离车关门", "主驾下车关门"};
         } else if ("door_fr_princess_enter".equalsIgnoreCase(baseName)) {
-            return new String[]{"公主请上车", "公主上车", "公主迎宾"};
+            return new String[]{"欢迎公主上车", "公主上车", "公主迎宾", "公主请上车"};
         } else if ("door_fr_princess_ready".equalsIgnoreCase(baseName)) {
             return new String[]{"公主请系好安全带", "公主系好安全带", "公主安全带"};
         } else if ("door_fr_princess_exit".equalsIgnoreCase(baseName)) {
