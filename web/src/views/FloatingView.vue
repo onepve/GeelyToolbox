@@ -176,10 +176,9 @@
             <button
               v-if="isBeta"
               @click="testScreensaver"
-              class="h-[50px] px-1 rounded-xl border-2 border-car-accent bg-car-item text-car-accent hover:border-car-accent active:scale-[0.99] font-black text-[14px] cursor-pointer shadow-md flex items-center justify-center space-x-1 transition-all whitespace-nowrap"
+              class="h-[50px] px-1 rounded-xl border-2 border-car-accent bg-car-item text-car-accent hover:border-car-accent active:scale-[0.99] font-black text-[14px] cursor-pointer shadow-md flex items-center justify-center transition-all whitespace-nowrap"
             >
               <span>屏保测试</span>
-              <span class="text-xs">➔</span>
             </button>
           </div>
         </div>

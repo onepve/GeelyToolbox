@@ -343,7 +343,47 @@ public class VehicleVoicePlayer {
     }
 
     private static String[] getChineseAliases(String baseName) {
-        if ("door_fl".equalsIgnoreCase(baseName)) {
+        if ("door_fl_enter".equalsIgnoreCase(baseName)) {
+            return new String[]{"主驾上车迎宾", "主驾登车迎宾", "车主上车", "主驾上车", "主驾迎宾", "主驾开门", "主驾车门开启", "迎宾"};
+        } else if ("door_fl_ready".equalsIgnoreCase(baseName)) {
+            return new String[]{"准备启程", "主驾就绪", "主驾准备启程", "主驾系好安全带", "主驾安全带", "系好安全带"};
+        } else if ("door_fl_exit".equalsIgnoreCase(baseName)) {
+            return new String[]{"主驾下车安全提示", "主驾下车提示", "主驾开门注意后方", "主驾离车提示", "主驾离车", "主驾下车"};
+        } else if ("door_fl_leave".equalsIgnoreCase(baseName)) {
+            return new String[]{"主驾离车锁车", "主驾车门已关好请锁车", "主驾关门", "主驾车门关闭", "主驾离车关门", "主驾下车关门"};
+        } else if ("door_fr_princess_enter".equalsIgnoreCase(baseName)) {
+            return new String[]{"公主请上车", "公主上车", "公主迎宾"};
+        } else if ("door_fr_princess_ready".equalsIgnoreCase(baseName)) {
+            return new String[]{"公主请系好安全带", "公主系好安全带", "公主安全带"};
+        } else if ("door_fr_princess_exit".equalsIgnoreCase(baseName)) {
+            return new String[]{"公主请下车", "公主下车", "公主离车"};
+        } else if ("door_fr_princess_leave".equalsIgnoreCase(baseName)) {
+            return new String[]{"公主再见", "公主请下车关门", "公主下车关门", "公主关门"};
+        } else if ("door_fr_queen_enter".equalsIgnoreCase(baseName)) {
+            return new String[]{"恭迎女王殿下请上车", "恭迎女王殿下", "女王请上车", "女王上车", "女王迎宾"};
+        } else if ("door_fr_queen_ready".equalsIgnoreCase(baseName)) {
+            return new String[]{"女王殿下已就座请系好安全带", "女王殿下已就座", "女王系好安全带", "女王安全带"};
+        } else if ("door_fr_queen_exit".equalsIgnoreCase(baseName)) {
+            return new String[]{"女王殿下请慢走注意后方来车", "女王殿下请慢走", "女王请下车", "女王下车"};
+        } else if ("door_fr_queen_leave".equalsIgnoreCase(baseName)) {
+            return new String[]{"恭送女王殿下", "女王再见", "女王下车关门", "女王关门"};
+        } else if ("door_fr_male_enter".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾欢迎乘车男声", "副驾上车男声", "欢迎乘车男声"};
+        } else if ("door_fr_male_ready".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾关门系好安全带男声", "副驾系好安全带男声", "关门系好安全带男声"};
+        } else if ("door_fr_male_exit".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾下车注意来车男声", "副驾开门注意来车男声", "下车注意来车男声"};
+        } else if ("door_fr_male_leave".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾关门带齐物品男声", "副驾离车关门男声", "副驾下车关门男声"};
+        } else if ("door_fr_enter".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾欢迎乘车女声", "副驾欢迎乘车", "副驾上车女声", "欢迎乘车女声", "副驾车门开启", "副驾开门", "副驾驶开门"};
+        } else if ("door_fr_ready".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾关门系好安全带女声", "副驾关门系好安全带", "副驾系好安全带", "副驾安全带"};
+        } else if ("door_fr_exit".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾下车注意来车女声", "副驾开门注意来车", "副驾下车注意来车", "副驾下车提示"};
+        } else if ("door_fr_leave".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾关门带齐物品女声", "副驾车门已关好", "副驾关门带齐物品", "副驾离车关门", "副驾下车关门", "副驾关门"};
+        } else if ("door_fl".equalsIgnoreCase(baseName)) {
             return new String[]{"主驾车门开启", "主驾开门", "主驾驶开门", "主驾门开", "通用开门", "开门", "车门开启"};
         } else if ("door_fl_close".equalsIgnoreCase(baseName)) {
             return new String[]{"主驾开门关闭", "主驾车门关闭", "主驾关门", "主驾驶关门", "关门", "车门关闭"};
@@ -363,6 +403,10 @@ public class VehicleVoicePlayer {
             return new String[]{"开门", "车门开启", "车门打开", "主驾车门开启", "主驾开门", "迎宾"};
         } else if ("door_close".equalsIgnoreCase(baseName)) {
             return new String[]{"关门", "车门关闭", "车门已关好", "主驾车门关闭", "主驾开门关闭"};
+        } else if ("trunk_open".equalsIgnoreCase(baseName)) {
+            return new String[]{"后备箱开启", "打开后备箱", "后备箱打开", "尾门开启", "尾门打开"};
+        } else if ("trunk_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"后备箱关闭", "关闭后备箱", "后备箱已关好", "尾门关闭", "尾门已关好"};
         } else if ("gear_p".equalsIgnoreCase(baseName)) {
             return new String[]{"P挡", "动力已锁止【P】", "挂入P挡", "驻车挡", "驻车"};
         } else if ("gear_d".equalsIgnoreCase(baseName)) {
