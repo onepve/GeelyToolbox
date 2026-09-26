@@ -280,8 +280,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 pushDeviceInfoToWeb();
-                // 页面加载就绪后，静默异步拉取最新云端 apps.json 并推送前端 (纯云端无本地静态兜底)
-                fetchCloudAppsAsync(false);
+                // 页面加载就绪后，避开开机前4秒交互黄金期，延迟至系统空闲时低优先级静默拉取，确保用户点击绝对丝滑零卡顿
+                mainHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        fetchCloudAppsAsync(false);
+                    }
+                }, 4000);
                 if (getIntent() != null && getIntent().hasExtra("eval_js")) {
                     mainHandler.postDelayed(() -> callJs(getIntent().getStringExtra("eval_js")), 300);
                 }
@@ -294,7 +299,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     }
 
     public void fetchCloudAppsAsync(final boolean showToast) {
-        new Thread(new Runnable() {
+        Thread worker = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -349,7 +354,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     });
                 }
             }
-        }).start();
+        });
+        worker.setPriority(Thread.MIN_PRIORITY);
+        worker.start();
     }
 
     public void callJs(final String script) {

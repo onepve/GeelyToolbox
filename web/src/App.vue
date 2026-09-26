@@ -209,19 +209,37 @@ onMounted(() => {
     } catch (e) {}
   };
 
-  window.applyCloudAppsJson = (jsonStr) => {
-    try {
-      const data = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+  // 本地离线二级缓存：车载商城 0 延迟秒开，避免冷启动白屏或网络抖动
+  try {
+    const cachedApps = localStorage.getItem('geely_cached_apps_json');
+    if (cachedApps) {
+      const data = JSON.parse(cachedApps);
       if (data && Array.isArray(data.apps)) {
-        store.apps = data.apps.map(item => ({
-          ...item,
-          desc: item.description || item.desc || '',
-          description: item.description || item.desc || '',
-          url: item.download_url || item.url || '',
-          download_url: item.download_url || item.url || ''
-        }));
+        store.apps = data.apps;
       }
-    } catch (e) {}
+    }
+  } catch (e) {}
+
+  window.applyCloudAppsJson = (jsonStr) => {
+    // 放入异步微延迟调度，绝不抢占用户在主界面的点击、切换等高优渲染事件
+    setTimeout(() => {
+      try {
+        const data = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+        if (data && Array.isArray(data.apps)) {
+          const mapped = data.apps.map(item => ({
+            ...item,
+            desc: item.description || item.desc || '',
+            description: item.description || item.desc || '',
+            url: item.download_url || item.url || '',
+            download_url: item.download_url || item.url || ''
+          }));
+          store.apps = mapped;
+          try {
+            localStorage.setItem('geely_cached_apps_json', JSON.stringify({ apps: mapped }));
+          } catch (e) {}
+        }
+      } catch (e) {}
+    }, 120);
   };
 
   window.updateDownloadProgress = (appId, percent, speed) => {
