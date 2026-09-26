@@ -205,12 +205,12 @@
               <!-- 1. 吉利应用商店 -->
               <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex items-center justify-between shadow-sm min-h-[80px]">
                 <div class="flex items-center space-x-3 min-w-0 flex-1 pr-3">
-                  <StatusDot size="sm" :color="presetStates['com.ecarx.appstore'] ? 'ok' : 'off'" />
+                  <StatusDot size="sm" :color="presetStates['com.ecarx.appstore'] === 'frozen' ? 'ok' : (presetStates['com.ecarx.appstore'] === 'active' ? 'warn' : 'off')" />
                   <div class="flex flex-col min-w-0 flex-1">
                     <div class="flex items-center space-x-2">
                       <span class="text-[16.5px] font-black text-car-text whitespace-nowrap">吉利应用商店</span>
-                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['com.ecarx.appstore'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
-                        {{ presetStates['com.ecarx.appstore'] ? '已安全冻结' : '活跃运行中' }}
+                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['com.ecarx.appstore'] === 'frozen' ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : (presetStates['com.ecarx.appstore'] === 'active' ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' : 'bg-car-card border-car-border text-car-sub')]">
+                        {{ presetStates['com.ecarx.appstore'] === 'frozen' ? '已安全冻结' : (presetStates['com.ecarx.appstore'] === 'active' ? '活跃运行中' : '未检测到程序') }}
                       </span>
                     </div>
                     <div class="text-[12px] text-car-sub font-bold truncate mt-1">
@@ -220,31 +220,35 @@
                 </div>
                 <button 
                   @click="confirmPresetFreeze('com.ecarx.appstore', '吉利应用商店')"
-                  :disabled="!!freezingPackages['com.ecarx.appstore']"
+                  :disabled="!!freezingPackages['com.ecarx.appstore'] || presetStates['com.ecarx.appstore'] === 'not_installed'"
                   :class="[
                     'w-[155px] min-h-[50px] px-2 rounded-xl border-2 font-black text-[13.5px] shrink-0 transition-all flex items-center justify-center shadow-sm',
-                    freezingPackages['com.ecarx.appstore']
-                      ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
-                      : (presetStates['com.ecarx.appstore'] 
-                          ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
-                          : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer')
+                    presetStates['com.ecarx.appstore'] === 'not_installed'
+                      ? 'bg-car-card border-car-border text-car-sub/60 opacity-50 cursor-not-allowed'
+                      : (freezingPackages['com.ecarx.appstore']
+                          ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
+                          : (presetStates['com.ecarx.appstore'] === 'frozen'
+                              ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
+                              : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer'))
                   ]"
                 >
-                  {{ freezingPackages['com.ecarx.appstore'] 
-                      ? (presetStates['com.ecarx.appstore'] ? '正在解冻中...' : '正在冻结中...') 
-                      : (presetStates['com.ecarx.appstore'] ? '已冻结 · 点击解冻' : '运行中 · 安全冻结') }}
+                  {{ presetStates['com.ecarx.appstore'] === 'not_installed'
+                      ? '未检测到对应程序'
+                      : (freezingPackages['com.ecarx.appstore'] 
+                          ? (presetStates['com.ecarx.appstore'] === 'frozen' ? '正在解冻中...' : '正在冻结中...') 
+                          : (presetStates['com.ecarx.appstore'] === 'frozen' ? '已冻结 · 点击解冻' : '运行中 · 安全冻结')) }}
                 </button>
               </div>
 
               <!-- 2. 原厂多媒体伴听 -->
               <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex items-center justify-between shadow-sm min-h-[80px]">
                 <div class="flex items-center space-x-3 min-w-0 flex-1 pr-3">
-                  <StatusDot size="sm" :color="presetStates['com.ecarx.multimedia'] ? 'ok' : 'off'" />
+                  <StatusDot size="sm" :color="presetStates['com.ecarx.multimedia'] === 'frozen' ? 'ok' : (presetStates['com.ecarx.multimedia'] === 'active' ? 'warn' : 'off')" />
                   <div class="flex flex-col min-w-0 flex-1">
                     <div class="flex items-center space-x-2">
                       <span class="text-[16.5px] font-black text-car-text whitespace-nowrap">原厂多媒体伴听</span>
-                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['com.ecarx.multimedia'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
-                        {{ presetStates['com.ecarx.multimedia'] ? '已安全冻结' : '活跃运行中' }}
+                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['com.ecarx.multimedia'] === 'frozen' ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : (presetStates['com.ecarx.multimedia'] === 'active' ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' : 'bg-car-card border-car-border text-car-sub')]">
+                        {{ presetStates['com.ecarx.multimedia'] === 'frozen' ? '已安全冻结' : (presetStates['com.ecarx.multimedia'] === 'active' ? '活跃运行中' : '未检测到程序') }}
                       </span>
                     </div>
                     <div class="text-[12px] text-car-sub font-bold truncate mt-1">
@@ -254,31 +258,35 @@
                 </div>
                 <button 
                   @click="confirmPresetFreeze('com.ecarx.multimedia', '原厂多媒体伴听')"
-                  :disabled="!!freezingPackages['com.ecarx.multimedia']"
+                  :disabled="!!freezingPackages['com.ecarx.multimedia'] || presetStates['com.ecarx.multimedia'] === 'not_installed'"
                   :class="[
                     'w-[155px] min-h-[50px] px-2 rounded-xl border-2 font-black text-[13.5px] shrink-0 transition-all flex items-center justify-center shadow-sm',
-                    freezingPackages['com.ecarx.multimedia']
-                      ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
-                      : (presetStates['com.ecarx.multimedia'] 
-                          ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
-                          : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer')
+                    presetStates['com.ecarx.multimedia'] === 'not_installed'
+                      ? 'bg-car-card border-car-border text-car-sub/60 opacity-50 cursor-not-allowed'
+                      : (freezingPackages['com.ecarx.multimedia']
+                          ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
+                          : (presetStates['com.ecarx.multimedia'] === 'frozen'
+                              ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
+                              : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer'))
                   ]"
                 >
-                  {{ freezingPackages['com.ecarx.multimedia'] 
-                      ? (presetStates['com.ecarx.multimedia'] ? '正在解冻中...' : '正在冻结中...') 
-                      : (presetStates['com.ecarx.multimedia'] ? '已冻结 · 点击解冻' : '运行中 · 安全冻结') }}
+                  {{ presetStates['com.ecarx.multimedia'] === 'not_installed'
+                      ? '未检测到对应程序'
+                      : (freezingPackages['com.ecarx.multimedia'] 
+                          ? (presetStates['com.ecarx.multimedia'] === 'frozen' ? '正在解冻中...' : '正在冻结中...') 
+                          : (presetStates['com.ecarx.multimedia'] === 'frozen' ? '已冻结 · 点击解冻' : '运行中 · 安全冻结')) }}
                 </button>
               </div>
 
               <!-- 3. 原厂云听车机版 (车主实测真机包名: com.edog.car) -->
               <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex items-center justify-between shadow-sm min-h-[80px]">
                 <div class="flex items-center space-x-3 min-w-0 flex-1 pr-3">
-                  <StatusDot size="sm" :color="presetStates['com.edog.car'] ? 'ok' : 'off'" />
+                  <StatusDot size="sm" :color="presetStates['com.edog.car'] === 'frozen' ? 'ok' : (presetStates['com.edog.car'] === 'active' ? 'warn' : 'off')" />
                   <div class="flex flex-col min-w-0 flex-1">
                     <div class="flex items-center space-x-2">
                       <span class="text-[16.5px] font-black text-car-text whitespace-nowrap">原厂云听车机版</span>
-                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['com.edog.car'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
-                        {{ presetStates['com.edog.car'] ? '已安全冻结' : '活跃运行中' }}
+                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['com.edog.car'] === 'frozen' ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : (presetStates['com.edog.car'] === 'active' ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' : 'bg-car-card border-car-border text-car-sub')]">
+                        {{ presetStates['com.edog.car'] === 'frozen' ? '已安全冻结' : (presetStates['com.edog.car'] === 'active' ? '活跃运行中' : '未检测到程序') }}
                       </span>
                     </div>
                     <div class="text-[12px] text-car-sub font-bold truncate mt-1">
@@ -288,31 +296,35 @@
                 </div>
                 <button 
                   @click="confirmPresetFreeze('com.edog.car', '原厂云听车机版')"
-                  :disabled="!!freezingPackages['com.edog.car']"
+                  :disabled="!!freezingPackages['com.edog.car'] || presetStates['com.edog.car'] === 'not_installed'"
                   :class="[
                     'w-[155px] min-h-[50px] px-2 rounded-xl border-2 font-black text-[13.5px] shrink-0 transition-all flex items-center justify-center shadow-sm',
-                    freezingPackages['com.edog.car']
-                      ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
-                      : (presetStates['com.edog.car'] 
-                          ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
-                          : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer')
+                    presetStates['com.edog.car'] === 'not_installed'
+                      ? 'bg-car-card border-car-border text-car-sub/60 opacity-50 cursor-not-allowed'
+                      : (freezingPackages['com.edog.car']
+                          ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
+                          : (presetStates['com.edog.car'] === 'frozen'
+                              ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
+                              : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer'))
                   ]"
                 >
-                  {{ freezingPackages['com.edog.car'] 
-                      ? (presetStates['com.edog.car'] ? '正在解冻中...' : '正在冻结中...') 
-                      : (presetStates['com.edog.car'] ? '已冻结 · 点击解冻' : '运行中 · 安全冻结') }}
+                  {{ presetStates['com.edog.car'] === 'not_installed'
+                      ? '未检测到对应程序'
+                      : (freezingPackages['com.edog.car'] 
+                          ? (presetStates['com.edog.car'] === 'frozen' ? '正在解冻中...' : '正在冻结中...') 
+                          : (presetStates['com.edog.car'] === 'frozen' ? '已冻结 · 点击解冻' : '运行中 · 安全冻结')) }}
                 </button>
               </div>
 
               <!-- 4. 火山车娱 (抖音车机版) -->
               <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex items-center justify-between shadow-sm min-h-[80px]">
                 <div class="flex items-center space-x-3 min-w-0 flex-1 pr-3">
-                  <StatusDot size="sm" :color="presetStates['com.bytedance.byteautoservice'] ? 'ok' : 'off'" />
+                  <StatusDot size="sm" :color="presetStates['com.bytedance.byteautoservice'] === 'frozen' ? 'ok' : (presetStates['com.bytedance.byteautoservice'] === 'active' ? 'warn' : 'off')" />
                   <div class="flex flex-col min-w-0 flex-1">
                     <div class="flex items-center space-x-2">
                       <span class="text-[16.5px] font-black text-car-text whitespace-nowrap">火山车娱</span>
-                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['com.bytedance.byteautoservice'] ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : 'bg-car-card border-car-border text-car-sub']">
-                        {{ presetStates['com.bytedance.byteautoservice'] ? '已安全冻结' : '活跃运行中' }}
+                      <span :class="['text-[11px] px-1.5 py-0.5 rounded font-extrabold border', presetStates['com.bytedance.byteautoservice'] === 'frozen' ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400' : (presetStates['com.bytedance.byteautoservice'] === 'active' ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' : 'bg-car-card border-car-border text-car-sub')]">
+                        {{ presetStates['com.bytedance.byteautoservice'] === 'frozen' ? '已安全冻结' : (presetStates['com.bytedance.byteautoservice'] === 'active' ? '活跃运行中' : '未检测到程序') }}
                       </span>
                     </div>
                     <div class="text-[12px] text-car-sub font-bold truncate mt-1">
@@ -322,19 +334,23 @@
                 </div>
                 <button 
                   @click="confirmPresetFreeze('com.bytedance.byteautoservice', '火山车娱')"
-                  :disabled="!!freezingPackages['com.bytedance.byteautoservice']"
+                  :disabled="!!freezingPackages['com.bytedance.byteautoservice'] || presetStates['com.bytedance.byteautoservice'] === 'not_installed'"
                   :class="[
                     'w-[155px] min-h-[50px] px-2 rounded-xl border-2 font-black text-[13.5px] shrink-0 transition-all flex items-center justify-center shadow-sm',
-                    freezingPackages['com.bytedance.byteautoservice']
-                      ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
-                      : (presetStates['com.bytedance.byteautoservice'] 
-                          ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
-                          : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer')
+                    presetStates['com.bytedance.byteautoservice'] === 'not_installed'
+                      ? 'bg-car-card border-car-border text-car-sub/60 opacity-50 cursor-not-allowed'
+                      : (freezingPackages['com.bytedance.byteautoservice']
+                          ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
+                          : (presetStates['com.bytedance.byteautoservice'] === 'frozen'
+                              ? 'bg-car-card border-emerald-500/60 text-emerald-400 hover:border-emerald-400 cursor-pointer' 
+                              : 'bg-car-card border-amber-500/70 text-car-text hover:border-amber-400 cursor-pointer'))
                   ]"
                 >
-                  {{ freezingPackages['com.bytedance.byteautoservice'] 
-                      ? (presetStates['com.bytedance.byteautoservice'] ? '正在解冻中...' : '正在冻结中...') 
-                      : (presetStates['com.bytedance.byteautoservice'] ? '已冻结 · 点击解冻' : '运行中 · 安全冻结') }}
+                  {{ presetStates['com.bytedance.byteautoservice'] === 'not_installed'
+                      ? '未检测到对应程序'
+                      : (freezingPackages['com.bytedance.byteautoservice'] 
+                          ? (presetStates['com.bytedance.byteautoservice'] === 'frozen' ? '正在解冻中...' : '正在冻结中...') 
+                          : (presetStates['com.bytedance.byteautoservice'] === 'frozen' ? '已冻结 · 点击解冻' : '运行中 · 安全冻结')) }}
                 </button>
               </div>
             </div>
@@ -383,21 +399,53 @@ const stateFilters = [
   { key: 'frozen', label: '已冻结' }
 ];
 
-// 原厂 4 款预装推荐冻结状态
+// 原厂 4 款预装推荐冻结状态：'not_installed' | 'frozen' | 'active'
 const presetStates = ref({
-  'com.ecarx.appstore': false,
-  'com.ecarx.multimedia': false,
-  'com.edog.car': false,
-  'com.bytedance.byteautoservice': false
+  'com.ecarx.appstore': 'not_installed',
+  'com.ecarx.multimedia': 'not_installed',
+  'com.edog.car': 'not_installed',
+  'com.bytedance.byteautoservice': 'not_installed'
 });
 const freezingPackages = ref({}); // 防呆置灰防狂点
 
+function parseAppDetailedState(val) {
+  // -1: APP_STATE_NOT_INSTALLED, 0: APP_STATE_DISABLED, 1: APP_STATE_ENABLED
+  const num = Number(val);
+  if (num === -1) return 'not_installed';
+  if (num === 0) return 'frozen';
+  if (num === 1) return 'active';
+  if (val === true) return 'frozen';
+  return 'not_installed';
+}
+
 function refreshPresetStates() {
+  const pkgs = [
+    'com.ecarx.appstore',
+    'com.ecarx.multimedia',
+    'com.edog.car',
+    'com.bytedance.byteautoservice'
+  ];
   try {
-    presetStates.value['com.ecarx.appstore'] = !!bridge.call('isPackageFrozen', 'com.ecarx.appstore');
-    presetStates.value['com.ecarx.multimedia'] = !!bridge.call('isPackageFrozen', 'com.ecarx.multimedia');
-    presetStates.value['com.edog.car'] = !!bridge.call('isPackageFrozen', 'com.edog.car');
-    presetStates.value['com.bytedance.byteautoservice'] = !!bridge.call('isPackageFrozen', 'com.bytedance.byteautoservice');
+    for (const pkg of pkgs) {
+      let st = 'not_installed';
+      try {
+        const raw = bridge.call('getPackageDetailedState', pkg);
+        if (raw !== undefined && raw !== null && raw !== '') {
+          st = parseAppDetailedState(raw);
+        } else {
+          const installed = !!bridge.call('isPackageInstalled', pkg);
+          if (!installed) {
+            st = 'not_installed';
+          } else {
+            const isFrozen = !!bridge.call('isPackageFrozen', pkg);
+            st = isFrozen ? 'frozen' : 'active';
+          }
+        }
+      } catch (e) {
+        st = 'not_installed';
+      }
+      presetStates.value[pkg] = st;
+    }
   } catch (e) {}
 }
 
@@ -428,12 +476,16 @@ function confirmPresetFreeze(pkg, pkgName) {
     showToast('ADB 总开关已关闭，该功能无法使用');
     return;
   }
+  if (presetStates.value[pkg] === 'not_installed') {
+    showToast(`车机未检测到【${pkgName}】，无需执行操作`, 'info');
+    return;
+  }
   if (freezingPackages.value[pkg]) {
     showToast('该应用正在执行操作中，请勿重复点击');
     return;
   }
 
-  const isFrozen = !!presetStates.value[pkg];
+  const isFrozen = presetStates.value[pkg] === 'frozen';
   const actionText = isFrozen ? '解冻恢复' : '安全冻结';
   
   if (pkg === 'com.ecarx.appstore') {

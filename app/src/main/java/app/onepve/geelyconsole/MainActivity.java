@@ -3944,6 +3944,18 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public int getPackageDetailedState(String pkg) {
+            if (pkg == null || pkg.isEmpty()) return SystemUtils.APP_STATE_NOT_INSTALLED;
+            return SystemUtils.getAppDetailedState(context, pkg);
+        }
+
+        @JavascriptInterface
+        public boolean isPackageInstalled(String pkg) {
+            if (pkg == null || pkg.isEmpty()) return false;
+            return SystemUtils.isPackageInstalled(context, pkg);
+        }
+
+        @JavascriptInterface
         public String getInstalledLaunchableApps() {
             JSONArray arr = new JSONArray();
             try {
