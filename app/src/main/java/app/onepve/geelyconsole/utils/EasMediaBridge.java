@@ -477,49 +477,35 @@ public class EasMediaBridge {
     }
 
     /**
-     * 唤醒底层 com.android.bluetooth A2DP Sink 链路，使其主动向系统申请 AudioFocus 避免静音
+     * 唤醒底层 com.android.bluetooth A2DP Sink 链路，使其主动向系统申请 AudioFocus 避免声卡硬件静音 (val:0.000000)
      */
     public void wakeBluetoothAudioSink() {
-        // 尝试通过 BluetoothProfile.A2DP_SINK 反射直接通知底层 requestAudioFocus (1.7.47 正式版关键链路)
-        try {
-            android.bluetooth.BluetoothAdapter adapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter();
-            if (adapter != null && adapter.isEnabled()) {
-                adapter.getProfileProxy(appContext, new android.bluetooth.BluetoothProfile.ServiceListener() {
-                    @Override
-                    public void onServiceConnected(int profile, android.bluetooth.BluetoothProfile proxy) {
-                        try {
-                            if (profile == 11 /* BluetoothProfile.A2DP_SINK */) {
-                                java.util.List<android.bluetooth.BluetoothDevice> devices = proxy.getConnectedDevices();
-                                if (devices != null && !devices.isEmpty()) {
-                                    android.bluetooth.BluetoothDevice dev = devices.get(0);
-                                    java.lang.reflect.Method m = proxy.getClass().getMethod("requestAudioFocus", android.bluetooth.BluetoothDevice.class, boolean.class);
-                                    m.invoke(proxy, dev, true);
-                                    AppLogger.i("蓝牙音频", "通过 BluetoothA2dpSink 反射下发 requestAudioFocus(true) 成功！");
-                                }
-                            }
-                        } catch (Throwable ignored) {
-                        } finally {
-                            try {
-                                adapter.closeProfileProxy(11, proxy);
-                            } catch (Throwable ignored) {}
-                        }
-                    }
-
-                    @Override
-                    public void onServiceDisconnected(int profile) {}
-                }, 11);
-            }
-        } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "获取 A2DP_SINK profile proxy 异常: " + t.getMessage());
+        if (isAutoWakeSuppressed()) {
+            AppLogger.i("蓝牙音频", "处于用户暂停抑制窗口内，跳过下发 play() (尊重用户暂停意图)");
+            return;
         }
 
         try {
-            // 契约保留：严禁自动下发 play() 抢播手机音乐，仅在非自启或用户显式调用时受控使用
-            if (false && btMediaController != null) {
+            if (btMediaController != null) {
+                AppLogger.i("蓝牙音频", "通过 A2dpMediaBrowserService MediaController 唤醒底层 A2DP Sink AudioFocus");
                 btMediaController.getTransportControls().play();
+            } else {
+                MediaSessionManager mm = (MediaSessionManager) appContext.getSystemService(Context.MEDIA_SESSION_SERVICE);
+                if (mm != null) {
+                    List<MediaController> controllers = mm.getActiveSessions(null);
+                    if (controllers != null) {
+                        for (MediaController mc : controllers) {
+                            if ("com.android.bluetooth".equals(mc.getPackageName())) {
+                                AppLogger.i("蓝牙音频", "命中系统蓝牙 MediaSession，下发 play() 唤醒底层 A2DP AudioFocus！");
+                                mc.getTransportControls().play();
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "btMediaController play 异常: " + t.getMessage());
+            AppLogger.w("蓝牙音频", "唤醒底层 A2DP AudioFocus 异常: " + t.getMessage());
         }
         connectBtMediaBrowser();
     }
@@ -702,8 +688,8 @@ public class EasMediaBridge {
                     int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
                     if (state == 2) {
                         a2dpSinkConnected = true;
-                        AppLogger.i("蓝牙音频", "监听到蓝牙已连接 (connected)，选通 2 号物理通道");
-                        activateBluetoothChannel();
+                        AppLogger.i("蓝牙音频", "监听到蓝牙已连接 (connected)，静默就绪底层链路 (严禁自动play抢播手机)");
+                        connectBtMediaBrowser();
                     } else if (state == 0) {
                         a2dpSinkConnected = false;
                         a2dpStreaming = false;
