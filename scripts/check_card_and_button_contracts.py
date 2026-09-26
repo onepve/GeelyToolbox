@@ -47,7 +47,7 @@ CARD_BUTTON_CONTRACTS = [
         "车身联动卡片", "主驾车门开关联动 (door_fl)",
         os.path.join(JAVA_BASE, "utils/DoorStateManager.java"),
         "public synchronized void updateDoors",
-        [r'isDriverInside', r'handleDoorTransition\("FL"', r'currentFL'],
+        [r'handleDoorTransition\("FL"', r'currentFL'],
         []
     ),
     (

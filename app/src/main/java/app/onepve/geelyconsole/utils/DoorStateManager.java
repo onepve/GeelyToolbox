@@ -66,35 +66,22 @@ public class DoorStateManager {
     public int getRR() { return currentRR == -1 ? 0 : currentRR; }
 
     /**
-     * 熄火休眠/下电复位：重置所有车门乘员状态机
-     * ⚠️ 幂等静默：仅在状态真正发生变化时才写日志，严禁被 MCU 心跳无限刷屏。
+     * 熄火休眠/下电复位：重置所有车门状态
      */
     public synchronized void resetState() {
-        boolean changed = (isDriverInside || isFRInside || isRLInside || isRRInside || !doorActionIntent.isEmpty());
-        isDriverInside = false;
-        isFRInside = false;
-        isRLInside = false;
-        isRRInside = false;
-        doorActionIntent.clear();
+        boolean changed = !lastVoiceTime.isEmpty();
+        lastVoiceTime.clear();
         if (changed) {
-            AppLogger.i("车门状态", "熄火休眠复位: 四门乘员感知状态机重置归位");
+            AppLogger.i("车门状态", "熄火休眠复位: 四门防抖状态重置归位");
         }
     }
 
-    /** 车辆点火/上电/运行中：主驾一定在车内，避免"车门已打开"被误判为上车 */
+    /** 车辆点火/上电/运行中兼容桩 */
     public synchronized void markDriverInside() {
-        if (!isDriverInside) {
-            isDriverInside = true;
-            doorActionIntent.put("FL", INTENT_NONE);
-            AppLogger.i("车门状态", "点火/上电确认 -> 主驾已就坐基准建立");
-        }
     }
 
-    /** 冷启动/解锁唤醒：主驾可能即将登车，把主驾座椅先置为'车外'，这样开门会播报"车门已打开" */
+    /** 冷启动/解锁唤醒兼容桩 */
     public synchronized void markDriverMayEnter() {
-        isDriverInside = false;
-        doorActionIntent.put("FL", INTENT_NONE);
-        AppLogger.i("车门状态", "冷启动/解锁 -> 主驾待登车基准建立");
     }
 
     /**
@@ -103,18 +90,14 @@ public class DoorStateManager {
     public synchronized void updateDoors(int fl, int fr, int rl, int rr, boolean voiceMasterSwitch, SharedPreferences prefs) {
         long now = System.currentTimeMillis();
 
-        // 1. 首次开机物理基准建立 (绝不盲目播报，精准校准主驾初始状态)
+        // 1. 首次开机物理基准建立 (绝不盲目播报)
         if (currentFL == -1) {
             currentFL = (fl >= 0) ? fl : 0;
             currentFR = (fr >= 0) ? fr : 0;
             currentRL = (rl >= 0) ? rl : 0;
             currentRR = (rr >= 0) ? rr : 0;
 
-            // 乘员就坐状态不由车门初始位置决定，统一等待电源/点火状态机通知。
-            // 默认值保持 false，点火后 markDriverInside() 会立刻把主驾置为在车内。
-            isDriverInside = false;
-
-            AppLogger.i("车门状态", "四门物理基准初始化: FL=" + currentFL + ", FR=" + currentFR + ", RL=" + currentRL + ", RR=" + currentRR + " (主驾就坐=" + isDriverInside + ")");
+            AppLogger.i("车门状态", "四门物理基准初始化: FL=" + currentFL + ", FR=" + currentFR + ", RL=" + currentRL + ", RR=" + currentRR);
             if (listener != null) {
                 listener.onDoorStateChanged(currentFL, currentFR, currentRL, currentRR);
             }
