@@ -155,7 +155,7 @@ CARD_BUTTON_CONTRACTS = [
         "多媒体接管卡片", "2号蓝牙物理通道硬选通广播 (SOURCE_TYPE_BLUETOOTH=2)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public synchronized void activateBluetoothChannel",
-        [r"SOURCE_TYPE_BLUETOOTH", r"ECARX_KEY_RSRC_EVENT", r"updateCurrentSourceType", r"if\s*\(\s*a2dpStreaming\s*\)\s*\{\s*wakeBluetoothAudioSink"],
+        [r"SOURCE_TYPE_BLUETOOTH", r"ECARX_KEY_RSRC_EVENT", r"updateCurrentSourceType", r"keepXcmediaOnBluetoothSource"],
         [r"isAutoWakeSuppressed", r"dummyListener"]
     ),
     (
@@ -173,11 +173,11 @@ CARD_BUTTON_CONTRACTS = [
         []
     ),
     (
-        "多媒体接管卡片", "微信语音推流防误杀与停流即时掐灭 (A2DP Streaming 保护与 pauseBluetoothAudioSink)",
+        "多媒体接管卡片", "微信语音推流防误杀与静默守护 (A2DP Streaming 保护与免抢播)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "private void registerA2dpReceiver",
-        [r"a2dpStreaming", r"activateBluetoothChannel", r"pauseBluetoothAudioSink", r"connectBtMediaBrowser"],
-        []
+        [r"a2dpStreaming", r"activateBluetoothChannel", r"connectBtMediaBrowser"],
+        [r"pauseBluetoothAudioSink"]
     ),
     (
         "多媒体接管卡片", "底层 A2dpMediaBrowserService 直连通道锁死",
@@ -299,6 +299,13 @@ CARD_BUTTON_CONTRACTS = [
         "private static String[] getChineseAliases",
         [r"drive_mode_smart", r"智能模式"],
         [r"雪地模式"]
+    ),
+    (
+        "语音包定制卡片", "车载蓝牙活跃免打断硬件混音锁死 (防 Ducking 忽大忽小与 AVRCP 掐断)",
+        os.path.join(JAVA_BASE, "utils/VehicleVoicePlayer.java"),
+        "private void requestAudioFocus",
+        [r"isBluetoothChannelActive", r"bypassing requestAudioFocus"],
+        []
     ),
 
     # ==========================================

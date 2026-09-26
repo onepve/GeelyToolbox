@@ -458,11 +458,6 @@ public class EasMediaBridge {
                     AppLogger.i("蓝牙音频", "检测到媒体音量为0，已自动恢复适中音量以保障放声");
                 }
             }
-
-            // 4. 仅在真正处于推流状态时唤醒底层 com.android.bluetooth A2DP 链路开闸，未推流时保持静默
-            if (a2dpStreaming) {
-                wakeBluetoothAudioSink();
-            }
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "选通蓝牙音频物理通道失败: " + t.getMessage());
         }
@@ -597,7 +592,7 @@ public class EasMediaBridge {
      * 车机侧无法、也不试图分辨手机端推的是微信语音还是本地音乐。
      */
     public synchronized boolean isBluetoothChannelActive() {
-        return a2dpStreaming;
+        return a2dpSinkConnected || a2dpStreaming;
     }
 
     /**
@@ -732,11 +727,16 @@ public class EasMediaBridge {
                     if (streaming != a2dpStreaming) {
                         a2dpStreaming = streaming;
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
-                        if (streaming) {
+                    }
+                    if (streaming) {
+                        requestBluetoothFocusIfNeeded();
+                        long now = SystemClock.uptimeMillis();
+                        if (now - lastA2dpWakeTime > 4000) {
+                            lastA2dpWakeTime = now;
                             activateBluetoothChannel();
-                        } else {
-                            pauseBluetoothAudioSink();
                         }
+                    } else {
+                        AppLogger.i("蓝牙音频", "监听到推流停止或间歇，保持静默通道守护 (严禁反向下发 pause 掐断手机音频生命周期)");
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
                     try {
@@ -749,8 +749,7 @@ public class EasMediaBridge {
                                 activateBluetoothChannel();
                             } else if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止");
-                                pauseBluetoothAudioSink();
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，保持通道就绪 (绝不下发 pause)");
                             }
                         }
                     } catch (Throwable ignored) {}
