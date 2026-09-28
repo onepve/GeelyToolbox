@@ -592,7 +592,7 @@ public class EasMediaBridge {
      * 车机侧无法、也不试图分辨手机端推的是微信语音还是本地音乐。
      */
     public synchronized boolean isBluetoothChannelActive() {
-        return a2dpSinkConnected || a2dpStreaming;
+        return a2dpStreaming;
     }
 
     /**

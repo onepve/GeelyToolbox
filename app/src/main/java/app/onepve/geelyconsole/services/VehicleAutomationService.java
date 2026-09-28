@@ -231,7 +231,9 @@ public class VehicleAutomationService extends Service {
                                 trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
                                 modeSmart || modeComfort || modeEco || modeSport);
 
-            boolean shouldRun = anyVoiceEnabled || wheelEnabled || turn360
+            boolean speedAutoplay = prefs.getBoolean("vehicle_speed_autoplay_enabled", true);
+            boolean speedCustom = prefs.getBoolean("vehicle_speed_custom_action_enabled", false);
+            boolean shouldRun = anyVoiceEnabled || wheelEnabled || turn360 || speedAutoplay || speedCustom
                     || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
             Intent intent = new Intent(context, VehicleAutomationService.class);
