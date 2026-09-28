@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <transition name="modal-fade">
+    <transition name="modal-backdrop-fade">
     <div 
       v-if="show" 
       :class="['fixed top-0 left-0 w-screen h-screen flex items-center justify-center p-6 select-none', zIndexClass || 'z-50']"
@@ -9,7 +9,7 @@
     >
       <div 
         :class="[
-          'tb-modal-surface rounded-3xl overflow-hidden flex flex-col transition-all duration-200 w-full shadow-2xl',
+          'tb-modal-surface rounded-3xl overflow-hidden flex flex-col w-full shadow-2xl modal-card-anim',
           'border border-car-border/80',
           maxWidthClass || 'max-w-[1000px]',
           maxHeightClass || 'max-h-[90vh]'
@@ -25,7 +25,7 @@
             <button 
               v-if="showCloseButton !== false"
               @click="close"
-              class="h-[56px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-all shadow-sm"
+              class="h-[56px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-sub hover:text-car-text font-black text-[18px] cursor-pointer hover:border-car-border-light transition-colors shadow-sm"
             >
               关闭
             </button>
@@ -90,19 +90,48 @@ function handleBackdropClick() {
   background: var(--bg-modal, rgba(20, 27, 43, 0.96));
 }
 
-/* 弹窗淡入曲线：0.2s -> 0.26s 缓出，并把遮罩提升为独立合成层。
-   老 WebView（Android 9）上，整屏遮罩若无独立图层，淡入会触发整页重绘，
-   车主观感就是「点一下关于，画面闪一下」。will-change + translateZ(0) 后只重绘遮罩层本身。 */
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.26s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.26s cubic-bezier(0.22, 0.61, 0.36, 1);
-  will-change: opacity, transform;
-  transform: translateZ(0);
+/* 动静分离铁律：
+   1. 100vw × 100vh 全屏遮罩仅做 opacity 纯透明度渐变，严禁施加 scale 缩放，
+      杜绝 1920×720 全屏像素逐帧重采样与 Mali GPU 算力打满；
+   2. 弹窗卡片本体容器单独微缩放，硬件合成层极速推进，手感瞬时跟手。 */
+.modal-backdrop-fade-enter-active,
+.modal-backdrop-fade-leave-active {
+  transition: opacity 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: opacity;
 }
 
-.modal-fade-enter-from,
-.modal-fade-leave-to {
+.modal-backdrop-fade-enter-from,
+.modal-backdrop-fade-leave-to {
   opacity: 0;
-  transform: scale(0.97);
+}
+
+.modal-backdrop-fade-enter-active .modal-card-anim {
+  animation: modalCardIn 0.2s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+.modal-backdrop-fade-leave-active .modal-card-anim {
+  animation: modalCardOut 0.16s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+@keyframes modalCardIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateZ(0);
+  }
+}
+
+@keyframes modalCardOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateZ(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.97) translateZ(0);
+  }
 }
 </style>

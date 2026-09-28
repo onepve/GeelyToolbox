@@ -8,7 +8,7 @@
       :key="item.id"
       @click="selectNav(item.id)"
       :class="[
-        'flex items-center justify-between px-5 min-h-[68px] rounded-2xl border-2 transition-all cursor-pointer font-black text-[21px] tracking-wide',
+        'flex items-center justify-between px-5 min-h-[68px] rounded-2xl border-2 transition-colors duration-150 cursor-pointer font-black text-[21px] tracking-wide',
         store.currentNav === item.id
           ? 'bg-car-item border-car-accent text-car-text shadow-md ring-2 ring-car-accent/30'
           : 'bg-car-item border-transparent text-car-text hover:bg-car-hover'
@@ -48,6 +48,7 @@ const navItems = [
 ];
 
 function selectNav(id) {
+  if (store.currentNav === id) return;
   playTouchFeedback();
   store.currentNav = id;
   recordActiveNav(id);

@@ -173,6 +173,9 @@ public class VehicleAutomationService extends Service {
                     voicePlayer.play("gear_park_alarm.mp3", "请挂入驻车挡", VehicleVoicePlayer.PRIORITY_P0_ALARM);
                 }
             }
+        } else {
+            // 挂在物理 P 挡且推开主驾车门：车主泊车下车离车，结束本次行程
+            resetTripSpeedAutoplay("挂入P挡驻车且主驾门开启(车主离车)");
         }
     }
 
@@ -487,6 +490,7 @@ public class VehicleAutomationService extends Service {
                     if (gearStateMachine != null) gearStateMachine.resetState();
                     if (driveModeManager != null) driveModeManager.resetState();
                     if (doorStateManager != null) doorStateManager.resetState();
+                    resetTripSpeedAutoplay("整车熄火下电广播");
                 } else if (screenOff) {
                     // 息屏 ≠ 熄火：车机息屏待机时发动机可能仍在运行（发电机充电电压仍 ≥13.2V）。
                     // 此处坚决不碰 lastPowerMode，交由电压权威判定兜底，杜绝「息屏误判锁死后永久静音」。
@@ -960,9 +964,10 @@ public class VehicleAutomationService extends Service {
         }
 
         if (gear == 5) {
-            // 挂入 P 挡驻车：重置本次行程用户手动暂停标记，以便下次出行重新生效起步自启
-            getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
-                    .edit().putBoolean("user_manually_paused_media", false).apply();
+            // 挂入 P 挡驻车：若主驾车门当前已处于开启状态，协同重置行程
+            if (currentDoorFL == 1) {
+                resetTripSpeedAutoplay("挂入P挡且主驾门已开启");
+            }
         }
 
         // D挡起步联动 360 严格单次跃变状态机：切入D挡仅触发1次，锁死不循环调起；切出D挡重新武装
@@ -1355,8 +1360,8 @@ public class VehicleAutomationService extends Service {
     // ==========================================
     // 车速与门控自动化中枢 (单次行程防抖闭环)
     // ==========================================
-    private boolean speedAutoplayArmed = true; // 车速自启武装锁：初始已武装，车速回落近停后重新武装
-    private boolean speedCustomActionArmed = true; // 车速自定义联动武装锁
+    private volatile boolean speedAutoplayTriggeredInTrip = false; // 单次行程车速自启锁：触发一次后永久闭锁，绝不重复触发
+    private volatile boolean speedCustomActionTriggeredInTrip = false; // 单次行程自定义动作锁
     private boolean gearD360Armed = true; // D挡起步360单次跃变武装锁 (离开D挡才复位，彻底根治手动退出后循环调起)
     // 前门开启「单次跃变」闩锁：门开着期间 CAN 报文会持续高频重复上报 data=1，
     // 必须只在 关 ➔ 开 物理跃变的那一刻执行一次门控暂停，杜绝反复下发暂停指令与日志刷屏。
@@ -1366,37 +1371,47 @@ public class VehicleAutomationService extends Service {
     private void processVehicleSpeedAutomation(int speed) {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
 
-        // 车速回落接近停车 (<=5km/h) 才重新武装：彻底根治「挡位跃变驱动武装」导致 beta 失效 ——
-        // 原实现把武装锁挂在挡位跃变上，一旦日志丢失挡位报文或长时间驻车，武装锁永远不解锁，
-        // 车速自启与自定义动作整段失效。改为以车速自身回落为权威信号，无需依赖挡位日志。
-        if (speed <= 5) {
-            speedAutoplayArmed = true;
-            speedCustomActionArmed = true;
-            // 车辆停车或等红绿灯 (车速回落至近停) 时重置手动暂停标记，恢复起步自动播歌武装
-            prefs.edit().putBoolean("user_manually_paused_media", false).apply();
-        }
+        // 核心铁律：严禁在车速回落 (<=5km/h) 时重新武装或重置手动暂停标记！
+        // 等红绿灯、拥堵跟车、踩刹车停稳均属行车中途，绝不视为全新行程。
 
-        // 1. 车速智能自启多媒体 (严格按软件界面选定的默认音源拉起，绝不硬编码写死特定应用)
+        // 1. 车速智能自启多媒体 (严格单次行程触发一次，100%尊重车主手动暂停)
         boolean autoplayEnabled = prefs.getBoolean("vehicle_speed_autoplay_enabled", true);
-        if (autoplayEnabled && speedAutoplayArmed && isEngineRunning()) {
+        boolean userManuallyPaused = prefs.getBoolean("user_manually_paused_media", false);
+        if (autoplayEnabled && !speedAutoplayTriggeredInTrip && !userManuallyPaused && isEngineRunning()) {
             int threshold = prefs.getInt("vehicle_speed_autoplay_threshold", 20);
             if (speed >= threshold) {
-                speedAutoplayArmed = false; // 触发一次即锁定，等红绿灯不重复触发
+                speedAutoplayTriggeredInTrip = true; // 本次行程永久闭锁，中途等红绿灯/减速绝不重复开歌
                 String targetPkg = getDefaultAutoplayPkg();
                 boolean fullscreen = prefs.getBoolean("vehicle_speed_autoplay_fullscreen", false);
+                AppLogger.i("车身联动", "【车速自启多媒体】单次行程首次达标 " + threshold + "km/h，拉起音源并永久闭锁: " + targetPkg);
                 triggerMusicAutoplay(targetPkg, fullscreen);
             }
         }
 
         // 2. 车速达标自定义动作与唤起应用 (满足车主任意设定车速与打开指定软件/360)
         boolean customActionEnabled = prefs.getBoolean("vehicle_speed_custom_action_enabled", false);
-        if (customActionEnabled && speedCustomActionArmed && isEngineRunning()) {
+        if (customActionEnabled && !speedCustomActionTriggeredInTrip && isEngineRunning()) {
             int customThreshold = prefs.getInt("vehicle_speed_custom_action_threshold", 40);
             if (speed >= customThreshold) {
-                speedCustomActionArmed = false; // 触发一次即锁定，等红绿灯不重复弹，单次行程防抖
+                speedCustomActionTriggeredInTrip = true; // 单次行程防抖闭锁
                 String actionTarget = prefs.getString("vehicle_speed_custom_action_target", "action_360");
+                AppLogger.i("车身联动", "【车速自定义联动】车速达到自定义阈值 " + customThreshold + "km/h，触发: " + actionTarget);
                 triggerCustomSpeedAction(actionTarget);
             }
+        }
+    }
+
+    /**
+     * 重置单次行程车速自启武装锁与手动暂停标记
+     * 仅在明确物理P挡且主驾开门(车主泊车下车)或整车下电时复位，等红绿灯绝不复位
+     */
+    private void resetTripSpeedAutoplay(String reason) {
+        if (speedAutoplayTriggeredInTrip || speedCustomActionTriggeredInTrip) {
+            speedAutoplayTriggeredInTrip = false;
+            speedCustomActionTriggeredInTrip = false;
+            getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                    .edit().putBoolean("user_manually_paused_media", false).apply();
+            AppLogger.i("车身联动", "【单次行程重置】" + reason + "，已重置车速自启武装与手动暂停标记，为下一次出行就绪");
         }
     }
 

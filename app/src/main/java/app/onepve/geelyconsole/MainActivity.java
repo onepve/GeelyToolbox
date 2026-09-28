@@ -1153,7 +1153,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 if (batteryVolt < 9.0f || batteryVolt > 16.5f) {
                     batteryVolt = 0.0f;
                     try {
-                        prefs.edit().putFloat("vehicle_real_battery_volt", 0.0f).commit();
+                        prefs.edit().putFloat("vehicle_real_battery_volt", 0.0f).apply();
                     } catch (Exception ignored) {}
                 }
                 obj.put("real_battery_volt", batteryVolt > 0 ? (double)batteryVolt : 0.0);
@@ -1487,7 +1487,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public boolean setAutostartEnabled(boolean enabled) {
             android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            prefs.edit().putBoolean("autostart_enabled", enabled).commit();
+            prefs.edit().putBoolean("autostart_enabled", enabled).apply();
             pushDeviceInfoToWeb();
             return enabled;
         }
@@ -1501,13 +1501,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     prefs.edit()
                             .putBoolean("autostart_enabled", savedPref)
                             .putBoolean("temp_autostart_for_rabbit", false)
-                            .commit();
+                            .apply();
                     pushDeviceInfoToWeb();
                 }
             } catch (Exception ignored) {}
             try {
                 android.content.SharedPreferences rPrefs = context.getSharedPreferences("rabbit_theme_prefs", Context.MODE_PRIVATE);
-                rPrefs.edit().putBoolean("pending_install_after_reboot", false).commit();
+                rPrefs.edit().putBoolean("pending_install_after_reboot", false).apply();
             } catch (Exception ignored) {}
         }
 
@@ -1855,7 +1855,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putBoolean("floating_enabled", enable).commit();
+                        prefs.edit().putBoolean("floating_enabled", enable).apply();
                         if (enable) {
                             FloatingWindowService.ensureServiceStarted(MainActivity.this);
                             showToast(" 全局悬浮小胶囊已开启 (๑•̀ㅂ•́)و");
@@ -1883,7 +1883,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putString("floating_display_mode", mode).commit();
+                        prefs.edit().putString("floating_display_mode", mode).apply();
                         boolean floatingEnabled = prefs.getBoolean("floating_enabled", false);
                         if (floatingEnabled && FloatingWindowService.isRunning) {
                             FloatingWindowService.ensureServiceStarted(MainActivity.this);
@@ -3432,7 +3432,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putString(key, value).commit();
+                        prefs.edit().putString(key, value).apply();
                         VehicleAutomationService.syncState(MainActivity.this);
                         AppLogger.i("方控设置", "更新字符设置: " + key + " -> " + value);
                     } catch (Exception e) {
@@ -3460,7 +3460,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     if (key == null || key.isEmpty()) return;
                     String v = "notification".equals(channel) ? "notification" : ("nav".equals(channel) ? "nav" : "music");
                     getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
-                            .edit().putString("voice_item_channel_" + key, v).commit();
+                            .edit().putString("voice_item_channel_" + key, v).apply();
                     AppLogger.i("声音设置", "声道[" + key + "] -> " + v);
                 } catch (Exception e) {
                     AppLogger.e("声音设置", "声道更新失败: " + e.getMessage());
@@ -3485,7 +3485,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         ed.remove("voice_item_offset_door_fr_queen_close");
                         ed.remove("voice_item_offset_door_fr_princess_close");
                     }
-                    ed.commit();
+                    ed.apply();
                     AppLogger.i("声音设置", "增益[" + key + "] -> " + v);
                 } catch (Exception e) {
                     AppLogger.e("声音设置", "增益更新失败: " + e.getMessage());
@@ -3544,7 +3544,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putInt(key, value).commit();
+                        prefs.edit().putInt(key, value).apply();
                         VehicleAutomationService.syncState(MainActivity.this);
                         AppLogger.i("座舱自动化", "更新数值设置: " + key + " -> " + value);
                     } catch (Exception e) {
@@ -3562,7 +3562,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().remove(key).putBoolean(key, enabled).commit();
+                        prefs.edit().remove(key).putBoolean(key, enabled).apply();
                         VehicleAutomationService.syncState(MainActivity.this);
                         if ("wheel_master_switch".equals(key)) {
                             new SteeringWheelKeyManager(MainActivity.this).syncMediaKeyReceiverState();
@@ -3584,9 +3584,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                         if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
-                            prefs.edit().remove(key).putBoolean(key, Boolean.parseBoolean(value)).commit();
+                            prefs.edit().remove(key).putBoolean(key, Boolean.parseBoolean(value)).apply();
                         } else {
-                            prefs.edit().remove(key).putString(key, value).commit();
+                            prefs.edit().remove(key).putString(key, value).apply();
                         }
                         VehicleAutomationService.syncState(MainActivity.this);
                         AppLogger.i("座舱自动化", "更新字符串设置项: " + key + " -> " + value);
@@ -3605,7 +3605,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putInt(key, value).commit();
+                        prefs.edit().putInt(key, value).apply();
                         VehicleAutomationService.syncState(MainActivity.this);
                         AppLogger.i("座舱自动化", "更新整数设置项: " + key + " -> " + value);
                     } catch (Exception e) {
@@ -3665,9 +3665,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                         String prefKey = "wheel_action_" + key + "_" + gesture;
-                        prefs.edit().putString(prefKey, action).commit();
+                        prefs.edit().putString(prefKey, action).apply();
                         if ("single".equals(gesture)) {
-                            prefs.edit().putString("wheel_action_" + key, action).commit();
+                            prefs.edit().putString("wheel_action_" + key, action).apply();
                         }
                         VehicleAutomationService.syncState(MainActivity.this);
                         AppLogger.i("方控设置", "设置按键手势: " + key + " [" + gesture + "] -> " + action);
@@ -3687,7 +3687,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putString(key, value).commit();
+                        prefs.edit().putString(key, value).apply();
                         VehicleAutomationService.syncState(MainActivity.this);
                         AppLogger.i("座舱自动化", "更新字符串设置项: " + key + " -> " + value);
                     } catch (Exception e) {
@@ -3706,9 +3706,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     try {
                         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                         if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
-                            prefs.edit().putBoolean(key, Boolean.parseBoolean(value)).commit();
+                            prefs.edit().putBoolean(key, Boolean.parseBoolean(value)).apply();
                         } else {
-                            prefs.edit().putString(key, value).commit();
+                            prefs.edit().putString(key, value).apply();
                         }
                         if ("autostart".equals(key)) {
                             setAutostartEnabled(Boolean.parseBoolean(value));
