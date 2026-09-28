@@ -93,8 +93,6 @@ public class SteeringWheelKeyManager {
     private final Context context;
     private final SharedPreferences prefs;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private long lastTriggerTime = 0;
-    private int lastTriggerKey = -1;
 
     private final Map<Integer, Long> lastKeyTriggerTime = new HashMap<>();
     private static final long KEY_DEBOUNCE_MS = 260L; // 260ms 单键防抖（过滤多源并发日志与物理接触抖动）
@@ -490,18 +488,6 @@ public class SteeringWheelKeyManager {
     }
 
     /**
-     * 蓝牙开关是否已打开（蓝牙修复分入口判定：蓝牙关时走纯原厂直发，不武装抑制窗口）。
-     */
-    private boolean isBluetoothEnabled() {
-        try {
-            BluetoothAdapter ba = BluetoothAdapter.getDefaultAdapter();
-            return ba != null && ba.isEnabled();
-        } catch (Throwable ignored) {
-            return false;
-        }
-    }
-
-    /**
      * 判定蓝牙是否处于已连接手机状态（A2DP Sink 已连通）
      */
     private boolean isBluetoothDeviceConnected() {
@@ -652,20 +638,6 @@ public class SteeringWheelKeyManager {
         } catch (Exception e) {
             AppLogger.e("方控按键", "调起自定义应用失败: " + e.getMessage());
         }
-    }
-
-    private void cancelNativeMute() {
-        mainHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-                    if (am != null) {
-                        am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
-                    }
-                } catch (Exception ignored) {}
-            }
-        }, 150);
     }
 
     public boolean is360CameraActive() {

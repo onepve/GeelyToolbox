@@ -97,7 +97,6 @@ final class VoiceArbiter {
     private Request current = null;         // 当前已受理 (占位) 的请求
     private Request active = null;          // 已真正开始播放的请求
     private long generation = 0L;           // 单调递增代数
-    private boolean externalBlocked = false;
 
     static final long P2_TTL_MS = 5000L;
     static final long DEQUEUE_GAP_MS = 150L; // 出队自然间隔

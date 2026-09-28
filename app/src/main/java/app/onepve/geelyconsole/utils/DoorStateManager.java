@@ -27,7 +27,6 @@ public class DoorStateManager {
     }
 
     private final Context context;
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private VehicleVoicePlayer voicePlayer;
     private DoorStateListener listener;
 
@@ -53,8 +52,6 @@ public class DoorStateManager {
     // 四门正在进行的动作意图 (1=登车中 ENTERING, 2=离车中 EXITING)
     private final Map<String, Integer> doorActionIntent = new HashMap<>();
     private static final int INTENT_NONE = 0;
-    private static final int INTENT_ENTERING = 1;
-    private static final int INTENT_EXITING = 2;
 
     // 同门同动作语音防抖 (1500ms)，防止多源报文串扰导致重复播报
     private final Map<String, Long> lastVoiceTime = new HashMap<>();
@@ -302,25 +299,6 @@ public class DoorStateManager {
                     voicePlayer.play(soundFile, text);
                 }
             }
-        }
-    }
-
-    private boolean getSeatState(String doorCode) {
-        switch (doorCode) {
-            case "FL": return isDriverInside;
-            case "FR": return isFRInside;
-            case "RL": return isRLInside;
-            case "RR": return isRRInside;
-            default: return false;
-        }
-    }
-
-    private void setSeatState(String doorCode, boolean seated) {
-        switch (doorCode) {
-            case "FL": isDriverInside = seated; break;
-            case "FR": isFRInside = seated; break;
-            case "RL": isRLInside = seated; break;
-            case "RR": isRRInside = seated; break;
         }
     }
 }

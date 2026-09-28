@@ -25,14 +25,11 @@ public class AppLogger {
 
     private static final String TAG = "GeelyToolbox_Logger";
     private static final String LOG_FILENAME = "geely_toolbox.log";
-    private static final long MAX_FILE_SIZE = 512 * 1024; // 512KB，防止日志界面读取卡死
     private static final int MAX_BACKUP_COUNT = 2; // 最多保留 2 个历史切片
-    private static final long MAX_RETENTION_MILLIS = 7L * 24 * 3600 * 1000; // 7 天过期清理
     private static final long LOG_DEDUP_MILLIS = 1000L; // 相同模块相同消息 1s 内不重复写盘
     private static final int MAX_MEMORY_LOGS = 500; // 内存环形缓冲区上限（零磁盘写入保护闪存）
     private static final java.util.LinkedList<String> memoryLogs = new java.util.LinkedList<>();
 
-    private static final ExecutorService logExecutor = Executors.newSingleThreadExecutor();
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.CHINA);
     private static final java.util.Map<String, Long> lastLogTime = new java.util.HashMap<>();
 
@@ -236,46 +233,6 @@ public class AppLogger {
             } catch (Exception ignored) {}
         }
         return result;
-    }
-
-    private static void checkAndRotate(File file) {
-        if (!file.exists()) return;
-
-        // 1. 检查大小滚动
-        if (file.length() >= MAX_FILE_SIZE) {
-            File dir = file.getParentFile();
-            for (int i = MAX_BACKUP_COUNT - 1; i >= 1; i--) {
-                File cur = new File(dir, LOG_FILENAME + "." + i);
-                File next = new File(dir, LOG_FILENAME + "." + (i + 1));
-                if (cur.exists()) {
-                    if (next.exists()) next.delete();
-                    cur.renameTo(next);
-                }
-            }
-            File backup1 = new File(dir, LOG_FILENAME + ".1");
-            if (backup1.exists()) backup1.delete();
-            file.renameTo(backup1);
-        }
-
-        // 2. 清理超过 7 天的历史滚动日志
-        try {
-            File dir = file.getParentFile();
-            if (dir != null && dir.exists()) {
-                File[] list = dir.listFiles();
-                if (list != null) {
-                    long now = System.currentTimeMillis();
-                    for (File f : list) {
-                        String name = f.getName();
-                        if (name.startsWith("geely_toolbox.log.") || name.startsWith("car_full.log")) {
-                            if (now - f.lastModified() > MAX_RETENTION_MILLIS) {
-                                f.delete();
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception ignored) {
-        }
     }
 
     /**

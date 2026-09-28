@@ -135,8 +135,6 @@ public class VehicleVoicePlayer {
     // ---- VoiceArbiter 单线程仲裁核心 ----
     private final Object arbiterLock = new Object();
     private volatile VoiceArbiter arbiter;
-    /** 仲裁是否已完成引擎回调绑定 (供测试等待) */
-    private volatile boolean arbiterReady = false;
 
     private final ExternalAudioDetector externalDetector;
 

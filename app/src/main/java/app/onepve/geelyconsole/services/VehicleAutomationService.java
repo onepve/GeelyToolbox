@@ -106,13 +106,6 @@ public class VehicleAutomationService extends Service {
     private int lastEngineState = -1;
     public static volatile int currentSpeedKmH = 0;
 
-    // 同状态接触微抖动过滤 (毫秒)
-    private long lastTriggerFL = 0;
-    private long lastTriggerFR = 0;
-    private long lastTriggerRL = 0;
-    private long lastTriggerRR = 0;
-    private long lastTriggerTrunk = 0;
-    private long lastTriggerGear = 0;
     /** 电源聚合状态字符串（仅变化时才写日志，杜绝心跳刷屏） */
     private String lastPowerStateAggregate = "";
 
@@ -133,9 +126,6 @@ public class VehicleAutomationService extends Service {
     // 转向灯联动 360 状态
     private boolean enableTurnSignal360 = false;
     private boolean isTurnSignal360Active = false;
-
-    /** 桥接只读快照 (供 MainActivity 同步读取，不加锁只写 volatile) */
-    private volatile boolean lastEngineRunningSnapshot = false;
 
     /** 桥接辅助: MainActivity 同步读取发动机运行判定 */
     public static boolean isEngineRunningForBridge() {
@@ -525,8 +515,6 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("gear=(\\d+)");
     private static final Pattern P_GEAR_POS =
             Pattern.compile("(?:funValue\\((?:0x)?([0-9a-fA-F]+)\\)|(?:mModelGearPos|GearPos)\\s*[:=]\\s*(?:0x)?([0-9a-fA-F]+))");
-    private static final Pattern P_FUNVALUE =
-            Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)");
     private static final Pattern P_DRIVE_MODE =
             Pattern.compile("(?:DirveMode|DriveMode)\\s*=\\s*(\\d+)");
     private static final Pattern P_PEPS_POWERMODE =
