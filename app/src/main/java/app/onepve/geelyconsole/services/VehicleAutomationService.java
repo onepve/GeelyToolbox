@@ -282,6 +282,10 @@ public class VehicleAutomationService extends Service {
         gearStateMachine = new GearStateMachine(this, voicePlayer);
         gearStateMachine.setListener(gear -> {
             lastGearPos = gear;
+            // 换挡起步（挂入 D 挡或 R 挡）触发音源静默预热，提前消化网络与播放器冷态初始化耗时
+            if (gear == 2 || gear == 4) {
+                warmUpTargetMediaService();
+            }
         });
 
         driveModeManager = new DriveModeManager(this, voicePlayer);
@@ -1455,27 +1459,52 @@ public class VehicleAutomationService extends Service {
         } catch (Throwable ignored) {}
     }
 
+    private void sendToExplicitReceiver(String pkg, String clsName, int keyCode) {
+        try {
+            ComponentName comp = new ComponentName(pkg, clsName);
+            Intent down = new Intent(Intent.ACTION_MEDIA_BUTTON);
+            down.setComponent(comp);
+            down.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_DOWN, keyCode));
+            sendOrderedBroadcast(down, null);
+
+            Intent up = new Intent(Intent.ACTION_MEDIA_BUTTON);
+            up.setComponent(comp);
+            up.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP, keyCode));
+            sendOrderedBroadcast(up, null);
+        } catch (Throwable ignored) {}
+    }
+
     private void sendExplicitMediaButtonToPackage(String pkg, int keyCode) {
+        sendExplicitMediaButtonToPackage(pkg, Intent.ACTION_MEDIA_BUTTON, keyCode);
+    }
+
+    private void sendExplicitMediaButtonToPackage(String pkg, String action, int keyCode) {
         if (pkg == null || pkg.isEmpty()) return;
         try {
-            Intent bQuery = new Intent(Intent.ACTION_MEDIA_BUTTON);
+            Intent bQuery = new Intent(action != null ? action : Intent.ACTION_MEDIA_BUTTON);
             bQuery.setPackage(pkg);
             List<ResolveInfo> receivers = getPackageManager().queryBroadcastReceivers(bQuery, 0);
             if (receivers != null && !receivers.isEmpty()) {
                 for (ResolveInfo ri : receivers) {
                     if (ri.activityInfo != null) {
                         ComponentName comp = new ComponentName(ri.activityInfo.packageName, ri.activityInfo.name);
-                        Intent down = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                        Intent down = new Intent(action != null ? action : Intent.ACTION_MEDIA_BUTTON);
                         down.setComponent(comp);
                         down.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_DOWN, keyCode));
                         sendOrderedBroadcast(down, null);
 
-                        Intent up = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                        Intent up = new Intent(action != null ? action : Intent.ACTION_MEDIA_BUTTON);
                         up.setComponent(comp);
                         up.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP, keyCode));
                         sendOrderedBroadcast(up, null);
                     }
                 }
+            }
+            // 针对主流车机播放器已知静态 Receiver 显式兜底（彻底杜绝 queryBroadcastReceivers 未扫到时的拉活失效）
+            if ("com.tencent.qqmusiccar".equals(pkg)) {
+                sendToExplicitReceiver(pkg, "com.tencent.qqmusicsdk.player.listener.MediaButtonReceiver", keyCode);
+            } else if ("cn.kuwo.kwmusiccar".equals(pkg)) {
+                sendToExplicitReceiver(pkg, "cn.kuwo.kwmusiccar.receiver.MediaButtonReceiver", keyCode);
             }
         } catch (Throwable ignored) {}
     }
@@ -1499,6 +1528,8 @@ public class VehicleAutomationService extends Service {
             if ("com.tencent.qqmusiccar".equals(pkg)) {
                 tryStartComponentService(pkg, "com.tencent.qqmusicplayerprocess.service.QQPlayerServiceNew");
                 tryStartComponentService(pkg, "com.tencent.qqmusic.service.QQPlayerService");
+                // 针对 QQ 音乐私有服务拉活被拒 (exported=false) 场景，显式发送静默按键拉活 QQPlayerProcess 核心进程
+                sendToExplicitReceiver(pkg, "com.tencent.qqmusicsdk.player.listener.MediaButtonReceiver", KeyEvent.KEYCODE_UNKNOWN);
             } else if ("com.netease.cloudmusiccar".equals(pkg) || "com.netease.cloudmusic".equals(pkg) || "com.netease.cloudmusic.iot".equals(pkg)) {
                 tryStartComponentService(pkg, "com.netease.cloudmusic.service.PlayService");
                 tryStartComponentService(pkg, "com.netease.cloudmusic.service.MediaPlaybackService");
@@ -1594,26 +1625,23 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Throwable ignored) {}
 
-            // 3. 发送针对该目标包名的显式媒体按键广播
-            try {
-                Intent btnDown = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                btnDown.setPackage(pkg);
-                btnDown.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY));
-                sendOrderedBroadcast(btnDown, null);
-
-                Intent btnUp = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                btnUp.setPackage(pkg);
-                btnUp.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY));
-                sendOrderedBroadcast(btnUp, null);
-            } catch (Throwable ignored) {}
+            // 3. 发送针对该目标包名的显式媒体按键广播 (精准带 ComponentName，秒级冷唤醒后台进程)
+            sendExplicitMediaButtonToPackage(pkg, Intent.ACTION_MEDIA_BUTTON, KeyEvent.KEYCODE_MEDIA_PLAY);
         }
 
         mainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 try {
-                    // 全局广播播放键补发（双保险，彻底唤醒任何就绪的播放内核）
-                    new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
+                    // 全局广播播放键补发：仅当非蓝牙且尚未处于播放态时，针对目标包名再次定向补发
+                    // 坚决严禁盲发全局公共按键，防止被原车蓝牙截胡导致误切通道
+                    if (!"com.android.bluetooth".equals(pkg)) {
+                        if (!isTargetMediaPlaying(pkg)) {
+                            sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
+                        }
+                    } else {
+                        new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
+                    }
                 } catch (Throwable ignored) {}
             }
         }, 800);
@@ -1755,16 +1783,16 @@ public class VehicleAutomationService extends Service {
                     if (VehicleVoicePlayer.isInPhoneCall(VehicleAutomationService.this) || !isEngineRunning()) {
                         return;
                     }
-                    // 若处于 P 挡驻车静止状态，不主动唤醒第三方媒体应用，避免截断车机蓝牙电话
-                    if (gearStateMachine != null && gearStateMachine.getGear() == 5 && currentSpeedKmH == 0) {
-                        return;
-                    }
                     SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                     boolean autoplayEnabled = prefs.getBoolean("vehicle_speed_autoplay_enabled", true);
                     if (!autoplayEnabled) return;
                     String pkg = getDefaultAutoplayPkg();
-                    AppLogger.i("车身联动", "点火通电预热：按软件默认配置预热音源服务: " + pkg);
+                    if (pkg == null || pkg.isEmpty() || "com.android.bluetooth".equals(pkg)) return;
+                    if (isTargetMediaPlaying(pkg)) return;
+
+                    AppLogger.i("车身联动", "起步/通电前置静默预热音源进程: " + pkg);
                     wakeUpTargetMediaService(pkg);
+                    sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_UNKNOWN);
                 } catch (Throwable ignored) {}
             }
         }).start();
