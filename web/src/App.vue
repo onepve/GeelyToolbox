@@ -12,17 +12,16 @@
       <Sidebar />
 
       <!-- 右侧专属大舞台 (切换功能时自动回顶) -->
+      <!-- 右侧专属大舞台 (按需首次挂载 + 永久常驻内存 v-show，彻底根除切大菜单时的销毁与从头重绘) -->
       <section ref="mainContent" class="flex-1 h-full overflow-y-auto p-5 flex flex-col">
-        <KeepAlive :max="8">
-          <StoreView v-if="store.currentNav === 'store'" />
-          <WheelView v-else-if="store.currentNav === 'wheel'" />
-          <LinkView v-else-if="store.currentNav === 'link'" />
-          <BodyView v-else-if="store.currentNav === 'body'" />
-          <AudioView v-else-if="store.currentNav === 'audio'" />
-          <!-- 桌面悬浮已并入系统维护：floating 导航兼容跳转 -->
-          <SystemView v-else-if="store.currentNav === 'floating' || store.currentNav === 'system'" />
-          <InstallView v-else-if="store.currentNav === 'install'" />
-        </KeepAlive>
+        <StoreView v-if="loadedNavs.has('store')" v-show="store.currentNav === 'store'" />
+        <WheelView v-if="loadedNavs.has('wheel')" v-show="store.currentNav === 'wheel'" />
+        <LinkView v-if="loadedNavs.has('link')" v-show="store.currentNav === 'link'" />
+        <BodyView v-if="loadedNavs.has('body')" v-show="store.currentNav === 'body'" />
+        <AudioView v-if="loadedNavs.has('audio')" v-show="store.currentNav === 'audio'" />
+        <!-- 桌面悬浮已并入系统维护：floating 导航兼容跳转 -->
+        <SystemView v-if="loadedNavs.has('system') || loadedNavs.has('floating')" v-show="store.currentNav === 'floating' || store.currentNav === 'system'" />
+        <InstallView v-if="loadedNavs.has('install')" v-show="store.currentNav === 'install'" />
       </section>
     </main>
     <GeekInstallModal />
@@ -88,7 +87,14 @@ import SystemView from './views/SystemView.vue';
 const mainContent = ref(null);
 
 // 切换左侧功能导航时，右侧主舞台无条件强制自动回顶，彻底消除翻页位置继承
+// 已按需加载过的导航页面集合：首次进入按需 mount，之后永远常驻内存，使用 v-show 极速显隐，彻底消除大菜单切换的卡顿
+const loadedNavs = ref(new Set([store.currentNav || 'wheel']));
+
 watch(() => store.currentNav, (nav) => {
+  if (nav) {
+    if (nav === 'floating') loadedNavs.value.add('system');
+    else loadedNavs.value.add(nav);
+  }
   recordActiveNav(nav);
   nextTick(() => {
     if (mainContent.value) {

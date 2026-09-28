@@ -375,3 +375,45 @@ if (typeof window !== 'undefined') {
     showToast(autoExec ? '已接收手机指令并立即自动执行...' : '已接收手机推送的 ADB 指令，正在打开控制台...', 'info');
   };
 }
+
+// 已安装媒体应用全局本地持久化缓存 (杜绝每次切页同步扫描卡死主线程)
+export function getInstalledMusicAppsCached(forceRefresh = false) {
+  if (!forceRefresh && store._cachedMusicApps && store._cachedMusicApps.length > 0) {
+    return store._cachedMusicApps;
+  }
+  if (!forceRefresh) {
+    try {
+      const local = localStorage.getItem('geely_cached_media_apps_list');
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          store._cachedMusicApps = parsed;
+          return parsed;
+        }
+      }
+    } catch (e) {}
+  }
+  try {
+    const raw = bridge.call('getInstalledMusicAppsJson');
+    if (raw) {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (Array.isArray(parsed)) {
+        store._cachedMusicApps = parsed;
+        try {
+          localStorage.setItem('geely_cached_media_apps_list', JSON.stringify(parsed));
+        } catch (e) {}
+        return parsed;
+      }
+    }
+  } catch (e) {}
+  return store._cachedMusicApps || [];
+}
+
+export function updateInstalledMusicAppsCache(list) {
+  if (Array.isArray(list)) {
+    store._cachedMusicApps = list;
+    try {
+      localStorage.setItem('geely_cached_media_apps_list', JSON.stringify(list));
+    } catch (e) {}
+  }
+}

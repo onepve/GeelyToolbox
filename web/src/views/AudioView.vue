@@ -362,7 +362,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import StatusDot from '../components/StatusDot.vue';
 import HelpDot from '../components/HelpDot.vue';
-import { store, bridge, openModal, showToast } from '../store';
+import { store, bridge, openModal, showToast, getInstalledMusicAppsCached, updateInstalledMusicAppsCache } from '../store';
 
 function showBluetoothCoexistHelp() {
   openModal('confirm', {
@@ -470,13 +470,12 @@ const OFFICIAL_MUSIC_SPECS = [
   { name: '酷狗音乐', pkgs: ['com.kugou.androidCar', 'com.kugou.android'], defaultPkg: 'com.kugou.androidCar' },
 ];
 
-function loadMediaApps() {
+function loadMediaApps(force = false) {
   mediaScanning.value = true;
   try {
-    let raw = bridge.call('getInstalledMusicAppsJson');
+    let parsed = getInstalledMusicAppsCached(force);
     let installedList = [];
-    if (raw) {
-      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (parsed) {
       const isSystemBlacklist = (p) => {
         if (!p) return true;
         const low = p.toLowerCase().trim();
@@ -580,7 +579,7 @@ function rescanMediaApps() {
   } catch (e) {}
   showToast('正在全仓重新扫描整车媒体应用...');
   setTimeout(() => {
-    loadMediaApps();
+    loadMediaApps(true);
     showToast('媒体应用列表与音源已更新');
   }, 400);
 }

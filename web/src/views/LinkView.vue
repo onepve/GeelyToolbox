@@ -306,7 +306,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { store, bridge, showToast, openModal } from '../store';
+import { store, bridge, showToast, openModal, getInstalledMusicAppsCached } from '../store';
 import PlanCard from '../components/PlanCard.vue';
 import BaseButton from '../components/BaseButton.vue';
 import StatusDot from '../components/StatusDot.vue';
@@ -363,14 +363,16 @@ function loadCustomAutoplayAppName() {
   }
 }
 
-function checkInstalledMusicApps() {
+function checkInstalledMusicApps(force = false) {
   try {
-    const raw = bridge.call('getInstalledMusicAppsJson');
-    if (raw) {
-      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      const pkgs = parsed.map(item => item.pkg || item.packageName);
+    const list = getInstalledMusicAppsCached(force);
+    if (list && list.length > 0) {
+      const pkgs = list.map(item => item.pkg || item.packageName);
       hasQQMusic.value = pkgs.includes('com.tencent.qqmusiccar');
       hasNeteaseMusic.value = pkgs.includes('com.netease.cloudmusiccar');
+    } else {
+      hasQQMusic.value = true;
+      hasNeteaseMusic.value = true;
     }
   } catch (e) {
     // 降级兜底：默认置 true 供前端调试/兜底
