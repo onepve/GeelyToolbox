@@ -493,50 +493,22 @@ public class VehicleVoicePlayer {
     }
 
     private synchronized void applyVolumeOffsetBeforePlay(String voiceType) {
-        if (audioManager == null || voiceType == null || voiceType.isEmpty()) return;
+        if (voiceType == null || voiceType.isEmpty()) return;
         try {
-            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-
-            // 归一化：播放侧传的是文件名（如 gear_r.mp3），配置端存的是裸 key（gear_r）。
-            // 未归一化时 voice_item_offset_gear_r.mp3 永远查不到，导致单项增益从未生效（核心缺陷）。
+            // v1.7.49: 全量内置音频已完成车规级满电平压限重采样 (-13 LUFS, TP -0.8dBFS)，
+            // 彻底下线动态篡改系统音量逻辑，杜绝听歌混音忽大忽小与系统策略抽搐。
             String key = VoiceGainResolver.normalizeVoiceKey(voiceType);
-            String lookupKey = resolveConfigKeyFallback(prefs, key, "voice_item_offset_");
-
-            // ── 每声效独立管理（v1.7.37 起）：voice_item_channel_<key> + voice_item_offset_<key> ──
-            // 未保存过该声效 = 不接管，原厂行为零变化；保存过 = 声道/增益完全按本项设置走 (副驾衍生音效自动继承主项)
-            if (!prefs.contains("voice_item_offset_" + lookupKey)) return;
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             String channelLookupKey = resolveConfigKeyFallback(prefs, key, "voice_item_channel_");
             String channel = prefs.getString("voice_item_channel_" + channelLookupKey, "music");
-            int offset = prefs.getInt("voice_item_offset_" + lookupKey, 0);
-            if (offset == 0) return;
-
-            // 三通道 → 原厂音量流（IHU516G 实测）：music→3、nav→12(私有 STREAM_NAVI)、notification→1(STREAM_SYSTEM)。
-            // 历史缺陷：nav/notification 被统一调成 STREAM_NOTIFICATION(5)，导航档实际改错对象、增益无法精准命中。
             int stream = VoiceGainResolver.resolveStreamForChannel(channel);
-            int currentVol = audioManager.getStreamVolume(stream);
-            int maxVol = audioManager.getStreamMaxVolume(stream);
-            int targetVol = Math.max(0, Math.min(maxVol, currentVol + offset));
-            if (targetVol == currentVol || restoreVolumeAfterPlay >= 0) return;
-
-            restoreVolumeAfterPlay = currentVol;
-            originalStreamType = stream;
-            audioManager.setStreamVolume(stream, targetVol, 0);
-            Log.i(TAG, "Item-managed voice gain: " + offset + " (vol: " + currentVol + " -> " + targetVol + ", stream: " + stream + ", item: " + voiceType + ", key: " + key + ")");
-            AppLogger.i("语音播报", "单项增益生效[" + voiceType + "]: " + (offset >= 0 ? "+" + offset : offset) + "格 (音量 " + currentVol + "->" + targetVol + ", 流 " + stream + ")");
-        } catch (Exception e) {
-            Log.w(TAG, "Failed to apply volume offset: " + e.getMessage());
+            Log.d(TAG, "Native full-scale voice output: item=" + voiceType + ", stream=" + stream + ", key=" + key);
+        } catch (Exception ignored) {
         }
     }
 
     private synchronized void restoreVolumeAfterPlay() {
-        if (audioManager == null || restoreVolumeAfterPlay < 0) return;
-        try {
-            audioManager.setStreamVolume(originalStreamType, restoreVolumeAfterPlay, 0);
-            Log.i(TAG, "Restored vehicle volume to original: " + restoreVolumeAfterPlay);
-        } catch (Exception ignored) {
-        } finally {
-            restoreVolumeAfterPlay = -1;
-        }
+        restoreVolumeAfterPlay = -1;
     }
 
     private VehicleVoicePlayer(Context context) {

@@ -49,12 +49,12 @@
         </button>
       </div>
 
-      <!-- 本声效输出：独立声道 + 音量增益 (每声效独立管理 · 增益0=原厂音量) -->
+      <!-- 本声效输出通道 (独立声道 · 车规满电平免改系统音量) -->
       <div class="bg-car-item border-2 border-car-accent/40 rounded-2xl p-4 flex flex-col space-y-2.5 shadow-md">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <span class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-sm"></span>
-            <span class="text-[17.5px] font-black text-car-text">本声效输出 (声道 · 音量增益)</span>
+            <span class="text-[17.5px] font-black text-car-text">本声效输出通道 (独立声道)</span>
           </div>
           <div class="flex space-x-2">
             <button
@@ -70,37 +70,6 @@
         </div>
         <div class="text-[13.5px] text-car-sub font-bold leading-relaxed">
           {{ channelHint }}
-        </div>
-        <div class="flex items-center space-x-4 pt-1">
-          <span class="text-[13px] text-car-sub font-bold whitespace-nowrap">-15 (接近静音)</span>
-          <input
-            type="range"
-            min="-15"
-            max="15"
-            step="1"
-            v-model.number="itemGain"
-            @change="setItemGain"
-            @input="setItemGain"
-            class="flex-1 accent-car-accent h-2.5 bg-car-card rounded-lg cursor-pointer"
-          />
-          <span class="text-[13px] text-car-sub font-bold whitespace-nowrap">+15 (最大增益)</span>
-          <button
-            @click="testCurrentAudio"
-            class="px-4 py-2 bg-car-card border-2 border-car-accent text-car-accent hover:text-car-text font-black text-[14.5px] rounded-xl cursor-pointer transition-all shrink-0 shadow-sm"
-          >
-            试听此音量
-          </button>
-        </div>
-        <div class="flex items-center justify-between pt-0.5">
-          <button
-            @click="resetItemGain"
-            class="px-4 py-1.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent cursor-pointer transition-all shadow-sm"
-            title="点击归零"
-          >
-            <span class="text-[24px] font-black" :class="itemGain === 0 ? 'text-car-sub' : 'text-car-accent'">{{ itemGain > 0 ? '+' + itemGain : itemGain }}</span>
-            <span class="text-[13px] font-bold text-car-sub ml-1.5">格 (点击归零)</span>
-          </button>
-          <span class="text-[13px] font-bold text-car-sub">{{ gainStateText }}</span>
         </div>
       </div>
 
@@ -220,7 +189,6 @@ const customText = ref('');
 const customFilePath = ref('');
 const installedThemes = ref([]);
 const itemChannel = ref('music');
-const itemGain = ref(0);
 
 const channelOptions = [
   { value: 'music', label: '普通媒体' },
@@ -257,32 +225,12 @@ const channelHint = computed(() => {
   return '普通媒体：跟随车机主音量（听歌那条），默认推荐。';
 });
 
-const gainStateText = computed(() => {
-  if (itemGain.value === 0) return '增益 0 = 原厂音量，不增不减';
-  if (itemGain.value > 0) return `播报瞬间叠加 +${itemGain.value} 格，播完自动还原`;
-  return `播报瞬间压低 ${itemGain.value} 格 (太小可能听不清)`;
-});
-
 function setItemChannel(ch) {
   if (!targetItem.value) return;
   itemChannel.value = ch;
   store.vehicleAuto[`channel_${targetItem.value.key}`] = ch;
   bridge.call('setVoiceItemChannel', targetItem.value.key, ch);
   showToast(ch === 'music' ? '已恢复普通媒体声道' : `已切至${ch === 'nav' ? '导航引导' : '系统提示'}声道`);
-}
-
-function setItemGain() {
-  if (!targetItem.value) return;
-  if (typeof itemGain.value !== 'number') itemGain.value = 0;
-  itemGain.value = Math.max(-15, Math.min(15, Math.round(itemGain.value)));
-  store.vehicleAuto[`offset_${targetItem.value.key}`] = itemGain.value;
-  bridge.call('setVoiceItemOffset', targetItem.value.key, itemGain.value);
-}
-
-function resetItemGain() {
-  itemGain.value = 0;
-  setItemGain();
-  showToast('增益已归零，恢复原厂音量');
 }
 
 function loadInstalledThemes() {
@@ -369,13 +317,11 @@ const VOICE_ALIAS_MAP = {
     customText.value = localStorage.getItem(`geely_voice_text_${item.key}`) || '';
     customFilePath.value = localStorage.getItem(`geely_voice_file_${item.key}`) || '';
     itemChannel.value = store.vehicleAuto[`channel_${item.key}`] || 'music';
-    itemGain.value = store.vehicleAuto[`offset_${item.key}`] !== undefined ? Number(store.vehicleAuto[`offset_${item.key}`]) : 0;
     loadInstalledThemes();
   } else {
     customText.value = '';
     customFilePath.value = '';
     itemChannel.value = 'music';
-    itemGain.value = 0;
   }
 });
 
