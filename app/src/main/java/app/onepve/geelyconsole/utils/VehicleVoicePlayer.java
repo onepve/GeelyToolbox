@@ -116,8 +116,6 @@ public class VehicleVoicePlayer {
     private final Object playerLock = new Object();
     private final java.util.concurrent.atomic.AtomicInteger playSessionId = new java.util.concurrent.atomic.AtomicInteger(0);
     private Object activeFocusRequest = null;
-    private int restoreVolumeAfterPlay = -1;
-    private int originalStreamType = AudioManager.STREAM_MUSIC;
     private Runnable focusReleaseRunnable = null;
 
     // ---- TTS 冷启动排队补播：点火后引擎未就绪时，缓存最新一条待播，就绪后自动补出（绝不丢首条语音）----
@@ -489,13 +487,12 @@ public class VehicleVoicePlayer {
             });
         }
         abandonAudioFocus();
-        restoreVolumeAfterPlay();
     }
 
     private synchronized void applyVolumeOffsetBeforePlay(String voiceType) {
         if (voiceType == null || voiceType.isEmpty()) return;
         try {
-            // v1.7.49: 全量内置音频已完成车规级满电平压限重采样 (-13 LUFS, TP -0.8dBFS)，
+            // v1.7.51: 全量内置音频已完成车规级满电平压限重采样 (-13 LUFS, TP -0.8dBFS)，
             // 彻底下线动态篡改系统音量逻辑，杜绝听歌混音忽大忽小与系统策略抽搐。
             String key = VoiceGainResolver.normalizeVoiceKey(voiceType);
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
@@ -505,10 +502,6 @@ public class VehicleVoicePlayer {
             Log.d(TAG, "Native full-scale voice output: item=" + voiceType + ", stream=" + stream + ", key=" + key);
         } catch (Exception ignored) {
         }
-    }
-
-    private synchronized void restoreVolumeAfterPlay() {
-        restoreVolumeAfterPlay = -1;
     }
 
     private VehicleVoicePlayer(Context context) {
@@ -824,7 +817,6 @@ public class VehicleVoicePlayer {
                     focusReleaseRunnable = null;
                 }
                 abandonAudioFocus();
-                restoreVolumeAfterPlay();
                 VoiceArbiter a = arbiter;
                 if (a != null && gen >= 0) {
                     a.onEngineFinished(gen);
@@ -1278,7 +1270,6 @@ public class VehicleVoicePlayer {
                         if (playSessionId.get() != sessionId) {
                             try { mp.release(); } catch (Exception ignored) {}
                             abandonAudioFocus();
-                            restoreVolumeAfterPlay();
                             return;
                         }
                         currentMediaPlayer = mp;
@@ -1297,7 +1288,6 @@ public class VehicleVoicePlayer {
                             if (currentMediaPlayer == mp) currentMediaPlayer = null;
                         }
                         abandonAudioFocus();
-                        restoreVolumeAfterPlay();
                         return;
                     }
                     mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
@@ -1307,7 +1297,6 @@ public class VehicleVoicePlayer {
                                 if (currentMediaPlayer == mediaPlayer) currentMediaPlayer = null;
                             }
                             abandonAudioFocus();
-                            restoreVolumeAfterPlay();
                             try { mediaPlayer.release(); } catch (Exception ignored) {}
                             notifyArbiterFinishedIfCurrent(arbiterGen);
                         }
@@ -1319,7 +1308,6 @@ public class VehicleVoicePlayer {
                                 if (currentMediaPlayer == mediaPlayer) currentMediaPlayer = null;
                             }
                             abandonAudioFocus();
-                            restoreVolumeAfterPlay();
                             try { mediaPlayer.release(); } catch (Exception ignored) {}
                             notifyArbiterFinishedIfCurrent(arbiterGen);
                             return true;
@@ -1344,7 +1332,6 @@ public class VehicleVoicePlayer {
                 } catch (Exception e) {
                     Log.e(TAG, "playAudioFile failed: " + e.getMessage(), e);
                     abandonAudioFocus();
-                    restoreVolumeAfterPlay();
                     if (mp != null) {
                         try { mp.release(); } catch (Exception ignored) {}
                     }

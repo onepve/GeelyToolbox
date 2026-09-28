@@ -80,22 +80,23 @@ public class PrefUtils {
         if (prefs == null) return;
         try {
             SharedPreferences.Editor editor = prefs.edit();
+            boolean changed = false;
+            // 物理遍历并彻底清除所有历史残留的 voice_item_offset_* 键（全量内置语音已满电平重采样，彻底下线动态音量篡改）
+            java.util.Map<String, ?> all = prefs.getAll();
+            for (String key : all.keySet()) {
+                if (key != null && key.startsWith("voice_item_offset_")) {
+                    editor.remove(key);
+                    changed = true;
+                }
+            }
             String[] staleKeys = {
-                "voice_item_offset_door_fr_enter",
-                "voice_item_offset_door_fr_queen_enter",
-                "voice_item_offset_door_fr_princess_enter",
-                "voice_item_offset_door_fr_queen_close",
-                "voice_item_offset_door_fr_princess_close",
                 "voice_item_channel_door_fr_enter",
                 "voice_item_channel_door_fr_queen_enter",
                 "voice_item_channel_door_fr_princess_enter",
                 "voice_item_channel_door_fr_queen_close",
                 "voice_item_channel_door_fr_princess_close",
-                "voice_item_offset_door_fl_enter",
-                "voice_item_offset_door_fl_close_enter",
                 "voice_item_channel_door_fl_enter"
             };
-            boolean changed = false;
             for (String key : staleKeys) {
                 if (prefs.contains(key)) {
                     editor.remove(key);
@@ -104,7 +105,7 @@ public class PrefUtils {
             }
             if (changed) {
                 editor.apply();
-                AppLogger.i("座舱自动化", "【自愈防护】已成功物理清除历史残留旧版语音增益/声道键，恢复权威主项管控");
+                AppLogger.i("座舱自动化", "【自愈防护】已成功物理清除历史残留旧版语音增益/声道废键，闪存存储已瘦身");
             }
         } catch (Exception ignored) {}
     }

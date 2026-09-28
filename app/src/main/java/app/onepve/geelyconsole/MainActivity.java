@@ -3474,22 +3474,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             mainHandler.post(() -> {
                 try {
                     if (key == null || key.isEmpty()) return;
-                    int v = Math.max(-15, Math.min(15, offset));
-                    SharedPreferences.Editor ed = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE).edit();
-                    ed.putInt("voice_item_offset_" + key, v);
-                    if ("door_fr".equals(key)) {
-                        ed.remove("voice_item_offset_door_fr_enter");
-                        ed.remove("voice_item_offset_door_fr_queen_enter");
-                        ed.remove("voice_item_offset_door_fr_princess_enter");
-                    } else if ("door_fr_close".equals(key)) {
-                        ed.remove("voice_item_offset_door_fr_queen_close");
-                        ed.remove("voice_item_offset_door_fr_princess_close");
+                    // v1.7.51: 全量语音已推满车规级标准响度，彻底停用写入增益键；若有旧键顺手清除
+                    SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                    if (prefs.contains("voice_item_offset_" + key)) {
+                        prefs.edit().remove("voice_item_offset_" + key).apply();
+                        AppLogger.i("声音设置", "废弃增益键已物理清除[" + key + "]");
                     }
-                    ed.apply();
-                    AppLogger.i("声音设置", "增益[" + key + "] -> " + v);
-                } catch (Exception e) {
-                    AppLogger.e("声音设置", "增益更新失败: " + e.getMessage());
-                }
+                } catch (Exception ignored) {}
             });
             return true;
         }
