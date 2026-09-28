@@ -233,6 +233,9 @@ function setItemChannel(ch) {
   showToast(ch === 'music' ? '已恢复普通媒体声道' : `已切至${ch === 'nav' ? '导航引导' : '系统提示'}声道`);
 }
 
+// v1.7.49: 已全面升级车规级满电平输出，增益接口下线保持空实现防报错
+function setVoiceItemOffset() {}
+
 function loadInstalledThemes() {
   try {
     const raw = bridge.call('getVoiceThemesJson');
