@@ -3456,7 +3456,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public boolean clearAllCustomVoices() {
-            return safeCall(false, () -> {
+            try {
                 File customDir = new File("/sdcard/GeelyPilot/voices/custom");
                 if (customDir.exists() && customDir.isDirectory()) {
                     File[] files = customDir.listFiles();
@@ -3483,7 +3483,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
                 });
                 return true;
-            });
+            } catch (Exception e) {
+                return false;
+            }
         }
 
         @JavascriptInterface
@@ -3922,16 +3924,43 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         public String scanAudioFilesInDownload() {
             return safeCall("[]", () -> {
                 File downloadDir = SystemUtils.getAppDownloadDir();
-                File[] files = downloadDir.listFiles();
+                File poolDir = new File(downloadDir, "车载语音自定义");
+                if (!poolDir.exists()) poolDir.mkdirs();
+                
                 JSONArray arr = new JSONArray();
-                if (files != null) {
-                    for (File f : files) {
+                java.util.HashSet<String> seenNames = new java.util.HashSet<>();
+
+                // 1. 优先扫描专属受保护目录 /sdcard/Download/车载语音自定义/
+                File[] poolFiles = poolDir.listFiles();
+                if (poolFiles != null) {
+                    for (File f : poolFiles) {
                         if (f.isFile()) {
                             String nameLower = f.getName().toLowerCase();
                             if (nameLower.endsWith(".mp3") || nameLower.endsWith(".wav") || nameLower.endsWith(".ogg")) {
                                 JSONObject obj = new JSONObject();
                                 obj.put("name", f.getName());
                                 obj.put("path", f.getAbsolutePath());
+                                obj.put("dir", "车载语音自定义");
+                                obj.put("size", SystemUtils.formatFileSize(f.length()));
+                                obj.put("time", new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date(f.lastModified())));
+                                arr.put(obj);
+                                seenNames.add(f.getName());
+                            }
+                        }
+                    }
+                }
+
+                // 2. 兼容扫描 /sdcard/Download/ 根目录
+                File[] rootFiles = downloadDir.listFiles();
+                if (rootFiles != null) {
+                    for (File f : rootFiles) {
+                        if (f.isFile() && !seenNames.contains(f.getName())) {
+                            String nameLower = f.getName().toLowerCase();
+                            if (nameLower.endsWith(".mp3") || nameLower.endsWith(".wav") || nameLower.endsWith(".ogg")) {
+                                JSONObject obj = new JSONObject();
+                                obj.put("name", f.getName());
+                                obj.put("path", f.getAbsolutePath());
+                                obj.put("dir", "Download");
                                 obj.put("size", SystemUtils.formatFileSize(f.length()));
                                 obj.put("time", new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date(f.lastModified())));
                                 arr.put(obj);
@@ -3953,7 +3982,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 if (downloadFileName.contains("..") || downloadFileName.contains("/") || downloadFileName.contains("\\")) {
                     return "{\"success\":false,\"error\":\"非法文件名\"}";
                 }
-                File src = new File(SystemUtils.getAppDownloadDir(), downloadFileName);
+                File poolDir = new File(SystemUtils.getAppDownloadDir(), "车载语音自定义");
+                File src = new File(poolDir, downloadFileName);
+                if (!src.exists() || !src.isFile() || src.length() == 0) {
+                    src = new File(SystemUtils.getAppDownloadDir(), downloadFileName);
+                }
                 if (!src.exists() || !src.isFile() || src.length() == 0) {
                     return "{\"success\":false,\"error\":\"源音频文件不存在\"}";
                 }

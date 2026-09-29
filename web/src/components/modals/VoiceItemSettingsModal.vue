@@ -112,17 +112,17 @@
           </div>
         </div>
 
-        <!-- 下载目录音频列表 (从 /sdcard/Download 免打字点选) -->
+        <!-- 下载目录音频列表 (从 /sdcard/Download/车载语音自定义 免打字点选) -->
         <div class="flex flex-col space-y-2">
           <div class="text-[13px] text-car-sub font-bold flex items-center justify-between">
-            <span>从车机下载目录点选 (绑定后自动安全备份至语音库，防误删)：</span>
+            <span>专属目录素材池 (受白名单保护，清理下载目录不丢失，解绑可找回)：</span>
             <span class="font-mono text-[12px] text-car-sub/80">{{ downloadAudioFiles.length }} 个文件</span>
           </div>
 
           <!-- 空状态 -->
           <div v-if="downloadAudioFiles.length === 0" class="py-5 px-4 rounded-xl bg-car-card border border-car-border/60 flex flex-col items-center justify-center space-y-2 text-center">
-            <span class="text-[13.5px] text-car-sub font-bold">下载目录 (/sdcard/Download) 暂无 MP3/WAV 音频</span>
-            <span class="text-[12px] text-car-sub/80">点击右上角「手机扫码快传」连接车机 Wi-Fi 秒传音频</span>
+            <span class="text-[13.5px] text-car-sub font-bold">专属受保护目录 (/sdcard/Download/车载语音自定义) 暂无 MP3/WAV 音频</span>
+            <span class="text-[12px] text-car-sub/80">点击右上角「手机扫码快传」连接车机 Wi-Fi 秒传，永久受白名单保护不误删</span>
           </div>
 
           <!-- 列表平铺 -->
@@ -132,8 +132,11 @@
               :key="f.name"
               class="p-2.5 rounded-xl bg-car-card border border-car-border flex items-center justify-between shadow-sm hover:border-car-border-light transition-all"
             >
-              <div class="flex flex-col min-w-0 pr-3">
-                <span class="text-[14px] font-black text-car-text truncate">{{ f.name }}</span>
+              <div class="flex flex-col min-w-0 pr-3 space-y-0.5">
+                <div class="flex items-center space-x-2">
+                  <span class="text-[14px] font-black text-car-text truncate">{{ f.name }}</span>
+                  <span v-if="f.dir === '车载语音自定义'" class="px-1.5 py-0.5 rounded bg-car-item border border-car-accent/40 text-car-accent text-[11px] font-bold shrink-0">受保护目录</span>
+                </div>
                 <span class="text-[12px] text-car-sub font-mono">{{ f.size }} · {{ f.time }}</span>
               </div>
               <div class="flex items-center space-x-2 shrink-0">

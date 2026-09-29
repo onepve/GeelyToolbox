@@ -851,6 +851,12 @@ public class SystemUtils {
             File[] list = downloadDir.listFiles();
             if (list != null) {
                 for (File file : list) {
+                    String lower = file.getName().toLowerCase();
+                    boolean isVoiceProtected = file.isDirectory() && (lower.contains("车载语音自定义") || lower.contains("语音") || lower.contains("voice") || lower.contains("audio") || lower.contains("sound"));
+                    if (isVoiceProtected) {
+                        // 语音素材专属保护白名单，清理下载目录时永久跳过，防止误删用户自定义音频源素材
+                        continue;
+                    }
                     if (mode == 1) {
                         result.freedBytes += (file.isFile() ? file.length() : getDirSizeBytes(file));
                         if (deleteRecursiveBool(file)) result.deletedFiles++;
@@ -860,7 +866,6 @@ public class SystemUtils {
                             if (sub == null || sub.length == 0) {
                                 if (file.delete()) result.deletedFiles++;
                             } else {
-                                String lower = file.getName().toLowerCase();
                                 if (lower.contains("voice") || lower.contains("audio") || lower.contains("sound") || lower.contains("语音")) {
                                     continue;
                                 }
@@ -911,6 +916,8 @@ public class SystemUtils {
         try {
             File dir = getAppDownloadDir();
             if (!dir.exists()) dir.mkdirs();
+            File customPoolDir = new File(dir, "车载语音自定义");
+            if (!customPoolDir.exists()) customPoolDir.mkdirs();
             executePrivileged(context, "chmod -R 777 /sdcard/Download");
 
             // 自动平滑迁移历史旧目录 00_车机应用/ 下的文件到 Download/，老版本无缝过渡
