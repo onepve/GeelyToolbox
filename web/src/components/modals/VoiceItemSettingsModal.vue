@@ -67,50 +67,106 @@
         </div>
       </div>
 
-      <!-- 自定义本地音频文件 (车规宽屏黄金通栏排版) -->
-      <div class="bg-car-item border border-car-border rounded-2xl p-4.5 flex flex-col shadow-sm space-y-3.5">
+      <!-- 自定义本地音频文件 (车规免打字点选 · 自动隔离生命周期) -->
+      <div class="bg-car-item border border-car-border rounded-2xl p-4 flex flex-col shadow-sm space-y-3">
         <div class="flex items-center justify-between">
-          <div class="text-[17.5px] font-black text-car-text">自定义本地音频 (MP3/WAV)</div>
-          <span class="text-[13px] text-car-sub font-bold font-mono">存储路径: /sdcard/GeelyPilot/voices/</span>
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-sm shrink-0"></span>
+            <span class="text-[17px] font-black text-car-text">绑定自定义本地音频</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button
+              @click="loadDownloadAudioFiles"
+              class="h-[50px] px-3.5 rounded-xl bg-car-card border border-car-border text-car-sub hover:text-car-text text-[13.5px] font-bold cursor-pointer transition-all"
+            >
+              刷新列表
+            </button>
+            <button
+              @click="openModal('qrcode')"
+              class="h-[50px] px-3.5 rounded-xl bg-car-card border border-car-accent/60 text-car-accent text-[13.5px] font-bold cursor-pointer transition-all"
+            >
+              手机扫码快传 ➔
+            </button>
+          </div>
         </div>
-        <input
-          v-model="customFilePath"
-          type="text"
-          placeholder="例如: /sdcard/GeelyPilot/voices/gear_d.mp3 或点下方快速选取"
-          class="w-full h-[54px] bg-car-card border-2 border-car-border rounded-xl px-3.5 text-car-text font-mono text-[14.5px] outline-none focus:border-car-accent shadow-inner placeholder-car-sub"
-        />
-        <div class="text-[12.5px] text-car-sub leading-relaxed">
-          🎙️ 规格要求：音频开头请保留 ≥280ms 静音（车机功放建立通道需 0.2~0.3 秒，零静音直录会吞掉第一个字）。ffmpeg 一条命令补齐：<span class="font-mono text-car-text">ffmpeg -i in.mp3 -af "adelay=280" out.mp3</span>，详见语音包模板说明。
+
+        <!-- 当前已绑定自定义提示条 -->
+        <div v-if="customFilePath" class="p-3 rounded-xl bg-car-card border border-car-accent/50 flex items-center justify-between shadow-sm">
+          <div class="flex items-center space-x-2 min-w-0 pr-3">
+            <span class="text-[13px] text-car-accent font-black shrink-0">已绑定音频:</span>
+            <span class="text-[13.5px] text-car-text font-bold truncate">{{ customFileName || customFilePath }}</span>
+          </div>
+          <div class="flex items-center space-x-2 shrink-0">
+            <button
+              @click="testCurrentAudio"
+              class="h-[50px] px-3.5 rounded-xl bg-car-item border border-car-border text-car-text text-[13.5px] font-black cursor-pointer hover:border-car-border-light shadow-sm"
+            >
+              试听当前
+            </button>
+            <button
+              @click="resetToDefault"
+              class="h-[50px] px-3.5 rounded-xl bg-car-item border border-car-border text-car-sub hover:text-car-accent text-[13.5px] font-bold cursor-pointer shadow-sm"
+            >
+              解绑还原
+            </button>
+          </div>
+        </div>
+
+        <!-- 下载目录音频列表 (从 /sdcard/Download 免打字点选) -->
+        <div class="flex flex-col space-y-2">
+          <div class="text-[13px] text-car-sub font-bold flex items-center justify-between">
+            <span>从车机下载目录点选 (绑定后自动安全备份至语音库，防误删)：</span>
+            <span class="font-mono text-[12px] text-car-sub/80">{{ downloadAudioFiles.length }} 个文件</span>
+          </div>
+
+          <!-- 空状态 -->
+          <div v-if="downloadAudioFiles.length === 0" class="py-5 px-4 rounded-xl bg-car-card border border-car-border/60 flex flex-col items-center justify-center space-y-2 text-center">
+            <span class="text-[13.5px] text-car-sub font-bold">下载目录 (/sdcard/Download) 暂无 MP3/WAV 音频</span>
+            <span class="text-[12px] text-car-sub/80">点击右上角「手机扫码快传」连接车机 Wi-Fi 秒传音频</span>
+          </div>
+
+          <!-- 列表平铺 -->
+          <div v-else class="max-h-[175px] overflow-y-auto space-y-2 pr-1">
+            <div
+              v-for="f in downloadAudioFiles"
+              :key="f.name"
+              class="p-2.5 rounded-xl bg-car-card border border-car-border flex items-center justify-between shadow-sm hover:border-car-border-light transition-all"
+            >
+              <div class="flex flex-col min-w-0 pr-3">
+                <span class="text-[14px] font-black text-car-text truncate">{{ f.name }}</span>
+                <span class="text-[12px] text-car-sub font-mono">{{ f.size }} · {{ f.time }}</span>
+              </div>
+              <div class="flex items-center space-x-2 shrink-0">
+                <button
+                  @click="testDownloadAudio(f.path)"
+                  class="h-[50px] px-3 rounded-xl bg-car-item border border-car-border text-car-text font-bold text-[13.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+                >
+                  试听
+                </button>
+                <button
+                  @click="importAndBindDownloadAudio(f.name)"
+                  class="h-[50px] px-3.5 rounded-xl bg-car-item border-2 border-car-accent text-car-accent font-black text-[13.5px] cursor-pointer hover:border-car-accent shadow-sm"
+                >
+                  设为本声效
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- 快速从已安装语音包中点选混搭 -->
-        <div v-if="installedThemes.length > 0" class="flex flex-col space-y-2 pt-1">
-          <span class="text-[13.5px] text-car-sub font-bold">快速从已导入音效包选取此声效：</span>
+        <div v-if="installedThemes.length > 0" class="flex flex-col space-y-2 pt-4 border-t border-car-border/40">
+          <span class="text-[13px] text-car-sub font-bold">或从已导入音效包混搭选择：</span>
           <div class="flex flex-wrap space-x-2">
             <button
               v-for="t in installedThemes"
               :key="t.name"
               @click="selectThemeSound(t.name)"
-              class="px-3.5 py-2 rounded-xl bg-car-card border border-car-border text-car-text text-[13.5px] font-bold hover:border-car-accent cursor-pointer shadow-sm transition-all"
+              class="h-[50px] px-3.5 rounded-xl bg-car-card border border-car-border text-car-text text-[13.5px] font-bold hover:border-car-accent cursor-pointer shadow-sm transition-all"
             >
               {{ t.name }}
             </button>
           </div>
-        </div>
-
-        <div class="flex space-x-3 pt-2">
-          <button 
-            @click="testAudioFile"
-            class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm"
-          >
-            试听此音频
-          </button>
-          <button 
-            @click="saveAudioFilePath"
-            class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-accent font-black text-[16px] cursor-pointer hover:border-car-accent shadow-sm"
-          >
-            绑定生效
-          </button>
         </div>
       </div>
     </div>
@@ -141,8 +197,51 @@ import { store, bridge, closeModal, showToast } from '../../store';
 
 const targetItem = computed(() => store.modals.voiceItemSettings);
 const customFilePath = ref('');
+const customFileName = ref('');
+const downloadAudioFiles = ref([]);
+const loadingDownload = ref(false);
 const installedThemes = ref([]);
 const itemChannel = ref('music');
+
+function loadDownloadAudioFiles() {
+  loadingDownload.value = true;
+  try {
+    const res = bridge.call('scanAudioFilesInDownload');
+    downloadAudioFiles.value = JSON.parse(res || '[]');
+  } catch (e) {
+    console.error('scanAudioFilesInDownload error:', e);
+    downloadAudioFiles.value = [];
+  } finally {
+    loadingDownload.value = false;
+  }
+}
+
+function testDownloadAudio(path) {
+  if (!path) return;
+  showToast('正在试听下载目录音频...');
+  bridge.call('playCustomAudioPath', path);
+}
+
+function importAndBindDownloadAudio(fileName) {
+  if (!targetItem.value) return;
+  const key = targetItem.value.key;
+  showToast(`正在安全导入「${fileName}」...`);
+  try {
+    const raw = bridge.call('importCustomVoiceFile', key, fileName);
+    const res = JSON.parse(raw || '{}');
+    if (res.success && res.path) {
+      customFilePath.value = res.path;
+      customFileName.value = res.originalName || fileName;
+      localStorage.setItem(`geely_voice_file_${key}`, res.path);
+      localStorage.setItem(`geely_voice_name_${key}`, customFileName.value);
+      showToast(`已成功将「${fileName}」绑定为本声效！`);
+    } else {
+      showToast(`导入绑定失败: ${res.error || '未知原因'}`, 'error');
+    }
+  } catch (e) {
+    showToast(`导入异常: ${e.message}`, 'error');
+  }
+}
 
 const channelOptions = [
   { value: 'music', label: '普通媒体' },
@@ -268,10 +367,13 @@ function selectThemeSound(themeName) {
 watch(() => store.modals.voiceItemSettings, (item) => {
   if (item && item.key) {
     customFilePath.value = localStorage.getItem(`geely_voice_file_${item.key}`) || '';
+    customFileName.value = localStorage.getItem(`geely_voice_name_${item.key}`) || '';
     itemChannel.value = store.vehicleAuto[`channel_${item.key}`] || 'music';
     loadInstalledThemes();
+    loadDownloadAudioFiles();
   } else {
     customFilePath.value = '';
+    customFileName.value = '';
     itemChannel.value = 'music';
   }
 });
@@ -288,7 +390,9 @@ const activeVoiceTypeLabel = computed(() => {
 });
 
 const activeVoiceDesc = computed(() => {
-  if (customFilePath.value.trim()) return customFilePath.value.trim();
+  if (customFilePath.value.trim()) {
+    return customFileName.value ? `已绑定: ${customFileName.value}` : customFilePath.value.trim();
+  }
   if (isFrDoorItem.value) {
     const role = store.vehicleAuto.passenger_voice_role || 'female';
     if (role === 'queen') return '端庄绅士男声 · 专属礼遇';
@@ -336,14 +440,18 @@ function resetToDefault() {
   if (!targetItem.value) return;
   const key = targetItem.value.key;
   customFilePath.value = '';
+  customFileName.value = '';
   localStorage.removeItem(`geely_voice_text_${key}`);
   localStorage.removeItem(`geely_voice_file_${key}`);
+  localStorage.removeItem(`geely_voice_name_${key}`);
   bridge.call('resetCustomVoice', key);
   bridge.call('setVehicleAutomationStringSetting', `custom_voice_${targetItem.value.soundFile || key + '.mp3'}`, '');
   bridge.call('setVehicleAutomationStringSetting', `custom_voice_${key}`, '');
+  bridge.call('setVehicleAutomationStringSetting', `custom_voice_name_${key}`, '');
   if (key === 'door_fl') {
     bridge.call('setVehicleAutomationStringSetting', 'custom_voice_door_open.mp3', '');
     bridge.call('setVehicleAutomationStringSetting', 'custom_voice_door_open', '');
+    bridge.call('setVehicleAutomationStringSetting', 'custom_voice_name_door_open', '');
   }
   showToast('已恢复为出厂默认晓晓温婉知性原声');
 }

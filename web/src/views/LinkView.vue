@@ -126,18 +126,6 @@
             前台全屏播放
           </button>
         </div>
-
-        <!-- 统一整车默认音源提示条 (详细配置收敛至【车载音频-多媒体】卡片) -->
-        <div class="pt-4 flex flex-col space-y-2 border-t border-car-border/60 min-w-0 flex-1 shrink-0">
-          <div class="flex items-center justify-between">
-            <span class="text-[13.5px] font-bold text-car-sub">整车默认音源：</span>
-            <span class="text-[14px] font-black text-car-accent truncate">{{ currentPrimaryMusicName }}</span>
-          </div>
-          <div class="p-3 rounded-xl bg-car-item border border-car-border/60 flex items-center justify-between shadow-sm">
-            <span class="text-[12.5px] text-car-sub font-bold">音源列表与优先级回退已由【车载音频】集中管控</span>
-            <span class="text-[12.5px] text-car-accent font-black">统一中枢 ➔</span>
-          </div>
-        </div>
       </div>
 
       <!-- 任务 4: 车速达标自定义动作与唤起应用 (紧凑车规卡片，高度对齐左侧) -->
@@ -205,33 +193,30 @@
           </div>
         </div>
 
-        <!-- 动作唤起目标选择 (紧凑对称双按钮，高度与左侧对称对齐) -->
-        <div class="pt-4 flex flex-col space-y-2 border-t border-car-border/60 min-w-0 flex-1 shrink-0">
-          <div class="text-[13.5px] font-bold text-car-sub">达标唤起目标应用：</div>
-          <div class="grid grid-cols-2 gap-2.5 items-stretch">
-            <button 
-              @click="setCustomActionTarget('pkg:com.autonavi.amapauto')"
-              :class="[
-                'w-full h-[50px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
-                store.vehicleAuto.vehicle_speed_custom_action_target === 'pkg:com.autonavi.amapauto'
-                  ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              高德车机地图
-            </button>
-            <button 
-              @click="openSelectModal('speed_custom_action')"
-              :class="[
-                'w-full h-[50px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap truncate px-3',
-                store.vehicleAuto.vehicle_speed_custom_action_target?.startsWith('pkg:') && store.vehicleAuto.vehicle_speed_custom_action_target !== 'pkg:com.autonavi.amapauto'
-                  ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              {{ customActionAppName ? customActionAppName : '自选应用 ➔' }}
-            </button>
-          </div>
+        <!-- 动作唤起目标选择 (紧凑对称双按钮，高度与左侧完全对齐) -->
+        <div class="grid grid-cols-2 gap-2.5 items-stretch shrink-0">
+          <button 
+            @click="setCustomActionTarget('pkg:com.autonavi.amapauto')"
+            :class="[
+              'w-full h-[50px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
+              store.vehicleAuto.vehicle_speed_custom_action_target === 'pkg:com.autonavi.amapauto'
+                ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+                : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+            ]"
+          >
+            高德车机地图
+          </button>
+          <button 
+            @click="openSelectModal('speed_custom_action')"
+            :class="[
+              'w-full h-[50px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap truncate px-3',
+              store.vehicleAuto.vehicle_speed_custom_action_target?.startsWith('pkg:') && store.vehicleAuto.vehicle_speed_custom_action_target !== 'pkg:com.autonavi.amapauto'
+                ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+                : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+            ]"
+          >
+            {{ customActionAppName ? customActionAppName : '自选应用 ➔' }}
+          </button>
         </div>
       </div>
     </div>

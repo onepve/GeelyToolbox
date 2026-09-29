@@ -193,8 +193,8 @@
               <div class="flex items-center space-x-2">
                 <span class="text-[18px] font-black text-car-text">出厂官方原声 (晓晓温婉知性)</span>
                 <span class="px-2 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[11.5px] font-black shrink-0">系统内置</span>
-                <span v-if="!activeThemeName" class="px-2.5 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/50 text-emerald-400 text-[12px] font-black inline-flex items-center shadow-sm shrink-0">
-                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-emerald-400"></span>正在生效
+                <span v-if="!activeThemeName" class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-accent/60 text-car-accent text-[12px] font-black inline-flex items-center shadow-sm shrink-0">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-car-accent shadow-sm"></span>正在生效
                 </span>
               </div>
               <span class="text-[13px] text-car-sub font-bold">
@@ -236,8 +236,8 @@
             <div class="flex-1 min-w-0 pr-4 flex flex-col space-y-1">
               <div class="flex items-center space-x-2">
                 <span class="text-[18px] font-black text-car-text">{{ theme.name }}</span>
-                <span v-if="activeThemeName === theme.name" class="px-2.5 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/50 text-emerald-400 text-[12px] font-black inline-flex items-center shadow-sm shrink-0">
-                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-emerald-400"></span>正在生效
+                <span v-if="activeThemeName === theme.name" class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-accent/60 text-car-accent text-[12px] font-black inline-flex items-center shadow-sm shrink-0">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-car-accent shadow-sm"></span>正在生效
                 </span>
                 <span v-else class="px-2 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[11.5px] font-black shrink-0">已导入</span>
               </div>

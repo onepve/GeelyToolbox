@@ -2092,7 +2092,8 @@ public class SystemUtils {
         }
     }
 
-    private static void copyFile(File src, File dst) throws java.io.IOException {
+    public static boolean copyFile(File src, File dst) {
+        if (src == null || dst == null || !src.exists()) return false;
         try (java.io.InputStream in = new java.io.FileInputStream(src);
              java.io.OutputStream out = new java.io.FileOutputStream(dst)) {
             byte[] buf = new byte[32 * 1024];
@@ -2100,6 +2101,10 @@ public class SystemUtils {
             while ((len = in.read(buf)) > 0) {
                 out.write(buf, 0, len);
             }
+            return true;
+        } catch (Exception e) {
+            Log.e("SystemUtils", "copyFile failed: " + e.getMessage());
+            return false;
         }
     }
 

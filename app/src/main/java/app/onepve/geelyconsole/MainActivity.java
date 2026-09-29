@@ -3858,6 +3858,81 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public String scanAudioFilesInDownload() {
+            return safeCall("[]", () -> {
+                File downloadDir = SystemUtils.getAppDownloadDir();
+                File[] files = downloadDir.listFiles();
+                JSONArray arr = new JSONArray();
+                if (files != null) {
+                    for (File f : files) {
+                        if (f.isFile()) {
+                            String nameLower = f.getName().toLowerCase();
+                            if (nameLower.endsWith(".mp3") || nameLower.endsWith(".wav") || nameLower.endsWith(".ogg")) {
+                                JSONObject obj = new JSONObject();
+                                obj.put("name", f.getName());
+                                obj.put("path", f.getAbsolutePath());
+                                obj.put("size", SystemUtils.formatFileSize(f.length()));
+                                obj.put("time", new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date(f.lastModified())));
+                                arr.put(obj);
+                            }
+                        }
+                    }
+                }
+                return arr.toString();
+            });
+        }
+
+        @JavascriptInterface
+        public String importCustomVoiceFile(final String itemKey, final String downloadFileName) {
+            return safeCall("{\"success\":false,\"error\":\"unknown\"}", () -> {
+                if (itemKey == null || itemKey.trim().isEmpty() || downloadFileName == null || downloadFileName.trim().isEmpty()) {
+                    return "{\"success\":false,\"error\":\"参数为空\"}";
+                }
+                String cleanKey = itemKey.trim().replaceAll("[^a-zA-Z0-9_]", "");
+                if (downloadFileName.contains("..") || downloadFileName.contains("/") || downloadFileName.contains("\\")) {
+                    return "{\"success\":false,\"error\":\"非法文件名\"}";
+                }
+                File src = new File(SystemUtils.getAppDownloadDir(), downloadFileName);
+                if (!src.exists() || !src.isFile() || src.length() == 0) {
+                    return "{\"success\":false,\"error\":\"源音频文件不存在\"}";
+                }
+                File customDir = new File("/sdcard/GeelyPilot/voices/custom");
+                if (!customDir.exists()) {
+                    customDir.mkdirs();
+                }
+                File dest = new File(customDir, cleanKey + ".mp3");
+                boolean copied = SystemUtils.copyFile(src, dest);
+                if (!copied) {
+                    return "{\"success\":false,\"error\":\"文件复制失败\"}";
+                }
+                SharedPreferences prefs = PrefUtils.getAppPreferences(MainActivity.this);
+                prefs.edit()
+                        .putString("custom_voice_" + cleanKey, dest.getAbsolutePath())
+                        .putString("custom_voice_" + cleanKey + ".mp3", dest.getAbsolutePath())
+                        .putString("custom_voice_name_" + cleanKey, downloadFileName)
+                        .apply();
+                if ("door_fl".equals(cleanKey)) {
+                    prefs.edit()
+                            .putString("custom_voice_door_open", dest.getAbsolutePath())
+                            .putString("custom_voice_door_open.mp3", dest.getAbsolutePath())
+                            .putString("custom_voice_name_door_open", downloadFileName)
+                            .apply();
+                } else if ("door_open".equals(cleanKey)) {
+                    prefs.edit()
+                            .putString("custom_voice_door_fl", dest.getAbsolutePath())
+                            .putString("custom_voice_door_fl.mp3", dest.getAbsolutePath())
+                            .putString("custom_voice_name_door_fl", downloadFileName)
+                            .apply();
+                }
+                JSONObject res = new JSONObject();
+                res.put("success", true);
+                res.put("path", dest.getAbsolutePath());
+                res.put("originalName", downloadFileName);
+                return res.toString();
+            });
+        }
+
+        @JavascriptInterface
         public void testVehicleVoice(final String type) {
             mainHandler.post(new Runnable() {
                 @Override
