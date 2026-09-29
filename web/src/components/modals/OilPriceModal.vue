@@ -186,7 +186,7 @@
           <span class="text-[13.5px] text-car-sub font-bold">
             {{ store.oilPrice.nextAdjustment ? '上轮生效: ' + store.oilPrice.nextAdjustment.lastAdjustmentDate + ' (' + store.oilPrice.selectedProvince + ')' : '正在同步最新调价周期...' }}
           </span>
-          
+          <GasStationBrand />
         </div>
         <button
           @click="closeModal('oilPrice')"
