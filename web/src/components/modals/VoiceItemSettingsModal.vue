@@ -73,89 +73,50 @@
         </div>
       </div>
 
-      <!-- 左右两栏并排 (车规宽屏 1920x720 黄金自适应排版，全要素同屏直出不翻页) -->
-      <div class="flex space-x-4">
-        <!-- 1. 自定义 TTS 朗读台词 -->
-        <div class="flex-1 bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="text-[17px] font-black text-car-text">1. 自定义台词 (TTS 语音合成)</div>
-            <span class="text-[12.5px] text-car-sub font-bold">留空不使用</span>
-          </div>
-          <input
-            v-model="customText"
-            type="text"
-            placeholder="输入个性化台词，留空保存则使用出厂音频"
-            class="w-full h-[54px] bg-car-card border-2 border-car-border rounded-xl px-3.5 text-car-text text-[15px] font-black outline-none focus:border-car-accent shadow-inner placeholder-car-sub"
-          />
+      <!-- 自定义本地音频文件 (车规宽屏黄金通栏排版) -->
+      <div class="bg-car-item border border-car-border rounded-2xl p-4.5 flex flex-col shadow-sm space-y-3.5">
+        <div class="flex items-center justify-between">
+          <div class="text-[17.5px] font-black text-car-text">自定义本地音频 (MP3/WAV)</div>
+          <span class="text-[13px] text-car-sub font-bold font-mono">存储路径: /sdcard/GeelyPilot/voices/</span>
+        </div>
+        <input
+          v-model="customFilePath"
+          type="text"
+          placeholder="例如: /sdcard/GeelyPilot/voices/gear_d.mp3 或点下方快速选取"
+          class="w-full h-[54px] bg-car-card border-2 border-car-border rounded-xl px-3.5 text-car-text font-mono text-[14.5px] outline-none focus:border-car-accent shadow-inner placeholder-car-sub"
+        />
+        <div class="text-[12.5px] text-car-sub leading-relaxed">
+          🎙️ 规格要求：音频开头请保留 ≥280ms 静音（车机功放建立通道需 0.2~0.3 秒，零静音直录会吞掉第一个字）。ffmpeg 一条命令补齐：<span class="font-mono text-car-text">ffmpeg -i in.mp3 -af "adelay=280" out.mp3</span>，详见语音包模板说明。
+        </div>
 
-          <div class="flex space-x-2.5 pt-2">
+        <!-- 快速从已安装语音包中点选混搭 -->
+        <div v-if="installedThemes.length > 0" class="flex flex-col space-y-2 pt-1">
+          <span class="text-[13.5px] text-car-sub font-bold">快速从已导入音效包选取此声效：</span>
+          <div class="flex flex-wrap space-x-2">
             <button
-              v-if="customText"
-              @click="customText = ''"
-              class="min-h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+              v-for="t in installedThemes"
+              :key="t.name"
+              @click="selectThemeSound(t.name)"
+              class="px-3.5 py-2 rounded-xl bg-car-card border border-car-border text-car-text text-[13.5px] font-bold hover:border-car-accent cursor-pointer shadow-sm transition-all"
             >
-              清空
-            </button>
-            <button
-              @click="testTtsText"
-              class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
-            >
-              试听台词
-            </button>
-            <button
-              @click="saveCustomText"
-              class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-accent font-black text-[15.5px] cursor-pointer hover:border-car-accent shadow-sm"
-            >
-              保存台词
+              {{ t.name }}
             </button>
           </div>
         </div>
 
-        <!-- 2. 自定义本地音频文件 -->
-        <div class="flex-1 bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="text-[17px] font-black text-car-text">2. 自定义本地音频 (MP3/WAV)</div>
-            <span class="text-[12.5px] text-car-sub font-bold">/sdcard/Music/</span>
-          </div>
-          <input
-            v-model="customFilePath"
-            type="text"
-            placeholder="例如: /sdcard/Music/gear_d.mp3"
-            class="w-full h-[54px] bg-car-card border-2 border-car-border rounded-xl px-3 text-car-text font-mono text-[14px] outline-none focus:border-car-accent shadow-inner placeholder-car-sub"
-          />
-          <div class="text-[12px] text-car-sub leading-relaxed">
-            🎙️ 规格要求：音频开头请保留 ≥280ms 静音（车机功放建立通道需 0.2~0.3 秒，零静音直录会吞掉第一个字）。ffmpeg 一条命令补齐：<span class="font-mono">ffmpeg -i in.mp3 -af "adelay=280" out.mp3</span>，详见语音包模板 README。
-          </div>
-
-          <!-- 快速从已安装语音包中点选混搭 -->
-          <div v-if="installedThemes.length > 0" class="flex flex-col space-y-1.5">
-            <span class="text-[13px] text-car-sub font-bold">快速从已导入语音包选取此音效：</span>
-            <div class="flex flex-wrap space-x-2">
-              <button
-                v-for="t in installedThemes"
-                :key="t.name"
-                @click="selectThemeSound(t.name)"
-                class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-text text-[13px] font-bold hover:border-car-accent cursor-pointer mb-1 shadow-sm transition-all"
-              >
-                {{ t.name }}
-              </button>
-            </div>
-          </div>
-
-          <div class="flex space-x-2.5">
-            <button 
-              @click="testAudioFile"
-              class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
-            >
-              试听音频文件
-            </button>
-            <button 
-              @click="saveAudioFilePath"
-              class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-accent font-black text-[15.5px] cursor-pointer hover:border-car-accent shadow-sm"
-            >
-              绑定文件
-            </button>
-          </div>
+        <div class="flex space-x-3 pt-2">
+          <button 
+            @click="testAudioFile"
+            class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm"
+          >
+            试听此音频
+          </button>
+          <button 
+            @click="saveAudioFilePath"
+            class="flex-1 min-h-[50px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-accent font-black text-[16px] cursor-pointer hover:border-car-accent shadow-sm"
+          >
+            绑定生效
+          </button>
         </div>
       </div>
     </div>
@@ -185,7 +146,6 @@ import ModalWrapper from './ModalWrapper.vue';
 import { store, bridge, closeModal, showToast } from '../../store';
 
 const targetItem = computed(() => store.modals.voiceItemSettings);
-const customText = ref('');
 const customFilePath = ref('');
 const installedThemes = ref([]);
 const itemChannel = ref('music');
@@ -201,7 +161,7 @@ const isFrDoorItem = computed(() => {
 });
 
 function isRoleActive(role) {
-  if (customText.value.trim() || customFilePath.value.trim()) return false;
+  if (customFilePath.value.trim()) return false;
   const currentRole = store.vehicleAuto.passenger_voice_role || 'female';
   return currentRole === role;
 }
@@ -209,9 +169,8 @@ function isRoleActive(role) {
 function selectFrEntityRole(role) {
   store.vehicleAuto.passenger_voice_role = role;
   bridge.call('setVehicleAutomationSetting', 'passenger_voice_role', role);
-  // 清空针对该项的自定义路径与台词覆盖，使出厂实体直接生效
+  // 清空针对该项的自定义路径覆盖，使出厂实体直接生效
   customFilePath.value = '';
-  customText.value = '';
   resetToDefault();
   showToast(`已切回出厂【${role === 'queen' ? '女王语音' : (role === 'female' ? '原车语音' : '公主语音')}】`);
   if (targetItem.value) {
@@ -233,7 +192,7 @@ function setItemChannel(ch) {
   showToast(ch === 'music' ? '已恢复普通媒体声道' : `已切至${ch === 'nav' ? '导航引导' : '系统提示'}声道`);
 }
 
-// v1.7.49: 已全面升级车规级满电平输出，增益接口下线保持空实现防报错
+// v1.7.49: 已全面升级车规级满电平输出，增益接口下线保持空实现防报错与门禁对齐
 function setVoiceItemOffset() {}
 
 function loadInstalledThemes() {
@@ -273,63 +232,57 @@ const VOICE_ALIAS_MAP = {
     trunk_close: ['后备箱关闭', '尾门关闭']
   };
 
-  function selectThemeSound(themeName) {
-    if (!targetItem.value) return;
-    const th = installedThemes.value.find(t => t.name === themeName);
-    const baseKey = targetItem.value.key;
-    const soundFile = targetItem.value.soundFile || (baseKey + '.mp3');
-    let finalName = soundFile;
+function selectThemeSound(themeName) {
+  if (!targetItem.value) return;
+  const th = installedThemes.value.find(t => t.name === themeName);
+  const baseKey = targetItem.value.key;
+  const soundFile = targetItem.value.soundFile || (baseKey + '.mp3');
+  let finalName = soundFile;
 
-    if (th && th.audioFiles && th.audioFiles.length > 0) {
-      // 1. 尝试英文原名
-      const exact = th.audioFiles.find(f => f.toLowerCase() === soundFile.toLowerCase());
-      if (exact) {
-        finalName = exact;
-      } else {
-        // 2. 尝试别名字典精准匹配
-        const aliases = VOICE_ALIAS_MAP[baseKey] || [];
-        let found = null;
+  if (th && th.audioFiles && th.audioFiles.length > 0) {
+    const exact = th.audioFiles.find(f => f.toLowerCase() === soundFile.toLowerCase());
+    if (exact) {
+      finalName = exact;
+    } else {
+      const aliases = VOICE_ALIAS_MAP[baseKey] || [];
+      let found = null;
+      for (const alias of aliases) {
+        found = th.audioFiles.find(f => {
+          const base = f.includes('.') ? f.substring(0, f.lastIndexOf('.')) : f;
+          return base === alias;
+        });
+        if (found) break;
+      }
+      if (!found) {
         for (const alias of aliases) {
           found = th.audioFiles.find(f => {
             const base = f.includes('.') ? f.substring(0, f.lastIndexOf('.')) : f;
-            return base === alias;
+            return base.includes(alias);
           });
           if (found) break;
         }
-        // 3. 尝试模糊包含别名
-        if (!found) {
-          for (const alias of aliases) {
-            found = th.audioFiles.find(f => {
-              const base = f.includes('.') ? f.substring(0, f.lastIndexOf('.')) : f;
-              return base.includes(alias);
-            });
-            if (found) break;
-          }
-        }
-        if (found) finalName = found;
       }
+      if (found) finalName = found;
     }
-
-    customFilePath.value = `/sdcard/GeelyPilot/voices/${themeName}/${finalName}`;
-    saveAudioFilePath();
-    showToast(`已快捷绑定【${themeName}】的 ${finalName}`);
   }
 
-  watch(() => store.modals.voiceItemSettings, (item) => {
+  customFilePath.value = `/sdcard/GeelyPilot/voices/${themeName}/${finalName}`;
+  saveAudioFilePath();
+  showToast(`已快捷绑定【${themeName}】的 ${finalName}`);
+}
+
+watch(() => store.modals.voiceItemSettings, (item) => {
   if (item && item.key) {
-    customText.value = localStorage.getItem(`geely_voice_text_${item.key}`) || '';
     customFilePath.value = localStorage.getItem(`geely_voice_file_${item.key}`) || '';
     itemChannel.value = store.vehicleAuto[`channel_${item.key}`] || 'music';
     loadInstalledThemes();
   } else {
-    customText.value = '';
     customFilePath.value = '';
     itemChannel.value = 'music';
   }
 });
 
 const activeVoiceTypeLabel = computed(() => {
-  if (customText.value.trim()) return '自定义台词 TTS (已覆盖出厂)';
   if (customFilePath.value.trim()) return '自定义本地音频 (已覆盖出厂)';
   if (isFrDoorItem.value) {
     const role = store.vehicleAuto.passenger_voice_role || 'female';
@@ -341,7 +294,6 @@ const activeVoiceTypeLabel = computed(() => {
 });
 
 const activeVoiceDesc = computed(() => {
-  if (customText.value.trim()) return `台词: “${customText.value.trim()}” (点下方出厂音色可一键还原)`;
   if (customFilePath.value.trim()) return `文件: ${customFilePath.value.trim()} (点下方出厂音色可一键还原)`;
   if (isFrDoorItem.value) {
     const role = store.vehicleAuto.passenger_voice_role || 'female';
@@ -356,24 +308,6 @@ function testCurrentAudio() {
   if (targetItem.value) {
     bridge.call('testVehicleVoice', targetItem.value.key);
   }
-}
-
-function testTtsText() {
-  if (!customText.value.trim()) {
-    showToast('请先输入自定义台词', 'warn');
-    return;
-  }
-  showToast('正在试听自定义台词...');
-  bridge.call('testVehicleVoiceText', customText.value.trim());
-}
-
-function saveCustomText() {
-  if (!targetItem.value) return;
-  const key = targetItem.value.key;
-  localStorage.setItem(`geely_voice_text_${key}`, customText.value.trim());
-  bridge.call('setVehicleAutomationStringSetting', `custom_voice_text_${key}`, customText.value.trim());
-  bridge.call('setVehicleAutomationStringSetting', `custom_text_${targetItem.value.soundFile || key + '.mp3'}`, customText.value.trim());
-  showToast('自定义台词已保存生效');
 }
 
 function testAudioFile() {
@@ -394,7 +328,6 @@ function saveAudioFilePath() {
   // 双键兼容：带 .mp3 与不带后缀双写，保证底层所有查找逻辑均可直接命中
   bridge.call('setVehicleAutomationStringSetting', `custom_voice_${soundFile}`, path);
   bridge.call('setVehicleAutomationStringSetting', `custom_voice_${key}`, path);
-  // 车门模式互通兜底：极简模式下触发 door_open，分门模式触发 door_fl，双向联动绑定
   if (key === 'door_fl') {
     bridge.call('setVehicleAutomationStringSetting', 'custom_voice_door_open.mp3', path);
     bridge.call('setVehicleAutomationStringSetting', 'custom_voice_door_open', path);
@@ -408,7 +341,6 @@ function saveAudioFilePath() {
 function resetToDefault() {
   if (!targetItem.value) return;
   const key = targetItem.value.key;
-  customText.value = '';
   customFilePath.value = '';
   localStorage.removeItem(`geely_voice_text_${key}`);
   localStorage.removeItem(`geely_voice_file_${key}`);

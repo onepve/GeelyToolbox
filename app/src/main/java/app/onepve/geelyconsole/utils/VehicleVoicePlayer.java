@@ -1080,24 +1080,6 @@ public class VehicleVoicePlayer {
     }
 
     private void executeActualPlay(String voiceFileName, final String fallbackText) {
-        // 0. 用户自定义台词优先
-        try {
-            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
-            String rawName = voiceFileName.endsWith(".mp3") ? voiceFileName.substring(0, voiceFileName.length() - 4) : voiceFileName;
-            String customText = prefs.getString("custom_text_" + voiceFileName, "");
-            if (customText == null || customText.trim().isEmpty()) {
-                customText = prefs.getString("custom_voice_text_" + rawName, "");
-            }
-            if (customText == null || customText.trim().isEmpty()) {
-                customText = prefs.getString("custom_voice_text_" + voiceFileName, "");
-            }
-            if (customText != null && !customText.trim().isEmpty()) {
-                Log.i(TAG, "Playing custom TTS text: " + customText);
-                speakTextInternal(customText.trim(), voiceFileName);
-                return;
-            }
-        } catch (Exception ignored) {}
-
         // 1. 用户指定自定义音频文件路径 (深度智能解析与车门模式兜底继承)
         try {
             SharedPreferences prefs = PrefUtils.getAppPreferences(context);

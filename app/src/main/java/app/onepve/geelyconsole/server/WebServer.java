@@ -7,6 +7,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import app.onepve.geelyconsole.utils.SystemUtils;
+import app.onepve.geelyconsole.utils.PrefUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -504,7 +505,7 @@ public class WebServer {
     }
 
     private void handleApiGetTts(OutputStream out) throws IOException {
-        android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = PrefUtils.getAppPreferences(context);
         JSONObject root = new JSONObject();
         String[] keys = {
             "door_open", "door_close",
@@ -532,7 +533,7 @@ public class WebServer {
         String bodyStr = new String(body, StandardCharsets.UTF_8);
         try {
             JSONObject json = new JSONObject(bodyStr);
-            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            android.content.SharedPreferences prefs = PrefUtils.getAppPreferences(context);
             android.content.SharedPreferences.Editor editor = prefs.edit();
             java.util.Iterator<String> it = json.keys();
             while (it.hasNext()) {

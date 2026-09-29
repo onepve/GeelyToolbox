@@ -374,15 +374,6 @@ function showBluetoothCoexistHelp() {
   });
 }
 
-
-
-
-const ttsInfo = ref({
-  connected: true,
-  name: '系统默认语音合成引擎',
-  status: '已连接系统底层默认语音引擎 · 声线就绪'
-});
-
 // ================= 多媒体音源管理与优先级调度 =================
 const showReorderModal = ref(false);
 const isReordering = ref(false);

@@ -45,7 +45,7 @@
         help-size="lg"
         help-text="gear"
         flow-sub="踩刹车挂入 D / R / N 挡，或从行车切回 P 挡驻车"
-        flow-main="清晰播报挡位状态，支持自定义台词与音频混搭"
+        flow-main="清晰播报挡位状态，支持自定义音频混搭"
         @help="showGearHelp"
       >
         <template #footer>
@@ -284,7 +284,7 @@ function showModeHelp() {
 function showDoorHelp() {
   openModal('confirm', {
     title: '【功能指南】五门防抖与通用智能语音',
-    desc: '1. 通用智能模式：推荐模式。开门统一播报「车门已打开」，关门统一播报「车门已关好」，多门同时动作合并防抖，不抢音。\n\n2. 独立分门模式：可分别为主驾、副驾、后排播报专属台词。',
+    desc: '1. 通用智能模式：推荐模式。开门统一播报「车门已打开」，关门统一播报「车门已关好」，多门同时动作合并防抖，不抢音。\n\n2. 独立分门模式：可分别为主驾、副驾、后排播报专属语音。',
     tip: '在二级向导中可随时切换模式，并对各项开闭动作进行个性化声效定制。',
     showCancel: false,
     confirmText: '我知道了'
