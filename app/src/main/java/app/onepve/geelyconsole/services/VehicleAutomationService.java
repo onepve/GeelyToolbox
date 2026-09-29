@@ -387,11 +387,15 @@ public class VehicleAutomationService extends Service {
         String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
         boolean wheelEnabled = wheelMasterSwitch && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
 
+        boolean speedAutoplayEnabled = prefs.getBoolean("vehicle_speed_autoplay_enabled", true);
+        boolean speedCustomActionEnabled = prefs.getBoolean("vehicle_speed_custom_action_enabled", false);
+
         boolean anyVoiceEnabled = voiceMasterSwitch && (enableDoorFl || enableDoorFlClose || enableDoorFr || enableDoorFrClose ||
                              enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
                              enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN || enableGearS ||
                              enableModeSmart || enableModeComfort || enableModeEco || enableModeSport);
         boolean anyEnabled = anyVoiceEnabled || wheelEnabled || enableTurnSignal360
+                || speedAutoplayEnabled || speedCustomActionEnabled
                 || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
         if (!anyEnabled) {
@@ -511,7 +515,15 @@ public class VehicleAutomationService extends Service {
     private static final Pattern SERIAL_DOOR_PATTERN =
             Pattern.compile("91\\s+02\\s+01(?:\\s+[0-9a-fA-F]{1,2}){3}\\s+([0-9a-fA-F]{1,2})\\s+([0-9a-fA-F]{1,2})");
     private static final Pattern P_GET_SPEED =
-            Pattern.compile("Get Speed\\s+(\\d+)km/h");
+            Pattern.compile("Get Speed\\s+(\\d+)km/h", Pattern.CASE_INSENSITIVE);
+    private static final Pattern P_SPEED_COLON =
+            Pattern.compile("speed\\s*:\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern P_SPEED_IPK_HEX =
+            Pattern.compile("VehId=Vehicle_IPK_Speed\\s+value=(?:0x)?([0-9a-fA-F]+)");
+    private static final Pattern P_SPEED_SENSOR_HEX =
+            Pattern.compile("INFO_ID_IPKINFO_INSTANT_SPEED\\)\\s+return\\s+funValue\\((?:0x)?([0-9a-fA-F]+)\\)");
+    private static final Pattern P_SPEED_JSON =
+            Pattern.compile("\"Vehicle_speed\"\\s*:\\s*(\\d+)");
     private static final Pattern P_VEHICLE_GEAR =
             Pattern.compile("VehId=Vehicle_Gear\\s+value=(?:0x)?([0-9a-fA-F]+)");
     private static final Pattern P_GEAR_EQ =
@@ -594,34 +606,52 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 2. 解析车辆实时车速
-        if (line.contains("Get Speed ") || line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")) {
+        // 2. 解析车辆实时车速 (多源全覆盖：原厂TBox、原厂CarAudio、原厂360、原厂仪表盘、DataCenter)
+        if (line.contains("Get Speed ") || line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")
+                || line.contains("speed :") || line.contains("speed:") || line.contains("Vehicle_IPK_Speed")
+                || line.contains("INFO_ID_IPKINFO_INSTANT_SPEED") || line.contains("Vehicle_speed")) {
             try {
-                if (line.contains("Get Speed ")) {
+                int detectedSpeed = -1;
+                if (line.contains("Get Speed ") || line.contains("getVehicleSpeed")) {
                     Matcher m = P_GET_SPEED.matcher(line);
-                    if (m.find()) {
-                        currentSpeedKmH = Integer.parseInt(m.group(1));
-                        processVehicleSpeedAutomation(currentSpeedKmH);
-                        return;
+                    if (m.find()) detectedSpeed = Integer.parseInt(m.group(1));
+                }
+                if (detectedSpeed < 0 && (line.contains("speed :") || line.contains("speed:"))) {
+                    Matcher m = P_SPEED_COLON.matcher(line);
+                    if (m.find()) detectedSpeed = Integer.parseInt(m.group(1));
+                }
+                if (detectedSpeed < 0 && line.contains("Vehicle_IPK_Speed")) {
+                    Matcher m = P_SPEED_IPK_HEX.matcher(line);
+                    if (m.find()) detectedSpeed = Integer.parseInt(m.group(1), 16);
+                }
+                if (detectedSpeed < 0 && line.contains("INFO_ID_IPKINFO_INSTANT_SPEED")) {
+                    Matcher m = P_SPEED_SENSOR_HEX.matcher(line);
+                    if (m.find()) detectedSpeed = Integer.parseInt(m.group(1), 16);
+                }
+                if (detectedSpeed < 0 && line.contains("Vehicle_speed")) {
+                    Matcher m = P_SPEED_JSON.matcher(line);
+                    if (m.find()) detectedSpeed = Integer.parseInt(m.group(1));
+                }
+                if (detectedSpeed < 0) {
+                    int idx = line.indexOf("speed ==");
+                    if (idx == -1) idx = line.indexOf("speed=");
+                    if (idx != -1) {
+                        String sub = line.substring(idx + (line.contains("speed ==") ? 8 : 6)).trim();
+                        StringBuilder num = new StringBuilder();
+                        for (int i = 0; i < sub.length(); i++) {
+                            char c = sub.charAt(i);
+                            if (Character.isDigit(c)) num.append(c);
+                            else if (num.length() > 0) break;
+                        }
+                        if (num.length() > 0) detectedSpeed = Integer.parseInt(num.toString());
                     }
                 }
-                int idx = line.indexOf("speed ==");
-                if (idx == -1) idx = line.indexOf("speed=");
-                if (idx != -1) {
-                    String sub = line.substring(idx + (line.contains("speed ==") ? 8 : 6)).trim();
-                    StringBuilder num = new StringBuilder();
-                    for (int i = 0; i < sub.length(); i++) {
-                        char c = sub.charAt(i);
-                        if (Character.isDigit(c)) num.append(c);
-                        else if (num.length() > 0) break;
-                    }
-                    if (num.length() > 0) {
-                        currentSpeedKmH = Integer.parseInt(num.toString());
-                        processVehicleSpeedAutomation(currentSpeedKmH);
-                    }
+                if (detectedSpeed >= 0) {
+                    currentSpeedKmH = detectedSpeed;
+                    processVehicleSpeedAutomation(currentSpeedKmH);
+                    return;
                 }
             } catch (Exception ignored) {}
-            return;
         }
 
         // 3. 解析车辆挡位报文 (四大独立权威源融合)
