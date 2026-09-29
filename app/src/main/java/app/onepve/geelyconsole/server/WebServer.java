@@ -458,6 +458,13 @@ public class WebServer {
         boolean isNameResolved = "true".equalsIgnoreCase(nameResolvedStr);
 
         File downloadDir = SystemUtils.getAppDownloadDir();
+        String targetSubDir = headers.get("x-target-dir");
+        if (targetSubDir == null || targetSubDir.isEmpty()) {
+            targetSubDir = queryParams.get("targetDir");
+        }
+        if ("custom_voice".equalsIgnoreCase(targetSubDir)) {
+            downloadDir = new File(downloadDir, "车载语音自定义");
+        }
         if (!downloadDir.exists()) downloadDir.mkdirs();
 
         // 仅在分片 offset == 0 且未经过重命名处理时检测同名冲突并自动重命名
