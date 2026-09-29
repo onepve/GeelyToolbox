@@ -8,7 +8,7 @@
     @close="closeModal('voiceItemSettings')"
   >
     <div v-if="targetItem" class="flex flex-col space-y-4">
-      <!-- 当前生效音源状态大卡片 (单行自适应排版，副驾3套音色直切平铺在右侧，点击自动试听) -->
+      <!-- 当前生效音源状态大卡片 (单行自适应展示) -->
       <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
         <div class="flex items-center min-w-0 mr-4">
           <span class="w-3 h-3 rounded-full bg-car-accent mr-3 shrink-0 shadow-[0_0_8px_var(--accent-gold)]"></span>
@@ -18,7 +18,7 @@
           </div>
         </div>
 
-        <!-- 针对副驾车门项：直接在右侧平铺 3 个切换按钮！点击自动试听！ -->
+        <!-- 针对副驾车门项：在右侧平铺 3 个音色切换按钮，点击即切即试听 -->
         <div v-if="isFrDoorItem" class="flex space-x-2 shrink-0">
           <button
             v-for="opt in [
@@ -38,15 +38,6 @@
             <span class="text-[14.5px] whitespace-nowrap">{{ opt.name }}</span>
           </button>
         </div>
-
-        <!-- 非副驾项：保留试听生效语音按钮 -->
-        <button 
-          v-else
-          @click="testCurrentAudio"
-          class="min-h-[50px] px-6 bg-car-card border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md shrink-0"
-        >
-          试听生效语音
-        </button>
       </div>
 
       <!-- 本声效输出通道 (独立声道 · 车规满电平免改系统音量) -->
@@ -299,7 +290,7 @@ const activeVoiceDesc = computed(() => {
     const role = store.vehicleAuto.passenger_voice_role || 'female';
     if (role === 'queen') return '端庄绅士男声 (云扬) · 专属高雅礼遇';
     if (role === 'female') return '吉利原车官方系统内置晓晓知性女声';
-    return '温润自然男声 (云哲) · 专属宠溺台词';
+    return '温润自然男声 (云哲) · 专属宠溺音色';
   }
   return '吉利智驾内置官方精调晓晓知性女声';
 });

@@ -904,20 +904,14 @@ public class SystemUtils {
         if (!dir.exists()) {
             dir.mkdirs();
         }
-        File voiceDir = new File(dir, "语音主题包");
-        if (!voiceDir.exists()) {
-            voiceDir.mkdirs();
-        }
         return dir;
     }
 
     public static void ensureAppDirectories(Context context) {
         try {
             File dir = getAppDownloadDir();
-            File voiceDir = new File(dir, "语音主题包");
             if (!dir.exists()) dir.mkdirs();
-            if (!voiceDir.exists()) voiceDir.mkdirs();
-            executePrivileged(context, "mkdir -p /sdcard/Download/语音主题包 && chmod -R 777 /sdcard/Download");
+            executePrivileged(context, "chmod -R 777 /sdcard/Download");
 
             // 自动平滑迁移历史旧目录 00_车机应用/ 下的文件到 Download/，老版本无缝过渡
             try {
@@ -927,10 +921,13 @@ public class SystemUtils {
                     if (oldFiles != null) {
                         for (File of : oldFiles) {
                             if (of.isDirectory() && "语音主题包".equals(of.getName())) {
+                                // 历史遗留语音主题包迁移至 GeelyPilot/voices/ 物理隔离目录
+                                File targetVoiceRoot = new File(Environment.getExternalStorageDirectory(), "GeelyPilot/voices");
+                                if (!targetVoiceRoot.exists()) targetVoiceRoot.mkdirs();
                                 File[] vfs = of.listFiles();
                                 if (vfs != null) {
                                     for (File vf : vfs) {
-                                        vf.renameTo(new File(voiceDir, vf.getName()));
+                                        vf.renameTo(new File(targetVoiceRoot, vf.getName()));
                                     }
                                 }
                                 of.delete();
@@ -947,8 +944,7 @@ public class SystemUtils {
 
             if (context != null) {
                 android.media.MediaScannerConnection.scanFile(context, new String[]{
-                        dir.getAbsolutePath(),
-                        voiceDir.getAbsolutePath()
+                        dir.getAbsolutePath()
                 }, null, null);
             }
         } catch (Exception ignored) {}

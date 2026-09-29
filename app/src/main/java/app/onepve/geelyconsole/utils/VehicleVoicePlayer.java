@@ -1481,6 +1481,64 @@ public class VehicleVoicePlayer {
         }
     }
 
+    public static String sanitizeThemeName(String themeName) {
+        if (themeName == null) {
+            return "custom_voice_" + (System.currentTimeMillis() % 100000);
+        }
+        // 支持中文、英文、数字、中划线、下划线，剥除路径穿越符 ../ 与特殊敏感符号
+        String clean = themeName.replaceAll("[\\\\/:*?\"<>|\\$`&'#!@%^~;.]+", "_").trim();
+        clean = clean.replaceAll("[\\p{Cntrl}]", "").trim();
+        if (clean.isEmpty()) {
+            clean = "custom_voice_" + (System.currentTimeMillis() % 100000);
+        }
+        if (clean.length() > 32) {
+            clean = clean.substring(0, 32).trim();
+        }
+        return clean;
+    }
+
+    public static String resolveStandardAudioName(String fileName) {
+        if (fileName == null) return "";
+        String lower = fileName.toLowerCase().trim();
+        int dot = lower.lastIndexOf('.');
+        String baseName = (dot > 0) ? lower.substring(0, dot) : lower;
+        String ext = (dot > 0) ? lower.substring(dot) : "";
+        if (!ext.equals(".mp3") && !ext.equals(".wav")) {
+            return fileName;
+        }
+
+        // 已经符合标准命名的英文直接放行
+        if (baseName.startsWith("gear_") || baseName.startsWith("mode_")
+                || baseName.startsWith("door_") || baseName.startsWith("trunk_")
+                || baseName.equals("start") || baseName.equals("stop")) {
+            return fileName;
+        }
+
+        // 常见中文别名智能自愈映射
+        if (baseName.contains("前进") || baseName.equals("d挡") || baseName.equals("d")) return "gear_d" + ext;
+        if (baseName.contains("倒车") || baseName.contains("倒挡") || baseName.equals("r挡") || baseName.equals("r")) return "gear_r" + ext;
+        if (baseName.contains("驻车") || baseName.equals("p挡") || baseName.equals("p")) return "gear_p" + ext;
+        if (baseName.contains("空挡") || baseName.equals("n挡") || baseName.equals("n")) return "gear_n" + ext;
+        if (baseName.contains("经济")) return "mode_eco" + ext;
+        if (baseName.contains("运动")) return "mode_sport" + ext;
+        if (baseName.contains("舒适")) return "mode_comfort" + ext;
+        if (baseName.contains("智能")) return "mode_smart" + ext;
+        if ((baseName.contains("尾门") || baseName.contains("后备箱")) && baseName.contains("关")) return "trunk_close" + ext;
+        if (baseName.contains("尾门") || baseName.contains("后备箱")) return "trunk_open" + ext;
+        if (baseName.contains("主驾") && baseName.contains("关")) return "door_fl_close" + ext;
+        if (baseName.contains("主驾")) return "door_fl" + ext;
+        if (baseName.contains("副驾") && baseName.contains("关")) return "door_fr_close" + ext;
+        if (baseName.contains("副驾")) return "door_fr" + ext;
+        if (baseName.contains("左后") && baseName.contains("关")) return "door_rl_close" + ext;
+        if (baseName.contains("左后")) return "door_rl" + ext;
+        if (baseName.contains("右后") && baseName.contains("关")) return "door_rr_close" + ext;
+        if (baseName.contains("右后")) return "door_rr" + ext;
+        if (baseName.contains("开门")) return "door_open" + ext;
+        if (baseName.contains("关门")) return "door_close" + ext;
+
+        return fileName;
+    }
+
     public static int extractVoiceZip(File zipFile, String themeName) {
         if (zipFile == null || !zipFile.exists()) return -1;
         if (themeName == null || themeName.trim().isEmpty()) {
@@ -1488,7 +1546,8 @@ public class VehicleVoicePlayer {
             int dot = fName.lastIndexOf('.');
             themeName = (dot > 0) ? fName.substring(0, dot) : fName;
         }
-        File targetDir = new File(getVoicesRootDir(), themeName.trim());
+        themeName = sanitizeThemeName(themeName);
+        File targetDir = new File(getVoicesRootDir(), themeName);
         if (!targetDir.exists()) {
             targetDir.mkdirs();
         }
@@ -1505,10 +1564,28 @@ public class VehicleVoicePlayer {
                     continue;
                 }
                 String fullPath = entry.getName();
-                String fileName = new File(fullPath).getName();
-                String lower = fileName.toLowerCase();
+                // 过滤 Mac 影子文件与不可见隐藏文件
+                if (fullPath.contains("__MACOSX") || fullPath.contains("/.") || fullPath.startsWith(".")) {
+                    zis.closeEntry();
+                    continue;
+                }
+                String rawFileName = new File(fullPath).getName();
+                if (rawFileName.startsWith(".")) {
+                    zis.closeEntry();
+                    continue;
+                }
+                // 中文别名自愈与标准命名纠错
+                String standardFileName = resolveStandardAudioName(rawFileName);
+                String lower = standardFileName.toLowerCase();
+
+                // 强安全后缀白名单放行（拒绝 .sh, .apk, .exe, .dex 等可执行脚本）
                 if (lower.endsWith(".mp3") || lower.endsWith(".wav") || lower.endsWith(".txt") || lower.endsWith(".json") || lower.endsWith(".png") || lower.endsWith(".jpg")) {
-                    File outFile = new File(targetDir, fileName);
+                    File outFile = new File(targetDir, standardFileName);
+                    // 严格验证目标路径在 targetDir 内部，彻底防御 ZipSlip 逃逸
+                    if (!outFile.getCanonicalPath().startsWith(targetDir.getCanonicalPath())) {
+                        zis.closeEntry();
+                        continue;
+                    }
                     FileOutputStream fos = new FileOutputStream(outFile);
                     int len;
                     while ((len = zis.read(buffer)) > 0) {

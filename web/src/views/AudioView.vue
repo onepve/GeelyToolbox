@@ -136,137 +136,6 @@
       </div>
     </FeatureCard>
 
-    <!-- 3. 车载专属语音主题包与自定义音效 (彻底消除横向多按钮挤压与折行堆叠) -->
-    <FeatureCard 
-      title="车载语音主题包"
-      helpId="voice_theme_mgr"
-      helpTitle="【功能指南】车载专属语音主题包"
-      helpText="1. 整套换装：&#10;支持导入车规级 ZIP 语音包，一键整套替换全车播报音色与音效。注意：包内每个音频开头必须自带 ≥280ms 静音（否则车机功放建立通道会吞掉第一个字），详见模板包 README。&#10;&#10;2. 物理隔离：&#10;所有语音主题独立保存在 /sdcard/GeelyPilot/voices/ 专属目录，与下载目录完全隔离，清空 Download 目录绝不影响已导入主题。&#10;&#10;3. 出厂兜底：&#10;未导入任何主题时自动使用出厂官方晓晓原声；导入的主题若有音频缺失项，自动补齐兜底，确保零丢失。&#10;&#10;4. 强制重装原声：&#10;App 升级后如果听到的还是旧声音，点一下「强制重装原声」，就会把车上旧的原声文件全部删掉，用车机里最新版的原声重新覆盖一遍，并自动切回出厂官方原声。"
-      helpTip="导入前请确认 ZIP 为车规语音包结构，删除主题会自动恢复出厂原声；升级后声音没换成新的，点「强制重装原声」即可。"
-    >
-      <div class="flex flex-col space-y-4">
-        <!-- 状态与快捷操作顶栏 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
-          <div class="flex items-center space-x-3.5 min-w-0 pr-4">
-            <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)] shrink-0"></span>
-            <div class="flex flex-col min-w-0">
-              <div class="flex items-center space-x-2">
-                <span class="text-[17px] font-black text-car-text shrink-0">当前整套音效：</span>
-                <span class="text-[17px] font-black text-car-accent">{{ activeThemeName ? activeThemeName : '出厂官方原声 (晓晓温婉知性)' }}</span>
-                <span class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-car-text text-[11.5px] font-black inline-flex items-center shadow-sm shrink-0">
-                  <StatusDot class="mr-1.5" size="xs" color="ok" />
-                  {{ activeThemeName ? '自定义主题' : '系统默认' }}
-                </span>
-              </div>
-              <span class="text-[12.5px] text-car-sub font-bold mt-0.5">
-                {{ activeThemeName ? `专属目录: /sdcard/GeelyPilot/voices/${activeThemeName}/` : '吉利智驾出厂原声 · 未包含项自动补齐兜底' }}
-              </span>
-            </div>
-          </div>
-
-          <div class="flex items-center space-x-2.5 shrink-0">
-            <button 
-              @click="openModal('voiceThemeImport')"
-              class="min-h-[50px] px-4 bg-car-card border-2 border-car-accent text-car-text font-black text-[15px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center space-x-1.5 whitespace-nowrap"
-            >
-              <span>导入语音包 (.zip)</span>
-            </button>
-            <button 
-              @click="loadVoiceThemes"
-              class="min-h-[50px] px-3.5 bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm transition-all whitespace-nowrap"
-            >
-              刷新列表
-            </button>
-          </div>
-        </div>
-
-        <!-- 主题包列表卡片流 -->
-        <div class="flex flex-col space-y-3">
-          <!-- 默认出厂主题卡片 (定宽规整按钮组，避免横向撑爆) -->
-          <div class="bg-car-item border-2 border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
-            <div class="flex-1 min-w-0 pr-4 flex flex-col space-y-1">
-              <div class="flex items-center space-x-2">
-                <span class="text-[18px] font-black text-car-text">出厂官方原声 (晓晓温婉知性)</span>
-                <span class="px-2 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[11.5px] font-black shrink-0">系统内置</span>
-                <span v-if="!activeThemeName" class="px-2.5 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/50 text-emerald-400 text-[12px] font-black inline-flex items-center shadow-sm shrink-0">
-                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-emerald-400"></span>正在生效
-                </span>
-              </div>
-              <span class="text-[13px] text-car-sub font-bold">
-                吉利原车温婉知性原声，端庄舒缓温润。零音频丢失，全场景兜底保障。
-              </span>
-            </div>
-
-            <div class="flex items-center space-x-2.5 shrink-0">
-              <button 
-                @click="testThemeVoice('')"
-                class="min-h-[50px] w-[100px] bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
-              >
-                试听样音
-              </button>
-              <button
-                v-if="activeThemeName"
-                @click="applyVoiceTheme('')"
-                class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-accent text-car-accent font-black text-[14.5px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md transition-all flex items-center justify-center whitespace-nowrap"
-              >
-                恢复原声
-              </button>
-              <button
-                v-else
-                @click="confirmForceRestoreFactory"
-                class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-border text-car-accent font-black text-[14.5px] rounded-xl hover:border-car-accent cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
-              >
-                重装原声
-              </button>
-            </div>
-          </div>
-
-          <!-- 用户导入的各语音主题包 -->
-          <div 
-            v-for="theme in voiceThemes" 
-            :key="theme.id"
-            class="bg-car-item border-2 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all"
-            :class="activeThemeName === theme.name ? 'border-car-accent ring-2 ring-car-accent/20' : 'border-car-border'"
-          >
-            <div class="flex-1 min-w-0 pr-4 flex flex-col space-y-1">
-              <div class="flex items-center space-x-2">
-                <span class="text-[18px] font-black text-car-text">{{ theme.name }}</span>
-                <span v-if="activeThemeName === theme.name" class="px-2.5 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/50 text-emerald-400 text-[12px] font-black inline-flex items-center shadow-sm shrink-0">
-                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-emerald-400"></span>正在生效
-                </span>
-                <span v-else class="px-2 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[11.5px] font-black shrink-0">已导入</span>
-              </div>
-              <span class="text-[13px] text-car-sub font-mono truncate">
-                /sdcard/GeelyPilot/voices/{{ theme.name }}/
-              </span>
-            </div>
-
-            <div class="flex items-center space-x-2.5 shrink-0">
-              <button 
-                @click="testThemeVoice(theme.name)"
-                class="min-h-[50px] w-[100px] bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
-              >
-                试听样音
-              </button>
-              <button 
-                v-if="activeThemeName !== theme.name"
-                @click="applyVoiceTheme(theme.name)"
-                class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-accent text-car-text font-black text-[14.5px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md transition-all flex items-center justify-center whitespace-nowrap"
-              >
-                整套启用
-              </button>
-              <button 
-                @click="confirmDeleteTheme(theme.name)"
-                class="min-h-[50px] w-[80px] bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text hover:text-rose-400 font-black text-[14.5px] rounded-xl cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
-              >
-                删除
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </FeatureCard>
-
     <!-- 调整排序模态框 (管理全部已安装播放器与完整优先级回退链) -->
     <div 
       v-if="showReorderModal" 
@@ -702,67 +571,6 @@ function testBluetoothAudio() {
   bridge.call('testBluetoothAudio');
 }
 
-const voiceThemes = ref([]);
-const activeThemeName = ref('');
-
-function loadVoiceThemes() {
-  try {
-    const raw = bridge.call('getVoiceThemesJson');
-    if (raw) {
-      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      activeThemeName.value = data.activeTheme || '';
-      voiceThemes.value = data.themes || [];
-    }
-  } catch (e) {
-    voiceThemes.value = [];
-  }
-}
-
-function applyVoiceTheme(themeName) {
-  bridge.call('setActiveVoiceTheme', themeName);
-  activeThemeName.value = themeName;
-  loadVoiceThemes();
-}
-
-// 强制重装官方原声：App 升级后若仍听到旧原声，一键清掉车上旧文件、用新版原声全量覆盖
-function confirmForceRestoreFactory() {
-  openModal('confirm', {
-    title: '强制重装官方原声',
-    desc: '会把车上旧的原声文件全部删掉，用车机里最新版的原声重新覆盖一遍，并自动切回出厂官方原声。',
-    tip: '正在使用的自定义语音包会被取消生效，但文件不会被删除，随时可以再整套启用。',
-    confirmText: '立即重装原声',
-    onConfirm: () => {
-      const count = bridge.call('forceRestoreFactoryVoice');
-      if (typeof count === 'number' && count >= 0) {
-        showToast(`已强制重装原声，更新 ${count} 个音频文件`);
-      } else {
-        showToast('原声重装失败，请稍后重试', 'error');
-      }
-      loadVoiceThemes();
-    }
-  });
-}
-
-function testThemeVoice(themeName) {
-  if (!themeName) {
-    bridge.call('testVehicleVoice', 'gear_d');
-  } else {
-    bridge.call('playCustomAudioPath', `/sdcard/GeelyPilot/voices/${themeName}/gear_d.mp3`);
-  }
-}
-
-function confirmDeleteTheme(themeName) {
-  openModal('confirm', {
-    title: `删除语音包【${themeName}】`,
-    message: `确定要彻底删除该语音包吗？\n删除后将释放其占用的存储空间，若正在生效将自动恢复为出厂晓晓原声。`,
-    isDanger: true,
-    onConfirm: () => {
-      bridge.call('deleteVoiceTheme', themeName);
-      loadVoiceThemes();
-    }
-  });
-}
-
 // 切页首帧优先：桥调用一律延后到首帧绘制之后执行。
 // getTtsEngineInfo（内部 checkAndReloadTtsIfNeeded 要读系统首选 TTS 引擎）与
 // getConnectivityStatus（内部 5+ 次蓝牙/WiFi binder IPC，含昂贵的 getBondedDevices）
@@ -781,11 +589,8 @@ function afterFirstPaint(fn) {
 let connectivityTimer = null;
 
 onMounted(() => {
-  window.refreshVoiceThemes = loadVoiceThemes;
-
   // 2. 异步分片调度：延后 30ms 执行，彻底不阻断组件首帧挂载与绘制
   setTimeout(() => {
-    loadVoiceThemes();
     if (!_globalMediaAppsCache || _globalMediaAppsCache.length <= 1) {
       loadMediaApps();
     }
