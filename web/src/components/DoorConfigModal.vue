@@ -74,7 +74,7 @@
             <div class="flex flex-col space-y-1">
               <div class="flex items-center space-x-2">
                 <span class="text-[21.5px] font-black text-car-text">通用关门提醒</span>
-                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 text-[14px] font-bold">安全闭合</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent text-[14px] font-bold">安全闭合</span>
               </div>
               <span class="text-[13px] text-car-sub font-bold">车门闭合完毕干脆提示“车门已关好”，多门同时动作合并防抖</span>
             </div>
