@@ -205,9 +205,15 @@
             <div class="flex items-center space-x-2.5 shrink-0">
               <button 
                 @click="testThemeVoice('')"
-                class="min-h-[50px] w-[100px] bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
+                class="min-h-[50px] w-[95px] bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
               >
                 试听样音
+              </button>
+              <button
+                @click="confirmClearAllCustomVoices"
+                class="min-h-[50px] w-[95px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[14px] rounded-xl cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
+              >
+                清空自选
               </button>
               <button
                 v-if="activeThemeName"
@@ -502,6 +508,29 @@ function confirmForceRestoreFactory() {
       } else {
         showToast('原声重装失败，请稍后重试', 'error');
       }
+      loadVoiceThemes();
+    }
+  });
+}
+
+function confirmClearAllCustomVoices() {
+  openModal('confirm', {
+    title: '一键清空所有自定义音频',
+    desc: '确定要彻底清空所有个性化单体音频并释放闪存空间吗？',
+    tip: '清空后全车所有按键、车门与联动将完整还原为吉利出厂官方晓晓原声，并物理删除 custom 目录下的所有音频文件。',
+    confirmText: '确认清空释放',
+    isDanger: true,
+    onConfirm: () => {
+      bridge.call('clearAllCustomVoices');
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const k = localStorage.key(i);
+          if (k && (k.startsWith('geely_voice_file_') || k.startsWith('geely_voice_name_') || k.startsWith('geely_voice_text_'))) {
+            localStorage.removeItem(k);
+          }
+        }
+      } catch (e) {}
+      showToast('已清空所有自定义单体音频，整车恢复出厂原声');
       loadVoiceThemes();
     }
   });

@@ -3411,17 +3411,78 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     try {
-                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().remove("custom_voice_" + voiceKey).apply();
+                        String cleanKey = voiceKey != null ? voiceKey.trim().replaceAll("[^a-zA-Z0-9_]", "") : "";
+                        SharedPreferences prefs = PrefUtils.getAppPreferences(MainActivity.this);
+                        prefs.edit()
+                                .remove("custom_voice_" + cleanKey)
+                                .remove("custom_voice_" + cleanKey + ".mp3")
+                                .remove("custom_voice_name_" + cleanKey)
+                                .apply();
+                        if ("door_fl".equals(cleanKey) || "door_open".equals(cleanKey)) {
+                            prefs.edit()
+                                    .remove("custom_voice_door_fl")
+                                    .remove("custom_voice_door_fl.mp3")
+                                    .remove("custom_voice_door_open")
+                                    .remove("custom_voice_door_open.mp3")
+                                    .remove("custom_voice_name_door_fl")
+                                    .remove("custom_voice_name_door_open")
+                                    .apply();
+                        }
+                        // 物理删除 /sdcard/GeelyPilot/voices/custom/ 下的实体文件，杜绝孤儿垃圾
+                        File customDir = new File("/sdcard/GeelyPilot/voices/custom");
+                        File customFile = new File(customDir, cleanKey + ".mp3");
+                        if (customFile.exists()) {
+                            customFile.delete();
+                        }
+                        if ("door_fl".equals(cleanKey) || "door_open".equals(cleanKey)) {
+                            File fl = new File(customDir, "door_fl.mp3");
+                            File open = new File(customDir, "door_open.mp3");
+                            if (fl.exists()) fl.delete();
+                            if (open.exists()) open.delete();
+                        }
+                        // 兼容清理旧历史目录
                         File voiceDir = new File(getFilesDir(), "custom_voices");
-                        File dest = new File(voiceDir, voiceKey);
+                        File dest = new File(voiceDir, cleanKey);
                         if (dest.exists()) dest.delete();
-                        Toast.makeText(MainActivity.this, "已恢复为内置默认语音", Toast.LENGTH_SHORT).show();
+
+                        Toast.makeText(MainActivity.this, "已恢复出厂原声并释放存储", Toast.LENGTH_SHORT).show();
                         if (webView != null) {
                             webView.loadUrl("javascript:refreshVehicleAutoUI()");
                         }
                     } catch (Exception ignored) {}
                 }
+            });
+        }
+
+        @JavascriptInterface
+        public boolean clearAllCustomVoices() {
+            return safeCall(false, () -> {
+                File customDir = new File("/sdcard/GeelyPilot/voices/custom");
+                if (customDir.exists() && customDir.isDirectory()) {
+                    File[] files = customDir.listFiles();
+                    if (files != null) {
+                        for (File f : files) {
+                            if (f.isFile()) {
+                                f.delete();
+                            }
+                        }
+                    }
+                }
+                SharedPreferences prefs = PrefUtils.getAppPreferences(MainActivity.this);
+                SharedPreferences.Editor editor = prefs.edit();
+                for (String k : prefs.getAll().keySet()) {
+                    if (k.startsWith("custom_voice_")) {
+                        editor.remove(k);
+                    }
+                }
+                editor.apply();
+                mainHandler.post(() -> {
+                    Toast.makeText(MainActivity.this, "已清空所有自定义音频并恢复官方原声", Toast.LENGTH_SHORT).show();
+                    if (webView != null) {
+                        webView.loadUrl("javascript:refreshVehicleAutoUI()");
+                    }
+                });
+                return true;
             });
         }
 
