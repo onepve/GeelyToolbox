@@ -25,7 +25,7 @@
         >
           <div class="flex flex-col space-y-0.5">
             <span class="text-[17.5px] font-black text-car-text">悬浮胶囊常驻开关</span>
-            <span class="text-[13.5px] text-car-sub font-bold">在桌面及全屏应用上层常驻，支持自由拖拽吸附</span>
+            <span class="text-[13.5px] text-car-sub font-bold">常驻屏幕顶层，支持自由拖拽并贴边智能吸附</span>
           </div>
           <div class="flex items-center space-x-2.5 shrink-0 pl-3">
             <StatusDot size="md" :color="store.deviceInfo.floating_enabled ? 'ok' : 'offDim'" :glow-px="8" />
@@ -113,7 +113,7 @@
         >
           <div class="flex flex-col space-y-0.5">
             <span class="text-[17.5px] font-black text-car-text">自动屏保息屏总闸</span>
-            <span class="text-[13.5px] text-car-sub font-bold">桌面闲置达标自动息屏唤醒原生屏保，关闭零CPU消耗</span>
+            <span class="text-[13.5px] text-car-sub font-bold">桌面闲置自动唤醒原厂屏保，关闭时零 CPU 占用</span>
           </div>
           <div class="flex items-center space-x-2.5 shrink-0 pl-3">
             <StatusDot size="md" :color="ssEnabled ? 'ok' : 'offDim'" :glow-px="8" />

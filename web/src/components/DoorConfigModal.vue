@@ -42,7 +42,7 @@
                 <span class="text-[21.5px] font-black text-car-text">通用开门提醒</span>
                 <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent text-[14px] font-bold">场景自适应</span>
               </div>
-              <span class="text-[13px] text-car-sub font-bold">登车开门提醒启程，停车下车提醒带好随身物品，行车意外开门紧急报警</span>
+              <span class="text-[13px] text-car-sub font-bold">下车提醒防落物品，行车意外开门紧急报警</span>
             </div>
             <div class="flex items-center space-x-2 shrink-0">
               <button 
@@ -76,7 +76,7 @@
                 <span class="text-[21.5px] font-black text-car-text">通用关门提醒</span>
                 <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent text-[14px] font-bold">安全闭合</span>
               </div>
-              <span class="text-[13px] text-car-sub font-bold">车门闭合完毕干脆提示“车门已关好”，多门同时动作合并防抖</span>
+              <span class="text-[13px] text-car-sub font-bold">车门闭合干脆播报，多门同时关闭智能合并防抖</span>
             </div>
             <div class="flex items-center space-x-2 shrink-0">
               <button 

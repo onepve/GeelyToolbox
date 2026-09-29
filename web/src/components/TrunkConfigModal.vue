@@ -16,7 +16,7 @@
                 <span class="text-[21.5px] font-black text-car-text">尾门升起提醒</span>
                 <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent text-[14px] font-bold">防碰防刮</span>
               </div>
-              <span class="text-[13px] text-car-sub font-bold">后备箱抬起升起时短促提醒，防止碰擦低矮车库顶梁</span>
+              <span class="text-[13px] text-car-sub font-bold">尾门升起短促提醒，防止碰擦低矮车库顶梁</span>
             </div>
             <div class="flex items-center space-x-2 shrink-0">
               <button 
@@ -50,7 +50,7 @@
                 <span class="text-[21.5px] font-black text-car-text">尾门完全锁止</span>
                 <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent text-[14px] font-bold">锁闭就绪</span>
               </div>
-              <span class="text-[13px] text-car-sub font-bold">后备箱电吸闭合完全锁止时短促播报“后备箱已关好”，关后备箱无需回头确认</span>
+              <span class="text-[13px] text-car-sub font-bold">电吸闭合锁止时播报，无需回头确认关门</span>
             </div>
             <div class="flex items-center space-x-2 shrink-0">
               <button 

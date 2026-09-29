@@ -71,8 +71,8 @@
     <div class="grid grid-cols-2 gap-4">
       <FeatureCard class="!mb-0" 
         title="车载原生文件管理"
-        desc="严禁直接通过 ADB 命令行 pm install 强行静默安装，底层安全策略会导致应用无法运行或白屏！"
-        helpTitle="【功能指南】车载原生文件管理与特权安装规范"
+        desc="请勿使用电脑命令行后台强行安装，易导致应用闪退或白屏，通过原生文件管理点选安装最稳定。"
+        helpTitle="【功能指南】车载原生文件管理与安全安装规范"
         helpText="1. 正规安装通道：&#10;把软件安装包放进车机 Download 文件夹后，点这里的按钮打开车机自带的原生文件管理，在里面点安装，系统就会正常放行。&#10;&#10;2. 为什么不用命令行强装：&#10;用电脑命令行强行静默安装容易导致软件闪退或白屏，通过原生文件管理点击安装才是最稳定正确的姿势。" helpTip="传到车机的安装包，统一在原生文件管理里点击安装。"
       >
         <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex items-center justify-between space-x-4">
@@ -80,9 +80,9 @@
             <div class="text-[15px] text-car-sub font-bold leading-normal">
               推送 APK 至 <code class="px-1.5 py-0.5 rounded bg-car-card text-car-accent font-mono text-[14px]">/sdcard/Download/</code> 目录，点击进入原生管理器即可直接特权无损直装。
             </div>
-            <div class="flex items-center text-[13px] text-emerald-400 font-extrabold">
+            <div class="flex items-center text-[13px] text-car-accent font-black">
               <StatusDot class="mr-1.5" size="sm" color="ok" :glow-px="6" />
-              <span>已接入原生 PackageInstaller 特权白名单</span>
+              <span>已就绪 · 支持原厂安全安装放行</span>
             </div>
           </div>
 
@@ -205,11 +205,11 @@
     <!-- 底部运维与安装说明 -->
     <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
       <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
-        车载应用安装与白名单管理规范说明：
+        车载应用安装与白名单说明：
       </div>
-      <div>• <b>白名单与应用商店</b>：原厂应用商店运行会重置校验属性导致第三方软件安装失败，必须保持冻结锁定；</div>
-      <div>• <b>原生文件管理正解</b>：严禁通过 ADB 命令行 pm install 强装，统一将 APK 放入 Download 目录后由原生文件管理直装；</div>
-      <div>• <b>应用全生命周期闭环</b>：在此页面即可完成「环境准备 ➔ 文件传输 ➔ 特权安装 ➔ 卸载与冻结」全套操作。</div>
+      <div>• <b>应用商店与白名单</b>：原厂应用商店运行会破坏安装白名单导致外部应用失效，须保持冻结；</div>
+      <div>• <b>原生文件管理安装</b>：请勿使用命令行后台强装，将 APK 存入 Download 目录后由原生文件管理安装最稳定；</div>
+      <div>• <b>闭环管理</b>：在此页面即可完成文件传输、安全安装、卸载与冻结全套操作。</div>
     </div>
   </div>
 </template>

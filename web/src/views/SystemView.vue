@@ -284,12 +284,12 @@
     <!-- 底部运维与安装说明 -->
     <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
       <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
-        车机底层维护铁律与核心原理说明：
+        车机维护与运行须知：
       </div>
-      <div>• <b>冷重启原理</b>：彻底断电重启 MCU 与 Framework，彻底杜绝开门播报延迟与系统卡顿；</div>
-      <div>• <b>应用商店与白名单</b>：原厂应用商店运行会破坏白名单策略导致第三方软件无法安装，必须保持冻结锁定；</div>
-      <div>• <b>三权分立架构</b>：桌面胶囊自启、车身语音总开关、方控接管总开关各自独立生效，互不影响与捆绑；</div>
-      <div>• <b>ADB 安全边界</b>：深度终端已做系统核心保护，严禁自行卸载系统 Framework 核心组件。</div>
+      <div>• <b>整车冷重启</b>：长按方向盘静音键 10 秒彻底重启车机硬件与系统，消除卡顿与播报延迟；</div>
+      <div>• <b>第三方软件安装</b>：原厂应用商店会破坏安装白名单，安装外部应用时须保持冻结；</div>
+      <div>• <b>功能独立生效</b>：桌面悬浮胶囊、车身语音播报与方控按键接管相互独立，互不影响；</div>
+      <div>• <b>系统安全防护</b>：核心底层服务已受安全保护，防止误操作影响车机正常运行。</div>
     </div>
   </div>
 </template>

@@ -2,7 +2,7 @@
   <ModalWrapper 
     :show="store.modals.battery" 
     title="12V 蓄电池健康看板" 
-    badge="CAN 物理采样"
+    badge="原车电瓶直读"
     maxWidthClass="max-w-[760px]"
     @close="closeModal('battery')"
   >
@@ -129,8 +129,8 @@ const batteryStatus = computed(() => {
     return {
       hasVolt: true,
       voltStr,
-      text: '严重亏电 (面临无法点火)',
-      desc: '电瓶严重亏电！请立即关闭高功耗电器，准备启动充能',
+      text: '严重亏电 (尽快点火)',
+      desc: '电瓶严重亏电！请立即关闭高功耗设备并启动充能',
       badgeClass: 'bg-car-item border border-car-border text-car-text',
       dot: { color: 'err', pulse: true }
     };
