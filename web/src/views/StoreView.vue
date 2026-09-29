@@ -6,15 +6,15 @@
       <div class="flex items-center justify-between min-h-[58px]">
         <!-- 左侧：安全实测认证标识与说明 -->
         <div class="flex items-center space-x-4 flex-1 min-w-0 pr-6">
-          <div class="w-[52px] h-[52px] rounded-full border-2 border-emerald-500/40 bg-emerald-500/10 flex items-center justify-center shrink-0 shadow-inner">
-            <svg class="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <div class="w-[52px] h-[52px] rounded-full border-2 border-car-border bg-car-card flex items-center justify-center shrink-0 shadow-inner">
+            <svg class="w-7 h-7 text-car-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
           <div class="flex flex-col space-y-1">
             <div class="flex items-center space-x-2.5">
               <span class="text-[20px] font-black text-car-text tracking-wide whitespace-nowrap">实测机型声明</span>
-              <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-emerald-500/20 border-emerald-500/40 text-emerald-300 inline-flex items-center shrink-0">
+              <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border border-car-border bg-car-card text-car-accent inline-flex items-center shrink-0">
                 专车真机已适配
               </span>
             </div>

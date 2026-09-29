@@ -112,7 +112,7 @@ public class DownloadManager {
                     conn.setRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
                     conn.setRequestProperty("Pragma", "no-cache");
                     conn.setRequestProperty("Expires", "0");
-                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 9; IHU516) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Mobile Safari/537.36");
+                    conn.setRequestProperty("User-Agent", SystemUtils.getAppUserAgent());
 
                     int responseCode = conn.getResponseCode();
                     if (responseCode != HttpURLConnection.HTTP_OK && responseCode != HttpURLConnection.HTTP_PARTIAL) {

@@ -13,9 +13,11 @@
         包含缤越 COOL 双联屏原厂白名单解密、高德车机版飞屏与方控按键定制全攻略。
       </div>
 
-      <!-- 二维码展示卡片 (护眼柔和对比度，已移除车机冗余复制网址) -->
-      <div class="p-4 bg-slate-200 rounded-3xl shadow-xl border-4 border-car-border flex flex-col items-center justify-center">
-        <canvas ref="canvasRef" width="220" height="220" class="rounded-xl opacity-90"></canvas>
+      <!-- 二维码展示卡片 (车规深色语义卡片，独立白底衬垫保证扫码对比度) -->
+      <div class="p-5 bg-car-item rounded-3xl border-2 border-car-border flex flex-col items-center justify-center shadow-lg">
+        <div class="p-3 bg-white rounded-2xl shadow-inner">
+          <canvas ref="canvasRef" width="220" height="220" class="rounded-xl"></canvas>
+        </div>
       </div>
 
       <!-- 操作流程提示 -->

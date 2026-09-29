@@ -21,9 +21,11 @@
         <span>{{ isWifiConnected ? `局域网已就绪: ${serverUrl}` : '提示: 请让手机与车机处于同一热点/Wi-Fi' }}</span>
       </div>
 
-      <!-- 二维码展示区 (护眼柔和对比度，已移除车机冗余复制网址) -->
-      <div class="p-4 bg-slate-200 rounded-3xl shadow-xl border-4 border-car-border flex flex-col items-center justify-center mb-5">
-        <canvas ref="canvasRef" id="qrCodeCanvas" width="220" height="220" class="rounded-xl opacity-90"></canvas>
+      <!-- 二维码展示区 (车规深色语义卡片，独立白底衬垫保证扫码对比度) -->
+      <div class="p-5 bg-car-item rounded-3xl border-2 border-car-border flex flex-col items-center justify-center mb-5 shadow-lg">
+        <div class="p-3 bg-white rounded-2xl shadow-inner">
+          <canvas ref="canvasRef" id="qrCodeCanvas" width="220" height="220" class="rounded-xl"></canvas>
+        </div>
       </div>
 
       <!-- 操作步骤指引 (向右箭头单行流) -->

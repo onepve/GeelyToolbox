@@ -215,7 +215,7 @@
         <div class="pt-3 border-t border-car-border flex justify-end">
           <button 
             @click="closeReorderModal" 
-            class="h-[50px] min-h-[50px] px-6 rounded-xl bg-car-accent text-slate-950 font-black text-[15px] cursor-pointer transition-all shadow-md hover:opacity-90 active:scale-95"
+            class="h-[50px] min-h-[50px] px-6 rounded-xl bg-car-accent text-car-card font-black text-[15px] cursor-pointer transition-all shadow-md hover:opacity-90 active:scale-95"
           >
             完成排序并保存
           </button>

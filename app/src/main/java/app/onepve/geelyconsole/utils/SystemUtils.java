@@ -36,6 +36,12 @@ public class SystemUtils {
 
     private static final String TAG = "SystemUtils";
 
+    public static final String APP_USER_AGENT = "Mozilla/5.0 (Linux; Android 9; IHU516G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Mobile Safari/537.36 GeelyToolbox";
+
+    public static String getAppUserAgent() {
+        return APP_USER_AGENT;
+    }
+
     public static class MemInfo {
         public long totalBytes;
         public long usedBytes;

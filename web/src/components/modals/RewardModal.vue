@@ -11,18 +11,20 @@
         感谢你对《缤越助手 (GeelyToolbox)》爱车改装与开源功能的支持与喜爱！
       </div>
 
-      <!-- 赞赏卡片展示区 -->
-      <div class="p-4 bg-white rounded-3xl shadow-xl border-4 border-car-border flex flex-col items-center justify-center">
-        <!-- 微信赞赏码实体图片 -->
-        <img 
-          :src="rewardQrImg" 
-          alt="微信赞赏码" 
-          class="w-48 h-48 object-contain rounded-xl shadow-sm"
-        />
-        <div class="text-slate-900 font-black text-[17px] mt-2.5 flex items-center">
+      <!-- 赞赏展示卡片 (车规深色语义卡片，二维码独立白色贴合底衬) -->
+      <div class="p-5 bg-car-item rounded-3xl border-2 border-car-border flex flex-col items-center justify-center shadow-lg">
+        <!-- 微信赞赏码实体图片 (独立白底衬垫保证高对比度易扫) -->
+        <div class="p-3 bg-white rounded-2xl shadow-inner">
+          <img 
+            :src="rewardQrImg" 
+            alt="微信赞赏码" 
+            class="w-48 h-48 object-contain rounded-xl"
+          />
+        </div>
+        <div class="text-car-text font-black text-[17px] mt-3.5 flex items-center">
            微信扫码赞赏支持 · 迷失
         </div>
-        <div class="text-slate-500 font-bold text-[13px] mt-0.5">
+        <div class="text-car-sub font-bold text-[13px] mt-1">
           车友交流 QQ 群：564654011
         </div>
       </div>

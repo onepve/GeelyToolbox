@@ -270,6 +270,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         settings.setLoadWithOverviewMode(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setDefaultTextEncodingName("UTF-8");
+        settings.setUserAgentString(settings.getUserAgentString() + " GeelyToolbox");
 
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setBackgroundColor(0xFF0A0D14);
@@ -300,6 +301,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                     conn.setConnectTimeout(6000);
                     conn.setReadTimeout(6000);
+                    conn.setRequestProperty("User-Agent", SystemUtils.getAppUserAgent());
                     final int respCode = conn.getResponseCode();
                     if (respCode == 200) {
                         java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
@@ -2189,6 +2191,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                         conn.setConnectTimeout(6000);
                         conn.setReadTimeout(6000);
+                        conn.setRequestProperty("User-Agent", SystemUtils.getAppUserAgent());
                         if (conn.getResponseCode() == 200) {
                             java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
                             StringBuilder sb = new StringBuilder();

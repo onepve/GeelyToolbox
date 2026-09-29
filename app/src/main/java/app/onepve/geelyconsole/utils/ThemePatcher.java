@@ -99,6 +99,7 @@ public class ThemePatcher {
             java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(3000);
             conn.setReadTimeout(6000);
+            conn.setRequestProperty("User-Agent", SystemUtils.getAppUserAgent());
             if (conn.getResponseCode() == 200) {
                 try (java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(conn.getInputStream())) {
                     java.util.zip.ZipEntry ze;
@@ -134,6 +135,7 @@ public class ThemePatcher {
             java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(3000);
             conn.setReadTimeout(6000);
+            conn.setRequestProperty("User-Agent", SystemUtils.getAppUserAgent());
             if (conn.getResponseCode() == 200) {
                 try (InputStream is = conn.getInputStream();
                      FileOutputStream fos = new FileOutputStream(cachedPreview)) {

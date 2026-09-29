@@ -1,7 +1,7 @@
 <template>
   <ModalWrapper 
     :show="store.modals.voiceThemeImport" 
-    title="缤越助手 · 导入车载语音包 (.zip)" 
+    title="导入车载语音包 (.zip)" 
     badge="车载音频主题"
     maxWidthClass="max-w-[880px]"
     @close="closeModal('voiceThemeImport')"

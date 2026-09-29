@@ -1,7 +1,7 @@
 <template>
-  <ModalWrapper
-    :show="store.modals.welcomeDonate"
-    title="欢迎体验缤越助手 · 作者说明"
+  <ModalWrapper 
+    :show="store.modals.welcomeDonate" 
+    title="作者说明与车主必读" 
     badge="车主互助"
     max-width-class="max-w-[1080px]"
     max-height-class="max-h-[92vh]"
@@ -38,17 +38,19 @@
           </div>
         </div>
 
-        <!-- 右侧：直接复用已有赞赏码 (占 5 栏) -->
-        <div class="md:col-span-5 p-4 bg-white rounded-3xl shadow-xl border-4 border-car-border flex flex-col items-center justify-center text-center">
-          <img 
-            :src="rewardQrImg" 
-            alt="微信赞赏码" 
-            class="w-44 h-44 object-contain rounded-2xl shadow-sm"
-          />
-          <div class="text-slate-900 font-black text-[16.5px] mt-2 flex items-center">
+        <!-- 右侧：直接复用已有赞赏码 (占 5 栏，车规深色语义卡片) -->
+        <div class="md:col-span-5 p-5 bg-car-item rounded-3xl border-2 border-car-border flex flex-col items-center justify-center text-center shadow-lg">
+          <div class="p-3 bg-white rounded-2xl shadow-inner">
+            <img 
+              :src="rewardQrImg" 
+              alt="微信赞赏码" 
+              class="w-44 h-44 object-contain rounded-xl"
+            />
+          </div>
+          <div class="text-car-text font-black text-[16.5px] mt-3 flex items-center">
              微信扫码赞赏支持 · 迷失
           </div>
-          <div class="text-slate-500 font-bold text-[13px] mt-0.5">
+          <div class="text-car-sub font-bold text-[13px] mt-1">
             吉利车友交流 QQ 群：564654011
           </div>
         </div>

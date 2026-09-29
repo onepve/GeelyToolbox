@@ -70,15 +70,15 @@
           <div class="flex flex-col space-y-1">
             <div class="flex items-center space-x-2">
               <span class="text-[17px] font-black text-car-text">{{ app.name }}</span>
-              <span v-if="app.isSystem" class="px-1.5 py-0.5 text-[11px] rounded bg-slate-800 text-slate-400 font-bold">系统</span>
+              <span v-if="app.isSystem" class="px-2 py-0.5 text-[11px] rounded-full bg-car-card border border-car-border text-car-sub font-bold">系统</span>
             </div>
             <span class="text-[13px] font-mono text-car-sub">{{ app.pkg }}</span>
           </div>
 
           <div class="flex items-center space-x-2 shrink-0">
             <button
-              class="px-5 py-2.5 rounded-xl font-black text-[15px] transition-all shadow-sm shrink-0"
-              :class="isCurrentSelected(app.pkg) ? 'bg-car-accent text-slate-950 shadow-md' : 'bg-car-card border border-car-border text-car-text hover:border-car-accent'"
+              class="h-[50px] px-5 rounded-xl font-black text-[15px] transition-all shadow-sm shrink-0 flex items-center justify-center cursor-pointer"
+              :class="isCurrentSelected(app.pkg) ? 'bg-car-accent text-car-card shadow-md' : 'bg-car-card border border-car-border text-car-text hover:border-car-accent'"
             >
               {{ isCurrentSelected(app.pkg) ? '当前选定' : '选定应用' }}
             </button>
