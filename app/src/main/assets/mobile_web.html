@@ -70,23 +70,43 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            padding: 11px 14px;
-            border-radius: 10px;
-            font-size: 14px;
+            height: 48px;
+            padding: 0 16px;
+            border-radius: 12px;
+            font-size: 14.5px;
             font-weight: 700;
             border: none;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             box-sizing: border-box;
             text-align: center;
             text-decoration: none;
+            letter-spacing: 0.2px;
         }
-        .btn-primary { background: #2563eb; color: #ffffff; margin-top: 8px; }
-        .btn-primary:active { background: #1d4ed8; transform: scale(0.98); }
-        .btn-success { background: #059669; color: #ffffff; margin-top: 8px; }
-        .btn-success:active { background: #047857; transform: scale(0.98); }
-        .btn-secondary { background: #fafafa; color: #27272a; border: 1.5px solid #d4d4d8; margin-top: 8px; }
-        .btn-secondary:active { background: #f4f4f5; transform: scale(0.98); }
+        /* 开始高速传输主按钮：温润科技蓝宝石渐变 + 柔光微投影，告别刺眼生硬纯蓝 */
+        .btn-primary {
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+            color: #ffffff;
+            margin-top: 10px;
+            box-shadow: 0 4px 14px rgba(30, 64, 175, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .btn-primary:active {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+            box-shadow: 0 2px 6px rgba(30, 64, 175, 0.18);
+            transform: scale(0.985);
+        }
+        .btn-primary:disabled {
+            background: #e4e4e7 !important;
+            color: #a1a1aa !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .btn-success { background: linear-gradient(135deg, #047857 0%, #059669 100%); color: #ffffff; margin-top: 8px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.18); }
+        .btn-success:active { background: #047857; transform: scale(0.985); }
+        .btn-secondary { background: #ffffff; color: #27272a; border: 1.5px solid #d4d4d8; margin-top: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .btn-secondary:active { background: #f4f4f5; border-color: #cbd5e1; transform: scale(0.985); }
         
         /* 柔和护眼警示按钮：温润淡粉底 + 细柔边框 + 深玫瑰沉稳文字，杜绝刺眼大红大绿 */
         .btn-warning-soft {
@@ -190,7 +210,7 @@
                 <div class="input-group">
                     <input type="file" id="file-input">
                 </div>
-                <button class="btn btn-primary" id="btn-upload" onclick="uploadMainFile()">开始高速传输</button>
+                <button class="btn btn-primary" id="btn-upload" onclick="uploadMainFile()">🚀 开始高速传输</button>
                 <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
                 <div id="upload-status" style="font-size:12.5px; color:#52525b; margin-top:8px; text-align:center; word-break:break-all; font-weight:600;"></div>
             </div>
@@ -563,7 +583,7 @@
             const pStatus = document.getElementById('upload-status');
             const btnUpload = document.getElementById('btn-upload');
 
-            if (btnUpload) { btnUpload.disabled = true; btnUpload.innerText = '正在高速传输中...'; }
+            if (btnUpload) { btnUpload.disabled = true; btnUpload.innerText = '⏳ 正在高速传输中...'; }
             pBar.style.display = 'block';
             pFill.style.width = '0%';
 
@@ -585,7 +605,7 @@
                 pStatus.innerText = '❌ 传输中断: ' + err.message;
                 alert('传输中断: ' + err.message);
             } finally {
-                if (btnUpload) { btnUpload.disabled = false; btnUpload.innerText = '开始高速传输'; }
+                if (btnUpload) { btnUpload.disabled = false; btnUpload.innerText = '🚀 开始高速传输'; }
             }
         }
 
