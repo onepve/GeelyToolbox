@@ -454,16 +454,18 @@ public class SteeringWheelKeyManager {
                 AppLogger.i("方控按键", "play_pause 仲裁目标: targetSource=" + (targetSource == SOURCE_BLUETOOTH ? "BLUETOOTH" : "LOCAL") + ", playingNow=" + playingNow);
 
                 if (playingNow) {
+                    VehicleAutomationService.setUserManuallyPausedInTrip(true);
                     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                            .edit().putBoolean("user_manually_paused_media", true).apply();
+                            .edit().remove("user_manually_paused_media").apply();
                     // 仅当目标源为手机蓝牙时，才武装 15 秒抑制窗口防反弹；本地音乐绝不抑制蓝牙！
                     if (targetSource == SOURCE_BLUETOOTH) {
                         EasMediaBridge.getInstance(context).suppressAutoWakeAfterUserPause(15000);
                     }
                     sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PAUSE, targetSource);
                 } else {
+                    VehicleAutomationService.setUserManuallyPausedInTrip(false);
                     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                            .edit().putBoolean("user_manually_paused_media", false).apply();
+                            .edit().remove("user_manually_paused_media").apply();
                     if (targetSource == SOURCE_BLUETOOTH) {
                         // 核心：用户主动恢复播放时，立即解除暂停抑制窗口，并重新激活选通蓝牙物理通道
                         EasMediaBridge.getInstance(context).clearAutoWakeSuppression();
