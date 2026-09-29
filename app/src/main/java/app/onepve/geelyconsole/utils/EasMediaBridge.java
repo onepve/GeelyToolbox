@@ -456,6 +456,9 @@ public class EasMediaBridge {
                     AppLogger.i("蓝牙音频", "检测到媒体音量为0，已自动恢复适中音量以保障放声");
                 }
             }
+
+            // 4. 恢复正式版基线：推流选通时唤醒底层 A2DP 链路申请 AudioFocus，杜绝声卡硬件静音 (val:0.000000)
+            wakeBluetoothAudioSink();
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "选通蓝牙音频物理通道失败: " + t.getMessage());
         }
