@@ -434,7 +434,8 @@ const quickCmds = [
   { label: '查看车机型号', cmd: 'getprop ro.product.model' },
   { label: '列出全部已装应用', cmd: 'pm list packages -3' },
   { label: '查看内存占用', cmd: 'dumpsys meminfo' },
-  { label: '查看最近20行日志', cmd: 'logcat -d -v time | tail -n 20' }
+  { label: '查看最近20行日志', cmd: 'logcat -d -v time | tail -n 20' },
+  { label: '激活均衡器权限', cmd: 'pm grant com.maxmpz.equalizer android.permission.DUMP' }
 ];
 
 function execCmd() {
