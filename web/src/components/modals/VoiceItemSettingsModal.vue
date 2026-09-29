@@ -112,46 +112,62 @@
           </div>
         </div>
 
-        <!-- 下载目录音频列表 (从 /sdcard/Download/车载语音自定义 免打字点选) -->
+        <!-- 专属目录素材池列表 (方案 A: 双列卡片网格，充分利用横屏视野) -->
         <div class="flex flex-col space-y-2">
           <div class="text-[13px] text-car-sub font-bold flex items-center justify-between">
-            <span>专属目录素材池 (受白名单保护，清理下载目录不丢失，解绑可找回)：</span>
-            <span class="font-mono text-[12px] text-car-sub/80">{{ downloadAudioFiles.length }} 个文件</span>
+            <span>专属目录素材池 (共 {{ downloadAudioFiles.length }} 个文件 · 白名单保护不误删)：</span>
+            <span class="font-mono text-[12px] text-car-sub/80">解绑后随时可找回</span>
           </div>
 
           <!-- 空状态 -->
-          <div v-if="downloadAudioFiles.length === 0" class="py-5 px-4 rounded-xl bg-car-card border border-car-border/60 flex flex-col items-center justify-center space-y-2 text-center">
-            <span class="text-[13.5px] text-car-sub font-bold">专属受保护目录 (/sdcard/Download/车载语音自定义) 暂无 MP3/WAV 音频</span>
-            <span class="text-[12px] text-car-sub/80">点击右上角「手机扫码快传」连接车机 Wi-Fi 秒传，永久受白名单保护不误删</span>
+          <div v-if="downloadAudioFiles.length === 0" class="py-6 px-4 rounded-2xl bg-car-card border border-car-border/60 flex flex-col items-center justify-center space-y-2 text-center">
+            <span class="text-[14px] font-black text-car-text">专属目录 (/sdcard/Download/车载语音自定义) 暂无音频</span>
+            <span class="text-[12.5px] text-car-sub">点击右上角「手机扫码快传」秒传至车机，享受永久白名单保护</span>
           </div>
 
-          <!-- 列表平铺 -->
-          <div v-else class="max-h-[175px] overflow-y-auto space-y-2 pr-1">
-            <div
-              v-for="f in downloadAudioFiles"
-              :key="f.name"
-              class="p-2.5 rounded-xl bg-car-card border border-car-border flex items-center justify-between shadow-sm hover:border-car-border-light transition-all"
-            >
-              <div class="flex flex-col min-w-0 pr-3 space-y-0.5">
-                <div class="flex items-center space-x-2">
-                  <span class="text-[14px] font-black text-car-text truncate">{{ f.name }}</span>
-                  <span v-if="f.dir === '车载语音自定义'" class="px-1.5 py-0.5 rounded bg-car-item border border-car-accent/40 text-car-accent text-[11px] font-bold shrink-0">受保护目录</span>
+          <!-- 方案 A: 双列网格平铺 (一屏开阔展示多个，宽屏操作从容顺滑) -->
+          <div v-else class="max-h-[250px] overflow-y-auto pr-1">
+            <div class="grid grid-cols-2 gap-3">
+              <div
+                v-for="f in downloadAudioFiles"
+                :key="f.name"
+                class="p-3 rounded-2xl bg-car-card border border-car-border flex flex-col justify-between space-y-2.5 shadow-sm hover:border-car-border-light transition-all"
+              >
+                <!-- 上半部: 文件名与详情 -->
+                <div class="flex flex-col min-w-0 space-y-1">
+                  <div class="flex items-center space-x-1.5 min-w-0">
+                    <span class="text-[14.5px] font-black text-car-text truncate flex-1 min-w-0" :title="f.name">
+                      {{ f.name }}
+                    </span>
+                    <span 
+                      v-if="f.dir === '车载语音自定义'" 
+                      class="px-1.5 py-0.5 rounded bg-car-item border border-car-accent/40 text-car-accent text-[11px] font-bold shrink-0"
+                    >
+                      受保护
+                    </span>
+                  </div>
+                  <div class="flex items-center space-x-2 text-[12px] text-car-sub font-mono">
+                    <span>{{ f.size }}</span>
+                    <span>•</span>
+                    <span>{{ f.time }}</span>
+                  </div>
                 </div>
-                <span class="text-[12px] text-car-sub font-mono">{{ f.size }} · {{ f.time }}</span>
-              </div>
-              <div class="flex items-center space-x-2 shrink-0">
-                <button
-                  @click="testDownloadAudio(f.path)"
-                  class="h-[50px] px-3 rounded-xl bg-car-item border border-car-border text-car-text font-bold text-[13.5px] cursor-pointer hover:border-car-border-light shadow-sm"
-                >
-                  试听
-                </button>
-                <button
-                  @click="importAndBindDownloadAudio(f.name)"
-                  class="h-[50px] px-3.5 rounded-xl bg-car-item border-2 border-car-accent text-car-accent font-black text-[13.5px] cursor-pointer hover:border-car-accent shadow-sm"
-                >
-                  设为本声效
-                </button>
+
+                <!-- 下半部: 双按键等宽对称 (试听 + 设为本声效) -->
+                <div class="flex items-center space-x-2">
+                  <button
+                    @click="testDownloadAudio(f.path)"
+                    class="flex-1 h-[50px] rounded-xl bg-car-item border border-car-border text-car-text font-bold text-[14px] cursor-pointer hover:border-car-border-light shadow-sm flex items-center justify-center whitespace-nowrap"
+                  >
+                    试听
+                  </button>
+                  <button
+                    @click="importAndBindDownloadAudio(f.name)"
+                    class="flex-1 h-[50px] rounded-xl bg-car-item border-2 border-car-accent text-car-accent font-black text-[14px] cursor-pointer hover:border-car-accent shadow-sm flex items-center justify-center whitespace-nowrap"
+                  >
+                    设为本声效
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -3846,11 +3846,22 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void importVoiceZipFromDownload(final String fileName) {
+            importVoiceThemeZip(fileName);
+        }
+
+        @JavascriptInterface
+        public void importVoiceThemeZip(final String fileName) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     File downloadDir = SystemUtils.getAppDownloadDir();
                     File zipFile = new File(downloadDir, fileName);
+                    if (!zipFile.exists()) {
+                        File poolZip = new File(new File(downloadDir, "车载语音自定义"), fileName);
+                        if (poolZip.exists()) {
+                            zipFile = poolZip;
+                        }
+                    }
                     if (!zipFile.exists()) {
                         mainHandler.post(new Runnable() {
                             @Override
@@ -3903,6 +3914,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 File downloadDir = SystemUtils.getAppDownloadDir();
                 File[] files = downloadDir.listFiles();
                 JSONArray arr = new JSONArray();
+                java.util.HashSet<String> seen = new java.util.HashSet<>();
                 if (files != null) {
                     for (File f : files) {
                         if (f.isFile() && f.getName().toLowerCase().endsWith(".zip")) {
@@ -3912,6 +3924,24 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                 obj.put("size", SystemUtils.formatFileSize(f.length()));
                                 obj.put("time", new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date(f.lastModified())));
                                 arr.put(obj);
+                                seen.add(f.getName());
+                            }
+                        }
+                    }
+                }
+                File poolDir = new File(downloadDir, "车载语音自定义");
+                if (poolDir.exists()) {
+                    File[] poolFiles = poolDir.listFiles();
+                    if (poolFiles != null) {
+                        for (File f : poolFiles) {
+                            if (f.isFile() && f.getName().toLowerCase().endsWith(".zip") && !seen.contains(f.getName())) {
+                                if (VehicleVoicePlayer.isVoicePackZip(f)) {
+                                    JSONObject obj = new JSONObject();
+                                    obj.put("name", f.getName());
+                                    obj.put("size", SystemUtils.formatFileSize(f.length()));
+                                    obj.put("time", new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date(f.lastModified())));
+                                    arr.put(obj);
+                                }
                             }
                         }
                     }
