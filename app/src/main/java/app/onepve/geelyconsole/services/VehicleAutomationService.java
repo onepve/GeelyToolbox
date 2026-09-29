@@ -1547,10 +1547,6 @@ public class VehicleAutomationService extends Service {
             AppLogger.i("车身联动", "车速达到阈值，手机蓝牙音频正在推流播放中，跳过车机本地音乐自启");
             return;
         }
-        if (isTargetMediaPlaying(pkg)) {
-            AppLogger.i("车身联动", "车速达到阈值，目标媒体已在正常播放中，静默放行防打断: " + pkg);
-            return;
-        }
         AppLogger.i("车身联动", "车速达到阈值，按软件选定音源触发多媒体自启: " + pkg + " (全屏=" + fullscreen + ")");
 
         // 分支 1：目标为手机蓝牙
@@ -1627,26 +1623,6 @@ public class VehicleAutomationService extends Service {
                 } catch (Throwable ignored) {}
             }
         }, 800);
-    }
-
-    private boolean isTargetMediaPlaying(String targetPkg) {
-        if (targetPkg == null || targetPkg.isEmpty()) return false;
-        try {
-            MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
-            if (msm != null) {
-                List<MediaController> controllers = msm.getActiveSessions(null);
-                if (controllers != null) {
-                    for (MediaController mc : controllers) {
-                        if (mc != null && targetPkg.equals(mc.getPackageName())) {
-                            if (mc.getPlaybackState() != null && mc.getPlaybackState().getState() == PlaybackState.STATE_PLAYING) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Throwable ignored) {}
-        return false;
     }
 
     public boolean isAnyMediaPlaying() {
