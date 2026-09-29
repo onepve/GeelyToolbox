@@ -218,9 +218,10 @@
             <!-- 卡片 1.2: 推送外部下载链接 -->
             <div class="card">
                 <div class="card-title"><span>🚀 推送下载链接到车机</span></div>
-                <div class="card-desc">直接粘贴外部文件或 APK 直链，让车机在后台直接下载。</div>
-                <div class="input-group">
-                    <input type="text" id="push-url" placeholder="https://example.com/app.apk">
+                <div class="card-desc">直接粘贴外部文件或 APK 直链，让车机在后台直接下载（支持双击输入框一键清空）。</div>
+                <div class="input-group" style="display:flex; gap: 10px; align-items:center;">
+                    <input type="text" id="push-url" placeholder="双击清空 · 粘贴或输入 https://..." style="flex:1;" ondblclick="clearPushUrl()" ontouchend="handleUrlTouch(event)">
+                    <button class="btn btn-secondary" style="width:auto; height:44px; padding:0 14px; margin-top:0; font-size:13.5px; white-space:nowrap;" onclick="pastePushUrl()">📋 粘贴</button>
                 </div>
                 <button class="btn btn-secondary" onclick="pushUrl()">一键推送车机下载</button>
             </div>
@@ -761,6 +762,43 @@
             }
         }
         loadCarFiles();
+
+        let lastUrlTap = 0;
+        function handleUrlTouch(e) {
+            const now = Date.now();
+            if (now - lastUrlTap < 350) {
+                clearPushUrl();
+            }
+            lastUrlTap = now;
+        }
+
+        function clearPushUrl() {
+            const input = document.getElementById('push-url');
+            if (input && input.value) {
+                input.value = '';
+                showMobileToast('🧹 输入框已清空');
+            }
+        }
+
+        async function pastePushUrl() {
+            const input = document.getElementById('push-url');
+            if (!input) return;
+            try {
+                if (navigator.clipboard && navigator.clipboard.readText) {
+                    const text = await navigator.clipboard.readText();
+                    if (text && text.trim()) {
+                        input.value = text.trim();
+                        showMobileToast('📋 已粘贴剪贴板内容');
+                        return;
+                    }
+                }
+                input.focus();
+                showMobileToast('💡 请长按输入框直接粘贴');
+            } catch (e) {
+                input.focus();
+                showMobileToast('💡 请长按输入框直接粘贴');
+            }
+        }
 
         async function pushUrl() {
             const url = document.getElementById('push-url').value.trim();
