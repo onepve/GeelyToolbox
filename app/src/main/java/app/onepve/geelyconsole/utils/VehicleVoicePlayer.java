@@ -66,7 +66,7 @@ public class VehicleVoicePlayer {
     public static AudioAttributes getVoiceAudioAttributes(Context context, String voiceType) {
         String channel = "music";
         try {
-            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
             // 每声效独立声道（voice_item_channel_<key>）优先；未设置则跟随全局语音通道
             // 归一化：voiceType 可能是文件名（gear_r.mp3），配置端存裸 key（gear_r），需先归一化才能命中。
             String key = VoiceGainResolver.normalizeVoiceKey(voiceType);
@@ -493,7 +493,7 @@ public class VehicleVoicePlayer {
             // v1.7.51: 全量内置音频已完成车规级满电平压限重采样 (-13 LUFS, TP -0.8dBFS)，
             // 彻底下线动态篡改系统音量逻辑，杜绝听歌混音忽大忽小与系统策略抽搐。
             String key = VoiceGainResolver.normalizeVoiceKey(voiceType);
-            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
             String channelLookupKey = resolveConfigKeyFallback(prefs, key, "voice_item_channel_");
             String channel = prefs.getString("voice_item_channel_" + channelLookupKey, "music");
             int stream = VoiceGainResolver.resolveStreamForChannel(channel);
@@ -588,12 +588,23 @@ public class VehicleVoicePlayer {
      *
      * @return 实际写入或修复的文件数；-1 表示当前版本无需刷新且资产完备
      */
+    public static File getSafeVoiceDir(Context context) {
+        Context target = context;
+        if (context != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !context.isDeviceProtectedStorage()) {
+            target = context.createDeviceProtectedStorageContext();
+        }
+        File dir = new File(target.getFilesDir(), "voices");
+        if (!dir.exists()) dir.mkdirs();
+        return dir;
+    }
+
     public static int syncBuiltinAssets(Context context, boolean force) {
+        if (context == null) return 0;
         try {
-            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
             int code = currentVersionCode(context);
-            int lastCode = prefs.getInt(PREF_LAST_ASSET_EXTRACTED_CODE, 0);
-            int lastVoiceVer = prefs.getInt(PREF_LAST_VOICE_ASSET_VER, 0);
+            int lastCode = prefs != null ? prefs.getInt(PREF_LAST_ASSET_EXTRACTED_CODE, 0) : 0;
+            int lastVoiceVer = prefs != null ? prefs.getInt(PREF_LAST_VOICE_ASSET_VER, 0) : 0;
 
             JSONObject manifest = loadVoiceManifest(context);
             int targetVoiceVer = (manifest != null) ? manifest.optInt("voice_version", 1) : 1;
@@ -601,8 +612,7 @@ public class VehicleVoicePlayer {
 
             boolean versionChanged = (code != 0 && code != lastCode) || (targetVoiceVer != lastVoiceVer);
 
-            File voiceDir = new File(context.getFilesDir(), "voices");
-            if (!voiceDir.exists()) voiceDir.mkdirs();
+            File voiceDir = getSafeVoiceDir(context);
 
             if (!force && !versionChanged) {
                 // 快速自愈检查：确保关键文件存在且大小非空
@@ -681,8 +691,9 @@ public class VehicleVoicePlayer {
      * @return 重新写入的音频文件数；-1 表示失败
      */
     public static int forceRestoreFactoryVoice(Context context) {
+        if (context == null) return -1;
         try {
-            File voiceDir = new File(context.getFilesDir(), "voices");
+            File voiceDir = getSafeVoiceDir(context);
             if (voiceDir.exists()) {
                 File[] olds = voiceDir.listFiles();
                 if (olds != null) {
@@ -697,9 +708,11 @@ public class VehicleVoicePlayer {
                 voiceDir.mkdirs();
             }
             // 版本戳归零 + 切回出厂原声，随后强制全量重装
-            context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
-                   .edit().putInt("last_asset_extracted_code", 0)
+            SharedPreferences sp = PrefUtils.getAppPreferences(context);
+            if (sp != null) {
+                sp.edit().putInt("last_asset_extracted_code", 0)
                    .putString("active_voice_theme", "").commit();
+            }
             return syncBuiltinAssets(context, true);
         } catch (Exception e) {
             Log.w(TAG, "forceRestoreFactoryVoice error: " + e.getMessage());
@@ -917,7 +930,7 @@ public class VehicleVoicePlayer {
     public void play(final String voiceFileName, final String fallbackText, final int priority) {
         // 核心优先判定：座舱车身语音播报总开关 (voice_master_switch)
         try {
-            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
             boolean masterSwitch = prefs.getBoolean("voice_master_switch", true);
             if (!masterSwitch) {
                 Log.i(TAG, "Voice master switch is OFF, dropping audio: " + voiceFileName);
@@ -985,7 +998,7 @@ public class VehicleVoicePlayer {
     private void speakTextInternal(final String text, final String arbiterKey) {
         // 历史公开 speakText 逻辑的内部直通版本 (已由仲裁放行，不再重复仲裁)
         try {
-            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
             boolean masterSwitch = prefs.getBoolean("voice_master_switch", true);
             if (!masterSwitch) {
                 Log.i(TAG, "Voice master switch is OFF, dropping TTS speak: " + text);
@@ -999,7 +1012,7 @@ public class VehicleVoicePlayer {
         }
         requestAudioFocus(arbiterKey);
         applyVolumeOffsetBeforePlay(arbiterKey);
-        SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        SharedPreferences prefs = PrefUtils.getAppPreferences(context);
         if (tts != null && ttsReady) {
             try {
                 float speed = prefs.getFloat("voice_playback_speed", 1.0f);
@@ -1069,7 +1082,7 @@ public class VehicleVoicePlayer {
     private void executeActualPlay(String voiceFileName, final String fallbackText) {
         // 0. 用户自定义台词优先
         try {
-            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
             String rawName = voiceFileName.endsWith(".mp3") ? voiceFileName.substring(0, voiceFileName.length() - 4) : voiceFileName;
             String customText = prefs.getString("custom_text_" + voiceFileName, "");
             if (customText == null || customText.trim().isEmpty()) {
@@ -1087,7 +1100,7 @@ public class VehicleVoicePlayer {
 
         // 1. 用户指定自定义音频文件路径 (深度智能解析与车门模式兜底继承)
         try {
-            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
             String rawName = voiceFileName.endsWith(".mp3") ? voiceFileName.substring(0, voiceFileName.length() - 4) : voiceFileName;
             String customPath = prefs.getString("custom_voice_" + voiceFileName, "");
             if (customPath == null || customPath.trim().isEmpty()) {
@@ -1140,7 +1153,7 @@ public class VehicleVoicePlayer {
         }
         String activeTheme = "";
         try {
-            SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences sp = PrefUtils.getAppPreferences(context);
             activeTheme = sp.getString("active_voice_theme", "");
         } catch (Exception ignored) {}
 
@@ -1194,16 +1207,13 @@ public class VehicleVoicePlayer {
             return;
         }
 
-        // 4. 兜底调用系统 TTS
-        Log.i(TAG, "Fallback speaking TTS: " + fallbackText);
-        AppLogger.i("语音播报", "触发朗读[系统TTS(" + getActiveTtsEngine() + ")]: " + fallbackText);
-        speakTextInternal(fallbackText, voiceFileName);
+        // 4. 纯净 MP3 模式：未匹配到指定音频时安全静默，杜绝调用怪异系统 TTS 破坏座舱体验
+        Log.i(TAG, "Pure MP3 mode: No audio file found for " + voiceFileName + ", quiet finish.");
     }
 
     private File getLocalAssetFile(String voiceFileName) {
         try {
-            File voiceDir = new File(context.getFilesDir(), "voices");
-            if (!voiceDir.exists()) voiceDir.mkdirs();
+            File voiceDir = getSafeVoiceDir(context);
             File target = new File(voiceDir, voiceFileName);
 
             JSONObject manifest = loadVoiceManifest(context);
@@ -1214,7 +1224,7 @@ public class VehicleVoicePlayer {
             String expectedMd5 = (meta != null) ? meta.optString("md5", "") : "";
 
             int currentCode = currentVersionCode(context);
-            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
             int lastExtractedCode = prefs.getInt(PREF_LAST_ASSET_EXTRACTED_CODE, 0);
             int lastVoiceVer = prefs.getInt(PREF_LAST_VOICE_ASSET_VER, 0);
 
@@ -1315,7 +1325,7 @@ public class VehicleVoicePlayer {
                         currentMediaPlayer = mp;
                     }
                     try {
-                        SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        SharedPreferences prefs = PrefUtils.getAppPreferences(context);
                         float speed = prefs.getFloat("voice_playback_speed", 1.0f);
                         if (speed != 1.0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                             android.media.PlaybackParams params = mp.getPlaybackParams();
@@ -1550,7 +1560,7 @@ public class VehicleVoicePlayer {
             File root = getVoicesRootDir();
             File[] files = root.listFiles();
             JSONObject result = new JSONObject();
-            SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences sp = PrefUtils.getAppPreferences(context);
             String active = sp.getString("active_voice_theme", "");
             result.put("activeTheme", active);
 
@@ -1594,7 +1604,7 @@ public class VehicleVoicePlayer {
 
     public static boolean setActiveTheme(Context context, String themeName) {
         try {
-            SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences sp = PrefUtils.getAppPreferences(context);
             return sp.edit().putString("active_voice_theme", themeName == null ? "" : themeName.trim()).commit();
         } catch (Exception e) {
             return false;
@@ -1604,7 +1614,7 @@ public class VehicleVoicePlayer {
     public static boolean deleteTheme(Context context, String themeName) {
         if (themeName == null || themeName.trim().isEmpty()) return false;
         try {
-            SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            SharedPreferences sp = PrefUtils.getAppPreferences(context);
             String active = sp.getString("active_voice_theme", "");
             if (themeName.trim().equals(active)) {
                 sp.edit().putString("active_voice_theme", "").commit();

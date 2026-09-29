@@ -13,6 +13,7 @@ import app.onepve.geelyconsole.MainActivity;
 import app.onepve.geelyconsole.services.FloatingWindowService;
 import app.onepve.geelyconsole.services.VehicleAutomationService;
 import app.onepve.geelyconsole.utils.AppLogger;
+import app.onepve.geelyconsole.utils.PrefUtils;
 import app.onepve.geelyconsole.utils.SystemUtils;
 import app.onepve.geelyconsole.utils.ThemePatcher;
 
@@ -57,9 +58,19 @@ public class BootReceiver extends BroadcastReceiver {
         // 场景 B：开机/点火/休眠恢复广播 (BOOT_COMPLETED / POWER_RESUME / QUICKBOOT)
         AppLogger.i("开机守护", "收到系统开机/唤醒广播: " + action);
 
-        SharedPreferences bootPrefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-        boolean autostartEnabled = bootPrefs.getBoolean("autostart_enabled", true);
-        boolean tempAutostartForRabbit = bootPrefs.getBoolean("temp_autostart_for_rabbit", false);
+        boolean autostartEnabled = true;
+        boolean tempAutostartForRabbit = false;
+        try {
+            SharedPreferences bootPrefs = PrefUtils.getAppPreferences(context);
+            if (bootPrefs != null) {
+                autostartEnabled = bootPrefs.getBoolean("autostart_enabled", true);
+                tempAutostartForRabbit = bootPrefs.getBoolean("temp_autostart_for_rabbit", false);
+            }
+        } catch (Exception e) {
+            // 开机未解锁阶段 (LOCKED_BOOT_COMPLETED) 读取失败时安全降级，绝不因异常导致进程闪退
+            Log.w(TAG, "Failed to read boot prefs in Direct Boot stage, fallback to defaults: " + e.getMessage());
+            AppLogger.e("开机守护", "未解锁阶段读取自启配置异常，已安全降级: " + e.getMessage());
+        }
         if (!autostartEnabled && !tempAutostartForRabbit) {
             AppLogger.i("开机守护", "车主已关闭开机自启动守护，车辆启动时不自动拉起工具箱后台服务");
             return;
@@ -86,7 +97,7 @@ public class BootReceiver extends BroadcastReceiver {
             @Override
             public void run() {
                 try {
-                    SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                    SharedPreferences prefs = PrefUtils.getAppPreferences(context);
                     boolean autostartEnabled = prefs.getBoolean("autostart_enabled", false);
                     boolean tempAutostartForRabbit = prefs.getBoolean("temp_autostart_for_rabbit", false);
 

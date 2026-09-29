@@ -9,6 +9,21 @@ import android.content.SharedPreferences;
 public class PrefUtils {
 
     /**
+     * 获取全应用统一的设备保护存储配置 (DE Storage SharedPreferences)
+     * 支持 Direct Boot (开机未解锁阶段畅通读写，彻底消除 IllegalStateException 崩溃)
+     */
+    public static SharedPreferences getAppPreferences(android.content.Context context) {
+        if (context == null) return null;
+        android.content.Context deContext = context;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            if (!context.isDeviceProtectedStorage()) {
+                deContext = context.createDeviceProtectedStorageContext();
+            }
+        }
+        return deContext.getSharedPreferences("toolbox_settings", android.content.Context.MODE_PRIVATE);
+    }
+
+    /**
      * 安全读取布尔值：
      * 1. 优先标准读取 getBoolean
      * 2. 若捕获 ClassCastException（如存储为 "true"/"false" 或 1/0），智能解析并自动将底层持久化数据自愈纠正为标准 Boolean
