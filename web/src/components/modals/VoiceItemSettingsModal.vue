@@ -8,59 +8,62 @@
     @close="closeModal('voiceItemSettings')"
   >
     <div v-if="targetItem" class="flex flex-col space-y-4">
-      <!-- 当前生效音源状态大卡片 (单行自适应展示) -->
-      <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
-        <div class="flex items-center min-w-0 mr-4">
-          <span class="w-3 h-3 rounded-full bg-car-accent mr-3 shrink-0 shadow-[0_0_8px_var(--accent-gold)]"></span>
-          <div class="flex flex-col min-w-0">
-            <span class="text-[17.5px] font-black text-car-text truncate">当前生效音源：{{ activeVoiceTypeLabel }}</span>
-            <span class="text-[14px] text-car-sub font-bold mt-0.5 truncate">{{ activeVoiceDesc }}</span>
+      <!-- 车规双子舱 (左：当前生效音源 / 右：本声效输出通道 · 左右并排极致精简) -->
+      <div class="flex space-x-4 items-stretch">
+        <!-- 左舱: 当前生效音源 -->
+        <div class="flex-1 min-w-0 bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+          <div class="flex flex-col space-y-1">
+            <div class="flex items-center min-w-0">
+              <span class="w-2.5 h-2.5 rounded-full bg-car-accent mr-2.5 shrink-0 shadow-[0_0_8px_var(--accent-gold)]"></span>
+              <span class="text-[16px] font-black text-car-text truncate">当前音源：{{ activeVoiceTypeLabel }}</span>
+            </div>
+            <span class="text-[13px] text-car-sub font-bold truncate pl-5">{{ activeVoiceDesc }}</span>
           </div>
-        </div>
 
-        <!-- 针对副驾车门项：在右侧平铺 3 个音色切换按钮，点击即切即试听 -->
-        <div v-if="isFrDoorItem" class="flex space-x-2 shrink-0">
-          <button
-            v-for="opt in [
-              { role: 'female', name: '原车 (晓晓)' },
-              { role: 'princess', name: '公主 (温润男声)' },
-              { role: 'queen', name: '女王 (绅士男声)' }
-            ]"
-            :key="opt.role"
-            @click="selectFrEntityRole(opt.role)"
-            :class="[
-              'h-[52px] px-3.5 rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all',
-              isRoleActive(opt.role)
-                ? 'bg-car-item border-car-accent text-car-accent font-black shadow-sm'
-                : 'bg-car-card border-car-border text-car-sub hover:text-car-text font-bold'
-            ]"
-          >
-            <span class="text-[14.5px] whitespace-nowrap">{{ opt.name }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 本声效输出通道 (独立声道 · 车规满电平免改系统音量) -->
-      <div class="bg-car-item border-2 border-car-accent/40 rounded-2xl p-4 flex flex-col space-y-2.5 shadow-md">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-sm"></span>
-            <span class="text-[17.5px] font-black text-car-text">本声效输出通道 (独立声道)</span>
-          </div>
-          <div class="flex space-x-2">
+          <!-- 副驾项专属 3 角色切键 -->
+          <div v-if="isFrDoorItem" class="flex space-x-2 pt-2.5">
             <button
-              v-for="ch in channelOptions"
-              :key="ch.value"
-              @click="setItemChannel(ch.value)"
-              class="px-4 py-2 rounded-xl border-2 font-black text-[14px] cursor-pointer transition-all shadow-sm"
-              :class="itemChannel === ch.value ? 'bg-car-accent border-car-accent text-black' : 'bg-car-card border-car-border text-car-sub hover:text-car-text'"
+              v-for="opt in [
+                { role: 'female', name: '原车' },
+                { role: 'princess', name: '公主' },
+                { role: 'queen', name: '女王' }
+              ]"
+              :key="opt.role"
+              @click="selectFrEntityRole(opt.role)"
+              :class="[
+                'flex-1 h-[50px] rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all',
+                isRoleActive(opt.role)
+                  ? 'bg-car-card border-car-accent text-car-accent font-black shadow-md'
+                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text font-bold'
+              ]"
             >
-              {{ ch.label }}
+              <span class="text-[13.5px] whitespace-nowrap">{{ opt.name }}</span>
             </button>
           </div>
         </div>
-        <div class="text-[13.5px] text-car-sub font-bold leading-relaxed">
-          {{ channelHint }}
+
+        <!-- 右舱: 本声效输出通道 (独立声道 · 契约保留) -->
+        <div class="flex-1 min-w-0 bg-car-item border border-car-border rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2 min-w-0 pr-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-car-accent shadow-sm shrink-0"></span>
+              <span class="text-[16px] font-black text-car-text whitespace-nowrap">本声效输出通道</span>
+            </div>
+            <div class="flex space-x-1.5 shrink-0">
+              <button
+                v-for="ch in channelOptions"
+                :key="ch.value"
+                @click="setItemChannel(ch.value)"
+                class="px-3 h-[50px] rounded-xl border-2 font-black text-[13.5px] cursor-pointer transition-all shadow-sm whitespace-nowrap"
+                :class="itemChannel === ch.value ? 'bg-car-card border-car-accent text-car-accent shadow-md' : 'bg-car-card border-car-border text-car-sub hover:text-car-text'"
+              >
+                {{ ch.label }}
+              </button>
+            </div>
+          </div>
+          <div class="text-[12.5px] text-car-sub font-bold truncate pt-2">
+            {{ channelHint }}
+          </div>
         </div>
       </div>
 
@@ -170,9 +173,9 @@ function selectFrEntityRole(role) {
 }
 
 const channelHint = computed(() => {
-  if (itemChannel.value === 'nav') return '导航引导：走导航音量流，可与媒体音量分开调。';
-  if (itemChannel.value === 'notification') return '系统提示：走通知音量流（倒车挡慎选，倒车雷达通道与其互斥可能滞后爆音）。';
-  return '普通媒体：跟随车机主音量（听歌那条），默认推荐。';
+  if (itemChannel.value === 'nav') return '跟随导航音量，与媒体音量独立调节';
+  if (itemChannel.value === 'notification') return '跟随系统警报/雷达音量，不受媒体静音影响';
+  return '跟随车机主媒体音量 (听歌通道)，默认推荐';
 });
 
 function setItemChannel(ch) {
@@ -274,25 +277,25 @@ watch(() => store.modals.voiceItemSettings, (item) => {
 });
 
 const activeVoiceTypeLabel = computed(() => {
-  if (customFilePath.value.trim()) return '自定义本地音频 (已覆盖出厂)';
+  if (customFilePath.value.trim()) return '自定义本地音频';
   if (isFrDoorItem.value) {
     const role = store.vehicleAuto.passenger_voice_role || 'female';
-    if (role === 'queen') return '👑 女王专属语音 (绅士男声 · 出厂)';
-    if (role === 'female') return '🚗 原车官方语音 (知性女声 · 原厂)';
-    return '👸 公主专属语音 (温润男声 · 出厂)';
+    if (role === 'queen') return '👑 女王专属 (绅士男声)';
+    if (role === 'female') return '🚗 原车官方 (知性女声)';
+    return '👸 公主专属 (温润男声)';
   }
-  return '出厂默认原声 (晓晓温婉知性原声)';
+  return '出厂官方原声 (晓晓)';
 });
 
 const activeVoiceDesc = computed(() => {
-  if (customFilePath.value.trim()) return `文件: ${customFilePath.value.trim()} (点下方出厂音色可一键还原)`;
+  if (customFilePath.value.trim()) return customFilePath.value.trim();
   if (isFrDoorItem.value) {
     const role = store.vehicleAuto.passenger_voice_role || 'female';
-    if (role === 'queen') return '端庄绅士男声 (云扬) · 专属高雅礼遇';
-    if (role === 'female') return '吉利原车官方系统内置晓晓知性女声';
-    return '温润自然男声 (云哲) · 专属宠溺音色';
+    if (role === 'queen') return '端庄绅士男声 · 专属礼遇';
+    if (role === 'female') return '吉利原车内置晓晓知性女声';
+    return '温润自然男声 · 专属宠溺音色';
   }
-  return '吉利智驾内置官方精调晓晓知性女声';
+  return '官方精调晓晓知性女声 · 舒缓温润';
 });
 
 function testCurrentAudio() {
