@@ -29,7 +29,8 @@ public class GearStateMachine {
     private int isGearVoiceArmed = 0; // 0=P挡静默休眠态, 1=车主激活态
     private Runnable pendingGearTask = null;
     private int pendingTargetGear = -1; // 防抖期目标挡位：同目标心跳不重置计时器
-    private static final long GEAR_DEBOUNCE_MS = 160; // 换挡防抖滤波窗口 (160ms 滤除快切瞬态，保证最终挡位干脆秒出)
+    private static final long GEAR_DEBOUNCE_MS = 160; // 目标挡位(D/R/P/S)常规防抖滤波窗口 (160ms 干脆秒出)
+    private static final long GEAR_N_TRANSIT_DEBOUNCE_MS = 650; // 空挡(N)过渡滤波窗口 (快速划过<650ms直接跳过零噪音，真正驻留才播)
 
     public static int normalizeGear(int rawGear) {
         int low = rawGear & 0x0F;
@@ -158,8 +159,11 @@ public class GearStateMachine {
                         isGearVoiceArmed = 1;
                     }
 
-                    // 2. 播报判定 (干脆利落短句，强制瞬发打断旧语音)
+                    // 2. 播报判定 (干脆利落短句，强制瞬发顶掉任何旧语音，绝不排队延时)
                     if (voiceMasterSwitch) {
+                        if (voicePlayer != null) {
+                            voicePlayer.stopCurrentVoice();
+                        }
                         boolean enableD = prefs.contains("voice_enable_gear_d") ? prefs.getBoolean("voice_enable_gear_d", true) : prefs.getBoolean("enable_gear_d", true);
                         boolean enableR = prefs.contains("voice_enable_gear_r") ? prefs.getBoolean("voice_enable_gear_r", true) : prefs.getBoolean("enable_gear_r", true);
                         boolean enableN = prefs.contains("voice_enable_gear_n") ? prefs.getBoolean("voice_enable_gear_n", true) : prefs.getBoolean("enable_gear_n", true);
@@ -202,8 +206,9 @@ public class GearStateMachine {
             }
         };
 
-        // 立即投递 160ms 防抖确认
-        mainHandler.postDelayed(pendingGearTask, GEAR_DEBOUNCE_MS);
+        // 动态防抖策略：空挡(N)为换挡必经物理过渡态，快速划过(<650ms)直接跳过不播；其他目标挡位 160ms 干脆秒出
+        long debounceTime = (gear == 3) ? GEAR_N_TRANSIT_DEBOUNCE_MS : GEAR_DEBOUNCE_MS;
+        mainHandler.postDelayed(pendingGearTask, debounceTime);
     }
 
     private String getGearName(int gear) {
