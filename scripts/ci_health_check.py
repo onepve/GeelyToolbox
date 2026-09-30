@@ -1415,11 +1415,64 @@ if _g28:
 else:
     print("[PASS] 车机前端框架骨架、8大功能主视图、侧边栏/顶部栏与背景样式体系全面冻结锁定，严禁非预期改动！")
 
+# ----------------------------------------------------------------------
+# 29. Vehicle Speed Autoplay Trip Lock & Steering Media Arbitration Rigidity Gate
+#     正式版车速自启单次行程硬锁、防倒车误触发、ADB 严禁阻塞死锁与方控音源仲裁刚性锁死
+# ----------------------------------------------------------------------
+log_step("29. Checking Vehicle Speed Autoplay Trip Lock & Steering Media Arbitration Rigidity")
+_g29 = []
+
+# 29a: 验证 VehicleAutomationService.java 单次行程硬锁与复位契约
+if os.path.exists(SERVICE_PATH):
+    with open(SERVICE_PATH, "r", encoding="utf-8") as f:
+        _vas_code = f.read()
+    
+    if "private volatile boolean speedAutoplayTriggeredInTrip" not in _vas_code:
+        _g29.append("VehicleAutomationService 缺失正式版单次行程车速自启锁 `speedAutoplayTriggeredInTrip`！")
+    if "speedAutoplayTriggeredInTrip = true;" not in _vas_code:
+        _g29.append("VehicleAutomationService 触发车速自启后未立即永久闭锁 `speedAutoplayTriggeredInTrip = true`！")
+    if 'resetTripSpeedAutoplay("挂入P挡驻车且主驾门开启(车主离车)")' not in _vas_code:
+        _g29.append("VehicleAutomationService 缺失离车复位行程锁契约！")
+    if 'resetTripSpeedAutoplay("整车熄火下电广播")' not in _vas_code:
+        _g29.append("VehicleAutomationService 缺失熄火下电复位行程锁契约！")
+    if "speedAutoplayArmed" in _vas_code or "speedCustomActionArmed" in _vas_code:
+        _g29.append("VehicleAutomationService 严禁包含导致倒车/低速误触发的 `speedAutoplayArmed` 重新武装代码！")
+    
+    # 严禁在车速自启/音乐唤醒链路进行同步特权 ADB 阻塞执行防 15 秒死锁与系统 ANR
+    _autoplay_chunk = ""
+    if "processVehicleSpeedAutomation" in _vas_code:
+        _autoplay_chunk = _vas_code.split("processVehicleSpeedAutomation")[1].split("initLogcatWatcher")[0]
+    if "AdbClient.execute" in _autoplay_chunk:
+        _g29.append("VehicleAutomationService 车速自启与音乐拉活链路严禁同步阻塞调用 `AdbClient.execute`！")
+else:
+    _g29.append(f"VehicleAutomationService.java 不存在: {SERVICE_PATH}")
+
+# 29b: 验证 SteeringWheelKeyManager.java 防抖与音源仲裁冻结契约
+if os.path.exists(KEY_MANAGER_PATH):
+    with open(KEY_MANAGER_PATH, "r", encoding="utf-8") as f:
+        _swkm_code = f.read()
+    
+    if "KEY_DEBOUNCE_MS = 260L;" not in _swkm_code:
+        _g29.append("SteeringWheelKeyManager 缺失正式版 260ms 单键物理防抖契约！")
+    if "resolveCurrentAudioSource()" not in _swkm_code:
+        _g29.append("SteeringWheelKeyManager 缺失核心音源仲裁方法 `resolveCurrentAudioSource()`！")
+    if 'putBoolean("user_manually_paused_media", true)' not in _swkm_code or 'putBoolean("user_manually_paused_media", false)' not in _swkm_code:
+        _g29.append("SteeringWheelKeyManager 用户手动暂停媒体标志位契约被破坏！")
+else:
+    _g29.append(f"SteeringWheelKeyManager.java 不存在: {KEY_MANAGER_PATH}")
+
+if _g29:
+    for _v29 in _g29:
+        print(f"  [FAIL] {_v29}")
+    passed = False
+else:
+    print("[PASS] 车速自启单次行程硬锁、防倒车误触、主线程防死锁与方控音源仲裁全面刚性锁死，严禁篡改！")
+
 # Final Summary Verdict
 # ----------------------------------------------------------------------
-log_step("CI 29-Gate Health Check Verdict")
+log_step("CI 30-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 28 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering closed, framework & background architecture frozen)")
+    print("[SUCCESS] All 29 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering closed, framework & background architecture frozen, speed autoplay trip-lock & steering arbitration rigidity locked)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")

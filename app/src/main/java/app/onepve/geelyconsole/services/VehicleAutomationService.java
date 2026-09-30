@@ -106,6 +106,13 @@ public class VehicleAutomationService extends Service {
     private int lastEngineState = -1;
     public static volatile int currentSpeedKmH = 0;
 
+    // 同状态接触微抖动过滤 (毫秒)
+    private long lastTriggerFL = 0;
+    private long lastTriggerFR = 0;
+    private long lastTriggerRL = 0;
+    private long lastTriggerRR = 0;
+    private long lastTriggerTrunk = 0;
+    private long lastTriggerGear = 0;
     /** 电源聚合状态字符串（仅变化时才写日志，杜绝心跳刷屏） */
     private String lastPowerStateAggregate = "";
 
@@ -126,6 +133,9 @@ public class VehicleAutomationService extends Service {
     // 转向灯联动 360 状态
     private boolean enableTurnSignal360 = false;
     private boolean isTurnSignal360Active = false;
+
+    /** 桥接只读快照 (供 MainActivity 同步读取，不加锁只写 volatile) */
+    private volatile boolean lastEngineRunningSnapshot = false;
 
     /** 桥接辅助: MainActivity 同步读取发动机运行判定 */
     public static boolean isEngineRunningForBridge() {
@@ -165,6 +175,7 @@ public class VehicleAutomationService extends Service {
             }
         } else {
             // 挂在物理 P 挡且推开主驾车门：车主泊车下车离车，结束本次行程
+            resetTripSpeedAutoplay("挂入P挡驻车且主驾门开启(车主离车)");
         }
     }
 
@@ -283,8 +294,6 @@ public class VehicleAutomationService extends Service {
             lastDriveMode = mode;
         });
 
-        // 启动与冷机初始化：重置单次行程自启锁与内存暂停标记，确保新行程自然就绪
-
         createNotificationChannel();
         Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ?
                 new Notification.Builder(this, CHANNEL_ID) : new Notification.Builder(this);
@@ -385,15 +394,11 @@ public class VehicleAutomationService extends Service {
         String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
         boolean wheelEnabled = wheelMasterSwitch && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
 
-        boolean speedAutoplayEnabled = prefs.getBoolean("vehicle_speed_autoplay_enabled", true);
-        boolean speedCustomActionEnabled = prefs.getBoolean("vehicle_speed_custom_action_enabled", false);
-
         boolean anyVoiceEnabled = voiceMasterSwitch && (enableDoorFl || enableDoorFlClose || enableDoorFr || enableDoorFrClose ||
                              enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
                              enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN || enableGearS ||
                              enableModeSmart || enableModeComfort || enableModeEco || enableModeSport);
         boolean anyEnabled = anyVoiceEnabled || wheelEnabled || enableTurnSignal360
-                || speedAutoplayEnabled || speedCustomActionEnabled
                 || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
         if (!anyEnabled) {
@@ -487,6 +492,7 @@ public class VehicleAutomationService extends Service {
                     if (gearStateMachine != null) gearStateMachine.resetState();
                     if (driveModeManager != null) driveModeManager.resetState();
                     if (doorStateManager != null) doorStateManager.resetState();
+                    resetTripSpeedAutoplay("整车熄火下电广播");
                 } else if (screenOff) {
                     // 息屏 ≠ 熄火：车机息屏待机时发动机可能仍在运行（发电机充电电压仍 ≥13.2V）。
                     // 此处坚决不碰 lastPowerMode，交由电压权威判定兜底，杜绝「息屏误判锁死后永久静音」。
@@ -512,21 +518,15 @@ public class VehicleAutomationService extends Service {
     private static final Pattern SERIAL_DOOR_PATTERN =
             Pattern.compile("91\\s+02\\s+01(?:\\s+[0-9a-fA-F]{1,2}){3}\\s+([0-9a-fA-F]{1,2})\\s+([0-9a-fA-F]{1,2})");
     private static final Pattern P_GET_SPEED =
-            Pattern.compile("Get Speed\\s+(\\d+)km/h", Pattern.CASE_INSENSITIVE);
-    private static final Pattern P_SPEED_COLON =
-            Pattern.compile("speed\\s*:\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern P_SPEED_IPK_HEX =
-            Pattern.compile("VehId=Vehicle_IPK_Speed\\s+value=(?:0x)?([0-9a-fA-F]+)");
-    private static final Pattern P_SPEED_SENSOR_HEX =
-            Pattern.compile("INFO_ID_IPKINFO_INSTANT_SPEED\\)\\s+return\\s+funValue\\((?:0x)?([0-9a-fA-F]+)\\)");
-    private static final Pattern P_SPEED_JSON =
-            Pattern.compile("\"Vehicle_speed\"\\s*:\\s*(\\d+)");
+            Pattern.compile("Get Speed\\s+(\\d+)km/h");
     private static final Pattern P_VEHICLE_GEAR =
             Pattern.compile("VehId=Vehicle_Gear\\s+value=(?:0x)?([0-9a-fA-F]+)");
     private static final Pattern P_GEAR_EQ =
             Pattern.compile("gear=(\\d+)");
     private static final Pattern P_GEAR_POS =
             Pattern.compile("(?:funValue\\((?:0x)?([0-9a-fA-F]+)\\)|(?:mModelGearPos|GearPos)\\s*[:=]\\s*(?:0x)?([0-9a-fA-F]+))");
+    private static final Pattern P_FUNVALUE =
+            Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)");
     private static final Pattern P_DRIVE_MODE =
             Pattern.compile("(?:DirveMode|DriveMode)\\s*=\\s*(\\d+)");
     private static final Pattern P_PEPS_POWERMODE =
@@ -603,52 +603,34 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 2. 解析车辆实时车速 (多源全覆盖：原厂TBox、原厂CarAudio、原厂360、原厂仪表盘、DataCenter)
-        if (line.contains("Get Speed ") || line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")
-                || line.contains("speed :") || line.contains("speed:") || line.contains("Vehicle_IPK_Speed")
-                || line.contains("INFO_ID_IPKINFO_INSTANT_SPEED") || line.contains("Vehicle_speed")) {
+        // 2. 解析车辆实时车速
+        if (line.contains("Get Speed ") || line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")) {
             try {
-                int detectedSpeed = -1;
-                if (line.contains("Get Speed ") || line.contains("getVehicleSpeed")) {
+                if (line.contains("Get Speed ")) {
                     Matcher m = P_GET_SPEED.matcher(line);
-                    if (m.find()) detectedSpeed = Integer.parseInt(m.group(1));
-                }
-                if (detectedSpeed < 0 && (line.contains("speed :") || line.contains("speed:"))) {
-                    Matcher m = P_SPEED_COLON.matcher(line);
-                    if (m.find()) detectedSpeed = Integer.parseInt(m.group(1));
-                }
-                if (detectedSpeed < 0 && line.contains("Vehicle_IPK_Speed")) {
-                    Matcher m = P_SPEED_IPK_HEX.matcher(line);
-                    if (m.find()) detectedSpeed = Integer.parseInt(m.group(1), 16);
-                }
-                if (detectedSpeed < 0 && line.contains("INFO_ID_IPKINFO_INSTANT_SPEED")) {
-                    Matcher m = P_SPEED_SENSOR_HEX.matcher(line);
-                    if (m.find()) detectedSpeed = Integer.parseInt(m.group(1), 16);
-                }
-                if (detectedSpeed < 0 && line.contains("Vehicle_speed")) {
-                    Matcher m = P_SPEED_JSON.matcher(line);
-                    if (m.find()) detectedSpeed = Integer.parseInt(m.group(1));
-                }
-                if (detectedSpeed < 0) {
-                    int idx = line.indexOf("speed ==");
-                    if (idx == -1) idx = line.indexOf("speed=");
-                    if (idx != -1) {
-                        String sub = line.substring(idx + (line.contains("speed ==") ? 8 : 6)).trim();
-                        StringBuilder num = new StringBuilder();
-                        for (int i = 0; i < sub.length(); i++) {
-                            char c = sub.charAt(i);
-                            if (Character.isDigit(c)) num.append(c);
-                            else if (num.length() > 0) break;
-                        }
-                        if (num.length() > 0) detectedSpeed = Integer.parseInt(num.toString());
+                    if (m.find()) {
+                        currentSpeedKmH = Integer.parseInt(m.group(1));
+                        processVehicleSpeedAutomation(currentSpeedKmH);
+                        return;
                     }
                 }
-                if (detectedSpeed >= 0) {
-                    currentSpeedKmH = detectedSpeed;
-                    processVehicleSpeedAutomation(currentSpeedKmH);
-                    return;
+                int idx = line.indexOf("speed ==");
+                if (idx == -1) idx = line.indexOf("speed=");
+                if (idx != -1) {
+                    String sub = line.substring(idx + (line.contains("speed ==") ? 8 : 6)).trim();
+                    StringBuilder num = new StringBuilder();
+                    for (int i = 0; i < sub.length(); i++) {
+                        char c = sub.charAt(i);
+                        if (Character.isDigit(c)) num.append(c);
+                        else if (num.length() > 0) break;
+                    }
+                    if (num.length() > 0) {
+                        currentSpeedKmH = Integer.parseInt(num.toString());
+                        processVehicleSpeedAutomation(currentSpeedKmH);
+                    }
                 }
             } catch (Exception ignored) {}
+            return;
         }
 
         // 3. 解析车辆挡位报文 (四大独立权威源融合)
@@ -984,7 +966,10 @@ public class VehicleAutomationService extends Service {
         }
 
         if (gear == 5) {
-            // 挂入 P 挡驻车停稳：标志本次行驶结束，自动重置单次行程与内存暂停标记，迎接下次起步
+            // 挂入 P 挡驻车：若主驾车门当前已处于开启状态，协同重置行程
+            if (currentDoorFL == 1) {
+                resetTripSpeedAutoplay("挂入P挡且主驾门已开启");
+            }
         }
 
         // D挡起步联动 360 严格单次跃变状态机：切入D挡仅触发1次，锁死不循环调起；切出D挡重新武装
@@ -1377,8 +1362,8 @@ public class VehicleAutomationService extends Service {
     // ==========================================
     // 车速与门控自动化中枢 (单次行程防抖闭环)
     // ==========================================
-    private boolean speedAutoplayArmed = true; // 车速自启武装锁：初始已武装，车速回落近停后重新武装
-    private boolean speedCustomActionArmed = true; // 车速自定义联动武装锁
+    private volatile boolean speedAutoplayTriggeredInTrip = false; // 单次行程车速自启锁：触发一次后永久闭锁，绝不重复触发
+    private volatile boolean speedCustomActionTriggeredInTrip = false; // 单次行程自定义动作锁
     private boolean gearD360Armed = true; // D挡起步360单次跃变武装锁 (离开D挡才复位，彻底根治手动退出后循环调起)
     // 前门开启「单次跃变」闩锁：门开着期间 CAN 报文会持续高频重复上报 data=1，
     // 必须只在 关 ➔ 开 物理跃变的那一刻执行一次门控暂停，杜绝反复下发暂停指令与日志刷屏。
@@ -1388,35 +1373,47 @@ public class VehicleAutomationService extends Service {
     private void processVehicleSpeedAutomation(int speed) {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
 
-        // 车速回落接近停车 (<=5km/h) 才重新武装
-        if (speed <= 5) {
-            speedAutoplayArmed = true;
-            speedCustomActionArmed = true;
-        }
+        // 核心铁律：严禁在车速回落 (<=5km/h) 时重新武装或重置手动暂停标记！
+        // 等红绿灯、拥堵跟车、踩刹车停稳均属行车中途，绝不视为全新行程。
 
-        // 1. 车速智能自启多媒体 (严格按软件选定音源拉起)
+        // 1. 车速智能自启多媒体 (严格单次行程触发一次，100%尊重车主手动暂停)
         boolean autoplayEnabled = prefs.getBoolean("vehicle_speed_autoplay_enabled", true);
-        if (autoplayEnabled && speedAutoplayArmed && isEngineRunning()) {
+        boolean userManuallyPaused = prefs.getBoolean("user_manually_paused_media", false);
+        if (autoplayEnabled && !speedAutoplayTriggeredInTrip && !userManuallyPaused && isEngineRunning()) {
             int threshold = prefs.getInt("vehicle_speed_autoplay_threshold", 20);
             if (speed >= threshold) {
-                speedAutoplayArmed = false; // 触发一次即锁定，等红绿灯不重复触发
+                speedAutoplayTriggeredInTrip = true; // 本次行程永久闭锁，中途等红绿灯/减速绝不重复开歌
                 String targetPkg = getDefaultAutoplayPkg();
                 boolean fullscreen = prefs.getBoolean("vehicle_speed_autoplay_fullscreen", false);
-                AppLogger.i("车身联动", "【车速自启多媒体】车速达标 " + threshold + "km/h，拉起音源并锁定: " + targetPkg);
+                AppLogger.i("车身联动", "【车速自启多媒体】单次行程首次达标 " + threshold + "km/h，拉起音源并永久闭锁: " + targetPkg);
                 triggerMusicAutoplay(targetPkg, fullscreen);
             }
         }
 
-        // 2. 车速达标自定义动作与唤起应用
+        // 2. 车速达标自定义动作与唤起应用 (满足车主任意设定车速与打开指定软件/360)
         boolean customActionEnabled = prefs.getBoolean("vehicle_speed_custom_action_enabled", false);
-        if (customActionEnabled && speedCustomActionArmed && isEngineRunning()) {
+        if (customActionEnabled && !speedCustomActionTriggeredInTrip && isEngineRunning()) {
             int customThreshold = prefs.getInt("vehicle_speed_custom_action_threshold", 40);
             if (speed >= customThreshold) {
-                speedCustomActionArmed = false; // 触发一次即锁定
+                speedCustomActionTriggeredInTrip = true; // 单次行程防抖闭锁
                 String actionTarget = prefs.getString("vehicle_speed_custom_action_target", "action_360");
                 AppLogger.i("车身联动", "【车速自定义联动】车速达到自定义阈值 " + customThreshold + "km/h，触发: " + actionTarget);
                 triggerCustomSpeedAction(actionTarget);
             }
+        }
+    }
+
+    /**
+     * 重置单次行程车速自启武装锁与手动暂停标记
+     * 仅在明确物理P挡且主驾开门(车主泊车下车)或整车下电时复位，等红绿灯绝不复位
+     */
+    private void resetTripSpeedAutoplay(String reason) {
+        if (speedAutoplayTriggeredInTrip || speedCustomActionTriggeredInTrip) {
+            speedAutoplayTriggeredInTrip = false;
+            speedCustomActionTriggeredInTrip = false;
+            getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                    .edit().putBoolean("user_manually_paused_media", false).apply();
+            AppLogger.i("车身联动", "【单次行程重置】" + reason + "，已重置车速自启武装与手动暂停标记，为下一次出行就绪");
         }
     }
 
@@ -1542,9 +1539,23 @@ public class VehicleAutomationService extends Service {
             AppLogger.i("车身联动", "车速达到阈值，但系统正处于通话中 (蓝牙电话/微信/QQ语音)，静默跳过音乐自启");
             return;
         }
-        // 核心互斥守卫 1：若手机蓝牙当前正处于推流播放态，绝不自启车机本地媒体，坚决杜绝双音并发
+        // 用户主动暂停守卫：仅当处于用户主动暂停抑制窗口内（8秒内）才跳过，绝不能被历史标记永久阻断起步放歌
+        if (EasMediaBridge.getInstance(this).isAutoWakeSuppressed()) {
+            AppLogger.i("车身联动", "车速达到阈值，但处于用户主动暂停抑制窗口内，跳过自动播放（尊重用户暂停意图）");
+            return;
+        }
+        // 核心互斥守卫 1：若当前系统已有任意媒体在播放，绝对不重复触发，静默放行防冲突
+        if (isAnyMediaPlaying()) {
+            AppLogger.i("车身联动", "车速达到阈值，但系统已有媒体在播放中，静默跳过自启防冲突");
+            return;
+        }
+        // 核心互斥守卫 2：若手机蓝牙当前正处于推流播放态，绝不自启车机本地媒体，坚决杜绝双音并发
         if (EasMediaBridge.getInstance(this).isA2dpStreaming()) {
             AppLogger.i("车身联动", "车速达到阈值，手机蓝牙音频正在推流播放中，跳过车机本地音乐自启");
+            return;
+        }
+        if (isTargetMediaPlaying(pkg)) {
+            AppLogger.i("车身联动", "车速达到阈值，目标媒体已在正常播放中，静默放行防打断: " + pkg);
             return;
         }
         AppLogger.i("车身联动", "车速达到阈值，按软件选定音源触发多媒体自启: " + pkg + " (全屏=" + fullscreen + ")");
@@ -1623,6 +1634,26 @@ public class VehicleAutomationService extends Service {
                 } catch (Throwable ignored) {}
             }
         }, 800);
+    }
+
+    private boolean isTargetMediaPlaying(String targetPkg) {
+        if (targetPkg == null || targetPkg.isEmpty()) return false;
+        try {
+            MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (msm != null) {
+                List<MediaController> controllers = msm.getActiveSessions(null);
+                if (controllers != null) {
+                    for (MediaController mc : controllers) {
+                        if (mc != null && targetPkg.equals(mc.getPackageName())) {
+                            if (mc.getPlaybackState() != null && mc.getPlaybackState().getState() == PlaybackState.STATE_PLAYING) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        return false;
     }
 
     public boolean isAnyMediaPlaying() {

@@ -93,6 +93,8 @@ public class SteeringWheelKeyManager {
     private final Context context;
     private final SharedPreferences prefs;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private long lastTriggerTime = 0;
+    private int lastTriggerKey = -1;
 
     private final Map<Integer, Long> lastKeyTriggerTime = new HashMap<>();
     private static final long KEY_DEBOUNCE_MS = 260L; // 260ms 单键防抖（过滤多源并发日志与物理接触抖动）
@@ -455,7 +457,7 @@ public class SteeringWheelKeyManager {
 
                 if (playingNow) {
                     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                            .edit().remove("user_manually_paused_media").apply();
+                            .edit().putBoolean("user_manually_paused_media", true).apply();
                     // 仅当目标源为手机蓝牙时，才武装 15 秒抑制窗口防反弹；本地音乐绝不抑制蓝牙！
                     if (targetSource == SOURCE_BLUETOOTH) {
                         EasMediaBridge.getInstance(context).suppressAutoWakeAfterUserPause(15000);
@@ -463,7 +465,7 @@ public class SteeringWheelKeyManager {
                     sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PAUSE, targetSource);
                 } else {
                     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                            .edit().remove("user_manually_paused_media").apply();
+                            .edit().putBoolean("user_manually_paused_media", false).apply();
                     if (targetSource == SOURCE_BLUETOOTH) {
                         // 核心：用户主动恢复播放时，立即解除暂停抑制窗口，并重新激活选通蓝牙物理通道
                         EasMediaBridge.getInstance(context).clearAutoWakeSuppression();
@@ -484,6 +486,18 @@ public class SteeringWheelKeyManager {
             case ACTION_SCREEN_OFF:
                 turnScreenOff();
                 break;
+        }
+    }
+
+    /**
+     * 蓝牙开关是否已打开（蓝牙修复分入口判定：蓝牙关时走纯原厂直发，不武装抑制窗口）。
+     */
+    private boolean isBluetoothEnabled() {
+        try {
+            BluetoothAdapter ba = BluetoothAdapter.getDefaultAdapter();
+            return ba != null && ba.isEnabled();
+        } catch (Throwable ignored) {
+            return false;
         }
     }
 
@@ -638,6 +652,20 @@ public class SteeringWheelKeyManager {
         } catch (Exception e) {
             AppLogger.e("方控按键", "调起自定义应用失败: " + e.getMessage());
         }
+    }
+
+    private void cancelNativeMute() {
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                    if (am != null) {
+                        am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
+                    }
+                } catch (Exception ignored) {}
+            }
+        }, 150);
     }
 
     public boolean is360CameraActive() {
