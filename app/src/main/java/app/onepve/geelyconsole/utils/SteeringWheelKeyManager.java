@@ -44,9 +44,13 @@ public class SteeringWheelKeyManager {
     private static final String PREFS_NAME = "toolbox_settings";
 
     // 音频目标源常量与记忆态
-    private static final int SOURCE_LOCAL = 1;
-    private static final int SOURCE_BLUETOOTH = 2;
+    public static final int SOURCE_LOCAL = 1;
+    public static final int SOURCE_BLUETOOTH = 2;
     private static int sLastActiveAudioSource = SOURCE_LOCAL;
+
+    public static void setLastActiveAudioSource(int source) {
+        sLastActiveAudioSource = source;
+    }
 
     // 手势常量
     public static final String GESTURE_SINGLE = "single";

@@ -50,7 +50,7 @@ public class AppLogger {
         DEFAULT_MODULE_STATES.put("方控按键", false);
         DEFAULT_MODULE_STATES.put("蓝牙音频", false);
         DEFAULT_MODULE_STATES.put("音频通道", false);
-        DEFAULT_MODULE_STATES.put("车身联动", false);
+        DEFAULT_MODULE_STATES.put("车身联动", true);
         DEFAULT_MODULE_STATES.put("座舱自动化", false);
         DEFAULT_MODULE_STATES.put("方控设置", false);
     }

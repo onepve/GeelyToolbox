@@ -1587,6 +1587,14 @@ public class VehicleAutomationService extends Service {
 
         // 后台静默播歌触发链：冷拉活 + 定向广播 + 定向媒体按键
         if (pkg != null && !pkg.isEmpty()) {
+            if (!"com.android.bluetooth".equals(pkg)) {
+                // 选通原车在线媒体通道 6 (保障第三方媒体声音正常进入车机扬声器，防蓝牙通道静音)
+                try {
+                    EasMediaBridge.getInstance(this).switchSourceTypeManually(6);
+                    SteeringWheelKeyManager.setLastActiveAudioSource(SteeringWheelKeyManager.SOURCE_LOCAL);
+                } catch (Throwable ignored) {}
+            }
+
             // 0. 动态拉活核心播放服务
             wakeUpTargetMediaService(pkg);
 
@@ -1630,7 +1638,16 @@ public class VehicleAutomationService extends Service {
             public void run() {
                 try {
                     // 全局广播播放键补发（双保险，彻底唤醒任何就绪的播放内核）
-                    new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
+                    if (pkg != null && !pkg.isEmpty() && !"com.android.bluetooth".equals(pkg)) {
+                        sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
+                        if ("com.tencent.qqmusiccar".equals(pkg)) {
+                            Intent qqPlay = new Intent("com.tencent.qqmusiccar.action.PLAY");
+                            qqPlay.setPackage("com.tencent.qqmusiccar");
+                            sendBroadcast(qqPlay);
+                        }
+                    } else {
+                        new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
+                    }
                 } catch (Throwable ignored) {}
             }
         }, 800);
