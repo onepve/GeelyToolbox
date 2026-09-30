@@ -1018,8 +1018,6 @@ public class SteeringWheelKeyManager {
                 VehicleAutomationService vas = VehicleAutomationService.getInstance();
                 if (vas != null) {
                     vas.wakeUpTargetMediaService(targetPkg);
-                } else if ("com.tencent.qqmusiccar".equals(targetPkg)) {
-                    SystemUtils.executePrivileged(context, "am startservice -n com.tencent.qqmusiccar/com.tencent.qqmusicplayerprocess.service.QQPlayerServiceNew");
                 }
             } catch (Throwable ignored) {}
         } else {

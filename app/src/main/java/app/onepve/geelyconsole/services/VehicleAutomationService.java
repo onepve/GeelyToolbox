@@ -1408,13 +1408,11 @@ public class VehicleAutomationService extends Service {
      * 仅在明确物理P挡且主驾开门(车主泊车下车)或整车下电时复位，等红绿灯绝不复位
      */
     private void resetTripSpeedAutoplay(String reason) {
-        if (speedAutoplayTriggeredInTrip || speedCustomActionTriggeredInTrip) {
-            speedAutoplayTriggeredInTrip = false;
-            speedCustomActionTriggeredInTrip = false;
-            getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
-                    .edit().putBoolean("user_manually_paused_media", false).apply();
-            AppLogger.i("车身联动", "【单次行程重置】" + reason + "，已重置车速自启武装与手动暂停标记，为下一次出行就绪");
-        }
+        speedAutoplayTriggeredInTrip = false;
+        speedCustomActionTriggeredInTrip = false;
+        getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                .edit().putBoolean("user_manually_paused_media", false).apply();
+        AppLogger.i("车身联动", "【单次行程重置】" + reason + "，已重置车速自启武装与手动暂停标记，为下一次出行就绪");
     }
 
     private void triggerCustomSpeedAction(String target) {
@@ -1571,9 +1569,9 @@ public class VehicleAutomationService extends Service {
         final String curFgPkg = ForegroundAppDetector.getForegroundPackage(this);
         final boolean wasNavigating = "com.autonavi.amapauto".equals(curFgPkg) || (curFgPkg != null && curFgPkg.contains("map"));
 
-        // 核心铁律：仅当用户明确开启「全屏沉浸大屏」时，才允许拉起前台 Activity！
-        // 若为「后台静默放歌」（默认），坚决严禁调用 startActivity，绝对不弹窗、不遮挡导航与桌面！
-        if (fullscreen && pkg != null && !pkg.isEmpty()) {
+        // 核心痛点根治：无论是否全屏，冷启动状态下必须拉活目标音乐应用进程 (startActivity)
+        // 确保播放内核、歌曲列表与网络鉴权全部加载就绪；若此前处于高德导航，1.2秒后无缝切回
+        if (pkg != null && !pkg.isEmpty()) {
             try {
                 Intent launch = getPackageManager().getLaunchIntentForPackage(pkg);
                 if (launch != null) {
@@ -1581,11 +1579,11 @@ public class VehicleAutomationService extends Service {
                     startActivity(launch);
                 }
             } catch (Throwable t) {
-                AppLogger.w("车身联动", "唤起前台媒体应用失败: " + t.getMessage());
+                AppLogger.w("车身联动", "唤起媒体应用失败: " + t.getMessage());
             }
         }
 
-        // 后台静默播歌触发链：冷拉活 + 定向广播 + 定向媒体按键
+        // 播歌触发链：冷拉活 + 定向广播 + 定向媒体按键
         if (pkg != null && !pkg.isEmpty()) {
             // 0. 动态拉活核心播放服务
             wakeUpTargetMediaService(pkg);
@@ -1633,8 +1631,20 @@ public class VehicleAutomationService extends Service {
                     // 全局广播播放键补发（双保险，彻底唤醒任何就绪的播放内核）
                     new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
                 } catch (Throwable ignored) {}
+
+                // 若车主配置为后台静默放歌且此前正在高德导航，1.2 秒后无缝将高德地图带回前台，实现完美的「后台放歌、不挡导航」！
+                if (!fullscreen && wasNavigating) {
+                    try {
+                        Intent naviIntent = getPackageManager().getLaunchIntentForPackage("com.autonavi.amapauto");
+                        if (naviIntent != null) {
+                            naviIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                            startActivity(naviIntent);
+                            AppLogger.i("车身联动", "后台静默放歌已就绪，已无缝将高德地图带回前台导航界面");
+                        }
+                    } catch (Throwable ignored) {}
+                }
             }
-        }, 800);
+        }, 1200);
     }
 
     private boolean isTargetMediaPlaying(String targetPkg) {
