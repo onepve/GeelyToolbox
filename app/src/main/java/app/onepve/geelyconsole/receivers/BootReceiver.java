@@ -34,7 +34,19 @@ public class BootReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         Log.i(TAG, "Received broadcast action: " + action);
 
-        // 场景 A：捕获应用安装/更新广播（高德/专车导航安装完成瞬间，毫秒级自动清理与自愈还原）
+        // 场景 A：本应用热更新覆盖完成 (ACTION_MY_PACKAGE_REPLACED)
+        if (Intent.ACTION_MY_PACKAGE_REPLACED.equals(action)) {
+            AppLogger.i("更新守护", "检测到缤越助手自身覆盖安装完成，秒级重启后台联动守护服务");
+            try {
+                VehicleAutomationService.syncState(context);
+                Log.i(TAG, "VehicleAutomationService synced immediately on MY_PACKAGE_REPLACED");
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to sync VehicleAutomationService on MY_PACKAGE_REPLACED: " + e.getMessage());
+            }
+            return;
+        }
+
+        // 场景 B：捕获第三方应用安装/更新广播（高德/专车导航安装完成瞬间，毫秒级自动清理与自愈还原）
         if (Intent.ACTION_PACKAGE_ADDED.equals(action) || Intent.ACTION_PACKAGE_REPLACED.equals(action)) {
             try {
                 String pkg = intent.getData() != null ? intent.getData().getSchemeSpecificPart() : null;
@@ -54,12 +66,12 @@ public class BootReceiver extends BroadcastReceiver {
             return;
         }
 
-        // 场景 B：开机/点火/休眠恢复广播 (BOOT_COMPLETED / POWER_RESUME / QUICKBOOT)
+        // 场景 C：开机/点火/休眠恢复广播 (BOOT_COMPLETED / POWER_RESUME / QUICKBOOT)
         AppLogger.i("开机守护", "收到系统开机/唤醒广播: " + action);
 
-        SharedPreferences bootPrefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-        boolean autostartEnabled = bootPrefs.getBoolean("autostart_enabled", true);
-        boolean tempAutostartForRabbit = bootPrefs.getBoolean("temp_autostart_for_rabbit", false);
+        SharedPreferences bootPrefs = app.onepve.geelyconsole.utils.PrefUtils.getAppPreferences(context);
+        boolean autostartEnabled = bootPrefs != null ? bootPrefs.getBoolean("autostart_enabled", true) : true;
+        boolean tempAutostartForRabbit = bootPrefs != null ? bootPrefs.getBoolean("temp_autostart_for_rabbit", false) : false;
         if (!autostartEnabled && !tempAutostartForRabbit) {
             AppLogger.i("开机守护", "车主已关闭开机自启动守护，车辆启动时不自动拉起工具箱后台服务");
             return;
@@ -86,7 +98,7 @@ public class BootReceiver extends BroadcastReceiver {
             @Override
             public void run() {
                 try {
-                    SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                    SharedPreferences prefs = app.onepve.geelyconsole.utils.PrefUtils.getAppPreferences(context);
                     boolean autostartEnabled = prefs.getBoolean("autostart_enabled", false);
                     boolean tempAutostartForRabbit = prefs.getBoolean("temp_autostart_for_rabbit", false);
 

@@ -13,7 +13,26 @@ public class PrefUtils {
      */
     public static SharedPreferences getAppPreferences(android.content.Context context) {
         if (context == null) return null;
-        return context.getSharedPreferences("toolbox_settings", android.content.Context.MODE_PRIVATE);
+        try {
+            // Android 7.0+ Direct Boot 校验：开机未解锁前严禁直调 CE 存储以防 IllegalStateException 崩溃
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                android.os.UserManager um = context.getSystemService(android.os.UserManager.class);
+                if (um != null && !um.isUserUnlocked()) {
+                    return context.createDeviceProtectedStorageContext().getSharedPreferences("toolbox_settings", android.content.Context.MODE_PRIVATE);
+                }
+            }
+            return context.getSharedPreferences("toolbox_settings", android.content.Context.MODE_PRIVATE);
+        } catch (IllegalStateException e) {
+            // 兜底捕获：若在未解锁时强读抛出异常，降级安全使用 DE 存储
+            try {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                    return context.createDeviceProtectedStorageContext().getSharedPreferences("toolbox_settings", android.content.Context.MODE_PRIVATE);
+                }
+            } catch (Throwable ignored) {}
+            return null;
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
 

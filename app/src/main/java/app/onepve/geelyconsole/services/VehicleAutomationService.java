@@ -1435,13 +1435,14 @@ public class VehicleAutomationService extends Service {
     }
 
     public String getDefaultAutoplayPkg() {
-        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-        String savedPkg = prefs.getString("vehicle_speed_autoplay_pkg", null);
+        SharedPreferences prefs = PrefUtils.getAppPreferences(this);
+        String savedPkg = prefs != null ? prefs.getString("vehicle_speed_autoplay_pkg", null) : null;
         if (savedPkg != null && !savedPkg.trim().isEmpty()) {
             return savedPkg.trim();
         }
         String[] candidatePkgs = new String[] {
             "com.tencent.qqmusiccar",
+            "com.tencent.qqmusic",
             "com.netease.cloudmusiccar",
             "cn.kuwo.kwmusiccar",
             "com.kugou.android.auto"
@@ -1449,10 +1450,17 @@ public class VehicleAutomationService extends Service {
         for (String candidate : candidatePkgs) {
             try {
                 getPackageManager().getPackageInfo(candidate, 0);
+                if (prefs != null) {
+                    prefs.edit().putString("vehicle_speed_autoplay_pkg", candidate).apply();
+                }
                 return candidate;
             } catch (Throwable ignored) {}
         }
-        return "com.android.bluetooth";
+        // 权威基线默认持久化：若未设置或未探测到，默认以 QQ 音乐车机版为基准持久化保存，绝不跌落蓝牙
+        if (prefs != null) {
+            prefs.edit().putString("vehicle_speed_autoplay_pkg", "com.tencent.qqmusiccar").apply();
+        }
+        return "com.tencent.qqmusiccar";
     }
 
     private void tryStartComponentService(String pkg, String serviceCls) {

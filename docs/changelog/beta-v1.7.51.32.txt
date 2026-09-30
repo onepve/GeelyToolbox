@@ -1,0 +1,5 @@
+修复DirectBoot开机未解锁闪退与热更新后台服务秒级拉活 (v1.7.51.32)
+- 彻底修复开机 Direct Boot 存储崩溃：PrefUtils 与 BootReceiver 增加用户解锁状态守卫，开机极早期未解锁时安全降级至 DE 存储，杜绝 IllegalStateException 崩溃闪退。
+- 新增热更新广播自动拉活：注册 android.intent.action.MY_PACKAGE_REPLACED 广播，车机点火状态下升级安装完成后秒级自动重启后台联动守护，无需手动点开图标。
+- 健全默认音源自动持久化：getDefaultAutoplayPkg 补齐 QQ 音乐全系包名（车机版与通用版），空配置时自动写入持久化保存，彻底杜绝回退跌落至手机蓝牙。
+- 29 道 CI 刚性健康门禁全量通过。

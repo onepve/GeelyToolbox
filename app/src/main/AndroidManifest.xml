@@ -85,6 +85,9 @@
                 <action android:name="com.ecarx.intent.action.POWER_RESUME" />
             </intent-filter>
             <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+            <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
                 <action android:name="android.intent.action.PACKAGE_REPLACED" />
                 <data android:scheme="package" />
