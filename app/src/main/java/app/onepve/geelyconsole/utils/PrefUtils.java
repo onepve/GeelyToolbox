@@ -7,21 +7,15 @@ import android.content.SharedPreferences;
  * 解决车载系统 WebView JSBridge、备份还原与多版本迁移时，布尔值被错误存为 String 或 Int 导致 ClassCastException 的顽疾。
  */
 public class PrefUtils {
-
     /**
-     * 获取全应用统一的设备保护存储配置 (DE Storage SharedPreferences)
-     * 支持 Direct Boot (开机未解锁阶段畅通读写，彻底消除 IllegalStateException 崩溃)
+     * 获取全应用权威统一的配置存储 (SharedPreferences)
+     * 100% 保持与正式版普通存储基线一致，彻底杜绝 DE 存储导致的前后端配置分裂
      */
     public static SharedPreferences getAppPreferences(android.content.Context context) {
         if (context == null) return null;
-        android.content.Context deContext = context;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            if (!context.isDeviceProtectedStorage()) {
-                deContext = context.createDeviceProtectedStorageContext();
-            }
-        }
-        return deContext.getSharedPreferences("toolbox_settings", android.content.Context.MODE_PRIVATE);
+        return context.getSharedPreferences("toolbox_settings", android.content.Context.MODE_PRIVATE);
     }
+
 
     /**
      * 安全读取布尔值：
@@ -95,23 +89,22 @@ public class PrefUtils {
         if (prefs == null) return;
         try {
             SharedPreferences.Editor editor = prefs.edit();
-            boolean changed = false;
-            // 物理遍历并彻底清除所有历史残留的 voice_item_offset_* 键（全量内置语音已满电平重采样，彻底下线动态音量篡改）
-            java.util.Map<String, ?> all = prefs.getAll();
-            for (String key : all.keySet()) {
-                if (key != null && key.startsWith("voice_item_offset_")) {
-                    editor.remove(key);
-                    changed = true;
-                }
-            }
             String[] staleKeys = {
+                "voice_item_offset_door_fr_enter",
+                "voice_item_offset_door_fr_queen_enter",
+                "voice_item_offset_door_fr_princess_enter",
+                "voice_item_offset_door_fr_queen_close",
+                "voice_item_offset_door_fr_princess_close",
                 "voice_item_channel_door_fr_enter",
                 "voice_item_channel_door_fr_queen_enter",
                 "voice_item_channel_door_fr_princess_enter",
                 "voice_item_channel_door_fr_queen_close",
                 "voice_item_channel_door_fr_princess_close",
+                "voice_item_offset_door_fl_enter",
+                "voice_item_offset_door_fl_close_enter",
                 "voice_item_channel_door_fl_enter"
             };
+            boolean changed = false;
             for (String key : staleKeys) {
                 if (prefs.contains(key)) {
                     editor.remove(key);
@@ -120,7 +113,7 @@ public class PrefUtils {
             }
             if (changed) {
                 editor.apply();
-                AppLogger.i("座舱自动化", "【自愈防护】已成功物理清除历史残留旧版语音增益/声道废键，闪存存储已瘦身");
+                AppLogger.i("座舱自动化", "【自愈防护】已成功物理清除历史残留旧版语音增益/声道键，恢复权威主项管控");
             }
         } catch (Exception ignored) {}
     }

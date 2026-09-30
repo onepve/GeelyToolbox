@@ -59,6 +59,7 @@ public class EasMediaBridge {
 
     private static volatile EasMediaBridge sInstance;
     private final Context appContext;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private MediaCenterAPI mApi;
     private Object mToken;
@@ -75,6 +76,7 @@ public class EasMediaBridge {
     private MediaBrowser btMediaBrowser;
     private MediaController btMediaController;
     private volatile boolean btMediaBrowserConnected = false;
+    private volatile boolean isDucked = false;
     private volatile boolean voiceCompensationEnabled = true;
     private volatile int voiceCompensationOffset = 3;
 
@@ -456,9 +458,6 @@ public class EasMediaBridge {
                     AppLogger.i("蓝牙音频", "检测到媒体音量为0，已自动恢复适中音量以保障放声");
                 }
             }
-
-            // 4. 恢复正式版基线：推流选通时唤醒底层 A2DP 链路申请 AudioFocus，杜绝声卡硬件静音 (val:0.000000)
-            wakeBluetoothAudioSink();
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "选通蓝牙音频物理通道失败: " + t.getMessage());
         }
