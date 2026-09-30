@@ -1457,10 +1457,7 @@ public class VehicleAutomationService extends Service {
 
     private void tryStartComponentService(String pkg, String serviceCls) {
         if (pkg == null || serviceCls == null) return;
-        // 优先通过特权 shell (uid 2000) 拉活，完美绕过 Android 9 普通应用跨进程启动私有服务的 Permission Denial
-        try {
-            SystemUtils.executePrivileged(this, "am startservice -n " + pkg + "/" + serviceCls);
-        } catch (Throwable ignored) {}
+        // 原生标准 Service 拉起，严禁在主/守护线程进行同步特权 ADB 阻塞执行，杜绝死锁与 ANR
         try {
             Intent intent = new Intent();
             intent.setComponent(new ComponentName(pkg, serviceCls));
@@ -1500,6 +1497,9 @@ public class VehicleAutomationService extends Service {
     public void wakeUpTargetMediaService(final String pkg) {
         if (pkg == null || pkg.isEmpty() || "com.android.bluetooth".equals(pkg)) return;
         try {
+            // 0. 优先发送显式定向 MediaButtonReceiver 广播极速拉活并触发播放 (实测毫秒级拉起主进程且绝不死锁)
+            sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
+
             // 1. 动态探测并启动目标应用声明的 MediaBrowserService 或后台核心服务
             Intent sQuery = new Intent("android.media.browse.MediaBrowserService");
             sQuery.setPackage(pkg);
@@ -1611,7 +1611,8 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Throwable ignored) {}
 
-            // 3. 发送针对该目标包名的显式媒体按键广播
+            // 3. 发送针对该目标包名的显式定向媒体按键广播 (精准命中 MediaButtonReceiver)
+            sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
             try {
                 Intent btnDown = new Intent(Intent.ACTION_MEDIA_BUTTON);
                 btnDown.setPackage(pkg);

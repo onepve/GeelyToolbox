@@ -1442,8 +1442,10 @@ if os.path.exists(SERVICE_PATH):
     _autoplay_chunk = ""
     if "processVehicleSpeedAutomation" in _vas_code:
         _autoplay_chunk = _vas_code.split("processVehicleSpeedAutomation")[1].split("initLogcatWatcher")[0]
-    if "AdbClient.execute" in _autoplay_chunk:
-        _g29.append("VehicleAutomationService 车速自启与音乐拉活链路严禁同步阻塞调用 `AdbClient.execute`！")
+    if "AdbClient.execute" in _autoplay_chunk or "executePrivileged" in _autoplay_chunk:
+        _g29.append("VehicleAutomationService 车速自启与音乐拉活链路严禁同步阻塞调用 ADB 或特权执行！")
+    if "sendExplicitMediaButtonToPackage" not in _vas_code:
+        _g29.append("VehicleAutomationService 缺失显式定向 MediaButtonReceiver 广播契约 `sendExplicitMediaButtonToPackage`！")
 else:
     _g29.append(f"VehicleAutomationService.java 不存在: {SERVICE_PATH}")
 
