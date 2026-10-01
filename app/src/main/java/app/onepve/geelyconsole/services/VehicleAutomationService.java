@@ -1640,6 +1640,42 @@ public class VehicleAutomationService extends Service {
                     // 全局广播播放键补发（双保险，彻底唤醒任何就绪的播放内核）
                     new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
                 } catch (Throwable ignored) {}
+
+                // 冷启动保底自愈：若设置了后台静默放歌，但此时目标播放器仍未处于播放态（冷态未被广播叫醒）
+                if (!fullscreen && pkg != null && !pkg.isEmpty() && !isTargetMediaPlaying(pkg)) {
+                    try {
+                        AppLogger.i("车身联动", "目标媒体处于未激活冷态，启动秒级无缝冷拉活以激活播放内核: " + pkg);
+                        Intent launch = getPackageManager().getLaunchIntentForPackage(pkg);
+                        if (launch != null) {
+                            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(launch);
+
+                            // 补发一次播放指令确保起播
+                            mainHandler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
+                                    } catch (Throwable ignored) {}
+
+                                    // 若此前在前台导航（高德等），无缝将导航带回前台实现 0 遮挡
+                                    if (wasNavigating) {
+                                        try {
+                                            Intent naviIntent = getPackageManager().getLaunchIntentForPackage("com.autonavi.amapauto");
+                                            if (naviIntent != null) {
+                                                naviIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                                                startActivity(naviIntent);
+                                                AppLogger.i("车身联动", "冷启动播放内核已就绪，已无缝将高德导航复位至前台");
+                                            }
+                                        } catch (Throwable ignored) {}
+                                    }
+                                }
+                            }, 500);
+                        }
+                    } catch (Throwable t) {
+                        AppLogger.w("车身联动", "冷拉活兜底失败: " + t.getMessage());
+                    }
+                }
             }
         }, 800);
     }
