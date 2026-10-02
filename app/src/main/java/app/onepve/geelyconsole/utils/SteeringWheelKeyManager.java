@@ -1009,42 +1009,16 @@ public class SteeringWheelKeyManager {
             Log.w(TAG, "MediaSession transportControls error: " + e.getMessage());
         }
 
-        // 4. 定向显式广播直达 (针对目标应用或已安装媒体库发送显式 Intent，穿透 Android 9 后台广播限制)
+        // 4. 定向显式广播调度 (严格遵循车规标准：切歌就是单纯切歌，严禁越俎代庖强行拉起或唤醒未运行的进程)
         List<String> broadcastTargets = new ArrayList<>();
         if (!targetPkg.isEmpty()) {
             broadcastTargets.add(targetPkg);
-            // 若目标应用当前处于冷态无会话，通过特权通道辅助拉活播放核心，确保按键即时响应
-            try {
-                VehicleAutomationService vas = VehicleAutomationService.getInstance();
-                if (vas != null) {
-                    vas.wakeUpTargetMediaService(targetPkg);
-                } else if ("com.tencent.qqmusiccar".equals(targetPkg)) {
-                    SystemUtils.executePrivileged(context, "am startservice -n com.tencent.qqmusiccar/com.tencent.qqmusic.innovation.network.service.NetworkService");
-                    SystemUtils.executePrivileged(context, "am broadcast -a android.intent.action.MEDIA_BUTTON -n com.tencent.qqmusiccar/com.tencent.qqmusicsdk.player.listener.MediaButtonReceiver --ei android.intent.extra.KEY_EVENT 126");
-                }
-            } catch (Throwable ignored) {}
         } else {
-            // 未锁定具体单一应用时，向整车已安装的媒体应用广播兜底
+            // 未锁定具体单一应用时，向整车已安装的媒体应用派发标准按键
             broadcastTargets.addAll(getInstalledMediaPackages());
         }
 
-        // 若当前处于未播放状态且车主执行上一首/下一首切歌，必须主动调起播放并起播
-        if (!isPlaying && isTrackSkip) {
-            for (String pkg : broadcastTargets) {
-                try {
-                    Intent playDown = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                    playDown.setPackage(pkg);
-                    playDown.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY, 0));
-                    context.sendOrderedBroadcast(playDown, null);
-
-                    Intent playUp = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                    playUp.setPackage(pkg);
-                    playUp.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY, 0));
-                    context.sendOrderedBroadcast(playUp, null);
-                } catch (Exception ignored) {}
-            }
-        }
-
+        // 仅在明确是切歌键（NEXT/PREV）或对应键值时下发纯粹的媒体按键广播，绝不附加 KEYCODE_MEDIA_PLAY，绝不拉起前后台进程
         for (String pkg : broadcastTargets) {
             try {
                 Intent down = new Intent(Intent.ACTION_MEDIA_BUTTON);
@@ -1150,17 +1124,8 @@ public class SteeringWheelKeyManager {
      * 5. 若均未命中，取整车已安装媒体应用中的首选。
      */
     public String resolveTargetMediaPackage() {
-        // 1. 优先读取系统底层音频焦点持有者
-        String focusPkg = getSystemAudioFocusPackage();
-        if (!focusPkg.isEmpty() && !isIgnoredMediaPackage(focusPkg)) {
-            try {
-                context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                        .edit().putString("last_active_media_pkg", focusPkg).apply();
-            } catch (Throwable ignored) {}
-            return focusPkg;
-        }
-
-        // 2. 检查是否有活跃且正在播放 (STATE_PLAYING) 的 MediaSession
+        // 1. 核心真源：检查向系统注册且正在播放 (STATE_PLAYING) 的 MediaSession
+        // 遵循车规媒体标准生命周期：音乐软件注册到系统后，以系统活跃会话为最高裁决基准
         try {
             MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
             if (msm != null) {
@@ -1183,31 +1148,17 @@ public class SteeringWheelKeyManager {
             }
         } catch (Throwable ignored) {}
 
-        // 3. 读取上次发声的记忆应用（若当前仍安装）
-        try {
-            String lastPkg = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                    .getString("last_active_media_pkg", "");
-            if (!lastPkg.isEmpty() && !isIgnoredMediaPackage(lastPkg)) {
-                try {
-                    context.getPackageManager().getPackageInfo(lastPkg, 0);
-                    return lastPkg;
-                } catch (PackageManager.NameNotFoundException ignored) {}
-            }
-        } catch (Throwable ignored) {}
+        // 2. 次级真源：读取系统底层音频焦点持有者
+        String focusPkg = getSystemAudioFocusPackage();
+        if (!focusPkg.isEmpty() && !isIgnoredMediaPackage(focusPkg)) {
+            try {
+                context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                        .edit().putString("last_active_media_pkg", focusPkg).apply();
+            } catch (Throwable ignored) {}
+            return focusPkg;
+        }
 
-        // 3.5 优先读取车主在“车速自启音乐软件”中选定的默认音源应用
-        try {
-            SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            String configuredPkg = sp.getString("vehicle_speed_autoplay_pkg", null);
-            if (configuredPkg != null && !configuredPkg.trim().isEmpty() && !isIgnoredMediaPackage(configuredPkg.trim())) {
-                try {
-                    context.getPackageManager().getPackageInfo(configuredPkg.trim(), 0);
-                    return configuredPkg.trim();
-                } catch (PackageManager.NameNotFoundException ignored) {}
-            }
-        } catch (Throwable ignored) {}
-
-        // 4. 若无记忆，检查是否有任意活跃的非空 MediaSession
+        // 3. 检查是否有任意已注册到系统的就绪态 MediaSession（已在后台注册挂载，但当前处于暂停或待机态）
         try {
             MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
             if (msm != null) {
@@ -1225,7 +1176,31 @@ public class SteeringWheelKeyManager {
             }
         } catch (Throwable ignored) {}
 
-        // 5. 若均未命中，返回已安装列表中的首选媒体应用
+        // 4. 兜底仲裁：严格尊重车主在设置中选定的【默认首选音源应用】（绝不可硬编码绑死或被过期历史缓存劫持）
+        try {
+            SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            String configuredPkg = sp.getString("vehicle_speed_autoplay_pkg", null);
+            if (configuredPkg != null && !configuredPkg.trim().isEmpty() && !isIgnoredMediaPackage(configuredPkg.trim())) {
+                try {
+                    context.getPackageManager().getPackageInfo(configuredPkg.trim(), 0);
+                    return configuredPkg.trim();
+                } catch (PackageManager.NameNotFoundException ignored) {}
+            }
+        } catch (Throwable ignored) {}
+
+        // 5. 读取上次发声的记忆应用（仅在无活跃会话且未指定默认音源时容灾参考）
+        try {
+            String lastPkg = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    .getString("last_active_media_pkg", "");
+            if (!lastPkg.isEmpty() && !isIgnoredMediaPackage(lastPkg)) {
+                try {
+                    context.getPackageManager().getPackageInfo(lastPkg, 0);
+                    return lastPkg;
+                } catch (PackageManager.NameNotFoundException ignored) {}
+            }
+        } catch (Throwable ignored) {}
+
+        // 6. 若均未命中，返回已安装列表中的首选媒体应用
         List<String> installed = getInstalledMediaPackages();
         if (!installed.isEmpty()) {
             return installed.get(0);
