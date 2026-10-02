@@ -1,70 +1,35 @@
 <template>
   <div class="flex flex-col space-y-4">
-    <!-- 0. 前置环境安装管控（一左一右双列对称网格：吉利应用商店状态与第三方 APK 放行白名单） -->
-    <div class="grid grid-cols-2 gap-4">
-      <!-- 左侧：吉利应用商店安全冻结防护 -->
-      <div class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card flex items-center justify-between space-x-4">
-        <div class="flex-1 min-w-0 flex flex-col space-y-1.5">
-          <div class="flex items-center space-x-2.5">
-            <span class="text-[20px] font-black text-car-text tracking-wide truncate">吉利应用商店防护</span>
-            <HelpDot @click="openModal('confirm', {
-              title: '【功能指南】吉利应用商店防护',
-              desc: '1. 为什么要冻结原厂商店：\n原厂商店会在后台偷偷重置系统限制，导致刚装好的第三方软件被清空或打不开。\n\n2. 冻结后的影响：\n仅停用原厂自带商城，原车自带的地图、倒车影像、车辆设置等所有功能完全不受影响；需要用原厂商城时可随时一键解冻。\n\n3. 推荐操作：\n平时建议一直保持冻结锁定，安装和使用第三方软件更稳定。',
-              tip: '建议保持冻结，使用第三方软件更省心。',
-              showCancel: false,
-              confirmText: '我知道了'
-            })" title="查看吉利应用商店防护说明" />
-          </div>
-          <div class="text-[13.5px] text-car-sub font-bold leading-normal truncate">
-            {{ store.deviceInfo.appstore_frozen ? '原厂商店已安全锁定，阻断安装策略被破坏' : '原厂商店未冻结，后台可能会重置白名单' }}
-          </div>
+    <!-- 0. 前置环境安全管控：吉利原厂应用商店冻结守护（白名单状态已常驻顶栏胶囊直达，界面更通透） -->
+    <div class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card flex items-center justify-between space-x-4">
+      <div class="flex-1 min-w-0 flex flex-col space-y-1.5">
+        <div class="flex items-center space-x-2.5">
+          <span class="text-[20px] font-black text-car-text tracking-wide truncate">吉利应用商店安全防护</span>
+          <HelpDot @click="openModal('confirm', {
+            title: '【功能指南】吉利应用商店安全防护',
+            desc: '1. 为什么要冻结原厂商店：\n原厂商店会在后台偷偷重置系统限制，导致刚装好的第三方软件被清空或打不开。\n\n2. 冻结后的影响：\n仅停用原厂自带商城，原车自带的地图、倒车影像、车辆设置等所有功能完全不受影响；需要用原厂商城时可随时一键解冻。\n\n3. 推荐操作：\n平时建议一直保持冻结锁定，安装和使用第三方软件更稳定。',
+            tip: '建议保持冻结，使用第三方软件更省心。',
+            showCancel: false,
+            confirmText: '我知道了'
+          })" title="查看吉利应用商店防护说明" />
         </div>
-
-        <button
-          @click="openAppstoreFlow"
-          :class="[
-            'min-w-[170px] min-h-[64px] px-4 rounded-2xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center space-x-2 shrink-0 whitespace-nowrap',
-            store.deviceInfo.appstore_frozen
-              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20'
-              : 'bg-car-item border-amber-500/80 hover:border-amber-400 ring-2 ring-amber-500/20 text-car-text'
-          ]"
-        >
-          <StatusDot size="sm" :color="store.deviceInfo.appstore_frozen ? 'ok' : 'warn'" />
-          <span>{{ store.deviceInfo.appstore_frozen ? '已安全冻结' : '立即冻结商店' }}</span>
-        </button>
+        <div class="text-[14px] text-car-sub font-bold leading-normal truncate">
+          {{ store.deviceInfo.appstore_frozen ? '原厂商店已安全锁定，阻断后台偷偷撤销安装白名单' : '原厂商店未冻结，后台可能在联网时撤销放行策略' }}
+        </div>
       </div>
 
-      <!-- 右侧：第三方 APK 放行白名单 -->
-      <div class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card flex items-center justify-between space-x-4">
-        <div class="flex-1 min-w-0 flex flex-col space-y-1.5">
-          <div class="flex items-center space-x-2.5">
-            <span class="text-[20px] font-black text-car-text tracking-wide truncate">第三方 APK 白名单</span>
-            <HelpDot @click="openModal('confirm', {
-              title: '【功能指南】第三方 APK 放行白名单',
-              desc: '1. 解除安装限制：\n解除车机系统对安装包的签名限制，允许自由安装高德地图、网易云等第三方应用。\n\n2. 开关说明：\n开启后即可随心安装第三方应用；关闭则恢复车机原厂限制。\n\n3. 搭配建议：\n建议始终保持开启，并配合上方「原厂商店冻结」一起使用。',
-              tip: '安装高德地图、音乐等软件必须保持开启。',
-              showCancel: false,
-              confirmText: '我知道了'
-            })" title="查看第三方 APK 放行白名单说明" />
-          </div>
-          <div class="text-[13.5px] text-car-sub font-bold leading-normal truncate">
-            注入 apk_verify=1 属性，解除系统级安装包签名限制
-          </div>
-        </div>
-
-        <button 
-          @click="confirmToggleWhitelist"
-          :class="[
-            'min-w-[170px] min-h-[64px] px-4 rounded-2xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center space-x-2 shrink-0 whitespace-nowrap',
-            store.deviceInfo.whitelist 
-              ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20' 
-              : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-          ]"
-        >
-          <StatusDot size="sm" :color="store.deviceInfo.whitelist ? 'ok' : 'warn'" />
-          <span>{{ store.deviceInfo.whitelist ? '白名单已放行' : '立即放行签名' }}</span>
-        </button>
-      </div>
+      <button
+        @click="openAppstoreFlow"
+        :class="[
+          'min-w-[180px] min-h-[64px] px-5 rounded-2xl border-2 font-black text-[16px] cursor-pointer transition-all shadow-sm flex items-center justify-center space-x-2 shrink-0 whitespace-nowrap',
+          store.deviceInfo.appstore_frozen
+            ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20'
+            : 'bg-car-item border-amber-500/80 hover:border-amber-400 ring-2 ring-amber-500/20 text-car-text'
+        ]"
+      >
+        <StatusDot size="sm" :color="store.deviceInfo.appstore_frozen ? 'ok' : 'warn'" />
+        <span>{{ store.deviceInfo.appstore_frozen ? '已安全冻结' : '立即冻结商店' }}</span>
+      </button>
     </div>
 
     <!-- 1. 原生文件管理特权安装通道与无线快传 (核心通道 2 列对称) -->

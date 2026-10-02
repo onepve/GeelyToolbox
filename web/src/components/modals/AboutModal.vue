@@ -101,7 +101,29 @@
         </div>
       </div>
 
-      <!-- 赞赏与车友交流支持 (移入关于页直观展示) -->
+      <!-- 永久免费承诺与安全免责底线 (原开屏说明完整常驻收纳) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <div class="p-4 rounded-2xl bg-car-card border border-car-border flex flex-col justify-between">
+          <div class="flex items-center space-x-2 text-[16px] font-black text-car-text">
+            <span class="text-emerald-400">🛡️</span>
+            <span>永久承诺 · 纯净免费</span>
+          </div>
+          <div class="text-[13.5px] text-car-sub font-bold leading-relaxed mt-2">
+            吉利缤越 COOL 2022 款专车打造，完全免费使用，承诺 <b class="text-car-text">0 广告、0 诱导充值、0 功能锁死</b>。
+          </div>
+        </div>
+        <div class="p-4 rounded-2xl bg-car-card border border-car-border flex flex-col justify-between">
+          <div class="flex items-center space-x-2 text-[16px] font-black text-car-text">
+            <span class="text-amber-400">⚠️</span>
+            <span>安全与免责底线</span>
+          </div>
+          <div class="text-[13.5px] text-car-sub font-bold leading-relaxed mt-2">
+            各项功能直接与底层车辆协议联动。请务必在 <b class="text-car-accent">安全停车（P 挡）</b> 下配置，行车途中严禁分心操作屏幕。
+          </div>
+        </div>
+      </div>
+
+      <!-- 赞赏与车友交流支持 -->
       <div class="p-5 rounded-2xl bg-car-card border border-car-border flex items-center justify-between">
         <div class="flex items-center space-x-5">
           <div class="p-2 bg-white rounded-2xl shadow-md border border-car-border/40 shrink-0">
@@ -109,14 +131,14 @@
           </div>
           <div class="flex flex-col space-y-1">
             <span class="text-[17px] font-black text-car-text flex items-center">
-              赞赏支持与交流
+              微信扫码赞赏支持与车友交流
             </span>
             <span class="text-[13.5px] text-car-sub font-bold">
-              个人业余开发与长期维护不易，若缤越助手对您有帮助，欢迎微信扫码赞赏支持！
+              业余个人开发与长期维护不易，若缤越助手对您有帮助，欢迎微信扫码赞赏支持！
             </span>
             <div class="flex items-center space-x-4 pt-1 text-[13.5px] text-car-sub">
               <span>作者: <b class="text-car-text">迷失</b></span>
-              <span>车友交流群: <b class="text-car-accent font-mono font-bold">564654011</b></span>
+              <span>车友交流 QQ 群: <b class="text-car-accent font-mono font-black text-[14.5px]">564654011</b></span>
             </div>
           </div>
         </div>

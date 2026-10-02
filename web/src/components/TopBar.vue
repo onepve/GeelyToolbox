@@ -147,6 +147,16 @@ const statusPills = computed(() => {
       onClick: () => handleStoreCapsuleClick() 
     },
     { 
+      text: `白名单: ${store.deviceInfo.whitelist ? '已放行' : '未放行'}`, 
+      dot: { color: store.deviceInfo.whitelist ? 'ok' : 'warn' },
+      onClick: () => handleWhitelistCapsuleClick() 
+    },
+    { 
+      text: '关于', 
+      dot: { color: 'accent' },
+      onClick: () => openModal('about') 
+    },
+    { 
       text: (() => {
         const ip = store.deviceInfo.car_ip || store.deviceInfo.ip || '';
         const isWifi = store.deviceInfo.is_wifi || (ip && (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')));
@@ -167,6 +177,24 @@ const statusPills = computed(() => {
     }
   ];
 });
+
+function handleWhitelistCapsuleClick() {
+  const current = !!store.deviceInfo.whitelist;
+  const next = !current;
+  openModal('confirm', {
+    title: next ? '【放行确认】开启第三方 APK 白名单' : '【限制确认】恢复原厂安装限制',
+    desc: next 
+      ? '即将注入 apk_verify=1 属性，解除系统对第三方 APK 的安装限制，允许自由安装高德地图、音乐等软件。' 
+      : '即将恢复原厂安装包验证，可能导致后续无法正常安装第三方应用，确定要恢复吗？',
+    tip: next ? '建议始终保持放行状态。' : '关闭后若需重新安装应用需再次开启。',
+    confirmText: next ? '确认立即放行' : '恢复限制',
+    onConfirm: () => {
+      bridge.call('toggleWhitelist');
+      store.deviceInfo.whitelist = next;
+      showToast(next ? '✓ 第三方 APK 白名单已成功放行' : '已恢复原厂安装签名限制', next ? 'success' : 'info');
+    }
+  });
+}
 
 function autoPollDeviceInfo() {
   try {

@@ -24,7 +24,6 @@
         <InstallView v-show="store.currentNav === 'install'" />
       </section>
     </main>
-    <GeekInstallModal />
 
     <!-- 7 大 M3 车规级二级模态弹窗 -->
     <AboutModal />
@@ -45,7 +44,6 @@
     <CleanDownloadModal />
     <VoiceThemeImportModal />
     <AllAppsModal />
-    <WelcomeDonateModal />
     <OilPriceModal />
 
     <!-- 极简 Toast 提示 -->
@@ -74,7 +72,6 @@ const TOAST_SKINS = {
 import { ref, watch, nextTick, onMounted } from 'vue';
 import TopBar from './components/TopBar.vue';
 import Sidebar from './components/Sidebar.vue'
-import GeekInstallModal from './components/GeekInstallModal.vue';
 import StoreView from './views/StoreView.vue';
 import WheelView from './views/WheelView.vue';
 import LinkView from './views/LinkView.vue';
@@ -115,7 +112,6 @@ import AppSelectModal from './components/modals/AppSelectModal.vue';
 import CleanDownloadModal from './components/modals/CleanDownloadModal.vue';
 import VoiceThemeImportModal from './components/modals/VoiceThemeImportModal.vue';
 import AllAppsModal from './components/modals/AllAppsModal.vue';
-import WelcomeDonateModal from './components/modals/WelcomeDonateModal.vue';
 import OilPriceModal from './components/modals/OilPriceModal.vue';
 
 import { store, bridge, openModal, recordActiveNav, refreshOilPrices, initOilPersistentSettings } from './store';
@@ -184,25 +180,8 @@ onMounted(() => {
     }
   } catch (e) {}
 
-  // 首次启动检测：等待原生权限就绪后串行拉起作者说明与赞赏弹窗（仅弹一次，持久化到 localStorage）
-  try {
-    if (!window.location.search.includes('skip_wizard')) {
-      const hasShown = localStorage.getItem('has_shown_welcome_donate');
-      if (!hasShown) {
-        let triggered = false;
-        const triggerWelcome = () => {
-          if (triggered) return;
-          triggered = true;
-          openModal('welcomeDonate');
-        };
-
-        // 监听原生层权限授权完毕信号
-        window.addEventListener('native-permission-ready', triggerWelcome, { once: true });
-        // 容错兜底：若 1800ms 内未收到原生事件（如已永久授权），自动拉起
-        setTimeout(triggerWelcome, 1800);
-      }
-    }
-  } catch (e) {}
+  // 方案 C 极客启动：取消一切开屏强制阻断弹窗，冷启动 0ms 直达主界面
+  // 作者说明、永久免费承诺、车友群与赞赏已全部常驻于顶栏【关于】胶囊与关于模态框中
 
   // 挂载 Java 状态与下载推送监听
   window.updateDeviceInfo = (jsonStr) => {
