@@ -20,26 +20,7 @@
             <span class="text-[13px] text-car-sub font-bold truncate pl-5">{{ activeVoiceDesc }}</span>
           </div>
 
-          <!-- 副驾项专属 3 角色切键 -->
-          <div v-if="isFrDoorItem" class="flex space-x-2 pt-2.5">
-            <button
-              v-for="opt in [
-                { role: 'female', name: '原车' },
-                { role: 'princess', name: '公主' },
-                { role: 'queen', name: '女王' }
-              ]"
-              :key="opt.role"
-              @click="selectFrEntityRole(opt.role)"
-              :class="[
-                'flex-1 h-[50px] rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all',
-                isRoleActive(opt.role)
-                  ? 'bg-car-card border-car-accent text-car-accent font-black shadow-md'
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text font-bold'
-              ]"
-            >
-              <span class="text-[13.5px] whitespace-nowrap">{{ opt.name }}</span>
-            </button>
-          </div>
+
         </div>
 
         <!-- 右舱: 本声效输出通道 (独立声道 · 契约保留) -->
@@ -268,27 +249,7 @@ const channelOptions = [
   { value: 'notification', label: '系统提示' }
 ];
 
-const isFrDoorItem = computed(() => {
-  return (targetItem.value?.key || '').startsWith('door_fr');
-});
 
-function isRoleActive(role) {
-  if (customFilePath.value.trim()) return false;
-  const currentRole = store.vehicleAuto.passenger_voice_role || 'female';
-  return currentRole === role;
-}
-
-function selectFrEntityRole(role) {
-  store.vehicleAuto.passenger_voice_role = role;
-  bridge.call('setVehicleAutomationSetting', 'passenger_voice_role', role);
-  // 清空针对该项的自定义路径覆盖，使出厂实体直接生效
-  customFilePath.value = '';
-  resetToDefault();
-  showToast(`已切回出厂【${role === 'queen' ? '女王语音' : (role === 'female' ? '原车语音' : '公主语音')}】`);
-  if (targetItem.value) {
-    bridge.call('testVehicleVoice', targetItem.value.key || 'door_fr');
-  }
-}
 
 const channelHint = computed(() => {
   if (itemChannel.value === 'nav') return '跟随导航音量，与媒体音量独立调节';
@@ -399,12 +360,7 @@ watch(() => store.modals.voiceItemSettings, (item) => {
 
 const activeVoiceTypeLabel = computed(() => {
   if (customFilePath.value.trim()) return '自定义本地音频';
-  if (isFrDoorItem.value) {
-    const role = store.vehicleAuto.passenger_voice_role || 'female';
-    if (role === 'queen') return '👑 女王专属 (绅士男声)';
-    if (role === 'female') return '🚗 原车官方 (知性女声)';
-    return '👸 公主专属 (温润男声)';
-  }
+
   return '出厂官方原声 (晓晓)';
 });
 
@@ -412,12 +368,7 @@ const activeVoiceDesc = computed(() => {
   if (customFilePath.value.trim()) {
     return customFileName.value ? `已绑定: ${customFileName.value}` : customFilePath.value.trim();
   }
-  if (isFrDoorItem.value) {
-    const role = store.vehicleAuto.passenger_voice_role || 'female';
-    if (role === 'queen') return '端庄绅士男声 · 专属礼遇';
-    if (role === 'female') return '吉利原车内置晓晓知性女声';
-    return '温润自然男声 · 专属宠溺音色';
-  }
+
   return '官方精调晓晓知性女声 · 舒缓温润';
 });
 

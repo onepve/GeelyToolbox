@@ -244,17 +244,8 @@ public class DoorStateManager {
                     String soundFile = "door_fl.mp3";
                     String text = doorName + "车门已打开";
                     if ("FR".equals(doorCode)) {
-                        String role = prefs.getString("passenger_voice_role", "female");
-                        if ("queen".equals(role)) {
-                            soundFile = "door_fr_queen_enter.mp3";
-                            text = "恭迎女王殿下";
-                        } else if ("princess".equals(role)) {
-                            soundFile = "door_fr_princess_enter.mp3";
-                            text = "欢迎公主上车";
-                        } else {
-                            soundFile = "door_fr.mp3";
-                            text = "欢迎乘车";
-                        }
+                        soundFile = "door_fr.mp3";
+                        text = "欢迎乘车";
                     } else if ("RL".equals(doorCode)) {
                         soundFile = "door_rl.mp3";
                     } else if ("RR".equals(doorCode)) {
@@ -280,17 +271,8 @@ public class DoorStateManager {
                     String text = doorName + "车门已关好";
 
                     if ("FR".equals(doorCode)) {
-                        String role = prefs.getString("passenger_voice_role", "female");
-                        if ("queen".equals(role)) {
-                            soundFile = "door_fr_queen_close.mp3";
-                            text = "副驾车门已关好";
-                        } else if ("princess".equals(role)) {
-                            soundFile = "door_fr_princess_close.mp3";
-                            text = "副驾车门已关好";
-                        } else {
-                            soundFile = "door_fr_close.mp3";
-                            text = "副驾车门已关好";
-                        }
+                        soundFile = "door_fr_close.mp3";
+                        text = "副驾车门已关好";
                     } else if ("RL".equals(doorCode)) {
                         soundFile = "door_rl_close.mp3";
                     } else if ("RR".equals(doorCode)) {

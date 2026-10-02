@@ -51,7 +51,7 @@ public class VehicleVoicePlayer {
     private static String resolveConfigKeyFallback(SharedPreferences prefs, String key, String prefix) {
         if (prefs == null || key == null || key.isEmpty()) return key;
         // 1. 副驾衍生音效一律收敛至前端绑定的权威主项 (开门统一指向 door_fr，关门统一指向 door_fr_close)
-        // 彻底杜绝命中历史残留的 door_fr_enter / door_fr_queen_* / door_fr_princess_* 等幽灵配置
+        // 彻底杜绝命中历史残留的幽灵配置
         if (key.startsWith("door_fr_") || key.equals("door_fr")) {
             return key.contains("close") ? "door_fr_close" : "door_fr";
         }
@@ -363,22 +363,7 @@ public class VehicleVoicePlayer {
             return new String[]{"主驾下车安全提示", "主驾下车提示", "主驾开门注意后方", "主驾离车提示", "主驾离车", "主驾下车"};
         } else if ("door_fl_leave".equalsIgnoreCase(baseName)) {
             return new String[]{"主驾离车锁车", "主驾车门已关好请锁车", "主驾关门", "主驾车门关闭", "主驾离车关门", "主驾下车关门"};
-        } else if ("door_fr_princess_enter".equalsIgnoreCase(baseName)) {
-            return new String[]{"欢迎公主上车", "公主上车", "公主迎宾", "公主请上车"};
-        } else if ("door_fr_princess_ready".equalsIgnoreCase(baseName)) {
-            return new String[]{"公主请系好安全带", "公主系好安全带", "公主安全带"};
-        } else if ("door_fr_princess_exit".equalsIgnoreCase(baseName)) {
-            return new String[]{"公主请下车小包包和手机别落下哦注意后方来车", "公主请下车别落下小包包", "公主请下车", "公主下车", "公主离车"};
-        } else if ("door_fr_princess_leave".equalsIgnoreCase(baseName)) {
-            return new String[]{"公主再见今天也要开心哦", "公主再见", "公主请下车关门", "公主下车关门", "公主关门"};
-        } else if ("door_fr_queen_enter".equalsIgnoreCase(baseName)) {
-            return new String[]{"恭迎女王殿下请上车", "恭迎女王殿下", "女王请上车", "女王上车", "女王迎宾"};
-        } else if ("door_fr_queen_ready".equalsIgnoreCase(baseName)) {
-            return new String[]{"女王殿下已就座请系好安全带", "女王殿下已就座", "女王系好安全带", "女王安全带"};
-        } else if ("door_fr_queen_exit".equalsIgnoreCase(baseName)) {
-            return new String[]{"女王殿下请慢走请带好随身贵重物品注意后方来车", "女王殿下请慢走注意后方来车", "女王殿下请慢走", "女王请下车", "女王下车"};
-        } else if ("door_fr_queen_leave".equalsIgnoreCase(baseName)) {
-            return new String[]{"恭送女王殿下期待下次为您服务", "恭送女王殿下", "女王再见", "女王下车关门", "女王关门"};
+
         } else if ("door_fr_enter".equalsIgnoreCase(baseName)) {
             return new String[]{"副驾欢迎乘车女声", "副驾欢迎乘车", "副驾上车女声", "欢迎乘车女声", "副驾车门开启", "副驾开门", "副驾驶开门"};
         } else if ("door_fr_ready".equalsIgnoreCase(baseName)) {

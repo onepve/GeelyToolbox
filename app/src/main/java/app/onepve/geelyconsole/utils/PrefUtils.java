@@ -110,15 +110,7 @@ public class PrefUtils {
             SharedPreferences.Editor editor = prefs.edit();
             String[] staleKeys = {
                 "voice_item_offset_door_fr_enter",
-                "voice_item_offset_door_fr_queen_enter",
-                "voice_item_offset_door_fr_princess_enter",
-                "voice_item_offset_door_fr_queen_close",
-                "voice_item_offset_door_fr_princess_close",
                 "voice_item_channel_door_fr_enter",
-                "voice_item_channel_door_fr_queen_enter",
-                "voice_item_channel_door_fr_princess_enter",
-                "voice_item_channel_door_fr_queen_close",
-                "voice_item_channel_door_fr_princess_close",
                 "voice_item_offset_door_fl_enter",
                 "voice_item_offset_door_fl_close_enter",
                 "voice_item_channel_door_fl_enter"

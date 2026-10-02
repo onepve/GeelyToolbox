@@ -557,6 +557,8 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)");
     private static final Pattern P_DRIVE_MODE =
             Pattern.compile("(?:DirveMode|DriveMode)\\s*=\\s*(\\d+)");
+    private static final Pattern P_COMFORT_DRIVE_MODE =
+            Pattern.compile("DM_FUNC_DRIVE_MODE_SELECT\\s+value\\s*=\\s*(\\d+)");
     private static final Pattern P_PEPS_POWERMODE =
             Pattern.compile("peps_powermode[^0-9]*(\\d+)");
     private static final Pattern P_KEY_STATE =
@@ -876,8 +878,22 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
-        // 优先 2: AdaptAPI 9位全局权威常量容灾 (必须携带 DM_FUNC_DRIVE_MODE_SELECT 或 mModelDriveMode 上下文，严禁裸数字误配)
-        else if (line.contains("DM_FUNC_DRIVE_MODE_SELECT") || line.contains("mModelDriveMode")) {
+        // 优先 2: 吉利原厂 ComfortModule 旋钮直接物理报文 (DM_FUNC_DRIVE_MODE_SELECT value=X)
+        // 旋钮物理转动时 100% 毫秒级必发，完全不受三方服务上报延迟限制
+        else if (line.contains("DM_FUNC_DRIVE_MODE_SELECT")) {
+            try {
+                Matcher m = P_COMFORT_DRIVE_MODE.matcher(line);
+                if (m.find()) {
+                    int dm = Integer.parseInt(m.group(1));
+                    if (dm == 1) modeVal = MODE_COMFORT;
+                    else if (dm == 2) modeVal = MODE_SPORT;
+                    else if (dm == 3) modeVal = MODE_ECO;
+                    else if (dm == 4 || dm == 6) modeVal = MODE_SMART;
+                }
+            } catch (Exception ignored) {}
+        }
+        // 优先 3: AdaptAPI/CarSettingService 9位全局权威常量容灾 (fun:570491136 或 mModelDriveMode)
+        else if (line.contains("570491136") || line.contains("mModelDriveMode")) {
             if (line.contains("570491138")) {
                 modeVal = MODE_COMFORT; // 舒适模式 (DRIVE_MODE_SELECTION_COMFORT = 570491138)
             } else if (line.contains("570491139")) {
@@ -1072,6 +1088,7 @@ public class VehicleAutomationService extends Service {
         if (currentSpeedKmH > 0) return true; // 行驶中，必然处于运转工况
         if (latestBatteryVoltage >= 13.0f) return true; // 发电机在充电，引擎必转（与isEngineRunning阈值统一）
         if (lastEngineState == 3) return true; // 发动机明确处于运行状态
+        if (lastPowerMode == 1 && (lastKeyState == 2 || lastKeyState == 3)) return true; // 整车处于 ON/START 行车就绪状态（消除初始冷启动电压爬升期的哑巴窗口）
         // 蓄电池自然静置电压 (<13.0V) 且零车速：属于熄火未点火驻车状态，旋钮无法切换模式，一律静默
         return false;
     }
