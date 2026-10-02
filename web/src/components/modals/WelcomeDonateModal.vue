@@ -87,12 +87,12 @@ import ModalWrapper from './ModalWrapper.vue';
 import { store, closeModal } from '../../store';
 import rewardQrImg from '../../assets/img_reward_code.webp';
 
-const countdown = ref(10);
+const countdown = ref(3);
 let timer = null;
 
 function startTimer() {
   stopTimer();
-  countdown.value = 10;
+  countdown.value = 3;
   timer = setInterval(() => {
     if (countdown.value > 0) {
       countdown.value--;
@@ -127,10 +127,10 @@ function handleFinish() {
     localStorage.setItem('has_shown_welcome_donate', 'true');
   } catch (e) {}
   closeModal('welcomeDonate');
-  // 顺畅串行衔接：通知初始化向导可以安全展示，避免层级重叠
+// 顺畅进入：首次说明完成后直接持久化并进入工具箱，杜绝二次冗余弹窗打断
   try {
-    openModal('geekInstall');
-    window.dispatchEvent(new CustomEvent('welcome-donate-completed'));
+    localStorage.setItem('geek_install_guide_completed', 'true');
+    localStorage.setItem('geek_install_disclaimer_agreed', 'true');
   } catch (e) {}
 }
 </script>
