@@ -1019,7 +1019,8 @@ public class SteeringWheelKeyManager {
                 if (vas != null) {
                     vas.wakeUpTargetMediaService(targetPkg);
                 } else if ("com.tencent.qqmusiccar".equals(targetPkg)) {
-                    SystemUtils.executePrivileged(context, "am startservice -n com.tencent.qqmusiccar/com.tencent.qqmusicplayerprocess.service.QQPlayerServiceNew");
+                    SystemUtils.executePrivileged(context, "am startservice -n com.tencent.qqmusiccar/com.tencent.qqmusic.innovation.network.service.NetworkService");
+                    SystemUtils.executePrivileged(context, "am broadcast -a android.intent.action.MEDIA_BUTTON -n com.tencent.qqmusiccar/com.tencent.qqmusicsdk.player.listener.MediaButtonReceiver --ei android.intent.extra.KEY_EVENT 126");
                 }
             } catch (Throwable ignored) {}
         } else {

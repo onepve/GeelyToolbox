@@ -1609,10 +1609,10 @@ public class VehicleAutomationService extends Service {
                 }
             }
 
-            // 2. 主流车机播放器已知后台核心服务直通加速 (特权 shell 拉活)
+            // 2. 主流车机播放器已知后台核心服务直通加速 (特权 shell 拉活与显式媒体按钮唤醒)
             if ("com.tencent.qqmusiccar".equals(pkg)) {
-                tryStartComponentService(pkg, "com.tencent.qqmusicplayerprocess.service.QQPlayerServiceNew");
-                tryStartComponentService(pkg, "com.tencent.qqmusic.service.QQPlayerService");
+                tryStartComponentService(pkg, "com.tencent.qqmusic.innovation.network.service.NetworkService");
+                SystemUtils.executePrivileged(this, "am broadcast -a android.intent.action.MEDIA_BUTTON -n com.tencent.qqmusiccar/com.tencent.qqmusicsdk.player.listener.MediaButtonReceiver --ei android.intent.extra.KEY_EVENT 126");
             } else if ("com.netease.cloudmusiccar".equals(pkg) || "com.netease.cloudmusic".equals(pkg) || "com.netease.cloudmusic.iot".equals(pkg)) {
                 tryStartComponentService(pkg, "com.netease.cloudmusic.service.PlayService");
                 tryStartComponentService(pkg, "com.netease.cloudmusic.service.MediaPlaybackService");
@@ -1708,18 +1708,21 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Throwable ignored) {}
 
-            // 3. 发送针对该目标包名的显式媒体按键广播
-            try {
-                Intent btnDown = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                btnDown.setPackage(pkg);
-                btnDown.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY));
-                sendOrderedBroadcast(btnDown, null);
+            // 3. 发送显式定向媒体按键广播 (精准击中目标组件，杜绝 Android 8+ 后台隐式广播丢弃)
+            sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
+            if ("com.tencent.qqmusiccar".equals(pkg)) {
+                try {
+                    Intent qqBtnDown = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                    qqBtnDown.setComponent(new ComponentName("com.tencent.qqmusiccar", "com.tencent.qqmusicsdk.player.listener.MediaButtonReceiver"));
+                    qqBtnDown.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY));
+                    sendOrderedBroadcast(qqBtnDown, null);
 
-                Intent btnUp = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                btnUp.setPackage(pkg);
-                btnUp.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY));
-                sendOrderedBroadcast(btnUp, null);
-            } catch (Throwable ignored) {}
+                    Intent qqBtnUp = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                    qqBtnUp.setComponent(new ComponentName("com.tencent.qqmusiccar", "com.tencent.qqmusicsdk.player.listener.MediaButtonReceiver"));
+                    qqBtnUp.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY));
+                    sendOrderedBroadcast(qqBtnUp, null);
+                } catch (Throwable ignored) {}
+            }
         }
 
         mainHandler.postDelayed(new Runnable() {
@@ -1730,43 +1733,41 @@ public class VehicleAutomationService extends Service {
                     new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
                 } catch (Throwable ignored) {}
 
-                // 冷启动保底自愈：若设置了后台静默放歌，但此时目标播放器仍未处于播放态（冷态未被广播叫醒）
+                // 核心铁律：后台静默放歌（fullscreen == false）下，坚决严禁调用 startActivity 弹出界面！
+                // 仅通过纯后台通道（显式组件广播 + 特权 shell + TransportControls）进行保底起播
                 if (!fullscreen && pkg != null && !pkg.isEmpty() && !isTargetMediaPlaying(pkg)) {
                     try {
-                        AppLogger.i("车身联动", "目标媒体处于未激活冷态，启动秒级无缝冷拉活以激活播放内核: " + pkg);
-                        Intent launch = getPackageManager().getLaunchIntentForPackage(pkg);
-                        if (launch != null) {
-                            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            startActivity(launch);
-
-                            // 补发一次播放指令确保起播
-                            mainHandler.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
-                                    } catch (Throwable ignored) {}
-
-                                    // 若此前在前台导航（高德等），无缝将导航带回前台实现 0 遮挡
-                                    if (wasNavigating) {
-                                        try {
-                                            Intent naviIntent = getPackageManager().getLaunchIntentForPackage("com.autonavi.amapauto");
-                                            if (naviIntent != null) {
-                                                naviIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                                                startActivity(naviIntent);
-                                                AppLogger.i("车身联动", "冷启动播放内核已就绪，已无缝将高德导航复位至前台");
-                                            }
-                                        } catch (Throwable ignored) {}
-                                    }
-                                }
-                            }, 500);
+                        AppLogger.i("车身联动", "目标媒体处于未激活冷态，执行纯后台静默唤起放歌: " + pkg);
+                        sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
+                        if ("com.tencent.qqmusiccar".equals(pkg)) {
+                            SystemUtils.executePrivileged(VehicleAutomationService.this, "am broadcast -a android.intent.action.MEDIA_BUTTON -n com.tencent.qqmusiccar/com.tencent.qqmusicsdk.player.listener.MediaButtonReceiver --ei android.intent.extra.KEY_EVENT 126");
                         }
+                        tryDirectMediaControllerPlay(pkg);
                     } catch (Throwable t) {
-                        AppLogger.w("车身联动", "冷拉活兜底失败: " + t.getMessage());
+                        AppLogger.w("车身联动", "后台静默放歌保底异常: " + t.getMessage());
                     }
                 }
             }
         }, 800);
+    }
+
+    private void tryDirectMediaControllerPlay(String targetPkg) {
+        if (targetPkg == null || targetPkg.isEmpty()) return;
+        try {
+            MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (msm != null) {
+                List<MediaController> controllers = msm.getActiveSessions(null);
+                if (controllers != null) {
+                    for (MediaController mc : controllers) {
+                        if (mc != null && targetPkg.equals(mc.getPackageName())) {
+                            mc.getTransportControls().play();
+                            AppLogger.i("车身联动", "通过 MediaController 成功向目标媒体下发 play(): " + targetPkg);
+                            return;
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
     }
 
     private boolean isTargetMediaPlaying(String targetPkg) {
