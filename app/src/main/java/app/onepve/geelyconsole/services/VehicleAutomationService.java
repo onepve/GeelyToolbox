@@ -559,6 +559,12 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("(?:DirveMode|DriveMode)\\s*=\\s*(\\d+)");
     private static final Pattern P_COMFORT_DRIVE_MODE =
             Pattern.compile("DM_FUNC_DRIVE_MODE_SELECT\\s+value\\s*=\\s*(\\d+)");
+    private static final Pattern P_AVM_GEAR_DRIVE_MODE =
+            Pattern.compile("DriveMode1=(?:0x)?([0-9a-fA-F]+)");
+    private static final Pattern P_HAL_DRIVE_MODE =
+            Pattern.compile("parseRxProtoBuf:\\s+vp->ap\\s*\\(0x287000eb,\\s*(?:0x)?([0-9a-fA-F]+)\\s*\\)");
+    private static final Pattern P_MCU_DRIVE_MODE_FRAME =
+            Pattern.compile("read data:\\s*91\\s+09\\s+02\\s+00\\s+05\\s+00\\s+[0-9a-fA-F]{2}\\s+([0-9a-fA-F]{2})");
     private static final Pattern P_PEPS_POWERMODE =
             Pattern.compile("peps_powermode[^0-9]*(\\d+)");
     private static final Pattern P_KEY_STATE =
@@ -694,6 +700,17 @@ public class VehicleAutomationService extends Service {
                         else if (low == 0x02) gearVal = 2;
                         else if (low == 0x06 || low == 0x07) gearVal = 6;
                         else gearVal = low;
+
+                        // 同步提取底层权威驾驶模式并递交状态机（AVM 底盘守护层毫秒级真源）
+                        int high = (rawHex >> 4) & 0x0F;
+                        int dm = 0;
+                        if (high == 1) dm = MODE_COMFORT;
+                        else if (high == 2) dm = MODE_SPORT;
+                        else if (high == 3) dm = MODE_ECO;
+                        else if (high == 4 || high == 6) dm = MODE_SMART;
+                        if (dm > 0) {
+                            handleDriveModeSignal(dm);
+                        }
                     }
                 } catch (Exception ignored) {}
             }
@@ -857,16 +874,31 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 4.1 解析驾驶模式切换信号 (严格收敛对齐 Tasker 实车验证黄金法则: 纯净收敛于 ECarXCarConfigService 与 AdaptAPI 权威常量)
+        // 4.1 解析驾驶模式切换信号 (严格收敛对齐 Tasker 实车验证黄金法则: 纯净收敛于 ECarXCarConfigService、AVM底盘守护与 AdaptAPI 权威常量)
         int modeVal = -1;
 
-        // 优先 1: ECarXCarConfigService 官方系统级权威上报 (DirveMode = X / DriveMode = X)
+        // 优先 1: AVM 状态管理器底盘直出信号 (DriveMode1=0x12 / DriveMode1=18)
+        // 底盘 C++ 常驻守护进程 100% 毫秒级必发，完全不受上层 App 是否休眠影响
+        if (line.contains("DriveMode1=")) {
+            try {
+                Matcher m = P_AVM_GEAR_DRIVE_MODE.matcher(line);
+                if (m.find()) {
+                    int rawHex = Integer.parseInt(m.group(1), 16);
+                    int high = (rawHex >> 4) & 0x0F;
+                    if (high == 1) modeVal = MODE_COMFORT;
+                    else if (high == 2) modeVal = MODE_SPORT;
+                    else if (high == 3) modeVal = MODE_ECO;
+                    else if (high == 4 || high == 6) modeVal = MODE_SMART;
+                }
+            } catch (Exception ignored) {}
+        }
+        // 优先 2: ECarXCarConfigService 官方系统级权威上报 (DirveMode = X / DriveMode = X)
         // 缤越 COOL Tasker 验证黄金源：旋钮切挡与系统配置全局同步，彻底杜绝杂波
         // 1 -> 舒适模式 (MODE_COMFORT)
         // 2 -> 运动模式 (MODE_SPORT)
         // 3 -> 经济模式 (MODE_ECO)
         // 4 / 6 -> 智能模式 (MODE_SMART)
-        if (line.contains("DirveMode =") || line.contains("DirveMode=") || line.contains("DriveMode =") || line.contains("DriveMode=")) {
+        else if (line.contains("DirveMode =") || line.contains("DirveMode=") || line.contains("DriveMode =") || line.contains("DriveMode=")) {
             try {
                 Matcher m = P_DRIVE_MODE.matcher(line);
                 if (m.find()) {
@@ -878,8 +910,21 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
-        // 优先 2: 吉利原厂 ComfortModule 旋钮直接物理报文 (DM_FUNC_DRIVE_MODE_SELECT value=X)
-        // 旋钮物理转动时 100% 毫秒级必发，完全不受三方服务上报延迟限制
+        // 优先 3: 吉利 HAL 仿真层原车属性事件 (parseRxProtoBuf: vp->ap (0x287000eb, 0x01 ))
+        else if (line.contains("0x287000eb")) {
+            try {
+                Matcher m = P_HAL_DRIVE_MODE.matcher(line);
+                if (m.find()) {
+                    int rawVal = Integer.parseInt(m.group(1), 16);
+                    if (rawVal == 1) modeVal = MODE_COMFORT;
+                    else if (rawVal == 2) modeVal = MODE_SPORT;
+                    else if (rawVal == 3) modeVal = MODE_ECO;
+                    else if (rawVal == 4 || rawVal == 6) modeVal = MODE_SMART;
+                }
+            } catch (Exception ignored) {}
+        }
+        // 优先 4: 吉利原厂 ComfortModule 旋钮直接物理报文 (DM_FUNC_DRIVE_MODE_SELECT value=X)
+        // 旋钮物理转动时必发，作为业务层补充兜底
         else if (line.contains("DM_FUNC_DRIVE_MODE_SELECT")) {
             try {
                 Matcher m = P_COMFORT_DRIVE_MODE.matcher(line);
@@ -892,7 +937,7 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
-        // 优先 3: AdaptAPI/CarSettingService 9位全局权威常量容灾 (fun:570491136 或 mModelDriveMode)
+        // 优先 5: AdaptAPI/CarSettingService 9位全局权威常量容灾 (fun:570491136 或 mModelDriveMode)
         else if (line.contains("570491136") || line.contains("mModelDriveMode")) {
             if (line.contains("570491138")) {
                 modeVal = MODE_COMFORT; // 舒适模式 (DRIVE_MODE_SELECTION_COMFORT = 570491138)
@@ -1084,12 +1129,13 @@ public class VehicleAutomationService extends Service {
     private boolean isDrivingModeAllowed() {
         if (lastPowerMode == 0) return false;
         if (lastKeyState == 0 || lastKeyState == 1) return false; // 0=关, 1=ACC (熄火只开车机听歌)
-        if (lastEngineState == 0 && currentSpeedKmH == 0) return false; // 发动机明确停止且零车速
+        if (lastEngineState == 0 && currentSpeedKmH == 0 && lastGearPos == 5) return false; // 发动机明确停止且零车速且在P挡
         if (currentSpeedKmH > 0) return true; // 行驶中，必然处于运转工况
+        if (lastGearPos == 2 || lastGearPos == 3 || lastGearPos == 4) return true; // 挂入行车挡位(D/N/R)，必然处于驾驶工况(消除等红灯自动启停哑巴窗口)
         if (latestBatteryVoltage >= 13.0f) return true; // 发电机在充电，引擎必转（与isEngineRunning阈值统一）
-        if (lastEngineState == 3) return true; // 发动机明确处于运行状态
+        if (lastEngineState == 3 || lastEngineState == 2) return true; // 发动机明确处于运行状态
         if (lastPowerMode == 1 && (lastKeyState == 2 || lastKeyState == 3)) return true; // 整车处于 ON/START 行车就绪状态（消除初始冷启动电压爬升期的哑巴窗口）
-        // 蓄电池自然静置电压 (<13.0V) 且零车速：属于熄火未点火驻车状态，旋钮无法切换模式，一律静默
+        // 蓄电池自然静置电压 (<13.0V) 且零车速且在P挡：属于熄火未点火驻车状态，旋钮无法切换模式，一律静默
         return false;
     }
 
@@ -1283,8 +1329,10 @@ public class VehicleAutomationService extends Service {
                 if (currentSpeedKmH == 0 || (gearStateMachine != null && gearStateMachine.getGear() == 5)) {
                     lastPowerMode = 0;
                     AppLogger.i("电源状态", "检测到钥匙 OFF (key=0)，确认下电熄火");
+                    resetAllStateMachines();
                 } else if (latestBatteryVoltage < 13.0f) {
                     lastPowerMode = 0;
+                    resetAllStateMachines();
                 } else {
                     AppLogger.i("电源状态", "行车中忽略疑似偶发按键释放噪音 key=0 (当前电压=" + latestBatteryVoltage + "V)");
                 }
