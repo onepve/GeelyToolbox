@@ -64,6 +64,10 @@ public class VehicleAutomationService extends Service {
     public static volatile boolean wheelMasterSwitch = true;
     private float lastSavedBatteryVoltage = -1.0f;
 
+    // 开机防洪峰与蓄电池低功耗守护
+    private long serviceBootTimestamp = 0L;
+    private volatile boolean isLowPowerDeepSleeping = false;
+
     // 功能开关
     private boolean enableDoorFl = false;
     private boolean enableDoorFlClose = false;
@@ -314,12 +318,29 @@ public class VehicleAutomationService extends Service {
             Log.w(TAG, "Failed to start IdleScreensaverManager: " + e.getMessage());
         }
 
+        serviceBootTimestamp = android.os.SystemClock.elapsedRealtime();
+
         registerPowerStateReceiver();
         startLogcatReader();
         registerEcarxKeyReceiver();
         startMediaMonitor();
         EasMediaBridge.getInstance(this); // 确保蓝牙 A2DP 连接/推流监听与原车音频通道常驻就绪
-        SystemUtils.warmDisabledPackagesCache();
+
+        // 开机点火防洪峰：重开销的包缓存预热延后 5 秒异步错峰执行，避免抢占车机开机初期 I/O
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            SystemUtils.warmDisabledPackagesCache();
+                            Log.i(TAG, "Package cache warmed up asynchronously after boot peak");
+                        } catch (Throwable ignored) {}
+                    }
+                }, "Geely_WarmupThread").start();
+            }
+        }, 5000);
 
         // 开机与自动化启动兜底：若用户开启了悬浮小胶囊，确保悬浮服务伴随启动
         try {
@@ -486,6 +507,8 @@ public class VehicleAutomationService extends Service {
                         "android.intent.action.QUICKBOOT_POWEROFF".equals(action) ||
                         "com.ecarx.intent.action.ECARX_SHUTDOWN".equals(action);
                 boolean screenOff = Intent.ACTION_SCREEN_OFF.equals(action);
+                boolean screenOn = Intent.ACTION_SCREEN_ON.equals(action) ||
+                        "android.intent.action.QUICKBOOT_POWERON".equals(action);
 
                 if (realPowerOff) {
                     lastPowerMode = 0; // 真正熄火下电：强制锁定为 0
@@ -493,6 +516,9 @@ public class VehicleAutomationService extends Service {
                     if (driveModeManager != null) driveModeManager.resetState();
                     if (doorStateManager != null) doorStateManager.resetState();
                     resetTripSpeedAutoplay("整车熄火下电广播");
+                    checkLowBatteryDeepSleep(latestBatteryVoltage);
+                } else if (screenOn) {
+                    wakeFromDeepSleep();
                 } else if (screenOff) {
                     // 息屏 ≠ 熄火：车机息屏待机时发动机可能仍在运行（发电机充电电压仍 ≥13.2V）。
                     // 此处坚决不碰 lastPowerMode，交由电压权威判定兜底，杜绝「息屏误判锁死后永久静音」。
@@ -506,6 +532,8 @@ public class VehicleAutomationService extends Service {
         filter.addAction("android.intent.action.QUICKBOOT_POWEROFF");
         filter.addAction("com.ecarx.intent.action.ECARX_SHUTDOWN");
         filter.addAction(Intent.ACTION_SCREEN_OFF);
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        filter.addAction("android.intent.action.QUICKBOOT_POWERON");
         try {
             registerReceiver(powerReceiver, filter);
         } catch (Exception ignored) {}
@@ -547,6 +575,14 @@ public class VehicleAutomationService extends Service {
             @Override
             public void run() {
                 while (isRunning) {
+                    if (isLowPowerDeepSleeping) {
+                        try {
+                            Thread.sleep(30000); // 深度睡眠态下每 30 秒仅保持轻量心跳，不拉取 logcat
+                        } catch (InterruptedException ignored) {
+                            break;
+                        }
+                        continue;
+                    }
                     try {
                         try {
                             AdbClient.execute(VehicleAutomationService.this, "pm grant " + getPackageName() + " android.permission.READ_LOGS");
@@ -919,6 +955,12 @@ public class VehicleAutomationService extends Service {
                         if (volt >= 9.0f && volt <= 16.5f) {
                             latestBatteryVoltage = volt;
 
+                            // 点火防洪峰滤波：点火前 5 秒起动机抽电造成的瞬时低压不触发深度睡眠评估
+                            boolean isBootStaggering = (android.os.SystemClock.elapsedRealtime() - serviceBootTimestamp) < 5000L;
+                            if (!isBootStaggering) {
+                                checkLowBatteryDeepSleep(volt);
+                            }
+
                             if (Math.abs(volt - lastSavedBatteryVoltage) >= 0.2f) {
                                 lastSavedBatteryVoltage = volt;
                                 getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
@@ -928,6 +970,36 @@ public class VehicleAutomationService extends Service {
                     }
                 }
             } catch (Exception ignored) {}
+        }
+    }
+
+    /**
+     * 蓄电池健康进阶守护：低电压超低功耗休眠判定
+     */
+    private synchronized void checkLowBatteryDeepSleep(float currentVolt) {
+        if (lastPowerMode == 0 && !isEngineRunning()) {
+            if (currentVolt > 0 && currentVolt < 11.9f && !isLowPowerDeepSleeping) {
+                isLowPowerDeepSleeping = true;
+                AppLogger.w("电量守护", "蓄电池电压低于 11.9V (" + currentVolt + "V) 且整车熄火，进入超低功耗休眠");
+                if (logcatProcess != null) {
+                    try {
+                        logcatProcess.destroy();
+                    } catch (Exception ignored) {}
+                }
+            }
+        } else {
+            wakeFromDeepSleep();
+        }
+    }
+
+    /**
+     * 唤醒复苏机制：供点火、亮屏、上电广播毫秒级复苏
+     */
+    public synchronized void wakeFromDeepSleep() {
+        if (isLowPowerDeepSleeping) {
+            isLowPowerDeepSleeping = false;
+            AppLogger.i("电量守护", "检测到车辆唤醒/点火，退出超低功耗深度休眠，恢复座舱监听");
+            startLogcatReader();
         }
     }
 

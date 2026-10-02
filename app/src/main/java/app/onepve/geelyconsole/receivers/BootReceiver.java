@@ -93,7 +93,7 @@ public class BootReceiver extends BroadcastReceiver {
             AppLogger.e("开机守护", "开机自愈清理异常: " + e.getMessage());
         }
 
-        // 延时 2 秒等系统核心服务就绪后处理后续引导与服务守护
+        // 开机点火错峰防洪峰：延时 4 秒等原厂底座与核心服务平稳就绪后，再处理外设引导与白名单注入
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -159,6 +159,6 @@ public class BootReceiver extends BroadcastReceiver {
                     Log.e(TAG, "BootReceiver handling error: " + e.getMessage(), e);
                 }
             }
-        }, 2000);
+        }, 4000);
     }
 }
