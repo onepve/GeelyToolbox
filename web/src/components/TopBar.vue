@@ -152,11 +152,6 @@ const statusPills = computed(() => {
       onClick: () => handleWhitelistCapsuleClick() 
     },
     { 
-      text: '关于', 
-      dot: { color: 'accent' },
-      onClick: () => openModal('about') 
-    },
-    { 
       text: (() => {
         const ip = store.deviceInfo.car_ip || store.deviceInfo.ip || '';
         const isWifi = store.deviceInfo.is_wifi || (ip && (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')));
