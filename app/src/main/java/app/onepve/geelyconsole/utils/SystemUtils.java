@@ -753,6 +753,9 @@ public class SystemUtils {
         } catch (Exception e) {
             result = new OpResult(false, "操作异常: " + e.getMessage(), "");
         }
+        if ("com.ecarx.multimedia".equals(pkg) && result.success) {
+            SteeringWheelKeyManager.updateMultimediaFrozenCache(!enable);
+        }
         AppLogger.action("应用冻结", (enable ? "解冻: " : "冻结: ") + pkg, result.success, result.message);
         return result;
     }

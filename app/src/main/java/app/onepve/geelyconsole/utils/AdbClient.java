@@ -321,6 +321,12 @@ public class AdbClient {
         if (context != null && !SystemUtils.isAdbMasterSwitchEnabled(context)) {
             return new AdbResult(false, "", "ADB 总开关已关闭");
         }
+        // 前置熔断保护：若当前无就绪连接且 5555 端口未开放，0ms 立即短路跳过，杜绝超时等待
+        if (sConnectionHolder == null || !sConnectionHolder.isHealthy()) {
+            if (!isAdbPortOpenCached()) {
+                return new AdbResult(false, "", "ADB 端口未开放 (5555)");
+            }
+        }
         synchronized (sConnLock) {
             try {
                 return executeInternal(context, command);

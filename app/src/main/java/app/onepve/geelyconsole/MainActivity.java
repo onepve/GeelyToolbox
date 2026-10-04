@@ -1948,11 +1948,17 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    AdbClient.execute(context, "pm clear " + pkg);
+                    AdbClient.AdbResult res = AdbClient.execute(context, "pm clear " + pkg);
+                    final AdbClient.AdbResult finalRes = res;
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(context, "已清除应用数据与缓存: " + pkg, Toast.LENGTH_SHORT).show();
+                            if (finalRes != null && finalRes.success && finalRes.output != null && finalRes.output.contains("Success")) {
+                                Toast.makeText(context, "已清除应用数据与缓存: " + pkg, Toast.LENGTH_SHORT).show();
+                            } else {
+                                String errMsg = (finalRes != null && finalRes.error != null && !finalRes.error.isEmpty()) ? finalRes.error : "ADB 未连接或执行失败";
+                                Toast.makeText(context, "清除数据失败: " + errMsg, Toast.LENGTH_SHORT).show();
+                            }
                         }
                     });
                 }
@@ -1993,7 +1999,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             if (finalRes != null && finalRes.success && finalRes.output != null && finalRes.output.contains("Success")) {
                                 showToast("已成功卸载/停用: " + pkg);
                             } else {
-                                showToast("已发送卸载指令: " + pkg);
+                                String errMsg = (finalRes != null && finalRes.error != null && !finalRes.error.isEmpty()) ? finalRes.error : "ADB 未连接或执行失败";
+                                showToast("卸载失败: " + errMsg);
                             }
                         }
                     });

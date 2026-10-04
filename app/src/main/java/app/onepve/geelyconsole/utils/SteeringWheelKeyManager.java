@@ -122,6 +122,20 @@ public class SteeringWheelKeyManager {
     }
 
     // ================= 热路径运行态缓存（性能铁律） =================
+    private static volatile Boolean sMultimediaFrozenCache = null;
+
+    public static void updateMultimediaFrozenCache(boolean frozen) {
+        sMultimediaFrozenCache = frozen;
+    }
+
+    public static boolean isMultimediaFrozenFast(Context context) {
+        if (sMultimediaFrozenCache != null) {
+            return sMultimediaFrozenCache;
+        }
+        boolean frozen = (SystemUtils.getAppDetailedState(context, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED);
+        sMultimediaFrozenCache = frozen;
+        return frozen;
+    }
     // parseKeyFromLine 会被 logcat 全量监听的每一行调用，严禁每行都读 SharedPreferences。
     private volatile boolean wheelMasterCached = true;
     private volatile String wheelModeCached = MODE_CARMEDIA_FIRST;
@@ -749,8 +763,8 @@ public class SteeringWheelKeyManager {
             @Override
             public void run() {
                 try {
-                    // 若原厂多媒体已被车主冻结/停用，直接退出守护，无需执行任何 ADB 命令
-                    if (SystemUtils.getAppDetailedState(context, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) {
+                    // 若原厂多媒体已被车主冻结/停用（纯内存变量 0ns 判断），直接退出守护，无需执行任何 ADB 命令
+                    if (isMultimediaFrozenFast(context)) {
                         return;
                     }
 
@@ -798,8 +812,8 @@ public class SteeringWheelKeyManager {
             @Override
             public void run() {
                 try {
-                    // 若原厂多媒体已被车主在应用管理中冻结停用，直接返回，绝不重复调用 ADB
-                    if (SystemUtils.getAppDetailedState(context, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) {
+                    // 若原厂多媒体已被车主在应用管理中冻结停用（纯内存变量 0ns 判断），直接返回，绝不重复调用 ADB
+                    if (isMultimediaFrozenFast(context)) {
                         return;
                     }
                     Intent pauseIntent = new Intent("ecarx.intent.action.STOP");

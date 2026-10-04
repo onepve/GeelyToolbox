@@ -321,15 +321,7 @@ public class ThemePatcher {
         } catch (Exception ignored) {
         }
 
-        // 4. 备选：通过本地 ADB 特权指令启动
-        try {
-            AdbClient.AdbResult res = AdbClient.execute(context, "am start -n com.ecarx.thememanager/com.ecarx.thememanager.main.MainActivity");
-            if (res != null && res.success) {
-                return true;
-            }
-        } catch (Exception ignored) {
-        }
-
+        // 4. 原生调起失败时直接返回 false，前端统一弹出友好指引弹窗由车主手动点选，不再通过 ADB 强拉
         return false;
     }
 
