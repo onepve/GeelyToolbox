@@ -916,9 +916,8 @@ public class SystemUtils {
             if (!dir.exists()) dir.mkdirs();
             File customPoolDir = new File(dir, "车载语音自定义");
             if (!customPoolDir.exists()) customPoolDir.mkdirs();
-            executePrivileged(context, "chmod -R 777 /sdcard/Download");
 
-            // 自动平滑迁移历史旧目录 00_车机应用/ 下的文件到 Download/，老版本无缝过渡
+            // 自动平滑迁移历史旧目录 00_车机应用/ 下的文件到 Download/，老版本无缝过渡（纯 Java 极速迁移，不触碰 ADB）
             try {
                 File oldDedicatedDir = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用");
                 if (oldDedicatedDir.exists() && oldDedicatedDir.isDirectory()) {
@@ -941,9 +940,7 @@ public class SystemUtils {
                             }
                         }
                     }
-                    if (!oldDedicatedDir.delete()) {
-                        executePrivileged(context, "rm -rf /sdcard/Download/00_车机应用");
-                    }
+                    deleteDirectoryRecursively(oldDedicatedDir);
                 }
             } catch (Exception ignored) {}
 
