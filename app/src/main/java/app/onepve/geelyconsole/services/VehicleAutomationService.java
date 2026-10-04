@@ -592,10 +592,6 @@ public class VehicleAutomationService extends Service {
                         continue;
                     }
                     try {
-                        try {
-                            AdbClient.execute(VehicleAutomationService.this, "pm grant " + getPackageName() + " android.permission.READ_LOGS");
-                        } catch (Exception ignored) {}
-
                         // 核心日志通道: 
                         // 1. VehicleDataBuilder (CAN 信号)
                         // 2. SerialControl_v2_0 & VehicleEmulator_v2_0 (MCU 物理串口报文 91 02 01)
@@ -605,6 +601,7 @@ public class VehicleAutomationService extends Service {
                         // 放宽串口与系统标签日志级别至 :V，彻底杜绝车门报文被丢弃
                         // 不在命令行中限制 -s 标签（避免因为底层模块标签变动或漏掉标签导致整包被丢弃）
                         // 直接全量监听，由我们在 parseLogLine 中进行高效关键字判定！
+                        // 核心铁律：守护线程启动必须 0ms 瞬开，严禁在 logcat 前同步执行 ADB 命令，杜绝数十秒感知盲区
                         ProcessBuilder pb = new ProcessBuilder("logcat", "-T", "1", "-b", "all", "-v", "brief");
                         pb.redirectErrorStream(true);
                         logcatProcess = pb.start();
@@ -1660,7 +1657,6 @@ public class VehicleAutomationService extends Service {
             // 2. 主流车机播放器已知后台核心服务直通加速 (特权 shell 拉活与显式媒体按钮唤醒)
             if ("com.tencent.qqmusiccar".equals(pkg)) {
                 tryStartComponentService(pkg, "com.tencent.qqmusic.innovation.network.service.NetworkService");
-                SystemUtils.executePrivileged(this, "am broadcast -a android.intent.action.MEDIA_BUTTON -n com.tencent.qqmusiccar/com.tencent.qqmusicsdk.player.listener.MediaButtonReceiver --ei android.intent.extra.KEY_EVENT 126");
             } else if ("com.netease.cloudmusiccar".equals(pkg) || "com.netease.cloudmusic".equals(pkg) || "com.netease.cloudmusic.iot".equals(pkg)) {
                 tryStartComponentService(pkg, "com.netease.cloudmusic.service.PlayService");
                 tryStartComponentService(pkg, "com.netease.cloudmusic.service.MediaPlaybackService");
@@ -1773,7 +1769,8 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        mainHandler.postDelayed(new Runnable() {
+        // 后台静默起播调度（异步执行，彻底解耦主线程，杜绝 ADB 锁竞争卡死 UI）
+        new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -1782,25 +1779,40 @@ public class VehicleAutomationService extends Service {
                 } catch (Throwable ignored) {}
 
                 // 核心铁律：后台静默放歌（fullscreen == false）下，坚决严禁调用 startActivity 弹出界面！
-                // 仅通过纯后台通道（显式组件广播 + 特权 shell + TransportControls）进行保底起播
-                if (!fullscreen && pkg != null && !pkg.isEmpty() && !isTargetMediaPlaying(pkg)) {
-                    try {
-                        AppLogger.i("车身联动", "目标媒体处于未激活冷态，执行纯后台静默唤起放歌: " + pkg);
-                        sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
-                        if ("com.tencent.qqmusiccar".equals(pkg)) {
-                            SystemUtils.executePrivileged(VehicleAutomationService.this, "am broadcast -a android.intent.action.MEDIA_BUTTON -n com.tencent.qqmusiccar/com.tencent.qqmusicsdk.player.listener.MediaButtonReceiver --ei android.intent.extra.KEY_EVENT 126");
+                // 仅通过纯后台通道（显式组件广播 + TransportControls + 渐进式多段检测）进行保底起播
+                if (!fullscreen && pkg != null && !pkg.isEmpty()) {
+                    AppLogger.i("车身联动", "目标媒体进入静默起播检测: " + pkg);
+                    // 渐进式多段起播探测（覆盖目标应用冷启动 1s~3s 耗时）
+                    long[] stepDelays = new long[]{600, 1200, 1800};
+                    for (int i = 0; i < stepDelays.length; i++) {
+                        try {
+                            Thread.sleep(stepDelays[i]);
+                        } catch (InterruptedException ignored) {
+                            break;
                         }
-                        tryDirectMediaControllerPlay(pkg);
-                    } catch (Throwable t) {
-                        AppLogger.w("车身联动", "后台静默放歌保底异常: " + t.getMessage());
+                        if (isTargetMediaPlaying(pkg)) {
+                            AppLogger.i("车身联动", "目标媒体已处于播放态，起播成功: " + pkg);
+                            break;
+                        }
+                        // 1. 优先通过 MediaSession 下发 play()
+                        if (tryDirectMediaControllerPlay(pkg)) {
+                            AppLogger.i("车身联动", "第 " + (i + 1) + " 次尝试通过 MediaController 成功下发播放: " + pkg);
+                            break;
+                        }
+                        // 2. 补发显式组件媒体按键广播
+                        sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
+                        // 3. 补发系统通用播放键
+                        try {
+                            new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
+                        } catch (Throwable ignored) {}
                     }
                 }
             }
-        }, 800);
+        }, "AsyncMediaAutoplay").start();
     }
 
-    private void tryDirectMediaControllerPlay(String targetPkg) {
-        if (targetPkg == null || targetPkg.isEmpty()) return;
+    private boolean tryDirectMediaControllerPlay(String targetPkg) {
+        if (targetPkg == null || targetPkg.isEmpty()) return false;
         try {
             MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
             if (msm != null) {
@@ -1810,12 +1822,13 @@ public class VehicleAutomationService extends Service {
                         if (mc != null && targetPkg.equals(mc.getPackageName())) {
                             mc.getTransportControls().play();
                             AppLogger.i("车身联动", "通过 MediaController 成功向目标媒体下发 play(): " + targetPkg);
-                            return;
+                            return true;
                         }
                     }
                 }
             }
         } catch (Throwable ignored) {}
+        return false;
     }
 
     private boolean isTargetMediaPlaying(String targetPkg) {
