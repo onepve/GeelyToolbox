@@ -811,17 +811,6 @@ public class VehicleVoicePlayer {
                         ttsReady = false;
                     }
 
-                    // 1. 若检测到安装了小爱TTS，后台静默保障其权限与免CTA拦截，但不强制写死绑定小爱
-                    try {
-                        context.getPackageManager().getPackageInfo("com.xiaomi.mibrain.speech", 0);
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                SystemUtils.configureXiaoAiTts(context);
-                            }
-                        }).start();
-                    } catch (Exception ignored) {}
-
                     // 2. 监听器：就绪后设置语言并刷新待播语音 (100% 满足 CI tts-ready-flush 契约)
                     TextToSpeech.OnInitListener listener = new TextToSpeech.OnInitListener() {
                         @Override

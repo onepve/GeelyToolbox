@@ -749,6 +749,11 @@ public class SteeringWheelKeyManager {
             @Override
             public void run() {
                 try {
+                    // 若原厂多媒体已被车主冻结/停用，直接退出守护，无需执行任何 ADB 命令
+                    if (SystemUtils.getAppDetailedState(context, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) {
+                        return;
+                    }
+
                     // 1. 前置双重清栈，消灭原车系统滞后拉起的伴听
                     Thread.sleep(300);
                     SystemUtils.executePrivileged(context, "am force-stop com.ecarx.multimedia");
@@ -793,6 +798,10 @@ public class SteeringWheelKeyManager {
             @Override
             public void run() {
                 try {
+                    // 若原厂多媒体已被车主在应用管理中冻结停用，直接返回，绝不重复调用 ADB
+                    if (SystemUtils.getAppDetailedState(context, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) {
+                        return;
+                    }
                     Intent pauseIntent = new Intent("ecarx.intent.action.STOP");
                     pauseIntent.setPackage("com.ecarx.multimedia");
                     context.sendBroadcast(pauseIntent);

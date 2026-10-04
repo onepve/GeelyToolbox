@@ -64,12 +64,7 @@ public class AutoPilotManager {
 
     public static void ensureOverlayPermission(Context context) {
         if (context == null) return;
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (Settings.canDrawOverlays(context)) return;
-            }
-            AdbClient.execute(context, "appops set " + context.getPackageName() + " SYSTEM_ALERT_WINDOW allow");
-        } catch (Exception ignored) {}
+        // 遵循系统权限规范：悬浮窗权限由车主通过系统设置界面授权，不再后台静默调用 ADB
     }
 
     public synchronized void startAutoInject(final Context context, final File targetApk) {

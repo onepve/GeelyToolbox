@@ -102,7 +102,6 @@ public class FloatingWindowService extends Service {
     public static void ensureServiceStarted(Context context) {
         if (context == null) return;
         try {
-            SystemUtils.grantOverlayPermissionViaShell(context);
             Intent intent = new Intent(context, FloatingWindowService.class);
             intent.setAction(ACTION_SHOW);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -163,7 +162,6 @@ public class FloatingWindowService extends Service {
         isRunning = true;
         startForegroundSafely();
         wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-        SystemUtils.grantOverlayPermissionViaShell(this);
         android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
         if (prefs.getBoolean("floating_enabled", false)) {
             showPill();
@@ -300,9 +298,6 @@ public class FloatingWindowService extends Service {
             pillView = null;
             visible = false;
         }
-
-        // 确保悬浮窗权限放行
-        SystemUtils.grantOverlayPermissionViaShell(this);
 
         pillView = buildPillView();
         final WindowManager.LayoutParams lp = new WindowManager.LayoutParams(

@@ -568,13 +568,6 @@ public class SystemUtils {
             }
         }
 
-        try {
-            if (freeze) {
-                executePrivileged(ctx, "rm -rf /sdcard/ota_update/mpu/* 2>/dev/null");
-            }
-        } catch (Exception ignored) {
-        }
-
         boolean currentFrozen = isOtaFrozen(ctx);
         boolean finalSuccess = freeze ? currentFrozen : !currentFrozen;
 
@@ -764,13 +757,9 @@ public class SystemUtils {
         return result;
     }
 
-    public static void softReboot(Context ctx) {
+    public static void executeReboot(Context ctx) {
         AppLogger.action("系统电源", "触发一键重启车机 (reboot)", true, "整车完整冷启动");
         executePrivileged(ctx, "reboot || svc power reboot");
-    }
-
-    public static void executeReboot(Context ctx) {
-        softReboot(ctx);
     }
 
     /** 清除应用数据（pm clear） */
@@ -1906,26 +1895,6 @@ public class SystemUtils {
         return "车机型号: " + model.trim() + "\n系统版本: " + build.trim() + "\n" + res;
     }
 
-    public static void grantOverlayPermissionViaShell(final Context context) {
-        if (context == null) return;
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    String pkg = context.getPackageName();
-                    executeShell("appops set " + pkg + " SYSTEM_ALERT_WINDOW allow");
-                    executeShell("pm grant " + pkg + " android.permission.SYSTEM_ALERT_WINDOW");
-                    executePrivileged(context, "appops set " + pkg + " SYSTEM_ALERT_WINDOW allow");
-                    executePrivileged(context, "pm grant " + pkg + " android.permission.SYSTEM_ALERT_WINDOW");
-                    executePrivileged(context, "pm grant " + pkg + " android.permission.READ_LOGS");
-                    executePrivileged(context, "pm grant " + pkg + " android.permission.WRITE_SECURE_SETTINGS");
-                    executePrivileged(context, "dumpsys deviceidle whitelist +" + pkg);
-                } catch (Exception ignored) {
-                }
-            }
-        }).start();
-    }
-
     public static boolean fixAmapPermissions(Context context) {
         try {
             String pkg = "com.autonavi.amapauto";
@@ -1952,26 +1921,6 @@ public class SystemUtils {
         } catch (Exception e) {
             return false;
         }
-    }
-
-    public static void configureXiaoAiTts(Context context) {
-        if (context == null) return;
-        try {
-            String pkg = "com.xiaomi.mibrain.speech";
-            executePrivileged(context, "pm grant " + pkg + " android.permission.RECORD_AUDIO");
-            executePrivileged(context, "pm grant " + pkg + " android.permission.READ_PHONE_STATE");
-            executePrivileged(context, "pm grant " + pkg + " android.permission.WRITE_EXTERNAL_STORAGE");
-            executePrivileged(context, "pm grant " + pkg + " android.permission.READ_EXTERNAL_STORAGE");
-            executePrivileged(context, "appops set " + pkg + " SYSTEM_ALERT_WINDOW allow");
-            executePrivileged(context, "settings put secure tts_default_synth " + pkg);
-            executePrivileged(context, "settings put secure tts_enabled_plugins " + pkg);
-
-            // 写入 CTA 隐私免授权与自启配置，彻底解除小爱 TTS 内部 CTAActivity 静默拦截
-            executePrivileged(context, "mkdir -p /data/data/" + pkg + "/shared_prefs");
-            String xml = "<?xml version='1.0' encoding='utf-8' standalone='yes' ?><map><boolean name='permission_allow' value='true' /><boolean name='is_cta_selected' value='true' /></map>";
-            executePrivileged(context, "echo \"" + xml + "\" > /data/data/" + pkg + "/shared_prefs/MutiProcessShare.xml");
-            executePrivileged(context, "chmod 660 /data/data/" + pkg + "/shared_prefs/MutiProcessShare.xml");
-        } catch (Exception ignored) {}
     }
 
     public static File resolveAndRenameApkToFriendlyName(Context context, File sourceApk) {

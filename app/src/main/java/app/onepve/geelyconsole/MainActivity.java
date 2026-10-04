@@ -914,19 +914,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }).start();
     }
 
-    public void softReboot() {
-        Toast.makeText(this, "正在软重启车机系统...", Toast.LENGTH_SHORT).show();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    AdbClient.execute(MainActivity.this, "setprop ctl.restart zygote");
-                } catch (Exception ignored) {
-                }
-            }
-        }).start();
-    }
-
     // WebServer Callbacks
     @Override
     public void onUrlPushed(String url, String fileName) {}
@@ -1453,39 +1440,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public void openTaskManager() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            boolean toggled = false;
-                            try {
-                                Object service = context.getSystemService("statusbar");
-                                Class<?> statusBarManager = Class.forName("android.app.StatusBarManager");
-                                java.lang.reflect.Method expand = statusBarManager.getMethod("toggleRecentApps");
-                                expand.invoke(service);
-                                toggled = true;
-                            } catch (Exception ignored) {}
-
-                            if (!toggled) {
-                                AdbClient.execute(context, "input keyevent 187");
-                            }
-
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(context, "已调起任务管理器，请切换到文件管理器完成安装", Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                        }
-                    }).start();
-                }
-            });
-        }
-
-        @JavascriptInterface
         public boolean setAutostartEnabled(boolean enabled) {
             android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             prefs.edit().putBoolean("autostart_enabled", enabled).apply();
@@ -1897,16 +1851,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
             });
             return true;
-        }
-
-        @JavascriptInterface
-        public void softReboot() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    MainActivity.this.softReboot();
-                }
-            });
         }
 
         @JavascriptInterface
@@ -4171,38 +4115,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    // 1. 后台静默保障小爱权限与免CTA拦截
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                SystemUtils.configureXiaoAiTts(MainActivity.this);
-                            } catch (Exception ignored) {}
-                        }
-                    }).start();
-
-                    // 2. 优先调起系统首选语音引擎设置（即车主选择 XCTtsEngine / 系统语音引擎 核心界面）
                     try {
                         Intent sysTts = new Intent("com.android.settings.TTS_SETTINGS");
                         sysTts.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         startActivity(sysTts);
-                        return;
-                    } catch (Exception e) {
-                        Log.i("MainActivity", "Direct TTS_SETTINGS failed, try privileged fallback: " + e.getMessage());
-                    }
-
-                    // 3. 特权 Shell 容灾唤起系统 TTS 设置
-                    try {
-                        String out = SystemUtils.executePrivileged(MainActivity.this, "am start -a com.android.settings.TTS_SETTINGS");
-                        if (out != null && !out.contains("Error") && !out.contains("does not exist")) {
-                            return;
-                        }
-                    } catch (Exception ignored) {}
-
-                    // 4. 小爱专属设置界面备选
-                    try {
-                        SystemUtils.executePrivileged(MainActivity.this,
-                                "am start -n com.xiaomi.mibrain.speech/.tts.TtsSettingsActivity");
                     } catch (Exception e) {
                         Toast.makeText(MainActivity.this, "未找到语音引擎设置界面", Toast.LENGTH_SHORT).show();
                     }

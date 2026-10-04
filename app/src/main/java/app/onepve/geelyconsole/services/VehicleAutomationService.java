@@ -242,7 +242,6 @@ public class VehicleAutomationService extends Service {
 
             Intent intent = new Intent(context, VehicleAutomationService.class);
             if (shouldRun) {
-                SystemUtils.grantOverlayPermissionViaShell(context);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(intent);
                 } else {
@@ -1599,10 +1598,6 @@ public class VehicleAutomationService extends Service {
 
     private void tryStartComponentService(String pkg, String serviceCls) {
         if (pkg == null || serviceCls == null) return;
-        // 优先通过特权 shell (uid 2000) 拉活，完美绕过 Android 9 普通应用跨进程启动私有服务的 Permission Denial
-        try {
-            SystemUtils.executePrivileged(this, "am startservice -n " + pkg + "/" + serviceCls);
-        } catch (Throwable ignored) {}
         try {
             Intent intent = new Intent();
             intent.setComponent(new ComponentName(pkg, serviceCls));
