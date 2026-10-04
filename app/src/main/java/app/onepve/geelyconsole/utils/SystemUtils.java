@@ -940,7 +940,7 @@ public class SystemUtils {
                             }
                         }
                     }
-                    deleteDirectoryRecursively(oldDedicatedDir);
+                    deleteRecursive(oldDedicatedDir);
                 }
             } catch (Exception ignored) {}
 
