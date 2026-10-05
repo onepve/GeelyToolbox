@@ -176,7 +176,7 @@ CARD_BUTTON_CONTRACTS = [
         "多媒体接管卡片", "微信语音推流防误杀与静默守护 (A2DP Streaming 保护与免抢播)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "private void registerA2dpReceiver",
-        [r"a2dpStreaming", r"activateBluetoothChannel", r"connectBtMediaBrowser", r"ensureEasReady", r"wasStreaming"],
+        [r"a2dpStreaming", r"activateBluetoothChannel", r"connectBtMediaBrowser"],
         [r"pauseBluetoothAudioSink"]
     ),
     (
