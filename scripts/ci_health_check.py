@@ -904,6 +904,7 @@ regression_scripts = [
     "test_screen_collect_once.py",
     "test_regression_mutations.py",
     "test_voice_gain_resolver.py",
+    "test_audio_channel_arbitration_gate.py",
 ]
 for regression_script in regression_scripts:
     try:
