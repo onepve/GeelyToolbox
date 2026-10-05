@@ -729,6 +729,7 @@ public class EasMediaBridge {
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                     }
                     if (streaming) {
+                        wakeBluetoothAudioSink();
                         requestBluetoothFocusIfNeeded();
                         long now = SystemClock.uptimeMillis();
                         if (now - lastA2dpWakeTime > 4000) {
@@ -746,6 +747,7 @@ public class EasMediaBridge {
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，选通蓝牙物理声道");
+                                wakeBluetoothAudioSink();
                                 activateBluetoothChannel();
                             } else if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
