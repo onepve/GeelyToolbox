@@ -713,8 +713,10 @@ public class EasMediaBridge {
                     int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
                     if (state == 2) {
                         a2dpSinkConnected = true;
-                        AppLogger.i("蓝牙音频", "监听到蓝牙已连接 (connected)，静默就绪底层链路 (严禁自动play抢播手机)");
+                        AppLogger.i("蓝牙音频", "监听到蓝牙已连接 (connected)，静默就绪底层链路并提前选通2号蓝牙物理声道");
                         connectBtMediaBrowser();
+                        ensureEasReady();
+                        activateBluetoothChannel();
                     } else if (state == 0) {
                         a2dpSinkConnected = false;
                         a2dpStreaming = false;
@@ -724,6 +726,7 @@ public class EasMediaBridge {
                 } else if ("android.bluetooth.a2dp-sink.profile.action.AUDIO_STATE_CHANGED".equals(action)) {
                     int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
                     boolean streaming = (state == A2DP_AUDIO_STATE_STARTED);
+                    boolean wasStreaming = a2dpStreaming;
                     if (streaming != a2dpStreaming) {
                         a2dpStreaming = streaming;
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
@@ -731,7 +734,8 @@ public class EasMediaBridge {
                     if (streaming) {
                         requestBluetoothFocusIfNeeded();
                         long now = SystemClock.uptimeMillis();
-                        if (now - lastA2dpWakeTime > 4000) {
+                        // 微信短语音精准开闸：推流跃变即刻触发选通开闸；持续推流则保持2秒防抖
+                        if (!wasStreaming || now - lastA2dpWakeTime > 2000) {
                             lastA2dpWakeTime = now;
                             activateBluetoothChannel();
                         }
@@ -756,7 +760,8 @@ public class EasMediaBridge {
                 } else if ("android.bluetooth.headsetclient.profile.action.AUDIO_STATE_CHANGED".equals(action)) {
                     int state = intent.getIntExtra("android.bluetooth.profile.extra.STATE", -1);
                     if (state == 2) {
-                        AppLogger.i("蓝牙音频", "监听到蓝牙免提/麦克风建立 (SCO Connected)");
+                        AppLogger.i("蓝牙音频", "监听到蓝牙免提/麦克风建立 (SCO Connected)，选通声道与焦点保障通话出声");
+                        activateBluetoothChannel();
                     } else if (state == 0) {
                         AppLogger.i("蓝牙音频", "监听到蓝牙免提/麦克风断开 (SCO Disconnected)");
                     }
