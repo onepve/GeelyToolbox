@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 176" width="220" height="176">
+  <!-- 黑白重绘方向盘右侧多媒体按键示意图：透明底、纯黑白、序号内嵌按键正中央。
+       物理排布铁律（车主实测校正，严禁再改）：
+         上排 2 键 —— 1（左） 3（右）
+         中排 3 键 —— 7（左箭头） 2（中央滚轮） 4（右箭头）
+         下排 2 键 —— 6（左） 5（右）
+       字号铁律：三角形单薄，序号必须落在质心且离斜边留足净空，
+       故左右箭头三角基底宽 38px、高 48px（早期 28x40 会把 20px 字号顶到斜边上）。 -->
+  <g fill="#ffffff" stroke="#0a0a0a" stroke-width="2.5" stroke-linejoin="round">
+    <!-- 上排：① 主页/返回键 + ③ 静音键 -->
+    <rect x="42" y="12" width="52" height="44" rx="10"/>
+    <rect x="126" y="12" width="52" height="44" rx="10"/>
+    <!-- 中排：⑦ 向左选择 + ② 音量滚轮 + ④ 向右选择 -->
+    <path d="M66 64 L28 88 L66 112 Z"/>
+    <ellipse cx="110" cy="88" rx="20" ry="24"/>
+    <path d="M154 64 L192 88 L154 112 Z"/>
+    <!-- 下排：⑥ MODE 键 + ⑤ 自定义键 -->
+    <rect x="42" y="124" width="52" height="44" rx="10"/>
+    <rect x="126" y="124" width="52" height="44" rx="10"/>
+  </g>
+  <!-- 序号内嵌按键正中央 -->
+  <g fill="#0a0a0a" font-family="Arial, sans-serif" font-weight="800" font-size="20" text-anchor="middle" dominant-baseline="central">
+    <text x="68" y="34">1</text>
+    <text x="152" y="34">3</text>
+    <text x="53" y="88">7</text>
+    <text x="110" y="88">2</text>
+    <text x="167" y="88">4</text>
+    <text x="68" y="146">6</text>
+    <text x="152" y="146">5</text>
+  </g>
+</svg>

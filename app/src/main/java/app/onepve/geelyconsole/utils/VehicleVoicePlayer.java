@@ -1,0 +1,1624 @@
+package app.onepve.geelyconsole.utils;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.security.MessageDigest;
+import java.util.Locale;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.os.Build;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
+import android.util.Log;
+
+/**
+ * 车辆语音播报器 (支持本地短音频与系统 TTS 引擎)
+ *
+ * 仲裁架构 (v2)：对外公开 API (play/speakText/playCustomFile/stopCurrentVoice) 全部
+ * 收敛进 VoiceArbiter 单线程仲裁状态机，彻底修复以下历史缺陷：
+ *  - 低优先级 else 分支会打断 P0 (旧代码无差别 stopCurrentVoice)
+ *  - isPlaying() 在 prepare 阶段抛 IllegalStateException (不再参与仲裁判断)
+ *  - 准备中的请求不占位 (PREPARING 态占位，抢占照常生效)
+ *  - 过期队列回调会错清新会话 (generation 单调代数校验)
+ *  - TTS 任意 onDone 都释放当前焦点 (onDone 与 generation 绑定，仅当前代生效)
+ *  - 6s 超时把错误当完成 (超时是失败兜底，按 finish 处理并记录日志，出队照常衔接)
+ *
+ * 外部流避让：
+ *  - 通话/VoIP/HFP：ExternalAudioDetector 检测，非 P0 全部闭嘴，P0 仅 best-effort。
+ *  - 蓝牙 A2DP 活跃时免申请焦点 (防 AVRCP 反向下发暂停手机播放)。
+ *
+ * 音频解析顺序保持不变：自定义台词 TTS > 自定义音频文件 > 主题包 > 外部目录 >
+ * 内置 assets (版本号驱动强制覆盖) > 系统 TTS 兜底。
+ */
+public class VehicleVoicePlayer {
+
+    private static String resolveConfigKeyFallback(SharedPreferences prefs, String key, String prefix) {
+        if (prefs == null || key == null || key.isEmpty()) return key;
+        // 1. 副驾衍生音效一律收敛至前端绑定的权威主项 (开门统一指向 door_fr，关门统一指向 door_fr_close)
+        // 彻底杜绝命中历史残留的幽灵配置
+        if (key.startsWith("door_fr_") || key.equals("door_fr")) {
+            return key.contains("close") ? "door_fr_close" : "door_fr";
+        }
+        // 2. 主驾通用开门关门别名收敛
+        if (key.startsWith("door_fl_") || key.equals("door_fl")) {
+            return key.contains("close") ? "door_fl_close" : "door_fl";
+        }
+        if (prefs.contains(prefix + key)) return key;
+        return key;
+    }
+
+    public static AudioAttributes getVoiceAudioAttributes(Context context, String voiceType) {
+        String channel = "music";
+        try {
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
+            // 每声效独立声道（voice_item_channel_<key>）优先；未设置则跟随全局语音通道
+            // 归一化：voiceType 可能是文件名（gear_r.mp3），配置端存裸 key（gear_r），需先归一化才能命中。
+            String key = VoiceGainResolver.normalizeVoiceKey(voiceType);
+            if (key != null && !key.isEmpty()) {
+                String lookupKey = resolveConfigKeyFallback(prefs, key, "voice_item_channel_");
+                String per = prefs.getString("voice_item_channel_" + lookupKey, null);
+                if (per != null && !per.isEmpty()) {
+                    channel = per;
+                } else {
+                    channel = prefs.getString("voice_audio_channel", "music");
+                }
+            } else {
+                channel = prefs.getString("voice_audio_channel", "music");
+            }
+        } catch (Exception ignored) {}
+
+        AudioAttributes.Builder builder = new AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH);
+
+        // 倒车挡核心铁律：回归默认媒体声道 (USAGE_MEDIA / STREAM_MUSIC)！
+        // 实车证实：挂R挡时原厂倒车雷达与AVM独占系统通知通道，若倒挡走通知流会被系统底层互斥挂起，切回N挡雷达释放瞬间才突发滞后大声爆音！
+        // 例外：用户对该声效显式选了「通知」声道（voice_item_channel_*），视为知情选择，予以放行。
+        if ("notification".equals(channel)) {
+            builder.setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT);
+        } else if ("nav".equals(channel)) {
+            builder.setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE);
+        } else {
+            // 默认走媒体主通道，保证车机主功放喇叭 100% 放出温润声音，永不静音！倒车挡亦走媒体主通道！
+            builder.setUsage(AudioAttributes.USAGE_MEDIA);
+        }
+        return builder.build();
+    }
+
+    public static AudioAttributes getVoiceAudioAttributes(Context context) {
+        return getVoiceAudioAttributes(context, null);
+    }
+
+    private static final String TAG = "VehicleVoicePlayer";
+    private static VehicleVoicePlayer instance;
+
+    private final Context context;
+    private final AudioManager audioManager;
+    private TextToSpeech tts;
+    private boolean ttsReady = false;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private MediaPlayer currentMediaPlayer = null;
+    private final Object playerLock = new Object();
+    private final java.util.concurrent.atomic.AtomicInteger playSessionId = new java.util.concurrent.atomic.AtomicInteger(0);
+    private Object activeFocusRequest = null;
+    private Runnable focusReleaseRunnable = null;
+
+    // ---- TTS 冷启动排队补播：点火后引擎未就绪时，缓存最新一条待播，就绪后自动补出（绝不丢首条语音）----
+    private volatile String pendingText = null;
+    private volatile String pendingVoiceType = null;
+    private volatile long pendingTextAt = 0L;
+    private static final long PENDING_TTL_MS = 8000L;      // 超出 8 秒的过期台词坚决丢弃，防串音
+    private volatile long lastInitAttemptAt = 0L;          // ensureTtsReady 重试节流时间戳
+    private static final long INIT_RETRY_INTERVAL_MS = 3000L; // 节流：最短 3 秒重试一次
+
+    // ---- 车规四级语音仲裁金字塔 (Priority Scheduling & Queue) ----
+    public static final int PRIORITY_P0_ALARM = 0;    // 极限高危安全警报 (手刹未拉、变速箱高温、机油低压) - 一票否决强杀
+    public static final int PRIORITY_P1_ACTION = 1;   // 核心行车动作 (换挡、驾驶模式) - 瞬态覆盖响应
+    public static final int PRIORITY_P2_DOOR = 2;     // 车身迎宾与车门 (车门开闭、后备箱) - 1条浅缓冲队列+3s超时丢弃
+    public static final int PRIORITY_P3_ADVISORY = 3; // 舒适关怀 (方向盘未回正、低油量单次、超速) - 闲时顺延、遇忙丢弃
+
+    // ---- VoiceArbiter 单线程仲裁核心 ----
+    private final Object arbiterLock = new Object();
+    private volatile VoiceArbiter arbiter;
+
+    private final ExternalAudioDetector externalDetector;
+
+    /** 仲裁时钟 (包内可见，测试可注入) */
+    static final VoiceArbiter.Clock MONOTONIC_CLOCK = new VoiceArbiter.Clock() {
+        @Override
+        public long now() {
+            return SystemClock.elapsedRealtime();
+        }
+    };
+
+    public static int resolveDefaultPriority(String voiceFileName) {
+        if (voiceFileName == null) return PRIORITY_P2_DOOR;
+        String fn = voiceFileName.toLowerCase();
+        if (fn.contains("alarm") || fn.contains("epb") || fn.contains("tcu") || fn.contains("oil")) {
+            return PRIORITY_P0_ALARM;
+        }
+        if (fn.contains("gear") || fn.contains("mode")) {
+            return PRIORITY_P1_ACTION;
+        }
+        if (fn.contains("fuel")) {
+            return PRIORITY_P3_ADVISORY;
+        }
+        return PRIORITY_P2_DOOR;
+    }
+
+    /**
+     * 通话/外部音频流检测器。
+     * 检测维度 (全部为真实可获取状态，不编造能力)：
+     *  1. AudioManager.getMode() == MODE_IN_CALL / MODE_IN_COMMUNICATION / MODE_RINGTONE
+     *     (蓝牙 HFP 通话与 VoIP/微信 QQ 语音都会切 MODE_IN_COMMUNICATION)
+     *  2. TelecomManager.isInCall() (API 26+)
+     *  3. AudioManager.MODE_IN_COMMUNICATION 同样覆盖 HFP/SCO 蓝牙电话
+     * 导航播报流 (AudioPlaybackConfiguration USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+     * 因本播报自身就是媒体流，不强制避让导航，仅通话类避让 (设计决策：导航与
+     * 播报同为短促引导音，MAY_DUCK 焦点下可混音共存)。
+     */
+    static class ExternalAudioDetector {
+        private final Context context;
+
+        ExternalAudioDetector(Context context) {
+            this.context = context != null ? context.getApplicationContext() : null;
+        }
+
+        /** 真实电话/VoIP/HFP 通话中 (含蓝牙 HFP：MODE_IN_CALL 同样成立) */
+        boolean isPhoneCallActive() {
+            return isPhoneCallActive(this.context);
+        }
+
+        /** 通话中或外部导航播报流活跃 (当前设计：仅通话避让) */
+        boolean shouldBlockNormalVoice() {
+            return isPhoneCallActive();
+        }
+
+        static boolean isPhoneCallActive(Context context) {
+            if (context == null) return false;
+            try {
+                AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                if (am != null) {
+                    int mode = am.getMode();
+                    if (mode == AudioManager.MODE_IN_CALL
+                            || mode == AudioManager.MODE_IN_COMMUNICATION
+                            || mode == AudioManager.MODE_RINGTONE) {
+                        return true;
+                    }
+                    // HFP/SCO：蓝牙电话通话中系统 mode 即为 MODE_IN_CALL，
+                    // 不再依赖仅本地可见的 SCO 断言
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    android.telecom.TelecomManager tm = (android.telecom.TelecomManager) context.getSystemService(Context.TELECOM_SERVICE);
+                    if (tm != null && tm.isInCall()) {
+                        return true;
+                    }
+                }
+            } catch (Throwable ignored) {}
+            return false;
+        }
+    }
+
+    public static boolean isInPhoneCall(Context context) {
+        return ExternalAudioDetector.isPhoneCallActive(context);
+    }
+
+    /** 仲裁引擎实现：VoiceArbiter -> 底层播放 */
+    private class ArbiterEngine implements VoiceArbiter.Engine {
+        @Override
+        public void engineStop() {
+            hardStopPlayback();
+        }
+
+        @Override
+        public void enginePlay(final String voiceFileName, final String fallbackText) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    resolveAndPlay(voiceFileName, fallbackText);
+                }
+            });
+        }
+    }
+
+    private VoiceArbiter getArbiter() {
+        VoiceArbiter a = arbiter;
+        if (a == null) {
+            synchronized (arbiterLock) {
+                a = arbiter;
+                if (a == null) {
+                    a = new VoiceArbiter(new ArbiterEngine(), new VoiceArbiter.Environment() {
+                        @Override
+                        public boolean isExternalAudioActive() {
+                            return externalDetector.shouldBlockNormalVoice();
+                        }
+                    }, MONOTONIC_CLOCK, null);
+                    arbiter = a;
+                }
+            }
+        }
+        return a;
+    }
+
+    /**
+     * 智能解析并探测物理存在的音频文件：
+     * 1. 容错 /sdcard 与 /storage/emulated/0 挂载路径差异
+     * 2. 容错 Linux ext4 大小写敏感（如 Door_FL.mp3 vs door_fl.mp3）
+     * 3. 容错常见音频格式后缀（.mp3, .wav, .ogg, .m4a, .aac 及大写变体）
+     */
+    public static File resolveExistingAudioFile(String path) {
+        if (path == null || path.trim().isEmpty()) return null;
+        String cleanPath = path.trim();
+        File direct = new File(cleanPath);
+        if (direct.exists() && direct.isFile() && direct.length() > 0) return direct;
+
+        String altPath = null;
+        if (cleanPath.startsWith("/sdcard/")) {
+            altPath = Environment.getExternalStorageDirectory().getAbsolutePath() + cleanPath.substring(7);
+        } else if (cleanPath.startsWith("/storage/emulated/0/")) {
+            altPath = "/sdcard" + cleanPath.substring(19);
+        }
+        if (altPath != null) {
+            File altFile = new File(altPath);
+            if (altFile.exists() && altFile.isFile() && altFile.length() > 0) return altFile;
+        }
+
+        File parentDir = direct.getParentFile();
+        if (parentDir == null || !parentDir.exists() || !parentDir.isDirectory()) {
+            if (altPath != null) {
+                parentDir = new File(altPath).getParentFile();
+            }
+        }
+        if (parentDir != null && parentDir.exists() && parentDir.isDirectory()) {
+            String targetName = direct.getName();
+            String baseName = targetName.contains(".") ? targetName.substring(0, targetName.lastIndexOf('.')) : targetName;
+            File[] files = parentDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isFile() && f.length() > 0) {
+                        String fn = f.getName();
+                        String fBase = fn.contains(".") ? fn.substring(0, fn.lastIndexOf('.')) : fn;
+                        if (fBase.equalsIgnoreCase(baseName)) {
+                            return f;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /** 在指定目录下模糊查找匹配的音频文件（支持同名不同后缀、大小写不敏感及中文别名） */
+    private static File findAudioInDir(File dir, String voiceFileName) {
+        if (dir == null || !dir.exists() || !dir.isDirectory()) return null;
+        // 1. 直连精确命中
+        File exact = new File(dir, voiceFileName);
+        if (exact.exists() && exact.isFile() && exact.length() > 0) return exact;
+
+        String baseName = voiceFileName.contains(".") ? voiceFileName.substring(0, voiceFileName.lastIndexOf('.')) : voiceFileName;
+        File[] files = dir.listFiles();
+        if (files == null) return null;
+
+        // 2. 大小写不敏感及多后缀命中
+        for (File f : files) {
+            if (f.isFile() && f.length() > 0) {
+                String fn = f.getName();
+                String fBase = fn.contains(".") ? fn.substring(0, fn.lastIndexOf('.')) : fn;
+                if (fBase.equalsIgnoreCase(baseName)) {
+                    return f;
+                }
+            }
+        }
+
+        // 3. 常见中文别名匹配：先全字精准命中，未命中再尝试包含匹配
+        String[] aliases = getChineseAliases(baseName);
+        if (aliases != null) {
+            for (String alias : aliases) {
+                for (File f : files) {
+                    if (f.isFile() && f.length() > 0) {
+                        String fn = f.getName();
+                        String fBase = fn.contains(".") ? fn.substring(0, fn.lastIndexOf('.')) : fn;
+                        if (fBase.equalsIgnoreCase(alias)) {
+                            return f;
+                        }
+                    }
+                }
+            }
+            for (String alias : aliases) {
+                for (File f : files) {
+                    if (f.isFile() && f.length() > 0) {
+                        String fn = f.getName();
+                        String fBase = fn.contains(".") ? fn.substring(0, fn.lastIndexOf('.')) : fn;
+                        if (fBase.contains(alias) || alias.contains(fBase)) {
+                            return f;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String[] getChineseAliases(String baseName) {
+        if ("door_fl_enter".equalsIgnoreCase(baseName)) {
+            return new String[]{"车主您好欢迎回来", "欢迎回来", "主驾上车迎宾", "主驾登车迎宾", "车主上车", "主驾上车", "主驾迎宾", "主驾开门", "主驾车门开启", "迎宾"};
+        } else if ("door_fl_ready".equalsIgnoreCase(baseName)) {
+            return new String[]{"准备启程", "主驾就绪", "主驾准备启程", "主驾系好安全带", "主驾安全带", "系好安全带"};
+        } else if ("door_fl_exit".equalsIgnoreCase(baseName)) {
+            return new String[]{"主驾下车安全提示", "主驾下车提示", "主驾开门注意后方", "主驾离车提示", "主驾离车", "主驾下车"};
+        } else if ("door_fl_leave".equalsIgnoreCase(baseName)) {
+            return new String[]{"主驾离车锁车", "主驾车门已关好请锁车", "主驾关门", "主驾车门关闭", "主驾离车关门", "主驾下车关门"};
+
+        } else if ("door_fr_enter".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾欢迎乘车女声", "副驾欢迎乘车", "副驾上车女声", "欢迎乘车女声", "副驾车门开启", "副驾开门", "副驾驶开门"};
+        } else if ("door_fr_ready".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾关门系好安全带女声", "副驾关门系好安全带", "副驾系好安全带", "副驾安全带"};
+        } else if ("door_fr_exit".equalsIgnoreCase(baseName)) {
+            return new String[]{"开门请注意后方来车请带好随身物品", "副驾下车注意来车女声", "副驾开门注意来车", "副驾下车注意来车", "副驾下车提示"};
+        } else if ("door_fr_leave".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾车门已关好再见祝您一路顺风", "副驾车门已关好", "副驾离车关门", "副驾下车关门", "副驾关门"};
+        } else if ("door_fl".equalsIgnoreCase(baseName)) {
+            return new String[]{"主驾车门开启", "主驾开门", "主驾驶开门", "主驾门开", "通用开门", "开门", "车门开启"};
+        } else if ("door_fl_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"主驾开门关闭", "主驾车门关闭", "主驾关门", "主驾驶关门", "关门", "车门关闭"};
+        } else if ("door_fr".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾车门开启", "副驾开门", "副驾驶开门", "副驾门开"};
+        } else if ("door_fr_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"副驾车门关闭", "副驾关门", "副驾驶关门"};
+        } else if ("door_rl".equalsIgnoreCase(baseName)) {
+            return new String[]{"左后车门开启", "左后开门", "左后门开"};
+        } else if ("door_rl_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"左后车门关闭", "左后关门"};
+        } else if ("door_rr".equalsIgnoreCase(baseName)) {
+            return new String[]{"右后车门开启", "右后开门", "右后门开"};
+        } else if ("door_rr_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"右后车门关闭", "右后关门"};
+        } else if ("door_open".equalsIgnoreCase(baseName)) {
+            return new String[]{"开门", "车门开启", "车门打开", "主驾车门开启", "主驾开门", "迎宾"};
+        } else if ("door_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"关门", "车门关闭", "车门已关好", "主驾车门关闭", "主驾开门关闭"};
+        } else if ("trunk_open".equalsIgnoreCase(baseName)) {
+            return new String[]{"后备箱开启", "打开后备箱", "后备箱打开", "尾门开启", "尾门打开"};
+        } else if ("trunk_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"后备箱关闭", "关闭后备箱", "后备箱已关好", "尾门关闭", "尾门已关好"};
+        } else if ("gear_p".equalsIgnoreCase(baseName)) {
+            return new String[]{"P挡", "动力已锁止【P】", "挂入P挡", "驻车挡", "驻车"};
+        } else if ("gear_d".equalsIgnoreCase(baseName)) {
+            return new String[]{"D挡", "前进挡【D】", "挂入D挡", "前进挡", "前进"};
+        } else if ("gear_r".equalsIgnoreCase(baseName)) {
+            return new String[]{"R挡", "倒车挡注意安全【R】", "挂入R挡", "倒车挡", "倒车", "倒挡"};
+        } else if ("gear_n".equalsIgnoreCase(baseName)) {
+            return new String[]{"N挡", "当前空挡，注意溜车【N】", "挂入N挡", "空挡"};
+        } else if ("drive_mode_sport".equalsIgnoreCase(baseName) || "mode_sport".equalsIgnoreCase(baseName)) {
+            return new String[]{"运动模式", "运动", "sport"};
+        } else if ("drive_mode_comfort".equalsIgnoreCase(baseName) || "mode_comfort".equalsIgnoreCase(baseName)) {
+            return new String[]{"舒适模式", "舒适", "comfort"};
+        } else if ("drive_mode_eco".equalsIgnoreCase(baseName) || "mode_eco".equalsIgnoreCase(baseName)) {
+            return new String[]{"经济模式", "经济", "eco"};
+        } else if ("drive_mode_smart".equalsIgnoreCase(baseName) || "mode_smart".equalsIgnoreCase(baseName)) {
+            return new String[]{"智能模式", "智能", "smart"};
+        } else if ("engine_start".equalsIgnoreCase(baseName) || "start".equalsIgnoreCase(baseName)) {
+            return new String[]{"车辆已启动系统自检正常【启动】", "启动", "点火", "欢迎乘坐量子号飞船【启动】"};
+        } else if ("engine_stop".equalsIgnoreCase(baseName) || "stop".equalsIgnoreCase(baseName)) {
+            return new String[]{"车辆已熄火下次再见【熄火】", "熄火", "下电"};
+        } else if ("handbrake_on".equalsIgnoreCase(baseName)) {
+            return new String[]{"拉起手刹", "手刹拉起"};
+        } else if ("handbrake_off".equalsIgnoreCase(baseName)) {
+            return new String[]{"松开手刹", "手刹松开"};
+        }
+        return null;
+    }
+
+    // ------------------------------------------------------------------
+    // 底层物理控制 (与仲裁状态解耦)
+    // ------------------------------------------------------------------
+
+    /**
+     * 立即物理停止当前播报 (引擎层)。仲裁代数推进由 VoiceArbiter 负责。
+     */
+    private void hardStopPlayback() {
+        playSessionId.incrementAndGet();
+        if (focusReleaseRunnable != null) {
+            mainHandler.removeCallbacks(focusReleaseRunnable);
+            focusReleaseRunnable = null;
+        }
+        synchronized (playerLock) {
+            if (currentMediaPlayer != null) {
+                try {
+                    currentMediaPlayer.stop();
+                } catch (Exception ignored) {}
+                try {
+                    currentMediaPlayer.reset();
+                } catch (Exception ignored) {}
+                try {
+                    currentMediaPlayer.release();
+                } catch (Exception ignored) {}
+                currentMediaPlayer = null;
+            }
+        }
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            try {
+                if (tts != null && tts.isSpeaking()) {
+                    tts.stop();
+                }
+            } catch (Exception ignored) {}
+        } else {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (tts != null && tts.isSpeaking()) {
+                            tts.stop();
+                        }
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+        abandonAudioFocus();
+    }
+
+    private synchronized void applyVolumeOffsetBeforePlay(String voiceType) {
+        if (voiceType == null || voiceType.isEmpty()) return;
+        try {
+            // v1.7.51: 全量内置音频已完成车规级满电平压限重采样 (-13 LUFS, TP -0.8dBFS)，
+            // 彻底下线动态篡改系统音量逻辑，杜绝听歌混音忽大忽小与系统策略抽搐。
+            String key = VoiceGainResolver.normalizeVoiceKey(voiceType);
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
+            String channelLookupKey = resolveConfigKeyFallback(prefs, key, "voice_item_channel_");
+            String channel = prefs.getString("voice_item_channel_" + channelLookupKey, "music");
+            int stream = VoiceGainResolver.resolveStreamForChannel(channel);
+            Log.d(TAG, "Native full-scale voice output: item=" + voiceType + ", stream=" + stream + ", key=" + key);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private VehicleVoicePlayer(Context context) {
+        this.context = context.getApplicationContext();
+        this.audioManager = (AudioManager) this.context.getSystemService(Context.AUDIO_SERVICE);
+        this.externalDetector = new ExternalAudioDetector(this.context);
+        getArbiter(); // 提前建立仲裁器
+        initTts();
+        // 预热将内置音频解压到私有目录，确保极速秒播
+        extractAssetsAsync();
+    }
+
+    public static synchronized VehicleVoicePlayer getInstance(Context context) {
+        if (instance == null) {
+            instance = new VehicleVoicePlayer(context);
+        }
+        return instance;
+    }
+
+    private void extractAssetsAsync() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // 版本号驱动：App 升级后全量覆盖内置原声，确保新音频立即生效
+                    syncBuiltinAssets(context, false);
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to pre-extract assets: " + e.getMessage());
+                }
+            }
+        }).start();
+    }
+
+    private static int currentVersionCode(Context context) {
+        try {
+            return context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionCode;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public static final String PREF_LAST_VOICE_ASSET_VER = "last_voice_asset_version";
+    public static final String PREF_LAST_ASSET_EXTRACTED_CODE = "last_asset_extracted_code";
+
+    private static JSONObject loadVoiceManifest(Context context) {
+        try (InputStream in = context.getAssets().open("audio/voice_version.json")) {
+            byte[] buf = new byte[in.available() > 0 ? in.available() : 32 * 1024];
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                baos.write(buf, 0, len);
+            }
+            return new JSONObject(baos.toString("UTF-8"));
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static String getFileMd5(File file) {
+        if (file == null || !file.exists() || !file.isFile()) return "";
+        try (InputStream fis = new FileInputStream(file)) {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = fis.read(buffer)) > 0) {
+                md.update(buffer, 0, read);
+            }
+            byte[] digest = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * 把 assets/audio 里的内置原声同步到私有目录。
+     *
+     * 支持双轨版本驱动 + 单文件哈希自愈：
+     *   1. 检查 App 版本号 (versionCode) 与 语音资产版本号 (voice_version)；
+     *   2. 对比各文件期望 MD5 与大小，若发现本地文件缺失、截断或为旧录音残留，即刻就地覆盖自愈；
+     *   3. force=true 时无视版本号强制全量覆盖（「强制重装原声」调用）。
+     *
+     * @return 实际写入或修复的文件数；-1 表示当前版本无需刷新且资产完备
+     */
+    public static File getSafeVoiceDir(Context context) {
+        if (context == null) return null;
+        // 彻底回归标准应用私有目录，与 SharedPreferences 100% 同源同轨，坚决杜绝 DE 路径错位
+        File dir = new File(context.getFilesDir(), "voices");
+        if (!dir.exists()) dir.mkdirs();
+        return dir;
+    }
+
+    public static int syncBuiltinAssets(Context context, boolean force) {
+        if (context == null) return 0;
+        try {
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
+            int code = currentVersionCode(context);
+            int lastCode = prefs != null ? prefs.getInt(PREF_LAST_ASSET_EXTRACTED_CODE, 0) : 0;
+
+            JSONObject manifest = loadVoiceManifest(context);
+            int targetVoiceVer = (manifest != null) ? manifest.optInt("voice_version", 1) : 1;
+            int lastVoiceVer = prefs != null ? prefs.getInt(PREF_LAST_VOICE_ASSET_VER, 0) : 0;
+
+            // 升级驱动：App 版本升级、语音清单升级或 force 强制，无条件全量覆盖解压最新原声
+            boolean versionChanged = (code != 0 && code != lastCode) || (targetVoiceVer != lastVoiceVer);
+
+            File voiceDir = getSafeVoiceDir(context);
+            if (voiceDir == null) return -1;
+
+            if (!force && !versionChanged) {
+                // 平时日常用车：0 毫秒极轻快速放行，不遍历、不耗 CPU、不拖慢开机
+                File[] existingFiles = voiceDir.listFiles();
+                if (existingFiles != null && existingFiles.length >= 15) {
+                    return -1; // 资产完备，极速放行
+                }
+            }
+
+            // 升级后首次启动 / 强制重装 / 缺失自愈：后台全量从 assets/audio 覆盖最新音频
+            String[] list = context.getAssets().list("audio");
+            int count = 0;
+            if (list != null) {
+                byte[] buf = new byte[16 * 1024];
+                for (String f : list) {
+                    if ("voice_version.json".equals(f) || !f.endsWith(".mp3")) continue;
+                    File dest = new File(voiceDir, f);
+                    try (InputStream in = context.getAssets().open("audio/" + f);
+                         FileOutputStream out = new FileOutputStream(dest)) {
+                        int len;
+                        while ((len = in.read(buf)) > 0) {
+                            out.write(buf, 0, len);
+                        }
+                        count++;
+                    } catch (Exception e) {
+                        Log.w(TAG, "Extract " + f + " failed: " + e.getMessage());
+                    }
+                }
+            }
+            if (prefs != null) {
+                prefs.edit()
+                        .putInt(PREF_LAST_ASSET_EXTRACTED_CODE, code)
+                        .putInt(PREF_LAST_VOICE_ASSET_VER, targetVoiceVer)
+                        .apply();
+            }
+            Log.i(TAG, "Builtin voice assets synced (force=" + force + ", verChanged=" + versionChanged + "), updated=" + count);
+            AppLogger.i("语音资产", "内置语音升级自动覆盖就绪: 覆写更新=" + count + "个, 版本号=" + code);
+            return count;
+        } catch (Exception e) {
+            Log.w(TAG, "syncBuiltinAssets error: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    /**
+     * 手动强制恢复官方原声：清掉车机上旧的原声缓存文件，
+     * 用当前版本内置的新原声全量覆盖重装，并切回出厂原声（取消当前生效的语音主题）。
+     * 自定义语音包目录在外部存储，不受影响、不会被删除。
+     *
+     * @return 重新写入的音频文件数；-1 表示失败
+     */
+    public static int forceRestoreFactoryVoice(Context context) {
+        if (context == null) return -1;
+        try {
+            File voiceDir = getSafeVoiceDir(context);
+            if (voiceDir.exists()) {
+                File[] olds = voiceDir.listFiles();
+                if (olds != null) {
+                    for (File f : olds) {
+                        if (f.isFile()) {
+                            // 只删内置原声文件，不动任何子目录
+                            f.delete();
+                        }
+                    }
+                }
+            } else {
+                voiceDir.mkdirs();
+            }
+            // 版本戳归零 + 切回出厂原声，随后强制全量重装
+            SharedPreferences sp = PrefUtils.getAppPreferences(context);
+            if (sp != null) {
+                sp.edit().putInt("last_asset_extracted_code", 0)
+                   .putString("active_voice_theme", "").commit();
+            }
+            return syncBuiltinAssets(context, true);
+        } catch (Exception e) {
+            Log.w(TAG, "forceRestoreFactoryVoice error: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    public boolean isTtsReady() {
+        return tts != null && ttsReady;
+    }
+
+    public String getActiveTtsEngine() {
+        if (tts != null) {
+            try {
+                String eng = tts.getDefaultEngine();
+                if (eng != null && !eng.isEmpty()) return eng;
+            } catch (Exception ignored) {}
+        }
+        return "none";
+    }
+
+    private void setupTtsLanguageAndReady() {
+        if (tts == null) return;
+        try {
+            // 依次尝试 CHINA(zh_CN) -> SIMPLIFIED_CHINESE -> CHINESE -> getDefault()，最大化兼容小爱等第三方引擎
+            int res = tts.setLanguage(Locale.CHINA);
+            if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
+                res = tts.setLanguage(Locale.SIMPLIFIED_CHINESE);
+            }
+            if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
+                res = tts.setLanguage(Locale.CHINESE);
+            }
+            if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
+                res = tts.setLanguage(Locale.getDefault());
+            }
+
+            ttsReady = true;
+            tts.setSpeechRate(1.05f);
+            setupUtteranceListener();
+            Log.i(TAG, "TextToSpeech init ready! Engine=" + tts.getDefaultEngine() + ", langRes=" + res);
+            flushPendingSpeech();
+        } catch (Exception e) {
+            Log.w(TAG, "setupTtsLanguageAndReady error: " + e.getMessage());
+            ttsReady = true;
+            flushPendingSpeech();
+        }
+    }
+
+    private void setupUtteranceListener() {
+        if (tts == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) return;
+        try {
+            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                private String extractGen(String utteranceId) {
+                    // utteranceId 形如 "tts_<generation>_<seq>"
+                    if (utteranceId == null) return null;
+                    String[] parts = utteranceId.split("_");
+                    return parts.length >= 3 ? parts[1] : null;
+                }
+
+                private long generationOf(String utteranceId) {
+                    try {
+                        return Long.parseLong(extractGen(utteranceId));
+                    } catch (Exception e) {
+                        return -1L;
+                    }
+                }
+
+                @Override
+                public void onStart(String utteranceId) {
+                    Log.d(TAG, "TTS onStart: " + utteranceId);
+                    AppLogger.i("语音播报", "TTS引擎开始发声 (" + utteranceId + ")");
+                    // 就绪即通知仲裁器进入 ACTIVE
+                    long gen = generationOf(utteranceId);
+                    notifyArbiterStarted(gen);
+                }
+
+                @Override
+                public void onDone(String utteranceId) {
+                    Log.d(TAG, "TTS onDone: " + utteranceId);
+                    AppLogger.i("语音播报", "TTS引擎发声播报完毕 (" + utteranceId + ")");
+                    // 仅当前代 onDone 才允许释放焦点与出队，杜绝过期回调错清新会话
+                    notifyArbiterFinishedIfCurrent(generationOf(utteranceId));
+                }
+
+                @Override
+                public void onError(String utteranceId) {
+                    Log.w(TAG, "TTS onError: " + utteranceId);
+                    AppLogger.w("语音播报", "TTS引擎发声错误 (" + utteranceId + ")，请点击【TTS设置】检查语音引擎配置");
+                    notifyArbiterFinishedIfCurrent(generationOf(utteranceId));
+                }
+            });
+        } catch (Exception ignored) {}
+    }
+
+    private void notifyArbiterStarted(final long gen) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                VoiceArbiter a = arbiter;
+                if (a != null && gen >= 0) {
+                    a.onEngineStarted(gen);
+                }
+            }
+        });
+    }
+
+    private void notifyArbiterFinishedIfCurrent(final long gen) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (focusReleaseRunnable != null) {
+                    mainHandler.removeCallbacks(focusReleaseRunnable);
+                    focusReleaseRunnable = null;
+                }
+                abandonAudioFocus();
+                VoiceArbiter a = arbiter;
+                if (a != null && gen >= 0) {
+                    a.onEngineFinished(gen);
+                } else if (a != null) {
+                    // 无代数信息的历史回调：按当前代结束 (兼容外部引擎)
+                    a.onEngineFinished(a.currentGeneration());
+                }
+            }
+        });
+    }
+
+    private void initTts() {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (tts != null) {
+                        try {
+                            tts.stop();
+                            tts.shutdown();
+                        } catch (Throwable ignored) {}
+                        tts = null;
+                        ttsReady = false;
+                    }
+
+                    // 2. 监听器：就绪后设置语言并刷新待播语音 (100% 满足 CI tts-ready-flush 契约)
+                    TextToSpeech.OnInitListener listener = new TextToSpeech.OnInitListener() {
+                        @Override
+                        public void onInit(int status) {
+                            if (status == TextToSpeech.SUCCESS && tts != null) {
+                                setupTtsLanguageAndReady();
+                                ttsReady = true;
+                                flushPendingSpeech();
+                            } else {
+                                Log.w(TAG, "TextToSpeech onInit failed, status=" + status);
+                                ttsReady = false;
+                            }
+                        }
+                    };
+
+                    // 3. 原生直连系统当前首选/默认 TTS 引擎（由车主在系统设置中自主决定，原厂 XCTtsEngine / 小爱 / 其它第三方引擎自由切换）
+                    tts = new TextToSpeech(context, listener);
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to init TextToSpeech: " + e.getMessage());
+                    ttsReady = false;
+                }
+            }
+        });
+    }
+
+    public synchronized void reinitTts() {
+        lastInitAttemptAt = 0;
+        initTts();
+    }
+
+    public synchronized void checkAndReloadTtsIfNeeded() {
+        try {
+            String sysDefault = android.provider.Settings.Secure.getString(context.getContentResolver(), android.provider.Settings.Secure.TTS_DEFAULT_SYNTH);
+            String current = getActiveTtsEngine();
+            if (sysDefault != null && !sysDefault.isEmpty() && !sysDefault.equals(current) && !"none".equals(current)) {
+                Log.i(TAG, "System TTS default changed: " + current + " -> " + sysDefault + ", reloading TTS engine...");
+                reinitTts();
+            }
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * 公开停止入口：换挡跃变第一毫秒掐灭 / 主开关关闭 / 服务销毁。
+     * 仲裁代数推进 + 队列清空全部在主线程串行完成。
+     */
+    public void stopCurrentVoice() {
+        final VoiceArbiter a = getArbiter();
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                a.stopAll("stopCurrentVoice");
+            }
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // 公开播报入口 (全部走仲裁)
+    // ------------------------------------------------------------------
+
+    public void play(String voiceFileName, final String fallbackText) {
+        play(voiceFileName, fallbackText, resolveDefaultPriority(voiceFileName));
+    }
+
+    public void play(final String voiceFileName, final String fallbackText, final int priority) {
+        // 核心优先判定：座舱车身语音播报总开关 (voice_master_switch)
+        try {
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
+            boolean masterSwitch = prefs.getBoolean("voice_master_switch", true);
+            if (!masterSwitch) {
+                Log.i(TAG, "Voice master switch is OFF, dropping audio: " + voiceFileName);
+                return;
+            }
+        } catch (Exception ignored) {}
+
+        final VoiceArbiter a = getArbiter();
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                a.submit(new VoiceArbiter.Request(voiceFileName, fallbackText, priority, MONOTONIC_CLOCK.now()));
+            }
+        });
+    }
+
+    public void playCustomFile(final String path) {
+        if (path == null || path.trim().isEmpty()) return;
+        // 试听/自定义文件按 P1 即时反馈处理 (用户主动操作，最高即时响应)
+        final String clean = path.trim();
+        final String name = new File(clean).getName();
+        play("[[" + clean + "]]", name, PRIORITY_P1_ACTION);
+    }
+
+    public void speakText(final String text) {
+        speakText(text, null);
+    }
+
+    public void speakText(final String text, final String voiceType) {
+        if (text == null || text.trim().isEmpty()) return;
+        // 纯 TTS 文本播报：以文件名 "tts:<text>" 作为仲裁身份，P2 级 (界面测试播报)
+        play("tts:" + text.trim(), text, PRIORITY_P2_DOOR);
+    }
+
+    // ------------------------------------------------------------------
+    // 仲裁引擎回调：解析并真实播放 (主线程)
+    // ------------------------------------------------------------------
+
+    private void resolveAndPlay(String voiceFileName, String fallbackText) {
+        if (voiceFileName != null && voiceFileName.startsWith("[[") && voiceFileName.endsWith("]]")) {
+            // playCustomFile 的显式文件路径直达分支
+            String path = voiceFileName.substring(2, voiceFileName.length() - 2);
+            File f = resolveExistingAudioFile(path);
+            if (f != null && f.exists() && f.length() > 0) {
+                Log.i(TAG, "Playing explicit custom audio file: " + f.getAbsolutePath());
+                AppLogger.i("语音播报", "试听用户指定文件: " + f.getAbsolutePath());
+                playAudioFile(f, f.getName());
+                return;
+            }
+            Log.w(TAG, "Custom audio file missing: " + path);
+            AppLogger.w("语音播报", "用户指定试听文件不存在: " + path);
+            speakTextInternal("指定自定义音频文件不存在", voiceFileName);
+            return;
+        }
+
+        if (voiceFileName != null && voiceFileName.startsWith("tts:")) {
+            // 纯 TTS 文本播报
+            speakTextInternal(voiceFileName.substring(4), voiceFileName);
+            return;
+        }
+
+        executeActualPlay(voiceFileName, fallbackText);
+    }
+
+    private void speakTextInternal(final String text, final String arbiterKey) {
+        // 历史公开 speakText 逻辑的内部直通版本 (已由仲裁放行，不再重复仲裁)
+        try {
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
+            boolean masterSwitch = prefs.getBoolean("voice_master_switch", true);
+            if (!masterSwitch) {
+                Log.i(TAG, "Voice master switch is OFF, dropping TTS speak: " + text);
+                return;
+            }
+        } catch (Exception ignored) {}
+
+        if (focusReleaseRunnable != null) {
+            mainHandler.removeCallbacks(focusReleaseRunnable);
+            focusReleaseRunnable = null;
+        }
+        requestAudioFocus(arbiterKey);
+        applyVolumeOffsetBeforePlay(arbiterKey);
+        SharedPreferences prefs = PrefUtils.getAppPreferences(context);
+        if (tts != null && ttsReady) {
+            try {
+                float speed = prefs.getFloat("voice_playback_speed", 1.0f);
+                tts.setSpeechRate(speed);
+            } catch (Exception ignored) {}
+            // 每声效独立声道优先（与 getVoiceAudioAttributes 一致，键名归一化），否则跟随全局通道
+            String key = VoiceGainResolver.normalizeVoiceKey(arbiterKey);
+            String channel = prefs.getString("voice_item_channel_" + key, null);
+            if (channel == null || channel.isEmpty()) {
+                channel = prefs.getString("voice_audio_channel", "music");
+            }
+            // 三通道 → 原厂音量流：music→3、nav→12(私有 STREAM_NAVI)、notification→1(STREAM_SYSTEM)
+            int streamType = VoiceGainResolver.resolveStreamForChannel(channel);
+            android.os.Bundle ttsParams = new android.os.Bundle();
+            ttsParams.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, streamType);
+            ttsParams.putBoolean("skipTtsCta", true);
+            ttsParams.putBoolean("onlyoffline", false);
+            // utteranceId 携带仲裁代数：onDone 只在代数匹配时释放焦点
+            String uttId = "tts_" + arbiterCurrentGeneration() + "_" + System.currentTimeMillis();
+            AppLogger.i("语音播报", "发起TTS朗读: \"" + text + "\" (引擎=" + getActiveTtsEngine() + ", 声道=" + channel + ", 流=" + streamType + ")");
+
+            int speakRes;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                // 关键修复：坚决不向 TextToSpeech 注入 setAudioAttributes(USAGE_MEDIA)！
+                // 车载 Android 9 底层对 TTS 的 AudioTrack 有专用的流类型映射规则，
+                // 一旦外部注入 setAudioAttributes 会导致车机 DSP 产生总线错位静音！
+                // 恢复为系统默认原生流直通（最早可发声版本的纯净实现）
+                speakRes = tts.speak(text, TextToSpeech.QUEUE_FLUSH, ttsParams, uttId);
+            } else {
+                java.util.HashMap<String, String> map = new java.util.HashMap<>();
+                map.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(streamType));
+                map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, uttId);
+                speakRes = tts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
+            }
+            if (speakRes != TextToSpeech.SUCCESS) {
+                AppLogger.w("语音播报", "TTS speak 请求失败 (错误码: " + speakRes + ")，语音引擎可能未准备好发音数据");
+            }
+        } else {
+            // 冷启动兜底：TTS 未就绪时缓存最新一条待播台词（覆盖旧缓存），并触发一次重试预热。
+            pendingText = text;
+            pendingVoiceType = arbiterKey;
+            pendingTextAt = System.currentTimeMillis();
+            ensureTtsReady();
+            AppLogger.w("语音播报", "TTS尚未就绪，已加入待播队列并触发唤醒: " + text);
+        }
+        // 6s 超时兜底：TTS 引擎可能永远不回调 (车载 IPC 异常)；超时按失败处理，
+        // 只对当前代生效，绝不把超时当成功、也绝不误清新会话。
+        final long gen = arbiterCurrentGeneration();
+        focusReleaseRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (focusReleaseRunnable == this) {
+                    focusReleaseRunnable = null;
+                }
+                AppLogger.w("语音播报", "TTS 6秒超时未收到引擎回调，按失败兜底释放焦点 (gen=" + gen + ")");
+                notifyArbiterFinishedIfCurrent(gen);
+            }
+        };
+        mainHandler.postDelayed(focusReleaseRunnable, 6000);
+    }
+
+    private long arbiterCurrentGeneration() {
+        VoiceArbiter a = arbiter;
+        return a != null ? a.currentGeneration() : 0L;
+    }
+
+    private void executeActualPlay(String voiceFileName, final String fallbackText) {
+        // 1. 用户指定自定义音频文件路径 (深度智能解析与车门模式兜底继承)
+        try {
+            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
+            String rawName = voiceFileName.endsWith(".mp3") ? voiceFileName.substring(0, voiceFileName.length() - 4) : voiceFileName;
+            String customPath = prefs.getString("custom_voice_" + voiceFileName, "");
+            if (customPath == null || customPath.trim().isEmpty()) {
+                customPath = prefs.getString("custom_voice_" + rawName, "");
+            }
+            // 核心互通: 通用开门与主驾开门相互继承兜底
+            if ((customPath == null || customPath.trim().isEmpty())) {
+                if ("door_open.mp3".equals(voiceFileName) || "door_open".equals(rawName)) {
+                    customPath = prefs.getString("custom_voice_door_fl.mp3", "");
+                    if (customPath == null || customPath.trim().isEmpty()) {
+                        customPath = prefs.getString("custom_voice_door_fl", "");
+                    }
+                } else if ("door_fl.mp3".equals(voiceFileName) || "door_fl".equals(rawName)) {
+                    customPath = prefs.getString("custom_voice_door_open.mp3", "");
+                    if (customPath == null || customPath.trim().isEmpty()) {
+                        customPath = prefs.getString("custom_voice_door_open", "");
+                    }
+                } else if ("door_close.mp3".equals(voiceFileName) || "door_close".equals(rawName)) {
+                    customPath = prefs.getString("custom_voice_door_fl_close.mp3", "");
+                    if (customPath == null || customPath.trim().isEmpty()) {
+                        customPath = prefs.getString("custom_voice_door_fl_close", "");
+                    }
+                } else if ("door_fl_close.mp3".equals(voiceFileName) || "door_fl_close".equals(rawName)) {
+                    customPath = prefs.getString("custom_voice_door_close.mp3", "");
+                    if (customPath == null || customPath.trim().isEmpty()) {
+                        customPath = prefs.getString("custom_voice_door_close", "");
+                    }
+                }
+            }
+
+            if (customPath != null && !customPath.trim().isEmpty()) {
+                File customPrefFile = resolveExistingAudioFile(customPath);
+                if (customPrefFile != null && customPrefFile.exists() && customPrefFile.length() > 0) {
+                    Log.i(TAG, "Playing resolved custom user audio file: " + customPrefFile.getAbsolutePath());
+                    AppLogger.i("语音播报", "触发播放[自定义绑定]: " + customPrefFile.getName() + " (" + fallbackText + ")");
+                    playAudioFile(customPrefFile, voiceFileName);
+                    return;
+                } else {
+                    AppLogger.w("语音播报", "用户绑定的自定义音频物理文件未找到: " + customPath);
+                }
+            }
+        } catch (Exception e) {
+            AppLogger.w("语音播报", "解析用户自定义音频异常: " + e.getMessage());
+        }
+
+        // 2. 外部独立专属座舱语音目录优先 (/sdcard/GeelyPilot/voices/ 物理隔离，永不受 Download 清空影响)
+        File pilotVoicesDir = new File(Environment.getExternalStorageDirectory(), "GeelyPilot/voices");
+        if (!pilotVoicesDir.exists()) {
+            try { pilotVoicesDir.mkdirs(); } catch (Exception ignored) {}
+        }
+        String activeTheme = "";
+        try {
+            SharedPreferences sp = PrefUtils.getAppPreferences(context);
+            activeTheme = sp.getString("active_voice_theme", "");
+        } catch (Exception ignored) {}
+
+        File targetFile = null;
+        if (!activeTheme.isEmpty()) {
+            File themeDir = new File(pilotVoicesDir, activeTheme);
+            targetFile = findAudioInDir(new File(themeDir, "audio"), voiceFileName);
+            if (targetFile == null) {
+                targetFile = findAudioInDir(themeDir, voiceFileName);
+            }
+            // 核心互通: 通用开门与主驾开门在主题包内回退互认
+            if (targetFile == null) {
+                if ("door_open.mp3".equalsIgnoreCase(voiceFileName) || "door_open".equalsIgnoreCase(voiceFileName)) {
+                    targetFile = findAudioInDir(themeDir, "door_fl.mp3");
+                } else if ("door_fl.mp3".equalsIgnoreCase(voiceFileName) || "door_fl".equalsIgnoreCase(voiceFileName)) {
+                    targetFile = findAudioInDir(themeDir, "door_open.mp3");
+                } else if ("door_close.mp3".equalsIgnoreCase(voiceFileName) || "door_close".equalsIgnoreCase(voiceFileName)) {
+                    targetFile = findAudioInDir(themeDir, "door_fl_close.mp3");
+                } else if ("door_fl_close.mp3".equalsIgnoreCase(voiceFileName) || "door_fl_close".equalsIgnoreCase(voiceFileName)) {
+                    targetFile = findAudioInDir(themeDir, "door_close.mp3");
+                }
+            }
+        }
+
+        if (targetFile == null) {
+            targetFile = findAudioInDir(pilotVoicesDir, voiceFileName);
+        }
+        if (targetFile == null) {
+            targetFile = findAudioInDir(new File(SystemUtils.getAppDownloadDir(), "语音主题包"), voiceFileName);
+        }
+        if (targetFile == null) {
+            targetFile = findAudioInDir(SystemUtils.getAppDownloadDir(), voiceFileName);
+        }
+        if (targetFile == null) {
+            targetFile = findAudioInDir(new File("/sdcard/Music"), voiceFileName);
+        }
+
+        if (targetFile != null && targetFile.length() > 0) {
+            Log.i(TAG, "Playing external audio file: " + targetFile.getAbsolutePath());
+            AppLogger.i("语音播报", "触发播放[主题音频]: " + targetFile.getName() + " (" + fallbackText + ")");
+            playAudioFile(targetFile, voiceFileName);
+            return;
+        }
+
+        // 3. 内置音频资产播放（解压至应用专有目录播放，100% 免疫 FD 异常）
+        File localAssetFile = getLocalAssetFile(voiceFileName);
+        if (localAssetFile != null && localAssetFile.exists() && localAssetFile.length() > 0) {
+            Log.i(TAG, "Playing local asset audio: " + localAssetFile.getAbsolutePath());
+            AppLogger.i("语音播报", "触发播放[官方原声]: " + voiceFileName + " (" + fallbackText + ")");
+            playAudioFile(localAssetFile, voiceFileName);
+            return;
+        }
+
+        // 4. 纯净 MP3 模式：未匹配到指定音频时安全静默，杜绝调用怪异系统 TTS 破坏座舱体验
+        Log.i(TAG, "Pure MP3 mode: No audio file found for " + voiceFileName + ", quiet finish.");
+    }
+
+    private File getLocalAssetFile(String voiceFileName) {
+        try {
+            File voiceDir = getSafeVoiceDir(context);
+            if (voiceDir == null) return null;
+            File target = new File(voiceDir, voiceFileName);
+
+            // 平时日常播报 0 毫秒直读：只要文件在且非空，直接返回推流，绝不执行耗时 MD5 计算
+            if (target.exists() && target.length() > 0) {
+                return target;
+            }
+
+            // 极端异常兜底：若该文件被意外误删，原地按需从 assets 极速单文件补齐
+            try (InputStream in = context.getAssets().open("audio/" + voiceFileName);
+                 FileOutputStream out = new FileOutputStream(target)) {
+                byte[] buf = new byte[16 * 1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            }
+            if (target.exists() && target.length() > 0) {
+                AppLogger.i("语音资产", "按需补齐缺失音频: " + voiceFileName);
+                return target;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private void playAudioFile(final File file, final String voiceType) {
+        final int sessionId = playSessionId.incrementAndGet();
+        final long arbiterGen = arbiterCurrentGeneration();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (playSessionId.get() != sessionId) return;
+                MediaPlayer mp = null;
+                try {
+                    requestAudioFocus(voiceType);
+                    applyVolumeOffsetBeforePlay(voiceType);
+                    mp = new MediaPlayer();
+                    synchronized (playerLock) {
+                        if (playSessionId.get() != sessionId) {
+                            try { mp.release(); } catch (Exception ignored) {}
+                            abandonAudioFocus();
+                            return;
+                        }
+                        currentMediaPlayer = mp;
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        mp.setAudioAttributes(getVoiceAudioAttributes(context, voiceType));
+                    } else {
+                        boolean isRev = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse")));
+                        mp.setAudioStreamType(isRev ? AudioManager.STREAM_NOTIFICATION : AudioManager.STREAM_MUSIC);
+                    }
+                    mp.setDataSource(file.getAbsolutePath());
+                    mp.prepare();
+                    if (playSessionId.get() != sessionId) {
+                        try { mp.release(); } catch (Exception ignored) {}
+                        synchronized (playerLock) {
+                            if (currentMediaPlayer == mp) currentMediaPlayer = null;
+                        }
+                        abandonAudioFocus();
+                        return;
+                    }
+                    mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                        @Override
+                        public void onCompletion(MediaPlayer mediaPlayer) {
+                            synchronized (playerLock) {
+                                if (currentMediaPlayer == mediaPlayer) currentMediaPlayer = null;
+                            }
+                            abandonAudioFocus();
+                            try { mediaPlayer.release(); } catch (Exception ignored) {}
+                            notifyArbiterFinishedIfCurrent(arbiterGen);
+                        }
+                    });
+                    mp.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                        @Override
+                        public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
+                            synchronized (playerLock) {
+                                if (currentMediaPlayer == mediaPlayer) currentMediaPlayer = null;
+                            }
+                            abandonAudioFocus();
+                            try { mediaPlayer.release(); } catch (Exception ignored) {}
+                            notifyArbiterFinishedIfCurrent(arbiterGen);
+                            return true;
+                        }
+                    });
+                    synchronized (playerLock) {
+                        currentMediaPlayer = mp;
+                    }
+                    try {
+                        SharedPreferences prefs = PrefUtils.getAppPreferences(context);
+                        float speed = prefs.getFloat("voice_playback_speed", 1.0f);
+                        if (speed != 1.0f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            android.media.PlaybackParams params = mp.getPlaybackParams();
+                            params.setSpeed(speed);
+                            params.setPitch(1.0f);
+                            mp.setPlaybackParams(params);
+                        }
+                    } catch (Exception ignored) {}
+                    mp.start();
+                    notifyArbiterStarted(arbiterGen);
+                    Log.i(TAG, "MediaPlayer started successfully for " + file.getName());
+                } catch (Exception e) {
+                    Log.e(TAG, "playAudioFile failed: " + e.getMessage(), e);
+                    abandonAudioFocus();
+                    if (mp != null) {
+                        try { mp.release(); } catch (Exception ignored) {}
+                    }
+                    synchronized (playerLock) {
+                        if (currentMediaPlayer == mp) currentMediaPlayer = null;
+                    }
+                    // 准备失败也要通知仲裁器结束，否则通道永久卡死
+                    notifyArbiterFinishedIfCurrent(arbiterGen);
+                }
+            }
+        }).start();
+    }
+
+    private void playAudioFile(final File file) {
+        playAudioFile(file, null);
+    }
+
+    /**
+     * TTS 就绪后立即补播排队中的首条语音（点火即挂挡场景零丢失）。
+     * 由 onInit 成功回调调用，也在 ensureTtsReady 重试成功后调用。
+     */
+    private void flushPendingSpeech() {
+        final String text = pendingText;
+        final String voiceType = pendingVoiceType;
+        final long at = pendingTextAt;
+        if (text == null || text.trim().isEmpty()) return;
+        if (System.currentTimeMillis() - at > PENDING_TTL_MS) {
+            // 过期台词（超 8 秒）坚决丢弃，防止点火瞬间排队、半天后串音
+            pendingText = null;
+            pendingVoiceType = null;
+            return;
+        }
+        pendingText = null;
+        pendingVoiceType = null;
+        pendingTextAt = 0L;
+        if (tts == null || !ttsReady) return;
+        Log.i(TAG, "Flushing pending buffered speech: " + text);
+        speakText(text, voiceType);
+    }
+
+    /**
+     * TTS 引擎健康检查与重试预热（QQ 音乐解锁即预载同款）。
+     * 解锁/上电广播触发时应主动调用一次，若引擎未就绪则带节流重试 init，
+     * 确保点火后第一条语音无需等待引擎冷启动。
+     * 该方法必须运行在主线程（TextToSpeech 构造要求），内部已用 mainHandler 包裹。
+     */
+    public void ensureTtsReady() {
+        if (tts != null && ttsReady) return;
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (tts != null && ttsReady) return;
+                long now = System.currentTimeMillis();
+                // 节流：最短 3 秒重试一次，避免引擎起不来的车机上空转刷屏
+                if (now - lastInitAttemptAt < INIT_RETRY_INTERVAL_MS) return;
+                lastInitAttemptAt = now;
+                try {
+                    if (tts != null && !ttsReady) {
+                        // 已构造过但未就绪：释放旧实例重新绑定（车机早期小爱引擎未起时的兜底）
+                        try { tts.shutdown(); } catch (Throwable ignored) {}
+                        tts = null;
+                    }
+                    initTts();
+                    Log.i(TAG, "ensureTtsReady: TTS re-init triggered");
+                } catch (Exception e) {
+                    Log.w(TAG, "ensureTtsReady re-init failed: " + e.getMessage());
+                }
+            }
+        });
+    }
+
+    private void requestAudioFocus(String voiceType) {
+        if (audioManager == null) return;
+        try {
+            // 核心铁律：当车载蓝牙音频通道处于活跃连接态或推流态时，严禁申请 AudioFocus！
+            // 吉利原厂蓝牙协议栈收到外部焦点申请/退让广播 (-3) 后，会反向触发系统级 Ducking (压低媒体音量导致忽大忽小)
+            // 甚至向手机下发 AVRCP PAUSE (0x46/70) 指令掐断微信语音或播放；
+            // 蓝牙连入时直接走 AudioFlinger PCM 底层硬件混音即可完美共存且音量平稳！
+            try {
+                if (EasMediaBridge.getInstance(context).isBluetoothChannelActive() || EasMediaBridge.getInstance(context).isA2dpStreaming()) {
+                    Log.i(TAG, "Bluetooth channel active/streaming, bypassing requestAudioFocus to prevent Ducking and AVRCP PAUSE.");
+                    return;
+                }
+            } catch (Throwable ignored) {}
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                AudioAttributes attrs = getVoiceAudioAttributes(context, voiceType);
+                AudioFocusRequest req = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                        .setAudioAttributes(attrs)
+                        .build();
+                audioManager.requestAudioFocus(req);
+                activeFocusRequest = req;
+            } else {
+                boolean isRev = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse")));
+                int stream = isRev ? AudioManager.STREAM_NOTIFICATION : AudioManager.STREAM_MUSIC;
+                audioManager.requestAudioFocus(null, stream, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void requestAudioFocus() {
+        requestAudioFocus(null);
+    }
+
+    private void abandonAudioFocus() {
+        if (audioManager == null) return;
+        try {
+            if (activeFocusRequest == null) return;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && activeFocusRequest instanceof AudioFocusRequest) {
+                audioManager.abandonAudioFocusRequest((AudioFocusRequest) activeFocusRequest);
+                activeFocusRequest = null;
+            } else {
+                audioManager.abandonAudioFocus(null);
+                activeFocusRequest = null;
+            }
+        } catch (Exception ignored) {}
+    }
+
+    public static File getVoicesRootDir() {
+        File dir = new File(Environment.getExternalStorageDirectory(), "GeelyPilot/voices");
+        if (!dir.exists()) {
+            try { dir.mkdirs(); } catch (Exception ignored) {}
+        }
+        return dir;
+    }
+
+    public static boolean isVoicePackZip(File zipFile) {
+        if (zipFile == null || !zipFile.exists() || !zipFile.getName().toLowerCase().endsWith(".zip")) {
+            return false;
+        }
+        ZipInputStream zis = null;
+        try {
+            zis = new ZipInputStream(new FileInputStream(zipFile));
+            ZipEntry entry;
+            int audioCount = 0;
+            boolean hasReadme = false;
+            while ((entry = zis.getNextEntry()) != null) {
+                String name = entry.getName().toLowerCase();
+                if (name.endsWith(".mp3") || name.endsWith(".wav")) {
+                    audioCount++;
+                    if (name.contains("gear_") || name.contains("door_") || name.contains("mode_") || name.contains("trunk_")) {
+                        zis.close();
+                        return true;
+                    }
+                } else if (name.endsWith("readme.txt") || name.endsWith("manifest.json")) {
+                    hasReadme = true;
+                }
+                zis.closeEntry();
+            }
+            return (audioCount >= 2) || (audioCount >= 1 && hasReadme);
+        } catch (Exception ignored) {
+            return false;
+        } finally {
+            if (zis != null) {
+                try { zis.close(); } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    public static String sanitizeThemeName(String themeName) {
+        if (themeName == null) {
+            return "custom_voice_" + (System.currentTimeMillis() % 100000);
+        }
+        // 支持中文、英文、数字、中划线、下划线，剥除路径穿越符 ../ 与特殊敏感符号
+        String clean = themeName.replaceAll("[\\\\/:*?\"<>|\\$`&'#!@%^~;.]+", "_").trim();
+        clean = clean.replaceAll("[\\p{Cntrl}]", "").trim();
+        if (clean.isEmpty()) {
+            clean = "custom_voice_" + (System.currentTimeMillis() % 100000);
+        }
+        if (clean.length() > 32) {
+            clean = clean.substring(0, 32).trim();
+        }
+        return clean;
+    }
+
+    public static String resolveStandardAudioName(String fileName) {
+        if (fileName == null) return "";
+        String lower = fileName.toLowerCase().trim();
+        int dot = lower.lastIndexOf('.');
+        String baseName = (dot > 0) ? lower.substring(0, dot) : lower;
+        String ext = (dot > 0) ? lower.substring(dot) : "";
+        if (!ext.equals(".mp3") && !ext.equals(".wav")) {
+            return fileName;
+        }
+
+        // 已经符合标准命名的英文直接放行
+        if (baseName.startsWith("gear_") || baseName.startsWith("mode_")
+                || baseName.startsWith("door_") || baseName.startsWith("trunk_")
+                || baseName.equals("start") || baseName.equals("stop")) {
+            return fileName;
+        }
+
+        // 常见中文别名智能自愈映射
+        if (baseName.contains("前进") || baseName.equals("d挡") || baseName.equals("d")) return "gear_d" + ext;
+        if (baseName.contains("倒车") || baseName.contains("倒挡") || baseName.equals("r挡") || baseName.equals("r")) return "gear_r" + ext;
+        if (baseName.contains("驻车") || baseName.equals("p挡") || baseName.equals("p")) return "gear_p" + ext;
+        if (baseName.contains("空挡") || baseName.equals("n挡") || baseName.equals("n")) return "gear_n" + ext;
+        if (baseName.contains("经济")) return "mode_eco" + ext;
+        if (baseName.contains("运动")) return "mode_sport" + ext;
+        if (baseName.contains("舒适")) return "mode_comfort" + ext;
+        if (baseName.contains("智能")) return "mode_smart" + ext;
+        if ((baseName.contains("尾门") || baseName.contains("后备箱")) && baseName.contains("关")) return "trunk_close" + ext;
+        if (baseName.contains("尾门") || baseName.contains("后备箱")) return "trunk_open" + ext;
+        if (baseName.contains("主驾") && baseName.contains("关")) return "door_fl_close" + ext;
+        if (baseName.contains("主驾")) return "door_fl" + ext;
+        if (baseName.contains("副驾") && baseName.contains("关")) return "door_fr_close" + ext;
+        if (baseName.contains("副驾")) return "door_fr" + ext;
+        if (baseName.contains("左后") && baseName.contains("关")) return "door_rl_close" + ext;
+        if (baseName.contains("左后")) return "door_rl" + ext;
+        if (baseName.contains("右后") && baseName.contains("关")) return "door_rr_close" + ext;
+        if (baseName.contains("右后")) return "door_rr" + ext;
+        if (baseName.contains("开门")) return "door_open" + ext;
+        if (baseName.contains("关门")) return "door_close" + ext;
+
+        return fileName;
+    }
+
+    public static int extractVoiceZip(File zipFile, String themeName) {
+        if (zipFile == null || !zipFile.exists()) return -1;
+        if (themeName == null || themeName.trim().isEmpty()) {
+            String fName = zipFile.getName();
+            int dot = fName.lastIndexOf('.');
+            themeName = (dot > 0) ? fName.substring(0, dot) : fName;
+        }
+        themeName = sanitizeThemeName(themeName);
+        File targetDir = new File(getVoicesRootDir(), themeName);
+        if (!targetDir.exists()) {
+            targetDir.mkdirs();
+        }
+
+        ZipInputStream zis = null;
+        int count = 0;
+        try {
+            zis = new ZipInputStream(new FileInputStream(zipFile));
+            ZipEntry entry;
+            byte[] buffer = new byte[8192];
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.isDirectory()) {
+                    zis.closeEntry();
+                    continue;
+                }
+                String fullPath = entry.getName();
+                // 过滤 Mac 影子文件与不可见隐藏文件
+                if (fullPath.contains("__MACOSX") || fullPath.contains("/.") || fullPath.startsWith(".")) {
+                    zis.closeEntry();
+                    continue;
+                }
+                String rawFileName = new File(fullPath).getName();
+                if (rawFileName.startsWith(".")) {
+                    zis.closeEntry();
+                    continue;
+                }
+                // 中文别名自愈与标准命名纠错
+                String standardFileName = resolveStandardAudioName(rawFileName);
+                String lower = standardFileName.toLowerCase();
+
+                // 强安全后缀白名单放行（拒绝 .sh, .apk, .exe, .dex 等可执行脚本）
+                if (lower.endsWith(".mp3") || lower.endsWith(".wav") || lower.endsWith(".txt") || lower.endsWith(".json") || lower.endsWith(".png") || lower.endsWith(".jpg")) {
+                    File outFile = new File(targetDir, standardFileName);
+                    // 严格验证目标路径在 targetDir 内部，彻底防御 ZipSlip 逃逸
+                    if (!outFile.getCanonicalPath().startsWith(targetDir.getCanonicalPath())) {
+                        zis.closeEntry();
+                        continue;
+                    }
+                    FileOutputStream fos = new FileOutputStream(outFile);
+                    int len;
+                    while ((len = zis.read(buffer)) > 0) {
+                        fos.write(buffer, 0, len);
+                    }
+                    fos.close();
+                    if (lower.endsWith(".mp3") || lower.endsWith(".wav")) {
+                        if (outFile.length() > 0) {
+                            count++;
+                        } else {
+                            // 0 字节空占位模板文件，自动丢弃防污染，绝不覆盖已有单项配置与出厂原声
+                            try { outFile.delete(); } catch (Exception ignored) {}
+                        }
+                    }
+                }
+                zis.closeEntry();
+            }
+            return count;
+        } catch (Exception e) {
+            Log.e(TAG, "extractVoiceZip error: " + e.getMessage(), e);
+            return -1;
+        } finally {
+            if (zis != null) {
+                try { zis.close(); } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    public static String listInstalledThemesJson(Context context) {
+        try {
+            File root = getVoicesRootDir();
+            File[] files = root.listFiles();
+            JSONObject result = new JSONObject();
+            SharedPreferences sp = PrefUtils.getAppPreferences(context);
+            String active = sp.getString("active_voice_theme", "");
+            result.put("activeTheme", active);
+
+            JSONArray list = new JSONArray();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isDirectory() && !f.getName().startsWith(".")) {
+                        JSONObject t = new JSONObject();
+                        t.put("id", f.getName());
+                        t.put("name", f.getName());
+                        t.put("path", f.getAbsolutePath());
+                        File[] audios = f.listFiles();
+                        int audioCount = 0;
+                        boolean hasPreview = false;
+                        JSONArray audioNames = new JSONArray();
+                        if (audios != null) {
+                            for (File af : audios) {
+                                String n = af.getName().toLowerCase();
+                                if ((n.endsWith(".mp3") || n.endsWith(".wav")) && af.length() > 0) {
+                                    audioCount++;
+                                    audioNames.put(af.getName());
+                                    if (n.equals("preview" + ".mp3") || n.equals("sample" + ".mp3")) {
+                                        hasPreview = true;
+                                    }
+                                }
+                            }
+                        }
+                        t.put("count", audioCount);
+                        t.put("hasPreview", hasPreview);
+                        t.put("audioFiles", audioNames);
+                        list.put(t);
+                    }
+                }
+            }
+            result.put("themes", list);
+            return result.toString();
+        } catch (Exception e) {
+            return "{\"activeTheme\":\"\",\"themes\":[]}";
+        }
+    }
+
+    public static boolean setActiveTheme(Context context, String themeName) {
+        try {
+            SharedPreferences sp = PrefUtils.getAppPreferences(context);
+            return sp.edit().putString("active_voice_theme", themeName == null ? "" : themeName.trim()).commit();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static boolean deleteTheme(Context context, String themeName) {
+        if (themeName == null || themeName.trim().isEmpty()) return false;
+        try {
+            SharedPreferences sp = PrefUtils.getAppPreferences(context);
+            String active = sp.getString("active_voice_theme", "");
+            if (themeName.trim().equals(active)) {
+                sp.edit().putString("active_voice_theme", "").commit();
+            }
+            File dir = new File(getVoicesRootDir(), themeName.trim());
+            return deleteRecursive(dir);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static boolean deleteRecursive(File f) {
+        if (f == null || !f.exists()) return false;
+        if (f.isDirectory()) {
+            File[] subs = f.listFiles();
+            if (subs != null) {
+                for (File s : subs) {
+                    deleteRecursive(s);
+                }
+            }
+        }
+        return f.delete();
+    }
+}
