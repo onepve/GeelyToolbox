@@ -577,7 +577,7 @@ public class SteeringWheelKeyManager {
             // 核心仲裁：检查车主配置的【首选音源】(尊重车主设置，完美消除蓝牙与本地音乐冲突)
             try {
                 SharedPreferences sp = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                String primaryPkg = sp.getString("vehicle_speed_autoplay_pkg", "com.android.bluetooth");
+                String primaryPkg = sp.getString("vehicle_speed_autoplay_pkg", "com.tencent.qqmusiccar");
                 boolean primaryIsBt = "com.android.bluetooth".equals(primaryPkg) || (primaryPkg != null && primaryPkg.contains("bluetooth"));
 
                 if (isBluetoothDeviceConnected()) {
