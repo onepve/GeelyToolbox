@@ -1394,6 +1394,9 @@ public class VehicleAutomationService extends Service {
         if (gearStateMachine != null) gearStateMachine.resetState();
         if (driveModeManager != null) driveModeManager.resetState();
         if (doorStateManager != null) doorStateManager.resetState();
+        // 下电熄火重置单次行程自启锁，保证下次上电点火起步能重新触发车速达标自启
+        speedAutoplayTriggeredInTrip = false;
+        speedCustomActionTriggeredInTrip = false;
     }
 
     private void open360Camera() {
