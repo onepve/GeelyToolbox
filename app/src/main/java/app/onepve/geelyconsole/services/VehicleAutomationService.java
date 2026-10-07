@@ -137,6 +137,7 @@ public class VehicleAutomationService extends Service {
     // 转向灯联动 360 状态
     private boolean enableTurnSignal360 = false;
     private boolean isTurnSignal360Active = false;
+    public static volatile boolean isAvmCameraShowing = false; // 真实原厂 360 画面前台状态 (来自 ecarx_avm_SocketCommand)
 
     /** 桥接只读快照 (供 MainActivity 同步读取，不加锁只写 volatile) */
     private volatile boolean lastEngineRunningSnapshot = false;
@@ -574,6 +575,10 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("ap_power_bootup_reason[^0-9]*(\\d+)");
     private static final Pattern P_TURN_LIGHT =
             Pattern.compile("turnLight\\s*=\\s*(\\d+)");
+    private static final Pattern P_AVM_SOCKET_CAM =
+            Pattern.compile("camera_state\\s*:\\s*(\\d+)");
+    private static final Pattern P_GOC_A2DP_VOL =
+            Pattern.compile("a2dp_player_setvol.*?:\\s*val\\s*:\\s*([0-9.]+)");
 
     private void startLogcatReader() {
         if (logcatThread != null && logcatThread.isAlive()) return;
@@ -980,6 +985,36 @@ public class VehicleAutomationService extends Service {
             } catch (Exception ignored) {}
         }
 
+        // 5.2 解析原厂 360 画面启闭真实状态 (ecarx_avm_SocketCommand: sendSocketMsg: camera_state: 1/0)
+        if (line.contains("camera_state:")) {
+            try {
+                Matcher mCam = P_AVM_SOCKET_CAM.matcher(line);
+                if (mCam.find()) {
+                    int camState = Integer.parseInt(mCam.group(1));
+                    boolean showing = (camState == 1);
+                    if (showing != isAvmCameraShowing) {
+                        isAvmCameraShowing = showing;
+                        AppLogger.i("车身联动", "【原厂环视】360 画面真实状态跃变: " + (showing ? "已在前台显示" : "已退出/关闭"));
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 5.3 监控原车硬件功放静音与推流状态 (goc / MT8666 音频 DSP: a2dp_player_unmute & setvol)
+        if (line.contains("a2dp_player_") || line.contains("MT8666 a2dp_player_setvol")) {
+            try {
+                if (line.contains("a2dp_player_unmute")) {
+                    AppLogger.i("音频路由", "【原车DSP】检测到底层 A2DP 功放解除静音报文 (a2dp_player_unmute)");
+                } else if (line.contains("setvol")) {
+                    Matcher mVol = P_GOC_A2DP_VOL.matcher(line);
+                    if (mVol.find()) {
+                        String volStr = mVol.group(1);
+                        AppLogger.i("音频路由", "【原车DSP】MT8666 硬件音量当前置为: " + volStr);
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
         // 6. 解析 12V 蓄电池物理电压报文 (ecarx_core_server: vehicledata----callbacks---mModelBatteryVolt = 125)
         if (line.contains("mModelBatteryVolt =")) {
             try {
@@ -1367,6 +1402,10 @@ public class VehicleAutomationService extends Service {
     }
 
     private void open360Camera() {
+        if (isAvmCameraShowing) {
+            AppLogger.i("车身联动", "原厂 360 画面已在前台显示，跳过重复调起防闪屏");
+            return;
+        }
         try {
             Intent intent = getPackageManager().getLaunchIntentForPackage("ecarx.camera.calibration");
             if (intent == null) {
