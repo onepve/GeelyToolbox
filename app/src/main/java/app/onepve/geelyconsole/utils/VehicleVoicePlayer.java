@@ -23,12 +23,10 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.speech.tts.TextToSpeech;
-import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 
 /**
- * 车辆语音播报器 (支持本地短音频与系统 TTS 引擎)
+ * 车辆语音播报器 (纯净原生短音频与用户主题包播放)
  *
  * 仲裁架构 (v2)：对外公开 API (play/speakText/playCustomFile/stopCurrentVoice) 全部
  * 收敛进 VoiceArbiter 单线程仲裁状态机，彻底修复以下历史缺陷：
@@ -109,22 +107,12 @@ public class VehicleVoicePlayer {
 
     private final Context context;
     private final AudioManager audioManager;
-    private TextToSpeech tts;
-    private boolean ttsReady = false;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private MediaPlayer currentMediaPlayer = null;
     private final Object playerLock = new Object();
     private final java.util.concurrent.atomic.AtomicInteger playSessionId = new java.util.concurrent.atomic.AtomicInteger(0);
     private Object activeFocusRequest = null;
     private Runnable focusReleaseRunnable = null;
-
-    // ---- TTS 冷启动排队补播：点火后引擎未就绪时，缓存最新一条待播，就绪后自动补出（绝不丢首条语音）----
-    private volatile String pendingText = null;
-    private volatile String pendingVoiceType = null;
-    private volatile long pendingTextAt = 0L;
-    private static final long PENDING_TTL_MS = 8000L;      // 超出 8 秒的过期台词坚决丢弃，防串音
-    private volatile long lastInitAttemptAt = 0L;          // ensureTtsReady 重试节流时间戳
-    private static final long INIT_RETRY_INTERVAL_MS = 3000L; // 节流：最短 3 秒重试一次
 
     // ---- 车规四级语音仲裁金字塔 (Priority Scheduling & Queue) ----
     public static final int PRIORITY_P0_ALARM = 0;    // 极限高危安全警报 (手刹未拉、变速箱高温、机油低压) - 一票否决强杀
@@ -451,24 +439,6 @@ public class VehicleVoicePlayer {
                 currentMediaPlayer = null;
             }
         }
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            try {
-                if (tts != null && tts.isSpeaking()) {
-                    tts.stop();
-                }
-            } catch (Exception ignored) {}
-        } else {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        if (tts != null && tts.isSpeaking()) {
-                            tts.stop();
-                        }
-                    } catch (Exception ignored) {}
-                }
-            });
-        }
         abandonAudioFocus();
     }
 
@@ -492,7 +462,6 @@ public class VehicleVoicePlayer {
         this.audioManager = (AudioManager) this.context.getSystemService(Context.AUDIO_SERVICE);
         this.externalDetector = new ExternalAudioDetector(this.context);
         getArbiter(); // 提前建立仲裁器
-        initTts();
         // 预热将内置音频解压到私有目录，确保极速秒播
         extractAssetsAsync();
     }
@@ -679,90 +648,17 @@ public class VehicleVoicePlayer {
     }
 
     public boolean isTtsReady() {
-        return tts != null && ttsReady;
+        return false;
     }
 
     public String getActiveTtsEngine() {
-        if (tts != null) {
-            try {
-                String eng = tts.getDefaultEngine();
-                if (eng != null && !eng.isEmpty()) return eng;
-            } catch (Exception ignored) {}
-        }
         return "none";
     }
 
-    private void setupTtsLanguageAndReady() {
-        if (tts == null) return;
-        try {
-            // 依次尝试 CHINA(zh_CN) -> SIMPLIFIED_CHINESE -> CHINESE -> getDefault()，最大化兼容小爱等第三方引擎
-            int res = tts.setLanguage(Locale.CHINA);
-            if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
-                res = tts.setLanguage(Locale.SIMPLIFIED_CHINESE);
-            }
-            if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
-                res = tts.setLanguage(Locale.CHINESE);
-            }
-            if (res == TextToSpeech.LANG_MISSING_DATA || res == TextToSpeech.LANG_NOT_SUPPORTED) {
-                res = tts.setLanguage(Locale.getDefault());
-            }
-
-            ttsReady = true;
-            tts.setSpeechRate(1.05f);
-            setupUtteranceListener();
-            Log.i(TAG, "TextToSpeech init ready! Engine=" + tts.getDefaultEngine() + ", langRes=" + res);
-            flushPendingSpeech();
-        } catch (Exception e) {
-            Log.w(TAG, "setupTtsLanguageAndReady error: " + e.getMessage());
-            ttsReady = true;
-            flushPendingSpeech();
-        }
+    public synchronized void reinitTts() {
     }
 
-    private void setupUtteranceListener() {
-        if (tts == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) return;
-        try {
-            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-                private String extractGen(String utteranceId) {
-                    // utteranceId 形如 "tts_<generation>_<seq>"
-                    if (utteranceId == null) return null;
-                    String[] parts = utteranceId.split("_");
-                    return parts.length >= 3 ? parts[1] : null;
-                }
-
-                private long generationOf(String utteranceId) {
-                    try {
-                        return Long.parseLong(extractGen(utteranceId));
-                    } catch (Exception e) {
-                        return -1L;
-                    }
-                }
-
-                @Override
-                public void onStart(String utteranceId) {
-                    Log.d(TAG, "TTS onStart: " + utteranceId);
-                    AppLogger.i("语音播报", "TTS引擎开始发声 (" + utteranceId + ")");
-                    // 就绪即通知仲裁器进入 ACTIVE
-                    long gen = generationOf(utteranceId);
-                    notifyArbiterStarted(gen);
-                }
-
-                @Override
-                public void onDone(String utteranceId) {
-                    Log.d(TAG, "TTS onDone: " + utteranceId);
-                    AppLogger.i("语音播报", "TTS引擎发声播报完毕 (" + utteranceId + ")");
-                    // 仅当前代 onDone 才允许释放焦点与出队，杜绝过期回调错清新会话
-                    notifyArbiterFinishedIfCurrent(generationOf(utteranceId));
-                }
-
-                @Override
-                public void onError(String utteranceId) {
-                    Log.w(TAG, "TTS onError: " + utteranceId);
-                    AppLogger.w("语音播报", "TTS引擎发声错误 (" + utteranceId + ")，请点击【TTS设置】检查语音引擎配置");
-                    notifyArbiterFinishedIfCurrent(generationOf(utteranceId));
-                }
-            });
-        } catch (Exception ignored) {}
+    public synchronized void checkAndReloadTtsIfNeeded() {
     }
 
     private void notifyArbiterStarted(final long gen) {
@@ -795,61 +691,6 @@ public class VehicleVoicePlayer {
                 }
             }
         });
-    }
-
-    private void initTts() {
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (tts != null) {
-                        try {
-                            tts.stop();
-                            tts.shutdown();
-                        } catch (Throwable ignored) {}
-                        tts = null;
-                        ttsReady = false;
-                    }
-
-                    // 2. 监听器：就绪后设置语言并刷新待播语音 (100% 满足 CI tts-ready-flush 契约)
-                    TextToSpeech.OnInitListener listener = new TextToSpeech.OnInitListener() {
-                        @Override
-                        public void onInit(int status) {
-                            if (status == TextToSpeech.SUCCESS && tts != null) {
-                                setupTtsLanguageAndReady();
-                                ttsReady = true;
-                                flushPendingSpeech();
-                            } else {
-                                Log.w(TAG, "TextToSpeech onInit failed, status=" + status);
-                                ttsReady = false;
-                            }
-                        }
-                    };
-
-                    // 3. 原生直连系统当前首选/默认 TTS 引擎（由车主在系统设置中自主决定，原厂 XCTtsEngine / 小爱 / 其它第三方引擎自由切换）
-                    tts = new TextToSpeech(context, listener);
-                } catch (Exception e) {
-                    Log.w(TAG, "Failed to init TextToSpeech: " + e.getMessage());
-                    ttsReady = false;
-                }
-            }
-        });
-    }
-
-    public synchronized void reinitTts() {
-        lastInitAttemptAt = 0;
-        initTts();
-    }
-
-    public synchronized void checkAndReloadTtsIfNeeded() {
-        try {
-            String sysDefault = android.provider.Settings.Secure.getString(context.getContentResolver(), android.provider.Settings.Secure.TTS_DEFAULT_SYNTH);
-            String current = getActiveTtsEngine();
-            if (sysDefault != null && !sysDefault.isEmpty() && !sysDefault.equals(current) && !"none".equals(current)) {
-                Log.i(TAG, "System TTS default changed: " + current + " -> " + sysDefault + ", reloading TTS engine...");
-                reinitTts();
-            }
-        } catch (Exception ignored) {}
     }
 
     /**
@@ -908,8 +749,7 @@ public class VehicleVoicePlayer {
 
     public void speakText(final String text, final String voiceType) {
         if (text == null || text.trim().isEmpty()) return;
-        // 纯 TTS 文本播报：以文件名 "tts:<text>" 作为仲裁身份，P2 级 (界面测试播报)
-        play("tts:" + text.trim(), text, PRIORITY_P2_DOOR);
+        Log.i(TAG, "Pure MP3 mode: TTS stripped, ignoring text: " + text);
     }
 
     // ------------------------------------------------------------------
@@ -929,96 +769,15 @@ public class VehicleVoicePlayer {
             }
             Log.w(TAG, "Custom audio file missing: " + path);
             AppLogger.w("语音播报", "用户指定试听文件不存在: " + path);
-            speakTextInternal("指定自定义音频文件不存在", voiceFileName);
             return;
         }
 
         if (voiceFileName != null && voiceFileName.startsWith("tts:")) {
-            // 纯 TTS 文本播报
-            speakTextInternal(voiceFileName.substring(4), voiceFileName);
+            // 纯 TTS 文本播报 -> 纯净 MP3 模式直接忽略
             return;
         }
 
         executeActualPlay(voiceFileName, fallbackText);
-    }
-
-    private void speakTextInternal(final String text, final String arbiterKey) {
-        // 历史公开 speakText 逻辑的内部直通版本 (已由仲裁放行，不再重复仲裁)
-        try {
-            SharedPreferences prefs = PrefUtils.getAppPreferences(context);
-            boolean masterSwitch = prefs.getBoolean("voice_master_switch", true);
-            if (!masterSwitch) {
-                Log.i(TAG, "Voice master switch is OFF, dropping TTS speak: " + text);
-                return;
-            }
-        } catch (Exception ignored) {}
-
-        if (focusReleaseRunnable != null) {
-            mainHandler.removeCallbacks(focusReleaseRunnable);
-            focusReleaseRunnable = null;
-        }
-        requestAudioFocus(arbiterKey);
-        applyVolumeOffsetBeforePlay(arbiterKey);
-        SharedPreferences prefs = PrefUtils.getAppPreferences(context);
-        if (tts != null && ttsReady) {
-            try {
-                float speed = prefs.getFloat("voice_playback_speed", 1.0f);
-                tts.setSpeechRate(speed);
-            } catch (Exception ignored) {}
-            // 每声效独立声道优先（与 getVoiceAudioAttributes 一致，键名归一化），否则跟随全局通道
-            String key = VoiceGainResolver.normalizeVoiceKey(arbiterKey);
-            String channel = prefs.getString("voice_item_channel_" + key, null);
-            if (channel == null || channel.isEmpty()) {
-                channel = prefs.getString("voice_audio_channel", "music");
-            }
-            // 三通道 → 原厂音量流：music→3、nav→12(私有 STREAM_NAVI)、notification→1(STREAM_SYSTEM)
-            int streamType = VoiceGainResolver.resolveStreamForChannel(channel);
-            android.os.Bundle ttsParams = new android.os.Bundle();
-            ttsParams.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, streamType);
-            ttsParams.putBoolean("skipTtsCta", true);
-            ttsParams.putBoolean("onlyoffline", false);
-            // utteranceId 携带仲裁代数：onDone 只在代数匹配时释放焦点
-            String uttId = "tts_" + arbiterCurrentGeneration() + "_" + System.currentTimeMillis();
-            AppLogger.i("语音播报", "发起TTS朗读: \"" + text + "\" (引擎=" + getActiveTtsEngine() + ", 声道=" + channel + ", 流=" + streamType + ")");
-
-            int speakRes;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                // 关键修复：坚决不向 TextToSpeech 注入 setAudioAttributes(USAGE_MEDIA)！
-                // 车载 Android 9 底层对 TTS 的 AudioTrack 有专用的流类型映射规则，
-                // 一旦外部注入 setAudioAttributes 会导致车机 DSP 产生总线错位静音！
-                // 恢复为系统默认原生流直通（最早可发声版本的纯净实现）
-                speakRes = tts.speak(text, TextToSpeech.QUEUE_FLUSH, ttsParams, uttId);
-            } else {
-                java.util.HashMap<String, String> map = new java.util.HashMap<>();
-                map.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(streamType));
-                map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, uttId);
-                speakRes = tts.speak(text, TextToSpeech.QUEUE_FLUSH, map);
-            }
-            if (speakRes != TextToSpeech.SUCCESS) {
-                AppLogger.w("语音播报", "TTS speak 请求失败 (错误码: " + speakRes + ")，语音引擎可能未准备好发音数据");
-            }
-        } else {
-            // 冷启动兜底：TTS 未就绪时缓存最新一条待播台词（覆盖旧缓存），并触发一次重试预热。
-            pendingText = text;
-            pendingVoiceType = arbiterKey;
-            pendingTextAt = System.currentTimeMillis();
-            ensureTtsReady();
-            AppLogger.w("语音播报", "TTS尚未就绪，已加入待播队列并触发唤醒: " + text);
-        }
-        // 6s 超时兜底：TTS 引擎可能永远不回调 (车载 IPC 异常)；超时按失败处理，
-        // 只对当前代生效，绝不把超时当成功、也绝不误清新会话。
-        final long gen = arbiterCurrentGeneration();
-        focusReleaseRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (focusReleaseRunnable == this) {
-                    focusReleaseRunnable = null;
-                }
-                AppLogger.w("语音播报", "TTS 6秒超时未收到引擎回调，按失败兜底释放焦点 (gen=" + gen + ")");
-                notifyArbiterFinishedIfCurrent(gen);
-            }
-        };
-        mainHandler.postDelayed(focusReleaseRunnable, 6000);
     }
 
     private long arbiterCurrentGeneration() {
@@ -1263,58 +1022,8 @@ public class VehicleVoicePlayer {
         playAudioFile(file, null);
     }
 
-    /**
-     * TTS 就绪后立即补播排队中的首条语音（点火即挂挡场景零丢失）。
-     * 由 onInit 成功回调调用，也在 ensureTtsReady 重试成功后调用。
-     */
-    private void flushPendingSpeech() {
-        final String text = pendingText;
-        final String voiceType = pendingVoiceType;
-        final long at = pendingTextAt;
-        if (text == null || text.trim().isEmpty()) return;
-        if (System.currentTimeMillis() - at > PENDING_TTL_MS) {
-            // 过期台词（超 8 秒）坚决丢弃，防止点火瞬间排队、半天后串音
-            pendingText = null;
-            pendingVoiceType = null;
-            return;
-        }
-        pendingText = null;
-        pendingVoiceType = null;
-        pendingTextAt = 0L;
-        if (tts == null || !ttsReady) return;
-        Log.i(TAG, "Flushing pending buffered speech: " + text);
-        speakText(text, voiceType);
-    }
-
-    /**
-     * TTS 引擎健康检查与重试预热（QQ 音乐解锁即预载同款）。
-     * 解锁/上电广播触发时应主动调用一次，若引擎未就绪则带节流重试 init，
-     * 确保点火后第一条语音无需等待引擎冷启动。
-     * 该方法必须运行在主线程（TextToSpeech 构造要求），内部已用 mainHandler 包裹。
-     */
     public void ensureTtsReady() {
-        if (tts != null && ttsReady) return;
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (tts != null && ttsReady) return;
-                long now = System.currentTimeMillis();
-                // 节流：最短 3 秒重试一次，避免引擎起不来的车机上空转刷屏
-                if (now - lastInitAttemptAt < INIT_RETRY_INTERVAL_MS) return;
-                lastInitAttemptAt = now;
-                try {
-                    if (tts != null && !ttsReady) {
-                        // 已构造过但未就绪：释放旧实例重新绑定（车机早期小爱引擎未起时的兜底）
-                        try { tts.shutdown(); } catch (Throwable ignored) {}
-                        tts = null;
-                    }
-                    initTts();
-                    Log.i(TAG, "ensureTtsReady: TTS re-init triggered");
-                } catch (Exception e) {
-                    Log.w(TAG, "ensureTtsReady re-init failed: " + e.getMessage());
-                }
-            }
-        });
+        // Pure MP3 mode: TTS stripped
     }
 
     private void requestAudioFocus(String voiceType) {

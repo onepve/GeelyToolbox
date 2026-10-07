@@ -30,13 +30,8 @@ static class TextUtils {static boolean isEmpty(String s){return s==null||s.isEmp
 static class Log {static void i(String t,String m){}}
 static String TAG="test";
 int lastPowerMode=1; float latestBatteryVoltage=0; int currentSpeedKmH=0; int lastKeyState=0;
-Object tts=new Object(); boolean ttsReady=true; String pendingText,pendingVoiceType;
-long pendingTextAt; %s
-int spoken; String spokenText;
-void speakText(String text,String type){spoken++;spokenText=text;}
 %s
 boolean isEngineRunning(){%s}
-void flushPendingSpeech(){%s}
 static void eq(Object want,Object got){if(!want.equals(got))throw new AssertionError(want+" != "+got);}
 public static void main(String[] args)throws Exception{
  int[][] clamps={{-1,-1},{0,3},{2,3},{3,3},{30,30},{600,600},{601,600}};
@@ -55,14 +50,10 @@ public static void main(String[] args)throws Exception{
  t.lastPowerMode=-1;t.latestBatteryVoltage=0f;eq(true,t.isEngineRunning());
  t.lastPowerMode=-1;t.latestBatteryVoltage=13.5f;eq(true,t.isEngineRunning());
  t.lastPowerMode=-1;t.latestBatteryVoltage=10f;t.currentSpeedKmH=10;eq(true,t.isEngineRunning());
- t.pendingText="最新语音";t.pendingTextAt=now;t.flushPendingSpeech();eq(1,t.spoken);eq("最新语音",t.spokenText);
- t.flushPendingSpeech();eq(1,t.spoken);
- t.pendingText="过期";t.pendingTextAt=now-9000;t.flushPendingSpeech();eq(1,t.spoken);
- t.ttsReady=false;t.pendingText="未就绪";t.pendingTextAt=now;t.flushPendingSpeech();eq(1,t.spoken);
- System.out.println("PASS production Java: idle formats/clamp, engine decisions, TTS flush/expiry");
+ System.out.println("PASS production Java: idle formats/clamp, engine decisions (pure audio architecture)");
 }
 }
-''' % (constants, ttl_decl, methods, region(service,'public boolean isEngineRunning()'),region(voice,'private void flushPendingSpeech()'))
+''' % (constants, methods, region(service,'public boolean isEngineRunning()'))
 java_bin = str(Path(os.environ['JAVA_HOME'])/'bin/java') if os.environ.get('JAVA_HOME') else shutil.which('java')
 if not java_bin:
     raise RuntimeError('JDK required')

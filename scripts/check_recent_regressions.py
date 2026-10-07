@@ -31,19 +31,10 @@ def region(source, marker):
 
 # id, path, method/block marker, required regexes, forbidden regexes
 CONTRACTS = [
- ('tts-arbiter-route', JAVA+'utils/VehicleVoicePlayer.java', 'public void speakText(final String text, final String voiceType)',
-  [r'play\("tts:"', r'PRIORITY_P2_DOOR'], []),
- ('tts-buffer', JAVA+'utils/VehicleVoicePlayer.java', 'private void speakTextInternal(final String text, final String arbiterKey)',
-  [r'pendingText\s*=\s*text', r'pendingVoiceType\s*=\s*arbiterKey', r'pendingTextAt\s*=\s*System.currentTimeMillis\(\)', r'ensureTtsReady\(\)'], []),
- ('tts-ready-flush', JAVA+'utils/VehicleVoicePlayer.java', 'private void initTts()', [r'ttsReady\s*=\s*true', r'flushPendingSpeech\(\)'], []),
- ('tts-expiry', JAVA+'utils/VehicleVoicePlayer.java', 'private void flushPendingSpeech()',
-  [r'System.currentTimeMillis\(\)\s*-\s*at\s*>\s*PENDING_TTL_MS', r'pendingText\s*=\s*null',r'speakText\(text,\s*voiceType\)'], []),
  ('webserver-options-preflight', JAVA+'server/WebServer.java', 'private void handleOptions(OutputStream out)',
   [r'HTTP/1\.1 204 No Content', r'Access-Control-Allow-Origin', r'Access-Control-Allow-Methods'], []),
  ('webserver-incomplete-data-check', JAVA+'server/WebServer.java', 'private void handleApiUploadChunk(InputStream in, int length, Map<String, String> headers, String queryString, OutputStream out)',
   [r'totalWritten\s*<\s*length', r'incomplete_data'], []),
- ('tts-retry', JAVA+'utils/VehicleVoicePlayer.java', 'public void ensureTtsReady()',
-  [r'mainHandler.post\(', r'now\s*-\s*lastInitAttemptAt\s*<\s*INIT_RETRY_INTERVAL_MS',r'initTts\(\)'], []),
  ('unlock-prewarm', JAVA+'services/VehicleAutomationService.java', 'if (bootReason == 0 || bootReason == 1)', [r'voicePlayer.ensureTtsReady\(\)'], []),
  ('screen-not-poweroff', JAVA+'services/VehicleAutomationService.java', 'private void registerPowerStateReceiver()',
   [r'boolean realPowerOff\s*=[^;]+;', r'else if\s*\(screenOff\)'], [r'boolean realPowerOff\s*=[^;]*ACTION_SCREEN_OFF']),

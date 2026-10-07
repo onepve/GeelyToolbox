@@ -392,16 +392,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             pendingShowPillRunnable = null;
         }
 
-        // 检查系统当前默认 TTS 引擎是否发生变更（移入后台执行，杜绝主线程 IPC 阻塞）
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    VehicleVoicePlayer.getInstance(MainActivity.this).checkAndReloadTtsIfNeeded();
-                } catch (Exception ignored) {}
-            }
-        }, "TtsReloadCheck").start();
-
         // 前台自适应：当控制台处于前台大屏展示时，隐藏悬浮小胶囊，彻底杜绝悬浮窗遮挡顶栏与页面内闪烁
         try {
             Intent hidePill = new Intent(this, FloatingWindowService.class);
@@ -4063,11 +4053,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     } else if ("seatbelt".equals(type)) {
                         player.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
                     } else {
-                        if (!player.isTtsReady()) {
-                            player.ensureTtsReady();
-                            Toast.makeText(MainActivity.this, "语音合成引擎正在唤醒连接中，请稍候再试...", Toast.LENGTH_SHORT).show();
-                        }
-                        player.speakText("吉利车机座舱智能语音联动测试成功");
+                        player.play("mode_smart.mp3", "智能");
                     }
                 }
             });
@@ -4076,44 +4062,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public String getTtsEngineInfo() {
             try {
-                VehicleVoicePlayer player = VehicleVoicePlayer.getInstance(MainActivity.this);
-                // 检测系统首选引擎是否有变化，有变则静默刷新
-                player.checkAndReloadTtsIfNeeded();
-
-                boolean ready = player.isTtsReady();
-                String activeEngine = player.getActiveTtsEngine();
-
-                String engineLabel = "系统默认语音引擎";
-                if (activeEngine != null && !activeEngine.isEmpty() && !"none".equals(activeEngine)) {
-                    try {
-                        PackageManager pm = getPackageManager();
-                        ApplicationInfo ai = pm.getApplicationInfo(activeEngine, 0);
-                        CharSequence label = pm.getApplicationLabel(ai);
-                        if (label != null && label.length() > 0) {
-                            engineLabel = label.toString();
-                        }
-                    } catch (Exception e) {
-                        engineLabel = activeEngine;
-                    }
-                }
-
                 JSONObject res = new JSONObject();
-                res.put("connected", ready);
-                res.put("engine", activeEngine);
-                if (activeEngine != null && !activeEngine.isEmpty() && !"none".equals(activeEngine)) {
-                    res.put("name", engineLabel + " (" + activeEngine + ")");
-                } else {
-                    res.put("name", engineLabel);
-                }
-
-                if (ready) {
-                    res.put("status", "已成功直连系统首选语音合成引擎 · 声线就绪");
-                } else {
-                    res.put("status", "语音合成引擎未就绪，可点击【TTS设置】选择或切换首选引擎");
-                }
+                res.put("connected", true);
+                res.put("engine", "native_mp3");
+                res.put("name", "本地原生短音频引擎 (Pure MP3)");
+                res.put("status", "已切换为纯净原生短音频架构 · 无系统TTS开销");
                 return res.toString();
             } catch (Exception e) {
-                return "{\"connected\":false,\"name\":\"系统语音引擎\",\"status\":\"TTS状态获取异常\",\"type\":\"native\"}";
+                return "{\"connected\":true,\"name\":\"本地原生短音频引擎\",\"status\":\"纯净MP3播放模式\",\"type\":\"native\"}";
             }
         }
 
