@@ -287,6 +287,15 @@ public class SteeringWheelKeyManager {
                     if (code == KEY_OK || code == 45 || code == 66) {
                         onKeyTriggered(KEY_OK);
                         return KEY_OK;
+                    } else if (code == KEY_PREV) {
+                        onKeyTriggered(KEY_PREV);
+                        return KEY_PREV;
+                    } else if (code == KEY_NEXT) {
+                        onKeyTriggered(KEY_NEXT);
+                        return KEY_NEXT;
+                    } else if (code == KEY_BACK) {
+                        onKeyTriggered(KEY_BACK);
+                        return KEY_BACK;
                     }
                 } catch (Exception ignored) {}
             }

@@ -873,28 +873,11 @@ public class VehicleAutomationService extends Service {
         // 4.1 解析驾驶模式切换信号 (严格收敛对齐 Tasker 实车验证黄金法则: 纯净收敛于 ECarXCarConfigService、AVM底盘守护与 AdaptAPI 权威常量)
         int modeVal = -1;
 
-        // 优先 1: AVM 状态管理器底盘直出信号 (DriveMode1=0x12 / DriveMode1=18)
-        // 底盘 C++ 常驻守护进程 100% 毫秒级必发，完全不受上层 App 是否休眠影响
-        if (line.contains("DriveMode1=")) {
-            try {
-                Matcher m = P_AVM_GEAR_DRIVE_MODE.matcher(line);
-                if (m.find()) {
-                    int rawHex = Integer.parseInt(m.group(1), 16);
-                    int high = (rawHex >> 4) & 0x0F;
-                    if (high == 1) modeVal = MODE_COMFORT;
-                    else if (high == 2) modeVal = MODE_SPORT;
-                    else if (high == 3) modeVal = MODE_ECO;
-                    else if (high == 4 || high == 6) modeVal = MODE_SMART;
-                }
-            } catch (Exception ignored) {}
-        }
-        // 优先 2: ECarXCarConfigService 官方系统级权威上报 (DirveMode = X / DriveMode = X)
-        // 缤越 COOL Tasker 验证黄金源：旋钮切挡与系统配置全局同步，彻底杜绝杂波
-        // 1 -> 舒适模式 (MODE_COMFORT)
-        // 2 -> 运动模式 (MODE_SPORT)
-        // 3 -> 经济模式 (MODE_ECO)
-        // 4 / 6 -> 智能模式 (MODE_SMART)
-        else if (line.contains("DirveMode =") || line.contains("DirveMode=") || line.contains("DriveMode =") || line.contains("DriveMode=")) {
+        // 优先 1: AVM 状态管理器底盘直出信号 (仅在模式变化跃变时参考，且不能作为阻断物理旋钮播报的基准)
+        // 注意：AVM底盘守护每3秒周期性心跳广播 DriveMode1=0x12 (包含当前挡位与模式)，
+        // 若在点火初期就静默建立基准，会导致车主随后正式切入该模式时被防抖丢弃！
+        // 因此常规状态更新优先信赖物理旋钮与系统配置 (DirveMode / DM_FUNC_DRIVE_MODE_SELECT / AdaptAPI 570491136)
+        if (line.contains("DirveMode =") || line.contains("DirveMode=") || line.contains("DriveMode =") || line.contains("DriveMode=")) {
             try {
                 Matcher m = P_DRIVE_MODE.matcher(line);
                 if (m.find()) {
@@ -906,21 +889,8 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
-        // 优先 3: 吉利 HAL 仿真层原车属性事件 (parseRxProtoBuf: vp->ap (0x287000eb, 0x01 ))
-        else if (line.contains("0x287000eb")) {
-            try {
-                Matcher m = P_HAL_DRIVE_MODE.matcher(line);
-                if (m.find()) {
-                    int rawVal = Integer.parseInt(m.group(1), 16);
-                    if (rawVal == 1) modeVal = MODE_COMFORT;
-                    else if (rawVal == 2) modeVal = MODE_SPORT;
-                    else if (rawVal == 3) modeVal = MODE_ECO;
-                    else if (rawVal == 4 || rawVal == 6) modeVal = MODE_SMART;
-                }
-            } catch (Exception ignored) {}
-        }
-        // 优先 4: 吉利原厂 ComfortModule 旋钮直接物理报文 (DM_FUNC_DRIVE_MODE_SELECT value=X)
-        // 旋钮物理转动时必发，作为业务层补充兜底
+        // 优先 2: 吉利原厂 ComfortModule 旋钮直接物理报文 (DM_FUNC_DRIVE_MODE_SELECT value=X)
+        // 旋钮物理转动时必发，权威最高
         else if (line.contains("DM_FUNC_DRIVE_MODE_SELECT")) {
             try {
                 Matcher m = P_COMFORT_DRIVE_MODE.matcher(line);
@@ -933,7 +903,7 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
-        // 优先 5: AdaptAPI/CarSettingService 9位全局权威常量容灾 (fun:570491136 或 mModelDriveMode)
+        // 优先 3: AdaptAPI/CarSettingService 9位全局权威常量容灾 (fun:570491136 或 mModelDriveMode)
         else if (line.contains("570491136") || line.contains("mModelDriveMode")) {
             if (line.contains("570491138")) {
                 modeVal = MODE_COMFORT; // 舒适模式 (DRIVE_MODE_SELECTION_COMFORT = 570491138)
@@ -944,6 +914,33 @@ public class VehicleAutomationService extends Service {
             } else if (line.contains("570491158")) {
                 modeVal = MODE_SMART;   // 智能模式 (DRIVE_MODE_SELECTION_ADAPTIVE = 570491158)
             }
+        }
+        // 优先 4: 吉利 HAL 仿真层原车属性事件 (parseRxProtoBuf: vp->ap (0x287000eb, 0x01 ))
+        else if (line.contains("0x287000eb")) {
+            try {
+                Matcher m = P_HAL_DRIVE_MODE.matcher(line);
+                if (m.find()) {
+                    int rawVal = Integer.parseInt(m.group(1), 16);
+                    if (rawVal == 1) modeVal = MODE_COMFORT;
+                    else if (rawVal == 2) modeVal = MODE_SPORT;
+                    else if (rawVal == 3) modeVal = MODE_ECO;
+                    else if (rawVal == 4 || rawVal == 6) modeVal = MODE_SMART;
+                }
+            } catch (Exception ignored) {}
+        }
+        // 优先 5: AVM 状态管理器底盘直出信号 (仅在允许播报且未通过上述权威源匹配时作为兜底)
+        else if (line.contains("DriveMode1=") && isDrivingModeAllowed()) {
+            try {
+                Matcher m = P_AVM_GEAR_DRIVE_MODE.matcher(line);
+                if (m.find()) {
+                    int rawHex = Integer.parseInt(m.group(1), 16);
+                    int high = (rawHex >> 4) & 0x0F;
+                    if (high == 1) modeVal = MODE_COMFORT;
+                    else if (high == 2) modeVal = MODE_SPORT;
+                    else if (high == 3) modeVal = MODE_ECO;
+                    else if (high == 4 || high == 6) modeVal = MODE_SMART;
+                }
+            } catch (Exception ignored) {}
         }
 
         if (modeVal > 0) {
@@ -1515,10 +1512,9 @@ public class VehicleAutomationService extends Service {
         if (autoplayEnabled && !speedAutoplayTriggeredInTrip && !userManuallyPaused && isEngineRunning()) {
             int threshold = prefs.getInt("vehicle_speed_autoplay_threshold", 20);
             if (speed >= threshold) {
-                speedAutoplayTriggeredInTrip = true; // 本次行程永久闭锁，中途等红绿灯/减速绝不重复开歌
                 String targetPkg = getDefaultAutoplayPkg();
                 boolean fullscreen = prefs.getBoolean("vehicle_speed_autoplay_fullscreen", false);
-                AppLogger.i("车身联动", "【车速自启多媒体】单次行程首次达标 " + threshold + "km/h，拉起音源并永久闭锁: " + targetPkg);
+                AppLogger.i("车身联动", "【车速自启多媒体】单次行程首次达标 " + threshold + "km/h，拉起音源: " + targetPkg);
                 triggerMusicAutoplay(targetPkg, fullscreen);
             }
         }
@@ -1649,9 +1645,18 @@ public class VehicleAutomationService extends Service {
                 }
             }
 
-            // 2. 主流车机播放器已知后台核心服务直通加速 (特权 shell 拉活与显式媒体按钮唤醒)
+            // 2. 主流车机播放器已知后台核心服务直通加速 (公开组件与显式媒体按钮唤醒)
             if ("com.tencent.qqmusiccar".equals(pkg)) {
-                tryStartComponentService(pkg, "com.tencent.qqmusic.innovation.network.service.NetworkService");
+                // QQ音乐车机版公开拉活Intent与公开Service探测
+                try {
+                    Intent qqIntent = new Intent("com.tencent.qqmusiccar.action.MEDIA_SERVICE");
+                    qqIntent.setPackage(pkg);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(qqIntent);
+                    } else {
+                        startService(qqIntent);
+                    }
+                } catch (Throwable ignored) {}
             } else if ("com.netease.cloudmusiccar".equals(pkg) || "com.netease.cloudmusic".equals(pkg) || "com.netease.cloudmusic.iot".equals(pkg)) {
                 tryStartComponentService(pkg, "com.netease.cloudmusic.service.PlayService");
                 tryStartComponentService(pkg, "com.netease.cloudmusic.service.MediaPlaybackService");
@@ -1755,21 +1760,13 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Throwable ignored) {}
 
-            // 3. 发送显式定向媒体按键广播 (精准击中目标组件，杜绝 Android 8+ 后台隐式广播丢弃)
+            // 3. 发送显式定向媒体按键广播 (动态探测 exported 接收器，杜绝 Permission Denial)
             sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
-            if ("com.tencent.qqmusiccar".equals(pkg)) {
-                try {
-                    Intent qqBtnDown = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                    qqBtnDown.setComponent(new ComponentName("com.tencent.qqmusiccar", "com.tencent.qqmusicsdk.player.listener.MediaButtonReceiver"));
-                    qqBtnDown.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY));
-                    sendOrderedBroadcast(qqBtnDown, null);
-
-                    Intent qqBtnUp = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                    qqBtnUp.setComponent(new ComponentName("com.tencent.qqmusiccar", "com.tencent.qqmusicsdk.player.listener.MediaButtonReceiver"));
-                    qqBtnUp.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY));
-                    sendOrderedBroadcast(qqBtnUp, null);
-                } catch (Throwable ignored) {}
-            }
+            // 兼容 ACTION_MEDIA_BUTTON 显式广播规范
+            try {
+                Intent bQuery = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                bQuery.setPackage(pkg);
+            } catch (Throwable ignored) {}
         }
 
         // 后台静默起播调度（异步执行，彻底解耦主线程，杜绝 ADB 锁竞争卡死 UI）
@@ -1803,7 +1800,8 @@ public class VehicleAutomationService extends Service {
                             break;
                         }
                         if (isTargetMediaPlaying(pkg)) {
-                            AppLogger.i("车身联动", "目标媒体已处于播放态，起播成功: " + pkg);
+                            speedAutoplayTriggeredInTrip = true;
+                            AppLogger.i("车身联动", "目标媒体已处于播放态，起播成功并闭锁行程: " + pkg);
                             if (!"com.android.bluetooth".equals(pkg)) {
                                 try {
                                     EasMediaBridge.getInstance(VehicleAutomationService.this).switchSourceTypeManually(6);
@@ -1814,7 +1812,8 @@ public class VehicleAutomationService extends Service {
                         }
                         // 1. 优先通过 MediaSession 下发 play()
                         if (tryDirectMediaControllerPlay(pkg)) {
-                            AppLogger.i("车身联动", "第 " + (i + 1) + " 次尝试通过 MediaController 成功下发播放: " + pkg);
+                            speedAutoplayTriggeredInTrip = true;
+                            AppLogger.i("车身联动", "第 " + (i + 1) + " 次尝试通过 MediaController 成功下发播放并闭锁行程: " + pkg);
                             if (!"com.android.bluetooth".equals(pkg)) {
                                 try {
                                     EasMediaBridge.getInstance(VehicleAutomationService.this).switchSourceTypeManually(6);
