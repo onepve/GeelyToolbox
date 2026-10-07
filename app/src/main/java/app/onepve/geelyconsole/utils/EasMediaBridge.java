@@ -737,10 +737,7 @@ public class EasMediaBridge {
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                     }
                     if (streaming) {
-                        // 核心铁律：手机微信语音 / 短音频起播时，彻底杜绝下发 play() 与抢占独占焦点！
-                        // 1. 绝不下发 play()：避免反向向手机下发 AVRCP 播歌键打断微信语音；
-                        // 2. 必须申请 MAY_DUCK 闪避焦点：告知系统 AudioPolicy 当前存在活跃音频，
-                        //    促使 goc 蓝牙协议栈触发 informAudioFocusStateNative:1，解除 DSP 硬件静音(AT#VF100 / val:1.000000)！
+                        // 1.7.47 正式版基线：推流起播时持有焦点与选通通道
                         requestBluetoothFocusIfNeeded();
                         long now = SystemClock.uptimeMillis();
                         if (now - lastA2dpWakeTime > 4000) {
@@ -748,9 +745,9 @@ public class EasMediaBridge {
                             activateBluetoothChannel();
                         }
                     } else {
-                        // 推流结束（微信语音播放完毕）：立即释放 MAY_DUCK 焦点，让车机 QQ 音乐/导航恢复完全音量
-                        abandonBluetoothFocus();
-                        AppLogger.i("蓝牙音频", "监听到推流停止或间歇，已释放 MAY_DUCK 焦点，保持静默通道守护");
+                        // 严禁在此处调用 abandonBluetoothFocus()！
+                        // 1.7.47 正式版核心设计：保持 MAY_DUCK 常驻守护，绝不反复丢焦点导致 MT8666 DSP 静音
+                        AppLogger.i("蓝牙音频", "监听到推流停止或间歇，保持通道就绪");
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
                     try {

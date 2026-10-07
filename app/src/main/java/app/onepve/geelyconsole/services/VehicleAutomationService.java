@@ -1683,6 +1683,7 @@ public class VehicleAutomationService extends Service {
             // 2. 主流车机播放器已知后台核心服务直通加速 (公开组件与显式媒体按钮唤醒)
             if ("com.tencent.qqmusiccar".equals(pkg)) {
                 // QQ音乐车机版公开拉活Intent与公开Service探测
+                tryStartComponentService(pkg, "com.tencent.qqmusic.innovation.network.service.NetworkService");
                 try {
                     Intent qqIntent = new Intent("com.tencent.qqmusiccar.action.MEDIA_SERVICE");
                     qqIntent.setPackage(pkg);
