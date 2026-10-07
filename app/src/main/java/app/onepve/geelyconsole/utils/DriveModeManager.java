@@ -79,8 +79,11 @@ public class DriveModeManager {
         // 1. 开机首包基准处理：一律静默确立基准，开机/熄火复位后绝不误播任何语音！
         if (lastDriveMode == -1) {
             lastDriveMode = mode;
-            isSmartModeArmed = false;
-            AppLogger.i("驾驶模式", "首包基准初始化: 当前模式【" + getModeName(mode) + "】(静默建立基准，开机绝不误播，智能模式闭锁)");
+            // 核心修复：若首次建基准为智能模式，智能闭锁锁定(false)；
+            // 若开机首包即为舒适/运动/经济（例如行车热更新重启），直接武装智能模式(true)！
+            // 确保车主随后从舒适/运动切回智能模式时，不会被判定为未武装而吞音！
+            isSmartModeArmed = (mode != MODE_SMART);
+            AppLogger.i("驾驶模式", "首包基准初始化: 当前模式【" + getModeName(mode) + "】(静默建立基准，开机绝不误播，smartArmed=" + isSmartModeArmed + ")");
             if (listener != null) {
                 listener.onDriveModeChanged(lastDriveMode);
             }
