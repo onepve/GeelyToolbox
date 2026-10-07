@@ -559,8 +559,6 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("(?:DirveMode|DriveMode)\\s*=\\s*(\\d+)");
     private static final Pattern P_COMFORT_DRIVE_MODE =
             Pattern.compile("DM_FUNC_DRIVE_MODE_SELECT\\s+value\\s*=\\s*(\\d+)");
-    private static final Pattern P_AVM_GEAR_DRIVE_MODE =
-            Pattern.compile("DriveMode1=(?:0x)?([0-9a-fA-F]+)");
     private static final Pattern P_HAL_DRIVE_MODE =
             Pattern.compile("parseRxProtoBuf:\\s+vp->ap\\s*\\(0x287000eb,\\s*(?:0x)?([0-9a-fA-F]+)\\s*\\)");
     private static final Pattern P_MCU_DRIVE_MODE_FRAME =
@@ -703,16 +701,10 @@ public class VehicleAutomationService extends Service {
                         else if (low == 0x06 || low == 0x07) gearVal = 6;
                         else gearVal = low;
 
-                        // 同步提取底层权威驾驶模式并递交状态机（AVM 底盘守护层毫秒级真源）
-                        int high = (rawHex >> 4) & 0x0F;
-                        int dm = 0;
-                        if (high == 1) dm = MODE_COMFORT;
-                        else if (high == 2) dm = MODE_SPORT;
-                        else if (high == 3) dm = MODE_ECO;
-                        else if (high == 4 || high == 6) dm = MODE_SMART;
-                        if (dm > 0) {
-                            handleDriveModeSignal(dm);
-                        }
+                        // 避坑核心铁律：VehId=Vehicle_Gear 仅作为物理挡位来源，严禁提取高4位作为驾驶模式！
+                        // 亿咖通原厂 ecarx_avm_state 每 3 秒广播的 value=0x12 中，低4位(0x2)是D挡，
+                        // 但其高4位(0x1)只是 360 环视模块内部固定的占位符(恒为0x1舒适)，根本不是当前底盘真实的驾驶模式！
+                        // 驾驶模式必须严格由底盘权威源（ComfortModule 57049113 / DM_FUNC_DRIVE_MODE_SELECT / 0x287000eb）裁决！
                     }
                 } catch (Exception ignored) {}
             }
@@ -934,20 +926,23 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
-        // 优先 5: AVM 状态管理器底盘直出信号 (仅在允许播报且未通过上述权威源匹配时作为兜底)
-        else if (line.contains("DriveMode1=") && isDrivingModeAllowed()) {
+        // 优先 5: MCU 串口硬件底层原车物理帧 (read data: 91 09 02 00 05 00 XX YY)
+        else if (line.contains("91 09 02 00 05 00")) {
             try {
-                Matcher m = P_AVM_GEAR_DRIVE_MODE.matcher(line);
+                Matcher m = P_MCU_DRIVE_MODE_FRAME.matcher(line);
                 if (m.find()) {
-                    int rawHex = Integer.parseInt(m.group(1), 16);
-                    int high = (rawHex >> 4) & 0x0F;
-                    if (high == 1) modeVal = MODE_COMFORT;
-                    else if (high == 2) modeVal = MODE_SPORT;
-                    else if (high == 3) modeVal = MODE_ECO;
-                    else if (high == 4 || high == 6) modeVal = MODE_SMART;
+                    int rawVal = Integer.parseInt(m.group(1), 16);
+                    if (rawVal == 1) modeVal = MODE_COMFORT;
+                    else if (rawVal == 2) modeVal = MODE_SPORT;
+                    else if (rawVal == 3) modeVal = MODE_ECO;
+                    else if (rawVal == 4 || rawVal == 6) modeVal = MODE_SMART;
                 }
             } catch (Exception ignored) {}
         }
+        // 核心铁律：坚决拔除 AVM 模块的 DriveMode1= 心跳兜底！
+        // 亿咖通原厂 ecarx_avm_state 每 3 秒周期性广播一次 'DriveMode1=0x12 Gear_position=GEAR_DRIVE'。
+        // 其高 4 位 0x1 永远恒定代表 Comfort(舒适)，这只是 360 环视模块内部的默认透传占位符，
+        // 根本不是当前底盘真实的驾驶模式！一旦兜底该信号，会导致只要车辆点火，就会被误判并反复播报为舒适模式。
 
         if (modeVal > 0) {
             handleDriveModeSignal(modeVal);

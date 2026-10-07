@@ -80,6 +80,14 @@ public class EasMediaBridge {
     private volatile boolean voiceCompensationEnabled = true;
     private volatile int voiceCompensationOffset = 3;
 
+    // 独立音频焦点监听器：专用于守护原厂 A2DP Sink 解除硬件静音 (val:1.000000 / AT#VF100)
+    private final AudioManager.OnAudioFocusChangeListener a2dpSinkKeepListener = new AudioManager.OnAudioFocusChangeListener() {
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+            AppLogger.i("蓝牙音频", "A2DP Sink 守护焦点状态变更: " + focusChange);
+        }
+    };
+
 
     private final AudioManager.OnAudioFocusChangeListener btFocusListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
@@ -729,17 +737,20 @@ public class EasMediaBridge {
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                     }
                     if (streaming) {
-                        // 核心铁律：手机微信语音 / 短音频起播时，坚决严禁下发 wakeBluetoothAudioSink() (play()) 与申请本地焦点！
-                        // 1. 下发 play() 会向手机反向注入 AVRCP 播歌指令，打断手机正在播放的微信语音，甚至把手机音乐 App 唤醒；
-                        // 2. 申请本地 MAY_DUCK 会触发系统 EcarxResManager 判定冲突，强行 pause 掉车机 QQ 音乐；
-                        // 3. 原厂车机硬件已通过 EAS 通道选通蓝牙流，只需确保硬件通道选通，完全无需重复抢焦点或下发 play！
+                        // 核心铁律：手机微信语音 / 短音频起播时，彻底杜绝下发 play() 与抢占独占焦点！
+                        // 1. 绝不下发 play()：避免反向向手机下发 AVRCP 播歌键打断微信语音；
+                        // 2. 必须申请 MAY_DUCK 闪避焦点：告知系统 AudioPolicy 当前存在活跃音频，
+                        //    促使 goc 蓝牙协议栈触发 informAudioFocusStateNative:1，解除 DSP 硬件静音(AT#VF100 / val:1.000000)！
+                        requestBluetoothFocusIfNeeded();
                         long now = SystemClock.uptimeMillis();
                         if (now - lastA2dpWakeTime > 4000) {
                             lastA2dpWakeTime = now;
                             activateBluetoothChannel();
                         }
                     } else {
-                        AppLogger.i("蓝牙音频", "监听到推流停止或间歇，保持静默通道守护 (严禁反向下发 pause 掐断手机音频生命周期)");
+                        // 推流结束（微信语音播放完毕）：立即释放 MAY_DUCK 焦点，让车机 QQ 音乐/导航恢复完全音量
+                        abandonBluetoothFocus();
+                        AppLogger.i("蓝牙音频", "监听到推流停止或间歇，已释放 MAY_DUCK 焦点，保持静默通道守护");
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
                     try {
