@@ -605,9 +605,9 @@ public class VehicleAutomationService extends Service {
                         // 放宽串口与系统标签日志级别至 :V，彻底杜绝车门报文被丢弃
                         // 不在命令行中限制 -s 标签（避免因为底层模块标签变动或漏掉标签导致整包被丢弃）
                         // 直接全量监听，由我们在 parseLogLine 中进行高效关键字判定！
-                        // 核心铁律：开机或行车中热更新启动时，拉取最近 50 行历史缓冲区（-t 50），
-                        // 确保服务被杀/热更新重启瞬间毫秒级回读到当前车速、挡位与门控基准，杜绝感知盲区！
-                        ProcessBuilder pb = new ProcessBuilder("logcat", "-t", "50", "-b", "all", "-v", "brief");
+                        // 核心铁律：持续实时监听 logcat，由我们在 parseLogLine 中进行高效关键字判定！
+                        // 避坑：严禁使用 -t 50 / -d 等非阻塞参数，否则进程读完 50 行立即 EOF 退出导致外层 while 陷入每 2 秒死循环重启！
+                        ProcessBuilder pb = new ProcessBuilder("logcat", "-v", "brief", "-b", "all");
                         pb.redirectErrorStream(true);
                         logcatProcess = pb.start();
                         AppLogger.i("系统日志", "Logcat 实时监听守护线程已建立就绪");

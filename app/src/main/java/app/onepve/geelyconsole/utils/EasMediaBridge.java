@@ -729,8 +729,10 @@ public class EasMediaBridge {
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                     }
                     if (streaming) {
-                        wakeBluetoothAudioSink();
-                        requestBluetoothFocusIfNeeded();
+                        // 核心铁律：手机微信语音 / 短音频起播时，坚决严禁下发 wakeBluetoothAudioSink() (play()) 与申请本地焦点！
+                        // 1. 下发 play() 会向手机反向注入 AVRCP 播歌指令，打断手机正在播放的微信语音，甚至把手机音乐 App 唤醒；
+                        // 2. 申请本地 MAY_DUCK 会触发系统 EcarxResManager 判定冲突，强行 pause 掉车机 QQ 音乐；
+                        // 3. 原厂车机硬件已通过 EAS 通道选通蓝牙流，只需确保硬件通道选通，完全无需重复抢焦点或下发 play！
                         long now = SystemClock.uptimeMillis();
                         if (now - lastA2dpWakeTime > 4000) {
                             lastA2dpWakeTime = now;
@@ -747,7 +749,6 @@ public class EasMediaBridge {
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，选通蓝牙物理声道");
-                                wakeBluetoothAudioSink();
                                 activateBluetoothChannel();
                             } else if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
