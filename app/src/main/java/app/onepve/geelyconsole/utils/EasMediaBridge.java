@@ -80,14 +80,6 @@ public class EasMediaBridge {
     private volatile boolean voiceCompensationEnabled = true;
     private volatile int voiceCompensationOffset = 3;
 
-    // 独立音频焦点监听器：专用于守护原厂 A2DP Sink 解除硬件静音 (val:1.000000 / AT#VF100)
-    private final AudioManager.OnAudioFocusChangeListener a2dpSinkKeepListener = new AudioManager.OnAudioFocusChangeListener() {
-        @Override
-        public void onAudioFocusChange(int focusChange) {
-            AppLogger.i("蓝牙音频", "A2DP Sink 守护焦点状态变更: " + focusChange);
-        }
-    };
-
 
     private final AudioManager.OnAudioFocusChangeListener btFocusListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
@@ -737,7 +729,7 @@ public class EasMediaBridge {
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                     }
                     if (streaming) {
-                        // 1.7.47 正式版基线：推流起播时持有焦点与选通通道
+                        wakeBluetoothAudioSink();
                         requestBluetoothFocusIfNeeded();
                         long now = SystemClock.uptimeMillis();
                         if (now - lastA2dpWakeTime > 4000) {
@@ -745,9 +737,7 @@ public class EasMediaBridge {
                             activateBluetoothChannel();
                         }
                     } else {
-                        // 严禁在此处调用 abandonBluetoothFocus()！
-                        // 1.7.47 正式版核心设计：保持 MAY_DUCK 常驻守护，绝不反复丢焦点导致 MT8666 DSP 静音
-                        AppLogger.i("蓝牙音频", "监听到推流停止或间歇，保持通道就绪");
+                        AppLogger.i("蓝牙音频", "监听到推流停止或间歇，保持静默通道守护 (严禁反向下发 pause 掐断手机音频生命周期)");
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
                     try {
@@ -757,6 +747,7 @@ public class EasMediaBridge {
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，选通蓝牙物理声道");
+                                wakeBluetoothAudioSink();
                                 activateBluetoothChannel();
                             } else if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
