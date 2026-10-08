@@ -566,10 +566,14 @@ public class SteeringWheelKeyManager {
         try {
             String focusPkg = getSystemAudioFocusPackage();
             if ("com.android.bluetooth".equals(focusPkg)) {
-                sLastActiveAudioSource = SOURCE_BLUETOOTH;
-                return SOURCE_BLUETOOTH;
+                // 只有当蓝牙真正处于推流活跃状态时，才确认为蓝牙音源；
+                // 若推流已停止，说明微信语音或瞬态播放已结束，绝不滞留独占蓝牙，应调度回本地音乐
+                if (EasMediaBridge.getInstance(context).isBluetoothChannelActive()) {
+                    sLastActiveAudioSource = SOURCE_BLUETOOTH;
+                    return SOURCE_BLUETOOTH;
+                }
             }
-            if (!focusPkg.isEmpty() && !"app.onepve.geelyconsole".equals(focusPkg)) {
+            if (!focusPkg.isEmpty() && !"app.onepve.geelyconsole".equals(focusPkg) && !"com.android.bluetooth".equals(focusPkg)) {
                 // 本地应用（如 com.tencent.qqmusiccar、ecarx.xsf.mediacenter 等）明确持有焦点
                 sLastActiveAudioSource = SOURCE_LOCAL;
                 return SOURCE_LOCAL;
@@ -597,9 +601,6 @@ public class SteeringWheelKeyManager {
                     if (primaryIsBt) {
                         // 车主首选音源即手机蓝牙：即使处于暂停(未推流)，按键也直接唤醒手机蓝牙播放！
                         sLastActiveAudioSource = SOURCE_BLUETOOTH;
-                        return SOURCE_BLUETOOTH;
-                    } else if (sLastActiveAudioSource == SOURCE_BLUETOOTH) {
-                        // 上次活跃的是蓝牙且蓝牙仍保持物理连接
                         return SOURCE_BLUETOOTH;
                     }
                 }
