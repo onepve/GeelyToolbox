@@ -68,6 +68,8 @@ def main():
         "【测试通道】本版本改动详见仓库提交记录"
     )
     print(f">> changelog 已按真实改动生成 ({len(changelog_text)} 字符)")
+    with open("/tmp/release_changelog.txt", "w", encoding="utf-8") as f:
+        f.write(changelog_text)
 
     if is_beta:
         meta = {
