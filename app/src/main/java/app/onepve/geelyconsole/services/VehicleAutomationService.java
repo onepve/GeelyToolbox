@@ -1317,8 +1317,7 @@ public class VehicleAutomationService extends Service {
                 doorStateManager.markDriverInside();
                 // 预设门控: KEY ON 只是就绪，不喂发动机边沿 (仅上升沿防抖触发单次预热，绝不每秒循环轰炸)
                 if (prevKey != 2) {
-                    AppLogger.i("电源状态", "钥匙 ON (key=2) -> 点火启动就绪");
-                    warmUpTargetMediaService();
+                    AppLogger.i("电源状态", "钥匙 ON (key=2) -> 点火启动就绪 (尊重车速阈值，绝不提前起播)");
                 }
             } else if (val == 0) {
                 // 车速为0或处于P挡驻车时，收到 key=0 坚决下电，绝不可因电瓶刚熄火的浮充电压(13.2V~13.8V)误判为未熄火
