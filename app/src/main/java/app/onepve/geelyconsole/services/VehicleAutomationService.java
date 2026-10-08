@@ -419,7 +419,10 @@ public class VehicleAutomationService extends Service {
                              enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
                              enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN || enableGearS ||
                              enableModeSmart || enableModeComfort || enableModeEco || enableModeSport);
+        boolean speedAutoplay = prefs.getBoolean("vehicle_speed_autoplay_enabled", true);
+        boolean speedCustom = prefs.getBoolean("vehicle_speed_custom_action_enabled", false);
         boolean anyEnabled = anyVoiceEnabled || wheelEnabled || enableTurnSignal360
+                || speedAutoplay || speedCustom
                 || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
         if (!anyEnabled) {
