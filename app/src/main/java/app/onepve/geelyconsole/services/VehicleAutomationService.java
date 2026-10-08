@@ -1739,11 +1739,8 @@ public class VehicleAutomationService extends Service {
         // 后台静默播歌触发链：冷拉活 + 定向广播 + 定向媒体按键
         if (pkg != null && !pkg.isEmpty()) {
             if (!"com.android.bluetooth".equals(pkg)) {
-                // 选通原车在线媒体通道 6 (保障第三方媒体声音正常进入车机扬声器，防蓝牙通道静音)
-                try {
-                    EasMediaBridge.getInstance(this).switchSourceTypeManually(6);
-                    SteeringWheelKeyManager.setLastActiveAudioSource(SteeringWheelKeyManager.SOURCE_LOCAL);
-                } catch (Throwable ignored) {}
+                // 标记本地音源活动态 (严格严禁在此处调用 switchSourceTypeManually(6)，防止强切通道掐断 2 号蓝牙物理选通)
+                SteeringWheelKeyManager.setLastActiveAudioSource(SteeringWheelKeyManager.SOURCE_LOCAL);
             }
 
             // 0. 动态拉活核心播放服务
@@ -1779,79 +1776,19 @@ public class VehicleAutomationService extends Service {
             } catch (Throwable ignored) {}
         }
 
-        // 后台静默起播调度（异步执行，彻底解耦主线程，杜绝 ADB 锁竞争卡死 UI）
-        new Thread(new Runnable() {
+        // 彻底回归 v1.7.50 正式版基线：延迟 800ms 补发一次标准媒体播放键，绝不在后台搞死循环探测与硬切通道 6
+        mainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 try {
-                    // 全局广播播放键补发（双保险，彻底唤醒任何就绪的播放内核；本地应用定向派发防蓝牙截胡）
                     if (pkg != null && !pkg.isEmpty() && !"com.android.bluetooth".equals(pkg)) {
                         sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
-                        if ("com.tencent.qqmusiccar".equals(pkg)) {
-                            Intent qqPlay = new Intent("com.tencent.qqmusiccar.action.PLAY");
-                            qqPlay.setPackage("com.tencent.qqmusiccar");
-                            sendBroadcast(qqPlay);
-                        }
                     } else {
                         new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
                     }
                 } catch (Throwable ignored) {}
-
-                // 核心铁律：后台静默放歌（fullscreen == false）下，坚决严禁调用 startActivity 弹出界面！
-                // 仅通过纯后台通道（显式组件广播 + TransportControls + 渐进式多段检测）进行保底起播
-                if (!fullscreen && pkg != null && !pkg.isEmpty()) {
-                    AppLogger.i("车身联动", "目标媒体进入静默起播检测: " + pkg);
-                    // 渐进式多段起播探测（覆盖目标应用冷启动 1s~3s 耗时）
-                    long[] stepDelays = new long[]{600, 1200, 1800};
-                    for (int i = 0; i < stepDelays.length; i++) {
-                        try {
-                            Thread.sleep(stepDelays[i]);
-                        } catch (InterruptedException ignored) {
-                            break;
-                        }
-                        if (isTargetMediaPlaying(pkg)) {
-                            speedAutoplayTriggeredInTrip = true;
-                            AppLogger.i("车身联动", "目标媒体已处于播放态，起播成功并闭锁行程: " + pkg);
-                            if (!"com.android.bluetooth".equals(pkg)) {
-                                try {
-                                    EasMediaBridge.getInstance(VehicleAutomationService.this).switchSourceTypeManually(6);
-                                    SteeringWheelKeyManager.setLastActiveAudioSource(SteeringWheelKeyManager.SOURCE_LOCAL);
-                                } catch (Throwable ignored) {}
-                            }
-                            break;
-                        }
-                        // 1. 优先通过 MediaSession 下发 play()
-                        if (tryDirectMediaControllerPlay(pkg)) {
-                            speedAutoplayTriggeredInTrip = true;
-                            AppLogger.i("车身联动", "第 " + (i + 1) + " 次尝试通过 MediaController 成功下发播放并闭锁行程: " + pkg);
-                            if (!"com.android.bluetooth".equals(pkg)) {
-                                try {
-                                    EasMediaBridge.getInstance(VehicleAutomationService.this).switchSourceTypeManually(6);
-                                    SteeringWheelKeyManager.setLastActiveAudioSource(SteeringWheelKeyManager.SOURCE_LOCAL);
-                                } catch (Throwable ignored) {}
-                            }
-                            break;
-                        }
-                        // 2. 补发显式组件媒体按键广播
-                        sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
-                        // 3. 补发播放按键 (本地应用定向补发防蓝牙截胡)
-                        if (!"com.android.bluetooth".equals(pkg)) {
-                            if ("com.tencent.qqmusiccar".equals(pkg)) {
-                                try {
-                                    Intent qqPlay = new Intent("com.tencent.qqmusiccar.action.PLAY");
-                                    qqPlay.setPackage("com.tencent.qqmusiccar");
-                                    sendBroadcast(qqPlay);
-                                } catch (Throwable ignored) {}
-                            }
-                        } else {
-                            try {
-                                new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
-                            } catch (Throwable ignored) {}
-                        }
-                    }
-                }
             }
-        }, "AsyncMediaAutoplay").start();
+        }, 800);
     }
 
     private boolean tryDirectMediaControllerPlay(String targetPkg) {

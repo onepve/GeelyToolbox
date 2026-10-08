@@ -85,8 +85,10 @@ public class EasMediaBridge {
         @Override
         public void onAudioFocusChange(int focusChange) {
             AppLogger.i("蓝牙音频", "蓝牙 MAY_DUCK 音频焦点状态变更: " + focusChange);
-            if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+            if (focusChange < 0) {
                 btFocusHeld = false;
+            } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+                btFocusHeld = true;
             }
         }
     };
