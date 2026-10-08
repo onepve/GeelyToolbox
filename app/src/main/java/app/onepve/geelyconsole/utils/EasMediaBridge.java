@@ -729,7 +729,8 @@ public class EasMediaBridge {
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                     }
                     if (streaming) {
-                        wakeBluetoothAudioSink();
+                        // 核心铁律：仅申请 MAY_DUCK 闪避混音焦点，严禁调用 wakeBluetoothAudioSink() 下发 play()！
+                        // 否则底层 A2dpSink 会向系统申请独占 AUDIOFOCUS_GAIN，直接掐断并暂停 QQ 音乐！
                         requestBluetoothFocusIfNeeded();
                         long now = SystemClock.uptimeMillis();
                         if (now - lastA2dpWakeTime > 4000) {
@@ -737,7 +738,8 @@ public class EasMediaBridge {
                             activateBluetoothChannel();
                         }
                     } else {
-                        AppLogger.i("蓝牙音频", "监听到推流停止或间歇，保持静默通道守护 (严禁反向下发 pause 掐断手机音频生命周期)");
+                        abandonBluetoothFocus();
+                        AppLogger.i("蓝牙音频", "监听到推流停止，已释放 MAY_DUCK 焦点，本地音乐恢复 100% 满音量");
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
                     try {
@@ -746,12 +748,13 @@ public class EasMediaBridge {
                             boolean isPlaying = (pbState.getState() == android.media.session.PlaybackState.STATE_PLAYING);
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，选通蓝牙物理声道");
-                                wakeBluetoothAudioSink();
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，申请 MAY_DUCK 闪避混音焦点");
+                                requestBluetoothFocusIfNeeded();
                                 activateBluetoothChannel();
                             } else if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，保持通道就绪 (绝不下发 pause)");
+                                abandonBluetoothFocus();
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，已释放 MAY_DUCK 焦点恢复满音量");
                             }
                         }
                     } catch (Throwable ignored) {}
