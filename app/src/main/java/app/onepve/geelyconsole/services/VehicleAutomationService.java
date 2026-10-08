@@ -1736,17 +1736,33 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 后台静默播歌触发链：冷拉活 + 定向广播 + 定向媒体按键
+        // 后台静默播歌触发链：冷拉活 + 定向广播 + 定向媒体按键 + 下一首唤醒保障
         if (pkg != null && !pkg.isEmpty()) {
             if (!"com.android.bluetooth".equals(pkg)) {
                 // 标记本地音源活动态 (严格严禁在此处调用 switchSourceTypeManually(6)，防止强切通道掐断 2 号蓝牙物理选通)
                 SteeringWheelKeyManager.setLastActiveAudioSource(SteeringWheelKeyManager.SOURCE_LOCAL);
+
+                // 核心安全兜底：若系统媒体音量当前处于 0 (静音)，自动恢复至适中音量，杜绝 DSP 硬件静音
+                try {
+                    AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                    if (am != null) {
+                        int curVol = am.getStreamVolume(AudioManager.STREAM_MUSIC);
+                        if (curVol == 0) {
+                            int maxVol = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+                            am.setStreamVolume(AudioManager.STREAM_MUSIC, Math.max(1, maxVol / 2), 0);
+                            AppLogger.i("车身联动", "【音量安全兜底】检测到系统媒体音量为0，已自动恢复适中音量以保障放声");
+                        }
+                    }
+                } catch (Throwable ignored) {}
             }
 
             // 0. 动态拉活核心播放服务
             wakeUpTargetMediaService(pkg);
 
-            // 1. 发送标准车机通用/专属播放广播
+            // 1. 尝试通过活跃 MediaSession 直接下发播放指令
+            tryDirectMediaControllerPlay(pkg);
+
+            // 2. 发送标准车机通用/专属播放广播
             try {
                 if ("com.tencent.qqmusiccar".equals(pkg)) {
                     Intent qqPlay = new Intent("com.tencent.qqmusiccar.action.PLAY");
@@ -1776,19 +1792,47 @@ public class VehicleAutomationService extends Service {
             } catch (Throwable ignored) {}
         }
 
-        // 彻底回归 v1.7.50 正式版基线：延迟 800ms 补发一次标准媒体播放键，绝不在后台搞死循环探测与硬切通道 6
+        // 核心优化：延迟 800ms 补发唤醒，若冷态播放器仍未起播，联动执行【下一首唤醒】(强制载入歌单并播放)
         mainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 try {
                     if (pkg != null && !pkg.isEmpty() && !"com.android.bluetooth".equals(pkg)) {
                         sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
+                        // 判定目标媒体是否已成功出声；若未起播(冷启动空列表特性)，联动切下一首强力唤醒
+                        if (!isTargetMediaPlaying(pkg)) {
+                            AppLogger.i("车身联动", "【车速自启多媒体】目标媒体在PLAY后尚未起播，联动执行【下一首唤醒】强制拉起歌单起播: " + pkg);
+                            tryDirectMediaControllerSkipToNext(pkg);
+                            sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_NEXT);
+                            new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_NEXT);
+                        }
                     } else {
                         new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
                     }
                 } catch (Throwable ignored) {}
             }
         }, 800);
+    }
+
+    private boolean tryDirectMediaControllerSkipToNext(String targetPkg) {
+        if (targetPkg == null || targetPkg.isEmpty()) return false;
+        try {
+            MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (msm != null) {
+                List<MediaController> controllers = msm.getActiveSessions(null);
+                if (controllers != null) {
+                    for (MediaController mc : controllers) {
+                        if (mc != null && targetPkg.equals(mc.getPackageName())) {
+                            mc.getTransportControls().skipToNext();
+                            mc.getTransportControls().play();
+                            AppLogger.i("车身联动", "通过 MediaController 成功向目标媒体下发 skipToNext() + play(): " + targetPkg);
+                            return true;
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        return false;
     }
 
     private boolean tryDirectMediaControllerPlay(String targetPkg) {
