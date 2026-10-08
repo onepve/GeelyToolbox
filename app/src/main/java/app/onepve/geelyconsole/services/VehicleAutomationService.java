@@ -550,6 +550,10 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("91\\s+02\\s+01(?:\\s+[0-9a-fA-F]{1,2}){3}\\s+([0-9a-fA-F]{1,2})\\s+([0-9a-fA-F]{1,2})");
     private static final Pattern P_GET_SPEED =
             Pattern.compile("Get Speed\\s+(\\d+)km/h");
+    private static final Pattern P_AVM_SPEED_EVENT =
+            Pattern.compile("onVehicleEventIpkSpeed[^0-9a-fA-F]*state=(?:0x)?([0-9a-fA-F]+)");
+    private static final Pattern P_AVM_SPEED_CMD =
+            Pattern.compile("VehId=Vehicle_IPK_Speed\\s+value=(?:0x)?([0-9a-fA-F]+)");
     private static final Pattern P_VEHICLE_GEAR =
             Pattern.compile("VehId=Vehicle_Gear\\s+value=(?:0x)?([0-9a-fA-F]+)");
     private static final Pattern P_GEAR_EQ =
@@ -651,7 +655,8 @@ public class VehicleAutomationService extends Service {
         }
 
         // 2. 解析车辆实时车速
-        if (line.contains("Get Speed ") || line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")) {
+        if (line.contains("Get Speed ") || line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")
+                || line.contains("onVehicleEventIpkSpeed") || line.contains("Vehicle_IPK_Speed")) {
             try {
                 if (line.contains("Get Speed ")) {
                     Matcher m = P_GET_SPEED.matcher(line);
@@ -659,6 +664,27 @@ public class VehicleAutomationService extends Service {
                         currentSpeedKmH = Integer.parseInt(m.group(1));
                         processVehicleSpeedAutomation(currentSpeedKmH);
                         return;
+                    }
+                }
+                if (line.contains("onVehicleEventIpkSpeed")) {
+                    Matcher m = P_AVM_SPEED_EVENT.matcher(line);
+                    if (m.find()) {
+                        int hexSpeed = Integer.parseInt(m.group(1), 16);
+                        currentSpeedKmH = hexSpeed;
+                        processVehicleSpeedAutomation(currentSpeedKmH);
+                        return;
+                    }
+                }
+                if (line.contains("Vehicle_IPK_Speed")) {
+                    Matcher m = P_AVM_SPEED_CMD.matcher(line);
+                    if (m.find()) {
+                        int hexVal = Integer.parseInt(m.group(1), 16);
+                        // 仪表车速原始刻度通常为 km/h 或 0.5km/h，若大于 200 则做安全边界保护
+                        if (hexVal <= 240) {
+                            currentSpeedKmH = hexVal;
+                            processVehicleSpeedAutomation(currentSpeedKmH);
+                            return;
+                        }
                     }
                 }
                 int idx = line.indexOf("speed ==");
@@ -1063,12 +1089,21 @@ public class VehicleAutomationService extends Service {
 
     /**
      * 蓄电池健康进阶守护：低电压超低功耗休眠判定
+     * 铁律：
+     * 1. 车辆正在行驶或车速 > 0，坚决不休眠！
+     * 2. lastPowerMode > 0 或发动机运转中，坚决不休眠！
+     * 3. 只有明确熄火且静止且电压极低 (< 11.5V) 时才触发深度休眠，杜绝点火被误杀。
      */
     private synchronized void checkLowBatteryDeepSleep(float currentVolt) {
-        if (lastPowerMode == 0 && !isEngineRunning()) {
-            if (currentVolt > 0 && currentVolt < 11.9f && !isLowPowerDeepSleeping) {
+        if (currentSpeedKmH > 0 || isEngineRunning() || lastPowerMode > 0) {
+            wakeFromDeepSleep();
+            return;
+        }
+
+        if (lastPowerMode == 0) {
+            if (currentVolt > 0 && currentVolt < 11.5f && !isLowPowerDeepSleeping) {
                 isLowPowerDeepSleeping = true;
-                AppLogger.w("电量守护", "蓄电池电压低于 11.9V (" + currentVolt + "V) 且整车熄火，进入超低功耗休眠");
+                AppLogger.w("电量守护", "蓄电池电压极低低于 11.5V (" + currentVolt + "V) 且整车明确熄火，进入超低功耗休眠");
                 if (logcatProcess != null) {
                     try {
                         logcatProcess.destroy();
