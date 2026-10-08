@@ -1429,8 +1429,19 @@ if os.path.exists(SERVICE_PATH):
     
     if "private volatile boolean speedAutoplayTriggeredInTrip" not in _vas_code:
         _g29.append("VehicleAutomationService 缺失正式版单次行程车速自启锁 `speedAutoplayTriggeredInTrip`！")
-    if "speedAutoplayTriggeredInTrip = true;" not in _vas_code:
-        _g29.append("VehicleAutomationService 触发车速自启后未立即永久闭锁 `speedAutoplayTriggeredInTrip = true`！")
+    
+    # 核心加固：严禁将 speedAutoplayTriggeredInTrip = true 移入异步或条件探测！
+    # 必须在 processVehicleSpeedAutomation 中判定 speed >= threshold 的首部立即闭锁！
+    if "private void processVehicleSpeedAutomation" in _vas_code:
+        _speed_chunk = _vas_code.split("private void processVehicleSpeedAutomation")[1].split("private void resetTripSpeedAutoplay")[0]
+        if "if (speed >= threshold)" not in _speed_chunk:
+            _g29.append("processVehicleSpeedAutomation 缺失车速阈值达标判定 `if (speed >= threshold)`！")
+        else:
+            _block_after_threshold = _speed_chunk.split("if (speed >= threshold)")[1][:200]
+            if "speedAutoplayTriggeredInTrip = true;" not in _block_after_threshold:
+                _g29.append("VehicleAutomationService 违规！车速达标后未在首部立即闭锁 `speedAutoplayTriggeredInTrip = true;` (严禁移入异步/条件探测防每秒循环拉活)！")
+    else:
+        _g29.append("VehicleAutomationService 缺失 processVehicleSpeedAutomation 方法！")
     if 'resetTripSpeedAutoplay("挂入P挡驻车且主驾门开启(车主离车)")' not in _vas_code:
         _g29.append("VehicleAutomationService 缺失离车复位行程锁契约！")
     if 'resetTripSpeedAutoplay("整车熄火下电广播")' not in _vas_code:
