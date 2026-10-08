@@ -1,0 +1,9 @@
+# 缤越助手 beta-v1.7.57.3 测试版更新日志
+
+### GOC 蓝牙协议栈与 DSP 硬件音量解冻闭环
+1. **彻底解决微信短语音播报时硬件音量置为 0.000000（无声）问题**：
+   - 对齐《亿咖通 GOC 蓝牙协议栈运维 SOP》与历史验证机制：GOC 底层 C 驱动（`a2dp_player.c`）在启动推流时强校验内部 `audioFocus` 状态，若未穿透唤醒系统蓝牙自身的会话控制器，底层 `informAudioFocusStateNative` 始终为 0，驱动会触发硬静音并向底层发送 `AT#VF0` 将 MT8666 DSP 硬件音量直接刷为 0.000000。
+   - 彻底恢复通过 `A2dpMediaBrowserService` 联动唤醒机制（`wakeBluetoothAudioSink()`），推流发生时穿透唤醒系统蓝牙 Native 层注入 `informAudioFocusStateNative: 1`，底层正常下发 `AT#VF100` 将 DSP 硬件音量解冻至 1.000000，微信语音清晰出声。
+
+2. **保持车速自启严苛门禁**：
+   - 维持钥匙通电（KEY ON）零预热原则，严禁原地放歌，严格等待车速真实达标后再起播媒体。

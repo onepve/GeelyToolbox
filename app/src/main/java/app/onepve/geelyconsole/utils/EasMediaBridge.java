@@ -752,19 +752,23 @@ public class EasMediaBridge {
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                     }
                     if (streaming) {
-                        // 方案 B（历史稳定验证方案）：申请 MAY_DUCK 瞬态闪避焦点，自动压低 QQ 音乐音量，
-                        // 严禁在此处调用 wakeBluetoothAudioSink() 调 play() 抢独占焦点，
-                        // 否则 A2dpSinkStreamHandler 会申请 AUDIOFOCUS_GAIN(-1) 导致第三方音乐被永久杀退。
-                        requestDuckingFocusForIncomingVoice();
+                        // 1. 穿透唤醒原厂 A2DP Sink 协议栈解冻硬件 Mute：
+                        // 在亿咖通 GOC 协议栈中，底层 a2dp_player.c 会强校验 audioFocus 状态；
+                        // 若未唤醒 A2dpMediaBrowserService，底层 informAudioFocusStateNative 始终为 0，
+                        // 会直接打印 [not to start audiotrack while a2dp is mute!] 并下发 AT#VF0 将硬件音量置为 0.000000！
+                        // 必须调用 wakeBluetoothAudioSink() 唤醒底层 A2DP，使其向系统申请焦点并注入 informAudioFocusStateNative:1，
+                        // 底层才会下发 AT#VF100 将 DSP 硬件音量解冻置为 1.000000！
+                        wakeBluetoothAudioSink();
+
+                        // 2. 选通原车 2 号蓝牙音频物理通道
                         long now = SystemClock.uptimeMillis();
                         if (now - lastA2dpWakeTime > 4000) {
                             lastA2dpWakeTime = now;
                             activateBluetoothChannel();
                         }
                     } else {
-                        // 微信推流结束：释放 MAY_DUCK 焦点，本地 QQ 音乐自动回弹恢复 100% 音量
-                        abandonDuckingFocus();
-                        AppLogger.i("蓝牙音频", "监听到推流停止，已释放 MAY_DUCK 焦点，本地音乐音量平滑回弹");
+                        // 微信推流结束：保持静默通道守护，绝不向下发会导致下一段短语音生命周期断裂的异常反向 pause 指令
+                        AppLogger.i("蓝牙音频", "监听到推流停止，保持通道守护");
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
                     try {
@@ -773,13 +777,12 @@ public class EasMediaBridge {
                             boolean isPlaying = (pbState.getState() == android.media.session.PlaybackState.STATE_PLAYING);
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，选通蓝牙物理声道并申请 MAY_DUCK 压低焦点");
-                                requestDuckingFocusForIncomingVoice();
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，唤醒原厂 A2DP 解冻硬件音量并选通声道");
+                                wakeBluetoothAudioSink();
                                 activateBluetoothChannel();
                             } else if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
-                                abandonDuckingFocus();
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，已释放 MAY_DUCK 焦点恢复本地音乐");
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，保持通道守护");
                             }
                         }
                     } catch (Throwable ignored) {}
