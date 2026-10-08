@@ -64,10 +64,6 @@ public class VehicleAutomationService extends Service {
     public static volatile boolean wheelMasterSwitch = true;
     private float lastSavedBatteryVoltage = -1.0f;
 
-    // 开机防洪峰与蓄电池低功耗守护
-    private long serviceBootTimestamp = 0L;
-    private volatile boolean isLowPowerDeepSleeping = false;
-
     // 功能开关
     private boolean enableDoorFl = false;
     private boolean enableDoorFlClose = false;
@@ -519,9 +515,8 @@ public class VehicleAutomationService extends Service {
                     if (driveModeManager != null) driveModeManager.resetState();
                     if (doorStateManager != null) doorStateManager.resetState();
                     resetTripSpeedAutoplay("整车熄火下电广播");
-                    checkLowBatteryDeepSleep(latestBatteryVoltage);
                 } else if (screenOn) {
-                    wakeFromDeepSleep();
+                    // 亮屏唤醒
                 } else if (screenOff) {
                     // 息屏 ≠ 熄火：车机息屏待机时发动机可能仍在运行（发电机充电电压仍 ≥13.2V）。
                     // 此处坚决不碰 lastPowerMode，交由电压权威判定兜底，杜绝「息屏误判锁死后永久静音」。
@@ -583,7 +578,7 @@ public class VehicleAutomationService extends Service {
     private static final Pattern P_AVM_SOCKET_CAM =
             Pattern.compile("camera_state\\s*:\\s*(\\d+)");
     private static final Pattern P_GOC_A2DP_VOL =
-            Pattern.compile("a2dp_player_setvol.*?:\\s*val\\s*:\\s*([0-9.]+)");
+            Pattern.compile("a2dp_player_setvol.*?:\\s*val\\s*:([0-9.]+)");
 
     private void startLogcatReader() {
         if (logcatThread != null && logcatThread.isAlive()) return;
@@ -592,14 +587,6 @@ public class VehicleAutomationService extends Service {
             @Override
             public void run() {
                 while (isRunning) {
-                    if (isLowPowerDeepSleeping) {
-                        try {
-                            Thread.sleep(30000); // 深度睡眠态下每 30 秒仅保持轻量心跳，不拉取 logcat
-                        } catch (InterruptedException ignored) {
-                            break;
-                        }
-                        continue;
-                    }
                     try {
                         // 核心日志通道: 
                         // 1. VehicleDataBuilder (CAN 信号)
@@ -1069,12 +1056,6 @@ public class VehicleAutomationService extends Service {
                         if (volt >= 9.0f && volt <= 16.5f) {
                             latestBatteryVoltage = volt;
 
-                            // 点火防洪峰滤波：点火前 5 秒起动机抽电造成的瞬时低压不触发深度睡眠评估
-                            boolean isBootStaggering = (android.os.SystemClock.elapsedRealtime() - serviceBootTimestamp) < 5000L;
-                            if (!isBootStaggering) {
-                                checkLowBatteryDeepSleep(volt);
-                            }
-
                             if (Math.abs(volt - lastSavedBatteryVoltage) >= 0.2f) {
                                 lastSavedBatteryVoltage = volt;
                                 getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
@@ -1088,60 +1069,14 @@ public class VehicleAutomationService extends Service {
     }
 
     /**
-     * 蓄电池健康进阶守护：低电压超低功耗休眠判定
-     * 铁律：
-     * 1. 车辆正在行驶或车速 > 0，坚决不休眠！
-     * 2. lastPowerMode > 0 或发动机运转中，坚决不休眠！
-     * 3. 只有明确熄火且静止且电压极低 (< 11.5V) 时才触发深度休眠，杜绝点火被误杀。
-     */
-    private synchronized void checkLowBatteryDeepSleep(float currentVolt) {
-        if (currentSpeedKmH > 0 || isEngineRunning() || lastPowerMode > 0) {
-            wakeFromDeepSleep();
-            return;
-        }
-
-        if (lastPowerMode == 0) {
-            if (currentVolt > 0 && currentVolt < 11.5f && !isLowPowerDeepSleeping) {
-                isLowPowerDeepSleeping = true;
-                AppLogger.w("电量守护", "蓄电池电压极低低于 11.5V (" + currentVolt + "V) 且整车明确熄火，进入超低功耗休眠");
-                if (logcatProcess != null) {
-                    try {
-                        logcatProcess.destroy();
-                    } catch (Exception ignored) {}
-                }
-            }
-        } else {
-            wakeFromDeepSleep();
-        }
-    }
-
-    /**
-     * 唤醒复苏机制：供点火、亮屏、上电广播毫秒级复苏
-     */
-    public synchronized void wakeFromDeepSleep() {
-        if (isLowPowerDeepSleeping) {
-            isLowPowerDeepSleeping = false;
-            AppLogger.i("电量守护", "检测到车辆唤醒/点火，退出超低功耗深度休眠，恢复座舱监听");
-            startLogcatReader();
-        }
-    }
-
-    /**
      * 判定整车是否处于真正点火启动/行车就绪状态
-     * 熄火下电或蓝牙唤醒浅待机时，发电机未转动，TCU处于休眠或诊断回环，坚决静默不发声
      */
     public boolean isEngineRunning() {
-        // 1. 明确检测到熄火下电（SHUTDOWN / QUICKBOOT_POWEROFF / ECARX_SHUTDOWN 广播锁定，或 PEPS/KEY=0）→ 绝对静音
         if (lastPowerMode == 0) return false;
-        // 2. 车速非零：车辆行驶移动中，100% 确认运行
         if (currentSpeedKmH > 0) return true;
-        // 3. 发电机高压充电权威信号：若电压稳稳 ≥13.2V，发电机必然在转，100% 确认运行
         if (latestBatteryVoltage >= 13.2f) return true;
-        // 4. 明确检测到电源点火处于就绪状态 (lastPowerMode == 1 或钥匙 ON 信号)
         if (lastPowerMode == 1 || lastKeyState == 2) return true;
-        // 5. 熄火锁定：若电压明确低于 12.8V 且静止，判定熄火
         if (latestBatteryVoltage > 0 && latestBatteryVoltage < 12.8f && currentSpeedKmH == 0) return false;
-        // 6. 默认回退：电压为 0（未读取到）或未知状态时保守视为开机运行中
         return true;
     }
 
