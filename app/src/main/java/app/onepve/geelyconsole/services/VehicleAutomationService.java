@@ -314,8 +314,6 @@ public class VehicleAutomationService extends Service {
             Log.w(TAG, "Failed to start IdleScreensaverManager: " + e.getMessage());
         }
 
-        serviceBootTimestamp = android.os.SystemClock.elapsedRealtime();
-
         registerPowerStateReceiver();
         startLogcatReader();
         registerEcarxKeyReceiver();
