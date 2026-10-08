@@ -761,6 +761,8 @@ public class EasMediaBridge {
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                     }
                     if (streaming) {
+                        // 核心机制：唤醒底层 A2DP Sink 焦点，驱动 GOC 底层 JNI 执行 informAudioFocusStateNative: 1 解除硬件静音 (val: 1.000000)
+                        wakeBluetoothAudioSink();
                         requestBluetoothFocusIfNeeded();
                         long now = SystemClock.uptimeMillis();
                         if (now - lastA2dpWakeTime > 4000) {
@@ -779,7 +781,8 @@ public class EasMediaBridge {
                             boolean isPlaying = (pbState.getState() == android.media.session.PlaybackState.STATE_PLAYING);
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，申请 MAY_DUCK 闪避混音焦点");
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，唤醒蓝牙物理声道与底层音频焦点");
+                                wakeBluetoothAudioSink();
                                 requestBluetoothFocusIfNeeded();
                                 activateBluetoothChannel();
                             } else if (!isPlaying && a2dpStreaming) {
