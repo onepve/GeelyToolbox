@@ -155,7 +155,7 @@ CARD_BUTTON_CONTRACTS = [
         "多媒体接管卡片", "2号蓝牙物理通道硬选通广播 (SOURCE_TYPE_BLUETOOTH=2)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public synchronized void activateBluetoothChannel",
-        [r"SOURCE_TYPE_BLUETOOTH", r"ECARX_KEY_RSRC_EVENT", r"updateCurrentSourceType", r"keepXcmediaOnBluetoothSource"],
+        [r"SOURCE_TYPE_BLUETOOTH", r"updateCurrentSourceType", r"keepXcmediaOnBluetoothSource"],
         [r"isAutoWakeSuppressed", r"dummyListener"]
     ),
     (

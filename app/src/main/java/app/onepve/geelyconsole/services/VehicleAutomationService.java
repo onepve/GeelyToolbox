@@ -1078,6 +1078,7 @@ public class VehicleAutomationService extends Service {
      * 判定整车是否处于真正点火启动/行车就绪状态
      */
     public boolean isEngineRunning() {
+        if (currentSpeedKmH > 5) return true; // 车速大于5km/h是行驶的绝对证据，绝不因未收到点火报文而判定熄火
         if (lastPowerMode == 0) return false;
         if (currentSpeedKmH > 0) return true;
         if (latestBatteryVoltage >= 13.2f) return true;
@@ -1741,7 +1742,7 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 后台静默播歌触发链：冷拉活 + 定向广播 + 定向媒体按键 + 下一首唤醒保障
+        // 后台静默播歌触发链：冷拉活 + 定向广播 + 直接复用方向盘「下一曲」系统级链路唤醒起播
         if (pkg != null && !pkg.isEmpty()) {
             if (!"com.android.bluetooth".equals(pkg)) {
                 // 标记本地音源活动态 (严格严禁在此处调用 switchSourceTypeManually(6)，防止强切通道掐断 2 号蓝牙物理选通)
@@ -1764,7 +1765,8 @@ public class VehicleAutomationService extends Service {
             // 0. 动态拉活核心播放服务
             wakeUpTargetMediaService(pkg);
 
-            // 1. 尝试通过活跃 MediaSession 直接下发播放指令
+            // 1. 尝试通过活跃 MediaSession 下发播放/下一曲指令
+            tryDirectMediaControllerSkipToNext(pkg);
             tryDirectMediaControllerPlay(pkg);
 
             // 2. 发送标准车机通用/专属播放广播
@@ -1788,31 +1790,31 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Throwable ignored) {}
 
-            // 3. 发送显式定向媒体按键广播 (动态探测 exported 接收器，杜绝 Permission Denial)
+            // 3. 核心升级：直接复用方向盘「下一曲」系统级派发链路 (KEYCODE_MEDIA_NEXT / 87)，100% 强制播放器加载歌单并起播
+            sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_NEXT);
             sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
             // 兼容 ACTION_MEDIA_BUTTON 显式广播规范
             try {
                 Intent bQuery = new Intent(Intent.ACTION_MEDIA_BUTTON);
                 bQuery.setPackage(pkg);
             } catch (Throwable ignored) {}
+            new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_NEXT);
         }
 
-        // 核心优化：延迟 800ms 补发唤醒，若冷态播放器仍未起播，联动执行【下一首唤醒】(强制载入歌单并播放)
+        // 核心优化：延迟 800ms 二次兜底，确保冷启动刚完成初始化的播放器稳定出声
         mainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 try {
                     if (pkg != null && !pkg.isEmpty() && !"com.android.bluetooth".equals(pkg)) {
-                        sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
-                        // 判定目标媒体是否已成功出声；若未起播(冷启动空列表特性)，联动切下一首强力唤醒
                         if (!isTargetMediaPlaying(pkg)) {
-                            AppLogger.i("车身联动", "【车速自启多媒体】目标媒体在PLAY后尚未起播，联动执行【下一首唤醒】强制拉起歌单起播: " + pkg);
+                            AppLogger.i("车身联动", "【车速自启多媒体】目标媒体尚未出声，复用方向盘下一曲二次唤醒: " + pkg);
                             tryDirectMediaControllerSkipToNext(pkg);
                             sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_NEXT);
                             new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_NEXT);
                         }
                     } else {
-                        new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_PLAY);
+                        new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_NEXT);
                     }
                 } catch (Throwable ignored) {}
             }

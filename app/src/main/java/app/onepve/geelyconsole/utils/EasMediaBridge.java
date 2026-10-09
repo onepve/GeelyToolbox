@@ -453,19 +453,6 @@ public class EasMediaBridge {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
                 AppLogger.i("蓝牙音频", "已下发 updateCurrentSourceType(2)，原车 2 号蓝牙音频物理通道已选通！");
             }
-            // 1. 发送吉利原车系统底层切源广播 (显式指定 + 全局广播双保险) 与保持广播
-            try {
-                Intent rsrcIntent = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
-                rsrcIntent.putExtra("source_type", SOURCE_TYPE_BLUETOOTH);
-                rsrcIntent.setPackage("com.ecarx.multimedia");
-                appContext.sendBroadcast(rsrcIntent);
-            } catch (Throwable ignored) {}
-            try {
-                Intent rsrcIntentGlobal = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
-                rsrcIntentGlobal.putExtra("source_type", SOURCE_TYPE_BLUETOOTH);
-                appContext.sendBroadcast(rsrcIntentGlobal);
-                AppLogger.i("蓝牙音频", "已下发原厂音源同步广播 (ECARX_KEY_RSRC_EVENT: BT)，确保原厂桌面卡片状态一致");
-            } catch (Throwable ignored) {}
 
             keepXcmediaOnBluetoothSource();
             connectBtMediaBrowser();
@@ -703,6 +690,10 @@ public class EasMediaBridge {
             if (ba != null) {
                 // 11 代表 BluetoothProfile.A2DP_SINK，2 代表 STATE_CONNECTED
                 this.a2dpSinkConnected = (ba.getProfileConnectionState(11) == 2);
+                if (this.a2dpSinkConnected) {
+                    connectBtMediaBrowser();
+                    requestBluetoothFocusIfNeeded();
+                }
             }
         } catch (Throwable ignored) {}
 
@@ -717,6 +708,7 @@ public class EasMediaBridge {
                         a2dpSinkConnected = true;
                         AppLogger.i("蓝牙音频", "监听到蓝牙已连接 (connected)，静默就绪底层链路 (严禁自动play抢播手机)");
                         connectBtMediaBrowser();
+                        requestBluetoothFocusIfNeeded();
                     } else if (state == 0) {
                         a2dpSinkConnected = false;
                         a2dpStreaming = false;
@@ -795,18 +787,6 @@ public class EasMediaBridge {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_LOCAL);
                 AppLogger.i("音频通道", "已下发 updateCurrentSourceType(6)，原车本地多媒体物理通道已选通！");
             }
-            try {
-                Intent rsrcIntent = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
-                rsrcIntent.putExtra("source_type", SOURCE_TYPE_LOCAL);
-                rsrcIntent.setPackage("com.ecarx.multimedia");
-                appContext.sendBroadcast(rsrcIntent);
-            } catch (Throwable ignored) {}
-            try {
-                Intent rsrcIntentGlobal = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
-                rsrcIntentGlobal.putExtra("source_type", SOURCE_TYPE_LOCAL);
-                appContext.sendBroadcast(rsrcIntentGlobal);
-                AppLogger.i("音频通道", "已下发原厂音源同步广播 (ECARX_KEY_RSRC_EVENT: LOCAL/6)，确保原厂桌面卡片状态一致");
-            } catch (Throwable ignored) {}
         } catch (Throwable t) {
             AppLogger.w("音频通道", "选通本地多媒体物理通道失败: " + t.getMessage());
         }
@@ -818,11 +798,6 @@ public class EasMediaBridge {
                 mApi.updateCurrentSourceType(mToken, sourceType);
                 AppLogger.i("音频通道", "手动下发 updateCurrentSourceType(" + sourceType + ")");
             }
-            try {
-                Intent rsrcIntent = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
-                rsrcIntent.putExtra("source_type", sourceType);
-                appContext.sendBroadcast(rsrcIntent);
-            } catch (Throwable ignored) {}
         } catch (Throwable t) {
             AppLogger.e("音频通道", "手动切换音源异常: " + t.getMessage());
         }
