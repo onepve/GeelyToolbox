@@ -551,6 +551,8 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("91\\s+02\\s+01(?:\\s+[0-9a-fA-F]{1,2}){3}\\s+([0-9a-fA-F]{1,2})\\s+([0-9a-fA-F]{1,2})");
     private static final Pattern P_GET_SPEED =
             Pattern.compile("Get Speed\\s+(\\d+)km/h");
+    private static final Pattern P_CARAUDIO_SPEED =
+            Pattern.compile("CarAudioInfo.*?(?:,\\s*speed=(\\d+)|Get Speed\\s+(\\d+)km/h)");
     private static final Pattern P_AVM_SPEED_EVENT =
             Pattern.compile("onVehicleEventIpkSpeed[^0-9a-fA-F]*state=(?:0x)?([0-9a-fA-F]+)");
     private static final Pattern P_AVM_SPEED_CMD =
@@ -648,15 +650,18 @@ public class VehicleAutomationService extends Service {
         }
 
         // 2. 解析车辆实时车速
-        if (line.contains("Get Speed ") || line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")
+        if (line.contains("Get Speed") || line.contains("CarAudioInfo") || line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")
                 || line.contains("onVehicleEventIpkSpeed") || line.contains("Vehicle_IPK_Speed")) {
             try {
-                if (line.contains("Get Speed ")) {
-                    Matcher m = P_GET_SPEED.matcher(line);
+                if (line.contains("CarAudioInfo") || line.contains("Get Speed")) {
+                    Matcher m = P_CARAUDIO_SPEED.matcher(line);
                     if (m.find()) {
-                        currentSpeedKmH = Integer.parseInt(m.group(1));
-                        processVehicleSpeedAutomation(currentSpeedKmH);
-                        return;
+                        String spStr = m.group(1) != null ? m.group(1) : m.group(2);
+                        if (spStr != null && !spStr.isEmpty()) {
+                            currentSpeedKmH = Integer.parseInt(spStr);
+                            processVehicleSpeedAutomation(currentSpeedKmH);
+                            return;
+                        }
                     }
                 }
                 if (line.contains("onVehicleEventIpkSpeed")) {
