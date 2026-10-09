@@ -549,6 +549,8 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("key\\s*=\\s*([^,\\s]+).*?data\\s*=\\s*(-?\\d+)");
     private static final Pattern SERIAL_DOOR_PATTERN =
             Pattern.compile("91\\s+02\\s+01(?:\\s+[0-9a-fA-F]{1,2}){3}\\s+([0-9a-fA-F]{1,2})\\s+([0-9a-fA-F]{1,2})");
+    private static final Pattern P_TASKER_SPEED =
+            Pattern.compile("getVehicleSpeed:speed\\s*==\\s*(\\d+)");
     private static final Pattern P_GET_SPEED =
             Pattern.compile("Get Speed\\s+(\\d+)km/h");
     private static final Pattern P_CARAUDIO_SPEED =
@@ -652,9 +654,22 @@ public class VehicleAutomationService extends Service {
         }
 
         // 2. 解析车辆实时车速
-        if (line.contains("Get Speed") || line.contains("CarAudioInfo") || line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")
-                || line.contains("onVehicleEventIpkSpeed") || line.contains("Vehicle_IPK_Speed") || line.contains("Vehicle_speed")) {
+        if (line.contains("getVehicleSpeed") || line.contains("Vehicle_speed") || line.contains("CarAudioInfo") || line.contains("Get Speed") || line.contains("speed ==") || line.contains("speed=")
+                || line.contains("onVehicleEventIpkSpeed") || line.contains("Vehicle_IPK_Speed")) {
             try {
+                // 优先级 1: 完美对齐 Tasker 实车验证的权威黄金基准 (高频 100ms 刷新)
+                if (line.contains("getVehicleSpeed")) {
+                    Matcher m = P_TASKER_SPEED.matcher(line);
+                    if (m.find()) {
+                        String spStr = m.group(1);
+                        if (spStr != null && !spStr.isEmpty()) {
+                            currentSpeedKmH = Integer.parseInt(spStr);
+                            processVehicleSpeedAutomation(currentSpeedKmH);
+                            return;
+                        }
+                    }
+                }
+                // 优先级 2: 吉利亿咖通数据中心原生 JSON 报文
                 if (line.contains("Vehicle_speed")) {
                     Matcher m = P_JSON_VEHICLE_SPEED.matcher(line);
                     if (m.find()) {
@@ -666,6 +681,7 @@ public class VehicleAutomationService extends Service {
                         }
                     }
                 }
+                // 优先级 3: 车载音效随速音量补偿报文
                 if (line.contains("CarAudioInfo") || line.contains("Get Speed")) {
                     Matcher m = P_CARAUDIO_SPEED.matcher(line);
                     if (m.find()) {
@@ -677,6 +693,7 @@ public class VehicleAutomationService extends Service {
                         }
                     }
                 }
+                // 优先级 4: AVM 盲区全景总线报文
                 if (line.contains("onVehicleEventIpkSpeed")) {
                     Matcher m = P_AVM_SPEED_EVENT.matcher(line);
                     if (m.find()) {
@@ -698,19 +715,22 @@ public class VehicleAutomationService extends Service {
                         }
                     }
                 }
-                int idx = line.indexOf("speed ==");
-                if (idx == -1) idx = line.indexOf("speed=");
-                if (idx != -1) {
-                    String sub = line.substring(idx + (line.contains("speed ==") ? 8 : 6)).trim();
-                    StringBuilder num = new StringBuilder();
-                    for (int i = 0; i < sub.length(); i++) {
-                        char c = sub.charAt(i);
-                        if (Character.isDigit(c)) num.append(c);
-                        else if (num.length() > 0) break;
-                    }
-                    if (num.length() > 0) {
-                        currentSpeedKmH = Integer.parseInt(num.toString());
-                        processVehicleSpeedAutomation(currentSpeedKmH);
+                // 优先级 5: 通用字符串提取 (严格规避 carSpeed == 米/秒干扰)
+                if (!line.contains("carSpeed")) {
+                    int idx = line.indexOf("speed ==");
+                    if (idx == -1) idx = line.indexOf("speed=");
+                    if (idx != -1) {
+                        String sub = line.substring(idx + (line.contains("speed ==") ? 8 : 6)).trim();
+                        StringBuilder num = new StringBuilder();
+                        for (int i = 0; i < sub.length(); i++) {
+                            char c = sub.charAt(i);
+                            if (Character.isDigit(c)) num.append(c);
+                            else if (num.length() > 0) break;
+                        }
+                        if (num.length() > 0) {
+                            currentSpeedKmH = Integer.parseInt(num.toString());
+                            processVehicleSpeedAutomation(currentSpeedKmH);
+                        }
                     }
                 }
             } catch (Exception ignored) {}
