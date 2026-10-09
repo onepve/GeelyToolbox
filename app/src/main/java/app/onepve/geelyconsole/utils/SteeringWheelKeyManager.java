@@ -969,6 +969,9 @@ public class SteeringWheelKeyManager {
         // 分支 B：车机本地播放器 / HiCar / 互联盒子分发
         // 采用动态单点锁定 + MediaSession + 定向显式广播三级精准调度（彻底杜绝多播放器串音）
         // ════════════════════════════════════════════════════════════
+        // 0. 核心音源对齐：确保底层 EAS 物理通道切换至 6 号本地/在线通道，并同步桌面卡片状态
+        EasMediaBridge.getInstance(context).activateLocalMediaChannel();
+
         // 1. Android 原生官方推荐通道: AudioManager.dispatchMediaKeyEvent (系统层全局尝试)
         try {
             AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);

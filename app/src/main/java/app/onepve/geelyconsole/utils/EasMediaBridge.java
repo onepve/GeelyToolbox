@@ -53,6 +53,7 @@ public class EasMediaBridge {
     public static final String PKG_BLUETOOTH = "com.android.bluetooth";
     // 经吉利官方 EAS SDK (SourceType.java) 源码级确证：SOURCE_TYPE_BT = 2，SOURCE_TYPE_ONLINE = 6
     public static final int SOURCE_TYPE_BLUETOOTH = 2;
+    public static final int SOURCE_TYPE_LOCAL = 6;
 
     /** A2DP Sink 音频流状态广播中的真实推流态 (STATE_STARTED) */
     private static final int A2DP_AUDIO_STATE_STARTED = 1;
@@ -783,9 +784,33 @@ public class EasMediaBridge {
         appContext.registerReceiver(a2dpReceiver, filter);
     }
     /**
-     * 手动切换底层硬件音源（用于声道排查与调试）
-     * @param sourceType 1=RADIO, 2=BT, 3=USB, 6=ONLINE/EAS
+     * 选通原车本地/在线音频物理通道 (EAS 6 号物理通道)
+     * 当车速自启放歌、或用户方控切歌/播放本地音乐(QQ音乐等)时调用，
+     * 确保 DSP 功放选通至车机端本地 DAC 输出通道，杜绝声卡被锁在蓝牙声道导致本地音乐无声。
      */
+    public synchronized void activateLocalMediaChannel() {
+        try {
+            ensureEasReady();
+            if (mApi != null && mRegistered && mToken != null) {
+                mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_LOCAL);
+                AppLogger.i("音频通道", "已下发 updateCurrentSourceType(6)，原车本地多媒体物理通道已选通！");
+            }
+            try {
+                Intent rsrcIntent = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
+                rsrcIntent.putExtra("source_type", SOURCE_TYPE_LOCAL);
+                rsrcIntent.setPackage("com.ecarx.multimedia");
+                appContext.sendBroadcast(rsrcIntent);
+            } catch (Throwable ignored) {}
+            try {
+                Intent rsrcIntentGlobal = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
+                rsrcIntentGlobal.putExtra("source_type", SOURCE_TYPE_LOCAL);
+                appContext.sendBroadcast(rsrcIntentGlobal);
+                AppLogger.i("音频通道", "已下发原厂音源同步广播 (ECARX_KEY_RSRC_EVENT: LOCAL/6)，确保原厂桌面卡片状态一致");
+            } catch (Throwable ignored) {}
+        } catch (Throwable t) {
+            AppLogger.w("音频通道", "选通本地多媒体物理通道失败: " + t.getMessage());
+        }
+    }
     public synchronized void switchSourceTypeManually(int sourceType) {
         try {
             ensureEasReady();
