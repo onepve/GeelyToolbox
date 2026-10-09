@@ -50,6 +50,22 @@ CARD_BUTTON_CONTRACTS = [
     # 1. 【车身联动卡片】(Door & Body Linkage)
     # ==========================================
     (
+        "车身联动卡片", "车速达标行程闭锁完整逻辑硬哈希锁死 (processVehicleSpeedAutomation)",
+        os.path.join(JAVA_BASE, "services/VehicleAutomationService.java"),
+        "private void processVehicleSpeedAutomation",
+        [r"speedAutoplayTriggeredInTrip = true;", r"isEngineRunning\(\)"],
+        [],
+        "0acabf8ccbcadce05e87f37076ff19825a4124fb7e5959333f07af8527cc01ab"
+    ),
+    (
+        "车身联动卡片", "音乐唤醒与方向盘下一曲派发完整实现硬哈希锁死 (triggerMusicAutoplay)",
+        os.path.join(JAVA_BASE, "services/VehicleAutomationService.java"),
+        "private void triggerMusicAutoplay",
+        [r"sendMediaKeyEventPublic\(KeyEvent\.KEYCODE_MEDIA_NEXT\)", r"sendExplicitMediaButtonToPackage"],
+        [],
+        "56188c0ed0107ed71026f0c62ef04ae42d0e263a6011d0276bb8a72c9492f299"
+    ),
+    (
         "车身联动卡片", "主驾车门开关联动 (door_fl)",
         os.path.join(JAVA_BASE, "utils/DoorStateManager.java"),
         "public synchronized void updateDoors",
