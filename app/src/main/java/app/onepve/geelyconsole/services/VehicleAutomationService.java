@@ -654,8 +654,9 @@ public class VehicleAutomationService extends Service {
         }
 
         // 2. 解析车辆实时车速
-        if (line.contains("getVehicleSpeed") || line.contains("Vehicle_speed") || line.contains("CarAudioInfo") || line.contains("Get Speed") || line.contains("speed ==") || line.contains("speed=")
-                || line.contains("onVehicleEventIpkSpeed") || line.contains("Vehicle_IPK_Speed")) {
+        // 核心铁律：仅采信权威物理车速源（Tasker高频 getVehicleSpeed:speed==、DataCenter总线 Vehicle_speed、车载音效 CarAudioInfo/Get Speed）
+        // 彻底剔除 AVM/360 盲区内部私有状态码（VehId=Vehicle_IPK_Speed value=0xec 等非车速刻度），杜绝倒车/蠕行时误报 200+ km/h 导致提前抢跑！
+        if (line.contains("getVehicleSpeed") || line.contains("Vehicle_speed") || line.contains("CarAudioInfo") || line.contains("Get Speed")) {
             try {
                 // 优先级 1: 完美对齐 Tasker 实车验证的权威黄金基准 (高频 100ms 刷新)
                 if (line.contains("getVehicleSpeed")) {
@@ -690,46 +691,6 @@ public class VehicleAutomationService extends Service {
                             currentSpeedKmH = Integer.parseInt(spStr);
                             processVehicleSpeedAutomation(currentSpeedKmH);
                             return;
-                        }
-                    }
-                }
-                // 优先级 4: AVM 盲区全景总线报文
-                if (line.contains("onVehicleEventIpkSpeed")) {
-                    Matcher m = P_AVM_SPEED_EVENT.matcher(line);
-                    if (m.find()) {
-                        int hexSpeed = Integer.parseInt(m.group(1), 16);
-                        currentSpeedKmH = hexSpeed;
-                        processVehicleSpeedAutomation(currentSpeedKmH);
-                        return;
-                    }
-                }
-                if (line.contains("Vehicle_IPK_Speed")) {
-                    Matcher m = P_AVM_SPEED_CMD.matcher(line);
-                    if (m.find()) {
-                        int hexVal = Integer.parseInt(m.group(1), 16);
-                        // 仪表车速原始刻度通常为 km/h 或 0.5km/h，若大于 200 则做安全边界保护
-                        if (hexVal <= 240) {
-                            currentSpeedKmH = hexVal;
-                            processVehicleSpeedAutomation(currentSpeedKmH);
-                            return;
-                        }
-                    }
-                }
-                // 优先级 5: 通用字符串提取 (严格规避 carSpeed == 米/秒干扰)
-                if (!line.contains("carSpeed")) {
-                    int idx = line.indexOf("speed ==");
-                    if (idx == -1) idx = line.indexOf("speed=");
-                    if (idx != -1) {
-                        String sub = line.substring(idx + (line.contains("speed ==") ? 8 : 6)).trim();
-                        StringBuilder num = new StringBuilder();
-                        for (int i = 0; i < sub.length(); i++) {
-                            char c = sub.charAt(i);
-                            if (Character.isDigit(c)) num.append(c);
-                            else if (num.length() > 0) break;
-                        }
-                        if (num.length() > 0) {
-                            currentSpeedKmH = Integer.parseInt(num.toString());
-                            processVehicleSpeedAutomation(currentSpeedKmH);
                         }
                     }
                 }
