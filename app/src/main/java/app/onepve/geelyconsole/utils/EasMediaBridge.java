@@ -498,35 +498,12 @@ public class EasMediaBridge {
 
     /**
      * 唤醒底层 com.android.bluetooth A2DP Sink 链路，使其主动向系统申请 AudioFocus 避免声卡硬件静音 (val:0.000000)
+     * 铁律：严格禁止下发 play() 指令！
+     * 下发 play() 会导致蓝牙向系统申请独占焦点 (AUDIOFOCUS_GAIN)，从而把第三方音乐 (如QQ音乐) 踢下线并强行打成暂停 (-1)！
+     * 正确做法：仅通过助手主动申请 MAY_DUCK 焦点守护，使系统保持混音，QQ音乐仅压低音量 (-3) 而绝不暂停！
      */
     public void wakeBluetoothAudioSink() {
-        if (isAutoWakeSuppressed()) {
-            AppLogger.i("蓝牙音频", "处于用户暂停抑制窗口内，跳过下发 play() (尊重用户暂停意图)");
-            return;
-        }
-
-        try {
-            if (btMediaController != null) {
-                AppLogger.i("蓝牙音频", "通过 A2dpMediaBrowserService MediaController 唤醒底层 A2DP Sink AudioFocus");
-                btMediaController.getTransportControls().play();
-            } else {
-                MediaSessionManager mm = (MediaSessionManager) appContext.getSystemService(Context.MEDIA_SESSION_SERVICE);
-                if (mm != null) {
-                    List<MediaController> controllers = mm.getActiveSessions(null);
-                    if (controllers != null) {
-                        for (MediaController mc : controllers) {
-                            if ("com.android.bluetooth".equals(mc.getPackageName())) {
-                                AppLogger.i("蓝牙音频", "命中系统蓝牙 MediaSession，下发 play() 唤醒底层 A2DP AudioFocus！");
-                                mc.getTransportControls().play();
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "唤醒底层 A2DP AudioFocus 异常: " + t.getMessage());
-        }
+        requestBluetoothFocusIfNeeded();
         connectBtMediaBrowser();
     }
 

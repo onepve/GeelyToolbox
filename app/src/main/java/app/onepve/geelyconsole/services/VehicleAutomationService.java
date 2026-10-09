@@ -268,6 +268,13 @@ public class VehicleAutomationService extends Service {
         voicePlayer = VehicleVoicePlayer.getInstance(this);
         wheelKeyManager = new SteeringWheelKeyManager(this);
 
+        // 每次启动服务或开机时，显式复位用户手动暂停标记与单次行程锁
+        // 彻底根除因上一趟行程按了暂停，重启车机后 user_manually_paused_media 依然死锁在磁盘导致起步不放歌的 Bug！
+        getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                .edit().putBoolean("user_manually_paused_media", false).apply();
+        speedAutoplayTriggeredInTrip = false;
+        speedCustomActionTriggeredInTrip = false;
+
         // 初始化四大独立状态机
         doorStateManager = new DoorStateManager(this, voicePlayer);
         doorStateManager.setListener((fl, fr, rl, rr) -> {
@@ -1547,13 +1554,11 @@ public class VehicleAutomationService extends Service {
      * 仅在明确物理P挡且主驾开门(车主泊车下车)或整车下电时复位，等红绿灯绝不复位
      */
     private void resetTripSpeedAutoplay(String reason) {
-        if (speedAutoplayTriggeredInTrip || speedCustomActionTriggeredInTrip) {
-            speedAutoplayTriggeredInTrip = false;
-            speedCustomActionTriggeredInTrip = false;
-            getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
-                    .edit().putBoolean("user_manually_paused_media", false).apply();
-            AppLogger.i("车身联动", "【单次行程重置】" + reason + "，已重置车速自启武装与手动暂停标记，为下一次出行就绪");
-        }
+        speedAutoplayTriggeredInTrip = false;
+        speedCustomActionTriggeredInTrip = false;
+        getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                .edit().putBoolean("user_manually_paused_media", false).apply();
+        AppLogger.i("车身联动", "【单次行程重置】" + reason + "，已重置车速自启武装与手动暂停标记，为下一次出行就绪");
     }
 
     private void triggerCustomSpeedAction(String target) {

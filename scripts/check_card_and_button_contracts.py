@@ -190,7 +190,7 @@ CARD_BUTTON_CONTRACTS = [
         "多媒体接管卡片", "国科 GOC 驱动解静音唤醒锁死 (wakeBluetoothAudioSink)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public void wakeBluetoothAudioSink",
-        [r"btMediaController\.getTransportControls\(\)\.play\(\)"],
+        [r"requestBluetoothFocusIfNeeded\(\)"],
         []
     ),
     (
