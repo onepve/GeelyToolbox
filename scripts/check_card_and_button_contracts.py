@@ -10,6 +10,7 @@
 import os
 import re
 import sys
+import hashlib
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 JAVA_BASE = os.path.join(BASE_DIR, "app/src/main/java/app/onepve/geelyconsole")
@@ -191,14 +192,16 @@ CARD_BUTTON_CONTRACTS = [
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public void wakeBluetoothAudioSink",
         [r"requestBluetoothFocusIfNeeded\(\)", r"btMediaController\.getTransportControls\(\)\.play\(\)", r"mc\.getTransportControls\(\)\.play\(\)"],
-        []
+        [],
+        "09499990eb2028d398a28dfda0850fce6e6804e655f7fe7bc5268342a750f2d3"
     ),
     (
         "多媒体接管卡片", "微信语音推流瞬态压低与停止自动回弹焦点锁死 (A2DP / AVRCP)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "private void registerA2dpReceiver",
         [r"requestDuckingFocusForIncomingVoice", r"abandonDuckingFocus", r"wakeBluetoothAudioSink"],
-        []
+        [],
+        "931def8c60fb1c017c4eeab12d1762e29f2e900640d16034261d93d8c2896876"
     ),
     (
         "多媒体接管卡片", "推流停止即时掐灭手机排队播放锁死 (pauseBluetoothAudioSink)",
@@ -366,7 +369,15 @@ def main():
     
     failures = []
     
-    for card, button, file_path, marker, required_patterns, forbidden_patterns in CARD_BUTTON_CONTRACTS:
+    for item in CARD_BUTTON_CONTRACTS:
+        card = item[0]
+        button = item[1]
+        file_path = item[2]
+        marker = item[3]
+        required_patterns = item[4]
+        forbidden_patterns = item[5]
+        expected_hash = item[6] if len(item) > 6 else None
+
         if not os.path.exists(file_path):
             failures.append((card, button, f"文件不存在: {file_path}"))
             continue
@@ -389,6 +400,12 @@ def main():
         for forb in forbidden_patterns:
             if re.search(forb, target_region):
                 failures.append((card, button, f"命中严禁包含的违规逻辑: `{forb}`"))
+
+        if expected_hash:
+            norm_region = re.sub(r'\s+', ' ', target_region).strip()
+            actual_hash = hashlib.sha256(norm_region.encode('utf-8')).hexdigest()
+            if actual_hash != expected_hash:
+                failures.append((card, button, f"整段完整实现代码哈希不匹配 (期望: {expected_hash[:8]}..., 实际: {actual_hash[:8]}...)，严禁任何细微篡改！"))
                 
     if failures:
         print(f"\n[FAIL] 🚨 检测到 {len(failures)} 项卡片/按钮独立原子契约被破坏：")
