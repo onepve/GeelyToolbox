@@ -487,12 +487,37 @@ public class EasMediaBridge {
 
     /**
      * 唤醒底层 com.android.bluetooth A2DP Sink 链路，使其主动向系统申请 AudioFocus 避免声卡硬件静音 (val:0.000000)
-     * 铁律：严格禁止下发 play() 指令！
-     * 下发 play() 会导致蓝牙向系统申请独占焦点 (AUDIOFOCUS_GAIN)，从而把第三方音乐 (如QQ音乐) 踢下线并强行打成暂停 (-1)！
-     * 正确做法：仅通过助手主动申请 MAY_DUCK 焦点守护，使系统保持混音，QQ音乐仅压低音量 (-3) 而绝不暂停！
+     * 必须调用 play() 穿透触发系统蓝牙的 informAudioFocusStateNative: 1，解除 GOC a2dp_player.c 的硬件静音锁！
      */
     public void wakeBluetoothAudioSink() {
         requestBluetoothFocusIfNeeded();
+        if (isAutoWakeSuppressed()) {
+            AppLogger.i("蓝牙音频", "处于用户暂停抑制窗口内，跳过下发 play() (尊重用户暂停意图)");
+            return;
+        }
+
+        try {
+            if (btMediaController != null) {
+                AppLogger.i("蓝牙音频", "通过 A2dpMediaBrowserService MediaController 唤醒底层 A2DP Sink AudioFocus");
+                btMediaController.getTransportControls().play();
+            } else {
+                MediaSessionManager mm = (MediaSessionManager) appContext.getSystemService(Context.MEDIA_SESSION_SERVICE);
+                if (mm != null) {
+                    List<MediaController> controllers = mm.getActiveSessions(null);
+                    if (controllers != null) {
+                        for (MediaController mc : controllers) {
+                            if ("com.android.bluetooth".equals(mc.getPackageName())) {
+                                AppLogger.i("蓝牙音频", "命中系统蓝牙 MediaSession，下发 play() 唤醒底层 A2DP AudioFocus！");
+                                mc.getTransportControls().play();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            AppLogger.w("蓝牙音频", "唤醒底层 A2DP AudioFocus 异常: " + t.getMessage());
+        }
         connectBtMediaBrowser();
     }
 
@@ -723,12 +748,9 @@ public class EasMediaBridge {
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                     }
                     if (streaming) {
+                        requestDuckingFocusForIncomingVoice();
+
                         // 1. 穿透唤醒原厂 A2DP Sink 协议栈解冻硬件 Mute：
-                        // 在亿咖通 GOC 协议栈中，底层 a2dp_player.c 会强校验 audioFocus 状态；
-                        // 若未唤醒 A2dpMediaBrowserService，底层 informAudioFocusStateNative 始终为 0，
-                        // 会直接打印 [not to start audiotrack while a2dp is mute!] 并下发 AT#VF0 将硬件音量置为 0.000000！
-                        // 必须调用 wakeBluetoothAudioSink() 唤醒底层 A2DP，使其向系统申请焦点并注入 informAudioFocusStateNative:1，
-                        // 底层才会下发 AT#VF100 将 DSP 硬件音量解冻置为 1.000000！
                         wakeBluetoothAudioSink();
 
                         // 2. 选通原车 2 号蓝牙音频物理通道
@@ -738,8 +760,9 @@ public class EasMediaBridge {
                             activateBluetoothChannel();
                         }
                     } else {
-                        // 微信推流结束：保持静默通道守护，绝不向下发会导致下一段短语音生命周期断裂的异常反向 pause 指令
-                        AppLogger.i("蓝牙音频", "监听到推流停止，保持通道守护");
+                        // 微信推流结束：释放压低焦点，触发 QQ 音乐/本地音乐音量回弹
+                        abandonDuckingFocus();
+                        AppLogger.i("蓝牙音频", "监听到推流停止，已释放压低焦点并保持通道守护");
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
                     try {
@@ -749,11 +772,13 @@ public class EasMediaBridge {
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，唤醒原厂 A2DP 解冻硬件音量并选通声道");
+                                requestDuckingFocusForIncomingVoice();
                                 wakeBluetoothAudioSink();
                                 activateBluetoothChannel();
                             } else if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，保持通道守护");
+                                abandonDuckingFocus();
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，已释放压低焦点并保持通道守护");
                             }
                         }
                     } catch (Throwable ignored) {}
