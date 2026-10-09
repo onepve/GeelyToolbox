@@ -190,7 +190,14 @@ CARD_BUTTON_CONTRACTS = [
         "多媒体接管卡片", "国科 GOC 驱动解静音唤醒锁死 (wakeBluetoothAudioSink)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public void wakeBluetoothAudioSink",
-        [r"requestBluetoothFocusIfNeeded\(\)"],
+        [r"requestBluetoothFocusIfNeeded\(\)", r"btMediaController\.getTransportControls\(\)\.play\(\)", r"mc\.getTransportControls\(\)\.play\(\)"],
+        []
+    ),
+    (
+        "多媒体接管卡片", "微信语音推流瞬态压低与停止自动回弹焦点锁死 (A2DP / AVRCP)",
+        os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
+        "private void registerA2dpReceiver",
+        [r"requestDuckingFocusForIncomingVoice", r"abandonDuckingFocus", r"wakeBluetoothAudioSink"],
         []
     ),
     (
