@@ -463,6 +463,7 @@ public class EasMediaBridge {
                 Intent rsrcIntentGlobal = new Intent("ecarx.intent.action.ECARX_KEY_RSRC_EVENT");
                 rsrcIntentGlobal.putExtra("source_type", SOURCE_TYPE_BLUETOOTH);
                 appContext.sendBroadcast(rsrcIntentGlobal);
+                AppLogger.i("蓝牙音频", "已下发原厂音源同步广播 (ECARX_KEY_RSRC_EVENT: BT)，确保原厂桌面卡片状态一致");
             } catch (Throwable ignored) {}
 
             keepXcmediaOnBluetoothSource();
