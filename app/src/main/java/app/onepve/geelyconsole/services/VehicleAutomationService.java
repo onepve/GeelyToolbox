@@ -553,6 +553,8 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("Get Speed\\s+(\\d+)km/h");
     private static final Pattern P_CARAUDIO_SPEED =
             Pattern.compile("CarAudioInfo.*?(?:,\\s*speed=(\\d+)|Get Speed\\s+(\\d+)km/h)");
+    private static final Pattern P_JSON_VEHICLE_SPEED =
+            Pattern.compile("\"Vehicle_speed\"\\s*:\\s*(\\d+)");
     private static final Pattern P_AVM_SPEED_EVENT =
             Pattern.compile("onVehicleEventIpkSpeed[^0-9a-fA-F]*state=(?:0x)?([0-9a-fA-F]+)");
     private static final Pattern P_AVM_SPEED_CMD =
@@ -651,8 +653,19 @@ public class VehicleAutomationService extends Service {
 
         // 2. 解析车辆实时车速
         if (line.contains("Get Speed") || line.contains("CarAudioInfo") || line.contains("getVehicleSpeed") || line.contains("speed ==") || line.contains("speed=")
-                || line.contains("onVehicleEventIpkSpeed") || line.contains("Vehicle_IPK_Speed")) {
+                || line.contains("onVehicleEventIpkSpeed") || line.contains("Vehicle_IPK_Speed") || line.contains("Vehicle_speed")) {
             try {
+                if (line.contains("Vehicle_speed")) {
+                    Matcher m = P_JSON_VEHICLE_SPEED.matcher(line);
+                    if (m.find()) {
+                        String spStr = m.group(1);
+                        if (spStr != null && !spStr.isEmpty()) {
+                            currentSpeedKmH = Integer.parseInt(spStr);
+                            processVehicleSpeedAutomation(currentSpeedKmH);
+                            return;
+                        }
+                    }
+                }
                 if (line.contains("CarAudioInfo") || line.contains("Get Speed")) {
                     Matcher m = P_CARAUDIO_SPEED.matcher(line);
                     if (m.find()) {
