@@ -223,17 +223,17 @@ public class FloatingWindowService extends Service {
 
         GradientDrawable bg = new GradientDrawable();
         bg.setShape(GradientDrawable.RECTANGLE);
-        bg.setCornerRadius(dp2px(22));
+        bg.setCornerRadius(dp2px(40));
 
         if (night) {
             // 夜晚深蓝黑半透
             bg.setColor(Color.parseColor("#EE0F172A"));
-            bg.setStroke(dp2px(1.5f), Color.parseColor("#3B82F6"));
+            bg.setStroke(dp2px(2.5f), Color.parseColor("#3B82F6"));
             tvText.setTextColor(Color.parseColor("#F8FAFC"));
         } else {
             // 白天纯净浅灰白
             bg.setColor(Color.parseColor("#F5F8FAFC"));
-            bg.setStroke(dp2px(1.5f), Color.parseColor("#2563EB"));
+            bg.setStroke(dp2px(2.5f), Color.parseColor("#2563EB"));
             tvText.setTextColor(Color.parseColor("#0F172A"));
         }
         layoutPillContainer.setBackground(bg);
@@ -323,14 +323,14 @@ public class FloatingWindowService extends Service {
                 pillX = savedX;
                 pillY = savedY;
             } else {
-                // 默认初始位置：右上角安全区域 (屏幕右边缘往内 140dp，顶部 12dp)
-                pillX = Math.max(20, screenWidth - dp2px(140));
-                pillY = dp2px(12);
+                // 默认初始位置：右上角安全区域 (屏幕右边缘往内 260dp，顶部 16dp)
+                pillX = Math.max(20, screenWidth - dp2px(260));
+                pillY = dp2px(16);
             }
         } else {
             // 确保坐标在当前屏幕范围内防移出屏幕
-            pillX = Math.max(0, Math.min(pillX, screenWidth - dp2px(80)));
-            pillY = Math.max(0, Math.min(pillY, screenHeight - dp2px(40)));
+            pillX = Math.max(0, Math.min(pillX, screenWidth - dp2px(160)));
+            pillY = Math.max(0, Math.min(pillY, screenHeight - dp2px(72)));
         }
 
         lp.x = pillX;
@@ -388,22 +388,22 @@ public class FloatingWindowService extends Service {
         layoutPillContainer = new LinearLayout(this);
         layoutPillContainer.setOrientation(LinearLayout.HORIZONTAL);
         layoutPillContainer.setGravity(Gravity.CENTER_VERTICAL);
-        layoutPillContainer.setPadding(dp2px(14), dp2px(8), dp2px(14), dp2px(8));
+        layoutPillContainer.setPadding(dp2px(28), dp2px(16), dp2px(28), dp2px(16));
 
         tvIcon = new TextView(this);
         tvIcon.setText("🔧");
-        tvIcon.setTextSize(15);
-        tvIcon.setPadding(0, 0, dp2px(6), 0);
+        tvIcon.setTextSize(26);
+        tvIcon.setPadding(0, 0, dp2px(12), 0);
         layoutPillContainer.addView(tvIcon);
 
         tvText = new TextView(this);
         tvText.setText("缤越助手");
-        tvText.setTextSize(13);
+        tvText.setTextSize(22);
         tvText.getPaint().setFakeBoldText(true);
         layoutPillContainer.addView(tvText);
 
         tvStatus = new TextView(this);
-        tvStatus.setTextSize(11);
+        tvStatus.setTextSize(18);
         layoutPillContainer.addView(tvStatus);
 
         updatePillContent();
@@ -461,8 +461,8 @@ public class FloatingWindowService extends Service {
                                 DisplayMetrics dm = getResources().getDisplayMetrics();
                                 int screenWidth = dm.widthPixels > 0 ? dm.widthPixels : 1920;
                                 int screenHeight = dm.heightPixels > 0 ? dm.heightPixels : 720;
-                                int pillWidth = (v.getWidth() > 0) ? v.getWidth() : dp2px(110);
-                                int pillHeight = (v.getHeight() > 0) ? v.getHeight() : dp2px(36);
+                                int pillWidth = (v.getWidth() > 0) ? v.getWidth() : dp2px(220);
+                                int pillHeight = (v.getHeight() > 0) ? v.getHeight() : dp2px(72);
 
                                 int clampX = Math.max(0, Math.min(lp.x, screenWidth - pillWidth));
                                 int clampY = Math.max(0, Math.min(lp.y, screenHeight - pillHeight));

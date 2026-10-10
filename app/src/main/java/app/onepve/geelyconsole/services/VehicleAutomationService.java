@@ -550,17 +550,15 @@ public class VehicleAutomationService extends Service {
     private static final Pattern SERIAL_DOOR_PATTERN =
             Pattern.compile("91\\s+02\\s+01(?:\\s+[0-9a-fA-F]{1,2}){3}\\s+([0-9a-fA-F]{1,2})\\s+([0-9a-fA-F]{1,2})");
     private static final Pattern P_TASKER_SPEED =
-            Pattern.compile("getVehicleSpeed:speed\\s*==\\s*(\\d+)");
+            Pattern.compile("(?:getVehicleSpeed:speed|carSpeed)\\s*==\\s*([0-9.]+)");
     private static final Pattern P_GET_SPEED =
             Pattern.compile("Get Speed\\s+(\\d+)km/h");
     private static final Pattern P_CARAUDIO_SPEED =
             Pattern.compile("CarAudioInfo.*?(?:,\\s*speed=(\\d+)|Get Speed\\s+(\\d+)km/h)");
     private static final Pattern P_JSON_VEHICLE_SPEED =
-            Pattern.compile("\"Vehicle_speed\"\\s*:\\s*(\\d+)");
-    private static final Pattern P_AVM_SPEED_EVENT =
-            Pattern.compile("onVehicleEventIpkSpeed[^0-9a-fA-F]*state=(?:0x)?([0-9a-fA-F]+)");
-    private static final Pattern P_AVM_SPEED_CMD =
-            Pattern.compile("VehId=Vehicle_IPK_Speed\\s+value=(?:0x)?([0-9a-fA-F]+)");
+            Pattern.compile("\"Vehicle_speed\"\\s*:\\s*\"?(\\d+)\"?");
+    private static final Pattern P_IPK_INSTANT_SPEED =
+            Pattern.compile("(?:onVehicleEventIpkSpeed[^0-9a-fA-F]*state=(?:0x)?([0-9a-fA-F]+)|VehId=Vehicle_IPK_Speed\\s+value=(?:0x)?([0-9a-fA-F]+)|INFO_ID_IPKINFO_INSTANT_SPEED.*?value\\s*[:=]\\s*(?:0x)?([0-9a-fA-F]+))");
     private static final Pattern P_VEHICLE_GEAR =
             Pattern.compile("VehId=Vehicle_Gear\\s+value=(?:0x)?([0-9a-fA-F]+)");
     private static final Pattern P_GEAR_EQ =
@@ -654,31 +652,49 @@ public class VehicleAutomationService extends Service {
         }
 
         // 2. 解析车辆实时车速
-        // 核心铁律：仅采信权威物理车速源（Tasker高频 getVehicleSpeed:speed==、DataCenter总线 Vehicle_speed、车载音效 CarAudioInfo/Get Speed）
-        // 彻底剔除 AVM/360 盲区内部私有状态码（VehId=Vehicle_IPK_Speed value=0xec 等非车速刻度），杜绝倒车/蠕行时误报 200+ km/h 导致提前抢跑！
-        if (line.contains("getVehicleSpeed") || line.contains("Vehicle_speed") || line.contains("CarAudioInfo") || line.contains("Get Speed")) {
+        // 核心铁律：仅采信权威物理车速源（Tasker高频 getVehicleSpeed/carSpeed、仪表IPK/SensorModule、车载音效 CarAudioInfo/Get Speed、DataCenter总线 Vehicle_speed）
+        // 过滤 AvmStateManger / recvVehicleCmd 环视控制私有状态码（value=0xec 等非车速刻度），杜绝倒车/蠕行时误报 200+ km/h 抢跑！
+        if (line.contains("getVehicleSpeed") || line.contains("carSpeed") || line.contains("Vehicle_speed") || line.contains("CarAudioInfo") || line.contains("Get Speed") || line.contains("Vehicle_IPK_Speed") || line.contains("onVehicleEventIpkSpeed") || line.contains("INFO_ID_IPKINFO_INSTANT_SPEED")) {
             try {
                 // 优先级 1: 完美对齐 Tasker 实车验证的权威黄金基准 (高频 100ms 刷新)
-                if (line.contains("getVehicleSpeed")) {
+                if (line.contains("getVehicleSpeed") || line.contains("carSpeed")) {
                     Matcher m = P_TASKER_SPEED.matcher(line);
                     if (m.find()) {
                         String spStr = m.group(1);
                         if (spStr != null && !spStr.isEmpty()) {
-                            currentSpeedKmH = Integer.parseInt(spStr);
-                            processVehicleSpeedAutomation(currentSpeedKmH);
-                            return;
+                            double rawSpeed = Double.parseDouble(spStr);
+                            // 若为浮点米/秒 (如 4.3416667)，换算为 km/h；若已是整数或 km/h 则直接使用
+                            int spKmH;
+                            if (line.contains("getVehicleSpeed:speed")) {
+                                spKmH = (int) Math.round(rawSpeed);
+                            } else {
+                                spKmH = (int) Math.round(rawSpeed * 3.6);
+                            }
+                            if (spKmH >= 0 && spKmH <= 240) {
+                                currentSpeedKmH = spKmH;
+                                processVehicleSpeedAutomation(currentSpeedKmH);
+                                return;
+                            }
                         }
                     }
                 }
-                // 优先级 2: 吉利亿咖通数据中心原生 JSON 报文
-                if (line.contains("Vehicle_speed")) {
-                    Matcher m = P_JSON_VEHICLE_SPEED.matcher(line);
+                // 优先级 2: 原厂仪表盘高频车速 (IPK / SensorModule，起步 0~30km/h 极速响应)
+                // 必须彻底排除 AvmStateManger / recvVehicleCmd 等环视控制枚举 (如 0xec)，防止倒车误报
+                if ((line.contains("Vehicle_IPK_Speed") || line.contains("onVehicleEventIpkSpeed") || line.contains("INFO_ID_IPKINFO_INSTANT_SPEED"))
+                        && !line.contains("AvmStateManger") && !line.contains("recvVehicleCmd")) {
+                    Matcher m = P_IPK_INSTANT_SPEED.matcher(line);
                     if (m.find()) {
-                        String spStr = m.group(1);
-                        if (spStr != null && !spStr.isEmpty()) {
-                            currentSpeedKmH = Integer.parseInt(spStr);
-                            processVehicleSpeedAutomation(currentSpeedKmH);
-                            return;
+                        String hexStr = m.group(1) != null ? m.group(1) : (m.group(2) != null ? m.group(2) : m.group(3));
+                        if (hexStr != null && !hexStr.isEmpty()) {
+                            try {
+                                int rawVal = Integer.parseInt(hexStr, 16);
+                                // 原厂仪表车速物理换算（有效过滤 0xec 等异常控制字，约束正常车速区间 0~220 km/h）
+                                if (rawVal >= 0 && rawVal <= 220) {
+                                    currentSpeedKmH = rawVal;
+                                    processVehicleSpeedAutomation(currentSpeedKmH);
+                                    return;
+                                }
+                            } catch (Exception ignored) {}
                         }
                     }
                 }
@@ -687,6 +703,18 @@ public class VehicleAutomationService extends Service {
                     Matcher m = P_CARAUDIO_SPEED.matcher(line);
                     if (m.find()) {
                         String spStr = m.group(1) != null ? m.group(1) : m.group(2);
+                        if (spStr != null && !spStr.isEmpty()) {
+                            currentSpeedKmH = Integer.parseInt(spStr);
+                            processVehicleSpeedAutomation(currentSpeedKmH);
+                            return;
+                        }
+                    }
+                }
+                // 优先级 4: 吉利亿咖通数据中心原生 JSON 报文
+                if (line.contains("Vehicle_speed")) {
+                    Matcher m = P_JSON_VEHICLE_SPEED.matcher(line);
+                    if (m.find()) {
+                        String spStr = m.group(1);
                         if (spStr != null && !spStr.isEmpty()) {
                             currentSpeedKmH = Integer.parseInt(spStr);
                             processVehicleSpeedAutomation(currentSpeedKmH);
