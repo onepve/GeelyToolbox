@@ -368,40 +368,16 @@ public class EasMediaBridge {
     };
 
     /**
-     * 方案 B：系统原生 AudioFocus 压低本地音乐 (Ducking)
-     * 使用 USAGE_ASSISTANCE_NAVIGATION_GUIDANCE 请求 MAY_DUCK 瞬态焦点：
-     * 1. 让正在播放的 QQ 音乐 / 媒体软件接收到 AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK 并自动把自身音量降低到 20%~30%；
-     * 2. 严禁改动硬件媒体总音量 (STREAM_MUSIC 保持 13~18)，确保微信声音清晰洪亮；
-     * 3. 严禁向音乐软件发送 Play/Pause，避免引起状态机抽搐；
-     * 4. 微信播完后释放焦点，QQ 音乐自动恢复 100% 满音量。
+     * 蓝牙语音/微信短语音放音保护：
+     * 铁律：彻底杜绝向系统申请任何 USAGE_ASSISTANCE_NAVIGATION_GUIDANCE 或 MAY_DUCK 焦点！
+     * 事实依据（吉利车机真车日志）：吉利原厂底层 AudioPolicyManager/AudioFlinger 检测到导航/MAY_DUCK 焦点时，
+     * 会在 HAL 硬件层对所有 STREAM_MUSIC (Stream 3) 强制执行全局 doDuck (ampl=0.562342, vlf降至0.003)，
+     * 而手机蓝牙 A2DP 语音恰恰挂在 STREAM_MUSIC 通道上，导致微信语音自身被系统误伤腰斩，声音发闷极小。
+     * 因此坚决不向系统申请此类压低焦点，若有残留则彻底释放，保障蓝牙音频 100% 满音量无损输出。
      */
     public synchronized void requestDuckingFocusForIncomingVoice() {
-        try {
-            if (audioManager == null) {
-                audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
-            }
-            if (audioManager == null) return;
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                if (voiceDuckingFocusRequest == null) {
-                    AudioAttributes playbackAttributes = new AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                            .build();
-                    voiceDuckingFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                            .setAudioAttributes(playbackAttributes)
-                            .setAcceptsDelayedFocusGain(false)
-                            .setOnAudioFocusChangeListener(voiceDuckingListener)
-                            .build();
-                }
-                int res = audioManager.requestAudioFocus(voiceDuckingFocusRequest);
-                AppLogger.i("蓝牙音频", "申请 USAGE_ASSISTANCE_NAVIGATION_GUIDANCE MAY_DUCK 压低焦点, res=" + res);
-            } else {
-                int res = audioManager.requestAudioFocus(voiceDuckingListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
-                AppLogger.i("蓝牙音频", "申请 STREAM_MUSIC MAY_DUCK 压低焦点, res=" + res);
-            }
-        } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "requestDuckingFocusForIncomingVoice 异常: " + t.getMessage());
+        if (voiceDuckingFocusRequest != null) {
+            abandonDuckingFocus();
         }
     }
 
