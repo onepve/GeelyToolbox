@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>手机无线快传与运维控制台</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        /* 柔和护眼温润背景，防强光刺眼与眩光 */
+        body { background: #f4f4f6; color: #18181b; padding: 16px; padding-bottom: 40px; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 540px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 16px; }
+        .title { font-size: 20px; font-weight: 800; color: #18181b; letter-spacing: -0.3px; }
+        .subtitle { font-size: 13px; color: #52525b; margin-top: 4px; font-weight: 600; }
+        
+        /* 顶级导航：护眼柔和胶囊 */
+        .main-nav {
+            display: flex;
+            background: #e4e4e7;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border: 1px solid #d4d4d8;
+            gap: 4px;
+        }
+        .main-nav-btn {
+            flex: 1;
+            padding: 10px 6px;
+            border: none;
+            border-radius: 9px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #52525b;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            text-align: center;
+        }
+        .main-nav-btn.active {
+            background: #ffffff;
+            color: #1d4ed8;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* 卡片：纯白、清晰暖灰边框与极微柔和阴影 */
+        .card { background: #ffffff; border-radius: 14px; padding: 16px; margin-bottom: 14px; border: 1px solid #e4e4e7; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); }
+        .card-title { font-size: 15.5px; font-weight: 700; color: #18181b; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        .card-desc { font-size: 13px; color: #52525b; line-height: 1.55; margin-bottom: 12px; font-weight: 500; }
+        
+        .input-group { margin-bottom: 12px; }
+        .input-label { display: block; font-size: 13px; font-weight: 600; color: #27272a; margin-bottom: 6px; }
+        .input-box, input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 11px 12px;
+            border-radius: 10px;
+            border: 1.5px solid #d4d4d8;
+            font-size: 14px;
+            color: #18181b;
+            background: #fafafa;
+            outline: none;
+            transition: border 0.15s;
+        }
+        .input-box:focus, input[type="text"]:focus { border-color: #2563eb; background: #ffffff; }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 48px;
+            padding: 0 16px;
+            border-radius: 12px;
+            font-size: 14.5px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-sizing: border-box;
+            text-align: center;
+            text-decoration: none;
+            letter-spacing: 0.2px;
+        }
+        /* 开始高速传输主按钮：温润科技蓝宝石渐变 + 柔光微投影，告别刺眼生硬纯蓝 */
+        .btn-primary {
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+            color: #ffffff;
+            margin-top: 10px;
+            box-shadow: 0 4px 14px rgba(30, 64, 175, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .btn-primary:active {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+            box-shadow: 0 2px 6px rgba(30, 64, 175, 0.18);
+            transform: scale(0.985);
+        }
+        .btn-primary:disabled {
+            background: #e4e4e7 !important;
+            color: #a1a1aa !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .btn-success { background: linear-gradient(135deg, #047857 0%, #059669 100%); color: #ffffff; margin-top: 8px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.18); }
+        .btn-success:active { background: #047857; transform: scale(0.985); }
+        .btn-secondary { background: #ffffff; color: #27272a; border: 1.5px solid #d4d4d8; margin-top: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .btn-secondary:active { background: #f4f4f5; border-color: #cbd5e1; transform: scale(0.985); }
+        
+        /* 柔和护眼警示按钮：温润淡粉底 + 细柔边框 + 深玫瑰沉稳文字，杜绝刺眼大红大绿 */
+        .btn-warning-soft {
+            background: #fff1f2;
+            color: #be123c;
+            border: 1.5px solid #fecdd3;
+            margin-top: 8px;
+            font-weight: 700;
+        }
+        .btn-warning-soft:active {
+            background: #ffe4e6;
+            border-color: #fda4af;
+            transform: scale(0.98);
+        }
+
+        .progress-bar { width: 100%; height: 8px; background: #e4e4e7; border-radius: 4px; overflow: hidden; margin-top: 10px; display: none; }
+        .progress-fill { height: 100%; width: 0%; background: #059669; transition: width 0.2s; }
+        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #e0f2fe; color: #0369a1; }
+        .tip-box { background: #fefce8; border: 1px solid #fef08a; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; color: #854d0e; line-height: 1.5; margin-top: 10px; font-weight: 500; }
+
+        .upload-drop-zone {
+            border: 2px dashed #d4d4d8;
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .upload-drop-zone:active { border-color: #2563eb; background: #eff6ff; }
+
+        /* 清理下载目录模式选择模态弹窗 */
+        .clean-modal-mask {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(24, 24, 27, 0.55);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .clean-modal-card {
+            background: #ffffff;
+            border: 1px solid #e4e4e7;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 360px;
+            padding: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+            animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .clean-option-btn {
+            width: 100%;
+            text-align: left;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid #e4e4e7;
+            background: #fafafa;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .clean-option-btn:active { background: #f4f4f5; transform: scale(0.98); }
+        .clean-option-btn.danger { border-color: #fecdd3; background: #fff1f2; }
+        .clean-option-title { font-size: 14px; font-weight: 700; color: #18181b; margin-bottom: 2px; }
+        .clean-option-btn.danger .clean-option-title { color: #be123c; }
+        .clean-option-desc { font-size: 12px; color: #71717a; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">手机无线快传与控制台</div>
+            <div class="subtitle">手机免插 U 盘极速直传 · 车机底层快捷运维</div>
+        </div>
+
+        <!-- 顶级一级导航：3 大核心场景 -->
+        <div class="main-nav">
+            <button class="main-nav-btn active" id="btn-tab-transfer" onclick="switchMainTab('transfer')">🚀 极速快传</button>
+            <button class="main-nav-btn" id="btn-tab-ops" onclick="switchMainTab('ops')">⚡ 远程运维</button>
+            <button class="main-nav-btn" id="btn-tab-voice" onclick="switchMainTab('voice')">🎙️ 车载语音</button>
+        </div>
+
+        <!-- ==================== 场景 1: 极速快传 ==================== -->
+        <div class="tab-content active" id="tab-transfer">
+            <!-- 卡片 1.1: 手机全格式文件秒传到车机 -->
+            <div class="card">
+                <div class="card-title">
+                    <span>📁 手机文件高速秒传车机</span>
+                    <span class="status-badge" id="car-status">车机在线</span>
+                </div>
+                <div class="card-desc">
+                    免插 U 盘！手机本地任意文件秒级直传至车机 Download 目录。
+                </div>
+                <div class="input-group">
+                    <input type="file" id="file-input">
+                </div>
+                <button class="btn btn-primary" id="btn-upload" onclick="uploadMainFile()">🚀 开始高速传输</button>
+                <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+                <div id="upload-status" style="font-size:12.5px; color:#52525b; margin-top:8px; text-align:center; word-break:break-all; font-weight:600;"></div>
+            </div>
+
+            <!-- 卡片 1.2: 推送外部下载链接 -->
+            <div class="card">
+                <div class="card-title"><span>🚀 推送下载链接到车机</span></div>
+                <div class="card-desc">直接粘贴外部文件或 APK 直链，让车机在后台直接下载（支持双击输入框一键清空）。</div>
+                <div class="input-group" style="display:flex; gap: 10px; align-items:center;">
+                    <input type="text" id="push-url" placeholder="双击清空 · 粘贴或输入 https://..." style="flex:1;" ondblclick="clearPushUrl()" ontouchend="handleUrlTouch(event)">
+                    <button class="btn btn-secondary" style="width:auto; height:44px; padding:0 14px; margin-top:0; font-size:13.5px; white-space:nowrap;" onclick="pastePushUrl()">📋 粘贴</button>
+                </div>
+                <button class="btn btn-secondary" onclick="pushUrl()">一键推送车机下载</button>
+            </div>
+
+            <!-- 卡片 1.3: 车机已存文件库 -->
+            <div class="card">
+                <div class="card-title">
+                    <span>📦 车机已存文件库 (/sdcard/Download/)</span>
+                    <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                        <button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin-top:0;" onclick="cleanCarFiles()">🧹 清理文件</button>
+                        <button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin-top:0;" onclick="loadCarFiles()">🔄 刷新</button>
+                    </div>
+                </div>
+                <div id="car-files-box" style="max-height: 240px; overflow-y: auto; border: 1px solid #e4e4e7; border-radius: 8px; background: #fafafa;">
+                    <div style="text-align: center; color: #71717a; font-size: 12.5px; padding: 16px;">正在加载车机文件列表...</div>
+                </div>
+            </div>
+
+            <div class="tip-box">
+                🛡️ <b>安装须知</b>：传到车机的安装包，统一在车机打开「车载原生文件管理」直接点击安装，最稳定安全。
+            </div>
+        </div>
+
+        <!-- ==================== 场景 2: 远程运维 ==================== -->
+        <div class="tab-content" id="tab-ops">
+            <!-- 卡片 2.1: 车机远程快捷指令 (9 大常用运维动作) -->
+            <div class="card">
+                <div class="card-title">
+                    <span>⚡ 车机远程快捷指令</span>
+                    <span class="status-badge" style="background:#f4f4f5; color:#3f3f46;">9项快捷运维</span>
+                </div>
+                <div class="card-desc">手机一键直发车机执行，无需在车机屏幕上翻找：</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_files', '📁 已通知车机打开原生文件管理')">📁 原生文件管理</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_settings', '⚙️ 已通知车机打开系统设置')">⚙️ 安卓系统设置</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_apps', '📦 已通知车机打开应用列表')">📦 应用管理列表</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_accessibility', '♿ 已通知车机打开无障碍设置')">♿ 无障碍辅助设置</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('freeze_appstore', '❄️ 已发送冻结应用商店指令')">❄️ 冻结应用商店</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('unfreeze_appstore', '☀️ 已发送解冻应用商店指令')">☀️ 解冻应用商店</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('enable_whitelist', '🔓 已发送放行安装白名单指令')">🔓 放行安装白名单</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('clean_memory', '🧹 已通知车机释放后台内存')">🧹 释放后台内存</button>
+                    <!-- 柔和护眼警示风格，消除大红刺眼视觉 -->
+                    <button class="btn btn-warning-soft" style="margin-top:0; padding:10px 6px; font-size:13px; grid-column: span 2;" onclick="confirmHardReboot()">⚡ 安全重启车机系统</button>
+                </div>
+            </div>
+
+            <!-- 卡片 2.2: OTA 官方升级直链（车机捕获到时展示） -->
+            <div class="card" id="ota-card" style="display:none;">
+                <div class="card-title"><span>📡 OTA 官方升级直链（已捕获）</span></div>
+                <div class="input-group">
+                    <label class="input-label">系统升级抓包直链地址：</label>
+                    <input type="text" id="ota-url" class="input-box" style="font-size:12.5px; color:#059669; font-weight:600;" readonly onclick="this.select();">
+                </div>
+                <button class="btn btn-success" onclick="copyOtaUrl()">📋 复制 OTA 直链</button>
+            </div>
+
+            <!-- 卡片 2.3: 远程 Shell 调试指令 -->
+            <div class="card">
+                <div class="card-title"><span>💻 远程调试指令推送</span></div>
+                <div class="input-group">
+                    <label class="input-label">推送执行终端指令：</label>
+                    <input type="text" id="adb-cmd" placeholder="例如: am start -n ...">
+                </div>
+                <div style="display:flex; align-items:center; margin-bottom:12px; gap:8px;">
+                    <input type="checkbox" id="adb-auto-exec" style="width:18px; height:18px; accent-color:#2563eb; cursor:pointer;">
+                    <label for="adb-auto-exec" style="font-size:13px; font-weight:600; color:#27272a; cursor:pointer; user-select:none;">
+                        ⚡ 发送后自动在车机后台执行
+                    </label>
+                </div>
+                <button class="btn btn-secondary" style="margin-top:0;" onclick="pushAdbCmd()">📤 推送指令到车机</button>
+            </div>
+        </div>
+
+        <!-- ==================== 场景 3: 车载语音 ==================== -->
+        <div class="tab-content" id="tab-voice">
+            <!-- 卡片 3.1: 专属素材池快速直传 (单项 MP3) -->
+            <div class="card" style="border-left: 4px solid #059669;">
+                <div class="card-title">
+                    <span>🎵 手机音频直传车载素材池 (.mp3)</span>
+                    <span class="status-badge" style="background:#d1fae5; color:#065f46;">免插U盘</span>
+                </div>
+                <div class="card-desc">
+                    从手机相册或文件中选择单项录音、个性音效或提示音（如“公主请上车.mp3”），极速直传至车机专属素材池，随后在车机【声效设置】中即可点选绑定！
+                </div>
+                <div class="upload-drop-zone" onclick="document.getElementById('voice-audio-input').click()">
+                    <div style="font-size:26px; margin-bottom:6px;">🎶</div>
+                    <div style="font-weight:700; font-size:14.5px; color:#059669;">点此选择手机里的音频文件 (.mp3)</div>
+                    <div style="font-size:12px; color:#52525b; margin-top:4px; font-weight:500;">支持 .mp3 / .wav / .ogg / .m4a，自动存入专属素材目录</div>
+                </div>
+                <input type="file" id="voice-audio-input" style="display:none;" accept=".mp3,.wav,.ogg,.m4a" onchange="handleVoiceAudioSelect(this.files)">
+                
+                <div id="voice-audio-status" style="display:none; margin-top:10px;">
+                    <div style="display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; color:#27272a; margin-bottom:4px;">
+                        <span id="voice-audio-filename">正在上传...</span>
+                        <span id="voice-audio-percent" style="color:#059669;">0%</span>
+                    </div>
+                    <div class="progress-bar" id="voice-audio-pbar" style="display:block;">
+                        <div class="progress-fill" id="voice-audio-pfill"></div>
+                    </div>
+                    <div id="voice-audio-tip" style="font-size:12.5px; color:#52525b; margin-top:6px; text-align:center; font-weight:600;"></div>
+                </div>
+            </div>
+
+            <!-- 卡片 3.2: 整套语音主题包直传与模板 -->
+            <div class="card" style="border-left: 4px solid #2563eb;">
+                <div class="card-title">
+                    <span>📦 整套语音主题包 (.zip) 制作与导入</span>
+                    <span class="status-badge" style="background:#dbeafe; color:#1e40af;">专属主题</span>
+                </div>
+                <div class="card-desc">
+                    整套打包好的语音主题包（.zip）可直接上传至车机，车机进入【声效设置 ➔ 导入车载语音包】即可一键自动解压并应用生效！
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+                    <a href="/api/voice_template" download="voice_template.zip" class="btn btn-secondary" style="margin-top:0; font-size:13px;">
+                        📥 下载官方模板
+                    </a>
+                    <button class="btn btn-secondary" style="margin-top:0; font-size:13px;" onclick="showVoiceReadme()">
+                        📖 制作与命名指南
+                    </button>
+                </div>
+                <div class="upload-drop-zone" onclick="document.getElementById('voice-zip-input').click()">
+                    <div style="font-size:26px; margin-bottom:6px;">📦</div>
+                    <div style="font-weight:700; font-size:14.5px; color:#2563eb;">点此选择整套语音包 (.zip)</div>
+                    <div style="font-size:12px; color:#52525b; margin-top:4px; font-weight:500;">上传至车机 Download 目录，车机端点选即刻导入</div>
+                </div>
+                <input type="file" id="voice-zip-input" style="display:none;" accept=".zip" onchange="handleVoiceZipSelect(this.files)">
+
+                <div id="voice-zip-status" style="display:none; margin-top:10px;">
+                    <div style="display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; color:#27272a; margin-bottom:4px;">
+                        <span id="voice-zip-filename">正在上传...</span>
+                        <span id="voice-zip-percent" style="color:#2563eb;">0%</span>
+                    </div>
+                    <div class="progress-bar" id="voice-zip-pbar" style="display:block;">
+                        <div class="progress-fill" id="voice-zip-pfill"></div>
+                    </div>
+                    <div id="voice-zip-tip" style="font-size:12.5px; color:#52525b; margin-top:6px; text-align:center; font-weight:600;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 清理下载目录模式选择模态弹窗 -->
+    <div id="clean-modal-mask" class="clean-modal-mask" onclick="closeCleanModal()">
+        <div class="clean-modal-card" onclick="event.stopPropagation()">
+            <div style="font-size: 16px; font-weight: 800; color: #18181b; margin-bottom: 4px;">🧹 清理车机 Download 目录</div>
+            <div style="font-size: 12.5px; color: #52525b; margin-bottom: 16px; font-weight: 500;">请选择清理策略，清理后将即时释放车机存储：</div>
+            
+            <div class="clean-option-btn" onclick="executeCleanMode(2)">
+                <div class="clean-option-title">🧹 智能安全清理 (推荐)</div>
+                <div class="clean-option-desc">清理旧 APK 安装包与临时压缩包，保留音频素材</div>
+            </div>
+
+            <div class="clean-option-btn" onclick="executeCleanMode(3)">
+                <div class="clean-option-title">📦 仅清理散落普通文件</div>
+                <div class="clean-option-desc">仅删除 Download 根目录散落单体文件，保留所有子文件夹</div>
+            </div>
+
+            <div class="clean-option-btn danger" onclick="executeCleanMode(1)">
+                <div class="clean-option-title">⚠️ 彻底全量清空 (慎用)</div>
+                <div class="clean-option-desc">强制清空整个 Download 目录所有文件，不可恢复</div>
+            </div>
+
+            <button class="btn btn-secondary" style="margin-top: 6px; width: 100%; padding: 10px; font-size: 13px; font-weight: 700;" onclick="closeCleanModal()">取消</button>
+        </div>
+    </div>
+
+    <!-- README 制作说明弹窗 -->
+    <div id="readme-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(24,24,27,0.55); z-index:9999; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;">
+        <div style="background:#ffffff; border-radius:14px; max-width:600px; width:100%; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+            <div style="padding:14px 16px; background:#f4f4f6; border-bottom:1px solid #e4e4e7; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:bold; font-size:15px; color:#18181b;">📖 车载语音制作与命名指南</span>
+                <button onclick="closeVoiceReadme()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#71717a; padding:4px 8px;">✕</button>
+            </div>
+            <pre id="readme-content" style="padding:14px 16px; margin:0; font-size:12px; color:#3f3f46; line-height:1.6; overflow-y:auto; white-space:pre-wrap; font-family:monospace; background:#fafafa; flex:1;"></pre>
+            <div style="padding:10px 16px; background:#f4f4f6; border-top:1px solid #e4e4e7; text-align:right;">
+                <button class="btn btn-primary" style="width:auto; padding:6px 22px; margin-top:0;" onclick="closeVoiceReadme()">我知道了</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---- 顶级 Tab 切换 ----
+        function switchMainTab(tabKey) {
+            const tabs = ['transfer', 'ops', 'voice'];
+            tabs.forEach(t => {
+                const btn = document.getElementById('btn-tab-' + t);
+                const content = document.getElementById('tab-' + t);
+                if (btn && content) {
+                    if (t === tabKey) {
+                        btn.classList.add('active');
+                        content.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                        content.classList.remove('active');
+                    }
+                }
+            });
+            if (tabKey === 'transfer') {
+                loadCarFiles();
+            }
+        }
+
+        // ---- OTA 直链卡片注入与复制 ----
+        const OTA_HAS_URL = "__OTA_HAS_URL__" === "1";
+        const OTA_URL = "__OTA_CAPTURE_URL__";
+        if (OTA_HAS_URL && OTA_URL) {
+            const otaCard = document.getElementById('ota-card');
+            const otaUrlEl = document.getElementById('ota-url');
+            if (otaCard) otaCard.style.display = '';
+            if (otaUrlEl) otaUrlEl.value = OTA_URL;
+        }
+        function copyOtaUrl() {
+            const el = document.getElementById('ota-url');
+            if (!el || !el.value) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(el.value).then(() => showMobileToast('📋 OTA 直链已复制到剪贴板')).catch(() => { el.select(); document.execCommand('copy'); });
+            } else {
+                el.select(); document.execCommand('copy'); showMobileToast('📋 OTA 直链已复制到剪贴板');
+            }
+        }
+
+        // ---- 顶部浮动文字提示 (Toast) ----
+        function showMobileToast(msg, isSuccess = true) {
+            var existing = document.getElementById('mobile-toast');
+            if (existing) existing.remove();
+
+            var toast = document.createElement('div');
+            toast.id = 'mobile-toast';
+            toast.innerText = msg;
+            toast.style.position = 'fixed';
+            toast.style.top = '36px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%) translateY(-20px)';
+            toast.style.background = isSuccess ? 'rgba(24, 24, 27, 0.94)' : 'rgba(190, 18, 60, 0.94)';
+            toast.style.backdropFilter = 'blur(10px)';
+            toast.style.webkitBackdropFilter = 'blur(10px)';
+            toast.style.color = '#ffffff';
+            toast.style.padding = '12px 24px';
+            toast.style.borderRadius = '9999px';
+            toast.style.fontSize = '14px';
+            toast.style.fontWeight = '700';
+            toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)';
+            toast.style.zIndex = '99999';
+            toast.style.pointerEvents = 'none';
+            toast.style.opacity = '0';
+            toast.style.transition = 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateX(-50%) translateY(0)';
+            }, 20);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(-20px)';
+                setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 250);
+            }, 2300);
+        }
+
+        // ---- 通用分片上传核心逻辑 ----
+        async function runChunkedUpload(file, options) {
+            const { targetDir, onProgress, onStatus } = options;
+            let chunkSize = 2 * 1024 * 1024;
+            if (file.size > 128 * 1024 * 1024) chunkSize = 8 * 1024 * 1024;
+            else if (file.size > 16 * 1024 * 1024) chunkSize = 4 * 1024 * 1024;
+
+            const totalChunks = Math.ceil(file.size / chunkSize);
+            let resolvedName = file.name;
+
+            let wakeLock = null;
+            if ('wakeLock' in navigator) {
+                try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+            }
+
+            const startTime = Date.now();
+            try {
+                for (let i = 0; i < totalChunks; i++) {
+                    const start = i * chunkSize;
+                    const end = Math.min(file.size, start + chunkSize);
+                    const chunk = file.slice(start, end);
+                    const isLast = (i === totalChunks - 1);
+
+                    const elapsedSec = Math.max(0.1, (Date.now() - startTime) / 1000);
+                    const speedMB = (start / 1024 / 1024 / elapsedSec).toFixed(1);
+                    const percent = Math.round((i / totalChunks) * 100);
+                    if (onStatus) onStatus(`正在传输: ${percent}% (${(start / 1024 / 1024).toFixed(1)}MB / ${(file.size / 1024 / 1024).toFixed(1)}MB, ${speedMB}MB/s)`);
+                    if (onProgress) onProgress(percent);
+
+                    const queryParams = new URLSearchParams({
+                        fileName: encodeURIComponent(resolvedName),
+                        chunkOffset: start.toString(),
+                        nameResolved: (i > 0 ? 'true' : 'false'),
+                        lastChunk: isLast ? 'true' : 'false',
+                        fileSize: file.size.toString()
+                    });
+                    if (targetDir) queryParams.set('targetDir', targetDir);
+
+                    const uploadUrl = '/api/upload_chunk?' + queryParams.toString();
+                    let chunkSuccess = false;
+                    let lastErr = '';
+
+                    for (let retry = 0; retry < 3; retry++) {
+                        try {
+                            if (retry > 0) {
+                                if (onStatus) onStatus(`网络波动，正在重试第 ${i + 1}/${totalChunks} 片 (${retry}/3)...`);
+                                await new Promise(r => setTimeout(r, 1000 * retry));
+                            }
+                            const res = await fetch(uploadUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/octet-stream',
+                                    'x-file-name': encodeURIComponent(resolvedName),
+                                    'x-chunk-offset': start.toString(),
+                                    'x-name-resolved': (i > 0 ? 'true' : 'false'),
+                                    'x-last-chunk': isLast ? 'true' : 'false',
+                                    'x-target-dir': targetDir || ''
+                                },
+                                body: chunk
+                            });
+                            if (!res.ok) throw new Error('HTTP ' + res.status);
+                            const chunkJson = await res.json();
+                            if (chunkJson && chunkJson.success) {
+                                if (chunkJson.savedName) resolvedName = chunkJson.savedName;
+                                chunkSuccess = true;
+                                break;
+                            } else {
+                                throw new Error((chunkJson && chunkJson.error) || '服务端分片校验失败');
+                            }
+                        } catch (err) {
+                            lastErr = err.message || '网络异常';
+                        }
+                    }
+
+                    if (!chunkSuccess) {
+                        throw new Error(`分片 ${i + 1}/${totalChunks} 失败 (${lastErr})`);
+                    }
+                    if (onProgress) onProgress(Math.round(((i + 1) / totalChunks) * 100));
+                }
+
+                if (onProgress) onProgress(100);
+                const totalSec = Math.max(0.1, (Date.now() - startTime) / 1000);
+                const avgSpeed = (file.size / 1024 / 1024 / totalSec).toFixed(1);
+                return { success: true, fileName: resolvedName, totalSec, avgSpeed };
+            } finally {
+                if (wakeLock) {
+                    try { await wakeLock.release(); } catch (e) {}
+                }
+            }
+        }
+
+        // ---- 1. 主页面普通文件上传 ----
+        async function uploadMainFile() {
+            const fileInput = document.getElementById('file-input');
+            if (!fileInput.files.length) { alert('请先选择文件'); return; }
+            const file = fileInput.files[0];
+
+            const pBar = document.getElementById('progress-bar');
+            const pFill = document.getElementById('progress-fill');
+            const pStatus = document.getElementById('upload-status');
+            const btnUpload = document.getElementById('btn-upload');
+
+            if (btnUpload) { btnUpload.disabled = true; btnUpload.innerText = '⏳ 正在高速传输中...'; }
+            pBar.style.display = 'block';
+            pFill.style.width = '0%';
+
+            try {
+                const res = await runChunkedUpload(file, {
+                    targetDir: '',
+                    onProgress: (p) => { pFill.style.width = p + '%'; },
+                    onStatus: (msg) => { pStatus.innerText = msg; }
+                });
+                const lower = res.fileName.toLowerCase();
+                let tip = `🎉 传输成功！已存至车机 /sdcard/Download/${res.fileName}`;
+                if (lower.endsWith('.apk')) {
+                    tip = `🎉 安装包传输成功！请前往车机「车载原生文件管理」直接点选安装。`;
+                }
+                pStatus.innerText = tip + ` (${res.totalSec.toFixed(1)}s, ${res.avgSpeed}MB/s)`;
+                showMobileToast('🎉 文件传输成功！');
+                loadCarFiles();
+            } catch (err) {
+                pStatus.innerText = '❌ 传输中断: ' + err.message;
+                alert('传输中断: ' + err.message);
+            } finally {
+                if (btnUpload) { btnUpload.disabled = false; btnUpload.innerText = '🚀 开始高速传输'; }
+            }
+        }
+
+        // ---- 2. 语音素材池单个音频直传 (.mp3) ----
+        async function handleVoiceAudioSelect(files) {
+            if (!files || !files.length) return;
+            const file = files[0];
+            const statusBox = document.getElementById('voice-audio-status');
+            const pFill = document.getElementById('voice-audio-pfill');
+            const percentEl = document.getElementById('voice-audio-percent');
+            const nameEl = document.getElementById('voice-audio-filename');
+            const tipEl = document.getElementById('voice-audio-tip');
+
+            statusBox.style.display = 'block';
+            nameEl.innerText = file.name;
+            pFill.style.width = '0%';
+            percentEl.innerText = '0%';
+            tipEl.innerText = '正在直传至车载语音素材池...';
+
+            try {
+                const res = await runChunkedUpload(file, {
+                    targetDir: 'custom_voice',
+                    onProgress: (p) => {
+                        pFill.style.width = p + '%';
+                        percentEl.innerText = p + '%';
+                    },
+                    onStatus: (msg) => { tipEl.innerText = msg; }
+                });
+                tipEl.innerText = `🎉 已直传至车载语音素材池！可在车机【声效设置】中直接绑定。`;
+                showMobileToast('🎶 音频已成功存入车载专属素材池！');
+            } catch (err) {
+                tipEl.innerText = '❌ 上传失败: ' + err.message;
+                alert('上传失败: ' + err.message);
+            }
+        }
+
+        // ---- 3. 整套语音主题包直传 (.zip) ----
+        async function handleVoiceZipSelect(files) {
+            if (!files || !files.length) return;
+            const file = files[0];
+            const statusBox = document.getElementById('voice-zip-status');
+            const pFill = document.getElementById('voice-zip-pfill');
+            const percentEl = document.getElementById('voice-zip-percent');
+            const nameEl = document.getElementById('voice-zip-filename');
+            const tipEl = document.getElementById('voice-zip-tip');
+
+            statusBox.style.display = 'block';
+            nameEl.innerText = file.name;
+            pFill.style.width = '0%';
+            percentEl.innerText = '0%';
+            tipEl.innerText = '正在上传语音主题包至车机...';
+
+            try {
+                const res = await runChunkedUpload(file, {
+                    targetDir: '',
+                    onProgress: (p) => {
+                        pFill.style.width = p + '%';
+                        percentEl.innerText = p + '%';
+                    },
+                    onStatus: (msg) => { tipEl.innerText = msg; }
+                });
+                tipEl.innerText = `🎉 语音主题包已就绪！前往车机【声效设置 ➔ 导入车载语音包】一键应用生效。`;
+                showMobileToast('📦 语音包已传输至车机！');
+                loadCarFiles();
+            } catch (err) {
+                tipEl.innerText = '❌ 上传失败: ' + err.message;
+                alert('上传失败: ' + err.message);
+            }
+        }
+
+        // ---- 远程指令下发 ----
+        async function sendAction(act, successMsg) {
+            try {
+                showMobileToast('⏳ 正在下发指令...');
+                const res = await fetch('/api/action', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: act })
+                });
+                const data = await res.json();
+                if (data && data.success === false) {
+                    showMobileToast('❌ 执行失败: ' + (data.error || data.message || '未知错误'), false);
+                } else {
+                    showMobileToast(successMsg || '⚡ 指令已成功发送至车机执行！');
+                }
+            } catch(e) {
+                showMobileToast('❌ 请求失败: ' + e.message, false);
+            }
+        }
+
+        function confirmHardReboot() {
+            if (confirm('【安全确认】确认远程重启车机系统？\n\n请确保车辆已安全停稳并挂入P挡！\n车机屏幕将立即黑屏重启。')) {
+                sendAction('hard_reboot', '⚡ 重启指令已下发，车机正在重启中...');
+            }
+        }
+
+        // ---- 调试指令推送 ----
+        async function pushAdbCmd() {
+            const cmd = document.getElementById('adb-cmd').value.trim();
+            if (!cmd) {
+                showMobileToast('⚠️ 请输入指令内容', false);
+                return;
+            }
+            const autoExec = document.getElementById('adb-auto-exec') ? document.getElementById('adb-auto-exec').checked : false;
+            try {
+                const res = await fetch('/api/push_cmd', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ cmd: cmd, auto_exec: autoExec })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showMobileToast(autoExec ? '⚡ 指令已推送至车机并自动执行' : '📤 指令已推送至车机待核对');
+                } else {
+                    showMobileToast('❌ 推送失败: ' + (data.message || '未知错误'), false);
+                }
+                document.getElementById('adb-cmd').value = '';
+            } catch(e) {
+                showMobileToast('❌ 网络异常: ' + e.message, false);
+            }
+        }
+
+        // ---- 车机文件管理 ----
+        async function loadCarFiles() {
+            const box = document.getElementById('car-files-box');
+            if (!box) return;
+            box.innerHTML = '<div style="text-align: center; color: #71717a; font-size: 12.5px; padding: 16px;">正在加载车机文件列表...</div>';
+            try {
+                const res = await fetch('/api/list_downloads');
+                const data = await res.json();
+                if (!data.files || data.files.length === 0) {
+                    box.innerHTML = '<div style="text-align: center; color: #71717a; font-size: 12.5px; padding: 16px;">车机下载目录暂无文件</div>';
+                    return;
+                }
+                let html = '';
+                data.files.forEach(f => {
+                    const lower = f.name.toLowerCase();
+                    let icon = '📄';
+                    if (lower.endsWith('.apk')) icon = '📦';
+                    else if (lower.endsWith('.zip') || lower.endsWith('.rar') || lower.endsWith('.7z')) icon = '🗜️';
+                    else if (lower.endsWith('.mp3') || lower.endsWith('.wav') || lower.endsWith('.m4a') || lower.endsWith('.ogg')) icon = '🎵';
+                    html += '<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid #f4f4f5;">' +
+                            '  <div style="overflow:hidden; margin-right:8px;">' +
+                            '    <div style="font-size:13.5px; font-weight:600; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + icon + ' ' + f.name + '</div>' +
+                            '    <div style="font-size:11.5px; color:#52525b; font-weight:500;">' + f.sizeFormatted + ' · ' + f.timeFormatted + '</div>' +
+                            '  </div>' +
+                            '  <a href="/api/download?file=' + encodeURIComponent(f.name) + '" download="' + f.name + '" style="text-decoration:none;"><button class="btn btn-secondary" style="width:auto; padding:5px 10px; font-size:12px; white-space:nowrap; margin-top:0;">⬇️ 下载</button></a>' +
+                            '</div>';
+                });
+                box.innerHTML = html;
+            } catch(e) {
+                box.innerHTML = '<div style="text-align: center; color: #be123c; font-size: 12.5px; padding: 16px;">加载失败: ' + e.message + '</div>';
+            }
+        }
+        loadCarFiles();
+
+        let lastUrlTap = 0;
+        function handleUrlTouch(e) {
+            const now = Date.now();
+            if (now - lastUrlTap < 350) {
+                clearPushUrl();
+            }
+            lastUrlTap = now;
+        }
+
+        function clearPushUrl() {
+            const input = document.getElementById('push-url');
+            if (input && input.value) {
+                input.value = '';
+                showMobileToast('🧹 输入框已清空');
+            }
+        }
+
+        async function pastePushUrl() {
+            const input = document.getElementById('push-url');
+            if (!input) return;
+            try {
+                if (navigator.clipboard && navigator.clipboard.readText) {
+                    const text = await navigator.clipboard.readText();
+                    if (text && text.trim()) {
+                        input.value = text.trim();
+                        showMobileToast('📋 已粘贴剪贴板内容');
+                        return;
+                    }
+                }
+                input.focus();
+                showMobileToast('💡 请长按输入框直接粘贴');
+            } catch (e) {
+                input.focus();
+                showMobileToast('💡 请长按输入框直接粘贴');
+            }
+        }
+
+        async function pushUrl() {
+            const url = document.getElementById('push-url').value.trim();
+            if (!url) { alert('请输入下载地址'); return; }
+            try {
+                const res = await fetch('/api/push_url', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ url: url }) });
+                const data = await res.json();
+                showMobileToast(data.message || '已成功推送到车机后台下载！');
+                document.getElementById('push-url').value = '';
+            } catch(e) { alert('推送失败: ' + e.message); }
+        }
+
+        // ---- 清理下载目录 ----
+        function cleanCarFiles() {
+            var modal = document.getElementById('clean-modal-mask');
+            if (modal) modal.style.display = 'flex';
+        }
+        function closeCleanModal() {
+            var modal = document.getElementById('clean-modal-mask');
+            if (modal) modal.style.display = 'none';
+        }
+        async function executeCleanMode(modeInt) {
+            closeCleanModal();
+            showMobileToast('⏳ 正在请求车机清理下载目录...');
+            try {
+                const res = await fetch('/api/clean_download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: modeInt })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showMobileToast(`🧹 清理完成！共清除 ${data.deleted || 0} 项，释放 ${data.freed_mb || '0.0'} MB 空间`);
+                    loadCarFiles();
+                } else {
+                    showMobileToast('❌ 清理失败：' + (data.error || '未知错误'), false);
+                }
+            } catch(e) {
+                showMobileToast('❌ 网络异常: ' + e.message, false);
+            }
+        }
+
+        // ---- README 制作指南 ----
+        async function showVoiceReadme() {
+            const modal = document.getElementById('readme-modal');
+            const content = document.getElementById('readme-content');
+            content.innerText = '正在加载说明文档...';
+            modal.style.display = 'flex';
+            try {
+                const res = await fetch('/api/voice_readme');
+                const text = await res.text();
+                content.innerText = text;
+            } catch(e) {
+                content.innerText = '加载说明文档失败: ' + e.message;
+            }
+        }
+        function closeVoiceReadme() {
+            document.getElementById('readme-modal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

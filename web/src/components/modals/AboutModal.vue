@@ -1,0 +1,322 @@
+<template>
+  <ModalWrapper 
+    :show="store.modals.about" 
+    title="关于与版本信息" 
+    :badge="isBeta ? 'BETA 测试版' : '正式版'"
+    maxWidthClass="max-w-[960px]"
+    @close="closeModal('about')"
+  >
+    <div class="flex flex-col space-y-5">
+      <!-- 品牌、版本与 5 连击彩蛋区域 -->
+      <div class="p-6 rounded-3xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center shadow-md relative">
+        <div class="flex items-center space-x-3 mb-2">
+          <span class="text-[26px] font-black text-car-text">缤越助手 (GeelyToolbox)</span>
+          <span 
+            @click="handleVersionClick"
+            class="text-[14px] px-3 py-1 rounded-full bg-car-card text-car-text font-black border border-car-border cursor-pointer hover:border-car-border-light transition-all shadow-sm select-none"
+          >
+            v{{ displayVersion }}
+          </span>
+          <span 
+            v-if="isBeta"
+            class="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 font-black tracking-wider shadow-sm flex items-center"
+          >
+            <StatusDot size="xxs" color="warnSoft" class="mr-1.5" :glow="false" pulse />
+            BETA
+          </span>
+        </div>
+
+        <span class="text-[14.5px] text-car-sub font-bold">
+          吉利缤越cool 2022款 专车打造，其他车型仅供测试
+        </span>
+
+        <!-- 真实屏幕参数采集与是否检测更新开关 -->
+        <div class="mt-3 pt-3 border-t border-car-border/60 w-full px-2 flex items-center justify-between">
+          <div class="flex flex-col items-start space-y-1">
+            <span class="text-[15.5px] text-car-sub font-bold">屏幕参数 (实车采集):</span>
+            <div class="flex flex-wrap items-center space-x-3 space-y-1 text-[14.5px] font-mono text-car-sub">
+              <span>分辨率 <b class="text-car-text">{{ screenInfo.size }}</b></span>
+              <span>DPI <b class="text-car-text">{{ screenInfo.dpi }}</b></span>
+              <span>应用边界 <b class="text-car-text">{{ screenInfo.appBounds }}</b></span>
+            </div>
+            <span v-if="screenInfo.wm" class="text-[13px] text-car-sub/80 font-mono truncate max-w-full">{{ screenInfo.wm }}</span>
+          </div>
+
+          <!-- 是否检测更新开关 (放置在屏幕参数右侧空位) -->
+          <div class="flex items-center space-x-2.5 pl-4 shrink-0">
+            <span class="text-[14.5px] font-bold text-car-text whitespace-nowrap">是否检测更新:</span>
+            <button 
+              @click="toggleAutoCheckUpdate"
+              :class="[
+                'h-[50px] px-5 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all shadow-sm flex items-center',
+                autoCheckUpdateEnabled 
+                  ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/20' 
+                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+              ]"
+            >
+              <StatusDot size="xs" :color="autoCheckUpdateEnabled ? 'success' : 'neutral'" class="mr-1.5" />
+              {{ autoCheckUpdateEnabled ? '开' : '关' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 内测特权卡片 (仅在测试通道激活时展示，切回正式通道自动隐藏) -->
+      <div v-if="isTester && useBetaChannel" class="p-5 rounded-2xl bg-car-card border border-car-border flex flex-col space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="text-[16.5px] font-black text-car-text flex items-center">
+              开发者与内测特权身份
+            </span>
+            <span class="text-[13.5px] text-car-sub font-bold mt-0.5">
+              已激活内测特权：支持在测试通道 (Beta) 与正式通道 (Release) 之间自由切换
+            </span>
+          </div>
+
+          <!-- 通道切换大按钮 -->
+          <button 
+            @click="toggleBetaChannel"
+            :class="[
+              'h-[52px] px-5 rounded-xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm flex items-center',
+              useBetaChannel 
+                ? 'bg-amber-500/20 border-amber-500 text-amber-400 ring-2 ring-amber-500/30' 
+                : 'bg-car-item border-car-border text-car-sub'
+            ]"
+          >
+            <span>{{ useBetaChannel ? '测试通道 (Beta)' : '正式通道 (Release)' }}</span>
+          </button>
+        </div>
+
+        <!-- 测试通道说明与独立检查按钮 -->
+        <div v-if="useBetaChannel" class="pt-3 border-t border-car-border/60 flex items-center justify-between">
+          <span class="text-[13.5px] text-amber-300 font-bold">
+            当前处于测试通道：将优先接收前沿功能实验固件包与内测修复。
+          </span>
+          <button 
+            @click="checkBetaUpdateManually"
+            class="h-[52px] px-6 rounded-2xl bg-car-item border-2 border-car-accent text-car-text font-black text-[16px] cursor-pointer hover:bg-car-card transition-all shrink-0"
+          >
+            检查测试通道更新
+          </button>
+        </div>
+      </div>
+
+      <!-- 永久免费承诺与安全免责底线 (原开屏说明完整常驻收纳) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <div class="p-4 rounded-2xl bg-car-card border border-car-border flex flex-col justify-between">
+          <div class="flex items-center space-x-2 text-[16px] font-black text-car-text">
+            <span class="text-emerald-400">🛡️</span>
+            <span>永久承诺 · 纯净免费</span>
+          </div>
+          <div class="text-[13.5px] text-car-sub font-bold leading-relaxed mt-2">
+            吉利缤越 COOL 2022 款专车打造，完全免费使用，承诺 <b class="text-car-text">0 广告、0 诱导充值、0 功能锁死</b>。
+          </div>
+        </div>
+        <div class="p-4 rounded-2xl bg-car-card border border-car-border flex flex-col justify-between">
+          <div class="flex items-center space-x-2 text-[16px] font-black text-car-text">
+            <span class="text-amber-400">⚠️</span>
+            <span>安全与免责底线</span>
+          </div>
+          <div class="text-[13.5px] text-car-sub font-bold leading-relaxed mt-2">
+            各项功能直接与底层车辆协议联动。请务必在 <b class="text-car-accent">安全停车（P 挡）</b> 下配置，行车途中严禁分心操作屏幕。
+          </div>
+        </div>
+      </div>
+
+      <!-- 赞赏与车友交流支持 -->
+      <div class="p-5 rounded-2xl bg-car-card border border-car-border flex items-center justify-between">
+        <div class="flex items-center space-x-5">
+          <div class="p-2 bg-white rounded-2xl shadow-md border border-car-border/40 shrink-0">
+            <img :src="rewardQrImg" alt="微信赞赏码" class="w-24 h-24 rounded-lg object-contain block" />
+          </div>
+          <div class="flex flex-col space-y-1">
+            <span class="text-[17px] font-black text-car-text flex items-center">
+              微信扫码赞赏支持与车友交流
+            </span>
+            <span class="text-[13.5px] text-car-sub font-bold">
+              业余个人开发与长期维护不易，若缤越助手对您有帮助，欢迎微信扫码赞赏支持！
+            </span>
+            <div class="flex items-center space-x-4 pt-1 text-[13.5px] text-car-sub">
+              <span>作者: <b class="text-car-text">迷失</b></span>
+              <span>车友交流 QQ 群: <b class="text-car-accent font-mono font-black text-[14.5px]">564654011</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <div class="flex items-center justify-end w-full">
+        <div class="flex items-center space-x-2.5">
+          <button 
+            @click="forceDownloadCurrent"
+            class="min-h-[54px] px-5 bg-car-item border-2 border-car-border rounded-xl text-car-sub hover:text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+          >
+            强制重新下载
+          </button>
+          <button 
+            @click="checkUpdate"
+            class="min-h-[54px] px-6 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[16.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md"
+          >
+            检查版本更新
+          </button>
+          <button 
+            @click="closeModal('about')"
+            class="min-h-[54px] px-6 bg-car-card border-2 border-car-border rounded-xl text-car-sub hover:text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm"
+          >
+            关闭
+          </button>
+        </div>
+      </div>
+    </template>
+  </ModalWrapper>
+</template>
+
+<script setup>
+import { ref, computed, watch } from 'vue';
+import ModalWrapper from './ModalWrapper.vue';
+import StatusDot from '../StatusDot.vue';
+import rewardQrImg from '../../assets/img_reward_code.webp';
+import { store, bridge, closeModal, openModal, showToast } from '../../store';
+
+const autoCheckUpdateEnabled = ref(localStorage.getItem('geely_auto_check_update') !== 'false');
+const isTester = ref(localStorage.getItem('geely_tester_unlocked') === 'true');
+const useBetaChannel = ref(localStorage.getItem('geely_use_beta_channel') === 'true');
+
+let versionClickCount = 0;
+let lastVersionClickTime = 0;
+
+const displayVersion = computed(() => store.deviceInfo.version || '1.6.1');
+const isBeta = computed(() => {
+  const ver = (store.deviceInfo.version || '').toLowerCase();
+  return ver.includes('beta');
+});
+
+// 真实屏幕参数：屏幕参数是固定值 —— 每次车机上电 Java 侧只采集一次（2026-09-18 用户定案），
+// 弹窗响应式跟进显示 + localStorage 缓存秒显（重启也能立刻显示上次参数），严禁反复轮询
+const SCREEN_CACHE_KEY = 'geely_screen_info_cache';
+const screenInfo = ref({
+  size: '读取中...',
+  dpi: '读取中...',
+  appBounds: '读取中...',
+  wm: ''
+});
+
+function applyScreenInfo(di) {
+  if (!di || !(di.screen_size || di.screen_real_size)) return false;
+  const next = {
+    size: di.screen_size && di.screen_size !== '未知'
+      ? di.screen_size
+      : (di.screen_real_size || '未知'),
+    dpi: di.screen_density || (di.screen_density_dpi ? di.screen_density_dpi + ' dpi' : '未知'),
+    appBounds: di.screen_app_bounds || '未知',
+    wm: di.screen_wm || ''
+  };
+  screenInfo.value = next;
+  try { localStorage.setItem(SCREEN_CACHE_KEY, JSON.stringify(next)); } catch (e) {}
+  return true;
+}
+
+applyScreenInfo(store.deviceInfo || {});
+if (screenInfo.value.size === '读取中...') {
+  // 启动采集尚未到达或失败：先回显上次上电的缓存（参数固定，直接秒显）
+  try {
+    const cached = JSON.parse(localStorage.getItem(SCREEN_CACHE_KEY) || 'null');
+    if (cached && cached.size) screenInfo.value = cached;
+  } catch (e) {}
+  // 首次运行且无任何缓存：兜底拉取一次（仍遵循「只抓一次」原则）
+  if (!localStorage.getItem(SCREEN_CACHE_KEY)) {
+    try {
+      const raw = bridge.call('getDeviceInfo');
+      if (raw) applyScreenInfo(typeof raw === 'string' ? JSON.parse(raw) : raw);
+    } catch (e) {}
+  }
+}
+watch(
+  () => [store.deviceInfo.screen_size, store.deviceInfo.screen_real_size, store.deviceInfo.screen_density, store.deviceInfo.screen_app_bounds],
+  () => { applyScreenInfo(store.deviceInfo || {}); }
+);
+
+function handleVersionClick() {
+  const now = Date.now();
+  if (now - lastVersionClickTime > 2000) {
+    versionClickCount = 0;
+  }
+  lastVersionClickTime = now;
+  versionClickCount++;
+
+  const REMAIN_THRESHOLD = 5;
+  const NEED_TOTAL = 11;
+  if (versionClickCount >= NEED_TOTAL) {
+    versionClickCount = 0;
+    isTester.value = true;
+    localStorage.setItem('geely_tester_unlocked', 'true');
+    useBetaChannel.value = true;
+    localStorage.setItem('geely_use_beta_channel', 'true');
+    showToast('👑 恭喜解锁内测特权！已开启高级定制手势与测试通道', 'success');
+  } else if (versionClickCount >= NEED_TOTAL - REMAIN_THRESHOLD) {
+    const left = NEED_TOTAL - versionClickCount;
+    showToast(`再点击 ${left} 次解锁内测特权`);
+  }
+}
+
+function toggleBetaChannel() {
+  if (useBetaChannel.value) {
+    useBetaChannel.value = false;
+    isTester.value = false;
+    localStorage.setItem('geely_use_beta_channel', 'false');
+    localStorage.setItem('geely_tester_unlocked', 'false');
+    showToast('已恢复为【正式通道 (Release)】，特权身份已锁定隐藏');
+  } else {
+    useBetaChannel.value = true;
+    localStorage.setItem('geely_use_beta_channel', 'true');
+    showToast('已切换至【测试通道 (Beta)】');
+  }
+}
+
+function checkBetaUpdateManually() {
+  showToast('正在向测试通道检索最新实验包...');
+  try {
+    bridge.call('checkBetaUpdate');
+  } catch (e) {}
+}
+
+function checkUpdate() {
+  showToast('正在检查最新版本...');
+  try {
+    if (useBetaChannel.value) {
+      bridge.call('checkBetaUpdate');
+    } else {
+      bridge.call('checkUpdate');
+    }
+  } catch (e) {}
+}
+
+function forceDownloadCurrent() {
+  showToast('正在获取云端完整安装包...');
+  try {
+    bridge.call('forceCheckUpdate', useBetaChannel.value);
+  } catch (e) {}
+}
+
+function toggleAutoCheckUpdate() {
+  autoCheckUpdateEnabled.value = !autoCheckUpdateEnabled.value;
+  localStorage.setItem('geely_auto_check_update', String(autoCheckUpdateEnabled.value));
+  showToast(autoCheckUpdateEnabled.value ? '已开启【自动检测更新】' : '已关闭【自动检测更新】');
+}
+
+function openReward() {
+  openModal('reward');
+}
+
+function handleGuideAction() {
+  closeModal('about');
+  if (isBeta.value) {
+    try {
+      window.dispatchEvent(new CustomEvent('open-geek-install-guide'));
+    } catch (e) {}
+  } else {
+    openModal('blogGuide');
+  }
+}
+</script>

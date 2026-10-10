@@ -1,0 +1,392 @@
+<template>
+  <div class="h-screen w-screen flex flex-col bg-transparent text-car-text font-sans overflow-hidden select-none transition-colors duration-200">
+    <!-- 液态玻璃柔光晕背景（纯氛围，不可交互） -->
+    <!-- 装饰光斑层已拔除：真机上 900px 级 blur 色块从屏幕底部探入，被用户识别为「下方浮出半截的未知窗口」；
+         且老 WebView 不支持 filter:blur 时会退化成硬边色块更吓人。纯装饰零功能，直接移除。 -->
+    <!-- 顶部状态栏 -->
+    <TopBar />
+
+    <!-- 主体：车规左右分栏 -->
+    <main class="flex-1 flex overflow-hidden">
+      <!-- 左侧大导航 -->
+      <Sidebar />
+
+      <!-- 右侧专属大舞台 (切换功能时自动回顶) -->
+      <!-- 右侧专属大舞台：开机即全量载入内存常驻，全生命周期绝不销毁重绘，任何大菜单切换 100% 物理 0ms 纯粹秒开 -->
+      <section ref="mainContent" class="flex-1 h-full overflow-y-auto p-5 flex flex-col">
+        <StoreView v-show="store.currentNav === 'store'" />
+        <WheelView v-show="store.currentNav === 'wheel'" />
+        <LinkView v-show="store.currentNav === 'link'" />
+        <BodyView v-show="store.currentNav === 'body'" />
+        <AudioView v-show="store.currentNav === 'audio'" />
+        <!-- 桌面悬浮已并入系统维护：floating 导航兼容跳转 -->
+        <SystemView v-show="store.currentNav === 'floating' || store.currentNav === 'system'" />
+        <InstallView v-show="store.currentNav === 'install'" />
+      </section>
+    </main>
+
+    <!-- 7 大 M3 车规级二级模态弹窗 -->
+    <AboutModal />
+    <BatteryModal />
+    <RewardModal />
+    <DeepToolsModal />
+    <QrCodeModal />
+    <BlogGuideModal />
+    <DialerModal />
+    <AppDetailModal />
+    <ConfirmModal />
+    <RabbitInstallModal />
+    <UpdateModal />
+    <LogModal />
+    <VoiceItemSettingsModal />
+    <OtaCaptureModal />
+    <AppSelectModal />
+    <CleanDownloadModal />
+    <VoiceThemeImportModal />
+    <AllAppsModal />
+    <OilPriceModal />
+
+    <!-- 极简 Toast 提示 -->
+    <transition name="fade">
+      <div 
+        v-if="store.toast.show" 
+        class="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-[var(--bg-card)] border px-6 py-2.5 rounded-full font-black text-[16.5px] shadow-2xl shadow-black/80 inline-flex items-center max-w-[86vw]"
+        :style="{ color: TOAST_SKINS[store.toast.kind]?.text, borderColor: TOAST_SKINS[store.toast.kind]?.border }"
+      >
+        <span class="w-2 h-2 rounded-full shrink-0 mr-2.5" :style="{ background: TOAST_SKINS[store.toast.kind]?.dot, boxShadow: `0 0 6px ${TOAST_SKINS[store.toast.kind]?.dot}` }"></span>
+        <span class="truncate">{{ store.toast.msg }}</span>
+      </div>
+    </transition>
+  </div>
+</template>
+
+<script setup>
+// Toast 四色语义皮肤 — 提示/成功/警告/错误全站统一，颜色一律取 --status-* 变量
+const TOAST_SKINS = {
+  info:    { text: 'var(--accent-gold-text)', border: 'rgba(212, 165, 74, 0.60)', dot: 'var(--accent-gold)' },
+  success: { text: 'var(--status-ok-fg, #6EE7B7)',  border: 'rgba(110, 231, 183, 0.55)', dot: 'var(--status-ok, #10B981)' },
+  warn:    { text: 'var(--status-warn-fg, #FCD34D)', border: 'rgba(252, 211, 77, 0.55)',  dot: 'var(--status-warn, #F59E0B)' },
+  error:   { text: 'var(--status-err-fg, #FDA4AF)',  border: 'rgba(253, 164, 175, 0.55)', dot: 'var(--status-err, #EF4444)' }
+};
+
+import { ref, watch, nextTick, onMounted } from 'vue';
+import TopBar from './components/TopBar.vue';
+import Sidebar from './components/Sidebar.vue'
+import StoreView from './views/StoreView.vue';
+import WheelView from './views/WheelView.vue';
+import LinkView from './views/LinkView.vue';
+import BodyView from './views/BodyView.vue';
+import AudioView from './views/AudioView.vue';
+import FloatingView from './views/FloatingView.vue';
+import InstallView from './views/InstallView.vue';
+import SystemView from './views/SystemView.vue';
+
+const mainContent = ref(null);
+
+// 切换左侧功能导航时，右侧主舞台无条件强制自动回顶，彻底消除翻页位置继承
+watch(() => store.currentNav, (nav) => {
+  recordActiveNav(nav);
+  nextTick(() => {
+    if (mainContent.value) {
+      mainContent.value.scrollTop = 0;
+    }
+  });
+});
+
+// 7 大 M3 二级模态弹窗组件
+import AboutModal from './components/modals/AboutModal.vue';
+import BatteryModal from './components/modals/BatteryModal.vue';
+import RewardModal from './components/modals/RewardModal.vue';
+import DeepToolsModal from './components/modals/DeepToolsModal.vue';
+import QrCodeModal from './components/modals/QrCodeModal.vue';
+import BlogGuideModal from './components/modals/BlogGuideModal.vue';
+import DialerModal from './components/modals/DialerModal.vue';
+import AppDetailModal from './components/modals/AppDetailModal.vue';
+import ConfirmModal from './components/modals/ConfirmModal.vue';
+import RabbitInstallModal from './components/modals/RabbitInstallModal.vue';
+import UpdateModal from './components/modals/UpdateModal.vue';
+import LogModal from './components/modals/LogModal.vue';
+import VoiceItemSettingsModal from './components/modals/VoiceItemSettingsModal.vue';
+import OtaCaptureModal from './components/modals/OtaCaptureModal.vue';
+import AppSelectModal from './components/modals/AppSelectModal.vue';
+import CleanDownloadModal from './components/modals/CleanDownloadModal.vue';
+import VoiceThemeImportModal from './components/modals/VoiceThemeImportModal.vue';
+import AllAppsModal from './components/modals/AllAppsModal.vue';
+import OilPriceModal from './components/modals/OilPriceModal.vue';
+
+import { store, bridge, openModal, recordActiveNav, refreshOilPrices, initOilPersistentSettings } from './store';
+import { initTheme, quickToggleDayNight } from './theme/themes';
+
+onMounted(() => {
+  // 从原生 SharedPreferences 同步油价常用省份持久化设置 (防覆盖升级丢失)
+  try { initOilPersistentSettings(); } catch (e) {}
+
+  // 根据配置恢复启动首屏落地页
+  try {
+    const startup = store.settings.startup_nav || 'wheel';
+    const validNavs = ['wheel', 'link', 'body', 'store', 'audio', 'install', 'system'];
+    if (startup === 'remember') {
+      const last = store.settings.last_active_nav;
+      if (last && validNavs.includes(last)) {
+        store.currentNav = last;
+      }
+    } else if (validNavs.includes(startup)) {
+      store.currentNav = startup;
+    }
+  } catch (e) {}
+
+  // 初始化液态玻璃主题（读持久化偏好 → 应用变量 → auto 模式每分钟跟随昼夜）
+  try { initTheme(); } catch (e) {}
+
+  // 兜底：JSBridge 可用时以车机系统日夜状态校正 auto 档的实际呈现
+  try {
+    const isNight = bridge.call('isNightMode');
+    if (typeof isNight === 'boolean' && store.theme.mode === 'auto') {
+      store.isNight = isNight;
+    }
+  } catch (e) {}
+
+  window.onSystemNightModeChanged = (isNight) => {
+    if (typeof isNight === 'boolean' && store.theme.mode === 'auto') {
+      store.isNight = isNight;
+    }
+  };
+
+  // 从 Java 原生拉取初始配置
+  try {
+    const rawAuto = bridge.call('getVehicleAutomationSettings');
+    if (rawAuto) {
+      const parsed = JSON.parse(rawAuto);
+      Object.assign(store.vehicleAuto, parsed);
+    }
+  } catch (e) {}
+
+  // 本地首次冷启动防护：仅当本地没有任何应用数据或油价缓存时，才在启动后轻量静默兜底拉取
+  try {
+    const hasCachedApps = !!localStorage.getItem('geely_cached_apps_json');
+    if (!hasCachedApps) {
+      setTimeout(() => {
+        try { bridge.call('refreshCloudApps'); } catch (e) {}
+      }, 4000);
+    }
+  } catch (e) {}
+
+  try {
+    const hasCachedOil = !!localStorage.getItem('geely_oil_cached_data');
+    if (!hasCachedOil) {
+      setTimeout(() => {
+        try { refreshOilPrices(false); } catch (e) {}
+      }, 4500);
+    }
+  } catch (e) {}
+
+  // 纯净极速启动：取消一切开屏强制阻断弹窗，冷启动 0ms 直达主界面
+  // 作者说明、永久免费承诺、车友群与赞赏已全部常驻于顶栏【关于】胶囊与关于模态框中
+
+  // 挂载 Java 状态与下载推送监听
+  window.updateDeviceInfo = (jsonStr) => {
+    try {
+      const data = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+      if (data.ip) store.deviceInfo.car_ip = data.ip;
+      if (data.dynamicCode) store.dynamicCode = data.dynamicCode;
+      if (data.dynamicCodePlus5) store.dynamicCodePlus5 = data.dynamicCodePlus5;
+      if (typeof data.whitelist === 'boolean') store.deviceInfo.whitelist = data.whitelist;
+      if (typeof data.version === 'string') store.deviceInfo.version = data.version;
+      if (typeof data.appstore_frozen === 'boolean') store.deviceInfo.appstore_frozen = data.appstore_frozen;
+      if (typeof data.multimedia_frozen === 'boolean') store.deviceInfo.multimedia_frozen = data.multimedia_frozen;
+      if (data.battery_volt) store.deviceInfo.battery_volt = data.battery_volt;
+      if (typeof data.autostart === 'boolean') store.settings.autostart = data.autostart;
+      if (typeof data.floating_enabled === 'boolean') store.settings.floating_pill = data.floating_enabled;
+      if (data.floating_display_mode) store.settings.floating_mode = data.floating_display_mode === 'code' ? 'code' : 'title';
+      if (typeof data.expert_rabbit_enabled === 'boolean') store.settings.expert_rabbit = data.expert_rabbit_enabled;
+      if (typeof data.silent_appstore_freeze === 'boolean') store.settings.silent_appstore_freeze = data.silent_appstore_freeze;
+      if (typeof data.adb_master_switch === 'boolean') store.deviceInfo.adb_master_switch = data.adb_master_switch;
+    } catch (e) {}
+  };
+
+  // 本地离线二级缓存：车载商城 0 延迟秒开，避免冷启动白屏或网络抖动
+  try {
+    const cachedApps = localStorage.getItem('geely_cached_apps_json');
+    if (cachedApps) {
+      const data = JSON.parse(cachedApps);
+      if (data && Array.isArray(data.apps)) {
+        store.apps = data.apps;
+      }
+    }
+  } catch (e) {}
+
+  window.applyCloudAppsJson = (jsonStr) => {
+    // 放入异步微延迟调度，绝不抢占用户在主界面的点击、切换等高优渲染事件
+    setTimeout(() => {
+      try {
+        const data = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+        if (data && Array.isArray(data.apps)) {
+          const mapped = data.apps.map(item => ({
+            ...item,
+            desc: item.description || item.desc || '',
+            description: item.description || item.desc || '',
+            url: item.download_url || item.url || '',
+            download_url: item.download_url || item.url || ''
+          }));
+          store.apps = mapped;
+          try {
+            localStorage.setItem('geely_cached_apps_json', JSON.stringify({ apps: mapped }));
+          } catch (e) {}
+        }
+      } catch (e) {}
+    }, 120);
+  };
+
+  window.updateDownloadProgress = (appId, percent, speed) => {
+    store.downloadProgress[appId] = { status: 'downloading', percent, speed };
+  };
+
+  window.updateDownloadPaused = (appId) => {
+    if (store.downloadProgress[appId]) {
+      store.downloadProgress[appId].status = 'paused';
+    } else {
+      store.downloadProgress[appId] = { status: 'paused', percent: 0, speed: '0 KB/s' };
+    }
+  };
+
+  window.updateDownloadCancelled = (appId) => {
+    delete store.downloadProgress[appId];
+  };
+
+  window.updateDownloadSuccess = (appId, savedFileName) => {
+    store.downloadProgress[appId] = { status: 'completed', percent: 100, speed: '0 KB/s', savedFileName };
+  };
+
+  window.updateDownloadError = (appId, errorMsg) => {
+    store.downloadProgress[appId] = { status: 'error', errorMsg, percent: 0 };
+  };
+
+  try {
+    const rawDev = bridge.call('getDeviceInfo');
+    if (rawDev) {
+      window.updateDeviceInfo(rawDev);
+    }
+  } catch (e) {}
+
+  // 开机与前台自动检测更新：依设置项执行，默认开启，静默不打扰
+  try {
+    const autoCheck = localStorage.getItem('geely_auto_check_update');
+    if (autoCheck !== 'false') {
+      const isBetaChannel = localStorage.getItem('geely_use_beta_channel') === 'true';
+      // 延迟至开机 30 秒网络与系统完全稳定后再静默检测更新，避开前台初始化黄金期
+      setTimeout(() => {
+        bridge.call('checkUpdateSilently', isBetaChannel);
+      }, 30000);
+    }
+  } catch (e) {}
+
+  // 行车巡航避峰静默同步：开机运行 6 分钟后（车主已平稳巡航，彻底避开上车操作与启动高峰），在后台单次静默同步最新商城应用与全国油价
+  try {
+    const CRUISING_SYNC_DELAY = 6 * 60 * 1000; // 6 分钟避峰单次静默同步
+    setTimeout(() => {
+      try {
+        bridge.call('refreshCloudApps');
+      } catch (e) {}
+      try {
+        refreshOilPrices(false);
+      } catch (e) {}
+    }, CRUISING_SYNC_DELAY);
+  } catch (e) {}
+});
+</script>
+
+<style>
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* 默认夜间豪华车规深色模式 (实体卡片高对比架构，彻底杜绝隐形错位感) */
+  --bg-main: #0B0F19;
+  --bg-panel: #101728;   /* 侧栏/顶栏实底面板，杜绝彩色光晕透垫文字发糊 */
+  --bg-card: #151C2C;          /* 提升卡片不透明实体度，轮廓分明 */
+  --bg-item: #1E273C;          /* 按钮底座与卡片底座形成层次分明对比 */
+  --bg-item-hover: #28334E;
+  --border-color: rgba(255, 255, 255, 0.16); /* 精致清晰的实体边框 */
+  --border-light: rgba(255, 255, 255, 0.28);
+  --text-main: #E2E8F0;        /* 柔和温润高级白，降低夜间刺眼过曝度，防视觉疲劳 */
+  --text-sub: #94A3B8;
+  --accent-gold: #F59E0B;
+  --modal-backdrop: rgba(11, 15, 25, 0.78);
+  /* 状态语义色（全站状态灯唯一真源，StatusDot 发光经变量自动换肤）。
+     非主题变量（palette 不下发、昼夜同值），不违反「:root 禁重复主题变量」铁律。 */
+  --status-ok: #10B981;
+  --status-warn: #F59E0B;
+  --status-err: #EF4444;
+  --status-info: #0EA5E9;
+  --term-bg: #0A0D12;
+  /* --bg-modal 的无脚本兜底值（首帧引导脚本正常时会被 <html> 内联值覆盖）。
+     仅作底色保险，绝非主题数据源——四套配色 × 昼夜的权威值一律在 theme/palette.js。 */
+  --bg-modal: rgba(20, 27, 43, 0.96);
+}
+
+/* 日间模式仅保留「弹窗遮罩」这一项变量。
+   铁律：严禁在此重复声明 --bg-main / --bg-card / --accent-gold 等任何主题变量！
+   theme/palette.js 已把四套配色（含昼夜）完整注入 <html> 内联样式，而 body 上的同名
+   声明会遮蔽 html 内联值并向下继承，导致白天模式下切换任何配色都毫无效果（黑夜正常）。
+   另：选择器只写 html.light —— 首帧引导脚本在 <head> 里执行，那时 body 还不存在，
+   挂在 body.light 上的规则会漏掉首帧；--modal-backdrop 可从 html 正常向下继承。 */
+html.light {
+  --modal-backdrop: rgba(20, 28, 44, 0.42);
+}
+
+body {
+  background: var(--bg-main) !important;
+}
+
+/* ===== 液态玻璃主题层 ===== */
+/* 玻璃卡片反射质感：顶部高光条 + 斜向折射光带（仅大卡片，小按钮不加防杂乱） */
+.bg-car-card {
+  position: relative;
+}
+.bg-car-card::before {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 1px;
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--glass-toplight), transparent);
+  filter: blur(1px);
+  opacity: .35;
+  pointer-events: none;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -10px);
+}
+
+/* 隐藏细小滚动条，保持车规整洁 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+/* 车规交互净化：车机 WebView 触摸点击后去除浏览器默认的虚线焦点框 (focus outline)，
+   杜绝按钮点击后残留一圈难看虚线。输入框已各自带 outline-none，此处统一兜底所有可聚焦元素。 */
+*:focus {
+  outline: none !important;
+}
+button:focus,
+button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+</style>
