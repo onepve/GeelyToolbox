@@ -41,10 +41,12 @@ def previous_tag(tag_name, repo_dir):
 
 
 _PREFIX_RE = re.compile(r"^[a-zA-Z]+(\([^)]*\))?:\s*")
+_INTERNAL_COMMIT_RE = re.compile(r"^(ci|chore|test|build)(\([^)]*\))?:\s*", re.IGNORECASE)
+_INTERNAL_KEYWORD_RE = re.compile(r"(硬哈希|门禁锁死|原子契约|卡片门禁|刚性锁死)", re.IGNORECASE)
 
 
 def commit_subjects(tag_name, repo_dir, prev_tag="", limit=12):
-    """取上一个 Tag 到当前 Tag 之间的提交主题（去掉 feat/fix 等英文前缀）。"""
+    """取上一个 Tag 到当前 Tag 之间的提交主题（去掉 feat/fix 等英文前缀），严格过滤内部 CI/门禁等工程提交。"""
     if prev_tag:
         rng = f"{prev_tag}..{tag_name}"
     else:
@@ -55,10 +57,13 @@ def commit_subjects(tag_name, repo_dir, prev_tag="", limit=12):
         out = _git(["log", "--no-merges", "--pretty=%s", "-n", str(limit)], repo_dir)
     subjects = []
     for line in out.splitlines():
-        s = line.strip()
-        if not s:
+        raw = line.strip()
+        if not raw:
             continue
-        s = _PREFIX_RE.sub("", s).strip()
+        # 过滤面向开发者的内部工程/CI/门禁提交，严禁泄露给车主
+        if _INTERNAL_COMMIT_RE.search(raw) or _INTERNAL_KEYWORD_RE.search(raw):
+            continue
+        s = _PREFIX_RE.sub("", raw).strip()
         if s and s not in subjects:
             subjects.append(s)
     return subjects[:limit]
