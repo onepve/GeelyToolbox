@@ -26,6 +26,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -36,6 +37,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import app.onepve.geelyconsole.hal.IVehiclePlatform;
 import app.onepve.geelyconsole.hal.VehiclePlatformFactory;
 import app.onepve.geelyconsole.server.WebServer;
 import app.onepve.geelyconsole.services.FloatingWindowService;
@@ -984,6 +986,38 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     } else {
                         Toast.makeText(MainActivity.this, "调起无障碍辅助设置失败", Toast.LENGTH_SHORT).show();
                     }
+                } else if ("open_dev_settings".equals(action)) {
+                    try {
+                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                        Toast.makeText(MainActivity.this, "已调起安卓系统开发者选项", Toast.LENGTH_SHORT).show();
+                    } catch (Throwable t) {
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                String cmd = "am start -a android.settings.APPLICATION_DEVELOPMENT_SETTINGS";
+                                AdbClient.execute(MainActivity.this, cmd);
+                            }
+                        }).start();
+                        Toast.makeText(MainActivity.this, "已指令调起开发者选项", Toast.LENGTH_SHORT).show();
+                    }
+                } else if ("open_wireless_settings".equals(action)) {
+                    try {
+                        Intent intent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                        Toast.makeText(MainActivity.this, "已调起网络与热点设置", Toast.LENGTH_SHORT).show();
+                    } catch (Throwable t) {
+                        try {
+                            Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
+                            Toast.makeText(MainActivity.this, "已调起无线网络设置", Toast.LENGTH_SHORT).show();
+                        } catch (Throwable t2) {
+                            Toast.makeText(MainActivity.this, "调起网络设置失败", Toast.LENGTH_SHORT).show();
+                        }
+                    }
                 } else if ("clean_memory".equals(action)) {
                     int killed = SystemUtils.cleanBackgroundProcesses(MainActivity.this);
                     Toast.makeText(MainActivity.this, "后台已清理，释放运行内存 (关闭非核心后台: " + killed + "个)", Toast.LENGTH_SHORT).show();
@@ -991,6 +1025,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
+                            IVehiclePlatform p = VehiclePlatformFactory.getPlatform(MainActivity.this);
+                            if (p != null && "L".equals(p.getPlatformCode())) {
+                                mainHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(MainActivity.this, "缤越L (Flyme Auto) 请直接在桌面长按或双指捏合添加/编辑卡片", Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                                return;
+                            }
                             String cmd = "am start -n ecarx.launcher3/ecarx.launcher3.widget.WidgetEditActivity";
                             AdbClient.AdbResult adbRes = AdbClient.execute(MainActivity.this, cmd);
                             if (adbRes == null || (!adbRes.success && (adbRes.output == null || adbRes.output.isEmpty()))) {

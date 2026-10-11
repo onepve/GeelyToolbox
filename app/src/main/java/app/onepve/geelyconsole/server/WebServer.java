@@ -202,8 +202,12 @@ public class WebServer {
         String dynamicCodePlus5 = SystemUtils.calculateDynamicCodePlus5();
         boolean lockActive = SystemUtils.isPlaceholderLockActive();
 
-        String json = String.format("{\"code\":\"%s\",\"code_plus5\":\"%s\",\"mem\":\"%s\",\"storage\":\"%s\",\"lock\":%b,\"status\":\"ok\"}",
-                dynamicCode, dynamicCodePlus5, mem.getSummary(), storage.getSummary(), lockActive);
+        app.onepve.geelyconsole.hal.IVehiclePlatform platform = app.onepve.geelyconsole.hal.VehiclePlatformFactory.getPlatform(context);
+        String pCode = platform != null ? platform.getPlatformCode() : "COOL";
+        String pName = platform != null ? platform.getPlatformName() : "吉利缤越";
+
+        String json = String.format("{\"code\":\"%s\",\"code_plus5\":\"%s\",\"mem\":\"%s\",\"storage\":\"%s\",\"lock\":%b,\"platform_code\":\"%s\",\"platform_name\":\"%s\",\"status\":\"ok\"}",
+                dynamicCode, dynamicCodePlus5, mem.getSummary(), storage.getSummary(), lockActive, pCode, pName);
 
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
         String header = "HTTP/1.1 200 OK\r\n" +
@@ -740,10 +744,16 @@ public class WebServer {
                 out.write(buf, 0, len);
             }
             String html = out.toString(StandardCharsets.UTF_8.name());
-            // 注入 OTA 捕获直链（空则不显示卡片；JS 端 __OTA_CAPTURE_URL__ 为 0/1 开关）
+            // 注入车型平台元数据与 OTA 捕获直链
+            app.onepve.geelyconsole.hal.IVehiclePlatform platform = app.onepve.geelyconsole.hal.VehiclePlatformFactory.getPlatform(context);
+            String pCode = platform != null ? platform.getPlatformCode() : "COOL";
+            String pName = platform != null ? platform.getPlatformName() : "吉利缤越";
+
             String otaUrl = SystemUtils.sOtaCaptureUrl != null ? SystemUtils.sOtaCaptureUrl : "";
             boolean hasOta = !otaUrl.isEmpty();
-            html = html.replace("__OTA_CAPTURE_URL__", otaUrl)
+            html = html.replace("__PLATFORM_CODE__", pCode)
+                       .replace("__PLATFORM_NAME__", pName)
+                       .replace("__OTA_CAPTURE_URL__", otaUrl)
                        .replace("__OTA_HAS_URL__", hasOta ? "1" : "0");
             return html;
         } catch (Exception e) {

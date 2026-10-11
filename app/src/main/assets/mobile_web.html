@@ -180,59 +180,114 @@
         .clean-option-title { font-size: 14px; font-weight: 700; color: #18181b; margin-bottom: 2px; }
         .clean-option-btn.danger .clean-option-title { color: #be123c; }
         .clean-option-desc { font-size: 12px; color: #71717a; font-weight: 500; }
+
+        .btn-icon {
+            width: 15px;
+            height: 15px;
+            vertical-align: -2.5px;
+            margin-right: 6px;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .badge-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+        .badge-pill-cool {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-color: #bfdbfe;
+        }
+        .badge-pill-l {
+            background: #ecfdf5;
+            color: #047857;
+            border-color: #a7f3d0;
+        }
+        .badge-pill-generic {
+            background: #f4f4f5;
+            color: #3f3f46;
+            border-color: #e4e4e7;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="title">手机无线快传与控制台</div>
-            <div class="subtitle">手机免插 U 盘极速直传 · 车机底层快捷运维</div>
+            <div class="title" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+                <span>缤越助手 · 车联控制台</span>
+            </div>
+            <div class="subtitle" style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
+                <span id="platform-badge" class="badge-pill badge-pill-cool">缤越平台</span>
+                <span>无线极速直传 · 远程快捷指令 · 车载个性音效</span>
+            </div>
         </div>
 
         <!-- 顶级一级导航：3 大核心场景 -->
         <div class="main-nav">
-            <button class="main-nav-btn active" id="btn-tab-transfer" onclick="switchMainTab('transfer')">🚀 极速快传</button>
-            <button class="main-nav-btn" id="btn-tab-ops" onclick="switchMainTab('ops')">⚡ 远程运维</button>
-            <button class="main-nav-btn" id="btn-tab-voice" onclick="switchMainTab('voice')">🎙️ 车载语音</button>
+            <button class="main-nav-btn active" id="btn-tab-transfer" onclick="switchMainTab('transfer')">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>极速快传
+            </button>
+            <button class="main-nav-btn" id="btn-tab-ops" onclick="switchMainTab('ops')">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>远程运维
+            </button>
+            <button class="main-nav-btn" id="btn-tab-voice" onclick="switchMainTab('voice')">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>车载语音
+            </button>
         </div>
 
         <!-- ==================== 场景 1: 极速快传 ==================== -->
         <div class="tab-content active" id="tab-transfer">
-            <!-- 卡片 1.1: 手机全格式文件秒传到车机 -->
+            <!-- 卡片 1.1: 手机文件直传车机 -->
             <div class="card">
                 <div class="card-title">
-                    <span>📁 手机文件高速秒传车机</span>
+                    <span style="display:flex; align-items:center;"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>手机文件高速直传车机</span>
                     <span class="status-badge" id="car-status">车机在线</span>
                 </div>
                 <div class="card-desc">
-                    免插 U 盘！手机本地任意文件秒级直传至车机 Download 目录。
+                    支持手机任意格式文件，极速直传至车机存储 Download 目录。
                 </div>
                 <div class="input-group">
                     <input type="file" id="file-input">
                 </div>
-                <button class="btn btn-primary" id="btn-upload" onclick="uploadMainFile()">🚀 开始高速传输</button>
+                <button class="btn btn-primary" id="btn-upload" onclick="uploadMainFile()">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>开始高速传输
+                </button>
                 <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
                 <div id="upload-status" style="font-size:12.5px; color:#52525b; margin-top:8px; text-align:center; word-break:break-all; font-weight:600;"></div>
             </div>
 
             <!-- 卡片 1.2: 推送外部下载链接 -->
             <div class="card">
-                <div class="card-title"><span>🚀 推送下载链接到车机</span></div>
-                <div class="card-desc">直接粘贴外部文件或 APK 直链，让车机在后台直接下载（支持双击输入框一键清空）。</div>
-                <div class="input-group" style="display:flex; gap: 10px; align-items:center;">
-                    <input type="text" id="push-url" placeholder="双击清空 · 粘贴或输入 https://..." style="flex:1;" ondblclick="clearPushUrl()" ontouchend="handleUrlTouch(event)">
-                    <button class="btn btn-secondary" style="width:auto; height:44px; padding:0 14px; margin-top:0; font-size:13.5px; white-space:nowrap;" onclick="pastePushUrl()">📋 粘贴</button>
+                <div class="card-title">
+                    <span style="display:flex; align-items:center;"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>推送外部下载链接到车机</span>
                 </div>
-                <button class="btn btn-secondary" onclick="pushUrl()">一键推送车机下载</button>
+                <div class="card-desc">粘贴外部文件或 APK 直链，由车机系统在后台自动下载。</div>
+                <div class="input-group" style="display:flex; gap: 10px; align-items:center;">
+                    <input type="text" id="push-url" placeholder="粘贴或输入下载直链 (https://...)" style="flex:1;" ondblclick="clearPushUrl()" ontouchend="handleUrlTouch(event)">
+                    <button class="btn btn-secondary" style="width:auto; height:44px; padding:0 14px; margin-top:0; font-size:13px; white-space:nowrap;" onclick="pastePushUrl()">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>粘贴
+                    </button>
+                </div>
+                <button class="btn btn-secondary" onclick="pushUrl()">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>推送到车机后台下载
+                </button>
             </div>
 
             <!-- 卡片 1.3: 车机已存文件库 -->
             <div class="card">
                 <div class="card-title">
-                    <span>📦 车机已存文件库 (/sdcard/Download/)</span>
+                    <span style="display:flex; align-items:center;"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></svg>车机存储文件库</span>
                     <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
-                        <button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin-top:0;" onclick="cleanCarFiles()">🧹 清理文件</button>
-                        <button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin-top:0;" onclick="loadCarFiles()">🔄 刷新</button>
+                        <button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin-top:0;" onclick="cleanCarFiles()">
+                            <svg class="btn-icon" style="margin-right:2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 4-2 2m4 4-2 2m2-8a2.83 2.83 0 0 0-4 0l-9 9a2.83 2.83 0 0 0 0 4l2 2a2.83 2.83 0 0 0 4 0l9-9a2.83 2.83 0 0 0 0-4z"/></svg>清理文件
+                        </button>
+                        <button class="btn btn-secondary" style="width:auto; padding:4px 10px; font-size:12px; margin-top:0;" onclick="loadCarFiles()">
+                            <svg class="btn-icon" style="margin-right:2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>刷新
+                        </button>
                     </div>
                 </div>
                 <div id="car-files-box" style="max-height: 240px; overflow-y: auto; border: 1px solid #e4e4e7; border-radius: 8px; background: #fafafa;">
@@ -240,32 +295,23 @@
                 </div>
             </div>
 
-            <div class="tip-box">
-                🛡️ <b>安装须知</b>：传到车机的安装包，统一在车机打开「车载原生文件管理」直接点击安装，最稳定安全。
+            <div class="tip-box" style="display:flex; align-items:flex-start; gap:8px;">
+                <svg class="btn-icon" style="width:18px; height:18px; margin-right:0; margin-top:1px; color:#d97706;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <div><b>安装安全提示</b>：传到车机的安装包，统一在车机打开「原生文件管理」直接点击安装，最稳定安全。</div>
             </div>
         </div>
 
         <!-- ==================== 场景 2: 远程运维 ==================== -->
         <div class="tab-content" id="tab-ops">
-            <!-- 卡片 2.1: 车机远程快捷指令 (10 大常用运维动作) -->
+            <!-- 卡片 2.1: 车机远程快捷指令 (车型智能动态适配) -->
             <div class="card">
                 <div class="card-title">
-                    <span>⚡ 车机远程快捷指令</span>
-                    <span class="status-badge" style="background:#f4f4f5; color:#3f3f46;">10项快捷运维</span>
+                    <span style="display:flex; align-items:center;"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>车机远程快捷指令</span>
+                    <span class="status-badge" id="ops-count-badge" style="background:#f4f4f5; color:#3f3f46;">10项快捷运维</span>
                 </div>
-                <div class="card-desc">手机一键直发车机执行，无需在车机屏幕上翻找：</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_files', '📁 已通知车机打开原生文件管理')">📁 原生文件管理</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_settings', '⚙️ 已通知车机打开系统设置')">⚙️ 安卓系统设置</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_apps', '📦 已通知车机打开应用列表')">📦 应用管理列表</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('open_accessibility', '♿ 已通知车机打开无障碍设置')">♿ 无障碍辅助设置</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('freeze_appstore', '❄️ 已发送冻结应用商店指令')">❄️ 冻结应用商店</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('unfreeze_appstore', '☀️ 已发送解冻应用商店指令')">☀️ 解冻应用商店</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('enable_whitelist', '🔓 已发送放行安装白名单指令')">🔓 放行安装白名单</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('clean_memory', '🧹 已通知车机释放后台内存')">🧹 释放后台内存</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600; background:#f0fdf4; border-color:#86efac; color:#15803d;" onclick="sendAction('edit_desktop_widget', '🧩 已下发调起车机桌面卡片编辑')">🧩 编辑桌面卡片</button>
-                    <!-- 柔和护眼警示风格，消除大红刺眼视觉 -->
-                    <button class="btn btn-warning-soft" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="confirmHardReboot()">⚡ 安全重启车机</button>
+                <div class="card-desc">点击指令即刻向车机系统下发并执行：</div>
+                <div id="ops-action-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <!-- 由 JavaScript 智能根据车型平台动态渲染 -->
                 </div>
             </div>
 
@@ -281,18 +327,22 @@
 
             <!-- 卡片 2.3: 远程 Shell 调试指令 -->
             <div class="card">
-                <div class="card-title"><span>💻 远程调试指令推送</span></div>
+                <div class="card-title">
+                    <span style="display:flex; align-items:center;"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>远程调试指令推送</span>
+                </div>
                 <div class="input-group">
-                    <label class="input-label">推送执行终端指令：</label>
+                    <label class="input-label">推送执行终端指令 (ADB / Shell)：</label>
                     <input type="text" id="adb-cmd" placeholder="例如: am start -n ...">
                 </div>
                 <div style="display:flex; align-items:center; margin-bottom:12px; gap:8px;">
                     <input type="checkbox" id="adb-auto-exec" style="width:18px; height:18px; accent-color:#2563eb; cursor:pointer;">
-                    <label for="adb-auto-exec" style="font-size:13px; font-weight:600; color:#27272a; cursor:pointer; user-select:none;">
-                        ⚡ 发送后自动在车机后台执行
+                    <label for="adb-auto-exec" style="font-size:13px; font-weight:600; color:#27272a; cursor:pointer; user-select:none; display:flex; align-items:center; gap:4px;">
+                        <svg class="btn-icon" style="width:14px; height:14px; color:#2563eb; margin-right:2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>发送后自动在车机后台执行
                     </label>
                 </div>
-                <button class="btn btn-secondary" style="margin-top:0;" onclick="pushAdbCmd()">📤 推送指令到车机</button>
+                <button class="btn btn-secondary" style="margin-top:0;" onclick="pushAdbCmd()">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>推送指令到车机
+                </button>
             </div>
         </div>
 
@@ -404,6 +454,132 @@
     </div>
 
     <script>
+        // ---- 车型平台感知与动态指令渲染 ----
+        const CURRENT_PLATFORM_CODE = "__PLATFORM_CODE__" || "COOL";
+        const CURRENT_PLATFORM_NAME = "__PLATFORM_NAME__" || "吉利缤越";
+
+        // SVG 矢量图标库
+        const ICONS = {
+            folder: '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+            settings: '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+            apps: '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>',
+            accessibility: '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="2"/><path d="m5 9 14 0"/><path d="m12 9 0 12"/><path d="m8 21 4-7 4 7"/></svg>',
+            freeze: '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="12" y1="7" x2="8" y2="3"/><line x1="12" y1="7" x2="16" y2="3"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="20" y1="8" x2="16" y2="12"/><line x1="20" y1="16" x2="16" y2="12"/><line x1="4" y1="8" x2="8" y2="12"/><line x1="4" y1="16" x2="8" y2="12"/></svg>',
+            unfreeze: '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
+            unlock: '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>',
+            clean: '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 4-2 2m4 4-2 2m2-8a2.83 2.83 0 0 0-4 0l-9 9a2.83 2.83 0 0 0 0 4l2 2a2.83 2.83 0 0 0 4 0l9-9a2.83 2.83 0 0 0 0-4z"/></svg>',
+            widget: '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.439 7.85c0-1.574-1.277-2.85-2.85-2.85a2.85 2.85 0 0 0-2.85 2.85v.149A2.85 2.85 0 0 1 10.889 10.85H7.74a2.85 2.85 0 0 0-2.85 2.85c0 1.573 1.277 2.85 2.85 2.85h.149a2.85 2.85 0 0 1 2.85 2.85v3.15a2.85 2.85 0 0 0 2.85 2.85c1.573 0 2.85-1.277 2.85-2.85v-.15a2.85 2.85 0 0 1 2.85-2.85h3.15a2.85 2.85 0 0 0 2.85-2.85c0-1.573-1.277-2.85-2.85-2.85h-.15a2.85 2.85 0 0 1-2.85-2.85v-3.15z"/></svg>',
+            reboot: '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#be123c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>',
+            dev: '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+            wireless: '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>'
+        };
+
+        function renderPlatformBadge(code) {
+            const badge = document.getElementById('platform-badge');
+            if (!badge) return;
+            badge.className = 'badge-pill';
+            if (code === 'L') {
+                badge.innerText = '缤越L · IHU624G';
+                badge.classList.add('badge-pill-l');
+            } else if (code === 'COOL') {
+                badge.innerText = '缤越COOL · IHU516G';
+                badge.classList.add('badge-pill-cool');
+            } else {
+                badge.innerText = '通用车规 · AOSP';
+                badge.classList.add('badge-pill-generic');
+            }
+        }
+
+        function renderOpsActionGrid(code) {
+            const grid = document.getElementById('ops-action-grid');
+            if (!grid) return;
+
+            let buttons = [];
+            if (code === 'L') {
+                // 缤越 L / IHU624G (Flyme Auto) 专属按钮组合 (10项)
+                buttons = [
+                    { icon: ICONS.folder, text: '原生文件管理', action: 'open_files', tip: '已通知车机打开原生文件管理' },
+                    { icon: ICONS.settings, text: '安卓系统设置', action: 'open_settings', tip: '已通知车机打开系统设置' },
+                    { icon: ICONS.apps, text: '已装应用管理', action: 'open_apps', tip: '已通知车机打开应用列表' },
+                    { icon: ICONS.accessibility, text: '无障碍服务设置', action: 'open_accessibility', tip: '已通知车机打开无障碍设置' },
+                    { icon: ICONS.dev, text: '开发者选项', action: 'open_dev_settings', tip: '已通知车机打开开发者选项' },
+                    { icon: ICONS.wireless, text: '网络与热点设置', action: 'open_wireless_settings', tip: '已通知车机打开无线网络与热点设置' },
+                    { icon: ICONS.unlock, text: '解除安装限制', action: 'enable_whitelist', tip: '已发送放行安装白名单指令' },
+                    { icon: ICONS.clean, text: '释放后台内存', action: 'clean_memory', tip: '已通知车机释放后台内存' },
+                    { icon: ICONS.widget, text: '桌面卡片指引', customClick: "showMobileToast('💡 缤越L (Flyme Auto) 请在桌面长按或双指捏合添加/编辑卡片')" },
+                    { icon: ICONS.reboot, text: '安全重启车机', isReboot: true }
+                ];
+            } else if (code === 'COOL') {
+                // 缤越 COOL / IHU516G (E02) 专属按钮组合 (10项)
+                buttons = [
+                    { icon: ICONS.folder, text: '原生文件管理', action: 'open_files', tip: '已通知车机打开原生文件管理' },
+                    { icon: ICONS.settings, text: '安卓系统设置', action: 'open_settings', tip: '已通知车机打开系统设置' },
+                    { icon: ICONS.apps, text: '已装应用管理', action: 'open_apps', tip: '已通知车机打开应用列表' },
+                    { icon: ICONS.accessibility, text: '无障碍服务设置', action: 'open_accessibility', tip: '已通知车机打开无障碍设置' },
+                    { icon: ICONS.freeze, text: '冻结应用商店', action: 'freeze_appstore', tip: '已发送冻结应用商店指令' },
+                    { icon: ICONS.unfreeze, text: '解冻应用商店', action: 'unfreeze_appstore', tip: '已发送解冻应用商店指令' },
+                    { icon: ICONS.unlock, text: '解除安装限制', action: 'enable_whitelist', tip: '已发送放行安装白名单指令' },
+                    { icon: ICONS.clean, text: '释放后台内存', action: 'clean_memory', tip: '已通知车机释放后台内存' },
+                    { icon: ICONS.widget, text: '编辑桌面卡片', action: 'edit_desktop_widget', tip: '已下发调起车机桌面卡片编辑', highlightGreen: true },
+                    { icon: ICONS.reboot, text: '安全重启车机', isReboot: true }
+                ];
+            } else {
+                // 通用车规平台 (GENERIC) 组合 (10项)
+                buttons = [
+                    { icon: ICONS.folder, text: '原生文件管理', action: 'open_files', tip: '已通知车机打开原生文件管理' },
+                    { icon: ICONS.settings, text: '安卓系统设置', action: 'open_settings', tip: '已通知车机打开系统设置' },
+                    { icon: ICONS.apps, text: '已装应用管理', action: 'open_apps', tip: '已通知车机打开应用列表' },
+                    { icon: ICONS.accessibility, text: '无障碍服务设置', action: 'open_accessibility', tip: '已通知车机打开无障碍设置' },
+                    { icon: ICONS.dev, text: '开发者选项', action: 'open_dev_settings', tip: '已通知车机打开开发者选项' },
+                    { icon: ICONS.wireless, text: '网络与热点设置', action: 'open_wireless_settings', tip: '已通知车机打开网络设置' },
+                    { icon: ICONS.unlock, text: '解除安装限制', action: 'enable_whitelist', tip: '已发送放行安装白名单指令' },
+                    { icon: ICONS.clean, text: '释放后台内存', action: 'clean_memory', tip: '已通知车机释放后台内存' },
+                    { icon: ICONS.widget, text: '桌面卡片指引', customClick: "showMobileToast('💡 请在车机桌面长按添加卡片')" },
+                    { icon: ICONS.reboot, text: '安全重启车机', isReboot: true }
+                ];
+            }
+
+            let html = '';
+            buttons.forEach(b => {
+                if (b.isReboot) {
+                    html += `<button class="btn btn-warning-soft" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600; display:flex; align-items:center; justify-content:center;" onclick="confirmHardReboot()">${b.icon}${b.text}</button>`;
+                } else if (b.customClick) {
+                    let style = 'margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600; display:flex; align-items:center; justify-content:center;';
+                    if (b.highlightGreen) {
+                        style += ' background:#f0fdf4; border-color:#86efac; color:#15803d;';
+                    }
+                    html += `<button class="btn btn-secondary" style="${style}" onclick="${b.customClick}">${b.icon}${b.text}</button>`;
+                } else {
+                    let style = 'margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600; display:flex; align-items:center; justify-content:center;';
+                    if (b.highlightGreen) {
+                        style += ' background:#f0fdf4; border-color:#86efac; color:#15803d;';
+                    }
+                    html += `<button class="btn btn-secondary" style="${style}" onclick="sendAction('${b.action}', '${b.tip}')">${b.icon}${b.text}</button>`;
+                }
+            });
+            grid.innerHTML = html;
+        }
+
+        renderPlatformBadge(CURRENT_PLATFORM_CODE);
+        renderOpsActionGrid(CURRENT_PLATFORM_CODE);
+
+        // 异步向车机状态接口拉取实时平台状态并核验
+        async function fetchPlatformStatus() {
+            try {
+                const res = await fetch('/api/status');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.platform_code) {
+                        renderPlatformBadge(data.platform_code);
+                        renderOpsActionGrid(data.platform_code);
+                    }
+                }
+            } catch (e) {
+                // 静态回退使用注入的 CURRENT_PLATFORM_CODE
+            }
+        }
+        fetchPlatformStatus();
+
         // ---- 顶级 Tab 切换 ----
         function switchMainTab(tabKey) {
             const tabs = ['transfer', 'ops', 'voice'];
