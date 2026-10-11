@@ -263,6 +263,7 @@
                     <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('unfreeze_appstore', '☀️ 已发送解冻应用商店指令')">☀️ 解冻应用商店</button>
                     <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('enable_whitelist', '🔓 已发送放行安装白名单指令')">🔓 放行安装白名单</button>
                     <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('clean_memory', '🧹 已通知车机释放后台内存')">🧹 释放后台内存</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600; grid-column: span 2; background:#f0fdf4; border-color:#86efac; color:#15803d;" onclick="sendAction('edit_desktop_widget', '🧩 已下发调起车机桌面卡片编辑')">🧩 编辑桌面卡片</button>
                     <!-- 柔和护眼警示风格，消除大红刺眼视觉 -->
                     <button class="btn btn-warning-soft" style="margin-top:0; padding:10px 6px; font-size:13px; grid-column: span 2;" onclick="confirmHardReboot()">⚡ 安全重启车机系统</button>
                 </div>
@@ -284,6 +285,11 @@
                 <div class="input-group">
                     <label class="input-label">推送执行终端指令：</label>
                     <input type="text" id="adb-cmd" placeholder="例如: am start -n ...">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <button class="btn btn-secondary" style="margin-top:0; padding:6px 10px; font-size:12px; background:#f8fafc; border-color:#cbd5e1; color:#334155; width:auto; display:inline-block;" onclick="fillAndPushWidgetEdit()">
+                        🧩 填入并执行: 编辑桌面卡片
+                    </button>
                 </div>
                 <div style="display:flex; align-items:center; margin-bottom:12px; gap:8px;">
                     <input type="checkbox" id="adb-auto-exec" style="width:18px; height:18px; accent-color:#2563eb; cursor:pointer;">
@@ -704,6 +710,14 @@
         }
 
         // ---- 调试指令推送 ----
+        function fillAndPushWidgetEdit() {
+            const input = document.getElementById('adb-cmd');
+            if (input) input.value = 'am start -n ecarx.launcher3/ecarx.launcher3.widget.WidgetEditActivity';
+            const autoExec = document.getElementById('adb-auto-exec');
+            if (autoExec) autoExec.checked = true;
+            pushAdbCmd();
+        }
+
         async function pushAdbCmd() {
             const cmd = document.getElementById('adb-cmd').value.trim();
             if (!cmd) {

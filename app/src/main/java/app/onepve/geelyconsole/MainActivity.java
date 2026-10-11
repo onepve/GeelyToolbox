@@ -987,6 +987,23 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 } else if ("clean_memory".equals(action)) {
                     int killed = SystemUtils.cleanBackgroundProcesses(MainActivity.this);
                     Toast.makeText(MainActivity.this, "后台已清理，释放运行内存 (关闭非核心后台: " + killed + "个)", Toast.LENGTH_SHORT).show();
+                } else if ("edit_desktop_widget".equals(action)) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            String cmd = "am start -n ecarx.launcher3/ecarx.launcher3.widget.WidgetEditActivity";
+                            AdbClient.AdbResult adbRes = AdbClient.execute(MainActivity.this, cmd);
+                            if (adbRes == null || (!adbRes.success && (adbRes.output == null || adbRes.output.isEmpty()))) {
+                                SystemUtils.executeShell(cmd);
+                            }
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(MainActivity.this, "已调起车机桌面卡片编辑界面", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                    }).start();
                 } else if ("freeze_appstore".equals(action)) {
                     new Thread(new Runnable() {
                         @Override
@@ -1045,10 +1062,30 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
+                if (autoExec) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            String cmd = command != null ? command.trim() : "";
+                            if (cmd.startsWith("adb shell ")) {
+                                cmd = cmd.substring("adb shell ".length()).trim();
+                            } else if (cmd.startsWith("adb ")) {
+                                cmd = cmd.substring("adb ".length()).trim();
+                            }
+                            if (!cmd.isEmpty()) {
+                                AdbClient.AdbResult adbRes = AdbClient.execute(MainActivity.this, cmd);
+                                if (adbRes == null || (!adbRes.success && (adbRes.output == null || adbRes.output.isEmpty()))) {
+                                    SystemUtils.executeShell(cmd);
+                                }
+                            }
+                        }
+                    }).start();
+                }
+
                 if (webView != null) {
                     webView.evaluateJavascript("if(window.onAdbCommandPushedFromPhone) window.onAdbCommandPushedFromPhone(" + JSONObject.quote(command) + ", " + autoExec + ");", null);
                 }
-                String tip = autoExec ? "收到手机推送的 ADB 指令，已立即自动执行！" : "收到手机推送的 ADB 指令，已自动填入，请核对后执行！";
+                String tip = autoExec ? "收到手机推送的 ADB 指令，已自动执行！" : "收到手机推送的 ADB 指令，已自动填入，请核对后执行！";
                 Toast.makeText(MainActivity.this, tip, Toast.LENGTH_SHORT).show();
             }
         });
