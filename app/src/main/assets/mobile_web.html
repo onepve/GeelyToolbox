@@ -286,11 +286,6 @@
                     <label class="input-label">推送执行终端指令：</label>
                     <input type="text" id="adb-cmd" placeholder="例如: am start -n ...">
                 </div>
-                <div style="margin-bottom: 10px;">
-                    <button class="btn btn-secondary" style="margin-top:0; padding:6px 10px; font-size:12px; background:#f8fafc; border-color:#cbd5e1; color:#334155; width:auto; display:inline-block;" onclick="fillAndPushWidgetEdit()">
-                        🧩 填入并执行: 编辑桌面卡片
-                    </button>
-                </div>
                 <div style="display:flex; align-items:center; margin-bottom:12px; gap:8px;">
                     <input type="checkbox" id="adb-auto-exec" style="width:18px; height:18px; accent-color:#2563eb; cursor:pointer;">
                     <label for="adb-auto-exec" style="font-size:13px; font-weight:600; color:#27272a; cursor:pointer; user-select:none;">
@@ -710,14 +705,6 @@
         }
 
         // ---- 调试指令推送 ----
-        function fillAndPushWidgetEdit() {
-            const input = document.getElementById('adb-cmd');
-            if (input) input.value = 'am start -n ecarx.launcher3/ecarx.launcher3.widget.WidgetEditActivity';
-            const autoExec = document.getElementById('adb-auto-exec');
-            if (autoExec) autoExec.checked = true;
-            pushAdbCmd();
-        }
-
         async function pushAdbCmd() {
             const cmd = document.getElementById('adb-cmd').value.trim();
             if (!cmd) {
