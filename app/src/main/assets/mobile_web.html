@@ -247,11 +247,11 @@
 
         <!-- ==================== 场景 2: 远程运维 ==================== -->
         <div class="tab-content" id="tab-ops">
-            <!-- 卡片 2.1: 车机远程快捷指令 (9 大常用运维动作) -->
+            <!-- 卡片 2.1: 车机远程快捷指令 (10 大常用运维动作) -->
             <div class="card">
                 <div class="card-title">
                     <span>⚡ 车机远程快捷指令</span>
-                    <span class="status-badge" style="background:#f4f4f5; color:#3f3f46;">9项快捷运维</span>
+                    <span class="status-badge" style="background:#f4f4f5; color:#3f3f46;">10项快捷运维</span>
                 </div>
                 <div class="card-desc">手机一键直发车机执行，无需在车机屏幕上翻找：</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
@@ -263,9 +263,9 @@
                     <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('unfreeze_appstore', '☀️ 已发送解冻应用商店指令')">☀️ 解冻应用商店</button>
                     <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('enable_whitelist', '🔓 已发送放行安装白名单指令')">🔓 放行安装白名单</button>
                     <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="sendAction('clean_memory', '🧹 已通知车机释放后台内存')">🧹 释放后台内存</button>
-                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600; grid-column: span 2; background:#f0fdf4; border-color:#86efac; color:#15803d;" onclick="sendAction('edit_desktop_widget', '🧩 已下发调起车机桌面卡片编辑')">🧩 编辑桌面卡片</button>
+                    <button class="btn btn-secondary" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600; background:#f0fdf4; border-color:#86efac; color:#15803d;" onclick="sendAction('edit_desktop_widget', '🧩 已下发调起车机桌面卡片编辑')">🧩 编辑桌面卡片</button>
                     <!-- 柔和护眼警示风格，消除大红刺眼视觉 -->
-                    <button class="btn btn-warning-soft" style="margin-top:0; padding:10px 6px; font-size:13px; grid-column: span 2;" onclick="confirmHardReboot()">⚡ 安全重启车机系统</button>
+                    <button class="btn btn-warning-soft" style="margin-top:0; padding:10px 6px; font-size:12.5px; font-weight:600;" onclick="confirmHardReboot()">⚡ 安全重启车机</button>
                 </div>
             </div>
 
