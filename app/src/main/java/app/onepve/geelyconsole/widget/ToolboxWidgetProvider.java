@@ -182,7 +182,11 @@ public class ToolboxWidgetProvider extends AppWidgetProvider {
         String dynCode = SystemUtils.calculateDynamicCode();
         views.setTextViewText(R.id.widget_btn_engineer, "⚡ 暗号 " + dynCode);
 
-        // 5. 点击事件绑定
+        // 5. 今日油价摘要显示
+        String oilSummary = app.onepve.geelyconsole.utils.OilPriceHelper.getCachedOilSummary(context);
+        views.setTextViewText(R.id.widget_oil_price, oilSummary);
+
+        // 6. 点击事件绑定
         // 5.1 点击标题打开主程序
         Intent mainIntent = new Intent(context, MainActivity.class);
         mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
