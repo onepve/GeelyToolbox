@@ -31,6 +31,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import app.onepve.geelyconsole.R;
+import app.onepve.geelyconsole.hal.IVehiclePlatform;
+import app.onepve.geelyconsole.hal.VehiclePlatformFactory;
+import app.onepve.geelyconsole.hal.platform.BinyueLPlatform;
 import app.onepve.geelyconsole.utils.AdbClient;
 import app.onepve.geelyconsole.utils.AppLogger;
 import app.onepve.geelyconsole.utils.DoorStateManager;
@@ -102,7 +105,7 @@ public class VehicleAutomationService extends Service {
 
     public static volatile int lastGearPos = -1;
     public static volatile int lastDriveMode = -1;
-    private int lastPowerMode = -1;
+    public volatile int lastPowerMode = -1;
     private int lastKeyState = -1;
     private int lastEngineState = -1;
     public static volatile int currentSpeedKmH = 0;
@@ -155,6 +158,14 @@ public class VehicleAutomationService extends Service {
 
     public static VehicleAutomationService getInstance() {
         return instance;
+    }
+
+    public DoorStateManager getDoorStateManager() {
+        return this.doorStateManager;
+    }
+
+    public TrunkStateManager getTrunkStateManager() {
+        return this.trunkStateManager;
     }
 
     private static volatile VehicleAutomationService instance;
@@ -323,7 +334,13 @@ public class VehicleAutomationService extends Service {
         }
 
         registerPowerStateReceiver();
-        startLogcatReader();
+        IVehiclePlatform currentPlatform = VehiclePlatformFactory.getPlatform(this);
+        if (currentPlatform instanceof BinyueLPlatform) {
+            AppLogger.i("车身联动", "检测到缤越 L (IHU624G / Flyme Auto)，通过 HAL 启动 VHAL 感知驱动 (免 logcat)");
+            currentPlatform.getSensorAdapter(this).startListening(this, null);
+        } else {
+            startLogcatReader();
+        }
         registerEcarxKeyReceiver();
         startMediaMonitor();
         EasMediaBridge.getInstance(this); // 确保蓝牙 A2DP 连接/推流监听与原车音频通道常驻就绪
@@ -1114,7 +1131,7 @@ public class VehicleAutomationService extends Service {
         return true;
     }
 
-    private void handleGearSignal(final int gear) {
+    public void handleGearSignal(final int gear) {
         // 核心修复：等红绿灯发动机自动启停（Start-Stop）防御！
         // 等红绿灯踩刹车时，发动机停转、发电机停充（电压落回12V），但车辆并未真正熄火下电（lastPowerMode仍为ON且屏幕点亮）。
         // 若当前已经处于前进挡/行车挡，严禁重置挡位状态机，否则绿灯松刹车发动机重启会把D挡误当成点火从P起步而爆音误报！
@@ -1470,6 +1487,9 @@ public class VehicleAutomationService extends Service {
             } catch (Exception ignored) {}
             ecarxKeyReceiver = null;
         }
+        try {
+            VehiclePlatformFactory.getPlatform(this).getSensorAdapter(this).stopListening();
+        } catch (Throwable ignored) {}
         try {
             IdleScreensaverManager.stop();
         } catch (Throwable ignored) {}

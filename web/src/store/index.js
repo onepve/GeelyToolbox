@@ -35,7 +35,9 @@ export const store = reactive({
     appstore_frozen: false,
     battery_volt: 0,
     car_ip: '127.0.0.1',
-    adb_master_switch: true
+    adb_master_switch: true,
+    platform_code: 'binyue_cool_e02',
+    platform_name: '吉利缤越 COOL'
   },
   doors: {
     fl: -1,

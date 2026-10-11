@@ -5,6 +5,7 @@ import android.os.Build;
 import android.util.Log;
 
 import app.onepve.geelyconsole.hal.platform.BinyueCoolPlatform;
+import app.onepve.geelyconsole.hal.platform.BinyueLPlatform;
 import app.onepve.geelyconsole.hal.platform.GenericAospPlatform;
 
 /**
@@ -41,7 +42,14 @@ public class VehiclePlatformFactory {
             String fingerprint = Build.FINGERPRINT != null ? Build.FINGERPRINT.toLowerCase() : "";
             String manufacturer = Build.MANUFACTURER != null ? Build.MANUFACTURER.toLowerCase() : "";
 
-            // 1. 缤越 COOL / 亿咖通 E02 / IHU516G 特征检测
+            // 1. 缤越 L / IHU624G / 魅族 Flyme Auto 优先判定
+            if (AndroidCarClient.isBinyueLPlatform(context) || model.contains("IHU624")
+                    || model.contains("COOLRAY L") || model.contains("BINYUE L")) {
+                Log.i(TAG, "Detected Geely Binyue L / Coolray L (IHU624G / Flyme Auto) Platform");
+                return new BinyueLPlatform();
+            }
+
+            // 2. 缤越 COOL / 亿咖通 E02 / IHU516G 特征检测
             if (model.contains("SX11") || model.contains("IHU516") || fingerprint.contains("ecarx")
                     || manufacturer.contains("ecarx") || fingerprint.contains("geely")) {
                 Log.i(TAG, "Detected Geely Binyue COOL (E02 / IHU516G) Platform");
@@ -51,7 +59,7 @@ public class VehiclePlatformFactory {
             Log.w(TAG, "Platform detection fallback due to: " + t.getMessage());
         }
 
-        // 2. 默认兜底为通用 AOSP 车规平台
+        // 3. 默认兜底为通用 AOSP 车规平台
         Log.i(TAG, "Fallback to Generic AOSP Vehicle Platform");
         return new GenericAospPlatform();
     }

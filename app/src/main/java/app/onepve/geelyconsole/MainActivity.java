@@ -36,6 +36,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import app.onepve.geelyconsole.hal.VehiclePlatformFactory;
 import app.onepve.geelyconsole.server.WebServer;
 import app.onepve.geelyconsole.services.FloatingWindowService;
 import app.onepve.geelyconsole.services.VehicleAutomationService;
@@ -729,6 +730,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("expert_rabbit_enabled", prefs.getBoolean("expert_rabbit_theme_enabled", false));
                     obj.put("has_system_settings", SystemUtils.isPackageInstalled(MainActivity.this, "com.android.settings"));
                     obj.put("is_car_device", isCarDevice(MainActivity.this));
+                    try {
+                        obj.put("platform_code", VehiclePlatformFactory.getPlatform(MainActivity.this).getPlatformCode());
+                        obj.put("platform_name", VehiclePlatformFactory.getPlatform(MainActivity.this).getPlatformName());
+                    } catch (Throwable ignored) {}
                     obj.put("logPath", AppLogger.getLogFilePath());
                     obj.put("logSize", AppLogger.getLogFileSizeStr());
                     // 真实屏幕参数：每次启动只采一次，之后复用缓存（修「屏幕采集」日志无限刷屏）
