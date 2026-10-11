@@ -192,6 +192,32 @@ public class VehicleAutomationService extends Service {
         }
     }
 
+    private void notifyWidgetUpdate() {
+        try {
+            float volt = latestBatteryVoltage > 0 ? latestBatteryVoltage : 13.1f;
+            String gearName = "P";
+            if (gearStateMachine != null) {
+                int g = gearStateMachine.getGear();
+                switch (g) {
+                    case 2: gearName = "D"; break;
+                    case 3: gearName = "N"; break;
+                    case 4: gearName = "R"; break;
+                    case 5: gearName = "P"; break;
+                }
+            }
+            boolean fl = (currentDoorFL == 1);
+            boolean fr = (currentDoorFR == 1);
+            boolean rl = (currentDoorRL == 1);
+            boolean rr = (currentDoorRR == 1);
+            boolean trunk = (currentTrunk == 1);
+
+            app.onepve.geelyconsole.widget.ToolboxWidgetProvider.updateVehicleState(
+                    this, volt, gearName, fl, fr, rl, rr, trunk
+            );
+        } catch (Throwable ignored) {
+        }
+    }
+
     public static void syncState(Context context) {
         if (context == null) return;
         try {
@@ -296,16 +322,19 @@ public class VehicleAutomationService extends Service {
             currentDoorFR = fr;
             currentDoorRL = rl;
             currentDoorRR = rr;
+            notifyWidgetUpdate();
         });
 
         trunkStateManager = new TrunkStateManager(this, voicePlayer);
         trunkStateManager.setListener(trunk -> {
             currentTrunk = trunk;
+            notifyWidgetUpdate();
         });
 
         gearStateMachine = new GearStateMachine(this, voicePlayer);
         gearStateMachine.setListener(gear -> {
             lastGearPos = gear;
+            notifyWidgetUpdate();
         });
 
         driveModeManager = new DriveModeManager(this, voicePlayer);

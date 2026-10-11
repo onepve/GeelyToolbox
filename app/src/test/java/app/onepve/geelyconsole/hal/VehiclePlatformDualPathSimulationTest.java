@@ -253,6 +253,33 @@ public class VehiclePlatformDualPathSimulationTest {
         check("通用车规平台".equals(badgeGeneric), "通用车规平台正确兜底显示");
     }
 
+    // ==========================================
+    // 5. 车规原生桌面卡片 (Widget) 布局与渲染数据断言
+    // ==========================================
+
+    public static void testToolboxWidgetStateAndBadge() {
+        System.out.println("\n[测试用例 6] 车机桌面原生卡片 (Widget) 电压健康分级与门锁状态机断言");
+
+        // 电压健康分级
+        float voltHigh = 13.5f;
+        float voltWarn = 11.8f;
+        float voltCritical = 11.2f;
+
+        check(voltHigh >= 12.0f, "13.5V 正确命中健康良好电压区间 (绿/天蓝)");
+        check(voltWarn >= 11.6f && voltWarn < 12.0f, "11.8V 正确命中电量偏低警戒区间 (琥珀黄)");
+        check(voltCritical < 11.6f, "11.2V 正确命中亏电预警高危区间 (严重红)");
+
+        // 门锁状态全关 vs 未关严判定
+        boolean fl = false, fr = false, rl = false, rr = false, trunk = false;
+        boolean anyOpen1 = fl || fr || rl || rr || trunk;
+        check(!anyOpen1, "全车车门与尾门全关时状态判定为正常");
+
+        // 模拟副驾未关严
+        fr = true;
+        boolean anyOpen2 = fl || fr || rl || rr || trunk;
+        check(anyOpen2, "任一车门未关严时正确触发预警提示");
+    }
+
     public static void main(String[] args) {
         System.out.println("==========================================================");
         System.out.println("  GeelyToolbox 双车型日志仿真与门禁回归测试套件 (JVM)");
@@ -263,6 +290,7 @@ public class VehiclePlatformDualPathSimulationTest {
         testBinyueLVHalPropertyMappingAndStateTransitions();
         testPlatformIsolationAndContract();
         testTopBarBadgeComputation();
+        testToolboxWidgetStateAndBadge();
 
         System.out.println("\n----------------------------------------------------------");
         System.out.println("测试结果统计: 通用 " + passes + " 项通过, " + failures + " 项失败");

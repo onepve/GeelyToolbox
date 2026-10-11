@@ -26,4 +26,9 @@ public interface IVehicleSensorAdapter {
 
     /** 当前车速同步查询 (km/h) */
     float getCurrentSpeed();
+
+    /** 当前蓄电池实时电压查询 (V)，不支持平台默认返回 -1.0f */
+    default float getBatteryVoltage() {
+        return -1.0f;
+    }
 }

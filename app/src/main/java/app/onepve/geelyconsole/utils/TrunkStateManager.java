@@ -92,4 +92,8 @@ public class TrunkStateManager {
             }
         }
     }
+
+    public int getCurrentTrunk() {
+        return currentTrunk;
+    }
 }

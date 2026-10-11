@@ -96,5 +96,20 @@
             </intent-filter>
         </receiver>
 
+        <!-- 车机原生桌面微胶囊卡片小组件 (AppWidgetProvider 3x1) -->
+        <receiver
+            android:name=".widget.ToolboxWidgetProvider"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="app.onepve.geelyconsole.widget.ACTION_TRIGGER_360" />
+                <action android:name="app.onepve.geelyconsole.widget.ACTION_OPEN_ENGINEER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/toolbox_widget_info_3x1" />
+        </receiver>
+
     </application>
 </manifest>
