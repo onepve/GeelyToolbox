@@ -14,7 +14,7 @@
         >
           <span v-if="!isSupportedPlatform" class="mr-1">⚠️</span>
           <span>{{ displayPlatformBadge }}</span>
-          <span v-if="!isSupportedPlatform" class="ml-1 text-[10px] opacity-75 font-normal">点击关闭</span>
+          <span v-if="!isSupportedPlatform" class="ml-1 text-[10px] opacity-75 font-normal">点击提前关闭</span>
         </span>
       </transition>
     </div>
@@ -141,14 +141,12 @@ const scheduleCapsuleAutoHide = () => {
     clearTimeout(platformCapsuleTimer);
     platformCapsuleTimer = null;
   }
-  // 仅在明确检测为适配车型时，展示 3.5 秒后自动淡出消失；未适配车型则常驻展示，杜绝车主困惑
-  if (isSupportedPlatform.value) {
-    platformCapsuleTimer = setTimeout(() => {
-      showPlatformCapsule.value = false;
-    }, 3500);
-  } else {
-    showPlatformCapsule.value = true;
-  }
+  showPlatformCapsule.value = true;
+  // 已适配车型 3.5 秒淡出；未适配车型展示 15 秒足够车主看清后自动淡出，支持车主随时点击提前关闭
+  const delay = isSupportedPlatform.value ? 3500 : 15000;
+  platformCapsuleTimer = setTimeout(() => {
+    showPlatformCapsule.value = false;
+  }, delay);
 };
 
 const onPlatformCapsuleClick = () => {
