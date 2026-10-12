@@ -49,7 +49,13 @@ public class VehiclePlatformFactory {
                 return new BinyueLPlatform();
             }
 
-            // 2. 缤越 COOL / 亿咖通 E02 / IHU516G 特征检测
+            // 2. 帝豪 L / 亿咖通 E02 / IHU521G (SS13) 特征检测
+            if (model.contains("SS13") || model.contains("IHU521") || model.contains("EMGRAND L")) {
+                Log.i(TAG, "Detected Geely Emgrand L (E02 / IHU521G / SS13) Platform");
+                return new app.onepve.geelyconsole.hal.platform.EmgrandLPlatform();
+            }
+
+            // 3. 缤越 COOL / 亿咖通 E02 / IHU516G 特征检测
             if (model.contains("SX11") || model.contains("IHU516") || fingerprint.contains("ecarx")
                     || manufacturer.contains("ecarx") || fingerprint.contains("geely")) {
                 Log.i(TAG, "Detected Geely Binyue COOL (E02 / IHU516G) Platform");

@@ -4,13 +4,19 @@
     <div class="flex items-center space-x-2">
       <span class="text-[20px] font-black text-car-text tracking-wide">缤越助手</span>
       <span class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-text font-extrabold border border-car-border">v{{ displayVersion }}</span>
-      <span 
-        class="text-[12px] px-2.5 py-0.5 rounded-full font-black border transition-all"
-        :class="isBinyueL ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-blue-500/10 text-blue-400 border-blue-500/30'"
-        :title="store.deviceInfo.platform_name || '车载平台'"
-      >
-        {{ displayPlatformBadge }}
-      </span>
+      <transition name="fade">
+        <span 
+          v-if="showPlatformCapsule"
+          @click="onPlatformCapsuleClick"
+          class="text-[12px] px-2.5 py-0.5 rounded-full font-black border transition-all inline-flex items-center shadow-sm cursor-pointer"
+          :class="capsuleStyleClass"
+          :title="capsuleTitle"
+        >
+          <span v-if="!isSupportedPlatform" class="mr-1">⚠️</span>
+          <span>{{ displayPlatformBadge }}</span>
+          <span v-if="!isSupportedPlatform" class="ml-1 text-[10px] opacity-75 font-normal">点击关闭</span>
+        </span>
+      </transition>
     </div>
 
     <!-- 中部状态指示器 (微胶囊流) -->
@@ -72,7 +78,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
 import { getDaysToAdjustment } from '../utils/oilPriceData';
 import { quickToggleDayNight } from '../theme/themes';
@@ -80,6 +86,8 @@ import { openAppstoreFlow } from '../utils/appstoreFreeze';
 import StatusDot from './StatusDot.vue';
 
 let topBarTimer = null;
+let platformCapsuleTimer = null;
+const showPlatformCapsule = ref(true);
 
 const displayVersion = computed(() => {
   return store.deviceInfo.version || '1.6.1';
@@ -91,10 +99,69 @@ const isBinyueL = computed(() => {
   return code.includes('binyue_l') || name.includes('缤越 L') || name.includes('缤越L');
 });
 
+const isEmgrandL = computed(() => {
+  const code = (store.deviceInfo.platform_code || '').toLowerCase();
+  const name = (store.deviceInfo.platform_name || '');
+  return code.includes('emgrand') || name.includes('帝豪 L') || name.includes('帝豪L') || code.includes('ss13');
+});
+
+const isBinyueCool = computed(() => {
+  const code = (store.deviceInfo.platform_code || '').toLowerCase();
+  const name = (store.deviceInfo.platform_name || '');
+  return code.includes('binyue_cool') || name.includes('COOL') || code.includes('sx11');
+});
+
+// 是否属于官方专项适配的受支持车型
+const isSupportedPlatform = computed(() => {
+  return isBinyueL.value || isEmgrandL.value || isBinyueCool.value;
+});
+
 const displayPlatformBadge = computed(() => {
   if (isBinyueL.value) return '缤越L · IHU624G';
-  if ((store.deviceInfo.platform_name || '').includes('COOL')) return '缤越COOL · IHU516G';
-  return store.deviceInfo.platform_name || '车载平台';
+  if (isEmgrandL.value) return '帝豪L · IHU521G';
+  if (isBinyueCool.value) return '缤越COOL · IHU516G';
+  return '未适配车型 (功能受限)';
+});
+
+const capsuleStyleClass = computed(() => {
+  if (isBinyueL.value) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:border-emerald-500/50';
+  if (isEmgrandL.value || isBinyueCool.value) return 'bg-blue-500/10 text-blue-400 border-blue-500/30 hover:border-blue-500/50';
+  return 'bg-amber-500/15 text-amber-400 border-amber-500/40 hover:border-amber-400';
+});
+
+const capsuleTitle = computed(() => {
+  if (isSupportedPlatform.value) {
+    return `${store.deviceInfo.platform_name || '已适配平台'} · 点击可关闭提示`;
+  }
+  return '当前车型尚未专项适配，部分底层车身与按键联动可能受限，点击关闭提示';
+});
+
+const scheduleCapsuleAutoHide = () => {
+  if (platformCapsuleTimer) {
+    clearTimeout(platformCapsuleTimer);
+    platformCapsuleTimer = null;
+  }
+  // 仅在明确检测为适配车型时，展示 3.5 秒后自动淡出消失；未适配车型则常驻展示，杜绝车主困惑
+  if (isSupportedPlatform.value) {
+    platformCapsuleTimer = setTimeout(() => {
+      showPlatformCapsule.value = false;
+    }, 3500);
+  } else {
+    showPlatformCapsule.value = true;
+  }
+};
+
+const onPlatformCapsuleClick = () => {
+  showPlatformCapsule.value = false;
+  if (platformCapsuleTimer) {
+    clearTimeout(platformCapsuleTimer);
+    platformCapsuleTimer = null;
+  }
+};
+
+// 监听平台信息异步同步刷新
+watch(() => store.deviceInfo.platform_code, () => {
+  scheduleCapsuleAutoHide();
 });
 
 const isBeta = computed(() => {
@@ -229,6 +296,7 @@ function autoPollDeviceInfo() {
 
 onMounted(() => {
   autoPollDeviceInfo();
+  scheduleCapsuleAutoHide();
   // 实时网络切换主动广播回调：连接/断开热点毫秒级响应
   window.onNetworkChanged = (net) => {
     if (net) {
