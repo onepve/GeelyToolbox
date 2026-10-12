@@ -351,14 +351,14 @@ else:
                             print(f"  [FAIL] Invalid voice_version in manifest: {vver}")
                             passed = False
                         mfiles = vmanifest.get("files", {})
-                        all_mp3s = {f for f in os.listdir(AUDIO_DIR) if f.endswith(".mp3")}
-                        if set(mfiles.keys()) != all_mp3s:
-                            diff = all_mp3s.symmetric_difference(set(mfiles.keys()))
-                            print(f"  [FAIL] Manifest files do not match assets/audio/*.mp3: diff={diff}")
+                        expected_audios = {f for f in os.listdir(AUDIO_DIR) if f.endswith(".mp3") or f.endswith(".ogg")}
+                        if set(mfiles.keys()) != expected_audios:
+                            diff = expected_audios.symmetric_difference(set(mfiles.keys()))
+                            print(f"  [FAIL] Manifest files do not match assets/audio/*.{{mp3,ogg}}: diff={diff}")
                             passed = False
                         else:
                             mismatched = []
-                            for fn in all_mp3s:
+                            for fn in expected_audios:
                                 meta = mfiles[fn]
                                 real_path = os.path.join(AUDIO_DIR, fn)
                                 real_size = os.path.getsize(real_path)
@@ -369,7 +369,7 @@ else:
                                 print(f"  [FAIL] Audio files md5/size mismatch with manifest: {mismatched}")
                                 passed = False
                             else:
-                                print(f"[PASS] 100% voice audio assets exist, anti-collision verified, and manifest (v{vver}) matches disk.")
+                                print(f"[PASS] 100% voice audio assets exist (mp3+ogg dual format), anti-collision verified, and manifest (v{vver}) matches disk.")
                     except Exception as ex:
                         print(f"  [FAIL] Exception parsing voice_version.json: {ex}")
                         passed = False
