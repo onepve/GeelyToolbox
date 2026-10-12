@@ -294,15 +294,30 @@ public class VehicleVoicePlayer {
     /** 在指定目录下模糊查找匹配的音频文件（支持同名不同后缀、大小写不敏感及中文别名） */
     private static File findAudioInDir(File dir, String voiceFileName) {
         if (dir == null || !dir.exists() || !dir.isDirectory()) return null;
-        // 1. 直连精确命中
+
+        String baseName = voiceFileName.contains(".") ? voiceFileName.substring(0, voiceFileName.lastIndexOf('.')) : voiceFileName;
+
+        // 1. 优先尝试 .ogg 精确命中 (车规标准原生格式)
+        File oggExact = new File(dir, baseName + ".ogg");
+        if (oggExact.exists() && oggExact.isFile() && oggExact.length() > 0) return oggExact;
+
+        // 2. 直连精确命中原始文件名 (如 .mp3)
         File exact = new File(dir, voiceFileName);
         if (exact.exists() && exact.isFile() && exact.length() > 0) return exact;
 
-        String baseName = voiceFileName.contains(".") ? voiceFileName.substring(0, voiceFileName.lastIndexOf('.')) : voiceFileName;
         File[] files = dir.listFiles();
         if (files == null) return null;
 
-        // 2. 大小写不敏感及多后缀命中
+        // 3. 大小写不敏感及多后缀命中 (优先返回 .ogg)
+        for (File f : files) {
+            if (f.isFile() && f.length() > 0) {
+                String fn = f.getName();
+                String fBase = fn.contains(".") ? fn.substring(0, fn.lastIndexOf('.')) : fn;
+                if (fBase.equalsIgnoreCase(baseName) && fn.toLowerCase().endsWith(".ogg")) {
+                    return f;
+                }
+            }
+        }
         for (File f : files) {
             if (f.isFile() && f.length() > 0) {
                 String fn = f.getName();
@@ -581,7 +596,7 @@ public class VehicleVoicePlayer {
             if (list != null) {
                 byte[] buf = new byte[16 * 1024];
                 for (String f : list) {
-                    if ("voice_version.json".equals(f) || !f.endsWith(".mp3")) continue;
+                    if ("voice_version.json".equals(f) || (!f.endsWith(".mp3") && !f.endsWith(".ogg"))) continue;
                     File dest = new File(voiceDir, f);
                     try (InputStream in = context.getAssets().open("audio/" + f);
                          FileOutputStream out = new FileOutputStream(dest)) {
@@ -903,6 +918,30 @@ public class VehicleVoicePlayer {
         try {
             File voiceDir = getSafeVoiceDir(context);
             if (voiceDir == null) return null;
+
+            // 1. 优先尝试 .ogg 扩展名（车规级原生格式，100% 免疫精简 ROM 的 MP3 解码器缺失缺陷）
+            String baseName = voiceFileName.contains(".") ? voiceFileName.substring(0, voiceFileName.lastIndexOf('.')) : voiceFileName;
+            String oggName = baseName + ".ogg";
+            File targetOgg = new File(voiceDir, oggName);
+            if (targetOgg.exists() && targetOgg.length() > 0) {
+                return targetOgg;
+            }
+
+            // 2. 尝试从 assets 极速单文件补齐 .ogg
+            try (InputStream in = context.getAssets().open("audio/" + oggName);
+                 FileOutputStream out = new FileOutputStream(targetOgg)) {
+                byte[] buf = new byte[16 * 1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            } catch (Exception ignored) {}
+            if (targetOgg.exists() && targetOgg.length() > 0) {
+                AppLogger.i("语音资产", "按需补齐原生 OGG 音频: " + oggName);
+                return targetOgg;
+            }
+
+            // 3. 兜底回退原始文件名（如 .mp3）
             File target = new File(voiceDir, voiceFileName);
 
             // 平时日常播报 0 毫秒直读：只要文件在且非空，直接返回推流，绝不执行耗时 MD5 计算

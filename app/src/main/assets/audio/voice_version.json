@@ -1,8 +1,8 @@
 {
-    "voice_version": 16,
-    "updated_at": "2026-09-22",
-    "description": "吉利智驾车规级内置音频资产版本清单与哈希校验索引",
-    "total_files": 26,
+    "voice_version": 17,
+    "updated_at": "2026-10-12",
+    "description": "吉利智驾车规级内置音频资产版本清单与哈希校验索引 (OGG/MP3 双格式兼容)",
+    "total_files": 44,
     "files": {
         "door_close.mp3": {
             "size": 13916,
@@ -91,6 +91,94 @@
         "trunk_open.mp3": {
             "size": 13196,
             "md5": "b8a8307397ac76d70142e98d85e504f6"
+        },
+        "door_close.ogg": {
+            "size": 13438,
+            "md5": "4119d7f105df750683f025753f98422f"
+        },
+        "door_fl.ogg": {
+            "size": 26706,
+            "md5": "be4f0fadc0a30a3594aa1c942a2a2817"
+        },
+        "door_fl_close.ogg": {
+            "size": 25788,
+            "md5": "c2b29b25ba1ea4c0a549ccd17906cee5"
+        },
+        "door_fr.ogg": {
+            "size": 20216,
+            "md5": "07a5a0a60a8339bb398ed6c963f3154a"
+        },
+        "door_fr_close.ogg": {
+            "size": 26348,
+            "md5": "b61b0d524973bc9562ac091e23a9c70b"
+        },
+        "door_open.ogg": {
+            "size": 13539,
+            "md5": "7ae3d652e9d4c9d491eae404ed5b6070"
+        },
+        "door_rl.ogg": {
+            "size": 26227,
+            "md5": "c1d2b64743fb88eb35d54ae549b6ad5d"
+        },
+        "door_rl_close.ogg": {
+            "size": 16397,
+            "md5": "39db42ef629eb1c9c2506b5b31213a90"
+        },
+        "door_rr.ogg": {
+            "size": 25797,
+            "md5": "de0f4fef8756535a4528d52e2301c83f"
+        },
+        "door_rr_close.ogg": {
+            "size": 15858,
+            "md5": "086df5753b3b6c8146a6864a4c896e71"
+        },
+        "gear_d.ogg": {
+            "size": 20070,
+            "md5": "a40841c3d8d88a1b101a04285df80b9e"
+        },
+        "gear_n.ogg": {
+            "size": 8968,
+            "md5": "710b9a002eca1c7a33e92d09e73ed6c9"
+        },
+        "gear_p.ogg": {
+            "size": 14899,
+            "md5": "9c35fbb42d23c5b26ad32dd98287a5a3"
+        },
+        "gear_park_alarm.ogg": {
+            "size": 14561,
+            "md5": "291c914bbabbca5a2b281ecea3939e4b"
+        },
+        "gear_r.ogg": {
+            "size": 8111,
+            "md5": "614c4c0cdeca60803ae22652c6045e64"
+        },
+        "gear_s.ogg": {
+            "size": 11731,
+            "md5": "4caeb7297a139adc6f642f1242862a3e"
+        },
+        "mode_comfort.ogg": {
+            "size": 7318,
+            "md5": "06aa0952cf8cc89d2a063c5dc2ea743d"
+        },
+        "mode_eco.ogg": {
+            "size": 7007,
+            "md5": "cc3a7fbcf3df854194e528bd5a7bf786"
+        },
+        "mode_smart.ogg": {
+            "size": 6842,
+            "md5": "408749fddb1343f2d47e2a206fc7651a"
+        },
+        "mode_sport.ogg": {
+            "size": 6689,
+            "md5": "78ca7e44873f4c869b63222defd4de86"
+        },
+        "trunk_close.ogg": {
+            "size": 22523,
+            "md5": "af505e149e55b5a7dd0587bb5e66642b"
+        },
+        "trunk_open.ogg": {
+            "size": 14858,
+            "md5": "96ecc3f45239be4c339a37442d2c86a3"
         }
     }
 }
