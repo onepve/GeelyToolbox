@@ -1168,6 +1168,14 @@ public class VehicleAutomationService extends Service {
         return true;
     }
 
+    /**
+     * 对外公开的车速信号注入入口（供 HAL 平台驱动或其它平台适配器调用）
+     */
+    public void handleSpeedSignal(final int speed) {
+        currentSpeedKmH = speed;
+        processVehicleSpeedAutomation(currentSpeedKmH);
+    }
+
     public void handleGearSignal(final int gear) {
         // 核心修复：等红绿灯发动机自动启停（Start-Stop）防御！
         // 等红绿灯踩刹车时，发动机停转、发电机停充（电压落回12V），但车辆并未真正熄火下电（lastPowerMode仍为ON且屏幕点亮）。

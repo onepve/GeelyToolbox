@@ -261,6 +261,9 @@ public class BinyueLPlatform implements IVehiclePlatform {
                     if (listener != null) {
                         listener.onSpeedChanged(speed);
                     }
+                    if (service != null) {
+                        service.handleSpeedSignal(Math.round(speed));
+                    }
                 }
 
             } catch (Throwable t) {
