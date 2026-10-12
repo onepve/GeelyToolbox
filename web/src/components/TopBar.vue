@@ -1,22 +1,17 @@
 <template>
   <header class="h-[64px] min-h-[64px] border-b border-car-border px-5 flex items-center justify-between z-20 select-none transition-colors" :style="{ background: 'var(--bg-panel)' }">
-    <!-- 品牌与版本及车型微胶囊 -->
+    <!-- 品牌、版本与常驻车型平台标签 -->
     <div class="flex items-center space-x-2">
       <span class="text-[20px] font-black text-car-text tracking-wide">缤越助手</span>
       <span class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-text font-extrabold border border-car-border">v{{ displayVersion }}</span>
-      <transition name="fade">
-        <span 
-          v-if="showPlatformCapsule"
-          @click="onPlatformCapsuleClick"
-          class="text-[12px] px-2.5 py-0.5 rounded-full font-black border transition-all inline-flex items-center shadow-sm cursor-pointer"
-          :class="capsuleStyleClass"
-          :title="capsuleTitle"
-        >
-          <span v-if="!isSupportedPlatform" class="mr-1">⚠️</span>
-          <span>{{ displayPlatformBadge }}</span>
-          <span v-if="!isSupportedPlatform" class="ml-1 text-[10px] opacity-75 font-normal">点击提前关闭</span>
-        </span>
-      </transition>
+      <span 
+        class="text-[12px] px-2.5 py-0.5 rounded-full font-black border transition-all inline-flex items-center shadow-sm select-none"
+        :class="badgeStyleClass"
+        :title="store.deviceInfo.platform_name || '车载平台'"
+      >
+        <span v-if="!isSupportedPlatform" class="mr-1">⚠️</span>
+        <span>{{ displayPlatformBadge }}</span>
+      </span>
     </div>
 
     <!-- 中部状态指示器 (微胶囊流) -->
@@ -86,8 +81,6 @@ import { openAppstoreFlow } from '../utils/appstoreFreeze';
 import StatusDot from './StatusDot.vue';
 
 let topBarTimer = null;
-let platformCapsuleTimer = null;
-const showPlatformCapsule = ref(true);
 
 const displayVersion = computed(() => {
   return store.deviceInfo.version || '1.6.1';
@@ -120,46 +113,13 @@ const displayPlatformBadge = computed(() => {
   if (isBinyueL.value) return '缤越L · IHU624G';
   if (isEmgrandL.value) return '帝豪L · IHU521G';
   if (isBinyueCool.value) return '缤越COOL · IHU516G';
-  return '未适配车型 (功能受限)';
+  return '未适配车型';
 });
 
-const capsuleStyleClass = computed(() => {
-  if (isBinyueL.value) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:border-emerald-500/50';
-  if (isEmgrandL.value || isBinyueCool.value) return 'bg-blue-500/10 text-blue-400 border-blue-500/30 hover:border-blue-500/50';
-  return 'bg-amber-500/15 text-amber-400 border-amber-500/40 hover:border-amber-400';
-});
-
-const capsuleTitle = computed(() => {
-  if (isSupportedPlatform.value) {
-    return `${store.deviceInfo.platform_name || '已适配平台'} · 点击可关闭提示`;
-  }
-  return '当前车型尚未专项适配，部分底层车身与按键联动可能受限，点击关闭提示';
-});
-
-const scheduleCapsuleAutoHide = () => {
-  if (platformCapsuleTimer) {
-    clearTimeout(platformCapsuleTimer);
-    platformCapsuleTimer = null;
-  }
-  showPlatformCapsule.value = true;
-  // 已适配车型 3.5 秒淡出；未适配车型展示 15 秒足够车主看清后自动淡出，支持车主随时点击提前关闭
-  const delay = isSupportedPlatform.value ? 3500 : 15000;
-  platformCapsuleTimer = setTimeout(() => {
-    showPlatformCapsule.value = false;
-  }, delay);
-};
-
-const onPlatformCapsuleClick = () => {
-  showPlatformCapsule.value = false;
-  if (platformCapsuleTimer) {
-    clearTimeout(platformCapsuleTimer);
-    platformCapsuleTimer = null;
-  }
-};
-
-// 监听平台信息异步同步刷新
-watch(() => store.deviceInfo.platform_code, () => {
-  scheduleCapsuleAutoHide();
+const badgeStyleClass = computed(() => {
+  if (isBinyueL.value) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+  if (isEmgrandL.value || isBinyueCool.value) return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+  return 'bg-amber-500/15 text-amber-400 border-amber-500/40';
 });
 
 const isBeta = computed(() => {
@@ -294,7 +254,6 @@ function autoPollDeviceInfo() {
 
 onMounted(() => {
   autoPollDeviceInfo();
-  scheduleCapsuleAutoHide();
   // 实时网络切换主动广播回调：连接/断开热点毫秒级响应
   window.onNetworkChanged = (net) => {
     if (net) {
