@@ -1,15 +1,15 @@
 <template>
   <header class="h-[64px] min-h-[64px] border-b border-car-border px-5 flex items-center justify-between z-20 select-none transition-colors" :style="{ background: 'var(--bg-panel)' }">
-    <!-- 品牌、版本与常驻车型平台标签 -->
+    <!-- 品牌、版本与适配车型专属标签 (未适配或未知车型自动静默隐藏，保持界面极简) -->
     <div class="flex items-center space-x-2">
       <span class="text-[20px] font-black text-car-text tracking-wide">缤越助手</span>
       <span class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-text font-extrabold border border-car-border">v{{ displayVersion }}</span>
       <span 
+        v-if="isSupportedPlatform"
         class="text-[12px] px-2.5 py-0.5 rounded-full font-black border transition-all inline-flex items-center shadow-sm select-none"
         :class="badgeStyleClass"
         :title="store.deviceInfo.platform_name || '车载平台'"
       >
-        <span v-if="!isSupportedPlatform" class="mr-1">⚠️</span>
         <span>{{ displayPlatformBadge }}</span>
       </span>
     </div>
@@ -113,13 +113,13 @@ const displayPlatformBadge = computed(() => {
   if (isBinyueL.value) return '缤越L · IHU624G';
   if (isEmgrandL.value) return '帝豪L · IHU521G';
   if (isBinyueCool.value) return '缤越COOL · IHU516G';
-  return '未适配车型';
+  return '';
 });
 
 const badgeStyleClass = computed(() => {
   if (isBinyueL.value) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
   if (isEmgrandL.value || isBinyueCool.value) return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
-  return 'bg-amber-500/15 text-amber-400 border-amber-500/40';
+  return '';
 });
 
 const isBeta = computed(() => {
