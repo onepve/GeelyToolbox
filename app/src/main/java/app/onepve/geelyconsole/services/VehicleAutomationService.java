@@ -604,7 +604,7 @@ public class VehicleAutomationService extends Service {
     private static final Pattern P_JSON_VEHICLE_SPEED =
             Pattern.compile("\"Vehicle_speed\"\\s*:\\s*\"?(\\d+)\"?");
     private static final Pattern P_IPK_INSTANT_SPEED =
-            Pattern.compile("(?:onVehicleEventIpkSpeed[^0-9a-fA-F]*state=(?:0x)?([0-9a-fA-F]+)|VehId=Vehicle_IPK_Speed\\s+value=(?:0x)?([0-9a-fA-F]+)|INFO_ID_IPKINFO_INSTANT_SPEED.*?value\\s*[:=]\\s*(?:0x)?([0-9a-fA-F]+))");
+            Pattern.compile("(?:onVehicleEventIpkSpeed[^0-9a-fA-F]*state=(?:0x)?([0-9a-fA-F]+)|VehId=Vehicle_IPK_Speed\\s+value=(?:0x)?([0-9a-fA-F]+)|INFO_ID_IPKINFO_INSTANT_SPEED.*?(?:funcValue\\((?:0x)?([0-9a-fA-F]+)\\)|value\\s*[:=]\\s*(?:0x)?([0-9a-fA-F]+)))");
     private static final Pattern P_VEHICLE_GEAR =
             Pattern.compile("VehId=Vehicle_Gear\\s+value=(?:0x)?([0-9a-fA-F]+)");
     private static final Pattern P_GEAR_EQ =
@@ -730,13 +730,25 @@ public class VehicleAutomationService extends Service {
                         && !line.contains("AvmStateManger") && !line.contains("recvVehicleCmd")) {
                     Matcher m = P_IPK_INSTANT_SPEED.matcher(line);
                     if (m.find()) {
-                        String hexStr = m.group(1) != null ? m.group(1) : (m.group(2) != null ? m.group(2) : m.group(3));
+                        String hexStr = null;
+                        for (int i = 1; i <= m.groupCount(); i++) {
+                            if (m.group(i) != null) {
+                                hexStr = m.group(i);
+                                break;
+                            }
+                        }
                         if (hexStr != null && !hexStr.isEmpty()) {
                             try {
                                 int rawVal = Integer.parseInt(hexStr, 16);
-                                // 原厂仪表车速物理换算（有效过滤 0xec 等异常控制字，约束正常车速区间 0~220 km/h）
+                                int parsedSpeed = -1;
                                 if (rawVal >= 0 && rawVal <= 220) {
-                                    currentSpeedKmH = rawVal;
+                                    parsedSpeed = rawVal;
+                                } else if (rawVal >= 500 && rawVal <= 25000) {
+                                    // 原厂 SensorModule 高精物理量换算 (单位 0.01 km/h，如 0x432=1074 -> 10 km/h)
+                                    parsedSpeed = Math.round(rawVal / 100.0f);
+                                }
+                                if (parsedSpeed >= 0 && parsedSpeed <= 220) {
+                                    currentSpeedKmH = parsedSpeed;
                                     processVehicleSpeedAutomation(currentSpeedKmH);
                                     return;
                                 }
@@ -1179,6 +1191,9 @@ public class VehicleAutomationService extends Service {
             // 挂入 P 挡驻车：若主驾车门当前已处于开启状态，协同重置行程
             if (currentDoorFL == 1) {
                 resetTripSpeedAutoplay("挂入P挡且主驾门已开启");
+            } else {
+                // 停车挂入 P 挡停稳，重置单次行程自启锁，方便下次起步重新自启
+                resetTripSpeedAutoplay("挂入P挡驻车停稳");
             }
         }
 
