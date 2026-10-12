@@ -110,9 +110,9 @@ const isSupportedPlatform = computed(() => {
 });
 
 const displayPlatformBadge = computed(() => {
-  if (isBinyueL.value) return '缤越L · IHU624G';
-  if (isEmgrandL.value) return '帝豪L · IHU521G';
-  if (isBinyueCool.value) return '缤越COOL · IHU516G';
+  if (isBinyueL.value) return '缤越L';
+  if (isEmgrandL.value) return '帝豪L';
+  if (isBinyueCool.value) return '缤越COOL';
   return '';
 });
 
