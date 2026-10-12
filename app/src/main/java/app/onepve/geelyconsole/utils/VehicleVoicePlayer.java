@@ -297,23 +297,23 @@ public class VehicleVoicePlayer {
 
         String baseName = voiceFileName.contains(".") ? voiceFileName.substring(0, voiceFileName.lastIndexOf('.')) : voiceFileName;
 
-        // 1. 优先尝试 .ogg 精确命中 (车规标准原生格式)
-        File oggExact = new File(dir, baseName + ".ogg");
-        if (oggExact.exists() && oggExact.isFile() && oggExact.length() > 0) return oggExact;
-
-        // 2. 直连精确命中原始文件名 (如 .mp3)
+        // 1. 直连精确命中原始文件名 (如 .mp3)
         File exact = new File(dir, voiceFileName);
         if (exact.exists() && exact.isFile() && exact.length() > 0) return exact;
+
+        // 2. 尝试 .mp3 精确命中
+        File mp3Exact = new File(dir, baseName + ".mp3");
+        if (mp3Exact.exists() && mp3Exact.isFile() && mp3Exact.length() > 0) return mp3Exact;
 
         File[] files = dir.listFiles();
         if (files == null) return null;
 
-        // 3. 大小写不敏感及多后缀命中 (优先返回 .ogg)
+        // 3. 大小写不敏感及多后缀命中 (优先返回 .mp3)
         for (File f : files) {
             if (f.isFile() && f.length() > 0) {
                 String fn = f.getName();
                 String fBase = fn.contains(".") ? fn.substring(0, fn.lastIndexOf('.')) : fn;
-                if (fBase.equalsIgnoreCase(baseName) && fn.toLowerCase().endsWith(".ogg")) {
+                if (fBase.equalsIgnoreCase(baseName) && fn.toLowerCase().endsWith(".mp3")) {
                     return f;
                 }
             }
@@ -454,6 +454,7 @@ public class VehicleVoicePlayer {
                 currentMediaPlayer = null;
             }
         }
+        Mp3SoftAudioPlayer.stopCurrent();
         abandonAudioFocus();
     }
 
@@ -596,7 +597,7 @@ public class VehicleVoicePlayer {
             if (list != null) {
                 byte[] buf = new byte[16 * 1024];
                 for (String f : list) {
-                    if ("voice_version.json".equals(f) || (!f.endsWith(".mp3") && !f.endsWith(".ogg"))) continue;
+                    if ("voice_version.json".equals(f) || !f.endsWith(".mp3")) continue;
                     File dest = new File(voiceDir, f);
                     try (InputStream in = context.getAssets().open("audio/" + f);
                          FileOutputStream out = new FileOutputStream(dest)) {
@@ -919,29 +920,7 @@ public class VehicleVoicePlayer {
             File voiceDir = getSafeVoiceDir(context);
             if (voiceDir == null) return null;
 
-            // 1. 优先尝试 .ogg 扩展名（车规级原生格式，100% 免疫精简 ROM 的 MP3 解码器缺失缺陷）
-            String baseName = voiceFileName.contains(".") ? voiceFileName.substring(0, voiceFileName.lastIndexOf('.')) : voiceFileName;
-            String oggName = baseName + ".ogg";
-            File targetOgg = new File(voiceDir, oggName);
-            if (targetOgg.exists() && targetOgg.length() > 0) {
-                return targetOgg;
-            }
-
-            // 2. 尝试从 assets 极速单文件补齐 .ogg
-            try (InputStream in = context.getAssets().open("audio/" + oggName);
-                 FileOutputStream out = new FileOutputStream(targetOgg)) {
-                byte[] buf = new byte[16 * 1024];
-                int len;
-                while ((len = in.read(buf)) > 0) {
-                    out.write(buf, 0, len);
-                }
-            } catch (Exception ignored) {}
-            if (targetOgg.exists() && targetOgg.length() > 0) {
-                AppLogger.i("语音资产", "按需补齐原生 OGG 音频: " + oggName);
-                return targetOgg;
-            }
-
-            // 3. 兜底回退原始文件名（如 .mp3）
+            // 1. 直连精确命中原始文件名 (如 .mp3)
             File target = new File(voiceDir, voiceFileName);
 
             // 平时日常播报 0 毫秒直读：只要文件在且非空，直接返回推流，绝不执行耗时 MD5 计算
@@ -973,6 +952,19 @@ public class VehicleVoicePlayer {
             @Override
             public void run() {
                 if (playSessionId.get() != sessionId) return;
+
+                // 帝豪 L (SS13 / IHU521G) 固件缺失系统 audio/mpeg 软解组件，MP3 直接强制走 JLayer 纯软解
+                boolean isEmgrandL = false;
+                try {
+                    isEmgrandL = app.onepve.geelyconsole.hal.platform.EmgrandLPlatform.PLATFORM_CODE.equals(
+                            app.onepve.geelyconsole.hal.VehiclePlatformFactory.getPlatform(context).getPlatformCode());
+                } catch (Throwable ignored) {}
+
+                if (isEmgrandL && file != null && file.getName().toLowerCase().endsWith(".mp3")) {
+                    playViaSoftDecode(file, voiceType, sessionId, arbiterGen);
+                    return;
+                }
+
                 MediaPlayer mp = null;
                 try {
                     requestAudioFocus(voiceType);
@@ -1016,11 +1008,18 @@ public class VehicleVoicePlayer {
                     mp.setOnErrorListener(new MediaPlayer.OnErrorListener() {
                         @Override
                         public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
+                            Log.w(TAG, "MediaPlayer onError: what=" + what + ", extra=" + extra);
                             synchronized (playerLock) {
                                 if (currentMediaPlayer == mediaPlayer) currentMediaPlayer = null;
                             }
                             abandonAudioFocus();
                             try { mediaPlayer.release(); } catch (Exception ignored) {}
+                            // 若系统 mediaserver 报解码器异常 (-2147483648)，无缝自动回退到 JLayer 纯软解二次兜底播放
+                            if (file != null && file.exists() && file.getName().toLowerCase().endsWith(".mp3")) {
+                                Log.i(TAG, "MediaPlayer decoder error, seamless fallback to Mp3SoftAudioPlayer: " + file.getName());
+                                playViaSoftDecode(file, voiceType, sessionId, arbiterGen);
+                                return true;
+                            }
                             notifyArbiterFinishedIfCurrent(arbiterGen);
                             return true;
                         }
@@ -1050,11 +1049,52 @@ public class VehicleVoicePlayer {
                     synchronized (playerLock) {
                         if (currentMediaPlayer == mp) currentMediaPlayer = null;
                     }
+                    // 异常时若为 MP3 也尝试纯软解兜底
+                    if (file != null && file.exists() && file.getName().toLowerCase().endsWith(".mp3")) {
+                        Log.i(TAG, "Exception during MediaPlayer, falling back to Mp3SoftAudioPlayer: " + file.getName());
+                        playViaSoftDecode(file, voiceType, sessionId, arbiterGen);
+                        return;
+                    }
                     // 准备失败也要通知仲裁器结束，否则通道永久卡死
                     notifyArbiterFinishedIfCurrent(arbiterGen);
                 }
             }
         }).start();
+    }
+
+    private void playViaSoftDecode(final File file, final String voiceType, final int sessionId, final long arbiterGen) {
+        try {
+            requestAudioFocus(voiceType);
+            applyVolumeOffsetBeforePlay(voiceType);
+            AudioAttributes attrs = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                attrs = getVoiceAudioAttributes(context, voiceType);
+            }
+            Mp3SoftAudioPlayer.play(context, file, voiceType, attrs, playSessionId, sessionId, new Mp3SoftAudioPlayer.PlayCallback() {
+                @Override
+                public void onStarted() {
+                    notifyArbiterStarted(arbiterGen);
+                    AppLogger.i("语音播报", "纯软解播放启动[JLayer]: " + file.getName());
+                }
+
+                @Override
+                public void onFinished() {
+                    abandonAudioFocus();
+                    notifyArbiterFinishedIfCurrent(arbiterGen);
+                }
+
+                @Override
+                public void onError(String message) {
+                    abandonAudioFocus();
+                    notifyArbiterFinishedIfCurrent(arbiterGen);
+                    AppLogger.w("语音播报", "纯软解播放异常: " + message);
+                }
+            });
+        } catch (Throwable t) {
+            Log.e(TAG, "playViaSoftDecode failed: " + t.getMessage(), t);
+            abandonAudioFocus();
+            notifyArbiterFinishedIfCurrent(arbiterGen);
+        }
     }
 
     private void playAudioFile(final File file) {
