@@ -88,14 +88,14 @@ public class Mp3SoftAudioPlayer {
                     int channels = (header.mode() == Header.SINGLE_CHANNEL) ? 1 : 2;
                     int channelConfig = (channels == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO;
                     int minBufferSize = AudioTrack.getMinBufferSize(sampleRate, channelConfig, AudioFormat.ENCODING_PCM_16BIT);
-                    int bufferSize = Math.max(minBufferSize, 8192);
+                    int bufferSize = Math.max(minBufferSize, 16384);
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         AudioAttributes attrs = audioAttributes;
                         if (attrs == null) {
                             attrs = new AudioAttributes.Builder()
                                     .setUsage(AudioAttributes.USAGE_MEDIA)
-                                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                                     .build();
                         }
                         track = new AudioTrack.Builder()
@@ -113,6 +113,11 @@ public class Mp3SoftAudioPlayer {
                         int streamType = isRev ? AudioManager.STREAM_NOTIFICATION : AudioManager.STREAM_MUSIC;
                         track = new AudioTrack(streamType, sampleRate, channelConfig, AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM);
                     }
+
+                    // 确保音量设置满格
+                    try {
+                        track.setStereoVolume(AudioTrack.getMaxVolume(), AudioTrack.getMaxVolume());
+                    } catch (Throwable ignored) {}
 
                     synchronized (sLock) {
                         if (currentSessionId != null && currentSessionId.get() != thisSessionId) {
