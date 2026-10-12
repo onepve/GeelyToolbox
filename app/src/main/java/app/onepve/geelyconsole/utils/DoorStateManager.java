@@ -43,6 +43,10 @@ public class DoorStateManager {
     private long lastTimeRL = 0;
     private long lastTimeRR = 0;
 
+    // 开机迎宾冷启动物理校准静默期 (3.5s)，彻底杜绝开机倒入 logcat 环形历史日志引发主驾连报
+    private final long creationTime = System.currentTimeMillis();
+    private static final long COLD_BOOT_SILENT_MS = 3500;
+
     // 四门独立乘员上下车感知状态机 (true=该座位乘员已就坐/车内态, false=未就坐/车外态)
     private boolean isDriverInside = true;  // 主驾驶员 (点火默认已就坐)
     private boolean isFRInside = false;     // 副驾驶乘员
@@ -108,13 +112,14 @@ public class DoorStateManager {
      * 幂等静默：仅在状态真正发生变化时才写日志，严禁被 MCU 心跳无限刷屏。
      */
     public synchronized void resetState() {
-        boolean changed = (isDriverInside || isFRInside || isRLInside || isRRInside || !doorActionIntent.isEmpty() || !lastVoiceTime.isEmpty());
+        boolean changed = (isDriverInside || isFRInside || isRLInside || isRRInside || !doorActionIntent.isEmpty());
         isDriverInside = false;
         isFRInside = false;
         isRLInside = false;
         isRRInside = false;
         doorActionIntent.clear();
-        lastVoiceTime.clear();
+        // 铁律：绝对不清除 lastVoiceTime 和 lastTimeFL/FR/RL/RR 硬件物理防抖！
+        // 彻底杜绝点火熄火电源模式跳变时防抖被清空导致连续连报！
         if (changed) {
             AppLogger.i("车门状态", "熄火休眠复位: 四门乘员感知状态机重置归位");
         }
@@ -204,13 +209,21 @@ public class DoorStateManager {
      * 单门状态跃变处理 (0ms 瞬发响应，打断旧声音)
      */
     private void handleDoorTransition(String doorCode, String doorName, int newSts, int oldSts, boolean universalMode, boolean voiceMasterSwitch, SharedPreferences prefs) {
+        long now = System.currentTimeMillis();
+
+        // 核心门禁 1: 开机冷启动物理基准校准期 (3.5s)，只静默校准四门真实物理状态，严禁发声！
+        // 彻底杜绝车机刚开机迎宾、logcat 缓存回放历史车门事件时瞬间狂报好几遍！
+        if (now - creationTime < COLD_BOOT_SILENT_MS) {
+            AppLogger.i("车门状态", "开机迎宾物理校准静默期(" + (now - creationTime) + "ms < " + COLD_BOOT_SILENT_MS + "ms)，静默同步物理状态不播报: " + doorName + (newSts == 1 ? "开" : "关"));
+            return;
+        }
+
         // 瞬间打断当前旧声音，实现干脆立断秒响应
         if (voicePlayer != null) {
             voicePlayer.stopCurrentVoice();
         }
 
         String voiceKey = doorCode + "_" + newSts;
-        long now = System.currentTimeMillis();
         Long last = lastVoiceTime.get(voiceKey);
         if (last != null && (now - last) < DOOR_VOICE_DEBOUNCE_MS) {
             AppLogger.i("车门状态", "同门同动作 1.5s 内重复触发，已抑制: " + doorName + (newSts == 1 ? "开" : "关"));

@@ -26,6 +26,7 @@ import android.content.pm.ResolveInfo;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -697,19 +698,55 @@ public class VehicleAutomationService extends Service {
             }
         }
 
-        // 2. 解析车辆实时车速
-        // 核心铁律：仅采信权威物理车速源（Tasker高频 getVehicleSpeed/carSpeed、仪表IPK/SensorModule、车载音效 CarAudioInfo/Get Speed、DataCenter总线 Vehicle_speed）
-        // 过滤 AvmStateManger / recvVehicleCmd 环视控制私有状态码（value=0xec 等非车速刻度），杜绝倒车/蠕行时误报 200+ km/h 抢跑！
-        if (line.contains("getVehicleSpeed") || line.contains("carSpeed") || line.contains("Vehicle_speed") || line.contains("CarAudioInfo") || line.contains("Get Speed") || line.contains("Vehicle_IPK_Speed") || line.contains("onVehicleEventIpkSpeed") || line.contains("INFO_ID_IPKINFO_INSTANT_SPEED")) {
+        // 2. 解析车辆实时车速 (以原厂随速音量 CarAudioInfo / Get Speed 为最高优先级主力源，原厂纯整数零误差)
+        if (line.contains("CarAudioInfo") || line.contains("Get Speed") || line.contains("INFO_ID_IPKINFO_INSTANT_SPEED") || line.contains("getVehicleSpeed") || line.contains("Vehicle_speed")) {
             try {
-                // 优先级 1: 完美对齐 Tasker 实车验证的权威黄金基准 (高频 100ms 刷新)
+                // 优先级 1 (主力真源): 车载音效随速音量补偿报文 (原厂十进制标准 km/h，最稳最快，无浮点计算)
+                if (line.contains("CarAudioInfo") || line.contains("Get Speed")) {
+                    Matcher m = P_CARAUDIO_SPEED.matcher(line);
+                    if (m.find()) {
+                        String spStr = m.group(1) != null ? m.group(1) : m.group(2);
+                        if (spStr != null && !spStr.isEmpty()) {
+                            int speed = Integer.parseInt(spStr);
+                            if (speed >= 0 && speed <= 240) {
+                                currentSpeedKmH = speed;
+                                processVehicleSpeedAutomation(currentSpeedKmH);
+                                return;
+                            }
+                        }
+                    }
+                }
+                // 优先级 2: 原厂仪表盘高频车速 (IPK / SensorModule，单位 0.01 km/h，除以 100)
+                if (line.contains("INFO_ID_IPKINFO_INSTANT_SPEED") && !line.contains("AvmStateManger") && !line.contains("recvVehicleCmd")) {
+                    Matcher m = P_IPK_INSTANT_SPEED.matcher(line);
+                    if (m.find()) {
+                        String hexStr = null;
+                        for (int i = 1; i <= m.groupCount(); i++) {
+                            if (m.group(i) != null) {
+                                hexStr = m.group(i);
+                                break;
+                            }
+                        }
+                        if (hexStr != null && !hexStr.isEmpty()) {
+                            try {
+                                int rawVal = Integer.parseInt(hexStr, 16);
+                                int parsedSpeed = Math.round(rawVal / 100.0f);
+                                if (parsedSpeed >= 0 && parsedSpeed <= 240) {
+                                    currentSpeedKmH = parsedSpeed;
+                                    processVehicleSpeedAutomation(currentSpeedKmH);
+                                    return;
+                                }
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                }
+                // 优先级 3: Tasker 高频基准源
                 if (line.contains("getVehicleSpeed") || line.contains("carSpeed")) {
                     Matcher m = P_TASKER_SPEED.matcher(line);
                     if (m.find()) {
                         String spStr = m.group(1);
                         if (spStr != null && !spStr.isEmpty()) {
                             double rawSpeed = Double.parseDouble(spStr);
-                            // 若为浮点米/秒 (如 4.3416667)，换算为 km/h；若已是整数或 km/h 则直接使用
                             int spKmH;
                             if (line.contains("getVehicleSpeed:speed")) {
                                 spKmH = (int) Math.round(rawSpeed);
@@ -724,59 +761,18 @@ public class VehicleAutomationService extends Service {
                         }
                     }
                 }
-                // 优先级 2: 原厂仪表盘高频车速 (IPK / SensorModule，起步 0~30km/h 极速响应)
-                // 必须彻底排除 AvmStateManger / recvVehicleCmd 等环视控制枚举 (如 0xec)，防止倒车误报
-                if ((line.contains("Vehicle_IPK_Speed") || line.contains("onVehicleEventIpkSpeed") || line.contains("INFO_ID_IPKINFO_INSTANT_SPEED"))
-                        && !line.contains("AvmStateManger") && !line.contains("recvVehicleCmd")) {
-                    Matcher m = P_IPK_INSTANT_SPEED.matcher(line);
-                    if (m.find()) {
-                        String hexStr = null;
-                        for (int i = 1; i <= m.groupCount(); i++) {
-                            if (m.group(i) != null) {
-                                hexStr = m.group(i);
-                                break;
-                            }
-                        }
-                        if (hexStr != null && !hexStr.isEmpty()) {
-                            try {
-                                int rawVal = Integer.parseInt(hexStr, 16);
-                                int parsedSpeed = -1;
-                                if (rawVal >= 0 && rawVal <= 220) {
-                                    parsedSpeed = rawVal;
-                                } else if (rawVal >= 500 && rawVal <= 25000) {
-                                    // 原厂 SensorModule 高精物理量换算 (单位 0.01 km/h，如 0x432=1074 -> 10 km/h)
-                                    parsedSpeed = Math.round(rawVal / 100.0f);
-                                }
-                                if (parsedSpeed >= 0 && parsedSpeed <= 220) {
-                                    currentSpeedKmH = parsedSpeed;
-                                    processVehicleSpeedAutomation(currentSpeedKmH);
-                                    return;
-                                }
-                            } catch (Exception ignored) {}
-                        }
-                    }
-                }
-                // 优先级 3: 车载音效随速音量补偿报文
-                if (line.contains("CarAudioInfo") || line.contains("Get Speed")) {
-                    Matcher m = P_CARAUDIO_SPEED.matcher(line);
-                    if (m.find()) {
-                        String spStr = m.group(1) != null ? m.group(1) : m.group(2);
-                        if (spStr != null && !spStr.isEmpty()) {
-                            currentSpeedKmH = Integer.parseInt(spStr);
-                            processVehicleSpeedAutomation(currentSpeedKmH);
-                            return;
-                        }
-                    }
-                }
                 // 优先级 4: 吉利亿咖通数据中心原生 JSON 报文
                 if (line.contains("Vehicle_speed")) {
                     Matcher m = P_JSON_VEHICLE_SPEED.matcher(line);
                     if (m.find()) {
                         String spStr = m.group(1);
                         if (spStr != null && !spStr.isEmpty()) {
-                            currentSpeedKmH = Integer.parseInt(spStr);
-                            processVehicleSpeedAutomation(currentSpeedKmH);
-                            return;
+                            int speed = Integer.parseInt(spStr);
+                            if (speed >= 0 && speed <= 240) {
+                                currentSpeedKmH = speed;
+                                processVehicleSpeedAutomation(currentSpeedKmH);
+                                return;
+                            }
                         }
                     }
                 }
@@ -1188,6 +1184,7 @@ public class VehicleAutomationService extends Service {
         }
 
         if (gear == 5) {
+            currentSpeedKmH = 0; // 挂入 P 挡驻车时车速立即强制归零，防止残留蠕行车速外溢
             // 挂入 P 挡驻车：若主驾车门当前已处于开启状态，协同重置行程
             if (currentDoorFL == 1) {
                 resetTripSpeedAutoplay("挂入P挡且主驾门已开启");
@@ -1509,6 +1506,7 @@ public class VehicleAutomationService extends Service {
         super.onDestroy();
         isRunning = false;
         instance = null;
+        cancelPendingMusicRetries("服务销毁");
         if (powerReceiver != null) {
             try {
                 unregisterReceiver(powerReceiver);
@@ -1602,6 +1600,7 @@ public class VehicleAutomationService extends Service {
     // ==========================================
     private volatile boolean speedAutoplayTriggeredInTrip = false; // 单次行程车速自启锁：触发一次后永久闭锁，绝不重复触发
     private volatile boolean speedCustomActionTriggeredInTrip = false; // 单次行程自定义动作锁
+    private final List<Runnable> pendingMusicRetryRunnables = new ArrayList<>(); // 音乐起播阶梯重试队列 (30s/60s/90s)
     private boolean gearD360Armed = true; // D挡起步360单次跃变武装锁 (离开D挡才复位，彻底根治手动退出后循环调起)
     // 前门开启「单次跃变」闩锁：门开着期间 CAN 报文会持续高频重复上报 data=1，
     // 必须只在 关 ➔ 开 物理跃变的那一刻执行一次门控暂停，杜绝反复下发暂停指令与日志刷屏。
@@ -1610,6 +1609,13 @@ public class VehicleAutomationService extends Service {
 
     private void processVehicleSpeedAutomation(int speed) {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+
+        // 核心铁律门禁：仅允许在前进挡(D挡/2)触发前进车速多媒体自启与自定义动作！
+        // 挂入驻车挡(P挡/5)、倒车挡(R挡/4)或空挡(N挡/3)期间，直接忽略返回，绝不触发！
+        int currentGear = (gearStateMachine != null) ? gearStateMachine.getGear() : lastGearPos;
+        if (currentGear != 2) {
+            return;
+        }
 
         // 核心铁律：严禁在车速回落 (<=5km/h) 时重新武装或重置手动暂停标记！
         // 等红绿灯、拥堵跟车、踩刹车停稳均属行车中途，绝不视为全新行程。
@@ -1646,11 +1652,28 @@ public class VehicleAutomationService extends Service {
      * 仅在明确物理P挡且主驾开门(车主泊车下车)或整车下电时复位，等红绿灯绝不复位
      */
     private void resetTripSpeedAutoplay(String reason) {
+        cancelPendingMusicRetries(reason);
         speedAutoplayTriggeredInTrip = false;
         speedCustomActionTriggeredInTrip = false;
+        currentSpeedKmH = 0; // 驻车重置行程锁时，强制归零物理车速缓存，杜绝残留低速外溢
         getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
                 .edit().putBoolean("user_manually_paused_media", false).apply();
         AppLogger.i("车身联动", "【单次行程重置】" + reason + "，已重置车速自启武装与手动暂停标记，为下一次出行就绪");
+    }
+
+    /**
+     * 熔断注销所有未执行的音乐阶梯重试任务
+     */
+    private void cancelPendingMusicRetries(String reason) {
+        synchronized (pendingMusicRetryRunnables) {
+            if (!pendingMusicRetryRunnables.isEmpty()) {
+                for (Runnable r : pendingMusicRetryRunnables) {
+                    mainHandler.removeCallbacks(r);
+                }
+                pendingMusicRetryRunnables.clear();
+                AppLogger.i("车身联动", "【音乐唤醒重试】" + reason + "，已熔断注销所有后续延时重试任务");
+            }
+        }
     }
 
     private void triggerCustomSpeedAction(String target) {
@@ -1853,6 +1876,82 @@ public class VehicleAutomationService extends Service {
                 } catch (Throwable ignored) {}
             }
 
+            // 首次唤醒下发
+            performMusicWakeup(pkg);
+        }
+
+        // 核心优化：延迟 800ms 快速二次兜底，确保冷启动刚完成初始化的播放器稳定出声
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (pkg != null && !pkg.isEmpty() && !"com.android.bluetooth".equals(pkg)) {
+                        if (!isTargetMediaPlaying(pkg) && !isAnyMediaPlaying()) {
+                            AppLogger.i("车身联动", "【车速自启多媒体】目标媒体尚未出声，800ms 快速二次唤醒: " + pkg);
+                            performMusicWakeup(pkg);
+                        }
+                    }
+                } catch (Throwable ignored) {}
+            }
+        }, 800);
+
+        // 核心架构：落地 3 次阶梯重试 (30s / 60s / 90s) 与出声熔断闭锁
+        cancelPendingMusicRetries("发起新一轮车速达标唤醒");
+        long[] retryDelays = new long[] { 30000L, 60000L, 90000L };
+        for (int i = 0; i < retryDelays.length; i++) {
+            final int attempt = i + 1;
+            final long delayMs = retryDelays[i];
+            Runnable retryRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    synchronized (pendingMusicRetryRunnables) {
+                        pendingMusicRetryRunnables.remove(this);
+                    }
+                    // 熔断守卫 1: 挡位门禁 (仅允许在 D 挡中重试，若挂入 P/R/N 挡则立即终止)
+                    int currentGear = (gearStateMachine != null) ? gearStateMachine.getGear() : lastGearPos;
+                    if (currentGear != 2) {
+                        AppLogger.i("车身联动", "【音乐阶梯重试#" + attempt + "】已离开 D 挡(gear=" + currentGear + ")，熔断注销后续重试");
+                        cancelPendingMusicRetries("离开 D 挡");
+                        return;
+                    }
+                    // 熔断守卫 2: 车主手动暂停避让
+                    if (EasMediaBridge.getInstance(VehicleAutomationService.this).isAutoWakeSuppressed()
+                            || getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE).getBoolean("user_manually_paused_media", false)) {
+                        AppLogger.i("车身联动", "【音乐阶梯重试#" + attempt + "】车主已手动暂停，尊重意图并熔断注销后续重试");
+                        cancelPendingMusicRetries("车主手动暂停避让");
+                        return;
+                    }
+                    // 熔断守卫 3: 通话避让
+                    if (VehicleVoicePlayer.isInPhoneCall(VehicleAutomationService.this)) {
+                        AppLogger.i("车身联动", "【音乐阶梯重试#" + attempt + "】当前处于电话/VoIP通话中，熔断注销");
+                        cancelPendingMusicRetries("通话避让");
+                        return;
+                    }
+                    // 熔断守卫 4: 出声熔断！检测到任意音频或目标媒体已出声，立即注销后续所有重试并永久闭锁！
+                    if (isAnyMediaPlaying() || isTargetMediaPlaying(pkg) || EasMediaBridge.getInstance(VehicleAutomationService.this).isA2dpStreaming()) {
+                        AppLogger.i("车身联动", "【音乐阶梯重试#" + attempt + "】检测到音频已成功起播发声，立即出声熔断！注销全部后续重试");
+                        cancelPendingMusicRetries("音频已正常出声");
+                        return;
+                    }
+
+                    // 尚未出声，执行本轮唤醒重试
+                    AppLogger.i("车身联动", "【音乐阶梯重试#" + attempt + " (" + (delayMs / 1000) + "s)】目标应用仍未起播，下发阶梯唤醒: " + pkg);
+                    performMusicWakeup(pkg);
+                }
+            };
+            synchronized (pendingMusicRetryRunnables) {
+                pendingMusicRetryRunnables.add(retryRunnable);
+            }
+            mainHandler.postDelayed(retryRunnable, delayMs);
+        }
+    }
+
+    /**
+     * 执行底层媒体唤醒与起播链路 (服务拉活 + MediaController + 定向广播 + 方向盘下一曲/播放键)
+     */
+    private void performMusicWakeup(String pkg) {
+        if (pkg == null || pkg.isEmpty()) return;
+        try {
             // 0. 动态拉活核心播放服务
             wakeUpTargetMediaService(pkg);
 
@@ -1881,35 +1980,13 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Throwable ignored) {}
 
-            // 3. 核心升级：直接复用方向盘「下一曲」系统级派发链路 (KEYCODE_MEDIA_NEXT / 87)，100% 强制播放器加载歌单并起播
+            // 3. 核心升级：直接复用方向盘「下一曲」与「播放」系统级派发链路，强制播放器加载歌单并起播
             sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_NEXT);
             sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
-            // 兼容 ACTION_MEDIA_BUTTON 显式广播规范
-            try {
-                Intent bQuery = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                bQuery.setPackage(pkg);
-            } catch (Throwable ignored) {}
             new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_NEXT);
+        } catch (Throwable t) {
+            AppLogger.w("车身联动", "执行媒体唤醒异常: " + t.getMessage());
         }
-
-        // 核心优化：延迟 800ms 二次兜底，确保冷启动刚完成初始化的播放器稳定出声
-        mainHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (pkg != null && !pkg.isEmpty() && !"com.android.bluetooth".equals(pkg)) {
-                        if (!isTargetMediaPlaying(pkg)) {
-                            AppLogger.i("车身联动", "【车速自启多媒体】目标媒体尚未出声，复用方向盘下一曲二次唤醒: " + pkg);
-                            tryDirectMediaControllerSkipToNext(pkg);
-                            sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_NEXT);
-                            new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_NEXT);
-                        }
-                    } else {
-                        new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_NEXT);
-                    }
-                } catch (Throwable ignored) {}
-            }
-        }, 800);
     }
 
     private boolean tryDirectMediaControllerSkipToNext(String targetPkg) {
