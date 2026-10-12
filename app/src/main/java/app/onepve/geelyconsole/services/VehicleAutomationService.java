@@ -1876,8 +1876,43 @@ public class VehicleAutomationService extends Service {
                 } catch (Throwable ignored) {}
             }
 
-            // 首次唤醒下发
-            performMusicWakeup(pkg);
+            // 0. 动态拉活核心播放服务
+            wakeUpTargetMediaService(pkg);
+
+            // 1. 尝试通过活跃 MediaSession 下发播放/下一曲指令
+            tryDirectMediaControllerSkipToNext(pkg);
+            tryDirectMediaControllerPlay(pkg);
+
+            // 2. 发送标准车机通用/专属播放广播
+            try {
+                if ("com.tencent.qqmusiccar".equals(pkg)) {
+                    Intent qqPlay = new Intent("com.tencent.qqmusiccar.action.PLAY");
+                    qqPlay.setPackage("com.tencent.qqmusiccar");
+                    sendBroadcast(qqPlay);
+
+                    Intent qqPlayOld = new Intent("com.tencent.qqmusic.action.PLAY");
+                    qqPlayOld.setPackage("com.tencent.qqmusiccar");
+                    sendBroadcast(qqPlayOld);
+                } else if ("com.netease.cloudmusiccar".equals(pkg) || "com.netease.cloudmusic".equals(pkg) || "com.netease.cloudmusic.iot".equals(pkg)) {
+                    Intent nePlay = new Intent("com.netease.cloudmusiccar.action.PLAY");
+                    nePlay.setPackage(pkg);
+                    sendBroadcast(nePlay);
+                } else if ("cn.kuwo.kwmusiccar".equals(pkg)) {
+                    Intent kwPlay = new Intent("cn.kuwo.kwmusiccar.action.PLAY");
+                    kwPlay.setPackage(pkg);
+                    sendBroadcast(kwPlay);
+                }
+            } catch (Throwable ignored) {}
+
+            // 3. 核心升级：直接复用方向盘「下一曲」系统级派发链路 (KEYCODE_MEDIA_NEXT / 87)，100% 强制播放器加载歌单并起播
+            sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_NEXT);
+            sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
+            // 兼容 ACTION_MEDIA_BUTTON 显式广播规范
+            try {
+                Intent bQuery = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                bQuery.setPackage(pkg);
+            } catch (Throwable ignored) {}
+            new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_NEXT);
         }
 
         // 核心优化：延迟 800ms 快速二次兜底，确保冷启动刚完成初始化的播放器稳定出声
