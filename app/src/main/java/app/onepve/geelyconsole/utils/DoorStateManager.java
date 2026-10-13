@@ -142,6 +142,7 @@ public class DoorStateManager {
      */
     public synchronized void updateDoors(int fl, int fr, int rl, int rr, boolean voiceMasterSwitch, SharedPreferences prefs) {
         long now = System.currentTimeMillis();
+        boolean universalMode = PrefUtils.getBoolean(prefs, "voice_door_mode_universal", false);
 
         // 1. 首次开机物理基准建立 (智能识别迎宾登车意图)
         if (currentFL == -1) {
@@ -176,7 +177,6 @@ public class DoorStateManager {
             return;
         }
 
-        boolean universalMode = PrefUtils.getBoolean(prefs, "voice_door_mode_universal", false);
         boolean changed = false;
 
         // 2. 主驾驶门 (FL) 独立状态判定
