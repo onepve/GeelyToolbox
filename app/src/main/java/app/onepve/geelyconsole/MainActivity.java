@@ -192,31 +192,36 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             registerReceiver(packageChangeReceiver, pkgFilter);
         } catch (Exception ignored) {}
         AppLogger.i("应用启动", "缤越助手界面启动完成");
-        // 启动时自动探测并开启白名单，若为真车环境且商店未冻结则自动执行安全冻结保护
-        new Thread(new Runnable() {
+        // 启动错峰：包名扫描与白名单探测等重型后台任务延后 20 秒错峰执行，确保前台界面与车门/挡位联动 100% 独占 CPU 与流畅响应
+        mainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                try {
-                    // 预热「全量禁用包名」缓存（后台一次 pm list packages -d，之后热路径零 shell）
-                    SystemUtils.warmDisabledPackagesCache();
-                    if (!SystemUtils.isApkVerifyWhitelistEnabled()) {
-                        SystemUtils.enableApkVerifyWhitelist(MainActivity.this);
-                    }
-                    // 启动静默冻结应用商店：仅当用户在「系统维护」里显式开启开关后才执行（默认关闭，
-                    // 严禁一启动就自动冻结 —— 是否冻结始终由用户主动决定）
-                    android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                    if (prefs.getBoolean("silent_appstore_freeze", false) && isCarDevice(MainActivity.this)) {
-                        boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
-                        if (!isAppstoreFrozen && SystemUtils.isPackageInstalled(MainActivity.this, "com.ecarx.appstore")) {
-                            SystemUtils.setPackageEnabled(MainActivity.this, "com.ecarx.appstore", false);
-                            AppLogger.action("应用商店", "启动静默冻结开关已开启，检测到商店未冻结，已自动冻结锁定白名单", true, "已冻结");
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            // 预热「全量禁用包名」缓存（后台一次 pm list packages -d，之后热路径零 shell）
+                            SystemUtils.warmDisabledPackagesCache();
+                            if (!SystemUtils.isApkVerifyWhitelistEnabled()) {
+                                SystemUtils.enableApkVerifyWhitelist(MainActivity.this);
+                            }
+                            // 启动静默冻结应用商店：仅当用户在「系统维护」里显式开启开关后才执行（默认关闭，
+                            // 严禁一启动就自动冻结 —— 是否冻结始终由用户主动决定）
+                            android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                            if (prefs.getBoolean("silent_appstore_freeze", false) && isCarDevice(MainActivity.this)) {
+                                boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
+                                if (!isAppstoreFrozen && SystemUtils.isPackageInstalled(MainActivity.this, "com.ecarx.appstore")) {
+                                    SystemUtils.setPackageEnabled(MainActivity.this, "com.ecarx.appstore", false);
+                                    AppLogger.action("应用商店", "启动静默冻结开关已开启，检测到商店未冻结，已自动冻结锁定白名单", true, "已冻结");
+                                }
+                            }
+                        } catch (Exception ignored) {
                         }
+                        pushDeviceInfoToWeb();
                     }
-                } catch (Exception ignored) {
-                }
-                pushDeviceInfoToWeb();
+                }, "MainActivity_WarmupThread").start();
             }
-        }).start();
+        }, 20000);
 
         getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(new View.OnSystemUiVisibilityChangeListener() {
             @Override

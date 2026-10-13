@@ -375,7 +375,7 @@ public class VehicleAutomationService extends Service {
         startMediaMonitor();
         EasMediaBridge.getInstance(this); // 确保蓝牙 A2DP 连接/推流监听与原车音频通道常驻就绪
 
-        // 开机点火防洪峰：重开销的包缓存预热延后 5 秒异步错峰执行，避免抢占车机开机初期 I/O
+        // 开机点火防洪峰：重开销的包缓存预热延后 20 秒异步错峰执行，彻底避开车机开机与用户上车初期的 CPU/IO 争抢
         mainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -384,12 +384,12 @@ public class VehicleAutomationService extends Service {
                     public void run() {
                         try {
                             SystemUtils.warmDisabledPackagesCache();
-                            Log.i(TAG, "Package cache warmed up asynchronously after boot peak");
+                            Log.i(TAG, "Package cache warmed up asynchronously after boot peak (20s delay)");
                         } catch (Throwable ignored) {}
                     }
                 }, "Geely_WarmupThread").start();
             }
-        }, 5000);
+        }, 20000);
 
         // 开机与自动化启动兜底：若用户开启了悬浮小胶囊，确保悬浮服务伴随启动
         try {

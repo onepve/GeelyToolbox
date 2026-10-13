@@ -92,7 +92,7 @@ public class BootReceiver extends BroadcastReceiver {
             AppLogger.e("开机守护", "开机自愈清理异常: " + e.getMessage());
         }
 
-        // 开机点火错峰防洪峰：延时 4 秒等原厂底座与核心服务平稳就绪后，再处理外设引导与白名单注入
+        // 开机点火错峰防洪峰：延时 20 秒等原厂底座与车机各项核心服务完全就绪、车主登车操作完成后，再处理白名单与外设引导
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {

@@ -43,10 +43,6 @@ public class DoorStateManager {
     private long lastTimeRL = 0;
     private long lastTimeRR = 0;
 
-    // 开机迎宾冷启动物理校准静默期 (3.5s)，彻底杜绝开机倒入 logcat 环形历史日志引发主驾连报
-    private final long creationTime = System.currentTimeMillis();
-    private static final long COLD_BOOT_SILENT_MS = 3500;
-
     // 四门独立乘员上下车感知状态机 (true=该座位乘员已就坐/车内态, false=未就坐/车外态)
     private boolean isDriverInside = true;  // 主驾驶员 (点火默认已就坐)
     private boolean isFRInside = false;     // 副驾驶乘员
@@ -147,7 +143,7 @@ public class DoorStateManager {
     public synchronized void updateDoors(int fl, int fr, int rl, int rr, boolean voiceMasterSwitch, SharedPreferences prefs) {
         long now = System.currentTimeMillis();
 
-        // 1. 首次开机物理基准建立 (绝不盲目播报，精准校准初始状态)
+        // 1. 首次开机物理基准建立 (智能识别迎宾登车意图)
         if (currentFL == -1) {
             PrefUtils.sanitizeDoorPreferences(prefs);
             currentFL = (fl >= 0) ? fl : 0;
@@ -155,12 +151,27 @@ public class DoorStateManager {
             currentRL = (rl >= 0) ? rl : 0;
             currentRR = (rr >= 0) ? rr : 0;
 
-            // 乘员就坐状态不由车门初始位置决定，统一等待电源/点火状态机通知
+            // 乘员就坐状态统一置为车外态，等待上车或电源通知
             isDriverInside = false;
 
             AppLogger.i("车门状态", "四门物理基准初始化: FL=" + currentFL + ", FR=" + currentFR + ", RL=" + currentRL + ", RR=" + currentRR + " (主驾就坐=" + isDriverInside + ")");
             if (listener != null) {
                 listener.onDoorStateChanged(currentFL, currentFR, currentRL, currentRR);
+            }
+
+            // 核心迎宾优化：若车主拉门唤醒车机，首包即为开门态 (1)，立即触发迎宾开门播报，绝不静默吞噬！
+            if (currentFL == 1) {
+                lastTimeFL = now;
+                handleDoorTransition("FL", "主驾", 1, 0, universalMode, voiceMasterSwitch, prefs);
+            } else if (currentFR == 1) {
+                lastTimeFR = now;
+                handleDoorTransition("FR", "副驾", 1, 0, universalMode, voiceMasterSwitch, prefs);
+            } else if (currentRL == 1) {
+                lastTimeRL = now;
+                handleDoorTransition("RL", "左后", 1, 0, universalMode, voiceMasterSwitch, prefs);
+            } else if (currentRR == 1) {
+                lastTimeRR = now;
+                handleDoorTransition("RR", "右后", 1, 0, universalMode, voiceMasterSwitch, prefs);
             }
             return;
         }
@@ -210,13 +221,6 @@ public class DoorStateManager {
      */
     private void handleDoorTransition(String doorCode, String doorName, int newSts, int oldSts, boolean universalMode, boolean voiceMasterSwitch, SharedPreferences prefs) {
         long now = System.currentTimeMillis();
-
-        // 核心门禁 1: 开机冷启动物理基准校准期 (3.5s)，只静默校准四门真实物理状态，严禁发声！
-        // 彻底杜绝车机刚开机迎宾、logcat 缓存回放历史车门事件时瞬间狂报好几遍！
-        if (now - creationTime < COLD_BOOT_SILENT_MS) {
-            AppLogger.i("车门状态", "开机迎宾物理校准静默期(" + (now - creationTime) + "ms < " + COLD_BOOT_SILENT_MS + "ms)，静默同步物理状态不播报: " + doorName + (newSts == 1 ? "开" : "关"));
-            return;
-        }
 
         // 瞬间打断当前旧声音，实现干脆立断秒响应
         if (voicePlayer != null) {

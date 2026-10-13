@@ -29,8 +29,8 @@ public class GearStateMachine {
     private int isGearVoiceArmed = 0; // 0=P挡静默休眠态, 1=车主激活态
     private Runnable pendingGearTask = null;
     private int pendingTargetGear = -1; // 防抖期目标挡位：同目标心跳不重置计时器
-    private static final long GEAR_DEBOUNCE_MS = 160; // 目标挡位(D/R/P/S)常规防抖滤波窗口 (160ms 干脆秒出)
-    private static final long GEAR_N_TRANSIT_DEBOUNCE_MS = 650; // 空挡(N)过渡滤波窗口 (快速划过<650ms直接跳过零噪音，真正驻留才播)
+    private static final long GEAR_DEBOUNCE_MS = 0; // 目标挡位(D/R/P/S) 0ms 瞬发响应，硬件跳变即刻播报
+    private static final long GEAR_N_TRANSIT_DEBOUNCE_MS = 400; // 空挡(N)过渡滤波窗口 (快速划过跳过，驻留才播)
 
     public static int normalizeGear(int rawGear) {
         int low = rawGear & 0x0F;
@@ -206,9 +206,13 @@ public class GearStateMachine {
             }
         };
 
-        // 动态防抖策略：空挡(N)为换挡必经物理过渡态，快速划过(<650ms)直接跳过不播；其他目标挡位 160ms 干脆秒出
+        // 动态防抖策略：空挡(N)为换挡过渡态，快速划过跳过；D/R/P/S 等目标挡位直接瞬发执行，绝不滞后
         long debounceTime = (gear == 3) ? GEAR_N_TRANSIT_DEBOUNCE_MS : GEAR_DEBOUNCE_MS;
-        mainHandler.postDelayed(pendingGearTask, debounceTime);
+        if (debounceTime <= 0) {
+            pendingGearTask.run();
+        } else {
+            mainHandler.postDelayed(pendingGearTask, debounceTime);
+        }
     }
 
     private String getGearName(int gear) {
