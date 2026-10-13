@@ -23,8 +23,20 @@ function getActionOptions(keyName) {
     { action: 'mute_toggle', ...ACTION_DEFS.mute_toggle },
     { action: 'screen_off', ...ACTION_DEFS.screen_off }
   ];
-  if (keyName === 'next') return [{ action: 'next_track', ...ACTION_DEFS.next_track }, ...tail];
-  if (keyName === 'prev') return [{ action: 'prev_track', ...ACTION_DEFS.prev_track }, ...tail];
+  if (keyName === 'next') {
+    return [
+      { action: 'default', ...ACTION_DEFS.default },
+      { action: 'next_track', ...ACTION_DEFS.next_track },
+      ...tail
+    ];
+  }
+  if (keyName === 'prev') {
+    return [
+      { action: 'default', ...ACTION_DEFS.default },
+      { action: 'prev_track', ...ACTION_DEFS.prev_track },
+      ...tail
+    ];
+  }
   return [{ action: 'default', ...ACTION_DEFS.default }, ...tail];
 }
 

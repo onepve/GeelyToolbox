@@ -376,6 +376,19 @@ public class SteeringWheelKeyManager {
 
         final String singleAction = getGestureAction(keyCode, GESTURE_SINGLE);
         if (ACTION_DEFAULT.equals(singleAction)) {
+            // 控制台独立接管模式下，原厂 MediaKeyReceiver 已由 ADB 停用以防多源冲突
+            // 若用户对上一曲/下一曲保留【原厂默认】，由助手履行原厂默认切歌职责，确保切歌功能 100% 可用且不空转
+            if (MODE_TOOLBOX_ALONE.equals(wheelModeCached)) {
+                if (keyCode == KEY_NEXT) {
+                    AppLogger.i("方控按键", getKeyName(keyCode) + " 处于[原厂默认]，独立接管模式下执行下一曲切歌");
+                    executeAction(ACTION_NEXT_TRACK);
+                    return;
+                } else if (keyCode == KEY_PREV) {
+                    AppLogger.i("方控按键", getKeyName(keyCode) + " 处于[原厂默认]，独立接管模式下执行上一曲切歌");
+                    executeAction(ACTION_PREV_TRACK);
+                    return;
+                }
+            }
             return;
         }
 
@@ -1071,6 +1084,21 @@ public class SteeringWheelKeyManager {
                 up.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
                 context.sendOrderedBroadcast(up, null);
                 Log.d(TAG, "Directed media broadcast sent to " + pkg + " (code=" + keyCode + ")");
+
+                // 特殊适配：吉利定制酷我音乐 (cn.kuwo.autolitDM / cn.kuwo.kwmusiccar) 额外监听专属 Action 广播
+                if ("cn.kuwo.autolitDM".equals(pkg) || "cn.kuwo.kwmusiccar".equals(pkg)) {
+                    try {
+                        Intent kwIntent = new Intent("cn.kuwo.autolite.action.MEDIA_BUTTON");
+                        kwIntent.setPackage(pkg);
+                        kwIntent.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
+                        if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT) {
+                            kwIntent.putExtra("EXTRA", "MEDIA_NEXT");
+                        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
+                            kwIntent.putExtra("EXTRA", "MEDIA_PREV");
+                        }
+                        context.sendBroadcast(kwIntent);
+                    } catch (Exception ignored) {}
+                }
             } catch (Exception ignored) {}
         }
     }
@@ -1089,9 +1117,10 @@ public class SteeringWheelKeyManager {
         "com.suding.speedplay",          // 速顶 CarPlay / HiCar
         "com.zjinnova.zlink",            // ZLink 互联
         // 主流本地与在线音乐播放器
-        "com.luna.music",                // 汽水音乐 (抖音车载/手机版)
-        "cn.kuwo.kwmusiccar",            // 酷我音乐车机版
+        "cn.kuwo.autolitDM",             // 吉利原厂定制酷我音乐车机版
+        "cn.kuwo.kwmusiccar",            // 酷我音乐车机公开版
         "cn.kuwo.player",                // 酷我音乐手机版/HD
+        "com.luna.music",                // 汽水音乐 (抖音车载/手机版)
         "com.tencent.qqmusiccar",        // QQ音乐车机版
         "com.tencent.qqmusic",           // QQ音乐手机版
         "com.netease.cloudmusiccar",     // 网易云音乐车机版
