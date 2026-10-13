@@ -231,14 +231,14 @@ public class SteeringWheelKeyManager {
         if (prefs.contains(specificKey)) {
             return prefs.getString(specificKey, ACTION_DEFAULT);
         }
-        // 兼容回退老配置 (单击模式)
+        // 兼容回退老配置 (单击模式：所有按键未配置时严格回归 default 放行原厂，绝不私自兜底代发)
         if (GESTURE_SINGLE.equals(gesture)) {
             String legacyKey = "wheel_action_" + prefix;
             if (keyCode == KEY_WMODE) return prefs.getString(legacyKey, ACTION_OPEN_360);
-            if (keyCode == KEY_NEXT) return prefs.getString(legacyKey, ACTION_NEXT_TRACK);
-            if (keyCode == KEY_PREV) return prefs.getString(legacyKey, ACTION_PREV_TRACK);
+            if (keyCode == KEY_NEXT) return prefs.getString(legacyKey, ACTION_DEFAULT);
+            if (keyCode == KEY_PREV) return prefs.getString(legacyKey, ACTION_DEFAULT);
             if (keyCode == KEY_CUSTOM) return prefs.getString(legacyKey, ACTION_DEFAULT);
-            if (keyCode == KEY_OK) return prefs.getString(legacyKey, ACTION_PLAY_PAUSE);
+            if (keyCode == KEY_OK) return prefs.getString(legacyKey, ACTION_DEFAULT);
             return prefs.getString(legacyKey, ACTION_DEFAULT);
         }
         return ACTION_DEFAULT;

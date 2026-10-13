@@ -381,6 +381,25 @@ function toggleWheelMasterSwitch() {
 }
 
 function setWheelMode(mode) {
+  if (mode === 'toolbox_alone' && (store.vehicleAuto.wheel_push_playback_cluster || store.vehicleAuto.wheel_push_lyrics_cluster)) {
+    openModal('confirm', {
+      title: '多媒体通道互斥提示',
+      desc: '开启「控制台独立接管」将由助手强占 EAS 通道以保障蓝牙微信语音放声，原厂仪表盘歌词与息屏卡片将无法显示。系统将自动关闭仪表歌词与屏保卡片投递，是否确认切换？',
+      confirmText: '确认切换接管',
+      onConfirm: () => {
+        store.vehicleAuto.wheel_push_playback_cluster = false;
+        bridge.call('setVehicleAutomationSetting', 'wheel_push_playback_cluster', false);
+        store.vehicleAuto.wheel_push_lyrics_cluster = false;
+        bridge.call('setVehicleAutomationSetting', 'wheel_push_lyrics_cluster', false);
+
+        store.vehicleAuto.wheel_control_mode = 'toolbox_alone';
+        bridge.call('setWheelControlStringSetting', 'wheel_control_mode', 'toolbox_alone');
+        showToast('方控模式已切换: 控制台独立接管 (已关闭仪表歌词与屏保卡片)');
+      }
+    });
+    return;
+  }
+
   store.vehicleAuto.wheel_control_mode = mode;
   bridge.call('setWheelControlStringSetting', 'wheel_control_mode', mode);
   showToast('方控模式已切换: ' + (mode === 'carmedia_first' ? '米小江优先' : (mode === 'toolbox_alone' ? '控制台独立接管' : '恢复原厂')));
@@ -388,6 +407,23 @@ function setWheelMode(mode) {
 
 function toggleClusterPlayback() {
   const next = !store.vehicleAuto.wheel_push_playback_cluster;
+  if (next && store.vehicleAuto.wheel_control_mode === 'toolbox_alone') {
+    openModal('confirm', {
+      title: '多媒体通道互斥提示',
+      desc: '开启息屏音乐卡片需要将通道主控权完整交还给原厂系统（酷我/系统媒体中心），这会自动将方控模式切换为「米小江优先/原厂放行」，助手的【蓝牙微信语音声道强占】将退让。是否确认开启并切换？',
+      confirmText: '确认开启并退让',
+      onConfirm: () => {
+        store.vehicleAuto.wheel_push_playback_cluster = true;
+        bridge.call('setVehicleAutomationSetting', 'wheel_push_playback_cluster', true);
+
+        store.vehicleAuto.wheel_control_mode = 'carmedia_first';
+        bridge.call('setWheelControlStringSetting', 'wheel_control_mode', 'carmedia_first');
+        showToast('已开启屏保音乐卡片，方控模式已退让为米小江/原厂优先');
+      }
+    });
+    return;
+  }
+
   store.vehicleAuto.wheel_push_playback_cluster = next;
   bridge.call('setVehicleAutomationSetting', 'wheel_push_playback_cluster', next);
   showToast(next ? '已开启仪表/屏保播放状态投递' : '已关闭投递，保持仪表盘与屏保纯净');
@@ -395,6 +431,23 @@ function toggleClusterPlayback() {
 
 function toggleClusterLyrics() {
   const next = !store.vehicleAuto.wheel_push_lyrics_cluster;
+  if (next && store.vehicleAuto.wheel_control_mode === 'toolbox_alone') {
+    openModal('confirm', {
+      title: '多媒体通道互斥提示',
+      desc: '开启仪表盘歌词需要将通道主控权完整交还给原厂系统（酷我/系统媒体中心），这会自动将方控模式切换为「米小江优先/原厂放行」，助手的【蓝牙微信语音声道强占】将退让。是否确认开启并切换？',
+      confirmText: '确认开启并退让',
+      onConfirm: () => {
+        store.vehicleAuto.wheel_push_lyrics_cluster = true;
+        bridge.call('setVehicleAutomationSetting', 'wheel_push_lyrics_cluster', true);
+
+        store.vehicleAuto.wheel_control_mode = 'carmedia_first';
+        bridge.call('setWheelControlStringSetting', 'wheel_control_mode', 'carmedia_first');
+        showToast('已开启仪表盘歌词投递，方控模式已退让为米小江/原厂优先');
+      }
+    });
+    return;
+  }
+
   store.vehicleAuto.wheel_push_lyrics_cluster = next;
   bridge.call('setVehicleAutomationSetting', 'wheel_push_lyrics_cluster', next);
   showToast(next ? '已开启仪表盘歌词投递' : '已关闭歌词投递，保持仪表盘纯净');

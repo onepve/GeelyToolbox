@@ -158,8 +158,7 @@ public final class VehicleConfigHelper {
                     String def = "default";
                     if ("single".equals(g)) {
                         if ("mode".equals(k)) def = "open_360";
-                        else if ("next".equals(k)) def = "next_track";
-                        else if ("prev".equals(k)) def = "prev_track";
+                        // 原厂主权铁律：下一曲、上一曲、OK等未配置时严格保持 default 原厂放行，不设强制代发兜底
                     }
                     obj.put(pKey, prefs.getString(pKey, prefs.getString("wheel_action_" + k, def)));
                 }
