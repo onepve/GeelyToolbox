@@ -142,6 +142,15 @@ public class EasMediaBridge {
 
         AppLogger.i("音频通道", "同步 EAS 桥接配置: 模式=" + mode + " 投递状态=" + pushPlayback + " 投递歌词=" + pushLyrics);
 
+        // 核心解耦：当用户开启仪表歌词或息屏屏保投递时，车主意图是由车机自带音乐播放器（如酷我/QQ音乐）自行投递
+        // 助手必须立即注销 EAS 注册并释放蓝牙媒体焦点，严禁霸占媒体中心，将通道完整交还给正在放歌的播放器
+        if (pushPlayback || pushLyrics) {
+            AppLogger.i("音频通道", "已开启仪表歌词/屏保投递，注销助手 EAS 媒体注册并释放焦点，完整交还给音乐播放器");
+            releaseEasRegistration();
+            abandonBluetoothFocus();
+            return;
+        }
+
         if ("toolbox_alone".equals(mode) || a2dpSinkConnected) {
             // 控制台独立接管或手机蓝牙已连接：确保 EAS 初始化并注册选通蓝牙通道
             ensureEasReady();
@@ -159,6 +168,10 @@ public class EasMediaBridge {
      * 确保 EAS API 就绪并注册
      */
     private synchronized void ensureEasReady() {
+        if (pushPlaybackCluster || pushLyricsCluster) {
+            AppLogger.i("音频通道", "当前已开启仪表歌词/屏保投递，跳过助手 EAS 媒体注册以防挤占通道");
+            return;
+        }
         if (mApi == null) {
             mApi = MediaCenterAPI.get(appContext);
         }
@@ -169,7 +182,9 @@ public class EasMediaBridge {
                 public void onAPIReady(boolean ready) {
                     if (ready) {
                         AppLogger.i("音频通道", "ECARX EAS API 就绪，执行媒体客户端注册...");
-                        performRegistration();
+                        if (!pushPlaybackCluster && !pushLyricsCluster) {
+                            performRegistration();
+                        }
                     } else {
                         AppLogger.w("音频通道", "ECARX EAS API 初始化返回失败");
                         mInitStarted = false;
@@ -177,7 +192,9 @@ public class EasMediaBridge {
                 }
             });
         } else if (mApi.isReady() && !mRegistered) {
-            performRegistration();
+            if (!pushPlaybackCluster && !pushLyricsCluster) {
+                performRegistration();
+            }
         }
     }
 
