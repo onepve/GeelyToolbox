@@ -152,6 +152,20 @@ public class DoorStateManager {
             currentRL = (rl >= 0) ? rl : 0;
             currentRR = (rr >= 0) ? rr : 0;
 
+            // 行车途中重启/更新守护：若车速大于0，证明车辆处于行驶状态，主驾必然就坐且四门全关，杜绝行车误报
+            if (VehicleAutomationService.currentSpeedKmH > 0) {
+                isDriverInside = true;
+                currentFL = 0;
+                currentFR = 0;
+                currentRL = 0;
+                currentRR = 0;
+                AppLogger.i("车门状态", "行车中开机/重启基准建立 (车速=" + VehicleAutomationService.currentSpeedKmH + "km/h) -> 判定车内就坐并全关，跳过所有开机播报");
+                if (listener != null) {
+                    listener.onDoorStateChanged(0, 0, 0, 0);
+                }
+                return;
+            }
+
             // 乘员就坐状态统一置为车外态，等待上车或电源通知
             isDriverInside = false;
 
@@ -273,6 +287,12 @@ public class DoorStateManager {
             }
         } else { // ============ 【关门动作】 ============
             AppLogger.i("车门状态", doorName + "门 关好");
+
+            // 行车途中判定：车速大于0时，车门处于行驶常态，跳过播报杜绝重启或颠簸误报
+            if (VehicleAutomationService.currentSpeedKmH > 0) {
+                AppLogger.i("车门状态", "行车中 (车速=" + VehicleAutomationService.currentSpeedKmH + "km/h) -> 跳过" + doorName + "车门关好播报");
+                return;
+            }
 
             if (universalMode) {
                 boolean enableClose = PrefUtils.getBoolean(prefs, "voice_enable_door_universal_close", true);

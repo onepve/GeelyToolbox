@@ -43,20 +43,20 @@
             <span v-if="currentAction === opt.action" class="text-[18px] text-car-accent font-black ml-1.5 shrink-0">✓</span>
           </button>
 
-          <!-- 自定义第三方应用入口：占满双列 -->
+          <!-- 自定义第三方应用入口：作为标准磁贴单元与左侧对齐（息屏屏保右侧） -->
           <button
             @click="pickCustom"
-            class="col-span-2 rounded-xl flex items-center justify-between cursor-pointer transition-all text-left px-3.5 py-2.5"
+            class="rounded-xl flex items-center justify-between cursor-pointer transition-all text-left px-3 py-2.5"
             :class="isCustom
-              ? 'bg-car-item border-2 border-car-accent text-car-text'
+              ? 'bg-car-item border-2 border-car-accent text-car-text shadow-sm'
               : 'bg-car-item border-2 border-car-border text-car-text hover:border-car-border-light'"
             style="min-height: 60px; box-sizing: border-box;"
           >
-            <span class="flex flex-col min-w-0">
-              <span class="text-[16px] font-black">{{ isCustom ? (customName || '自定义应用') : '自定义打开应用' }}</span>
-              <span class="text-[12.5px] font-bold text-car-sub mt-0.5">{{ isCustom ? '点击重新更换应用' : '挑选车机第三方应用' }}</span>
+            <span class="flex flex-col min-w-0 pr-1.5">
+              <span class="text-[16px] font-black leading-tight text-car-text whitespace-nowrap">{{ isCustom ? (customName || '自定义应用') : '自定义应用' }}</span>
+              <span class="text-[12.5px] font-bold text-car-sub mt-0.5 whitespace-nowrap">{{ isCustom ? '点击重新挑选' : '挑选车机应用' }}</span>
             </span>
-            <span v-if="isCustom" class="text-[18px] text-car-accent font-black ml-2 shrink-0">✓</span>
+            <span v-if="isCustom" class="text-[18px] text-car-accent font-black ml-1.5 shrink-0">✓</span>
           </button>
         </div>
       </div>

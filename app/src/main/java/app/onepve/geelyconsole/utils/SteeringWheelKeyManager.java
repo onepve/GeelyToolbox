@@ -980,31 +980,20 @@ public class SteeringWheelKeyManager {
         // ════════════════════════════════════════════════════════════
         // ════════════════════════════════════════════════════════════
         // 分支 B：车机本地播放器 / HiCar / 互联盒子分发
-        // 采用动态单点锁定 + MediaSession + 定向显式广播三级精准调度（彻底杜绝多播放器串音）
+        // 采用单点锁定 + 分级互斥派发架构（MediaSession优先 -> 定向广播次优 -> 系统兜底，杜绝按一次换两下歌）
         // ════════════════════════════════════════════════════════════
         // 0. 核心音源对齐：确保底层 EAS 物理通道切换至 6 号本地/在线通道，并同步桌面卡片状态
         EasMediaBridge.getInstance(context).activateLocalMediaChannel();
 
-        // 1. Android 原生官方推荐通道: AudioManager.dispatchMediaKeyEvent (系统层全局尝试)
-        try {
-            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            if (am != null) {
-                am.dispatchMediaKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
-                am.dispatchMediaKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
-                Log.i(TAG, "Dispatched media key via AudioManager: " + keyCode);
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "AudioManager.dispatchMediaKeyEvent error: " + e.getMessage());
-        }
-
-        // 2. 动态解析本次控制的目标应用（防串音核心真源）
+        // 1. 动态解析本次控制的目标应用（防串音核心真源）
         String targetPkg = resolveTargetMediaPackage();
         Log.i(TAG, "Resolved target media package: " + (targetPkg.isEmpty() ? "NONE" : targetPkg) + " (code=" + keyCode + ")");
 
         boolean isPlaying = isAnyMediaPlaying();
         boolean isTrackSkip = (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT || keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS);
+        boolean dispatched = false;
 
-        // 3. MediaSessionManager 传输控制通道 (直接调用目标或活跃会话的 skipToNext / skipToPrevious / 播放暂停)
+        // 2. 第一级优先通道: MediaSessionManager 传输控制 (现代播放器标准，直接控制 TransportControls，精准且零串音)
         try {
             MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
             if (msm != null) {
@@ -1028,17 +1017,21 @@ public class SteeringWheelKeyManager {
                                 if (!isPlaying) {
                                     mc.getTransportControls().play();
                                 }
+                                dispatched = true;
                             } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
                                 mc.getTransportControls().skipToPrevious();
                                 if (!isPlaying) {
                                     mc.getTransportControls().play();
                                 }
+                                dispatched = true;
                             } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
                                 // 幂等暂停：无论状态广播是否滞后，pause() 语义恒定为暂停
                                 mc.getTransportControls().pause();
+                                dispatched = true;
                             } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
                                 // 幂等播放：与 pause() 对称，杜绝 TOGGLE 读态竞态反向
                                 mc.getTransportControls().play();
+                                dispatched = true;
                             } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
                                 android.media.session.PlaybackState state = mc.getPlaybackState();
                                 if (state != null && state.getState() == android.media.session.PlaybackState.STATE_PLAYING) {
@@ -1049,10 +1042,11 @@ public class SteeringWheelKeyManager {
                                     mc.dispatchMediaButtonEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
                                     mc.dispatchMediaButtonEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
                                 }
+                                dispatched = true;
                             }
-                            Log.i(TAG, "TransportControls dispatched to " + pkg);
-                            if (!targetPkg.isEmpty()) {
-                                break; // 目标已命中，跳出避免多发
+                            Log.i(TAG, "TransportControls dispatched to " + pkg + ", completed single delivery");
+                            if (!targetPkg.isEmpty() || dispatched) {
+                                break; // 目标已命中，跳出循环，绝不再走后续通道防止切歌换两下
                             }
                         }
                     }
@@ -1062,44 +1056,61 @@ public class SteeringWheelKeyManager {
             Log.w(TAG, "MediaSession transportControls error: " + e.getMessage());
         }
 
-        // 4. 定向显式广播调度 (严格遵循车规标准：切歌就是单纯切歌，严禁越俎代庖强行拉起或唤醒未运行的进程)
-        List<String> broadcastTargets = new ArrayList<>();
-        if (!targetPkg.isEmpty()) {
-            broadcastTargets.add(targetPkg);
-        } else {
-            // 未锁定具体单一应用时，向整车已安装的媒体应用派发标准按键
-            broadcastTargets.addAll(getInstalledMediaPackages());
+        // 3. 第二级通道: 定向显式广播调度 (若 MediaSession 未拦截命中，向目标或系统安装应用下发标准按键广播与酷我私有广播)
+        if (!dispatched) {
+            List<String> broadcastTargets = new ArrayList<>();
+            if (!targetPkg.isEmpty()) {
+                broadcastTargets.add(targetPkg);
+            } else {
+                // 未锁定具体单一应用时，向整车已安装的媒体应用派发标准按键
+                broadcastTargets.addAll(getInstalledMediaPackages());
+            }
+
+            // 仅在明确是切歌键（NEXT/PREV）或对应键值时下发纯粹的媒体按键广播，绝不附加 KEYCODE_MEDIA_PLAY，绝不拉起前后台进程
+            for (String pkg : broadcastTargets) {
+                try {
+                    Intent down = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                    down.setPackage(pkg);
+                    down.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
+                    context.sendOrderedBroadcast(down, null);
+
+                    Intent up = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                    up.setPackage(pkg);
+                    up.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
+                    context.sendOrderedBroadcast(up, null);
+                    Log.d(TAG, "Directed media broadcast sent to " + pkg + " (code=" + keyCode + ")");
+
+                    // 特殊适配：吉利定制酷我音乐 (cn.kuwo.autolitDM / cn.kuwo.kwmusiccar) 额外监听专属 Action 广播
+                    if ("cn.kuwo.autolitDM".equals(pkg) || "cn.kuwo.kwmusiccar".equals(pkg)) {
+                        try {
+                            Intent kwIntent = new Intent("cn.kuwo.autolite.action.MEDIA_BUTTON");
+                            kwIntent.setPackage(pkg);
+                            kwIntent.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
+                            if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT) {
+                                kwIntent.putExtra("EXTRA", "MEDIA_NEXT");
+                            } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
+                                kwIntent.putExtra("EXTRA", "MEDIA_PREV");
+                            }
+                            context.sendBroadcast(kwIntent);
+                        } catch (Exception ignored) {}
+                    }
+                    dispatched = true;
+                } catch (Exception ignored) {}
+            }
         }
 
-        // 仅在明确是切歌键（NEXT/PREV）或对应键值时下发纯粹的媒体按键广播，绝不附加 KEYCODE_MEDIA_PLAY，绝不拉起前后台进程
-        for (String pkg : broadcastTargets) {
+        // 4. 第三级兜底通道: 仅在既无活跃 MediaSession 且无定向广播目标时，才通过系统 AudioManager 全局兜底
+        if (!dispatched) {
             try {
-                Intent down = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                down.setPackage(pkg);
-                down.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
-                context.sendOrderedBroadcast(down, null);
-
-                Intent up = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                up.setPackage(pkg);
-                up.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
-                context.sendOrderedBroadcast(up, null);
-                Log.d(TAG, "Directed media broadcast sent to " + pkg + " (code=" + keyCode + ")");
-
-                // 特殊适配：吉利定制酷我音乐 (cn.kuwo.autolitDM / cn.kuwo.kwmusiccar) 额外监听专属 Action 广播
-                if ("cn.kuwo.autolitDM".equals(pkg) || "cn.kuwo.kwmusiccar".equals(pkg)) {
-                    try {
-                        Intent kwIntent = new Intent("cn.kuwo.autolite.action.MEDIA_BUTTON");
-                        kwIntent.setPackage(pkg);
-                        kwIntent.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
-                        if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT) {
-                            kwIntent.putExtra("EXTRA", "MEDIA_NEXT");
-                        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
-                            kwIntent.putExtra("EXTRA", "MEDIA_PREV");
-                        }
-                        context.sendBroadcast(kwIntent);
-                    } catch (Exception ignored) {}
+                AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                if (am != null) {
+                    am.dispatchMediaKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
+                    am.dispatchMediaKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
+                    Log.i(TAG, "Dispatched fallback media key via AudioManager: " + keyCode);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                Log.w(TAG, "AudioManager fallback error: " + e.getMessage());
+            }
         }
     }
 
