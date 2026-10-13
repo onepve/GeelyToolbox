@@ -288,12 +288,6 @@ public class DoorStateManager {
         } else { // ============ 【关门动作】 ============
             AppLogger.i("车门状态", doorName + "门 关好");
 
-            // 行车途中判定：车速大于0时，车门处于行驶常态，跳过播报杜绝重启或颠簸误报
-            if (VehicleAutomationService.currentSpeedKmH > 0) {
-                AppLogger.i("车门状态", "行车中 (车速=" + VehicleAutomationService.currentSpeedKmH + "km/h) -> 跳过" + doorName + "车门关好播报");
-                return;
-            }
-
             if (universalMode) {
                 boolean enableClose = PrefUtils.getBoolean(prefs, "voice_enable_door_universal_close", true);
                 if (voiceMasterSwitch && enableClose && voicePlayer != null) {
