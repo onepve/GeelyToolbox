@@ -1069,16 +1069,41 @@ public class SteeringWheelKeyManager {
             // 仅在明确是切歌键（NEXT/PREV）或对应键值时下发纯粹的媒体按键广播，绝不附加 KEYCODE_MEDIA_PLAY，绝不拉起前后台进程
             for (String pkg : broadcastTargets) {
                 try {
-                    Intent down = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                    down.setPackage(pkg);
-                    down.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
-                    context.sendOrderedBroadcast(down, null);
+                    // 查询应用声明的显式 MediaButtonReceiver 组件
+                    Intent bQuery = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                    bQuery.setPackage(pkg);
+                    List<ResolveInfo> receivers = context.getPackageManager().queryBroadcastReceivers(bQuery, 0);
+                    boolean explicitSent = false;
+                    if (receivers != null && !receivers.isEmpty()) {
+                        for (ResolveInfo ri : receivers) {
+                            if (ri.activityInfo != null) {
+                                ComponentName comp = new ComponentName(ri.activityInfo.packageName, ri.activityInfo.name);
+                                Intent down = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                                down.setComponent(comp);
+                                down.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
+                                context.sendOrderedBroadcast(down, null);
 
-                    Intent up = new Intent(Intent.ACTION_MEDIA_BUTTON);
-                    up.setPackage(pkg);
-                    up.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
-                    context.sendOrderedBroadcast(up, null);
-                    Log.d(TAG, "Directed media broadcast sent to " + pkg + " (code=" + keyCode + ")");
+                                Intent up = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                                up.setComponent(comp);
+                                up.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
+                                context.sendOrderedBroadcast(up, null);
+                                explicitSent = true;
+                                Log.d(TAG, "Explicit media broadcast sent to " + comp.flattenToShortString() + " (code=" + keyCode + ")");
+                            }
+                        }
+                    }
+                    if (!explicitSent) {
+                        Intent down = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                        down.setPackage(pkg);
+                        down.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_DOWN, keyCode, 0));
+                        context.sendOrderedBroadcast(down, null);
+
+                        Intent up = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                        up.setPackage(pkg);
+                        up.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(now, now, KeyEvent.ACTION_UP, keyCode, 0));
+                        context.sendOrderedBroadcast(up, null);
+                        Log.d(TAG, "Directed media broadcast sent to " + pkg + " (code=" + keyCode + ")");
+                    }
 
                     // 特殊适配：吉利定制酷我音乐 (cn.kuwo.autolitDM / cn.kuwo.kwmusiccar) 额外监听专属 Action 广播
                     if ("cn.kuwo.autolitDM".equals(pkg) || "cn.kuwo.kwmusiccar".equals(pkg)) {
@@ -1094,7 +1119,6 @@ public class SteeringWheelKeyManager {
                             context.sendBroadcast(kwIntent);
                         } catch (Exception ignored) {}
                     }
-                    dispatched = true;
                 } catch (Exception ignored) {}
             }
         }

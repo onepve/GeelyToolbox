@@ -1781,16 +1781,8 @@ public class VehicleAutomationService extends Service {
 
             // 2. 主流车机播放器已知后台核心服务直通加速 (公开组件与显式媒体按钮唤醒)
             if ("com.tencent.qqmusiccar".equals(pkg)) {
-                // QQ音乐车机版公开拉活Intent探测（严禁调用未导出的私有NetworkService，防系统Permission Denial）
-                try {
-                    Intent qqIntent = new Intent("com.tencent.qqmusiccar.action.MEDIA_SERVICE");
-                    qqIntent.setPackage(pkg);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(qqIntent);
-                    } else {
-                        startService(qqIntent);
-                    }
-                } catch (Throwable ignored) {}
+                // QQ音乐车机版通过显式媒体按钮接收器进行冷启动预热拉活
+                sendExplicitMediaButtonToPackage(pkg, KeyEvent.KEYCODE_MEDIA_PLAY);
             } else if ("com.netease.cloudmusiccar".equals(pkg) || "com.netease.cloudmusic".equals(pkg) || "com.netease.cloudmusic.iot".equals(pkg)) {
                 tryStartComponentService(pkg, "com.netease.cloudmusic.service.PlayService");
                 tryStartComponentService(pkg, "com.netease.cloudmusic.service.MediaPlaybackService");
@@ -1919,20 +1911,20 @@ public class VehicleAutomationService extends Service {
             new SteeringWheelKeyManager(VehicleAutomationService.this).sendMediaKeyEventPublic(KeyEvent.KEYCODE_MEDIA_NEXT);
         }
 
-        // 核心优化：延迟 800ms 快速二次兜底，确保冷启动刚完成初始化的播放器稳定出声
+        // 核心优化：延迟 1500ms 快速二次兜底，确保冷启动刚完成初始化的播放器稳定出声
         mainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 try {
                     if (pkg != null && !pkg.isEmpty() && !"com.android.bluetooth".equals(pkg)) {
                         if (!isTargetMediaPlaying(pkg) && !isAnyMediaPlaying()) {
-                            AppLogger.i("车身联动", "【车速自启多媒体】目标媒体尚未出声，800ms 快速二次唤醒: " + pkg);
+                            AppLogger.i("车身联动", "【车速自启多媒体】目标媒体尚未出声，1500ms 快速二次唤醒: " + pkg);
                             performMusicWakeup(pkg);
                         }
                     }
                 } catch (Throwable ignored) {}
             }
-        }, 800);
+        }, 1500);
 
         // 核心架构：落地 3 次阶梯重试 (30s / 60s / 90s) 与出声熔断闭锁
         cancelPendingMusicRetries("发起新一轮车速达标唤醒");
