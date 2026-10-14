@@ -55,7 +55,7 @@ CARD_BUTTON_CONTRACTS = [
         "private void processVehicleSpeedAutomation",
         [r"speedAutoplayTriggeredInTrip = true;", r"isEngineRunning\(\)"],
         [],
-        "2703c027f4bd7babadded6fe49f659ee0c494dc7b8d637b7a65ca94d175db563"
+        "174eef103c444f4b99f9fb919620c6293a0adb58f38429e7ef18fd03cf81719b"
     ),
     (
         "车身联动卡片", "音乐唤醒与方向盘下一曲派发完整实现硬哈希锁死 (triggerMusicAutoplay)",
@@ -63,7 +63,7 @@ CARD_BUTTON_CONTRACTS = [
         "private void triggerMusicAutoplay",
         [r"sendMediaKeyEventPublic\(KeyEvent\.KEYCODE_MEDIA_NEXT\)", r"sendExplicitMediaButtonToPackage"],
         [],
-        "30e50dce51c3817ee1683dea23aeef2281392650f0487db235f6e88b9737055f"
+        "03962601c89eaeda31b11638b3d02833a1292191e86b9d10a44610a7b8086892"
     ),
     (
         "车身联动卡片", "主驾车门开关联动 (door_fl)",

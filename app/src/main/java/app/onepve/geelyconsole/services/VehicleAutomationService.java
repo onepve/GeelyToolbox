@@ -1177,17 +1177,13 @@ public class VehicleAutomationService extends Service {
     }
 
     public void handleGearSignal(final int gear) {
-        // 核心修复：等红绿灯发动机自动启停（Start-Stop）防御！
-        // 等红绿灯踩刹车时，发动机停转、发电机停充（电压落回12V），但车辆并未真正熄火下电（lastPowerMode仍为ON且屏幕点亮）。
-        // 若当前已经处于前进挡/行车挡，严禁重置挡位状态机，否则绿灯松刹车发动机重启会把D挡误当成点火从P起步而爆音误报！
-        if (!isEngineRunning()) {
-            // 仅在明确处于物理P挡或真正熄火下电时，才允许重置状态机；行车挡等红灯自动启停绝对保持状态记忆！
-            if (gearStateMachine != null && (gearStateMachine.getGear() == 5 || lastPowerMode == 0)) {
+        // 核心修复：等红绿灯发动机自动启停（Start-Stop）与冷启动点火防护！
+        // 1. 挡位是来自 TCU/MCU 权威底盘总线的绝对物理状态，只要收到有效挡位跃变，必须无条件更新状态机，绝不因电压滞后丢弃。
+        // 2. 仅在明确处于物理P挡或真正熄火下电时，才允许重置状态机；行车挡(D/N/R/S)等红灯自动启停绝对保持状态记忆！
+        if (gearStateMachine != null) {
+            if (!isEngineRunning() && (gearStateMachine.getGear() == 5 || lastPowerMode == 0)) {
                 gearStateMachine.resetState();
             }
-            return;
-        }
-        if (gearStateMachine != null) {
             gearStateMachine.updateGear(gear, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
         }
 
@@ -1618,10 +1614,10 @@ public class VehicleAutomationService extends Service {
     private void processVehicleSpeedAutomation(int speed) {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
 
-        // 核心铁律门禁：仅允许在前进挡(D挡/2)触发前进车速多媒体自启与自定义动作！
+        // 核心铁律门禁：仅允许在前进挡(D挡/2 或 S挡/6/7)触发前进车速多媒体自启与自定义动作！
         // 挂入驻车挡(P挡/5)、倒车挡(R挡/4)或空挡(N挡/3)期间，直接忽略返回，绝不触发！
         int currentGear = (gearStateMachine != null) ? gearStateMachine.getGear() : lastGearPos;
-        if (currentGear != 2) {
+        if (currentGear != 2 && currentGear != 6 && currentGear != 7) {
             return;
         }
 
@@ -1950,11 +1946,11 @@ public class VehicleAutomationService extends Service {
                     synchronized (pendingMusicRetryRunnables) {
                         pendingMusicRetryRunnables.remove(this);
                     }
-                    // 熔断守卫 1: 挡位门禁 (仅允许在 D 挡中重试，若挂入 P/R/N 挡则立即终止)
+                    // 熔断守卫 1: 挡位门禁 (仅允许在前进挡 D/S 中重试，若挂入 P/R/N 挡则立即终止)
                     int currentGear = (gearStateMachine != null) ? gearStateMachine.getGear() : lastGearPos;
-                    if (currentGear != 2) {
-                        AppLogger.i("车身联动", "【音乐阶梯重试#" + attempt + "】已离开 D 挡(gear=" + currentGear + ")，熔断注销后续重试");
-                        cancelPendingMusicRetries("离开 D 挡");
+                    if (currentGear != 2 && currentGear != 6 && currentGear != 7) {
+                        AppLogger.i("车身联动", "【音乐阶梯重试#" + attempt + "】已离开前进挡(gear=" + currentGear + ")，熔断注销后续重试");
+                        cancelPendingMusicRetries("离开前进挡");
                         return;
                     }
                     // 熔断守卫 2: 车主手动暂停避让
