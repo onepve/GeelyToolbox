@@ -163,14 +163,21 @@
               仅剩 {{ daysLeft.days }} 天
             </span>
           </div>
-          <div class="text-[14px] font-black text-rose-400">
+          <div 
+            class="text-[14px] font-black"
+            :class="store.oilPrice.nextAdjustment.trend === 'down' ? 'text-emerald-400' : (store.oilPrice.nextAdjustment.trend === 'up' ? 'text-rose-400' : 'text-car-sub')"
+          >
             {{ store.oilPrice.nextAdjustment.trendLabel }} ({{ store.oilPrice.nextAdjustment.predictedTonne }})
           </div>
         </div>
 
         <div class="text-[14.5px] text-car-sub font-bold flex items-center leading-relaxed">
-          
-          <span>预测变动幅度：每升预计上调约 <b class="text-rose-400">{{ store.oilPrice.nextAdjustment.predictedLiter }} 元</b>。</span>
+          <span>
+            预测变动幅度：每升预计{{ store.oilPrice.nextAdjustment.trend === 'down' ? '下调' : (store.oilPrice.nextAdjustment.trend === 'up' ? '上调' : '变动') }}约 
+            <b :class="store.oilPrice.nextAdjustment.trend === 'down' ? 'text-emerald-400' : (store.oilPrice.nextAdjustment.trend === 'up' ? 'text-rose-400' : 'text-car-text')">
+              {{ (store.oilPrice.nextAdjustment.predictedLiter || '').replace(/^[+-]/, '') }} 元
+            </b>。
+          </span>
         </div>
 
         <div class="p-3 rounded-xl bg-car-item border border-car-border text-[14px] text-car-text font-bold flex items-center">

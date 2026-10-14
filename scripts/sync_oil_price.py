@@ -10,13 +10,14 @@
 import os
 import sys
 import json
+import re
 import urllib.request
 import urllib.parse
 from datetime import datetime, date
 
 REPO_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
-# 2026 年国家发改委成品油调价日历 (每 10 个工作日，官方法定窗口)
+# 2026 年国家发改委成品油调价日历 (每 10 个工作日，官方法定窗口，遇国庆长假等法定休市顺延)
 SCHEDULE_2026 = [
     {"round": 1, "date": "2026-01-06 24:00", "label": "2026年1月6日 24:00"},
     {"round": 2, "date": "2026-01-20 24:00", "label": "2026年1月20日 24:00"},
@@ -37,13 +38,83 @@ SCHEDULE_2026 = [
     {"round": 17, "date": "2026-08-31 24:00", "label": "2026年8月31日 24:00"},
     {"round": 18, "date": "2026-09-11 24:00", "label": "2026年9月11日 24:00"},
     {"round": 19, "date": "2026-09-24 24:00", "label": "2026年9月24日 24:00"},
-    {"round": 20, "date": "2026-10-14 24:00", "label": "2026年10月14日 24:00"},
-    {"round": 21, "date": "2026-10-28 24:00", "label": "2026年10月28日 24:00"},
-    {"round": 22, "date": "2026-11-11 24:00", "label": "2026年11月11日 24:00"},
-    {"round": 23, "date": "2026-11-25 24:00", "label": "2026年11月25日 24:00"},
-    {"round": 24, "date": "2026-12-09 24:00", "label": "2026年12月9日 24:00"},
-    {"round": 25, "date": "2026-12-23 24:00", "label": "2026年12月23日 24:00"},
+    {"round": 20, "date": "2026-10-15 24:00", "label": "2026年10月15日 24:00"},
+    {"round": 21, "date": "2026-10-29 24:00", "label": "2026年10月29日 24:00"},
+    {"round": 22, "date": "2026-11-12 24:00", "label": "2026年11月12日 24:00"},
+    {"round": 23, "date": "2026-11-26 24:00", "label": "2026年11月26日 24:00"},
+    {"round": 24, "date": "2026-12-10 24:00", "label": "2026年12月10日 24:00"},
+    {"round": 25, "date": "2026-12-24 24:00", "label": "2026年12月24日 24:00"},
 ]
+
+def fetch_oil_forecast(current_year=2026):
+    """
+    抓取全国成品油下轮调价权威预测 (免鉴权动态源: 汽油价格网 / 油价网)
+    包含: 下轮调价具体窗口、涨跌方向 (下调/上调/搁浅)、预期变动幅度 (元/吨与元/升)
+    """
+    urls = [
+        "http://m.qiyoujiage.com/",
+        "http://www.qiyoujiage.com/"
+    ]
+    headers = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"
+    }
+
+    for u in urls:
+        try:
+            req = urllib.request.Request(u, headers=headers)
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                html = resp.read().decode("utf-8", errors="ignore")
+                tc_match = re.search(r"var\s+tishiContent\s*=\s*[\"'](.*?)[\"'];", html)
+                raw_text = tc_match.group(1) if tc_match else html
+                clean_text = re.sub(r"<[^>]+>", " ", raw_text)
+                clean_text = " ".join(clean_text.split())
+
+                # 匹配下次油价日期: 如 "10月15日24时"
+                date_m = re.search(r"下次油价(?:将在)?(\d{1,2}月\d{1,2}日24时)调整", clean_text)
+                # 匹配预测方向与幅度: 如 "预计下调油价150元/吨(0.11元/升-0.14元/升)"
+                fc_m = re.search(r"预计(下调|上调|搁浅)[^\d]*(\d+)?元/吨.*?\((.*?)\)", clean_text)
+
+                if date_m and fc_m:
+                    date_raw = date_m.group(1)
+                    direction = fc_m.group(1)   # "下调" / "上调" / "搁浅"
+                    tonne_val = fc_m.group(2)   # "150"
+                    liter_raw = fc_m.group(3)   # "0.11元/升-0.14元/升"
+
+                    month_day = re.match(r"(\d+)月(\d+)日", date_raw)
+                    if month_day:
+                        m_int = int(month_day.group(1))
+                        d_int = int(month_day.group(2))
+                        date_iso = f"{current_year}-{m_int:02d}-{d_int:02d} 24:00"
+                        date_label = f"{current_year}年{m_int}月{d_int}日 24:00"
+                    else:
+                        date_iso = None
+                        date_label = date_raw
+
+                    liter_nums = [float(x) for x in re.findall(r"\d+\.?\d*", liter_raw)]
+                    if len(liter_nums) >= 2:
+                        min_l, max_l = liter_nums[0], liter_nums[1]
+                    elif len(liter_nums) == 1:
+                        min_l, max_l = liter_nums[0], liter_nums[0]
+                    else:
+                        t_float = float(tonne_val) if tonne_val else 150.0
+                        min_l = round(t_float / 1380.0, 2)
+                        max_l = round(t_float / 1320.0, 2)
+
+                    print(f">> [Forecast] 成功从 {u} 抓取动态调价预测: {date_label} {direction} {tonne_val}元/吨 ({min_l}~{max_l}元/升)")
+                    return {
+                        "success": True,
+                        "date_iso": date_iso,
+                        "date_label": date_label,
+                        "direction": direction,
+                        "tonne": int(tonne_val) if tonne_val else None,
+                        "min_liter": min_l,
+                        "max_liter": max_l,
+                        "source": u
+                    }
+        except Exception as e:
+            print(f">> [Forecast] 警告: 尝试连接 {u} 失败: {e}")
+
+    return {"success": False}
 
 def fetch_eastmoney_data():
     headers = {
@@ -95,7 +166,7 @@ def fetch_eastmoney_data():
             "diff0": float(it.get('ZDE0') or 0)
         }
 
-    # 推导下轮调价日历
+    # 推导下轮调价日历与轮次
     now = datetime.now()
     next_round = None
     last_round_label = latest_date_raw.split(" ")[0]
@@ -103,11 +174,25 @@ def fetch_eastmoney_data():
         parse_str = s['date'].replace("24:00", "23:59")
         dt = datetime.strptime(parse_str, "%Y-%m-%d %H:%M")
         if dt > now:
-            next_round = s
+            next_round = dict(s)
             break
 
     if not next_round:
-        next_round = SCHEDULE_2026[-1]
+        next_round = dict(SCHEDULE_2026[-1])
+
+    # 动态抓取第三方权威公开数据中心的调价预期
+    forecast = fetch_oil_forecast(now.year)
+    date_iso_val = forecast.get("date_iso")
+    date_label_val = forecast.get("date_label")
+    if forecast.get("success") and isinstance(date_iso_val, str) and isinstance(date_label_val, str):
+        parse_str = date_iso_val.replace("24:00", "23:59")
+        try:
+            dt_fc = datetime.strptime(parse_str, "%Y-%m-%d %H:%M")
+            if dt_fc > now:
+                next_round['date'] = date_iso_val
+                next_round['label'] = date_label_val
+        except Exception:
+            pass
 
     # 上轮调价日期格式化
     try:
@@ -116,18 +201,60 @@ def fetch_eastmoney_data():
     except Exception:
         last_date_str = latest_date_raw
 
-    # 根据调价幅度推算预期 (默认基于发改委近期变动)
+    # 根据动态预测构建涨跌幅度与建议
+    if forecast.get("success"):
+        direction = str(forecast.get("direction", ""))
+        tonne_val = forecast.get("tonne")
+        tonne = int(tonne_val) if isinstance(tonne_val, (int, float)) else 150
+        min_l_val = forecast.get("min_liter")
+        min_l = float(min_l_val) if isinstance(min_l_val, (int, float)) else 0.11
+        max_l_val = forecast.get("max_liter")
+        max_l = float(max_l_val) if isinstance(max_l_val, (int, float)) else 0.14
+        saving_min = int(round(45 * min_l))
+        saving_max = int(round(45 * max_l))
+        saving_str = f"约 {saving_min} ~ {saving_max} 元" if saving_min != saving_max else f"约 {saving_min} 元"
+        round_label_str = str(next_round.get('label', ''))
+        target_time_label = round_label_str.split('年')[1] if '年' in round_label_str else round_label_str
+
+        if direction == "下调":
+            trend = "down"
+            trend_label = "预计大幅下调" if tonne >= 200 else "预计小幅下调"
+            pred_tonne = f"-{tonne} 元/吨"
+            pred_liter = f"-{min_l:.2f} ~ -{max_l:.2f}"
+            tip = f"缤越 COOL 油箱容积 45L，在 {target_time_label}调价后加满一箱可省{saving_str}，建议暂缓加油！"
+        elif direction == "上调":
+            trend = "up"
+            trend_label = "预计大幅上调" if tonne >= 200 else "预计小幅上调"
+            pred_tonne = f"+{tonne} 元/吨"
+            pred_liter = f"+{min_l:.2f} ~ +{max_l:.2f}"
+            tip = f"缤越 COOL 油箱容积 45L，在 {target_time_label}前加满一箱可省{saving_str}，建议提前补油！"
+        else:
+            trend = "flat"
+            trend_label = "预计搁浅"
+            pred_tonne = "未达 50 元/吨"
+            pred_liter = "0.00"
+            saving_str = "0 元"
+            tip = "本次调价金额预计未达 50 元/吨调价红线，预计不作调整，按需补油即可。"
+    else:
+        # 网络异常时的安全保底
+        trend = "flat"
+        trend_label = "正在统计"
+        pred_tonne = "--"
+        pred_liter = "--"
+        saving_str = "--"
+        tip = f"第 {next_round['round']} 轮调价窗口将在 {next_round['label']} 开启，正在统计原油变化率。"
+
     next_adjustment = {
         "date": next_round['date'],
         "dateLabel": next_round['label'],
         "roundName": f"2026年第{next_round['round']}轮调价",
         "lastAdjustmentDate": last_date_str,
-        "trend": "up",
-        "trendLabel": "预计大幅上调",
-        "predictedTonne": "+520 元/吨",
-        "predictedLiter": "+0.43 ~ +0.46",
-        "tankSaving": "约 20 元",
-        "tip": f"缤越 COOL 油箱容积 45L，在 {next_round['label'].split('年')[1]}前加满一箱可省约 20 元，建议提前补油！"
+        "trend": trend,
+        "trendLabel": trend_label,
+        "predictedTonne": pred_tonne,
+        "predictedLiter": pred_liter,
+        "tankSaving": saving_str,
+        "tip": tip
     }
 
     payload = {
