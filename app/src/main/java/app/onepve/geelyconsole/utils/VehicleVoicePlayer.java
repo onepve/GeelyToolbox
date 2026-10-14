@@ -215,12 +215,16 @@ public class VehicleVoicePlayer {
 
         @Override
         public void enginePlay(final String voiceFileName, final String fallbackText) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    resolveAndPlay(voiceFileName, fallbackText);
-                }
-            });
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                resolveAndPlay(voiceFileName, fallbackText);
+            } else {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        resolveAndPlay(voiceFileName, fallbackText);
+                    }
+                });
+            }
         }
     }
 
@@ -712,15 +716,20 @@ public class VehicleVoicePlayer {
     /**
      * 公开停止入口：换挡跃变第一毫秒掐灭 / 主开关关闭 / 服务销毁。
      * 仲裁代数推进 + 队列清空全部在主线程串行完成。
+     * 若调用方已在主线程，立即同步同步执行 stopAll，杜绝 post 消息排队造成的切歌滞后。
      */
     public void stopCurrentVoice() {
         final VoiceArbiter a = getArbiter();
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                a.stopAll("stopCurrentVoice");
-            }
-        });
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            a.stopAll("stopCurrentVoice");
+        } else {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    a.stopAll("stopCurrentVoice");
+                }
+            });
+        }
     }
 
     // ------------------------------------------------------------------
@@ -743,12 +752,17 @@ public class VehicleVoicePlayer {
         } catch (Exception ignored) {}
 
         final VoiceArbiter a = getArbiter();
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                a.submit(new VoiceArbiter.Request(voiceFileName, fallbackText, priority, MONOTONIC_CLOCK.now()));
-            }
-        });
+        final VoiceArbiter.Request req = new VoiceArbiter.Request(voiceFileName, fallbackText, priority, MONOTONIC_CLOCK.now());
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            a.submit(req);
+        } else {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    a.submit(req);
+                }
+            });
+        }
     }
 
     public void playCustomFile(final String path) {

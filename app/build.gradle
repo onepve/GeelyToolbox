@@ -7,13 +7,13 @@ android {
     compileSdk 34
 
     defaultConfig {
-        applicationId "app.onepve.geelyconsole"
-        minSdk 28
-        targetSdk 28
-        versionCode 1075706
-        versionName "1.7.57-beta.6"
+    applicationId "app.onepve.geelyconsole"
+    minSdk 28
+    targetSdk 28
+    versionCode 1076999
+    versionName "1.7.69"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildFeatures {

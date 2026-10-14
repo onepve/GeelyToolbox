@@ -32,7 +32,7 @@ public class GearStateMachine {
     private Runnable pendingGearTask = null;
     private int pendingTargetGear = -1; // 防抖期目标挡位：同目标心跳不重置计时器
     private static final long GEAR_DEBOUNCE_MS = 0; // 目标挡位(D/R/P/S) 0ms 瞬发响应，硬件跳变即刻播报
-    private static final long GEAR_N_TRANSIT_DEBOUNCE_MS = 400; // 空挡(N)过渡滤波窗口 (快速划过跳过，驻留才播)
+    private static final long GEAR_N_TRANSIT_DEBOUNCE_MS = 350; // 空挡(N)过渡滤波窗口 (快速划过跳过，驻留才播)
 
     public static int normalizeGear(int rawGear) {
         int low = rawGear & 0x0F;
