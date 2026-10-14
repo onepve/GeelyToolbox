@@ -994,6 +994,30 @@ public class SteeringWheelKeyManager {
         boolean dispatched = false;
 
         // 2. 第一级优先通道: MediaSessionManager 传输控制 (现代播放器标准，直接控制 TransportControls，精准且零串音)
+        // 2.1 专项硬件直通：若目标锁定为 QQ音乐车机版，优先使用老版本《QQ音乐助手》验证的 AIDL 直通通道
+        if (!dispatched && QQMusicCarController.PACKAGE_QQMUSICCAR.equals(targetPkg)) {
+            try {
+                QQMusicCarController qqCtrl = QQMusicCarController.getInstance(context);
+                if (qqCtrl.isInstalled()) {
+                    if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT) {
+                        dispatched = qqCtrl.skipToNext();
+                        Log.i(TAG, "QQMusicCarController skipToNext result=" + dispatched);
+                    } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
+                        dispatched = qqCtrl.skipToPrevious();
+                        Log.i(TAG, "QQMusicCarController skipToPrevious result=" + dispatched);
+                    } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
+                        dispatched = qqCtrl.resumeMusic();
+                        Log.i(TAG, "QQMusicCarController resumeMusic result=" + dispatched);
+                    } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
+                        dispatched = qqCtrl.pauseMusic();
+                        Log.i(TAG, "QQMusicCarController pauseMusic result=" + dispatched);
+                    }
+                }
+            } catch (Throwable t) {
+                Log.w(TAG, "QQMusicCarController direct dispatch error: " + t.getMessage());
+            }
+        }
+
         try {
             MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
             if (msm != null) {

@@ -24,6 +24,8 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.content.pm.ResolveInfo;
 
+import app.onepve.geelyconsole.utils.QQMusicCarController;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -305,6 +307,11 @@ public class VehicleAutomationService extends Service {
         instance = this;
         voicePlayer = VehicleVoicePlayer.getInstance(this);
         wheelKeyManager = new SteeringWheelKeyManager(this);
+
+        // 预热 QQ 音乐车机版官方 AIDL 服务连接 (移植自老版本 QQ音乐助手 极速响应机制)
+        try {
+            QQMusicCarController.getInstance(this).ensureConnected();
+        } catch (Throwable ignored) {}
 
         // 每次启动服务或开机时，显式复位用户手动暂停标记与单次行程锁
         // 彻底根除因上一趟行程按了暂停，重启车机后 user_manually_paused_media 依然死锁在磁盘导致起步不放歌的 Bug！
@@ -2151,8 +2158,14 @@ public class VehicleAutomationService extends Service {
                 AppLogger.w("音频通道", "MediaController play 异常: " + t.getMessage());
             }
 
-            // 2. 针对第三方播放器（如 QQ 音乐车机版）下发专属广播，确保 100% 成功起播
+            // 2. 针对第三方播放器（如 QQ 音乐车机版）下发专属广播与 AIDL 直通起播，确保 100% 成功起播
             if ("com.tencent.qqmusiccar".equals(targetPkg)) {
+                try {
+                    QQMusicCarController.getInstance(this).resumeMusic();
+                    AppLogger.i("音频通道", "已向 QQ 音乐发送 AIDL resumeMusic 直通播放指令");
+                } catch (Throwable t) {
+                    AppLogger.w("音频通道", "QQ 音乐 AIDL resumeMusic 异常: " + t.getMessage());
+                }
                 try {
                     Intent playIntent = new Intent("com.tencent.qqmusiccar.action.PLAY");
                     playIntent.setPackage("com.tencent.qqmusiccar");
