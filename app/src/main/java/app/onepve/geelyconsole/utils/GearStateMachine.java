@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 
+import app.onepve.geelyconsole.services.VehicleAutomationService;
+
 /**
  * 车辆换挡独立状态机 (GearStateMachine)
  * 纯粹聚焦于 TCU / MCU 物理挡位信号，内置有人感知状态机（P挡静默，换出激活，换回静默）
@@ -113,8 +115,17 @@ public class GearStateMachine {
                     listener.onGearChanged(lastGearPos);
                 }
                 return;
+            } else if (VehicleAutomationService.currentSpeedKmH > 0) {
+                // 行车途中开机/更新守护：若当前整车已有车速(>0)，证明处于行车中途，静默建立挡位基准并武装，杜绝前进挡误播
+                lastGearPos = gear;
+                isGearVoiceArmed = 1;
+                AppLogger.i("挡位状态", "行车中开机/更新基准建立 (车速=" + VehicleAutomationService.currentSpeedKmH + "km/h, 挡位=" + getGearName(gear) + "): 静默建立基准并武装，跳过换挡播报");
+                if (listener != null) {
+                    listener.onGearChanged(lastGearPos);
+                }
+                return;
             } else {
-                // 首包即为非 P 挡（D/R/N/S）：说明车主点火后已在车机服务就绪前踩刹车挂挡开走！
+                // 首包即为非 P 挡（D/R/N/S）且零车速：说明车主点火后已在车机服务就绪前踩刹车挂挡起步！
                 // 必须以原厂默认物理 P 挡为前置基准，正常触发换挡确认与语音播报，并立即武装状态机
                 AppLogger.i("挡位状态", "开机检测到起步挂挡: 车主已踩刹车从【P挡(驻车)】->【" + getGearName(gear) + "】，确立P挡前置基准并执行换挡播报！");
                 lastGearPos = 5; // 前置基准确立为物理出厂停泊 P 挡
@@ -172,7 +183,11 @@ public class GearStateMachine {
 
                         if (gear == 2) { // D 挡
                             if (enableD && voicePlayer != null) {
-                                voicePlayer.play("gear_d.mp3", "已挂入前进挡");
+                                if (VehicleAutomationService.currentSpeedKmH > 0) {
+                                    AppLogger.i("挡位状态", "当前车速 " + VehicleAutomationService.currentSpeedKmH + "km/h > 0，跳过前进挡播报");
+                                } else {
+                                    voicePlayer.play("gear_d.mp3", "已挂入前进挡");
+                                }
                             }
                         } else if (gear == 4) { // R 挡
                             if (enableR && voicePlayer != null) {
