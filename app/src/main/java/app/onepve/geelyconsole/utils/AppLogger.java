@@ -42,8 +42,8 @@ public class AppLogger {
 
     private static final java.util.Map<String, Boolean> DEFAULT_MODULE_STATES = new java.util.HashMap<>();
     static {
-        // 日志按需采集哲学：仅车身联动核心状态机默认开启，其余 7 项默认全关，按需开启
-        DEFAULT_MODULE_STATES.put("车身联动", true);
+        // 日志按需采集哲学：默认全关，按需开启（开机零日志、零磁盘 I/O 磨损、零日志风暴）
+        DEFAULT_MODULE_STATES.put("车身联动", false);
         DEFAULT_MODULE_STATES.put("挡位与模式", false);
         DEFAULT_MODULE_STATES.put("车门与尾门", false);
         DEFAULT_MODULE_STATES.put("方控按键", false);

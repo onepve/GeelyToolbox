@@ -8,10 +8,24 @@
     @close="closeModal('log')"
   >
     <div class="flex flex-col space-y-3">
-      <!-- 模块日志开关：用户可独立控制高频模块写入，默认关闭以避免日志风暴卡死界面 -->
+      <!-- 模块日志开关：用户可独立控制高频模块写入，默认全关以避免日志风暴卡死界面 -->
       <div class="bg-car-item border border-car-border rounded-xl p-3 shadow-sm">
-        <div class="text-[13.5px] text-car-sub font-bold mb-2 flex items-center">
-          模块日志采集开关（默认关闭高频通道，按需开启）
+        <div class="text-[13.5px] text-car-sub font-bold mb-2 flex items-center justify-between">
+          <span>8大核心业务日志采集开关（默认全关，按需开启）</span>
+          <div class="flex items-center space-x-2">
+            <button
+              @click="setAllModules(false)"
+              class="text-[12px] px-2.5 py-1 rounded-md bg-car-card border border-car-border text-car-sub hover:text-car-text font-bold cursor-pointer transition-all"
+            >
+              一键全关
+            </button>
+            <button
+              @click="setAllModules(true)"
+              class="text-[12px] px-2.5 py-1 rounded-md bg-car-card border border-car-border text-car-sub hover:text-car-text font-bold cursor-pointer transition-all"
+            >
+              一键全开
+            </button>
+          </div>
         </div>
         <div class="flex flex-wrap -mb-2">
           <button
@@ -142,17 +156,14 @@ const autoScroll = ref(true);
 let pollTimer = null;
 
 const MODULE_LABELS = {
-  '电源状态': '电源状态',
-  '挡位状态': '挡位状态',
-  '驾驶模式': '驾驶模式',
-  '车门状态': '车门状态',
-  '语音播报': '语音播报',
-  '方控按键': '方控按键',
-  '蓝牙音频': '蓝牙音频',
-  '音频通道': '音频通道',
   '车身联动': '车身联动',
-  '座舱自动化': '座舱自动化',
-  '方控设置': '方控设置'
+  '挡位与模式': '挡位与模式',
+  '车门与尾门': '车门与尾门',
+  '方控按键': '方控按键',
+  '音频与蓝牙': '音频与蓝牙',
+  '专车语音': '专车语音',
+  '屏保与主题': '屏保与主题',
+  '电源与系统': '电源与系统'
 };
 const moduleSwitches = ref([]);
 
@@ -172,6 +183,15 @@ function loadModuleSwitches() {
       enabled: false
     }));
   }
+}
+
+function setAllModules(enabled) {
+  moduleSwitches.value.forEach(item => {
+    item.enabled = enabled;
+    bridge.call('setLogModuleSwitch', item.key, enabled);
+  });
+  showToast(`8大业务日志已全部${enabled ? '开启' : '关闭'}`);
+  fetchLogs(true);
 }
 
 function toggleModule(key) {
