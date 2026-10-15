@@ -70,6 +70,8 @@ public class VehicleAutomationService extends Service {
     public static volatile boolean voiceMasterSwitch = true;
     public static volatile boolean wheelMasterSwitch = true;
     private float lastSavedBatteryVoltage = -1.0f;
+    private String lastReportedDspVol = "";
+    private boolean lastReportedDspMute = true;
 
     // 功能开关
     private boolean enableDoorFl = false;
@@ -406,7 +408,23 @@ public class VehicleAutomationService extends Service {
             }
         } catch (Throwable ignored) {}
 
-        AppLogger.i("系统日志", "车辆启动自动运行守护服务已启动 -> 开启底层门控、挡位与方控全量监听");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", java.util.Locale.CHINA);
+        long now = System.currentTimeMillis();
+        long bootUpElapsed = android.os.SystemClock.elapsedRealtime();
+        long vehicleWakeupTime = now - Math.min(bootUpElapsed, 3000L);
+        String welcomeTimeStr = sdf.format(new java.util.Date(vehicleWakeupTime));
+        String startupTimeStr = sdf.format(new java.util.Date(now));
+
+        AppLogger.i("车辆迎宾", "车辆迎宾时间: " + welcomeTimeStr);
+        AppLogger.i("车辆迎宾", "钥匙开门/靠近唤醒生效，物理基准已建立 (登车态)");
+        AppLogger.i("系统启动", "软件启动时间: " + startupTimeStr);
+        AppLogger.i("系统启动", "缤越助手守护就绪 (PID: " + android.os.Process.myPid() + " | VHAL/Logcat双通道)");
+        String verName = "v2.5.3";
+        try {
+            verName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (Exception ignored) {}
+        AppLogger.i("系统启动", "软件版本: " + verName);
+        AppLogger.i("系统启动", "车型平台: " + currentPlatform.getPlatformName() + " (" + currentPlatform.getPlatformCode() + ")");
         Log.i(TAG, "VehicleAutomationService started successfully");
     }
 
@@ -1109,12 +1127,18 @@ public class VehicleAutomationService extends Service {
         if (line.contains("a2dp_player_") || line.contains("MT8666 a2dp_player_setvol")) {
             try {
                 if (line.contains("a2dp_player_unmute")) {
-                    AppLogger.i("音频路由", "【原车DSP】检测到底层 A2DP 功放解除静音报文 (a2dp_player_unmute)");
+                    if (lastReportedDspMute) {
+                        lastReportedDspMute = false;
+                        AppLogger.i("音频与蓝牙", "【原车DSP】底层 A2DP 功放解除静音，通道放音就绪");
+                    }
                 } else if (line.contains("setvol")) {
                     Matcher mVol = P_GOC_A2DP_VOL.matcher(line);
                     if (mVol.find()) {
                         String volStr = mVol.group(1);
-                        AppLogger.i("音频路由", "【原车DSP】MT8666 硬件音量当前置为: " + volStr);
+                        if (!volStr.equals(lastReportedDspVol)) {
+                            lastReportedDspVol = volStr;
+                            AppLogger.i("音频与蓝牙", "【原车DSP】硬件音量当前置为: " + volStr);
+                        }
                     }
                 }
             } catch (Exception ignored) {}
@@ -1424,16 +1448,16 @@ public class VehicleAutomationService extends Service {
                     AppLogger.i("电源状态", "钥匙 ON (key=2) -> 点火启动就绪 (尊重车速阈值，绝不提前起播)");
                 }
             } else if (val == 0) {
-                // 车速为0或处于P挡驻车时，收到 key=0 坚决下电，绝不可因电瓶刚熄火的浮充电压(13.2V~13.8V)误判为未熄火
-                if (currentSpeedKmH == 0 || (gearStateMachine != null && gearStateMachine.getGear() == 5)) {
-                    lastPowerMode = 0;
-                    AppLogger.i("电源状态", "检测到钥匙 OFF (key=0)，确认下电熄火");
-                    resetAllStateMachines();
-                } else if (latestBatteryVoltage < 13.0f) {
-                    lastPowerMode = 0;
-                    resetAllStateMachines();
-                } else {
-                    AppLogger.i("电源状态", "行车中忽略疑似偶发按键释放噪音 key=0 (当前电压=" + latestBatteryVoltage + "V)");
+                if (prevKey != 0) {
+                    // 仅在由非0状态变为0（状态跃变）时处理下电，彻底抑制行车中反复收到 key=0 释放报文的刷屏
+                    if (currentSpeedKmH == 0 || (gearStateMachine != null && gearStateMachine.getGear() == 5)) {
+                        lastPowerMode = 0;
+                        AppLogger.i("电源与系统", "检测到钥匙 OFF (key=0)，确认下电熄火");
+                        resetAllStateMachines();
+                    } else if (latestBatteryVoltage < 13.0f) {
+                        lastPowerMode = 0;
+                        resetAllStateMachines();
+                    }
                 }
             }
         }

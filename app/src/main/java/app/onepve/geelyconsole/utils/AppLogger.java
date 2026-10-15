@@ -15,11 +15,10 @@ import java.util.concurrent.Executors;
 
 /**
  * 缤越助手持久化运行日志系统
- * 1. 日志文件保存于 /sdcard/Download/geely_toolbox.log
- * 2. 单文件最大 2MB，超出自动滚动保留最多 3 个历史备份 (geely_toolbox.log.1, .2)
- * 3. 启动及定时清理超过 7 天的历史日志文件
- * 4. 记录每一步操作的具体时间、模块标签、操作是否成功及详细说明
- * 5. 支持在工具箱内快速查看近 500 行日志、实时刷新与一键清空
+ * 1. 日志内存环形缓冲区上限 500 行，零磁盘 I/O 写入损耗保护闪存
+ * 2. 8 大领域业务采集开关细分控制，抑制日志风暴
+ * 3. 车辆迎宾、系统启动、屏幕采集作为基础自检信息硬性常驻首部，不受开关过滤
+ * 4. 支持在工具箱内快速查看近 500 行日志、实时刷新与一键清空、ZIP 打包导出
  */
 public class AppLogger {
 
@@ -35,24 +34,97 @@ public class AppLogger {
 
     private static android.content.Context appContext = null;
     private static final String PREFS_LOG_SWITCHES = "log_module_switches";
-    // 聚焦座舱核心状态，高频/调试通道按需开启避免日志风暴
-    private static final java.util.Map<String, Boolean> DEFAULT_MODULE_STATES = new java.util.HashMap<>();
+
+    // 8 大领域核心业务采集开关
     private static final java.util.List<String> KNOWN_MODULES = java.util.Arrays.asList(
-            "电源状态", "挡位状态", "驾驶模式", "车门状态", "语音播报", "方控按键", "蓝牙音频",
-            "音频通道", "车身联动", "座舱自动化", "方控设置");
+            "车身联动", "挡位与模式", "车门与尾门", "方控按键",
+            "音频与蓝牙", "专车语音", "屏保与主题", "电源与系统");
+
+    private static final java.util.Map<String, Boolean> DEFAULT_MODULE_STATES = new java.util.HashMap<>();
     static {
-        // 日志按需采集哲学：默认全关，零 I/O 写入开销与零日志风暴。排查问题时车主按需开启对应模块。
-        DEFAULT_MODULE_STATES.put("电源状态", false);
-        DEFAULT_MODULE_STATES.put("挡位状态", false);
-        DEFAULT_MODULE_STATES.put("驾驶模式", false);
-        DEFAULT_MODULE_STATES.put("车门状态", false);
-        DEFAULT_MODULE_STATES.put("语音播报", false);
-        DEFAULT_MODULE_STATES.put("方控按键", false);
-        DEFAULT_MODULE_STATES.put("蓝牙音频", false);
-        DEFAULT_MODULE_STATES.put("音频通道", false);
+        // 日志按需采集哲学：仅车身联动核心状态机默认开启，其余 7 项默认全关，按需开启
         DEFAULT_MODULE_STATES.put("车身联动", true);
-        DEFAULT_MODULE_STATES.put("座舱自动化", false);
-        DEFAULT_MODULE_STATES.put("方控设置", false);
+        DEFAULT_MODULE_STATES.put("挡位与模式", false);
+        DEFAULT_MODULE_STATES.put("车门与尾门", false);
+        DEFAULT_MODULE_STATES.put("方控按键", false);
+        DEFAULT_MODULE_STATES.put("音频与蓝牙", false);
+        DEFAULT_MODULE_STATES.put("专车语音", false);
+        DEFAULT_MODULE_STATES.put("屏保与主题", false);
+        DEFAULT_MODULE_STATES.put("电源与系统", false);
+    }
+
+    // 旧标签智能收敛映射表：杜绝散落的 40+ 标签脱离开关管控
+    private static final java.util.Map<String, String> MODULE_MAPPING = new java.util.HashMap<>();
+    static {
+        // 车身联动
+        MODULE_MAPPING.put("安全守护", "车身联动");
+        MODULE_MAPPING.put("车身状态", "车身联动");
+
+        // 挡位与模式
+        MODULE_MAPPING.put("挡位状态", "挡位与模式");
+        MODULE_MAPPING.put("驾驶模式", "挡位与模式");
+
+        // 车门与尾门
+        MODULE_MAPPING.put("车门状态", "车门与尾门");
+
+        // 方控按键
+        MODULE_MAPPING.put("方控设置", "方控按键");
+
+        // 音频与蓝牙
+        MODULE_MAPPING.put("蓝牙音频", "音频与蓝牙");
+        MODULE_MAPPING.put("音频通道", "音频与蓝牙");
+        MODULE_MAPPING.put("音频路由", "音频与蓝牙");
+        MODULE_MAPPING.put("声音设置", "音频与蓝牙");
+
+        // 专车语音
+        MODULE_MAPPING.put("语音播报", "专车语音");
+        MODULE_MAPPING.put("语音资产", "专车语音");
+
+        // 屏保与主题 (纠正原先屏保跑到电源状态的错位)
+        MODULE_MAPPING.put("车机屏保", "屏保与主题");
+        MODULE_MAPPING.put("兔子主题", "屏保与主题");
+        MODULE_MAPPING.put("车机主题", "屏保与主题");
+        MODULE_MAPPING.put("开机自愈", "屏保与主题");
+
+        // 电源与系统
+        MODULE_MAPPING.put("电源状态", "电源与系统");
+        MODULE_MAPPING.put("系统电源", "电源与系统");
+        MODULE_MAPPING.put("开机守护", "电源与系统");
+        MODULE_MAPPING.put("更新守护", "电源与系统");
+        MODULE_MAPPING.put("更新下载", "电源与系统");
+        MODULE_MAPPING.put("应用管理", "电源与系统");
+        MODULE_MAPPING.put("应用冻结", "电源与系统");
+        MODULE_MAPPING.put("应用安装", "电源与系统");
+        MODULE_MAPPING.put("应用商店", "电源与系统");
+        MODULE_MAPPING.put("应用权限", "电源与系统");
+        MODULE_MAPPING.put("应用启动", "电源与系统");
+        MODULE_MAPPING.put("应用监听", "电源与系统");
+        MODULE_MAPPING.put("安装自愈", "电源与系统");
+        MODULE_MAPPING.put("白名单", "电源与系统");
+        MODULE_MAPPING.put("防覆写锁", "电源与系统");
+        MODULE_MAPPING.put("系统导航", "电源与系统");
+        MODULE_MAPPING.put("系统状态", "电源与系统");
+        MODULE_MAPPING.put("系统设置", "电源与系统");
+        MODULE_MAPPING.put("系统退出", "电源与系统");
+        MODULE_MAPPING.put("悬浮胶囊", "电源与系统");
+        MODULE_MAPPING.put("座舱自动化", "电源与系统");
+        MODULE_MAPPING.put("系统日志", "系统启动");
+    }
+
+    /**
+     * 判断是否为每次开机自检必显的基准模块（不受任何开关控制，永久记录）
+     */
+    public static boolean isSystemBaseline(String module) {
+        return "车辆迎宾".equals(module) || "系统启动".equals(module) || "屏幕采集".equals(module);
+    }
+
+    public static String normalizeModule(String module) {
+        if (module == null || module.trim().isEmpty()) return "系统启动";
+        String trimmed = module.trim();
+        if (isSystemBaseline(trimmed)) return trimmed;
+        if (KNOWN_MODULES.contains(trimmed)) return trimmed;
+        String mapped = MODULE_MAPPING.get(trimmed);
+        return mapped != null ? mapped : "电源与系统";
     }
 
     public static void init(android.content.Context ctx) {
@@ -60,16 +132,23 @@ public class AppLogger {
     }
 
     public static boolean isModuleEnabled(String module) {
-        if (appContext == null) return true; // 未初始化前保持兼容：默认允许写入
+        if (isSystemBaseline(module)) return true;
+        String norm = normalizeModule(module);
+        if (isSystemBaseline(norm)) return true;
+        if (appContext == null) {
+            Boolean def = DEFAULT_MODULE_STATES.get(norm);
+            return def != null && def;
+        }
         android.content.SharedPreferences prefs = appContext.getSharedPreferences(PREFS_LOG_SWITCHES, android.content.Context.MODE_PRIVATE);
-        Boolean def = DEFAULT_MODULE_STATES.get(module);
-        return prefs.getBoolean(module, def == null || def);
+        Boolean def = DEFAULT_MODULE_STATES.get(norm);
+        return prefs.getBoolean(norm, def != null && def);
     }
 
     public static void setModuleEnabled(String module, boolean enabled) {
         if (appContext == null) return;
+        String norm = normalizeModule(module);
         android.content.SharedPreferences prefs = appContext.getSharedPreferences(PREFS_LOG_SWITCHES, android.content.Context.MODE_PRIVATE);
-        prefs.edit().putBoolean(module, enabled).apply();
+        prefs.edit().putBoolean(norm, enabled).apply();
     }
 
     public static String getAllModuleSwitchesJson() {
@@ -111,10 +190,6 @@ public class AppLogger {
 
     /**
      * 核心操作打点记录
-     * @param module 业务模块（如：卡兔子、白名单、应用冻结、ADB终端、系统重启等）
-     * @param actionName 具体操作名（如：注入高德伪装包、放行白名单、冻结应用商店）
-     * @param success 是否成功
-     * @param details 详细参数与执行结果
      */
     public static void action(final String module, final String actionName, final boolean success, final String details) {
         String statusStr = success ? "成功 [PASS]" : "失败 [FAIL]";
@@ -122,11 +197,12 @@ public class AppLogger {
         writeLog(success ? "INFO" : "ERROR", module, fullMsg, null);
     }
 
-    private static void writeLog(final String level, final String module, final String message, final Throwable tr) {
+    private static void writeLog(final String level, final String rawModule, final String message, final Throwable tr) {
         final long time = System.currentTimeMillis();
+        final String module = normalizeModule(rawModule);
 
-        // 高频模块被用户关闭时：不再写文件，也不再输出 logcat（ERROR 始终保留）
-        final boolean fileEnabled = "ERROR".equals(level) || isModuleEnabled(module);
+        // 高频模块被用户关闭时：不再写文件，也不再输出 logcat（ERROR 与 系统基准自检始终保留）
+        final boolean fileEnabled = "ERROR".equals(level) || isSystemBaseline(module) || isModuleEnabled(module);
 
         // 抑制日志风暴：同一模块+消息 1s 内只写一次（异常/ERROR 不受限）
         String dedupKey = level + "|" + module + "|" + message;

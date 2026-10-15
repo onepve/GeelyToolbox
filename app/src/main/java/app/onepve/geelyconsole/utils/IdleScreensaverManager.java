@@ -51,7 +51,7 @@ public final class IdleScreensaverManager {
     private static final String TAG = "GeelyToolbox_IdleSS";
 
     /** 日志模块（沿用「电源状态」通道，语义最贴合且默认开启） */
-    private static final String LOG_MODULE = "电源状态";
+    private static final String LOG_MODULE = "屏保与主题";
 
     // ---------------- 配置项 ----------------
     public static final String PREFS = "toolbox_settings";
@@ -265,8 +265,8 @@ public final class IdleScreensaverManager {
                         + "；已自动切换为系统熄屏兜底（通道B）");
             } else if (readFailStreak == 4) {
                 channelState = "通道A不可用(已降级通道B)";
-            } else if (readFailStreak > 4 && readFailStreak % 20 == 0) {
-                AppLogger.w(LOG_MODULE, "闲置时间仍读取失败，已连续 " + readFailStreak + " 次，持续使用通道B兜底");
+            } else if (readFailStreak > 4) {
+                // 降级为通道B熄屏兜底后彻底静默，不再周期性重复刷屏告警，仅在通道A恢复时输出
             }
             return;
         }
