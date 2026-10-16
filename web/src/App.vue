@@ -115,7 +115,7 @@ import AllAppsModal from './components/modals/AllAppsModal.vue';
 import OilPriceModal from './components/modals/OilPriceModal.vue';
 
 import { store, bridge, openModal, recordActiveNav, refreshOilPrices, initOilPersistentSettings } from './store';
-import { initTheme, quickToggleDayNight } from './theme/themes';
+import { initTheme, applyTheme, quickToggleDayNight } from './theme/themes';
 
 onMounted(() => {
   // 从原生 SharedPreferences 同步油价常用省份持久化设置 (防覆盖升级丢失)
@@ -141,14 +141,20 @@ onMounted(() => {
   // 兜底：JSBridge 可用时以车机系统日夜状态校正 auto 档的实际呈现
   try {
     const isNight = bridge.call('isNightMode');
-    if (typeof isNight === 'boolean' && store.theme.mode === 'auto') {
+    if (typeof isNight === 'boolean') {
       store.isNight = isNight;
+      if (store.theme.mode === 'auto') {
+        applyTheme();
+      }
     }
   } catch (e) {}
 
   window.onSystemNightModeChanged = (isNight) => {
-    if (typeof isNight === 'boolean' && store.theme.mode === 'auto') {
+    if (typeof isNight === 'boolean') {
       store.isNight = isNight;
+      if (store.theme.mode === 'auto') {
+        applyTheme();
+      }
     }
   };
 

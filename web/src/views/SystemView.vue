@@ -309,7 +309,7 @@ import { openAppstoreFlow } from '../utils/appstoreFreeze';
 import { getDaysToAdjustment } from '../utils/oilPriceData';
 
 // 方块副标题：昼夜档标注时段语义，配色卡标注主题全名
-const MODE_SUBS = { auto: '6:00~17:59', day: '常驻白天', night: '常驻黑夜' };
+const MODE_SUBS = { auto: '跟随车机日夜', day: '常驻白天', night: '常驻黑夜' };
 const PALETTE_FULL = { blue: '清晨蓝', brown: '琥珀棕', green: '晨曦绿', pink: '樱语粉', gold: '曜石金' };
 
 function onSetMode(v) {

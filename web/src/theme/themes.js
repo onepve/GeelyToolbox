@@ -1,5 +1,5 @@
 // 液态玻璃 4 色 + 曜石金（初代实底主题复活）× 白夜主题系统
-// 模式三档：auto（跟随时间 6:00~17:59 为白天）| day | night
+// 模式三档：auto（跟随车机原厂昼夜信号）| day | night
 // 配色：blue / brown / green / pink / gold，出厂默认 green · night
 
 import { store } from '../store';
@@ -13,7 +13,7 @@ import { DAY_START, DAY_END, STORAGE_KEY, THEMES, DEFAULT_PALETTE, DEFAULT_MODE,
 
 // MODES / PALETTES 与默认档统一定义在 palette.js（构建期首帧引导脚本同源共用），此处只做转出。
 export { MODES, PALETTES };
-export const MODE_LABELS = { auto: '跟随时间', day: '白天', night: '黑夜' };
+export const MODE_LABELS = { auto: '跟随车机', day: '白天', night: '黑夜' };
 export const PALETTE_LABELS = { blue: '蓝', brown: '棕', green: '绿', pink: '粉', gold: '金' };
 // 色卡小圆点取色（各配色主色，取自认可效果图）
 export const PALETTE_DOT = { blue: '#5b8cff', brown: '#d4a04a', green: '#3fbf88', pink: '#d46a8c', gold: '#d99a26' };
@@ -38,6 +38,15 @@ function save() {
 export function resolvedMode() {
   const mode = store.theme.mode;
   if (mode === 'day' || mode === 'night') return mode;
+  // auto 模式：以车机系统原生日夜模式信号 store.isNight 为绝对真源
+  if (typeof store.isNight === 'boolean') {
+    return store.isNight ? 'night' : 'day';
+  }
+  // 若脱离车机/在电脑浏览器等调试环境，优先读取系统的 prefers-color-scheme，最后时间兜底
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'night';
+    if (window.matchMedia('(prefers-color-scheme: light)').matches) return 'day';
+  }
   const h = new Date().getHours();
   return (h >= DAY_START && h < DAY_END) ? 'day' : 'night';
 }
@@ -63,16 +72,35 @@ export function applyTheme() {
   }
 }
 
-// 初始化：读持久化 → 应用 → auto 模式每分钟自动跟随昼夜
+// 初始化：读持久化 → 应用 → auto 模式感知车机昼夜变化
 export function initTheme() {
   const saved = loadSaved();
   store.theme.palette = saved ? saved.palette : DEFAULT_PALETTE;
   store.theme.mode = saved ? saved.mode : DEFAULT_MODE;
+  // 首帧若处于 auto 模式，尝试先调取原厂车机 isNightMode 信号
+  try {
+    if (window.ToolboxBridge && typeof window.ToolboxBridge.isNightMode === 'function') {
+      const isNight = window.ToolboxBridge.isNightMode();
+      if (typeof isNight === 'boolean') {
+        store.isNight = isNight;
+      }
+    }
+  } catch (e) {}
   applyTheme();
   if (applyTimer) clearInterval(applyTimer);
   applyTimer = setInterval(() => {
-    if (store.theme.mode === 'auto') applyTheme();
-  }, 60000);
+    if (store.theme.mode === 'auto') {
+      try {
+        if (window.ToolboxBridge && typeof window.ToolboxBridge.isNightMode === 'function') {
+          const isNight = window.ToolboxBridge.isNightMode();
+          if (typeof isNight === 'boolean' && isNight !== store.isNight) {
+            store.isNight = isNight;
+            applyTheme();
+          }
+        }
+      } catch (e) {}
+    }
+  }, 30000);
 }
 
 export function setPalette(p) {
