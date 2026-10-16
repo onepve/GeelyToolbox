@@ -712,6 +712,8 @@ public class VehicleAutomationService extends Service {
         if (line == null || line.isEmpty()) return;
         // 过滤本应用自身日志，避免 AppLogger 写 logcat 又被 logcat 守护线程读回形成风暴
         if (line.contains("GeelyToolbox_Logger") || line.contains("GeelyConsole")) return;
+        // 过滤声卡底层极高频状态轮询日志，防 logcat 管道积压引起时钟倒流误判
+        if (line.contains("APM_AudioPolicyManager")) return;
 
         // 1. 解析方向盘按键
         // parseKeyFromLine 内部已根据 press/release 调用 handleKeyDown/handleKeyUp，
@@ -871,12 +873,8 @@ public class VehicleAutomationService extends Service {
             } catch (Exception ignored) {}
         }
 
-        // 3.3 AudioPolicyManager 硬件倒车静音标志 (isGearReverse 1 -> 确认挂入倒车挡)
-        if (gearVal <= 0 && line.contains("isGearReverse 1")) {
-            gearVal = 4; // R挡
-        }
-
-        // 3.4 原厂核心服务与底层传感器属性: INFO_ID_VDRIVEINFO_GEAR_POSITION / mModelGearPos
+        // 3.3 原厂核心服务与底层传感器属性: INFO_ID_VDRIVEINFO_GEAR_POSITION / mModelGearPos
+        // 核心铁律：底盘物理报文才是唯一法定真源，严禁使用声卡高频日志 isGearReverse 1 判定倒车（倒车期间刷屏数千条会导致管道堵塞及切D挡时钟倒流误判）
         if (gearVal <= 0 && (line.contains("VDRIVEINFO_GEAR_POSITION") || line.contains("mModelGearPos") || line.contains("GearPos =") || line.contains("GearPos:"))) {
             try {
                 Matcher gm = P_GEAR_POS.matcher(line);
@@ -884,10 +882,11 @@ public class VehicleAutomationService extends Service {
                     String valStr = gm.group(1) != null ? gm.group(1) : gm.group(2);
                     int raw = Integer.parseInt(valStr, 16);
                     int low = raw & 0xFF;
-                    if (low == 0x30 || low == 0x05) gearVal = 5; // P
-                    else if (low == 0x31 || low == 0x04) gearVal = 4; // R
-                    else if (low == 0x32 || low == 0x03) gearVal = 3; // N
-                    else if (low == 0x33 || low == 0x02) gearVal = 2; // D
+                    // 完美覆盖吉利实车底盘报文: 0x40(R) / 0x20(D) / 0x10(N) / 0x00(P) 及传统协议
+                    if (low == 0x00 || low == 0x30 || low == 0x05) gearVal = 5; // P
+                    else if (low == 0x40 || low == 0x31 || low == 0x04) gearVal = 4; // R
+                    else if (low == 0x10 || low == 0x32 || low == 0x03) gearVal = 3; // N
+                    else if (low == 0x20 || low == 0x33 || low == 0x02) gearVal = 2; // D
                     else if (low >= 2 && low <= 7) gearVal = low;
                 }
             } catch (Exception ignored) {}
