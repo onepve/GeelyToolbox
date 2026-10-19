@@ -1122,29 +1122,15 @@ public class VehicleVoicePlayer {
     private void requestAudioFocus(String voiceType) {
         if (audioManager == null) return;
         try {
-            // 核心铁律：当车载蓝牙音频通道处于活跃连接态或推流态时，严禁申请 AudioFocus！
-            // 吉利原厂蓝牙协议栈收到外部焦点申请/退让广播 (-3) 后，会反向触发系统级 Ducking (压低媒体音量导致忽大忽小)
-            // 甚至向手机下发 AVRCP PAUSE (0x46/70) 指令掐断微信语音或播放；
-            // 蓝牙连入时直接走 AudioFlinger PCM 底层硬件混音即可完美共存且音量平稳！
-            try {
-                if (EasMediaBridge.getInstance(context).isBluetoothChannelActive() || EasMediaBridge.getInstance(context).isA2dpStreaming()) {
-                    Log.i(TAG, "Bluetooth channel active/streaming, bypassing requestAudioFocus to prevent Ducking and AVRCP PAUSE.");
-                    return;
-                }
-            } catch (Throwable ignored) {}
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                AudioAttributes attrs = getVoiceAudioAttributes(context, voiceType);
-                AudioFocusRequest req = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                        .setAudioAttributes(attrs)
-                        .build();
-                audioManager.requestAudioFocus(req);
-                activeFocusRequest = req;
-            } else {
-                boolean isRev = (voiceType != null && (voiceType.contains("gear_r") || voiceType.contains("reverse")));
-                int stream = isRev ? AudioManager.STREAM_NOTIFICATION : AudioManager.STREAM_MUSIC;
-                audioManager.requestAudioFocus(null, stream, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+            // 核心铁律：车身提示音（换挡/模式/迎宾/车速）走原生 PCM 硬件混音，严禁向系统申请 MAY_DUCK 焦点！
+            // 彻底拔除对 QQ 音乐下发 -3 (Duck) 压低广播，杜绝报个换挡音乐就抽搐一下的恶疾！
+            // 车载蓝牙活跃/推流时，同样维持 bypassing requestAudioFocus，绝不打扰蓝牙与媒体！
+            if (EasMediaBridge.getInstance(context).isBluetoothChannelActive() || EasMediaBridge.getInstance(context).isA2dpStreaming()) {
+                Log.i(TAG, "Bluetooth channel active/streaming, bypassing requestAudioFocus to prevent Ducking and AVRCP PAUSE.");
+                return;
             }
+            // 普通状态下提示音直接叠加混音，不再向系统申请焦点抢占媒体
+            return;
         } catch (Exception ignored) {}
     }
 
