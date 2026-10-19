@@ -17,3 +17,8 @@ __pycache__/
 
 # probe screenshots
 scripts/shots/
+
+# 本地实车仿真测试全量日志包（严禁上传到 GitHub 仓库防隐私泄露与膨胀）
+local_test_logs/
+*.log
+

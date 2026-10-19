@@ -37,6 +37,7 @@ public class DriveModeManager {
 
     private int lastDriveMode = -1; // 初始未定态 (-1)，开机首包静默确立基准
     private boolean isSmartModeArmed = false; // 智能模式闭锁标志：默认锁定(false)，切到其他模式时武装(true)，切回智能并播报一次后立即恢复锁定值(false)，彻底杜绝驻车循环播报
+    private long creationTimeMs = System.currentTimeMillis();
     private Runnable pendingModeTask = null;
     private int pendingTargetMode = -1; // 防抖期目标模式：同目标信号不重置计时器
     private static final long MODE_DEBOUNCE_MS = 160; // 模式切换防抖滤波窗口 (160ms 滤除旋钮极速滑动过渡态)
@@ -76,18 +77,26 @@ public class DriveModeManager {
     public synchronized void updateDriveMode(int mode, final boolean voiceMasterSwitch, final SharedPreferences prefs) {
         if (mode <= 0) return;
 
-        // 1. 开机首包基准处理：一律静默确立基准，开机/熄火复位后绝不误播任何语音！
+        // 1. 开机首包基准处理：
+        // 避坑核心：仅在服务刚启动的前 3 秒内收到信号才判定为“开机静默对齐”；
+        // 若启动 3 秒后首次收到模式信号（例如开机初期底座未发心跳，直到车主旋转旋钮才首次上报），
+        // 必须直接确立前置基准为出厂默认【智能模式(4)】，并放行本次换挡播报，绝对不吞音！
         if (lastDriveMode == -1) {
-            lastDriveMode = mode;
-            // 核心修复：若首次建基准为智能模式，智能闭锁锁定(false)；
-            // 若开机首包即为舒适/运动/经济（例如行车热更新重启），直接武装智能模式(true)！
-            // 确保车主随后从舒适/运动切回智能模式时，不会被判定为未武装而吞音！
-            isSmartModeArmed = (mode != MODE_SMART);
-            AppLogger.i("驾驶模式", "首包基准初始化: 当前模式【" + getModeName(mode) + "】(静默建立基准，开机绝不误播，smartArmed=" + isSmartModeArmed + ")");
-            if (listener != null) {
-                listener.onDriveModeChanged(lastDriveMode);
+            boolean isInitialBootWindow = (System.currentTimeMillis() - creationTimeMs < 3000L);
+            if (isInitialBootWindow) {
+                lastDriveMode = mode;
+                isSmartModeArmed = (mode != MODE_SMART);
+                AppLogger.i("驾驶模式", "首包基准初始化: 当前模式【" + getModeName(mode) + "】(开机静默对齐，smartArmed=" + isSmartModeArmed + ")");
+                if (listener != null) {
+                    listener.onDriveModeChanged(lastDriveMode);
+                }
+                return;
+            } else {
+                // 启动 3 秒后首次收到：必是车主在旋转旋钮！以默认智能模式(4)为前置基准，放行播报！
+                AppLogger.i("驾驶模式", "首次操作判定: 车主手动旋转旋钮切入【" + getModeName(mode) + "】，确立智能模式为前置基准并放行播报！");
+                lastDriveMode = (mode == MODE_SMART) ? MODE_COMFORT : MODE_SMART;
+                isSmartModeArmed = true;
             }
-            return;
         }
 
         if (mode == lastDriveMode) {

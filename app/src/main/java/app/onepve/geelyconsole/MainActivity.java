@@ -3395,15 +3395,34 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     try {
-                        AppLogger.i("系统退出", "车主点击退出，安全退入后台并返回系统桌面，彻底杜绝回弹原厂多媒体");
-                        moveTaskToBack(true);
-                        Intent home = new Intent(Intent.ACTION_MAIN);
-                        home.addCategory(Intent.CATEGORY_HOME);
-                        home.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(home);
+                        AppLogger.i("系统退出", "车主点击退出，安全停止后台服务并彻底杀死自身进程");
+                        
+                        // 1. 显式停止所有后台守护服务
+                        try {
+                            stopService(new Intent(MainActivity.this, VehicleAutomationService.class));
+                        } catch (Throwable ignored) {}
+                        try {
+                            stopService(new Intent(MainActivity.this, FloatingWindowService.class));
+                        } catch (Throwable ignored) {}
+
+                        // 2. 彻底结束当前 Activity 并移出前台
+                        finishAffinity();
+
+                        // 3. 延后 200ms 彻底连根拔起杀死进程，释放所有句柄与内存
+                        mainHandler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    android.os.Process.killProcess(android.os.Process.myPid());
+                                    System.exit(0);
+                                } catch (Throwable ignored) {}
+                            }
+                        }, 200L);
                     } catch (Throwable t) {
                         try {
-                            moveTaskToBack(true);
+                            finish();
+                            android.os.Process.killProcess(android.os.Process.myPid());
+                            System.exit(0);
                         } catch (Throwable ignored) {}
                     }
                 }
