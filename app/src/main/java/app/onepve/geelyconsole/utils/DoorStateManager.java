@@ -144,7 +144,7 @@ public class DoorStateManager {
         long now = System.currentTimeMillis();
         boolean universalMode = PrefUtils.getBoolean(prefs, "voice_door_mode_universal", false);
 
-        // 1. 首次开机物理基准建立 (智能识别迎宾登车意图)
+        // 1. 首次开机物理基准建立 (智能对齐当前状态，开机首包绝对静默)
         if (currentFL == -1) {
             PrefUtils.sanitizeDoorPreferences(prefs);
             currentFL = (fl >= 0) ? fl : 0;
@@ -166,33 +166,12 @@ public class DoorStateManager {
                 return;
             }
 
-            // 乘员就坐状态统一置为车外态，等待上车或电源通知
-            isDriverInside = false;
+            // 乘员就坐状态统一置为车内态（人已经在车里开机了）
+            isDriverInside = true;
 
-            AppLogger.i("车门状态", "四门物理基准初始化: FL=" + currentFL + ", FR=" + currentFR + ", RL=" + currentRL + ", RR=" + currentRR + " (主驾就坐=" + isDriverInside + ")");
+            AppLogger.i("车门状态", "四门物理基准初始化: FL=" + currentFL + ", FR=" + currentFR + ", RL=" + currentRL + ", RR=" + currentRR + " (静默建立基准，开机绝不倒灌开门/关门声音)");
             if (listener != null) {
                 listener.onDoorStateChanged(currentFL, currentFR, currentRL, currentRR);
-            }
-
-            // 核心迎宾与时序闭环：
-            // 若开机首包即为关门态 (0)，说明车主在车机启动就绪前就已关门就坐，仅静默建立基准，绝不倒灌补报关门！
-            // 仅当首包即为开门态 (1) 时，才触发迎宾开门播报
-            if (currentFL == 1) {
-                String welcomeTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", java.util.Locale.CHINA).format(new java.util.Date(now));
-                AppLogger.i("车辆迎宾", "车辆迎宾时间: " + welcomeTime + " (检测到主驾开门首包，即刻触发迎宾播报)");
-                lastTimeFL = now;
-                handleDoorTransition("FL", "主驾", 1, 0, universalMode, voiceMasterSwitch, prefs);
-            } else if (currentFR == 1) {
-                lastTimeFR = now;
-                handleDoorTransition("FR", "副驾", 1, 0, universalMode, voiceMasterSwitch, prefs);
-            } else if (currentRL == 1) {
-                lastTimeRL = now;
-                handleDoorTransition("RL", "左后", 1, 0, universalMode, voiceMasterSwitch, prefs);
-            } else if (currentRR == 1) {
-                lastTimeRR = now;
-                handleDoorTransition("RR", "右后", 1, 0, universalMode, voiceMasterSwitch, prefs);
-            } else {
-                AppLogger.i("车门状态", "开机首包检测到四门全关，静默对齐当前物理基准 (0 误播报)");
             }
             return;
         }

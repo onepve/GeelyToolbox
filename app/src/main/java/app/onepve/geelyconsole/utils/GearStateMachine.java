@@ -108,32 +108,14 @@ public class GearStateMachine {
 
         // 1. 开机首包基准处理：车辆熄火后硬件强制锁 P 挡 (5)
         if (lastGearPos == -1) {
-            if (gear == 5) {
-                // 车主点火后未换挡，保持原厂停泊 P 挡：静默确立基准，开机绝不误播
-                lastGearPos = 5;
-                isGearVoiceArmed = 0;
-                AppLogger.i("挡位状态", "开机基准初始化: 当前保持出厂停泊【P挡(驻车)】(静默建立基准，开机绝不误播，休眠态 armed=0)");
-                if (listener != null) {
-                    listener.onGearChanged(lastGearPos);
-                }
-                return;
-            } else if (VehicleAutomationService.currentSpeedKmH > 0) {
-                // 行车途中开机/更新守护：若当前整车已有车速(>0)，证明处于行车中途，静默建立挡位基准并武装，杜绝前进挡误播
-                lastGearPos = gear;
-                isGearVoiceArmed = 1;
-                AppLogger.i("挡位状态", "行车中开机/更新基准建立 (车速=" + VehicleAutomationService.currentSpeedKmH + "km/h, 挡位=" + getGearName(gear) + "): 静默建立基准并武装，跳过换挡播报");
-                if (listener != null) {
-                    listener.onGearChanged(lastGearPos);
-                }
-                return;
-            } else {
-                // 首包即为非 P 挡（D/R/N/S）且零车速：说明车主点火后已在车机服务就绪前踩刹车挂挡起步！
-                // 必须以原厂默认物理 P 挡为前置基准，正常触发换挡确认与语音播报，并立即武装状态机
-                AppLogger.i("挡位状态", "开机检测到起步挂挡: 车主已踩刹车从【P挡(驻车)】->【" + getGearName(gear) + "】，确立P挡前置基准并执行换挡播报！");
-                lastGearPos = 5; // 前置基准确立为物理出厂停泊 P 挡
-                isGearVoiceArmed = 1; // 换出行车挡立即武装！确保后续回 P 挡能正常播报与归零
-                // 继续往下执行常规换挡防抖、掐灭旧音与播报逻辑
+            // 开机冷启动：无论首包收到的是物理 P 挡还是当前静止状态，统一静默确立基准，开机绝对不误播任何挡位声音！
+            lastGearPos = (gear >= 2 && gear <= 7) ? gear : 5;
+            isGearVoiceArmed = (lastGearPos == 5) ? 0 : 1;
+            AppLogger.i("挡位状态", "开机基准初始化: 确立当前基准为【" + getGearName(lastGearPos) + "】(静默建立基准，开机绝不误播，armed=" + isGearVoiceArmed + ")");
+            if (listener != null) {
+                listener.onGearChanged(lastGearPos);
             }
+            return;
         }
 
         // 物理跳变回落防抖铁律：

@@ -684,8 +684,8 @@ public class VehicleAutomationService extends Service {
         "reportkeytoadaptapi", "shouldcallback", "swc_trip", "do nothing for this key", "onalreadyhome", "cmd_data[",
         // 2. 车辆实时车速
         "caraudioinfo", "get speed", "ipkinfo_instant_speed", "vehiclespeed", "carspeed", "vehicle_speed", "ipkspeed",
-        // 3. 挡位状态
-        "gear_position", "vehicleeventgear", "state[gear_", "vehicle_gear", "getdrivingmode", "mmodelepb", "gearposition", "gearpos",
+        // 3. 挡位状态 (彻底剔除易产生轮询占位伪信号的 vdriveinfo_gear_position 与 gearpos)
+        "vehicleeventgear", "state[gear_", "vehicle_gear", "getdrivingmode", "mmodelepb", "gearposition",
         // 4. 车门、后尾箱与乘员安全带
         "91 02 01", "mcu->mpu", "_door_sts", "mmodellfdoor", "mmodelrfdoor", "mmodellrdoor", "mmodelrrdoor", "seat_belt", "0x002012", "0x002013",
         // 5. 驾驶模式切换
@@ -887,37 +887,33 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // 3. 解析车辆挡位报文 (四大独立权威源融合)
+        // 3. 解析车辆挡位报文 (唯一权威底盘物理通道)
+        // 核心铁律：仅采纳 ecarx_avm_state 与 Tasker 底盘状态，严禁采纳 DCService 的 getFunctionValue 轮询占位符 (0x200230)！
         int gearVal = -1;
 
-        // 3.1 吉利原厂 360 环视核心状态机 (AvmStateManger / onVehicleEventGear / state[GEAR_*]) 与 VehId=Vehicle_Gear
-        if (line.contains("onVehicleEventGear") || line.contains("state[GEAR_") || line.contains("Vehicle_Gear")) {
+        // 3.1 吉利原厂核心状态机与底盘总线: VehId=Vehicle_Gear (最权威物理真源，实测 100% 准确)
+        if (line.contains("VehId=Vehicle_Gear")) {
+            try {
+                Matcher m = P_VEHICLE_GEAR.matcher(line);
+                if (m.find()) {
+                    int rawHex = Integer.parseInt(m.group(1), 16);
+                    int low = rawHex & 0x0F;
+                    if (low == 0x05) gearVal = 5;      // P 挡 (驻车)
+                    else if (low == 0x04) gearVal = 4; // R 挡 (倒挡)
+                    else if (low == 0x03) gearVal = 3; // N 挡 (空挡)
+                    else if (low == 0x02) gearVal = 2; // D 挡 (前进)
+                    else if (low == 0x06 || low == 0x07) gearVal = 6; // S 挡
+                    else if (low >= 2 && low <= 7) gearVal = low;
+                }
+            } catch (Exception ignored) {}
+        }
+        // 3.12 吉利原厂状态字: onVehicleEventGear / state[GEAR_*]
+        else if (line.contains("onVehicleEventGear") || line.contains("state[GEAR_")) {
             if (line.contains("GEAR_DRIVE") || line.contains("state[GEAR_DRIVE]")) gearVal = 2;
             else if (line.contains("GEAR_REVERSE") || line.contains("state[GEAR_REVERSE]")) gearVal = 4;
             else if (line.contains("GEAR_NEUTRAL") || line.contains("state[GEAR_NEUTRAL]")) gearVal = 3;
             else if (line.contains("GEAR_PARK") || line.contains("state[GEAR_PARK]")) gearVal = 5;
             else if (line.contains("GEAR_SPORT") || line.contains("state[GEAR_SPORT]")) gearVal = 6;
-            else if (line.contains("VehId=Vehicle_Gear")) {
-                try {
-                    Matcher m = P_VEHICLE_GEAR.matcher(line);
-                    if (m.find()) {
-                        int rawHex = Integer.parseInt(m.group(1), 16);
-                        // 吉利 E02 复合报文：高4位为驾驶模式 (如 0x1=舒适), 低4位为物理挡位 (0x2=D挡, 0x3=N挡, 0x4=R挡, 0x5=P挡)
-                        int low = rawHex & 0x0F;
-                        if (low == 0x05) gearVal = 5;
-                        else if (low == 0x04) gearVal = 4;
-                        else if (low == 0x03) gearVal = 3;
-                        else if (low == 0x02) gearVal = 2;
-                        else if (low == 0x06 || low == 0x07) gearVal = 6;
-                        else gearVal = low;
-
-                        // 避坑核心铁律：VehId=Vehicle_Gear 仅作为物理挡位来源，严禁提取高4位作为驾驶模式！
-                        // 亿咖通原厂 ecarx_avm_state 每 3 秒广播的 value=0x12 中，低4位(0x2)是D挡，
-                        // 但其高4位(0x1)只是 360 环视模块内部固定的占位符(恒为0x1舒适)，根本不是当前底盘真实的驾驶模式！
-                        // 驾驶模式必须严格由底盘权威源（ComfortModule 57049113 / DM_FUNC_DRIVE_MODE_SELECT / 0x287000eb）裁决！
-                    }
-                } catch (Exception ignored) {}
-            }
         }
 
         // 3.15 吉利 VehicleManager 框架标准状态: getDrivingMode: gear=X mode=Y (Tasker实车权威验证源)
@@ -953,26 +949,6 @@ public class VehicleAutomationService extends Service {
             } catch (Exception ignored) {}
         }
 
-        // 3.3 原厂核心服务与底层传感器属性: INFO_ID_VDRIVEINFO_GEAR_POSITION / mModelGearPos
-        // 核心铁律：底盘物理报文才是唯一法定真源，严禁使用声卡高频日志 isGearReverse 1 判定倒车（倒车期间刷屏数千条会导致管道堵塞及切D挡时钟倒流误判）
-        if (gearVal <= 0 && (line.contains("VDRIVEINFO_GEAR_POSITION") || line.contains("mModelGearPos") || line.contains("GearPos =") || line.contains("GearPos:"))) {
-            try {
-                Matcher gm = P_GEAR_POS.matcher(line);
-                if (gm.find()) {
-                    String valStr = gm.group(1) != null ? gm.group(1) : gm.group(2);
-                    int raw = Integer.parseInt(valStr, 16);
-                    int low = raw & 0xFF;
-                    // 吉利 E02 标准 0x200210/20/30/40 体系与原生 0x02~0x05 规范统一对齐
-                    // 权威映射：0x10(P挡) / 0x20(D挡) / 0x30(N挡) / 0x40(R挡)
-                    if (low == 0x10 || low == 0x00 || low == 0x05) gearVal = 5; // P 挡 (驻车)
-                    else if (low == 0x20 || low == 0x33 || low == 0x02) gearVal = 2; // D 挡 (前进)
-                    else if (low == 0x30 || low == 0x32 || low == 0x03) gearVal = 3; // N 挡 (空挡)
-                    else if (low == 0x40 || low == 0x31 || low == 0x04) gearVal = 4; // R 挡 (倒挡)
-                    else if (low >= 2 && low <= 7) gearVal = low;
-                }
-            } catch (Exception ignored) {}
-        }
-
         if (gearVal > 0) {
             handleGearSignal(gearVal);
             return;
@@ -985,6 +961,10 @@ public class VehicleAutomationService extends Service {
                 if (sm.find()) {
                     int b6 = Integer.parseInt(sm.group(1).trim(), 16);
                     int b7 = Integer.parseInt(sm.group(2).trim(), 16);
+
+                    // 避坑核心铁律：0x00 代表 MCU 刚启动通信通道未对齐的瞬态无效占位帧，绝对忽略！
+                    // 正常四门全关为 0x55，各门开为 0x54/0x51/0x45 等，绝不可把 0x00 当成四门全开！
+                    if (b6 == 0x00 && b7 == 0x00) return;
 
                     // b6 解析四门:
                     // bit0-1: FL主驾 (00b=开, 01b=关)
