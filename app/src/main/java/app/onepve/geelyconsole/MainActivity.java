@@ -1196,6 +1196,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
                 obj.put("multimedia_frozen", isMediaFrozen);
                 obj.put("appstore_frozen", isAppstoreFrozen);
+                try {
+                    obj.put("platform_code", VehiclePlatformFactory.getPlatform(MainActivity.this).getPlatformCode());
+                    obj.put("platform_name", VehiclePlatformFactory.getPlatform(MainActivity.this).getPlatformName());
+                } catch (Throwable ignored) {}
                 // 真实屏幕参数：每次启动只采一次，之后复用缓存（与 pushDeviceInfoToWeb 同步）
                 org.json.JSONObject scr = ensureScreenInfoOnce(ver);
                 if (scr != null) {
