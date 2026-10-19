@@ -684,8 +684,8 @@ public class VehicleAutomationService extends Service {
         "reportkeytoadaptapi", "shouldcallback", "swc_trip", "do nothing for this key", "onalreadyhome", "cmd_data[",
         // 2. 车辆实时车速
         "caraudioinfo", "get speed", "ipkinfo_instant_speed", "vehiclespeed", "carspeed", "vehicle_speed", "ipkspeed",
-        // 3. 挡位状态 (彻底剔除易产生轮询占位伪信号的 vdriveinfo_gear_position 与 gearpos)
-        "vehicleeventgear", "state[gear_", "vehicle_gear", "getdrivingmode", "mmodelepb", "gearposition",
+        // 3. 挡位状态 (彻底锁定原厂唯一真源: VehId=Vehicle_Gear)
+        "vehicle_gear", "getdrivingmode",
         // 4. 车门、后尾箱与乘员安全带
         "91 02 01", "mcu->mpu", "_door_sts", "mmodellfdoor", "mmodelrfdoor", "mmodellrdoor", "mmodelrrdoor", "seat_belt", "0x002012", "0x002013",
         // 5. 驾驶模式切换
@@ -887,11 +887,10 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // 3. 解析车辆挡位报文 (唯一权威底盘物理通道)
-        // 核心铁律：仅采纳 ecarx_avm_state 与 Tasker 底盘状态，严禁采纳 DCService 的 getFunctionValue 轮询占位符 (0x200230)！
+        // 3. 解析车辆挡位报文 (唯一法定真源: VehId=Vehicle_Gear)
+        // 核心铁律：仅信赖原厂底盘总线 VehId=Vehicle_Gear 与标准 getDrivingMode，彻底灭绝一切伪信号！
         int gearVal = -1;
 
-        // 3.1 吉利原厂核心状态机与底盘总线: VehId=Vehicle_Gear (最权威物理真源，实测 100% 准确)
         if (line.contains("VehId=Vehicle_Gear")) {
             try {
                 Matcher m = P_VEHICLE_GEAR.matcher(line);
@@ -907,17 +906,7 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
-        // 3.12 吉利原厂状态字: onVehicleEventGear / state[GEAR_*]
-        else if (line.contains("onVehicleEventGear") || line.contains("state[GEAR_")) {
-            if (line.contains("GEAR_DRIVE") || line.contains("state[GEAR_DRIVE]")) gearVal = 2;
-            else if (line.contains("GEAR_REVERSE") || line.contains("state[GEAR_REVERSE]")) gearVal = 4;
-            else if (line.contains("GEAR_NEUTRAL") || line.contains("state[GEAR_NEUTRAL]")) gearVal = 3;
-            else if (line.contains("GEAR_PARK") || line.contains("state[GEAR_PARK]")) gearVal = 5;
-            else if (line.contains("GEAR_SPORT") || line.contains("state[GEAR_SPORT]")) gearVal = 6;
-        }
-
-        // 3.15 吉利 VehicleManager 框架标准状态: getDrivingMode: gear=X mode=Y (Tasker实车权威验证源)
-        if (gearVal <= 0 && line.contains("getDrivingMode") && line.contains("gear=")) {
+        else if (line.contains("getDrivingMode") && line.contains("gear=")) {
             try {
                 Matcher m = P_GEAR_EQ.matcher(line);
                 if (m.find()) {
@@ -927,24 +916,6 @@ public class VehicleAutomationService extends Service {
                     else if (low == 0x20 || gNum == 2097696L) gearVal = 2; // D挡 (0x200220) 前进挡
                     else if (low == 0x30 || gNum == 2097712L) gearVal = 3; // N挡 (0x200230) 空挡
                     else if (low == 0x40 || gNum == 2097728L) gearVal = 4; // R挡 (0x200240) 倒车挡
-                }
-            } catch (Exception ignored) {}
-        }
-
-        // 3.16 ecarx_core_server 电子手刹/驻车: mModelEPB = 0 -> P 挡 (Tasker 模式.prj 黄金源)
-        if (gearVal <= 0 && line.contains("mModelEPB")) {
-            if (line.contains("mModelEPB = 0") || line.contains("mModelEPB=0")) {
-                gearVal = 5; // P 挡 (驻车挡)
-            }
-        }
-
-        // 3.2 MCU 串口硬件报文: MCULog:GearPosition: x (2=D, 3=N, 4=R, 5=P)
-        if (gearVal <= 0 && line.contains("GearPosition:")) {
-            try {
-                int idx = line.indexOf("GearPosition:");
-                if (idx != -1) {
-                    String sub = line.substring(idx + 13).trim();
-                    gearVal = Integer.parseInt(sub.substring(0, 1));
                 }
             } catch (Exception ignored) {}
         }
@@ -1063,21 +1034,8 @@ public class VehicleAutomationService extends Service {
         // 注意：AVM底盘守护每3秒周期性心跳广播 DriveMode1=0x12 (包含当前挡位与模式)，
         // 若在点火初期就静默建立基准，会导致车主随后正式切入该模式时被防抖丢弃！
         // 因此常规状态更新优先信赖物理旋钮与系统配置 (DirveMode / DM_FUNC_DRIVE_MODE_SELECT / AdaptAPI 570491136)
-        if (line.contains("DirveMode =") || line.contains("DirveMode=") || line.contains("DriveMode =") || line.contains("DriveMode=")) {
-            try {
-                Matcher m = P_DRIVE_MODE.matcher(line);
-                if (m.find()) {
-                    int dm = Integer.parseInt(m.group(1));
-                    if (dm == 1) modeVal = MODE_COMFORT;
-                    else if (dm == 2) modeVal = MODE_SPORT;
-                    else if (dm == 3) modeVal = MODE_ECO;
-                    else if (dm == 4 || dm == 6) modeVal = MODE_SMART;
-                }
-            } catch (Exception ignored) {}
-        }
-        // 优先 2: 吉利原厂 ComfortModule 旋钮直接物理报文 (DM_FUNC_DRIVE_MODE_SELECT value=X)
-        // 旋钮物理转动时必发，权威最高
-        else if (line.contains("DM_FUNC_DRIVE_MODE_SELECT")) {
+        // 核心铁律：仅信赖原厂旋钮与原生事件，绝对不可拿 MCU 0x09 车速/挡位复合帧当模式解析！
+        if (line.contains("DM_FUNC_DRIVE_MODE_SELECT")) {
             try {
                 Matcher m = P_COMFORT_DRIVE_MODE.matcher(line);
                 if (m.find()) {
@@ -1089,41 +1047,15 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
-        // 优先 3: AdaptAPI/CarSettingService 9位全局权威常量容灾 (fun:570491136 或 mModelDriveMode)
-        else if (line.contains("570491136") || line.contains("mModelDriveMode")) {
-            if (line.contains("570491138")) {
-                modeVal = MODE_COMFORT; // 舒适模式 (DRIVE_MODE_SELECTION_COMFORT = 570491138)
-            } else if (line.contains("570491139")) {
-                modeVal = MODE_SPORT;   // 运动模式 (DRIVE_MODE_SELECTION_DYNAMIC = 570491139)
-            } else if (line.contains("570491137")) {
-                modeVal = MODE_ECO;     // 经济模式 (DRIVE_MODE_SELECTION_ECO = 570491137)
-            } else if (line.contains("570491158")) {
-                modeVal = MODE_SMART;   // 智能模式 (DRIVE_MODE_SELECTION_ADAPTIVE = 570491158)
-            }
-        }
-        // 优先 4: 吉利 HAL 仿真层原车属性事件 (parseRxProtoBuf: vp->ap (0x287000eb, 0x01 ))
-        else if (line.contains("0x287000eb")) {
+        else if (line.contains("DirveMode =") || line.contains("DirveMode=") || line.contains("DriveMode =") || line.contains("DriveMode=")) {
             try {
-                Matcher m = P_HAL_DRIVE_MODE.matcher(line);
+                Matcher m = P_DRIVE_MODE.matcher(line);
                 if (m.find()) {
-                    int rawVal = Integer.parseInt(m.group(1), 16);
-                    if (rawVal == 1) modeVal = MODE_COMFORT;
-                    else if (rawVal == 2) modeVal = MODE_SPORT;
-                    else if (rawVal == 3) modeVal = MODE_ECO;
-                    else if (rawVal == 4 || rawVal == 6) modeVal = MODE_SMART;
-                }
-            } catch (Exception ignored) {}
-        }
-        // 优先 5: MCU 串口硬件底层原车物理帧 (read data: 91 09 02 00 05 00 XX YY)
-        else if (line.contains("91 09 02 00 05 00")) {
-            try {
-                Matcher m = P_MCU_DRIVE_MODE_FRAME.matcher(line);
-                if (m.find()) {
-                    int rawVal = Integer.parseInt(m.group(1), 16);
-                    if (rawVal == 1) modeVal = MODE_COMFORT;
-                    else if (rawVal == 2) modeVal = MODE_SPORT;
-                    else if (rawVal == 3) modeVal = MODE_ECO;
-                    else if (rawVal == 4 || rawVal == 6) modeVal = MODE_SMART;
+                    int dm = Integer.parseInt(m.group(1));
+                    if (dm == 1) modeVal = MODE_COMFORT;
+                    else if (dm == 2) modeVal = MODE_SPORT;
+                    else if (dm == 3) modeVal = MODE_ECO;
+                    else if (dm == 4 || dm == 6) modeVal = MODE_SMART;
                 }
             } catch (Exception ignored) {}
         }

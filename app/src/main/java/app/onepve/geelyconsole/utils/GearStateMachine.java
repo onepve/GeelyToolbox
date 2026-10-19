@@ -197,9 +197,9 @@ public class GearStateMachine {
                                 voicePlayer.play("gear_s.mp3", "已挂入运动挡");
                             }
                         } else if (gear == 5) { // P 挡
-                            // 严格铁律：必须且仅当曾换入行车挡武装过 (isGearVoiceArmed == 1)，挂回 P 挡才允许播报！
-                            // 彻底拔除 || prevGear != 5 漏洞，杜绝熄火或刚开机时因总线诊断心跳反复误报驻车挡
-                            if (isGearVoiceArmed == 1) {
+                            // 核心铁律：只要是从非 P 挡切换回 P 挡（prevGear != 5），100% 灵敏播报驻车挡！
+                            // 彻底消除按 P 键偶尔哑巴无声的顽疾！
+                            if (prevGear != 5) {
                                 if (enableP && voicePlayer != null) {
                                     voicePlayer.play("gear_p.mp3", "已挂入驻车挡");
                                 }
