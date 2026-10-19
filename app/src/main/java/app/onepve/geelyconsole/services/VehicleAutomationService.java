@@ -719,7 +719,7 @@ public class VehicleAutomationService extends Service {
                         // 直接全量监听，由我们在 parseLogLine 中进行高效关键字判定！
                         // 核心铁律：持续实时监听 logcat，由我们在 parseLogLine 中进行高效关键字判定！
                         // 避坑：严禁使用 -t 50 / -d 等非阻塞参数，否则进程读完 50 行立即 EOF 退出导致外层 while 陷入每 2 秒死循环重启！
-                        ProcessBuilder pb = new ProcessBuilder("logcat", "-v", "brief", "-b", "all");
+                        ProcessBuilder pb = new ProcessBuilder("logcat", "-v", "time", "-b", "all");
                         pb.redirectErrorStream(true);
                         logcatProcess = pb.start();
                         AppLogger.i("系统日志", "Logcat 实时监听守护线程已建立就绪");
@@ -934,17 +934,7 @@ public class VehicleAutomationService extends Service {
                     int rl = (((b6 >> 4) & 0x03) == 0x00) ? 1 : 0;
                     int rr = (((b6 >> 6) & 0x03) == 0x00) ? 1 : 0;
 
-                    // 【开机首包对齐期】：若服务刚启动前 20 秒，且整车处于静止驻车状态 (车速=0)，
-        // 门状态必须以 0 (全关) 为基准，绝对禁止在车主坐进车里后倒灌开门与关门声音！
-        if (System.currentTimeMillis() - serviceBootTimestampMs < 20000L && currentSpeedKmH == 0) {
-            // 开机 20 秒内若车门有信号到达，强制静默更新物理基准，绝不触发语音发声！
-            if (doorStateManager != null) {
-                doorStateManager.updateDoors(fl, fr, rl, rr, false, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
-            }
-            return;
-        }
-
-        // 分发给四门独立状态机
+                    // 分发给四门独立状态机
                     if (doorStateManager != null) {
                         doorStateManager.updateDoors(fl, fr, rl, rr, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
                     }
