@@ -29,6 +29,7 @@ public class GearStateMachine {
 
     private int lastGearPos = -1;
     private int isGearVoiceArmed = 0; // 0=P挡静默休眠态, 1=车主激活态
+    private long bootInitTimeMs = System.currentTimeMillis(); // 开机/重置时间戳，用于冷启动自检毛刺吸收
     private Runnable pendingGearTask = null;
     private int pendingTargetGear = -1; // 防抖期目标挡位：同目标心跳不重置计时器
     private static final long GEAR_DEBOUNCE_MS = 0; // 目标挡位(D/R/P/S) 0ms 瞬发响应，硬件跳变即刻播报
@@ -93,6 +94,7 @@ public class GearStateMachine {
         boolean changed = (lastGearPos != -1 || isGearVoiceArmed != 0);
         lastGearPos = -1;
         isGearVoiceArmed = 0;
+        bootInitTimeMs = System.currentTimeMillis();
         if (changed) {
             AppLogger.i("挡位状态", "熄火休眠: 换挡状态机重置归零 (armed=0, lastGear=-1)");
         }
@@ -221,8 +223,12 @@ public class GearStateMachine {
             }
         };
 
-        // 动态防抖策略：空挡(N)为换挡过渡态，快速划过跳过；D/R/P/S 等目标挡位直接瞬发执行，绝不滞后
-        long debounceTime = (gear == 3) ? GEAR_N_TRANSIT_DEBOUNCE_MS : GEAR_DEBOUNCE_MS;
+        // 动态防抖策略：
+        // 1. 空挡(N)为换挡过渡态，快速划过跳过 (350ms)
+        // 2. 开机冷启动稳定期 (启动后 10 秒内从物理 P 挡离开)：防底层传感器与总线自检电平瞬态抖动 (350ms)
+        // 3. 常规行车状态：目标挡位(D/R/P/S) 严格 0ms 瞬发执行，硬件跳变即刻播报，绝不滞后
+        boolean isBootSettling = (System.currentTimeMillis() - bootInitTimeMs < 10000L) && (lastGearPos == 5);
+        long debounceTime = (gear == 3 || isBootSettling) ? GEAR_N_TRANSIT_DEBOUNCE_MS : GEAR_DEBOUNCE_MS;
         if (debounceTime <= 0) {
             pendingGearTask.run();
         } else {

@@ -636,7 +636,7 @@ public class VehicleAutomationService extends Service {
     private static final Pattern P_GEAR_EQ =
             Pattern.compile("gear=(\\d+)");
     private static final Pattern P_GEAR_POS =
-            Pattern.compile("(?:funValue\\((?:0x)?([0-9a-fA-F]+)\\)|(?:mModelGearPos|GearPos)\\s*[:=]\\s*(?:0x)?([0-9a-fA-F]+))");
+            Pattern.compile("(?:func?Value\\((?:0x)?([0-9a-fA-F]+)\\)|(?:mModelGearPos|GearPos)\\s*[:=]\\s*(?:0x)?([0-9a-fA-F]+))");
     private static final Pattern P_FUNVALUE =
             Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)");
     private static final Pattern P_DRIVE_MODE =
@@ -847,10 +847,10 @@ public class VehicleAutomationService extends Service {
                 if (m.find()) {
                     long gNum = Long.parseLong(m.group(1));
                     long low = gNum & 0xFF;
-                    if (low == 0x20 || gNum == 2097696L) gearVal = 2; // D挡 (0x200220)
-                    else if (low == 0x40 || gNum == 2097728L) gearVal = 4; // R挡 (0x200240)
-                    else if (low == 0x10 || gNum == 2097680L) gearVal = 3; // N挡 (0x200210)
-                    else if (low == 0x30 || gNum == 2097712L) gearVal = 5; // P挡 (0x200230)
+                    if (low == 0x10 || gNum == 2097680L) gearVal = 5; // P挡 (0x200210) 驻车基准
+                    else if (low == 0x20 || gNum == 2097696L) gearVal = 2; // D挡 (0x200220) 前进挡
+                    else if (low == 0x30 || gNum == 2097712L) gearVal = 3; // N挡 (0x200230) 空挡
+                    else if (low == 0x40 || gNum == 2097728L) gearVal = 4; // R挡 (0x200240) 倒车挡
                 }
             } catch (Exception ignored) {}
         }
@@ -882,11 +882,12 @@ public class VehicleAutomationService extends Service {
                     String valStr = gm.group(1) != null ? gm.group(1) : gm.group(2);
                     int raw = Integer.parseInt(valStr, 16);
                     int low = raw & 0xFF;
-                    // 完美覆盖吉利实车底盘报文: 0x40(R) / 0x20(D) / 0x10(N) / 0x00(P) 及传统协议
-                    if (low == 0x00 || low == 0x30 || low == 0x05) gearVal = 5; // P
-                    else if (low == 0x40 || low == 0x31 || low == 0x04) gearVal = 4; // R
-                    else if (low == 0x10 || low == 0x32 || low == 0x03) gearVal = 3; // N
-                    else if (low == 0x20 || low == 0x33 || low == 0x02) gearVal = 2; // D
+                    // 吉利 E02 标准 0x200210/20/30/40 体系与原生 0x02~0x05 规范统一对齐
+                    // 权威映射：0x10(P挡) / 0x20(D挡) / 0x30(N挡) / 0x40(R挡)
+                    if (low == 0x10 || low == 0x00 || low == 0x05) gearVal = 5; // P 挡 (驻车)
+                    else if (low == 0x20 || low == 0x33 || low == 0x02) gearVal = 2; // D 挡 (前进)
+                    else if (low == 0x30 || low == 0x32 || low == 0x03) gearVal = 3; // N 挡 (空挡)
+                    else if (low == 0x40 || low == 0x31 || low == 0x04) gearVal = 4; // R 挡 (倒挡)
                     else if (low >= 2 && low <= 7) gearVal = low;
                 }
             } catch (Exception ignored) {}
