@@ -217,11 +217,9 @@ public class GearStateMachine {
         };
 
         // 动态防抖策略：
-        // 1. 空挡(N)为换挡过渡态，快速划过跳过 (350ms)
-        // 2. 开机冷启动稳定期 (启动后 15 秒内从出厂停泊 P 挡首次离开)：防底层传感器与总线自检电平瞬态抖动 (350ms)
-        // 3. 常规行车状态：目标挡位(D/R/P/S) 严格 0ms 瞬发执行，硬件跳变即刻播报，绝不滞后
-        boolean isBootSettling = (System.currentTimeMillis() - bootInitTimeMs < 15000L) && (lastGearPos == 5);
-        long debounceTime = (gear == 3 || isBootSettling) ? GEAR_N_TRANSIT_DEBOUNCE_MS : GEAR_DEBOUNCE_MS;
+        // 核心铁律：所有目标挡位(D/R/P/S/N) 严格 0ms 瞬发执行，手落声起！
+        // 避坑：严禁对 N 挡增加 350ms 延迟，否则下拨路过 N 挡会滞后排队，误以为是在后面挡位播报！
+        long debounceTime = GEAR_DEBOUNCE_MS;
         if (debounceTime <= 0) {
             pendingGearTask.run();
         } else {

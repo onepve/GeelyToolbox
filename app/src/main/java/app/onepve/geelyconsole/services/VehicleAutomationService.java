@@ -685,7 +685,7 @@ public class VehicleAutomationService extends Service {
         // 2. 车辆实时车速
         "caraudioinfo", "get speed", "ipkinfo_instant_speed", "vehiclespeed", "carspeed", "vehicle_speed", "ipkspeed",
         // 3. 挡位状态 (彻底锁定原厂唯一真源: VehId=Vehicle_Gear)
-        "vehicle_gear", "getdrivingmode",
+        "vehicle_gear",
         // 4. 车门、后尾箱与乘员安全带
         "91 02 01", "mcu->mpu", "_door_sts", "mmodellfdoor", "mmodelrfdoor", "mmodellrdoor", "mmodelrrdoor", "seat_belt", "0x002012", "0x002013",
         // 5. 驾驶模式切换
@@ -888,7 +888,7 @@ public class VehicleAutomationService extends Service {
         }
 
         // 3. 解析车辆挡位报文 (唯一法定真源: VehId=Vehicle_Gear)
-        // 核心铁律：仅信赖原厂底盘总线 VehId=Vehicle_Gear 与标准 getDrivingMode，彻底灭绝一切伪信号！
+        // 核心铁律：仅信赖原厂底盘总线 VehId=Vehicle_Gear (0x02=D, 0x03=N, 0x04=R, 0x05=P)，绝不杂糅任何上层伪信号！
         int gearVal = -1;
 
         if (line.contains("VehId=Vehicle_Gear")) {
@@ -903,19 +903,6 @@ public class VehicleAutomationService extends Service {
                     else if (low == 0x02) gearVal = 2; // D 挡 (前进)
                     else if (low == 0x06 || low == 0x07) gearVal = 6; // S 挡
                     else if (low >= 2 && low <= 7) gearVal = low;
-                }
-            } catch (Exception ignored) {}
-        }
-        else if (line.contains("getDrivingMode") && line.contains("gear=")) {
-            try {
-                Matcher m = P_GEAR_EQ.matcher(line);
-                if (m.find()) {
-                    long gNum = Long.parseLong(m.group(1));
-                    long low = gNum & 0xFF;
-                    if (low == 0x10 || gNum == 2097680L) gearVal = 5; // P挡 (0x200210) 驻车基准
-                    else if (low == 0x20 || gNum == 2097696L) gearVal = 2; // D挡 (0x200220) 前进挡
-                    else if (low == 0x30 || gNum == 2097712L) gearVal = 3; // N挡 (0x200230) 空挡
-                    else if (low == 0x40 || gNum == 2097728L) gearVal = 4; // R挡 (0x200240) 倒车挡
                 }
             } catch (Exception ignored) {}
         }
@@ -947,7 +934,17 @@ public class VehicleAutomationService extends Service {
                     int rl = (((b6 >> 4) & 0x03) == 0x00) ? 1 : 0;
                     int rr = (((b6 >> 6) & 0x03) == 0x00) ? 1 : 0;
 
-                    // 分发给四门独立状态机
+                    // 【开机首包对齐期】：若服务刚启动前 20 秒，且整车处于静止驻车状态 (车速=0)，
+        // 门状态必须以 0 (全关) 为基准，绝对禁止在车主坐进车里后倒灌开门与关门声音！
+        if (System.currentTimeMillis() - serviceBootTimestampMs < 20000L && currentSpeedKmH == 0) {
+            // 开机 20 秒内若车门有信号到达，强制静默更新物理基准，绝不触发语音发声！
+            if (doorStateManager != null) {
+                doorStateManager.updateDoors(fl, fr, rl, rr, false, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
+            }
+            return;
+        }
+
+        // 分发给四门独立状态机
                     if (doorStateManager != null) {
                         doorStateManager.updateDoors(fl, fr, rl, rr, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
                     }
