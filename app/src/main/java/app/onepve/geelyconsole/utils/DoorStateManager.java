@@ -174,7 +174,9 @@ public class DoorStateManager {
                 listener.onDoorStateChanged(currentFL, currentFR, currentRL, currentRR);
             }
 
-            // 核心迎宾优化：若车主拉门唤醒车机，首包即为开门态 (1)，立即触发迎宾开门播报，绝不静默吞噬！
+            // 核心迎宾与时序闭环：
+            // 若开机首包即为关门态 (0)，说明车主在车机启动就绪前就已关门就坐，仅静默建立基准，绝不倒灌补报关门！
+            // 仅当首包即为开门态 (1) 时，才触发迎宾开门播报
             if (currentFL == 1) {
                 String welcomeTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", java.util.Locale.CHINA).format(new java.util.Date(now));
                 AppLogger.i("车辆迎宾", "车辆迎宾时间: " + welcomeTime + " (检测到主驾开门首包，即刻触发迎宾播报)");
@@ -189,6 +191,8 @@ public class DoorStateManager {
             } else if (currentRR == 1) {
                 lastTimeRR = now;
                 handleDoorTransition("RR", "右后", 1, 0, universalMode, voiceMasterSwitch, prefs);
+            } else {
+                AppLogger.i("车门状态", "开机首包检测到四门全关，静默对齐当前物理基准 (0 误播报)");
             }
             return;
         }

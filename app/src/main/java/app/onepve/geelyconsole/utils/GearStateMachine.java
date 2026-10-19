@@ -136,7 +136,18 @@ public class GearStateMachine {
             }
         }
 
-        if (gear == lastGearPos) return;
+        // 物理跳变回落防抖铁律：
+        // 若当前有正在倒计时的防抖任务（例如毛刺 5->2），若信号瞬间又跳回当前稳定挡位 (5)，
+        // 必须立即撤销该未到期的毛刺防抖任务并清空 pendingTargetGear，彻底吸收瞬态毛刺，杜绝误播！
+        if (gear == lastGearPos) {
+            if (pendingGearTask != null) {
+                mainHandler.removeCallbacks(pendingGearTask);
+                pendingGearTask = null;
+                pendingTargetGear = -1;
+                AppLogger.i("挡位状态", "瞬态自检毛刺已吸收: 挡位已恢复为当前稳定挡位 " + getGearName(lastGearPos) + "，撤销未到期防抖任务");
+            }
+            return;
+        }
 
         // 核心铁律：一旦物理挡位发生跃变，第一毫秒立即掐灭上一段旧语音！
         // 彻底解决从倒挡切回空挡时，倒挡声音仍在播放或排队延迟播报的问题，手拨即静、立竿见影
@@ -225,9 +236,9 @@ public class GearStateMachine {
 
         // 动态防抖策略：
         // 1. 空挡(N)为换挡过渡态，快速划过跳过 (350ms)
-        // 2. 开机冷启动稳定期 (启动后 10 秒内从物理 P 挡离开)：防底层传感器与总线自检电平瞬态抖动 (350ms)
+        // 2. 开机冷启动稳定期 (启动后 15 秒内从出厂停泊 P 挡首次离开)：防底层传感器与总线自检电平瞬态抖动 (350ms)
         // 3. 常规行车状态：目标挡位(D/R/P/S) 严格 0ms 瞬发执行，硬件跳变即刻播报，绝不滞后
-        boolean isBootSettling = (System.currentTimeMillis() - bootInitTimeMs < 10000L) && (lastGearPos == 5);
+        boolean isBootSettling = (System.currentTimeMillis() - bootInitTimeMs < 15000L) && (lastGearPos == 5);
         long debounceTime = (gear == 3 || isBootSettling) ? GEAR_N_TRANSIT_DEBOUNCE_MS : GEAR_DEBOUNCE_MS;
         if (debounceTime <= 0) {
             pendingGearTask.run();
