@@ -409,8 +409,6 @@ public class EasMediaBridge {
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "abandonDuckingFocus 异常: " + t.getMessage());
         }
-        // 核心契合：推流停止后启动 5 秒延时静默保护，随后安全恢复 QQ 音乐音量
-        scheduleRestoreMediaFocusDelayed();
     }
 
     /**
@@ -743,7 +741,6 @@ public class EasMediaBridge {
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                     }
                     if (streaming) {
-                        cancelPendingRestoreMediaFocus();
                         requestDuckingFocusForIncomingVoice();
 
                         // 1. 穿透唤醒原厂 A2DP Sink 协议栈解冻硬件 Mute：
@@ -756,9 +753,9 @@ public class EasMediaBridge {
                             activateBluetoothChannel();
                         }
                     } else {
-                        // 微信/消息推流结束：保持 5 秒静默窗口期，随后平滑恢复 QQ 音乐音量
+                        // 微信推流结束：释放压低焦点，触发 QQ 音乐/本地音乐音量回弹
                         abandonDuckingFocus();
-                        AppLogger.i("蓝牙音频", "监听到推流停止，已释放压低焦点并启动 5 秒延时音量平滑恢复保护");
+                        AppLogger.i("蓝牙音频", "监听到推流停止，已释放压低焦点并保持通道守护");
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
                     try {
@@ -767,7 +764,6 @@ public class EasMediaBridge {
                             boolean isPlaying = (pbState.getState() == android.media.session.PlaybackState.STATE_PLAYING);
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
-                                cancelPendingRestoreMediaFocus();
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，唤醒原厂 A2DP 解冻硬件音量并选通声道");
                                 requestDuckingFocusForIncomingVoice();
                                 wakeBluetoothAudioSink();
@@ -775,7 +771,7 @@ public class EasMediaBridge {
                             } else if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
                                 abandonDuckingFocus();
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，已释放压低焦点并启动 5 秒延时音量平滑恢复保护");
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，已释放压低焦点并保持通道守护");
                             }
                         }
                     } catch (Throwable ignored) {}
