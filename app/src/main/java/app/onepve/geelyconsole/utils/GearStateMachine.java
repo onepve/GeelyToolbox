@@ -178,11 +178,7 @@ public class GearStateMachine {
 
                         if (gear == 2) { // D 挡
                             if (enableD && voicePlayer != null) {
-                                if (VehicleAutomationService.currentSpeedKmH > 0) {
-                                    AppLogger.i("挡位状态", "当前车速 " + VehicleAutomationService.currentSpeedKmH + "km/h > 0，跳过前进挡播报");
-                                } else {
-                                    voicePlayer.play("gear_d.mp3", "已挂入前进挡");
-                                }
+                                voicePlayer.play("gear_d.mp3", "已挂入前进挡");
                             }
                         } else if (gear == 4) { // R 挡
                             if (enableR && voicePlayer != null) {
