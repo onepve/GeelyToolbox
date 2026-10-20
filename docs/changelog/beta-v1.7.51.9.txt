@@ -1,0 +1,2 @@
+1. 升级 Direct Boot 设备保护存储（DE Storage）：全应用 SharedPreferences 与内置官方 MP3 资产释放统一切换至 user_de 设备保护存储区，彻底根除开机 7 秒 LOCKED_BOOT_COMPLETED 阶段由于读取凭证加密存储（CE）抛出 IllegalStateException 导致进程闪退的历史缺陷，实现开机 7 秒未解锁状态毫秒级无损自启；
+2. 架构减负与全面拥抱纯净 MP3：彻底下线系统 TTS 引擎（com.ecarx.xcttsengine）无休止轮询重试机制与怪异机械音兜底朗读，座舱语音全面收敛为「用户自定义外部 MP3 / 官方高保真内置 MP3」，开机内存减少 15MB，彻底根除开机 6 分钟延迟与异常杂音。

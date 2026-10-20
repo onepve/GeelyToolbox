@@ -1,0 +1,44 @@
+<template>
+  <ModalWrapper 
+    :show="store.modals.reward" 
+    title="赞赏支持 · 纯净开源无广告" 
+    badge="开发者致谢"
+    maxWidthClass="max-w-[620px]"
+    @close="closeModal('reward')"
+  >
+    <div class="flex flex-col items-center text-center space-y-3">
+      <div class="text-[15.5px] text-car-sub font-bold">
+        感谢你对《缤越助手 (GeelyToolbox)》爱车改装与开源功能的支持与喜爱！
+      </div>
+
+      <!-- 赞赏展示卡片 (车规深色语义卡片，二维码独立白色贴合底衬) -->
+      <div class="p-5 bg-car-item rounded-3xl border-2 border-car-border flex flex-col items-center justify-center shadow-lg">
+        <!-- 微信赞赏码实体图片 (独立白底衬垫保证高对比度易扫) -->
+        <div class="p-3 bg-white rounded-2xl shadow-inner">
+          <img 
+            :src="rewardQrImg" 
+            alt="微信赞赏码" 
+            class="w-48 h-48 object-contain rounded-xl"
+          />
+        </div>
+        <div class="text-car-text font-black text-[17px] mt-3.5 flex items-center">
+           微信扫码赞赏支持 · 迷失
+        </div>
+        <div class="text-car-sub font-bold text-[13px] mt-1">
+          车友交流 QQ 群：564654011
+        </div>
+      </div>
+
+      <!-- 提示语 -->
+      <div class="text-[14px] text-car-sub font-bold leading-relaxed px-2">
+        本软件由迷失开发制作，承诺无广告、无收费捆绑，完全免费分享，感谢大家的使用与支持！
+      </div>
+    </div>
+  </ModalWrapper>
+</template>
+
+<script setup>
+import ModalWrapper from './ModalWrapper.vue';
+import { store, closeModal } from '../../store';
+import rewardQrImg from '../../assets/img_reward_code.webp';
+</script>
