@@ -71,9 +71,6 @@ public class EasMediaBridge {
     private volatile boolean a2dpStreaming = false;
     private BroadcastReceiver a2dpReceiver;
     private long lastA2dpWakeTime = 0;
-    private final Handler mRestoreHandler = new Handler(Looper.getMainLooper());
-    private Runnable mPendingMusicRestoreTask = null;
-    private static final long BLUETOOTH_DUCK_RESTORE_DELAY_MS = 5000; // 微信语音与消息推流停止后的静默等待期 (5秒车规黄金窗口)，给车主读消息/连点下一条语音留足充裕时间，彻底杜绝音乐反复忽大忽小抽搐
     private volatile long lastBtSourceKeepMs = 0;
     private volatile boolean btFocusHeld = false;
     private AudioManager audioManager;
@@ -442,59 +439,6 @@ public class EasMediaBridge {
      */
     public synchronized void restoreMediaVolume() {
         abandonDuckingFocus();
-        scheduleRestoreMediaFocusDelayed();
-    }
-
-    /**
-     * 计划在推流停止后延迟恢复 QQ 音乐/车载媒体焦点与音量
-     * 核心契合：
-     * 1. 2.5 秒静默窗口期：防多条微信连点或短语音间隔导致音量反复忽大忽小；
-     * 2. 打破卡死：由于原厂 com.android.bluetooth 在消息放完后不会主动调用 abandonAudioFocus，
-     *    此处由助手在 2.5 秒后安全下发恢复广播并唤醒 QQ 音乐，彻底打破压低卡死状态！
-     */
-    private synchronized void scheduleRestoreMediaFocusDelayed() {
-        if (mPendingMusicRestoreTask != null) {
-            mRestoreHandler.removeCallbacks(mPendingMusicRestoreTask);
-            mPendingMusicRestoreTask = null;
-        }
-        mPendingMusicRestoreTask = new Runnable() {
-            @Override
-            public void run() {
-                synchronized (EasMediaBridge.this) {
-                    mPendingMusicRestoreTask = null;
-                    if (a2dpStreaming) {
-                        return; // 若在 5 秒内车主又点了下一条语音，保持压低，绝不回弹！
-                    }
-                    AppLogger.i("蓝牙音频", "微信/消息推流结束 5 秒静默期已过，唤醒 QQ 音乐恢复正常播放音量");
-                    try {
-                        // 1. 无感触动一次系统媒体通道 (STREAM_MUSIC)，迫使 AudioFlinger 重新计算并拉回媒体硬件增益 (Gain)
-                        AudioManager am = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
-                        if (am != null) {
-                            am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_SAME, 0);
-                        }
-                        // 2. 如果 QQ音乐车机版正在运行，向其直连 AIDL 事务发送恢复指令
-                        QQMusicCarController qqCtrl = QQMusicCarController.getInstance(appContext);
-                        if (qqCtrl != null && qqCtrl.isInstalled()) {
-                            qqCtrl.resumeMusic();
-                        }
-                        // 3. 发送标准原厂恢复播放广播，触发系统焦点仲裁回弹
-                        Intent playIntent = new Intent("com.tencent.qqmusiccar.action.PLAY");
-                        playIntent.setPackage("com.tencent.qqmusiccar");
-                        appContext.sendBroadcast(playIntent);
-                    } catch (Throwable t) {
-                        AppLogger.w("蓝牙音频", "恢复媒体音量异常: " + t.getMessage());
-                    }
-                }
-            }
-        };
-        mRestoreHandler.postDelayed(mPendingMusicRestoreTask, BLUETOOTH_DUCK_RESTORE_DELAY_MS);
-    }
-
-    private synchronized void cancelPendingRestoreMediaFocus() {
-        if (mPendingMusicRestoreTask != null) {
-            mRestoreHandler.removeCallbacks(mPendingMusicRestoreTask);
-            mPendingMusicRestoreTask = null;
-        }
     }
 
     public synchronized void activateBluetoothChannel() {
