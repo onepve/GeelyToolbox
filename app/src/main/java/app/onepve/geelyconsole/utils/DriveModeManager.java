@@ -35,7 +35,9 @@ public class DriveModeManager {
     private VehicleVoicePlayer voicePlayer;
     private DriveModeListener listener;
 
-    private int lastDriveMode = -1; // 初始未定态 (-1)，开机首包静默确立基准
+    // 核心车规铁律：吉利原厂底盘每次熄火/点火必定无条件强制回归【智能模式(MODE_SMART)】！
+    // 初始基准直接锁定 MODE_SMART，杜绝使用 -1 导致开机后车主第一次旋转旋钮被当成开机对齐而吞音！
+    private int lastDriveMode = MODE_SMART;
     private boolean isSmartModeArmed = false; // 智能模式闭锁标志：默认锁定(false)，切到其他模式时武装(true)，切回智能并播报一次后立即恢复锁定值(false)，彻底杜绝驻车循环播报
     private long creationTimeMs = System.currentTimeMillis();
     private Runnable pendingModeTask = null;
@@ -49,16 +51,19 @@ public class DriveModeManager {
 
     public void setListener(DriveModeListener listener) {
         this.listener = listener;
+        if (listener != null) {
+            listener.onDriveModeChanged(lastDriveMode);
+        }
     }
 
     public void setVoicePlayer(VehicleVoicePlayer voicePlayer) {
         this.voicePlayer = voicePlayer;
     }
 
-    public int getDriveMode() { return lastDriveMode == -1 ? MODE_SMART : lastDriveMode; }
+    public int getDriveMode() { return lastDriveMode; }
 
     /**
-     * 车辆熄火/断电/休眠复位：驾驶模式状态机重置归零，下一次点火绝对静默
+     * 车辆熄火/断电/休眠复位：驾驶模式状态机重置归位为出厂默认【智能模式】
      * ⚠️ 幂等静默：仅在状态真正发生变化时才写日志，严禁被 MCU 心跳无限刷屏。
      */
     public synchronized void resetState() {
@@ -66,33 +71,20 @@ public class DriveModeManager {
             mainHandler.removeCallbacks(pendingModeTask);
             pendingModeTask = null;
         }
-        boolean changed = (lastDriveMode != -1 || isSmartModeArmed);
-        lastDriveMode = -1;
+        pendingTargetMode = -1;
+        boolean changed = (lastDriveMode != MODE_SMART || isSmartModeArmed);
+        lastDriveMode = MODE_SMART;
         isSmartModeArmed = false;
         if (changed) {
-            AppLogger.i("驾驶模式", "熄火休眠复位: 重置归位基准 (lastMode=-1, smartArmed=false)");
+            AppLogger.i("驾驶模式", "熄火休眠复位: 重置归位基准为出厂默认【智能模式】(lastMode=MODE_SMART, smartArmed=false)");
         }
     }
 
     public synchronized void updateDriveMode(int mode, final boolean voiceMasterSwitch, final SharedPreferences prefs) {
         if (mode <= 0) return;
 
-        // 1. 开机首包基准处理：
-        // 避坑核心：
-        // 开机冷启动阶段：一律静默建立当前模式基准，开机绝不误播任何模式声音！
-        // 仅当基准已建立后，车主真正拧动旋钮使 targetMode != lastDriveMode 时，才触发模式切换播报！
-        if (lastDriveMode == -1) {
-            lastDriveMode = mode;
-            isSmartModeArmed = (mode != MODE_SMART);
-            AppLogger.i("驾驶模式", "开机基准初始化: 当前模式【" + getModeName(mode) + "】(静默建立基准，开机绝不误播，smartArmed=" + isSmartModeArmed + ")");
-            if (listener != null) {
-                listener.onDriveModeChanged(lastDriveMode);
-            }
-            return;
-        }
-
+        // 1. 同模式信号重复接收，静默放行（开机阶段底层汇报默认智能模式，直接静默放行，零误报）
         if (mode == lastDriveMode) {
-            // 同模式信号重复接收，静默放行
             return;
         }
 

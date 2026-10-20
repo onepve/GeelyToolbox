@@ -71,6 +71,9 @@ public class EasMediaBridge {
     private volatile boolean a2dpStreaming = false;
     private BroadcastReceiver a2dpReceiver;
     private long lastA2dpWakeTime = 0;
+    private final Handler mRestoreHandler = new Handler(Looper.getMainLooper());
+    private Runnable mPendingMusicRestoreTask = null;
+    private static final long BLUETOOTH_DUCK_RESTORE_DELAY_MS = 5000; // 微信语音与消息推流停止后的静默等待期 (5秒车规黄金窗口)，给车主读消息/连点下一条语音留足充裕时间，彻底杜绝音乐反复忽大忽小抽搐
     private volatile long lastBtSourceKeepMs = 0;
     private volatile boolean btFocusHeld = false;
     private AudioManager audioManager;
@@ -409,6 +412,8 @@ public class EasMediaBridge {
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "abandonDuckingFocus 异常: " + t.getMessage());
         }
+        // 核心契合：推流停止后启动 5 秒延时静默保护，随后安全恢复 QQ 音乐音量
+        scheduleRestoreMediaFocusDelayed();
     }
 
     /**
@@ -437,6 +442,54 @@ public class EasMediaBridge {
      */
     public synchronized void restoreMediaVolume() {
         abandonDuckingFocus();
+        scheduleRestoreMediaFocusDelayed();
+    }
+
+    /**
+     * 计划在推流停止后延迟恢复 QQ 音乐/车载媒体焦点与音量
+     * 核心契合：
+     * 1. 2.5 秒静默窗口期：防多条微信连点或短语音间隔导致音量反复忽大忽小；
+     * 2. 打破卡死：由于原厂 com.android.bluetooth 在消息放完后不会主动调用 abandonAudioFocus，
+     *    此处由助手在 2.5 秒后安全下发恢复广播并唤醒 QQ 音乐，彻底打破压低卡死状态！
+     */
+    private synchronized void scheduleRestoreMediaFocusDelayed() {
+        if (mPendingMusicRestoreTask != null) {
+            mRestoreHandler.removeCallbacks(mPendingMusicRestoreTask);
+            mPendingMusicRestoreTask = null;
+        }
+        mPendingMusicRestoreTask = new Runnable() {
+            @Override
+            public void run() {
+                synchronized (EasMediaBridge.this) {
+                    mPendingMusicRestoreTask = null;
+                    if (a2dpStreaming) {
+                        return; // 若在 5 秒内车主又点了下一条语音，保持压低，绝不回弹！
+                    }
+                    AppLogger.i("蓝牙音频", "微信/消息推流结束 5 秒静默期已过，唤醒 QQ 音乐恢复正常播放音量");
+                    try {
+                        // 1. 如果 QQ音乐车机版正在运行，向其直连 AIDL 事务发送恢复指令
+                        QQMusicCarController qqCtrl = QQMusicCarController.getInstance(appContext);
+                        if (qqCtrl != null && qqCtrl.isInstalled()) {
+                            qqCtrl.resumeMusic();
+                        }
+                        // 2. 发送标准原厂恢复播放广播，触发系统焦点仲裁回弹
+                        Intent playIntent = new Intent("com.tencent.qqmusiccar.action.PLAY");
+                        playIntent.setPackage("com.tencent.qqmusiccar");
+                        appContext.sendBroadcast(playIntent);
+                    } catch (Throwable t) {
+                        AppLogger.w("蓝牙音频", "恢复媒体音量异常: " + t.getMessage());
+                    }
+                }
+            }
+        };
+        mRestoreHandler.postDelayed(mPendingMusicRestoreTask, BLUETOOTH_DUCK_RESTORE_DELAY_MS);
+    }
+
+    private synchronized void cancelPendingRestoreMediaFocus() {
+        if (mPendingMusicRestoreTask != null) {
+            mRestoreHandler.removeCallbacks(mPendingMusicRestoreTask);
+            mPendingMusicRestoreTask = null;
+        }
     }
 
     public synchronized void activateBluetoothChannel() {
@@ -741,6 +794,7 @@ public class EasMediaBridge {
                         AppLogger.i("蓝牙音频", "蓝牙推流状态跃变: streaming=" + streaming);
                     }
                     if (streaming) {
+                        cancelPendingRestoreMediaFocus();
                         requestDuckingFocusForIncomingVoice();
 
                         // 1. 穿透唤醒原厂 A2DP Sink 协议栈解冻硬件 Mute：
@@ -753,9 +807,9 @@ public class EasMediaBridge {
                             activateBluetoothChannel();
                         }
                     } else {
-                        // 微信推流结束：释放压低焦点，触发 QQ 音乐/本地音乐音量回弹
+                        // 微信/消息推流结束：保持 5 秒静默窗口期，随后平滑恢复 QQ 音乐音量
                         abandonDuckingFocus();
-                        AppLogger.i("蓝牙音频", "监听到推流停止，已释放压低焦点并保持通道守护");
+                        AppLogger.i("蓝牙音频", "监听到推流停止，已释放压低焦点并启动 5 秒延时音量平滑恢复保护");
                     }
                 } else if ("android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT".equals(action)) {
                     try {
@@ -764,6 +818,7 @@ public class EasMediaBridge {
                             boolean isPlaying = (pbState.getState() == android.media.session.PlaybackState.STATE_PLAYING);
                             if (isPlaying && !a2dpStreaming) {
                                 a2dpStreaming = true;
+                                cancelPendingRestoreMediaFocus();
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，唤醒原厂 A2DP 解冻硬件音量并选通声道");
                                 requestDuckingFocusForIncomingVoice();
                                 wakeBluetoothAudioSink();
@@ -771,7 +826,7 @@ public class EasMediaBridge {
                             } else if (!isPlaying && a2dpStreaming) {
                                 a2dpStreaming = false;
                                 abandonDuckingFocus();
-                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，已释放压低焦点并保持通道守护");
+                                AppLogger.i("蓝牙音频", "监听到 AVRCP 推流停止，已释放压低焦点并启动 5 秒延时音量平滑恢复保护");
                             }
                         }
                     } catch (Throwable ignored) {}

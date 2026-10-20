@@ -220,12 +220,12 @@ CARD_BUTTON_CONTRACTS = [
         "0f0643d52480221a38cd5bdc20a191b2ad5fdb3084289e30b71ee420415d4740"
     ),
     (
-        "多媒体接管卡片", "微信推流残留焦点释放清理硬哈希刚性锁死 (abandonDuckingFocus)",
+        "多媒体接管卡片", "微信语音放音残留压低焦点释放 (abandonDuckingFocus)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public synchronized void abandonDuckingFocus",
         [r"abandonAudioFocusRequest"],
         [],
-        "8f0fa25d7849594c9218117be47972b175fa39940b6c21e7cb7c7d7ec9701b08"
+        "9437d6e14f189da64affed8134b8bcbb486ab49af157f333c7c1e041c09322d2"
     ),
     (
         "多媒体接管卡片", "微信语音推流广播监听与通道守护锁死 (A2DP / AVRCP)",
@@ -233,7 +233,7 @@ CARD_BUTTON_CONTRACTS = [
         "private void registerA2dpReceiver",
         [r"requestDuckingFocusForIncomingVoice", r"abandonDuckingFocus", r"wakeBluetoothAudioSink"],
         [],
-        "931def8c60fb1c017c4eeab12d1762e29f2e900640d16034261d93d8c2896876"
+        "a7e98615ef4df79591c19623df54bf2fa06225a5552e00d18d8953616640a031"
     ),
     (
         "多媒体接管卡片", "推流停止即时掐灭手机排队播放锁死 (pauseBluetoothAudioSink)",
