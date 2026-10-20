@@ -103,8 +103,8 @@ public class AutoPilotManager {
 
         if (!expertMode && !MainActivity.isNavigationApp(null, targetApk.getName())) {
             isRunning = false;
-            Toast.makeText(context, "【安全拦截】默认仅允许高德、百度等地图软件卡时钟伪装！如需测试其他软件请在设置开启专家模式。", Toast.LENGTH_LONG).show();
-            if (callback != null) callback.onError("默认仅允许地图软件卡主题");
+            Toast.makeText(context, "【安全拦截】默认仅允许高德、百度等地图软件使用时钟主题伪装。如需测试其他软件请在设置中开启专家模式。", Toast.LENGTH_LONG).show();
+            if (callback != null) callback.onError("默认仅允许地图软件安装主题");
             return;
         }
 

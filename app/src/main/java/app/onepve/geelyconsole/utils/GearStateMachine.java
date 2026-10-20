@@ -214,7 +214,7 @@ public class GearStateMachine {
 
         // 动态防抖策略：
         // 核心铁律：所有目标挡位(D/R/P/S/N) 严格 0ms 瞬发执行，手落声起！
-        // 避坑：严禁对 N 挡增加 350ms 延迟，否则下拨路过 N 挡会滞后排队，误以为是在后面挡位播报！
+        // 换挡响应设计：所有挡位(D/R/P/S/N) 严格 0ms 瞬发执行，保证操作即时播报。严禁对 N 挡增加 350ms 延迟防误以为滞后排队。
         long debounceTime = GEAR_DEBOUNCE_MS;
         if (debounceTime <= 0) {
             pendingGearTask.run();

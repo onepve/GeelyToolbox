@@ -189,7 +189,7 @@ public class VehicleAutomationService extends Service {
         int gear = gearStateMachine.getGear();
         if (gear != 5) {
             if (isEngineRunning()) {
-                AppLogger.w("安全守护", "【P0报警】挡位[" + gear + "]未挂驻车挡就推开车门，车辆可能溜车！");
+                AppLogger.w("安全守护", "【安全提示】挡位[" + gear + "]未挂驻车挡开门，提醒请挂入驻车挡");
                 if (voicePlayer != null) {
                     voicePlayer.play("gear_park_alarm.mp3", "请挂入驻车挡", VehicleVoicePlayer.PRIORITY_P0_ALARM);
                 }
@@ -718,7 +718,7 @@ public class VehicleAutomationService extends Service {
                         // 不在命令行中限制 -s 标签（避免因为底层模块标签变动或漏掉标签导致整包被丢弃）
                         // 直接全量监听，由我们在 parseLogLine 中进行高效关键字判定！
                         // 核心铁律：持续实时监听 logcat，由我们在 parseLogLine 中进行高效关键字判定！
-                        // 避坑：严禁使用 -t 50 / -d 等非阻塞参数，否则进程读完 50 行立即 EOF 退出导致外层 while 陷入每 2 秒死循环重启！
+                        // 稳定性规范：严禁使用 -t 50 / -d 等非阻塞参数，否则进程读完 50 行立即 EOF 退出导致外层 while 陷入每 2 秒死循环重启！
                         ProcessBuilder pb = new ProcessBuilder("logcat", "-v", "time", "-b", "all");
                         pb.redirectErrorStream(true);
                         logcatProcess = pb.start();
@@ -766,7 +766,7 @@ public class VehicleAutomationService extends Service {
         if (!isInterested) return;
 
         // 【应用层时间戳软栅栏 (Timestamp Gate)】：毫秒级丢弃开机前的陈旧录像日志
-        // 避坑：仅在时间戳已同步至当前真实日期时生效；冷启动初期 01-01 08:00 放行对齐初始基准
+        // 过滤机制：仅在时间戳已同步至当前真实日期时生效；冷启动初期 01-01 08:00 放行对齐初始基准
         if (serviceBootTimestampMs > 0 && line.length() >= 18 && line.charAt(2) == '-' && line.charAt(5) == ' ') {
             try {
                 // 排除 01-01 冷启动时间未对齐阶段
@@ -920,7 +920,7 @@ public class VehicleAutomationService extends Service {
                     int b6 = Integer.parseInt(sm.group(1).trim(), 16);
                     int b7 = Integer.parseInt(sm.group(2).trim(), 16);
 
-                    // 避坑核心铁律：0x00 代表 MCU 刚启动通信通道未对齐的瞬态无效占位帧，绝对忽略！
+                    // 过滤机制：0x00 代表 MCU 刚启动通信通道未对齐的瞬态无效占位帧，绝对忽略！
                     // 正常四门全关为 0x55，各门开为 0x54/0x51/0x45 等，绝不可把 0x00 当成四门全开！
                     if (b6 == 0x00 && b7 == 0x00) return;
 

@@ -870,7 +870,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         }
                     } catch (Exception ignored) {}
 
-                    // 2. 检查卡主题安全防护开关（默认仅限车载导航白名单）
+                    // 2. 检查主题伪装安全防护开关（默认仅限车载导航白名单）
                     android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                     boolean safeMode = prefs.getBoolean("rabbit_safe_mode_enabled", true);
                     if (safeMode && !isNavigationApp(pkg, tempApk.getName())) {
@@ -878,7 +878,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         mainHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                showToast("【安全保护】当前仅允许导航专车包卡时钟伪装，常规应用请直接在文件管理中安装。");
+                                showToast("【安全保护】当前仅允许导航专车包使用时钟主题伪装，常规应用请直接在文件管理中安装。");
                             }
                         });
                         return;
@@ -1378,7 +1378,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         if (webView != null) {
                             webView.evaluateJavascript("if(window.hideAutoPilotLoading){window.hideAutoPilotLoading();}", null);
                         }
-                        Toast.makeText(context, "【安全拦截】默认仅允许高德、百度等地图软件卡时钟伪装。常规应用严禁卡主题以防死机变砖！如需测试其他应用，请在【设置】中开启专家模式。", Toast.LENGTH_LONG).show();
+                        Toast.makeText(context, "【安全拦截】默认仅允许高德、百度等地图软件使用时钟主题伪装。常规应用请在设置中开启专家模式后测试。", Toast.LENGTH_LONG).show();
                         return;
                     }
 
@@ -1462,7 +1462,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                     mainHandler.post(new Runnable() {
                                         @Override
                                         public void run() {
-                                            showToast("【安全拦截】默认仅允许高德、百度等地图软件卡时钟伪装。常规应用严禁卡主题以防死机变砖！如需测试其他应用，请在【设置】中开启专家模式。");
+                                            showToast("【安全拦截】默认仅允许高德、百度等地图软件使用时钟主题伪装。常规应用请在设置中开启专家模式后测试。");
                                         }
                                     });
                                     return;
