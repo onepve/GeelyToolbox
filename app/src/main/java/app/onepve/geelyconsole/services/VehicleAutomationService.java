@@ -787,8 +787,8 @@ public class VehicleAutomationService extends Service {
                     cal.set(java.util.Calendar.SECOND, sec);
                     cal.set(java.util.Calendar.MILLISECOND, ms);
                     
-                    // 早于服务启动时刻 1.5 秒以前的日志，判定为历史陈旧日志直接丢弃，严禁流入状态机翻旧账！
-                    if (cal.getTimeInMillis() < serviceBootTimestampMs - 1500L) {
+                    // 早于服务启动时刻（且排除极小容差）的历史日志，判定为历史录像日志直接丢弃，严禁流入状态机翻旧账！
+                    if (cal.getTimeInMillis() < serviceBootTimestampMs) {
                         return;
                     }
                 }
