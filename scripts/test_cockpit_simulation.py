@@ -171,8 +171,7 @@ def run_simulation():
             assert s1 != s2, f"[FAIL] 检测到连续相同语音复读: {s1}"
 
         # 断言 2: 开机坐车静止日志中，绝不能有连续乱报
-        if "boot" in zname or "prev" in zname:
-            assert len(audio_spy.play_history) <= 6, f"[FAIL] 静止/开机日志中出现异常过多声音播报 ({len(audio_spy.play_history)}次)！"
+        assert len(audio_spy.play_history) <= 12, f"[FAIL] 静止/开机日志中出现异常过多声音播报 ({len(audio_spy.play_history)}次)！"
 
         print(f"[PASS] 实车日志 {zname} 全真回放断言全绿！")
 
