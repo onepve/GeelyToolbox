@@ -467,12 +467,17 @@ public class EasMediaBridge {
                     }
                     AppLogger.i("蓝牙音频", "微信/消息推流结束 5 秒静默期已过，唤醒 QQ 音乐恢复正常播放音量");
                     try {
-                        // 1. 如果 QQ音乐车机版正在运行，向其直连 AIDL 事务发送恢复指令
+                        // 1. 无感触动一次系统媒体通道 (STREAM_MUSIC)，迫使 AudioFlinger 重新计算并拉回媒体硬件增益 (Gain)
+                        AudioManager am = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
+                        if (am != null) {
+                            am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_SAME, 0);
+                        }
+                        // 2. 如果 QQ音乐车机版正在运行，向其直连 AIDL 事务发送恢复指令
                         QQMusicCarController qqCtrl = QQMusicCarController.getInstance(appContext);
                         if (qqCtrl != null && qqCtrl.isInstalled()) {
                             qqCtrl.resumeMusic();
                         }
-                        // 2. 发送标准原厂恢复播放广播，触发系统焦点仲裁回弹
+                        // 3. 发送标准原厂恢复播放广播，触发系统焦点仲裁回弹
                         Intent playIntent = new Intent("com.tencent.qqmusiccar.action.PLAY");
                         playIntent.setPackage("com.tencent.qqmusiccar");
                         appContext.sendBroadcast(playIntent);

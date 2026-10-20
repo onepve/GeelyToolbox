@@ -180,14 +180,16 @@ CARD_BUTTON_CONTRACTS = [
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public synchronized void requestBluetoothFocusIfNeeded",
         [r"AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK", r"requestAudioFocus"],
-        [r"abandonBluetoothFocus"]
+        [r"abandonBluetoothFocus"],
+        "7ad5108060c662fb2076d8b67b171127f96e008e4de27102c8f2c6285fd842ee"
     ),
     (
         "多媒体接管卡片", "原厂部件蓝牙声道保持广播 (ECARX_WIDGET_BLUETOOTH_PLAY)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public void keepXcmediaOnBluetoothSource",
         [r"ECARX_WIDGET_BLUETOOTH_PLAY", r"com\.ecarx\.multimedia"],
-        []
+        [],
+        "03499d2b478b899953f3c5347e6a9e5230ab4df0d78c6603830daeb850cc81c3"
     ),
     (
         "多媒体接管卡片", "微信语音推流防误杀与静默守护 (A2DP Streaming 保护与免抢播)",
@@ -201,7 +203,8 @@ CARD_BUTTON_CONTRACTS = [
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "private synchronized void connectBtMediaBrowser",
         [r"A2dpMediaBrowserService", r"com\.android\.bluetooth"],
-        []
+        [],
+        "8d0903f34f84255d060b5edac0165879937c506aebef699d121de620189cdbb2"
     ),
     (
         "多媒体接管卡片", "国科 GOC 驱动解静音唤醒锁死 (wakeBluetoothAudioSink)",
@@ -240,7 +243,8 @@ CARD_BUTTON_CONTRACTS = [
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public void pauseBluetoothAudioSink",
         [r"btMediaController\.getTransportControls\(\)\.pause\(\)", r"mc\.getTransportControls\(\)\.pause\(\)"],
-        []
+        [],
+        "308ef130f093b5b46b5581021587941223f204c1d8975273f8577adf914037fb"
     ),
     (
         "多媒体接管卡片", "微信音频平滑压低与自动恢复音量锁死 (duckMediaVolume)",
