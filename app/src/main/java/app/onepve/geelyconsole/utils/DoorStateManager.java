@@ -239,14 +239,14 @@ public class DoorStateManager {
 
         if (newSts == 1) { // ============ 【开门动作】 ============
             if (isDriving) {
-                AppLogger.w("车门状态", "【危险警报】行车中 " + doorName + "门 打开！触发最高优先级警报！");
+                AppLogger.w("车门状态", "【安全提示】行车中 " + doorName + "车门打开！触发安全提醒");
                 if (voiceMasterSwitch && voicePlayer != null) {
-                    voicePlayer.play("door_open.mp3", "警告！车门未关好！");
+                    voicePlayer.play("door_open.mp3", doorName + "车门未关好");
                 }
                 return;
             }
 
-            AppLogger.i("车门状态", doorName + "门 打开");
+            AppLogger.i("车门状态", doorName + "车门已打开");
 
             if (universalMode) {
                 boolean enableOpen = PrefUtils.getBoolean(prefs, "voice_enable_door_universal_open", true);
@@ -271,7 +271,7 @@ public class DoorStateManager {
                 }
             }
         } else { // ============ 【关门动作】 ============
-            AppLogger.i("车门状态", doorName + "门 关好");
+            AppLogger.i("车门状态", doorName + "车门已关闭");
 
             if (universalMode) {
                 boolean enableClose = PrefUtils.getBoolean(prefs, "voice_enable_door_universal_close", true);
@@ -284,11 +284,11 @@ public class DoorStateManager {
                 boolean enableClose = PrefUtils.getBoolean(prefs, closeKey, true) && PrefUtils.getBoolean(prefs, "enable_door_" + doorCode.toLowerCase() + "_close", true);
                 if (voiceMasterSwitch && enableClose && voicePlayer != null) {
                     String soundFile = "door_fl_close.mp3";
-                    String text = doorName + "车门已关好";
+                    String text = doorName + "车门已关闭";
 
                     if ("FR".equals(doorCode)) {
                         soundFile = "door_fr_close.mp3";
-                        text = "副驾车门已关好";
+                        text = "副驾车门已关闭";
                     } else if ("RL".equals(doorCode)) {
                         soundFile = "door_rl_close.mp3";
                     } else if ("RR".equals(doorCode)) {

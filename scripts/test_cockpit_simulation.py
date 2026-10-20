@@ -96,7 +96,7 @@ class VirtualCockpitService:
             if fl == 1:
                 self.spy.play("door_fl.mp3", "主驾车门已打开")
             else:
-                self.spy.play("door_fl_close.mp3", "主驾车门已关好")
+                self.spy.play("door_fl_close.mp3", "主驾车门已关闭")
             self.currentFL = fl
 
     def handle_drive_mode(self, mode):

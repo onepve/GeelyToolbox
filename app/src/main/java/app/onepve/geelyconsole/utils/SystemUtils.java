@@ -1466,7 +1466,7 @@ public class SystemUtils {
                     "ECARX_KEY", "方控按键", "方向盘", "steering", "SWC", "按键");
 
             doorFile = filterLogByKeywords(logFile, new File(tempDir, "door.log"),
-                    "DoorStateManager", "车门", "车门已打开", "车门已关好", "FL_DOOR", "FR_DOOR", "RL_DOOR", "RR_DOOR",
+                    "DoorStateManager", "车门", "车门已打开", "车门已关好", "车门已关闭", "FL_DOOR", "FR_DOOR", "RL_DOOR", "RR_DOOR",
                     "mModelLFDoor", "mModelRFDoor", "mModelLRDoor", "mModelRRDoor", "TRUNK", "尾门", "后备箱");
 
             gearFile = filterLogByKeywords(logFile, new File(tempDir, "gear.log"),
@@ -1594,8 +1594,8 @@ public class SystemUtils {
             summary.put("wheelStats", wheelStats);
 
             JSONObject doorStats = new JSONObject();
-            doorStats.put("opened", countMatches(all, "车门已打开") + countMatches(all, "车门已打开"));
-            doorStats.put("closed", countMatches(all, "车门已关好") + countMatches(all, "车门已关好"));
+            doorStats.put("opened", countMatches(all, "车门已打开"));
+            doorStats.put("closed", countMatches(all, "车门已关闭") + countMatches(all, "车门已关好"));
             doorStats.put("warning", countMatches(all, "车门未关好"));
             summary.put("doorStats", doorStats);
         } catch (Exception ignored) {}
