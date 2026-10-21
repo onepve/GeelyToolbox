@@ -771,10 +771,13 @@ public class VehicleAutomationService extends Service {
             try {
                 java.util.Calendar bootCal = java.util.Calendar.getInstance();
                 bootCal.setTimeInMillis(serviceBootTimestampMs);
-                boolean isBootInRealTime = (bootCal.get(java.util.Calendar.YEAR) >= 2020 && bootCal.get(java.util.Calendar.MONTH) > 0);
+                // 吉利车机冷启动未对齐时出厂默认基准为 2010-01-01；只要年份 >= 2024 即为已同步真实时间
+                boolean isBootInRealTime = bootCal.get(java.util.Calendar.YEAR) >= 2024;
+                boolean isTodayNewYearsDay = (bootCal.get(java.util.Calendar.MONTH) == java.util.Calendar.JANUARY 
+                        && bootCal.get(java.util.Calendar.DAY_OF_MONTH) == 1);
                 
-                // 系统已校准至真实日期（非 01-01）：所有 01-01 阶段的存量冷启动积压日志直接瞬时丢弃！
-                if (isBootInRealTime && line.startsWith("01-01")) {
+                // 系统已校准至真实日期且今天不是元旦当天：所有 01-01 阶段的存量冷启动积压日志瞬时丢弃！
+                if (isBootInRealTime && !isTodayNewYearsDay && line.startsWith("01-01")) {
                     return;
                 }
 
