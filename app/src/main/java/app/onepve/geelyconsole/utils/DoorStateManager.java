@@ -30,11 +30,11 @@ public class DoorStateManager {
     private VehicleVoicePlayer voicePlayer;
     private DoorStateListener listener;
 
-    // 四门独立物理状态 (0=关, 1=开, -1=未初始化基准)
-    private int currentFL = -1;
-    private int currentFR = -1;
-    private int currentRL = -1;
-    private int currentRR = -1;
+    // 四门独立物理状态 (0=关, 1=开，出厂停泊锁车物理基准为全关0)
+    private int currentFL = 0;
+    private int currentFR = 0;
+    private int currentRL = 0;
+    private int currentRR = 0;
 
     // 四门独立硬件防抖时间戳 (800ms 硬件机械防抖滤波，彻底滤除微动开关反弹与颠簸抖动)
     private static final long DOOR_PHYSICAL_DEBOUNCE_MS = 800;
@@ -144,41 +144,13 @@ public class DoorStateManager {
         long now = System.currentTimeMillis();
         boolean universalMode = PrefUtils.getBoolean(prefs, "voice_door_mode_universal", false);
 
-        // 1. 首次开机物理基准建立 (智能对齐当前状态，开机首包绝对静默)
-        if (currentFL == -1) {
-            PrefUtils.sanitizeDoorPreferences(prefs);
-            currentFL = (fl >= 0) ? fl : 0;
-            currentFR = (fr >= 0) ? fr : 0;
-            currentRL = (rl >= 0) ? rl : 0;
-            currentRR = (rr >= 0) ? rr : 0;
-
-            // 行车途中重启/更新守护：若车速大于0，证明车辆处于行驶状态，主驾必然就坐且四门全关，杜绝行车误报
-            if (VehicleAutomationService.currentSpeedKmH > 0) {
-                isDriverInside = true;
-                currentFL = 0;
-                currentFR = 0;
-                currentRL = 0;
-                currentRR = 0;
-                AppLogger.i("车门状态", "行车中开机/重启基准建立 (车速=" + VehicleAutomationService.currentSpeedKmH + "km/h) -> 判定车内就坐并全关，跳过所有开机播报");
-                if (listener != null) {
-                    listener.onDoorStateChanged(0, 0, 0, 0);
-                }
-                return;
-            }
-
-            // 乘员就坐状态统一置为车内态（人已经在车里开机了）
+        // 1. 行车途中守护：若车速大于0，证明车辆处于行驶状态，主驾必然就坐且四门全关，杜绝行车误报
+        if (VehicleAutomationService.currentSpeedKmH > 0) {
             isDriverInside = true;
-
-            // 硬件防抖基准同步建立，封死开机初期任何总线毛刺
-            lastTimeFL = now;
-            lastTimeFR = now;
-            lastTimeRL = now;
-            lastTimeRR = now;
-
-            AppLogger.i("车门状态", "四门物理基准初始化: FL=" + currentFL + ", FR=" + currentFR + ", RL=" + currentRL + ", RR=" + currentRR + " (静默建立基准，开机绝不倒灌开门/关门声音)");
-            if (listener != null) {
-                listener.onDoorStateChanged(currentFL, currentFR, currentRL, currentRR);
-            }
+            currentFL = 0;
+            currentFR = 0;
+            currentRL = 0;
+            currentRR = 0;
             return;
         }
 
