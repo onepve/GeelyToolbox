@@ -222,8 +222,8 @@
                 : 'bg-car-card border-car-border hover:border-car-border-light'
             ]"
           >
-            <div class="flex items-center justify-center w-14 h-14 rounded-2xl bg-car-card border border-car-border shadow-inner">
-              <span class="text-[26px]">⚡</span>
+            <div class="flex items-center justify-center w-14 h-14">
+              <span class="text-[32px] filter drop-shadow">⚡</span>
             </div>
             <div class="flex flex-col items-center leading-tight">
               <span class="text-[17px] font-black text-car-text">自动跟随车型</span>
@@ -243,8 +243,8 @@
                 : 'bg-car-card border-car-border hover:border-car-border-light'
             ]"
           >
-            <div class="flex items-center justify-center w-14 h-14 rounded-2xl bg-car-card border border-car-border shadow-sm p-1">
-              <img :src="ICON_PREVIEW_DEFAULT" class="w-full h-full object-contain" alt="通用车标" />
+            <div class="flex items-center justify-center w-14 h-14">
+              <img :src="ICON_PREVIEW_DEFAULT" class="w-14 h-14 object-contain rounded-2xl filter drop-shadow-md" alt="通用车标" />
             </div>
             <div class="flex flex-col items-center leading-tight">
               <span class="text-[17px] font-black text-car-text">通用科技车标</span>
@@ -262,8 +262,8 @@
                 : 'bg-car-card border-car-border hover:border-car-border-light'
             ]"
           >
-            <div class="flex items-center justify-center w-14 h-14 rounded-2xl bg-car-card border border-car-border shadow-sm p-1">
-              <img :src="ICON_PREVIEW_COOL" class="w-full h-full object-contain" alt="缤越COOL专属" />
+            <div class="flex items-center justify-center w-14 h-14">
+              <img :src="ICON_PREVIEW_COOL" class="w-14 h-14 object-contain rounded-2xl filter drop-shadow-md" alt="缤越COOL专属" />
             </div>
             <div class="flex flex-col items-center leading-tight">
               <span class="text-[17px] font-black text-car-text">缤越COOL专属</span>
