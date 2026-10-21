@@ -98,7 +98,7 @@
         <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <span class="text-[12.5px] px-2 py-0.5 rounded bg-car-card border border-car-border text-car-sub font-black">
-              {{ app.category || 'tools' }}
+              {{ app.category || 'tool' }}
             </span>
             <span v-if="app.version" class="text-[12.5px] text-car-sub font-bold">
               v{{ app.version }}
@@ -111,6 +111,18 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 暂无该分类应用 -->
+    <div v-else-if="allApps.length > 0" class="bg-car-item border-2 border-car-border rounded-2xl p-12 flex flex-col items-center justify-center space-y-4 shadow-sm min-h-[220px]">
+      <div class="text-[19px] text-car-text font-black">该分类下暂无已适配应用</div>
+      <div class="text-[15px] text-car-sub font-bold">请切换其他分类或点击查看全部应用</div>
+      <button 
+        @click="currentCategory = 'all'"
+        class="mt-3 h-[50px] px-8 rounded-2xl bg-car-card border-2 border-car-accent text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-md active:scale-95"
+      >
+        查看全部应用
+      </button>
     </div>
 
     <!-- 纯云端拉取中状态 -->
@@ -139,7 +151,7 @@ const categories = [
   { id: 'all', name: '全部' },
   { id: 'navigation', name: '车载导航' },
   { id: 'music', name: '音乐应用' },
-  { id: 'tools', name: '车机工具' }
+  { id: 'tool', name: '车机工具' }
 ];
 
 const allApps = computed(() => {
@@ -148,6 +160,9 @@ const allApps = computed(() => {
 
 const filteredApps = computed(() => {
   if (currentCategory.value === 'all') return allApps.value;
+  if (currentCategory.value === 'tool') {
+    return allApps.value.filter(a => a.category === 'tool' || a.category === 'tools' || a.category === 'system');
+  }
   return allApps.value.filter(a => a.category === currentCategory.value);
 });
 
