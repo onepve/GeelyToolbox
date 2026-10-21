@@ -56,6 +56,7 @@ import app.onepve.geelyconsole.utils.ThemePatcher;
 import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
 import app.onepve.geelyconsole.utils.PrefUtils;
 import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
+import app.onepve.geelyconsole.utils.AppIconManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
