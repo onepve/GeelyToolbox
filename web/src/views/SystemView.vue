@@ -381,6 +381,7 @@ import { getDaysToAdjustment } from '../utils/oilPriceData';
 import { ICON_PREVIEW_DEFAULT, ICON_PREVIEW_COOL } from '../utils/launcherIcons';
 
 function onSelectAppIconStyle(style) {
+  store.deviceInfo.app_icon_style = style;
   bridge.call('setAppIconStyle', style);
 }
 
