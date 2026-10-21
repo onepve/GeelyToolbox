@@ -203,6 +203,77 @@
       </div>
     </div>
 
+    <!-- 桌面车标样式切换 (支持自动车型自适应与双图标预览切换) -->
+    <FeatureCard 
+      title="桌面应用图标"
+      desc="支持根据车型自动匹配或手动指定桌面图标。设置后立即生效，可在车机桌面上展现专属车标。"
+      helpTitle="【功能指南】桌面应用图标"
+      helpText="1. 自动跟随车型：&#10;若为缤越 COOL 专车环境，自动激活改款运动大嘴专属车标；其他吉利车型自动保持通用科技车标。&#10;&#10;2. 手动指定：&#10;您也可以随时手动指定通用科技车标或改款缤越专属车标。&#10;&#10;3. 生效时机：&#10;切换后车机桌面启动器将在数秒内自动刷新对应车标。" helpTip="切换后若桌面图标未立刻刷新，可返回桌面稍等片刻或滑动屏幕即可触发刷新。"
+    >
+      <div class="w-full flex flex-col space-y-3">
+        <div class="grid grid-cols-3 gap-3 w-full">
+          <!-- 1. 自动跟随车型 -->
+          <button
+            @click="onSelectAppIconStyle('auto')"
+            :class="[
+              'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
+              (store.deviceInfo.app_icon_style === 'auto' || !store.deviceInfo.app_icon_style)
+                ? 'bg-car-item border-car-accent ring-2 ring-car-accent/30 shadow-md'
+                : 'bg-car-card border-car-border hover:border-car-border-light'
+            ]"
+          >
+            <div class="flex items-center justify-center w-14 h-14 rounded-2xl bg-car-card border border-car-border shadow-inner">
+              <span class="text-[26px]">⚡</span>
+            </div>
+            <div class="flex flex-col items-center leading-tight">
+              <span class="text-[17px] font-black text-car-text">自动跟随车型</span>
+              <span class="text-[12px] font-bold text-car-sub mt-1">
+                {{ store.deviceInfo.is_binyue_cool_model ? '当前匹配：缤越专属' : '当前匹配：通用车标' }}
+              </span>
+            </div>
+          </button>
+
+          <!-- 2. 通用科技车标 -->
+          <button
+            @click="onSelectAppIconStyle('default')"
+            :class="[
+              'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
+              store.deviceInfo.app_icon_style === 'default'
+                ? 'bg-car-item border-car-accent ring-2 ring-car-accent/30 shadow-md'
+                : 'bg-car-card border-car-border hover:border-car-border-light'
+            ]"
+          >
+            <div class="flex items-center justify-center w-14 h-14 rounded-2xl bg-car-card border border-car-border shadow-sm p-1">
+              <img :src="ICON_PREVIEW_DEFAULT" class="w-full h-full object-contain" alt="通用车标" />
+            </div>
+            <div class="flex flex-col items-center leading-tight">
+              <span class="text-[17px] font-black text-car-text">通用科技车标</span>
+              <span class="text-[12px] font-bold text-car-sub mt-1">吉利全系百搭</span>
+            </div>
+          </button>
+
+          <!-- 3. 缤越专属车标 -->
+          <button
+            @click="onSelectAppIconStyle('cool')"
+            :class="[
+              'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
+              store.deviceInfo.app_icon_style === 'cool'
+                ? 'bg-car-item border-car-accent ring-2 ring-car-accent/30 shadow-md'
+                : 'bg-car-card border-car-border hover:border-car-border-light'
+            ]"
+          >
+            <div class="flex items-center justify-center w-14 h-14 rounded-2xl bg-car-card border border-car-border shadow-sm p-1">
+              <img :src="ICON_PREVIEW_COOL" class="w-full h-full object-contain" alt="缤越专属" />
+            </div>
+            <div class="flex flex-col items-center leading-tight">
+              <span class="text-[17px] font-black text-car-text">缤越专属车标</span>
+              <span class="text-[12px] font-bold text-car-sub mt-1">能量风暴大嘴款</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </FeatureCard>
+
     <!-- 7. 主题外观与昼夜模式 (液态玻璃 4 色 × 白夜三档) -->
     <FeatureCard 
       title="主题外观与昼夜模式"
@@ -307,6 +378,11 @@ import FloatingView from './FloatingView.vue';
 import { MODES, MODE_LABELS, PALETTES, PALETTE_LABELS, PALETTE_DOT, setMode, setPalette } from '../theme/themes';
 import { openAppstoreFlow } from '../utils/appstoreFreeze';
 import { getDaysToAdjustment } from '../utils/oilPriceData';
+import { ICON_PREVIEW_DEFAULT, ICON_PREVIEW_COOL } from '../utils/launcherIcons';
+
+function onSelectAppIconStyle(style) {
+  bridge.call('setAppIconStyle', style);
+}
 
 // 方块副标题：昼夜档标注时段语义，配色卡标注主题全名
 const MODE_SUBS = { auto: '跟随车机日夜', day: '常驻白天', night: '常驻黑夜' };

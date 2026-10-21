@@ -175,6 +175,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         hideSystemUI();
         setContentView(R.layout.activity_main);
 
+        // 异步应用车标策略（自适应车型或保持自定义配置）
+        AppIconManager.applyAppIconStyle(this);
+
         initWebView();
         checkAndRequestStoragePermission();
         try {
@@ -735,6 +738,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("floating_display_mode", prefs.getString("floating_display_mode", "battery"));
                     obj.put("rabbit_safe_mode", prefs.getBoolean("rabbit_safe_mode_enabled", true));
                     obj.put("expert_rabbit_enabled", prefs.getBoolean("expert_rabbit_theme_enabled", false));
+                    obj.put("app_icon_style", AppIconManager.getAppIconStyle(MainActivity.this));
+                    obj.put("is_binyue_cool_model", AppIconManager.isBinyueCoolModel());
                     obj.put("has_system_settings", SystemUtils.isPackageInstalled(MainActivity.this, "com.android.settings"));
                     obj.put("is_car_device", isCarDevice(MainActivity.this));
                     try {
@@ -1910,6 +1915,23 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         pushDeviceInfoToWeb();
                     } catch (Exception e) {
                         showToast("设置失败: " + e.getMessage());
+                    }
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
+        public boolean setAppIconStyle(final String style) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        AppIconManager.setAppIconStyle(MainActivity.this, style);
+                        showToast("桌面车标已切换，稍后将在车机桌面生效");
+                        pushDeviceInfoToWeb();
+                    } catch (Exception e) {
+                        showToast("切换失败: " + e.getMessage());
                     }
                 }
             });
