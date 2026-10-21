@@ -250,6 +250,7 @@ function handleVersionClick() {
   if (versionClickCount >= NEED_TOTAL) {
     versionClickCount = 0;
     isTester.value = true;
+    store.isTester = true;
     localStorage.setItem('geely_tester_unlocked', 'true');
     useBetaChannel.value = true;
     localStorage.setItem('geely_use_beta_channel', 'true');
@@ -264,6 +265,7 @@ function toggleBetaChannel() {
   if (useBetaChannel.value) {
     useBetaChannel.value = false;
     isTester.value = false;
+    store.isTester = false;
     localStorage.setItem('geely_use_beta_channel', 'false');
     localStorage.setItem('geely_tester_unlocked', 'false');
     showToast('已恢复为【正式通道 (Release)】，特权身份已锁定隐藏');

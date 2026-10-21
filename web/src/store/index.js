@@ -29,6 +29,13 @@ export const store = reactive({
   toast: { show: false, msg: '', kind: 'info' },
   
   // 顶栏状态
+  isTester: (() => {
+    try {
+      return localStorage.getItem('geely_tester_unlocked') === 'true';
+    } catch (e) {
+      return false;
+    }
+  })(),
   deviceInfo: {
     whitelist: true,
     multimedia_frozen: false,

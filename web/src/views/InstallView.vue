@@ -91,8 +91,8 @@
         </div>
       </FeatureCard>
 
-      <!-- 专家模式卡兔子主题安装通道 -->
-      <FeatureCard class="!mb-0"
+      <!-- 专家模式卡兔子主题安装通道 (仅在调试/内测模式或已激活专家模式下显示) -->
+      <FeatureCard v-if="store.isTester || store.settings.expert_rabbit" class="!mb-0"
         title="卡兔子主题通道"
         desc="解除地图与音乐安装签名限制，用于通过原厂时钟屏保注入第三方软件。"
         helpTitle="【功能指南】卡兔子主题通道 (专家模式)"
