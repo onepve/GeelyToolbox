@@ -22,7 +22,8 @@ public class AppIconManager {
     private static final String ALIAS_COOL = "app.onepve.geelyconsole.MainActivityCool";
 
     /**
-     * 判断当前车辆是否为吉利缤越 COOL (SX11-A3 等改款车型)
+     * 判断当前车辆是否为吉利缤越 COOL 改款车型 (专车代号: SX11-A3 / SX11A3 / IHU516G)
+     * 注意区分：老款缤越代号通常为 SX11 (GKUI / IHU301G)，而缤越 COOL 改款代号明确为 SX11-A3 或带 COOL 标识。
      */
     public static boolean isBinyueCoolModel() {
         try {
@@ -31,22 +32,30 @@ public class AppIconManager {
             String product = Build.PRODUCT != null ? Build.PRODUCT.toUpperCase() : "";
             String device = Build.DEVICE != null ? Build.DEVICE.toUpperCase() : "";
 
-            if (model.contains("SX11") || finger.contains("SX11") || product.contains("SX11") || device.contains("SX11")) {
+            // 1. 优先精准匹配缤越 COOL 专车代号 (SX11A3 / SX11-A3 / COOLRAY_COOL / COOL)
+            if (model.contains("SX11A3") || model.contains("SX11-A3") || finger.contains("SX11A3") || finger.contains("SX11-A3")
+                    || product.contains("SX11A3") || product.contains("SX11-A3") || device.contains("SX11A3") || device.contains("SX11-A3")) {
                 return true;
             }
-            if (model.contains("COOLRAY") || finger.contains("COOLRAY") || product.contains("COOLRAY")) {
+            if (model.contains("COOL") || finger.contains("COOL") || product.contains("COOL")) {
                 return true;
             }
-            // 反射检测系统属性
+            // 2. 反射检测吉利专车工程属性 (ro.ecarx.project 或 ro.product.model)
             Class<?> sp = Class.forName("android.os.SystemProperties");
             java.lang.reflect.Method getMethod = sp.getMethod("get", String.class, String.class);
             String pCode = (String) getMethod.invoke(null, "ro.ecarx.project", "");
-            if (pCode != null && pCode.toUpperCase().contains("SX11")) {
-                return true;
+            if (pCode != null) {
+                String up = pCode.toUpperCase();
+                if (up.contains("SX11A3") || up.contains("SX11-A3") || (up.contains("SX11") && up.contains("516"))) {
+                    return true;
+                }
             }
             String vModel = (String) getMethod.invoke(null, "ro.product.model", "");
-            if (vModel != null && vModel.toUpperCase().contains("SX11")) {
-                return true;
+            if (vModel != null) {
+                String uv = vModel.toUpperCase();
+                if (uv.contains("SX11A3") || uv.contains("SX11-A3") || uv.contains("COOL")) {
+                    return true;
+                }
             }
         } catch (Throwable t) {
             Log.w(TAG, "isBinyueCoolModel check error: " + t.getMessage());

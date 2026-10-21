@@ -208,7 +208,7 @@
       title="桌面应用图标"
       desc="支持根据车型自动匹配或手动指定桌面图标。设置后立即生效，可在车机桌面上展现专属车标。"
       helpTitle="【功能指南】桌面应用图标"
-      helpText="1. 自动跟随车型：&#10;若为缤越 COOL 专车环境，自动激活改款运动大嘴专属车标；其他吉利车型自动保持通用科技车标。&#10;&#10;2. 手动指定：&#10;您也可以随时手动指定通用科技车标或改款缤越专属车标。&#10;&#10;3. 生效时机：&#10;切换后车机桌面启动器将在数秒内自动刷新对应车标。" helpTip="切换后若桌面图标未立刻刷新，可返回桌面稍等片刻或滑动屏幕即可触发刷新。"
+      helpText="1. 自动跟随车型：&#10;若为缤越 COOL 改款专车环境（SX11-A3 / 能量风暴前脸），自动激活改款运动大嘴专属车标；老款缤越及其他吉利车型自动保持通用科技车标。&#10;&#10;2. 缤越 COOL 专属车标致谢：&#10;车标素材由车友【筱小龚 QQ:42457071】设计贡献。&#10;&#10;3. 手动指定与生效：&#10;您也可以随时手动指定通用科技车标或改款缤越专属车标；切换后车机桌面启动器将在数秒内自动刷新对应车标。" helpTip="切换后若桌面图标未立刻刷新，可返回桌面稍等片刻或滑动屏幕即可触发刷新。"
     >
       <div class="w-full flex flex-col space-y-3">
         <div class="grid grid-cols-3 gap-3 w-full">
@@ -228,7 +228,7 @@
             <div class="flex flex-col items-center leading-tight">
               <span class="text-[17px] font-black text-car-text">自动跟随车型</span>
               <span class="text-[12px] font-bold text-car-sub mt-1">
-                {{ store.deviceInfo.is_binyue_cool_model ? '当前匹配：缤越专属' : '当前匹配：通用车标' }}
+                {{ store.deviceInfo.is_binyue_cool_model ? '当前匹配：缤越COOL' : '当前匹配：通用车标' }}
               </span>
             </div>
           </button>
@@ -248,7 +248,7 @@
             </div>
             <div class="flex flex-col items-center leading-tight">
               <span class="text-[17px] font-black text-car-text">通用科技车标</span>
-              <span class="text-[12px] font-bold text-car-sub mt-1">吉利全系百搭</span>
+              <span class="text-[12px] font-bold text-car-sub mt-1">老款缤越及吉利全系</span>
             </div>
           </button>
 
@@ -263,11 +263,11 @@
             ]"
           >
             <div class="flex items-center justify-center w-14 h-14 rounded-2xl bg-car-card border border-car-border shadow-sm p-1">
-              <img :src="ICON_PREVIEW_COOL" class="w-full h-full object-contain" alt="缤越专属" />
+              <img :src="ICON_PREVIEW_COOL" class="w-full h-full object-contain" alt="缤越COOL专属" />
             </div>
             <div class="flex flex-col items-center leading-tight">
-              <span class="text-[17px] font-black text-car-text">缤越专属车标</span>
-              <span class="text-[12px] font-bold text-car-sub mt-1">能量风暴大嘴款</span>
+              <span class="text-[17px] font-black text-car-text">缤越COOL专属</span>
+              <span class="text-[12px] font-bold text-car-sub mt-1">筱小龚(QQ:42457071)</span>
             </div>
           </button>
         </div>
