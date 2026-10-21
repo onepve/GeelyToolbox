@@ -766,31 +766,37 @@ public class VehicleAutomationService extends Service {
         if (!isInterested) return;
 
         // 【应用层时间戳软栅栏 (Timestamp Gate)】：毫秒级丢弃开机前的陈旧录像日志
-        // 过滤机制：仅在时间戳已同步至当前真实日期时生效；冷启动初期 01-01 08:00 放行对齐初始基准
+        // 核心铁律：车机时间已同步至真实日期时，冷启动初期 01-01 的存量历史日志一律丢弃，彻底杜绝历史开门/按键倒灌！
         if (serviceBootTimestampMs > 0 && line.length() >= 18 && line.charAt(2) == '-' && line.charAt(5) == ' ') {
             try {
-                // 排除 01-01 冷启动时间未对齐阶段
-                if (!line.startsWith("01-01")) {
-                    int month = Integer.parseInt(line.substring(0, 2));
-                    int day = Integer.parseInt(line.substring(3, 5));
-                    int hour = Integer.parseInt(line.substring(6, 8));
-                    int min = Integer.parseInt(line.substring(9, 11));
-                    int sec = Integer.parseInt(line.substring(12, 14));
-                    int ms = (line.length() >= 18 && line.charAt(14) == '.') ? Integer.parseInt(line.substring(15, 18)) : 0;
-                    
-                    java.util.Calendar cal = java.util.Calendar.getInstance();
-                    cal.setTimeInMillis(serviceBootTimestampMs);
-                    cal.set(java.util.Calendar.MONTH, month - 1);
-                    cal.set(java.util.Calendar.DAY_OF_MONTH, day);
-                    cal.set(java.util.Calendar.HOUR_OF_DAY, hour);
-                    cal.set(java.util.Calendar.MINUTE, min);
-                    cal.set(java.util.Calendar.SECOND, sec);
-                    cal.set(java.util.Calendar.MILLISECOND, ms);
-                    
-                    // 早于服务启动时刻（且排除极小容差）的历史日志，判定为历史录像日志直接丢弃，严禁流入状态机翻旧账！
-                    if (cal.getTimeInMillis() < serviceBootTimestampMs) {
-                        return;
-                    }
+                java.util.Calendar bootCal = java.util.Calendar.getInstance();
+                bootCal.setTimeInMillis(serviceBootTimestampMs);
+                boolean isBootInRealTime = (bootCal.get(java.util.Calendar.YEAR) >= 2020 && bootCal.get(java.util.Calendar.MONTH) > 0);
+                
+                // 系统已校准至真实日期（非 01-01）：所有 01-01 阶段的存量冷启动积压日志直接瞬时丢弃！
+                if (isBootInRealTime && line.startsWith("01-01")) {
+                    return;
+                }
+
+                int month = Integer.parseInt(line.substring(0, 2));
+                int day = Integer.parseInt(line.substring(3, 5));
+                int hour = Integer.parseInt(line.substring(6, 8));
+                int min = Integer.parseInt(line.substring(9, 11));
+                int sec = Integer.parseInt(line.substring(12, 14));
+                int ms = (line.length() >= 18 && line.charAt(14) == '.') ? Integer.parseInt(line.substring(15, 18)) : 0;
+                
+                java.util.Calendar cal = java.util.Calendar.getInstance();
+                cal.setTimeInMillis(serviceBootTimestampMs);
+                cal.set(java.util.Calendar.MONTH, month - 1);
+                cal.set(java.util.Calendar.DAY_OF_MONTH, day);
+                cal.set(java.util.Calendar.HOUR_OF_DAY, hour);
+                cal.set(java.util.Calendar.MINUTE, min);
+                cal.set(java.util.Calendar.SECOND, sec);
+                cal.set(java.util.Calendar.MILLISECOND, ms);
+                
+                // 早于服务启动时刻的历史日志，判定为历史录像日志直接丢弃，严禁流入状态机翻旧账！
+                if (cal.getTimeInMillis() < serviceBootTimestampMs) {
+                    return;
                 }
             } catch (Throwable ignored) {}
         }

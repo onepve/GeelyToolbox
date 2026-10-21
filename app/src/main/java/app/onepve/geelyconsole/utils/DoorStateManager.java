@@ -169,6 +169,12 @@ public class DoorStateManager {
             // 乘员就坐状态统一置为车内态（人已经在车里开机了）
             isDriverInside = true;
 
+            // 硬件防抖基准同步建立，封死开机初期任何总线毛刺
+            lastTimeFL = now;
+            lastTimeFR = now;
+            lastTimeRL = now;
+            lastTimeRR = now;
+
             AppLogger.i("车门状态", "四门物理基准初始化: FL=" + currentFL + ", FR=" + currentFR + ", RL=" + currentRL + ", RR=" + currentRR + " (静默建立基准，开机绝不倒灌开门/关门声音)");
             if (listener != null) {
                 listener.onDoorStateChanged(currentFL, currentFR, currentRL, currentRR);
