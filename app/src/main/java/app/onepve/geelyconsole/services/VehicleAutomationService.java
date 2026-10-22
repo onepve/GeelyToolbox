@@ -720,6 +720,10 @@ public class VehicleAutomationService extends Service {
                         // 直接全量监听，由我们在 parseLogLine 中进行高效关键字判定！
                         // 核心铁律：持续实时监听 logcat，由我们在 parseLogLine 中进行高效关键字判定！
                         // 稳定性规范：严禁使用 -t 50 / -d 等非阻塞参数，否则进程读完 50 行立即 EOF 退出导致外层 while 陷入每 2 秒死循环重启！
+                        // 核心防翻旧账：写入纳秒同步标记行，读到标记前秒级抽干存量历史缓冲区
+                        final String drainMarker = "GEELY_TOOLBOX_DRAIN_MARKER_" + android.os.SystemClock.elapsedRealtimeNanos();
+                        Log.i("GeelyConsole", drainMarker);
+
                         ProcessBuilder pb = new ProcessBuilder("logcat", "-v", "time", "-b", "all");
                         pb.redirectErrorStream(true);
                         logcatProcess = pb.start();
@@ -727,7 +731,17 @@ public class VehicleAutomationService extends Service {
 
                         BufferedReader reader = new BufferedReader(new InputStreamReader(logcatProcess.getInputStream()), 1024);
                         String line;
+                        boolean bufferDrained = false;
+                        long drainLinesCount = 0;
                         while (isRunning && (line = reader.readLine()) != null) {
+                            if (!bufferDrained) {
+                                drainLinesCount++;
+                                if (line.contains(drainMarker) || drainLinesCount > 5000) {
+                                    bufferDrained = true;
+                                    AppLogger.i("系统日志", "Logcat 历史缓冲抽干就绪 (跳过 " + drainLinesCount + " 行旧日志)，正式进入实时信号监听");
+                                }
+                                continue;
+                            }
                             parseLogLine(line);
                         }
                     } catch (Exception e) {
@@ -989,26 +1003,7 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // 4.3 解析原厂 core_server 单门状态容灾 (vehicledata----callbacks---mModelLFDoor = 1/0)
-        if (line.contains("vehicledata----callbacks---mModel") && line.contains("Door =")) {
-            SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            if (doorStateManager != null) {
-                int curFL = doorStateManager.getFL();
-                int curFR = doorStateManager.getFR();
-                int curRL = doorStateManager.getRL();
-                int curRR = doorStateManager.getRR();
-
-                if (line.contains("mModelLFDoor =")) curFL = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
-                else if (line.contains("mModelRFDoor =")) curFR = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
-                else if (line.contains("mModelLRDoor =")) curRL = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
-                else if (line.contains("mModelRRDoor =")) curRR = (line.contains("= 1") || line.contains("=1")) ? 1 : 0;
-
-                doorStateManager.updateDoors(curFL, curFR, curRL, curRR, voiceMasterSwitch, prefs);
-            }
-            return;
-        }
-
-        // 4.4 解析底盘主副驾座椅乘员与安全带状态 (INFO_ID_IPKWARN_PASS_SEAT_BELT / INFO_ID_IPKWARN_DRV_SEAT_BELT)
+        // 4.3 底盘主副驾座椅乘员与安全带状态 (INFO_ID_IPKWARN_PASS_SEAT_BELT / INFO_ID_IPKWARN_DRV_SEAT_BELT)
         if (line.contains("INFO_ID_IPKWARN_PASS_SEAT_BELT") || line.contains("0x00201300")) {
             if (line.contains("funValue(0x00201202)") || line.contains("funValue(2)")) {
                 if (doorStateManager != null) doorStateManager.updatePassengerOccupancy(true);
@@ -1441,6 +1436,7 @@ public class VehicleAutomationService extends Service {
             if (val == 2) {
                 lastPowerMode = 1; // 钥匙 ON -> 点火就绪
                 doorStateManager.markDriverInside();
+                doorStateManager.establishCurrentAsBaseline();
                 // 预设门控: KEY ON 只是就绪，不喂发动机边沿 (仅上升沿防抖触发单次预热，绝不每秒循环轰炸)
                 if (prevKey != 2) {
                     AppLogger.i("电源状态", "钥匙 ON (key=2) -> 点火启动就绪 (尊重车速阈值，绝不提前起播)");
@@ -1465,16 +1461,19 @@ public class VehicleAutomationService extends Service {
             if (val == 3) {
                 lastPowerMode = 1;
                 doorStateManager.markDriverInside();
+                doorStateManager.establishCurrentAsBaseline();
             } else if (val == 0) {
                 // 引擎停止不一定熄火，等待 PEPS_PowerMode=0 或 KEY_STATE=0
             }
         }
         // PEPS_PowerMode
         if (rawLine.toLowerCase().contains("peps_powermode")) {
+            int prevPowerMode = lastPowerMode;
             lastPowerMode = val;
             if (val > 0) {
                 doorStateManager.markDriverInside();
-            } else {
+                doorStateManager.establishCurrentAsBaseline();
+            } else if (prevPowerMode != 0) {
                 resetAllStateMachines();
             }
         }

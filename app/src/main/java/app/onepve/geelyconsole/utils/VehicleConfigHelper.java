@@ -164,18 +164,18 @@ public final class VehicleConfigHelper {
                 }
             }
 
-            // 兼容历史老 Key 别名
+            // 兼容历史老 Key 别名 (默认均开启)
             obj.put("voice_door_fl", prefs.getBoolean("voice_enable_door_fl", true));
             obj.put("voice_door_fl_close", prefs.getBoolean("voice_enable_door_fl_close", true));
-            obj.put("voice_door_fr", prefs.getBoolean("voice_enable_door_fr", false));
-            obj.put("voice_door_fr_close", prefs.getBoolean("voice_enable_door_fr_close", false));
-            obj.put("voice_door_rl", prefs.getBoolean("voice_enable_door_rl", false));
-            obj.put("voice_door_rl_close", prefs.getBoolean("voice_enable_door_rl_close", false));
-            obj.put("voice_door_rr", prefs.getBoolean("voice_enable_door_rr", false));
-            obj.put("voice_door_rr_close", prefs.getBoolean("voice_enable_door_rr_close", false));
-            obj.put("voice_door_rear", prefs.getBoolean("voice_enable_door_rear", false));
-            obj.put("voice_trunk_open", prefs.getBoolean("voice_enable_trunk_open", false));
-            obj.put("voice_trunk_close", prefs.getBoolean("voice_enable_trunk_close", false));
+            obj.put("voice_door_fr", prefs.getBoolean("voice_enable_door_fr", true));
+            obj.put("voice_door_fr_close", prefs.getBoolean("voice_enable_door_fr_close", true));
+            obj.put("voice_door_rl", prefs.getBoolean("voice_enable_door_rl", true));
+            obj.put("voice_door_rl_close", prefs.getBoolean("voice_enable_door_rl_close", true));
+            obj.put("voice_door_rr", prefs.getBoolean("voice_enable_door_rr", true));
+            obj.put("voice_door_rr_close", prefs.getBoolean("voice_enable_door_rr_close", true));
+            obj.put("voice_door_rear", prefs.getBoolean("voice_enable_door_rear", true));
+            obj.put("voice_trunk_open", prefs.getBoolean("voice_enable_trunk_open", true));
+            obj.put("voice_trunk_close", prefs.getBoolean("voice_enable_trunk_close", true));
             obj.put("voice_gear_d", prefs.getBoolean("voice_enable_gear_d", true));
             obj.put("voice_gear_r", prefs.getBoolean("voice_enable_gear_r", true));
 

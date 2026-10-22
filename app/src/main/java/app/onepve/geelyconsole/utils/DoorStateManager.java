@@ -30,11 +30,12 @@ public class DoorStateManager {
     private VehicleVoicePlayer voicePlayer;
     private DoorStateListener listener;
 
-    // 四门独立物理状态 (0=关, 1=开，出厂停泊锁车物理基准为全关0)
+    // 四门独立物理状态 (0=关, 1=开)
     private int currentFL = 0;
     private int currentFR = 0;
     private int currentRL = 0;
     private int currentRR = 0;
+    private boolean isBaselineEstablished = false;
 
     // 四门独立硬件防抖时间戳 (800ms 硬件机械防抖滤波，彻底滤除微动开关反弹与颠簸抖动)
     private static final long DOOR_PHYSICAL_DEBOUNCE_MS = 800;
@@ -108,17 +109,30 @@ public class DoorStateManager {
      * 幂等静默：仅在状态真正发生变化时才写日志，严禁被 MCU 心跳无限刷屏。
      */
     public synchronized void resetState() {
-        boolean changed = (isDriverInside || isFRInside || isRLInside || isRRInside || !doorActionIntent.isEmpty());
+        boolean changed = (isDriverInside || isFRInside || isRLInside || isRRInside || !doorActionIntent.isEmpty() || isBaselineEstablished);
         isDriverInside = false;
         isFRInside = false;
         isRLInside = false;
         isRRInside = false;
         doorActionIntent.clear();
+        isBaselineEstablished = false;
         // 铁律：绝对不清除 lastVoiceTime 和 lastTimeFL/FR/RL/RR 硬件物理防抖！
         // 彻底杜绝点火熄火电源模式跳变时防抖被清空导致连续连报！
         if (changed) {
             AppLogger.i("车门状态", "熄火休眠复位: 四门乘员感知状态机重置归位");
         }
+    }
+
+    /** 点火通电基准吸收：车主点火上电瞬间对齐基准，杜绝点火连环补报开门关门旧账 */
+    public synchronized void establishCurrentAsBaseline() {
+        long now = System.currentTimeMillis();
+        lastTimeFL = now;
+        lastTimeFR = now;
+        lastTimeRL = now;
+        lastTimeRR = now;
+        isBaselineEstablished = true;
+        isDriverInside = true;
+        AppLogger.i("车门状态", "点火通电基准吸收对齐: FL=" + currentFL + ", FR=" + currentFR + ", RL=" + currentRL + ", RR=" + currentRR);
     }
 
     /** 车辆点火/上电/运行中：主驾一定在车内，避免"车门已打开"被误判为上车 */
@@ -151,6 +165,25 @@ public class DoorStateManager {
             currentFR = 0;
             currentRL = 0;
             currentRR = 0;
+            isBaselineEstablished = true;
+            return;
+        }
+
+        // 2. 开机/首包物理基准静默建立（记录当前真实物理电平，首包绝对不发声，杜绝点火后补报旧账）
+        if (!isBaselineEstablished) {
+            currentFL = (fl >= 0) ? fl : 0;
+            currentFR = (fr >= 0) ? fr : 0;
+            currentRL = (rl >= 0) ? rl : 0;
+            currentRR = (rr >= 0) ? rr : 0;
+            lastTimeFL = now;
+            lastTimeFR = now;
+            lastTimeRL = now;
+            lastTimeRR = now;
+            isBaselineEstablished = true;
+            AppLogger.i("车门状态", "四门物理基准静默建立: FL=" + currentFL + ", FR=" + currentFR + ", RL=" + currentRL + ", RR=" + currentRR);
+            if (listener != null) {
+                listener.onDoorStateChanged(currentFL, currentFR, currentRL, currentRR);
+            }
             return;
         }
 
@@ -233,7 +266,7 @@ public class DoorStateManager {
                 }
             } else {
                 String openKey = "voice_enable_door_" + doorCode.toLowerCase();
-                boolean enableOpen = PrefUtils.getBoolean(prefs, openKey, true) && PrefUtils.getBoolean(prefs, "enable_door_" + doorCode.toLowerCase(), true);
+                boolean enableOpen = PrefUtils.getBoolean(prefs, openKey, true);
                 if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
                     String soundFile = "door_fl.mp3";
                     String text = doorName + "车门已打开";
@@ -242,8 +275,10 @@ public class DoorStateManager {
                         text = "欢迎乘车";
                     } else if ("RL".equals(doorCode)) {
                         soundFile = "door_rl.mp3";
+                        text = "左后车门已打开";
                     } else if ("RR".equals(doorCode)) {
                         soundFile = "door_rr.mp3";
+                        text = "右后车门已打开";
                     }
                     voicePlayer.play(soundFile, text);
                 }
@@ -259,7 +294,7 @@ public class DoorStateManager {
             } else {
                 // 独立分门模式
                 String closeKey = "voice_enable_door_" + doorCode.toLowerCase() + "_close";
-                boolean enableClose = PrefUtils.getBoolean(prefs, closeKey, true) && PrefUtils.getBoolean(prefs, "enable_door_" + doorCode.toLowerCase() + "_close", true);
+                boolean enableClose = PrefUtils.getBoolean(prefs, closeKey, true);
                 if (voiceMasterSwitch && enableClose && voicePlayer != null) {
                     String soundFile = "door_fl_close.mp3";
                     String text = doorName + "车门已关闭";
@@ -269,8 +304,10 @@ public class DoorStateManager {
                         text = "副驾车门已关闭";
                     } else if ("RL".equals(doorCode)) {
                         soundFile = "door_rl_close.mp3";
+                        text = "左后车门已关闭";
                     } else if ("RR".equals(doorCode)) {
                         soundFile = "door_rr_close.mp3";
+                        text = "右后车门已关闭";
                     }
                     voicePlayer.play(soundFile, text);
                 }
