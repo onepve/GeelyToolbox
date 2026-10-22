@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 import app.onepve.geelyconsole.R;
 import app.onepve.geelyconsole.hal.IVehiclePlatform;
 import app.onepve.geelyconsole.hal.VehiclePlatformFactory;
+import app.onepve.geelyconsole.hal.platform.BinyueCoolPlatform;
 import app.onepve.geelyconsole.hal.platform.BinyueLPlatform;
 import app.onepve.geelyconsole.utils.AdbClient;
 import app.onepve.geelyconsole.utils.AppLogger;
@@ -1237,8 +1238,8 @@ public class VehicleAutomationService extends Service {
                     open360Camera();
                 }
             }
-        } else {
-            // 只要不是 D 挡 (P/R/N)，重新恢复武装状态，等待下一次起步切入 D 挡
+        } else if (gear >= 3 && gear <= 7) {
+            // 只要不是 D 挡 (P/R/N/S)，重新恢复武装状态，等待下一次起步切入 D 挡
             gearD360Armed = true;
         }
     }
@@ -1501,14 +1502,31 @@ public class VehicleAutomationService extends Service {
             return;
         }
         try {
-            Intent intent = getPackageManager().getLaunchIntentForPackage("ecarx.camera.calibration");
+            String targetPkg = "ecarx.camera.calibration";
+            Intent intent = getPackageManager().getLaunchIntentForPackage(targetPkg);
+            if (intent == null) {
+                String[] candidates = new String[]{
+                        "com.geely.pnd.avm",
+                        "com.ecarx.avm",
+                        "com.android.car.avm",
+                        "com.jsbd.avm"
+                };
+                for (String c : candidates) {
+                    Intent ci = getPackageManager().getLaunchIntentForPackage(c);
+                    if (ci != null) {
+                        targetPkg = c;
+                        intent = ci;
+                        break;
+                    }
+                }
+            }
             if (intent == null) {
                 intent = new Intent(Intent.ACTION_MAIN);
                 intent.setComponent(new ComponentName("ecarx.camera.calibration", "ecarx.camera.calibration.MainActivity"));
             }
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
             startActivity(intent);
-            AppLogger.i("车身联动", "已成功下发指令唤起 360 全景环视界面");
+            AppLogger.i("车身联动", "已成功下发指令唤起 360 全景环视界面 (" + targetPkg + ")");
         } catch (Exception e) {
             Log.w(TAG, "Failed to launch 360: " + e.getMessage());
             AppLogger.w("车身联动", "唤起 360 失败: " + e.getMessage());
@@ -1525,6 +1543,14 @@ public class VehicleAutomationService extends Service {
             Intent closeIntentGlobal = new Intent("ecarx.intent.broadcast.action.ECARX_VR_APP_CLOSE");
             closeIntentGlobal.setData(Uri.parse("ecarx://vr.com/360全景"));
             sendBroadcast(closeIntentGlobal);
+
+            // 非 COOL 车型下发返回键辅助退出
+            try {
+                IVehiclePlatform platform = VehiclePlatformFactory.getPlatform(this);
+                if (platform != null && !(platform instanceof BinyueCoolPlatform)) {
+                    SystemUtils.executePrivileged(this, "input keyevent 4");
+                }
+            } catch (Throwable ignored) {}
 
             AppLogger.i("车身联动", "已下发指令退出 360 全景界面");
         } catch (Exception e) {
@@ -1633,7 +1659,7 @@ public class VehicleAutomationService extends Service {
     private volatile boolean speedAutoplayTriggeredInTrip = false; // 单次行程车速自启锁：触发一次后永久闭锁，绝不重复触发
     private volatile boolean speedCustomActionTriggeredInTrip = false; // 单次行程自定义动作锁
     private final List<Runnable> pendingMusicRetryRunnables = new ArrayList<>(); // 音乐起播阶梯重试队列 (30s/60s/90s)
-    private boolean gearD360Armed = true; // D挡起步360单次跃变武装锁 (离开D挡才复位，彻底根治手动退出后循环调起)
+    private boolean gearD360Armed = false; // D挡起步360单次跃变武装锁 (初始闭锁，必须离开D挡切入非D挡后才武装，杜绝启动首包误调起)
     // 前门开启「单次跃变」闩锁：门开着期间 CAN 报文会持续高频重复上报 data=1，
     // 必须只在 关 ➔ 开 物理跃变的那一刻执行一次门控暂停，杜绝反复下发暂停指令与日志刷屏。
     private volatile boolean frontLeftDoorOpenLatched = false;

@@ -4,6 +4,9 @@ import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
 import android.net.Uri;
+import app.onepve.geelyconsole.hal.IVehiclePlatform;
+import app.onepve.geelyconsole.hal.VehiclePlatformFactory;
+import app.onepve.geelyconsole.hal.platform.BinyueCoolPlatform;
 import app.onepve.geelyconsole.services.VehicleAutomationService;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -709,43 +712,102 @@ public class SteeringWheelKeyManager {
         }, 150);
     }
 
+    public boolean isBinyueCoolPlatform() {
+        try {
+            IVehiclePlatform platform = VehiclePlatformFactory.getPlatform(context);
+            if (platform instanceof BinyueCoolPlatform) return true;
+            if (platform != null && "binyue_cool_e02".equals(platform.getPlatformCode())) return true;
+        } catch (Throwable ignored) {}
+        return false;
+    }
+
+    public static boolean is360PackageName(String pkg) {
+        if (pkg == null || pkg.isEmpty()) return false;
+        if ("ecarx.camera.calibration".equals(pkg)
+                || "com.geely.pnd.avm".equals(pkg)
+                || "com.ecarx.avm".equals(pkg)
+                || "com.android.car.avm".equals(pkg)
+                || "com.jsbd.avm".equals(pkg)) {
+            return true;
+        }
+        String lower = pkg.toLowerCase();
+        return lower.contains("camera.calibration") || lower.contains(".avm") || lower.endsWith(".avm");
+    }
+
     public boolean is360CameraActive() {
+        if (VehicleAutomationService.isAvmCameraShowing) {
+            return true;
+        }
         try {
             String fg = ForegroundAppDetector.getForegroundPackage(context);
-            if ("ecarx.camera.calibration".equals(fg)) {
+            if (is360PackageName(fg)) {
                 return true;
             }
         } catch (Throwable ignored) {}
         return false;
     }
 
+    private static volatile boolean sNonCool360StateOpen = false;
+    private static volatile long sLast360ToggleTimestamp = 0L;
+
     private void toggle360Camera() {
-        if (is360CameraActive()) {
-            AppLogger.i("方控按键", "检测到 360 全景正处于前台运行，按键执行【退出 360】");
-            close360Camera();
+        boolean isCool = isBinyueCoolPlatform();
+        if (isCool) {
+            // 缤越 COOL 专车: 维持原汁原味的原厂循环态
+            if (is360CameraActive()) {
+                AppLogger.i("方控按键", "【缤越COOL循环态】检测到 360 全景正处于前台运行，按键执行【退出 360】");
+                close360Camera();
+            } else {
+                AppLogger.i("方控按键", "【缤越COOL循环态】检测到 360 全景未在前台，按键执行【打开 360】");
+                open360Camera();
+            }
         } else {
-            AppLogger.i("方控按键", "检测到 360 全景未在前台，按键执行【打开 360】");
-            open360Camera();
+            // 其他车型: 自动适配为标准“按一下开、按一下关”开闭切换
+            long now = System.currentTimeMillis();
+            boolean fgActive = is360CameraActive();
+            // 若前台明确在 360，或最近 60 秒内通过本键打开过处于开启态，本次执行关闭
+            boolean shouldClose = fgActive || (sNonCool360StateOpen && (now - sLast360ToggleTimestamp < 60_000L));
+            if (shouldClose) {
+                AppLogger.i("方控按键", "【多车型自适应】当前处于开启态(fg=" + fgActive + ", stateOpen=" + sNonCool360StateOpen + ")，按键执行【退出 360】");
+                sNonCool360StateOpen = false;
+                sLast360ToggleTimestamp = now;
+                close360Camera();
+            } else {
+                AppLogger.i("方控按键", "【多车型自适应】当前处于关闭态，按键执行【打开 360】");
+                sNonCool360StateOpen = true;
+                sLast360ToggleTimestamp = now;
+                open360Camera();
+            }
         }
     }
 
     private void close360Camera() {
         try {
-            // 1. 发送吉利官方原厂 VR 退出广播
+            // 1. 发送吉利官方原厂 VR 退出广播（缤越 COOL 等支持原厂 VR 广播的平台秒级退出）
             Intent closeIntent = new Intent("ecarx.intent.broadcast.action.ECARX_VR_APP_CLOSE");
             closeIntent.setData(Uri.parse("ecarx://vr.com/360全景"));
             closeIntent.setPackage("ecarx.camera.calibration");
             context.sendBroadcast(closeIntent);
+
+            Intent closeIntentGlobal = new Intent("ecarx.intent.broadcast.action.ECARX_VR_APP_CLOSE");
+            closeIntentGlobal.setData(Uri.parse("ecarx://vr.com/360全景"));
+            context.sendBroadcast(closeIntentGlobal);
             AppLogger.i("方控按键", "已下发吉利原厂 VR 指令退出 360 全景界面");
 
-            // 2. 延迟 300ms 检查：若 360 仍在前台，注入返回键兜底退出
+            // 2. 针对非 COOL 车型，直接注入标准返回键 (KEYCODE_BACK = 4) 干净退出
+            if (!isBinyueCoolPlatform()) {
+                SystemUtils.executePrivileged(context, "input keyevent 4");
+                AppLogger.i("方控按键", "【多车型自适应】非 COOL 车型下发返回键完成 360 退出");
+            }
+
+            // 3. 延迟 300ms 检查：若 360 仍在前台，注入返回键兜底退出
             mainHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         String fg = ForegroundAppDetector.getForegroundPackage(context);
-                        if ("ecarx.camera.calibration".equals(fg)) {
-                            AppLogger.i("方控按键", "360 仍处于前台，下发返回键完成退出");
+                        if (is360PackageName(fg)) {
+                            AppLogger.i("方控按键", "360 仍处于前台(" + fg + ")，下发返回键完成退出");
                             SystemUtils.executePrivileged(context, "input keyevent 4");
                         }
                     } catch (Throwable ignored) {}
@@ -758,14 +820,33 @@ public class SteeringWheelKeyManager {
 
     private void open360Camera() {
         try {
-            Intent intent = context.getPackageManager().getLaunchIntentForPackage("ecarx.camera.calibration");
+            String targetPkg = "ecarx.camera.calibration";
+            PackageManager pm = context.getPackageManager();
+            Intent intent = pm.getLaunchIntentForPackage(targetPkg);
+            if (intent == null) {
+                // 非 COOL 车型常见包名探测
+                String[] candidates = new String[]{
+                        "com.geely.pnd.avm",
+                        "com.ecarx.avm",
+                        "com.android.car.avm",
+                        "com.jsbd.avm"
+                };
+                for (String c : candidates) {
+                    Intent ci = pm.getLaunchIntentForPackage(c);
+                    if (ci != null) {
+                        targetPkg = c;
+                        intent = ci;
+                        break;
+                    }
+                }
+            }
             if (intent == null) {
                 intent = new Intent(Intent.ACTION_MAIN);
                 intent.setComponent(new ComponentName("ecarx.camera.calibration", "ecarx.camera.calibration.MainActivity"));
             }
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
             context.startActivity(intent);
-            AppLogger.i("方控按键", "已下发指令秒级唤起 360 全景环视");
+            AppLogger.i("方控按键", "已下发指令秒级唤起 360 全景环视 (" + targetPkg + ")");
 
             suppressOriginalMultimedia();
             watch360ExitAndCleanTaskStack();
@@ -807,7 +888,7 @@ public class SteeringWheelKeyManager {
                     while (System.currentTimeMillis() - start < 120_000L) { // 最长守护 2 分钟 (覆盖倒车与看全景)
                         Thread.sleep(250);
                         String fg = ForegroundAppDetector.getForegroundPackage(context);
-                        if ("ecarx.camera.calibration".equals(fg)) {
+                        if (is360PackageName(fg)) {
                             entered360 = true;
                         } else if (entered360) {
                             // 360 已退出！
