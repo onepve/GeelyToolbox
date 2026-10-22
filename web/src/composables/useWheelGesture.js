@@ -2,6 +2,14 @@ import { computed } from 'vue';
 import { store, bridge, showToast, openModal } from '../store';
 
 // 方控按键手势映射共享逻辑（WheelView 与 WheelGestureCard 共用，单一真源）
+// 判定当前是否为缤越 COOL 平台（原厂支持 VR 360 循环态退出）
+function isBinyueCoolModel() {
+  if (store.deviceInfo.is_binyue_cool_model === true) return true;
+  const code = (store.deviceInfo.platform_code || '').toLowerCase();
+  const name = (store.deviceInfo.platform_name || '');
+  return code.includes('binyue_cool') || name.includes('COOL') || code.includes('sx11');
+}
+
 // 动作统一定义表：下拉选择器、名称展示、切歌键三方共用，杜绝手写数组顺序混乱
 const ACTION_DEFS = {
   default: { name: '保持原厂默认', sub: '不拦截原厂动作' },
@@ -16,9 +24,14 @@ const ACTION_DEFS = {
 
 // 各键下拉选项（统一顺序：原厂/切歌 → 高德 → 360 → 播放暂停 → 静音 → 息屏，彻底消除顺序不一致）
 function getActionOptions(keyName) {
+  const isCool = isBinyueCoolModel();
+  const open360Def = isCool
+    ? { name: '360 全景 (循环开关)', sub: '未开则开·已开则退' }
+    : { name: '360 全景 (标准开启)', sub: '一键秒开全景影像' };
+
   const tail = [
     { action: 'open_navi', ...ACTION_DEFS.open_navi },
-    { action: 'open_360', ...ACTION_DEFS.open_360 },
+    { action: 'open_360', ...open360Def },
     { action: 'play_pause', ...ACTION_DEFS.play_pause },
     { action: 'mute_toggle', ...ACTION_DEFS.mute_toggle },
     { action: 'screen_off', ...ACTION_DEFS.screen_off }
@@ -73,9 +86,10 @@ export function useWheelGesture() {
   }
 
   function getActionName(act) {
+    const isCool = isBinyueCoolModel();
     const map = {
       default: '原厂默认',
-      open_360: '360全景',
+      open_360: isCool ? '360全景 (循环)' : '360全景',
       open_navi: '高德地图',
       play_pause: '播放/暂停',
       next_track: '下一曲',
