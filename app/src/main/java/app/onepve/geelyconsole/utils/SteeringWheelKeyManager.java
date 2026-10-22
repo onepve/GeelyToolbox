@@ -794,13 +794,7 @@ public class SteeringWheelKeyManager {
             context.sendBroadcast(closeIntentGlobal);
             AppLogger.i("方控按键", "已下发吉利原厂 VR 指令退出 360 全景界面");
 
-            // 2. 针对非 COOL 车型，直接注入标准返回键 (KEYCODE_BACK = 4) 干净退出
-            if (!isBinyueCoolPlatform()) {
-                SystemUtils.executePrivileged(context, "input keyevent 4");
-                AppLogger.i("方控按键", "【多车型自适应】非 COOL 车型下发返回键完成 360 退出");
-            }
-
-            // 3. 延迟 300ms 检查：若 360 仍在前台，注入返回键兜底退出
+            // 2. 延迟 300ms 检查：若 360 仍在前台，注入返回键兜底退出
             mainHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {

@@ -1544,14 +1544,6 @@ public class VehicleAutomationService extends Service {
             closeIntentGlobal.setData(Uri.parse("ecarx://vr.com/360全景"));
             sendBroadcast(closeIntentGlobal);
 
-            // 非 COOL 车型下发返回键辅助退出
-            try {
-                IVehiclePlatform platform = VehiclePlatformFactory.getPlatform(this);
-                if (platform != null && !(platform instanceof BinyueCoolPlatform)) {
-                    SystemUtils.executePrivileged(this, "input keyevent 4");
-                }
-            } catch (Throwable ignored) {}
-
             AppLogger.i("车身联动", "已下发指令退出 360 全景界面");
         } catch (Exception e) {
             Log.w(TAG, "Failed to close 360: " + e.getMessage());
