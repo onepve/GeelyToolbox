@@ -16,7 +16,7 @@ const ACTION_DEFS = {
   next_track: { name: '下一曲', sub: '切歌 (官方调度)' },
   prev_track: { name: '上一曲', sub: '切歌 (官方调度)' },
   open_navi: { name: '打开高德地图', sub: '一键秒切导航' },
-  open_360: { name: '360 全景 (循环开关)', sub: '未开则开·已开则退' },
+  open_360: { name: '360 全景', sub: '一键秒开全景影像' },
   play_pause: { name: '播放 / 暂停', sub: '媒体暂停或继续' },
   mute_toggle: { name: '静音切换', sub: '音乐声道静音/恢复' },
   screen_off: { name: '息屏屏保', sub: '唤起内部息屏屏保' }
@@ -25,9 +25,10 @@ const ACTION_DEFS = {
 // 各键下拉选项（统一顺序：原厂/切歌 → 高德 → 360 → 播放暂停 → 静音 → 息屏，彻底消除顺序不一致）
 function getActionOptions(keyName) {
   const isCool = isBinyueCoolModel();
-  const open360Def = isCool
-    ? { name: '360 全景 (循环开关)', sub: '未开则开·已开则退' }
-    : { name: '360 全景 (标准开启)', sub: '一键秒开全景影像' };
+  const open360Def = {
+    name: '360 全景',
+    sub: isCool ? '未开则开·已开则退' : '一键秒开全景影像'
+  };
 
   const tail = [
     { action: 'open_navi', ...ACTION_DEFS.open_navi },
@@ -86,10 +87,9 @@ export function useWheelGesture() {
   }
 
   function getActionName(act) {
-    const isCool = isBinyueCoolModel();
     const map = {
       default: '原厂默认',
-      open_360: isCool ? '360全景 (循环)' : '360全景',
+      open_360: '360 全景',
       open_navi: '高德地图',
       play_pause: '播放/暂停',
       next_track: '下一曲',
