@@ -82,17 +82,33 @@
       <div class="grid grid-cols-2 gap-4 items-stretch">
         <div class="p-5 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col justify-between">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-[19px] font-black text-car-text">吉利缤越 45L 标称油箱测算</span>
-            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-car-accent">官方容积</span>
+            <span class="text-[19px] font-black text-car-text">{{ vehicleModelDisplay }} {{ tankCapacity }}L 油箱测算</span>
+            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-car-accent">官方标称</span>
           </div>
-          <div class="flex items-baseline space-x-2 py-2">
-            <span class="text-[14px] text-car-sub font-bold">加满 92# 约需:</span>
-            <span class="text-[28px] font-black text-car-accent font-mono">¥{{ (currentOilData?.p92 ? currentOilData.p92 * 45 : 340).toFixed(1) }}</span>
-            <span class="text-[13px] text-car-sub ml-4 font-bold">加满 95# 约需:</span>
-            <span class="text-[24px] font-black text-car-text font-mono">¥{{ (currentOilData?.p95 ? currentOilData.p95 * 45 : 365).toFixed(1) }}</span>
+
+          <!-- 双测算模块：空箱加满 vs 加200元实惠测算 -->
+          <div class="space-y-3 py-1">
+            <!-- 1. 加满整箱预估 -->
+            <div class="p-3 bg-car-item border border-car-border rounded-2xl flex items-center justify-between">
+              <span class="text-[14px] text-car-sub font-bold">空箱加满整箱：</span>
+              <div class="flex items-baseline space-x-3">
+                <span class="text-[13px] text-car-sub font-bold">92# <span class="text-[20px] font-black text-car-accent font-mono">¥{{ (currentOilData?.p92 ? currentOilData.p92 * tankCapacity : 340).toFixed(1) }}</span></span>
+                <span class="text-[13px] text-car-sub font-bold">95# <span class="text-[18px] font-black text-car-text font-mono">¥{{ (currentOilData?.p95 ? currentOilData.p95 * tankCapacity : 365).toFixed(1) }}</span></span>
+              </div>
+            </div>
+
+            <!-- 2. 日常加 200 元可加油量测算 -->
+            <div class="p-3 bg-car-item border border-car-border rounded-2xl flex items-center justify-between">
+              <span class="text-[14px] text-car-sub font-bold">日常加 200 元可加：</span>
+              <div class="flex items-baseline space-x-3">
+                <span class="text-[13px] text-car-sub font-bold">92# <span class="text-[20px] font-black text-emerald-400 font-mono">{{ (currentOilData?.p92 ? 200 / currentOilData.p92 : 26.3).toFixed(1) }}</span> <span class="text-[12px]">L</span></span>
+                <span class="text-[13px] text-car-sub font-bold">95# <span class="text-[18px] font-black text-car-text font-mono">{{ (currentOilData?.p95 ? 200 / currentOilData.p95 : 24.6).toFixed(1) }}</span> <span class="text-[12px]">L</span></span>
+              </div>
+            </div>
           </div>
-          <div class="text-[13px] text-car-sub font-bold pt-4 border-t border-car-border/50">
-            按国家发改委最新限价计算，实际加油站优惠或满减立减活动请以现场实际机显为准。
+
+          <div class="text-[12.5px] text-car-sub font-bold pt-3 border-t border-car-border/50">
+            根据 {{ currentProvinceName }} 发改委最新挂牌价换算；车主实际优惠及满减立减以加油机实显为准。
           </div>
         </div>
 
@@ -210,6 +226,25 @@ const fuelTabs = [
   { id: 'trip', name: '单次行程油耗', tag: '行车账单' },
   { id: 'record', name: '智能加油账本', tag: '自动记账' }
 ];
+
+// 车型名称与油箱容积动态适配
+const vehicleModelDisplay = computed(() => {
+  if (store.deviceInfo.is_binyue_cool_model) {
+    return '吉利缤越 COOL (2022款)';
+  }
+  const name = store.deviceInfo.platform_name || '';
+  if (name.includes('帝豪 L')) return '吉利帝豪 L';
+  if (name.includes('缤越 L')) return '吉利缤越 L';
+  if (name.includes('缤越')) return '吉利缤越 COOL (2022款)';
+  return '吉利缤越 COOL (2022款)';
+});
+
+const tankCapacity = computed(() => {
+  const name = store.deviceInfo.platform_name || '';
+  if (name.includes('帝豪 L')) return 52;
+  if (name.includes('缤越 L')) return 51;
+  return 45; // 缤越 COOL 2022款 官方标称容积 45L
+});
 
 // 油价计算属性
 const currentProvinceName = computed(() => store.oilPrice.selectedProvince || '北京');
