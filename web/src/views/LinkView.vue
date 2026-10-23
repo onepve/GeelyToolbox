@@ -1,7 +1,10 @@
 <template>
   <div class="flex flex-col space-y-4">
-    <!-- 联动功能列表 -->
-    <div class="grid grid-cols-2 gap-4">
+    <!-- 顶部车规二级分段胶囊：一页全景掌控，消灭长滑 -->
+    <SubTabs :tabs="linkTabs" v-model="activeTab" />
+
+    <!-- 1. 360全景联动 (双大卡片，一屏收尽) -->
+    <div v-show="activeTab === '360'" class="grid grid-cols-2 gap-4 items-stretch">
       <!-- 任务 1: D 挡起步联动 360 -->
       <PlanCard
         title="1. 前进 D 挡起步联动 360"
@@ -19,24 +22,76 @@
         </template>
       </PlanCard>
 
-      <!-- 任务 2: P 挡开门多媒体优雅静音 -->
-      <PlanCard
-        title="2. 停稳推门多媒体暂停"
-        tag="下车静音"
-        help-text="door_pause"
-        flow-sub="挂入驻车 P 挡且推开前排车门（准备下车）"
-        flow-main="自动向音乐播放器发送暂停指令，下车优雅安静"
-        @help="showHelp('door_pause')"
-      >
-        <template #footer>
-          <BaseButton variant="planToggle" :active="store.vehicleAuto.vehicle_door_pause_music_enabled" @click="toggleSetting('vehicle_door_pause_music_enabled')">
-            <StatusDot size="sm" :color="store.vehicleAuto.vehicle_door_pause_music_enabled ? 'accent' : 'sub'" :glow-px="6" />
-            <span>{{ store.vehicleAuto.vehicle_door_pause_music_enabled ? '推门暂停音乐已开启' : '推门暂停音乐已关闭' }}</span>
-          </BaseButton>
-        </template>
-      </PlanCard>
 
-      <!-- 任务 3: 车速达标智能启播车载音乐 (紧凑车规卡片) -->
+    <div
+      class="bg-car-card border-2 border-car-border rounded-2xl px-6 shadow-xl flex flex-col justify-between transition-all"
+      :class="store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'py-8 min-h-[240px] space-y-6' : 'py-7 min-h-[148px] space-y-0'"
+    >
+      <div class="flex items-center justify-between">
+        <div class="w-[62%] max-w-[62%] flex flex-col space-y-2 shrink-0">
+          <div class="flex items-center space-x-3">
+            <StatusDot size="lg" :color="store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
+            <span class="text-[22px] font-black text-car-text tracking-wide whitespace-nowrap">转向灯开启联动 360 全景</span>
+            <span class="px-3 py-1 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
+              <StatusDot class="mr-2" size="sm" :color="store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'ok' : 'off'" />
+              {{ store.vehicleAuto.vehicle_turn_signal_360_enabled ? '转向灯联动已启用' : '转向灯联动已关闭 (不干涉)' }}
+            </span>
+            <HelpDot size="sm" @click="showHelp('turn_signal_360')" />
+          </div>
+          <div class="text-[15px] text-car-sub font-bold leading-relaxed">
+            打左/右转向灯时自动唤起 360 全景环视，消除变道与侧向盲区（倒车 R 挡避让原厂倒车影像）。
+          </div>
+        </div>
+
+        <div class="shrink-0 w-[240px]">
+          <BaseButton
+            variant="master"
+            :active="store.vehicleAuto.vehicle_turn_signal_360_enabled"
+            @click="toggleTurnSignal360"
+          >
+            <span class="text-[19px] font-black text-car-text tracking-wide whitespace-nowrap">
+              {{ store.vehicleAuto.vehicle_turn_signal_360_enabled ? '转向灯联动已开启' : '转向灯联动已关闭' }}
+            </span>
+            <span :class="['text-[13px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'text-car-accent' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_turn_signal_360_enabled ? '点击关闭转向灯联动' : '点击开启转向灯联动' }}
+            </span>
+          </BaseButton>
+        </div>
+      </div>
+
+      <!-- 转向灯复位自动退出 360 子配置 (联动开启时展开，充裕纵深呼吸空间) -->
+      <div v-if="store.vehicleAuto.vehicle_turn_signal_360_enabled" class="pt-6 border-t border-car-border/60 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <StatusDot size="sm" :color="store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? 'ok' : 'off'" />
+          <div>
+            <div class="text-[17px] font-black text-car-text tracking-wide">转向灯回正复位后自动退出 360</div>
+            <div class="text-[13.5px] text-car-sub font-bold mt-1">
+              {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '开启：转向灯打回关闭后自动退出 360 画面还原大屏' : '关闭：转向灯回正后 360 持续保持在屏幕上，不自动退出' }}
+            </div>
+          </div>
+        </div>
+        <div class="shrink-0 w-[170px]">
+          <BaseButton
+            variant="dual"
+            :active="store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false"
+            @click="toggleTurnSignal360AutoExit"
+          >
+            <span class="text-[17px] font-black text-car-text tracking-wide whitespace-nowrap">
+              {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '已开启' : '已关闭' }}
+            </span>
+            <span :class="['text-[12px] font-bold mt-0.5 whitespace-nowrap', store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? 'text-car-accent' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '回正自动退出' : '回正持续保持' }}
+            </span>
+          </BaseButton>
+        </div>
+      </div>
+    </div>
+
+
+    </div>
+
+    <!-- 2. 车速与启播 (左右双列卡片，一屏收尽) -->
+    <div v-show="activeTab === 'speed'" class="grid grid-cols-2 gap-4 items-stretch">
       <div
         class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl h-full flex flex-col space-y-3.5 transition-all duration-200"
       >
@@ -219,75 +274,30 @@
           </button>
         </div>
       </div>
-    </div>
 
-    <!-- 5. 转向灯开启联动 360 - 核心车身联动 (左右分栏车规黄金磁贴，展开自适应充盈大磁贴) -->
-    <div
-      class="bg-car-card border-2 border-car-border rounded-2xl px-6 shadow-xl flex flex-col justify-between transition-all"
-      :class="store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'py-8 min-h-[240px] space-y-6' : 'py-7 min-h-[148px] space-y-0'"
-    >
-      <div class="flex items-center justify-between">
-        <div class="w-[62%] max-w-[62%] flex flex-col space-y-2 shrink-0">
-          <div class="flex items-center space-x-3">
-            <StatusDot size="lg" :color="store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
-            <span class="text-[22px] font-black text-car-text tracking-wide whitespace-nowrap">转向灯开启联动 360 全景</span>
-            <span class="px-3 py-1 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
-              <StatusDot class="mr-2" size="sm" :color="store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'ok' : 'off'" />
-              {{ store.vehicleAuto.vehicle_turn_signal_360_enabled ? '转向灯联动已启用' : '转向灯联动已关闭 (不干涉)' }}
-            </span>
-            <HelpDot size="sm" @click="showHelp('turn_signal_360')" />
-          </div>
-          <div class="text-[15px] text-car-sub font-bold leading-relaxed">
-            打左/右转向灯时自动唤起 360 全景环视，消除变道与侧向盲区（倒车 R 挡避让原厂倒车影像）。
-          </div>
-        </div>
-
-        <div class="shrink-0 w-[240px]">
-          <BaseButton
-            variant="master"
-            :active="store.vehicleAuto.vehicle_turn_signal_360_enabled"
-            @click="toggleTurnSignal360"
-          >
-            <span class="text-[19px] font-black text-car-text tracking-wide whitespace-nowrap">
-              {{ store.vehicleAuto.vehicle_turn_signal_360_enabled ? '转向灯联动已开启' : '转向灯联动已关闭' }}
-            </span>
-            <span :class="['text-[13px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'text-car-accent' : 'text-car-sub']">
-              {{ store.vehicleAuto.vehicle_turn_signal_360_enabled ? '点击关闭转向灯联动' : '点击开启转向灯联动' }}
-            </span>
+      <div class="col-span-2">
+      <PlanCard
+        title="2. 停稳推门多媒体暂停"
+        tag="下车静音"
+        help-text="door_pause"
+        flow-sub="挂入驻车 P 挡且推开前排车门（准备下车）"
+        flow-main="自动向音乐播放器发送暂停指令，下车优雅安静"
+        @help="showHelp('door_pause')"
+      >
+        <template #footer>
+          <BaseButton variant="planToggle" :active="store.vehicleAuto.vehicle_door_pause_music_enabled" @click="toggleSetting('vehicle_door_pause_music_enabled')">
+            <StatusDot size="sm" :color="store.vehicleAuto.vehicle_door_pause_music_enabled ? 'accent' : 'sub'" :glow-px="6" />
+            <span>{{ store.vehicleAuto.vehicle_door_pause_music_enabled ? '推门暂停音乐已开启' : '推门暂停音乐已关闭' }}</span>
           </BaseButton>
-        </div>
-      </div>
+        </template>
+      </PlanCard>
 
-      <!-- 转向灯复位自动退出 360 子配置 (联动开启时展开，充裕纵深呼吸空间) -->
-      <div v-if="store.vehicleAuto.vehicle_turn_signal_360_enabled" class="pt-6 border-t border-car-border/60 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <StatusDot size="sm" :color="store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? 'ok' : 'off'" />
-          <div>
-            <div class="text-[17px] font-black text-car-text tracking-wide">转向灯回正复位后自动退出 360</div>
-            <div class="text-[13.5px] text-car-sub font-bold mt-1">
-              {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '开启：转向灯打回关闭后自动退出 360 画面还原大屏' : '关闭：转向灯回正后 360 持续保持在屏幕上，不自动退出' }}
-            </div>
-          </div>
-        </div>
-        <div class="shrink-0 w-[170px]">
-          <BaseButton
-            variant="dual"
-            :active="store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false"
-            @click="toggleTurnSignal360AutoExit"
-          >
-            <span class="text-[17px] font-black text-car-text tracking-wide whitespace-nowrap">
-              {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '已开启' : '已关闭' }}
-            </span>
-            <span :class="['text-[12px] font-bold mt-0.5 whitespace-nowrap', store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? 'text-car-accent' : 'text-car-sub']">
-              {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '回正自动退出' : '回正持续保持' }}
-            </span>
-          </BaseButton>
-        </div>
+
       </div>
     </div>
 
-    <!-- 6. 车载网络与外设连接中枢 (一行三卡片车规栅格：Wi-Fi / 热点 / 蓝牙) -->
-    <div class="grid grid-cols-3 gap-4">
+    <!-- 3. 网络与外设连接中枢 (一行三列大卡片，一屏充满) -->
+    <div v-show="activeTab === 'network'" class="grid grid-cols-3 gap-4 items-stretch">
       <!-- 卡片 1: 车载 Wi-Fi -->
       <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl flex flex-col justify-between transition-all duration-200">
         <!-- 头部 -->
@@ -477,7 +487,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -488,10 +497,18 @@ import {
   setNetworkBootPolicy, toggleNetworkDeviceDirect, initNetworkDeviceStatus,
   openDeviceSettings
 } from '../store';
+import SubTabs from '../components/SubTabs.vue';
 import PlanCard from '../components/PlanCard.vue';
 import BaseButton from '../components/BaseButton.vue';
 import StatusDot from '../components/StatusDot.vue';
 import HelpDot from '../components/HelpDot.vue';
+
+const activeTab = ref('360');
+const linkTabs = [
+  { id: '360', name: '360全景联动', tag: 'D挡/转向灯' },
+  { id: 'speed', name: '车速与启播', tag: '车速联动' },
+  { id: 'network', name: '网络与外设', tag: 'Wi-Fi/蓝牙' }
+];
 
 const hasQQMusic = ref(false);
 const hasNeteaseMusic = ref(false);

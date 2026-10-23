@@ -1,6 +1,9 @@
 <template>
   <div class="flex flex-col space-y-4">
-    <!-- 核心：方向盘按键方控接管总开关 - 核心功能首屏 (左右分栏车规黄金磁贴) -->
+    <!-- 顶部车规二级分段胶囊：一页全景掌控 -->
+    <SubTabs :tabs="wheelTabs" v-model="activeTab" />
+
+    <!-- 核心：方向盘按键方控接管总开关 (双 Tab 均常驻置顶) -->
     <div class="bg-car-card border-2 border-car-border rounded-2xl p-4 min-h-[88px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
@@ -32,128 +35,10 @@
       </div>
     </div>
 
-    <!-- 车型图解与协议指示区 (缤越 COOL / SX-0017 原厂按键分布) -->
-    <div class="bg-car-item border border-car-border rounded-2xl p-5 shadow-sm">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center">
-          <StatusDot class="mr-3" size="md" color="accent" :glow-px="8" />
-          <div class="flex flex-col">
-            <span class="text-[18px] font-black text-car-text">吉利缤越 COOL (IHU516G / E02) 原厂方控图解</span>
-            <span class="text-[14px] text-car-sub font-bold mt-0.5">
-              右方向盘多媒体控制区 (SX-0017)：静音、切歌、MODE、返回键全量打通单击极速接管
-            </span>
-          </div>
-        </div>
-        <div class="flex items-center space-x-3">
-          <BaseButton variant="chipLg" :active="floatingEnabled" @click="toggleFloating()">
-            <StatusDot class="mr-2.5" size="sm" :color="floatingEnabled ? 'ok' : 'off'" />
-            {{ floatingEnabled ? '悬浮图解：开' : '悬浮图解：关' }}
-          </BaseButton>
-          <BaseButton variant="ghost" @click="toggleDiagram()">
-            {{ showDiagram ? '收起图解' : '展开图解' }}
-          </BaseButton>
-        </div>
-      </div>
 
-      <!-- 图解内容展示区 -->
-      <div v-if="showDiagram" class="mt-4 pt-4 border-t border-car-border/60 flex items-start space-x-6">
-        <!-- 原厂方向盘按键高清图示 (沉稳车规底座，绝非刺眼白底) -->
-        <div class="p-3 bg-car-item rounded-2xl shadow-md border-2 border-car-border w-[320px] min-w-[320px] max-w-[320px] shrink-0">
-          <img 
-            :src="wheelGuideImg" 
-            alt="吉利缤越 COOL 右侧多媒体 SX-0017" 
-            class="guide-img w-full h-auto rounded-xl object-contain block" 
-          />
-        </div>
 
-        <!-- 按键编号与原厂定义清单 -->
-        <div class="flex-1 min-w-0 flex flex-col space-y-2.5 text-[14.5px] font-bold text-car-sub">
-          <div class="flex space-x-3">
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">① 主页/返回键:</span> 返回车机中控主页 / 单击自定义
-            </div>
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">② 滚轮按压:</span> 媒体播放 / 暂停 (支持自定义)
-            </div>
-          </div>
-          <div class="flex space-x-3">
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">③ 静音键:</span> 开关静音 (支持单击自定义)
-            </div>
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">④ 向右选择键:</span> 下一个文件 / 下一曲 (单击自定义)
-            </div>
-          </div>
-          <div class="flex space-x-3">
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">⑤ 自定义键:</span> 0x37 硬件按键 / 默认原厂 (单击自定义)
-            </div>
-            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">⑥ MODE键:</span> 音源切换 / 自定义 (单击自定义)
-            </div>
-          </div>
-          <div class="w-full p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-            <span class="text-car-accent font-black mr-1.5">⑦ 向左选择键:</span> 上一个文件 / 上一曲 (单击自定义)
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 1. 方向盘方控接管模式 -->
-    <FeatureCard 
-      title="方控按键接管模式"
-      desc="屏蔽原厂伴听抢占广播；若同时安装米小江建议选择协同优先。"
-      helpTitle="【功能指南】方控接管模式与仪表显示"
-      helpText="1. 接管模式选择：&#10;• 控制台独立接管（推荐）：方向盘按键直接控制切歌与播放，自动唤醒车载喇叭，体验最流畅。&#10;• 米小江方控优先：如果车机上装了米小江 CarMedia，选这项让它优先处理切歌，两者互不打扰。&#10;• 恢复原厂默认：不拦截方向盘按键，全部交回原车控制。&#10;&#10;2. 蓝牙无声问题解决：&#10;独立接管模式下，手机连车机蓝牙放微信语音或音乐没声音时，会自动帮您接通车载喇叭。&#10;&#10;3. 仪表与屏保显示：&#10;可自由选择是否把当前歌名和歌词推送到仪表盘或屏保上显示。" 
-      helpTip="如果同时装了米小江请选「米小江方控优先」；只用本工具箱建议选「控制台独立接管」。"
-    >
-      <div class="grid grid-cols-3 gap-4" style="grid-gap: 14px; -webkit-column-gap: 14px;">
-        <MatrixButton 
-          title="米小江方控优先"
-          subtitle="放行切歌与Mode键，工具箱补充静音键接管"
-          :active="store.vehicleAuto.wheel_control_mode === 'carmedia_first'"
-          @click="setWheelMode('carmedia_first')"
-        />
-        <MatrixButton 
-          title="控制台独立接管 (推荐)"
-          subtitle="全量接管切歌与按键，并自动选通原车蓝牙音频硬件通道"
-          :active="store.vehicleAuto.wheel_control_mode === 'toolbox_alone' || (!store.vehicleAuto.wheel_control_mode && store.vehicleAuto.wheel_control_mode !== 'factory_default')"
-          @click="setWheelMode('toolbox_alone')"
-        />
-        <MatrixButton 
-          title="恢复原厂默认"
-          subtitle="解禁原厂广播接收器，完全不拦截任何按键"
-          :active="store.vehicleAuto.wheel_control_mode === 'factory_default'"
-          @click="setWheelMode('factory_default')"
-        />
-      </div>
-
-      <!-- 仪表盘与屏保显示扩展 (独立开关·默认关闭) -->
-      <div class="mt-4 pt-4 border-t border-car-border/60 flex flex-col space-y-4">
-        <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border-2 border-car-border">
-          <div class="flex flex-col space-y-1">
-            <span class="text-[17px] font-black text-car-text">息屏时钟显示音乐卡片</span>
-            <span class="text-[14px] text-car-sub font-bold">息屏或显示原厂时钟屏保时，自动展示当前播放的歌名与歌手。</span>
-          </div>
-          <BaseButton variant="pill" :active="store.vehicleAuto.wheel_push_playback_cluster" @click="toggleClusterPlayback">
-            {{ store.vehicleAuto.wheel_push_playback_cluster ? '已开启 (显示卡片)' : '已关闭 (默认纯净)' }}
-          </BaseButton>
-        </div>
-
-        <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border-2 border-car-border">
-          <div class="flex flex-col space-y-1">
-            <span class="text-[17px] font-black text-car-text">液晶仪表盘同步滚动歌词</span>
-            <span class="text-[14px] text-car-sub font-bold">向全液晶仪表盘中间卡片推送实时滚动歌词，默认关闭防视觉打扰。</span>
-          </div>
-          <BaseButton variant="pill" :active="store.vehicleAuto.wheel_push_lyrics_cluster" @click="toggleClusterLyrics">
-            {{ store.vehicleAuto.wheel_push_lyrics_cluster ? '已开启 (推送歌词)' : '已关闭 (默认纯净)' }}
-          </BaseButton>
-        </div>
-      </div>
-    </FeatureCard>
-
-    
-
+    <!-- Tab 1: 按键独立映射网格 -->
+    <div v-show="activeTab === 'keys'" class="flex flex-col space-y-4">
     <!-- 3. 各按键映射配置 (右方向盘多媒体 SX-0017 物理按键逐项配置) -->
     <div class="flex flex-col space-y-4">
       <div class="flex items-center px-2">
@@ -251,8 +136,134 @@
       </div>
     </div>
 
-    <!-- 方向盘图解悬浮对照卡：滚动设键位时默认悬浮于内容区右上角（绝不遮挡下方功能菜单）；
-         支持拖放自定义位置并本地记忆，下次同位显示；原地点按隐藏 -->
+
+    </div>
+
+    <!-- Tab 2: 接管模式与图解 -->
+    <div v-show="activeTab === 'mode'" class="flex flex-col space-y-4">
+    </div>
+
+    <!-- 1. 方向盘方控接管模式 -->
+    <FeatureCard 
+      title="方控按键接管模式"
+      desc="屏蔽原厂伴听抢占广播；若同时安装米小江建议选择协同优先。"
+      helpTitle="【功能指南】方控接管模式与仪表显示"
+      helpText="1. 接管模式选择：&#10;• 控制台独立接管（推荐）：方向盘按键直接控制切歌与播放，自动唤醒车载喇叭，体验最流畅。&#10;• 米小江方控优先：如果车机上装了米小江 CarMedia，选这项让它优先处理切歌，两者互不打扰。&#10;• 恢复原厂默认：不拦截方向盘按键，全部交回原车控制。&#10;&#10;2. 蓝牙无声问题解决：&#10;独立接管模式下，手机连车机蓝牙放微信语音或音乐没声音时，会自动帮您接通车载喇叭。&#10;&#10;3. 仪表与屏保显示：&#10;可自由选择是否把当前歌名和歌词推送到仪表盘或屏保上显示。" 
+      helpTip="如果同时装了米小江请选「米小江方控优先」；只用本工具箱建议选「控制台独立接管」。"
+    >
+      <div class="grid grid-cols-3 gap-4" style="grid-gap: 14px; -webkit-column-gap: 14px;">
+        <MatrixButton 
+          title="米小江方控优先"
+          subtitle="放行切歌与Mode键，工具箱补充静音键接管"
+          :active="store.vehicleAuto.wheel_control_mode === 'carmedia_first'"
+          @click="setWheelMode('carmedia_first')"
+        />
+        <MatrixButton 
+          title="控制台独立接管 (推荐)"
+          subtitle="全量接管切歌与按键，并自动选通原车蓝牙音频硬件通道"
+          :active="store.vehicleAuto.wheel_control_mode === 'toolbox_alone' || (!store.vehicleAuto.wheel_control_mode && store.vehicleAuto.wheel_control_mode !== 'factory_default')"
+          @click="setWheelMode('toolbox_alone')"
+        />
+        <MatrixButton 
+          title="恢复原厂默认"
+          subtitle="解禁原厂广播接收器，完全不拦截任何按键"
+          :active="store.vehicleAuto.wheel_control_mode === 'factory_default'"
+          @click="setWheelMode('factory_default')"
+        />
+      </div>
+
+      <!-- 仪表盘与屏保显示扩展 (独立开关·默认关闭) -->
+      <div class="mt-4 pt-4 border-t border-car-border/60 flex flex-col space-y-4">
+        <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border-2 border-car-border">
+          <div class="flex flex-col space-y-1">
+            <span class="text-[17px] font-black text-car-text">息屏时钟显示音乐卡片</span>
+            <span class="text-[14px] text-car-sub font-bold">息屏或显示原厂时钟屏保时，自动展示当前播放的歌名与歌手。</span>
+          </div>
+          <BaseButton variant="pill" :active="store.vehicleAuto.wheel_push_playback_cluster" @click="toggleClusterPlayback">
+            {{ store.vehicleAuto.wheel_push_playback_cluster ? '已开启 (显示卡片)' : '已关闭 (默认纯净)' }}
+          </BaseButton>
+        </div>
+
+        <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border-2 border-car-border">
+          <div class="flex flex-col space-y-1">
+            <span class="text-[17px] font-black text-car-text">液晶仪表盘同步滚动歌词</span>
+            <span class="text-[14px] text-car-sub font-bold">向全液晶仪表盘中间卡片推送实时滚动歌词，默认关闭防视觉打扰。</span>
+          </div>
+          <BaseButton variant="pill" :active="store.vehicleAuto.wheel_push_lyrics_cluster" @click="toggleClusterLyrics">
+            {{ store.vehicleAuto.wheel_push_lyrics_cluster ? '已开启 (推送歌词)' : '已关闭 (默认纯净)' }}
+          </BaseButton>
+        </div>
+      </div>
+    </FeatureCard>
+
+    
+
+    <div class="bg-car-item border border-car-border rounded-2xl p-5 shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center">
+          <StatusDot class="mr-3" size="md" color="accent" :glow-px="8" />
+          <div class="flex flex-col">
+            <span class="text-[18px] font-black text-car-text">吉利缤越 COOL (IHU516G / E02) 原厂方控图解</span>
+            <span class="text-[14px] text-car-sub font-bold mt-0.5">
+              右方向盘多媒体控制区 (SX-0017)：静音、切歌、MODE、返回键全量打通单击极速接管
+            </span>
+          </div>
+        </div>
+        <div class="flex items-center space-x-3">
+          <BaseButton variant="chipLg" :active="floatingEnabled" @click="toggleFloating()">
+            <StatusDot class="mr-2.5" size="sm" :color="floatingEnabled ? 'ok' : 'off'" />
+            {{ floatingEnabled ? '悬浮图解：开' : '悬浮图解：关' }}
+          </BaseButton>
+          <BaseButton variant="ghost" @click="toggleDiagram()">
+            {{ showDiagram ? '收起图解' : '展开图解' }}
+          </BaseButton>
+        </div>
+      </div>
+
+      <!-- 图解内容展示区 -->
+      <div v-if="showDiagram" class="mt-4 pt-4 border-t border-car-border/60 flex items-start space-x-6">
+        <!-- 原厂方向盘按键高清图示 (沉稳车规底座，绝非刺眼白底) -->
+        <div class="p-3 bg-car-item rounded-2xl shadow-md border-2 border-car-border w-[320px] min-w-[320px] max-w-[320px] shrink-0">
+          <img 
+            :src="wheelGuideImg" 
+            alt="吉利缤越 COOL 右侧多媒体 SX-0017" 
+            class="guide-img w-full h-auto rounded-xl object-contain block" 
+          />
+        </div>
+
+        <!-- 按键编号与原厂定义清单 -->
+        <div class="flex-1 min-w-0 flex flex-col space-y-2.5 text-[14.5px] font-bold text-car-sub">
+          <div class="flex space-x-3">
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-accent font-black mr-1.5">① 主页/返回键:</span> 返回车机中控主页 / 单击自定义
+            </div>
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-accent font-black mr-1.5">② 滚轮按压:</span> 媒体播放 / 暂停 (支持自定义)
+            </div>
+          </div>
+          <div class="flex space-x-3">
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-accent font-black mr-1.5">③ 静音键:</span> 开关静音 (支持单击自定义)
+            </div>
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-accent font-black mr-1.5">④ 向右选择键:</span> 下一个文件 / 下一曲 (单击自定义)
+            </div>
+          </div>
+          <div class="flex space-x-3">
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-accent font-black mr-1.5">⑤ 自定义键:</span> 0x37 硬件按键 / 默认原厂 (单击自定义)
+            </div>
+            <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+              <span class="text-car-accent font-black mr-1.5">⑥ MODE键:</span> 音源切换 / 自定义 (单击自定义)
+            </div>
+          </div>
+          <div class="w-full p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
+            <span class="text-car-accent font-black mr-1.5">⑦ 向左选择键:</span> 上一个文件 / 上一曲 (单击自定义)
+          </div>
+        </div>
+
+    </div>
+
     <transition name="floating-fade">
       <div
         v-if="showFloating"
@@ -270,12 +281,15 @@
       </div>
     </transition>
   </div>
+
+  </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
 import { useWheelGesture } from '../composables/useWheelGesture';
+import SubTabs from '../components/SubTabs.vue';
 import StatusDot from '../components/StatusDot.vue';
 import BaseButton from '../components/BaseButton.vue';
 import FeatureCard from '../components/FeatureCard.vue';
@@ -287,7 +301,13 @@ import WheelGestureCard from '../components/WheelGestureCard.vue';
 import wheelGuideImg from '../assets/steering_wheel_guide.webp';
 import wheelGuideFloatingImg from '../assets/steering_wheel_guide_floating.svg';
 
-const showDiagram = ref(false);
+const activeTab = ref('keys');
+const wheelTabs = [
+  { id: 'keys', name: '按键映射手势', tag: '6大按键' },
+  { id: 'mode', name: '接管模式与图解', tag: '工作模式' }
+];
+
+const showDiagram = ref(true);
 
 function toggleDiagram() {
   showDiagram.value = !showDiagram.value;
