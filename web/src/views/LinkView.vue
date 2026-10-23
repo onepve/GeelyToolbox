@@ -80,7 +80,7 @@
       >
         <div class="flex items-center justify-between shrink-0">
           <div class="flex items-center space-x-2.5">
-            <span class="text-[20px] font-black text-car-text tracking-wide">3. 车速达标智能启播音乐</span>
+            <span class="text-[20px] font-black text-car-text tracking-wide">车速达标智能启播音乐</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">起步自启</span>
             <HelpDot size="sm" @click="showHelp('speed_music')" />
           </div>
@@ -166,13 +166,13 @@
         </div>
       </div>
 
-      <!-- 任务 4: 车速达标自定义动作与唤起应用 (紧凑车规卡片，高度对齐左侧) -->
+      <!-- 车速达标自定义动作与唤起应用 (紧凑车规卡片，高度对齐左侧) -->
       <div
         class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl h-full flex flex-col space-y-3.5 transition-all duration-200"
       >
         <div class="flex items-center justify-between shrink-0">
           <div class="flex items-center space-x-2.5">
-            <span class="text-[20px] font-black text-car-text tracking-wide">4. 车速达标自定义动作</span>
+            <span class="text-[20px] font-black text-car-text tracking-wide">车速达标自定义动作</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">自定动作</span>
             <HelpDot size="sm" @click="showHelp('speed_custom')" />
           </div>
