@@ -16,6 +16,7 @@ const ACTION_DEFS = {
   next_track: { name: '下一曲', sub: '切歌 (官方调度)' },
   prev_track: { name: '上一曲', sub: '切歌 (官方调度)' },
   open_navi: { name: '打开高德地图', sub: '一键秒切导航' },
+  open_media_source: { name: '唤起当前音乐', sub: '切出正在播放的App' },
   open_360: { name: '360 全景', sub: '一键秒开全景影像' },
   play_pause: { name: '播放 / 暂停', sub: '媒体暂停或继续' },
   mute_toggle: { name: '静音切换', sub: '音乐声道静音/恢复' },
@@ -32,6 +33,7 @@ function getActionOptions(keyName) {
 
   const tail = [
     { action: 'open_navi', ...ACTION_DEFS.open_navi },
+    { action: 'open_media_source', ...ACTION_DEFS.open_media_source },
     { action: 'open_360', ...open360Def },
     { action: 'play_pause', ...ACTION_DEFS.play_pause },
     { action: 'mute_toggle', ...ACTION_DEFS.mute_toggle },
@@ -89,6 +91,7 @@ export function useWheelGesture() {
   function getActionName(act) {
     const map = {
       default: '原厂默认',
+      open_media_source: '唤起当前音乐',
       open_360: '360 全景',
       open_navi: '高德地图',
       play_pause: '播放/暂停',

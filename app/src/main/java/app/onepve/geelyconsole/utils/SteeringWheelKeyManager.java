@@ -20,6 +20,7 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -69,6 +70,7 @@ public class SteeringWheelKeyManager {
     // 按键功能选项
     public static final String ACTION_OPEN_360 = "open_360";
     public static final String ACTION_OPEN_NAVI = "open_navi";
+    public static final String ACTION_OPEN_MEDIA_SOURCE = "open_media_source";
     public static final String ACTION_PLAY_PAUSE = "play_pause";
     public static final String ACTION_NEXT_TRACK = "next_track";
     public static final String ACTION_PREV_TRACK = "prev_track";
@@ -473,6 +475,9 @@ public class SteeringWheelKeyManager {
                 break;
             case ACTION_OPEN_NAVI:
                 openAmapNavi();
+                break;
+            case ACTION_OPEN_MEDIA_SOURCE:
+                openActiveMediaSource();
                 break;
             case ACTION_PLAY_PAUSE:
                 // 根治「单击暂停后音乐又自动续播」（2026-09-16 用户真车复现）：
@@ -1410,5 +1415,51 @@ public class SteeringWheelKeyManager {
         }
 
         return "";
+    }
+
+    /**
+     * 唤起当前发声或活跃的媒体播放源 (零 ADB 耗时，极速响应，尊重助手排序与冻结状态)
+     */
+    private void openActiveMediaSource() {
+        String pkg = resolveTargetMediaPackage();
+        AppLogger.i("方控按键", "方控触发唤起当前音乐应用: " + pkg);
+
+        if (pkg == null || pkg.isEmpty()) {
+            showToast("未检测到运行中的音乐软件");
+            return;
+        }
+
+        // 1. 若当前发声源为手机蓝牙：手机蓝牙无独立车机界面，直接友好提示，绝不误触冻结的原厂伴听
+        if ("com.android.bluetooth".equals(pkg)) {
+            showToast("当前为手机蓝牙音频 · 正在播放手机音乐");
+            return;
+        }
+
+        // 2. 车载本地音乐应用 (QQ音乐/网易云/酷狗等)：直接拉起到前台
+        try {
+            Intent intent = context.getPackageManager().getLaunchIntentForPackage(pkg);
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                context.startActivity(intent);
+                AppLogger.i("方控按键", "已成功将音乐应用唤起至前台: " + pkg);
+            } else {
+                showToast("未找到该音乐软件的启动界面");
+            }
+        } catch (Throwable e) {
+            showToast("唤起音乐应用失败");
+            AppLogger.w("方控按键", "唤起音乐应用失败: " + e.getMessage());
+        }
+    }
+
+    private void showToast(final String msg) {
+        if (msg == null || msg.isEmpty()) return;
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
+                } catch (Throwable ignored) {}
+            }
+        });
     }
 }
