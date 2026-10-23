@@ -784,6 +784,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         obj.put("platform_code", VehiclePlatformFactory.getPlatform(MainActivity.this).getPlatformCode());
                         obj.put("platform_name", VehiclePlatformFactory.getPlatform(MainActivity.this).getPlatformName());
                     } catch (Throwable ignored) {}
+                    obj.put("fuel_percent", VehicleAutomationService.currentFuelPercent);
+                    obj.put("fuel_liters", (double) VehicleAutomationService.currentFuelLiters);
                     obj.put("logPath", AppLogger.getLogFilePath());
                     obj.put("logSize", AppLogger.getLogFileSizeStr());
                     // 真实屏幕参数：每次启动只采一次，之后复用缓存（修「屏幕采集」日志无限刷屏）

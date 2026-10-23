@@ -40,14 +40,8 @@
 
     <!-- Tab 1: 按键独立映射 (v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'keys'" class="flex flex-col space-y-4">
-    <!-- 3. 各按键映射配置 (右方向盘多媒体 SX-0017 物理按键逐项配置) -->
+    <!-- 各按键映射配置 (右方向盘多媒体 SX-0017 物理按键逐项配置) -->
     <div class="flex flex-col space-y-4">
-      <div class="flex items-center px-2">
-        <StatusDot class="mr-3" size="md" color="accent" :glow-px="8" />
-        <span class="text-[18px] font-black text-car-text tracking-wide">按键独立映射 (单击动作设定)</span>
-        <span class="ml-3 text-[13px] font-bold text-car-sub">即按即响应 · 零延迟触发</span>
-      </div>
-
       <!-- 双列规整网格：一排两卡，工整对齐，共三排 -->
       <div class="grid grid-cols-2 gap-4">
         <!-- ① 右方向盘主页/返回键 -->

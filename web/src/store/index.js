@@ -51,7 +51,9 @@ export const store = reactive({
       }
     })(),
     platform_code: '',
-    platform_name: ''
+    platform_name: '',
+    fuel_percent: -1,
+    fuel_liters: -1
   },
   doors: {
     fl: -1,

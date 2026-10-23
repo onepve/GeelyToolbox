@@ -706,8 +706,8 @@ public class VehicleAutomationService extends Service {
         "parsecandata",
         // 8. 转向灯360与画面感知
         "turnlight=", "camera_state:",
-        // 9. 原车音频 DSP 监控与电瓶电压
-        "a2dp_player_", "mmodelbatteryvolt"
+        // 9. 原车音频 DSP 监控与电瓶电压、油箱油位
+        "a2dp_player_", "mmodelbatteryvolt", "mmodelfuel", "fuel_level", "fuellevel", "0x11600407"
     };
 
     private void startLogcatReader() {
@@ -1177,6 +1177,29 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         }
+
+        // 6.1 解析原厂油量报文 (ecarx_core_server: mModelFuel = xx 或 0x11600407 / FUEL_LEVEL)
+        if (line.contains("mModelFuel =") || line.contains("mModelFuel=") || line.contains("0x11600407")) {
+            try {
+                int fuelIdx = line.indexOf("mModelFuel");
+                if (fuelIdx != -1) {
+                    int eqIdx = line.indexOf("=", fuelIdx);
+                    if (eqIdx != -1) {
+                        String sub = line.substring(eqIdx + 1).trim();
+                        StringBuilder num = new StringBuilder();
+                        for (int i = 0; i < sub.length(); i++) {
+                            char c = sub.charAt(i);
+                            if (Character.isDigit(c)) num.append(c);
+                            else if (num.length() > 0) break;
+                        }
+                        if (num.length() > 0) {
+                            int fuelVal = Integer.parseInt(num.toString());
+                            handleFuelLevelSignal(fuelVal);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
     }
 
     /**
@@ -1317,6 +1340,11 @@ public class VehicleAutomationService extends Service {
             if (doorStateManager != null) {
                 doorStateManager.updateDoors(-1, -1, -1, val, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
             }
+        }
+
+        // 油箱剩余百分比/升数 (Tasker/CAN 常见键: IPK_FuelLevel, BCM_FuelLevel, RemainingFuel)
+        if ("IPK_FuelLevel".equalsIgnoreCase(key) || "BCM_FuelLevel".equalsIgnoreCase(key) || "RemainingFuel".equalsIgnoreCase(key) || "FuelLevel".equalsIgnoreCase(key)) {
+            handleFuelLevelSignal(val);
         }
 
         // 大灯/小灯联动高德日夜模式 (BCM_PositionLightSts: 1=开启, 0=关闭)
@@ -2328,6 +2356,34 @@ public class VehicleAutomationService extends Service {
             AppLogger.i("车身联动", "已向高德发送日夜模式广播: mode=" + mode + (mode == 2 ? " (黑夜深色)" : " (白天浅色)"));
         } catch (Exception e) {
             AppLogger.w("车身联动", "发送高德日夜模式广播失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 处理底层油量信号更新 (百分比或直接升数)
+     * @param val 原始信号值 (支持 0~100 百分比，或 0~60 升数)
+     */
+    private void handleFuelLevelSignal(int val) {
+        if (val < 0) return;
+        try {
+            int pct;
+            float liters;
+            if (val <= 100) {
+                // 作为百分比
+                pct = val;
+                liters = (45.0f * pct) / 100.0f;
+            } else {
+                // 若为千分比或超范围值
+                pct = Math.min(100, val / 10);
+                liters = (45.0f * pct) / 100.0f;
+            }
+            if (currentFuelPercent != pct) {
+                currentFuelPercent = pct;
+                currentFuelLiters = liters;
+                AppLogger.i("行程油耗", "底盘燃油信号更新: 剩余 " + pct + "% (约 " + String.format(java.util.Locale.US, "%.1f", liters) + "L)");
+            }
+        } catch (Throwable t) {
+            AppLogger.w("行程油耗", "解析燃油信号异常: " + t.getMessage());
         }
     }
 }

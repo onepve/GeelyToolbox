@@ -269,7 +269,12 @@ const tankCapacity = computed(() => {
 });
 
 // 实时油位与动态加满计算
-const currentFuelPercent = ref(-1);
+const currentFuelPercent = computed(() => {
+  if (typeof store.deviceInfo.fuel_percent === 'number' && store.deviceInfo.fuel_percent >= 0) {
+    return store.deviceInfo.fuel_percent;
+  }
+  return -1;
+});
 const hasFuelSignal = computed(() => {
   return currentFuelPercent.value >= 0 && store.deviceInfo.is_car_device;
 });
