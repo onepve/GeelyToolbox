@@ -145,7 +145,12 @@
 
     </div>
 
-    <!-- Tab 3: 专车主题语音包 (整套换装中枢，v-if 彻底杜绝幽灵重叠) -->
+    <!-- Tab 3: 音乐音源优先级与回退调度 (车载音频合并至此，v-if 彻底杜绝幽灵重叠) -->
+    <div v-if="activeTab === 'media'" class="flex flex-col space-y-4">
+      <AudioView />
+    </div>
+
+    <!-- Tab 4: 专属主题语音包 (整套换装中枢，v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'packs'" class="flex flex-col space-y-4">
     <!-- 进阶管理: 车载专属语音主题包中枢 (位于四大核心卡片下方) -->
     <FeatureCard 
@@ -319,13 +324,15 @@ import GearConfigModal from '../components/GearConfigModal.vue';
 import ModeConfigModal from '../components/ModeConfigModal.vue';
 import DoorConfigModal from '../components/DoorConfigModal.vue';
 import TrunkConfigModal from '../components/TrunkConfigModal.vue';
+import AudioView from './AudioView.vue';
 
 
 const activeTab = ref('motion');
 const voiceTabs = [
   { id: 'motion', name: '行车动态播报', tag: '换挡/模式' },
   { id: 'doors', name: '车门迎宾播报', tag: '车门提示' },
-  { id: 'packs', name: '专车主题语音包', tag: '整套换装' }
+  { id: 'media', name: '音乐音源优先级', tag: '回退调度' },
+  { id: 'packs', name: '专属语音包', tag: '整套换装' }
 ];
 
 const showGearModal = ref(false);

@@ -3,6 +3,11 @@
     <!-- 顶部车规二级分段胶囊：一页全景掌控，消灭长滑 -->
     <SubTabs :tabs="linkTabs" v-model="activeTab" />
 
+    <!-- 0. 方向盘按键接管与独立映射 (v-if 彻底杜绝幽灵重叠) -->
+    <div v-if="activeTab === 'wheel'" class="flex flex-col space-y-4">
+      <WheelView />
+    </div>
+
     <!-- 1. 360全景联动 (双大卡片，一屏收尽) -->
     <div v-if="activeTab === '360'" class="grid grid-cols-2 gap-4 items-stretch">
       <!-- D 挡起步联动 360 -->
@@ -489,10 +494,7 @@
       </div>
     </div>
 
-    <!-- 4. 音乐音源优先级与回退调度 (原车载音频合并至此) -->
-    <div v-if="activeTab === 'media'" class="flex flex-col space-y-4">
-      <AudioView />
-    </div>
+    <!-- 4. 音乐音源优先级与回退调度已归入「车载声音」大类 -->
   </div>
 </template>
 
@@ -508,13 +510,13 @@ import PlanCard from '../components/PlanCard.vue';
 import BaseButton from '../components/BaseButton.vue';
 import StatusDot from '../components/StatusDot.vue';
 import HelpDot from '../components/HelpDot.vue';
-import AudioView from './AudioView.vue';
+import WheelView from './WheelView.vue';
 
-const activeTab = ref('360');
+const activeTab = ref('wheel');
 const linkTabs = [
+  { id: 'wheel', name: '按键独立映射', tag: '方向盘接管' },
   { id: '360', name: '360全景联动', tag: 'D挡/转向灯' },
-  { id: 'speed', name: '车速与启播', tag: '车速联动' },
-  { id: 'media', name: '音乐音源优先级', tag: '回退调度' },
+  { id: 'speed', name: '车速与大灯', tag: '车速/大灯' },
   { id: 'network', name: '网络与外设', tag: 'Wi-Fi/蓝牙' }
 ];
 

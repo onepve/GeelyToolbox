@@ -133,12 +133,12 @@
       helpText="1. 智能跟随：&#10;选择「智能跟随」后，每次启动自动恢复到您上次退出时停留的功能页。&#10;&#10;2. 固定主菜单：&#10;也可以固定为方控按键、车身联动、车载语音、精选商城、车载音频、特权安装或系统维护等任意页面。&#10;&#10;3. 立即生效：&#10;点击相应项即刻完成设置并永久记忆，下次打开软件直接进入该页面。" helpTip="建议经常传歌/装软件的车主设置为「特权安装」，常玩车机设为「精选商城」。"
     >
       <div class="w-full">
-        <!-- 8 宫格严丝合缝车规对称矩阵 (2行 x 4列，彻底消除缺角空缺) -->
+        <!-- 6 宫格车规对称矩阵 (2行 x 3列，完美契合 5 大分类 + 智能跟随) -->
         <div class="w-full flex flex-wrap -m-1">
           <div
             v-for="item in STARTUP_NAV_ITEMS"
             :key="item.id"
-            class="p-1 w-1/4"
+            class="p-1 w-1/3"
           >
             <button
               @click="onSelectStartupNav(item.id)"
@@ -420,29 +420,28 @@ const oilDaysText = computed(() => {
   return '今晚调价';
 });
 
-// 启动首屏默认视图配置 (8 宫格：1 个智能跟随 + 7 个核心业务菜单，严丝合缝对称 2x4)
+// 启动首屏默认视图配置 (5 黄金大类 + 智能跟随)
 const STARTUP_NAV_ITEMS = [
   { id: 'remember', name: '智能跟随', desc: '记忆上次停留' },
-  { id: 'wheel', name: '方控按键', desc: '核心改装·默认' },
-  { id: 'link', name: '车身联动', desc: '360/车速' },
-  { id: 'body', name: '车载语音', desc: '语音播报' },
-  { id: 'store', name: '精选商城', desc: '专车应用' },
-  { id: 'audio', name: '车载音频', desc: '语音/蓝牙' },
-  { id: 'install', name: '特权安装', desc: '暗码/快传' },
-  { id: 'system', name: '系统维护', desc: '维护/油价' }
+  { id: 'link', name: '行车联动', desc: '方控/360' },
+  { id: 'body', name: '车载声音', desc: '提示/语音' },
+  { id: 'fuel', name: '行程油耗', desc: '油价/账本' },
+  { id: 'store', name: '应用生态', desc: '商城/安装' },
+  { id: 'system', name: '系统设置', desc: '桌面/外观' }
 ];
 
 function getNavName(id) {
   const map = {
-    wheel: '方控按键',
-    link: '车身联动',
-    body: '车载语音',
-    store: '精选商城',
-    audio: '车载音频',
-    install: '特权安装',
-    system: '系统维护'
+    wheel: '行车联动',
+    link: '行车联动',
+    body: '车载声音',
+    fuel: '行程油耗',
+    store: '应用生态',
+    audio: '车载声音',
+    install: '应用生态',
+    system: '系统设置'
   };
-  return map[id] || '方控按键';
+  return map[id] || '行车联动';
 }
 
 function onSelectStartupNav(navId) {

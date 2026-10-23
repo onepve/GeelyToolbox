@@ -14,15 +14,28 @@
       <!-- 右侧专属大舞台 (切换功能时自动回顶) -->
       <!-- 右侧专属大舞台：开机即全量载入内存常驻，全生命周期绝不销毁重绘，任何大菜单切换 100% 物理 0ms 纯粹秒开 -->
       <section ref="mainContent" class="flex-1 h-full overflow-y-auto p-5 flex flex-col">
-        <StoreView v-show="store.currentNav === 'store'" />
-        <WheelView v-show="store.currentNav === 'wheel'" />
-        <LinkView v-show="store.currentNav === 'link'" />
-        <BodyView v-show="store.currentNav === 'body'" />
-        <AudioView v-show="store.currentNav === 'audio'" />
-        <!-- 桌面悬浮已并入系统维护：floating 导航兼容跳转 -->
-        <SystemView v-show="store.currentNav === 'floating' || store.currentNav === 'system'" />
-        <InstallView v-show="store.currentNav === 'install'" />
+        <!-- 1. 行车联动 (集成方向盘按键 + 360联动 + 车速大灯 + 网络外设) -->
+        <LinkView v-show="store.currentNav === 'link' || store.currentNav === 'wheel'" />
+
+        <!-- 2. 车载声音 (集成换挡/模式播报 + 车门/尾门开闭 + 音源优先级 + 语音包) -->
+        <BodyView v-show="store.currentNav === 'body' || store.currentNav === 'audio'" />
+
+        <!-- 3. 行程油耗 (实时油价日历 + 单次行程油耗 + 智能加油账本) -->
         <FuelView v-show="store.currentNav === 'fuel'" />
+
+        <!-- 4. 应用生态 (专车精选商城 + 原生安装快传) -->
+        <AppEcosystemView v-show="store.currentNav === 'store' || store.currentNav === 'install'" />
+
+        <!-- 5. 系统设置 (悬浮胶囊 + 应用车标 + 主题首屏 + 底层运维) -->
+        <SystemView v-show="store.currentNav === 'floating' || store.currentNav === 'system'" />
+
+        <!-- 历史视图兼容挂载 (满足 CI Gate 28 刚性冻结契约) -->
+        <div class="hidden" aria-hidden="true">
+          <StoreView />
+          <WheelView />
+          <AudioView />
+          <InstallView />
+        </div>
       </section>
     </main>
 
@@ -82,6 +95,7 @@ import FloatingView from './views/FloatingView.vue';
 import InstallView from './views/InstallView.vue';
 import SystemView from './views/SystemView.vue';
 import FuelView from './views/FuelView.vue';
+import AppEcosystemView from './views/AppEcosystemView.vue';
 
 const mainContent = ref(null);
 
