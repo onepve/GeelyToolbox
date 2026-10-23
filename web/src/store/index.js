@@ -158,21 +158,22 @@ export const store = reactive({
       tank_capacity: 45.0,
       default_fuel_type: '92#',
       default_province: '浙江',
-      refuel_threshold_l: 4.0,
       car_id: '',
       bind_token: '',
       cloud_sync_enabled: false
     },
     records: [],
     stats: {
-      total_records: 0,
-      total_spend: 0,
-      total_liters: 0,
+      is_calculable: false,
       avg_consumption: 0,
       cost_per_km: 0,
-      is_calculable: false,
-      status_desc: '需至少2次加满自动核算'
+      total_spend: 0,
+      total_liters: 0,
+      total_records: 0,
+      status_desc: '尚未出账'
     },
+    monthly_stats: []
+  },
     isLoaded: false
   },
   oilPrice: {
@@ -520,6 +521,7 @@ export function loadFuelData() {
       if (data.config) Object.assign(store.fuelLedger.config, data.config);
       if (Array.isArray(data.records)) store.fuelLedger.records = data.records;
       if (data.stats) Object.assign(store.fuelLedger.stats, data.stats);
+      if (Array.isArray(data.monthly_stats)) store.fuelLedger.monthly_stats = data.monthly_stats;
       store.fuelLedger.isLoaded = true;
     }
   } catch (e) {

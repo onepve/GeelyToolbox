@@ -34,6 +34,10 @@ public class FuelManager {
     private static final String FILE_CONFIG = "fuel_config.json";
     private static final String FILE_RECORDS = "fuel_records.json";
 
+    // 车机端防卡顿性能与轻量化门禁限制:
+    // 最多保留最新 30 条流水记录，超出自动滚动淘汰最旧记录 (全量数据由云端 PWA/D1 承接)
+    public static final int MAX_LOCAL_RECORDS = 30;
+
     private static final Object LOCK = new Object();
 
     /**
@@ -127,7 +131,7 @@ public class FuelManager {
     }
 
     /**
-     * 新增一条加油记录
+     * 新增一条加油记录 (自动执行 MAX_LOCAL_RECORDS = 30 轻量化滑动窗口滚动淘汰)
      */
     public static boolean addRecord(Context context, JSONObject record) {
         synchronized (LOCK) {
@@ -144,11 +148,15 @@ public class FuelManager {
                 // 新记录插在最前
                 updated.put(record);
                 for (int i = 0; i < current.length(); i++) {
+                    // 车机本地滑动窗口截断淘汰：只保留最新 30 条，多余的最旧记录从车机内存/存储淘汰
+                    if (updated.length() >= MAX_LOCAL_RECORDS) {
+                        break;
+                    }
                     updated.put(current.getJSONObject(i));
                 }
                 boolean ok = saveRecordsInternal(updated);
                 if (ok) {
-                    AppLogger.i("行程油耗", "成功记录一笔加油台账: " + record.optDouble("liters") + "L (¥" + record.optDouble("actual_paid") + ")");
+                    AppLogger.i("行程油耗", "成功记录一笔加油台账: " + record.optDouble("liters") + "L (¥" + record.optDouble("actual_paid") + ")，当前本地保留: " + updated.length() + "/" + MAX_LOCAL_RECORDS);
                 }
                 return ok;
             } catch (Throwable t) {
@@ -332,6 +340,54 @@ public class FuelManager {
     }
 
     /**
+     * 按月份聚合统计加油与花费清单 (轻量秒算，车机零负担)
+     */
+    public static JSONArray calculateMonthlyStats(JSONArray records) {
+        JSONArray monthlyList = new JSONArray();
+        try {
+            int len = records.length();
+            if (len == 0) return monthlyList;
+
+            // 使用有序 Map 按月份逆序聚合 (最新月份排在前)
+            java.util.Map<String, JSONObject> map = new java.util.LinkedHashMap<>();
+
+            for (int i = 0; i < len; i++) {
+                JSONObject r = records.getJSONObject(i);
+                String dateStr = r.optString("date", "");
+                String monthKey = "近期";
+                if (dateStr.length() >= 7) {
+                    monthKey = dateStr.substring(0, 7); // "2026-10"
+                }
+
+                JSONObject mObj = map.get(monthKey);
+                if (mObj == null) {
+                    mObj = new JSONObject();
+                    mObj.put("month", monthKey);
+                    mObj.put("count", 0);
+                    mObj.put("total_paid", 0.0);
+                    mObj.put("total_liters", 0.0);
+                    map.put(monthKey, mObj);
+                }
+
+                int c = mObj.optInt("count", 0) + 1;
+                double p = mObj.optDouble("total_paid", 0.0) + r.optDouble("actual_paid", r.optDouble("amount", 0.0));
+                double l = mObj.optDouble("total_liters", 0.0) + r.optDouble("liters", 0.0);
+
+                mObj.put("count", c);
+                mObj.put("total_paid", Math.round(p * 100.0) / 100.0);
+                mObj.put("total_liters", Math.round(l * 10.0) / 10.0);
+            }
+
+            for (JSONObject m : map.values()) {
+                monthlyList.put(m);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "聚合月度账单异常: " + t.getMessage());
+        }
+        return monthlyList;
+    }
+
+    /**
      * 组装前台所需完整数据 (包含配置、流水记录列表、统计数据)
      */
     public static String getFullDataJson(Context context) {
@@ -344,6 +400,7 @@ public class FuelManager {
             root.put("config", config);
             root.put("records", records);
             root.put("stats", stats);
+            root.put("monthly_stats", calculateMonthlyStats(records));
             return root.toString();
         } catch (Throwable t) {
             Log.e(TAG, "组装燃油管家完整数据失败: " + t.getMessage());

@@ -210,14 +210,53 @@
       </div>
 
       <!-- 加油记录流水台账列表 (高对比度紧凑列表，拒绝大块空洞卡片) -->
-      <div class="p-4 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col space-y-2">
-        <div class="flex items-center justify-between pb-2 border-b border-car-border/60 text-[13px] text-car-sub font-bold px-2">
-          <span>加油历史台账 (共 {{ store.fuelLedger.records.length }} 笔记录 · 共享持久存储防丢)</span>
-          <span>点击任一记录可随时微调金额、油价、省份或删除</span>
+      <div class="p-4 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col space-y-3">
+        <!-- 月度聚合统计清单 (按月收敛，车机轻量化秒览) -->
+        <div v-if="store.fuelLedger.monthly_stats && store.fuelLedger.monthly_stats.length > 0" class="flex flex-col space-y-1.5 pb-2 border-b border-car-border/60">
+          <div class="flex items-center justify-between text-[13px] text-car-sub font-bold px-1">
+            <span>月度花费汇总清单 (按月聚合)</span>
+            <span class="text-car-accent">点击月份可单月过滤 · 车机最多留存 30 笔精细流水</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2.5">
+            <div 
+              @click="toggleMonthFilter('')"
+              class="px-3.5 py-2 rounded-xl border cursor-pointer transition-all flex items-center justify-between"
+              :class="selectedMonth === '' ? 'bg-car-accent-light border-car-accent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
+            >
+              <div class="flex flex-col">
+                <span class="text-[14px] font-black leading-tight">全部流水</span>
+                <span class="text-[11.5px] text-car-sub font-bold mt-0.5">本地共 {{ store.fuelLedger.records.length }} 笔</span>
+              </div>
+              <span class="text-[13px] font-mono font-black">¥{{ store.fuelLedger.stats.total_spend || '0.0' }}</span>
+            </div>
+
+            <div 
+              v-for="m in store.fuelLedger.monthly_stats" 
+              :key="m.month"
+              @click="toggleMonthFilter(m.month)"
+              class="px-3.5 py-2 rounded-xl border cursor-pointer transition-all flex items-center justify-between"
+              :class="selectedMonth === m.month ? 'bg-car-accent-light border-car-accent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
+            >
+              <div class="flex flex-col">
+                <div class="flex items-center space-x-1">
+                  <span class="text-[14px] font-black leading-tight">{{ m.month }}</span>
+                  <span class="text-[11px] px-1.5 py-0.2 rounded bg-car-card border border-car-border text-car-sub font-bold">{{ m.count }}次</span>
+                </div>
+                <span class="text-[11.5px] text-car-sub font-bold mt-0.5">共加 {{ m.total_liters }} L</span>
+              </div>
+              <span class="text-[14px] font-mono font-black text-car-accent">¥{{ m.total_paid }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pb-1 text-[13px] text-car-sub font-bold px-1">
+          <span>{{ selectedMonth ? `【${selectedMonth}】详细流水 (${filteredRecords.length} 笔)` : `近期加油流水 (${filteredRecords.length} 笔 · 滚动防卡顿)` }}</span>
+          <span>点击任一记录可微调金额、油价、省份或删除</span>
         </div>
 
         <!-- 空状态提示 -->
-        <div v-if="!store.fuelLedger.records || store.fuelLedger.records.length === 0" class="py-12 flex flex-col items-center justify-center space-y-3 text-center">
+        <div v-if="!filteredRecords || filteredRecords.length === 0" class="py-12 flex flex-col items-center justify-center space-y-3 text-center">
           <div class="w-12 h-12 rounded-full bg-car-item border border-car-border flex items-center justify-center text-car-sub text-[22px]">
             ⛽
           </div>
@@ -229,7 +268,7 @@
 
         <!-- 紧凑流水列表条目 (高度 58px) -->
         <div 
-          v-for="rec in store.fuelLedger.records" 
+          v-for="rec in filteredRecords" 
           :key="rec.id"
           @click="openEditRecordModal(rec)"
           class="min-h-[58px] px-4 py-2 rounded-2xl bg-car-item border border-car-border hover:border-car-accent/60 cursor-pointer transition-all flex items-center justify-between shadow-sm"
@@ -649,6 +688,23 @@ const fuelTabs = [
   { id: 'price', name: '实时油价日历', tag: '发改委限价' },
   { id: 'trip', name: '单次行程油耗', tag: '行车账单' }
 ];
+
+// 月度聚合与单月过滤状态
+const selectedMonth = ref('');
+
+function toggleMonthFilter(month) {
+  if (selectedMonth.value === month) {
+    selectedMonth.value = '';
+  } else {
+    selectedMonth.value = month;
+  }
+}
+
+const filteredRecords = computed(() => {
+  const all = store.fuelLedger.records || [];
+  if (!selectedMonth.value) return all;
+  return all.filter(r => (r.date || '').startsWith(selectedMonth.value));
+});
 
 // 全国所有省份名称列表 (支持跑长途异地加油单价)
 const allProvinceNames = [
