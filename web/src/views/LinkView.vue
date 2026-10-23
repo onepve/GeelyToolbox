@@ -286,160 +286,158 @@
       </div>
     </div>
 
-    <!-- 6. 车载网络与外设连接中枢 (三合一状态控制与开机就绪自检策略) -->
-    <div class="bg-car-card border-2 border-car-border rounded-2xl p-6 shadow-xl flex flex-col space-y-5 transition-all">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <StatusDot size="lg" color="ok" :glow-px="6" class="shadow-md" />
-          <span class="text-[22px] font-black text-car-text tracking-wide whitespace-nowrap">车载网络与外设连接中枢</span>
-          <span class="px-3 py-1 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent inline-flex items-center shrink-0 shadow-sm">
-            连接策略
-          </span>
-          <HelpDot size="sm" @click="showHelp('network_policy')" />
+    <!-- 6. 车载网络与外设连接中枢 (一行三卡片车规栅格：Wi-Fi / 热点 / 蓝牙) -->
+    <div class="grid grid-cols-3 gap-4">
+      <!-- 卡片 1: 车载 Wi-Fi -->
+      <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl flex flex-col justify-between transition-all duration-200">
+        <!-- 头部 -->
+        <div class="flex items-center justify-between shrink-0 mb-3">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[20px] font-black text-car-text tracking-wide">车载 Wi-Fi</span>
+            <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">无线网络</span>
+            <HelpDot size="sm" @click="showHelp('network_policy')" />
+          </div>
         </div>
-        <div class="text-[14px] text-car-sub font-bold">
-          后台硬件自检就绪即拉起 · 免手动等待
+
+        <!-- 中部：状态与开机策略 -->
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2">
+          <div class="text-[14px] text-car-sub font-bold leading-relaxed">
+            {{ store.networkDevice.wifi_enabled ? '正在运行 · 可扫描并连接外部网络' : '已关闭 · 停止后台扫描以节省系统算力' }}
+          </div>
+
+          <!-- 开机策略三选一 -->
+          <div class="flex flex-col space-y-1.5 p-3 rounded-2xl bg-car-item border border-car-border">
+            <span class="text-[12.5px] font-black text-car-sub">开机自启策略:</span>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button
+                v-for="item in policyOptions"
+                :key="'wifi_' + item.value"
+                @click="changeBootPolicy('wifi', item.value)"
+                :class="[
+                  'h-[50px] rounded-xl font-black text-[14px] cursor-pointer transition-all border-2 text-center flex items-center justify-center',
+                  store.networkDevice.wifi_policy === item.value
+                    ? 'bg-car-card border-car-accent text-car-accent shadow-sm'
+                    : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+                ]"
+              >
+                {{ item.label }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部标准点击式大开关 -->
+        <div class="pt-4 border-t border-car-border/60 shrink-0">
+          <BaseButton
+            variant="planToggle"
+            :active="store.networkDevice.wifi_enabled"
+            @click="toggleDeviceDirect('wifi')"
+          >
+            <StatusDot size="sm" :color="store.networkDevice.wifi_enabled ? 'accent' : 'sub'" :glow-px="6" />
+            <span>{{ store.networkDevice.wifi_enabled ? 'Wi-Fi 已开启' : 'Wi-Fi 已关闭' }}</span>
+          </BaseButton>
         </div>
       </div>
 
-      <!-- 三大通道控制矩阵 -->
-      <div class="flex flex-col space-y-3.5">
-        <!-- 通道 1: 车载 Wi-Fi -->
-        <div class="flex items-center justify-between p-4 rounded-xl bg-car-item border border-car-border">
-          <div class="flex items-center space-x-3.5 w-[240px] shrink-0">
-            <StatusDot size="md" :color="store.networkDevice.wifi_enabled ? 'ok' : 'off'" />
-            <div class="flex flex-col">
-              <span class="text-[17.5px] font-black text-car-text tracking-wide">车载 Wi-Fi</span>
-              <span class="text-[13px] font-bold text-car-sub mt-0.5">
-                {{ store.networkDevice.wifi_enabled ? '正在运行 / 可连接' : '已关闭' }}
-              </span>
-            </div>
-          </div>
-
-          <!-- 手动即时切换 -->
-          <div class="shrink-0 w-[130px]">
-            <button
-              @click="toggleDeviceDirect('wifi')"
-              :class="[
-                'w-full h-[50px] px-3 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center justify-center',
-                store.networkDevice.wifi_enabled
-                  ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              <span>{{ store.networkDevice.wifi_enabled ? '已开启' : '已关闭' }}</span>
-            </button>
-          </div>
-
-          <!-- 开机自启策略单选胶囊 -->
-          <div class="flex items-center space-x-2 shrink-0">
-            <span class="text-[13.5px] text-car-sub font-bold mr-1">开机策略:</span>
-            <button
-              v-for="item in policyOptions"
-              :key="'wifi_' + item.value"
-              @click="changeBootPolicy('wifi', item.value)"
-              :class="[
-                'h-[50px] min-w-[84px] px-4 rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2',
-                store.networkDevice.wifi_policy === item.value
-                  ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              {{ item.label }}
-            </button>
+      <!-- 卡片 2: 车机热点分享 -->
+      <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl flex flex-col justify-between transition-all duration-200">
+        <!-- 头部 -->
+        <div class="flex items-center justify-between shrink-0 mb-3">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[20px] font-black text-car-text tracking-wide">车机热点分享</span>
+            <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">网络共享</span>
+            <HelpDot size="sm" @click="showHelp('network_policy')" />
           </div>
         </div>
 
-        <!-- 通道 2: 车机热点分享 (AP) -->
-        <div class="flex items-center justify-between p-4 rounded-xl bg-car-item border border-car-border">
-          <div class="flex items-center space-x-3.5 w-[240px] shrink-0">
-            <StatusDot size="md" :color="store.networkDevice.hotspot_enabled ? 'ok' : 'off'" />
-            <div class="flex flex-col">
-              <span class="text-[17.5px] font-black text-car-text tracking-wide">车机热点分享</span>
-              <span class="text-[13px] font-bold text-car-sub mt-0.5">
-                {{ store.networkDevice.hotspot_enabled ? '正在广播热点' : '已关闭' }}
-              </span>
+        <!-- 中部：状态与开机策略 -->
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2">
+          <div class="text-[14px] text-car-sub font-bold leading-relaxed">
+            {{ store.networkDevice.hotspot_enabled ? '正在广播热点 · 手机或行车记录仪可直连' : '已关闭 · 未开启车载热点网络共享' }}
+          </div>
+
+          <!-- 开机策略三选一 -->
+          <div class="flex flex-col space-y-1.5 p-3 rounded-2xl bg-car-item border border-car-border">
+            <span class="text-[12.5px] font-black text-car-sub">开机自启策略:</span>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button
+                v-for="item in policyOptions"
+                :key="'ap_' + item.value"
+                @click="changeBootPolicy('hotspot', item.value)"
+                :class="[
+                  'h-[50px] rounded-xl font-black text-[14px] cursor-pointer transition-all border-2 text-center flex items-center justify-center',
+                  store.networkDevice.hotspot_policy === item.value
+                    ? 'bg-car-card border-car-accent text-car-accent shadow-sm'
+                    : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+                ]"
+              >
+                {{ item.label }}
+              </button>
             </div>
-          </div>
-
-          <!-- 手动即时切换 -->
-          <div class="shrink-0 w-[130px]">
-            <button
-              @click="toggleDeviceDirect('hotspot')"
-              :class="[
-                'w-full h-[50px] px-3 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center justify-center',
-                store.networkDevice.hotspot_enabled
-                  ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              <span>{{ store.networkDevice.hotspot_enabled ? '已开启' : '已关闭' }}</span>
-            </button>
-          </div>
-
-          <!-- 开机自启策略单选胶囊 -->
-          <div class="flex items-center space-x-2 shrink-0">
-            <span class="text-[13.5px] text-car-sub font-bold mr-1">开机策略:</span>
-            <button
-              v-for="item in policyOptions"
-              :key="'ap_' + item.value"
-              @click="changeBootPolicy('hotspot', item.value)"
-              :class="[
-                'h-[50px] min-w-[84px] px-4 rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2',
-                store.networkDevice.hotspot_policy === item.value
-                  ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              {{ item.label }}
-            </button>
           </div>
         </div>
 
-        <!-- 通道 3: 车载蓝牙外设 -->
-        <div class="flex items-center justify-between p-4 rounded-xl bg-car-item border border-car-border">
-          <div class="flex items-center space-x-3.5 w-[240px] shrink-0">
-            <StatusDot size="md" :color="store.networkDevice.bluetooth_enabled ? 'ok' : 'off'" />
-            <div class="flex flex-col">
-              <span class="text-[17.5px] font-black text-car-text tracking-wide">车载蓝牙</span>
-              <span class="text-[13px] font-bold text-car-sub mt-0.5">
-                {{ store.networkDevice.bluetooth_enabled ? '正在运行 / 可连接' : '已关闭' }}
-              </span>
+        <!-- 底部标准点击式大开关 -->
+        <div class="pt-4 border-t border-car-border/60 shrink-0">
+          <BaseButton
+            variant="planToggle"
+            :active="store.networkDevice.hotspot_enabled"
+            @click="toggleDeviceDirect('hotspot')"
+          >
+            <StatusDot size="sm" :color="store.networkDevice.hotspot_enabled ? 'accent' : 'sub'" :glow-px="6" />
+            <span>{{ store.networkDevice.hotspot_enabled ? '热点分享已开启' : '热点分享已关闭' }}</span>
+          </BaseButton>
+        </div>
+      </div>
+
+      <!-- 卡片 3: 车载蓝牙外设 -->
+      <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl flex flex-col justify-between transition-all duration-200">
+        <!-- 头部 -->
+        <div class="flex items-center justify-between shrink-0 mb-3">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[20px] font-black text-car-text tracking-wide">车载蓝牙</span>
+            <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">车载外设</span>
+            <HelpDot size="sm" @click="showHelp('network_policy')" />
+          </div>
+        </div>
+
+        <!-- 中部：状态与开机策略 -->
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2">
+          <div class="text-[14px] text-car-sub font-bold leading-relaxed">
+            {{ store.networkDevice.bluetooth_enabled ? '正在运行 · 可连接手机进行通话与音乐' : '已关闭 · 彻底避免手机消息打扰车机' }}
+          </div>
+
+          <!-- 开机策略三选一 -->
+          <div class="flex flex-col space-y-1.5 p-3 rounded-2xl bg-car-item border border-car-border">
+            <span class="text-[12.5px] font-black text-car-sub">开机自启策略:</span>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button
+                v-for="item in policyOptions"
+                :key="'bt_' + item.value"
+                @click="changeBootPolicy('bluetooth', item.value)"
+                :class="[
+                  'h-[50px] rounded-xl font-black text-[14px] cursor-pointer transition-all border-2 text-center flex items-center justify-center',
+                  store.networkDevice.bluetooth_policy === item.value
+                    ? 'bg-car-card border-car-accent text-car-accent shadow-sm'
+                    : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+                ]"
+              >
+                {{ item.label }}
+              </button>
             </div>
           </div>
+        </div>
 
-          <!-- 手动即时切换 -->
-          <div class="shrink-0 w-[130px]">
-            <button
-              @click="toggleDeviceDirect('bluetooth')"
-              :class="[
-                'w-full h-[50px] px-3 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center justify-center',
-                store.networkDevice.bluetooth_enabled
-                  ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              <span>{{ store.networkDevice.bluetooth_enabled ? '已开启' : '已关闭' }}</span>
-            </button>
-          </div>
-
-          <!-- 开机自启策略单选胶囊 -->
-          <div class="flex items-center space-x-2 shrink-0">
-            <span class="text-[13.5px] text-car-sub font-bold mr-1">开机策略:</span>
-            <button
-              v-for="item in policyOptions"
-              :key="'bt_' + item.value"
-              @click="changeBootPolicy('bluetooth', item.value)"
-              :class="[
-                'h-[50px] min-w-[84px] px-4 rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2',
-                store.networkDevice.bluetooth_policy === item.value
-                  ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-                  : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              {{ item.label }}
-            </button>
-          </div>
+        <!-- 底部标准点击式大开关 -->
+        <div class="pt-4 border-t border-car-border/60 shrink-0">
+          <BaseButton
+            variant="planToggle"
+            :active="store.networkDevice.bluetooth_enabled"
+            @click="toggleDeviceDirect('bluetooth')"
+          >
+            <StatusDot size="sm" :color="store.networkDevice.bluetooth_enabled ? 'accent' : 'sub'" :glow-px="6" />
+            <span>{{ store.networkDevice.bluetooth_enabled ? '蓝牙已开启' : '蓝牙已关闭' }}</span>
+          </BaseButton>
         </div>
       </div>
     </div>
