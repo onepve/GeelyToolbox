@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col space-y-4">
-    <!-- 顶部车规二级分段胶囊：一页全景掌控 -->
-    <SubTabs :tabs="wheelTabs" v-model="activeTab" />
+    <!-- 顶部车规二级分段胶囊：一页全景掌控 (支持外部统一接管隐藏) -->
+    <SubTabs v-if="!hideSubTabs" :tabs="wheelTabs" v-model="activeTab" />
 
     <!-- 核心：方向盘按键方控接管总开关 (置顶常驻) -->
     <!-- 核心：方向盘按键方控接管总开关 - 核心功能首屏 (左右分栏车规黄金磁贴) -->
@@ -171,25 +171,25 @@
         />
       </div>
 
-      <!-- 仪表盘与屏保显示扩展 (独立开关·默认关闭) -->
-      <div class="mt-4 pt-4 border-t border-car-border/60 flex flex-col space-y-4">
+      <!-- 仪表盘与屏保显示扩展 (左右对称双卡，彻底消除纵向拉长) -->
+      <div class="mt-4 pt-4 border-t border-car-border/60 grid grid-cols-2 gap-4 items-stretch">
         <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border-2 border-car-border">
-          <div class="flex flex-col space-y-1">
+          <div class="flex flex-col space-y-1 pr-3">
             <span class="text-[17px] font-black text-car-text">息屏时钟显示音乐卡片</span>
-            <span class="text-[14px] text-car-sub font-bold">息屏或显示原厂时钟屏保时，自动展示当前播放的歌名与歌手。</span>
+            <span class="text-[13px] text-car-sub font-bold">息屏/时钟屏保时展示当前歌名歌手</span>
           </div>
           <BaseButton variant="pill" :active="store.vehicleAuto.wheel_push_playback_cluster" @click="toggleClusterPlayback">
-            {{ store.vehicleAuto.wheel_push_playback_cluster ? '已开启 (显示卡片)' : '已关闭 (默认纯净)' }}
+            {{ store.vehicleAuto.wheel_push_playback_cluster ? '已开启' : '已关闭' }}
           </BaseButton>
         </div>
 
         <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border-2 border-car-border">
-          <div class="flex flex-col space-y-1">
+          <div class="flex flex-col space-y-1 pr-3">
             <span class="text-[17px] font-black text-car-text">液晶仪表盘同步滚动歌词</span>
-            <span class="text-[14px] text-car-sub font-bold">向全液晶仪表盘中间卡片推送实时滚动歌词，默认关闭防视觉打扰。</span>
+            <span class="text-[13px] text-car-sub font-bold">向仪表盘中间卡片推送实时歌词</span>
           </div>
           <BaseButton variant="pill" :active="store.vehicleAuto.wheel_push_lyrics_cluster" @click="toggleClusterLyrics">
-            {{ store.vehicleAuto.wheel_push_lyrics_cluster ? '已开启 (推送歌词)' : '已关闭 (默认纯净)' }}
+            {{ store.vehicleAuto.wheel_push_lyrics_cluster ? '已开启' : '已关闭' }}
           </BaseButton>
         </div>
       </div>
@@ -286,7 +286,7 @@
 
 
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
 import { useWheelGesture } from '../composables/useWheelGesture';
 import SubTabs from '../components/SubTabs.vue';
@@ -301,11 +301,26 @@ import WheelGestureCard from '../components/WheelGestureCard.vue';
 import wheelGuideImg from '../assets/steering_wheel_guide.webp';
 import wheelGuideFloatingImg from '../assets/steering_wheel_guide_floating.svg';
 
-const activeTab = ref('keys');
+const props = defineProps({
+  initialTab: {
+    type: String,
+    default: 'keys'
+  },
+  hideSubTabs: {
+    type: Boolean,
+    default: false
+  }
+});
+
+const activeTab = ref(props.initialTab || 'keys');
 const wheelTabs = [
   { id: 'keys', name: '按键映射手势', tag: '6大按键' },
   { id: 'mode', name: '接管模式与图解', tag: '工作模式' }
 ];
+
+watch(() => props.initialTab, (v) => {
+  if (v) activeTab.value = v;
+});
 
 const showDiagram = ref(true);
 

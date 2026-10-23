@@ -3,9 +3,9 @@
     <!-- 顶部车规二级分段胶囊：一页全景掌控，消灭长滑 -->
     <SubTabs :tabs="linkTabs" v-model="activeTab" />
 
-    <!-- 0. 方向盘按键接管与独立映射 (v-if 彻底杜绝幽灵重叠) -->
-    <div v-if="activeTab === 'wheel'" class="flex flex-col space-y-4">
-      <WheelView />
+    <!-- 0. 方向盘按键接管与独立映射 (v-if 彻底杜绝幽灵重叠，传递 tab 参数消除第三级嵌套) -->
+    <div v-if="activeTab === 'wheel_keys' || activeTab === 'wheel_mode'" class="flex flex-col space-y-4">
+      <WheelView :initial-tab="activeTab === 'wheel_mode' ? 'mode' : 'keys'" :hide-sub-tabs="true" />
     </div>
 
     <!-- 1. 360全景联动 (双大卡片，一屏收尽) -->
@@ -283,7 +283,7 @@
       <!-- 进隧道大灯联动高德日夜模式 (高德 7.5 经典通道) -->
       <PlanCard
         title="进隧道大灯联动高德"
-        tag="高德7.5"
+        tag="日夜深浅"
         help-text="light_nav"
         flow-sub="白天行车开启前大灯（驶入地下车库或长隧道）"
         flow-main="秒级切为夜间深色导航；关大灯自动恢复白天浅色"
@@ -512,9 +512,10 @@ import StatusDot from '../components/StatusDot.vue';
 import HelpDot from '../components/HelpDot.vue';
 import WheelView from './WheelView.vue';
 
-const activeTab = ref('wheel');
+const activeTab = ref('wheel_keys');
 const linkTabs = [
-  { id: 'wheel', name: '按键独立映射', tag: '方向盘接管' },
+  { id: 'wheel_keys', name: '按键映射手势', tag: '6大按键' },
+  { id: 'wheel_mode', name: '接管模式图解', tag: '工作模式' },
   { id: '360', name: '360全景联动', tag: 'D挡/转向灯' },
   { id: 'speed', name: '车速与大灯', tag: '车速/大灯' },
   { id: 'network', name: '网络与外设', tag: 'Wi-Fi/蓝牙' }
@@ -727,8 +728,8 @@ function showHelp(key) {
     },
     light_nav: {
       title: '【功能指南】进隧道大灯联动高德',
-      desc: '1. 自动深色护眼：\\n白天开大灯（进地下车库或长隧道）时，毫秒级向高德地图发送夜间模式指令，自动切换为深色黑底，告别刺眼白屏。\\n\\n2. 出隧道自动恢复：\\n出隧道或离开地库关闭大灯后，自动恢复白天清爽浅色地图。\\n\\n3. 版本适配说明：\\n本功能针对【高德地图 7.5 经典版】深度适配完美生效。',
-      tip: '使用高德 7.5 的车友强烈推荐开启。'
+      desc: '1. 自动深色护眼：\n白天开大灯（进地下车库或长隧道）时，毫秒级向高德地图发送夜间模式指令，自动切换为深色黑底，告别刺眼白屏。\n\n2. 出隧道自动恢复：\n出隧道或离开地库关闭大灯后，自动恢复白天清爽浅色地图。\n\n3. 版本适配说明：\n本功能针对高德地图 7.5 经典版深度适配生效。',
+      tip: '使用高德 7.5 经典版的车友推荐开启。'
     },
     turn_signal_360: {
       title: '【功能指南】转向灯开启联动 360',

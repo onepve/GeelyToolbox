@@ -223,6 +223,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             registerReceiver(packageChangeReceiver, pkgFilter);
         } catch (Exception ignored) {}
         AppLogger.i("应用启动", "缤越助手界面启动完成");
+
+        // 若是由开机自启静默预热唤起的，立即移入后台，完成渲染准备但不打扰当前屏幕
+        if (getIntent() != null && getIntent().getBooleanExtra("silent_boot_preload", false)) {
+            AppLogger.i("应用启动", "开机静默预热：已提前绘制就绪，静默退至后台待命");
+            moveTaskToBack(true);
+        }
+
         // 启动错峰：包名扫描与白名单探测等重型后台任务延后 20 秒错峰执行，确保前台界面与车门/挡位联动 100% 独占 CPU 与流畅响应
         mainHandler.postDelayed(new Runnable() {
             @Override

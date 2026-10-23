@@ -97,6 +97,14 @@ public class BootReceiver extends BroadcastReceiver {
             @Override
             public void run() {
                 try {
+                    // 后台静默预热 MainActivity：在用户登车点火时提前将界面渲染树与 WebView 画好，用户打开时 0ms 瞬间秒现
+                    try {
+                        Intent warmUpIntent = new Intent(context, MainActivity.class);
+                        warmUpIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                        warmUpIntent.putExtra("silent_boot_preload", true);
+                        context.startActivity(warmUpIntent);
+                    } catch (Throwable ignored) {}
+
                     SharedPreferences prefs = app.onepve.geelyconsole.utils.PrefUtils.getAppPreferences(context);
                     boolean autostartEnabled = prefs.getBoolean("autostart_enabled", false);
                     boolean tempAutostartForRabbit = prefs.getBoolean("temp_autostart_for_rabbit", false);
