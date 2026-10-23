@@ -54,7 +54,7 @@
       </div>
 
       <!-- 提示 -->
-      <div class="text-[14px] text-car-text font-bold px-1 bg-car-item/70 p-3 rounded-xl border border-car-border/60">
+      <div class="text-[14px] text-car-text font-bold px-1 leading-relaxed">
         提示：点击【不再提醒】后，前台将不再自动弹出升级提示。后续可随时进入【设置 ➔ 关于】手动检查更新或恢复自动检测。
       </div>
     </div>
