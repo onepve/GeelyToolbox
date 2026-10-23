@@ -204,6 +204,42 @@ public class NetworkPolicyManager {
             obj.put("wifi_policy", wifiPol);
             obj.put("hotspot_policy", apPol);
             obj.put("bluetooth_policy", btPol);
+
+            // 获取当前连接的 Wi-Fi SSID
+            String wifiSsid = "未连接外部网络";
+            if (wifiCur && ctx != null) {
+                try {
+                    WifiManager wm = (WifiManager) ctx.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                    if (wm != null) {
+                        android.net.wifi.WifiInfo info = wm.getConnectionInfo();
+                        if (info != null && info.getNetworkId() != -1) {
+                            String s = info.getSSID();
+                            if (s != null && !s.isEmpty() && !"<unknown ssid>".equals(s)) {
+                                wifiSsid = s.replace("\"", "");
+                            }
+                        }
+                    }
+                } catch (Throwable ignored) {}
+            }
+            obj.put("wifi_ssid", wifiSsid);
+
+            // 获取当前连接的蓝牙设备名 (A2DP已连接时获取)
+            String btDeviceName = "未连接设备";
+            if (btCur) {
+                try {
+                    BluetoothAdapter ba = BluetoothAdapter.getDefaultAdapter();
+                    if (ba != null && ba.getProfileConnectionState(11) == 2) {
+                        java.util.Set<android.bluetooth.BluetoothDevice> bonded = ba.getBondedDevices();
+                        if (bonded != null) {
+                            for (android.bluetooth.BluetoothDevice dev : bonded) {
+                                btDeviceName = dev.getName();
+                                break;
+                            }
+                        }
+                    }
+                } catch (Throwable ignored) {}
+            }
+            obj.put("bluetooth_device_name", btDeviceName);
         } catch (Exception ignored) {}
         return obj;
     }

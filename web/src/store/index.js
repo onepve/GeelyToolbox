@@ -107,7 +107,9 @@ export const store = reactive({
     bluetooth_enabled: false,
     wifi_policy: 0,       // 0: 保持现状, 1: 默认开启, 2: 默认关闭
     hotspot_policy: 0,
-    bluetooth_policy: 0
+    bluetooth_policy: 0,
+    wifi_ssid: '未连接外部网络',
+    bluetooth_device_name: '未连接设备'
   },
 
   // 云端应用与下载
@@ -458,6 +460,14 @@ export function setNetworkBootPolicy(type, policy) {
 export function toggleNetworkDeviceDirect(type, enable) {
   store.networkDevice[`${type}_enabled`] = enable;
   bridge.call('setNetworkDeviceDirect', type, enable);
+}
+
+export function openDeviceSettings(type) {
+  const nameMap = { wifi: 'Wi-Fi', hotspot: '热点分享', bluetooth: '蓝牙' };
+  showToast(`正在打开原厂系统 ${nameMap[type] || '连接'} 设置...`);
+  if (type === 'wifi') bridge.call('openWifiSettings');
+  else if (type === 'hotspot') bridge.call('openHotspotSettings');
+  else if (type === 'bluetooth' || type === 'bt') bridge.call('openBluetoothSettings');
 }
 
 if (typeof window !== 'undefined') {

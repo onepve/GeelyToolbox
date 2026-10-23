@@ -3210,6 +3210,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public void openHotspotSettings() {
+            openSystemSettingsPage("android.settings.TETHER_SETTINGS");
+        }
+
+        @JavascriptInterface
         public String forceActivateBluetoothChannel() {
             EasMediaBridge.getInstance(MainActivity.this).activateBluetoothChannel();
             showToast("已强制选通 2 号蓝牙物理声道");

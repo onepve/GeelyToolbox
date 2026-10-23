@@ -297,12 +297,24 @@
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">无线网络</span>
             <HelpDot size="sm" @click="showHelp('network_policy')" />
           </div>
+          <button
+            @click="openSettings('wifi')"
+            class="h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text font-black text-[14.5px] cursor-pointer transition-all flex items-center space-x-1.5 shrink-0 shadow-sm"
+          >
+            <span>系统设置</span>
+            <svg class="w-4 h-4 text-car-sub" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
         </div>
 
         <!-- 中部：状态与开机策略 -->
         <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2">
-          <div class="text-[14px] text-car-sub font-bold leading-relaxed">
-            {{ store.networkDevice.wifi_enabled ? '正在运行 · 可扫描并连接外部网络' : '已关闭 · 停止后台扫描以节省系统算力' }}
+          <div class="text-[15.5px] leading-relaxed truncate font-mono">
+            <span class="text-car-sub font-bold">网络: </span>
+            <span class="text-car-text font-black">
+              {{ store.networkDevice.wifi_enabled ? (store.networkDevice.wifi_ssid && store.networkDevice.wifi_ssid !== '未连接外部网络' ? store.networkDevice.wifi_ssid : '未连接热点') : '已关闭 (省电)' }}
+            </span>
           </div>
 
           <!-- 开机策略三选一 -->
@@ -348,12 +360,24 @@
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">网络共享</span>
             <HelpDot size="sm" @click="showHelp('network_policy')" />
           </div>
+          <button
+            @click="openSettings('hotspot')"
+            class="h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text font-black text-[14.5px] cursor-pointer transition-all flex items-center space-x-1.5 shrink-0 shadow-sm"
+          >
+            <span>系统设置</span>
+            <svg class="w-4 h-4 text-car-sub" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
         </div>
 
         <!-- 中部：状态与开机策略 -->
         <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2">
-          <div class="text-[14px] text-car-sub font-bold leading-relaxed">
-            {{ store.networkDevice.hotspot_enabled ? '正在广播热点 · 手机或行车记录仪可直连' : '已关闭 · 未开启车载热点网络共享' }}
+          <div class="text-[15.5px] leading-relaxed truncate font-mono">
+            <span class="text-car-sub font-bold">广播: </span>
+            <span class="text-car-text font-black">
+              {{ store.networkDevice.hotspot_enabled ? '车载热点正在运行' : '已关闭 (未广播)' }}
+            </span>
           </div>
 
           <!-- 开机策略三选一 -->
@@ -399,12 +423,24 @@
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">车载外设</span>
             <HelpDot size="sm" @click="showHelp('network_policy')" />
           </div>
+          <button
+            @click="openSettings('bluetooth')"
+            class="h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text font-black text-[14.5px] cursor-pointer transition-all flex items-center space-x-1.5 shrink-0 shadow-sm"
+          >
+            <span>系统设置</span>
+            <svg class="w-4 h-4 text-car-sub" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
         </div>
 
         <!-- 中部：状态与开机策略 -->
         <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2">
-          <div class="text-[14px] text-car-sub font-bold leading-relaxed">
-            {{ store.networkDevice.bluetooth_enabled ? '正在运行 · 可连接手机进行通话与音乐' : '已关闭 · 彻底避免手机消息打扰车机' }}
+          <div class="text-[15.5px] leading-relaxed truncate font-mono">
+            <span class="text-car-sub font-bold">设备: </span>
+            <span class="text-car-text font-black">
+              {{ store.networkDevice.bluetooth_enabled ? (store.networkDevice.bluetooth_device_name && store.networkDevice.bluetooth_device_name !== '未连接设备' ? store.networkDevice.bluetooth_device_name : '未连接设备') : '已关闭 (不打扰)' }}
+            </span>
           </div>
 
           <!-- 开机策略三选一 -->
@@ -449,7 +485,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { 
   store, bridge, showToast, openModal, getInstalledMusicAppsCached,
-  setNetworkBootPolicy, toggleNetworkDeviceDirect, initNetworkDeviceStatus 
+  setNetworkBootPolicy, toggleNetworkDeviceDirect, initNetworkDeviceStatus,
+  openDeviceSettings
 } from '../store';
 import PlanCard from '../components/PlanCard.vue';
 import BaseButton from '../components/BaseButton.vue';
@@ -480,6 +517,14 @@ const changeBootPolicy = (type, val) => {
   const nameMap = { wifi: 'Wi-Fi', hotspot: '热点分享', bluetooth: '蓝牙' };
   const polMap = { 0: '保持现状', 1: '默认开启', 2: '默认关闭' };
   showToast(`已设置 ${nameMap[type]} 开机策略为：${polMap[val]}`);
+};
+
+let settingsLockUntil = 0;
+const openSettings = (type) => {
+  const now = Date.now();
+  if (now < settingsLockUntil) return;
+  settingsLockUntil = now + 900;
+  openDeviceSettings(type);
 };
 
 const toggleTurnSignal360 = () => {
