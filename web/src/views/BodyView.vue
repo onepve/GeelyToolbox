@@ -1,5 +1,9 @@
 <template>
   <div class="flex flex-col space-y-4">
+    <!-- 顶部车规二级分段胶囊：一页全景掌控 -->
+    <SubTabs :tabs="voiceTabs" v-model="activeTab" />
+
+    <!-- 核心：全车语音播报总开关 (置顶常驻) -->
     <!-- 核心：全车语音播报总开关 - 核心功能首屏 (左右分栏车规黄金磁贴 · 完全对齐方控总开关) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
@@ -36,8 +40,9 @@
       </div>
     </div>
 
-    <!-- 语音提示列表：车规双列网格，一屏尽览四大场景 -->
-    <div class="grid grid-cols-2 gap-4">
+
+    <!-- Tab 1: 行车动态播报 (换挡 + 驾驶模式，v-if 彻底杜绝幽灵重叠) -->
+    <div v-if="activeTab === 'motion'" class="grid grid-cols-2 gap-4 items-stretch">
       <!-- 语音提示 1：换挡安全播报 -->
       <PlanCard
         title="1. 换挡语音提示"
@@ -86,6 +91,10 @@
         </template>
       </PlanCard>
 
+    </div>
+
+    <!-- Tab 2: 车门迎宾安全 (四门 + 尾门，v-if 彻底杜绝幽灵重叠) -->
+    <div v-if="activeTab === 'doors'" class="grid grid-cols-2 gap-4 items-stretch">
       <!-- 语音提示 3：车门迎宾与关门安全播报 -->
       <PlanCard
         title="3. 车门迎宾与安全提示"
@@ -133,8 +142,11 @@
           </div>
         </template>
       </PlanCard>
+
     </div>
 
+    <!-- Tab 3: 专车主题语音包 (整套换装中枢，v-if 彻底杜绝幽灵重叠) -->
+    <div v-if="activeTab === 'packs'" class="flex flex-col space-y-4">
     <!-- 进阶管理: 车载专属语音主题包中枢 (位于四大核心卡片下方) -->
     <FeatureCard 
       id="voice_theme_mgr"
@@ -278,6 +290,9 @@
       </div>
     </FeatureCard>
 
+
+    </div>
+
     <!-- 挡位细分配置二级向导 → 独立组件（二级向导） -->
     <GearConfigModal v-if="showGearModal" @close="showGearModal = false" />
 
@@ -295,6 +310,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { store, bridge, showToast, openModal } from '../store';
+import SubTabs from '../components/SubTabs.vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import PlanCard from '../components/PlanCard.vue';
 import BaseButton from '../components/BaseButton.vue';
@@ -304,6 +320,13 @@ import ModeConfigModal from '../components/ModeConfigModal.vue';
 import DoorConfigModal from '../components/DoorConfigModal.vue';
 import TrunkConfigModal from '../components/TrunkConfigModal.vue';
 
+
+const activeTab = ref('motion');
+const voiceTabs = [
+  { id: 'motion', name: '行车动态播报', tag: '换挡/模式' },
+  { id: 'doors', name: '车门迎宾安全', tag: '五门安全' },
+  { id: 'packs', name: '专车主题语音包', tag: '整套换装' }
+];
 
 const showGearModal = ref(false);
 const showModeModal = ref(false);

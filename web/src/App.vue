@@ -207,7 +207,10 @@ onMounted(() => {
       if (typeof data.expert_rabbit_enabled === 'boolean') store.settings.expert_rabbit = data.expert_rabbit_enabled;
       if (typeof data.silent_appstore_freeze === 'boolean') store.settings.silent_appstore_freeze = data.silent_appstore_freeze;
       if (typeof data.adb_master_switch === 'boolean') store.deviceInfo.adb_master_switch = data.adb_master_switch;
-      if (data.app_icon_style) store.deviceInfo.app_icon_style = data.app_icon_style;
+      if (data.app_icon_style) {
+        store.deviceInfo.app_icon_style = data.app_icon_style;
+        try { localStorage.setItem('toolbox_app_icon_style', data.app_icon_style); } catch (e) {}
+      }
       if (typeof data.is_binyue_cool_model === 'boolean') store.deviceInfo.is_binyue_cool_model = data.is_binyue_cool_model;
     } catch (e) {}
   };

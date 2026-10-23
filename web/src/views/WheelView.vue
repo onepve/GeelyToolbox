@@ -3,7 +3,8 @@
     <!-- 顶部车规二级分段胶囊：一页全景掌控 -->
     <SubTabs :tabs="wheelTabs" v-model="activeTab" />
 
-    <!-- 核心：方向盘按键方控接管总开关 (双 Tab 均常驻置顶) -->
+    <!-- 核心：方向盘按键方控接管总开关 (置顶常驻) -->
+    <!-- 核心：方向盘按键方控接管总开关 - 核心功能首屏 (左右分栏车规黄金磁贴) -->
     <div class="bg-car-card border-2 border-car-border rounded-2xl p-4 min-h-[88px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
@@ -37,8 +38,8 @@
 
 
 
-    <!-- Tab 1: 按键独立映射网格 -->
-    <div v-show="activeTab === 'keys'" class="flex flex-col space-y-4">
+    <!-- Tab 1: 按键独立映射 (v-if 彻底杜绝幽灵重叠) -->
+    <div v-if="activeTab === 'keys'" class="flex flex-col space-y-4">
     <!-- 3. 各按键映射配置 (右方向盘多媒体 SX-0017 物理按键逐项配置) -->
     <div class="flex flex-col space-y-4">
       <div class="flex items-center px-2">
@@ -139,10 +140,8 @@
 
     </div>
 
-    <!-- Tab 2: 接管模式与图解 -->
-    <div v-show="activeTab === 'mode'" class="flex flex-col space-y-4">
-    </div>
-
+    <!-- Tab 2: 接管模式与图解 (v-if 彻底杜绝幽灵重叠) -->
+    <div v-if="activeTab === 'mode'" class="flex flex-col space-y-4">
     <!-- 1. 方向盘方控接管模式 -->
     <FeatureCard 
       title="方控按键接管模式"
@@ -196,7 +195,6 @@
       </div>
     </FeatureCard>
 
-    
 
     <div class="bg-car-item border border-car-border rounded-2xl p-5 shadow-sm">
       <div class="flex items-center justify-between mb-4">
@@ -261,9 +259,12 @@
             <span class="text-car-accent font-black mr-1.5">⑦ 向左选择键:</span> 上一个文件 / 上一曲 (单击自定义)
           </div>
         </div>
+      </div>
+    </div>
 
     </div>
 
+         支持拖放自定义位置并本地记忆，下次同位显示；原地点按隐藏 -->
     <transition name="floating-fade">
       <div
         v-if="showFloating"
@@ -281,9 +282,8 @@
       </div>
     </transition>
   </div>
-
-  </div>
 </template>
+
 
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';

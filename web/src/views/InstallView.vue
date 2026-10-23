@@ -1,6 +1,10 @@
 <template>
   <div class="flex flex-col space-y-4">
-    <!-- 1. 原生文件管理特权安装通道与无线快传 (核心通道 2 列对称) -->
+    <!-- 顶部车规二级分段胶囊：一页全景掌控 -->
+    <SubTabs :tabs="installTabs" v-model="activeTab" />
+
+    <!-- Tab 1: 特权安装通道 (v-if 彻底杜绝幽灵重叠) -->
+    <div v-if="activeTab === 'channels'" class="grid grid-cols-2 gap-4 items-stretch">
     <div class="grid grid-cols-2 gap-4">
       <FeatureCard class="!mb-0" 
         title="车载原生文件管理"
@@ -62,7 +66,11 @@
       </FeatureCard>
     </div>
 
-    <!-- 3. 整车应用高级管理与专家通道 (2 列对称卡片) -->
+    </div>
+
+    <!-- Tab 2: 整车应用高级管理 (v-if 彻底杜绝幽灵重叠) -->
+    <div v-if="activeTab === 'manage'" class="flex flex-col space-y-4">
+      <div class="grid grid-cols-2 gap-4 items-stretch">
     <div class="grid grid-cols-2 gap-4">
       <!-- 应用高级管理 (原系统维护移至此处，形成安装与卸载管理闭环) -->
       <FeatureCard class="!mb-0"
@@ -135,7 +143,7 @@
       </FeatureCard>
     </div>
 
-    <!-- 底部运维与安装说明 -->
+      </div>
     <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
       <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
         车载应用安装与白名单说明：
@@ -144,15 +152,25 @@
       <div>• <b>原生文件管理安装</b>：请勿使用命令行后台强装，将 APK 存入 Download 目录后由原生文件管理安装最稳定；</div>
       <div>• <b>闭环管理</b>：在此页面即可完成文件传输、安全安装、卸载与冻结全套操作。</div>
     </div>
+
+    </div>
   </div>
 </template>
 
 <script setup>
+import SubTabs from '../components/SubTabs.vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import StatusDot from '../components/StatusDot.vue';
+import { ref } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
 
 
+
+const activeTab = ref('channels');
+const installTabs = [
+  { id: 'channels', name: '特权安装通道', tag: '文件/快传' },
+  { id: 'manage', name: '整车应用管理', tag: '卸载/主题' }
+];
 
 function confirmToggleWhitelist() {
   if (store.deviceInfo.adb_master_switch === false) {

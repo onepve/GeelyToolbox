@@ -4,7 +4,7 @@
     <SubTabs :tabs="linkTabs" v-model="activeTab" />
 
     <!-- 1. 360全景联动 (双大卡片，一屏收尽) -->
-    <div v-show="activeTab === '360'" class="grid grid-cols-2 gap-4 items-stretch">
+    <div v-if="activeTab === '360'" class="grid grid-cols-2 gap-4 items-stretch">
       <!-- 任务 1: D 挡起步联动 360 -->
       <PlanCard
         title="1. 前进 D 挡起步联动 360"
@@ -91,7 +91,7 @@
     </div>
 
     <!-- 2. 车速与启播 (左右双列卡片，一屏收尽) -->
-    <div v-show="activeTab === 'speed'" class="grid grid-cols-2 gap-4 items-stretch">
+    <div v-if="activeTab === 'speed'" class="grid grid-cols-2 gap-4 items-stretch">
       <div
         class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl h-full flex flex-col space-y-3.5 transition-all duration-200"
       >
@@ -297,7 +297,7 @@
     </div>
 
     <!-- 3. 网络与外设连接中枢 (一行三列大卡片，一屏充满) -->
-    <div v-show="activeTab === 'network'" class="grid grid-cols-3 gap-4 items-stretch">
+    <div v-if="activeTab === 'network'" class="grid grid-cols-3 gap-4 items-stretch">
       <!-- 卡片 1: 车载 Wi-Fi -->
       <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl flex flex-col justify-between transition-all duration-200">
         <!-- 头部 -->

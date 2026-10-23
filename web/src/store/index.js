@@ -43,6 +43,13 @@ export const store = reactive({
     battery_volt: 0,
     car_ip: '127.0.0.1',
     adb_master_switch: true,
+    app_icon_style: (() => {
+      try {
+        return localStorage.getItem('toolbox_app_icon_style') || 'auto';
+      } catch (e) {
+        return 'auto';
+      }
+    })(),
     platform_code: '',
     platform_name: ''
   },
