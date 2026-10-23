@@ -411,8 +411,7 @@ body {
 *:focus {
   outline: none !important;
 }
-button:focus,
-button:focus-visible {
+button:focus {
   outline: none !important;
   box-shadow: none !important;
 }

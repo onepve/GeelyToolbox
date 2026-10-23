@@ -5,9 +5,9 @@
       :key="tab.id"
       @click="onSelect(tab.id)"
       :class="[
-        'h-[50px] px-5 rounded-xl text-[16px] transition-all flex items-center space-x-2 cursor-pointer border-2',
+        'h-[50px] px-5 rounded-xl text-[16px] transition-all flex items-center space-x-2 cursor-pointer border-2 select-none outline-none focus:outline-none',
         modelValue === tab.id
-          ? 'bg-car-card border-car-accent text-car-accent font-black shadow-md ring-2 ring-car-accent/20'
+          ? 'bg-car-card border-car-accent text-car-accent font-black shadow-md'
           : 'bg-transparent border-transparent text-car-sub hover:text-car-text font-bold'
       ]"
     >
