@@ -25,8 +25,8 @@
       </span>
     </div>
 
-    <!-- 左下角官方教程二维码微卡片 -->
-    <div class="mt-auto pt-2">
+    <!-- 左下角关于助手菜单卡片：完全看齐主菜单统一车规设计 -->
+    <div class="mt-auto pt-3 border-t border-car-border/50">
       <SidebarQrCodeCard />
     </div>
   </aside>
