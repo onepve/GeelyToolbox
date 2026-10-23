@@ -24,7 +24,7 @@
               :class="[
                 'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
                 (store.deviceInfo.app_icon_style === 'auto' || !store.deviceInfo.app_icon_style)
-                  ? 'bg-car-item border-car-accent ring-2 ring-car-accent/30 shadow-md'
+                  ? 'bg-car-item border-car-accent shadow-md'
                   : 'bg-car-card border-car-border hover:border-car-border-light'
               ]"
             >
@@ -45,7 +45,7 @@
               :class="[
                 'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
                 store.deviceInfo.app_icon_style === 'default'
-                  ? 'bg-car-item border-car-accent ring-2 ring-car-accent/30 shadow-md'
+                  ? 'bg-car-item border-car-accent shadow-md'
                   : 'bg-car-card border-car-border hover:border-car-border-light'
               ]"
             >
@@ -64,7 +64,7 @@
               :class="[
                 'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
                 store.deviceInfo.app_icon_style === 'cool'
-                  ? 'bg-car-item border-car-accent ring-2 ring-car-accent/30 shadow-md'
+                  ? 'bg-car-item border-car-accent shadow-md'
                   : 'bg-car-card border-car-border hover:border-car-border-light'
               ]"
             >
@@ -99,7 +99,7 @@
             :class="[
               'm-2 w-[150px] h-[150px] rounded-3xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-2.5',
               store.theme.mode === m
-                ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-lg'
+                ? 'bg-car-item border-car-accent text-car-text shadow-lg'
                 : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
             ]"
           >
@@ -114,7 +114,7 @@
             :class="[
               'm-2 w-[150px] h-[150px] rounded-3xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-2.5',
               store.theme.palette === p
-                ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-lg'
+                ? 'bg-car-item border-car-accent text-car-text shadow-lg'
                 : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
             ]"
           >
@@ -145,7 +145,7 @@
               :class="[
                 'w-full min-h-[64px] p-2 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm',
                 store.settings.startup_nav === item.id
-                  ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/30 shadow-md font-black'
+                  ? 'bg-car-item border-car-accent text-car-accent shadow-md font-black'
                   : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
               ]"
             >

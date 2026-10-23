@@ -70,7 +70,7 @@
 
             <button 
               @click="openModal('oilPrice')"
-              class="min-h-[56px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center whitespace-nowrap"
+              class="min-h-[56px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16.5px] cursor-pointer hover:border-car-accent transition-all shadow-md flex items-center whitespace-nowrap"
             >
               <span>全国详情 ➔</span>
             </button>

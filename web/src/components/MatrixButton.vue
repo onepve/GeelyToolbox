@@ -2,10 +2,10 @@
   <button 
     @click="handleClick"
     :class="[
-      'rounded-2xl border-2 transition-colors duration-150 flex flex-col items-center justify-center text-center select-none cursor-pointer',
+      'w-full min-h-[74px] p-4 rounded-2xl border-2 transition-all flex items-center justify-between shadow-sm cursor-pointer select-none',
       active 
-        ? 'bg-car-item border-car-accent text-car-text font-black shadow-lg shadow-amber-500/10 ring-2 ring-car-accent/30' 
-        : 'bg-car-item border-car-border text-car-text hover:border-car-border-light font-extrabold opacity-85 hover:opacity-100'
+        ? 'bg-car-item border-car-accent text-car-text font-black shadow-md' 
+        : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light hover:text-car-text font-bold'
     ]"
     style="min-height: 80px; height: 80px; max-height: 84px; padding: 10px 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden;"
   >

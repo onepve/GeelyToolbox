@@ -59,7 +59,7 @@
             :class="[
               'h-[50px] px-6 rounded-xl font-black text-[15.5px] cursor-pointer transition-all whitespace-nowrap shadow-md flex items-center justify-center active:scale-95',
               currentCategory === cat.id 
-                ? 'bg-car-card border-2 border-car-accent text-car-text ring-2 ring-car-accent/30 shadow-lg' 
+                ? 'bg-car-card border-2 border-car-accent text-car-text shadow-lg' 
                 : 'bg-car-card text-car-text/80 border-2 border-car-border hover:border-car-border-light hover:text-car-text'
             ]"
           >

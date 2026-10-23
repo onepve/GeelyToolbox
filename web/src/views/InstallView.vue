@@ -31,7 +31,7 @@
             </button>
             <button 
               @click="openFileManager"
-              class="h-[50px] px-5 bg-car-item border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all whitespace-nowrap"
+              class="h-[50px] px-5 bg-car-item border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl cursor-pointer hover:border-car-accent shadow-md transition-all whitespace-nowrap"
             >
               打开文件管理
             </button>

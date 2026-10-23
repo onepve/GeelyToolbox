@@ -183,7 +183,7 @@
           <div class="flex items-center space-x-2.5 shrink-0">
             <button 
               @click="openModal('voiceThemeImport')"
-              class="min-h-[50px] px-4 bg-car-card border-2 border-car-accent text-car-text font-black text-[15px] rounded-xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center space-x-1.5 whitespace-nowrap"
+              class="min-h-[50px] px-4 bg-car-card border-2 border-car-accent text-car-text font-black text-[15px] rounded-xl cursor-pointer hover:border-car-accent shadow-md transition-all flex items-center space-x-1.5 whitespace-nowrap"
             >
               <span>导入语音包 (.zip)</span>
             </button>

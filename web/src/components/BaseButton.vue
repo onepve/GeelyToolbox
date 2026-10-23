@@ -28,7 +28,7 @@ const BASE = {
   // 手势选择 chip 大号（WheelGestureCard 顶部切换器，px-5 py-2.5）
   gestureChipLg: 'px-5 py-2.5 rounded-xl text-[15.5px] font-black cursor-pointer transition-all whitespace-nowrap',
   // 金色强调 CTA
-  cta: 'h-[52px] px-6 rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all flex items-center whitespace-nowrap',
+  cta: 'h-[52px] px-6 rounded-2xl border-2 border-car-accent bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-accent shadow-md transition-all flex items-center whitespace-nowrap',
   // 柔和次级按钮（恢复默认）
   ghostSoft: 'h-[52px] px-6 rounded-2xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center whitespace-nowrap',
   // 纵向双行紧凑按钮（标题+小字说明，如回正自动退出）
@@ -44,8 +44,8 @@ const BASE = {
 // active=true 的补充分（与基础串拼接）
 const ACTIVE = {
   master: 'bg-car-item border-car-accent',
-  chipLg: 'bg-car-card border-car-accent text-car-text ring-2 ring-car-accent/20',
-  pill: 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20',
+  chipLg: 'bg-car-card border-car-accent text-car-text',
+  pill: 'bg-car-item border-car-accent text-car-text',
   miniChip: 'bg-car-card border-2 border-car-accent text-car-accent',
   gestureChip: 'bg-car-card border-2 border-car-accent text-car-text shadow-sm',
   gestureChipLg: 'bg-car-card border-2 border-car-accent text-car-text shadow-sm',
