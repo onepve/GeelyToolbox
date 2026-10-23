@@ -1348,6 +1348,59 @@ public class SystemUtils {
     private static final java.util.regex.Pattern PATTERN_ADDRESS = java.util.regex.Pattern.compile("(?i)(address|geofullAddress|formatedAddress|poiName)\\s*[:=]\\s*['\"][^'\"]*['\"]");
     private static final java.util.regex.Pattern PATTERN_XDSN = java.util.regex.Pattern.compile("(?i)(getXDSN|deviceID|XDSN)\\s*[:=]\\s*([A-Za-z0-9_]{4})[A-Za-z0-9_]{4,}([A-Za-z0-9_]{4})");
 
+    // 噪音特征过滤：排除 Wi-Fi 扫描、蓝牙 BLE 嗅探、360 逐帧渲染、声卡 20ms 死循环轮询、UI 掉帧、GC、系统压制等纯噪音
+    private static final String[] NOISE_PATTERNS = {
+        // 1. 无线 Wi-Fi 扫描与驱动心跳
+        "wificond", "WifiScanningService", "WifiScanner", "wpa_supplicant",
+        "WifiHAL", "WifiConfigStore", "WifiNetworkAgent", "WifiConnectivityManager",
+        "WifiProxy-->", "android.net.wifi.SCAN_RESULTS",
+        
+        // 2. 蓝牙 BLE 广播嗅探 (非车机配对/通话/音频连接)
+        "BtGatt.GattService", "bt_btif_scan", "BluetoothLeScanner",
+        
+        // 3. 360 环视逐帧模型绘制与相机释放 (状态机与触发源完整保留)
+        "ecarx_avm_ModelDraw", "LiteCameraFrame",
+        
+        // 4. 声卡底层死循环轮询与 20ms 级重复音量打印
+        "APM_AudioPolicyManager", "abs(mReverseValue -", "setFinalVolume, v:",
+        
+        // 5. 界面掉帧与底层图形管线
+        "Choreographer", "SurfaceFlinger", "OpenGLRenderer", "RenderThread",
+        
+        // 6. 虚拟机 GC 垃圾回收脉冲
+        "concurrent mark sweep GC", "concurrent copying GC", "Explicit concurrent mark sweep",
+        
+        // 7. 系统压制行与大数据埋点
+        "chatty", "SA.AnalyticsMessages", "SA.TrackTaskManager"
+    };
+
+    // 防误杀白名单 (包含以下车身/业务核心关键字绝对不拦截)
+    private static final String[] SAFE_LOG_PATTERNS = {
+        "SerialControl", "VehId=", "Vehicle_Gear", "DoorState", "GearState",
+        "FL_DOOR", "FR_DOOR", "RL_DOOR", "RR_DOOR", "TRUNK", "SWC",
+        "reportKeyToAdaptApi", "shouldCallback", "ECARX_KEY", "CarAudioInfo",
+        "Get Speed", "PEPS_PowerMode", "INFO_ID_", "GeelyToolbox", "VehicleAutomationService",
+        "VehicleVoicePlayer", "ecarx_avm_state", "AvmServiceManger", "AvmStateManger",
+        "camera_state", "turnlight=", "goc", "XCBTPhone", "A2dpSink", "EasMediaBridge"
+    };
+
+    public static boolean isNoiseLogLine(String line) {
+        if (line == null || line.isEmpty()) return true;
+        // 优先白名单放行
+        for (int i = 0; i < SAFE_LOG_PATTERNS.length; i++) {
+            if (line.contains(SAFE_LOG_PATTERNS[i])) {
+                return false;
+            }
+        }
+        // 黑名单噪音判定
+        for (int i = 0; i < NOISE_PATTERNS.length; i++) {
+            if (line.contains(NOISE_PATTERNS[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static String desensitizeLogLine(String line) {
         if (line == null || line.isEmpty()) return line;
         String clean = line;
@@ -1376,6 +1429,9 @@ public class SystemUtils {
              java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter(dest))) {
             String line;
             while ((line = reader.readLine()) != null) {
+                if (isNoiseLogLine(line)) {
+                    continue;
+                }
                 writer.write(desensitizeLogLine(line));
                 writer.newLine();
             }
