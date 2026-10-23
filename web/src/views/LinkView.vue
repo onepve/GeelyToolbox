@@ -290,15 +290,15 @@
     <div class="bg-car-card border-2 border-car-border rounded-2xl p-6 shadow-xl flex flex-col space-y-5 transition-all">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-3">
-          <StatusDot size="lg" color="ok" :glow-px="8" class="shadow-md" />
+          <StatusDot size="lg" color="ok" :glow-px="6" class="shadow-md" />
           <span class="text-[22px] font-black text-car-text tracking-wide whitespace-nowrap">车载网络与外设连接中枢</span>
           <span class="px-3 py-1 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent inline-flex items-center shrink-0 shadow-sm">
-            硬件自检
+            连接策略
           </span>
           <HelpDot size="sm" @click="showHelp('network_policy')" />
         </div>
         <div class="text-[14px] text-car-sub font-bold">
-          开机后台硬件探针自检 · 就绪即拉起 · 零死等
+          后台硬件自检就绪即拉起 · 免手动等待
         </div>
       </div>
 
@@ -306,29 +306,28 @@
       <div class="flex flex-col space-y-3.5">
         <!-- 通道 1: 车载 Wi-Fi -->
         <div class="flex items-center justify-between p-4 rounded-xl bg-car-item border border-car-border">
-          <div class="flex items-center space-x-3 w-[260px] shrink-0">
+          <div class="flex items-center space-x-3.5 w-[240px] shrink-0">
             <StatusDot size="md" :color="store.networkDevice.wifi_enabled ? 'ok' : 'off'" />
             <div class="flex flex-col">
-              <span class="text-[17px] font-black text-car-text">车载 Wi-Fi</span>
-              <span class="text-[12.5px] font-bold text-car-sub mt-0.5">
-                {{ store.networkDevice.wifi_enabled ? '● 正在运行 / 可连接' : '○ 已关闭' }}
+              <span class="text-[17.5px] font-black text-car-text tracking-wide">车载 Wi-Fi</span>
+              <span class="text-[13px] font-bold text-car-sub mt-0.5">
+                {{ store.networkDevice.wifi_enabled ? '正在运行 / 可连接' : '已关闭' }}
               </span>
             </div>
           </div>
 
           <!-- 手动即时切换 -->
-          <div class="shrink-0 w-[140px]">
+          <div class="shrink-0 w-[130px]">
             <button
               @click="toggleDeviceDirect('wifi')"
               :class="[
-                'w-full h-[50px] px-3 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2',
+                'w-full h-[50px] px-3 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center justify-center',
                 store.networkDevice.wifi_enabled
                   ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
               ]"
             >
-              <StatusDot size="sm" :color="store.networkDevice.wifi_enabled ? 'ok' : 'sub'" />
-              <span>{{ store.networkDevice.wifi_enabled ? '点击关闭' : '点击开启' }}</span>
+              <span>{{ store.networkDevice.wifi_enabled ? '已开启' : '已关闭' }}</span>
             </button>
           </div>
 
@@ -340,7 +339,7 @@
               :key="'wifi_' + item.value"
               @click="changeBootPolicy('wifi', item.value)"
               :class="[
-                'h-[50px] px-3.5 rounded-xl font-black text-[14px] cursor-pointer transition-all border-2',
+                'h-[50px] min-w-[84px] px-4 rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2',
                 store.networkDevice.wifi_policy === item.value
                   ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
@@ -353,29 +352,28 @@
 
         <!-- 通道 2: 车机热点分享 (AP) -->
         <div class="flex items-center justify-between p-4 rounded-xl bg-car-item border border-car-border">
-          <div class="flex items-center space-x-3 w-[260px] shrink-0">
+          <div class="flex items-center space-x-3.5 w-[240px] shrink-0">
             <StatusDot size="md" :color="store.networkDevice.hotspot_enabled ? 'ok' : 'off'" />
             <div class="flex flex-col">
-              <span class="text-[17px] font-black text-car-text">车机热点分享</span>
-              <span class="text-[12.5px] font-bold text-car-sub mt-0.5">
-                {{ store.networkDevice.hotspot_enabled ? '● 正在广播热点' : '○ 已关闭' }}
+              <span class="text-[17.5px] font-black text-car-text tracking-wide">车机热点分享</span>
+              <span class="text-[13px] font-bold text-car-sub mt-0.5">
+                {{ store.networkDevice.hotspot_enabled ? '正在广播热点' : '已关闭' }}
               </span>
             </div>
           </div>
 
           <!-- 手动即时切换 -->
-          <div class="shrink-0 w-[140px]">
+          <div class="shrink-0 w-[130px]">
             <button
               @click="toggleDeviceDirect('hotspot')"
               :class="[
-                'w-full h-[50px] px-3 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2',
+                'w-full h-[50px] px-3 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center justify-center',
                 store.networkDevice.hotspot_enabled
                   ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
               ]"
             >
-              <StatusDot size="sm" :color="store.networkDevice.hotspot_enabled ? 'ok' : 'sub'" />
-              <span>{{ store.networkDevice.hotspot_enabled ? '点击关闭' : '点击开启' }}</span>
+              <span>{{ store.networkDevice.hotspot_enabled ? '已开启' : '已关闭' }}</span>
             </button>
           </div>
 
@@ -387,7 +385,7 @@
               :key="'ap_' + item.value"
               @click="changeBootPolicy('hotspot', item.value)"
               :class="[
-                'h-[50px] px-3.5 rounded-xl font-black text-[14px] cursor-pointer transition-all border-2',
+                'h-[50px] min-w-[84px] px-4 rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2',
                 store.networkDevice.hotspot_policy === item.value
                   ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
@@ -400,29 +398,28 @@
 
         <!-- 通道 3: 车载蓝牙外设 -->
         <div class="flex items-center justify-between p-4 rounded-xl bg-car-item border border-car-border">
-          <div class="flex items-center space-x-3 w-[260px] shrink-0">
+          <div class="flex items-center space-x-3.5 w-[240px] shrink-0">
             <StatusDot size="md" :color="store.networkDevice.bluetooth_enabled ? 'ok' : 'off'" />
             <div class="flex flex-col">
-              <span class="text-[17px] font-black text-car-text">车载蓝牙</span>
-              <span class="text-[12.5px] font-bold text-car-sub mt-0.5">
-                {{ store.networkDevice.bluetooth_enabled ? '● 正在运行 / 可连接' : '○ 已关闭' }}
+              <span class="text-[17.5px] font-black text-car-text tracking-wide">车载蓝牙</span>
+              <span class="text-[13px] font-bold text-car-sub mt-0.5">
+                {{ store.networkDevice.bluetooth_enabled ? '正在运行 / 可连接' : '已关闭' }}
               </span>
             </div>
           </div>
 
           <!-- 手动即时切换 -->
-          <div class="shrink-0 w-[140px]">
+          <div class="shrink-0 w-[130px]">
             <button
               @click="toggleDeviceDirect('bluetooth')"
               :class="[
-                'w-full h-[50px] px-3 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-2',
+                'w-full h-[50px] px-3 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center justify-center',
                 store.networkDevice.bluetooth_enabled
                   ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
               ]"
             >
-              <StatusDot size="sm" :color="store.networkDevice.bluetooth_enabled ? 'ok' : 'sub'" />
-              <span>{{ store.networkDevice.bluetooth_enabled ? '点击关闭' : '点击开启' }}</span>
+              <span>{{ store.networkDevice.bluetooth_enabled ? '已开启' : '已关闭' }}</span>
             </button>
           </div>
 
@@ -434,7 +431,7 @@
               :key="'bt_' + item.value"
               @click="changeBootPolicy('bluetooth', item.value)"
               :class="[
-                'h-[50px] px-3.5 rounded-xl font-black text-[14px] cursor-pointer transition-all border-2',
+                'h-[50px] min-w-[84px] px-4 rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2',
                 store.networkDevice.bluetooth_policy === item.value
                   ? 'bg-car-card border-car-accent text-car-accent shadow-md'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
