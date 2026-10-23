@@ -82,7 +82,10 @@
       <div class="grid grid-cols-2 gap-4 items-stretch">
         <div class="p-5 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col justify-between">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-[19px] font-black text-car-text">{{ vehicleModelDisplay }} {{ tankCapacity }}L 油箱测算</span>
+            <div class="flex items-center space-x-2">
+              <span class="text-[19px] font-black text-car-text">{{ vehicleModelDisplay }} {{ tankCapacity }}L 油箱测算</span>
+              <HelpDot size="sm" @click="showTankCalcHelp" />
+            </div>
             <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-car-accent">官方标称</span>
           </div>
 
@@ -218,6 +221,7 @@ import { ref, computed } from 'vue';
 import { store, openModal, refreshOilPrices } from '../store';
 import SubTabs from '../components/SubTabs.vue';
 import FeatureCard from '../components/FeatureCard.vue';
+import HelpDot from '../components/HelpDot.vue';
 import { getDaysToAdjustment } from '../utils/oilPriceData';
 
 const activeTab = ref('price');
@@ -265,5 +269,23 @@ const oilDaysText = computed(() => {
 
 function onRefreshOilPrice() {
   refreshOilPrices(true);
+}
+
+function showTankCalcHelp() {
+  const p92 = currentOilData.value?.p92 || 7.55;
+  const p95 = currentOilData.value?.p95 || 8.05;
+  const cap = tankCapacity.value;
+  const cost92 = (p92 * cap).toFixed(1);
+  const cost95 = (p95 * cap).toFixed(1);
+  const lit200_92 = (200 / p92).toFixed(1);
+  const lit200_95 = (200 / p95).toFixed(1);
+
+  openModal('confirm', {
+    title: '【计算公式】油箱加注与成本核算逻辑',
+    desc: `1. 空箱加满整箱金额公式：\n【公式】：油箱标称总容积(L) × 当前对应标号油价(元/L)\n・92# 加满：${cap}L × ¥${p92}/L = ¥${cost92} 元\n・95# 加满：${cap}L × ¥${p95}/L = ¥${cost95} 元\n\n2. 日常加 200 元可加油量公式：\n【公式】：预算金额(200元) ÷ 当前对应标号油价(元/L)\n・92# 加200元：200 ÷ ¥${p92} = 约 ${lit200_92} 升\n・95# 加200元：200 ÷ ¥${p95} = 约 ${lit200_95} 升\n\n3. 车型标称容积自适应机制：\n・缤越 COOL (2022款)：官方油箱容积 45L\n・吉利帝豪 L：官方油箱容积 52L\n・吉利缤越 L：官方油箱容积 51L\n\n4. 实际油量动态补满计算方法：\n【公式】：(油箱总容积 - 当前油表剩余升数) × 当日油价\n即距离加满还差多少升就补多少钱，进站加油心中有数。`,
+    tip: '所有油价均以当前所选省份发改委官方最高限价核算。',
+    showCancel: false,
+    confirmText: '我知道了'
+  });
 }
 </script>
