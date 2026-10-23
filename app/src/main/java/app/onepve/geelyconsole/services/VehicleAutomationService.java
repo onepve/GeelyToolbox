@@ -117,8 +117,8 @@ public class VehicleAutomationService extends Service {
     private int lastEngineState = -1;
     private int lastHeadlightSts = -1;
     public static volatile int currentSpeedKmH = 0;
-    public static volatile int currentFuelPercent = 38; // 实时油箱剩余百分比 (底盘感知或基准刻度)
-    public static volatile float currentFuelLiters = 17.1f; // 实时剩余升数
+    public static volatile int currentFuelPercent = -1; // 实时油箱剩余百分比 (-1 表示等待总线信号读取中)
+    public static volatile float currentFuelLiters = -1f; // 实时剩余升数 (-1 表示等待总线信号)
 
     // 同状态接触微抖动过滤 (毫秒)
     private long lastTriggerFL = 0;

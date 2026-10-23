@@ -96,17 +96,24 @@
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-2">
                   <span class="text-[14px] text-car-text font-black">当前油箱实际估算：</span>
-                  <span class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 font-mono text-[12px] font-black">
+                  <span v-if="hasFuelSignal" class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 font-mono text-[12px] font-black">
                     余 {{ currentFuelLiters }}L ({{ currentFuelPercent }}%)
                   </span>
+                  <span v-else class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-car-sub font-bold text-[12px]">
+                    底层总线读取中 · 点火即显
+                  </span>
                 </div>
-                <span class="text-[12.5px] text-car-sub font-bold">加满缺口: {{ fillGapLiters }}L</span>
+                <span class="text-[12.5px] text-car-sub font-bold">
+                  {{ hasFuelSignal ? `加满缺口: ${fillGapLiters}L` : `标称总容积: ${tankCapacity}L` }}
+                </span>
               </div>
               <div class="flex items-center justify-between mt-2 pt-4 border-t border-car-border/40">
-                <span class="text-[13px] text-car-sub font-bold">加满预估需补：</span>
+                <span class="text-[13px] text-car-sub font-bold">
+                  {{ hasFuelSignal ? '加满预估需补：' : '空箱加满整箱预估：' }}
+                </span>
                 <div class="flex items-baseline space-x-3">
-                  <span class="text-[13px] text-car-sub font-bold">92# <span class="text-[20px] font-black text-car-accent font-mono">¥{{ dynamicFillCost92 }}</span></span>
-                  <span class="text-[13px] text-car-sub font-bold">95# <span class="text-[18px] font-black text-car-text font-mono">¥{{ dynamicFillCost95 }}</span></span>
+                  <span class="text-[13px] text-car-sub font-bold">92# <span class="text-[20px] font-black text-car-accent font-mono">¥{{ displayCost92 }}</span></span>
+                  <span class="text-[13px] text-car-sub font-bold">95# <span class="text-[18px] font-black text-car-text font-mono">¥{{ displayCost95 }}</span></span>
                 </div>
               </div>
             </div>
@@ -262,11 +269,17 @@ const tankCapacity = computed(() => {
 });
 
 // 实时油位与动态加满计算
-const currentFuelPercent = ref(38);
+const currentFuelPercent = ref(-1);
+const hasFuelSignal = computed(() => {
+  return currentFuelPercent.value >= 0 && store.deviceInfo.is_car_device;
+});
+
 const currentFuelLiters = computed(() => {
+  if (!hasFuelSignal.value) return '--';
   return ((tankCapacity.value * currentFuelPercent.value) / 100).toFixed(1);
 });
 const fillGapLiters = computed(() => {
+  if (!hasFuelSignal.value) return tankCapacity.value;
   return (tankCapacity.value - Number(currentFuelLiters.value)).toFixed(1);
 });
 const dynamicFillCost92 = computed(() => {
@@ -276,6 +289,18 @@ const dynamicFillCost92 = computed(() => {
 const dynamicFillCost95 = computed(() => {
   const p = currentOilData.value?.p95 || 8.05;
   return (p * Number(fillGapLiters.value)).toFixed(1);
+});
+
+const displayCost92 = computed(() => {
+  if (hasFuelSignal.value) return dynamicFillCost92.value;
+  const p = currentOilData.value?.p92 || 7.55;
+  return (p * tankCapacity.value).toFixed(1);
+});
+
+const displayCost95 = computed(() => {
+  if (hasFuelSignal.value) return dynamicFillCost95.value;
+  const p = currentOilData.value?.p95 || 8.05;
+  return (p * tankCapacity.value).toFixed(1);
 });
 
 // 油价计算属性
@@ -303,19 +328,26 @@ function showTankCalcHelp() {
   const p92 = currentOilData.value?.p92 || 7.55;
   const p95 = currentOilData.value?.p95 || 8.05;
   const cap = tankCapacity.value;
-  const remLiters = currentFuelLiters.value;
-  const remPercent = currentFuelPercent.value;
-  const gap = fillGapLiters.value;
-  const dyn92 = dynamicFillCost92.value;
-  const dyn95 = dynamicFillCost95.value;
   const cost92 = (p92 * cap).toFixed(1);
   const cost95 = (p95 * cap).toFixed(1);
   const lit200_92 = (200 / p92).toFixed(1);
   const lit200_95 = (200 / p95).toFixed(1);
 
+  let descText = '';
+  if (hasFuelSignal.value) {
+    const remLiters = currentFuelLiters.value;
+    const remPercent = currentFuelPercent.value;
+    const gap = fillGapLiters.value;
+    const dyn92 = dynamicFillCost92.value;
+    const dyn95 = dynamicFillCost95.value;
+    descText = `1. 实车动态加满补能公式（当前生效）：\n【公式】：(油箱总容积 - 剩余升数) × 当日油价\n・实车油量：剩余约 ${remPercent}% (约 ${remLiters} L)，距离加满还差 ${gap} L\n・92# 补满需：${gap}L × ¥${p92}/L = ¥${dyn92} 元\n・95# 补满需：${gap}L × ¥${p95}/L = ¥${dyn95} 元\n\n2. 日常加 200 元可加油量公式：\n【公式】：200元 ÷ 当日油价\n・92# 加200元：200 ÷ ¥${p92} = 约 ${lit200_92} 升\n・95# 加200元：200 ÷ ¥${p95} = 约 ${lit200_95} 升\n\n3. 车型标称容积说明：\n・缤越 COOL (2022款)：官方油箱容积 45L\n・吉利帝豪 L：官方油箱容积 52L\n・吉利缤越 L：官方油箱容积 51L`;
+  } else {
+    descText = `1. 动态加满机制说明：\n当前处于模拟器或尚未读取到底盘燃油信号状态，界面展示【整箱加满基准】；真车点火连通底盘 CAN 总线后，将自动秒级切换为【实车动态补满计算】。\n\n2. 空箱整箱基准金额公式：\n【公式】：油箱标称总容积 × 当日油价\n・92# 整箱：${cap}L × ¥${p92}/L = ¥${cost92} 元\n・95# 整箱：${cap}L × ¥${p95}/L = ¥${cost95} 元\n\n3. 日常加 200 元可加油量公式：\n【公式】：200元 ÷ 当日油价\n・92# 加200元：200 ÷ ¥${p92} = 约 ${lit200_92} 升\n・95# 加200元：200 ÷ ¥${p95} = 约 ${lit200_95} 升\n\n4. 车型标称容积自适应：\n・缤越 COOL (2022款)：45L\n・吉利帝豪 L：52L\n・吉利缤越 L：51L`;
+  }
+
   openModal('confirm', {
     title: '【计算公式】油箱加注与成本核算逻辑',
-    desc: `1. 车辆实际动态加满补能公式（主界面展示）：\n【公式】：(油箱标称总容积 - 当前油箱剩余升数) × 当前油价\n・当前状态：油箱剩余约 ${remPercent}% (约 ${remLiters} L)，距离加满还差 ${gap} L\n・92# 补满需：${gap}L × ¥${p92}/L = ¥${dyn92} 元\n・95# 补满需：${gap}L × ¥${p95}/L = ¥${dyn95} 元\n\n2. 日常加 200 元可加油量公式（主界面展示）：\n【公式】：预算金额(200元) ÷ 当前油价(元/L)\n・92# 加200元：200 ÷ ¥${p92} = 约 ${lit200_92} 升\n・95# 加200元：200 ÷ ¥${p95} = 约 ${lit200_95} 升\n\n3. 空箱整箱基准金额（参考）：\n・92# 整箱：${cap}L × ¥${p92}/L = ¥${cost92} 元\n・95# 整箱：${cap}L × ¥${p95}/L = ¥${cost95} 元\n\n4. 车型容积自适应机制：\n・缤越 COOL (2022款)：官方油箱容积 45L\n・吉利帝豪 L：官方油箱容积 52L\n・吉利缤越 L：官方油箱容积 51L`,
+    desc: descText,
     tip: '所有油价均以当前所选省份发改委官方最高限价核算。',
     showCancel: false,
     confirmText: '我知道了'

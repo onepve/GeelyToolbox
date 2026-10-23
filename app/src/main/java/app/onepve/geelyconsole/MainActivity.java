@@ -3842,8 +3842,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("speed_kmh", VehicleAutomationService.currentSpeedKmH);
                 obj.put("battery_volt", (double) VehicleAutomationService.latestBatteryVoltage);
                 obj.put("drive_mode", VehicleAutomationService.lastDriveMode);
-                obj.put("fuel_percent", VehicleAutomationService.currentFuelPercent);
-                obj.put("fuel_liters", (double) VehicleAutomationService.currentFuelLiters);
+                int fuelPct = VehicleAutomationService.currentFuelPercent;
+                float fuelLit = VehicleAutomationService.currentFuelLiters;
+                obj.put("fuel_percent", fuelPct);
+                obj.put("fuel_liters", (double) fuelLit);
+                obj.put("has_fuel_sensor", isCarDevice(MainActivity.this) && fuelPct >= 0);
                 // 状态描述: 如实汇报，未知就是未知
                 StringBuilder sb = new StringBuilder();
                 sb.append(engineRunning ? "发动机运行中" : "发动机未确认运行 (可能 KEY ON/ACC)");
