@@ -140,13 +140,13 @@
 
         <div class="p-5 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col justify-between">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-[20px] font-black text-car-text">行程数据状态机</span>
-            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-car-sub">底层静默</span>
+            <span class="text-[20px] font-black text-car-text">行程计程与出账机制</span>
+            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-car-sub">静默出账</span>
           </div>
           <div class="space-y-2 text-[14.5px] text-car-sub font-bold py-2 leading-relaxed">
             <div>• <b>起步计程</b>：踩刹车换入 D 挡起步打点底盘真实里程，原地挪车 (&lt;0.5km) 智能过滤；</div>
             <div>• <b>停稳记账</b>：挂回 P 挡瞬间冻结单次能耗数据，自动持久化至车机内部存储；</div>
-            <div>• <b>数据安全</b>：数据写入本地 JSON 文件，零云端强制依赖，应用卸载不丢账。</div>
+            <div>• <b>本地存储</b>：数据写入车机共享存储，零强制网络依赖，应用卸载不丢账。</div>
           </div>
           <div class="pt-4 border-t border-car-border/50 text-[13px] text-car-accent font-black">
             状态：底层总线监听中 · 随时就绪
@@ -155,18 +155,18 @@
       </div>
     </div>
 
-    <!-- Tab 3: 智能加油账本 (小熊油耗超越算法) -->
+    <!-- Tab 3: 智能加油账本 -->
     <div v-if="activeTab === 'record'" class="flex flex-col space-y-4">
       <div class="grid grid-cols-2 gap-4 items-stretch">
         <div class="p-5 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col justify-between">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-[20px] font-black text-car-text">自动识别加油 (反超小熊油耗)</span>
-            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-car-accent">智能算法</span>
+            <span class="text-[20px] font-black text-car-text">自动识别加油记账</span>
+            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-car-accent">智能感知</span>
           </div>
           <div class="space-y-2 text-[14.5px] text-car-sub font-bold py-2 leading-relaxed">
-            <div>• <b>自动感知</b>：熄火前锁存油箱浮子油量，下次点火若油量突增 &ge;8% 自动判定刚加完油；</div>
-            <div>• <b>免人肉记账</b>：自动计算加注升数与预估花费，彻底告别每次加油掏手机手动输入的繁琐；</div>
-            <div>• <b>人工微调支持</b>：支持对加注记录随时手动修改真实实付金额、满减优惠或删除误判。</div>
+            <div>• <b>智能感知</b>：熄火前锁存油箱浮子油量，下次点火若油量突增 &ge;8% 自动判定刚加完油；</div>
+            <div>• <b>全自动记账</b>：自动计算加注升数与预估花费，加油开走无需掏手机手动输入；</div>
+            <div>• <b>人工灵活微调</b>：支持对加注记录随时手动修改真实实付金额、满减优惠或删除误判。</div>
           </div>
           <div class="p-3 bg-car-item border border-car-border rounded-2xl flex items-center justify-between">
             <span class="text-[14px] text-car-text font-black">最近一次加油推算：</span>
@@ -176,11 +176,11 @@
 
         <div class="p-5 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col justify-between">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-[20px] font-black text-car-text">手机微信扫码云同步</span>
-            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-emerald-400">免300元认证</span>
+            <span class="text-[20px] font-black text-car-text">手机端同步查看</span>
+            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-emerald-400">微信扫码</span>
           </div>
           <div class="text-[14px] text-car-sub font-bold leading-relaxed py-2">
-            采用车规级设备配对机制（Device Pairing）：无需申请繁琐的微信开放平台企业资质，手机微信直接扫码车机屏幕一键绑定，离车随时随地查看历史油耗趋势与账本流水。
+            微信直接扫码车机屏幕即可一键绑定爱车，离车后在手机微信中随时翻看历史油耗走势、消费明细与账单流水。
           </div>
           <div class="pt-4 border-t border-car-border/50 flex items-center justify-between">
             <span class="text-[13px] text-car-sub font-bold">微信扫一扫屏幕即可直接绑定爱车</span>
@@ -208,7 +208,7 @@ const activeTab = ref('price');
 const fuelTabs = [
   { id: 'price', name: '实时油价日历', tag: '发改委限价' },
   { id: 'trip', name: '单次行程油耗', tag: '行车账单' },
-  { id: 'record', name: '智能加油账本', tag: '小熊算法' }
+  { id: 'record', name: '智能加油账本', tag: '自动记账' }
 ];
 
 // 油价计算属性

@@ -115,6 +115,7 @@ public class VehicleAutomationService extends Service {
     public volatile int lastPowerMode = -1;
     private int lastKeyState = -1;
     private int lastEngineState = -1;
+    private int lastHeadlightSts = -1;
     public static volatile int currentSpeedKmH = 0;
 
     // 同状态接触微抖动过滤 (毫秒)
@@ -1316,6 +1317,11 @@ public class VehicleAutomationService extends Service {
             }
         }
 
+        // 大灯/小灯联动高德日夜模式 (BCM_PositionLightSts: 1=开启, 0=关闭)
+        if ("BCM_PositionLightSts".equals(key)) {
+            handleHeadlightNavNight(val);
+        }
+
         // 电源模式/熄火检测
         if ("PEPS_PowerMode".equals(key)) {
             if (val == 0) {
@@ -1324,6 +1330,7 @@ public class VehicleAutomationService extends Service {
                 if (driveModeManager != null) driveModeManager.resetState();
                 if (doorStateManager != null) doorStateManager.resetState();
                 isTurnSignal360Active = false;
+                lastHeadlightSts = -1;
             }
             lastPowerMode = val;
         }
@@ -2281,4 +2288,44 @@ public class VehicleAutomationService extends Service {
         } catch (Throwable ignored) {}
     }
 
+    /**
+     * 进出隧道大灯联动高德日夜深浅色模式 (高德 7.5 经典通道)
+     * @param val 1=大灯/小灯开启 (进隧道), 0=大灯/小灯关闭 (出隧道)
+     */
+    private void handleHeadlightNavNight(int val) {
+        try {
+            SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            boolean enabled = prefs.getBoolean("vehicle_headlight_nav_night_enabled", false);
+            if (!enabled) return;
+
+            if (lastHeadlightSts == -1) {
+                lastHeadlightSts = val;
+                return;
+            }
+
+            // 跃变锁存判定：只在 0 -> 1（开灯进隧道）或 1 -> 0（关灯出隧道）瞬间单次触发，防高频刷屏
+            if (val == 1 && lastHeadlightSts == 0) {
+                sendAmapDayNightMode(2); // 2: 黑夜模式
+                lastHeadlightSts = 1;
+            } else if (val == 0 && lastHeadlightSts == 1) {
+                sendAmapDayNightMode(0); // 0: 日间模式
+                lastHeadlightSts = 0;
+            }
+        } catch (Throwable t) {
+            AppLogger.w("车身联动", "大灯联动高德异常: " + t.getMessage());
+        }
+    }
+
+    private void sendAmapDayNightMode(int mode) {
+        try {
+            Intent intent = new Intent("AUTONAVI_STANDARD_BROADCAST_RECV");
+            intent.putExtra("KEY_TYPE", 10048);
+            intent.putExtra("EXTRA_DAY_NIGHT_MODE", mode); // 0=日间, 2=黑夜
+            intent.setComponent(new ComponentName("com.autonavi.amapauto", "com.autonavi.amapauto.adapter.internal.AmapAutoBroadcastReceiver"));
+            sendBroadcast(intent);
+            AppLogger.i("车身联动", "已向高德发送日夜模式广播: mode=" + mode + (mode == 2 ? " (黑夜深色)" : " (白天浅色)"));
+        } catch (Exception e) {
+            AppLogger.w("车身联动", "发送高德日夜模式广播失败: " + e.getMessage());
+        }
+    }
 }

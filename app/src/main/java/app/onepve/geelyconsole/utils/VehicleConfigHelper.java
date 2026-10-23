@@ -61,6 +61,7 @@ public final class VehicleConfigHelper {
             obj.put("vehicle_speed_custom_action_enabled", PrefUtils.getBoolean(prefs, "vehicle_speed_custom_action_enabled", false));
             obj.put("vehicle_speed_custom_action_threshold", prefs.getInt("vehicle_speed_custom_action_threshold", 40));
             obj.put("vehicle_speed_custom_action_target", prefs.getString("vehicle_speed_custom_action_target", "pkg:com.autonavi.amapauto"));
+            obj.put("vehicle_headlight_nav_night_enabled", PrefUtils.getBoolean(prefs, "vehicle_headlight_nav_night_enabled", false));
 
             // 播报音频输出通道 (music | nav | notification)
             obj.put("voice_audio_channel", prefs.getString("voice_audio_channel", "music"));

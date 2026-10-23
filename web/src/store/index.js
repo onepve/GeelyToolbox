@@ -104,7 +104,8 @@ export const store = reactive({
     vehicle_turn_signal_360_auto_exit: true,
     vehicle_speed_custom_action_enabled: false,
     vehicle_speed_custom_action_threshold: 40,
-    vehicle_speed_custom_action_target: 'pkg' + ':com.autonavi.amapauto'
+    vehicle_speed_custom_action_target: 'pkg' + ':com.autonavi.amapauto',
+    vehicle_headlight_nav_night_enabled: false,
   },
 
   // 车载网络与外设连接策略中枢

@@ -258,7 +258,7 @@
         </div>
       </div>
 
-      <div class="col-span-2">
+      <!-- 任务 2: 停稳推门多媒体暂停 -->
       <PlanCard
         title="2. 停稳推门多媒体暂停"
         tag="下车静音"
@@ -275,8 +275,26 @@
         </template>
       </PlanCard>
 
-
-      </div>
+      <!-- 任务 5: 进隧道大灯联动高德日夜模式 (高德 7.5 经典通道) -->
+      <PlanCard
+        title="5. 进隧道大灯联动高德"
+        tag="高德7.5"
+        help-text="light_nav"
+        flow-sub="白天行车开启前大灯（驶入地下车库或长隧道）"
+        flow-main="秒级切为夜间深色导航；关大灯自动恢复白天浅色"
+        @help="showHelp('light_nav')"
+      >
+        <template #footer>
+          <BaseButton
+            variant="planToggle"
+            :active="store.vehicleAuto.vehicle_headlight_nav_night_enabled"
+            @click="toggleSetting('vehicle_headlight_nav_night_enabled')"
+          >
+            <StatusDot size="sm" :color="store.vehicleAuto.vehicle_headlight_nav_night_enabled ? 'accent' : 'sub'" :glow-px="6" />
+            <span>{{ store.vehicleAuto.vehicle_headlight_nav_night_enabled ? '大灯联动高德已开启' : '大灯联动高德已关闭' }}</span>
+          </BaseButton>
+        </template>
+      </PlanCard>
     </div>
 
     <!-- 3. 网络与外设连接中枢 (一行三列大卡片，一屏充满) -->
@@ -702,8 +720,13 @@ function showHelp(key) {
     },
     speed_custom: {
       title: '【功能指南】车速达标自定义动作',
-      desc: '1. 车速阈值唤起：行驶车速达到设定阈值时，自动唤醒高德车机地图或自选软件，无需行车中分心操作屏幕。\n\n2. 行程防抖机制：单次行驶中仅触发一次，避免频繁弹窗；挂入 P 挡停稳后自动重置待命。',
-      tip: '适合将阈值设为 40~50 km/h，出地库上主路巡航时自动切回大屏导航。'
+      desc: '车速达到设定阈值后，自动打开高德车机地图或自选的任意第三方应用。单次行程仅触发一次。',
+      tip: '常用导航建议设为「高德车机地图」。'
+    },
+    light_nav: {
+      title: '【功能指南】进隧道大灯联动高德',
+      desc: '1. 自动深色护眼：\\n白天开大灯（进地下车库或长隧道）时，毫秒级向高德地图发送夜间模式指令，自动切换为深色黑底，告别刺眼白屏。\\n\\n2. 出隧道自动恢复：\\n出隧道或离开地库关闭大灯后，自动恢复白天清爽浅色地图。\\n\\n3. 版本适配说明：\\n本功能针对【高德地图 7.5 经典版】深度适配完美生效。',
+      tip: '使用高德 7.5 的车友强烈推荐开启。'
     },
     turn_signal_360: {
       title: '【功能指南】转向灯开启联动 360',
