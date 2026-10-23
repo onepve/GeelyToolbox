@@ -89,19 +89,30 @@
             <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-car-accent">官方标称</span>
           </div>
 
-          <!-- 双测算模块：空箱加满 vs 加200元实惠测算 -->
+          <!-- 核心双测算：车辆实时加满测算 vs 日常加200元实用换算 -->
           <div class="space-y-3 py-1">
-            <!-- 1. 加满整箱预估 -->
-            <div class="p-3 bg-car-item border border-car-border rounded-2xl flex items-center justify-between">
-              <span class="text-[14px] text-car-sub font-bold">空箱加满整箱：</span>
-              <div class="flex items-baseline space-x-3">
-                <span class="text-[13px] text-car-sub font-bold">92# <span class="text-[20px] font-black text-car-accent font-mono">¥{{ (currentOilData?.p92 ? currentOilData.p92 * tankCapacity : 340).toFixed(1) }}</span></span>
-                <span class="text-[13px] text-car-sub font-bold">95# <span class="text-[18px] font-black text-car-text font-mono">¥{{ (currentOilData?.p95 ? currentOilData.p95 * tankCapacity : 365).toFixed(1) }}</span></span>
+            <!-- 1. 车辆实时动态加满补能计算 -->
+            <div class="p-3.5 bg-car-item border border-car-border rounded-2xl flex flex-col space-y-1.5">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="text-[14px] text-car-text font-black">当前油箱实际估算：</span>
+                  <span class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 font-mono text-[12px] font-black">
+                    余 {{ currentFuelLiters }}L ({{ currentFuelPercent }}%)
+                  </span>
+                </div>
+                <span class="text-[12.5px] text-car-sub font-bold">加满缺口: {{ fillGapLiters }}L</span>
+              </div>
+              <div class="flex items-center justify-between mt-2 pt-4 border-t border-car-border/40">
+                <span class="text-[13px] text-car-sub font-bold">加满预估需补：</span>
+                <div class="flex items-baseline space-x-3">
+                  <span class="text-[13px] text-car-sub font-bold">92# <span class="text-[20px] font-black text-car-accent font-mono">¥{{ dynamicFillCost92 }}</span></span>
+                  <span class="text-[13px] text-car-sub font-bold">95# <span class="text-[18px] font-black text-car-text font-mono">¥{{ dynamicFillCost95 }}</span></span>
+                </div>
               </div>
             </div>
 
             <!-- 2. 日常加 200 元可加油量测算 -->
-            <div class="p-3 bg-car-item border border-car-border rounded-2xl flex items-center justify-between">
+            <div class="p-3.5 bg-car-item border border-car-border rounded-2xl flex items-center justify-between">
               <span class="text-[14px] text-car-sub font-bold">日常加 200 元可加：</span>
               <div class="flex items-baseline space-x-3">
                 <span class="text-[13px] text-car-sub font-bold">92# <span class="text-[20px] font-black text-emerald-400 font-mono">{{ (currentOilData?.p92 ? 200 / currentOilData.p92 : 26.3).toFixed(1) }}</span> <span class="text-[12px]">L</span></span>
@@ -250,6 +261,23 @@ const tankCapacity = computed(() => {
   return 45; // 缤越 COOL 2022款 官方标称容积 45L
 });
 
+// 实时油位与动态加满计算
+const currentFuelPercent = ref(38);
+const currentFuelLiters = computed(() => {
+  return ((tankCapacity.value * currentFuelPercent.value) / 100).toFixed(1);
+});
+const fillGapLiters = computed(() => {
+  return (tankCapacity.value - Number(currentFuelLiters.value)).toFixed(1);
+});
+const dynamicFillCost92 = computed(() => {
+  const p = currentOilData.value?.p92 || 7.55;
+  return (p * Number(fillGapLiters.value)).toFixed(1);
+});
+const dynamicFillCost95 = computed(() => {
+  const p = currentOilData.value?.p95 || 8.05;
+  return (p * Number(fillGapLiters.value)).toFixed(1);
+});
+
 // 油价计算属性
 const currentProvinceName = computed(() => store.oilPrice.selectedProvince || '北京');
 const currentOilData = computed(() => {
@@ -275,6 +303,11 @@ function showTankCalcHelp() {
   const p92 = currentOilData.value?.p92 || 7.55;
   const p95 = currentOilData.value?.p95 || 8.05;
   const cap = tankCapacity.value;
+  const remLiters = currentFuelLiters.value;
+  const remPercent = currentFuelPercent.value;
+  const gap = fillGapLiters.value;
+  const dyn92 = dynamicFillCost92.value;
+  const dyn95 = dynamicFillCost95.value;
   const cost92 = (p92 * cap).toFixed(1);
   const cost95 = (p95 * cap).toFixed(1);
   const lit200_92 = (200 / p92).toFixed(1);
@@ -282,7 +315,7 @@ function showTankCalcHelp() {
 
   openModal('confirm', {
     title: '【计算公式】油箱加注与成本核算逻辑',
-    desc: `1. 空箱加满整箱金额公式：\n【公式】：油箱标称总容积(L) × 当前对应标号油价(元/L)\n・92# 加满：${cap}L × ¥${p92}/L = ¥${cost92} 元\n・95# 加满：${cap}L × ¥${p95}/L = ¥${cost95} 元\n\n2. 日常加 200 元可加油量公式：\n【公式】：预算金额(200元) ÷ 当前对应标号油价(元/L)\n・92# 加200元：200 ÷ ¥${p92} = 约 ${lit200_92} 升\n・95# 加200元：200 ÷ ¥${p95} = 约 ${lit200_95} 升\n\n3. 车型标称容积自适应机制：\n・缤越 COOL (2022款)：官方油箱容积 45L\n・吉利帝豪 L：官方油箱容积 52L\n・吉利缤越 L：官方油箱容积 51L\n\n4. 实际油量动态补满计算方法：\n【公式】：(油箱总容积 - 当前油表剩余升数) × 当日油价\n即距离加满还差多少升就补多少钱，进站加油心中有数。`,
+    desc: `1. 车辆实际动态加满补能公式（主界面展示）：\n【公式】：(油箱标称总容积 - 当前油箱剩余升数) × 当前油价\n・当前状态：油箱剩余约 ${remPercent}% (约 ${remLiters} L)，距离加满还差 ${gap} L\n・92# 补满需：${gap}L × ¥${p92}/L = ¥${dyn92} 元\n・95# 补满需：${gap}L × ¥${p95}/L = ¥${dyn95} 元\n\n2. 日常加 200 元可加油量公式（主界面展示）：\n【公式】：预算金额(200元) ÷ 当前油价(元/L)\n・92# 加200元：200 ÷ ¥${p92} = 约 ${lit200_92} 升\n・95# 加200元：200 ÷ ¥${p95} = 约 ${lit200_95} 升\n\n3. 空箱整箱基准金额（参考）：\n・92# 整箱：${cap}L × ¥${p92}/L = ¥${cost92} 元\n・95# 整箱：${cap}L × ¥${p95}/L = ¥${cost95} 元\n\n4. 车型容积自适应机制：\n・缤越 COOL (2022款)：官方油箱容积 45L\n・吉利帝豪 L：官方油箱容积 52L\n・吉利缤越 L：官方油箱容积 51L`,
     tip: '所有油价均以当前所选省份发改委官方最高限价核算。',
     showCancel: false,
     confirmText: '我知道了'
