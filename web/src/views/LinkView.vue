@@ -43,15 +43,17 @@
               <span>转向灯联动 360 已关闭</span>
             </BaseButton>
           </div>
-          <div v-else class="grid grid-cols-2 gap-3">
-            <BaseButton
-              variant="planToggleGrid"
-              :active="true"
+          <div v-else class="grid grid-cols-2 gap-3 items-stretch">
+            <button
               @click="toggleTurnSignal360"
+              class="w-full min-h-[58px] h-[58px] px-3.5 py-1.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center text-center bg-car-item border-car-accent shadow-md"
             >
-              <StatusDot size="sm" color="accent" :glow-px="6" />
-              <span class="truncate">转向灯联动已开启</span>
-            </BaseButton>
+              <div class="flex items-center space-x-1.5 leading-tight">
+                <StatusDot size="sm" color="accent" :glow-px="6" />
+                <span class="text-[16.5px] font-black text-car-text tracking-wide whitespace-nowrap">转向灯联动已开启</span>
+              </div>
+              <span class="text-[12px] font-bold mt-0.5 text-car-accent whitespace-nowrap">点击可关闭联动</span>
+            </button>
             <BaseButton
               variant="dual"
               :active="store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false"
@@ -347,7 +349,7 @@
         <!-- 头部 -->
         <div class="flex items-center justify-between shrink-0 mb-3">
           <div class="flex items-center space-x-2.5">
-            <span class="text-[20px] font-black text-car-text tracking-wide">车机热点分享</span>
+            <span class="text-[20px] font-black text-car-text tracking-wide">车机热点</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">网络共享</span>
             <HelpDot size="sm" @click="showHelp('network_policy')" />
           </div>
@@ -367,7 +369,7 @@
           <div class="text-[15.5px] leading-relaxed truncate font-mono">
             <span class="text-car-sub font-bold">广播: </span>
             <span class="text-car-text font-black">
-              {{ store.networkDevice.hotspot_enabled ? '车载热点正在运行' : '已关闭 (未广播)' }}
+              {{ store.networkDevice.hotspot_enabled ? (store.networkDevice.hotspot_ssid ? store.networkDevice.hotspot_ssid : '已开启广播') : '已关闭 (未广播)' }}
             </span>
           </div>
 
@@ -468,6 +470,11 @@
         </div>
       </div>
     </div>
+
+    <!-- 4. 音乐音源优先级与回退调度 (原车载音频合并至此) -->
+    <div v-if="activeTab === 'media'" class="flex flex-col space-y-4">
+      <AudioView />
+    </div>
   </div>
 </template>
 
@@ -483,11 +490,13 @@ import PlanCard from '../components/PlanCard.vue';
 import BaseButton from '../components/BaseButton.vue';
 import StatusDot from '../components/StatusDot.vue';
 import HelpDot from '../components/HelpDot.vue';
+import AudioView from './AudioView.vue';
 
 const activeTab = ref('360');
 const linkTabs = [
   { id: '360', name: '360全景联动', tag: 'D挡/转向灯' },
   { id: 'speed', name: '车速与启播', tag: '车速联动' },
+  { id: 'media', name: '音乐音源优先级', tag: '回退调度' },
   { id: 'network', name: '网络与外设', tag: 'Wi-Fi/蓝牙' }
 ];
 

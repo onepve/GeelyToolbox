@@ -38,13 +38,13 @@ import SidebarQrCodeCard from './SidebarQrCodeCard.vue';
 import { playTouchFeedback } from '../utils/sound';
 
 const navItems = [
-  { id: 'wheel', name: '方控按键', badge: '核心改装' },
+  { id: 'wheel', name: '方控按键', badge: '按键接管' },
   { id: 'link', name: '车身联动', badge: '360/车速' },
   { id: 'body', name: '车载语音', badge: '语音播报' },
+  { id: 'fuel', name: '行程油耗', badge: '油价/账本' },
   { id: 'store', name: '精选商城', badge: '专车应用' },
-  { id: 'audio', name: '车载音频', badge: '语音/蓝牙' },
   { id: 'install', name: '特权安装', badge: '暗码/快传' },
-  { id: 'system', name: '系统维护', badge: '维护/悬浮' }
+  { id: 'system', name: '系统维护', badge: '工具/运维' }
 ];
 
 function selectNav(id) {

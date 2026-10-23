@@ -1,83 +1,12 @@
 <template>
   <div class="flex flex-col space-y-4 shrink-0">
-    <!-- 顶部车规二级分段胶囊：一页全景掌控 -->
+    <!-- 顶部车规二级分段胶囊：一页全景掌控 (3大单屏纯净Tab) -->
     <SubTabs :tabs="systemTabs" v-model="activeTab" />
 
-    <!-- Tab 1: 车况与个性化 (v-if 彻底杜绝幽灵重叠) -->
-    <div v-if="activeTab === 'general'" class="flex flex-col space-y-4">
-    <FeatureCard 
-      title="全国实时油价与调价日历"
-      desc="监测各省发改委最新最高零售限价，提供调价周期倒计时与加油算账建议。"
-      helpTitle="【功能指南】全国实时油价与调价日历"
-      helpText="1. 官方限价：&#10;基于国家发改委最新发布的各省成品油最高零售限价，同省同价。&#10;&#10;2. 调价倒计时：&#10;按照国家发改委 10 个工作日调价周期倒计时，提前提供涨跌预期预警。&#10;&#10;3. 省钱算账：&#10;结合缤越 COOL 45L 油箱容积自动折算加满一箱所需成本变动。" helpTip="点击可查看全国 31 省份 92#/95#/98#/柴油价格及调价详情。"
-    >
-      <div class="w-full flex items-center justify-between p-4 rounded-2xl bg-car-item border border-car-border">
-        <div class="flex items-center space-x-4">
-          <div class="flex items-center space-x-2">
-            
-            <div class="flex flex-col">
-              <div class="flex items-center space-x-2">
-                <span class="text-[19px] font-black text-car-text">{{ currentProvinceName }}</span>
-                <span class="text-[13px] px-2 py-0.5 rounded bg-car-card text-car-accent font-extrabold border border-car-accent/30">当前地区</span>
-              </div>
-              <span class="text-[13px] text-car-sub font-bold mt-0.5">发改委限价 · {{ store.oilPrice.nextAdjustment.lastAdjustmentDate }} 生效</span>
-            </div>
-          </div>
+    <!-- Tab 1: 桌面与车标 (悬浮胶囊 + 应用图标，v-if 彻底杜绝幽灵重叠) -->
+    <div v-if="activeTab === 'desktop'" class="flex flex-col space-y-4">
+    <FloatingView />
 
-          <div class="h-10 w-px bg-car-border"></div>
-
-          <div class="flex items-center space-x-3">
-            <div class="flex flex-col">
-              <span class="text-[12.5px] text-car-sub font-bold">92# 汽油</span>
-              <span class="text-[20px] font-black text-car-text font-mono leading-none">¥{{ currentOilP92 }}<span class="text-[13px] font-normal text-car-sub">/L</span></span>
-            </div>
-            <div class="flex flex-col">
-              <span class="text-[12.5px] text-car-sub font-bold">95# 汽油</span>
-              <span class="text-[20px] font-black text-car-text font-mono leading-none">¥{{ currentOilP95 }}<span class="text-[13px] font-normal text-car-sub">/L</span></span>
-            </div>
-          </div>
-
-          <div class="h-10 w-px bg-car-border"></div>
-
-          <div class="flex flex-col">
-            <div class="flex items-center space-x-1.5">
-              <span 
-                class="text-[13px] font-black"
-                :class="store.oilPrice.nextAdjustment?.trend === 'down' ? 'text-emerald-500 dark:text-emerald-400' : (store.oilPrice.nextAdjustment?.trend === 'up' ? 'text-rose-500 dark:text-rose-400' : 'text-car-sub')"
-              >
-                下轮预期: {{ store.oilPrice.nextAdjustment ? store.oilPrice.nextAdjustment.predictedLiter + '元/L' : '获取中...' }}
-              </span>
-              <span class="text-[12px] px-2 py-0.5 rounded-full bg-car-card text-rose-600 dark:text-rose-300 font-extrabold border border-car-border whitespace-nowrap">
-                {{ oilDaysText }}
-              </span>
-            </div>
-            <span class="text-[12.5px] text-car-sub font-bold mt-0.5">
-              调价日: {{ store.oilPrice.nextAdjustment ? store.oilPrice.nextAdjustment.dateLabel : '同步中...' }}
-            </span>
-          </div>
-        </div>
-
-        <div class="flex items-center space-x-3 shrink-0">
-          <button 
-            @click="onRefreshOilPrice"
-            :disabled="store.oilPrice.isSyncing"
-            class="min-h-[56px] px-5 rounded-xl border-2 border-car-border bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light transition-all shadow-md flex items-center space-x-2 whitespace-nowrap"
-          >
-            <svg class="w-4 h-4 text-car-sub" :class="{'animate-spin text-car-accent': store.oilPrice.isSyncing}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-            </svg>
-            <span>{{ store.oilPrice.isSyncing ? '同步中...' : '刷新油价' }}</span>
-          </button>
-
-          <button 
-            @click="openModal('oilPrice')"
-            class="min-h-[56px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 transition-all shadow-md flex items-center whitespace-nowrap"
-          >
-            <span>全国详情 ➔</span>
-          </button>
-        </div>
-      </div>
-    </FeatureCard>
 
     <FeatureCard 
       title="桌面应用图标"
@@ -149,6 +78,11 @@
       </div>
     </FeatureCard>
 
+
+    </div>
+
+    <!-- Tab 2: 外观与首屏 (液态玻璃主题 + 默认首屏，v-if 彻底杜绝幽灵重叠) -->
+    <div v-if="activeTab === 'theme'" class="flex flex-col space-y-4">
     <FeatureCard 
       title="主题外观与昼夜模式"
       desc="四套液态玻璃配色任选，昼夜三档切换；顶栏太阳/月亮按钮可随时一键快捷翻转。"
@@ -192,12 +126,44 @@
       </div>
     </FeatureCard>
 
-    <FloatingView />
-
-
+    <FeatureCard 
+      title="启动首屏默认视图"
+      desc="设置缤越助手每次启动时默认呈现的主功能页。配置后立即生效并持久记忆。"
+      helpTitle="【功能指南】启动首屏默认视图"
+      helpText="1. 智能跟随：&#10;选择「智能跟随」后，每次启动自动恢复到您上次退出时停留的功能页。&#10;&#10;2. 固定主菜单：&#10;也可以固定为方控按键、车身联动、车载语音、精选商城、车载音频、特权安装或系统维护等任意页面。&#10;&#10;3. 立即生效：&#10;点击相应项即刻完成设置并永久记忆，下次打开软件直接进入该页面。" helpTip="建议经常传歌/装软件的车主设置为「特权安装」，常玩车机设为「精选商城」。"
+    >
+      <div class="w-full">
+        <!-- 8 宫格严丝合缝车规对称矩阵 (2行 x 4列，彻底消除缺角空缺) -->
+        <div class="w-full flex flex-wrap -m-1">
+          <div
+            v-for="item in STARTUP_NAV_ITEMS"
+            :key="item.id"
+            class="p-1 w-1/4"
+          >
+            <button
+              @click="onSelectStartupNav(item.id)"
+              :class="[
+                'w-full min-h-[64px] p-2 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm',
+                store.settings.startup_nav === item.id
+                  ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/30 shadow-md font-black'
+                  : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
+              ]"
+            >
+              <div class="flex items-center space-x-1.5 leading-none">
+                <span v-if="item.id === 'remember'" class="text-[14.5px] text-car-accent">★</span>
+                <span class="text-[16.5px] font-black leading-none">{{ item.name }}</span>
+              </div>
+              <span class="text-[12px] font-bold text-car-sub leading-none truncate max-w-full">
+                {{ item.id === 'remember' ? (store.settings.startup_nav === 'remember' ? `上次: ${getNavName(store.settings.last_active_nav)}` : '记忆上次停留') : item.desc }}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </FeatureCard>
     </div>
 
-    <!-- Tab 2: 系统底层运维工具 (v-if 彻底杜绝幽灵重叠) -->
+    <!-- Tab 3: 系统底层运维 (2x2网格工具矩阵，v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'tools'" class="flex flex-col space-y-4">
     <div class="grid grid-cols-2 gap-4">
       <!-- 1. 运行与守护日志 -->
@@ -324,42 +290,7 @@
       </div>
     </div>
 
-    <FeatureCard 
-      title="启动首屏默认视图"
-      desc="设置缤越助手每次启动时默认呈现的主功能页。配置后立即生效并持久记忆。"
-      helpTitle="【功能指南】启动首屏默认视图"
-      helpText="1. 智能跟随：&#10;选择「智能跟随」后，每次启动自动恢复到您上次退出时停留的功能页。&#10;&#10;2. 固定主菜单：&#10;也可以固定为方控按键、车身联动、车载语音、精选商城、车载音频、特权安装或系统维护等任意页面。&#10;&#10;3. 立即生效：&#10;点击相应项即刻完成设置并永久记忆，下次打开软件直接进入该页面。" helpTip="建议经常传歌/装软件的车主设置为「特权安装」，常玩车机设为「精选商城」。"
-    >
-      <div class="w-full">
-        <!-- 8 宫格严丝合缝车规对称矩阵 (2行 x 4列，彻底消除缺角空缺) -->
-        <div class="w-full flex flex-wrap -m-1">
-          <div
-            v-for="item in STARTUP_NAV_ITEMS"
-            :key="item.id"
-            class="p-1 w-1/4"
-          >
-            <button
-              @click="onSelectStartupNav(item.id)"
-              :class="[
-                'w-full min-h-[64px] p-2 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm',
-                store.settings.startup_nav === item.id
-                  ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/30 shadow-md font-black'
-                  : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
-              ]"
-            >
-              <div class="flex items-center space-x-1.5 leading-none">
-                <span v-if="item.id === 'remember'" class="text-[14.5px] text-car-accent">★</span>
-                <span class="text-[16.5px] font-black leading-none">{{ item.name }}</span>
-              </div>
-              <span class="text-[12px] font-bold text-car-sub leading-none truncate max-w-full">
-                {{ item.id === 'remember' ? (store.settings.startup_nav === 'remember' ? `上次: ${getNavName(store.settings.last_active_nav)}` : '记忆上次停留') : item.desc }}
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </FeatureCard>
-
+    <!-- 底部运维与安装说明 -->
     <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
       <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
         车机维护与运行须知：
@@ -369,7 +300,6 @@
       <div>• <b>功能独立生效</b>：桌面悬浮胶囊、车身语音播报与方控按键接管相互独立，互不影响；</div>
       <div>• <b>系统安全防护</b>：核心底层服务已受安全保护，防止误操作影响车机正常运行。</div>
     </div>
-
     </div>
   </div>
 </template>
@@ -387,10 +317,11 @@ import { openAppstoreFlow } from '../utils/appstoreFreeze';
 import { getDaysToAdjustment } from '../utils/oilPriceData';
 import { ICON_PREVIEW_DEFAULT, ICON_PREVIEW_COOL } from '../utils/launcherIcons';
 
-const activeTab = ref('general');
+const activeTab = ref('desktop');
 const systemTabs = [
-  { id: 'general', name: '车况与个性化', tag: '油价/图标' },
-  { id: 'tools', name: '系统运维工具', tag: '日志/ADB' }
+  { id: 'desktop', name: '桌面与车标', tag: '悬浮/车标' },
+  { id: 'theme', name: '外观与首屏', tag: '昼夜/首屏' },
+  { id: 'tools', name: '系统底层运维', tag: '日志/ADB' }
 ];
 
 function onSelectAppIconStyle(style) {

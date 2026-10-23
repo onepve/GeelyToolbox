@@ -22,6 +22,7 @@
         <!-- 桌面悬浮已并入系统维护：floating 导航兼容跳转 -->
         <SystemView v-show="store.currentNav === 'floating' || store.currentNav === 'system'" />
         <InstallView v-show="store.currentNav === 'install'" />
+        <FuelView v-show="store.currentNav === 'fuel'" />
       </section>
     </main>
 
@@ -80,6 +81,7 @@ import AudioView from './views/AudioView.vue';
 import FloatingView from './views/FloatingView.vue';
 import InstallView from './views/InstallView.vue';
 import SystemView from './views/SystemView.vue';
+import FuelView from './views/FuelView.vue';
 
 const mainContent = ref(null);
 
