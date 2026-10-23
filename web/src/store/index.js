@@ -172,8 +172,7 @@ export const store = reactive({
       total_records: 0,
       status_desc: '尚未出账'
     },
-    monthly_stats: []
-  },
+    monthly_stats: [],
     isLoaded: false
   },
   oilPrice: {
