@@ -153,6 +153,28 @@ export const store = reactive({
   
   // 全国实时油价与调价窗口状态
   pushedAdbCmd: '',
+  fuelLedger: {
+    config: {
+      tank_capacity: 45.0,
+      default_fuel_type: '92#',
+      default_province: '浙江',
+      refuel_threshold_l: 4.0,
+      car_id: '',
+      bind_token: '',
+      cloud_sync_enabled: false
+    },
+    records: [],
+    stats: {
+      total_records: 0,
+      total_spend: 0,
+      total_liters: 0,
+      avg_consumption: 0,
+      cost_per_km: 0,
+      is_calculable: false,
+      status_desc: '需至少2次加满自动核算'
+    },
+    isLoaded: false
+  },
   oilPrice: {
     selectedProvince: (() => {
       try {
@@ -488,4 +510,63 @@ if (typeof window !== 'undefined') {
       Object.assign(store.networkDevice, parsed);
     } catch (e) {}
   };
+}
+
+export function loadFuelData() {
+  try {
+    const raw = bridge.call('getFuelData');
+    if (raw) {
+      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (data.config) Object.assign(store.fuelLedger.config, data.config);
+      if (Array.isArray(data.records)) store.fuelLedger.records = data.records;
+      if (data.stats) Object.assign(store.fuelLedger.stats, data.stats);
+      store.fuelLedger.isLoaded = true;
+    }
+  } catch (e) {
+    console.error('loadFuelData error', e);
+  }
+}
+
+export function addFuelRecord(record) {
+  try {
+    const ok = bridge.call('addFuelRecord', JSON.stringify(record));
+    loadFuelData();
+    return ok;
+  } catch (e) {
+    console.error('addFuelRecord error', e);
+    return false;
+  }
+}
+
+export function updateFuelRecord(record) {
+  try {
+    const ok = bridge.call('updateFuelRecord', JSON.stringify(record));
+    loadFuelData();
+    return ok;
+  } catch (e) {
+    console.error('updateFuelRecord error', e);
+    return false;
+  }
+}
+
+export function deleteFuelRecord(id) {
+  try {
+    const ok = bridge.call('deleteFuelRecord', String(id));
+    loadFuelData();
+    return ok;
+  } catch (e) {
+    console.error('deleteFuelRecord error', e);
+    return false;
+  }
+}
+
+export function saveFuelConfig(cfg) {
+  try {
+    const ok = bridge.call('saveFuelConfig', JSON.stringify(cfg));
+    loadFuelData();
+    return ok;
+  } catch (e) {
+    console.error('saveFuelConfig error', e);
+    return false;
+  }
 }

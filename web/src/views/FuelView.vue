@@ -148,7 +148,140 @@
       </div>
     </div>
 
-    <!-- Tab 2: 单次行程油耗账单 (框架就绪) -->
+    <!-- Tab 2: 智能加油账本 (核心高密度真实流水与数据台账) -->
+    <div v-if="activeTab === 'record'" class="flex flex-col space-y-4">
+      <!-- 顶部高密度仪表盘：核心三指标与快捷操作 -->
+      <div class="p-4 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex items-center justify-between">
+        <div class="flex items-center space-x-6">
+          <div class="flex flex-col">
+            <span class="text-[12.5px] text-car-sub font-bold">加权综合油耗 (跳枪法)</span>
+            <div class="flex items-baseline space-x-1.5 mt-0.5">
+              <span v-if="store.fuelLedger.stats.is_calculable" class="text-[26px] font-black text-emerald-400 font-mono leading-none">
+                {{ store.fuelLedger.stats.avg_consumption }}
+              </span>
+              <span v-else class="text-[20px] font-black text-car-text leading-none">
+                计算中
+              </span>
+              <span class="text-[13px] text-car-sub font-bold">
+                {{ store.fuelLedger.stats.is_calculable ? 'L/100km' : `(${store.fuelLedger.stats.status_desc})` }}
+              </span>
+            </div>
+          </div>
+
+          <div class="h-10 w-px bg-car-border"></div>
+
+          <div class="flex flex-col">
+            <span class="text-[12.5px] text-car-sub font-bold">每公里平均花费</span>
+            <div class="flex items-baseline space-x-1 mt-0.5">
+              <span v-if="store.fuelLedger.stats.is_calculable" class="text-[22px] font-black text-amber-400 font-mono leading-none">
+                ¥{{ store.fuelLedger.stats.cost_per_km }}
+              </span>
+              <span v-else class="text-[20px] font-black text-car-sub font-mono leading-none">--</span>
+              <span class="text-[13px] text-car-sub font-bold">/km</span>
+            </div>
+          </div>
+
+          <div class="h-10 w-px bg-car-border"></div>
+
+          <div class="flex flex-col">
+            <span class="text-[12.5px] text-car-sub font-bold">累计加油总支出 / 升数</span>
+            <div class="flex items-baseline space-x-2 mt-0.5">
+              <span class="text-[22px] font-black text-car-accent font-mono leading-none">¥{{ store.fuelLedger.stats.total_spend || '0.0' }}</span>
+              <span class="text-[13px] text-car-sub font-bold">共 {{ store.fuelLedger.stats.total_liters || '0.0' }} L</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-3 shrink-0">
+          <button 
+            @click="openAddRecordModal"
+            class="min-h-[52px] px-5 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[15.5px] cursor-pointer hover:border-car-accent transition-all shadow-md flex items-center space-x-2 whitespace-nowrap"
+          >
+            <span>+ 手动记一笔</span>
+          </button>
+
+          <button 
+            @click="showCloudPairModal"
+            class="min-h-[52px] px-4 rounded-xl border-2 border-car-border bg-car-item text-car-sub font-black text-[14.5px] cursor-pointer hover:text-car-text hover:border-car-border-light transition-all shadow-md flex items-center space-x-1.5 whitespace-nowrap"
+          >
+            <span>手机扫码同步</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 加油记录流水台账列表 (高对比度紧凑列表，拒绝大块空洞卡片) -->
+      <div class="p-4 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col space-y-2">
+        <div class="flex items-center justify-between pb-2 border-b border-car-border/60 text-[13px] text-car-sub font-bold px-2">
+          <span>加油历史台账 (共 {{ store.fuelLedger.records.length }} 笔记录 · 共享持久存储防丢)</span>
+          <span>点击任一记录可随时微调金额、油价、省份或删除</span>
+        </div>
+
+        <!-- 空状态提示 -->
+        <div v-if="!store.fuelLedger.records || store.fuelLedger.records.length === 0" class="py-12 flex flex-col items-center justify-center space-y-3 text-center">
+          <div class="w-12 h-12 rounded-full bg-car-item border border-car-border flex items-center justify-center text-car-sub text-[22px]">
+            ⛽
+          </div>
+          <span class="text-[16px] font-black text-car-text">暂无加油台账记录</span>
+          <span class="text-[13px] text-car-sub font-bold max-w-[480px]">
+            点火连通底盘总线后，系统会在加油后自动感知记录；跑长途或外地加油也可直接点击右上角【+ 手动记一笔】快速补录。
+          </span>
+        </div>
+
+        <!-- 紧凑流水列表条目 (高度 58px) -->
+        <div 
+          v-for="rec in store.fuelLedger.records" 
+          :key="rec.id"
+          @click="openEditRecordModal(rec)"
+          class="min-h-[58px] px-4 py-2 rounded-2xl bg-car-item border border-car-border hover:border-car-accent/60 cursor-pointer transition-all flex items-center justify-between shadow-sm"
+        >
+          <div class="flex items-center space-x-5">
+            <!-- 日期与总里程 -->
+            <div class="flex flex-col min-w-[120px]">
+              <span class="text-[15px] font-black text-car-text font-mono leading-tight">{{ rec.date }}</span>
+              <span class="text-[12px] text-car-sub font-bold font-mono">{{ rec.odo ? rec.odo + ' km' : '里程未打点' }}</span>
+            </div>
+
+            <div class="h-8 w-px bg-car-border/70"></div>
+
+            <!-- 加油规格与加满标签 -->
+            <div class="flex items-center space-x-2">
+              <span class="text-[16px] font-black text-car-text font-mono">加 {{ rec.liters }} L</span>
+              <span class="text-[12.5px] px-2 py-0.5 rounded font-black border bg-car-card border-car-border text-car-sub">
+                {{ rec.fuel_type || '92#' }} {{ rec.is_full ? '跳枪加满' : '阶段补油' }}
+              </span>
+            </div>
+
+            <div class="h-8 w-px bg-car-border/70"></div>
+
+            <!-- 单价与省份 -->
+            <div class="flex flex-col">
+              <span class="text-[13.5px] font-bold text-car-sub">
+                ¥{{ rec.price ? rec.price.toFixed(2) : '--' }}/L
+                <span class="text-[12px] text-car-sub/80">[{{ rec.province || currentProvinceName }}]</span>
+              </span>
+              <span v-if="rec.note" class="text-[11.5px] text-car-accent font-bold truncate max-w-[140px]">{{ rec.note }}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-5">
+            <!-- 实付金额 -->
+            <div class="flex flex-col text-right">
+              <span class="text-[18px] font-black text-car-accent font-mono leading-tight">¥{{ rec.actual_paid ? rec.actual_paid.toFixed(1) : (rec.amount ? rec.amount.toFixed(1) : '0.0') }}</span>
+              <span class="text-[11.5px] text-car-sub font-bold">{{ rec.source === 'auto' ? '底盘自动抓取' : '手动录入' }}</span>
+            </div>
+
+            <!-- 编辑操作图标 -->
+            <div class="flex items-center space-x-2">
+              <span class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-sub text-[13px] font-bold hover:text-car-text">
+                编辑/改
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: 单次行程油耗账单 (行车打点机制) -->
     <div v-if="activeTab === 'trip'" class="flex flex-col space-y-4">
       <div class="grid grid-cols-2 gap-4 items-stretch">
         <div class="p-5 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col justify-between">
@@ -183,7 +316,7 @@
           <div class="space-y-2 text-[14.5px] text-car-sub font-bold py-2 leading-relaxed">
             <div>• <b>起步计程</b>：踩刹车换入 D 挡起步打点底盘真实里程，原地挪车 (&lt;0.5km) 智能过滤；</div>
             <div>• <b>停稳记账</b>：挂回 P 挡瞬间冻结单次能耗数据，自动持久化至车机内部存储；</div>
-            <div>• <b>本地存储</b>：数据写入车机共享存储，零强制网络依赖，应用卸载不丢账。</div>
+            <div>• <b>本地存储</b>：数据写入 /sdcard/GeelyPilot/fuel 共享存储，零强制网络依赖，应用卸载不丢账。</div>
           </div>
           <div class="pt-4 border-t border-car-border/50 text-[13px] text-car-accent font-black">
             状态：底层总线监听中 · 随时就绪
@@ -192,42 +325,302 @@
       </div>
     </div>
 
-    <!-- Tab 3: 智能加油账本 -->
-    <div v-if="activeTab === 'record'" class="flex flex-col space-y-4">
-      <div class="grid grid-cols-2 gap-4 items-stretch">
-        <div class="p-5 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[20px] font-black text-car-text">自动识别加油记账</span>
-            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-car-accent">智能感知</span>
+    <!-- 内聚车规弹窗 1: 编辑/修改单笔加油台账 (支持异地跨省单价、实付金额与升数联动微调) -->
+    <div 
+      v-if="showEditModal" 
+      class="fixed top-0 left-0 right-0 bottom-0 z-[9990] flex items-center justify-center p-6"
+      style="width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.85);"
+    >
+      <div class="w-[680px] bg-[#1a1f2c] border-2 border-car-border rounded-3xl p-6 shadow-2xl flex flex-col space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-car-border">
+          <div class="flex items-center space-x-2">
+            <span class="text-[20px] font-black text-car-text">编辑加油记录</span>
+            <span class="text-[12px] px-2 py-0.5 rounded bg-car-card border border-car-border text-car-sub font-mono">ID: {{ editingRecord.id }}</span>
           </div>
-          <div class="space-y-2 text-[14.5px] text-car-sub font-bold py-2 leading-relaxed">
-            <div>• <b>智能感知</b>：熄火前锁存油箱浮子油量，下次点火若油量突增 &ge;8% 自动判定刚加完油；</div>
-            <div>• <b>全自动记账</b>：自动计算加注升数与预估花费，加油开走无需掏手机手动输入；</div>
-            <div>• <b>人工灵活微调</b>：支持对加注记录随时手动修改真实实付金额、满减优惠或删除误判。</div>
+          <button @click="showEditModal = false" class="min-h-[50px] min-w-[50px] flex items-center justify-center text-car-sub hover:text-car-text text-[20px] font-bold px-2 py-1">✕</button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <!-- 实付金额 (车主最常用) -->
+          <div class="flex flex-col space-y-1">
+            <span class="text-[13px] text-car-sub font-bold">车主实付金额 (元) *</span>
+            <input 
+              type="number" 
+              step="0.1" 
+              v-model.number="editingRecord.actual_paid" 
+              @input="onEditPaidChange"
+              class="h-[52px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[18px] font-mono font-black focus:border-car-accent outline-none" 
+            />
           </div>
-          <div class="p-3 bg-car-item border border-car-border rounded-2xl flex items-center justify-between">
-            <span class="text-[14px] text-car-text font-black">最近一次加油推算：</span>
-            <span class="text-[16px] font-mono text-car-accent font-black">加注约 +28.5 L · ¥225.0</span>
+
+          <!-- 加注升数 (L) -->
+          <div class="flex flex-col space-y-1">
+            <span class="text-[13px] text-car-sub font-bold">加注升数 (L) *</span>
+            <input 
+              type="number" 
+              step="0.01" 
+              v-model.number="editingRecord.liters" 
+              @input="onEditLitersChange"
+              class="h-[52px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[18px] font-mono font-black focus:border-car-accent outline-none" 
+            />
+          </div>
+
+          <!-- 加油省份 (支持长途异地) -->
+          <div class="flex flex-col space-y-1">
+            <span class="text-[13px] text-car-sub font-bold">加油省份/地区</span>
+            <select 
+              v-model="editingRecord.province" 
+              @change="onEditProvinceChange"
+              class="h-[52px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[16px] font-bold focus:border-car-accent outline-none"
+            >
+              <option v-for="prov in allProvinceNames" :key="prov" :value="prov">{{ prov }}</option>
+            </select>
+          </div>
+
+          <!-- 单价 (元/L) -->
+          <div class="flex flex-col space-y-1">
+            <span class="text-[13px] text-car-sub font-bold">实际单价 (元/L)</span>
+            <input 
+              type="number" 
+              step="0.01" 
+              v-model.number="editingRecord.price" 
+              @input="onEditPriceChange"
+              class="h-[52px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[18px] font-mono font-black focus:border-car-accent outline-none" 
+            />
+          </div>
+
+          <!-- 油品与加满状态 -->
+          <div class="flex items-center space-x-3">
+            <div class="flex flex-col space-y-1 flex-1 min-w-0">
+              <span class="text-[13px] text-car-sub font-bold">油品标号</span>
+              <select 
+                v-model="editingRecord.fuel_type" 
+                @change="onEditFuelTypeChange"
+                class="h-[52px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[16px] font-bold focus:border-car-accent outline-none"
+              >
+                <option value="92#">92# 汽油</option>
+                <option value="95#">95# 汽油</option>
+                <option value="98#">98# 汽油</option>
+                <option value="0#柴油">0# 柴油</option>
+              </select>
+            </div>
+
+            <div class="flex flex-col space-y-1 flex-1 min-w-0">
+              <span class="text-[13px] text-car-sub font-bold">是否加满</span>
+              <button 
+                type="button"
+                @click="editingRecord.is_full = !editingRecord.is_full" 
+                class="h-[52px] px-3 rounded-xl border-2 font-black text-[15px] transition-all flex items-center justify-center whitespace-nowrap bg-car-card border-car-border text-car-sub"
+              >
+                {{ editingRecord.is_full ? '✓ 跳枪加满' : '阶段加注(未满)' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 加油时总里程 ODO -->
+          <div class="flex flex-col space-y-1">
+            <span class="text-[13px] text-car-sub font-bold">总里程 ODO (km)</span>
+            <input 
+              type="number" 
+              v-model.number="editingRecord.odo" 
+              class="h-[52px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[18px] font-mono font-black focus:border-car-accent outline-none" 
+            />
           </div>
         </div>
 
-        <div class="p-5 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[20px] font-black text-car-text">手机端同步查看</span>
-            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-emerald-400">微信扫码</span>
-          </div>
-          <div class="text-[14px] text-car-sub font-bold leading-relaxed py-2">
-            微信直接扫码车机屏幕即可一键绑定爱车，离车后在手机微信中随时翻看历史油耗走势、消费明细与账单流水。
-          </div>
-          <div class="pt-4 border-t border-car-border/50 flex items-center justify-between">
-            <span class="text-[13px] text-car-sub font-bold">微信扫一扫屏幕即可直接绑定爱车</span>
+        <!-- 备注 -->
+        <div class="flex flex-col space-y-1">
+          <span class="text-[13px] text-car-sub font-bold">备注/加油站名 (选填)</span>
+          <input 
+            type="text" 
+            v-model="editingRecord.note" 
+            placeholder="如：中石化周五优惠20元、高速服务区加注等"
+            class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[15px] font-bold focus:border-car-accent outline-none" 
+          />
+        </div>
+
+        <!-- 底部操作按钮 -->
+        <div class="flex items-center justify-between pt-4 border-t border-car-border">
+          <button 
+            type="button"
+            @click="onDeleteCurrentRecord"
+            class="h-[52px] px-5 rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[15px] hover:bg-rose-500/20 transition-all cursor-pointer whitespace-nowrap"
+          >
+            删除此记录
+          </button>
+
+          <div class="flex items-center space-x-3">
             <button 
-              @click="openModal('confirm', { title: '手机扫码配对', desc: '即将在下一阶段开启微信扫码免密直连云同步服务。', confirmText: '我知道了' })"
-              class="h-[50px] px-5 bg-car-card border-2 border-car-accent text-car-accent font-black text-[15px] rounded-xl hover:border-car-accent cursor-pointer shadow-md transition-all whitespace-nowrap"
+              type="button"
+              @click="showEditModal = false"
+              class="h-[52px] px-6 rounded-xl border-2 border-car-border bg-car-card text-car-sub font-black text-[15.5px] hover:text-car-text transition-all cursor-pointer whitespace-nowrap"
             >
-              绑定手机微信 ➔
+              取消
+            </button>
+            <button 
+              type="button"
+              @click="onSaveEditedRecord"
+              class="h-[52px] px-7 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 transition-all cursor-pointer shadow-lg whitespace-nowrap"
+            >
+              保存修改
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 内聚车规弹窗 2: 手动补录一笔加油台账 -->
+    <div 
+      v-if="showAddModal" 
+      class="fixed top-0 left-0 right-0 bottom-0 z-[9990] flex items-center justify-center p-6"
+      style="width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.85);"
+    >
+      <div class="w-[680px] bg-[#1a1f2c] border-2 border-car-border rounded-3xl p-6 shadow-2xl flex flex-col space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-car-border">
+          <div class="flex items-center space-x-2">
+            <span class="text-[20px] font-black text-car-text">手动记一笔加油</span>
+            <span class="text-[12px] px-2 py-0.5 rounded bg-car-card border border-car-border text-emerald-400 font-bold">快速补录</span>
+          </div>
+          <button @click="showAddModal = false" class="min-h-[50px] min-w-[50px] flex items-center justify-center text-car-sub hover:text-car-text text-[20px] font-bold px-2 py-1">✕</button>
+        </div>
+
+        <!-- 快捷加注金额预设 -->
+        <div class="flex items-center space-x-2">
+          <span class="text-[13px] text-car-sub font-bold">快捷金额:</span>
+          <button 
+            v-for="amt in [100, 200, 300]" 
+            :key="amt"
+            type="button"
+            @click="setQuickAmount(amt)"
+            class="min-h-[50px] px-4 py-2 rounded-xl bg-car-card border border-car-border text-car-text font-mono font-black text-[14.5px] hover:border-car-accent flex items-center justify-center"
+          >
+            ¥{{ amt }}
+          </button>
+          <button 
+            type="button"
+            @click="setQuickFull"
+            class="min-h-[50px] px-4 py-2 rounded-xl bg-car-card border border-emerald-400/50 text-emerald-400 font-black text-[14px] hover:border-emerald-400 flex items-center justify-center"
+          >
+            加满整箱
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <!-- 实付金额 -->
+          <div class="flex flex-col space-y-1">
+            <span class="text-[13px] text-car-sub font-bold">实付金额 (元) *</span>
+            <input 
+              type="number" 
+              step="0.1" 
+              v-model.number="newRecord.actual_paid" 
+              @input="onNewPaidChange"
+              placeholder="如：200"
+              class="h-[52px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[18px] font-mono font-black focus:border-car-accent outline-none" 
+            />
+          </div>
+
+          <!-- 加注升数 (L) -->
+          <div class="flex flex-col space-y-1">
+            <span class="text-[13px] text-car-sub font-bold">加注升数 (L) *</span>
+            <input 
+              type="number" 
+              step="0.01" 
+              v-model.number="newRecord.liters" 
+              @input="onNewLitersChange"
+              placeholder="如：26.5"
+              class="h-[52px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[18px] font-mono font-black focus:border-car-accent outline-none" 
+            />
+          </div>
+
+          <!-- 加油省份 -->
+          <div class="flex flex-col space-y-1">
+            <span class="text-[13px] text-car-sub font-bold">加油地区</span>
+            <select 
+              v-model="newRecord.province" 
+              @change="onNewProvinceChange"
+              class="h-[52px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[16px] font-bold focus:border-car-accent outline-none"
+            >
+              <option v-for="prov in allProvinceNames" :key="prov" :value="prov">{{ prov }}</option>
+            </select>
+          </div>
+
+          <!-- 单价 (元/L) -->
+          <div class="flex flex-col space-y-1">
+            <span class="text-[13px] text-car-sub font-bold">实际单价 (元/L)</span>
+            <input 
+              type="number" 
+              step="0.01" 
+              v-model.number="newRecord.price" 
+              @input="onNewPriceChange"
+              class="h-[52px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[18px] font-mono font-black focus:border-car-accent outline-none" 
+            />
+          </div>
+
+          <!-- 油品与加满状态 -->
+          <div class="flex items-center space-x-3">
+            <div class="flex flex-col space-y-1 flex-1 min-w-0">
+              <span class="text-[13px] text-car-sub font-bold">油品标号</span>
+              <select 
+                v-model="newRecord.fuel_type" 
+                @change="onNewFuelTypeChange"
+                class="h-[52px] px-3 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[16px] font-bold focus:border-car-accent outline-none"
+              >
+                <option value="92#">92# 汽油</option>
+                <option value="95#">95# 汽油</option>
+                <option value="98#">98# 汽油</option>
+                <option value="0#柴油">0# 柴油</option>
+              </select>
+            </div>
+
+            <div class="flex flex-col space-y-1 flex-1 min-w-0">
+              <span class="text-[13px] text-car-sub font-bold">是否加满</span>
+              <button 
+                type="button"
+                @click="newRecord.is_full = !newRecord.is_full" 
+                class="h-[52px] px-3 rounded-xl border-2 font-black text-[15px] transition-all flex items-center justify-center whitespace-nowrap bg-car-card border-car-border text-car-sub"
+              >
+                {{ newRecord.is_full ? '✓ 跳枪加满' : '阶段加注(未满)' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 当前总里程 ODO -->
+          <div class="flex flex-col space-y-1">
+            <span class="text-[13px] text-car-sub font-bold">加油时总里程 ODO (km)</span>
+            <input 
+              type="number" 
+              v-model.number="newRecord.odo" 
+              placeholder="仪表盘总里程"
+              class="h-[52px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[18px] font-mono font-black focus:border-car-accent outline-none" 
+            />
+          </div>
+        </div>
+
+        <div class="flex flex-col space-y-1">
+          <span class="text-[13px] text-car-sub font-bold">备注 (选填)</span>
+          <input 
+            type="text" 
+            v-model="newRecord.note" 
+            placeholder="加油站或优惠信息"
+            class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[15px] font-bold focus:border-car-accent outline-none" 
+          />
+        </div>
+
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-car-border">
+          <button 
+            type="button"
+            @click="showAddModal = false"
+            class="h-[52px] px-6 rounded-xl border-2 border-car-border bg-car-card text-car-sub font-black text-[15.5px] hover:text-car-text transition-all cursor-pointer whitespace-nowrap"
+          >
+            取消
+          </button>
+          <button 
+            type="button"
+            @click="onSaveNewRecord"
+            class="h-[52px] px-8 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 transition-all cursor-pointer shadow-lg whitespace-nowrap"
+          >
+            确认记入账本
+          </button>
         </div>
       </div>
     </div>
@@ -235,19 +628,39 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { store, openModal, refreshOilPrices } from '../store';
+import { ref, computed, onMounted } from 'vue';
+import { 
+  store, 
+  openModal, 
+  refreshOilPrices, 
+  loadFuelData, 
+  addFuelRecord, 
+  updateFuelRecord, 
+  deleteFuelRecord 
+} from '../store';
 import SubTabs from '../components/SubTabs.vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import HelpDot from '../components/HelpDot.vue';
 import { getDaysToAdjustment } from '../utils/oilPriceData';
 
-const activeTab = ref('price');
+const activeTab = ref('record'); // 默认展示智能加油账本
 const fuelTabs = [
+  { id: 'record', name: '智能加油账本', tag: '数据台账' },
   { id: 'price', name: '实时油价日历', tag: '发改委限价' },
-  { id: 'trip', name: '单次行程油耗', tag: '行车账单' },
-  { id: 'record', name: '智能加油账本', tag: '自动记账' }
+  { id: 'trip', name: '单次行程油耗', tag: '行车账单' }
 ];
+
+// 全国所有省份名称列表 (支持跑长途异地加油单价)
+const allProvinceNames = [
+  '北京', '天津', '河北', '山西', '内蒙古', '辽宁', '吉林', '黑龙江',
+  '上海', '江苏', '浙江', '安徽', '福建', '江西', '山东', '河南',
+  '湖北', '湖南', '广东', '广西', '海南', '重庆', '四川', '贵州',
+  '云南', '西藏', '陕西', '甘肃', '青海', '宁夏', '新疆'
+];
+
+onMounted(() => {
+  loadFuelData();
+});
 
 // 车型名称与油箱容积动态适配
 const vehicleModelDisplay = computed(() => {
@@ -327,6 +740,198 @@ const oilDaysText = computed(() => {
 
 function onRefreshOilPrice() {
   refreshOilPrices(true);
+}
+
+// ----------------------------------------------------
+// 编辑台账逻辑 (内聚弹窗)
+// ----------------------------------------------------
+const showEditModal = ref(false);
+const editingRecord = ref({});
+
+function openEditRecordModal(rec) {
+  editingRecord.value = JSON.parse(JSON.stringify(rec));
+  if (!editingRecord.value.province) {
+    editingRecord.value.province = currentProvinceName.value;
+  }
+  showEditModal.value = true;
+}
+
+function onEditProvinceChange() {
+  const prov = editingRecord.value.province;
+  const pData = store.oilPrice.regionalPrices[prov];
+  if (pData) {
+    const fuelType = editingRecord.value.fuel_type || '92#';
+    if (fuelType.includes('95')) editingRecord.value.price = pData.p95 || 8.05;
+    else if (fuelType.includes('98')) editingRecord.value.price = pData.p98 || 9.10;
+    else if (fuelType.includes('柴油') || fuelType.includes('0#')) editingRecord.value.price = pData.p0 || 7.20;
+    else editingRecord.value.price = pData.p92 || 7.55;
+
+    // 智能联动实付金额
+    if (editingRecord.value.liters > 0) {
+      editingRecord.value.actual_paid = Math.round(editingRecord.value.liters * editingRecord.value.price * 10) / 10;
+    }
+  }
+}
+
+function onEditFuelTypeChange() {
+  onEditProvinceChange();
+}
+
+function onEditPaidChange() {
+  if (editingRecord.value.price > 0 && editingRecord.value.actual_paid > 0) {
+    editingRecord.value.liters = Math.round((editingRecord.value.actual_paid / editingRecord.value.price) * 100) / 100;
+  }
+}
+
+function onEditLitersChange() {
+  if (editingRecord.value.price > 0 && editingRecord.value.liters > 0) {
+    editingRecord.value.actual_paid = Math.round(editingRecord.value.liters * editingRecord.value.price * 10) / 10;
+  }
+}
+
+function onEditPriceChange() {
+  if (editingRecord.value.liters > 0 && editingRecord.value.price > 0) {
+    editingRecord.value.actual_paid = Math.round(editingRecord.value.liters * editingRecord.value.price * 10) / 10;
+  }
+}
+
+function onSaveEditedRecord() {
+  if (!editingRecord.value.actual_paid || !editingRecord.value.liters) {
+    openModal('confirm', {
+      title: '参数未填完整',
+      desc: '请确保实付金额与加注升数均大于 0。',
+      showCancel: false,
+      confirmText: '好的'
+    });
+    return;
+  }
+  updateFuelRecord(editingRecord.value);
+  showEditModal.value = false;
+}
+
+function onDeleteCurrentRecord() {
+  openModal('confirm', {
+    title: '确认删除此记录？',
+    desc: '删除后此笔加油台账将从车机中彻底移除，不可恢复。',
+    confirmText: '确定删除',
+    isDanger: true,
+    onConfirm: () => {
+      deleteFuelRecord(editingRecord.value.id);
+      showEditModal.value = false;
+    }
+  });
+}
+
+// ----------------------------------------------------
+// 新增台账逻辑 (内聚弹窗)
+// ----------------------------------------------------
+const showAddModal = ref(false);
+const newRecord = ref({
+  actual_paid: 200,
+  liters: 26.5,
+  price: 7.55,
+  province: '北京',
+  fuel_type: '92#',
+  is_full: false,
+  odo: 0,
+  note: '',
+  source: 'manual'
+});
+
+function openAddRecordModal() {
+  const p92 = currentOilData.value?.p92 || 7.55;
+  const initialPaid = 200;
+  newRecord.value = {
+    actual_paid: initialPaid,
+    liters: Math.round((initialPaid / p92) * 100) / 100,
+    price: p92,
+    province: currentProvinceName.value,
+    fuel_type: '92#',
+    is_full: false,
+    odo: 0,
+    note: '',
+    source: 'manual'
+  };
+  showAddModal.value = true;
+}
+
+function setQuickAmount(amt) {
+  newRecord.value.actual_paid = amt;
+  newRecord.value.is_full = false;
+  if (newRecord.value.price > 0) {
+    newRecord.value.liters = Math.round((amt / newRecord.value.price) * 100) / 100;
+  }
+}
+
+function setQuickFull() {
+  newRecord.value.is_full = true;
+  const gap = Number(fillGapLiters.value) || 35.0;
+  newRecord.value.liters = gap;
+  if (newRecord.value.price > 0) {
+    newRecord.value.actual_paid = Math.round(gap * newRecord.value.price * 10) / 10;
+  }
+}
+
+function onNewProvinceChange() {
+  const prov = newRecord.value.province;
+  const pData = store.oilPrice.regionalPrices[prov];
+  if (pData) {
+    const fuelType = newRecord.value.fuel_type || '92#';
+    if (fuelType.includes('95')) newRecord.value.price = pData.p95 || 8.05;
+    else if (fuelType.includes('98')) newRecord.value.price = pData.p98 || 9.10;
+    else if (fuelType.includes('柴油') || fuelType.includes('0#')) newRecord.value.price = pData.p0 || 7.20;
+    else newRecord.value.price = pData.p92 || 7.55;
+
+    if (newRecord.value.actual_paid > 0 && newRecord.value.price > 0) {
+      newRecord.value.liters = Math.round((newRecord.value.actual_paid / newRecord.value.price) * 100) / 100;
+    }
+  }
+}
+
+function onNewFuelTypeChange() {
+  onNewProvinceChange();
+}
+
+function onNewPaidChange() {
+  if (newRecord.value.price > 0 && newRecord.value.actual_paid > 0) {
+    newRecord.value.liters = Math.round((newRecord.value.actual_paid / newRecord.value.price) * 100) / 100;
+  }
+}
+
+function onNewLitersChange() {
+  if (newRecord.value.price > 0 && newRecord.value.liters > 0) {
+    newRecord.value.actual_paid = Math.round(newRecord.value.liters * newRecord.value.price * 10) / 10;
+  }
+}
+
+function onNewPriceChange() {
+  if (newRecord.value.actual_paid > 0 && newRecord.value.price > 0) {
+    newRecord.value.liters = Math.round((newRecord.value.actual_paid / newRecord.value.price) * 100) / 100;
+  }
+}
+
+function onSaveNewRecord() {
+  if (!newRecord.value.actual_paid || !newRecord.value.liters) {
+    openModal('confirm', {
+      title: '参数未填完整',
+      desc: '请确保实付金额与加注升数均大于 0。',
+      showCancel: false,
+      confirmText: '好的'
+    });
+    return;
+  }
+  addFuelRecord(newRecord.value);
+  showAddModal.value = false;
+}
+
+function showCloudPairModal() {
+  const carId = store.fuelLedger.config.car_id || 'COOL_CAR';
+  openModal('confirm', {
+    title: '【手机云同步】爱车配对码',
+    desc: `您的爱车专属配对码为：\n【 ${carId} 】\n\n手机端（微信或浏览器）打开专属页面后输入此配对码，即可离车查看实时油耗折线报表与语音智能修改。`,
+    showCancel: false,
+    confirmText: '我知道了'
+  });
 }
 
 function showTankCalcHelp() {

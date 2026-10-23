@@ -58,6 +58,7 @@ import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
 import app.onepve.geelyconsole.utils.PrefUtils;
 import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
 import app.onepve.geelyconsole.utils.AppIconManager;
+import app.onepve.geelyconsole.utils.FuelManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -2220,6 +2221,61 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
             });
             return true;
+        }
+
+        @JavascriptInterface
+        public String getFuelData() {
+            return safeCall("{\"config\":{},\"records\":[],\"stats\":{}}", () -> FuelManager.getFullDataJson(MainActivity.this));
+        }
+
+        @JavascriptInterface
+        public boolean saveFuelConfig(String configJson) {
+            try {
+                if (configJson == null || configJson.trim().isEmpty()) return false;
+                return FuelManager.saveConfig(MainActivity.this, new JSONObject(configJson));
+            } catch (Exception e) {
+                Log.w(TAG, "saveFuelConfig error", e);
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public boolean addFuelRecord(String recordJson) {
+            try {
+                if (recordJson == null || recordJson.trim().isEmpty()) return false;
+                return FuelManager.addRecord(MainActivity.this, new JSONObject(recordJson));
+            } catch (Exception e) {
+                Log.w(TAG, "addFuelRecord error", e);
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public boolean updateFuelRecord(String recordJson) {
+            try {
+                if (recordJson == null || recordJson.trim().isEmpty()) return false;
+                return FuelManager.updateRecord(MainActivity.this, new JSONObject(recordJson));
+            } catch (Exception e) {
+                Log.w(TAG, "updateFuelRecord error", e);
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public boolean deleteFuelRecord(String recordId) {
+            try {
+                if (recordId == null || recordId.trim().isEmpty()) return false;
+                long id = Long.parseLong(recordId);
+                return FuelManager.deleteRecord(MainActivity.this, id);
+            } catch (Exception e) {
+                Log.w(TAG, "deleteFuelRecord error", e);
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public boolean clearFuelRecords() {
+            return FuelManager.clearRecords(MainActivity.this);
         }
 
         @JavascriptInterface
