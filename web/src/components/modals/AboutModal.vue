@@ -39,7 +39,7 @@
               <span>DPI <b class="text-car-text">{{ screenInfo.dpi }}</b></span>
               <span>应用边界 <b class="text-car-text">{{ screenInfo.appBounds }}</b></span>
             </div>
-            <span v-if="screenInfo.wm" class="text-[13px] text-car-text/90 font-mono truncate max-w-full font-bold bg-car-item/60 px-2 py-0.5 rounded border border-car-border/50">{{ screenInfo.wm }}</span>
+            <span v-if="screenInfo.wm" class="text-[13px] text-amber-300 font-mono truncate max-w-full font-black bg-car-card px-2.5 py-1 rounded-lg border border-car-border shadow-sm">{{ screenInfo.wm }}</span>
           </div>
 
           <!-- 是否检测更新开关 (放置在屏幕参数右侧空位) -->

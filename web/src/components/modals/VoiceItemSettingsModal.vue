@@ -97,7 +97,7 @@
         <div class="flex flex-col space-y-2">
           <div class="text-[13px] text-car-sub font-bold flex items-center justify-between">
             <span>专属目录素材池 (共 {{ downloadAudioFiles.length }} 个文件 · 白名单保护不误删)：</span>
-            <span class="font-mono text-[12px] text-car-sub/80">解绑后随时可找回</span>
+            <span class="font-mono text-[12px] text-car-sub font-bold">解绑后随时可找回</span>
           </div>
 
           <!-- 空状态 -->
