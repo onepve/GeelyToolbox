@@ -18,6 +18,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiInfo;
 import app.onepve.geelyconsole.utils.EasMediaBridge;
+import app.onepve.geelyconsole.utils.NetworkPolicyManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.net.Uri;
@@ -116,6 +117,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @Override
         public void onReceive(Context context, Intent intent) {
             pushNetworkStatusToWeb();
+            pushNetworkDeviceStatusToWeb();
         }
     };
 
@@ -167,6 +169,21 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         });
     }
 
+    public void pushNetworkDeviceStatusToWeb() {
+        if (webView == null) return;
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    JSONObject obj = NetworkPolicyManager.getFullStatusJson(MainActivity.this);
+                    if (webView != null) {
+                        webView.evaluateJavascript("if(window.onNetworkDeviceStatusChanged) window.onNetworkDeviceStatusChanged(" + obj.toString() + ");", null);
+                    }
+                } catch (Exception ignored) {}
+            }
+        });
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -182,7 +199,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         initWebView();
         checkAndRequestStoragePermission();
         try {
-            registerReceiver(networkChangeReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+            IntentFilter netFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+            netFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+            netFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+            netFilter.addAction("android.net.wifi.WIFI_AP_STATE_CHANGED");
+            netFilter.addAction("android.net.conn.TETHER_STATE_CHANGED");
+            registerReceiver(networkChangeReceiver, netFilter);
         } catch (Exception ignored) {}
         try {
             registerReceiver(volumeChangeReceiver, new IntentFilter("android.media.VOLUME_CHANGED_ACTION"));
@@ -2227,6 +2249,41 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public void checkUpdateSilently(final boolean isBetaChannel) {
             checkUpdateInternal(true, isBetaChannel, false);
+        }
+
+        @JavascriptInterface
+        public String getNetworkDeviceStatus() {
+            return safeCall("{}", () -> NetworkPolicyManager.getFullStatusJson(MainActivity.this).toString());
+        }
+
+        @JavascriptInterface
+        public boolean setNetworkBootPolicy(final String type, final int policy) {
+            safeRun(new BridgeTask() {
+                @Override
+                public void run() {
+                    NetworkPolicyManager.setPolicy(MainActivity.this, type, policy);
+                    pushNetworkDeviceStatusToWeb();
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
+        public boolean setNetworkDeviceDirect(final String type, final boolean enable) {
+            safeRun(new BridgeTask() {
+                @Override
+                public void run() {
+                    if ("wifi".equalsIgnoreCase(type)) {
+                        NetworkPolicyManager.setWifiEnabled(MainActivity.this, enable);
+                    } else if ("hotspot".equalsIgnoreCase(type)) {
+                        NetworkPolicyManager.setHotspotEnabled(MainActivity.this, enable);
+                    } else if ("bluetooth".equalsIgnoreCase(type) || "bt".equalsIgnoreCase(type)) {
+                        NetworkPolicyManager.setBluetoothEnabled(MainActivity.this, enable);
+                    }
+                    pushNetworkDeviceStatusToWeb();
+                }
+            });
+            return true;
         }
 
         private void checkUpdateInternal(final boolean silent) {

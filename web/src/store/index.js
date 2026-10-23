@@ -100,6 +100,16 @@ export const store = reactive({
     vehicle_speed_custom_action_target: 'pkg' + ':com.autonavi.amapauto'
   },
 
+  // 车载网络与外设连接策略中枢
+  networkDevice: {
+    wifi_enabled: false,
+    hotspot_enabled: false,
+    bluetooth_enabled: false,
+    wifi_policy: 0,       // 0: 保持现状, 1: 默认开启, 2: 默认关闭
+    hotspot_policy: 0,
+    bluetooth_policy: 0
+  },
+
   // 云端应用与下载
   apps: [],
   downloadProgress: {},
@@ -424,4 +434,38 @@ export function updateInstalledMusicAppsCache(list) {
       localStorage.setItem('geely_cached_media_apps_list', JSON.stringify(list));
     } catch (e) {}
   }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// 车载网络与外设连接策略中枢控制与同步
+// ──────────────────────────────────────────────────────────────────────────
+
+export function initNetworkDeviceStatus() {
+  try {
+    const raw = bridge.call('getNetworkDeviceStatus');
+    if (raw) {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      Object.assign(store.networkDevice, parsed);
+    }
+  } catch (e) {}
+}
+
+export function setNetworkBootPolicy(type, policy) {
+  store.networkDevice[`${type}_policy`] = policy;
+  bridge.call('setNetworkBootPolicy', type, policy);
+}
+
+export function toggleNetworkDeviceDirect(type, enable) {
+  store.networkDevice[`${type}_enabled`] = enable;
+  bridge.call('setNetworkDeviceDirect', type, enable);
+}
+
+if (typeof window !== 'undefined') {
+  window.onNetworkDeviceStatusChanged = (data) => {
+    if (!data) return;
+    try {
+      const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+      Object.assign(store.networkDevice, parsed);
+    } catch (e) {}
+  };
 }

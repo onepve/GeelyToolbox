@@ -25,6 +25,7 @@ import android.view.KeyEvent;
 import android.content.pm.ResolveInfo;
 
 import app.onepve.geelyconsole.utils.QQMusicCarController;
+import app.onepve.geelyconsole.utils.NetworkPolicyManager;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -420,6 +421,11 @@ public class VehicleAutomationService extends Service {
             if (prefs.getBoolean("floating_enabled", false)) {
                 FloatingWindowService.ensureServiceStarted(this);
             }
+        } catch (Throwable ignored) {}
+
+        // 开机车载网络与外设连接策略守护 (后台就绪自检探针，零阻塞主线程)
+        try {
+            NetworkPolicyManager.runBootPolicyWorkerAsync(this);
         } catch (Throwable ignored) {}
 
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", java.util.Locale.CHINA);
