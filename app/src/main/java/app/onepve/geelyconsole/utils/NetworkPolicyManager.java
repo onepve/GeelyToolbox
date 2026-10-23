@@ -129,7 +129,7 @@ public class NetworkPolicyManager {
                 return true;
             }
         } catch (Throwable t) {
-            SystemUtils.executePrivileged(ctx, "svc wifi " + (enable ? "enable" : "disable"));
+            SystemUtils.executeWithTimeout(ctx, "svc wifi " + (enable ? "enable" : "disable"), 600);
         }
         return isWifiEnabled(ctx);
     }
@@ -144,7 +144,7 @@ public class NetworkPolicyManager {
                 return true;
             }
         } catch (Throwable t) {
-            SystemUtils.executePrivileged(ctx, "service call bluetooth_manager " + (enable ? "6" : "8"));
+            SystemUtils.executeWithTimeout(ctx, "service call bluetooth_manager " + (enable ? "6" : "8"), 600);
         }
         return isBluetoothEnabled();
     }
@@ -168,14 +168,14 @@ public class NetworkPolicyManager {
             }
         } catch (Throwable t) {
             if (enable) {
-                String res = SystemUtils.executePrivileged(ctx, "cmd connectivity start-tethering wifi");
+                String res = SystemUtils.executeWithTimeout(ctx, "cmd connectivity start-tethering wifi", 600);
                 if (res == null || res.contains("Error")) {
-                    SystemUtils.executePrivileged(ctx, "svc wifi setWifiApEnabled true");
+                    SystemUtils.executeWithTimeout(ctx, "svc wifi setWifiApEnabled true", 600);
                 }
             } else {
-                String res = SystemUtils.executePrivileged(ctx, "cmd connectivity stop-tethering wifi");
+                String res = SystemUtils.executeWithTimeout(ctx, "cmd connectivity stop-tethering wifi", 600);
                 if (res == null || res.contains("Error")) {
-                    SystemUtils.executePrivileged(ctx, "svc wifi setWifiApEnabled false");
+                    SystemUtils.executeWithTimeout(ctx, "svc wifi setWifiApEnabled false", 600);
                 }
             }
         }

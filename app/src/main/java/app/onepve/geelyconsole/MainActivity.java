@@ -171,14 +171,19 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
     public void pushNetworkDeviceStatusToWeb() {
         if (webView == null) return;
-        mainHandler.post(new Runnable() {
+        NETWORK_WORKER.execute(new Runnable() {
             @Override
             public void run() {
                 try {
-                    JSONObject obj = NetworkPolicyManager.getFullStatusJson(MainActivity.this);
-                    if (webView != null) {
-                        webView.evaluateJavascript("if(window.onNetworkDeviceStatusChanged) window.onNetworkDeviceStatusChanged(" + obj.toString() + ");", null);
-                    }
+                    final JSONObject obj = NetworkPolicyManager.getFullStatusJson(MainActivity.this);
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (webView != null) {
+                                webView.evaluateJavascript("if(window.onNetworkDeviceStatusChanged) window.onNetworkDeviceStatusChanged(" + obj.toString() + ");", null);
+                            }
+                        }
+                    });
                 } catch (Exception ignored) {}
             }
         });
@@ -651,6 +656,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
     /** 顶栏设备信息推送线程（绝不在主线程做 getprop / 包状态查询，否则整机 UI 卡死数秒） */
     private static final java.util.concurrent.ExecutorService DEVICE_INFO_EXECUTOR =
+            java.util.concurrent.Executors.newSingleThreadExecutor();
+    /** 车载网络外设专属异步队列（严格隔离 JSBridge 线程与 UI 主线程，防止底层网络 Shell 阻塞界面） */
+    private static final java.util.concurrent.ExecutorService NETWORK_WORKER =
             java.util.concurrent.Executors.newSingleThreadExecutor();
     private volatile boolean deviceInfoPushing = false;
     /** 屏幕参数进程级缓存：软件每次启动只真实采集一次，之后推送复用（2026-09-18 定案，修复「屏幕采集」日志无限刷屏） */
@@ -2258,11 +2266,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public boolean setNetworkBootPolicy(final String type, final int policy) {
-            safeRun(new BridgeTask() {
+            NETWORK_WORKER.execute(new Runnable() {
                 @Override
                 public void run() {
-                    NetworkPolicyManager.setPolicy(MainActivity.this, type, policy);
-                    pushNetworkDeviceStatusToWeb();
+                    try {
+                        NetworkPolicyManager.setPolicy(MainActivity.this, type, policy);
+                        pushNetworkDeviceStatusToWeb();
+                    } catch (Throwable ignored) {}
                 }
             });
             return true;
@@ -2270,17 +2280,19 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public boolean setNetworkDeviceDirect(final String type, final boolean enable) {
-            safeRun(new BridgeTask() {
+            NETWORK_WORKER.execute(new Runnable() {
                 @Override
                 public void run() {
-                    if ("wifi".equalsIgnoreCase(type)) {
-                        NetworkPolicyManager.setWifiEnabled(MainActivity.this, enable);
-                    } else if ("hotspot".equalsIgnoreCase(type)) {
-                        NetworkPolicyManager.setHotspotEnabled(MainActivity.this, enable);
-                    } else if ("bluetooth".equalsIgnoreCase(type) || "bt".equalsIgnoreCase(type)) {
-                        NetworkPolicyManager.setBluetoothEnabled(MainActivity.this, enable);
-                    }
-                    pushNetworkDeviceStatusToWeb();
+                    try {
+                        if ("wifi".equalsIgnoreCase(type)) {
+                            NetworkPolicyManager.setWifiEnabled(MainActivity.this, enable);
+                        } else if ("hotspot".equalsIgnoreCase(type)) {
+                            NetworkPolicyManager.setHotspotEnabled(MainActivity.this, enable);
+                        } else if ("bluetooth".equalsIgnoreCase(type) || "bt".equalsIgnoreCase(type)) {
+                            NetworkPolicyManager.setBluetoothEnabled(MainActivity.this, enable);
+                        }
+                        pushNetworkDeviceStatusToWeb();
+                    } catch (Throwable ignored) {}
                 }
             });
             return true;

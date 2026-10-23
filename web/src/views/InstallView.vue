@@ -5,7 +5,6 @@
 
     <!-- Tab 1: 特权安装通道 (v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'channels'" class="grid grid-cols-2 gap-4 items-stretch">
-    <div class="grid grid-cols-2 gap-4">
       <FeatureCard class="!mb-0" 
         title="车载原生文件管理"
         desc="请勿使用电脑命令行后台强行安装，易导致应用闪退或白屏，通过原生文件管理点选安装最稳定。"
@@ -66,12 +65,9 @@
       </FeatureCard>
     </div>
 
-    </div>
-
     <!-- Tab 2: 整车应用高级管理 (v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'manage'" class="flex flex-col space-y-4">
       <div class="grid grid-cols-2 gap-4 items-stretch">
-    <div class="grid grid-cols-2 gap-4">
       <!-- 应用高级管理 (原系统维护移至此处，形成安装与卸载管理闭环) -->
       <FeatureCard class="!mb-0"
         title="整车应用高级管理"
@@ -142,8 +138,6 @@
         </div>
       </FeatureCard>
     </div>
-
-      </div>
     <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
       <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
         车载应用安装与白名单说明：
