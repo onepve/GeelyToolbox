@@ -3,82 +3,82 @@
     <!-- 顶部车规二级分段胶囊：一页全景掌控 (3大单屏纯净Tab) -->
     <SubTabs :tabs="systemTabs" v-model="activeTab" />
 
-    <!-- Tab 1: 桌面与车标 (悬浮胶囊 + 应用图标，v-if 彻底杜绝幽灵重叠) -->
+    <!-- Tab 1: 桌面悬浮胶囊与屏保 (v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'desktop'" class="flex flex-col space-y-4">
-    <FloatingView />
+      <FloatingView />
+    </div>
 
+    <!-- Tab 2: 桌面应用车标 (独占单屏展示，彻底告别滚动) -->
+    <div v-if="activeTab === 'icon'" class="flex flex-col space-y-4">
+      <FeatureCard 
+        title="桌面应用图标"
+        desc="支持根据车型自动匹配或手动指定桌面图标。设置后立即生效，可在车机桌面上展现专属车标。"
+        helpTitle="【功能指南】桌面应用图标"
+        helpText="1. 自动跟随车型：&#10;若为缤越 COOL 改款专车环境（SX11-A3 / 能量风暴前脸），自动激活改款运动大嘴专属车标；老款缤越及其他吉利车型自动保持通用科技车标。&#10;&#10;2. 缤越 COOL 专属车标致谢：&#10;车标素材由车友【筱小龚 QQ:42457071】设计贡献。&#10;&#10;3. 手动指定与生效：&#10;您也可以随时手动指定通用科技车标或改款缤越专属车标；切换后车机桌面启动器将在数秒内自动刷新对应车标。" helpTip="切换后若桌面图标未立刻刷新，可返回桌面稍等片刻或滑动屏幕即可触发刷新。"
+      >
+        <div class="w-full flex flex-col space-y-3">
+          <div class="grid grid-cols-3 gap-3 w-full">
+            <!-- 自动跟随车型 -->
+            <button
+              @click="onSelectAppIconStyle('auto')"
+              :class="[
+                'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
+                (store.deviceInfo.app_icon_style === 'auto' || !store.deviceInfo.app_icon_style)
+                  ? 'bg-car-item border-car-accent ring-2 ring-car-accent/30 shadow-md'
+                  : 'bg-car-card border-car-border hover:border-car-border-light'
+              ]"
+            >
+              <div class="flex items-center justify-center w-14 h-14">
+                <span class="text-[32px] filter drop-shadow">⚡</span>
+              </div>
+              <div class="flex flex-col items-center leading-tight">
+                <span class="text-[17px] font-black text-car-text">自动跟随车型</span>
+                <span class="text-[12px] font-bold text-car-sub mt-1">
+                  {{ store.deviceInfo.is_binyue_cool_model ? '当前匹配：缤越COOL' : '当前匹配：通用车标' }}
+                </span>
+              </div>
+            </button>
 
-    <FeatureCard 
-      title="桌面应用图标"
-      desc="支持根据车型自动匹配或手动指定桌面图标。设置后立即生效，可在车机桌面上展现专属车标。"
-      helpTitle="【功能指南】桌面应用图标"
-      helpText="1. 自动跟随车型：&#10;若为缤越 COOL 改款专车环境（SX11-A3 / 能量风暴前脸），自动激活改款运动大嘴专属车标；老款缤越及其他吉利车型自动保持通用科技车标。&#10;&#10;2. 缤越 COOL 专属车标致谢：&#10;车标素材由车友【筱小龚 QQ:42457071】设计贡献。&#10;&#10;3. 手动指定与生效：&#10;您也可以随时手动指定通用科技车标或改款缤越专属车标；切换后车机桌面启动器将在数秒内自动刷新对应车标。" helpTip="切换后若桌面图标未立刻刷新，可返回桌面稍等片刻或滑动屏幕即可触发刷新。"
-    >
-      <div class="w-full flex flex-col space-y-3">
-        <div class="grid grid-cols-3 gap-3 w-full">
-          <!-- 1. 自动跟随车型 -->
-          <button
-            @click="onSelectAppIconStyle('auto')"
-            :class="[
-              'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
-              (store.deviceInfo.app_icon_style === 'auto' || !store.deviceInfo.app_icon_style)
-                ? 'bg-car-item border-car-accent ring-2 ring-car-accent/30 shadow-md'
-                : 'bg-car-card border-car-border hover:border-car-border-light'
-            ]"
-          >
-            <div class="flex items-center justify-center w-14 h-14">
-              <span class="text-[32px] filter drop-shadow">⚡</span>
-            </div>
-            <div class="flex flex-col items-center leading-tight">
-              <span class="text-[17px] font-black text-car-text">自动跟随车型</span>
-              <span class="text-[12px] font-bold text-car-sub mt-1">
-                {{ store.deviceInfo.is_binyue_cool_model ? '当前匹配：缤越COOL' : '当前匹配：通用车标' }}
-              </span>
-            </div>
-          </button>
+            <!-- 通用科技车标 -->
+            <button
+              @click="onSelectAppIconStyle('default')"
+              :class="[
+                'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
+                store.deviceInfo.app_icon_style === 'default'
+                  ? 'bg-car-item border-car-accent ring-2 ring-car-accent/30 shadow-md'
+                  : 'bg-car-card border-car-border hover:border-car-border-light'
+              ]"
+            >
+              <div class="flex items-center justify-center w-14 h-14">
+                <img :src="ICON_PREVIEW_DEFAULT" class="w-14 h-14 object-contain rounded-2xl filter drop-shadow-md" alt="通用车标" />
+              </div>
+              <div class="flex flex-col items-center leading-tight">
+                <span class="text-[17px] font-black text-car-text">通用科技车标</span>
+                <span class="text-[12px] font-bold text-car-sub mt-1">老款缤越及吉利全系</span>
+              </div>
+            </button>
 
-          <!-- 2. 通用科技车标 -->
-          <button
-            @click="onSelectAppIconStyle('default')"
-            :class="[
-              'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
-              store.deviceInfo.app_icon_style === 'default'
-                ? 'bg-car-item border-car-accent ring-2 ring-car-accent/30 shadow-md'
-                : 'bg-car-card border-car-border hover:border-car-border-light'
-            ]"
-          >
-            <div class="flex items-center justify-center w-14 h-14">
-              <img :src="ICON_PREVIEW_DEFAULT" class="w-14 h-14 object-contain rounded-2xl filter drop-shadow-md" alt="通用车标" />
-            </div>
-            <div class="flex flex-col items-center leading-tight">
-              <span class="text-[17px] font-black text-car-text">通用科技车标</span>
-              <span class="text-[12px] font-bold text-car-sub mt-1">老款缤越及吉利全系</span>
-            </div>
-          </button>
-
-          <!-- 3. 缤越专属车标 -->
-          <button
-            @click="onSelectAppIconStyle('cool')"
-            :class="[
-              'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
-              store.deviceInfo.app_icon_style === 'cool'
-                ? 'bg-car-item border-car-accent ring-2 ring-car-accent/30 shadow-md'
-                : 'bg-car-card border-car-border hover:border-car-border-light'
-            ]"
-          >
-            <div class="flex items-center justify-center w-14 h-14">
-              <img :src="ICON_PREVIEW_COOL" class="w-14 h-14 object-contain rounded-2xl filter drop-shadow-md" alt="缤越COOL专属" />
-            </div>
-            <div class="flex flex-col items-center leading-tight">
-              <span class="text-[17px] font-black text-car-text">缤越COOL专属</span>
-              <span class="text-[12px] font-bold text-car-sub mt-1">筱小龚(QQ:42457071)</span>
-            </div>
-          </button>
+            <!-- 缤越专属车标 -->
+            <button
+              @click="onSelectAppIconStyle('cool')"
+              :class="[
+                'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
+                store.deviceInfo.app_icon_style === 'cool'
+                  ? 'bg-car-item border-car-accent ring-2 ring-car-accent/30 shadow-md'
+                  : 'bg-car-card border-car-border hover:border-car-border-light'
+              ]"
+            >
+              <div class="flex items-center justify-center w-14 h-14">
+                <img :src="ICON_PREVIEW_COOL" class="w-14 h-14 object-contain rounded-2xl filter drop-shadow-md" alt="缤越COOL专属" />
+              </div>
+              <div class="flex flex-col items-center leading-tight">
+                <span class="text-[17px] font-black text-car-text">缤越COOL专属</span>
+                <span class="text-[12px] font-bold text-car-sub mt-1">筱小龚(QQ:42457071)</span>
+              </div>
+            </button>
+          </div>
         </div>
-      </div>
-    </FeatureCard>
-
-
+      </FeatureCard>
     </div>
 
     <!-- Tab 2: 外观与首屏 (液态玻璃主题 + 默认首屏，v-if 彻底杜绝幽灵重叠) -->
@@ -319,7 +319,8 @@ import { ICON_PREVIEW_DEFAULT, ICON_PREVIEW_COOL } from '../utils/launcherIcons'
 
 const activeTab = ref('desktop');
 const systemTabs = [
-  { id: 'desktop', name: '桌面与车标', tag: '悬浮/车标' },
+  { id: 'desktop', name: '桌面胶囊悬浮', tag: '悬浮/屏保' },
+  { id: 'icon', name: '桌面应用车标', tag: '专属车标' },
   { id: 'theme', name: '外观与首屏', tag: '昼夜/首屏' },
   { id: 'tools', name: '系统底层运维', tag: '日志/ADB' }
 ];

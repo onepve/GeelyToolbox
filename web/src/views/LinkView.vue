@@ -5,10 +5,10 @@
 
     <!-- 1. 360全景联动 (双大卡片，一屏收尽) -->
     <div v-if="activeTab === '360'" class="grid grid-cols-2 gap-4 items-stretch">
-      <!-- 任务 1: D 挡起步联动 360 -->
+      <!-- D 挡起步联动 360 -->
       <PlanCard
-        title="1. 前进 D 挡起步联动 360"
-        tag="单次跃变"
+        title="前进 D 挡起步联动 360"
+        tag="起步盲区"
         help-text="gear_d_360"
         flow-sub="从 P 挡或 R 挡切入前进 D 挡起步 (单次跃变锁)"
         flow-main="唤醒 360 扫除起步盲区；车速超 15 km/h 自动还原"
@@ -23,10 +23,10 @@
       </PlanCard>
 
 
-      <!-- 任务 2: 转向灯开启联动 360 全景 (车规标准 PlanCard，双列等高对称) -->
+      <!-- 转向灯开启联动 360 全景 (车规标准 PlanCard，双列等高对称) -->
       <PlanCard
-        title="2. 转向灯开启联动 360"
-        tag="侧向盲区"
+        title="转向灯开启联动 360"
+        tag="变道盲区"
         help-text="turn_signal_360"
         flow-sub="打左/右转向灯时自动唤起 360 全景环视，消除变道盲区"
         :flow-main="store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '倒车 R 挡避让原厂倒车；转向灯回正复位后自动退出 360 画面' : '倒车 R 挡避让原厂倒车；转向灯回正后持续保持 360 画面'"
@@ -258,9 +258,9 @@
         </div>
       </div>
 
-      <!-- 任务 2: 停稳推门多媒体暂停 -->
+      <!-- 停稳推门多媒体暂停 -->
       <PlanCard
-        title="2. 停稳推门多媒体暂停"
+        title="停稳推门多媒体暂停"
         tag="下车静音"
         help-text="door_pause"
         flow-sub="挂入驻车 P 挡且推开前排车门（准备下车）"
@@ -275,9 +275,9 @@
         </template>
       </PlanCard>
 
-      <!-- 任务 5: 进隧道大灯联动高德日夜模式 (高德 7.5 经典通道) -->
+      <!-- 进隧道大灯联动高德日夜模式 (高德 7.5 经典通道) -->
       <PlanCard
-        title="5. 进隧道大灯联动高德"
+        title="进隧道大灯联动高德"
         tag="高德7.5"
         help-text="light_nav"
         flow-sub="白天行车开启前大灯（驶入地下车库或长隧道）"

@@ -45,8 +45,8 @@
     <div v-if="activeTab === 'motion'" class="grid grid-cols-2 gap-4 items-stretch">
       <!-- 语音提示 1：换挡安全播报 -->
       <PlanCard
-        title="1. 换挡语音提示"
-        tag="换挡安全"
+        title="换挡语音提示"
+        tag="换挡提示"
         help-size="lg"
         help-text="gear"
         flow-sub="踩刹车挂入 D / R / N 挡，或从行车切回 P 挡驻车"
@@ -69,8 +69,8 @@
 
       <!-- 语音提示 2：驾驶模式播报 -->
       <PlanCard
-        title="2. 驾驶模式播报"
-        tag="旋钮激擎"
+        title="驾驶模式播报"
+        tag="模式切换"
         help-size="lg"
         help-text="mode"
         flow-sub="中控模式旋钮转动切换至舒适、经济、运动或智能"
@@ -93,12 +93,12 @@
 
     </div>
 
-    <!-- Tab 2: 车门迎宾安全 (四门 + 尾门，v-if 彻底杜绝幽灵重叠) -->
+    <!-- Tab 2: 车门迎宾播报 (四门 + 尾门，v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'doors'" class="grid grid-cols-2 gap-4 items-stretch">
-      <!-- 语音提示 3：车门迎宾与关门安全播报 -->
+      <!-- 语音提示 3：车门迎宾与关门提示 -->
       <PlanCard
-        title="3. 车门迎宾与安全提示"
-        tag="五门防抖"
+        title="车门迎宾提示"
+        tag="车门提示"
         help-size="lg"
         help-text="door"
         flow-sub="主驾、副驾、后排车门开启或关好 (防抖合并)"
@@ -121,8 +121,8 @@
 
       <!-- 语音提示 4：电动尾门安全播报 -->
       <PlanCard
-        title="4. 尾门安全提示"
-        tag="尾门防碰"
+        title="尾门开闭提示"
+        tag="尾门提示"
         help-size="lg"
         help-text="trunk"
         flow-sub="电动尾门按键触发升起，或锁扣电机下落闭锁确认"
@@ -324,7 +324,7 @@ import TrunkConfigModal from '../components/TrunkConfigModal.vue';
 const activeTab = ref('motion');
 const voiceTabs = [
   { id: 'motion', name: '行车动态播报', tag: '换挡/模式' },
-  { id: 'doors', name: '车门迎宾安全', tag: '五门安全' },
+  { id: 'doors', name: '车门迎宾播报', tag: '车门提示' },
   { id: 'packs', name: '专车主题语音包', tag: '整套换装' }
 ];
 
@@ -450,9 +450,9 @@ function showModeHelp() {
 
 function showDoorHelp() {
   openModal('confirm', {
-    title: '【功能指南】五门防抖与通用智能语音',
-    desc: '1. 通用智能模式：推荐模式。开门统一播报「车门已打开」，关门统一播报「车门已关好」，多门同时动作合并防抖，不抢音。\n\n2. 独立分门模式：可分别为主驾、副驾、后排播报专属语音。',
-    tip: '在二级向导中可随时切换模式，并对各项开闭动作进行个性化声效定制。',
+    title: '【功能指南】车门开闭智能语音提示',
+    desc: '1. 通用模式：开门统一播报「车门已打开」，关门统一播报「车门已关好」，多门同时动作自动合并，不连环抢音。\n\n2. 独立分门模式：可分别为主驾、副驾、后排播报专属语音。',
+    tip: '日常建议使用「通用模式」，播报简洁干脆。',
     showCancel: false,
     confirmText: '我知道了'
   });

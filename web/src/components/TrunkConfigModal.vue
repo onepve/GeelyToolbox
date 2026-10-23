@@ -14,7 +14,7 @@
             <div class="flex flex-col space-y-1">
               <div class="flex items-center space-x-2">
                 <span class="text-[21.5px] font-black text-car-text">尾门升起提醒</span>
-                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent text-[14px] font-bold">防碰防刮</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent text-[14px] font-bold">开门提示</span>
               </div>
               <span class="text-[13px] text-car-sub font-bold">尾门升起短促提醒，防止碰擦低矮车库顶梁</span>
             </div>
@@ -48,7 +48,7 @@
             <div class="flex flex-col space-y-1">
               <div class="flex items-center space-x-2">
                 <span class="text-[21.5px] font-black text-car-text">尾门完全锁止</span>
-                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent text-[14px] font-bold">锁闭就绪</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent text-[14px] font-bold">关门提示</span>
               </div>
               <span class="text-[13px] text-car-sub font-bold">电吸闭合锁止时播报，无需回头确认关门</span>
             </div>
