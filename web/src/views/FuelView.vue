@@ -364,21 +364,16 @@
       </div>
     </div>
 
-    <!-- 内聚车规弹窗 1: 编辑/修改单笔加油台账 (支持异地跨省单价、实付金额与升数联动微调) -->
-    <div 
-      v-if="showEditModal" 
-      class="fixed top-0 left-0 right-0 bottom-0 z-[9990] flex items-center justify-center p-6"
-      style="width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.85);"
+    <!-- 车规标准弹窗 1: 编辑/修改单笔加油台账 (接入助手统一 ModalWrapper，彻底告别黑底) -->
+    <ModalWrapper
+      :show="showEditModal"
+      :title="'编辑加油台账 (ID: ' + editingRecord.id + ')'"
+      badge="流水微调"
+      maxWidthClass="max-w-[820px]"
+      zIndexClass="z-[9990]"
+      @close="showEditModal = false"
     >
-      <div class="w-[680px] bg-[#1a1f2c] border-2 border-car-border rounded-3xl p-6 shadow-2xl flex flex-col space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-car-border">
-          <div class="flex items-center space-x-2">
-            <span class="text-[20px] font-black text-car-text">编辑加油记录</span>
-            <span class="text-[12px] px-2 py-0.5 rounded bg-car-card border border-car-border text-car-sub font-mono">ID: {{ editingRecord.id }}</span>
-          </div>
-          <button @click="showEditModal = false" class="min-h-[50px] min-w-[50px] flex items-center justify-center text-car-sub hover:text-car-text text-[20px] font-bold px-2 py-1">✕</button>
-        </div>
-
+      <div class="flex flex-col space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <!-- 实付金额 (车主最常用) -->
           <div class="flex flex-col space-y-1">
@@ -477,52 +472,45 @@
             class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[15px] font-bold focus:border-car-accent outline-none" 
           />
         </div>
-
-        <!-- 底部操作按钮 -->
-        <div class="flex items-center justify-between pt-4 border-t border-car-border">
-          <button 
-            type="button"
-            @click="onDeleteCurrentRecord"
-            class="h-[52px] px-5 rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[15px] hover:bg-rose-500/20 transition-all cursor-pointer whitespace-nowrap"
-          >
-            删除此记录
-          </button>
-
-          <div class="flex items-center space-x-3">
-            <button 
-              type="button"
-              @click="showEditModal = false"
-              class="h-[52px] px-6 rounded-xl border-2 border-car-border bg-car-card text-car-sub font-black text-[15.5px] hover:text-car-text transition-all cursor-pointer whitespace-nowrap"
-            >
-              取消
-            </button>
-            <button 
-              type="button"
-              @click="onSaveEditedRecord"
-              class="h-[52px] px-7 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 transition-all cursor-pointer shadow-lg whitespace-nowrap"
-            >
-              保存修改
-            </button>
-          </div>
-        </div>
       </div>
-    </div>
 
-    <!-- 内聚车规弹窗 2: 手动补录一笔加油台账 -->
-    <div 
-      v-if="showAddModal" 
-      class="fixed top-0 left-0 right-0 bottom-0 z-[9990] flex items-center justify-center p-6"
-      style="width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.85);"
+      <!-- 底部操作按钮 -->
+      <template #footer>
+        <button 
+          type="button"
+          @click="onDeleteCurrentRecord"
+          class="h-[52px] px-5 rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[15px] hover:bg-rose-500/20 transition-all cursor-pointer whitespace-nowrap mr-auto"
+        >
+          删除此记录
+        </button>
+
+        <button 
+          type="button"
+          @click="showEditModal = false"
+          class="h-[52px] px-6 rounded-xl border-2 border-car-border bg-car-card text-car-sub font-black text-[15.5px] hover:text-car-text transition-all cursor-pointer whitespace-nowrap"
+        >
+          取消
+        </button>
+        <button 
+          type="button"
+          @click="onSaveEditedRecord"
+          class="h-[52px] px-7 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 transition-all cursor-pointer shadow-lg whitespace-nowrap"
+        >
+          保存修改
+        </button>
+      </template>
+    </ModalWrapper>
+
+    <!-- 车规标准弹窗 2: 手动补录一笔加油台账 (接入助手统一 ModalWrapper) -->
+    <ModalWrapper
+      :show="showAddModal"
+      title="手动补录一笔加油台账"
+      badge="快速补录"
+      maxWidthClass="max-w-[820px]"
+      zIndexClass="z-[9990]"
+      @close="showAddModal = false"
     >
-      <div class="w-[680px] bg-[#1a1f2c] border-2 border-car-border rounded-3xl p-6 shadow-2xl flex flex-col space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-car-border">
-          <div class="flex items-center space-x-2">
-            <span class="text-[20px] font-black text-car-text">手动记一笔加油</span>
-            <span class="text-[12px] px-2 py-0.5 rounded bg-car-card border border-car-border text-emerald-400 font-bold">快速补录</span>
-          </div>
-          <button @click="showAddModal = false" class="min-h-[50px] min-w-[50px] flex items-center justify-center text-car-sub hover:text-car-text text-[20px] font-bold px-2 py-1">✕</button>
-        </div>
-
+      <div class="flex flex-col space-y-4">
         <!-- 快捷加注金额预设 -->
         <div class="flex items-center space-x-2">
           <span class="text-[13px] text-car-sub font-bold">快捷金额:</span>
@@ -644,25 +632,25 @@
             class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border text-car-text text-[15px] font-bold focus:border-car-accent outline-none" 
           />
         </div>
-
-        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-car-border">
-          <button 
-            type="button"
-            @click="showAddModal = false"
-            class="h-[52px] px-6 rounded-xl border-2 border-car-border bg-car-card text-car-sub font-black text-[15.5px] hover:text-car-text transition-all cursor-pointer whitespace-nowrap"
-          >
-            取消
-          </button>
-          <button 
-            type="button"
-            @click="onSaveNewRecord"
-            class="h-[52px] px-8 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 transition-all cursor-pointer shadow-lg whitespace-nowrap"
-          >
-            确认记入账本
-          </button>
-        </div>
       </div>
-    </div>
+
+      <template #footer>
+        <button 
+          type="button"
+          @click="showAddModal = false"
+          class="h-[52px] px-6 rounded-xl border-2 border-car-border bg-car-card text-car-sub font-black text-[15.5px] hover:text-car-text transition-all cursor-pointer whitespace-nowrap"
+        >
+          取消
+        </button>
+        <button 
+          type="button"
+          @click="onSaveNewRecord"
+          class="h-[52px] px-8 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 transition-all cursor-pointer shadow-lg whitespace-nowrap"
+        >
+          确认记入账本
+        </button>
+      </template>
+    </ModalWrapper>
   </div>
 </template>
 
@@ -680,6 +668,7 @@ import {
 import SubTabs from '../components/SubTabs.vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import HelpDot from '../components/HelpDot.vue';
+import ModalWrapper from '../components/modals/ModalWrapper.vue';
 import { getDaysToAdjustment } from '../utils/oilPriceData';
 
 const activeTab = ref('record'); // 默认展示智能加油账本

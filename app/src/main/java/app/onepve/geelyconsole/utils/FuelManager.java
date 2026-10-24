@@ -1,7 +1,9 @@
 package app.onepve.geelyconsole.utils;
 
 import android.content.Context;
+import android.os.Build;
 import android.os.Environment;
+import android.provider.Settings;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -13,6 +15,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -33,6 +36,7 @@ public class FuelManager {
     private static final String DIR_NAME = "GeelyPilot/fuel";
     private static final String FILE_CONFIG = "fuel_config.json";
     private static final String FILE_RECORDS = "fuel_records.json";
+    private static final String FILE_VEHICLE_KEY = "vehicle_identity.key";
 
     // 车机端防卡顿性能与轻量化门禁限制:
     // 最多保留最新 30 条流水记录，超出自动滚动淘汰最旧记录 (全量数据由云端 PWA/D1 承接)
@@ -60,7 +64,14 @@ public class FuelManager {
             if (configFile.exists() && configFile.length() > 0) {
                 try {
                     String content = readFileContent(configFile);
-                    return new JSONObject(content);
+                    JSONObject cfg = new JSONObject(content);
+                    // 确保爱车识别码与出厂硬件身份同步对齐 (防重置/刷机防漂移)
+                    String persistentCarId = getHardwareCarIdentity(context);
+                    if (!persistentCarId.isEmpty() && (!cfg.has("car_id") || cfg.optString("car_id", "").startsWith("COOL_"))) {
+                        cfg.put("car_id", persistentCarId);
+                        saveConfig(context, cfg);
+                    }
+                    return cfg;
                 } catch (Throwable t) {
                     Log.w(TAG, "读取 fuel_config.json 异常，生成默认配置: " + t.getMessage());
                 }
@@ -72,12 +83,101 @@ public class FuelManager {
                 def.put("default_fuel_type", "92#");     // 默认 92# 汽油
                 def.put("default_province", "浙江");     // 默认发改委省份
                 def.put("refuel_threshold_l", 4.0);      // 加油检测跃变阈值 (4.0L)
-                def.put("car_id", "COOL_" + UUID.randomUUID().toString().substring(0, 6).toUpperCase(Locale.US));
+                def.put("car_id", getHardwareCarIdentity(context)); // 原车出厂芯片/总线硬件唯一指纹
                 def.put("bind_token", UUID.randomUUID().toString().substring(0, 8));
                 def.put("cloud_sync_enabled", false);
                 saveConfig(context, def);
             } catch (Throwable ignored) {}
             return def;
+        }
+    }
+
+    /**
+     * 获取原车不可变硬件身份指纹 (防 Root、防刷机双清漂移)
+     * 优先级:
+     * 1. 外部共享存储已持久化烙印 (vehicle_identity.key)
+     * 2. 原车出厂 SoC 芯片序列号 (ro.boot.serialno / ro.serialno / Build.SERIAL)
+     * 3. 亿咖通专车硬件标识 (ro.boot.ecarx_projectinfo / XDSN)
+     * 4. Android 硬件唯一 ID (Settings.Secure.ANDROID_ID)
+     */
+    public static String getHardwareCarIdentity(Context context) {
+        // 1. 检查 /sdcard/GeelyPilot/fuel/vehicle_identity.key 物理持久烙印
+        try {
+            File keyFile = new File(getFuelDir(), FILE_VEHICLE_KEY);
+            if (keyFile.exists() && keyFile.length() > 0) {
+                String savedKey = readFileContent(keyFile).trim();
+                if (!savedKey.isEmpty()) {
+                    return savedKey;
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        String identity = "";
+
+        // 2. 读取原车出厂硬件芯片序列号 (不受刷系统、改 system 分区影响)
+        identity = getSystemProperty("ro.boot.serialno");
+        if (identity.isEmpty() || "unknown".equalsIgnoreCase(identity)) {
+            identity = getSystemProperty("ro.serialno");
+        }
+        if (identity.isEmpty() || "unknown".equalsIgnoreCase(identity)) {
+            try {
+                if (Build.SERIAL != null && !Build.SERIAL.isEmpty() && !"unknown".equalsIgnoreCase(Build.SERIAL)) {
+                    identity = Build.SERIAL;
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        // 3. 读取吉利亿咖通车规硬件标识
+        if (identity.isEmpty() || "unknown".equalsIgnoreCase(identity)) {
+            String ecarxInfo = getSystemProperty("ro.boot.ecarx_projectinfo");
+            if (!ecarxInfo.isEmpty() && !"unknown".equalsIgnoreCase(ecarxInfo)) {
+                identity = "ECARX_" + ecarxInfo.replace(" ", "_");
+            }
+        }
+
+        // 4. 回退至硬件级 ANDROID_ID
+        if (identity.isEmpty() || "unknown".equalsIgnoreCase(identity)) {
+            try {
+                if (context != null) {
+                    String aid = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+                    if (aid != null && !aid.trim().isEmpty()) {
+                        identity = aid.toUpperCase(Locale.US);
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        // 5. 兜底随机兜底码
+        if (identity.isEmpty() || "unknown".equalsIgnoreCase(identity)) {
+            identity = "GEELY_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.US);
+        }
+
+        // 规范化前缀标识
+        String finalId = identity.replaceAll("[^A-Za-z0-9_\\-]", "");
+        if (!finalId.startsWith("GEELY_") && !finalId.startsWith("ECARX_")) {
+            finalId = "GEELY_" + finalId;
+        }
+
+        // 写入外部共享持久文件做物理烙印，即使后续被双清也能跨环境恢复识别
+        try {
+            File keyFile = new File(getFuelDir(), FILE_VEHICLE_KEY);
+            writeFileContent(keyFile, finalId);
+        } catch (Throwable ignored) {}
+
+        return finalId;
+    }
+
+    /**
+     * 安全反射读取系统属性
+     */
+    private static String getSystemProperty(String key) {
+        try {
+            Class<?> sp = Class.forName("android.os.SystemProperties");
+            Method m = sp.getMethod("get", String.class, String.class);
+            String val = (String) m.invoke(null, key, "");
+            return val != null ? val.trim() : "";
+        } catch (Throwable ignored) {
+            return "";
         }
     }
 
