@@ -385,82 +385,31 @@ public class FuelManager {
     }
 
     /**
-     * 获取所有历史行程记录 (按时间降序排列，最新一笔排在最前)
+     * 单次行程出账功能已按车规极简原则废弃：
+     * 单次行程（里程、油耗、均速）完全交由原厂液晶仪表原生呈现；
+     * 燃油管家聚焦跨周期加注宏观台账，彻底拔除单次频繁刷写 flash 磁盘。
      */
     public static JSONArray getTrips(Context context) {
-        synchronized (LOCK) {
-            File tripsFile = new File(getFuelDir(), FILE_TRIPS);
-            if (tripsFile.exists() && tripsFile.length() > 0) {
-                try {
-                    String content = readFileContent(tripsFile);
-                    return new JSONArray(content);
-                } catch (Throwable t) {
-                    Log.w(TAG, "读取 fuel_trips.json 异常: " + t.getMessage());
-                }
-            }
-            return new JSONArray();
-        }
+        return new JSONArray();
     }
 
-    /**
-     * 获取最新一笔行程记录 (若无则返回 null)
-     */
     public static JSONObject getLastTrip(Context context) {
-        synchronized (LOCK) {
-            JSONArray trips = getTrips(context);
-            if (trips.length() > 0) {
-                try {
-                    return trips.getJSONObject(0);
-                } catch (Throwable ignored) {}
-            }
-            return null;
-        }
+        return null;
     }
 
-    /**
-     * 新增一笔单次行程记录 (自动执行 MAX_LOCAL_RECORDS = 30 滑动窗口滚动淘汰)
-     */
     public static boolean addTrip(Context context, JSONObject trip) {
-        synchronized (LOCK) {
-            try {
-                if (!trip.has("id") || trip.optLong("id", 0) <= 0) {
-                    trip.put("id", System.currentTimeMillis());
-                }
-                JSONArray current = getTrips(context);
-                JSONArray updated = new JSONArray();
-
-                // 最新一笔插入队首
-                updated.put(trip);
-
-                // 保留历史记录 (滑动窗口淘汰旧记录)
-                int limit = Math.min(current.length(), MAX_LOCAL_RECORDS - 1);
-                for (int i = 0; i < limit; i++) {
-                    updated.put(current.getJSONObject(i));
-                }
-
-                File tripsFile = new File(getFuelDir(), FILE_TRIPS);
-                writeFileContent(tripsFile, updated.toString(2));
-                AppLogger.i("行程油耗", "已持久化单次行程账单: 里程=" + trip.optDouble("distance", 0.0) + "km, 均速=" + trip.optDouble("avg_speed", 0.0) + "km/h");
-                return true;
-            } catch (Throwable t) {
-                Log.e(TAG, "持久化 fuel_trips.json 失败: " + t.getMessage());
-                return false;
-            }
-        }
+        return true;
     }
 
-    /**
-     * 清空全部单次行程记录
-     */
     public static boolean clearTrips(Context context) {
         synchronized (LOCK) {
             try {
                 File tripsFile = new File(getFuelDir(), FILE_TRIPS);
-                writeFileContent(tripsFile, new JSONArray().toString(2));
-                AppLogger.i("行程油耗", "已清空所有单次行程记录");
+                if (tripsFile.exists()) {
+                    tripsFile.delete();
+                }
                 return true;
             } catch (Throwable t) {
-                Log.e(TAG, "清空 fuel_trips.json 失败: " + t.getMessage());
                 return false;
             }
         }
