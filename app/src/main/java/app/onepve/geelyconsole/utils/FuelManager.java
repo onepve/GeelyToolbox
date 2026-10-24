@@ -37,6 +37,7 @@ public class FuelManager {
     private static final String FILE_CONFIG = "fuel_config.json";
     private static final String FILE_RECORDS = "fuel_records.json";
     private static final String FILE_TRIPS = "fuel_trips.json";
+    private static final String FILE_STATE = "fuel_state.json";
     private static final String FILE_VEHICLE_KEY = "vehicle_identity.key";
 
     // 车机端防卡顿性能与轻量化门禁限制:
@@ -180,6 +181,42 @@ public class FuelManager {
             return val != null ? val.trim() : "";
         } catch (Throwable ignored) {
             return "";
+        }
+    }
+
+    /**
+     * 读取断电前保存的最后液位快照 (fuel_state.json)
+     */
+    public static JSONObject getLastFuelState(Context context) {
+        synchronized (LOCK) {
+            try {
+                File stateFile = new File(getFuelDir(), FILE_STATE);
+                if (stateFile.exists() && stateFile.length() > 0) {
+                    String content = readFileContent(stateFile);
+                    return new JSONObject(content);
+                }
+            } catch (Throwable t) {
+                Log.w(TAG, "读取 fuel_state.json 异常: " + t.getMessage());
+            }
+            return new JSONObject();
+        }
+    }
+
+    /**
+     * 保持更新液位与总里程瞬态状态 (在熄火断电或行车打点时落盘)
+     */
+    public static void saveLastFuelState(Context context, double oilLiters, double odoKm) {
+        synchronized (LOCK) {
+            try {
+                JSONObject state = new JSONObject();
+                state.put("oil", oilLiters);
+                state.put("odo", odoKm);
+                state.put("timestamp", System.currentTimeMillis());
+                File stateFile = new File(getFuelDir(), FILE_STATE);
+                writeFileContent(stateFile, state.toString(2));
+            } catch (Throwable t) {
+                Log.w(TAG, "保存 fuel_state.json 异常: " + t.getMessage());
+            }
         }
     }
 

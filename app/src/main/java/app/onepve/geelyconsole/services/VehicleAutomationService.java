@@ -223,6 +223,9 @@ public class VehicleAutomationService extends Service {
             } else {
                 // 引擎已熄火但未挂入 P 挡推开主驾门 (吉利车机即将断电)：立即紧急收尾单次行程！
                 settleActiveTrip("未挂P挡熄火开门离车");
+                if (currentRemainingOilLiters > 0) {
+                    FuelManager.saveLastFuelState(this, currentRemainingOilLiters, currentTotalOdoKm);
+                }
             }
         } else {
             // 挂在物理 P 挡且推开主驾车门：车主泊车下车离车，结束本次行程
@@ -641,6 +644,10 @@ public class VehicleAutomationService extends Service {
                 if (realPowerOff) {
                     lastPowerMode = 0; // 真正熄火下电：强制锁定为 0
                     settleActiveTrip("整车熄火下电断电保护");
+                    // 熄火瞬间必须将最后液位快照写入物理闪存，供加完油重新点火时比对！
+                    if (currentRemainingOilLiters > 0) {
+                        FuelManager.saveLastFuelState(VehicleAutomationService.this, currentRemainingOilLiters, currentTotalOdoKm);
+                    }
                     if (gearStateMachine != null) gearStateMachine.resetState();
                     if (driveModeManager != null) driveModeManager.resetState();
                     if (doorStateManager != null) doorStateManager.resetState();
@@ -1690,6 +1697,9 @@ public class VehicleAutomationService extends Service {
     public void onDestroy() {
         super.onDestroy();
         settleActiveTrip("服务注销终极兜底");
+        if (currentRemainingOilLiters > 0) {
+            FuelManager.saveLastFuelState(this, currentRemainingOilLiters, currentTotalOdoKm);
+        }
         isRunning = false;
         instance = null;
         cancelPendingMusicRetries("服务销毁");
@@ -1835,13 +1845,26 @@ public class VehicleAutomationService extends Service {
 
     /**
      * 智能加油跃变感知与自动静默记账引擎
+     * 实车真实加油工况：车主到站必先熄火 ➔ 车机断电 ➔ 加油员加完油 ➔ 车主点火通电 ➔ 车机上电读到油量大增
      * 核心原则：零打扰静默记账，车主离场后空闲微调
      */
     private void processRefuelDetection(double currentOil) {
-        // 初始化基准液位
+        // 1. 初始化基准液位：优先读取上次熄火断电前持久化在 fuel_state.json 的历史液位
         if (lastBaselineOilLiters < 0) {
-            lastBaselineOilLiters = currentOil;
-            return;
+            try {
+                JSONObject state = FuelManager.getLastFuelState(this);
+                double savedOil = state.optDouble("oil", -1.0);
+                if (savedOil > 0) {
+                    lastBaselineOilLiters = savedOil;
+                    AppLogger.i("加油感知", "已载入上次熄火断电前液位基准: " + lastBaselineOilLiters + "L");
+                } else {
+                    lastBaselineOilLiters = currentOil;
+                    return;
+                }
+            } catch (Throwable ignored) {
+                lastBaselineOilLiters = currentOil;
+                return;
+            }
         }
 
         // 仅在停稳P挡或超低速(<=5km/h，排除高速颠簸晃动)时才检测加油跃变
@@ -1858,18 +1881,21 @@ public class VehicleAutomationService extends Service {
             if (lastOilJumpDetectedTimeMs == 0) {
                 lastOilJumpDetectedTimeMs = now;
                 pendingRefuelLiters = delta;
-                AppLogger.i("加油感知", "检测到油箱液面跃升: 基准=" + lastBaselineOilLiters + "L ➔ 当前=" + currentOil + "L (跃升 " + delta + "L)，开始防抖监听...");
+                AppLogger.i("加油感知", "检测到点火前后油箱液面跃升: 上次熄火/基准=" + lastBaselineOilLiters + "L ➔ 当前=" + currentOil + "L (跃升 " + delta + "L)，开始防抖监听...");
             } else if (now - lastOilJumpDetectedTimeMs >= REFUEL_STABLE_HOLD_MS) {
                 // 稳定持续 >= 6秒，判定为真实加油入账，直接静默记账！
                 double addedLiters = Math.round(delta * 10.0) / 10.0;
                 autoRecordRefuelSilently(addedLiters, currentOil);
                 lastBaselineOilLiters = currentOil;
                 lastOilJumpDetectedTimeMs = 0;
+                // 更新持久化快照
+                FuelManager.saveLastFuelState(this, currentOil, currentTotalOdoKm);
             }
         } else if (delta < -2.0) {
-            // 正常行车油耗下降，平滑下推基准线
+            // 正常行车油耗下降，平滑下推基准线并定期持久化快照
             lastBaselineOilLiters = currentOil;
             lastOilJumpDetectedTimeMs = 0;
+            FuelManager.saveLastFuelState(this, currentOil, currentTotalOdoKm);
         }
     }
 
