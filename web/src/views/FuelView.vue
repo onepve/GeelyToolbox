@@ -397,19 +397,34 @@
             <div class="flex flex-col space-y-1">
               <div class="flex items-center space-x-2">
                 <span class="text-[15px] font-black text-car-text">{{ item.end_time || item.start_time }}</span>
-                <span class="px-2 py-0.5 text-[11px] font-black rounded bg-car-item border border-car-border text-car-sub">
-                  耗时 {{ Math.round((item.duration_sec || 0) / 60) }} 分钟
+                <span 
+                  class="px-2 py-0.5 text-[11px] font-black rounded border"
+                  :class="item.is_idle ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-car-item border-car-border text-car-sub'"
+                >
+                  {{ item.is_idle ? '❄️ 怠速开空调/驻车' : '耗时 ' + Math.round((item.duration_sec || 0) / 60) + ' 分钟' }}
+                </span>
+                <span v-if="item.is_idle" class="text-[11px] font-mono text-car-sub">
+                  ({{ Math.round((item.duration_sec || 0) / 60) }}分钟)
                 </span>
               </div>
               <div class="text-[13px] text-car-sub font-mono">
-                起止: {{ item.start_odo }} km ➔ {{ item.end_odo }} km (均速: {{ item.avg_speed }} km/h)
+                <template v-if="item.is_idle">
+                  原地基准能耗: {{ item.idle_rate || '1.0 L/h' }} · 消耗 {{ item.consumed_liters }} L
+                </template>
+                <template v-else>
+                  起止: {{ item.start_odo }} km ➔ {{ item.end_odo }} km (均速: {{ item.avg_speed }} km/h)
+                </template>
               </div>
             </div>
 
             <div class="flex items-center space-x-4">
               <div class="flex flex-col items-end">
-                <span class="text-[18px] font-black text-car-accent font-mono">{{ item.distance }} km</span>
-                <span class="text-[12px] text-car-sub font-mono">{{ item.avg_consumption }} L/100km</span>
+                <span class="text-[18px] font-black font-mono" :class="item.is_idle ? 'text-amber-400' : 'text-car-accent'">
+                  {{ item.is_idle ? '原地怠速' : item.distance + ' km' }}
+                </span>
+                <span class="text-[12px] text-car-sub font-mono">
+                  {{ item.is_idle ? item.consumed_liters + ' L' : item.avg_consumption + ' L/100km' }}
+                </span>
               </div>
               <div class="flex flex-col items-end pl-3 border-l border-car-border/60">
                 <span class="text-[18px] font-black text-amber-400 font-mono">¥ {{ item.estimated_cost }}</span>

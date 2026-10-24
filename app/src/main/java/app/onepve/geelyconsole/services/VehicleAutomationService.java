@@ -158,6 +158,7 @@ public class VehicleAutomationService extends Service {
     private double activeTripMaxSpeedKmH = 0.0;
     private long activeTripSpeedSampleCount = 0;
     private double activeTripSpeedSampleSum = 0.0;
+    private long engineStartTimestampMs = 0; // 引擎点火启动时刻 (用于怠速吹空调/驻车等人能耗统计)
 
     // 智能加油静默感知防抖追踪
     private double lastBaselineOilLiters = -1.0;
@@ -351,6 +352,9 @@ public class VehicleAutomationService extends Service {
         try {
             QQMusicCarController.getInstance(this).ensureConnected();
         } catch (Throwable ignored) {}
+
+        // 初始化点火启动时间戳
+        engineStartTimestampMs = System.currentTimeMillis();
 
         // 每次启动服务或开机时，显式复位用户手动暂停标记与单次行程锁
         // 彻底根除因上一趟行程按了暂停，重启车机后 user_manually_paused_media 依然死锁在磁盘导致起步不放歌的 Bug！
@@ -1939,9 +1943,55 @@ public class VehicleAutomationService extends Service {
      * 单次行程出账结算引擎 (P挡停稳瞬态冻结)
      */
     private void settleActiveTrip(String reason) {
-        if (activeTripStartTimeMs <= 0) return;
-
         long now = System.currentTimeMillis();
+
+        // 场景 A: 纯原地怠速开空调/等人出账 (打着车未挂前进挡起步，但怠速持续 >= 3分钟)
+        if (activeTripStartTimeMs <= 0) {
+            if (engineStartTimestampMs > 0 && isEngineRunning()) {
+                long idleDurationSec = (now - engineStartTimestampMs) / 1000;
+                // 原地怠速达 3 分钟 (180秒) 以上，生成一张专属「怠速驻车能耗账单」
+                if (idleDurationSec >= 180) {
+                    try {
+                        JSONObject trip = new JSONObject();
+                        trip.put("id", now);
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+                        trip.put("start_time", sdf.format(new Date(engineStartTimestampMs)));
+                        trip.put("end_time", sdf.format(new Date(now)));
+                        trip.put("duration_sec", idleDurationSec);
+                        trip.put("distance", 0.0);
+                        trip.put("is_idle", true); // 纯怠速驻车标记
+                        trip.put("start_odo", currentTotalOdoKm > 0 ? Math.round(currentTotalOdoKm * 10.0) / 10.0 : 0.0);
+                        trip.put("end_odo", currentTotalOdoKm > 0 ? Math.round(currentTotalOdoKm * 10.0) / 10.0 : 0.0);
+                        trip.put("avg_speed", 0.0);
+                        trip.put("max_speed", 0.0);
+                        trip.put("start_oil", currentRemainingOilLiters >= 0 ? currentRemainingOilLiters : 0.0);
+                        trip.put("end_oil", currentRemainingOilLiters >= 0 ? currentRemainingOilLiters : 0.0);
+
+                        // 1.5T 怠速开空调基准能耗: 约 1.0 L/小时 (0.0167 L/分钟)
+                        double idleHours = idleDurationSec / 3600.0;
+                        double consumedLiters = Math.round(idleHours * 1.0 * 100.0) / 100.0;
+                        if (consumedLiters < 0.05) consumedLiters = 0.05;
+                        double estPrice = 7.6;
+                        double estCost = Math.round(consumedLiters * estPrice * 10.0) / 10.0;
+
+                        trip.put("consumed_liters", consumedLiters);
+                        trip.put("avg_consumption", 0.0); // 怠速不折算L/100km
+                        trip.put("estimated_cost", estCost);
+                        trip.put("idle_rate", "1.0 L/h");
+
+                        FuelManager.addTrip(this, trip);
+                        AppLogger.i("行程结算", "【怠速驻车账单已出账】(" + reason + ") 原地驻车/吹空调=" + (idleDurationSec / 60) + "分钟, 预估消耗=" + consumedLiters + "L, 预估费用=" + estCost + "元");
+                    } catch (Throwable t) {
+                        Log.e(TAG, "怠速结单异常: " + t.getMessage());
+                    } finally {
+                        engineStartTimestampMs = now; // 结算后重置，等待下一次怠速或起步
+                    }
+                }
+            }
+            return;
+        }
+
+        // 场景 B: 正常起步行驶出账
         long durationSec = (now - activeTripStartTimeMs) / 1000;
         double startOdo = activeTripStartOdoKm;
         double endOdo = currentTotalOdoKm;
@@ -1968,6 +2018,7 @@ public class VehicleAutomationService extends Service {
             trip.put("end_time", sdf.format(new Date(now)));
             trip.put("duration_sec", durationSec);
             trip.put("distance", Math.round(distance * 10.0) / 10.0);
+            trip.put("is_idle", false);
             trip.put("start_odo", startOdo > 0 ? Math.round(startOdo * 10.0) / 10.0 : 0.0);
             trip.put("end_odo", endOdo > 0 ? Math.round(endOdo * 10.0) / 10.0 : 0.0);
             trip.put("avg_speed", Math.round(avgSpeed * 10.0) / 10.0);
@@ -1996,6 +2047,7 @@ public class VehicleAutomationService extends Service {
             Log.e(TAG, "结单异常: " + t.getMessage());
         } finally {
             activeTripStartTimeMs = 0;
+            engineStartTimestampMs = now;
         }
     }
 
