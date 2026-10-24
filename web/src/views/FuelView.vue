@@ -335,21 +335,26 @@
         <div class="p-5 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col justify-between">
           <div class="flex items-center justify-between mb-2">
             <span class="text-[20px] font-black text-car-text">上次行程总结 (停稳 P 挡结算)</span>
-            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-emerald-400">自动记录</span>
+            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-emerald-400">
+              {{ fuelLedger.last_trip ? '已结单' : '等待起步' }}
+            </span>
           </div>
-          <div class="grid grid-cols-3 gap-2 py-4 text-center bg-car-item border border-car-border rounded-2xl my-2">
+          <div v-if="fuelLedger.last_trip" class="grid grid-cols-3 gap-2 py-4 text-center bg-car-item border border-car-border rounded-2xl my-2">
             <div class="flex flex-col">
               <span class="text-[13px] text-car-sub font-bold">行驶里程</span>
-              <span class="text-[24px] font-black text-car-accent font-mono mt-1">18.5 <span class="text-[12px]">km</span></span>
+              <span class="text-[24px] font-black text-car-accent font-mono mt-1">{{ fuelLedger.last_trip.distance }} <span class="text-[12px]">km</span></span>
             </div>
             <div class="flex flex-col border-x border-car-border/60">
               <span class="text-[13px] text-car-sub font-bold">综合油耗</span>
-              <span class="text-[24px] font-black text-car-text font-mono mt-1">6.8 <span class="text-[12px]">L/100km</span></span>
+              <span class="text-[24px] font-black text-car-text font-mono mt-1">{{ fuelLedger.last_trip.avg_consumption }} <span class="text-[12px]">L/100km</span></span>
             </div>
             <div class="flex flex-col">
               <span class="text-[13px] text-car-sub font-bold">预估油费</span>
-              <span class="text-[24px] font-black text-amber-400 font-mono mt-1">¥ 9.8 <span class="text-[12px]">元</span></span>
+              <span class="text-[24px] font-black text-amber-400 font-mono mt-1">¥ {{ fuelLedger.last_trip.estimated_cost }} <span class="text-[12px]">元</span></span>
             </div>
+          </div>
+          <div v-else class="py-6 text-center text-car-sub font-bold bg-car-item border border-car-border rounded-2xl my-2">
+            暂无已结单行程 · 起步挂入 D 挡后开始打点记录
           </div>
           <div class="text-[13px] text-car-sub font-bold">
             起步切 D 挡自动打点仪表盘总里程；停稳挂 P 挡结合发改委实时油价静默出账，杜绝语音扰民。
@@ -362,12 +367,52 @@
             <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-car-sub">静默出账</span>
           </div>
           <div class="space-y-2 text-[14.5px] text-car-sub font-bold py-2 leading-relaxed">
-            <div>• <b>起步计程</b>：踩刹车换入 D 挡起步打点底盘真实里程，原地挪车 (&lt;0.5km) 智能过滤；</div>
+            <div>• <b>起步计程</b>：踩刹车换入 D 挡起步打点底盘真实里程，原地切挡 (&lt;0.1km 且 &lt;15s) 智能过滤；</div>
             <div>• <b>停稳记账</b>：挂回 P 挡瞬间冻结单次能耗数据，自动持久化至车机内部存储；</div>
             <div>• <b>本地存储</b>：数据写入 /sdcard/GeelyPilot/fuel 共享存储，零强制网络依赖，应用卸载不丢账。</div>
           </div>
           <div class="pt-4 border-t border-car-border/50 text-[13px] text-car-accent font-black">
             状态：底层总线监听中 · 随时就绪
+          </div>
+        </div>
+      </div>
+
+      <!-- 历史行程账单列表 (滑动窗口最多30条) -->
+      <div v-if="fuelLedger.trips && fuelLedger.trips.length > 0" class="flex flex-col space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <span class="text-[18px] font-black text-car-text">最近行程账单明细 ({{ fuelLedger.trips.length }} 笔)</span>
+          <button @click="onClearTrips" class="h-[52px] px-4 rounded-xl bg-car-card border-2 border-car-border text-[14px] text-rose-400 font-bold hover:border-rose-500/50 flex items-center justify-center">
+            清空历史行程
+          </button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div 
+            v-for="item in fuelLedger.trips" 
+            :key="item.id" 
+            class="p-4 rounded-2xl bg-car-card border-2 border-car-border shadow-md flex items-center justify-between"
+          >
+            <div class="flex flex-col space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="text-[15px] font-black text-car-text">{{ item.end_time || item.start_time }}</span>
+                <span class="px-2 py-0.5 text-[11px] font-black rounded bg-car-item border border-car-border text-car-sub">
+                  耗时 {{ Math.round((item.duration_sec || 0) / 60) }} 分钟
+                </span>
+              </div>
+              <div class="text-[13px] text-car-sub font-mono">
+                起止: {{ item.start_odo }} km ➔ {{ item.end_odo }} km (均速: {{ item.avg_speed }} km/h)
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+              <div class="flex flex-col items-end">
+                <span class="text-[18px] font-black text-car-accent font-mono">{{ item.distance }} km</span>
+                <span class="text-[12px] text-car-sub font-mono">{{ item.avg_consumption }} L/100km</span>
+              </div>
+              <div class="flex flex-col items-end pl-3 border-l border-car-border/60">
+                <span class="text-[18px] font-black text-amber-400 font-mono">¥ {{ item.estimated_cost }}</span>
+                <span class="text-[11px] text-car-sub">预估费用</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -763,7 +808,8 @@ import {
   loadFuelData, 
   addFuelRecord, 
   updateFuelRecord, 
-  deleteFuelRecord 
+  deleteFuelRecord,
+  clearFuelTrips
 } from '../store';
 import SubTabs from '../components/SubTabs.vue';
 import FeatureCard from '../components/FeatureCard.vue';
@@ -1123,6 +1169,19 @@ function showTankCalcHelp() {
     tip: '所有油价均以当前所选省份发改委官方最高限价核算。',
     showCancel: false,
     confirmText: '我知道了'
+  });
+}
+
+function onClearTrips() {
+  openModal('confirm', {
+    title: '清空行程记录',
+    desc: '确定要清空全部单次行程账单明细吗？',
+    tip: '此操作不可撤销，已存储的油耗账单将被清空。',
+    confirmText: '清空',
+    cancelText: '取消',
+    onConfirm: () => {
+      clearFuelTrips();
+    }
   });
 }
 </script>

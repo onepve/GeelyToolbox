@@ -174,6 +174,8 @@ export const store = reactive({
       status_desc: '尚未出账'
     },
     monthly_stats: [],
+    trips: [],
+    last_trip: null,
     isLoaded: false
   },
   oilPrice: {
@@ -522,6 +524,8 @@ export function loadFuelData() {
       if (Array.isArray(data.records)) store.fuelLedger.records = data.records;
       if (data.stats) Object.assign(store.fuelLedger.stats, data.stats);
       if (Array.isArray(data.monthly_stats)) store.fuelLedger.monthly_stats = data.monthly_stats;
+      if (Array.isArray(data.trips)) store.fuelLedger.trips = data.trips;
+      store.fuelLedger.last_trip = data.last_trip || (store.fuelLedger.trips.length > 0 ? store.fuelLedger.trips[0] : null);
       store.fuelLedger.isLoaded = true;
     }
   } catch (e) {
@@ -569,6 +573,17 @@ export function saveFuelConfig(cfg) {
     return ok;
   } catch (e) {
     console.error('saveFuelConfig error', e);
+    return false;
+  }
+}
+
+export function clearFuelTrips() {
+  try {
+    const ok = bridge.call('clearFuelTrips');
+    loadFuelData();
+    return ok;
+  } catch (e) {
+    console.error('clearFuelTrips error', e);
     return false;
   }
 }

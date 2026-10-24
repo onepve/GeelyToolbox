@@ -29,10 +29,14 @@ import app.onepve.geelyconsole.utils.NetworkPolicyManager;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.json.JSONObject;
 
 import app.onepve.geelyconsole.R;
 import app.onepve.geelyconsole.hal.IVehiclePlatform;
@@ -45,6 +49,7 @@ import app.onepve.geelyconsole.utils.DoorStateManager;
 import app.onepve.geelyconsole.utils.DriveModeManager;
 import app.onepve.geelyconsole.utils.EasMediaBridge;
 import app.onepve.geelyconsole.utils.ForegroundAppDetector;
+import app.onepve.geelyconsole.utils.FuelManager;
 import app.onepve.geelyconsole.utils.GearStateMachine;
 import app.onepve.geelyconsole.utils.IdleScreensaverManager;
 import app.onepve.geelyconsole.utils.PrefUtils;
@@ -143,6 +148,16 @@ public class VehicleAutomationService extends Service {
     private TrunkStateManager trunkStateManager;
     private GearStateMachine gearStateMachine;
     private DriveModeManager driveModeManager;
+
+    // 燃油管家与行程出账实时状态 (法定真源)
+    public static volatile double currentTotalOdoKm = -1.0;
+    public static volatile double currentRemainingOilLiters = -1.0;
+    private long activeTripStartTimeMs = 0;
+    private double activeTripStartOdoKm = -1.0;
+    private double activeTripStartOilLiters = -1.0;
+    private double activeTripMaxSpeedKmH = 0.0;
+    private long activeTripSpeedSampleCount = 0;
+    private double activeTripSpeedSampleSum = 0.0;
 
     // 服务启动时间戳（用于时间戳软栅栏，毫秒级丢弃开机前的陈旧日志）
     private long serviceBootTimestampMs = 0;
@@ -665,6 +680,10 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("(?:func?Value\\((?:0x)?([0-9a-fA-F]+)\\)|(?:mModelGearPos|GearPos)\\s*[:=]\\s*(?:0x)?([0-9a-fA-F]+))");
     private static final Pattern P_FUNVALUE =
             Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)");
+    private static final Pattern P_IPK_TOTAL_ODO =
+            Pattern.compile("INFO_ID_IPKINFO_TOTAL_ODO.*?(?:funValue|funcValue)\\((?:0x)?([0-9a-fA-F]+)\\)");
+    private static final Pattern P_REMAINING_OIL =
+            Pattern.compile("INFO_ID_REMAINING_OIL.*?(?:funValue|funcValue)\\((?:0x)?([0-9a-fA-F]+)\\)");
     private static final Pattern P_DRIVE_MODE =
             Pattern.compile("(?:DirveMode|DriveMode)\\s*=\\s*(\\d+)");
     private static final Pattern P_COMFORT_DRIVE_MODE =
@@ -836,6 +855,46 @@ public class VehicleAutomationService extends Service {
             if (wheelKey > 0) {
                 return;
             }
+        }
+
+        // 1.1 解析仪表盘累计总里程与剩余油量 (燃油管家核心法定真源)
+        if (line.contains("INFO_ID_IPKINFO_TOTAL_ODO")) {
+            try {
+                Matcher m = P_IPK_TOTAL_ODO.matcher(line);
+                if (m.find()) {
+                    String hexStr = m.group(1);
+                    if (hexStr != null && !hexStr.isEmpty()) {
+                        int rawVal = Integer.parseInt(hexStr, 16);
+                        double odo = rawVal / 10.0; // 0.1km 分辨率 (如 504529 -> 50452.9 km)
+                        if (odo > 0) {
+                            currentTotalOdoKm = odo;
+                            if (activeTripStartTimeMs > 0 && activeTripStartOdoKm <= 0) {
+                                activeTripStartOdoKm = odo;
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
+            return;
+        }
+
+        if (line.contains("INFO_ID_REMAINING_OIL")) {
+            try {
+                Matcher m = P_REMAINING_OIL.matcher(line);
+                if (m.find()) {
+                    String hexStr = m.group(1);
+                    if (hexStr != null && !hexStr.isEmpty()) {
+                        int rawVal = Integer.parseInt(hexStr, 16);
+                        if (rawVal >= 0 && rawVal <= 100) {
+                            currentRemainingOilLiters = rawVal;
+                            if (activeTripStartTimeMs > 0 && activeTripStartOilLiters <= 0) {
+                                activeTripStartOilLiters = rawVal;
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
+            return;
         }
 
         // 2. 解析车辆实时车速 (以原厂随速音量 CarAudioInfo / Get Speed 为最高优先级主力源，原厂纯整数零误差)
@@ -1220,6 +1279,13 @@ public class VehicleAutomationService extends Service {
      */
     public void handleSpeedSignal(final int speed) {
         currentSpeedKmH = speed;
+        if (activeTripStartTimeMs > 0 && speed > 0) {
+            activeTripSpeedSampleCount++;
+            activeTripSpeedSampleSum += speed;
+            if (speed > activeTripMaxSpeedKmH) {
+                activeTripMaxSpeedKmH = speed;
+            }
+        }
         processVehicleSpeedAutomation(currentSpeedKmH);
     }
 
@@ -1243,8 +1309,22 @@ public class VehicleAutomationService extends Service {
         //    保持状态机状态记忆，放行真实换挡跃变与语音播报！
         gearStateMachine.updateGear(gear, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
 
+        if (gear == 2 || gear == 6 || gear == 7) {
+            // 前进挡起步：打点单次行程初始数据
+            if (activeTripStartTimeMs == 0) {
+                activeTripStartTimeMs = System.currentTimeMillis();
+                activeTripStartOdoKm = currentTotalOdoKm;
+                activeTripStartOilLiters = currentRemainingOilLiters;
+                activeTripMaxSpeedKmH = 0.0;
+                activeTripSpeedSampleCount = 0;
+                activeTripSpeedSampleSum = 0.0;
+                AppLogger.i("行程打点", "挂入前进挡起步打点: 起点里程=" + (activeTripStartOdoKm > 0 ? activeTripStartOdoKm + "km" : "待对齐") + ", 初始油量=" + (activeTripStartOilLiters >= 0 ? activeTripStartOilLiters + "L" : "待对齐"));
+            }
+        }
+
         if (gear == 5) {
             currentSpeedKmH = 0; // 挂入 P 挡驻车时车速立即强制归零，防止残留蠕行车速外溢
+            settleActiveTrip("挂入P挡驻车停稳");
             // 挂入 P 挡驻车：若主驾车门当前已处于开启状态，协同重置行程
             if (currentDoorFL == 1) {
                 resetTripSpeedAutoplay("挂入P挡且主驾门已开启");
@@ -1736,6 +1816,70 @@ public class VehicleAutomationService extends Service {
                 AppLogger.i("车身联动", "【车速自定义联动】车速达到自定义阈值 " + customThreshold + "km/h，触发: " + actionTarget);
                 triggerCustomSpeedAction(actionTarget);
             }
+        }
+    }
+
+    /**
+     * 单次行程出账结算引擎 (P挡停稳瞬态冻结)
+     */
+    private void settleActiveTrip(String reason) {
+        if (activeTripStartTimeMs <= 0) return;
+
+        long now = System.currentTimeMillis();
+        long durationSec = (now - activeTripStartTimeMs) / 1000;
+        double startOdo = activeTripStartOdoKm;
+        double endOdo = currentTotalOdoKm;
+        double distance = 0.0;
+        if (startOdo > 0 && endOdo >= startOdo) {
+            distance = endOdo - startOdo;
+        }
+
+        double avgSpeed = activeTripSpeedSampleCount > 0 ? (activeTripSpeedSampleSum / activeTripSpeedSampleCount) : 0.0;
+        double maxSpeed = activeTripMaxSpeedKmH;
+
+        // 智能过滤门禁：原地切挡未起步（距离 < 0.1km 且时长 < 15秒）不写入账单
+        if (distance < 0.1 && durationSec < 15) {
+            AppLogger.i("行程结算", "过滤原地瞬态切挡(" + reason + "): 距离=" + distance + "km, 耗时=" + durationSec + "秒");
+            activeTripStartTimeMs = 0;
+            return;
+        }
+
+        try {
+            JSONObject trip = new JSONObject();
+            trip.put("id", now);
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+            trip.put("start_time", sdf.format(new Date(activeTripStartTimeMs)));
+            trip.put("end_time", sdf.format(new Date(now)));
+            trip.put("duration_sec", durationSec);
+            trip.put("distance", Math.round(distance * 10.0) / 10.0);
+            trip.put("start_odo", startOdo > 0 ? Math.round(startOdo * 10.0) / 10.0 : 0.0);
+            trip.put("end_odo", endOdo > 0 ? Math.round(endOdo * 10.0) / 10.0 : 0.0);
+            trip.put("avg_speed", Math.round(avgSpeed * 10.0) / 10.0);
+            trip.put("max_speed", Math.round(maxSpeed * 10.0) / 10.0);
+            trip.put("start_oil", activeTripStartOilLiters >= 0 ? activeTripStartOilLiters : 0.0);
+            trip.put("end_oil", currentRemainingOilLiters >= 0 ? currentRemainingOilLiters : 0.0);
+
+            // 能耗与油费核算 (缤越 1.5T 综合工况 6.8L/100km 兜底)
+            double consumedLiters = 0.0;
+            if (activeTripStartOilLiters > 0 && currentRemainingOilLiters >= 0 && activeTripStartOilLiters > currentRemainingOilLiters) {
+                consumedLiters = activeTripStartOilLiters - currentRemainingOilLiters;
+            } else {
+                consumedLiters = (distance * 6.8) / 100.0;
+            }
+            double tripConsumption = distance > 0 ? (consumedLiters / distance * 100.0) : 6.8;
+            double estPrice = 7.6; // 默认 92# 发改委均价
+            double estCost = consumedLiters * estPrice;
+
+            trip.put("consumed_liters", Math.round(consumedLiters * 100.0) / 100.0);
+            trip.put("avg_consumption", Math.round(tripConsumption * 10.0) / 10.0);
+            trip.put("estimated_cost", Math.round(estCost * 10.0) / 10.0);
+
+            FuelManager.addTrip(this, trip);
+            AppLogger.i("行程结算", "【单次行程已结单】(" + reason + ") 里程=" + trip.optDouble("distance", 0.0) + "km, 耗时=" + durationSec + "秒, 均速=" + trip.optDouble("avg_speed", 0.0) + "km/h, 预估费用=" + trip.optDouble("estimated_cost", 0.0) + "元");
+        } catch (Throwable t) {
+            Log.e(TAG, "结单异常: " + t.getMessage());
+        } finally {
+            activeTripStartTimeMs = 0;
         }
     }
 

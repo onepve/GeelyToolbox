@@ -2279,6 +2279,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public boolean clearFuelTrips() {
+            return FuelManager.clearTrips(MainActivity.this);
+        }
+
+        @JavascriptInterface
         public String getDeviceUid() {
             try {
                 String androidId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
