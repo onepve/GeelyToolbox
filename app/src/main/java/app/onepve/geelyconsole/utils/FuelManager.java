@@ -84,6 +84,7 @@ public class FuelManager {
                 def.put("default_province", "浙江");     // 默认发改委省份
                 def.put("refuel_threshold_l", 4.0);      // 加油检测跃变阈值 (4.0L)
                 def.put("car_id", getHardwareCarIdentity(context)); // 原车出厂芯片/总线硬件唯一指纹
+                def.put("plate_number", "");             // 车牌号 (支持车规软键盘录入)
                 def.put("bind_token", UUID.randomUUID().toString().substring(0, 8));
                 def.put("cloud_sync_enabled", false);
                 saveConfig(context, def);

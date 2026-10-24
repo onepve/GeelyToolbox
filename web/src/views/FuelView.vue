@@ -193,6 +193,15 @@
         </div>
 
         <div class="flex items-center space-x-3 shrink-0">
+          <!-- 快速车牌卡片 / 录入入口 (大触控、高辨识度) -->
+          <button 
+            @click="showPlateModal = true"
+            class="min-h-[52px] px-4 rounded-xl border-2 border-car-border bg-car-item text-car-text font-black text-[15px] cursor-pointer hover:border-car-accent transition-all shadow-md flex items-center space-x-2 whitespace-nowrap"
+          >
+            <span class="text-[12px] px-2 py-0.5 rounded bg-car-card border border-car-border text-car-sub">车牌</span>
+            <span class="font-mono font-black text-car-accent">{{ store.fuelLedger.config.plate_number || '点此录入车牌' }}</span>
+          </button>
+
           <button 
             @click="openAddRecordModal"
             class="min-h-[52px] px-5 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[15.5px] cursor-pointer hover:border-car-accent transition-all shadow-md flex items-center space-x-2 whitespace-nowrap"
@@ -204,7 +213,7 @@
             @click="showCloudPairModal"
             class="min-h-[52px] px-4 rounded-xl border-2 border-car-border bg-car-item text-car-sub font-black text-[14.5px] cursor-pointer hover:text-car-text hover:border-car-border-light transition-all shadow-md flex items-center space-x-1.5 whitespace-nowrap"
           >
-            <span>手机扫码同步</span>
+            <span>手机扫码绑定</span>
           </button>
         </div>
       </div>
@@ -733,6 +742,15 @@
         </button>
       </template>
     </ModalWrapper>
+
+    <!-- 车规大屏专属车牌录入弹窗 -->
+    <LicensePlateModal
+      :show="showPlateModal"
+      :carId="store.fuelLedger.config.car_id || ''"
+      :initialPlate="store.fuelLedger.config.plate_number || ''"
+      @close="showPlateModal = false"
+      @confirm="onPlateConfirmed"
+    />
   </div>
 </template>
 
@@ -751,6 +769,7 @@ import SubTabs from '../components/SubTabs.vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import HelpDot from '../components/HelpDot.vue';
 import ModalWrapper from '../components/modals/ModalWrapper.vue';
+import LicensePlateModal from '../components/modals/LicensePlateModal.vue';
 import { getDaysToAdjustment } from '../utils/oilPriceData';
 
 const activeTab = ref('record'); // 默认展示智能加油账本
@@ -873,6 +892,7 @@ function onRefreshOilPrice() {
 // 编辑台账逻辑 (内聚弹窗)
 // ----------------------------------------------------
 const showEditModal = ref(false);
+const showPlateModal = ref(false);
 const editingRecord = ref({});
 
 function openEditRecordModal(rec) {
@@ -1051,11 +1071,26 @@ function onSaveNewRecord() {
   showAddModal.value = false;
 }
 
+function onPlateConfirmed(newPlate) {
+  if (store.fuelLedger.config) {
+    store.fuelLedger.config.plate_number = newPlate;
+    saveFuelConfig(store.fuelLedger.config);
+  }
+  showPlateModal.value = false;
+  openModal('confirm', {
+    title: '车牌绑定成功',
+    desc: `已成功将车牌【 ${newPlate} 】绑定至当前出厂硬件芯片 (${store.fuelLedger.config.car_id || 'COOL'})。后续手机端扫码即可同步该车。`,
+    showCancel: false,
+    confirmText: '好的'
+  });
+}
+
 function showCloudPairModal() {
   const carId = store.fuelLedger.config.car_id || 'COOL_CAR';
+  const plate = store.fuelLedger.config.plate_number || '未绑定车牌';
   openModal('confirm', {
-    title: '【手机云同步】爱车配对码',
-    desc: `您的爱车专属配对码为：\n【 ${carId} 】\n\n手机端（微信或浏览器）打开专属页面后输入此配对码，即可离车查看实时油耗折线报表与语音智能修改。`,
+    title: '【手机云同步】爱车专属配对',
+    desc: `当前车辆识别身份：\\n・出厂硬件唯一码：【 ${carId} 】\\n・当前车牌号：【 ${plate} 】\\n\\n手机端打开专属车库页面后，扫码或输入此出厂码即可一键认领该车进您的车库。`,
     showCancel: false,
     confirmText: '我知道了'
   });

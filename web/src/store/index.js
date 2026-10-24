@@ -159,6 +159,7 @@ export const store = reactive({
       default_fuel_type: '92#',
       default_province: '浙江',
       car_id: '',
+      plate_number: '',
       bind_token: '',
       cloud_sync_enabled: false
     },
