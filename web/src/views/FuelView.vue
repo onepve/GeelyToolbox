@@ -294,8 +294,11 @@
             <!-- 加油规格与加满标签 -->
             <div class="flex items-center space-x-2">
               <span class="text-[16px] font-black text-car-text font-mono">加 {{ rec.liters }} L</span>
-              <span class="text-[12.5px] px-2 py-0.5 rounded font-black border bg-car-card border-car-border text-car-sub">
-                {{ rec.fuel_type || '92#' }} {{ rec.is_full ? '跳枪加满' : '阶段补油' }}
+              <span 
+                :class="rec.is_auto_detected ? 'border-amber-500/50 text-amber-400 bg-amber-500/10' : 'bg-car-card border-car-border text-car-sub'"
+                class="text-[12.5px] px-2 py-0.5 rounded font-black border"
+              >
+                {{ rec.is_auto_detected ? '⚡ 自动感知待核对' : (rec.fuel_type || '92#') + ' ' + (rec.is_full ? '跳枪加满' : '阶段补油') }}
               </span>
             </div>
 

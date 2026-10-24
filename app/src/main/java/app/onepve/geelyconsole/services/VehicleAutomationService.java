@@ -159,6 +159,13 @@ public class VehicleAutomationService extends Service {
     private long activeTripSpeedSampleCount = 0;
     private double activeTripSpeedSampleSum = 0.0;
 
+    // 智能加油静默感知防抖追踪
+    private double lastBaselineOilLiters = -1.0;
+    private long lastOilJumpDetectedTimeMs = 0;
+    private double pendingRefuelLiters = 0.0;
+    private static final double MIN_REFUEL_DELTA_LITERS = 5.0; // 最小跃变有效阈值 (>=5.0L 排除坡道晃动)
+    private static final long REFUEL_STABLE_HOLD_MS = 6000; // 稳定持续防抖时间 (6秒)
+
     // 服务启动时间戳（用于时间戳软栅栏，毫秒级丢弃开机前的陈旧日志）
     private long serviceBootTimestampMs = 0;
 
@@ -894,6 +901,8 @@ public class VehicleAutomationService extends Service {
                             if (activeTripStartTimeMs > 0 && activeTripStartOilLiters <= 0) {
                                 activeTripStartOilLiters = rawVal;
                             }
+                            // 触发智能加油跃变过滤与自动静默记账感知
+                            processRefuelDetection(rawVal);
                         }
                     }
                 }
@@ -1821,6 +1830,82 @@ public class VehicleAutomationService extends Service {
                 AppLogger.i("车身联动", "【车速自定义联动】车速达到自定义阈值 " + customThreshold + "km/h，触发: " + actionTarget);
                 triggerCustomSpeedAction(actionTarget);
             }
+        }
+    }
+
+    /**
+     * 智能加油跃变感知与自动静默记账引擎
+     * 核心原则：零打扰静默记账，车主离场后空闲微调
+     */
+    private void processRefuelDetection(double currentOil) {
+        // 初始化基准液位
+        if (lastBaselineOilLiters < 0) {
+            lastBaselineOilLiters = currentOil;
+            return;
+        }
+
+        // 仅在停稳P挡或超低速(<=5km/h，排除高速颠簸晃动)时才检测加油跃变
+        if (currentSpeedKmH > 5 && (gearStateMachine == null || gearStateMachine.getGear() != 5)) {
+            lastBaselineOilLiters = currentOil;
+            lastOilJumpDetectedTimeMs = 0;
+            return;
+        }
+
+        double delta = currentOil - lastBaselineOilLiters;
+        long now = System.currentTimeMillis();
+
+        if (delta >= MIN_REFUEL_DELTA_LITERS) {
+            if (lastOilJumpDetectedTimeMs == 0) {
+                lastOilJumpDetectedTimeMs = now;
+                pendingRefuelLiters = delta;
+                AppLogger.i("加油感知", "检测到油箱液面跃升: 基准=" + lastBaselineOilLiters + "L ➔ 当前=" + currentOil + "L (跃升 " + delta + "L)，开始防抖监听...");
+            } else if (now - lastOilJumpDetectedTimeMs >= REFUEL_STABLE_HOLD_MS) {
+                // 稳定持续 >= 6秒，判定为真实加油入账，直接静默记账！
+                double addedLiters = Math.round(delta * 10.0) / 10.0;
+                autoRecordRefuelSilently(addedLiters, currentOil);
+                lastBaselineOilLiters = currentOil;
+                lastOilJumpDetectedTimeMs = 0;
+            }
+        } else if (delta < -2.0) {
+            // 正常行车油耗下降，平滑下推基准线
+            lastBaselineOilLiters = currentOil;
+            lastOilJumpDetectedTimeMs = 0;
+        }
+    }
+
+    /**
+     * 自动静默生成一笔加油台账
+     */
+    private void autoRecordRefuelSilently(double addedLiters, double currentOil) {
+        try {
+            JSONObject config = FuelManager.getConfig(this);
+            String province = config.optString("province", "guangdong");
+            String fuelType = config.optString("fuel_type", "92#");
+            double price = 7.60; // 默认均价兜底
+            double amount = Math.round(addedLiters * price * 10.0) / 10.0;
+            double odo = currentTotalOdoKm > 0 ? Math.round(currentTotalOdoKm * 10.0) / 10.0 : 0.0;
+
+            JSONObject record = new JSONObject();
+            record.put("id", System.currentTimeMillis());
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+            record.put("date", sdf.format(new Date()));
+            record.put("liters", addedLiters);
+            record.put("price", price);
+            record.put("amount", amount);
+            record.put("actual_paid", amount);
+            record.put("odo", odo);
+            record.put("is_full", currentOil >= 45.0); // 缤越/博越油箱约45L~50L，接近满箱判定跳枪
+            record.put("fuel_type", fuelType);
+            record.put("province", province);
+            record.put("gas_station", "智能自动感知");
+            record.put("note", "【智能感知自动记账·待车主核对】");
+            record.put("source", "auto");
+            record.put("is_auto_detected", true);
+
+            FuelManager.addRecord(this, record);
+            AppLogger.i("加油感知", "【智能静默记账成功】加油=" + addedLiters + "L, 当前总里程=" + odo + "km, 预估金额=" + amount + "元(免打扰入账)");
+        } catch (Throwable t) {
+            Log.e(TAG, "静默生成加油记录失败: " + t.getMessage());
         }
     }
 
