@@ -10,8 +10,8 @@ android {
         applicationId "app.onepve.geelyconsole"
         minSdk 28
         targetSdk 28
-        versionCode 1078227
-        versionName "1.7.82-beta.27"
+        versionCode 1078228
+        versionName "1.7.82-beta.28"
 
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
