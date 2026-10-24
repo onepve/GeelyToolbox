@@ -213,6 +213,9 @@ public class VehicleAutomationService extends Service {
                 if (voicePlayer != null) {
                     voicePlayer.play("gear_park_alarm.mp3", "请挂入驻车挡", VehicleVoicePlayer.PRIORITY_P0_ALARM);
                 }
+            } else {
+                // 引擎已熄火但未挂入 P 挡推开主驾门 (吉利车机即将断电)：立即紧急收尾单次行程！
+                settleActiveTrip("未挂P挡熄火开门离车");
             }
         } else {
             // 挂在物理 P 挡且推开主驾车门：车主泊车下车离车，结束本次行程
@@ -630,6 +633,7 @@ public class VehicleAutomationService extends Service {
 
                 if (realPowerOff) {
                     lastPowerMode = 0; // 真正熄火下电：强制锁定为 0
+                    settleActiveTrip("整车熄火下电断电保护");
                     if (gearStateMachine != null) gearStateMachine.resetState();
                     if (driveModeManager != null) driveModeManager.resetState();
                     if (doorStateManager != null) doorStateManager.resetState();
@@ -1676,6 +1680,7 @@ public class VehicleAutomationService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        settleActiveTrip("服务注销终极兜底");
         isRunning = false;
         instance = null;
         cancelPendingMusicRetries("服务销毁");
