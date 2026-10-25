@@ -12,21 +12,21 @@
       @close="$emit('close-edit')"
     >
       <template #header-actions>
-        <!-- 仪表总里程蓝色小胶囊与大尺寸刷新按钮 -->
+        <!-- 仪表总里程主题小胶囊与大尺寸刷新按钮 -->
         <div class="flex items-center space-x-2">
           <div 
             @click="applyCurrentOdo(editingRecord)"
-            class="min-h-[50px] px-3.5 py-1.5 rounded-xl border-2 border-car-accent/60 bg-sky-500/15 text-sky-400 hover:bg-sky-500/25 active:scale-95 transition-all cursor-pointer flex items-center space-x-2 shadow-sm select-none"
+            class="min-h-[50px] px-3.5 py-1.5 rounded-xl border-2 border-car-accent bg-car-item text-car-accent hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center space-x-2 shadow-sm select-none"
             title="点击将当前仪表里程填入"
           >
             <span class="text-[17px]">🚗</span>
             <div class="flex flex-col text-left">
-              <span class="text-[10.5px] text-sky-300/80 font-bold leading-tight">车机仪表总里程</span>
-              <span class="text-[14.5px] font-mono font-black text-sky-400 leading-tight">
+              <span class="text-[10.5px] text-car-sub font-bold leading-tight">车机仪表总里程</span>
+              <span class="text-[14.5px] font-mono font-black text-car-accent leading-tight">
                 {{ currentOdo > 0 ? Math.round(currentOdo) + ' km' : '等待获取' }}
               </span>
             </div>
-            <span v-if="currentOdo > 0" class="text-[11px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-400/30 ml-1">
+            <span v-if="currentOdo > 0" class="text-[11px] px-1.5 py-0.5 rounded bg-car-accent-bg text-car-accent font-bold border border-car-accent/40 ml-1">
               填入
             </span>
           </div>
@@ -34,7 +34,7 @@
           <button
             type="button"
             @click.stop="$emit('refresh-odo')"
-            class="min-h-[50px] min-w-[50px] px-3 rounded-xl border-2 border-car-border bg-car-item text-car-text hover:border-car-accent/60 active:scale-95 transition-all cursor-pointer flex items-center justify-center text-[18px] font-black shadow-sm"
+            class="min-h-[50px] min-w-[50px] px-3 rounded-xl border-2 border-car-accent bg-car-item text-car-accent hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center justify-center text-[18px] font-black shadow-sm"
             title="重新从车规总线抓取里程"
           >
             ⟳
@@ -144,22 +144,6 @@
                 <div class="flex flex-col text-left">
                   <div class="flex items-center space-x-1.5">
                     <span class="text-[11.5px] text-car-sub font-bold">仪表总里程</span>
-                    <span 
-                      v-if="currentOdo > 0"
-                      @click.stop="applyCurrentOdo(editingRecord)"
-                      class="px-1.5 py-0.5 rounded-md bg-car-item border border-car-accent text-[10.5px] text-car-accent font-black hover:bg-car-accent hover:text-car-text cursor-pointer transition-all shadow-sm"
-                      title="点击填入车机采集的实时里程"
-                    >
-                      实车 {{ Math.round(currentOdo) }} km ⤶
-                    </span>
-                    <span 
-                      v-else
-                      @click.stop="$emit('refresh-odo')"
-                      class="px-1.5 py-0.5 rounded-md bg-car-item border border-car-border text-[10.5px] text-car-sub font-bold hover:border-car-accent hover:text-car-text cursor-pointer transition-all shadow-sm"
-                      title="点击向车机请求同步实时里程"
-                    >
-                      待同步 ⟳
-                    </span>
                   </div>
                   <div class="flex items-center space-x-1">
                     <span class="text-[19px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
@@ -346,18 +330,18 @@
           <!-- 右翼：油品标号 + 快捷省份折叠 + 免打字多选组合备注工作台 (占 6 列) -->
           <div class="col-span-6 flex flex-col space-y-2">
             
-            <!-- 油品标号 4 选 1 -->
+            <!-- 油品标号 3 选 1 -->
             <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex items-center justify-between shadow-sm">
               <span class="text-[12px] text-car-sub font-bold whitespace-nowrap mr-2">油品标号:</span>
-              <div class="grid grid-cols-4 gap-1.5 w-[75%]">
+              <div class="grid grid-cols-3 gap-1.5 w-[75%]">
                 <button
-                  v-for="ft in ['92#', '95#', '98#', '0#']"
+                  v-for="ft in ['92#', '95#', '98#']"
                   :key="ft"
                   type="button"
-                  @click="editingRecord.fuel_type = (ft === '0#' ? '0#柴油' : ft); $emit('edit-fuel-type-change')"
+                  @click="editingRecord.fuel_type = ft; $emit('edit-fuel-type-change')"
                   :class="[
-                    'min-h-[50px] rounded-xl border-2 font-black text-[13.5px] transition-all flex items-center justify-center cursor-pointer shadow-sm',
-                    (editingRecord.fuel_type === ft || (ft === '0#' && editingRecord.fuel_type === '0#柴油'))
+                    'min-h-[50px] rounded-xl border-2 font-black text-[14px] transition-all flex items-center justify-center cursor-pointer shadow-sm',
+                    editingRecord.fuel_type === ft
                       ? 'bg-car-item border-car-accent text-car-accent'
                       : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
                   ]"
@@ -460,21 +444,21 @@
       @close="$emit('close-add')"
     >
       <template #header-actions>
-        <!-- 仪表总里程蓝色小胶囊与大尺寸刷新按钮 -->
+        <!-- 仪表总里程主题小胶囊与大尺寸刷新按钮 -->
         <div class="flex items-center space-x-2">
           <div 
             @click="applyCurrentOdo(newRecord)"
-            class="min-h-[50px] px-3.5 py-1.5 rounded-xl border-2 border-car-accent/60 bg-sky-500/15 text-sky-400 hover:bg-sky-500/25 active:scale-95 transition-all cursor-pointer flex items-center space-x-2 shadow-sm select-none"
+            class="min-h-[50px] px-3.5 py-1.5 rounded-xl border-2 border-car-accent bg-car-item text-car-accent hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center space-x-2 shadow-sm select-none"
             title="点击将当前仪表里程填入"
           >
             <span class="text-[17px]">🚗</span>
             <div class="flex flex-col text-left">
-              <span class="text-[10.5px] text-sky-300/80 font-bold leading-tight">车机仪表总里程</span>
-              <span class="text-[14.5px] font-mono font-black text-sky-400 leading-tight">
+              <span class="text-[10.5px] text-car-sub font-bold leading-tight">车机仪表总里程</span>
+              <span class="text-[14.5px] font-mono font-black text-car-accent leading-tight">
                 {{ currentOdo > 0 ? Math.round(currentOdo) + ' km' : '等待获取' }}
               </span>
             </div>
-            <span v-if="currentOdo > 0" class="text-[11px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-400/30 ml-1">
+            <span v-if="currentOdo > 0" class="text-[11px] px-1.5 py-0.5 rounded bg-car-accent-bg text-car-accent font-bold border border-car-accent/40 ml-1">
               填入
             </span>
           </div>
@@ -482,7 +466,7 @@
           <button
             type="button"
             @click.stop="$emit('refresh-odo')"
-            class="min-h-[50px] min-w-[50px] px-3 rounded-xl border-2 border-car-border bg-car-item text-car-text hover:border-car-accent/60 active:scale-95 transition-all cursor-pointer flex items-center justify-center text-[18px] font-black shadow-sm"
+            class="min-h-[50px] min-w-[50px] px-3 rounded-xl border-2 border-car-accent bg-car-item text-car-accent hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center justify-center text-[18px] font-black shadow-sm"
             title="重新从车规总线抓取里程"
           >
             ⟳
@@ -585,22 +569,6 @@
                 <div class="flex flex-col text-left">
                   <div class="flex items-center space-x-1.5">
                     <span class="text-[11.5px] text-car-sub font-bold">仪表总里程</span>
-                    <span 
-                      v-if="currentOdo > 0"
-                      @click.stop="applyCurrentOdo(newRecord)"
-                      class="px-1.5 py-0.5 rounded-md bg-car-item border border-car-accent text-[10.5px] text-car-accent font-black hover:bg-car-accent hover:text-car-text cursor-pointer transition-all shadow-sm"
-                      title="点击填入车机采集的实时里程"
-                    >
-                      实车 {{ Math.round(currentOdo) }} km ⤶
-                    </span>
-                    <span 
-                      v-else
-                      @click.stop="$emit('refresh-odo')"
-                      class="px-1.5 py-0.5 rounded-md bg-car-item border border-car-border text-[10.5px] text-car-sub font-bold hover:border-car-accent hover:text-car-text cursor-pointer transition-all shadow-sm"
-                      title="点击向车机请求同步实时里程"
-                    >
-                      待同步 ⟳
-                    </span>
                   </div>
                   <div class="flex items-center space-x-1">
                     <span class="text-[19px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
@@ -787,18 +755,18 @@
           <!-- 右翼：油品标号 + 快捷省份折叠 + 免打字多选组合备注工作台 (占 6 列) -->
           <div class="col-span-6 flex flex-col space-y-2">
             
-            <!-- 油品标号 4 选 1 -->
+            <!-- 油品标号 3 选 1 -->
             <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex items-center justify-between shadow-sm">
               <span class="text-[12px] text-car-sub font-bold whitespace-nowrap mr-2">油品标号:</span>
-              <div class="grid grid-cols-4 gap-1.5 w-[75%]">
+              <div class="grid grid-cols-3 gap-1.5 w-[75%]">
                 <button
-                  v-for="ft in ['92#', '95#', '98#', '0#']"
+                  v-for="ft in ['92#', '95#', '98#']"
                   :key="ft"
                   type="button"
-                  @click="newRecord.fuel_type = (ft === '0#' ? '0#柴油' : ft); $emit('new-fuel-type-change')"
+                  @click="newRecord.fuel_type = ft; $emit('new-fuel-type-change')"
                   :class="[
-                    'min-h-[50px] rounded-xl border-2 font-black text-[13.5px] transition-all flex items-center justify-center cursor-pointer shadow-sm',
-                    (newRecord.fuel_type === ft || (ft === '0#' && newRecord.fuel_type === '0#柴油'))
+                    'min-h-[50px] rounded-xl border-2 font-black text-[14px] transition-all flex items-center justify-center cursor-pointer shadow-sm',
+                    newRecord.fuel_type === ft
                       ? 'bg-car-item border-car-accent text-car-accent'
                       : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
                   ]"

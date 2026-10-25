@@ -531,10 +531,16 @@ function openEditRecordModal(rec) {
 }
 
 function clearAllRecords() {
-  if (confirm('确定要清空全部加油台账记录吗？此操作不可撤销。')) {
-    bridge.call('clearFuelRecords');
-    store.fetchFuelLedgerData();
-  }
+  openModal('confirm', {
+    title: '确认清空全部加油台账？',
+    desc: '清空后所有历史加油流水与统计将被彻底抹除，恢复为空白台账，不可恢复。',
+    confirmText: '确定清空',
+    isDanger: true,
+    onConfirm: () => {
+      bridge.call('clearFuelRecords');
+      store.fetchFuelLedgerData();
+    }
+  });
 }
 
 function onEditProvinceChange() {
@@ -544,7 +550,6 @@ function onEditProvinceChange() {
     const fuelType = editingRecord.value.fuel_type || '92#';
     if (fuelType.includes('95')) editingRecord.value.price = pData.p95 || 8.05;
     else if (fuelType.includes('98')) editingRecord.value.price = pData.p98 || 9.10;
-    else if (fuelType.includes('柴油') || fuelType.includes('0#')) editingRecord.value.price = pData.p0 || 7.20;
     else editingRecord.value.price = pData.p92 || 7.55;
 
     // 智能联动实付金额
@@ -661,7 +666,6 @@ function onNewProvinceChange() {
     const fuelType = newRecord.value.fuel_type || '92#';
     if (fuelType.includes('95')) newRecord.value.price = pData.p95 || 8.05;
     else if (fuelType.includes('98')) newRecord.value.price = pData.p98 || 9.10;
-    else if (fuelType.includes('柴油') || fuelType.includes('0#')) newRecord.value.price = pData.p0 || 7.20;
     else newRecord.value.price = pData.p92 || 7.55;
 
     if (newRecord.value.actual_paid > 0 && newRecord.value.price > 0) {
