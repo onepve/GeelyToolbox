@@ -401,7 +401,8 @@ import {
   loadFuelData, 
   addFuelRecord, 
   updateFuelRecord, 
-  deleteFuelRecord
+  deleteFuelRecord,
+  clearFuelRecords
 } from '../store';
 import SubTabs from '../components/SubTabs.vue';
 import FeatureCard from '../components/FeatureCard.vue';
@@ -548,8 +549,7 @@ function clearAllRecords() {
     confirmText: '确定清空',
     isDanger: true,
     onConfirm: () => {
-      bridge.call('clearFuelRecords');
-      store.fetchFuelLedgerData();
+      clearFuelRecords();
     }
   });
 }

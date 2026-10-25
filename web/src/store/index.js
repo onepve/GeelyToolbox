@@ -601,9 +601,22 @@ export function deleteFuelRecord(id) {
   try {
     const ok = bridge.call('deleteFuelRecord', String(id));
     loadFuelData();
+    showToast('该笔记录已删除', 'info');
     return ok;
   } catch (e) {
     console.error('deleteFuelRecord error', e);
+    return false;
+  }
+}
+
+export function clearFuelRecords() {
+  try {
+    const ok = bridge.call('clearFuelRecords');
+    loadFuelData();
+    showToast('加油台账记录已清空', 'success');
+    return ok;
+  } catch (e) {
+    console.error('clearFuelRecords error', e);
     return false;
   }
 }
