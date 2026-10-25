@@ -3,26 +3,50 @@
     :show="show"
     title="爱车配对与车牌快速录入"
     badge="车规大屏专属"
-    maxWidthClass="max-w-[960px]"
+    maxWidthClass="max-w-[1140px]"
+    bodyClass="p-4 space-y-2.5"
     zIndexClass="z-[9990]"
     @close="$emit('close')"
   >
-    <div class="flex flex-col space-y-5 py-1">
-      <!-- 顶部：当前车辆出厂硬件唯一标识卡片 -->
-      <div class="flex items-center justify-between p-4 rounded-2xl bg-car-card border-2 border-car-border">
-        <div class="flex flex-col">
-          <span class="text-[13px] text-car-sub font-bold">原车出厂硬件芯片唯一编码 (只读不可篡改)</span>
-          <span class="text-[20px] font-mono font-black text-car-accent tracking-wider mt-0.5">{{ carId }}</span>
+    <div class="flex flex-col space-y-2.5">
+      <!-- 顶部紧凑卡片：硬件芯片码 + 8格车牌预览 + 绿牌/蓝牌切换 (横向集成，不占垂直高度) -->
+      <div class="flex items-center justify-between p-3 rounded-2xl bg-car-card border-2 border-car-border">
+        <!-- 左侧：硬件芯片码 (单行紧凑) -->
+        <div class="flex items-center space-x-2">
+          <span class="text-[12px] text-car-sub font-bold whitespace-nowrap">硬件芯片码:</span>
+          <span class="text-[15px] font-mono font-black text-car-accent tracking-wide">{{ carId }}</span>
         </div>
-        <div class="flex items-center space-x-3">
-          <!-- 牌照类型切换按钮 (大触控区) -->
+
+        <!-- 中间：8格车牌实时预览 (车规大字体但高度紧凑 50px) -->
+        <div class="flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-car-item border border-car-border">
+          <div
+            v-for="(char, idx) in plateSlots"
+            :key="idx"
+            :class="[
+              'w-[46px] h-[50px] rounded-xl border-2 flex items-center justify-center font-black transition-all shadow-sm',
+              idx === currentSlotIndex
+                ? 'border-car-accent bg-car-card scale-105 shadow-car-accent/20'
+                : 'border-car-border bg-car-card/60',
+              idx === 0 ? 'text-[22px] text-car-accent' : 'text-[24px] font-mono text-car-text',
+              isGreenPlate && idx === 7 ? 'text-emerald-400' : ''
+            ]"
+          >
+            {{ char || (idx === currentSlotIndex ? '·' : '') }}
+          </div>
+          <span class="text-[12px] text-car-sub font-bold pl-2 whitespace-nowrap">
+            {{ currentSlotIndex + 1 }}/{{ maxSlots }}
+          </span>
+        </div>
+
+        <!-- 右侧：新能源/蓝牌切换 -->
+        <div class="flex items-center space-x-2">
           <button
             type="button"
             @click="isGreenPlate = !isGreenPlate"
             :class="[
-              'min-h-[52px] px-5 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all flex items-center justify-center whitespace-nowrap',
+              'min-h-[50px] px-4 rounded-xl border-2 font-black text-[13.5px] cursor-pointer transition-all flex items-center justify-center whitespace-nowrap',
               isGreenPlate
-                ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 shadow-md'
+                ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 shadow-sm'
                 : 'bg-car-item border-car-border text-car-sub'
             ]"
           >
@@ -31,43 +55,13 @@
         </div>
       </div>
 
-      <!-- 车牌展示框（超大字体、高对比车规级车牌预览） -->
-      <div class="flex flex-col items-center justify-center p-5 rounded-3xl bg-car-item border-2 border-car-border/80 shadow-inner">
-        <div class="flex items-center space-x-2">
-          <!-- 逐格展示车牌字符 -->
-          <div
-            v-for="(char, idx) in plateSlots"
-            :key="idx"
-            :class="[
-              'w-[64px] h-[72px] rounded-2xl border-2 flex items-center justify-center font-black transition-all shadow-md',
-              idx === currentSlotIndex
-                ? 'border-car-accent bg-car-card scale-105 shadow-car-accent/20'
-                : 'border-car-border bg-car-card/60',
-              idx === 0 ? 'text-[28px] text-car-accent' : 'text-[32px] font-mono text-car-text',
-              isGreenPlate && idx === 7 ? 'text-emerald-400' : ''
-            ]"
-          >
-            {{ char || (idx === currentSlotIndex ? '·' : '') }}
-          </div>
-        </div>
-
-        <div class="flex items-center space-x-4 mt-3">
-          <span class="text-[13.5px] text-car-sub font-bold">
-            当前录入：第 <b class="text-car-accent">{{ currentSlotIndex + 1 }}</b> 位 / 共 {{ maxSlots }} 位
-          </span>
-          <span class="text-[12px] text-car-sub/70">
-            (支持车机大屏点选，录完点击保存即可关联硬件)
-          </span>
-        </div>
-      </div>
-
-      <!-- 车规大号软键盘区 -->
-      <div class="p-4 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col space-y-3">
+      <!-- 车规大号软键盘区 (控制工具栏 + 全平铺按键) -->
+      <div class="p-3.5 rounded-2xl bg-car-card border-2 border-car-border shadow-xl flex flex-col space-y-2">
         <!-- 键盘状态与操作栏 -->
-        <div class="flex items-center justify-between pb-2 border-b border-car-border/60 px-1">
+        <div class="flex items-center justify-between pb-1.5 border-b border-car-border/60 px-1">
           <div class="flex items-center space-x-2">
-            <span class="text-[15px] font-black text-car-text">
-              {{ currentSlotIndex === 0 ? '第一步：请点选车辆所属省份/直辖市' : '第二步：请点选车牌字母与数字' }}
+            <span class="text-[14px] font-black text-car-text">
+              {{ currentSlotIndex === 0 ? '第一步：请点选车辆所属省份简称' : '第二步：请点选车牌字母与数字' }}
             </span>
           </div>
 
@@ -76,7 +70,7 @@
             <button
               type="button"
               @click="toggleKeyboardMode"
-              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item text-car-sub hover:text-car-text text-[14px] font-bold cursor-pointer"
+              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item text-car-sub hover:text-car-text text-[13px] font-bold cursor-pointer"
             >
               {{ keyboardMode === 'province' ? '切到字母/数字盘' : '切到省份简称盘' }}
             </button>
@@ -85,7 +79,7 @@
             <button
               type="button"
               @click="onBackspace"
-              class="min-h-[50px] px-5 rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[15px] cursor-pointer hover:bg-rose-500/20 active:scale-95 transition-all"
+              class="min-h-[50px] px-5 rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[14.5px] cursor-pointer hover:bg-rose-500/20 active:scale-95 transition-all"
             >
               ⌫ 退格删除
             </button>
@@ -94,79 +88,79 @@
             <button
               type="button"
               @click="onClearAll"
-              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item text-car-sub text-[14px] font-bold cursor-pointer"
+              class="min-h-[50px] px-4 rounded-xl border border-car-border bg-car-item text-car-sub text-[13px] font-bold cursor-pointer"
             >
               清空
             </button>
           </div>
         </div>
 
-        <!-- 键盘 1: 省份简称盘 (大按键、全平铺) -->
-        <div v-if="keyboardMode === 'province'" class="flex flex-wrap -m-1">
+        <!-- 键盘 1: 省份简称盘 (8列平铺，紧凑大按键) -->
+        <div v-if="keyboardMode === 'province'" class="flex flex-wrap -m-0.5">
           <div
             v-for="prov in PROVINCE_KEYS"
             :key="prov"
-            class="w-[12.5%] p-1"
+            class="w-[12.5%] p-0.5"
           >
             <button
               type="button"
               @click="onSelectProvince(prov)"
-              class="w-full min-h-[56px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+              class="w-full min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text text-[18px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
             >
               {{ prov }}
             </button>
           </div>
         </div>
 
-        <!-- 键盘 2: 字母与数字键盘 (大尺寸车规按键) -->
-        <div v-else class="flex flex-col space-y-2">
+        <!-- 键盘 2: 字母与数字键盘 (行间紧凑) -->
+        <div v-else class="flex flex-col space-y-1.5">
           <!-- 数字行 0-9 -->
-          <div class="flex space-x-2">
+          <div class="flex space-x-1.5">
             <button
               v-for="num in NUMBER_KEYS"
               :key="num"
               type="button"
               @click="onSelectAlphanumeric(num)"
-              class="flex-1 min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-amber-400 font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+              class="flex-1 min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-amber-400 font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
             >
               {{ num }}
             </button>
           </div>
 
           <!-- 字母行 1 (Q - P) -->
-          <div class="flex space-x-2">
+          <div class="flex space-x-1.5">
             <button
               v-for="lt in LETTER_ROW1"
               :key="lt"
               type="button"
               @click="onSelectAlphanumeric(lt)"
-              class="flex-1 min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[21px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+              class="flex-1 min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[19px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
             >
               {{ lt }}
             </button>
           </div>
 
           <!-- 字母行 2 (A - L) -->
-          <div class="flex space-x-2 px-3">
+          <div class="flex space-x-1.5 px-3">
             <button
               v-for="lt in LETTER_ROW2"
               :key="lt"
               type="button"
               @click="onSelectAlphanumeric(lt)"
-              class="flex-1 min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[21px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+              class="flex-1 min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[19px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
             >
               {{ lt }}
             </button>
           </div>
 
-          <!-- 字母行 3 (Z - M + 特殊新能源标识) -->
-          <div class="flex space-x-2 px-6">
+          <!-- 字母行 3 (Z - M) -->
+          <div class="flex space-x-1.5 px-6">
             <button
               v-for="lt in LETTER_ROW3"
               :key="lt"
               type="button"
               @click="onSelectAlphanumeric(lt)"
-              class="flex-1 min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[21px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+              class="flex-1 min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[19px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
             >
               {{ lt }}
             </button>
@@ -180,7 +174,7 @@
       <button
         type="button"
         @click="$emit('close')"
-        class="min-h-[54px] px-7 rounded-xl border-2 border-car-border bg-car-card text-car-sub font-black text-[16px] hover:text-car-text transition-all cursor-pointer whitespace-nowrap"
+        class="min-h-[50px] px-6 rounded-xl border-2 border-car-border bg-car-card text-car-sub font-black text-[15.5px] hover:text-car-text transition-all cursor-pointer whitespace-nowrap"
       >
         稍后再录
       </button>
@@ -190,7 +184,7 @@
         @click="onConfirmSave"
         :disabled="!isPlateComplete"
         :class="[
-          'min-h-[54px] px-9 rounded-xl border-2 font-black text-[17px] transition-all cursor-pointer shadow-lg whitespace-nowrap flex items-center justify-center',
+          'min-h-[50px] px-8 rounded-xl border-2 font-black text-[16px] transition-all cursor-pointer shadow-lg whitespace-nowrap flex items-center justify-center',
           isPlateComplete
             ? 'border-car-accent bg-car-item text-car-accent hover:opacity-95'
             : 'border-car-border bg-car-card text-car-sub opacity-50 cursor-not-allowed'
