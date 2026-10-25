@@ -705,7 +705,7 @@ function showCloudPairModal() {
   const plate = store.fuelLedger.config.plate_number || '未绑定车牌';
   openModal('confirm', {
     title: '【手机云同步】爱车专属配对',
-    desc: `当前车辆识别身份：\\n・出厂硬件唯一码：【 ${carId} 】\\n・当前车牌号：【 ${plate} 】\\n\\n手机端打开专属车库页面后，扫码或输入此出厂码即可一键认领该车进您的车库。`,
+    desc: `当前车辆识别身份：\n・出厂硬件唯一码：【 ${carId} 】\n・当前车牌号：【 ${plate} 】\n\n手机端打开专属车库页面后，扫码或输入此出厂码即可一键认领该车进您的车库。`,
     showCancel: false,
     confirmText: '我知道了'
   });
