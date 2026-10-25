@@ -257,17 +257,39 @@
               </div>
             </div>
 
-            <!-- 底排：免打字常用备注快捷标签 -->
-            <div class="flex items-center space-x-1.5 px-0.5">
-              <span class="text-[11.5px] text-car-sub font-bold whitespace-nowrap">常用备注:</span>
-              <div class="flex flex-wrap -m-0.5 flex-1">
-                <div v-for="tag in ['中石化优惠', '中石油加注', '周五特惠', '高速服务区', '长途自驾']" :key="tag" class="p-0.5">
+            <!-- 底排：免打字组合备注控制台 (支持多选组合、反选取消、一键清空) -->
+            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex flex-col space-y-1.5">
+              <div class="flex items-center justify-between text-[12px] font-bold text-car-sub px-0.5">
+                <div class="flex items-center space-x-1.5 truncate">
+                  <span class="whitespace-nowrap">组合备注:</span>
+                  <span v-if="editingRecord.note" class="text-car-accent font-black truncate max-w-[340px]">
+                    {{ editingRecord.note }}
+                  </span>
+                  <span v-else class="text-car-sub/60">可点下方标签多选组合</span>
+                </div>
+                <button
+                  type="button"
+                  @click="onClearNote(editingRecord)"
+                  class="min-h-[50px] px-3 rounded-lg border border-car-border bg-car-item text-car-sub hover:text-car-text text-[11.5px] font-bold cursor-pointer whitespace-nowrap"
+                >
+                  清空备注
+                </button>
+              </div>
+
+              <!-- 15 个多选标签平铺 -->
+              <div class="flex flex-wrap -m-0.5">
+                <div v-for="tag in NOTE_TAGS" :key="tag" class="p-0.5">
                   <button 
                     type="button"
-                    @click="editingRecord.note = tag"
-                    class="min-h-[50px] px-2.5 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-accent hover:border-car-accent text-[11.5px] font-bold cursor-pointer transition-all"
+                    @click="toggleNoteTag(editingRecord, tag)"
+                    :class="[
+                      'min-h-[50px] px-2.5 rounded-lg border font-black text-[12px] cursor-pointer transition-all flex items-center justify-center whitespace-nowrap shadow-sm',
+                      isTagSelected(editingRecord, tag)
+                        ? 'bg-car-item border-car-accent text-car-accent'
+                        : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+                    ]"
                   >
-                    + {{ tag }}
+                    {{ isTagSelected(editingRecord, tag) ? '✓ ' + tag : '+ ' + tag }}
                   </button>
                 </div>
               </div>
@@ -560,17 +582,39 @@
               </div>
             </div>
 
-            <!-- 底排：免打字常用备注快捷标签 -->
-            <div class="flex items-center space-x-1.5 px-0.5">
-              <span class="text-[11.5px] text-car-sub font-bold whitespace-nowrap">常用备注:</span>
-              <div class="flex flex-wrap -m-0.5 flex-1">
-                <div v-for="tag in ['中石化优惠', '中石油加注', '周五特惠', '高速服务区', '长途自驾']" :key="tag" class="p-0.5">
+            <!-- 底排：免打字组合备注控制台 (支持多选组合、反选取消、一键清空) -->
+            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex flex-col space-y-1.5">
+              <div class="flex items-center justify-between text-[12px] font-bold text-car-sub px-0.5">
+                <div class="flex items-center space-x-1.5 truncate">
+                  <span class="whitespace-nowrap">组合备注:</span>
+                  <span v-if="newRecord.note" class="text-car-accent font-black truncate max-w-[340px]">
+                    {{ newRecord.note }}
+                  </span>
+                  <span v-else class="text-car-sub/60">可点下方标签多选组合</span>
+                </div>
+                <button
+                  type="button"
+                  @click="onClearNote(newRecord)"
+                  class="min-h-[50px] px-3 rounded-lg border border-car-border bg-car-item text-car-sub hover:text-car-text text-[11.5px] font-bold cursor-pointer whitespace-nowrap"
+                >
+                  清空备注
+                </button>
+              </div>
+
+              <!-- 15 个多选标签平铺 -->
+              <div class="flex flex-wrap -m-0.5">
+                <div v-for="tag in NOTE_TAGS" :key="tag" class="p-0.5">
                   <button 
                     type="button"
-                    @click="newRecord.note = tag"
-                    class="min-h-[50px] px-2.5 rounded-lg bg-car-card border border-car-border text-car-sub hover:text-car-accent hover:border-car-accent text-[11.5px] font-bold cursor-pointer transition-all"
+                    @click="toggleNoteTag(newRecord, tag)"
+                    :class="[
+                      'min-h-[50px] px-2.5 rounded-lg border font-black text-[12px] cursor-pointer transition-all flex items-center justify-center whitespace-nowrap shadow-sm',
+                      isTagSelected(newRecord, tag)
+                        ? 'bg-car-item border-car-accent text-car-accent'
+                        : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+                    ]"
                   >
-                    + {{ tag }}
+                    {{ isTagSelected(newRecord, tag) ? '✓ ' + tag : '+ ' + tag }}
                   </button>
                 </div>
               </div>
@@ -763,5 +807,34 @@ function handleFieldCalculation(record, field, mode) {
     if (mode === 'edit') emit('edit-price-change');
     else emit('new-price-change');
   }
+}
+// 常用免打字多选组合备注库 (涵盖小油站、品牌、优惠、场景)
+const NOTE_TAGS = [
+  '中石化', '中石油', '中海油', '壳牌', '民营小站', '山姆加油',
+  '周五特惠', '会员折扣', '直降促销', '银行满减', '送洗车',
+  '日常通勤', '高速服务区', '长途自驾', '加燃油宝'
+];
+
+function isTagSelected(record, tag) {
+  if (!record || !record.note) return false;
+  const parts = String(record.note).trim().split(/\s+/);
+  return parts.includes(tag);
+}
+
+function toggleNoteTag(record, tag) {
+  if (!record) return;
+  const currentNote = String(record.note || '').trim();
+  let parts = currentNote ? currentNote.split(/\s+/) : [];
+  if (parts.includes(tag)) {
+    parts = parts.filter(t => t !== tag);
+  } else {
+    parts.push(tag);
+  }
+  record.note = parts.join(' ');
+}
+
+function onClearNote(record) {
+  if (!record) return;
+  record.note = '';
 }
 </script>
