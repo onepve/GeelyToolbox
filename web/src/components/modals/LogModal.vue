@@ -125,6 +125,17 @@
           >
             清空
           </button>
+          <button 
+            @click="toggleWifiState"
+            class="min-h-[50px] px-4 rounded-xl border-2 font-black text-[15.5px] cursor-pointer transition-all flex items-center shadow-sm"
+            :class="isWifiOn 
+              ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-400' 
+              : 'bg-car-item border-car-border text-car-sub hover:text-car-text'"
+            :title="isWifiOn ? 'Wi-Fi 开启中 (手机可扫码连车机下载日志；排查时可点击关闭以防日志污染)' : '点击开启车机 Wi-Fi (便于手机连接车机局域网下载日志)'"
+          >
+            <span class="mr-1.5">{{ isWifiOn ? '📶' : '📵' }}</span>
+            <span>{{ isWifiOn ? 'Wi-Fi: 已开启' : '打开 Wi-Fi' }}</span>
+          </button>
         </div>
 
         <div class="flex items-center space-x-4">
@@ -320,8 +331,40 @@ function toggleAutoScroll() {
   }
 }
 
+const isWifiOn = ref(false);
+
+function checkWifiState() {
+  try {
+    const res = bridge.call('isWifiEnabled');
+    if (res !== undefined && res !== null) {
+      isWifiOn.value = (res === true || res === 'true');
+      return;
+    }
+    const raw = bridge.call('getConnectivityStatus');
+    if (raw) {
+      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (data && data.wifi_enabled !== undefined) {
+        isWifiOn.value = !!data.wifi_enabled;
+      }
+    }
+  } catch (e) {}
+}
+
+function toggleWifiState() {
+  const target = !isWifiOn.value;
+  try {
+    bridge.call('toggleWifi', target);
+    isWifiOn.value = target;
+    setTimeout(checkWifiState, 600);
+    setTimeout(checkWifiState, 1500);
+  } catch (e) {
+    showToast('切换 Wi-Fi 失败: ' + e);
+  }
+}
+
 watch(() => store.modals.log, (show) => {
   if (show) {
+    checkWifiState();
     startPolling();
   } else {
     stopPolling();

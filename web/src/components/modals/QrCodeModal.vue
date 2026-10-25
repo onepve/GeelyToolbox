@@ -10,7 +10,7 @@
       <!-- 网络状态胶囊 -->
       <div 
         :class="[
-          'px-5 py-2.5 rounded-full font-black text-[16px] mb-5 shadow-sm flex items-center space-x-2',
+          'px-5 py-2.5 rounded-full font-black text-[16px] mb-4 shadow-sm flex items-center space-x-2',
           isWifiConnected 
             ? 'text-emerald-500 border-2' 
             : 'text-amber-500 border-2'
@@ -21,8 +21,30 @@
         <span>{{ isWifiConnected ? `局域网已就绪: ${serverUrl}` : '提示: 请让手机与车机处于同一热点/Wi-Fi' }}</span>
       </div>
 
+      <!-- 快捷 Wi-Fi 控制工具栏 -->
+      <div class="flex items-center space-x-3 mb-4">
+        <button 
+          type="button"
+          @click="toggleWifiState"
+          class="min-h-[50px] px-5 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all flex items-center shadow-sm whitespace-nowrap"
+          :class="isWifiOn 
+            ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-400' 
+            : 'bg-car-item border-car-border text-car-sub hover:text-car-text'"
+        >
+          <span class="mr-1.5">{{ isWifiOn ? '📶' : '📵' }}</span>
+          <span>{{ isWifiOn ? 'Wi-Fi: 已开启 (点击关闭)' : '一键开启车机 Wi-Fi' }}</span>
+        </button>
+        <button 
+          type="button"
+          @click="openWifiSettings"
+          class="min-h-[50px] px-4 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[14.5px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center whitespace-nowrap"
+        >
+          <span>系统设置 ➔</span>
+        </button>
+      </div>
+
       <!-- 二维码展示区 (车规深色语义卡片，独立白底衬垫保证扫码对比度) -->
-      <div class="p-5 bg-car-item rounded-3xl border-2 border-car-border flex flex-col items-center justify-center mb-5 shadow-lg">
+      <div class="p-5 bg-car-item rounded-3xl border-2 border-car-border flex flex-col items-center justify-center mb-4 shadow-lg">
         <div class="p-3 bg-white rounded-2xl shadow-inner">
           <canvas ref="canvasRef" id="qrCodeCanvas" width="220" height="220" class="rounded-xl"></canvas>
         </div>
@@ -41,9 +63,53 @@ import { computed, watch, nextTick, ref } from 'vue';
 import QRCode from 'qrcode';
 import ModalWrapper from './ModalWrapper.vue';
 import StatusDot from '../StatusDot.vue';
-import { store, bridge, closeModal } from '../../store';
+import { store, bridge, closeModal, showToast } from '../../store';
 
 const canvasRef = ref(null);
+const isWifiOn = ref(false);
+
+function checkWifiState() {
+  try {
+    const res = bridge.call('isWifiEnabled');
+    if (res !== undefined && res !== null) {
+      isWifiOn.value = (res === true || res === 'true');
+      return;
+    }
+    const raw = bridge.call('getConnectivityStatus');
+    if (raw) {
+      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (data && data.wifi_enabled !== undefined) {
+        isWifiOn.value = !!data.wifi_enabled;
+      }
+    }
+  } catch (e) {}
+}
+
+function toggleWifiState() {
+  const target = !isWifiOn.value;
+  try {
+    bridge.call('toggleWifi', target);
+    isWifiOn.value = target;
+    setTimeout(() => {
+      checkWifiState();
+      refreshNetworkAndRender();
+    }, 800);
+    setTimeout(() => {
+      checkWifiState();
+      refreshNetworkAndRender();
+    }, 2000);
+  } catch (e) {
+    showToast('切换 Wi-Fi 失败: ' + e);
+  }
+}
+
+function openWifiSettings() {
+  try {
+    bridge.call('openWifiSettings');
+  } catch (e) {
+    showToast('打开系统 Wi-Fi 设置失败: ' + e);
+  }
+}
 
 const serverUrl = computed(() => `http://${store.deviceInfo.car_ip || '127.0.0.1'}:8888`);
 const isWifiConnected = computed(() => {
@@ -70,6 +136,7 @@ function refreshNetworkAndRender() {
 // 监听弹窗打开时拉取最新局域网 IP 并渲染标准 QR Code
 watch(() => store.modals.qrCode, (show) => {
   if (show) {
+    checkWifiState();
     refreshNetworkAndRender();
   }
 });

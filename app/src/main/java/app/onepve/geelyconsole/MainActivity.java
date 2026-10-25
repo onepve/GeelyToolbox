@@ -3275,15 +3275,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public void toggleWifi(boolean enable) {
-            WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            if (wm != null) {
-                wm.setWifiEnabled(enable);
-                showToast(enable ? "正在开启车机 Wi-Fi..." : "已关闭车机 Wi-Fi");
-            } else {
-                AdbClient.execute(MainActivity.this, "svc wifi " + (enable ? "enable" : "disable"));
-                showToast(enable ? "已下发指令开启 Wi-Fi" : "已下发指令关闭 Wi-Fi");
-            }
+        public boolean isWifiEnabled() {
+            return NetworkPolicyManager.isWifiEnabled(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public boolean toggleWifi(boolean enable) {
+            boolean ok = NetworkPolicyManager.setWifiEnabled(MainActivity.this, enable);
+            showToast(enable ? "正在开启车机 Wi-Fi..." : "已关闭车机 Wi-Fi");
+            return ok;
         }
 
         @JavascriptInterface

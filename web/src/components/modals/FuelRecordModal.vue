@@ -134,7 +134,7 @@
                   </div>
                   <div class="flex items-center space-x-1">
                     <span class="text-[19px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
-                      {{ editingRecord.odo !== undefined && editingRecord.odo !== null && editingRecord.odo > 0 ? editingRecord.odo : (currentOdo > 0 ? Math.round(currentOdo) : '未打点') }}
+                      {{ editingRecord.odo !== undefined && editingRecord.odo !== null && editingRecord.odo > 0 ? editingRecord.odo : (currentOdo > 0 ? Math.round(currentOdo) : '未记录') }}
                     </span>
                     <span v-if="activeField === 'odo'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
                   </div>
@@ -546,7 +546,7 @@
                   </div>
                   <div class="flex items-center space-x-1">
                     <span class="text-[19px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
-                      {{ newRecord.odo !== undefined && newRecord.odo !== null && newRecord.odo > 0 ? newRecord.odo : (currentOdo > 0 ? Math.round(currentOdo) : '未打点') }}
+                      {{ newRecord.odo !== undefined && newRecord.odo !== null && newRecord.odo > 0 ? newRecord.odo : (currentOdo > 0 ? Math.round(currentOdo) : '未记录') }}
                     </span>
                     <span v-if="activeField === 'odo'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
                   </div>

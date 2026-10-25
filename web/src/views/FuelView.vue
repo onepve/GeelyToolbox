@@ -100,7 +100,7 @@
                     余 {{ currentFuelLiters }}L ({{ currentFuelPercent }}%)
                   </span>
                   <span v-else class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-car-sub font-bold text-[12px]">
-                    底层总线读取中 · 点火即显
+                    正在连接车辆 · 点火即显示
                   </span>
                 </div>
                 <span class="text-[12.5px] text-car-sub font-bold">
@@ -154,13 +154,13 @@
       <div class="p-4 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex items-center justify-between">
         <div class="flex items-center space-x-6">
           <div class="flex flex-col">
-            <span class="text-[12.5px] text-car-sub font-bold">加权综合油耗 (跳枪法)</span>
+            <span class="text-[12.5px] text-car-sub font-bold">综合百公里真实油耗</span>
             <div class="flex items-baseline space-x-1.5 mt-0.5">
               <span v-if="store.fuelLedger.stats.is_calculable" class="text-[26px] font-black text-emerald-400 font-mono leading-none">
                 {{ store.fuelLedger.stats.avg_consumption }}
               </span>
               <span v-else class="text-[20px] font-black text-car-text leading-none">
-                计算中
+                暂未出账
               </span>
               <span class="text-[13px] text-car-sub font-bold">
                 {{ store.fuelLedger.stats.is_calculable ? 'L/100km' : `(${store.fuelLedger.stats.status_desc})` }}
@@ -279,7 +279,7 @@
           </div>
           <span class="text-[16px] font-black text-car-text">暂无加油台账记录</span>
           <span class="text-[13px] text-car-sub font-bold max-w-[480px]">
-            点火连通底盘总线后，系统会在加油后自动感知记录；跑长途或外地加油也可直接点击右上角【+ 手动记一笔】快速补录。
+            启动点火后，系统会在每次加油后自动记录；平时手动加油也可直接点击右上角【+ 手动记一笔】补录。
           </span>
         </div>
 
@@ -295,7 +295,7 @@
               <!-- 日期与总里程 -->
               <div class="flex flex-col min-w-[95px] shrink-0">
                 <span class="text-[13.5px] font-black text-car-text font-mono leading-tight whitespace-nowrap">{{ rec.date }}</span>
-                <span class="text-[11.5px] text-car-sub font-bold font-mono whitespace-nowrap">{{ rec.odo ? rec.odo + ' km' : '里程未打点' }}</span>
+                <span class="text-[11.5px] text-car-sub font-bold font-mono whitespace-nowrap">{{ rec.odo ? rec.odo + ' km' : '未记里程' }}</span>
               </div>
 
               <div class="h-7 w-px bg-car-border/70 shrink-0"></div>
@@ -319,7 +319,7 @@
             <div class="flex items-center space-x-3 shrink-0">
               <div class="flex flex-col text-right">
                 <span class="text-[17px] font-black text-car-accent font-mono leading-tight whitespace-nowrap">¥{{ rec.actual_paid ? rec.actual_paid.toFixed(1) : (rec.amount ? rec.amount.toFixed(1) : '0.0') }}</span>
-                <span class="text-[11px] text-car-sub font-bold whitespace-nowrap">{{ rec.source === 'auto' ? '底盘' : '手动' }}</span>
+                <span class="text-[11px] text-car-sub font-bold whitespace-nowrap">{{ rec.source === 'auto' ? '自动' : '手动' }}</span>
               </div>
 
               <span class="px-2.5 py-1.5 rounded-lg bg-car-card border border-car-border text-car-sub text-[12px] font-bold hover:text-car-text whitespace-nowrap">
@@ -731,7 +731,7 @@ function showTankCalcHelp() {
     const dyn95 = dynamicFillCost95.value;
     descText = `1. 实车动态加满补能公式（当前生效）：\n【公式】：(油箱总容积 - 剩余升数) × 当日油价\n・实车油量：剩余约 ${remPercent}% (约 ${remLiters} L)，距离加满还差 ${gap} L\n・92# 补满需：${gap}L × ¥${p92}/L = ¥${dyn92} 元\n・95# 补满需：${gap}L × ¥${p95}/L = ¥${dyn95} 元\n\n2. 日常加 200 元可加油量公式：\n【公式】：200元 ÷ 当日油价\n・92# 加200元：200 ÷ ¥${p92} = 约 ${lit200_92} 升\n・95# 加200元：200 ÷ ¥${p95} = 约 ${lit200_95} 升\n\n3. 车型标称容积说明：\n・缤越 COOL (2022款)：官方油箱容积 45L\n・吉利帝豪 L：官方油箱容积 52L\n・吉利缤越 L：官方油箱容积 51L`;
   } else {
-    descText = `1. 动态加满机制说明：\n当前处于模拟器或尚未读取到底盘燃油信号状态，界面展示【整箱加满基准】；真车点火连通底盘 CAN 总线后，将自动秒级切换为【实车动态补满计算】。\n\n2. 空箱整箱基准金额公式：\n【公式】：油箱标称总容积 × 当日油价\n・92# 整箱：${cap}L × ¥${p92}/L = ¥${cost92} 元\n・95# 整箱：${cap}L × ¥${p95}/L = ¥${cost95} 元\n\n3. 日常加 200 元可加油量公式：\n【公式】：200元 ÷ 当日油价\n・92# 加200元：200 ÷ ¥${p92} = 约 ${lit200_92} 升\n・95# 加200元：200 ÷ ¥${p95} = 约 ${lit200_95} 升\n\n4. 车型标称容积自适应：\n・缤越 COOL (2022款)：45L\n・吉利帝豪 L：52L\n・吉利缤越 L：51L`;
+    descText = '1. 动态加满说明：\n当前车辆尚未启动或正在读取油量，暂按【整箱加满】展示；车辆点火后，会自动按【当前实际油量】算出还需要补多少升。\n\n2. 空箱整箱基准金额公式：\n【公式】：油箱总容积 × 当日油价\n・92# 整箱：' + cap + 'L × ¥' + p92 + '/L = ¥' + cost92 + ' 元\n・95# 整箱：' + cap + 'L × ¥' + p95 + '/L = ¥' + cost95 + ' 元\n\n3. 日常加 200 元可加油量公式：\n【公式】：200元 ÷ 当日油价\n・92# 加200元：200 ÷ ¥' + p92 + ' = 约 ' + lit200_92 + ' 升\n・95# 加200元：200 ÷ ¥' + p95 + ' = 约 ' + lit200_95 + ' 升\n\n4. 适配车型标准油箱：\n・缤越 COOL (2022款)：45L\n・吉利帝豪 L：52L\n・吉利缤越 L：51L';
   }
 
   openModal('confirm', {
