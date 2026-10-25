@@ -916,8 +916,11 @@ public class VehicleAutomationService extends Service {
                         // 1. 吉利原厂该字段实测为油箱浮子剩余百分比 (0~100%)
                         handleFuelLevelSignal(rawVal);
 
-                        // 2. 缤越(SX11)油箱标准容积 45L，按百分比换算实际物理剩余升数
-                        double liters = Math.round((45.0 * rawVal / 100.0) * 10.0) / 10.0;
+                        // 2. 动态读取当前车型的标称油箱容积，按百分比换算实际物理剩余升数
+                        double defaultCap = VehiclePlatformFactory.getPlatform(VehicleAutomationService.this).getDefaultFuelCapacityLiters();
+                        JSONObject config = FuelManager.getConfig(VehicleAutomationService.this);
+                        double cap = config.optDouble("fuel_capacity", defaultCap);
+                        double liters = Math.round((cap * rawVal / 100.0) * 10.0) / 10.0;
                         currentRemainingOilLiters = liters;
 
                         // 3. 触发智能加油跃变过滤与自动静默记账感知 (以标准升数为基准)
