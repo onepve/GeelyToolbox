@@ -212,8 +212,16 @@
     </FeatureCard>
 
 
-    <div class="bg-car-item border border-car-border rounded-2xl p-5 shadow-sm">
-      <div class="flex items-center justify-between mb-4">
+    <div
+      @click="toggleFloating()"
+      :class="[
+        'rounded-3xl border-2 p-5 shadow-xl transition-all duration-200 cursor-pointer select-none active:scale-[0.99]',
+        floatingEnabled
+          ? 'bg-car-item border-car-accent shadow-md'
+          : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+      ]"
+    >
+      <div class="flex items-center justify-between">
         <div class="flex items-center">
           <StatusDot class="mr-3" size="md" color="accent" :glow-px="8" />
           <div class="flex flex-col">
@@ -223,19 +231,26 @@
             </span>
           </div>
         </div>
-        <div class="flex items-center space-x-3">
-          <BaseButton variant="chipLg" :active="floatingEnabled" @click="toggleFloating()">
-            <StatusDot class="mr-2.5" size="sm" :color="floatingEnabled ? 'ok' : 'off'" />
-            {{ floatingEnabled ? '悬浮图解：开' : '悬浮图解：关' }}
-          </BaseButton>
-          <BaseButton variant="ghost" @click="toggleDiagram()">
+        <div class="flex items-center space-x-3 shrink-0">
+          <!-- 悬浮状态灯指示（消除大按钮） -->
+          <div class="flex items-center space-x-2 mr-1">
+            <StatusDot size="sm" :color="floatingEnabled ? 'ok' : 'off'" :glow-px="6" />
+            <span :class="['text-[15px] font-black', floatingEnabled ? 'text-car-text' : 'text-car-sub']">
+              {{ floatingEnabled ? '悬浮图解已开启' : '悬浮图解已关闭' }}
+            </span>
+          </div>
+          <button
+            type="button"
+            @click.stop="toggleDiagram()"
+            class="h-[50px] px-4 rounded-xl bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[14px] cursor-pointer shadow-sm active:scale-95 transition-all"
+          >
             {{ showDiagram ? '收起图解' : '展开图解' }}
-          </BaseButton>
+          </button>
         </div>
       </div>
 
-      <!-- 图解内容展示区 -->
-      <div v-if="showDiagram" class="mt-4 pt-4 border-t border-car-border/60 flex items-start space-x-6">
+      <!-- 图解内容展示区 (阻止冒泡防误触) -->
+      <div v-if="showDiagram" @click.stop class="mt-4 pt-4 border-t border-car-border/60 flex items-start space-x-6">
         <!-- 原厂方向盘按键高清图示 (沉稳车规底座，绝非刺眼白底) -->
         <div class="p-3 bg-car-item rounded-2xl shadow-md border-2 border-car-border w-[320px] min-w-[320px] max-w-[320px] shrink-0">
           <img 
