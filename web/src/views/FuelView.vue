@@ -299,9 +299,9 @@
               v-for="rec in filteredRecords" 
               :key="rec.id"
               @click="openEditRecordModal(rec)"
-              class="min-h-[58px] px-3.5 py-2 rounded-2xl bg-car-item border border-car-border hover:border-car-accent/60 cursor-pointer transition-all flex items-center justify-between shadow-sm"
+              class="min-h-[58px] px-3.5 py-2.5 rounded-2xl bg-car-item border border-car-border hover:border-car-accent/60 cursor-pointer transition-all flex items-center justify-between shadow-sm"
             >
-              <div class="flex items-center space-x-3 truncate">
+              <div class="flex items-center space-x-3 flex-1 min-w-0 mr-3">
                 <!-- 日期与总里程 -->
                 <div class="flex flex-col min-w-[95px] shrink-0">
                   <span class="text-[13.5px] font-black text-car-text font-mono leading-tight whitespace-nowrap">{{ rec.date }}</span>
@@ -322,6 +322,17 @@
                     </span>
                     <span class="text-[11.5px] text-car-sub font-mono font-bold whitespace-nowrap">¥{{ rec.price ? rec.price.toFixed(2) : '--' }}</span>
                   </div>
+                </div>
+
+                <!-- 中间备注标签展示区 (有备注才展示，支持自动折行并列展示，车规标准 margin 间距) -->
+                <div v-if="rec.note && String(rec.note).trim()" class="flex-1 flex flex-wrap items-center min-w-0 pl-1">
+                  <span 
+                    v-for="(tag, tIdx) in String(rec.note).trim().split(/\s+/).filter(Boolean)" 
+                    :key="tIdx"
+                    class="text-[10px] px-1.5 py-0.5 m-0.5 rounded-md bg-car-card/90 border border-car-accent/40 text-car-accent font-bold whitespace-nowrap"
+                  >
+                    {{ tag }}
+                  </span>
                 </div>
               </div>
 
