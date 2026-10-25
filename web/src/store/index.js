@@ -154,6 +154,7 @@ export const store = reactive({
   // 全国实时油价与调价窗口状态
   pushedAdbCmd: '',
   fuelLedger: {
+    current_odo: 0,
     config: {
       tank_capacity: 45.0,
       default_fuel_type: '92#',
@@ -521,6 +522,7 @@ export function loadFuelData() {
     if (raw) {
       const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
       if (data.config) Object.assign(store.fuelLedger.config, data.config);
+      if (data.current_odo !== undefined) store.fuelLedger.current_odo = data.current_odo;
       if (Array.isArray(data.records)) store.fuelLedger.records = data.records;
       if (data.stats) Object.assign(store.fuelLedger.stats, data.stats);
       if (Array.isArray(data.monthly_stats)) store.fuelLedger.monthly_stats = data.monthly_stats;

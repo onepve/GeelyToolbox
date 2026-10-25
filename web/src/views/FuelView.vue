@@ -602,6 +602,7 @@ const newRecord = ref({
 function openAddRecordModal() {
   const p92 = currentOilData.value?.p92 || 7.55;
   const initialPaid = 200;
+  const odoVal = Math.round(Number(store.fuelLedger.current_odo) || 0);
   newRecord.value = {
     actual_paid: initialPaid,
     liters: Math.round((initialPaid / p92) * 100) / 100,
@@ -609,7 +610,7 @@ function openAddRecordModal() {
     province: currentProvinceName.value,
     fuel_type: '92#',
     is_full: false,
-    odo: 0,
+    odo: odoVal > 0 ? odoVal : 0,
     note: '',
     source: 'manual'
   };

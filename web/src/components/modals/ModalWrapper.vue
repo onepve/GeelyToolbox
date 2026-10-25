@@ -19,6 +19,7 @@
         <div :class="['min-h-[80px] px-8 py-4 border-b border-car-border flex items-center justify-between shrink-0 tb-modal-surface', headerClass]">
           <div class="flex-1 min-w-0 text-[25px] font-black text-car-text tracking-wide leading-[1.3]">{{ title }}</div>
           <div class="shrink-0 ml-5 flex items-center space-x-3">
+            <slot name="header-actions" />
             <span v-if="badge" class="text-[13.5px] px-3 py-1.5 rounded-full border border-car-border bg-car-item text-car-sub font-black whitespace-nowrap">
               {{ badge }}
             </span>

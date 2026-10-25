@@ -572,6 +572,12 @@ public class FuelManager {
             root.put("stats", stats);
             root.put("monthly_stats", calculateMonthlyStats(records));
 
+            double curOdo = app.onepve.geelyconsole.services.VehicleAutomationService.currentTotalOdoKm;
+            if (curOdo <= 0) {
+                curOdo = getLastFuelState(context).optDouble("odo", 0.0);
+            }
+            root.put("current_odo", curOdo > 0 ? Math.round(curOdo * 10.0) / 10.0 : 0.0);
+
             JSONArray trips = getTrips(context);
             root.put("trips", trips);
             root.put("last_trip", trips.length() > 0 ? trips.getJSONObject(0) : JSONObject.NULL);

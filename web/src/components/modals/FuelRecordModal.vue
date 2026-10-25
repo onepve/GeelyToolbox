@@ -6,12 +6,28 @@
       title="编辑与校对加油台账"
       badge="车载工作台"
       maxWidthClass="max-w-[1260px]"
-      headerClass="min-h-[64px] px-6 py-2.5"
+      headerClass="min-h-[64px] px-6 py-2"
       bodyClass="p-3.5 space-y-2"
-      footerClass="px-6 py-2.5"
       zIndexClass="z-[9990]"
       @close="$emit('close-edit')"
     >
+      <template #header-actions>
+        <button 
+          type="button"
+          @click="$emit('delete-record')"
+          class="min-h-[50px] px-4 rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[14px] hover:bg-rose-500/20 active:scale-95 transition-all cursor-pointer whitespace-nowrap shadow-sm"
+        >
+          删除记录
+        </button>
+        <button 
+          type="button"
+          @click="$emit('save-edit')"
+          class="min-h-[50px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md whitespace-nowrap"
+        >
+          保存修改
+        </button>
+      </template>
+
       <div v-if="editingRecord" class="flex flex-col space-y-2">
         <!-- 左右双翼工作台 (横向展开，消除垂直滚动条) -->
         <div class="grid grid-cols-12 gap-3.5 items-stretch">
@@ -365,32 +381,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 底部操作按钮 -->
-      <template #footer>
-        <button 
-          type="button"
-          @click="$emit('delete-record')"
-          class="min-h-[50px] px-5 rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[15px] hover:bg-rose-500/20 transition-all cursor-pointer whitespace-nowrap mr-auto"
-        >
-          删除此记录
-        </button>
-
-        <button 
-          type="button"
-          @click="$emit('close-edit')"
-          class="min-h-[50px] px-6 rounded-xl border-2 border-car-border bg-car-card text-car-sub font-black text-[15.5px] hover:text-car-text transition-all cursor-pointer whitespace-nowrap"
-        >
-          取消
-        </button>
-        <button 
-          type="button"
-          @click="$emit('save-edit')"
-          class="min-h-[50px] px-7 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 transition-all cursor-pointer shadow-lg whitespace-nowrap"
-        >
-          保存修改
-        </button>
-      </template>
     </ModalWrapper>
 
     <!-- 车规标准弹窗 2: 手动补录一笔加油台账 -->
@@ -399,12 +389,21 @@
       title="手动补录一笔加油台账"
       badge="车载工作台"
       maxWidthClass="max-w-[1260px]"
-      headerClass="min-h-[64px] px-6 py-2.5"
+      headerClass="min-h-[64px] px-6 py-2"
       bodyClass="p-3.5 space-y-2"
-      footerClass="px-6 py-2.5"
       zIndexClass="z-[9990]"
       @close="$emit('close-add')"
     >
+      <template #header-actions>
+        <button 
+          type="button"
+          @click="$emit('save-new')"
+          class="min-h-[50px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md whitespace-nowrap"
+        >
+          确认记入账本
+        </button>
+      </template>
+
       <div v-if="newRecord" class="flex flex-col space-y-2">
         <!-- 左右双翼工作台 (横向展开，消除垂直滚动条) -->
         <div class="grid grid-cols-12 gap-3.5 items-stretch">
@@ -758,24 +757,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 底部操作按钮 -->
-      <template #footer>
-        <button 
-          type="button"
-          @click="$emit('close-add')"
-          class="min-h-[50px] px-6 rounded-xl border-2 border-car-border bg-car-card text-car-sub font-black text-[15.5px] hover:text-car-text transition-all cursor-pointer whitespace-nowrap"
-        >
-          取消
-        </button>
-        <button 
-          type="button"
-          @click="$emit('save-new')"
-          class="min-h-[50px] px-7 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 transition-all cursor-pointer shadow-lg whitespace-nowrap"
-        >
-          确认记入账本
-        </button>
-      </template>
     </ModalWrapper>
   </div>
 </template>
