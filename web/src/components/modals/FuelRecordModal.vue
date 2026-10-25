@@ -123,6 +123,14 @@
                     >
                       实车 {{ Math.round(currentOdo) }} km ⤶
                     </span>
+                    <span 
+                      v-else
+                      @click.stop="$emit('refresh-odo')"
+                      class="px-1.5 py-0.5 rounded-md bg-car-item border border-car-border text-[10.5px] text-car-sub font-bold hover:border-car-accent hover:text-car-text cursor-pointer transition-all shadow-sm"
+                      title="点击向车机请求同步实时里程"
+                    >
+                      待同步 ⟳
+                    </span>
                   </div>
                   <div class="flex items-center space-x-1">
                     <span class="text-[19px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
@@ -188,12 +196,12 @@
                   {{ k }}
                 </button>
                 <button 
-                  v-if="activeField === 'odo' && currentOdo > 0"
+                  v-if="activeField === 'odo'"
                   type="button" 
-                  @click="applyCurrentOdo(editingRecord)" 
+                  @click="currentOdo > 0 ? applyCurrentOdo(editingRecord) : onInputKey(editingRecord, '00', 'edit')" 
                   class="min-h-[50px] rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-mono text-[13px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
                 >
-                  带入实车
+                  {{ currentOdo > 0 ? '带入实车' : '00' }}
                 </button>
                 <button 
                   v-else
@@ -226,12 +234,12 @@
                   下项 ➔
                 </button>
                 <button 
-                  v-if="activeField === 'odo' && currentOdo > 0"
+                  v-if="activeField === 'odo'"
                   type="button" 
-                  @click="applyCurrentOdo(editingRecord)" 
+                  @click="currentOdo > 0 ? applyCurrentOdo(editingRecord) : onInputKey(editingRecord, '000', 'edit')" 
                   class="min-h-[50px] rounded-xl border-2 border-emerald-500/50 bg-emerald-500/10 text-emerald-400 font-mono text-[11.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
                 >
-                  {{ Math.round(currentOdo) }}km
+                  {{ currentOdo > 0 ? Math.round(currentOdo) + 'km' : '000' }}
                 </button>
                 <button 
                   v-else
@@ -527,6 +535,14 @@
                     >
                       实车 {{ Math.round(currentOdo) }} km ⤶
                     </span>
+                    <span 
+                      v-else
+                      @click.stop="$emit('refresh-odo')"
+                      class="px-1.5 py-0.5 rounded-md bg-car-item border border-car-border text-[10.5px] text-car-sub font-bold hover:border-car-accent hover:text-car-text cursor-pointer transition-all shadow-sm"
+                      title="点击向车机请求同步实时里程"
+                    >
+                      待同步 ⟳
+                    </span>
                   </div>
                   <div class="flex items-center space-x-1">
                     <span class="text-[19px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
@@ -592,12 +608,12 @@
                   {{ k }}
                 </button>
                 <button 
-                  v-if="activeField === 'odo' && currentOdo > 0"
+                  v-if="activeField === 'odo'"
                   type="button" 
-                  @click="applyCurrentOdo(newRecord)" 
+                  @click="currentOdo > 0 ? applyCurrentOdo(newRecord) : onInputKey(newRecord, '00', 'new')" 
                   class="min-h-[50px] rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-mono text-[13px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
                 >
-                  带入实车
+                  {{ currentOdo > 0 ? '带入实车' : '00' }}
                 </button>
                 <button 
                   v-else
@@ -630,12 +646,12 @@
                   下项 ➔
                 </button>
                 <button 
-                  v-if="activeField === 'odo' && currentOdo > 0"
+                  v-if="activeField === 'odo'"
                   type="button" 
-                  @click="applyCurrentOdo(newRecord)" 
+                  @click="currentOdo > 0 ? applyCurrentOdo(newRecord) : onInputKey(newRecord, '000', 'new')" 
                   class="min-h-[50px] rounded-xl border-2 border-emerald-500/50 bg-emerald-500/10 text-emerald-400 font-mono text-[11.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
                 >
-                  {{ Math.round(currentOdo) }}km
+                  {{ currentOdo > 0 ? Math.round(currentOdo) + 'km' : '000' }}
                 </button>
                 <button 
                   v-else
@@ -920,6 +936,7 @@ function onInputKey(record, char, mode) {
 
   // 如果原本是 0 且输入的不是小数点，直接替换
   if (strVal === '0' && char !== '.') {
+    if (char === '00' || char === '000') return;
     strVal = '';
   }
 
@@ -929,7 +946,7 @@ function onInputKey(record, char, mode) {
   }
 
   // 限制长度防溢出
-  if (strVal.length >= 8) return;
+  if (strVal.length + char.length > 8) return;
 
   strVal += char;
   

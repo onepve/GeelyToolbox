@@ -576,6 +576,17 @@ public class FuelManager {
             if (curOdo <= 0) {
                 curOdo = getLastFuelState(context).optDouble("odo", 0.0);
             }
+            if (curOdo <= 0 && records != null) {
+                for (int i = 0; i < records.length(); i++) {
+                    JSONObject r = records.optJSONObject(i);
+                    if (r != null) {
+                        double recOdo = r.optDouble("odo", 0.0);
+                        if (recOdo > curOdo) {
+                            curOdo = recOdo;
+                        }
+                    }
+                }
+            }
             root.put("current_odo", curOdo > 0 ? Math.round(curOdo * 10.0) / 10.0 : 0.0);
 
             JSONArray trips = getTrips(context);

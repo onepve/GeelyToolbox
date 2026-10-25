@@ -339,6 +339,7 @@
       :newRecord="newRecord"
       :currentOdo="store.fuelLedger.current_odo || 0"
       :allProvinceNames="allProvinceNames"
+      @refresh-odo="store.fetchFuelLedgerData()"
       @close-edit="showEditModal = false"
       @save-edit="onSaveEditedRecord"
       @delete-record="onDeleteCurrentRecord"

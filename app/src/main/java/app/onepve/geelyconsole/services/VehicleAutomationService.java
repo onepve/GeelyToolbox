@@ -704,9 +704,9 @@ public class VehicleAutomationService extends Service {
     private static final Pattern P_FUNVALUE =
             Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)");
     private static final Pattern P_IPK_TOTAL_ODO =
-            Pattern.compile("INFO_ID_IPKINFO_TOTAL_ODO.*?(?:funValue|funcValue)\\((?:0x)?([0-9a-fA-F]+)\\)");
+            Pattern.compile("(?:INFO_ID_IPKINFO_TOTAL_ODO|TotalOdo|total_odo|TOTAL_ODO).*?(?:(?:funValue|funcValue)\\((?:0x)?([0-9a-fA-F]+)\\)|[:=]\\s*([0-9.]+))", Pattern.CASE_INSENSITIVE);
     private static final Pattern P_REMAINING_OIL =
-            Pattern.compile("INFO_ID_REMAINING_OIL.*?(?:funValue|funcValue)\\((?:0x)?([0-9a-fA-F]+)\\)");
+            Pattern.compile("(?:INFO_ID_REMAINING_OIL|RemainingOil|remaining_oil).*?(?:(?:funValue|funcValue)\\((?:0x)?([0-9a-fA-F]+)\\)|[:=]\\s*([0-9.]+))", Pattern.CASE_INSENSITIVE);
     private static final Pattern P_DRIVE_MODE =
             Pattern.compile("(?:DirveMode|DriveMode)\\s*=\\s*(\\d+)");
     private static final Pattern P_COMFORT_DRIVE_MODE =
@@ -748,8 +748,9 @@ public class VehicleAutomationService extends Service {
         "parsecandata",
         // 8. 转向灯360与画面感知
         "turnlight=", "camera_state:",
-        // 9. 原车音频 DSP 监控与电瓶电压、油箱油位
-        "a2dp_player_", "mmodelbatteryvolt", "mmodelfuel", "fuel_level", "fuellevel", "0x11600407"
+        // 9. 原车音频 DSP 监控与电瓶电压、油箱油位、仪表总里程
+        "a2dp_player_", "mmodelbatteryvolt", "mmodelfuel", "fuel_level", "fuellevel", "0x11600407",
+        "ipkinfo_total_odo", "total_odo", "totalodo", "remaining_oil", "ipkinfo", "mmodeltotalodo", "0x002011"
     };
 
     private void startLogcatReader() {
@@ -881,35 +882,43 @@ public class VehicleAutomationService extends Service {
         }
 
         // 1.1 解析仪表盘累计总里程与剩余油量 (燃油管家核心法定真源)
-        if (line.contains("INFO_ID_IPKINFO_TOTAL_ODO")) {
+        if (line.contains("INFO_ID_IPKINFO_TOTAL_ODO") || line.contains("TOTAL_ODO") || line.contains("TotalOdo") || line.contains("total_odo") || line.contains("0x00201100")) {
             try {
                 Matcher m = P_IPK_TOTAL_ODO.matcher(line);
                 if (m.find()) {
                     String hexStr = m.group(1);
+                    String decStr = m.group(2);
+                    double odo = 0.0;
                     if (hexStr != null && !hexStr.isEmpty()) {
-                        int rawVal = Integer.parseInt(hexStr, 16);
-                        double odo = rawVal / 10.0; // 0.1km 分辨率 (如 504529 -> 50452.9 km)
-                        if (odo > 0) {
-                            currentTotalOdoKm = odo;
-                        }
+                        long rawVal = Long.parseLong(hexStr, 16);
+                        odo = rawVal / 10.0; // 0.1km 分辨率 (如 504529 -> 50452.9 km)
+                    } else if (decStr != null && !decStr.isEmpty()) {
+                        odo = Double.parseDouble(decStr);
+                    }
+                    if (odo > 0 && odo < 2000000) {
+                        currentTotalOdoKm = odo;
                     }
                 }
             } catch (Throwable ignored) {}
             return;
         }
 
-        if (line.contains("INFO_ID_REMAINING_OIL")) {
+        if (line.contains("INFO_ID_REMAINING_OIL") || line.contains("RemainingOil") || line.contains("remaining_oil")) {
             try {
                 Matcher m = P_REMAINING_OIL.matcher(line);
                 if (m.find()) {
                     String hexStr = m.group(1);
+                    String decStr = m.group(2);
+                    int rawVal = -1;
                     if (hexStr != null && !hexStr.isEmpty()) {
-                        int rawVal = Integer.parseInt(hexStr, 16);
-                        if (rawVal >= 0 && rawVal <= 100) {
-                            currentRemainingOilLiters = rawVal;
-                            // 触发智能加油跃变过滤与自动静默记账感知
-                            processRefuelDetection(rawVal);
-                        }
+                        rawVal = (int) Long.parseLong(hexStr, 16);
+                    } else if (decStr != null && !decStr.isEmpty()) {
+                        rawVal = (int) Double.parseDouble(decStr);
+                    }
+                    if (rawVal >= 0 && rawVal <= 100) {
+                        currentRemainingOilLiters = rawVal;
+                        // 触发智能加油跃变过滤与自动静默记账感知
+                        processRefuelDetection(rawVal);
                     }
                 }
             } catch (Throwable ignored) {}

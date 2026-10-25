@@ -130,24 +130,21 @@ import VoiceThemeImportModal from './components/modals/VoiceThemeImportModal.vue
 import AllAppsModal from './components/modals/AllAppsModal.vue';
 import OilPriceModal from './components/modals/OilPriceModal.vue';
 
-import { store, bridge, openModal, recordActiveNav, refreshOilPrices, initOilPersistentSettings } from './store';
+import { store, bridge, openModal, recordActiveNav, refreshOilPrices, initOilPersistentSettings, normalizeNav } from './store';
 import { initTheme, applyTheme, quickToggleDayNight } from './theme/themes';
 
 onMounted(() => {
   // 从原生 SharedPreferences 同步油价常用省份持久化设置 (防覆盖升级丢失)
   try { initOilPersistentSettings(); } catch (e) {}
 
-  // 根据配置恢复启动首屏落地页
+  // 根据配置恢复启动首屏落地页 (支持 remember 智能记忆与 5 大主功能模块秒开直达)
   try {
-    const startup = store.settings.startup_nav || 'wheel';
-    const validNavs = ['wheel', 'link', 'body', 'store', 'audio', 'install', 'system'];
+    const startup = store.settings.startup_nav || 'link';
     if (startup === 'remember') {
       const last = store.settings.last_active_nav;
-      if (last && validNavs.includes(last)) {
-        store.currentNav = last;
-      }
-    } else if (validNavs.includes(startup)) {
-      store.currentNav = startup;
+      store.currentNav = normalizeNav(last);
+    } else {
+      store.currentNav = normalizeNav(startup);
     }
   } catch (e) {}
 

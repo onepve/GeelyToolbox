@@ -17,9 +17,54 @@ export const bridge = {
   }
 };
 
+export function normalizeNav(id) {
+  if (!id) return 'link';
+  if (id === 'wheel') return 'link';
+  if (id === 'audio') return 'body';
+  if (id === 'install') return 'store';
+  if (id === 'floating') return 'system';
+  const validNavs = ['link', 'body', 'fuel', 'store', 'system'];
+  return validNavs.includes(id) ? id : 'link';
+}
+
+function getInitialStartupNav() {
+  try {
+    const nativeVal = bridge.call('getStartupNav');
+    if (nativeVal && typeof nativeVal === 'string' && nativeVal.trim()) {
+      return nativeVal.trim();
+    }
+  } catch (e) {}
+  try {
+    const lsVal = localStorage.getItem('geely_startup_nav');
+    if (lsVal) return lsVal;
+  } catch (e) {}
+  return 'link';
+}
+
+function getInitialLastActiveNav() {
+  try {
+    const nativeVal = bridge.call('getLastActiveNav');
+    if (nativeVal && typeof nativeVal === 'string' && nativeVal.trim()) {
+      return nativeVal.trim();
+    }
+  } catch (e) {}
+  try {
+    const lsVal = localStorage.getItem('geely_last_active_nav');
+    if (lsVal) return lsVal;
+  } catch (e) {}
+  return 'link';
+}
+
 // 全局响应式状态
 export const store = reactive({
-  currentNav: 'wheel',
+  currentNav: (() => {
+    const startup = getInitialStartupNav();
+    if (startup === 'remember') {
+      const last = getInitialLastActiveNav();
+      return normalizeNav(last);
+    }
+    return normalizeNav(startup);
+  })(),
   isNight: true,
   // 液态玻璃主题：palette=蓝/棕/绿/粉，mode=auto(跟随时间)/day/night
   theme: {
@@ -258,20 +303,8 @@ export const store = reactive({
     floating_mode: 'battery', // 'name' | 'code' | 'battery'
     expert_rabbit: false,
     silent_appstore_freeze: false,
-    startup_nav: (() => {
-      try {
-        return localStorage.getItem('geely_startup_nav') || 'wheel';
-      } catch (e) {
-        return 'wheel';
-      }
-    })(),
-    last_active_nav: (() => {
-      try {
-        return localStorage.getItem('geely_last_active_nav') || 'wheel';
-      } catch (e) {
-        return 'wheel';
-      }
-    })()
+    startup_nav: getInitialStartupNav(),
+    last_active_nav: getInitialLastActiveNav()
   }
 });
 
@@ -377,14 +410,21 @@ export function setStartupNav(navId) {
   try {
     localStorage.setItem('geely_startup_nav', navId);
   } catch (e) {}
+  try {
+    bridge.call('setStartupNav', navId);
+  } catch (e) {}
   showToast('已更新启动首屏落地页', 'success');
 }
 
 export function recordActiveNav(navId) {
   if (!navId || navId === 'floating') return;
-  store.settings.last_active_nav = navId;
+  const normalized = normalizeNav(navId);
+  store.settings.last_active_nav = normalized;
   try {
-    localStorage.setItem('geely_last_active_nav', navId);
+    localStorage.setItem('geely_last_active_nav', normalized);
+  } catch (e) {}
+  try {
+    bridge.call('setLastActiveNav', normalized);
   } catch (e) {}
 }
 

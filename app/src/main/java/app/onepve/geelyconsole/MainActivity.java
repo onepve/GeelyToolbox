@@ -4457,6 +4457,54 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public String getStartupNav() {
+            try {
+                android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                return prefs.getString("geely_startup_nav", "link");
+            } catch (Exception e) {
+                return "link";
+            }
+        }
+
+        @JavascriptInterface
+        public void setStartupNav(final String nav) {
+            if (nav == null || nav.trim().isEmpty()) return;
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        prefs.edit().putString("geely_startup_nav", nav.trim()).apply();
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public String getLastActiveNav() {
+            try {
+                android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                return prefs.getString("geely_last_active_nav", "link");
+            } catch (Exception e) {
+                return "link";
+            }
+        }
+
+        @JavascriptInterface
+        public void setLastActiveNav(final String nav) {
+            if (nav == null || nav.trim().isEmpty()) return;
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        prefs.edit().putString("geely_last_active_nav", nav.trim()).apply();
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+
+        @JavascriptInterface
         public String getInstalledLaunchableApps() {
             JSONArray arr = new JSONArray();
             try {
