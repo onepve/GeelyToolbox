@@ -192,37 +192,37 @@
         </button>
       </div>
 
-      <!-- 2. 车机 ADB 交互终端 -->
-      <div class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card flex items-center justify-between space-x-4">
+      <!-- 2. 车机 ADB 交互终端 (整卡点击开关) -->
+      <div
+        @click="toggleAdbMasterSwitch"
+        :class="[
+          'rounded-3xl border-2 p-5 shadow-2xl transition-all flex items-center justify-between space-x-4 cursor-pointer select-none active:scale-[0.985]',
+          store.deviceInfo.adb_master_switch !== false
+            ? 'bg-car-item border-car-accent shadow-md'
+            : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+        ]"
+      >
         <div class="flex-1 min-w-0 flex flex-col space-y-1.5">
           <div class="flex items-center space-x-2.5">
             <span class="text-[20px] font-black text-car-text tracking-wide truncate">车机 ADB 终端</span>
-            <HelpDot @click="showAdbHelp" title="查看 ADB 总开关与失效功能说明" />
+            <HelpDot @click.stop="showAdbHelp" title="查看 ADB 总开关与失效功能说明" />
           </div>
           <div class="text-[13.5px] text-car-sub font-bold leading-relaxed line-clamp-2">
             本地特权调试交互终端；若遇其他车型无限弹调试授权窗，请关闭 ADB 总开关
           </div>
         </div>
 
-        <div class="flex items-center space-x-2.5 shrink-0">
-          <button
-            @click="toggleAdbMasterSwitch"
-            :class="[
-              'min-h-[58px] px-3.5 rounded-2xl border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center space-x-1.5 whitespace-nowrap',
-              store.deviceInfo.adb_master_switch !== false
-                ? 'border-car-accent bg-car-item text-car-accent'
-                : 'border-amber-500/60 bg-car-item text-amber-400 hover:border-amber-400'
-            ]"
-          >
-            <StatusDot size="sm" :color="store.deviceInfo.adb_master_switch !== false ? 'ok' : 'off'" />
-            <span class="font-black text-[14px]">
-              {{ store.deviceInfo.adb_master_switch !== false ? '总开关已开启' : '总开关已关闭' }}
+        <div class="flex items-center space-x-3 shrink-0 pr-2">
+          <div class="flex items-center space-x-2">
+            <StatusDot size="sm" :color="store.deviceInfo.adb_master_switch !== false ? 'ok' : 'off'" :glow="store.deviceInfo.adb_master_switch !== false" :glow-px="store.deviceInfo.adb_master_switch !== false ? 6 : 0" />
+            <span :class="['font-black text-[16px]', store.deviceInfo.adb_master_switch !== false ? 'text-car-text' : 'text-car-sub']">
+              {{ store.deviceInfo.adb_master_switch !== false ? '已开启总开关' : '已关闭总开关' }}
             </span>
-          </button>
+          </div>
 
           <button 
-            @click="openDeepTools"
-            class="min-h-[58px] px-4 rounded-2xl border-2 border-car-border bg-car-item text-car-text hover:border-car-accent font-black text-[14.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+            @click.stop="openDeepTools"
+            class="min-h-[58px] px-4 rounded-2xl border-2 border-car-border bg-car-item text-car-text hover:border-car-accent font-black text-[14.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap ml-2"
           >
             <span>打开终端 ➔</span>
           </button>

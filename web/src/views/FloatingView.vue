@@ -13,23 +13,23 @@
           </div>
         </div>
 
-        <!-- 胶囊整卡一体化开关大磁贴 -->
+        <!-- 胶囊整卡一体化卡片开关 -->
         <div 
           @click="toggleFloatingWindow"
           :class="[
-            'p-4 rounded-2xl border-2 cursor-pointer transition-all shadow-sm flex items-center justify-between select-none mb-4',
+            'p-4 rounded-2xl border-2 cursor-pointer select-none active:scale-[0.985] transition-all flex items-center justify-between mb-4',
             store.deviceInfo.floating_enabled
-              ? 'bg-car-item border-car-accent ring-2 ring-car-accent/20'
-              : 'bg-car-item border-car-border hover:border-car-border-light'
+              ? 'bg-car-item border-car-accent shadow-md'
+              : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
           ]"
         >
           <div class="flex flex-col space-y-0.5">
             <span class="text-[17.5px] font-black text-car-text">悬浮胶囊常驻开关</span>
             <span class="text-[13.5px] text-car-sub font-bold">常驻屏幕顶层，支持自由拖拽并贴边智能吸附</span>
           </div>
-          <div class="flex items-center space-x-2.5 shrink-0 pl-3">
-            <StatusDot size="md" :color="store.deviceInfo.floating_enabled ? 'ok' : 'offDim'" :glow-px="8" />
-            <span :class="['text-[18px] font-black', store.deviceInfo.floating_enabled ? 'text-car-text' : 'text-car-sub']">
+          <div class="flex items-center space-x-2 shrink-0 pl-3">
+            <StatusDot size="sm" :color="store.deviceInfo.floating_enabled ? 'ok' : 'off'" :glow="store.deviceInfo.floating_enabled" :glow-px="store.deviceInfo.floating_enabled ? 6 : 0" />
+            <span :class="['text-[16px] font-black', store.deviceInfo.floating_enabled ? 'text-car-text' : 'text-car-sub']">
               {{ store.deviceInfo.floating_enabled ? '胶囊已常驻' : '胶囊已隐藏' }}
             </span>
           </div>
@@ -101,23 +101,23 @@
           </div>
         </div>
 
-        <!-- 屏保整卡一体化开关大磁贴 -->
+        <!-- 屏保整卡一体化卡片开关 -->
         <div 
           @click="toggleScreensaver"
           :class="[
-            'p-4 rounded-2xl border-2 cursor-pointer transition-all shadow-sm flex items-center justify-between select-none mb-4',
+            'p-4 rounded-2xl border-2 cursor-pointer select-none active:scale-[0.985] transition-all flex items-center justify-between mb-4',
             ssEnabled
-              ? 'bg-car-item border-car-accent ring-2 ring-car-accent/20'
-              : 'bg-car-item border-car-border hover:border-car-border-light'
+              ? 'bg-car-item border-car-accent shadow-md'
+              : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
           ]"
         >
           <div class="flex flex-col space-y-0.5">
             <span class="text-[17.5px] font-black text-car-text">自动屏保息屏总闸</span>
             <span class="text-[13.5px] text-car-sub font-bold">桌面闲置自动唤醒原厂屏保，关闭时零 CPU 占用</span>
           </div>
-          <div class="flex items-center space-x-2.5 shrink-0 pl-3">
-            <StatusDot size="md" :color="ssEnabled ? 'ok' : 'offDim'" :glow-px="8" />
-            <span :class="['text-[18px] font-black', ssEnabled ? 'text-car-text' : 'text-car-sub']">
+          <div class="flex items-center space-x-2 shrink-0 pl-3">
+            <StatusDot size="sm" :color="ssEnabled ? 'ok' : 'off'" :glow="ssEnabled" :glow-px="ssEnabled ? 6 : 0" />
+            <span :class="['text-[16px] font-black', ssEnabled ? 'text-car-text' : 'text-car-sub']">
               {{ ssEnabled ? '自动屏保已开启' : '自动屏保已关闭' }}
             </span>
           </div>
