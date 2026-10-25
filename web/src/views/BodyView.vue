@@ -1,10 +1,9 @@
 <template>
   <div class="flex flex-col space-y-4">
-    <!-- 顶部车规二级分段胶囊：一页全景掌控 -->
+    <!-- 顶部车规二级分段胶囊：一页全景掌控（按功能小类扁平拆分直达） -->
     <SubTabs :tabs="voiceTabs" v-model="activeTab" />
 
     <!-- 核心：全车语音播报总开关 (置顶常驻) -->
-    <!-- 核心：全车语音播报总开关 - 核心功能首屏 (左右分栏车规黄金磁贴 · 完全对齐方控总开关) -->
     <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
       <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
@@ -40,300 +39,398 @@
       </div>
     </div>
 
-
-    <!-- Tab 1: 行车动态播报 (换挡 + 驾驶模式，v-if 彻底杜绝幽灵重叠) -->
-    <div v-if="activeTab === 'motion'" class="grid grid-cols-2 gap-4 items-stretch">
-      <!-- 语音提示 1：换挡安全播报 -->
-      <PlanCard
-        title="换挡语音提示"
-        tag="换挡提示"
-        help-size="lg"
-        help-text="gear"
-        flow-sub="踩刹车挂入 D / R / N 挡，或从行车切回 P 挡驻车"
-        flow-main="清晰播报挡位状态，支持自定义音频混搭"
-        @help="showGearHelp"
-      >
-        <template #footer>
-          <div class="grid grid-cols-2 gap-3">
-            <BaseButton variant="planToggleGrid" :active="isGearVoicePlanActive" @click="toggleAllGearVoice">
-              <StatusDot size="sm" :color="isGearVoicePlanActive ? 'accent' : 'sub'" :glow-px="6" />
-              <span class="truncate">{{ isGearVoicePlanActive ? '已开启' : '已关闭' }}</span>
-            </BaseButton>
-            <BaseButton variant="configCta" @click="openGearConfigModal">
-              <span>挡位细分配置</span>
-              <span>➔</span>
-            </BaseButton>
-          </div>
-        </template>
-      </PlanCard>
-
-      <!-- 语音提示 2：驾驶模式播报 -->
-      <PlanCard
-        title="驾驶模式播报"
-        tag="模式切换"
-        help-size="lg"
-        help-text="mode"
-        flow-sub="中控模式旋钮转动切换至舒适、经济、运动或智能"
-        flow-main="晓晓知性声线发声，点亮对应氛围 (含 160ms 防抖)"
-        @help="showModeHelp"
-      >
-        <template #footer>
-          <div class="grid grid-cols-2 gap-3">
-            <BaseButton variant="planToggleGrid" :active="isModeVoicePlanActive" @click="toggleAllModeVoice">
-              <StatusDot size="sm" :color="isModeVoicePlanActive ? 'accent' : 'sub'" :glow-px="6" />
-              <span class="truncate">{{ isModeVoicePlanActive ? '已开启' : '已关闭' }}</span>
-            </BaseButton>
-            <BaseButton variant="configCta" @click="openModeConfigModal">
-              <span>模式细分配置</span>
-              <span>➔</span>
-            </BaseButton>
-          </div>
-        </template>
-      </PlanCard>
-
+    <!-- Tab 1: 换挡语音 (D / R / P / N 4 大实体开关卡片平铺首屏) -->
+    <div v-if="activeTab === 'gear'" class="flex flex-col space-y-4">
+      <div class="grid grid-cols-2 gap-4 items-stretch">
+        <VoiceItemCard
+          title="前进挡 (D 挡)"
+          tag="D 挡"
+          desc="踩刹车挂入前进 D 挡触发启程语音播报"
+          :active="!!store.vehicleAuto.voice_enable_gear_d"
+          @toggle="toggleSetting('voice_enable_gear_d')"
+          @test="testVoice('gear_d')"
+          @custom="openCustomVoice('gear_d', '前进挡 (D 挡)', 'gear_d.mp3')"
+        />
+        <VoiceItemCard
+          title="倒车挡 (R 挡)"
+          tag="R 挡"
+          desc="挂入倒车 R 挡触发倒车警示与后方安全提醒"
+          :active="!!store.vehicleAuto.voice_enable_gear_r"
+          @toggle="toggleSetting('voice_enable_gear_r')"
+          @test="testVoice('gear_r')"
+          @custom="openCustomVoice('gear_r', '倒车挡 (R 挡)', 'gear_r.mp3')"
+        />
+        <VoiceItemCard
+          title="驻车挡 (P 挡)"
+          tag="P 挡"
+          desc="挂回驻车 P 挡播报，并立即安全归零行程状态机"
+          :active="!!store.vehicleAuto.voice_enable_gear_p"
+          @toggle="toggleSetting('voice_enable_gear_p')"
+          @test="testVoice('gear_p')"
+          @custom="openCustomVoice('gear_p', '驻车挡 (P 挡)', 'gear_p.mp3')"
+        />
+        <VoiceItemCard
+          title="空挡 (N 挡)"
+          tag="N 挡"
+          desc="挂入空挡 N 挡防溜车提醒，默认关闭防红绿灯打扰"
+          :active="!!store.vehicleAuto.voice_enable_gear_n"
+          @toggle="toggleSetting('voice_enable_gear_n')"
+          @test="testVoice('gear_n')"
+          @custom="openCustomVoice('gear_n', '空挡 (N 挡)', 'gear_n.mp3')"
+        />
+      </div>
     </div>
 
-    <!-- Tab 2: 车门迎宾播报 (四门 + 尾门，v-if 彻底杜绝幽灵重叠) -->
-    <div v-if="activeTab === 'doors'" class="grid grid-cols-2 gap-4 items-stretch">
-      <!-- 语音提示 3：车门迎宾与关门提示 -->
-      <PlanCard
-        title="车门迎宾提示"
-        tag="车门提示"
-        help-size="lg"
-        help-text="door"
-        flow-sub="主驾、副驾、后排车门开启或关好 (防抖合并)"
-        flow-main="通用「车门已打开/关好」或独立分门，支持专属音频定制"
-        @help="showDoorHelp"
-      >
-        <template #footer>
-          <div class="grid grid-cols-2 gap-3">
-            <BaseButton variant="planToggleGrid" :active="isDoorVoicePlanActive" @click="toggleAllDoorVoice">
-              <StatusDot size="sm" :color="isDoorVoicePlanActive ? 'accent' : 'sub'" :glow-px="6" />
-              <span class="truncate">{{ isDoorVoicePlanActive ? '已开启' : '已关闭' }}</span>
-            </BaseButton>
-            <BaseButton variant="configCta" @click="openDoorConfigModal">
-              <span>车门详细配置</span>
-              <span>➔</span>
-            </BaseButton>
-          </div>
-        </template>
-      </PlanCard>
-
-      <!-- 语音提示 4：电动尾门安全播报 -->
-      <PlanCard
-        title="尾门开闭提示"
-        tag="尾门提示"
-        help-size="lg"
-        help-text="trunk"
-        flow-sub="电动尾门按键触发升起，或锁扣电机下落闭锁确认"
-        flow-main="播报升起防刮蹭警示与落锁提示，支持专属定制"
-        @help="showTrunkHelp"
-      >
-        <template #footer>
-          <div class="grid grid-cols-2 gap-3">
-            <BaseButton variant="planToggleGrid" :active="isTrunkVoicePlanActive" @click="toggleAllTrunkVoice">
-              <StatusDot size="sm" :color="isTrunkVoicePlanActive ? 'accent' : 'sub'" :glow-px="6" />
-              <span class="truncate">{{ isTrunkVoicePlanActive ? '已开启' : '已关闭' }}</span>
-            </BaseButton>
-            <BaseButton variant="configCta" @click="openTrunkConfigModal">
-              <span>尾门详细配置</span>
-              <span>➔</span>
-            </BaseButton>
-          </div>
-        </template>
-      </PlanCard>
-
+    <!-- Tab 2: 驾驶模式 (舒适 / 经济 / 运动 / 智能 4 大实体开关卡片平铺首屏) -->
+    <div v-if="activeTab === 'mode'" class="flex flex-col space-y-4">
+      <div class="grid grid-cols-2 gap-4 items-stretch">
+        <VoiceItemCard
+          title="舒适模式 (Comfort)"
+          tag="舒适"
+          desc="中控旋钮切入舒适模式，换挡平顺温润知性播报"
+          :active="!!store.vehicleAuto.voice_enable_mode_comfort"
+          @toggle="toggleSetting('voice_enable_mode_comfort')"
+          @test="testVoice('mode_comfort')"
+          @custom="openCustomVoice('mode_comfort', '舒适模式', 'mode_comfort.mp3')"
+        />
+        <VoiceItemCard
+          title="经济模式 (Eco)"
+          tag="经济"
+          desc="中控旋钮切入经济模式，极致节油长途巡航播报"
+          :active="!!store.vehicleAuto.voice_enable_mode_eco"
+          @toggle="toggleSetting('voice_enable_mode_eco')"
+          @test="testVoice('mode_eco')"
+          @custom="openCustomVoice('mode_eco', '经济模式', 'mode_eco.mp3')"
+        />
+        <VoiceItemCard
+          title="运动模式 (Sport)"
+          tag="运动"
+          desc="中控旋钮切入运动模式，激活动感声浪与热血播报"
+          :active="!!store.vehicleAuto.voice_enable_mode_sport"
+          @toggle="toggleSetting('voice_enable_mode_sport')"
+          @test="testVoice('mode_sport')"
+          @custom="openCustomVoice('mode_sport', '运动模式', 'mode_sport.mp3')"
+        />
+        <VoiceItemCard
+          title="智能模式 (Smart)"
+          tag="智能"
+          desc="中控旋钮切入智能模式，自适应工况智能调度播报"
+          :active="!!store.vehicleAuto.voice_enable_mode_smart"
+          @toggle="toggleSetting('voice_enable_mode_smart')"
+          @test="testVoice('mode_smart')"
+          @custom="openCustomVoice('mode_smart', '智能模式', 'mode_smart.mp3')"
+        />
+      </div>
     </div>
 
-    <!-- Tab 3: 音乐音源优先级与回退调度 (车载音频合并至此，v-if 彻底杜绝幽灵重叠) -->
+    <!-- Tab 3: 车门迎宾 (模式胶囊切换 + 细分车门卡片平铺首屏) -->
+    <div v-if="activeTab === 'doors'" class="flex flex-col space-y-4">
+      <!-- 模式单选切换 -->
+      <div class="flex items-center space-x-3 p-4 bg-car-item rounded-2xl border-2 border-car-border">
+        <button
+          type="button"
+          @click="setDoorMode(true)"
+          :class="[
+            'flex-1 h-[52px] rounded-xl font-black text-[15.5px] cursor-pointer transition-all border-2',
+            store.vehicleAuto.voice_door_mode_universal === true
+              ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+              : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+          ]"
+        >
+          极简合并播报
+        </button>
+        <button
+          type="button"
+          @click="setDoorMode(false)"
+          :class="[
+            'flex-1 h-[52px] rounded-xl font-black text-[15.5px] cursor-pointer transition-all border-2',
+            store.vehicleAuto.voice_door_mode_universal !== true
+              ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+              : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+          ]"
+        >
+          详细分门播报
+        </button>
+      </div>
+
+      <!-- 模式 1: 通用极简合并播报卡片 -->
+      <div v-if="store.vehicleAuto.voice_door_mode_universal === true" class="grid grid-cols-2 gap-4 items-stretch">
+        <VoiceItemCard
+          title="通用开门提醒"
+          tag="开门提示"
+          desc="任意车门开启触发下车防落物品与行车防误开报警"
+          :active="store.vehicleAuto.voice_enable_door_universal_open !== false"
+          @toggle="toggleSetting('voice_enable_door_universal_open')"
+          @test="testVoice('door_open')"
+          @custom="openCustomVoice('door_open', '通用开门提醒', 'door_open.mp3')"
+        />
+        <VoiceItemCard
+          title="通用关门好提示"
+          tag="关门提示"
+          desc="全车车门关好就位确认，告别反复回头观望"
+          :active="store.vehicleAuto.voice_enable_door_universal_close !== false"
+          @toggle="toggleSetting('voice_enable_door_universal_close')"
+          @test="testVoice('door_close')"
+          @custom="openCustomVoice('door_close', '通用关门好提示', 'door_close.mp3')"
+        />
+      </div>
+
+      <!-- 模式 2: 详细分门播报卡片 (四门平铺) -->
+      <div v-else class="grid grid-cols-2 gap-4 items-stretch">
+        <VoiceItemCard
+          title="主驾驶门迎宾"
+          tag="FL 主驾"
+          desc="主驾驶门专属登车迎宾与启程提示"
+          :active="!!store.vehicleAuto.voice_enable_door_fl"
+          @toggle="toggleSetting('voice_enable_door_fl')"
+          @test="testVoice('door_fl')"
+          @custom="openCustomVoice('door_fl', '主驾驶车门', 'door_fl.mp3')"
+        />
+        <VoiceItemCard
+          title="副驾驶门迎宾"
+          tag="FR 副驾"
+          desc="副驾驶乘客登车温馨提示与关门确认"
+          :active="!!store.vehicleAuto.voice_enable_door_fr"
+          @toggle="toggleSetting('voice_enable_door_fr')"
+          @test="testVoice('door_fr')"
+          @custom="openCustomVoice('door_fr', '副驾驶车门', 'door_fr.mp3')"
+        />
+        <VoiceItemCard
+          title="左后排车门迎宾"
+          tag="RL 左后"
+          desc="左后排尊贵乘客登车提示与下车防开门碰擦"
+          :active="!!store.vehicleAuto.voice_enable_door_rl"
+          @toggle="toggleSetting('voice_enable_door_rl')"
+          @test="testVoice('door_rl')"
+          @custom="openCustomVoice('door_rl', '左后排车门', 'door_rl.mp3')"
+        />
+        <VoiceItemCard
+          title="右后排车门迎宾"
+          tag="RR 右后"
+          desc="右后排乘客登车提示与下车关门确认"
+          :active="!!store.vehicleAuto.voice_enable_door_rr"
+          @toggle="toggleSetting('voice_enable_door_rr')"
+          @test="testVoice('door_rr')"
+          @custom="openCustomVoice('door_rr', '右后排车门', 'door_rr.mp3')"
+        />
+      </div>
+    </div>
+
+    <!-- Tab 4: 电动尾门 (开启升起 + 闭锁关好 2 大实体开关卡片平铺首屏) -->
+    <div v-if="activeTab === 'trunk'" class="flex flex-col space-y-4">
+      <div class="grid grid-cols-2 gap-4 items-stretch">
+        <VoiceItemCard
+          title="尾门升起提醒"
+          tag="开门提示"
+          desc="尾门按键触发升起短促提醒，防止碰擦低矮车库顶梁"
+          :active="!!store.vehicleAuto.voice_enable_trunk_open"
+          @toggle="toggleSetting('voice_enable_trunk_open')"
+          @test="testVoice('trunk_open')"
+          @custom="openCustomVoice('trunk_open', '尾门升起提醒', 'trunk_open.mp3')"
+        />
+        <VoiceItemCard
+          title="尾门完全锁止"
+          tag="关门提示"
+          desc="电吸闭合锁止时播报确认，无需回头确认关门"
+          :active="!!store.vehicleAuto.voice_enable_trunk_close"
+          @toggle="toggleSetting('voice_enable_trunk_close')"
+          @test="testVoice('trunk_close')"
+          @custom="openCustomVoice('trunk_close', '尾门完全锁止', 'trunk_close.mp3')"
+        />
+      </div>
+    </div>
+
+    <!-- Tab 5: 音乐音源优先级与回退调度 -->
     <div v-if="activeTab === 'media'" class="flex flex-col space-y-4">
       <AudioView />
     </div>
 
-    <!-- Tab 4: 专属主题语音包 (整套换装中枢，v-if 彻底杜绝幽灵重叠) -->
+    <!-- Tab 6: 专属主题语音包 (整套换装中枢) -->
     <div v-if="activeTab === 'packs'" class="flex flex-col space-y-4">
-    <!-- 进阶管理: 车载专属语音主题包中枢 (位于四大核心卡片下方) -->
-    <FeatureCard 
-      id="voice_theme_mgr"
-      title="车载专属语音主题包 (整套一键换装)" 
-      tag="整套换装"
-      icon-name="music"
-      help-text="一键整套替换全车 D/R/P 挡位、4大驾驶模式、四门迎宾与电动尾门音效包；也支持在上方四大卡片各自分项中单独混搭覆盖。"
-    >
-      <div class="flex flex-col space-y-4">
-        <!-- 顶部状态栏: 当前生效主题与操作按钮 -->
-        <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
-          <div class="flex items-center space-x-3.5 min-w-0 pr-4">
-            <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)] shrink-0"></span>
-            <div class="flex flex-col min-w-0">
-              <div class="flex items-center space-x-2">
-                <span class="text-[17px] font-black text-car-text shrink-0">当前整套音效：</span>
-                <span class="text-[17px] font-black text-car-accent">{{ activeThemeName ? activeThemeName : '出厂官方原声 (晓晓温婉知性)' }}</span>
-                <span class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-car-text text-[11.5px] font-black inline-flex items-center shadow-sm shrink-0">
-                  <StatusDot class="mr-1.5" size="xs" color="ok" />
-                  {{ activeThemeName ? '自定义主题' : '系统默认' }}
+      <FeatureCard 
+        id="voice_theme_mgr"
+        title="车载专属语音主题包 (整套一键换装)" 
+        tag="整套换装"
+        icon-name="music"
+        help-text="一键整套替换全车 D/R/P 挡位、4大驾驶模式、四门迎宾与电动尾门音效包；也支持在上方四大卡片各自分项中单独混搭覆盖。"
+      >
+        <div class="flex flex-col space-y-4">
+          <!-- 顶部状态栏: 当前生效主题与操作按钮 -->
+          <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
+            <div class="flex items-center space-x-3.5 min-w-0 pr-4">
+              <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)] shrink-0"></span>
+              <div class="flex flex-col min-w-0">
+                <div class="flex items-center space-x-2">
+                  <span class="text-[17px] font-black text-car-text shrink-0">当前整套音效：</span>
+                  <span class="text-[17px] font-black text-car-accent">{{ activeThemeName ? activeThemeName : '出厂官方原声 (晓晓温婉知性)' }}</span>
+                  <span class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-car-text text-[11.5px] font-black inline-flex items-center shadow-sm shrink-0">
+                    <StatusDot class="mr-1.5" size="xs" color="ok" />
+                    {{ activeThemeName ? '自定义主题' : '系统默认' }}
+                  </span>
+                </div>
+                <span class="text-[12.5px] text-car-sub font-bold mt-0.5">
+                  {{ activeThemeName ? `专属目录: /sdcard/GeelyPilot/voices/${activeThemeName}/` : '吉利智驾出厂原声 · 未包含项自动补齐兜底' }}
                 </span>
               </div>
-              <span class="text-[12.5px] text-car-sub font-bold mt-0.5">
-                {{ activeThemeName ? `专属目录: /sdcard/GeelyPilot/voices/${activeThemeName}/` : '吉利智驾出厂原声 · 未包含项自动补齐兜底' }}
-              </span>
-            </div>
-          </div>
-
-          <div class="flex items-center space-x-2.5 shrink-0">
-            <button 
-              @click="openModal('voiceThemeImport')"
-              class="min-h-[50px] px-4 bg-car-card border-2 border-car-accent text-car-text font-black text-[15px] rounded-xl cursor-pointer hover:border-car-accent shadow-md transition-all flex items-center space-x-1.5 whitespace-nowrap"
-            >
-              <span>导入语音包 (.zip)</span>
-            </button>
-            <button 
-              @click="openModal('qrCode')"
-              class="min-h-[50px] px-3.5 bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm transition-all whitespace-nowrap"
-            >
-              手机扫码制作
-            </button>
-            <button 
-              @click="loadVoiceThemes"
-              class="min-h-[50px] px-3.5 bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm transition-all whitespace-nowrap"
-            >
-              刷新
-            </button>
-          </div>
-        </div>
-
-        <!-- 主题包列表卡片流 -->
-        <div class="flex flex-col space-y-3">
-          <!-- 默认出厂主题卡片 -->
-          <div class="bg-car-item border-2 border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
-            <div class="flex-1 min-w-0 pr-4 flex flex-col space-y-1">
-              <div class="flex items-center space-x-2">
-                <span class="text-[18px] font-black text-car-text">出厂官方原声 (晓晓温婉知性)</span>
-                <span class="px-2 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[11.5px] font-black shrink-0">系统内置</span>
-                <span v-if="!activeThemeName" class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-accent/60 text-car-accent text-[12px] font-black inline-flex items-center shadow-sm shrink-0">
-                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-car-accent shadow-sm"></span>正在生效
-                </span>
-              </div>
-              <span class="text-[13px] text-car-sub font-bold">
-                吉利原车温婉知性原声，端庄舒缓温润。零音频丢失，全场景兜底保障。
-              </span>
             </div>
 
             <div class="flex items-center space-x-2.5 shrink-0">
               <button 
-                @click="testThemeVoice('')"
-                class="min-h-[50px] w-[95px] bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
+                @click="openModal('voiceThemeImport')"
+                class="min-h-[50px] px-4 bg-car-card border-2 border-car-accent text-car-text font-black text-[15px] rounded-xl cursor-pointer hover:border-car-accent shadow-md transition-all flex items-center space-x-1.5 whitespace-nowrap"
               >
-                试听样音
+                <span>导入语音包 (.zip)</span>
               </button>
-              <button
-                @click="confirmClearAllCustomVoices"
-                class="min-h-[50px] w-[95px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[14px] rounded-xl cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
+              <button 
+                @click="openModal('qrCode')"
+                class="min-h-[50px] px-3.5 bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm transition-all whitespace-nowrap"
               >
-                清空自选
+                手机扫码制作
               </button>
-              <button
-                v-if="activeThemeName"
-                @click="applyVoiceTheme('')"
-                class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-accent text-car-accent font-black text-[14.5px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md transition-all flex items-center justify-center whitespace-nowrap"
+              <button 
+                @click="loadVoiceThemes"
+                class="min-h-[50px] px-3.5 bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm transition-all whitespace-nowrap"
               >
-                恢复原声
-              </button>
-              <button
-                v-else
-                @click="confirmForceRestoreFactory"
-                class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-border text-car-accent font-black text-[14.5px] rounded-xl hover:border-car-accent cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
-              >
-                重装原声
+                刷新
               </button>
             </div>
           </div>
 
-          <!-- 用户导入的各语音主题包 -->
-          <div 
-            v-for="theme in voiceThemes" 
-            :key="theme.id"
-            class="bg-car-item border-2 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all"
-            :class="activeThemeName === theme.name ? 'border-car-accent ring-2 ring-car-accent/20' : 'border-car-border'"
-          >
-            <div class="flex-1 min-w-0 pr-4 flex flex-col space-y-1">
-              <div class="flex items-center space-x-2">
-                <span class="text-[18px] font-black text-car-text">{{ theme.name }}</span>
-                <span v-if="activeThemeName === theme.name" class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-accent/60 text-car-accent text-[12px] font-black inline-flex items-center shadow-sm shrink-0">
-                  <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-car-accent shadow-sm"></span>正在生效
+          <!-- 主题包列表卡片流 -->
+          <div class="flex flex-col space-y-3">
+            <!-- 默认出厂主题卡片 -->
+            <div class="bg-car-item border-2 border-car-border rounded-2xl p-4 flex items-center justify-between shadow-sm">
+              <div class="flex-1 min-w-0 pr-4 flex flex-col space-y-1">
+                <div class="flex items-center space-x-2">
+                  <span class="text-[18px] font-black text-car-text">出厂官方原声 (晓晓温婉知性)</span>
+                  <span class="px-2 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[11.5px] font-black shrink-0">系统内置</span>
+                  <span v-if="!activeThemeName" class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-accent text-car-accent text-[12px] font-black inline-flex items-center shadow-sm shrink-0">
+                    <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-car-accent shadow-sm"></span>正在生效
+                  </span>
+                </div>
+                <span class="text-[13px] text-car-sub font-bold">
+                  吉利原车温婉知性原声，端庄舒缓温润。零音频丢失，全场景兜底保障。
                 </span>
-                <span v-else class="px-2 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[11.5px] font-black shrink-0">已导入</span>
               </div>
-              <span class="text-[13px] text-car-sub font-mono truncate">
-                /sdcard/GeelyPilot/voices/{{ theme.name }}/
-              </span>
+
+              <div class="flex items-center space-x-2.5 shrink-0">
+                <button 
+                  @click="testThemeVoice('')"
+                  class="min-h-[50px] w-[95px] bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
+                >
+                  试听样音
+                </button>
+                <button
+                  @click="confirmClearAllCustomVoices"
+                  class="min-h-[50px] w-[95px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[14px] rounded-xl cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
+                >
+                  清空自选
+                </button>
+                <button
+                  v-if="activeThemeName"
+                  @click="applyVoiceTheme('')"
+                  class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-accent text-car-accent font-black text-[14.5px] rounded-xl hover:border-car-accent cursor-pointer shadow-md transition-all flex items-center justify-center whitespace-nowrap"
+                >
+                  恢复原声
+                </button>
+                <button
+                  v-else
+                  @click="confirmForceRestoreFactory"
+                  class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-border text-car-accent font-black text-[14.5px] rounded-xl hover:border-car-accent cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
+                >
+                  重装原声
+                </button>
+              </div>
             </div>
 
-            <div class="flex items-center space-x-2.5 shrink-0">
-              <button 
-                @click="testThemeVoice(theme.name)"
-                class="min-h-[50px] w-[100px] bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
-              >
-                试听样音
-              </button>
-              <button 
-                v-if="activeThemeName !== theme.name"
-                @click="applyVoiceTheme(theme.name)"
-                class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-accent text-car-text font-black text-[14.5px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md transition-all flex items-center justify-center whitespace-nowrap"
-              >
-                整套启用
-              </button>
-              <button 
-                @click="confirmDeleteTheme(theme.name)"
-                class="min-h-[50px] w-[80px] bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text hover:text-rose-400 font-black text-[14.5px] rounded-xl cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
-              >
-                删除
-              </button>
+            <!-- 用户导入的各语音主题包 -->
+            <div 
+              v-for="theme in voiceThemes" 
+              :key="theme.id"
+              class="bg-car-item border-2 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all"
+              :class="activeThemeName === theme.name ? 'border-car-accent' : 'border-car-border'"
+            >
+              <div class="flex-1 min-w-0 pr-4 flex flex-col space-y-1">
+                <div class="flex items-center space-x-2">
+                  <span class="text-[18px] font-black text-car-text">{{ theme.name }}</span>
+                  <span v-if="activeThemeName === theme.name" class="px-2.5 py-0.5 rounded-md bg-car-card border border-car-accent text-car-accent text-[12px] font-black inline-flex items-center shadow-sm shrink-0">
+                    <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-car-accent shadow-sm"></span>正在生效
+                  </span>
+                  <span v-else class="px-2 py-0.5 rounded-md bg-car-card border border-car-border text-car-sub text-[11.5px] font-black shrink-0">已导入</span>
+                </div>
+                <span class="text-[13px] text-car-sub font-mono truncate">
+                  /sdcard/GeelyPilot/voices/{{ theme.name }}/
+                </span>
+              </div>
+
+              <div class="flex items-center space-x-2.5 shrink-0">
+                <button 
+                  @click="testThemeVoice(theme.name)"
+                  class="min-h-[50px] w-[100px] bg-car-card border-2 border-car-border text-car-text font-black text-[14.5px] rounded-xl hover:border-car-border-light cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
+                >
+                  试听样音
+                </button>
+                <button 
+                  v-if="activeThemeName !== theme.name"
+                  @click="applyVoiceTheme(theme.name)"
+                  class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-accent text-car-text font-black text-[14.5px] rounded-xl hover:border-car-accent cursor-pointer shadow-md transition-all flex items-center justify-center whitespace-nowrap"
+                >
+                  整套启用
+                </button>
+                <button 
+                  @click="confirmDeleteTheme(theme.name)"
+                  class="min-h-[50px] w-[80px] bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text hover:text-rose-400 font-black text-[14.5px] rounded-xl cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
+                >
+                  删除
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </FeatureCard>
-
-
+      </FeatureCard>
     </div>
 
-    <!-- 挡位细分配置二级向导 → 独立组件（二级向导） -->
+    <!-- 二级向导弹窗挂载（保持向后兼容与 CI 完整性） -->
     <GearConfigModal v-if="showGearModal" @close="showGearModal = false" />
-
-    <!-- 驾驶模式细分配置二级向导 → 独立组件（二级向导） -->
     <ModeConfigModal v-if="showModeModal" @close="showModeModal = false" />
-
-    <!-- 四门迎宾与关门安全二级向导 → 独立组件（二级向导） -->
     <DoorConfigModal v-if="showDoorModal" @close="showDoorModal = false" />
-
-    <!-- 原厂电动尾门细分配置二级向导 → 独立组件（二级向导） -->
     <TrunkConfigModal v-if="showTrunkModal" @close="showTrunkModal = false" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+// ============================================================================
+// BodyView — 车载声音与智能播报控制中枢
+// 架构全景压平：换挡 / 模式 / 车门 / 尾门 独立 Tab 直达，首屏卡片整卡即开关
+// ============================================================================
+import { ref, computed, onMounted } from 'vue';
 import { store, bridge, showToast, openModal } from '../store';
-import SubTabs from '../components/SubTabs.vue';
 import FeatureCard from '../components/FeatureCard.vue';
-import PlanCard from '../components/PlanCard.vue';
-import BaseButton from '../components/BaseButton.vue';
+import SubTabs from '../components/SubTabs.vue';
 import StatusDot from '../components/StatusDot.vue';
+import VoiceItemCard from '../components/VoiceItemCard.vue';
 import GearConfigModal from '../components/GearConfigModal.vue';
 import ModeConfigModal from '../components/ModeConfigModal.vue';
 import DoorConfigModal from '../components/DoorConfigModal.vue';
 import TrunkConfigModal from '../components/TrunkConfigModal.vue';
 import AudioView from './AudioView.vue';
+import { useConfigModal } from '../composables/useConfigModal';
 
-
-const activeTab = ref('motion');
+const activeTab = ref('gear');
 const voiceTabs = [
-  { id: 'motion', name: '行车动态播报', tag: '换挡/模式' },
-  { id: 'doors', name: '车门迎宾播报', tag: '车门提示' },
+  { id: 'gear', name: '换挡语音', tag: '挡位播报' },
+  { id: 'mode', name: '驾驶模式', tag: '旋钮模式' },
+  { id: 'doors', name: '车门迎宾', tag: '迎宾提示' },
+  { id: 'trunk', name: '电动尾门', tag: '尾门开闭' },
   { id: 'media', name: '音乐音源优先级', tag: '回退调度' },
   { id: 'packs', name: '专属语音包', tag: '整套换装' }
 ];
+
+const { toggleSetting, setSetting, testVoice, openCustomVoice } = useConfigModal();
+
+function setDoorMode(isUniversal) {
+  setSetting('voice_door_mode_universal', isUniversal, isUniversal ? '已切换为: 极简合并播报模式' : '已切换为: 详细分门播报模式');
+}
 
 const showGearModal = ref(false);
 const showModeModal = ref(false);
@@ -357,15 +454,6 @@ const isDoorVoicePlanActive = computed(() => {
 
 const isTrunkVoicePlanActive = computed(() => {
   return !!(store.vehicleAuto.voice_enable_trunk_open || store.vehicleAuto.voice_enable_trunk_close);
-});
-
-const activeVoiceTaskCount = computed(() => {
-  let count = 0;
-  if (isGearVoicePlanActive.value) count++;
-  if (isModeVoicePlanActive.value) count++;
-  if (isDoorVoicePlanActive.value) count++;
-  if (isTrunkVoicePlanActive.value) count++;
-  return count;
 });
 
 function toggleAllGearVoice() {
@@ -416,84 +504,6 @@ function toggleAllTrunkVoice() {
   bridge.call('setVehicleAutomationSetting', 'voice_enable_trunk_open', next);
   bridge.call('setVehicleAutomationSetting', 'voice_enable_trunk_close', next);
   showToast(next ? '电动尾门播报已开启' : '电动尾门播报已关闭');
-}
-
-
-function openGearConfigModal() {
-  showGearModal.value = true;
-}
-
-function openModeConfigModal() {
-  showModeModal.value = true;
-}
-
-function openDoorConfigModal() {
-  showDoorModal.value = true;
-}
-
-function openTrunkConfigModal() {
-  showTrunkModal.value = true;
-}
-
-function showGearHelp() {
-  openModal('confirm', {
-    title: '【功能指南】换挡权威源与有人感知状态机',
-    desc: '1. 权威判定：以原厂 360 环视 AVM 广播与 TCU 换挡底层低 4 位为权威源，过滤 10 号假挡位。\n\n2. 有人感知：蓝牙钥匙靠近唤醒时保持静默；真正踩刹车切 D/R 挡才激活；回 P 挡播报一次后归零休眠。',
-    tip: 'N 挡空挡播报默认关闭，避免红绿灯打扰；支持在细分配置中独立声效设置。',
-    showCancel: false,
-    confirmText: '我知道了'
-  });
-}
-
-function showModeHelp() {
-  openModal('confirm', {
-    title: '【功能指南】4 大驾驶模式旋钮切换',
-    desc: '1. 旋钮响应：支持舒适、经济、运动与智能 4 大驾驶模式。\n\n2. 极速防抖：内置 160ms 防抖滤波，防止快速旋转旋钮掐灭音频或重叠发声。',
-    tip: '点火前 5 秒自动保护音频通道，防止原厂开机音吞音；支持在细分配置中为每种模式独立定制专属音效。',
-    showCancel: false,
-    confirmText: '我知道了'
-  });
-}
-
-function showDoorHelp() {
-  openModal('confirm', {
-    title: '【功能指南】车门开闭智能语音提示',
-    desc: '1. 通用模式：开门统一播报「车门已打开」，关门统一播报「车门已关好」，多门同时动作自动合并，不连环抢音。\n\n2. 独立分门模式：可分别为主驾、副驾、后排播报专属语音。',
-    tip: '日常建议使用「通用模式」，播报简洁干脆。',
-    showCancel: false,
-    confirmText: '我知道了'
-  });
-}
-
-function showTrunkHelp() {
-  openModal('confirm', {
-    title: '【功能指南】原厂电动尾门独立语音播报',
-    desc: '1. 底层独立串口：独立监听 MCU 串口 91 02 01 b7 尾门位图，与四门逻辑完全解耦独立。\n\n2. 升起防刮与锁止确认：后备箱抬起升起时安全警示，防碰擦车库顶梁；电吸完全锁止时短促确认“后备箱已关好”，关后备箱无需回头确认。',
-    tip: '升起播报与锁止播报均带独立开关，支持试听与自定义音频文件。',
-    showCancel: false,
-    confirmText: '我知道了'
-  });
-}
-
-
-function formatGearName(gear) {
-  switch (gear) {
-    case 2: return '前进挡 (D 挡)';
-    case 4: return '倒车挡 (R 挡)';
-    case 5: return '驻车挡 (P 挡)';
-    case 1: return '空挡 (N 挡)';
-    default: return '采集中...';
-  }
-}
-
-function formatModeName(mode) {
-  switch (mode) {
-    case 1: return '舒适模式 (Comfort)';
-    case 2: return '运动模式 (Sport)';
-    case 3: return '经济模式 (Eco)';
-    case 4: return '智能模式 (Smart)';
-    default: return '采集中...';
-  }
 }
 
 function toggleVoiceMasterSwitch() {
