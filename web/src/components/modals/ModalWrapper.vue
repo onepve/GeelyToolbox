@@ -33,7 +33,7 @@
         </div>
 
         <!-- 弹窗主体内容 (独立平滑滚动，实体隔离彻底杜绝 Android 9 gap 塌陷与透视穿帮) -->
-        <div class="flex-1 overflow-y-auto p-8 space-y-6 tb-modal-surface">
+        <div :class="['flex-1 overflow-y-auto tb-modal-surface', bodyClass || 'p-8 space-y-6']">
           <slot />
         </div>
 
@@ -56,6 +56,7 @@ const props = defineProps({
   badge: String,
   maxWidthClass: String,
   maxHeightClass: String,
+  bodyClass: String,
   zIndexClass: String,
   showCloseButton: {
     type: Boolean,
