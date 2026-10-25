@@ -391,13 +391,13 @@ import { useConfigModal } from '../composables/useConfigModal';
 
 const activeTab = ref(store.vehicleAuto.voice_door_mode_universal === true ? 'door_universal' : 'gear');
 const voiceTabs = [
-  { id: 'gear', name: '换挡语音', tag: '挡位播报' },
-  { id: 'mode', name: '驾驶模式', tag: '旋钮模式' },
-  { id: 'door_universal', name: '车门合并播报', tag: '极简合并' },
-  { id: 'door_detail', name: '车门分门播报', tag: '独立迎宾' },
-  { id: 'trunk', name: '电动尾门', tag: '尾门开闭' },
-  { id: 'media', name: '音乐音源优先级', tag: '回退调度' },
-  { id: 'packs', name: '专属语音包', tag: '整套换装' }
+  { id: 'gear', name: '换挡语音' },
+  { id: 'mode', name: '驾驶模式' },
+  { id: 'door_universal', name: '车门合并播报' },
+  { id: 'door_detail', name: '车门分门播报' },
+  { id: 'trunk', name: '电动尾门' },
+  { id: 'media', name: '音乐音源优先级' },
+  { id: 'packs', name: '专属语音包' }
 ];
 
 const { toggleSetting, setSetting, testVoice, openCustomVoice } = useConfigModal();
