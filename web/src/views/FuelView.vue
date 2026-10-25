@@ -660,7 +660,7 @@ const currentFuelPercent = computed(() => {
   return -1;
 });
 const hasFuelSignal = computed(() => {
-  return currentFuelPercent.value >= 0 && store.deviceInfo.is_car_device;
+  return currentFuelPercent.value >= 0;
 });
 
 const currentFuelLiters = computed(() => {

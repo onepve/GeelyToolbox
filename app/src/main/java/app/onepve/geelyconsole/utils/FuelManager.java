@@ -275,6 +275,55 @@ public class FuelManager {
     }
 
     /**
+     * 主动从 logcat 缓存中极速反查最近一次打印的仪表油位报文 (点火开机瞬态回溯，杜绝白等慢广播)
+     */
+    public static int fetchLatestFuelFromLogcat() {
+        try {
+            String out = SystemUtils.executeShell("logcat -d -v time | grep -iE 'P_REMAINING_OIL|0x00201100|0x11600407|mModelFuel' | tail -n 5");
+            if (out != null && !out.isEmpty()) {
+                String[] lines = out.split("\n");
+                for (int i = lines.length - 1; i >= 0; i--) {
+                    String line = lines[i];
+                    // 1. 匹配 SensorModule 格式 (funValue / funcValue / hex)
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?:P_REMAINING_OIL|0x00201100|0x11600407).*?(?:(?:funValue|funcValue)\\((?:0x)?([0-9a-fA-F]+)\\)|[:=]\\s*([0-9.]+))", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(line);
+                    if (m.find()) {
+                        String hexStr = m.group(1);
+                        String decStr = m.group(2);
+                        int val = -1;
+                        if (hexStr != null && !hexStr.isEmpty()) {
+                            val = (int) Long.parseLong(hexStr, 16);
+                        } else if (decStr != null && !decStr.isEmpty()) {
+                            val = (int) Double.parseDouble(decStr);
+                        }
+                        if (val >= 0 && val <= 100) return val;
+                        if (val > 100 && val <= 1000) return Math.min(100, val / 10);
+                    }
+                    // 2. 匹配 ecarx_core_server mModelFuel 格式
+                    if (line.contains("mModelFuel")) {
+                        int eqIdx = line.indexOf("=", line.indexOf("mModelFuel"));
+                        if (eqIdx != -1) {
+                            String sub = line.substring(eqIdx + 1).trim();
+                            StringBuilder num = new StringBuilder();
+                            for (int j = 0; j < sub.length(); j++) {
+                                char c = sub.charAt(j);
+                                if (Character.isDigit(c)) num.append(c);
+                                else if (num.length() > 0) break;
+                            }
+                            if (num.length() > 0) {
+                                int v = Integer.parseInt(num.toString());
+                                if (v >= 0 && v <= 100) return v;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "fetchLatestFuelFromLogcat error: " + t.getMessage());
+        }
+        return -1;
+    }
+
+    /**
      * 保存燃油配置
      */
     public static boolean saveConfig(Context context, JSONObject config) {
@@ -669,8 +718,11 @@ public class FuelManager {
     public static JSONArray calculateMonthlyStats(Context context, JSONArray records) {
         JSONArray monthlyList = new JSONArray();
         try {
-            JSONObject cfg = getConfig(context);
-            JSONObject bases = cfg.optJSONObject("monthly_bases");
+            JSONObject bases = null;
+            if (context != null) {
+                JSONObject cfg = getConfig(context);
+                bases = cfg.optJSONObject("monthly_bases");
+            }
 
             // 使用有序 Map 按月份逆序聚合 (最新月份排在前)
             java.util.Map<String, JSONObject> map = new java.util.LinkedHashMap<>();
@@ -736,7 +788,7 @@ public class FuelManager {
     }
 
     public static JSONArray calculateMonthlyStats(JSONArray records) {
-        return calculateMonthlyStats(app.onepve.geelyconsole.GeelyApplication.getAppContext(), records);
+        return calculateMonthlyStats(null, records);
     }
 
     /**
@@ -777,6 +829,31 @@ public class FuelManager {
                 }
             }
             root.put("current_odo", curOdo > 0 ? Math.round(curOdo * 10.0) / 10.0 : 0.0);
+
+            // 附带底盘最新燃油状态，若内存暂无则主动抓取 logcat 报文与历史瞬态快照
+            int curFuelPct = app.onepve.geelyconsole.services.VehicleAutomationService.currentFuelPercent;
+            float curFuelLit = app.onepve.geelyconsole.services.VehicleAutomationService.currentFuelLiters;
+            if (curFuelPct < 0) {
+                int logFuel = fetchLatestFuelFromLogcat();
+                if (logFuel >= 0) {
+                    curFuelPct = logFuel;
+                    curFuelLit = (45.0f * curFuelPct) / 100.0f;
+                    app.onepve.geelyconsole.services.VehicleAutomationService.currentFuelPercent = curFuelPct;
+                    app.onepve.geelyconsole.services.VehicleAutomationService.currentFuelLiters = curFuelLit;
+                } else {
+                    JSONObject lastFuel = getLastFuelState(context);
+                    double savedOil = lastFuel.optDouble("oil", -1.0);
+                    if (savedOil >= 0) {
+                        curFuelLit = (float) savedOil;
+                        curFuelPct = Math.min(100, (int) Math.round((savedOil / 45.0) * 100.0));
+                        app.onepve.geelyconsole.services.VehicleAutomationService.currentFuelPercent = curFuelPct;
+                        app.onepve.geelyconsole.services.VehicleAutomationService.currentFuelLiters = curFuelLit;
+                    }
+                }
+            }
+            root.put("fuel_percent", curFuelPct);
+            root.put("fuel_liters", (double) curFuelLit);
+            root.put("is_car_device", MainActivity.isCarDevice(context));
 
             JSONArray trips = getTrips(context);
             root.put("trips", trips);

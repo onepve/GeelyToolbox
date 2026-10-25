@@ -225,6 +225,9 @@ onMounted(() => {
         try { localStorage.setItem('toolbox_app_icon_style', data.app_icon_style); } catch (e) {}
       }
       if (typeof data.is_binyue_cool_model === 'boolean') store.deviceInfo.is_binyue_cool_model = data.is_binyue_cool_model;
+      if (typeof data.is_car_device === 'boolean') store.deviceInfo.is_car_device = data.is_car_device;
+      if (data.fuel_percent !== undefined && data.fuel_percent !== null) store.deviceInfo.fuel_percent = data.fuel_percent;
+      if (data.fuel_liters !== undefined && data.fuel_liters !== null) store.deviceInfo.fuel_liters = data.fuel_liters;
     } catch (e) {}
   };
 

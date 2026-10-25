@@ -381,12 +381,17 @@ public class VehicleAutomationService extends Service {
             lastDriveMode = mode;
         });
 
-        // 预载上次持久化的仪表总里程基准 (保障开机首秒即有真实里程)
+        // 预载上次持久化的仪表总里程基准与剩余油量 (保障开机首秒即有真实里程与油量，无需苦等第一包慢广播)
         try {
             JSONObject lastFuel = FuelManager.getLastFuelState(this);
             double savedOdo = lastFuel.optDouble("odo", -1.0);
             if (savedOdo > 0 && currentTotalOdoKm <= 0) {
                 currentTotalOdoKm = savedOdo;
+            }
+            double savedOil = lastFuel.optDouble("oil", -1.0);
+            if (savedOil >= 0 && currentFuelPercent < 0) {
+                currentFuelLiters = (float) savedOil;
+                currentFuelPercent = Math.min(100, (int) Math.round((savedOil / 45.0) * 100.0));
             }
         } catch (Throwable ignored) {}
 
@@ -2579,10 +2584,13 @@ public class VehicleAutomationService extends Service {
                 pct = Math.min(100, val / 10);
                 liters = (45.0f * pct) / 100.0f;
             }
+            currentRemainingOilLiters = (double) liters;
             if (currentFuelPercent != pct) {
                 currentFuelPercent = pct;
                 currentFuelLiters = liters;
                 AppLogger.i("行程油耗", "底盘燃油信号更新: 剩余 " + pct + "% (约 " + String.format(java.util.Locale.US, "%.1f", liters) + "L)");
+                // 实时通知前台网页更新油箱估算卡片
+                MainActivity.requestDeviceInfoPush();
             }
         } catch (Throwable t) {
             AppLogger.w("行程油耗", "解析燃油信号异常: " + t.getMessage());

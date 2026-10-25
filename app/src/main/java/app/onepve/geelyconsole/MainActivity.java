@@ -94,6 +94,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
     }
 
+    public static void requestDeviceInfoPush() {
+        if (currentActivity != null) {
+            MainActivity activity = currentActivity.get();
+            if (activity != null && !activity.isFinishing()) {
+                activity.pushDeviceInfoToWeb();
+            }
+        }
+    }
+
     private static final String TAG = "MainActivity";
     private static final int REQ_CODE_STORAGE = 1001;
     private static final int REQ_CODE_SELECT_APK = 2001;

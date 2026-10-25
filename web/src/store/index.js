@@ -97,6 +97,7 @@ export const store = reactive({
     })(),
     platform_code: '',
     platform_name: '',
+    is_car_device: true,
     fuel_percent: -1,
     fuel_liters: -1
   },
@@ -563,6 +564,9 @@ export function loadFuelData() {
       const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
       if (data.config) Object.assign(store.fuelLedger.config, data.config);
       if (data.current_odo !== undefined) store.fuelLedger.current_odo = data.current_odo;
+      if (typeof data.is_car_device === 'boolean') store.deviceInfo.is_car_device = data.is_car_device;
+      if (data.fuel_percent !== undefined && data.fuel_percent !== null) store.deviceInfo.fuel_percent = data.fuel_percent;
+      if (data.fuel_liters !== undefined && data.fuel_liters !== null) store.deviceInfo.fuel_liters = data.fuel_liters;
       if (Array.isArray(data.records)) store.fuelLedger.records = data.records;
       if (data.stats) Object.assign(store.fuelLedger.stats, data.stats);
       if (Array.isArray(data.monthly_stats)) store.fuelLedger.monthly_stats = data.monthly_stats;
