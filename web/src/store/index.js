@@ -221,6 +221,8 @@ export const store = reactive({
       status_desc: '尚未出账'
     },
     monthly_stats: [],
+    current_year: '',
+    yearly_stats: [],
     trips: [],
     last_trip: null,
     isLoaded: false
@@ -567,6 +569,8 @@ export function loadFuelData() {
       if (typeof data.is_car_device === 'boolean') store.deviceInfo.is_car_device = data.is_car_device;
       if (data.fuel_percent !== undefined && data.fuel_percent !== null) store.deviceInfo.fuel_percent = data.fuel_percent;
       if (data.fuel_liters !== undefined && data.fuel_liters !== null) store.deviceInfo.fuel_liters = data.fuel_liters;
+      if (data.current_year) store.fuelLedger.current_year = data.current_year;
+      if (Array.isArray(data.yearly_stats)) store.fuelLedger.yearly_stats = data.yearly_stats;
       if (Array.isArray(data.records)) store.fuelLedger.records = data.records;
       if (data.stats) Object.assign(store.fuelLedger.stats, data.stats);
       if (Array.isArray(data.monthly_stats)) store.fuelLedger.monthly_stats = data.monthly_stats;
@@ -633,6 +637,18 @@ export function clearMonthlyRecords(month) {
     return ok;
   } catch (e) {
     console.error('clearMonthlyRecords error', e);
+    return false;
+  }
+}
+
+export function clearYearlyArchive(year) {
+  try {
+    const ok = bridge.call('clearYearlyArchive', String(year));
+    loadFuelData();
+    showToast(`已清空【${year}】年度历史归档`, 'success');
+    return ok;
+  } catch (e) {
+    console.error('clearYearlyArchive error', e);
     return false;
   }
 }

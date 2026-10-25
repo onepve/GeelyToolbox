@@ -220,6 +220,98 @@
 
       <!-- 加油记录流水台账列表 (高对比度紧凑列表，拒绝大块空洞卡片) -->
       <div class="p-4 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col space-y-3">
+        <!-- 顶栏：记账年份切换与状态栏 -->
+        <div class="flex items-center justify-between pb-2 border-b border-car-border/60">
+          <div class="flex items-center space-x-2">
+            <span class="text-[13px] text-car-sub font-bold">台账年份:</span>
+            <div class="flex items-center space-x-1.5">
+              <div 
+                v-for="yItem in availableYears" 
+                :key="yItem.year"
+                @click="onYearChange(yItem.year)"
+                class="h-[36px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-center font-black text-[13px] select-none shadow-sm"
+                :class="(activeYear === yItem.year || (activeYear === '' && yItem.year === currentYear)) 
+                  ? 'bg-car-accent-light border-car-accent text-car-accent' 
+                  : 'bg-car-item border-car-border text-car-sub hover:text-car-text'"
+              >
+                {{ yItem.label }}
+              </div>
+            </div>
+          </div>
+
+          <div class="text-[12px] text-car-sub font-bold text-right hidden sm:block">
+            <span v-if="!isPastYearView">本年支持详细小票与单月筛选 · 跨年后自动压缩归档释放槽位</span>
+            <span v-else class="text-car-accent">往年年度已压实归档 · 详细槽位已全量释放</span>
+          </div>
+        </div>
+
+        <!-- 往年年度归档总账视图 (无需琐碎流水小票，直接呈现年度宏观总账与月度收敛分布) -->
+        <div v-if="isPastYearView && selectedPastYearData" class="flex flex-col space-y-3">
+          <!-- 往年年度宏观总览卡片 -->
+          <div class="p-4 rounded-2xl bg-car-item border border-car-accent/50 shadow-md flex items-center justify-between">
+            <div class="flex items-center space-x-6">
+              <div class="flex flex-col">
+                <span class="text-[12px] text-car-sub font-bold">{{ selectedPastYearData.year }} 年度总支出</span>
+                <span class="text-[22px] font-mono font-black text-car-accent">¥{{ selectedPastYearData.total_paid }}</span>
+              </div>
+              <div class="h-8 w-px bg-car-border/80"></div>
+              <div class="flex flex-col">
+                <span class="text-[12px] text-car-sub font-bold">年度加油总量</span>
+                <span class="text-[20px] font-mono font-black text-car-text">{{ selectedPastYearData.total_liters }} <span class="text-[14px]">L</span></span>
+              </div>
+              <div class="h-8 w-px bg-car-border/80"></div>
+              <div class="flex flex-col">
+                <span class="text-[12px] text-car-sub font-bold">加油频次</span>
+                <span class="text-[18px] font-mono font-black text-car-text">{{ selectedPastYearData.count }} <span class="text-[13px] text-car-sub">次 (加满 {{ selectedPastYearData.full_count || 0 }} 次)</span></span>
+              </div>
+              <div v-if="selectedPastYearData.distance > 0" class="h-8 w-px bg-car-border/80"></div>
+              <div v-if="selectedPastYearData.distance > 0" class="flex flex-col">
+                <span class="text-[12px] text-car-sub font-bold">年度里程跨度</span>
+                <span class="text-[18px] font-mono font-black text-car-text">{{ selectedPastYearData.distance }} <span class="text-[13px] text-car-sub">km</span></span>
+              </div>
+            </div>
+
+            <!-- 清除该年归档按钮 -->
+            <button 
+              @click="onClearPastYear(selectedPastYearData.year)"
+              class="h-[50px] min-h-[50px] px-4 rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-[13px] font-bold cursor-pointer transition-colors whitespace-nowrap shadow-sm"
+            >
+              清空{{ selectedPastYearData.year }}年归档
+            </button>
+          </div>
+
+          <!-- 往年月度收敛分布网格 -->
+          <div class="flex flex-col space-y-2">
+            <div class="flex items-center justify-between text-[13px] text-car-sub font-bold px-1">
+              <span>{{ selectedPastYearData.year }} 年各月份用油分布 (已收敛汇总)</span>
+              <span>历史年份不保留零碎小票，只留完整月度台账</span>
+            </div>
+
+            <div v-if="selectedPastYearData.months && selectedPastYearData.months.length > 0" class="grid grid-cols-4 gap-2.5">
+              <div 
+                v-for="m in selectedPastYearData.months" 
+                :key="m.month"
+                class="p-3 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-1 shadow-sm"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="text-[14px] font-black text-car-text font-mono">{{ m.month_short || m.month }}</span>
+                  <span class="text-[11px] px-1.5 py-0.5 rounded bg-car-card border border-car-border text-car-sub font-bold">{{ m.count }}次加油</span>
+                </div>
+                <div class="flex items-baseline justify-between pt-1">
+                  <span class="text-[12px] text-car-sub font-bold">加油量: <span class="text-car-text font-mono font-black">{{ m.liters }}</span> L</span>
+                  <span class="text-[15px] font-mono font-black text-car-accent">¥{{ m.paid }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="py-8 text-center text-car-sub text-[13px] font-bold bg-car-item rounded-2xl border border-car-border">
+              该年度暂无细分月度汇总数据
+            </div>
+          </div>
+        </div>
+
+        <!-- 本年度常规详细流水视图 -->
+        <template v-else>
         <!-- 月度聚合统计清单 (按月收敛，车机轻量化秒览) -->
         <div v-if="store.fuelLedger.monthly_stats && store.fuelLedger.monthly_stats.length > 0" class="flex flex-col space-y-1.5 pb-2 border-b border-car-border/60">
           <div class="flex items-center justify-between text-[13px] text-car-sub font-bold px-1">
@@ -302,8 +394,8 @@
 
         <!-- 空状态提示 -->
         <div v-if="!filteredRecords || filteredRecords.length === 0" class="py-12 flex flex-col items-center justify-center space-y-3 text-center">
-          <div class="w-12 h-12 rounded-full bg-car-item border border-car-border flex items-center justify-center text-car-sub text-[22px]">
-            ⛽
+          <div class="w-12 h-12 rounded-full bg-car-item border border-car-border flex items-center justify-center text-car-sub">
+            <span class="font-black text-car-accent text-[18px]">油</span>
           </div>
           <span class="text-[16px] font-black text-car-text">暂无加油台账记录</span>
           <span class="text-[13px] text-car-sub font-bold max-w-[480px]">
@@ -369,6 +461,7 @@
             </div>
           </div>
         </div>
+        </template>
       </div>
     </div>
 
@@ -507,6 +600,7 @@ import {
   deleteFuelRecord,
   clearFuelRecords,
   clearMonthlyRecords,
+  clearYearlyArchive,
   saveMonthlyAdjustment
 } from '../store';
 import SubTabs from '../components/SubTabs.vue';
@@ -526,6 +620,49 @@ const fuelTabs = [
 // 月度聚合与单月过滤状态
 const selectedMonth = ref('');
 let clickTimer = null;
+
+// 年度切换状态 (默认为空表示当前本年)
+const activeYear = ref('');
+const currentYear = computed(() => store.fuelLedger.current_year || new Date().getFullYear().toString());
+
+const availableYears = computed(() => {
+  const list = [{ year: currentYear.value, label: `${currentYear.value}年 (本年)` }];
+  if (store.fuelLedger.yearly_stats && store.fuelLedger.yearly_stats.length > 0) {
+    store.fuelLedger.yearly_stats.forEach(y => {
+      if (y.year !== currentYear.value) {
+        list.push({ year: y.year, label: `${y.year}年 (归档)` });
+      }
+    });
+  }
+  return list;
+});
+
+const isPastYearView = computed(() => {
+  return activeYear.value !== '' && activeYear.value !== currentYear.value;
+});
+
+const selectedPastYearData = computed(() => {
+  if (!isPastYearView.value) return null;
+  return store.fuelLedger.yearly_stats?.find(y => y.year === activeYear.value) || null;
+});
+
+function onYearChange(yr) {
+  activeYear.value = yr;
+  selectedMonth.value = '';
+}
+
+function onClearPastYear(year) {
+  openModal('confirm', {
+    title: `确认清空【${year}年度】历史归档？`,
+    desc: `清空后【${year}年】的历史年度总账与月度分布将被彻底抹除，不可恢复。`,
+    confirmText: '确定清空',
+    isDanger: true,
+    onConfirm: () => {
+      clearYearlyArchive(year);
+      activeYear.value = '';
+    }
+  });
+}
 
 // 单击筛选 (防抖防止与双击冲突)
 function onMonthClick(month) {

@@ -540,6 +540,30 @@ public class FuelManager {
     }
 
     /**
+     * 清空指定年份的历史归档
+     */
+    public static boolean clearYearlyArchive(Context context, String year) {
+        if (year == null || year.trim().isEmpty()) return false;
+        synchronized (LOCK) {
+            try {
+                JSONObject cfg = getConfig(context);
+                JSONObject archives = cfg.optJSONObject("yearly_archives");
+                if (archives != null && archives.has(year)) {
+                    archives.remove(year);
+                    cfg.put("yearly_archives", archives);
+                    saveConfig(context, cfg);
+                    AppLogger.i("行程油耗", "已清空【" + year + "】年度历史归档");
+                    return true;
+                }
+                return false;
+            } catch (Throwable t) {
+                Log.e(TAG, "清空年度归档失败: " + t.getMessage());
+                return false;
+            }
+        }
+    }
+
+    /**
      * 手动校对/修正指定月份的总金额与总升数
      */
     public static boolean saveMonthlyAdjustment(Context context, String month, double totalPaid, double totalLiters) {
@@ -792,10 +816,261 @@ public class FuelManager {
     }
 
     /**
+     * 跨年自动归纳压缩：
+     * 自动扫描并提取非当年的往年明细流水，将其卷叠压实为年度历史归档 (写入 fuel_config.json 的 yearly_archives)，
+     * 同时从 fuel_records.json 中安全移除往年单笔小票，为本年度腾出完整的明细记录槽位。
+     */
+    public static void compactPastYears(Context context) {
+        synchronized (LOCK) {
+            try {
+                String currentYear = new SimpleDateFormat("yyyy", Locale.getDefault()).format(new Date());
+                File recordsFile = new File(getFuelDir(), FILE_RECORDS);
+                if (!recordsFile.exists() || recordsFile.length() == 0) return;
+
+                String content = readFileContent(recordsFile);
+                if (content == null || content.isEmpty()) return;
+                JSONArray current = new JSONArray(content);
+                if (current.length() == 0) return;
+
+                boolean hasPastYearRecords = false;
+                for (int i = 0; i < current.length(); i++) {
+                    JSONObject r = current.optJSONObject(i);
+                    if (r != null) {
+                        String d = r.optString("date", "");
+                        if (d.length() >= 4) {
+                            String y = d.substring(0, 4);
+                            if (y.compareTo(currentYear) < 0) {
+                                hasPastYearRecords = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (!hasPastYearRecords) return;
+
+                JSONObject cfg = getConfig(context);
+                JSONObject yearlyArchives = cfg.optJSONObject("yearly_archives");
+                if (yearlyArchives == null) yearlyArchives = new JSONObject();
+
+                JSONArray keepRecords = new JSONArray();
+                int archivedCount = 0;
+
+                for (int i = 0; i < current.length(); i++) {
+                    JSONObject r = current.optJSONObject(i);
+                    if (r == null) continue;
+                    String d = r.optString("date", "");
+                    String y = d.length() >= 4 ? d.substring(0, 4) : currentYear;
+
+                    if (y.compareTo(currentYear) < 0) {
+                        // 属于往年记录，归入对应年份归档
+                        JSONObject yArchive = yearlyArchives.optJSONObject(y);
+                        if (yArchive == null) {
+                            yArchive = new JSONObject();
+                            yArchive.put("year", y);
+                            yArchive.put("total_paid", 0.0);
+                            yArchive.put("total_liters", 0.0);
+                            yArchive.put("count", 0);
+                            yArchive.put("full_count", 0);
+                            yArchive.put("months", new JSONObject());
+                        }
+
+                        double paid = r.optDouble("actual_paid", r.optDouble("amount", 0.0));
+                        double liters = r.optDouble("liters", 0.0);
+                        double odo = r.optDouble("odo", 0.0);
+                        boolean isFull = r.optBoolean("is_full", false);
+
+                        double totPaid = yArchive.optDouble("total_paid", 0.0) + paid;
+                        double totLit = yArchive.optDouble("total_liters", 0.0) + liters;
+                        int cnt = yArchive.optInt("count", 0) + 1;
+                        int fullCnt = yArchive.optInt("full_count", 0) + (isFull ? 1 : 0);
+
+                        double minOdo = yArchive.optDouble("min_odo", -1.0);
+                        double maxOdo = yArchive.optDouble("max_odo", -1.0);
+                        if (odo > 0) {
+                            if (minOdo <= 0 || odo < minOdo) minOdo = odo;
+                            if (maxOdo <= 0 || odo > maxOdo) maxOdo = odo;
+                        }
+
+                        yArchive.put("total_paid", Math.round(totPaid * 100.0) / 100.0);
+                        yArchive.put("total_liters", Math.round(totLit * 10.0) / 10.0);
+                        yArchive.put("count", cnt);
+                        yArchive.put("full_count", fullCnt);
+                        if (minOdo > 0) yArchive.put("min_odo", minOdo);
+                        if (maxOdo > 0) yArchive.put("max_odo", maxOdo);
+
+                        // 按月份归纳
+                        String monthKey = d.length() >= 7 ? d.substring(0, 7) : (y + "-01");
+                        JSONObject months = yArchive.optJSONObject("months");
+                        if (months == null) months = new JSONObject();
+                        JSONObject mData = months.optJSONObject(monthKey);
+                        if (mData == null) {
+                            mData = new JSONObject();
+                            mData.put("month", monthKey);
+                            mData.put("paid", 0.0);
+                            mData.put("liters", 0.0);
+                            mData.put("count", 0);
+                        }
+                        mData.put("paid", Math.round((mData.optDouble("paid", 0.0) + paid) * 100.0) / 100.0);
+                        mData.put("liters", Math.round((mData.optDouble("liters", 0.0) + liters) * 10.0) / 10.0);
+                        mData.put("count", mData.optInt("count", 0) + 1);
+                        months.put(monthKey, mData);
+                        yArchive.put("months", months);
+
+                        yearlyArchives.put(y, yArchive);
+                        archivedCount++;
+                    } else {
+                        keepRecords.put(r);
+                    }
+                }
+
+                // 检查并合并 monthly_bases 中历史往年碎片
+                if (cfg.has("monthly_bases")) {
+                    JSONObject bases = cfg.optJSONObject("monthly_bases");
+                    if (bases != null) {
+                        java.util.List<String> toRemove = new java.util.ArrayList<>();
+                        java.util.Iterator<String> it = bases.keys();
+                        while (it.hasNext()) {
+                            String mKey = it.next();
+                            if (mKey.length() >= 4) {
+                                String y = mKey.substring(0, 4);
+                                if (y.compareTo(currentYear) < 0) {
+                                    JSONObject b = bases.optJSONObject(mKey);
+                                    if (b != null) {
+                                        JSONObject yArchive = yearlyArchives.optJSONObject(y);
+                                        if (yArchive == null) {
+                                            yArchive = new JSONObject();
+                                            yArchive.put("year", y);
+                                            yArchive.put("total_paid", 0.0);
+                                            yArchive.put("total_liters", 0.0);
+                                            yArchive.put("count", 0);
+                                            yArchive.put("full_count", 0);
+                                            yArchive.put("months", new JSONObject());
+                                        }
+                                        double bPaid = b.optDouble("base_paid", 0.0);
+                                        double bLit = b.optDouble("base_liters", 0.0);
+                                        int bCnt = b.optInt("base_count", 0);
+
+                                        yArchive.put("total_paid", Math.round((yArchive.optDouble("total_paid", 0.0) + bPaid) * 100.0) / 100.0);
+                                        yArchive.put("total_liters", Math.round((yArchive.optDouble("total_liters", 0.0) + bLit) * 10.0) / 10.0);
+                                        yArchive.put("count", yArchive.optInt("count", 0) + bCnt);
+
+                                        JSONObject months = yArchive.optJSONObject("months");
+                                        if (months == null) months = new JSONObject();
+                                        JSONObject mData = months.optJSONObject(mKey);
+                                        if (mData == null) {
+                                            mData = new JSONObject();
+                                            mData.put("month", mKey);
+                                            mData.put("paid", 0.0);
+                                            mData.put("liters", 0.0);
+                                            mData.put("count", 0);
+                                        }
+                                        mData.put("paid", Math.round((mData.optDouble("paid", 0.0) + bPaid) * 100.0) / 100.0);
+                                        mData.put("liters", Math.round((mData.optDouble("liters", 0.0) + bLit) * 10.0) / 10.0);
+                                        mData.put("count", mData.optInt("count", 0) + bCnt);
+                                        months.put(mKey, mData);
+                                        yArchive.put("months", months);
+                                        yearlyArchives.put(y, yArchive);
+                                    }
+                                    toRemove.add(mKey);
+                                }
+                            }
+                        }
+                        for (String rk : toRemove) {
+                            bases.remove(rk);
+                        }
+                        cfg.put("monthly_bases", bases);
+                    }
+                }
+
+                if (archivedCount > 0) {
+                    cfg.put("yearly_archives", yearlyArchives);
+                    saveConfig(context, cfg);
+                    saveRecordsInternal(keepRecords);
+                    AppLogger.i("行程油耗", "跨年归纳完成: 自动将 " + archivedCount + " 笔往年流水归档为年度记录，已清空并释放槽位。");
+                }
+            } catch (Throwable t) {
+                Log.w(TAG, "跨年油耗归纳异常: " + t.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 获取往年年度归档统计列表 (按年份降序排列)
+     */
+    public static JSONArray getYearlyStats(Context context) {
+        JSONArray res = new JSONArray();
+        try {
+            compactPastYears(context);
+            JSONObject cfg = getConfig(context);
+            JSONObject yearlyArchives = cfg.optJSONObject("yearly_archives");
+            if (yearlyArchives == null || yearlyArchives.length() == 0) {
+                return res;
+            }
+
+            java.util.List<String> years = new java.util.ArrayList<>();
+            java.util.Iterator<String> it = yearlyArchives.keys();
+            while (it.hasNext()) {
+                years.add(it.next());
+            }
+            java.util.Collections.sort(years, (a, b) -> b.compareTo(a));
+
+            for (String y : years) {
+                JSONObject raw = yearlyArchives.optJSONObject(y);
+                if (raw == null) continue;
+                JSONObject item = new JSONObject();
+                item.put("year", y);
+                item.put("total_paid", raw.optDouble("total_paid", 0.0));
+                item.put("total_liters", raw.optDouble("total_liters", 0.0));
+                item.put("count", raw.optInt("count", 0));
+                item.put("full_count", raw.optInt("full_count", 0));
+
+                double minOdo = raw.optDouble("min_odo", 0.0);
+                double maxOdo = raw.optDouble("max_odo", 0.0);
+                double dist = (maxOdo > minOdo && minOdo > 0) ? (maxOdo - minOdo) : 0.0;
+                item.put("distance", Math.round(dist * 10.0) / 10.0);
+
+                // 组装月份列表 (按月份降序)
+                JSONObject monthsObj = raw.optJSONObject("months");
+                JSONArray monthsList = new JSONArray();
+                if (monthsObj != null) {
+                    java.util.List<String> mKeys = new java.util.ArrayList<>();
+                    java.util.Iterator<String> mIt = monthsObj.keys();
+                    while (mIt.hasNext()) mKeys.add(mIt.next());
+                    java.util.Collections.sort(mKeys, (a, b) -> b.compareTo(a));
+
+                    for (String mk : mKeys) {
+                        JSONObject mData = monthsObj.optJSONObject(mk);
+                        if (mData != null) {
+                            JSONObject mOut = new JSONObject();
+                            mOut.put("month", mk);
+                            String shortMonth = mk.length() >= 7 ? mk.substring(5) + "月" : mk;
+                            if (shortMonth.startsWith("0")) shortMonth = shortMonth.substring(1);
+                            mOut.put("month_short", shortMonth);
+                            mOut.put("paid", mData.optDouble("paid", 0.0));
+                            mOut.put("liters", mData.optDouble("liters", 0.0));
+                            mOut.put("count", mData.optInt("count", 0));
+                            monthsList.put(mOut);
+                        }
+                    }
+                }
+                item.put("months", monthsList);
+                res.put(item);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "获取年度归档统计异常: " + t.getMessage());
+        }
+        return res;
+    }
+
+    /**
      * 组装前台所需完整数据 (包含配置、流水记录列表、统计数据)
      */
     public static String getFullDataJson(Context context) {
         try {
+            compactPastYears(context);
+            String currentYear = new SimpleDateFormat("yyyy", Locale.getDefault()).format(new Date());
+
             JSONObject root = new JSONObject();
             JSONObject config = getConfig(context);
             JSONArray records = getRecords(context);
@@ -805,6 +1080,8 @@ public class FuelManager {
             root.put("records", records);
             root.put("stats", stats);
             root.put("monthly_stats", calculateMonthlyStats(context, records));
+            root.put("current_year", currentYear);
+            root.put("yearly_stats", getYearlyStats(context));
 
             double curOdo = app.onepve.geelyconsole.services.VehicleAutomationService.currentTotalOdoKm;
             if (curOdo <= 0) {
@@ -853,7 +1130,7 @@ public class FuelManager {
             }
             root.put("fuel_percent", curFuelPct);
             root.put("fuel_liters", (double) curFuelLit);
-            root.put("is_car_device", MainActivity.isCarDevice(context));
+            root.put("is_car_device", app.onepve.geelyconsole.MainActivity.isCarDevice(context));
 
             JSONArray trips = getTrips(context);
             root.put("trips", trips);

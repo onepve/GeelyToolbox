@@ -2590,7 +2590,7 @@ public class VehicleAutomationService extends Service {
                 currentFuelLiters = liters;
                 AppLogger.i("行程油耗", "底盘燃油信号更新: 剩余 " + pct + "% (约 " + String.format(java.util.Locale.US, "%.1f", liters) + "L)");
                 // 实时通知前台网页更新油箱估算卡片
-                MainActivity.requestDeviceInfoPush();
+                app.onepve.geelyconsole.MainActivity.requestDeviceInfoPush();
             }
         } catch (Throwable t) {
             AppLogger.w("行程油耗", "解析燃油信号异常: " + t.getMessage());
