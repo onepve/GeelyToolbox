@@ -227,41 +227,49 @@
             <span class="text-car-accent">点击月份可单月过滤 · 车机最多留存 30 笔精细流水</span>
           </div>
 
-          <div class="grid grid-cols-3 gap-2.5">
-            <div 
-              @click="toggleMonthFilter('')"
-              class="px-3.5 py-2 rounded-xl border cursor-pointer transition-all flex items-center justify-between"
-              :class="selectedMonth === '' ? 'bg-car-accent-light border-car-accent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
-            >
-              <div class="flex flex-col">
-                <span class="text-[14px] font-black leading-tight">全部流水</span>
-                <span class="text-[11.5px] text-car-sub font-bold mt-0.5">本地共 {{ store.fuelLedger.records.length }} 笔</span>
+          <div class="flex flex-wrap -m-1">
+            <div class="p-1">
+              <div 
+                @click="toggleMonthFilter('')"
+                class="h-[50px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center space-x-2.5 shadow-sm"
+                :class="selectedMonth === '' ? 'bg-car-accent-light border-car-accent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
+              >
+                <div class="flex flex-col">
+                  <span class="text-[13px] font-black leading-tight whitespace-nowrap">全部汇总</span>
+                  <span class="text-[11px] text-car-sub font-bold whitespace-nowrap">共 {{ store.fuelLedger.records.length }} 笔</span>
+                </div>
+                <span class="text-[13.5px] font-mono font-black text-car-accent whitespace-nowrap">¥{{ store.fuelLedger.stats.total_spend || '0.0' }}</span>
               </div>
-              <span class="text-[13px] font-mono font-black">¥{{ store.fuelLedger.stats.total_spend || '0.0' }}</span>
             </div>
 
             <div 
               v-for="m in store.fuelLedger.monthly_stats" 
               :key="m.month"
-              @click="toggleMonthFilter(m.month)"
-              class="px-3.5 py-2 rounded-xl border cursor-pointer transition-all flex items-center justify-between"
-              :class="selectedMonth === m.month ? 'bg-car-accent-light border-car-accent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
+              class="p-1"
             >
-              <div class="flex flex-col">
-                <div class="flex items-center space-x-1">
-                  <span class="text-[14px] font-black leading-tight">{{ m.month }}</span>
-                  <span class="text-[11px] px-1.5 py-0.2 rounded bg-car-card border border-car-border text-car-sub font-bold">{{ m.count }}次</span>
+              <div 
+                @click="toggleMonthFilter(m.month)"
+                class="h-[50px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center space-x-3 shadow-sm"
+                :class="selectedMonth === m.month ? 'bg-car-accent-light border-car-accent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
+              >
+                <div class="flex flex-col text-left">
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[13px] font-black leading-tight whitespace-nowrap">{{ m.month }}</span>
+                    <span class="text-[10.5px] px-1 rounded bg-car-card border border-car-border text-car-sub font-bold whitespace-nowrap">{{ m.count }}次</span>
+                  </div>
+                  <span class="text-[11px] text-car-sub font-bold whitespace-nowrap">共 {{ m.total_liters }} L</span>
                 </div>
-                <span class="text-[11.5px] text-car-sub font-bold mt-0.5">共加 {{ m.total_liters }} L</span>
+                <div class="flex flex-col text-right">
+                  <span class="text-[14px] font-mono font-black text-car-accent whitespace-nowrap">¥{{ m.total_paid }}</span>
+                </div>
               </div>
-              <span class="text-[14px] font-mono font-black text-car-accent">¥{{ m.total_paid }}</span>
             </div>
           </div>
         </div>
 
         <div class="flex items-center justify-between pb-1 text-[13px] text-car-sub font-bold px-1">
-          <span>{{ selectedMonth ? `【${selectedMonth}】详细流水 (${filteredRecords.length} 笔)` : `近期加油流水 (${filteredRecords.length} 笔 · 滚动防卡顿)` }}</span>
-          <span>点击任一记录可微调金额、油价、省份或删除</span>
+          <span>{{ selectedMonth ? `【${selectedMonth}】详细流水 (${filteredRecords.length} 笔)` : `近期加油流水 (${filteredRecords.length} 笔 · 双列卡片)` }}</span>
+          <span>点击任一卡片可微调金额、油价、省份或删除</span>
         </div>
 
         <!-- 空状态提示 -->
@@ -275,56 +283,47 @@
           </span>
         </div>
 
-        <!-- 紧凑流水列表条目 (高度 58px) -->
-        <div 
-          v-for="rec in filteredRecords" 
-          :key="rec.id"
-          @click="openEditRecordModal(rec)"
-          class="min-h-[58px] px-4 py-2 rounded-2xl bg-car-item border border-car-border hover:border-car-accent/60 cursor-pointer transition-all flex items-center justify-between shadow-sm"
-        >
-          <div class="flex items-center space-x-5">
-            <!-- 日期与总里程 -->
-            <div class="flex flex-col min-w-[120px]">
-              <span class="text-[15px] font-black text-car-text font-mono leading-tight">{{ rec.date }}</span>
-              <span class="text-[12px] text-car-sub font-bold font-mono">{{ rec.odo ? rec.odo + ' km' : '里程未打点' }}</span>
+        <!-- 双列流水卡片列表 (左右两张卡片并排，高密度，消灭单行拉长留白) -->
+        <div v-else class="grid grid-cols-2 gap-2.5">
+          <div 
+            v-for="rec in filteredRecords" 
+            :key="rec.id"
+            @click="openEditRecordModal(rec)"
+            class="min-h-[58px] px-3.5 py-2 rounded-2xl bg-car-item border border-car-border hover:border-car-accent/60 cursor-pointer transition-all flex items-center justify-between shadow-sm"
+          >
+            <div class="flex items-center space-x-3 truncate">
+              <!-- 日期与总里程 -->
+              <div class="flex flex-col min-w-[95px] shrink-0">
+                <span class="text-[13.5px] font-black text-car-text font-mono leading-tight whitespace-nowrap">{{ rec.date }}</span>
+                <span class="text-[11.5px] text-car-sub font-bold font-mono whitespace-nowrap">{{ rec.odo ? rec.odo + ' km' : '里程未打点' }}</span>
+              </div>
+
+              <div class="h-7 w-px bg-car-border/70 shrink-0"></div>
+
+              <!-- 加油规格与加满标签 -->
+              <div class="flex flex-col shrink-0">
+                <span class="text-[15px] font-black text-car-text font-mono leading-tight whitespace-nowrap">加 {{ rec.liters }} L</span>
+                <div class="flex items-center space-x-1 mt-0.5">
+                  <span 
+                    :class="rec.is_auto_detected ? 'border-amber-500/50 text-amber-400 bg-amber-500/10' : 'bg-car-card border-car-border text-car-sub'"
+                    class="text-[10.5px] px-1.5 py-0.2 rounded font-black border whitespace-nowrap"
+                  >
+                    {{ rec.is_auto_detected ? '⚡自动' : (rec.fuel_type || '92#') + (rec.is_full ? '·满' : '') }}
+                  </span>
+                  <span class="text-[11.5px] text-car-sub font-mono font-bold whitespace-nowrap">¥{{ rec.price ? rec.price.toFixed(2) : '--' }}</span>
+                </div>
+              </div>
             </div>
 
-            <div class="h-8 w-px bg-car-border/70"></div>
+            <!-- 右侧：实付金额与编辑入口 -->
+            <div class="flex items-center space-x-3 shrink-0">
+              <div class="flex flex-col text-right">
+                <span class="text-[17px] font-black text-car-accent font-mono leading-tight whitespace-nowrap">¥{{ rec.actual_paid ? rec.actual_paid.toFixed(1) : (rec.amount ? rec.amount.toFixed(1) : '0.0') }}</span>
+                <span class="text-[11px] text-car-sub font-bold whitespace-nowrap">{{ rec.source === 'auto' ? '底盘' : '手动' }}</span>
+              </div>
 
-            <!-- 加油规格与加满标签 -->
-            <div class="flex items-center space-x-2">
-              <span class="text-[16px] font-black text-car-text font-mono">加 {{ rec.liters }} L</span>
-              <span 
-                :class="rec.is_auto_detected ? 'border-amber-500/50 text-amber-400 bg-amber-500/10' : 'bg-car-card border-car-border text-car-sub'"
-                class="text-[12.5px] px-2 py-0.5 rounded font-black border"
-              >
-                {{ rec.is_auto_detected ? '⚡ 自动感知待核对' : (rec.fuel_type || '92#') + ' ' + (rec.is_full ? '跳枪加满' : '阶段补油') }}
-              </span>
-            </div>
-
-            <div class="h-8 w-px bg-car-border/70"></div>
-
-            <!-- 单价与省份 -->
-            <div class="flex flex-col">
-              <span class="text-[13.5px] font-bold text-car-sub">
-                ¥{{ rec.price ? rec.price.toFixed(2) : '--' }}/L
-                <span class="text-[12px] text-car-sub/80">[{{ rec.province || currentProvinceName }}]</span>
-              </span>
-              <span v-if="rec.note" class="text-[11.5px] text-car-accent font-bold truncate max-w-[140px]">{{ rec.note }}</span>
-            </div>
-          </div>
-
-          <div class="flex items-center space-x-5">
-            <!-- 实付金额 -->
-            <div class="flex flex-col text-right">
-              <span class="text-[18px] font-black text-car-accent font-mono leading-tight">¥{{ rec.actual_paid ? rec.actual_paid.toFixed(1) : (rec.amount ? rec.amount.toFixed(1) : '0.0') }}</span>
-              <span class="text-[11.5px] text-car-sub font-bold">{{ rec.source === 'auto' ? '底盘自动抓取' : '手动录入' }}</span>
-            </div>
-
-            <!-- 编辑操作图标 -->
-            <div class="flex items-center space-x-2">
-              <span class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-sub text-[13px] font-bold hover:text-car-text">
-                编辑/改
+              <span class="px-2.5 py-1.5 rounded-lg bg-car-card border border-car-border text-car-sub text-[12px] font-bold hover:text-car-text whitespace-nowrap">
+                改
               </span>
             </div>
           </div>
