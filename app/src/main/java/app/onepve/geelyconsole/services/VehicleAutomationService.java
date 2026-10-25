@@ -1867,6 +1867,8 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
+        long now = System.currentTimeMillis();
+
         // 冷却限制：10 分钟内最多只允许自动记录一笔加油台账，严禁短时间内连环记账
         if (now - lastRefuelRecordedTimeMs < 600000) {
             lastBaselineOilLiters = currentOil;
