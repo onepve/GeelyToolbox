@@ -155,7 +155,6 @@ public class VehicleAutomationService extends Service {
 
     // 智能加油：单次点火行程严格仅判定一次，判定完毕立即闭锁，熄火前绝不重复计算
     private volatile boolean tripRefuelEvaluatedInThisTrip = false;
-    private volatile double tripInitialValidOil = -1.0;
     private volatile int consecutiveValidOilSamples = 0;
     private static final double MIN_REFUEL_DELTA_LITERS = 8.0; // 最小跃变有效阈值 (>=8.0L)
     private static final double MAX_REASONABLE_FUEL_CAPACITY = 75.0; // 宽限油箱物理冗余安全上限 (容纳油箱颈与各车型公差)
@@ -1909,6 +1908,7 @@ public class VehicleAutomationService extends Service {
             JSONObject config = FuelManager.getConfig(this);
             String province = config.optString("province", "guangdong");
             String fuelType = config.optString("fuel_type", "92#");
+            double capacity = config.optDouble("fuel_capacity", 45.0);
             double price = 7.60; // 默认均价兜底
             double amount = Math.round(addedLiters * price * 10.0) / 10.0;
             double odo = currentTotalOdoKm > 0 ? Math.round(currentTotalOdoKm * 10.0) / 10.0 : 0.0;
@@ -1922,7 +1922,7 @@ public class VehicleAutomationService extends Service {
             record.put("amount", amount);
             record.put("actual_paid", amount);
             record.put("odo", odo);
-            record.put("is_full", currentOil >= 45.0); // 缤越/博越油箱约45L~50L，接近满箱判定跳枪
+            record.put("is_full", currentOil >= (capacity - 3.0)); // 达到油箱容量上限(如42L~45L)判定为加满跳枪
             record.put("fuel_type", fuelType);
             record.put("province", province);
             record.put("gas_station", "智能自动感知");
