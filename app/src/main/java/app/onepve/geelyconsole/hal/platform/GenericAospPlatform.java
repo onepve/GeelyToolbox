@@ -28,6 +28,11 @@ public class GenericAospPlatform implements IVehiclePlatform {
     }
 
     @Override
+    public double getDefaultFuelCapacityLiters() {
+        return 50.0; // 通用车载油箱容积兜底 50L
+    }
+
+    @Override
     public synchronized IVehicleKeyAdapter getKeyAdapter(Context context) {
         if (keyAdapter == null) {
             keyAdapter = new GenericKeyAdapterImpl();

@@ -1908,7 +1908,8 @@ public class VehicleAutomationService extends Service {
             JSONObject config = FuelManager.getConfig(this);
             String province = config.optString("province", "guangdong");
             String fuelType = config.optString("fuel_type", "92#");
-            double capacity = config.optDouble("fuel_capacity", 45.0);
+            double defaultCapacity = VehiclePlatformFactory.getPlatform(this).getDefaultFuelCapacityLiters();
+            double capacity = config.optDouble("fuel_capacity", defaultCapacity);
             double price = 7.60; // 默认均价兜底
             double amount = Math.round(addedLiters * price * 10.0) / 10.0;
             double odo = currentTotalOdoKm > 0 ? Math.round(currentTotalOdoKm * 10.0) / 10.0 : 0.0;

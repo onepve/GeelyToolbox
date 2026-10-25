@@ -30,6 +30,11 @@ public class BinyueCoolPlatform implements IVehiclePlatform {
     }
 
     @Override
+    public double getDefaultFuelCapacityLiters() {
+        return 45.0; // 吉利缤越 COOL 官方标称容积 45L
+    }
+
+    @Override
     public synchronized IVehicleKeyAdapter getKeyAdapter(Context context) {
         if (keyAdapter == null) {
             keyAdapter = new BinyueKeyAdapterImpl(context);

@@ -40,6 +40,11 @@ public class BinyueLPlatform implements IVehiclePlatform {
     }
 
     @Override
+    public double getDefaultFuelCapacityLiters() {
+        return 51.0; // 吉利缤越 L 官方标称容积 51L
+    }
+
+    @Override
     public synchronized IVehicleKeyAdapter getKeyAdapter(Context context) {
         if (keyAdapter == null) {
             keyAdapter = new BinyueLKeyAdapterImpl(context);

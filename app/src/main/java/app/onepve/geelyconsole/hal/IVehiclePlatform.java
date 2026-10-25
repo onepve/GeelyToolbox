@@ -13,6 +13,9 @@ public interface IVehiclePlatform {
     /** 平台友好显示名称 */
     String getPlatformName();
 
+    /** 获取当前车型的官方标称油箱容积 (Liters) */
+    double getDefaultFuelCapacityLiters();
+
     /** 获取方控按键适配器 */
     IVehicleKeyAdapter getKeyAdapter(Context context);
 

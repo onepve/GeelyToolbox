@@ -81,7 +81,8 @@ public class FuelManager {
             // 默认初始配置
             JSONObject def = new JSONObject();
             try {
-                def.put("tank_capacity", 45.0);          // 缤越标称 45L
+                double defCap = app.onepve.geelyconsole.hal.VehiclePlatformFactory.getPlatform(context).getDefaultFuelCapacityLiters();
+                def.put("tank_capacity", defCap);        // 按照当前实车底层 HAL 自动识别车型标称容积
                 def.put("default_fuel_type", "92#");     // 默认 92# 汽油
                 def.put("default_province", "浙江");     // 默认发改委省份
                 def.put("refuel_threshold_l", 4.0);      // 加油检测跃变阈值 (4.0L)

@@ -30,6 +30,11 @@ public class EmgrandLPlatform implements IVehiclePlatform {
     }
 
     @Override
+    public double getDefaultFuelCapacityLiters() {
+        return 52.0; // 吉利帝豪 L 官方标称容积 52L
+    }
+
+    @Override
     public synchronized IVehicleKeyAdapter getKeyAdapter(Context context) {
         if (keyAdapter == null) {
             keyAdapter = new EmgrandKeyAdapterImpl(context);
