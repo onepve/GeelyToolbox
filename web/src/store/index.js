@@ -621,6 +621,30 @@ export function clearFuelRecords() {
   }
 }
 
+export function clearMonthlyRecords(month) {
+  try {
+    const ok = bridge.call('clearMonthlyRecords', String(month));
+    loadFuelData();
+    showToast(`已清空【${month}】月度台账记录`, 'success');
+    return ok;
+  } catch (e) {
+    console.error('clearMonthlyRecords error', e);
+    return false;
+  }
+}
+
+export function saveMonthlyAdjustment(month, totalPaid, totalLiters) {
+  try {
+    const ok = bridge.call('saveMonthlyAdjustment', String(month), Number(totalPaid), Number(totalLiters));
+    loadFuelData();
+    showToast(`已校准【${month}】月度总额`, 'success');
+    return ok;
+  } catch (e) {
+    console.error('saveMonthlyAdjustment error', e);
+    return false;
+  }
+}
+
 export function saveFuelConfig(cfg) {
   try {
     const ok = bridge.call('saveFuelConfig', JSON.stringify(cfg));

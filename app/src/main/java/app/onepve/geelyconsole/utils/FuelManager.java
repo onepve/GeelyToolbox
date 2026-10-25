@@ -41,8 +41,8 @@ public class FuelManager {
     private static final String FILE_VEHICLE_KEY = "vehicle_identity.key";
 
     // 车机端防卡顿性能与轻量化门禁限制:
-    // 最多保留最新 30 条流水记录，超出自动滚动淘汰最旧记录 (全量数据由云端 PWA/D1 承接)
-    public static final int MAX_LOCAL_RECORDS = 30;
+    // 本地扩容保留最新 120 条精细流水记录 (覆盖家用车 3~5 年周期)，超出自动归档至对应月份基底
+    public static final int MAX_LOCAL_RECORDS = 120;
 
     private static final Object LOCK = new Object();
 
@@ -324,7 +324,26 @@ public class FuelManager {
     }
 
     /**
-     * 新增一条加油记录 (自动执行 MAX_LOCAL_RECORDS = 30 轻量化滑动窗口滚动淘汰)
+     * 将溢出淘汰的记录归档至月度历史基底 (防止超限滚动导致月度总额缩水)
+     */
+    public static void archiveToMonthlyBase(Context context, String monthKey, double paid, double liters) {
+        try {
+            JSONObject cfg = getConfig(context);
+            JSONObject bases = cfg.optJSONObject("monthly_bases");
+            if (bases == null) bases = new JSONObject();
+            JSONObject mBase = bases.optJSONObject(monthKey);
+            if (mBase == null) mBase = new JSONObject();
+            mBase.put("base_paid", Math.round((mBase.optDouble("base_paid", 0.0) + paid) * 100.0) / 100.0);
+            mBase.put("base_liters", Math.round((mBase.optDouble("base_liters", 0.0) + liters) * 10.0) / 10.0);
+            mBase.put("base_count", mBase.optInt("base_count", 0) + 1);
+            bases.put(monthKey, mBase);
+            cfg.put("monthly_bases", bases);
+            saveConfig(context, cfg);
+        } catch (Throwable ignored) {}
+    }
+
+    /**
+     * 新增一条加油记录 (自动执行 MAX_LOCAL_RECORDS = 120 轻量化滑动窗口滚动淘汰，多余的最旧记录自动固化至月度基底)
      */
     public static boolean addRecord(Context context, JSONObject record) {
         synchronized (LOCK) {
@@ -341,11 +360,15 @@ public class FuelManager {
                 // 新记录插在最前
                 updated.put(record);
                 for (int i = 0; i < current.length(); i++) {
-                    // 车机本地滑动窗口截断淘汰：只保留最新 30 条，多余的最旧记录从车机内存/存储淘汰
+                    JSONObject item = current.getJSONObject(i);
+                    // 车机本地滑动窗口截断淘汰：保留最新 120 条，多余的最旧记录自动固化到月度历史基底
                     if (updated.length() >= MAX_LOCAL_RECORDS) {
-                        break;
+                        String d = item.optString("date", "");
+                        String mKey = d.length() >= 7 ? d.substring(0, 7) : "近期";
+                        archiveToMonthlyBase(context, mKey, item.optDouble("actual_paid", 0.0), item.optDouble("liters", 0.0));
+                    } else {
+                        updated.put(item);
                     }
-                    updated.put(current.getJSONObject(i));
                 }
                 boolean ok = saveRecordsInternal(updated);
                 if (ok) {
@@ -426,13 +449,106 @@ public class FuelManager {
     }
 
     /**
-     * 清空全部加油记录
+     * 清空指定月份的加油流水记录及对应月度基底
+     */
+    public static boolean clearMonthlyRecords(Context context, String month) {
+        if (month == null || month.trim().isEmpty()) {
+            return false;
+        }
+        synchronized (LOCK) {
+            try {
+                JSONArray current = getRecords(context);
+                JSONArray updated = new JSONArray();
+                int removedCount = 0;
+                for (int i = 0; i < current.length(); i++) {
+                    JSONObject item = current.getJSONObject(i);
+                    String d = item.optString("date", "");
+                    if (d.startsWith(month)) {
+                        removedCount++;
+                    } else {
+                        updated.put(item);
+                    }
+                }
+                // 清理 monthly_bases 中该月份的基底
+                JSONObject cfg = getConfig(context);
+                if (cfg.has("monthly_bases")) {
+                    JSONObject bases = cfg.optJSONObject("monthly_bases");
+                    if (bases != null && bases.has(month)) {
+                        bases.remove(month);
+                        saveConfig(context, cfg);
+                    }
+                }
+                boolean ok = saveRecordsInternal(updated);
+                if (ok) {
+                    AppLogger.i("行程油耗", "已清空 " + month + " 月度台账流水，共移除 " + removedCount + " 笔记录");
+                }
+                return ok;
+            } catch (Throwable t) {
+                Log.e(TAG, "clearMonthlyRecords error: " + t.getMessage());
+                return false;
+            }
+        }
+    }
+
+    /**
+     * 手动校对/修正指定月份的总金额与总升数
+     */
+    public static boolean saveMonthlyAdjustment(Context context, String month, double totalPaid, double totalLiters) {
+        if (month == null || month.trim().isEmpty()) return false;
+        synchronized (LOCK) {
+            try {
+                // 计算该月份在当前 records 中的流水小计
+                JSONArray current = getRecords(context);
+                double currentPaid = 0.0;
+                double currentLiters = 0.0;
+                for (int i = 0; i < current.length(); i++) {
+                    JSONObject item = current.getJSONObject(i);
+                    String d = item.optString("date", "");
+                    if (d.startsWith(month)) {
+                        currentPaid += item.optDouble("actual_paid", 0.0);
+                        currentLiters += item.optDouble("liters", 0.0);
+                    }
+                }
+
+                // 差额补入基底
+                double diffPaid = Math.max(0.0, Math.round((totalPaid - currentPaid) * 100.0) / 100.0);
+                double diffLiters = Math.max(0.0, Math.round((totalLiters - currentLiters) * 10.0) / 10.0);
+
+                JSONObject cfg = getConfig(context);
+                JSONObject bases = cfg.optJSONObject("monthly_bases");
+                if (bases == null) bases = new JSONObject();
+                JSONObject mBase = bases.optJSONObject(month);
+                if (mBase == null) mBase = new JSONObject();
+
+                mBase.put("base_paid", diffPaid);
+                mBase.put("base_liters", diffLiters);
+                bases.put(month, mBase);
+                cfg.put("monthly_bases", bases);
+                saveConfig(context, cfg);
+                AppLogger.i("行程油耗", "已手动校准 " + month + " 月度总额为: ¥" + totalPaid + ", " + totalLiters + "L");
+                return true;
+            } catch (Throwable t) {
+                Log.e(TAG, "saveMonthlyAdjustment error: " + t.getMessage());
+                return false;
+            }
+        }
+    }
+
+    /**
+     * 清空全部加油记录与月度基底
      */
     public static boolean clearRecords(Context context) {
         synchronized (LOCK) {
+            try {
+                JSONObject cfg = getConfig(context);
+                if (cfg.has("monthly_bases")) {
+                    cfg.remove("monthly_bases");
+                    saveConfig(context, cfg);
+                }
+            } catch (Throwable ignored) {}
             boolean ok = saveRecordsInternal(new JSONArray());
             if (ok) {
-                AppLogger.i("行程油耗", "已清空所有加油流水台账");
+                AppLogger.i("行程油耗", "已清空所有加油流水台账及历史基底");
             }
             return ok;
         }
@@ -548,17 +664,37 @@ public class FuelManager {
     }
 
     /**
-     * 按月份聚合统计加油与花费清单 (轻量秒算，车机零负担)
+     * 按月份聚合统计加油与花费清单 (包含本地明细与历史归档基底，车机零负担秒算)
      */
-    public static JSONArray calculateMonthlyStats(JSONArray records) {
+    public static JSONArray calculateMonthlyStats(Context context, JSONArray records) {
         JSONArray monthlyList = new JSONArray();
         try {
-            int len = records.length();
-            if (len == 0) return monthlyList;
+            JSONObject cfg = getConfig(context);
+            JSONObject bases = cfg.optJSONObject("monthly_bases");
 
             // 使用有序 Map 按月份逆序聚合 (最新月份排在前)
             java.util.Map<String, JSONObject> map = new java.util.LinkedHashMap<>();
 
+            // 1. 先注入已归档/手动校准的月度基底
+            if (bases != null) {
+                java.util.Iterator<String> keys = bases.keys();
+                while (keys.hasNext()) {
+                    String mKey = keys.next();
+                    JSONObject b = bases.optJSONObject(mKey);
+                    if (b != null) {
+                        JSONObject mObj = new JSONObject();
+                        mObj.put("month", mKey);
+                        mObj.put("count", b.optInt("base_count", 0));
+                        mObj.put("total_paid", b.optDouble("base_paid", 0.0));
+                        mObj.put("total_liters", b.optDouble("base_liters", 0.0));
+                        mObj.put("archived_count", b.optInt("base_count", 0));
+                        map.put(mKey, mObj);
+                    }
+                }
+            }
+
+            // 2. 累加当前未淘汰的本地精细明细
+            int len = records != null ? records.length() : 0;
             for (int i = 0; i < len; i++) {
                 JSONObject r = records.getJSONObject(i);
                 String dateStr = r.optString("date", "");
@@ -586,13 +722,21 @@ public class FuelManager {
                 mObj.put("total_liters", Math.round(l * 10.0) / 10.0);
             }
 
-            for (JSONObject m : map.values()) {
-                monthlyList.put(m);
+            // 按月份降序排序 (最新月份排最前)
+            java.util.List<java.util.Map.Entry<String, JSONObject>> entryList = new java.util.ArrayList<>(map.entrySet());
+            java.util.Collections.sort(entryList, (a, b) -> b.getKey().compareTo(a.getKey()));
+
+            for (java.util.Map.Entry<String, JSONObject> entry : entryList) {
+                monthlyList.put(entry.getValue());
             }
         } catch (Throwable t) {
             Log.w(TAG, "聚合月度账单异常: " + t.getMessage());
         }
         return monthlyList;
+    }
+
+    public static JSONArray calculateMonthlyStats(JSONArray records) {
+        return calculateMonthlyStats(app.onepve.geelyconsole.GeelyApplication.getAppContext(), records);
     }
 
     /**
@@ -608,7 +752,7 @@ public class FuelManager {
             root.put("config", config);
             root.put("records", records);
             root.put("stats", stats);
-            root.put("monthly_stats", calculateMonthlyStats(records));
+            root.put("monthly_stats", calculateMonthlyStats(context, records));
 
             double curOdo = app.onepve.geelyconsole.services.VehicleAutomationService.currentTotalOdoKm;
             if (curOdo <= 0) {

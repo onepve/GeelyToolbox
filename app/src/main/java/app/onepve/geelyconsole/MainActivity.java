@@ -2278,6 +2278,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             return FuelManager.clearRecords(MainActivity.this);
         }
 
+        @JavascriptInterface
+        public boolean clearMonthlyRecords(String month) {
+            return FuelManager.clearMonthlyRecords(MainActivity.this, month);
+        }
+
+        @JavascriptInterface
+        public boolean saveMonthlyAdjustment(String month, double totalPaid, double totalLiters) {
+            return FuelManager.saveMonthlyAdjustment(MainActivity.this, month, totalPaid, totalLiters);
+        }
+
 
 
         @JavascriptInterface

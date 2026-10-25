@@ -224,7 +224,7 @@
         <div v-if="store.fuelLedger.monthly_stats && store.fuelLedger.monthly_stats.length > 0" class="flex flex-col space-y-1.5 pb-2 border-b border-car-border/60">
           <div class="flex items-center justify-between text-[13px] text-car-sub font-bold px-1">
             <span>月度花费汇总清单 (按月聚合)</span>
-            <span class="text-car-accent">点击月份可单月过滤 · 车机最多留存 30 笔精细流水</span>
+            <span class="text-car-accent">单击筛选 · 双击管理/校准本月 · 车机本地扩容至 120 笔</span>
           </div>
 
           <div class="flex flex-wrap -m-1">
@@ -248,9 +248,11 @@
               class="p-1"
             >
               <div 
-                @click="toggleMonthFilter(m.month)"
-                class="h-[50px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center space-x-3 shadow-sm"
+                @click="onMonthClick(m.month)"
+                @dblclick="openMonthManageModal(m)"
+                class="h-[50px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center space-x-3 shadow-sm select-none"
                 :class="selectedMonth === m.month ? 'bg-car-accent-light border-car-accent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
+                :title="'单击筛选，双击管理/校准【' + m.month + '】账单'"
               >
                 <div class="flex flex-col text-left">
                   <div class="flex items-center space-x-1">
@@ -270,15 +272,32 @@
         <div class="flex items-center justify-between pb-1 text-[13px] text-car-sub font-bold px-1">
           <div class="flex items-center space-x-2">
             <span>{{ selectedMonth ? `【${selectedMonth}】详细流水 (${filteredRecords.length} 笔)` : `近期加油流水 (${filteredRecords.length} 笔 · 双列卡片)` }}</span>
+            <!-- 未选单月时：清空全部 -->
             <span 
-              v-if="store.fuelLedger.records && store.fuelLedger.records.length > 0"
+              v-if="!selectedMonth && store.fuelLedger.records && store.fuelLedger.records.length > 0"
               @click="clearAllRecords"
               class="px-2 py-0.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-[11px] font-bold cursor-pointer transition-colors"
             >
-              清空记录
+              清空全部记录
+            </span>
+            <!-- 选中单月时：智能联动为清空本月 (带笔数) -->
+            <span 
+              v-if="selectedMonth && filteredRecords.length > 0"
+              @click="clearCurrentMonthRecords"
+              class="px-2 py-0.5 rounded-lg border border-rose-500/40 bg-rose-500/15 text-rose-400 hover:bg-rose-500/25 text-[11px] font-bold cursor-pointer transition-colors"
+            >
+              清空【{{ selectedMonth }}】流水 ({{ filteredRecords.length }} 笔)
+            </span>
+            <!-- 选中单月时：提供快捷管理校准入口 -->
+            <span 
+              v-if="selectedMonth"
+              @click="openSelectedMonthManage"
+              class="px-2 py-0.5 rounded-lg border border-car-border bg-car-item text-car-sub hover:text-car-text text-[11px] font-bold cursor-pointer transition-colors"
+            >
+              校准本月账单
             </span>
           </div>
-          <span>点击任一卡片可微调金额、油价、省份或删除</span>
+          <span>点击卡片微调或删除 · 双击月份胶囊管理月度</span>
         </div>
 
         <!-- 空状态提示 -->
@@ -389,6 +408,90 @@
       @close="showPlateModal = false"
       @confirm="onPlateConfirmed"
     />
+
+    <!-- 车规标准弹窗: 单月台账管理与校准 -->
+    <ModalWrapper
+      :show="showMonthModal"
+      :title="`【${activeManagingMonth?.month || ''}】月度账单管理与校准`"
+      badge="月度台账中枢"
+      maxWidthClass="max-w-[820px]"
+      zIndexClass="z-[9990]"
+      @close="showMonthModal = false"
+    >
+      <div v-if="activeManagingMonth" class="flex flex-col space-y-4 py-1">
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-3.5 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-1 text-center">
+            <span class="text-[13px] text-car-sub font-bold">本月总花费</span>
+            <span class="text-[22px] font-mono font-black text-car-accent">¥{{ activeManagingMonth.total_paid }}</span>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-1 text-center">
+            <span class="text-[13px] text-car-sub font-bold">本月加注升数</span>
+            <span class="text-[22px] font-mono font-black text-car-text">{{ activeManagingMonth.total_liters }} L</span>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-1 text-center">
+            <span class="text-[13px] text-car-sub font-bold">本月加油笔数</span>
+            <span class="text-[22px] font-mono font-black text-car-text">{{ activeManagingMonth.count }} 次</span>
+          </div>
+        </div>
+
+        <div class="text-[13.5px] text-car-sub font-bold bg-car-item/70 p-3 rounded-xl border border-car-border leading-relaxed">
+          说明：本月数据由当前本地明细与历史归档基底实时合并生成。若本月存在漏记的发票或想统一校准，可直接修改下方实付总金额与总升数；亦可仅清空本月的所有流水记录，其他月份不受任何影响。
+        </div>
+
+        <!-- 手动校准输入区 -->
+        <div class="flex flex-col space-y-2 p-3.5 rounded-2xl bg-car-item border border-car-border">
+          <span class="text-[14.5px] font-black text-car-text">手动校准当月总额 (可选)：</span>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="flex flex-col space-y-1">
+              <span class="text-[12px] text-car-sub font-bold">校准总花费 (元)</span>
+              <input 
+                v-model.number="adjustPaidInput" 
+                type="number" 
+                step="0.1" 
+                class="h-[48px] px-3 rounded-xl bg-car-card border border-car-border text-car-text text-[18px] font-mono font-black focus:border-car-accent outline-none"
+              />
+            </div>
+            <div class="flex flex-col space-y-1">
+              <span class="text-[12px] text-car-sub font-bold">校准总升数 (L)</span>
+              <input 
+                v-model.number="adjustLitersInput" 
+                type="number" 
+                step="0.1" 
+                class="h-[48px] px-3 rounded-xl bg-car-card border border-car-border text-car-text text-[18px] font-mono font-black focus:border-car-accent outline-none"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-between w-full">
+          <button 
+            type="button"
+            @click="onConfirmClearMonth"
+            class="min-h-[56px] px-5 rounded-2xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[16px] hover:bg-rose-500/20 active:scale-95 transition-all cursor-pointer"
+          >
+            清空本月台账
+          </button>
+          <div class="flex items-center space-x-3">
+            <button 
+              type="button"
+              @click="showMonthModal = false"
+              class="min-h-[56px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-sub font-black text-[16px] hover:text-car-text active:scale-95 transition-all cursor-pointer"
+            >
+              取消
+            </button>
+            <button 
+              type="button"
+              @click="onSaveMonthAdjust"
+              class="min-h-[56px] px-7 rounded-2xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md"
+            >
+              保存校准
+            </button>
+          </div>
+        </div>
+      </template>
+    </ModalWrapper>
   </div>
 </template>
 
@@ -402,7 +505,9 @@ import {
   addFuelRecord, 
   updateFuelRecord, 
   deleteFuelRecord,
-  clearFuelRecords
+  clearFuelRecords,
+  clearMonthlyRecords,
+  saveMonthlyAdjustment
 } from '../store';
 import SubTabs from '../components/SubTabs.vue';
 import FeatureCard from '../components/FeatureCard.vue';
@@ -420,6 +525,20 @@ const fuelTabs = [
 
 // 月度聚合与单月过滤状态
 const selectedMonth = ref('');
+let clickTimer = null;
+
+// 单击筛选 (防抖防止与双击冲突)
+function onMonthClick(month) {
+  if (clickTimer) {
+    clearTimeout(clickTimer);
+    clickTimer = null;
+    return;
+  }
+  clickTimer = setTimeout(() => {
+    toggleMonthFilter(month);
+    clickTimer = null;
+  }, 250);
+}
 
 function toggleMonthFilter(month) {
   if (selectedMonth.value === month) {
@@ -427,6 +546,73 @@ function toggleMonthFilter(month) {
   } else {
     selectedMonth.value = month;
   }
+}
+
+// 单月管理与校准弹窗状态
+const showMonthModal = ref(false);
+const activeManagingMonth = ref(null);
+const adjustPaidInput = ref(0);
+const adjustLitersInput = ref(0);
+
+function openMonthManageModal(m) {
+  if (clickTimer) {
+    clearTimeout(clickTimer);
+    clickTimer = null;
+  }
+  activeManagingMonth.value = m;
+  adjustPaidInput.value = m.total_paid || 0;
+  adjustLitersInput.value = m.total_liters || 0;
+  showMonthModal.value = true;
+}
+
+function openSelectedMonthManage() {
+  if (!selectedMonth.value) return;
+  const m = (store.fuelLedger.monthly_stats || []).find(item => item.month === selectedMonth.value);
+  if (m) {
+    openMonthManageModal(m);
+  } else {
+    openMonthManageModal({ month: selectedMonth.value, total_paid: 0, total_liters: 0, count: 0 });
+  }
+}
+
+function onSaveMonthAdjust() {
+  if (!activeManagingMonth.value) return;
+  const mKey = activeManagingMonth.value.month;
+  saveMonthlyAdjustment(mKey, adjustPaidInput.value, adjustLitersInput.value);
+  showMonthModal.value = false;
+}
+
+function onConfirmClearMonth() {
+  if (!activeManagingMonth.value) return;
+  const mKey = activeManagingMonth.value.month;
+  openModal('confirm', {
+    title: `确认清空【${mKey}】月度台账？`,
+    desc: `清空后该月份的历史流水明细及汇总基底将被彻底抹除，其他月份台账完全不受影响。`,
+    confirmText: '确定清空本月',
+    isDanger: true,
+    onConfirm: () => {
+      clearMonthlyRecords(mKey);
+      showMonthModal.value = false;
+      if (selectedMonth.value === mKey) {
+        selectedMonth.value = '';
+      }
+    }
+  });
+}
+
+function clearCurrentMonthRecords() {
+  if (!selectedMonth.value) return;
+  const mKey = selectedMonth.value;
+  openModal('confirm', {
+    title: `确认清空【${mKey}】加油流水？`,
+    desc: `清空后【${mKey}】月份的全部加油记录将被抹除，其他月份台账完全不受影响。`,
+    confirmText: '确定清空本月',
+    isDanger: true,
+    onConfirm: () => {
+      clearMonthlyRecords(mKey);
+      selectedMonth.value = '';
+    }
+  });
 }
 
 const filteredRecords = computed(() => {
