@@ -109,7 +109,7 @@ public class FuelManager {
             File keyFile = new File(getFuelDir(), FILE_VEHICLE_KEY);
             if (keyFile.exists() && keyFile.length() > 0) {
                 String savedKey = readFileContent(keyFile).trim();
-                if (!savedKey.isEmpty()) {
+                if (!savedKey.isEmpty() && !isKnownDummyId(savedKey)) {
                     return savedKey;
                 }
             }
@@ -119,39 +119,48 @@ public class FuelManager {
 
         // 2. 读取原车出厂硬件芯片序列号 (不受刷系统、改 system 分区影响)
         identity = getSystemProperty("ro.boot.serialno");
-        if (identity.isEmpty() || "unknown".equalsIgnoreCase(identity)) {
+        if (identity.isEmpty() || isKnownDummyId(identity)) {
             identity = getSystemProperty("ro.serialno");
         }
-        if (identity.isEmpty() || "unknown".equalsIgnoreCase(identity)) {
+        if (identity.isEmpty() || isKnownDummyId(identity)) {
             try {
-                if (Build.SERIAL != null && !Build.SERIAL.isEmpty() && !"unknown".equalsIgnoreCase(Build.SERIAL)) {
+                if (Build.SERIAL != null && !Build.SERIAL.isEmpty() && !isKnownDummyId(Build.SERIAL)) {
                     identity = Build.SERIAL;
                 }
             } catch (Throwable ignored) {}
         }
 
-        // 3. 读取吉利亿咖通车规硬件标识
-        if (identity.isEmpty() || "unknown".equalsIgnoreCase(identity)) {
+        // 3. 读取吉利亿咖通车规硬件标识 (优先从 IHUID / DeviceService 中抓取真正唯一的出厂码)
+        if (identity.isEmpty() || isKnownDummyId(identity)) {
+            String ihuid = getSystemProperty("ro.ecarx.ihuid");
+            if (ihuid.isEmpty() || isKnownDummyId(ihuid)) {
+                ihuid = getSystemProperty("persist.sys.ecarx.ihuid");
+            }
+            if (!ihuid.isEmpty() && !isKnownDummyId(ihuid)) {
+                identity = "ECARX_" + ihuid;
+            }
+        }
+        if (identity.isEmpty() || isKnownDummyId(identity)) {
             String ecarxInfo = getSystemProperty("ro.boot.ecarx_projectinfo");
-            if (!ecarxInfo.isEmpty() && !"unknown".equalsIgnoreCase(ecarxInfo)) {
+            if (!ecarxInfo.isEmpty() && !isKnownDummyId(ecarxInfo)) {
                 identity = "ECARX_" + ecarxInfo.replace(" ", "_");
             }
         }
 
         // 4. 回退至硬件级 ANDROID_ID
-        if (identity.isEmpty() || "unknown".equalsIgnoreCase(identity)) {
+        if (identity.isEmpty() || isKnownDummyId(identity)) {
             try {
                 if (context != null) {
                     String aid = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
-                    if (aid != null && !aid.trim().isEmpty()) {
+                    if (aid != null && !aid.trim().isEmpty() && !isKnownDummyId(aid)) {
                         identity = aid.toUpperCase(Locale.US);
                     }
                 }
             } catch (Throwable ignored) {}
         }
 
-        // 5. 兜底随机兜底码
-        if (identity.isEmpty() || "unknown".equalsIgnoreCase(identity)) {
+        // 5. 兜底随机码 (基于 AndroidId / UUID)
+        if (identity.isEmpty() || isKnownDummyId(identity)) {
             identity = "GEELY_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.US);
         }
 
@@ -168,6 +177,17 @@ public class FuelManager {
         } catch (Throwable ignored) {}
 
         return finalId;
+    }
+
+    /**
+     * 判断是否为车规芯片/Android通用占位测试序列号 (如 0123456789ABCDEF、unknown 等)
+     */
+    private static boolean isKnownDummyId(String val) {
+        if (val == null) return true;
+        String s = val.trim();
+        if (s.isEmpty() || "unknown".equalsIgnoreCase(s) || "null".equalsIgnoreCase(s)) return true;
+        String clean = s.replaceAll("[^A-Za-z0-9]", "").toUpperCase(Locale.US);
+        return clean.startsWith("0123456789ABCDE") || clean.equals("0123456789") || clean.equals("1234567890");
     }
 
     /**
@@ -218,6 +238,39 @@ public class FuelManager {
                 Log.w(TAG, "保存 fuel_state.json 异常: " + t.getMessage());
             }
         }
+    }
+
+    /**
+     * 主动从 logcat 缓存中极速反查最近一次打印的仪表总里程报文
+     */
+    public static double fetchLatestOdoFromLogcat() {
+        try {
+            String out = SystemUtils.executeShell("logcat -d -v time | grep -iE 'INFO_ID_IPKINFO_TOTAL_ODO|0x00100700' | tail -n 5");
+            if (out != null && !out.isEmpty()) {
+                String[] lines = out.split("\n");
+                for (int i = lines.length - 1; i >= 0; i--) {
+                    String line = lines[i];
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?:INFO_ID_IPKINFO_TOTAL_ODO|0x00100700).*?(?:(?:funValue|funcValue)\\((?:0x)?([0-9a-fA-F]+)\\)|[:=]\\s*([0-9.]+))", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(line);
+                    if (m.find()) {
+                        String hexStr = m.group(1);
+                        String decStr = m.group(2);
+                        double odo = 0.0;
+                        if (hexStr != null && !hexStr.isEmpty()) {
+                            long raw = Long.parseLong(hexStr, 16);
+                            odo = raw / 10.0;
+                        } else if (decStr != null && !decStr.isEmpty()) {
+                            odo = Double.parseDouble(decStr);
+                        }
+                        if (odo > 0 && odo < 2000000) {
+                            return Math.round(odo * 10.0) / 10.0;
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "fetchLatestOdoFromLogcat error: " + t.getMessage());
+        }
+        return -1.0;
     }
 
     /**
@@ -573,6 +626,13 @@ public class FuelManager {
             root.put("monthly_stats", calculateMonthlyStats(records));
 
             double curOdo = app.onepve.geelyconsole.services.VehicleAutomationService.currentTotalOdoKm;
+            if (curOdo <= 0) {
+                // 主动从车端 logcat 历史缓存中速抓一次最近的真实里程
+                curOdo = fetchLatestOdoFromLogcat();
+                if (curOdo > 0) {
+                    app.onepve.geelyconsole.services.VehicleAutomationService.currentTotalOdoKm = curOdo;
+                }
+            }
             if (curOdo <= 0) {
                 curOdo = getLastFuelState(context).optDouble("odo", 0.0);
             }

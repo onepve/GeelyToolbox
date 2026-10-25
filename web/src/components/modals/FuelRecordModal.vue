@@ -12,6 +12,35 @@
       @close="$emit('close-edit')"
     >
       <template #header-actions>
+        <!-- 仪表总里程蓝色小胶囊与大尺寸刷新按钮 -->
+        <div class="flex items-center space-x-2">
+          <div 
+            @click="applyCurrentOdo(editingRecord)"
+            class="min-h-[50px] px-3.5 py-1.5 rounded-xl border-2 border-car-accent/60 bg-sky-500/15 text-sky-400 hover:bg-sky-500/25 active:scale-95 transition-all cursor-pointer flex items-center space-x-2 shadow-sm select-none"
+            title="点击将当前仪表里程填入"
+          >
+            <span class="text-[17px]">🚗</span>
+            <div class="flex flex-col text-left">
+              <span class="text-[10.5px] text-sky-300/80 font-bold leading-tight">车机仪表总里程</span>
+              <span class="text-[14.5px] font-mono font-black text-sky-400 leading-tight">
+                {{ currentOdo > 0 ? Math.round(currentOdo) + ' km' : '等待获取' }}
+              </span>
+            </div>
+            <span v-if="currentOdo > 0" class="text-[11px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-400/30 ml-1">
+              填入
+            </span>
+          </div>
+
+          <button
+            type="button"
+            @click.stop="$emit('refresh-odo')"
+            class="min-h-[50px] min-w-[50px] px-3 rounded-xl border-2 border-car-border bg-car-item text-car-text hover:border-car-accent/60 active:scale-95 transition-all cursor-pointer flex items-center justify-center text-[18px] font-black shadow-sm"
+            title="重新从车规总线抓取里程"
+          >
+            ⟳
+          </button>
+        </div>
+
         <button 
           type="button"
           @click="$emit('delete-record')"
@@ -431,6 +460,35 @@
       @close="$emit('close-add')"
     >
       <template #header-actions>
+        <!-- 仪表总里程蓝色小胶囊与大尺寸刷新按钮 -->
+        <div class="flex items-center space-x-2">
+          <div 
+            @click="applyCurrentOdo(newRecord)"
+            class="min-h-[50px] px-3.5 py-1.5 rounded-xl border-2 border-car-accent/60 bg-sky-500/15 text-sky-400 hover:bg-sky-500/25 active:scale-95 transition-all cursor-pointer flex items-center space-x-2 shadow-sm select-none"
+            title="点击将当前仪表里程填入"
+          >
+            <span class="text-[17px]">🚗</span>
+            <div class="flex flex-col text-left">
+              <span class="text-[10.5px] text-sky-300/80 font-bold leading-tight">车机仪表总里程</span>
+              <span class="text-[14.5px] font-mono font-black text-sky-400 leading-tight">
+                {{ currentOdo > 0 ? Math.round(currentOdo) + ' km' : '等待获取' }}
+              </span>
+            </div>
+            <span v-if="currentOdo > 0" class="text-[11px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-400/30 ml-1">
+              填入
+            </span>
+          </div>
+
+          <button
+            type="button"
+            @click.stop="$emit('refresh-odo')"
+            class="min-h-[50px] min-w-[50px] px-3 rounded-xl border-2 border-car-border bg-car-item text-car-text hover:border-car-accent/60 active:scale-95 transition-all cursor-pointer flex items-center justify-center text-[18px] font-black shadow-sm"
+            title="重新从车规总线抓取里程"
+          >
+            ⟳
+          </button>
+        </div>
+
         <button 
           type="button"
           @click="$emit('save-new')"

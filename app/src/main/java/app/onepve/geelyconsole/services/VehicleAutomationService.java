@@ -157,8 +157,9 @@ public class VehicleAutomationService extends Service {
     private double lastBaselineOilLiters = -1.0;
     private long lastOilJumpDetectedTimeMs = 0;
     private double pendingRefuelLiters = 0.0;
-    private static final double MIN_REFUEL_DELTA_LITERS = 5.0; // 最小跃变有效阈值 (>=5.0L 排除坡道晃动)
-    private static final long REFUEL_STABLE_HOLD_MS = 6000; // 稳定持续防抖时间 (6秒)
+    private static final double MIN_REFUEL_DELTA_LITERS = 8.0; // 最小跃变有效阈值 (>=8.0L 彻底排除坡道/停车晃动)
+    private static final long REFUEL_STABLE_HOLD_MS = 15000; // 稳定持续防抖时间 (15秒)
+    private static long lastRefuelRecordedTimeMs = 0; // 上次成功触发记录加油的时间戳 (防短时间连环触发)
 
     // 服务启动时间戳（用于时间戳软栅栏，毫秒级丢弃开机前的陈旧日志）
     private long serviceBootTimestampMs = 0;
@@ -1866,8 +1867,14 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
+        // 冷却限制：10 分钟内最多只允许自动记录一笔加油台账，严禁短时间内连环记账
+        if (now - lastRefuelRecordedTimeMs < 600000) {
+            lastBaselineOilLiters = currentOil;
+            lastOilJumpDetectedTimeMs = 0;
+            return;
+        }
+
         double delta = currentOil - lastBaselineOilLiters;
-        long now = System.currentTimeMillis();
 
         if (delta >= MIN_REFUEL_DELTA_LITERS) {
             if (lastOilJumpDetectedTimeMs == 0) {
@@ -1875,11 +1882,12 @@ public class VehicleAutomationService extends Service {
                 pendingRefuelLiters = delta;
                 AppLogger.i("加油感知", "检测到点火前后油箱液面跃升: 上次熄火/基准=" + lastBaselineOilLiters + "L ➔ 当前=" + currentOil + "L (跃升 " + delta + "L)，开始防抖监听...");
             } else if (now - lastOilJumpDetectedTimeMs >= REFUEL_STABLE_HOLD_MS) {
-                // 稳定持续 >= 6秒，判定为真实加油入账，直接静默记账！
+                // 稳定持续 >= 15秒，判定为真实加油入账，直接静默记账！
                 double addedLiters = Math.round(delta * 10.0) / 10.0;
                 autoRecordRefuelSilently(addedLiters, currentOil);
                 lastBaselineOilLiters = currentOil;
                 lastOilJumpDetectedTimeMs = 0;
+                lastRefuelRecordedTimeMs = now;
                 // 更新持久化快照
                 FuelManager.saveLastFuelState(this, currentOil, currentTotalOdoKm);
             }
