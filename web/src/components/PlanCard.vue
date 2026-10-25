@@ -1,5 +1,14 @@
 <template>
-  <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200">
+  <div
+    @click="handleClick"
+    :class="[
+      'rounded-3xl border-2 p-6 shadow-xl h-full min-h-[260px] flex flex-col justify-between transition-all duration-200',
+      clickable ? 'cursor-pointer select-none active:scale-[0.985]' : '',
+      active
+        ? 'bg-car-item border-car-accent shadow-md'
+        : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+    ]"
+  >
     <!-- 头部：编号标题 + 语义标签 + 问号帮助 -->
     <div class="flex items-center justify-between shrink-0 mb-2">
       <div class="flex items-center space-x-3">
@@ -8,7 +17,7 @@
         <HelpDot
           v-if="helpText"
           :size="helpSize"
-          @click="$emit('help')"
+          @click.stop="$emit('help')"
         />
       </div>
     </div>
@@ -31,16 +40,26 @@
 // 功能卡片的通用外观与按钮规格
 // ============================================================================
 import HelpDot from './HelpDot.vue';
+import { playTouchFeedback } from '../utils/sound';
 
-defineProps({
+const props = defineProps({
   title: String,
   tag: String,
   flowSub: String,
   flowMain: String,
   helpText: String,
   // lg = BodyView 50px 大问号；sm = LinkView 34px 标准问号
-  helpSize: { type: String, default: 'sm' }
+  helpSize: { type: String, default: 'sm' },
+  active: { type: Boolean, default: false },
+  clickable: { type: Boolean, default: false }
 });
 
-defineEmits(['help']);
+const emit = defineEmits(['help', 'toggle']);
+
+function handleClick() {
+  if (props.clickable) {
+    playTouchFeedback();
+    emit('toggle');
+  }
+}
 </script>

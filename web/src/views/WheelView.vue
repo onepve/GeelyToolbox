@@ -3,10 +3,17 @@
     <!-- 顶部车规二级分段胶囊：一页全景掌控 (支持外部统一接管隐藏) -->
     <SubTabs v-if="!hideSubTabs" :tabs="wheelTabs" v-model="activeTab" />
 
-    <!-- 核心：方向盘按键方控接管总开关 (置顶常驻) -->
-    <!-- 核心：方向盘按键方控接管总开关 - 核心功能首屏 (左右分栏车规黄金磁贴) -->
-    <div class="bg-car-card border-2 border-car-border rounded-2xl p-4 min-h-[88px] shadow-xl flex items-center justify-between transition-all">
-      <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
+    <!-- 核心：方向盘按键方控接管总开关 (置顶常驻整卡开关大磁贴) -->
+    <div
+      @click="toggleWheelMasterSwitch"
+      :class="[
+        'border-2 rounded-2xl p-4 min-h-[88px] shadow-xl flex items-center justify-between transition-all cursor-pointer select-none active:scale-[0.99]',
+        store.vehicleAuto.wheel_master_switch
+          ? 'bg-car-item border-car-accent shadow-md'
+          : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+      ]"
+    >
+      <div class="w-[65%] max-w-[65%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
           <StatusDot size="lg" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">方向盘按键方控接管总开关</span>
@@ -20,19 +27,12 @@
         </div>
       </div>
 
-      <div class="shrink-0 w-[230px]">
-        <BaseButton
-          variant="master"
-          :active="store.vehicleAuto.wheel_master_switch"
-          @click="toggleWheelMasterSwitch"
-        >
-          <span class="text-[18.5px] font-black text-car-text tracking-wide whitespace-nowrap">
-            {{ store.vehicleAuto.wheel_master_switch ? '方控接管已开启' : '方控接管已关闭' }}
-          </span>
-          <span :class="['text-[12.5px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.wheel_master_switch ? 'text-car-accent' : 'text-car-sub']">
-            {{ store.vehicleAuto.wheel_master_switch ? '点击切换为彻底放行' : '点击开启按键接管' }}
-          </span>
-        </BaseButton>
+      <!-- 右侧：轻量化状态大磁贴（消灭外框大按钮） -->
+      <div class="flex items-center space-x-3 shrink-0 pr-2">
+        <StatusDot size="md" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" :glow-px="8" />
+        <span :class="['text-[20px] font-black tracking-wide', store.vehicleAuto.wheel_master_switch ? 'text-car-text' : 'text-car-sub']">
+          {{ store.vehicleAuto.wheel_master_switch ? '方控接管已启用' : '方控彻底放行' }}
+        </span>
       </div>
     </div>
 
@@ -165,26 +165,48 @@
         />
       </div>
 
-      <!-- 仪表盘与屏保显示扩展 (左右对称双卡，彻底消除纵向拉长) -->
+      <!-- 仪表盘与屏保显示扩展 (左右对称双卡，彻底消除纵向拉长，整卡点击开关) -->
       <div class="mt-4 pt-4 border-t border-car-border/60 grid grid-cols-2 gap-4 items-stretch">
-        <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border-2 border-car-border">
+        <div
+          @click="toggleClusterPlayback"
+          :class="[
+            'flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer select-none active:scale-[0.985] transition-all',
+            store.vehicleAuto.wheel_push_playback_cluster
+              ? 'bg-car-item border-car-accent shadow-md'
+              : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+          ]"
+        >
           <div class="flex flex-col space-y-1 pr-3">
             <span class="text-[17px] font-black text-car-text">息屏时钟显示音乐卡片</span>
             <span class="text-[13px] text-car-sub font-bold">息屏/时钟屏保时展示当前歌名歌手</span>
           </div>
-          <BaseButton variant="pill" :active="store.vehicleAuto.wheel_push_playback_cluster" @click="toggleClusterPlayback">
-            {{ store.vehicleAuto.wheel_push_playback_cluster ? '已开启' : '已关闭' }}
-          </BaseButton>
+          <div class="flex items-center space-x-2 shrink-0">
+            <StatusDot size="sm" :color="store.vehicleAuto.wheel_push_playback_cluster ? 'ok' : 'off'" :glow-px="6" />
+            <span :class="['text-[15px] font-black', store.vehicleAuto.wheel_push_playback_cluster ? 'text-car-text' : 'text-car-sub']">
+              {{ store.vehicleAuto.wheel_push_playback_cluster ? '已开启' : '已关闭' }}
+            </span>
+          </div>
         </div>
 
-        <div class="flex items-center justify-between p-4 rounded-2xl bg-car-item border-2 border-car-border">
+        <div
+          @click="toggleClusterLyrics"
+          :class="[
+            'flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer select-none active:scale-[0.985] transition-all',
+            store.vehicleAuto.wheel_push_lyrics_cluster
+              ? 'bg-car-item border-car-accent shadow-md'
+              : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+          ]"
+        >
           <div class="flex flex-col space-y-1 pr-3">
             <span class="text-[17px] font-black text-car-text">液晶仪表盘同步滚动歌词</span>
             <span class="text-[13px] text-car-sub font-bold">向仪表盘中间卡片推送实时歌词</span>
           </div>
-          <BaseButton variant="pill" :active="store.vehicleAuto.wheel_push_lyrics_cluster" @click="toggleClusterLyrics">
-            {{ store.vehicleAuto.wheel_push_lyrics_cluster ? '已开启' : '已关闭' }}
-          </BaseButton>
+          <div class="flex items-center space-x-2 shrink-0">
+            <StatusDot size="sm" :color="store.vehicleAuto.wheel_push_lyrics_cluster ? 'ok' : 'off'" :glow-px="6" />
+            <span :class="['text-[15px] font-black', store.vehicleAuto.wheel_push_lyrics_cluster ? 'text-car-text' : 'text-car-sub']">
+              {{ store.vehicleAuto.wheel_push_lyrics_cluster ? '已开启' : '已关闭' }}
+            </span>
+          </div>
         </div>
       </div>
     </FeatureCard>

@@ -255,12 +255,20 @@
         </button>
       </div>
 
-      <!-- 4. 工具箱开机自启动与后台守护 -->
-      <div class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card flex items-center justify-between space-x-4">
+      <!-- 4. 工具箱开机自启动与后台守护 (整卡点击开关) -->
+      <div
+        @click="toggleAutostart"
+        :class="[
+          'rounded-3xl border-2 p-5 shadow-2xl transition-all flex items-center justify-between space-x-4 cursor-pointer select-none active:scale-[0.985]',
+          store.deviceInfo.autostart
+            ? 'bg-car-item border-car-accent shadow-md'
+            : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+        ]"
+      >
         <div class="flex-1 min-w-0 flex flex-col space-y-1.5">
           <div class="flex items-center space-x-2.5">
             <span class="text-[20px] font-black text-car-text tracking-wide truncate">开机自启静默守护</span>
-            <HelpDot @click="openModal('confirm', {
+            <HelpDot @click.stop="openModal('confirm', {
               title: '【功能指南】工具箱开机自启动与后台守护',
               desc: '1. 开机后台自启：\n车辆打火通电后，工具箱自动在后台安静启动，让各项自动化联动功能上车就能直接用。\n\n2. 关闭说明：\n关闭后车辆通电将不再自启工具箱，完全不占用后台资源；仅在您桌面主动打开时运行。\n\n3. 推荐常开：\n默认保持常开，确保上车后一切功能运转顺畅。',
               tip: '这是自动化功能的基础开关，可按需开启或关闭。',
@@ -273,20 +281,12 @@
           </div>
         </div>
 
-        <button
-          @click="toggleAutostart"
-          :class="[
-            'w-[185px] h-[58px] px-2 rounded-2xl border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center space-x-1.5 shrink-0 whitespace-nowrap',
-            store.deviceInfo.autostart
-              ? 'border-car-accent bg-car-item text-car-accent'
-              : 'border-car-border bg-car-item text-car-text hover:border-car-border-light'
-          ]"
-        >
+        <div class="flex items-center space-x-2 shrink-0 pr-2">
           <StatusDot size="sm" :color="store.deviceInfo.autostart ? 'ok' : 'off'" :glow="store.deviceInfo.autostart" :glow-px="store.deviceInfo.autostart ? 6 : 0" />
-          <span class="font-black text-[14px]">
-            {{ store.deviceInfo.autostart ? '已启用·点击关闭' : '已关闭·点击开启' }}
+          <span :class="['font-black text-[16px]', store.deviceInfo.autostart ? 'text-car-text' : 'text-car-sub']">
+            {{ store.deviceInfo.autostart ? '已开启守护' : '已关闭守护' }}
           </span>
-        </button>
+        </div>
       </div>
     </div>
 

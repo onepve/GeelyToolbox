@@ -8,7 +8,7 @@
       <WheelView :initial-tab="activeTab === 'wheel_mode' ? 'mode' : 'keys'" :hide-sub-tabs="true" />
     </div>
 
-    <!-- 1. 360全景联动 (双大卡片，一屏收尽) -->
+    <!-- 1. 360全景联动 (双大卡片，一屏收尽，整卡点击开关) -->
     <div v-if="activeTab === '360'" class="grid grid-cols-2 gap-4 items-stretch">
       <!-- D 挡起步联动 360 -->
       <PlanCard
@@ -17,105 +17,97 @@
         help-text="gear_d_360"
         flow-sub="从 P 挡或 R 挡切入前进 D 挡起步 (单次跃变锁)"
         flow-main="唤醒 360 扫除起步盲区；车速超 15 km/h 自动还原"
+        :clickable="true"
+        :active="store.vehicleAuto.vehicle_d_gear_360_enabled"
+        @toggle="toggleSetting('vehicle_d_gear_360_enabled')"
         @help="showHelp('gear_d_360')"
       >
         <template #footer>
-          <BaseButton variant="planToggle" :active="store.vehicleAuto.vehicle_d_gear_360_enabled" @click="toggleSetting('vehicle_d_gear_360_enabled')">
-            <StatusDot size="sm" :color="store.vehicleAuto.vehicle_d_gear_360_enabled ? 'accent' : 'sub'" :glow-px="6" />
-            <span>{{ store.vehicleAuto.vehicle_d_gear_360_enabled ? 'D 挡起步 360 已开启' : 'D 挡起步 360 已关闭' }}</span>
-          </BaseButton>
+          <div class="flex items-center space-x-2">
+            <StatusDot size="sm" :color="store.vehicleAuto.vehicle_d_gear_360_enabled ? 'ok' : 'off'" :glow-px="6" />
+            <span :class="['text-[16px] font-black', store.vehicleAuto.vehicle_d_gear_360_enabled ? 'text-car-text' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_d_gear_360_enabled ? 'D 挡起步 360 已开启' : 'D 挡起步 360 已关闭' }}
+            </span>
+          </div>
         </template>
       </PlanCard>
 
-
-      <!-- 转向灯开启联动 360 全景 (车规标准 PlanCard，双列等高对称) -->
+      <!-- 转向灯开启联动 360 全景 (车规标准 PlanCard，双列等高对称，整卡点击开关) -->
       <PlanCard
         title="转向灯开启联动 360"
         tag="变道盲区"
         help-text="turn_signal_360"
         flow-sub="打左/右转向灯时自动唤起 360 全景环视，消除变道盲区"
         :flow-main="store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '倒车 R 挡避让原厂倒车；转向灯回正复位后自动退出 360 画面' : '倒车 R 挡避让原厂倒车；转向灯回正后持续保持 360 画面'"
+        :clickable="true"
+        :active="store.vehicleAuto.vehicle_turn_signal_360_enabled"
+        @toggle="toggleTurnSignal360"
         @help="showHelp('turn_signal_360')"
       >
         <template #footer>
-          <div v-if="!store.vehicleAuto.vehicle_turn_signal_360_enabled">
-            <BaseButton
-              variant="planToggle"
-              :active="false"
-              @click="toggleTurnSignal360"
-            >
-              <StatusDot size="sm" color="sub" :glow-px="6" />
-              <span>转向灯联动 360 已关闭</span>
-            </BaseButton>
-          </div>
-          <div v-else class="grid grid-cols-2 gap-3 items-stretch">
-            <button
-              @click="toggleTurnSignal360"
-              class="w-full min-h-[58px] h-[58px] px-3.5 py-1.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center text-center bg-car-item border-car-accent shadow-md"
-            >
-              <div class="flex items-center space-x-1.5 leading-tight">
-                <StatusDot size="sm" color="accent" :glow-px="6" />
-                <span class="text-[16.5px] font-black text-car-text tracking-wide whitespace-nowrap">转向灯联动已开启</span>
-              </div>
-              <span class="text-[12px] font-bold mt-0.5 text-car-accent whitespace-nowrap">点击可关闭联动</span>
-            </button>
-            <BaseButton
-              variant="dual"
-              :active="store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false"
-              @click="toggleTurnSignal360AutoExit"
-            >
-              <span class="text-[17px] font-black text-car-text tracking-wide whitespace-nowrap">
-                {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '已开启' : '已关闭' }}
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <StatusDot size="sm" :color="store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'ok' : 'off'" :glow-px="6" />
+              <span :class="['text-[16px] font-black', store.vehicleAuto.vehicle_turn_signal_360_enabled ? 'text-car-text' : 'text-car-sub']">
+                {{ store.vehicleAuto.vehicle_turn_signal_360_enabled ? '转向灯联动 360 已开启' : '转向灯联动 360 已关闭' }}
               </span>
-              <span :class="['text-[12px] font-bold mt-0.5 whitespace-nowrap', store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? 'text-car-accent' : 'text-car-sub']">
-                {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '回正自动退出' : '回正持续保持' }}
-              </span>
-            </BaseButton>
+            </div>
+            <div v-if="store.vehicleAuto.vehicle_turn_signal_360_enabled" class="shrink-0" @click.stop>
+              <BaseButton
+                variant="dual"
+                :active="store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false"
+                @click="toggleTurnSignal360AutoExit"
+              >
+                <span class="text-[17px] font-black text-car-text tracking-wide whitespace-nowrap">
+                  {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '已开启' : '已关闭' }}
+                </span>
+                <span :class="['text-[12px] font-bold mt-0.5 whitespace-nowrap', store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? 'text-car-accent' : 'text-car-sub']">
+                  {{ store.vehicleAuto.vehicle_turn_signal_360_auto_exit !== false ? '回正自动退出' : '回正持续保持' }}
+                </span>
+              </BaseButton>
+            </div>
           </div>
         </template>
       </PlanCard>
-
-
     </div>
 
-    <!-- 2. 车速与启播 (左右双列卡片，一屏收尽) -->
+    <!-- 2. 车速与启播 (左右双列卡片，一屏收尽，整卡点击开关) -->
     <div v-if="activeTab === 'speed'" class="grid grid-cols-2 gap-4 items-stretch">
       <div
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl h-full flex flex-col space-y-3.5 transition-all duration-200"
+        @click="toggleSetting('vehicle_speed_autoplay_enabled')"
+        :class="[
+          'rounded-3xl border-2 p-5 shadow-xl h-full flex flex-col space-y-3.5 transition-all duration-200 cursor-pointer select-none active:scale-[0.985]',
+          store.vehicleAuto.vehicle_speed_autoplay_enabled
+            ? 'bg-car-item border-car-accent shadow-md'
+            : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+        ]"
       >
         <div class="flex items-center justify-between shrink-0">
           <div class="flex items-center space-x-2.5">
             <span class="text-[20px] font-black text-car-text tracking-wide">车速达标智能启播音乐</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">起步自启</span>
-            <HelpDot size="sm" @click="showHelp('speed_music')" />
+            <HelpDot size="sm" @click.stop="showHelp('speed_music')" />
           </div>
+          <!-- 右上角：轻量状态指示灯 + 文字（消灭独立大按钮） -->
           <div class="flex items-center space-x-2 shrink-0">
-            <button
-              @click="toggleSetting('vehicle_speed_autoplay_enabled')"
-              :class="[
-                'h-[50px] px-4 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center space-x-2 shrink-0',
-                store.vehicleAuto.vehicle_speed_autoplay_enabled
-                  ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                  : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_speed_autoplay_enabled ? 'bg-car-accent' : 'bg-car-sub']"></span>
-              <span>{{ store.vehicleAuto.vehicle_speed_autoplay_enabled ? '已开启' : '已关闭' }}</span>
-            </button>
+            <StatusDot size="sm" :color="store.vehicleAuto.vehicle_speed_autoplay_enabled ? 'ok' : 'off'" :glow-px="6" />
+            <span :class="['text-[15px] font-black', store.vehicleAuto.vehicle_speed_autoplay_enabled ? 'text-car-text' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_speed_autoplay_enabled ? '已开启' : '已关闭' }}
+            </span>
           </div>
         </div>
 
-        <!-- 紧凑车速步进器 (一体化设计，不再与提示语层叠) -->
-        <div class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl p-2 shrink-0">
+        <!-- 紧凑车速步进器 (一体化设计，不再与提示语层叠，阻止事件冒泡) -->
+        <div class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl p-2 shrink-0" @click.stop>
           <div class="flex items-center space-x-1.5">
             <button 
-              @click="adjustAutoplaySpeed(-5)"
+              @click.stop="adjustAutoplaySpeed(-5)"
               class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
             >
               -5
             </button>
             <button 
-              @click="adjustAutoplaySpeed(-1)"
+              @click.stop="adjustAutoplaySpeed(-1)"
               class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
             >
               -1
@@ -130,13 +122,13 @@
           </div>
           <div class="flex items-center space-x-1.5">
             <button 
-              @click="adjustAutoplaySpeed(1)"
+              @click.stop="adjustAutoplaySpeed(1)"
               class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
             >
               +1
             </button>
             <button 
-              @click="adjustAutoplaySpeed(5)"
+              @click.stop="adjustAutoplaySpeed(5)"
               class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
             >
               +5
@@ -144,10 +136,10 @@
           </div>
         </div>
 
-        <!-- 播放模式切换 (紧凑对称双按钮) -->
-        <div class="grid grid-cols-2 gap-2.5 items-stretch shrink-0">
+        <!-- 播放模式切换 (紧凑对称双按钮，阻止事件冒泡) -->
+        <div class="grid grid-cols-2 gap-2.5 items-stretch shrink-0" @click.stop>
           <button 
-            @click="setAutoplayFullscreen(false)"
+            @click.stop="setAutoplayFullscreen(false)"
             :class="[
               'w-full h-[50px] rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2 whitespace-nowrap',
               !store.vehicleAuto.vehicle_speed_autoplay_fullscreen
@@ -158,7 +150,7 @@
             后台静默播放
           </button>
           <button 
-            @click="setAutoplayFullscreen(true)"
+            @click.stop="setAutoplayFullscreen(true)"
             :class="[
               'w-full h-[50px] rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2 whitespace-nowrap',
               store.vehicleAuto.vehicle_speed_autoplay_fullscreen
@@ -171,43 +163,42 @@
         </div>
       </div>
 
-      <!-- 车速达标自定义动作与唤起应用 (紧凑车规卡片，高度对齐左侧) -->
+      <!-- 车速达标自定义动作与唤起应用 (紧凑车规卡片，高度对齐左侧，整卡点击开关) -->
       <div
-        class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl h-full flex flex-col space-y-3.5 transition-all duration-200"
+        @click="toggleSetting('vehicle_speed_custom_action_enabled')"
+        :class="[
+          'rounded-3xl border-2 p-5 shadow-xl h-full flex flex-col space-y-3.5 transition-all duration-200 cursor-pointer select-none active:scale-[0.985]',
+          store.vehicleAuto.vehicle_speed_custom_action_enabled
+            ? 'bg-car-item border-car-accent shadow-md'
+            : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+        ]"
       >
         <div class="flex items-center justify-between shrink-0">
           <div class="flex items-center space-x-2.5">
             <span class="text-[20px] font-black text-car-text tracking-wide">车速达标自定义动作</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">自定动作</span>
-            <HelpDot size="sm" @click="showHelp('speed_custom')" />
+            <HelpDot size="sm" @click.stop="showHelp('speed_custom')" />
           </div>
+          <!-- 右上角：轻量状态指示灯 + 文字（消灭独立大按钮） -->
           <div class="flex items-center space-x-2 shrink-0">
-            <button
-              @click="toggleSetting('vehicle_speed_custom_action_enabled')"
-              :class="[
-                'h-[50px] px-4 rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 flex items-center space-x-2 shrink-0',
-                store.vehicleAuto.vehicle_speed_custom_action_enabled
-                  ? 'bg-car-item border-car-accent text-car-text shadow-md'
-                  : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
-              ]"
-            >
-              <span :class="['w-2.5 h-2.5 rounded-full', store.vehicleAuto.vehicle_speed_custom_action_enabled ? 'bg-car-accent' : 'bg-car-sub']"></span>
-              <span>{{ store.vehicleAuto.vehicle_speed_custom_action_enabled ? '已开启' : '已关闭' }}</span>
-            </button>
+            <StatusDot size="sm" :color="store.vehicleAuto.vehicle_speed_custom_action_enabled ? 'ok' : 'off'" :glow-px="6" />
+            <span :class="['text-[15px] font-black', store.vehicleAuto.vehicle_speed_custom_action_enabled ? 'text-car-text' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_speed_custom_action_enabled ? '已开启' : '已关闭' }}
+            </span>
           </div>
         </div>
 
-        <!-- 紧凑车速步进器 -->
-        <div class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl p-2 shrink-0">
+        <!-- 紧凑车速步进器 (阻止事件冒泡) -->
+        <div class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl p-2 shrink-0" @click.stop>
           <div class="flex items-center space-x-1.5">
             <button 
-              @click="adjustCustomActionSpeed(-5)"
+              @click.stop="adjustCustomActionSpeed(-5)"
               class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
             >
               -5
             </button>
             <button 
-              @click="adjustCustomActionSpeed(-1)"
+              @click.stop="adjustCustomActionSpeed(-1)"
               class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
             >
               -1
@@ -222,13 +213,13 @@
           </div>
           <div class="flex items-center space-x-1.5">
             <button 
-              @click="adjustCustomActionSpeed(1)"
+              @click.stop="adjustCustomActionSpeed(1)"
               class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
             >
               +1
             </button>
             <button 
-              @click="adjustCustomActionSpeed(5)"
+              @click.stop="adjustCustomActionSpeed(5)"
               class="h-[50px] px-3.5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[15px] cursor-pointer active:scale-95 transition-all shadow-sm"
             >
               +5
@@ -236,10 +227,10 @@
           </div>
         </div>
 
-        <!-- 动作唤起目标选择 (紧凑对称双按钮，高度与左侧完全对齐) -->
-        <div class="grid grid-cols-2 gap-2.5 items-stretch shrink-0">
+        <!-- 动作唤起目标选择 (紧凑对称双按钮，高度与左侧完全对齐，阻止事件冒泡) -->
+        <div class="grid grid-cols-2 gap-2.5 items-stretch shrink-0" @click.stop>
           <button 
-            @click="setCustomActionTarget('pkg:com.autonavi.amapauto')"
+            @click.stop="setCustomActionTarget('pkg:com.autonavi.amapauto')"
             :class="[
               'w-full h-[50px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
               store.vehicleAuto.vehicle_speed_custom_action_target === 'pkg:com.autonavi.amapauto'
@@ -250,7 +241,7 @@
             高德车机地图
           </button>
           <button 
-            @click="openSelectModal('speed_custom_action')"
+            @click.stop="openSelectModal('speed_custom_action')"
             :class="[
               'w-full h-[50px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap truncate px-3',
               store.vehicleAuto.vehicle_speed_custom_action_target?.startsWith('pkg:') && store.vehicleAuto.vehicle_speed_custom_action_target !== 'pkg:com.autonavi.amapauto'
@@ -263,58 +254,72 @@
         </div>
       </div>
 
-      <!-- 停稳推门多媒体暂停 -->
+      <!-- 停稳推门多媒体暂停 (整卡点击开关) -->
       <PlanCard
         title="停稳推门多媒体暂停"
         tag="下车静音"
         help-text="door_pause"
         flow-sub="挂入驻车 P 挡且推开前排车门（准备下车）"
         flow-main="自动向音乐播放器发送暂停指令，下车优雅安静"
+        :clickable="true"
+        :active="store.vehicleAuto.vehicle_door_pause_music_enabled"
+        @toggle="toggleSetting('vehicle_door_pause_music_enabled')"
         @help="showHelp('door_pause')"
       >
         <template #footer>
-          <BaseButton variant="planToggle" :active="store.vehicleAuto.vehicle_door_pause_music_enabled" @click="toggleSetting('vehicle_door_pause_music_enabled')">
-            <StatusDot size="sm" :color="store.vehicleAuto.vehicle_door_pause_music_enabled ? 'accent' : 'sub'" :glow-px="6" />
-            <span>{{ store.vehicleAuto.vehicle_door_pause_music_enabled ? '推门暂停音乐已开启' : '推门暂停音乐已关闭' }}</span>
-          </BaseButton>
+          <div class="flex items-center space-x-2">
+            <StatusDot size="sm" :color="store.vehicleAuto.vehicle_door_pause_music_enabled ? 'ok' : 'off'" :glow-px="6" />
+            <span :class="['text-[16px] font-black', store.vehicleAuto.vehicle_door_pause_music_enabled ? 'text-car-text' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_door_pause_music_enabled ? '推门暂停音乐已开启' : '推门暂停音乐已关闭' }}
+            </span>
+          </div>
         </template>
       </PlanCard>
 
-      <!-- 进隧道大灯联动高德日夜模式 (高德 7.5 经典通道) -->
+      <!-- 进隧道大灯联动高德日夜模式 (高德 7.5 经典通道，整卡点击开关) -->
       <PlanCard
         title="进隧道大灯联动高德"
         tag="日夜深浅"
         help-text="light_nav"
         flow-sub="白天行车开启前大灯（驶入地下车库或长隧道）"
         flow-main="秒级切为夜间深色导航；关大灯自动恢复白天浅色"
+        :clickable="true"
+        :active="store.vehicleAuto.vehicle_headlight_nav_night_enabled"
+        @toggle="toggleSetting('vehicle_headlight_nav_night_enabled')"
         @help="showHelp('light_nav')"
       >
         <template #footer>
-          <BaseButton
-            variant="planToggle"
-            :active="store.vehicleAuto.vehicle_headlight_nav_night_enabled"
-            @click="toggleSetting('vehicle_headlight_nav_night_enabled')"
-          >
-            <StatusDot size="sm" :color="store.vehicleAuto.vehicle_headlight_nav_night_enabled ? 'accent' : 'sub'" :glow-px="6" />
-            <span>{{ store.vehicleAuto.vehicle_headlight_nav_night_enabled ? '大灯联动高德已开启' : '大灯联动高德已关闭' }}</span>
-          </BaseButton>
+          <div class="flex items-center space-x-2">
+            <StatusDot size="sm" :color="store.vehicleAuto.vehicle_headlight_nav_night_enabled ? 'ok' : 'off'" :glow-px="6" />
+            <span :class="['text-[16px] font-black', store.vehicleAuto.vehicle_headlight_nav_night_enabled ? 'text-car-text' : 'text-car-sub']">
+              {{ store.vehicleAuto.vehicle_headlight_nav_night_enabled ? '大灯联动高德已开启' : '大灯联动高德已关闭' }}
+            </span>
+          </div>
         </template>
       </PlanCard>
     </div>
 
-    <!-- 3. 网络与外设连接中枢 (一行三列大卡片，一屏充满) -->
+    <!-- 3. 网络与外设连接中枢 (一行三列大卡片，一屏充满，整卡点击开关) -->
     <div v-if="activeTab === 'network'" class="grid grid-cols-3 gap-4 items-stretch">
-      <!-- 卡片 1: 车载 Wi-Fi -->
-      <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl flex flex-col justify-between transition-all duration-200">
+      <!-- 卡片 1: 车载 Wi-Fi (整卡点击开关) -->
+      <div
+        @click="toggleDeviceDirect('wifi')"
+        :class="[
+          'rounded-3xl border-2 p-5 shadow-xl flex flex-col justify-between transition-all duration-200 cursor-pointer select-none active:scale-[0.985]',
+          store.networkDevice.wifi_enabled
+            ? 'bg-car-item border-car-accent shadow-md'
+            : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+        ]"
+      >
         <!-- 头部 -->
         <div class="flex items-center justify-between shrink-0 mb-3">
           <div class="flex items-center space-x-2.5">
             <span class="text-[20px] font-black text-car-text tracking-wide">车载 Wi-Fi</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">无线网络</span>
-            <HelpDot size="sm" @click="showHelp('network_policy')" />
+            <HelpDot size="sm" @click.stop="showHelp('network_policy')" />
           </div>
           <button
-            @click="openSettings('wifi')"
+            @click.stop="openSettings('wifi')"
             class="h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text font-black text-[14.5px] cursor-pointer transition-all flex items-center space-x-1.5 shrink-0 shadow-sm"
           >
             <span>系统设置</span>
@@ -324,8 +329,8 @@
           </button>
         </div>
 
-        <!-- 中部：状态与开机策略 -->
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2">
+        <!-- 中部：状态与开机策略 (阻止冒泡) -->
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2" @click.stop>
           <div class="text-[15.5px] leading-relaxed truncate font-mono">
             <span class="text-car-sub font-bold">网络: </span>
             <span class="text-car-text font-black">
@@ -340,7 +345,7 @@
               <button
                 v-for="item in policyOptions"
                 :key="'wifi_' + item.value"
-                @click="changeBootPolicy('wifi', item.value)"
+                @click.stop="changeBootPolicy('wifi', item.value)"
                 :class="[
                   'h-[50px] rounded-xl font-black text-[14px] cursor-pointer transition-all border-2 text-center flex items-center justify-center',
                   store.networkDevice.wifi_policy === item.value
@@ -354,30 +359,34 @@
           </div>
         </div>
 
-        <!-- 底部标准点击式大开关 -->
-        <div class="pt-4 border-t border-car-border/60 shrink-0">
-          <BaseButton
-            variant="planToggle"
-            :active="store.networkDevice.wifi_enabled"
-            @click="toggleDeviceDirect('wifi')"
-          >
-            <StatusDot size="sm" :color="store.networkDevice.wifi_enabled ? 'accent' : 'sub'" :glow-px="6" />
-            <span>{{ store.networkDevice.wifi_enabled ? 'Wi-Fi 已开启' : 'Wi-Fi 已关闭' }}</span>
-          </BaseButton>
+        <!-- 底部标准状态灯 -->
+        <div class="pt-4 border-t border-car-border/60 shrink-0 flex items-center space-x-2">
+          <StatusDot size="sm" :color="store.networkDevice.wifi_enabled ? 'ok' : 'off'" :glow-px="6" />
+          <span :class="['text-[16px] font-black', store.networkDevice.wifi_enabled ? 'text-car-text' : 'text-car-sub']">
+            {{ store.networkDevice.wifi_enabled ? 'Wi-Fi 已开启' : 'Wi-Fi 已关闭' }}
+          </span>
         </div>
       </div>
 
-      <!-- 卡片 2: 车机热点分享 -->
-      <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl flex flex-col justify-between transition-all duration-200">
+      <!-- 卡片 2: 车机热点分享 (整卡点击开关) -->
+      <div
+        @click="toggleDeviceDirect('hotspot')"
+        :class="[
+          'rounded-3xl border-2 p-5 shadow-xl flex flex-col justify-between transition-all duration-200 cursor-pointer select-none active:scale-[0.985]',
+          store.networkDevice.hotspot_enabled
+            ? 'bg-car-item border-car-accent shadow-md'
+            : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+        ]"
+      >
         <!-- 头部 -->
         <div class="flex items-center justify-between shrink-0 mb-3">
           <div class="flex items-center space-x-2.5">
             <span class="text-[20px] font-black text-car-text tracking-wide">车机热点</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">网络共享</span>
-            <HelpDot size="sm" @click="showHelp('network_policy')" />
+            <HelpDot size="sm" @click.stop="showHelp('network_policy')" />
           </div>
           <button
-            @click="openSettings('hotspot')"
+            @click.stop="openSettings('hotspot')"
             class="h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text font-black text-[14.5px] cursor-pointer transition-all flex items-center space-x-1.5 shrink-0 shadow-sm"
           >
             <span>系统设置</span>
@@ -387,8 +396,8 @@
           </button>
         </div>
 
-        <!-- 中部：状态与开机策略 -->
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2">
+        <!-- 中部：状态与开机策略 (阻止冒泡) -->
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2" @click.stop>
           <div class="text-[15.5px] leading-relaxed truncate font-mono">
             <span class="text-car-sub font-bold">广播: </span>
             <span class="text-car-text font-black">
@@ -403,7 +412,7 @@
               <button
                 v-for="item in policyOptions"
                 :key="'ap_' + item.value"
-                @click="changeBootPolicy('hotspot', item.value)"
+                @click.stop="changeBootPolicy('hotspot', item.value)"
                 :class="[
                   'h-[50px] rounded-xl font-black text-[14px] cursor-pointer transition-all border-2 text-center flex items-center justify-center',
                   store.networkDevice.hotspot_policy === item.value
@@ -417,30 +426,34 @@
           </div>
         </div>
 
-        <!-- 底部标准点击式大开关 -->
-        <div class="pt-4 border-t border-car-border/60 shrink-0">
-          <BaseButton
-            variant="planToggle"
-            :active="store.networkDevice.hotspot_enabled"
-            @click="toggleDeviceDirect('hotspot')"
-          >
-            <StatusDot size="sm" :color="store.networkDevice.hotspot_enabled ? 'accent' : 'sub'" :glow-px="6" />
-            <span>{{ store.networkDevice.hotspot_enabled ? '热点分享已开启' : '热点分享已关闭' }}</span>
-          </BaseButton>
+        <!-- 底部标准状态灯 -->
+        <div class="pt-4 border-t border-car-border/60 shrink-0 flex items-center space-x-2">
+          <StatusDot size="sm" :color="store.networkDevice.hotspot_enabled ? 'ok' : 'off'" :glow-px="6" />
+          <span :class="['text-[16px] font-black', store.networkDevice.hotspot_enabled ? 'text-car-text' : 'text-car-sub']">
+            {{ store.networkDevice.hotspot_enabled ? '热点分享已开启' : '热点分享已关闭' }}
+          </span>
         </div>
       </div>
 
-      <!-- 卡片 3: 车载蓝牙外设 -->
-      <div class="rounded-3xl border-2 border-car-border hover:border-car-border-light bg-car-card p-5 shadow-xl flex flex-col justify-between transition-all duration-200">
+      <!-- 卡片 3: 车载蓝牙外设 (整卡点击开关) -->
+      <div
+        @click="toggleDeviceDirect('bluetooth')"
+        :class="[
+          'rounded-3xl border-2 p-5 shadow-xl flex flex-col justify-between transition-all duration-200 cursor-pointer select-none active:scale-[0.985]',
+          store.networkDevice.bluetooth_enabled
+            ? 'bg-car-item border-car-accent shadow-md'
+            : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+        ]"
+      >
         <!-- 头部 -->
         <div class="flex items-center justify-between shrink-0 mb-3">
           <div class="flex items-center space-x-2.5">
             <span class="text-[20px] font-black text-car-text tracking-wide">车载蓝牙</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">车载外设</span>
-            <HelpDot size="sm" @click="showHelp('network_policy')" />
+            <HelpDot size="sm" @click.stop="showHelp('network_policy')" />
           </div>
           <button
-            @click="openSettings('bluetooth')"
+            @click.stop="openSettings('bluetooth')"
             class="h-[50px] px-4 rounded-xl border border-car-border bg-car-item hover:border-car-border-light text-car-text font-black text-[14.5px] cursor-pointer transition-all flex items-center space-x-1.5 shrink-0 shadow-sm"
           >
             <span>系统设置</span>
@@ -450,8 +463,8 @@
           </button>
         </div>
 
-        <!-- 中部：状态与开机策略 -->
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2">
+        <!-- 中部：状态与开机策略 (阻止冒泡) -->
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2" @click.stop>
           <div class="text-[15.5px] leading-relaxed truncate font-mono">
             <span class="text-car-sub font-bold">设备: </span>
             <span class="text-car-text font-black">
@@ -466,7 +479,7 @@
               <button
                 v-for="item in policyOptions"
                 :key="'bt_' + item.value"
-                @click="changeBootPolicy('bluetooth', item.value)"
+                @click.stop="changeBootPolicy('bluetooth', item.value)"
                 :class="[
                   'h-[50px] rounded-xl font-black text-[14px] cursor-pointer transition-all border-2 text-center flex items-center justify-center',
                   store.networkDevice.bluetooth_policy === item.value
@@ -480,16 +493,12 @@
           </div>
         </div>
 
-        <!-- 底部标准点击式大开关 -->
-        <div class="pt-4 border-t border-car-border/60 shrink-0">
-          <BaseButton
-            variant="planToggle"
-            :active="store.networkDevice.bluetooth_enabled"
-            @click="toggleDeviceDirect('bluetooth')"
-          >
-            <StatusDot size="sm" :color="store.networkDevice.bluetooth_enabled ? 'accent' : 'sub'" :glow-px="6" />
-            <span>{{ store.networkDevice.bluetooth_enabled ? '蓝牙已开启' : '蓝牙已关闭' }}</span>
-          </BaseButton>
+        <!-- 底部标准状态灯 -->
+        <div class="pt-4 border-t border-car-border/60 shrink-0 flex items-center space-x-2">
+          <StatusDot size="sm" :color="store.networkDevice.bluetooth_enabled ? 'ok' : 'off'" :glow-px="6" />
+          <span :class="['text-[16px] font-black', store.networkDevice.bluetooth_enabled ? 'text-car-text' : 'text-car-sub']">
+            {{ store.networkDevice.bluetooth_enabled ? '蓝牙已开启' : '蓝牙已关闭' }}
+          </span>
         </div>
       </div>
     </div>

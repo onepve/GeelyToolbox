@@ -3,9 +3,17 @@
     <!-- 顶部车规二级分段胶囊：一页全景掌控（按功能小类扁平拆分直达） -->
     <SubTabs :tabs="voiceTabs" v-model="activeTab" />
 
-    <!-- 核心：全车语音播报总开关 (置顶常驻) -->
-    <div class="bg-car-card border-2 border-car-border rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all">
-      <div class="w-[60%] max-w-[60%] flex flex-col space-y-1.5 shrink-0">
+    <!-- 核心：全车语音播报总开关 (置顶常驻整卡开关大磁贴) -->
+    <div
+      @click="toggleVoiceMasterSwitch"
+      :class="[
+        'border-2 rounded-3xl p-5 min-h-[106px] shadow-xl flex items-center justify-between transition-all cursor-pointer select-none active:scale-[0.99]',
+        store.vehicleAuto.voice_master_switch
+          ? 'bg-car-item border-car-accent shadow-md'
+          : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+      ]"
+    >
+      <div class="w-[65%] max-w-[65%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
           <StatusDot size="lg" :color="store.vehicleAuto.voice_master_switch ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">全车语音播报总开关</span>
@@ -19,23 +27,12 @@
         </div>
       </div>
 
-      <div class="shrink-0 w-[230px]">
-        <button
-          @click="toggleVoiceMasterSwitch"
-          :class="[
-            'w-full h-[74px] px-4 py-2 rounded-2xl border-2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center',
-            store.vehicleAuto.voice_master_switch
-              ? 'bg-car-item border-car-accent'
-              : 'bg-car-card border-car-border hover:border-car-border-light'
-          ]"
-        >
-          <span class="text-[18.5px] font-black text-car-text tracking-wide whitespace-nowrap">
-            {{ store.vehicleAuto.voice_master_switch ? '全车播报已开启' : '全车已一键静音' }}
-          </span>
-          <span :class="['text-[12.5px] font-bold mt-1 whitespace-nowrap', store.vehicleAuto.voice_master_switch ? 'text-car-accent' : 'text-car-sub']">
-            {{ store.vehicleAuto.voice_master_switch ? '点击切换为全车静音' : '点击开启全车播报' }}
-          </span>
-        </button>
+      <!-- 右侧：轻量化状态大磁贴（消灭外框大按钮） -->
+      <div class="flex items-center space-x-3 shrink-0 pr-2">
+        <StatusDot size="md" :color="store.vehicleAuto.voice_master_switch ? 'ok' : 'off'" :glow-px="8" />
+        <span :class="['text-[20px] font-black tracking-wide', store.vehicleAuto.voice_master_switch ? 'text-car-text' : 'text-car-sub']">
+          {{ store.vehicleAuto.voice_master_switch ? '全车播报已开启' : '全车已物理静音' }}
+        </span>
       </div>
     </div>
 
