@@ -2278,10 +2278,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             return FuelManager.clearRecords(MainActivity.this);
         }
 
-        @JavascriptInterface
-        public boolean clearFuelTrips() {
-            return FuelManager.clearTrips(MainActivity.this);
-        }
+
 
         @JavascriptInterface
         public String getDeviceUid() {

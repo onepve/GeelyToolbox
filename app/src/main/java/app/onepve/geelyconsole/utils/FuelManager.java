@@ -36,7 +36,7 @@ public class FuelManager {
     private static final String DIR_NAME = "GeelyPilot/fuel";
     private static final String FILE_CONFIG = "fuel_config.json";
     private static final String FILE_RECORDS = "fuel_records.json";
-    private static final String FILE_TRIPS = "fuel_trips.json";
+
     private static final String FILE_STATE = "fuel_state.json";
     private static final String FILE_VEHICLE_KEY = "vehicle_identity.key";
 
@@ -450,23 +450,7 @@ public class FuelManager {
         return null;
     }
 
-    public static boolean addTrip(Context context, JSONObject trip) {
-        return true;
-    }
 
-    public static boolean clearTrips(Context context) {
-        synchronized (LOCK) {
-            try {
-                File tripsFile = new File(getFuelDir(), FILE_TRIPS);
-                if (tripsFile.exists()) {
-                    tripsFile.delete();
-                }
-                return true;
-            } catch (Throwable t) {
-                return false;
-            }
-        }
-    }
 
     /**
      * 小熊油耗跳枪法与阶段油耗算法统计引擎

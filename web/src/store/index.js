@@ -619,13 +619,4 @@ export function saveFuelConfig(cfg) {
   }
 }
 
-export function clearFuelTrips() {
-  try {
-    const ok = bridge.call('clearFuelTrips');
-    loadFuelData();
-    return ok;
-  } catch (e) {
-    console.error('clearFuelTrips error', e);
-    return false;
-  }
-}
+// 历史行程数据清理由 clearFuelRecords 统一接管，保持接口纯粹性
