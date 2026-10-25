@@ -123,38 +123,9 @@
       </div>
     </div>
 
-    <!-- Tab 3: 车门迎宾 (模式胶囊切换 + 细分车门卡片平铺首屏) -->
-    <div v-if="activeTab === 'doors'" class="flex flex-col space-y-4">
-      <!-- 模式单选切换 -->
-      <div class="flex items-center space-x-3 p-4 bg-car-item rounded-2xl border-2 border-car-border">
-        <button
-          type="button"
-          @click="setDoorMode(true)"
-          :class="[
-            'flex-1 h-[52px] rounded-xl font-black text-[15.5px] cursor-pointer transition-all border-2',
-            store.vehicleAuto.voice_door_mode_universal === true
-              ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-              : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-          ]"
-        >
-          极简合并播报
-        </button>
-        <button
-          type="button"
-          @click="setDoorMode(false)"
-          :class="[
-            'flex-1 h-[52px] rounded-xl font-black text-[15.5px] cursor-pointer transition-all border-2',
-            store.vehicleAuto.voice_door_mode_universal !== true
-              ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-              : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-          ]"
-        >
-          详细分门播报
-        </button>
-      </div>
-
-      <!-- 模式 1: 通用极简合并播报卡片 -->
-      <div v-if="store.vehicleAuto.voice_door_mode_universal === true" class="grid grid-cols-2 gap-4 items-stretch">
+    <!-- Tab 3: 车门合并播报 (极简模式：通用开门 + 通用关门，全平铺卡片零按钮) -->
+    <div v-if="activeTab === 'door_universal'" class="flex flex-col space-y-4">
+      <div class="grid grid-cols-2 gap-4 items-stretch">
         <VoiceItemCard
           title="通用开门提醒"
           tag="开门提示"
@@ -174,9 +145,11 @@
           @custom="openCustomVoice('door_close', '通用关门好提示', 'door_close.mp3')"
         />
       </div>
+    </div>
 
-      <!-- 模式 2: 详细分门播报卡片 (四门平铺) -->
-      <div v-else class="grid grid-cols-2 gap-4 items-stretch">
+    <!-- Tab 4: 车门分门播报 (四门独立迎宾：主驾 / 副驾 / 左后 / 右后，全平铺卡片零按钮) -->
+    <div v-if="activeTab === 'door_detail'" class="flex flex-col space-y-4">
+      <div class="grid grid-cols-2 gap-4 items-stretch">
         <VoiceItemCard
           title="主驾驶门迎宾"
           tag="FL 主驾"
@@ -216,7 +189,7 @@
       </div>
     </div>
 
-    <!-- Tab 4: 电动尾门 (开启升起 + 闭锁关好 2 大实体开关卡片平铺首屏) -->
+    <!-- Tab 5: 电动尾门 (开启升起 + 闭锁关好 2 大实体开关卡片平铺首屏) -->
     <div v-if="activeTab === 'trunk'" class="flex flex-col space-y-4">
       <div class="grid grid-cols-2 gap-4 items-stretch">
         <VoiceItemCard
@@ -240,12 +213,12 @@
       </div>
     </div>
 
-    <!-- Tab 5: 音乐音源优先级与回退调度 -->
+    <!-- Tab 6: 音乐音源优先级与回退调度 -->
     <div v-if="activeTab === 'media'" class="flex flex-col space-y-4">
       <AudioView />
     </div>
 
-    <!-- Tab 6: 专属主题语音包 (整套换装中枢) -->
+    <!-- Tab 7: 专属主题语音包 (整套换装中枢) -->
     <div v-if="activeTab === 'packs'" class="flex flex-col space-y-4">
       <FeatureCard 
         id="voice_theme_mgr"
@@ -320,20 +293,20 @@
                 >
                   试听样音
                 </button>
-                <button
+                <button 
                   @click="confirmClearAllCustomVoices"
                   class="min-h-[50px] w-[95px] bg-car-card border-2 border-car-border text-car-sub hover:text-car-text font-black text-[14px] rounded-xl cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
                 >
                   清空自选
                 </button>
-                <button
+                <button 
                   v-if="activeThemeName"
                   @click="applyVoiceTheme('')"
                   class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-accent text-car-accent font-black text-[14.5px] rounded-xl hover:border-car-accent cursor-pointer shadow-md transition-all flex items-center justify-center whitespace-nowrap"
                 >
                   恢复原声
                 </button>
-                <button
+                <button 
                   v-else
                   @click="confirmForceRestoreFactory"
                   class="min-h-[50px] w-[110px] bg-car-card border-2 border-car-border text-car-accent font-black text-[14.5px] rounded-xl hover:border-car-accent cursor-pointer shadow-sm transition-all flex items-center justify-center whitespace-nowrap"
@@ -401,9 +374,9 @@
 <script setup>
 // ============================================================================
 // BodyView — 车载声音与智能播报控制中枢
-// 架构全景压平：换挡 / 模式 / 车门 / 尾门 独立 Tab 直达，首屏卡片整卡即开关
+// 架构全景压平：换挡 / 模式 / 车门合并 / 车门分门 / 尾门 独立 Tab 直达，首屏卡片整卡即开关
 // ============================================================================
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { store, bridge, showToast, openModal } from '../store';
 import FeatureCard from '../components/FeatureCard.vue';
 import SubTabs from '../components/SubTabs.vue';
@@ -416,11 +389,12 @@ import TrunkConfigModal from '../components/TrunkConfigModal.vue';
 import AudioView from './AudioView.vue';
 import { useConfigModal } from '../composables/useConfigModal';
 
-const activeTab = ref('gear');
+const activeTab = ref(store.vehicleAuto.voice_door_mode_universal === true ? 'door_universal' : 'gear');
 const voiceTabs = [
   { id: 'gear', name: '换挡语音', tag: '挡位播报' },
   { id: 'mode', name: '驾驶模式', tag: '旋钮模式' },
-  { id: 'doors', name: '车门迎宾', tag: '迎宾提示' },
+  { id: 'door_universal', name: '车门合并播报', tag: '极简合并' },
+  { id: 'door_detail', name: '车门分门播报', tag: '独立迎宾' },
   { id: 'trunk', name: '电动尾门', tag: '尾门开闭' },
   { id: 'media', name: '音乐音源优先级', tag: '回退调度' },
   { id: 'packs', name: '专属语音包', tag: '整套换装' }
@@ -429,8 +403,21 @@ const voiceTabs = [
 const { toggleSetting, setSetting, testVoice, openCustomVoice } = useConfigModal();
 
 function setDoorMode(isUniversal) {
-  setSetting('voice_door_mode_universal', isUniversal, isUniversal ? '已切换为: 极简合并播报模式' : '已切换为: 详细分门播报模式');
+  setSetting('voice_door_mode_universal', isUniversal, isUniversal ? '车门语音已切换为: 极简合并播报' : '车门语音已切换为: 独立分门播报');
 }
+
+// 监听 Tab 切换：切入车门合并播报或分门播报时，底层状态自动同步切换，告别奇怪按钮
+watch(activeTab, (newTab) => {
+  if (newTab === 'door_universal') {
+    if (store.vehicleAuto.voice_door_mode_universal !== true) {
+      setDoorMode(true);
+    }
+  } else if (newTab === 'door_detail') {
+    if (store.vehicleAuto.voice_door_mode_universal === true) {
+      setDoorMode(false);
+    }
+  }
+});
 
 const showGearModal = ref(false);
 const showModeModal = ref(false);
