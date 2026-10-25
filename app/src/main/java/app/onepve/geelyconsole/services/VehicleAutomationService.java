@@ -153,13 +153,12 @@ public class VehicleAutomationService extends Service {
     public static volatile double currentTotalOdoKm = -1.0;
     public static volatile double currentRemainingOilLiters = -1.0;
 
-    // 智能加油静默感知防抖追踪
-    private double lastBaselineOilLiters = -1.0;
-    private long lastOilJumpDetectedTimeMs = 0;
-    private double pendingRefuelLiters = 0.0;
-    private static final double MIN_REFUEL_DELTA_LITERS = 8.0; // 最小跃变有效阈值 (>=8.0L 彻底排除坡道/停车晃动)
-    private static final long REFUEL_STABLE_HOLD_MS = 15000; // 稳定持续防抖时间 (15秒)
-    private static long lastRefuelRecordedTimeMs = 0; // 上次成功触发记录加油的时间戳 (防短时间连环触发)
+    // 智能加油：单次点火行程严格仅判定一次，判定完毕立即闭锁，熄火前绝不重复计算
+    private volatile boolean tripRefuelEvaluatedInThisTrip = false;
+    private volatile double tripInitialValidOil = -1.0;
+    private volatile int consecutiveValidOilSamples = 0;
+    private static final double MIN_REFUEL_DELTA_LITERS = 8.0; // 最小跃变有效阈值 (>=8.0L)
+    private static final double MAX_REASONABLE_FUEL_CAPACITY = 75.0; // 宽限油箱物理冗余安全上限 (容纳油箱颈与各车型公差)
 
     // 服务启动时间戳（用于时间戳软栅栏，毫秒级丢弃开机前的陈旧日志）
     private long serviceBootTimestampMs = 0;
@@ -383,16 +382,12 @@ public class VehicleAutomationService extends Service {
             lastDriveMode = mode;
         });
 
-        // 预载上次持久化的燃油液位与仪表总里程基准 (保障开机首秒即有真实里程)
+        // 预载上次持久化的仪表总里程基准 (保障开机首秒即有真实里程)
         try {
             JSONObject lastFuel = FuelManager.getLastFuelState(this);
             double savedOdo = lastFuel.optDouble("odo", -1.0);
             if (savedOdo > 0 && currentTotalOdoKm <= 0) {
                 currentTotalOdoKm = savedOdo;
-            }
-            double savedOil = lastFuel.optDouble("oil", -1.0);
-            if (savedOil > 0 && lastBaselineOilLiters < 0) {
-                lastBaselineOilLiters = savedOil;
             }
         } catch (Throwable ignored) {}
 
@@ -650,10 +645,12 @@ public class VehicleAutomationService extends Service {
 
                 if (realPowerOff) {
                     lastPowerMode = 0; // 真正熄火下电：强制锁定为 0
-                    // 熄火瞬间必须将最后液位快照写入物理闪存，供加完油重新点火时比对！
-                    if (currentRemainingOilLiters > 0) {
-                        FuelManager.saveLastFuelState(VehicleAutomationService.this, currentRemainingOilLiters, currentTotalOdoKm);
-                    }
+                    // 【双保险第2重】：熄火瞬间再次落盘最新快照
+                    snapshotFuelStateOnStop("整车熄火下电广播");
+                    // 行程彻底结束：复位单次行程加油判定锁，为下次点火重新就绪
+                    tripRefuelEvaluatedInThisTrip = false;
+                    consecutiveValidOilSamples = 0;
+                    AppLogger.i("加油感知", "车辆已熄火下电，复位单次点火判定锁，等待下次点火判定。");
                     if (gearStateMachine != null) gearStateMachine.resetState();
                     if (driveModeManager != null) driveModeManager.resetState();
                     if (doorStateManager != null) doorStateManager.resetState();
@@ -943,8 +940,7 @@ public class VehicleAutomationService extends Service {
                         if (spStr != null && !spStr.isEmpty()) {
                             int speed = Integer.parseInt(spStr);
                             if (speed >= 0 && speed <= 240) {
-                                currentSpeedKmH = speed;
-                                processVehicleSpeedAutomation(currentSpeedKmH);
+                                onSpeedUpdated(speed);
                                 return;
                             }
                         }
@@ -966,8 +962,7 @@ public class VehicleAutomationService extends Service {
                                 int rawVal = Integer.parseInt(hexStr, 16);
                                 int parsedSpeed = Math.round(rawVal / 100.0f);
                                 if (parsedSpeed >= 0 && parsedSpeed <= 240) {
-                                    currentSpeedKmH = parsedSpeed;
-                                    processVehicleSpeedAutomation(currentSpeedKmH);
+                                    onSpeedUpdated(parsedSpeed);
                                     return;
                                 }
                             } catch (Exception ignored) {}
@@ -988,8 +983,7 @@ public class VehicleAutomationService extends Service {
                                 spKmH = (int) Math.round(rawSpeed * 3.6);
                             }
                             if (spKmH >= 0 && spKmH <= 240) {
-                                currentSpeedKmH = spKmH;
-                                processVehicleSpeedAutomation(currentSpeedKmH);
+                                onSpeedUpdated(spKmH);
                                 return;
                             }
                         }
@@ -1003,8 +997,7 @@ public class VehicleAutomationService extends Service {
                         if (spStr != null && !spStr.isEmpty()) {
                             int speed = Integer.parseInt(spStr);
                             if (speed >= 0 && speed <= 240) {
-                                currentSpeedKmH = speed;
-                                processVehicleSpeedAutomation(currentSpeedKmH);
+                                onSpeedUpdated(speed);
                                 return;
                             }
                         }
@@ -1314,7 +1307,7 @@ public class VehicleAutomationService extends Service {
      */
     public void handleSpeedSignal(final int speed) {
         currentSpeedKmH = speed;
-        processVehicleSpeedAutomation(currentSpeedKmH);
+        onSpeedUpdated(speed);
     }
 
     public void handleGearSignal(final int gear) {
@@ -1339,6 +1332,7 @@ public class VehicleAutomationService extends Service {
 
         if (gear == 5) {
             currentSpeedKmH = 0; // 挂入 P 挡驻车时车速立即强制归零，防止残留蠕行车速外溢
+            snapshotFuelStateOnStop("挂入P挡驻车");
             // 挂入 P 挡驻车：若主驾车门当前已处于开启状态，协同重置行程
             if (currentDoorFL == 1) {
                 resetTripSpeedAutoplay("挂入P挡且主驾门已开启");
@@ -1690,9 +1684,7 @@ public class VehicleAutomationService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (currentRemainingOilLiters > 0) {
-            FuelManager.saveLastFuelState(this, currentRemainingOilLiters, currentTotalOdoKm);
-        }
+        snapshotFuelStateOnStop("服务销毁onDestroy");
         isRunning = false;
         instance = null;
         cancelPendingMusicRetries("服务销毁");
@@ -1796,6 +1788,14 @@ public class VehicleAutomationService extends Service {
     private volatile boolean frontLeftDoorOpenLatched = false;
     private volatile boolean frontRightDoorOpenLatched = false;
 
+    private void onSpeedUpdated(int speed) {
+        currentSpeedKmH = speed;
+        if (currentSpeedKmH == 0) {
+            snapshotFuelStateOnStop("车速归零停稳");
+        }
+        processVehicleSpeedAutomation(currentSpeedKmH);
+    }
+
     private void processVehicleSpeedAutomation(int speed) {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
 
@@ -1837,67 +1837,67 @@ public class VehicleAutomationService extends Service {
     }
 
     /**
-     * 智能加油跃变感知与自动静默记账引擎
-     * 实车真实加油工况：车主到站必先熄火 ➔ 车机断电 ➔ 加油员加完油 ➔ 车主点火通电 ➔ 车机上电读到油量大增
-     * 核心原则：零打扰静默记账，车主离场后空闲微调
+     * 第一重保险：驻车/车速归零持久化快照 (车速 == 0 或 挂入 P 挡停稳时预热落盘)
+     * 车机供电充足，从容安全落盘，杜绝下电瞬断导致的 I/O 截断
+     */
+    private void snapshotFuelStateOnStop(String triggerReason) {
+        if (currentRemainingOilLiters > 0 && currentRemainingOilLiters <= MAX_REASONABLE_FUEL_CAPACITY) {
+            FuelManager.saveLastFuelState(this, currentRemainingOilLiters, currentTotalOdoKm);
+            AppLogger.i("加油基准", "【双保险第1重】" + triggerReason + "，预热保存当前油位快照: " + currentRemainingOilLiters + "L, 里程=" + currentTotalOdoKm + "km");
+        }
+    }
+
+    /**
+     * 智能加油跃变感知与自动静默记账引擎 (真车物理状态机)
+     * 核心铁律：
+     * 1. 单次点火行程严格只比对判定 1 次！
+     * 2. 判定完毕立刻闭锁 (tripRefuelEvaluatedInThisTrip = true)，整段行车/停车/等灯绝不重复计算！
+     * 3. 严格过滤 <=0L 或异常超标的无效读数，油箱冗余上限宽限至 75L。
      */
     private void processRefuelDetection(double currentOil) {
-        // 1. 初始化基准液位：优先读取上次熄火断电前持久化在 fuel_state.json 的历史液位
-        if (lastBaselineOilLiters < 0) {
-            try {
-                JSONObject state = FuelManager.getLastFuelState(this);
-                double savedOil = state.optDouble("oil", -1.0);
-                if (savedOil > 0) {
-                    lastBaselineOilLiters = savedOil;
-                    AppLogger.i("加油感知", "已载入上次熄火断电前液位基准: " + lastBaselineOilLiters + "L");
+        // 非法读数直接丢弃 (油不可能 <= 0，且不超过油箱冗余宽限)
+        if (currentOil <= 0 || currentOil > MAX_REASONABLE_FUEL_CAPACITY) {
+            return;
+        }
+
+        // 核心闭锁铁律：本次点火行程已经判定过，彻底静默跳过！
+        if (tripRefuelEvaluatedInThisTrip) {
+            return;
+        }
+
+        // 收集连续 3 包稳定读数，防止刚上电传感器抖动
+        consecutiveValidOilSamples++;
+        if (consecutiveValidOilSamples < 3) {
+            return;
+        }
+
+        // 标记本次行程已判定，立即闭锁！
+        tripRefuelEvaluatedInThisTrip = true;
+
+        try {
+            JSONObject state = FuelManager.getLastFuelState(this);
+            double savedOil = state.optDouble("oil", -1.0);
+            double savedOdo = state.optDouble("odo", -1.0);
+
+            if (savedOil > 0 && savedOil <= MAX_REASONABLE_FUEL_CAPACITY) {
+                double delta = currentOil - savedOil;
+                AppLogger.i("加油感知", "【点火初检】读取上次熄火双保险基准=" + savedOil + "L，本次点火稳定油位=" + currentOil + "L (差值=" + delta + "L)");
+
+                if (delta >= MIN_REFUEL_DELTA_LITERS) {
+                    double addedLiters = Math.round(delta * 10.0) / 10.0;
+                    AppLogger.i("加油感知", "【命中加油事件】检测到熄火加注: " + addedLiters + "L，静默入账！");
+                    autoRecordRefuelSilently(addedLiters, currentOil);
                 } else {
-                    lastBaselineOilLiters = currentOil;
-                    return;
+                    AppLogger.i("加油感知", "【正常冷启动】未检测到有效加油跃变 (差值 " + delta + "L < " + MIN_REFUEL_DELTA_LITERS + "L)，行程锁定。");
                 }
-            } catch (Throwable ignored) {
-                lastBaselineOilLiters = currentOil;
-                return;
+            } else {
+                AppLogger.i("加油感知", "【首次启动/无历史基准】当前有效油位 " + currentOil + "L 已作为下次基准，行程锁定。");
             }
-        }
 
-        // 仅在停稳P挡或超低速(<=5km/h，排除高速颠簸晃动)时才检测加油跃变
-        if (currentSpeedKmH > 5 && (gearStateMachine == null || gearStateMachine.getGear() != 5)) {
-            lastBaselineOilLiters = currentOil;
-            lastOilJumpDetectedTimeMs = 0;
-            return;
-        }
-
-        long now = System.currentTimeMillis();
-
-        // 冷却限制：10 分钟内最多只允许自动记录一笔加油台账，严禁短时间内连环记账
-        if (now - lastRefuelRecordedTimeMs < 600000) {
-            lastBaselineOilLiters = currentOil;
-            lastOilJumpDetectedTimeMs = 0;
-            return;
-        }
-
-        double delta = currentOil - lastBaselineOilLiters;
-
-        if (delta >= MIN_REFUEL_DELTA_LITERS) {
-            if (lastOilJumpDetectedTimeMs == 0) {
-                lastOilJumpDetectedTimeMs = now;
-                pendingRefuelLiters = delta;
-                AppLogger.i("加油感知", "检测到点火前后油箱液面跃升: 上次熄火/基准=" + lastBaselineOilLiters + "L ➔ 当前=" + currentOil + "L (跃升 " + delta + "L)，开始防抖监听...");
-            } else if (now - lastOilJumpDetectedTimeMs >= REFUEL_STABLE_HOLD_MS) {
-                // 稳定持续 >= 15秒，判定为真实加油入账，直接静默记账！
-                double addedLiters = Math.round(delta * 10.0) / 10.0;
-                autoRecordRefuelSilently(addedLiters, currentOil);
-                lastBaselineOilLiters = currentOil;
-                lastOilJumpDetectedTimeMs = 0;
-                lastRefuelRecordedTimeMs = now;
-                // 更新持久化快照
-                FuelManager.saveLastFuelState(this, currentOil, currentTotalOdoKm);
-            }
-        } else if (delta < -2.0) {
-            // 正常行车油耗下降，平滑下推基准线并定期持久化快照
-            lastBaselineOilLiters = currentOil;
-            lastOilJumpDetectedTimeMs = 0;
+            // 更新当前最新油位为下一次准备
             FuelManager.saveLastFuelState(this, currentOil, currentTotalOdoKm);
+        } catch (Throwable t) {
+            AppLogger.w("加油感知", "读取上次油位基准失败: " + t.getMessage());
         }
     }
 
