@@ -113,10 +113,20 @@
                 ]"
               >
                 <div class="flex flex-col text-left">
-                  <span class="text-[11.5px] text-car-sub font-bold">仪表总里程</span>
+                  <div class="flex items-center space-x-1.5">
+                    <span class="text-[11.5px] text-car-sub font-bold">仪表总里程</span>
+                    <span 
+                      v-if="currentOdo > 0"
+                      @click.stop="applyCurrentOdo(editingRecord)"
+                      class="px-1.5 py-0.5 rounded-md bg-car-item border border-car-accent text-[10.5px] text-car-accent font-black hover:bg-car-accent hover:text-car-text cursor-pointer transition-all shadow-sm"
+                      title="点击填入车机采集的实时里程"
+                    >
+                      实车 {{ Math.round(currentOdo) }} km ⤶
+                    </span>
+                  </div>
                   <div class="flex items-center space-x-1">
                     <span class="text-[19px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
-                      {{ editingRecord.odo !== undefined && editingRecord.odo !== null ? editingRecord.odo : '未打点' }}
+                      {{ editingRecord.odo !== undefined && editingRecord.odo !== null && editingRecord.odo > 0 ? editingRecord.odo : (currentOdo > 0 ? Math.round(currentOdo) : '未打点') }}
                     </span>
                     <span v-if="activeField === 'odo'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
                   </div>
@@ -178,6 +188,15 @@
                   {{ k }}
                 </button>
                 <button 
+                  v-if="activeField === 'odo' && currentOdo > 0"
+                  type="button" 
+                  @click="applyCurrentOdo(editingRecord)" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-mono text-[13px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  带入实车
+                </button>
+                <button 
+                  v-else
                   type="button" 
                   @click="onQuickAmount(editingRecord, 200, 'edit')" 
                   class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
@@ -207,6 +226,15 @@
                   下项 ➔
                 </button>
                 <button 
+                  v-if="activeField === 'odo' && currentOdo > 0"
+                  type="button" 
+                  @click="applyCurrentOdo(editingRecord)" 
+                  class="min-h-[50px] rounded-xl border-2 border-emerald-500/50 bg-emerald-500/10 text-emerald-400 font-mono text-[11.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  {{ Math.round(currentOdo) }}km
+                </button>
+                <button 
+                  v-else
                   type="button" 
                   @click="onQuickAmount(editingRecord, 300, 'edit')" 
                   class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
@@ -489,10 +517,20 @@
                 ]"
               >
                 <div class="flex flex-col text-left">
-                  <span class="text-[11.5px] text-car-sub font-bold">仪表总里程</span>
+                  <div class="flex items-center space-x-1.5">
+                    <span class="text-[11.5px] text-car-sub font-bold">仪表总里程</span>
+                    <span 
+                      v-if="currentOdo > 0"
+                      @click.stop="applyCurrentOdo(newRecord)"
+                      class="px-1.5 py-0.5 rounded-md bg-car-item border border-car-accent text-[10.5px] text-car-accent font-black hover:bg-car-accent hover:text-car-text cursor-pointer transition-all shadow-sm"
+                      title="点击填入车机采集的实时里程"
+                    >
+                      实车 {{ Math.round(currentOdo) }} km ⤶
+                    </span>
+                  </div>
                   <div class="flex items-center space-x-1">
                     <span class="text-[19px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
-                      {{ newRecord.odo !== undefined && newRecord.odo !== null ? newRecord.odo : '未打点' }}
+                      {{ newRecord.odo !== undefined && newRecord.odo !== null && newRecord.odo > 0 ? newRecord.odo : (currentOdo > 0 ? Math.round(currentOdo) : '未打点') }}
                     </span>
                     <span v-if="activeField === 'odo'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
                   </div>
@@ -554,6 +592,15 @@
                   {{ k }}
                 </button>
                 <button 
+                  v-if="activeField === 'odo' && currentOdo > 0"
+                  type="button" 
+                  @click="applyCurrentOdo(newRecord)" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-mono text-[13px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  带入实车
+                </button>
+                <button 
+                  v-else
                   type="button" 
                   @click="onQuickAmount(newRecord, 200, 'new')" 
                   class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
@@ -583,6 +630,15 @@
                   下项 ➔
                 </button>
                 <button 
+                  v-if="activeField === 'odo' && currentOdo > 0"
+                  type="button" 
+                  @click="applyCurrentOdo(newRecord)" 
+                  class="min-h-[50px] rounded-xl border-2 border-emerald-500/50 bg-emerald-500/10 text-emerald-400 font-mono text-[11.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  {{ Math.round(currentOdo) }}km
+                </button>
+                <button 
+                  v-else
                   type="button" 
                   @click="onQuickAmount(newRecord, 300, 'new')" 
                   class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
@@ -776,6 +832,10 @@ const props = defineProps({
     type: Object,
     default: () => ({})
   },
+  currentOdo: {
+    type: [Number, String],
+    default: 0
+  },
   allProvinceNames: {
     type: Array,
     default: () => []
@@ -809,11 +869,14 @@ const activeField = ref('actual_paid');
 const showEditProvincePicker = ref(false);
 const showAddProvincePicker = ref(false);
 
-// 监听弹窗打开，重置聚焦到实付金额
+// 监听弹窗打开，重置聚焦到实付金额，并尝试为新记录带入实车最新总里程
 watch(() => props.showAddModal, (val) => {
   if (val) {
     activeField.value = 'actual_paid';
     showAddProvincePicker.value = false;
+    if (props.newRecord && (!props.newRecord.odo || props.newRecord.odo === 0) && props.currentOdo > 0) {
+      props.newRecord.odo = Math.round(Number(props.currentOdo));
+    }
   }
 });
 watch(() => props.showEditModal, (val) => {
@@ -822,6 +885,13 @@ watch(() => props.showEditModal, (val) => {
     showEditProvincePicker.value = false;
   }
 });
+
+// 一键填入/同步车机采集到的当前真实总里程
+function applyCurrentOdo(record) {
+  if (!record || !props.currentOdo) return;
+  record.odo = Math.round(Number(props.currentOdo));
+  activeField.value = 'odo';
+}
 
 function getFieldLabel(f) {
   switch (f) {

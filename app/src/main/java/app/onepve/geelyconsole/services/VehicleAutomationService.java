@@ -382,6 +382,19 @@ public class VehicleAutomationService extends Service {
             lastDriveMode = mode;
         });
 
+        // 预载上次持久化的燃油液位与仪表总里程基准 (保障开机首秒即有真实里程)
+        try {
+            JSONObject lastFuel = FuelManager.getLastFuelState(this);
+            double savedOdo = lastFuel.optDouble("odo", -1.0);
+            if (savedOdo > 0 && currentTotalOdoKm <= 0) {
+                currentTotalOdoKm = savedOdo;
+            }
+            double savedOil = lastFuel.optDouble("oil", -1.0);
+            if (savedOil > 0 && lastBaselineOilLiters < 0) {
+                lastBaselineOilLiters = savedOil;
+            }
+        } catch (Throwable ignored) {}
+
         createNotificationChannel();
         Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ?
                 new Notification.Builder(this, CHANNEL_ID) : new Notification.Builder(this);

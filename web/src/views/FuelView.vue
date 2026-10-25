@@ -337,6 +337,7 @@
       :editingRecord="editingRecord"
       :showAddModal="showAddModal"
       :newRecord="newRecord"
+      :currentOdo="store.fuelLedger.current_odo || 0"
       :allProvinceNames="allProvinceNames"
       @close-edit="showEditModal = false"
       @save-edit="onSaveEditedRecord"
