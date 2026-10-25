@@ -4,248 +4,315 @@
     <ModalWrapper
       :show="showEditModal"
       title="编辑与校对加油台账"
-      badge="车载数字键盘"
-      maxWidthClass="max-w-[1140px]"
-      bodyClass="p-3.5 space-y-2.5"
+      badge="车载工作台"
+      maxWidthClass="max-w-[1260px]"
+      headerClass="min-h-[64px] px-6 py-2.5"
+      bodyClass="p-3.5 space-y-2"
+      footerClass="px-6 py-2.5"
       zIndexClass="z-[9990]"
       @close="$emit('close-edit')"
     >
-      <div v-if="editingRecord" class="flex flex-col space-y-2.5">
-        <!-- 顶部 4 列大号数值槽位 (触控切换焦点，完全禁止唤出车机系统输入法) -->
-        <div class="grid grid-cols-4 gap-2.5">
-          <!-- 实付金额 -->
-          <div 
-            @click="activeField = 'actual_paid'"
-            :class="[
-              'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-              activeField === 'actual_paid'
-                ? 'border-car-accent bg-car-accent-light scale-[1.01]'
-                : 'border-car-border bg-car-card hover:border-car-border-light'
-            ]"
-          >
-            <div class="flex flex-col text-left">
-              <span class="text-[11.5px] text-car-sub font-bold">实付金额 *</span>
-              <div class="flex items-center space-x-1">
-                <span class="text-[19px] font-mono font-black" :class="activeField === 'actual_paid' ? 'text-car-accent' : 'text-car-text'">
-                  {{ editingRecord.actual_paid !== undefined && editingRecord.actual_paid !== null ? editingRecord.actual_paid : '0.0' }}
-                </span>
-                <span v-if="activeField === 'actual_paid'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+      <div v-if="editingRecord" class="flex flex-col space-y-2">
+        <!-- 左右双翼工作台 (横向展开，消除垂直滚动条) -->
+        <div class="grid grid-cols-12 gap-3.5 items-stretch">
+          
+          <!-- 左翼：数值槽位 + 大号数字软键盘 + 填补空白的加满/补油卡片 (占 6 列) -->
+          <div class="col-span-6 flex flex-col space-y-2">
+            <!-- 4 个数值槽位 (2x2 网格，触控直选，禁止唤出系统软键盘) -->
+            <div class="grid grid-cols-2 gap-2">
+              <!-- 实付金额 -->
+              <div 
+                @click="activeField = 'actual_paid'"
+                :class="[
+                  'min-h-[52px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'actual_paid'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11.5px] text-car-sub font-bold">实付金额 *</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[19px] font-mono font-black" :class="activeField === 'actual_paid' ? 'text-car-accent' : 'text-car-text'">
+                      {{ editingRecord.actual_paid !== undefined && editingRecord.actual_paid !== null ? editingRecord.actual_paid : '0.0' }}
+                    </span>
+                    <span v-if="activeField === 'actual_paid'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+                  </div>
+                </div>
+                <span class="text-[12px] font-mono font-bold text-car-sub">元</span>
+              </div>
+
+              <!-- 加注升数 -->
+              <div 
+                @click="activeField = 'liters'"
+                :class="[
+                  'min-h-[52px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'liters'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11.5px] text-car-sub font-bold">加注升数 *</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[19px] font-mono font-black" :class="activeField === 'liters' ? 'text-car-accent' : 'text-car-text'">
+                      {{ editingRecord.liters !== undefined && editingRecord.liters !== null ? editingRecord.liters : '0.0' }}
+                    </span>
+                    <span v-if="activeField === 'liters'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+                  </div>
+                </div>
+                <span class="text-[12px] font-mono font-bold text-car-sub">L</span>
+              </div>
+
+              <!-- 实际单价 -->
+              <div 
+                @click="activeField = 'price'"
+                :class="[
+                  'min-h-[52px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'price'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11.5px] text-car-sub font-bold">实际单价</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[19px] font-mono font-black" :class="activeField === 'price' ? 'text-car-accent' : 'text-car-text'">
+                      {{ editingRecord.price !== undefined && editingRecord.price !== null ? editingRecord.price : '0.00' }}
+                    </span>
+                    <span v-if="activeField === 'price'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+                  </div>
+                </div>
+                <span class="text-[12px] font-mono font-bold text-car-sub">元/L</span>
+              </div>
+
+              <!-- 仪表总里程 -->
+              <div 
+                @click="activeField = 'odo'"
+                :class="[
+                  'min-h-[52px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'odo'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11.5px] text-car-sub font-bold">仪表总里程</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[19px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
+                      {{ editingRecord.odo !== undefined && editingRecord.odo !== null ? editingRecord.odo : '未打点' }}
+                    </span>
+                    <span v-if="activeField === 'odo'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+                  </div>
+                </div>
+                <span class="text-[12px] font-mono font-bold text-car-sub">km</span>
               </div>
             </div>
-            <span class="text-[11.5px] font-mono font-bold text-car-sub">元</span>
-          </div>
 
-          <!-- 加注升数 -->
-          <div 
-            @click="activeField = 'liters'"
-            :class="[
-              'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-              activeField === 'liters'
-                ? 'border-car-accent bg-car-accent-light scale-[1.01]'
-                : 'border-car-border bg-car-card hover:border-car-border-light'
-            ]"
-          >
-            <div class="flex flex-col text-left">
-              <span class="text-[11.5px] text-car-sub font-bold">加注升数 *</span>
-              <div class="flex items-center space-x-1">
-                <span class="text-[19px] font-mono font-black" :class="activeField === 'liters' ? 'text-car-accent' : 'text-car-text'">
-                  {{ editingRecord.liters !== undefined && editingRecord.liters !== null ? editingRecord.liters : '0.0' }}
-                </span>
-                <span v-if="activeField === 'liters'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+            <!-- 车载大号数字键盘面板 -->
+            <div class="p-2.5 rounded-2xl bg-car-card border-2 border-car-border shadow-md flex flex-col space-y-1.5">
+              <div class="flex items-center justify-between px-1 text-[12px] font-bold text-car-sub pb-1 border-b border-car-border/60">
+                <span>当前录入: <b class="text-car-accent text-[13px]">{{ getFieldLabel(activeField) }}</b></span>
+                <span class="text-[11px] text-car-sub/70">内置软键盘 · 免调车机输入法</span>
+              </div>
+
+              <!-- 4x4 紧凑数字键阵 -->
+              <div class="grid grid-cols-4 gap-1.5">
+                <button 
+                  v-for="k in ['1', '2', '3']" 
+                  :key="k" 
+                  type="button" 
+                  @click="onInputKey(editingRecord, k, 'edit')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  {{ k }}
+                </button>
+                <button 
+                  type="button" 
+                  @click="onBackspace(editingRecord, 'edit')" 
+                  class="min-h-[50px] rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[14px] flex items-center justify-center cursor-pointer hover:bg-rose-500/20 active:scale-95 transition-all shadow-sm"
+                >
+                  ⌫ 退格
+                </button>
+
+                <button 
+                  v-for="k in ['4', '5', '6']" 
+                  :key="k" 
+                  type="button" 
+                  @click="onInputKey(editingRecord, k, 'edit')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  {{ k }}
+                </button>
+                <button 
+                  type="button" 
+                  @click="onClearCurrent(editingRecord, 'edit')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text text-[13.5px] font-bold flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  清空
+                </button>
+
+                <button 
+                  v-for="k in ['7', '8', '9']" 
+                  :key="k" 
+                  type="button" 
+                  @click="onInputKey(editingRecord, k, 'edit')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  {{ k }}
+                </button>
+                <button 
+                  type="button" 
+                  @click="onQuickAmount(editingRecord, 200, 'edit')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  ¥200
+                </button>
+
+                <button 
+                  type="button" 
+                  @click="onInputKey(editingRecord, '.', 'edit')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  .
+                </button>
+                <button 
+                  type="button" 
+                  @click="onInputKey(editingRecord, '0', 'edit')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  0
+                </button>
+                <button 
+                  type="button" 
+                  @click="onNextField" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-accent/40 bg-car-item text-car-accent text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  下项 ➔
+                </button>
+                <button 
+                  type="button" 
+                  @click="onQuickAmount(editingRecord, 300, 'edit')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  ¥300
+                </button>
               </div>
             </div>
-            <span class="text-[11.5px] font-mono font-bold text-car-sub">L</span>
-          </div>
 
-          <!-- 实际单价 -->
-          <div 
-            @click="activeField = 'price'"
-            :class="[
-              'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-              activeField === 'price'
-                ? 'border-car-accent bg-car-accent-light scale-[1.01]'
-                : 'border-car-border bg-car-card hover:border-car-border-light'
-            ]"
-          >
-            <div class="flex flex-col text-left">
-              <span class="text-[11.5px] text-car-sub font-bold">实际单价</span>
-              <div class="flex items-center space-x-1">
-                <span class="text-[19px] font-mono font-black" :class="activeField === 'price' ? 'text-car-accent' : 'text-car-text'">
-                  {{ editingRecord.price !== undefined && editingRecord.price !== null ? editingRecord.price : '0.00' }}
+            <!-- 填补键盘下方多余空白：【跳枪加满】与【阶段补油】带状态胶囊双卡片 -->
+            <div class="grid grid-cols-2 gap-2">
+              <!-- 跳枪加满卡片 -->
+              <div
+                @click="editingRecord.is_full = true"
+                :class="[
+                  'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  editingRecord.is_full
+                    ? 'border-emerald-500 bg-emerald-500/10'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[13px] font-black" :class="editingRecord.is_full ? 'text-emerald-400' : 'text-car-text'">
+                    跳枪加满
+                  </span>
+                  <span class="text-[10.5px] text-car-sub font-bold">精准核算百公里油耗</span>
+                </div>
+                <!-- 专属状态小胶囊 -->
+                <span 
+                  :class="[
+                    'px-2.5 py-1 rounded-full text-[11.5px] font-black whitespace-nowrap transition-all shadow-sm',
+                    editingRecord.is_full
+                      ? 'bg-emerald-500 text-white'
+                      : 'border border-car-border bg-car-item text-car-sub/60'
+                  ]"
+                >
+                  {{ editingRecord.is_full ? '● 已加满' : '○ 未激活' }}
                 </span>
-                <span v-if="activeField === 'price'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+              </div>
+
+              <!-- 阶段补油卡片 -->
+              <div
+                @click="editingRecord.is_full = false"
+                :class="[
+                  'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  !editingRecord.is_full
+                    ? 'border-amber-500 bg-amber-500/10'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[13px] font-black" :class="!editingRecord.is_full ? 'text-amber-400' : 'text-car-text'">
+                    阶段补油
+                  </span>
+                  <span class="text-[10.5px] text-car-sub font-bold">临时补充 · 不计油耗</span>
+                </div>
+                <!-- 专属状态小胶囊 -->
+                <span 
+                  :class="[
+                    'px-2.5 py-1 rounded-full text-[11.5px] font-black whitespace-nowrap transition-all shadow-sm',
+                    !editingRecord.is_full
+                      ? 'bg-amber-500 text-slate-900'
+                      : 'border border-car-border bg-car-item text-car-sub/60'
+                  ]"
+                >
+                  {{ !editingRecord.is_full ? '● 补油中' : '○ 未激活' }}
+                </span>
               </div>
             </div>
-            <span class="text-[11.5px] font-mono font-bold text-car-sub">元/L</span>
           </div>
 
-          <!-- 仪表里程 -->
-          <div 
-            @click="activeField = 'odo'"
-            :class="[
-              'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-              activeField === 'odo'
-                ? 'border-car-accent bg-car-accent-light scale-[1.01]'
-                : 'border-car-border bg-car-card hover:border-car-border-light'
-            ]"
-          >
-            <div class="flex flex-col text-left">
-              <span class="text-[11.5px] text-car-sub font-bold">仪表总里程</span>
-              <div class="flex items-center space-x-1">
-                <span class="text-[19px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
-                  {{ editingRecord.odo !== undefined && editingRecord.odo !== null ? editingRecord.odo : '未打点' }}
-                </span>
-                <span v-if="activeField === 'odo'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
-              </div>
-            </div>
-            <span class="text-[11.5px] font-mono font-bold text-car-sub">km</span>
-          </div>
-        </div>
-
-        <!-- 核心交互区：左侧车载数字键盘 + 右侧油品/加满/省份控制 (横向并列) -->
-        <div class="grid grid-cols-12 gap-3 items-stretch">
-          <!-- 左侧：车载专用大号数字键盘 (5列宽) -->
-          <div class="col-span-5 p-2.5 rounded-2xl bg-car-card border-2 border-car-border shadow-lg flex flex-col space-y-1.5">
-            <div class="flex items-center justify-between px-1 text-[12px] font-bold text-car-sub pb-1 border-b border-car-border/60">
-              <span>当前输入: <b class="text-car-accent text-[13px]">{{ getFieldLabel(activeField) }}</b></span>
-              <span class="text-[11px] text-car-sub/70">车规小键盘免输入法</span>
-            </div>
-
-            <!-- 4x4 紧凑数字键阵 -->
-            <div class="grid grid-cols-4 gap-1.5">
-              <button 
-                v-for="k in ['1', '2', '3']" 
-                :key="k" 
-                type="button" 
-                @click="onInputKey(editingRecord, k, 'edit')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                {{ k }}
-              </button>
-              <button 
-                type="button" 
-                @click="onBackspace(editingRecord, 'edit')" 
-                class="min-h-[50px] rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[14px] flex items-center justify-center cursor-pointer hover:bg-rose-500/20 active:scale-95 transition-all shadow-sm"
-              >
-                ⌫ 退格
-              </button>
-
-              <button 
-                v-for="k in ['4', '5', '6']" 
-                :key="k" 
-                type="button" 
-                @click="onInputKey(editingRecord, k, 'edit')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                {{ k }}
-              </button>
-              <button 
-                type="button" 
-                @click="onClearCurrent(editingRecord, 'edit')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text text-[13.5px] font-bold flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                清空
-              </button>
-
-              <button 
-                v-for="k in ['7', '8', '9']" 
-                :key="k" 
-                type="button" 
-                @click="onInputKey(editingRecord, k, 'edit')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                {{ k }}
-              </button>
-              <button 
-                type="button" 
-                @click="onQuickAmount(editingRecord, 200, 'edit')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                ¥200
-              </button>
-
-              <button 
-                type="button" 
-                @click="onInputKey(editingRecord, '.', 'edit')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                .
-              </button>
-              <button 
-                type="button" 
-                @click="onInputKey(editingRecord, '0', 'edit')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                0
-              </button>
-              <button 
-                type="button" 
-                @click="onNextField" 
-                class="min-h-[50px] rounded-xl border-2 border-car-accent/40 bg-car-item text-car-accent text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                下项 ➔
-              </button>
-              <button 
-                type="button" 
-                @click="onQuickAmount(editingRecord, 300, 'edit')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                ¥300
-              </button>
-            </div>
-          </div>
-
-          <!-- 右侧：油品标号 + 加满状态 + 省份矩阵 + 快捷备注 (7列宽) -->
-          <div class="col-span-7 flex flex-col justify-between space-y-2">
-            <!-- 顶排：油品标号与加满状态 -->
-            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex items-center justify-between">
-              <div class="flex items-center space-x-1.5 flex-1">
-                <span class="text-[12px] text-car-sub font-bold whitespace-nowrap mr-1">标号:</span>
+          <!-- 右翼：油品标号 + 快捷省份折叠 + 免打字多选组合备注工作台 (占 6 列) -->
+          <div class="col-span-6 flex flex-col space-y-2">
+            
+            <!-- 油品标号 4 选 1 -->
+            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex items-center justify-between shadow-sm">
+              <span class="text-[12px] text-car-sub font-bold whitespace-nowrap mr-2">油品标号:</span>
+              <div class="grid grid-cols-4 gap-1.5 w-[75%]">
                 <button
                   v-for="ft in ['92#', '95#', '98#', '0#']"
                   :key="ft"
                   type="button"
                   @click="editingRecord.fuel_type = (ft === '0#' ? '0#柴油' : ft); $emit('edit-fuel-type-change')"
                   :class="[
-                    'flex-1 min-h-[50px] rounded-xl border-2 font-black text-[13.5px] transition-all flex items-center justify-center cursor-pointer',
+                    'min-h-[50px] rounded-xl border-2 font-black text-[13.5px] transition-all flex items-center justify-center cursor-pointer shadow-sm',
                     (editingRecord.fuel_type === ft || (ft === '0#' && editingRecord.fuel_type === '0#柴油'))
-                      ? 'bg-car-item border-car-accent text-car-accent shadow-sm'
+                      ? 'bg-car-item border-car-accent text-car-accent'
                       : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
                   ]"
                 >
                   {{ ft }}
                 </button>
               </div>
-
-              <div class="w-2"></div>
-
-              <button 
-                type="button"
-                @click="editingRecord.is_full = !editingRecord.is_full" 
-                :class="[
-                  'min-h-[50px] px-3.5 rounded-xl border-2 font-black text-[13px] transition-all flex items-center justify-center cursor-pointer whitespace-nowrap',
-                  editingRecord.is_full
-                    ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
-                    : 'bg-car-card border-car-border text-car-sub'
-                ]"
-              >
-                {{ editingRecord.is_full ? '✓ 跳枪加满' : '阶段补油' }}
-              </button>
             </div>
 
-            <!-- 中排：全国 31 省市直选平铺矩阵 (紧凑 8 列) -->
-            <div class="p-2 rounded-xl bg-car-item border border-car-border flex flex-col space-y-1">
-              <div class="flex items-center justify-between text-[12px] text-car-sub font-bold px-0.5">
-                <span>加油省份: <b class="text-car-accent text-[13px]">{{ editingRecord.province }}</b></span>
-                <span class="text-[10.5px] text-car-sub/70">一键对齐当地实时限价</span>
+            <!-- 省份快捷联动 (默认单行，可折叠切换，杜绝挤占空间) -->
+            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex flex-col space-y-1.5 shadow-sm">
+              <div class="flex items-center justify-between text-[12px] font-bold px-0.5">
+                <div class="flex items-center space-x-1.5">
+                  <span class="text-car-sub whitespace-nowrap">加油省份:</span>
+                  <span class="px-2 py-0.5 rounded-lg bg-car-accent-light border border-car-accent text-car-accent font-black text-[12.5px]">
+                    {{ editingRecord.province || '浙江' }}
+                  </span>
+                  <span class="text-[11px] text-car-sub/70">限价自动对齐</span>
+                </div>
+                <button
+                  type="button"
+                  @click="showEditProvincePicker = !showEditProvincePicker"
+                  class="min-h-[50px] px-3.5 rounded-lg border border-car-border bg-car-item text-car-sub hover:text-car-text text-[12px] font-bold cursor-pointer whitespace-nowrap"
+                >
+                  {{ showEditProvincePicker ? '收起省份 ▲' : '切换省份 ▾' }}
+                </button>
               </div>
-              <div class="flex flex-wrap -m-0.5">
+
+              <!-- 折叠展开的 31 省市网格 -->
+              <div v-if="showEditProvincePicker" class="flex flex-wrap -m-0.5 pt-4 border-t border-car-border/60">
                 <div v-for="prov in allProvinceNames" :key="prov" class="w-[12.5%] p-0.5">
                   <button 
                     type="button"
-                    @click="editingRecord.province = prov; $emit('edit-province-change')"
+                    @click="onSelectProvince(editingRecord, prov, 'edit')"
                     :class="[
-                      'w-full min-h-[50px] rounded-lg border font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-center truncate',
+                      'w-full min-h-[50px] rounded-lg border font-black text-[12px] cursor-pointer transition-all flex items-center justify-center truncate',
                       editingRecord.province === prov
                         ? 'bg-car-accent border-car-accent text-car-text shadow-sm'
                         : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
@@ -257,43 +324,44 @@
               </div>
             </div>
 
-            <!-- 底排：免打字组合备注控制台 (支持多选组合、反选取消、一键清空) -->
-            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex flex-col space-y-1.5">
-              <div class="flex items-center justify-between text-[12px] font-bold text-car-sub px-0.5">
+            <!-- 免打字组合备注工作台 (多选组合、反选剔除、一键清空) -->
+            <div class="p-2.5 rounded-2xl bg-car-card border-2 border-car-border flex flex-col space-y-2 flex-1 shadow-md">
+              <div class="flex items-center justify-between text-[12px] font-bold text-car-sub px-0.5 border-b border-car-border/60 pb-1.5">
                 <div class="flex items-center space-x-1.5 truncate">
                   <span class="whitespace-nowrap">组合备注:</span>
-                  <span v-if="editingRecord.note" class="text-car-accent font-black truncate max-w-[340px]">
+                  <span v-if="editingRecord.note" class="text-car-accent font-black truncate max-w-[360px] text-[13px]">
                     {{ editingRecord.note }}
                   </span>
-                  <span v-else class="text-car-sub/60">可点下方标签多选组合</span>
+                  <span v-else class="text-car-sub/60">可点击下方标签多选自由组合</span>
                 </div>
                 <button
                   type="button"
                   @click="onClearNote(editingRecord)"
-                  class="min-h-[50px] px-3 rounded-lg border border-car-border bg-car-item text-car-sub hover:text-car-text text-[11.5px] font-bold cursor-pointer whitespace-nowrap"
+                  class="min-h-[50px] px-3.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-[12px] font-black cursor-pointer whitespace-nowrap transition-all shadow-sm"
                 >
                   清空备注
                 </button>
               </div>
 
-              <!-- 15 个多选标签平铺 -->
-              <div class="flex flex-wrap -m-0.5">
-                <div v-for="tag in NOTE_TAGS" :key="tag" class="p-0.5">
-                  <button 
-                    type="button"
-                    @click="toggleNoteTag(editingRecord, tag)"
-                    :class="[
-                      'min-h-[50px] px-2.5 rounded-lg border font-black text-[12px] cursor-pointer transition-all flex items-center justify-center whitespace-nowrap shadow-sm',
-                      isTagSelected(editingRecord, tag)
-                        ? 'bg-car-item border-car-accent text-car-accent'
-                        : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-                    ]"
-                  >
-                    {{ isTagSelected(editingRecord, tag) ? '✓ ' + tag : '+ ' + tag }}
-                  </button>
-                </div>
+              <!-- 15 组车规级高频常用标签矩阵 (3 列 x 5 行) -->
+              <div class="grid grid-cols-3 gap-1.5">
+                <button 
+                  v-for="tag in NOTE_TAGS" 
+                  :key="tag" 
+                  type="button"
+                  @click="toggleNoteTag(editingRecord, tag)"
+                  :class="[
+                    'min-h-[50px] px-2 rounded-xl border font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-center whitespace-nowrap shadow-sm',
+                    isTagSelected(editingRecord, tag)
+                      ? 'bg-car-item border-2 border-car-accent text-car-accent'
+                      : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
+                  ]"
+                >
+                  {{ isTagSelected(editingRecord, tag) ? '✓ ' + tag : '+ ' + tag }}
+                </button>
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -329,248 +397,315 @@
     <ModalWrapper
       :show="showAddModal"
       title="手动补录一笔加油台账"
-      badge="车载数字键盘"
-      maxWidthClass="max-w-[1140px]"
-      bodyClass="p-3.5 space-y-2.5"
+      badge="车载工作台"
+      maxWidthClass="max-w-[1260px]"
+      headerClass="min-h-[64px] px-6 py-2.5"
+      bodyClass="p-3.5 space-y-2"
+      footerClass="px-6 py-2.5"
       zIndexClass="z-[9990]"
       @close="$emit('close-add')"
     >
-      <div v-if="newRecord" class="flex flex-col space-y-2.5">
-        <!-- 顶部 4 列数值槽位 (触控切换焦点，完全禁止唤出车机系统输入法) -->
-        <div class="grid grid-cols-4 gap-2.5">
-          <!-- 实付金额 -->
-          <div 
-            @click="activeField = 'actual_paid'"
-            :class="[
-              'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-              activeField === 'actual_paid'
-                ? 'border-car-accent bg-car-accent-light scale-[1.01]'
-                : 'border-car-border bg-car-card hover:border-car-border-light'
-            ]"
-          >
-            <div class="flex flex-col text-left">
-              <span class="text-[11.5px] text-car-sub font-bold">实付金额 *</span>
-              <div class="flex items-center space-x-1">
-                <span class="text-[19px] font-mono font-black" :class="activeField === 'actual_paid' ? 'text-car-accent' : 'text-car-text'">
-                  {{ newRecord.actual_paid !== undefined && newRecord.actual_paid !== null ? newRecord.actual_paid : '0.0' }}
-                </span>
-                <span v-if="activeField === 'actual_paid'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+      <div v-if="newRecord" class="flex flex-col space-y-2">
+        <!-- 左右双翼工作台 (横向展开，消除垂直滚动条) -->
+        <div class="grid grid-cols-12 gap-3.5 items-stretch">
+          
+          <!-- 左翼：数值槽位 + 大号数字软键盘 + 填补空白的加满/补油卡片 (占 6 列) -->
+          <div class="col-span-6 flex flex-col space-y-2">
+            <!-- 4 个数值槽位 (2x2 网格，触控直选，禁止唤出系统软键盘) -->
+            <div class="grid grid-cols-2 gap-2">
+              <!-- 实付金额 -->
+              <div 
+                @click="activeField = 'actual_paid'"
+                :class="[
+                  'min-h-[52px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'actual_paid'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11.5px] text-car-sub font-bold">实付金额 *</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[19px] font-mono font-black" :class="activeField === 'actual_paid' ? 'text-car-accent' : 'text-car-text'">
+                      {{ newRecord.actual_paid !== undefined && newRecord.actual_paid !== null ? newRecord.actual_paid : '0.0' }}
+                    </span>
+                    <span v-if="activeField === 'actual_paid'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+                  </div>
+                </div>
+                <span class="text-[12px] font-mono font-bold text-car-sub">元</span>
+              </div>
+
+              <!-- 加注升数 -->
+              <div 
+                @click="activeField = 'liters'"
+                :class="[
+                  'min-h-[52px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'liters'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11.5px] text-car-sub font-bold">加注升数 *</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[19px] font-mono font-black" :class="activeField === 'liters' ? 'text-car-accent' : 'text-car-text'">
+                      {{ newRecord.liters !== undefined && newRecord.liters !== null ? newRecord.liters : '0.0' }}
+                    </span>
+                    <span v-if="activeField === 'liters'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+                  </div>
+                </div>
+                <span class="text-[12px] font-mono font-bold text-car-sub">L</span>
+              </div>
+
+              <!-- 实际单价 -->
+              <div 
+                @click="activeField = 'price'"
+                :class="[
+                  'min-h-[52px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'price'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11.5px] text-car-sub font-bold">实际单价</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[19px] font-mono font-black" :class="activeField === 'price' ? 'text-car-accent' : 'text-car-text'">
+                      {{ newRecord.price !== undefined && newRecord.price !== null ? newRecord.price : '0.00' }}
+                    </span>
+                    <span v-if="activeField === 'price'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+                  </div>
+                </div>
+                <span class="text-[12px] font-mono font-bold text-car-sub">元/L</span>
+              </div>
+
+              <!-- 仪表总里程 -->
+              <div 
+                @click="activeField = 'odo'"
+                :class="[
+                  'min-h-[52px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'odo'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11.5px] text-car-sub font-bold">仪表总里程</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[19px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
+                      {{ newRecord.odo !== undefined && newRecord.odo !== null ? newRecord.odo : '未打点' }}
+                    </span>
+                    <span v-if="activeField === 'odo'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+                  </div>
+                </div>
+                <span class="text-[12px] font-mono font-bold text-car-sub">km</span>
               </div>
             </div>
-            <span class="text-[11.5px] font-mono font-bold text-car-sub">元</span>
-          </div>
 
-          <!-- 加注升数 -->
-          <div 
-            @click="activeField = 'liters'"
-            :class="[
-              'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-              activeField === 'liters'
-                ? 'border-car-accent bg-car-accent-light scale-[1.01]'
-                : 'border-car-border bg-car-card hover:border-car-border-light'
-            ]"
-          >
-            <div class="flex flex-col text-left">
-              <span class="text-[11.5px] text-car-sub font-bold">加注升数 *</span>
-              <div class="flex items-center space-x-1">
-                <span class="text-[19px] font-mono font-black" :class="activeField === 'liters' ? 'text-car-accent' : 'text-car-text'">
-                  {{ newRecord.liters !== undefined && newRecord.liters !== null ? newRecord.liters : '0.0' }}
-                </span>
-                <span v-if="activeField === 'liters'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+            <!-- 车载大号数字键盘面板 -->
+            <div class="p-2.5 rounded-2xl bg-car-card border-2 border-car-border shadow-md flex flex-col space-y-1.5">
+              <div class="flex items-center justify-between px-1 text-[12px] font-bold text-car-sub pb-1 border-b border-car-border/60">
+                <span>当前录入: <b class="text-car-accent text-[13px]">{{ getFieldLabel(activeField) }}</b></span>
+                <span class="text-[11px] text-car-sub/70">内置软键盘 · 免调车机输入法</span>
+              </div>
+
+              <!-- 4x4 紧凑数字键阵 -->
+              <div class="grid grid-cols-4 gap-1.5">
+                <button 
+                  v-for="k in ['1', '2', '3']" 
+                  :key="k" 
+                  type="button" 
+                  @click="onInputKey(newRecord, k, 'new')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  {{ k }}
+                </button>
+                <button 
+                  type="button" 
+                  @click="onBackspace(newRecord, 'new')" 
+                  class="min-h-[50px] rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[14px] flex items-center justify-center cursor-pointer hover:bg-rose-500/20 active:scale-95 transition-all shadow-sm"
+                >
+                  ⌫ 退格
+                </button>
+
+                <button 
+                  v-for="k in ['4', '5', '6']" 
+                  :key="k" 
+                  type="button" 
+                  @click="onInputKey(newRecord, k, 'new')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  {{ k }}
+                </button>
+                <button 
+                  type="button" 
+                  @click="onClearCurrent(newRecord, 'new')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text text-[13.5px] font-bold flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  清空
+                </button>
+
+                <button 
+                  v-for="k in ['7', '8', '9']" 
+                  :key="k" 
+                  type="button" 
+                  @click="onInputKey(newRecord, k, 'new')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  {{ k }}
+                </button>
+                <button 
+                  type="button" 
+                  @click="onQuickAmount(newRecord, 200, 'new')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  ¥200
+                </button>
+
+                <button 
+                  type="button" 
+                  @click="onInputKey(newRecord, '.', 'new')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  .
+                </button>
+                <button 
+                  type="button" 
+                  @click="onInputKey(newRecord, '0', 'new')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  0
+                </button>
+                <button 
+                  type="button" 
+                  @click="onNextField" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-accent/40 bg-car-item text-car-accent text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  下项 ➔
+                </button>
+                <button 
+                  type="button" 
+                  @click="onQuickAmount(newRecord, 300, 'new')" 
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  ¥300
+                </button>
               </div>
             </div>
-            <span class="text-[11.5px] font-mono font-bold text-car-sub">L</span>
-          </div>
 
-          <!-- 实际单价 -->
-          <div 
-            @click="activeField = 'price'"
-            :class="[
-              'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-              activeField === 'price'
-                ? 'border-car-accent bg-car-accent-light scale-[1.01]'
-                : 'border-car-border bg-car-card hover:border-car-border-light'
-            ]"
-          >
-            <div class="flex flex-col text-left">
-              <span class="text-[11.5px] text-car-sub font-bold">实际单价</span>
-              <div class="flex items-center space-x-1">
-                <span class="text-[19px] font-mono font-black" :class="activeField === 'price' ? 'text-car-accent' : 'text-car-text'">
-                  {{ newRecord.price !== undefined && newRecord.price !== null ? newRecord.price : '0.00' }}
+            <!-- 填补键盘下方多余空白：【跳枪加满】与【阶段补油】带状态胶囊双卡片 -->
+            <div class="grid grid-cols-2 gap-2">
+              <!-- 跳枪加满卡片 -->
+              <div
+                @click="newRecord.is_full = true"
+                :class="[
+                  'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  newRecord.is_full
+                    ? 'border-emerald-500 bg-emerald-500/10'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[13px] font-black" :class="newRecord.is_full ? 'text-emerald-400' : 'text-car-text'">
+                    跳枪加满
+                  </span>
+                  <span class="text-[10.5px] text-car-sub font-bold">精准核算百公里油耗</span>
+                </div>
+                <!-- 专属状态小胶囊 -->
+                <span 
+                  :class="[
+                    'px-2.5 py-1 rounded-full text-[11.5px] font-black whitespace-nowrap transition-all shadow-sm',
+                    newRecord.is_full
+                      ? 'bg-emerald-500 text-white'
+                      : 'border border-car-border bg-car-item text-car-sub/60'
+                  ]"
+                >
+                  {{ newRecord.is_full ? '● 已加满' : '○ 未激活' }}
                 </span>
-                <span v-if="activeField === 'price'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
+              </div>
+
+              <!-- 阶段补油卡片 -->
+              <div
+                @click="newRecord.is_full = false"
+                :class="[
+                  'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  !newRecord.is_full
+                    ? 'border-amber-500 bg-amber-500/10'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[13px] font-black" :class="!newRecord.is_full ? 'text-amber-400' : 'text-car-text'">
+                    阶段补油
+                  </span>
+                  <span class="text-[10.5px] text-car-sub font-bold">临时补充 · 不计油耗</span>
+                </div>
+                <!-- 专属状态小胶囊 -->
+                <span 
+                  :class="[
+                    'px-2.5 py-1 rounded-full text-[11.5px] font-black whitespace-nowrap transition-all shadow-sm',
+                    !newRecord.is_full
+                      ? 'bg-amber-500 text-slate-900'
+                      : 'border border-car-border bg-car-item text-car-sub/60'
+                  ]"
+                >
+                  {{ !newRecord.is_full ? '● 补油中' : '○ 未激活' }}
+                </span>
               </div>
             </div>
-            <span class="text-[11.5px] font-mono font-bold text-car-sub">元/L</span>
           </div>
 
-          <!-- 仪表里程 -->
-          <div 
-            @click="activeField = 'odo'"
-            :class="[
-              'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-              activeField === 'odo'
-                ? 'border-car-accent bg-car-accent-light scale-[1.01]'
-                : 'border-car-border bg-car-card hover:border-car-border-light'
-            ]"
-          >
-            <div class="flex flex-col text-left">
-              <span class="text-[11.5px] text-car-sub font-bold">仪表总里程</span>
-              <div class="flex items-center space-x-1">
-                <span class="text-[19px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
-                  {{ newRecord.odo !== undefined && newRecord.odo !== null ? newRecord.odo : '未打点' }}
-                </span>
-                <span v-if="activeField === 'odo'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
-              </div>
-            </div>
-            <span class="text-[11.5px] font-mono font-bold text-car-sub">km</span>
-          </div>
-        </div>
-
-        <!-- 核心交互区：左侧车规数字键盘 + 右侧油品/加满/省份控制 (横向并列) -->
-        <div class="grid grid-cols-12 gap-3 items-stretch">
-          <!-- 左侧：车载专用大号数字键盘 (5列宽) -->
-          <div class="col-span-5 p-2.5 rounded-2xl bg-car-card border-2 border-car-border shadow-lg flex flex-col space-y-1.5">
-            <div class="flex items-center justify-between px-1 text-[12px] font-bold text-car-sub pb-1 border-b border-car-border/60">
-              <span>当前输入: <b class="text-car-accent text-[13px]">{{ getFieldLabel(activeField) }}</b></span>
-              <span class="text-[11px] text-car-sub/70">车规小键盘免输入法</span>
-            </div>
-
-            <!-- 4x4 紧凑数字键阵 -->
-            <div class="grid grid-cols-4 gap-1.5">
-              <button 
-                v-for="k in ['1', '2', '3']" 
-                :key="k" 
-                type="button" 
-                @click="onInputKey(newRecord, k, 'new')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                {{ k }}
-              </button>
-              <button 
-                type="button" 
-                @click="onBackspace(newRecord, 'new')" 
-                class="min-h-[50px] rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[14px] flex items-center justify-center cursor-pointer hover:bg-rose-500/20 active:scale-95 transition-all shadow-sm"
-              >
-                ⌫ 退格
-              </button>
-
-              <button 
-                v-for="k in ['4', '5', '6']" 
-                :key="k" 
-                type="button" 
-                @click="onInputKey(newRecord, k, 'new')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                {{ k }}
-              </button>
-              <button 
-                type="button" 
-                @click="onClearCurrent(newRecord, 'new')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text text-[13.5px] font-bold flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                清空
-              </button>
-
-              <button 
-                v-for="k in ['7', '8', '9']" 
-                :key="k" 
-                type="button" 
-                @click="onInputKey(newRecord, k, 'new')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                {{ k }}
-              </button>
-              <button 
-                type="button" 
-                @click="onQuickAmount(newRecord, 200, 'new')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                ¥200
-              </button>
-
-              <button 
-                type="button" 
-                @click="onInputKey(newRecord, '.', 'new')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                .
-              </button>
-              <button 
-                type="button" 
-                @click="onInputKey(newRecord, '0', 'new')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                0
-              </button>
-              <button 
-                type="button" 
-                @click="onNextField" 
-                class="min-h-[50px] rounded-xl border-2 border-car-accent/40 bg-car-item text-car-accent text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                下项 ➔
-              </button>
-              <button 
-                type="button" 
-                @click="onQuickAmount(newRecord, 300, 'new')" 
-                class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-              >
-                ¥300
-              </button>
-            </div>
-          </div>
-
-          <!-- 右侧：油品标号 + 加满状态 + 省份矩阵 + 快捷备注 (7列宽) -->
-          <div class="col-span-7 flex flex-col justify-between space-y-2">
-            <!-- 顶排：油品标号与加满状态 -->
-            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex items-center justify-between">
-              <div class="flex items-center space-x-1.5 flex-1">
-                <span class="text-[12px] text-car-sub font-bold whitespace-nowrap mr-1">标号:</span>
+          <!-- 右翼：油品标号 + 快捷省份折叠 + 免打字多选组合备注工作台 (占 6 列) -->
+          <div class="col-span-6 flex flex-col space-y-2">
+            
+            <!-- 油品标号 4 选 1 -->
+            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex items-center justify-between shadow-sm">
+              <span class="text-[12px] text-car-sub font-bold whitespace-nowrap mr-2">油品标号:</span>
+              <div class="grid grid-cols-4 gap-1.5 w-[75%]">
                 <button
                   v-for="ft in ['92#', '95#', '98#', '0#']"
                   :key="ft"
                   type="button"
                   @click="newRecord.fuel_type = (ft === '0#' ? '0#柴油' : ft); $emit('new-fuel-type-change')"
                   :class="[
-                    'flex-1 min-h-[50px] rounded-xl border-2 font-black text-[13.5px] transition-all flex items-center justify-center cursor-pointer',
+                    'min-h-[50px] rounded-xl border-2 font-black text-[13.5px] transition-all flex items-center justify-center cursor-pointer shadow-sm',
                     (newRecord.fuel_type === ft || (ft === '0#' && newRecord.fuel_type === '0#柴油'))
-                      ? 'bg-car-item border-car-accent text-car-accent shadow-sm'
+                      ? 'bg-car-item border-car-accent text-car-accent'
                       : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
                   ]"
                 >
                   {{ ft }}
                 </button>
               </div>
-
-              <div class="w-2"></div>
-
-              <button 
-                type="button"
-                @click="newRecord.is_full = !newRecord.is_full" 
-                :class="[
-                  'min-h-[50px] px-3.5 rounded-xl border-2 font-black text-[13px] transition-all flex items-center justify-center cursor-pointer whitespace-nowrap',
-                  newRecord.is_full
-                    ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400'
-                    : 'bg-car-card border-car-border text-car-sub'
-                ]"
-              >
-                {{ newRecord.is_full ? '✓ 跳枪加满' : '阶段补油' }}
-              </button>
             </div>
 
-            <!-- 中排：全国 31 省市直选平铺矩阵 (紧凑 8 列) -->
-            <div class="p-2 rounded-xl bg-car-item border border-car-border flex flex-col space-y-1">
-              <div class="flex items-center justify-between text-[12px] text-car-sub font-bold px-0.5">
-                <span>加油省份: <b class="text-car-accent text-[13px]">{{ newRecord.province }}</b></span>
-                <span class="text-[10.5px] text-car-sub/70">一键对齐当地实时限价</span>
+            <!-- 省份快捷联动 (默认单行，可折叠切换，杜绝挤占空间) -->
+            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex flex-col space-y-1.5 shadow-sm">
+              <div class="flex items-center justify-between text-[12px] font-bold px-0.5">
+                <div class="flex items-center space-x-1.5">
+                  <span class="text-car-sub whitespace-nowrap">加油省份:</span>
+                  <span class="px-2 py-0.5 rounded-lg bg-car-accent-light border border-car-accent text-car-accent font-black text-[12.5px]">
+                    {{ newRecord.province || '浙江' }}
+                  </span>
+                  <span class="text-[11px] text-car-sub/70">限价自动对齐</span>
+                </div>
+                <button
+                  type="button"
+                  @click="showAddProvincePicker = !showAddProvincePicker"
+                  class="min-h-[50px] px-3.5 rounded-lg border border-car-border bg-car-item text-car-sub hover:text-car-text text-[12px] font-bold cursor-pointer whitespace-nowrap"
+                >
+                  {{ showAddProvincePicker ? '收起省份 ▲' : '切换省份 ▾' }}
+                </button>
               </div>
-              <div class="flex flex-wrap -m-0.5">
+
+              <!-- 折叠展开的 31 省市网格 -->
+              <div v-if="showAddProvincePicker" class="flex flex-wrap -m-0.5 pt-4 border-t border-car-border/60">
                 <div v-for="prov in allProvinceNames" :key="prov" class="w-[12.5%] p-0.5">
                   <button 
                     type="button"
-                    @click="newRecord.province = prov; $emit('new-province-change')"
+                    @click="onSelectProvince(newRecord, prov, 'new')"
                     :class="[
-                      'w-full min-h-[50px] rounded-lg border font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-center truncate',
+                      'w-full min-h-[50px] rounded-lg border font-black text-[12px] cursor-pointer transition-all flex items-center justify-center truncate',
                       newRecord.province === prov
                         ? 'bg-car-accent border-car-accent text-car-text shadow-sm'
                         : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
@@ -582,47 +717,49 @@
               </div>
             </div>
 
-            <!-- 底排：免打字组合备注控制台 (支持多选组合、反选取消、一键清空) -->
-            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex flex-col space-y-1.5">
-              <div class="flex items-center justify-between text-[12px] font-bold text-car-sub px-0.5">
+            <!-- 免打字组合备注工作台 (多选组合、反选剔除、一键清空) -->
+            <div class="p-2.5 rounded-2xl bg-car-card border-2 border-car-border flex flex-col space-y-2 flex-1 shadow-md">
+              <div class="flex items-center justify-between text-[12px] font-bold text-car-sub px-0.5 border-b border-car-border/60 pb-1.5">
                 <div class="flex items-center space-x-1.5 truncate">
                   <span class="whitespace-nowrap">组合备注:</span>
-                  <span v-if="newRecord.note" class="text-car-accent font-black truncate max-w-[340px]">
+                  <span v-if="newRecord.note" class="text-car-accent font-black truncate max-w-[360px] text-[13px]">
                     {{ newRecord.note }}
                   </span>
-                  <span v-else class="text-car-sub/60">可点下方标签多选组合</span>
+                  <span v-else class="text-car-sub/60">可点击下方标签多选自由组合</span>
                 </div>
                 <button
                   type="button"
                   @click="onClearNote(newRecord)"
-                  class="min-h-[50px] px-3 rounded-lg border border-car-border bg-car-item text-car-sub hover:text-car-text text-[11.5px] font-bold cursor-pointer whitespace-nowrap"
+                  class="min-h-[50px] px-3.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-[12px] font-black cursor-pointer whitespace-nowrap transition-all shadow-sm"
                 >
                   清空备注
                 </button>
               </div>
 
-              <!-- 15 个多选标签平铺 -->
-              <div class="flex flex-wrap -m-0.5">
-                <div v-for="tag in NOTE_TAGS" :key="tag" class="p-0.5">
-                  <button 
-                    type="button"
-                    @click="toggleNoteTag(newRecord, tag)"
-                    :class="[
-                      'min-h-[50px] px-2.5 rounded-lg border font-black text-[12px] cursor-pointer transition-all flex items-center justify-center whitespace-nowrap shadow-sm',
-                      isTagSelected(newRecord, tag)
-                        ? 'bg-car-item border-car-accent text-car-accent'
-                        : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-                    ]"
-                  >
-                    {{ isTagSelected(newRecord, tag) ? '✓ ' + tag : '+ ' + tag }}
-                  </button>
-                </div>
+              <!-- 15 组车规级高频常用标签矩阵 (3 列 x 5 行) -->
+              <div class="grid grid-cols-3 gap-1.5">
+                <button 
+                  v-for="tag in NOTE_TAGS" 
+                  :key="tag" 
+                  type="button"
+                  @click="toggleNoteTag(newRecord, tag)"
+                  :class="[
+                    'min-h-[50px] px-2 rounded-xl border font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-center whitespace-nowrap shadow-sm',
+                    isTagSelected(newRecord, tag)
+                      ? 'bg-car-item border-2 border-car-accent text-car-accent'
+                      : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
+                  ]"
+                >
+                  {{ isTagSelected(newRecord, tag) ? '✓ ' + tag : '+ ' + tag }}
+                </button>
               </div>
             </div>
+
           </div>
         </div>
       </div>
 
+      <!-- 底部操作按钮 -->
       <template #footer>
         <button 
           type="button"
@@ -634,7 +771,7 @@
         <button 
           type="button"
           @click="$emit('save-new')"
-          class="min-h-[50px] px-8 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 transition-all cursor-pointer shadow-lg whitespace-nowrap"
+          class="min-h-[50px] px-7 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 transition-all cursor-pointer shadow-lg whitespace-nowrap"
         >
           确认记入账本
         </button>
@@ -687,12 +824,22 @@ const emit = defineEmits([
 // 当前选中的输入字段: 'actual_paid' | 'liters' | 'price' | 'odo'
 const activeField = ref('actual_paid');
 
+// 省份折叠开关状态
+const showEditProvincePicker = ref(false);
+const showAddProvincePicker = ref(false);
+
 // 监听弹窗打开，重置聚焦到实付金额
 watch(() => props.showAddModal, (val) => {
-  if (val) activeField.value = 'actual_paid';
+  if (val) {
+    activeField.value = 'actual_paid';
+    showAddProvincePicker.value = false;
+  }
 });
 watch(() => props.showEditModal, (val) => {
-  if (val) activeField.value = 'actual_paid';
+  if (val) {
+    activeField.value = 'actual_paid';
+    showEditProvincePicker.value = false;
+  }
 });
 
 function getFieldLabel(f) {
@@ -774,7 +921,7 @@ function onClearCurrent(record, mode) {
   handleFieldCalculation(record, field, mode);
 }
 
-// 快捷预设金额 (如 ¥200, ¥300)
+// 快捷金额 (¥200, ¥300)
 function onQuickAmount(record, amount, mode) {
   if (!record) return;
   record.actual_paid = amount;
@@ -782,7 +929,20 @@ function onQuickAmount(record, amount, mode) {
   handleFieldCalculation(record, 'actual_paid', mode);
 }
 
-// 联动自动折算
+// 省份选择事件
+function onSelectProvince(record, prov, mode) {
+  if (!record) return;
+  record.province = prov;
+  if (mode === 'edit') {
+    emit('edit-province-change');
+    showEditProvincePicker.value = false;
+  } else {
+    emit('new-province-change');
+    showAddProvincePicker.value = false;
+  }
+}
+
+// 触发联动重算
 function handleFieldCalculation(record, field, mode) {
   const price = parseFloat(record.price) || 0;
   if (field === 'actual_paid') {
@@ -808,11 +968,14 @@ function handleFieldCalculation(record, field, mode) {
     else emit('new-price-change');
   }
 }
+
 // 常用免打字多选组合备注库 (涵盖小油站、品牌、优惠、场景)
 const NOTE_TAGS = [
-  '中石化', '中石油', '中海油', '壳牌', '民营小站', '山姆加油',
-  '周五特惠', '会员折扣', '直降促销', '银行满减', '送洗车',
-  '日常通勤', '高速服务区', '长途自驾', '加燃油宝'
+  '中石化', '中石油', '中海油',
+  '壳牌', '民营小站', '山姆加油',
+  '周五特惠', '会员折扣', '直降促销',
+  '银行满减', '送洗车', '加燃油宝',
+  '日常通勤', '高速服务区', '长途自驾'
 ];
 
 function isTagSelected(record, tag) {

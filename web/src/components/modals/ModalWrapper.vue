@@ -16,7 +16,7 @@
         ]"
       >
         <!-- 弹窗标题栏 (车规加高 80px：标题左区独占可自动换行完整显示，徽标+关闭按钮右区成组永不挤压错位) -->
-        <div class="min-h-[80px] px-8 py-4 border-b border-car-border flex items-center justify-between shrink-0 tb-modal-surface">
+        <div :class="['min-h-[80px] px-8 py-4 border-b border-car-border flex items-center justify-between shrink-0 tb-modal-surface', headerClass]">
           <div class="flex-1 min-w-0 text-[25px] font-black text-car-text tracking-wide leading-[1.3]">{{ title }}</div>
           <div class="shrink-0 ml-5 flex items-center space-x-3">
             <span v-if="badge" class="text-[13.5px] px-3 py-1.5 rounded-full border border-car-border bg-car-item text-car-sub font-black whitespace-nowrap">
@@ -38,7 +38,7 @@
         </div>
 
         <!-- 底部可选操作栏 (车规加高 84px) -->
-        <div v-if="$slots.footer" class="px-8 py-5 border-t border-car-border tb-modal-surface shrink-0 flex items-center justify-end space-x-4">
+        <div v-if="$slots.footer" :class="['px-8 py-5 border-t border-car-border tb-modal-surface shrink-0 flex items-center justify-end space-x-4', footerClass]">
           <slot name="footer" />
         </div>
       </div>
@@ -57,6 +57,8 @@ const props = defineProps({
   maxWidthClass: String,
   maxHeightClass: String,
   bodyClass: String,
+  headerClass: String,
+  footerClass: String,
   zIndexClass: String,
   showCloseButton: {
     type: Boolean,
