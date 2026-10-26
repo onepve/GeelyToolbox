@@ -4,19 +4,75 @@
 
 import { store } from '../store';
 
-import { DAY_START, DAY_END, STORAGE_KEY, THEMES, DEFAULT_PALETTE, DEFAULT_MODE, MODES, PALETTES } from './palette';
-
-// 每组变量与 make_glass.py THEMES 逐值对应：
-// bg→--bg-main | glass2→--bg-card | glass→--bg-item | stroke→--border-color
-// text/sub→--text-main/--text-sub | accent→--accent-gold | badge→--accent-gold-*
-// highlight/toplight→玻璃高光 | shadow→--glass-shadow
+import { DAY_START, DAY_END, STORAGE_KEY, THEMES, DEFAULT_PALETTE, DEFAULT_MODE, MODES, PALETTES, V1_PALETTES, V2_PALETTES } from './palette';
 
 // MODES / PALETTES 与默认档统一定义在 palette.js（构建期首帧引导脚本同源共用），此处只做转出。
-export { MODES, PALETTES };
+export { MODES, PALETTES, V1_PALETTES, V2_PALETTES };
 export const MODE_LABELS = { auto: '跟随车机', day: '白天', night: '黑夜' };
-export const PALETTE_LABELS = { blue: '蓝', brown: '棕', green: '绿', pink: '粉', gold: '金' };
+export const PALETTE_LABELS = {
+  blue: '蓝', brown: '棕', green: '绿', pink: '粉', gold: '金',
+  sky_ocean: '蓝', aurora_cyber: '青', amber_gold: '金', bamboo_emerald: '绿'
+};
 // 色卡小圆点取色（各配色主色，取自认可效果图）
-export const PALETTE_DOT = { blue: '#5b8cff', brown: '#d4a04a', green: '#3fbf88', pink: '#d46a8c', gold: '#d99a26' };
+export const PALETTE_DOT = {
+  blue: '#5b8cff', brown: '#d4a04a', green: '#3fbf88', pink: '#d46a8c', gold: '#d99a26',
+  sky_ocean: '#2563eb', aurora_cyber: '#059669', amber_gold: '#d97706', bamboo_emerald: '#16a34a'
+};
+
+export const V2_THEME_INFO = {
+  sky_ocean: {
+    name: '晴空蓝调 / 深海星曜',
+    shortName: '晴空蓝',
+    tag: '主力推荐',
+    desc: '白天柔光天蓝防眩，夜间黑晶超清冷光',
+    dayBg: '#eef3fa',
+    nightBg: '#0a0f1d',
+    accent: '#2563eb'
+  },
+  aurora_cyber: {
+    name: '极光幻境 / 霓虹深空',
+    shortName: '极光青',
+    tag: '电竞赛博',
+    desc: '白天淡青护眼漫射，夜间深邃青绿呼吸环',
+    dayBg: '#edf9f5',
+    nightBg: '#081412',
+    accent: '#059669'
+  },
+  amber_gold: {
+    name: '暖阳琥珀 / 曜石流金',
+    shortName: '暖阳金',
+    tag: '豪华温润',
+    desc: '白天暖玉柔光不晃，夜间香槟曜石长途护眼',
+    dayBg: '#fbf7ee',
+    nightBg: '#14110b',
+    accent: '#d97706'
+  },
+  bamboo_emerald: {
+    name: '晨曦竹影 / 翡冷翠境',
+    shortName: '翡翠绿',
+    tag: '清新舒缓',
+    desc: '白天青翠生机漫反射，夜间沉浸墨绿质感',
+    dayBg: '#f0fdf4',
+    nightBg: '#0a140f',
+    accent: '#16a34a'
+  }
+};
+
+export function getDayBrightness() {
+  try {
+    const val = localStorage.getItem('toolbox_day_brightness');
+    if (val) return parseFloat(val);
+  } catch (e) {}
+  return 1.0;
+}
+
+export function setDayBrightness(val) {
+  const clamped = Math.max(0.65, Math.min(1.0, val));
+  try {
+    localStorage.setItem('toolbox_day_brightness', clamped.toString());
+  } catch (e) {}
+  applyTheme();
+}
 
 
 function loadSaved() {
@@ -66,9 +122,16 @@ export function applyTheme() {
   if (mode === 'day') {
     root.classList.add('light');
     document.body.classList.add('light');
+    const b = getDayBrightness();
+    if (b < 0.99) {
+      root.style.filter = `brightness(${b})`;
+    } else {
+      root.style.filter = '';
+    }
   } else {
     root.classList.remove('light');
     document.body.classList.remove('light');
+    root.style.filter = '';
   }
 }
 

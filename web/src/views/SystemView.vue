@@ -163,6 +163,9 @@
     </FeatureCard>
     </div>
 
+    <!-- Tab: 新皮肤尝鲜 (v2.0 自绘双模高质感皮肤，独立测试) -->
+    <ThemeV2Panel v-if="activeTab === 'theme_v2'" />
+
     <!-- Tab 3: 系统底层运维 (2x2网格工具矩阵，v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'tools'" class="flex flex-col space-y-4">
     <div class="grid grid-cols-2 gap-4">
@@ -312,6 +315,7 @@ import HelpDot from '../components/HelpDot.vue';
 import { store, bridge, openModal, showToast, setStartupNav, refreshOilPrices } from '../store';
 import { ref, computed } from 'vue';
 import FloatingView from './FloatingView.vue';
+import ThemeV2Panel from '../components/ThemeV2Panel.vue';
 import { MODES, MODE_LABELS, PALETTES, PALETTE_LABELS, PALETTE_DOT, setMode, setPalette } from '../theme/themes';
 import { openAppstoreFlow } from '../utils/appstoreFreeze';
 import { getDaysToAdjustment } from '../utils/oilPriceData';
@@ -321,7 +325,8 @@ const activeTab = ref('desktop');
 const systemTabs = [
   { id: 'desktop', name: '桌面胶囊悬浮', tag: '悬浮/屏保' },
   { id: 'icon', name: '桌面应用车标', tag: '专属车标' },
-  { id: 'theme', name: '外观与首屏', tag: '昼夜/首屏' },
+  { id: 'theme', name: '经典外观首屏', tag: '原版主题' },
+  { id: 'theme_v2', name: '新皮肤(尝鲜)', tag: '自绘双模' },
   { id: 'tools', name: '系统底层运维', tag: '日志/ADB' }
 ];
 

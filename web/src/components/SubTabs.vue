@@ -16,10 +16,10 @@
       <span
         v-if="tab.tag"
         :class="[
-          'text-[12px] px-2 py-0.5 rounded-lg font-black border',
+          'text-[12px] px-2 py-0.5 rounded-lg font-black border transition-all',
           modelValue === tab.id
-            ? 'bg-car-item border-car-accent/40 text-car-accent'
-            : 'bg-car-card border-car-border text-car-sub'
+            ? 'bg-car-item border-car-accent/60 text-car-accent shadow-xs'
+            : 'bg-car-card/50 border-car-border/50 text-car-sub/60 opacity-70'
         ]"
       >
         {{ tab.tag }}

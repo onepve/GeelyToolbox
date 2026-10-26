@@ -385,6 +385,46 @@ body {
   pointer-events: none;
 }
 
+/* 核心铁律：全站激活态卡片与总开关流光呼吸光环 */
+.border-car-accent {
+  border-color: var(--accent-gold, #2563eb) !important;
+  box-shadow: 0 0 16px var(--accent-gold, #2563eb) !important;
+}
+
+html.light .border-car-accent {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 18px rgba(37, 99, 235, 0.45),
+              0 4px 20px rgba(37, 99, 235, 0.18),
+              inset 0 0 10px rgba(37, 99, 235, 0.08),
+              inset 0 1px 1px #ffffff !important;
+}
+
+html.light .bg-car-item.border-car-accent {
+  background: linear-gradient(165deg, rgba(239, 246, 255, 0.96), rgba(219, 234, 254, 0.85)) !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.50),
+              0 6px 24px rgba(37, 99, 235, 0.22),
+              inset 0 0 12px rgba(37, 99, 235, 0.10),
+              inset 0 1px 2px #ffffff !important;
+}
+
+html.dark .border-car-accent {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.45),
+              0 4px 20px rgba(56, 189, 248, 0.20),
+              inset 0 0 12px rgba(56, 189, 248, 0.10),
+              inset 0 1px 1px rgba(255, 255, 255, 0.20) !important;
+}
+
+html.dark .bg-car-item.border-car-accent {
+  background: linear-gradient(165deg, rgba(30, 41, 59, 0.90), rgba(15, 23, 42, 0.80)) !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.45),
+              0 6px 24px rgba(56, 189, 248, 0.25),
+              inset 0 0 12px rgba(56, 189, 248, 0.15),
+              inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease, transform 0.2s ease;

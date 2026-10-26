@@ -14,7 +14,13 @@ export const STORAGE_KEY = 'toolbox_theme_v2';
 export const DEFAULT_PALETTE = 'green';   // 出厂默认配色：晨曦绿
 export const DEFAULT_MODE = 'night';
 export const MODES = ['auto', 'day', 'night'];
-export const PALETTES = ['blue', 'brown', 'green', 'pink', 'gold'];
+export const PALETTES = [
+  'blue', 'brown', 'green', 'pink', 'gold',
+  'sky_ocean', 'aurora_cyber', 'amber_gold', 'bamboo_emerald'
+];
+
+export const V1_PALETTES = ['blue', 'brown', 'green', 'pink', 'gold'];
+export const V2_PALETTES = ['sky_ocean', 'aurora_cyber', 'amber_gold', 'bamboo_emerald'];
 
 // 弹窗专用「实底」表面 --bg-modal：二级/三级弹窗是叠在页面之上的独立层，
 // 若沿用 --bg-card（玻璃半透 0.13~0.68）会让背后页面内容透上来、正文读不清。
@@ -241,6 +247,182 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.36)',
       '--glass-toplight': 'rgba(255,255,255,.92)',
       '--glass-shadow': 'rgba(71,85,105,.30)'
+    }
+  },
+  sky_ocean: {
+    label: '晴空蓝',
+    swatch: '#2563eb',
+    night: {
+      '--bg-main': '#0a0f1d',
+      '--bg-panel': '#111827',
+      '--bg-modal': 'rgba(17,24,39,1)',
+      '--bg-card': '#162032',
+      '--bg-item': '#1e293b',
+      '--bg-item-hover': '#27354f',
+      '--border-color': 'rgba(56,189,248,.25)',
+      '--border-light': 'rgba(56,189,248,.45)',
+      '--text-main': '#f8fafc',
+      '--text-sub': '#94a3b8',
+      '--accent-gold': '#38bdf8',
+      '--accent-gold-bg': 'rgba(56,189,248,.20)',
+      '--accent-gold-text': '#7dd3fc',
+      '--accent-gold-sub': '#bae6fd',
+      '--glass-highlight': 'rgba(255,255,255,.20)',
+      '--glass-underline': 'rgba(255,255,255,.05)',
+      '--glass-toplight': 'rgba(56,189,248,.50)',
+      '--glass-shadow': 'rgba(0,0,0,.60)'
+    },
+    day: {
+      '--bg-main': '#eef3fa',
+      '--bg-panel': '#f4f8fd',
+      '--bg-modal': 'rgba(255,255,255,1)',
+      '--bg-card': 'rgba(255,255,255,.88)',
+      '--bg-item': 'rgba(238,245,254,.80)',
+      '--bg-item-hover': 'rgba(219,234,254,.95)',
+      '--border-color': 'rgba(191,219,254,.90)',
+      '--border-light': '#93c5fd',
+      '--text-main': '#0f172a',
+      '--text-sub': '#475569',
+      '--accent-gold': '#2563eb',
+      '--accent-gold-bg': 'rgba(37,99,235,.14)',
+      '--accent-gold-text': '#1d4ed8',
+      '--accent-gold-sub': '#60a5fa',
+      '--glass-highlight': 'rgba(255,255,255,.95)',
+      '--glass-underline': 'rgba(255,255,255,.40)',
+      '--glass-toplight': 'rgba(255,255,255,.95)',
+      '--glass-shadow': 'rgba(37,99,235,.18)'
+    }
+  },
+  aurora_cyber: {
+    label: '极光青',
+    swatch: '#059669',
+    night: {
+      '--bg-main': '#081412',
+      '--bg-panel': '#0e1f1c',
+      '--bg-modal': 'rgba(14,31,28,1)',
+      '--bg-card': '#132824',
+      '--bg-item': '#1a3631',
+      '--bg-item-hover': '#234741',
+      '--border-color': 'rgba(52,211,153,.30)',
+      '--border-light': 'rgba(52,211,153,.55)',
+      '--text-main': '#f0fdf4',
+      '--text-sub': '#86efac',
+      '--accent-gold': '#10b981',
+      '--accent-gold-bg': 'rgba(16,185,129,.22)',
+      '--accent-gold-text': '#6ee7b7',
+      '--accent-gold-sub': '#a7f3d0',
+      '--glass-highlight': 'rgba(255,255,255,.20)',
+      '--glass-underline': 'rgba(255,255,255,.05)',
+      '--glass-toplight': 'rgba(52,211,153,.50)',
+      '--glass-shadow': 'rgba(0,0,0,.60)'
+    },
+    day: {
+      '--bg-main': '#edf9f5',
+      '--bg-panel': '#f5fcf9',
+      '--bg-modal': 'rgba(255,255,255,1)',
+      '--bg-card': 'rgba(255,255,255,.88)',
+      '--bg-item': 'rgba(230,249,242,.80)',
+      '--bg-item-hover': 'rgba(204,245,231,.95)',
+      '--border-color': 'rgba(167,243,208,.90)',
+      '--border-light': '#6ee7b7',
+      '--text-main': '#064e3b',
+      '--text-sub': '#374151',
+      '--accent-gold': '#059669',
+      '--accent-gold-bg': 'rgba(5,150,105,.14)',
+      '--accent-gold-text': '#047857',
+      '--accent-gold-sub': '#34d399',
+      '--glass-highlight': 'rgba(255,255,255,.95)',
+      '--glass-underline': 'rgba(255,255,255,.40)',
+      '--glass-toplight': 'rgba(255,255,255,.95)',
+      '--glass-shadow': 'rgba(5,150,105,.18)'
+    }
+  },
+  amber_gold: {
+    label: '暖阳金',
+    swatch: '#d97706',
+    night: {
+      '--bg-main': '#14110b',
+      '--bg-panel': '#1c1811',
+      '--bg-modal': 'rgba(28,24,17,1)',
+      '--bg-card': '#241f17',
+      '--bg-item': '#2f291f',
+      '--bg-item-hover': '#3c3529',
+      '--border-color': 'rgba(245,158,11,.28)',
+      '--border-light': 'rgba(245,158,11,.50)',
+      '--text-main': '#fffbeb',
+      '--text-sub': '#fde68a',
+      '--accent-gold': '#f59e0b',
+      '--accent-gold-bg': 'rgba(245,158,11,.22)',
+      '--accent-gold-text': '#fcd34d',
+      '--accent-gold-sub': '#fef3c7',
+      '--glass-highlight': 'rgba(255,255,255,.20)',
+      '--glass-underline': 'rgba(255,255,255,.05)',
+      '--glass-toplight': 'rgba(245,158,11,.50)',
+      '--glass-shadow': 'rgba(0,0,0,.60)'
+    },
+    day: {
+      '--bg-main': '#fbf7ee',
+      '--bg-panel': '#fdfbf5',
+      '--bg-modal': 'rgba(255,255,255,1)',
+      '--bg-card': 'rgba(255,255,255,.90)',
+      '--bg-item': 'rgba(254,249,235,.82)',
+      '--bg-item-hover': 'rgba(253,242,208,.95)',
+      '--border-color': 'rgba(253,230,138,.90)',
+      '--border-light': '#fcd34d',
+      '--text-main': '#451a03',
+      '--text-sub': '#78350f',
+      '--accent-gold': '#d97706',
+      '--accent-gold-bg': 'rgba(217,119,6,.15)',
+      '--accent-gold-text': '#b45309',
+      '--accent-gold-sub': '#f59e0b',
+      '--glass-highlight': 'rgba(255,255,255,.95)',
+      '--glass-underline': 'rgba(255,255,255,.40)',
+      '--glass-toplight': 'rgba(255,255,255,.95)',
+      '--glass-shadow': 'rgba(217,119,6,.18)'
+    }
+  },
+  bamboo_emerald: {
+    label: '翡翠绿',
+    swatch: '#16a34a',
+    night: {
+      '--bg-main': '#0a140f',
+      '--bg-panel': '#11221a',
+      '--bg-modal': 'rgba(17,34,26,1)',
+      '--bg-card': '#172e23',
+      '--bg-item': '#1f3c2f',
+      '--bg-item-hover': '#294e3e',
+      '--border-color': 'rgba(74,222,128,.28)',
+      '--border-light': 'rgba(74,222,128,.50)',
+      '--text-main': '#f0fdf4',
+      '--text-sub': '#86efac',
+      '--accent-gold': '#22c55e',
+      '--accent-gold-bg': 'rgba(34,197,94,.22)',
+      '--accent-gold-text': '#4ade80',
+      '--accent-gold-sub': '#bbf7d0',
+      '--glass-highlight': 'rgba(255,255,255,.20)',
+      '--glass-underline': 'rgba(255,255,255,.05)',
+      '--glass-toplight': 'rgba(74,222,128,.50)',
+      '--glass-shadow': 'rgba(0,0,0,.60)'
+    },
+    day: {
+      '--bg-main': '#f0fdf4',
+      '--bg-panel': '#f7fee7',
+      '--bg-modal': 'rgba(255,255,255,1)',
+      '--bg-card': 'rgba(255,255,255,.90)',
+      '--bg-item': 'rgba(240,253,244,.82)',
+      '--bg-item-hover': 'rgba(220,252,231,.95)',
+      '--border-color': 'rgba(187,247,208,.85)',
+      '--border-light': '#86efac',
+      '--text-main': '#14532d',
+      '--text-sub': '#365314',
+      '--accent-gold': '#16a34a',
+      '--accent-gold-bg': 'rgba(22,163,74,.15)',
+      '--accent-gold-text': '#15803d',
+      '--accent-gold-sub': '#4ade80',
+      '--glass-highlight': 'rgba(255,255,255,.95)',
+      '--glass-underline': 'rgba(255,255,255,.40)',
+      '--glass-toplight': 'rgba(255,255,255,.95)',
+      '--glass-shadow': 'rgba(22,163,74,.18)'
     }
   }
 };

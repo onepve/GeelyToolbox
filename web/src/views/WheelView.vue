@@ -17,10 +17,6 @@
         <div class="flex items-center space-x-3">
           <StatusDot size="lg" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">方向盘按键方控接管总开关</span>
-          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
-            <StatusDot class="mr-2" size="sm" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" />
-            {{ store.vehicleAuto.wheel_master_switch ? '方控接管已启用' : '方控已彻底放行 (不干涉)' }}
-          </span>
         </div>
         <div class="text-[14.5px] text-car-sub font-bold leading-normal">
           全面接管静音键、Mode键、切歌键与主页返回键。单击即发，零延迟触发。

@@ -1,10 +1,14 @@
 <template>
-  <div class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card">
+  <div :class="[
+    'rounded-3xl border-2 p-5 shadow-2xl transition-all bg-car-card',
+    active ? 'border-car-accent' : 'border-car-border'
+  ]">
     <!-- 头部标题与说明：内嵌在卡片顶端 (仅在声明 title 或 header slot 时渲染) -->
     <div v-if="title || $slots.header" class="flex flex-col pb-4 mb-4 border-b border-car-border/60">
       <div class="flex items-center justify-between mb-1">
         <slot name="header">
           <div class="flex items-center space-x-2.5">
+            <StatusDot size="sm" :color="active ? 'ok' : 'off'" :glow-px="active ? 6 : 0" />
             <div class="text-[21px] font-black text-car-text tracking-wide">
               {{ title }}
             </div>
@@ -32,6 +36,7 @@
 
 <script setup>
 import { openModal } from '../store';
+import StatusDot from './StatusDot.vue';
 import HelpDot from './HelpDot.vue';
 
 const props = defineProps({
@@ -39,7 +44,8 @@ const props = defineProps({
   desc: String,
   helpText: String,
   helpTitle: String,
-  helpTip: String
+  helpTip: String,
+  active: { type: Boolean, default: false }
 });
 
 function showHelp() {

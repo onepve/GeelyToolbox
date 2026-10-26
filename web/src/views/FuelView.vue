@@ -611,10 +611,10 @@ import LicensePlateModal from '../components/modals/LicensePlateModal.vue';
 import FuelRecordModal from '../components/modals/FuelRecordModal.vue';
 import { getDaysToAdjustment } from '../utils/oilPriceData';
 
-const activeTab = ref('record'); // 默认展示智能加油账本
+const activeTab = ref('price'); // 默认优先展示实时油价日历，符合日常高频查看需求
 const fuelTabs = [
-  { id: 'record', name: '智能加油账本', tag: '数据台账' },
-  { id: 'price', name: '实时油价日历', tag: '发改委限价' }
+  { id: 'price', name: '实时油价日历', tag: '发改委限价' },
+  { id: 'record', name: '智能加油账本', tag: '数据台账' }
 ];
 
 // 月度聚合与单月过滤状态

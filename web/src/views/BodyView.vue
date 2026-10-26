@@ -17,10 +17,6 @@
         <div class="flex items-center space-x-3">
           <StatusDot size="lg" :color="store.vehicleAuto.voice_master_switch ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">全车语音播报总开关</span>
-          <span class="px-3 py-0.5 text-[13px] font-black rounded-full border bg-car-item border-car-border text-car-text inline-flex items-center shrink-0 shadow-sm">
-            <StatusDot class="mr-2" size="sm" :color="store.vehicleAuto.voice_master_switch ? 'ok' : 'off'" />
-            {{ store.vehicleAuto.voice_master_switch ? '全车播报已启用' : '全车已彻底静音 (全车总闸)' }}
-          </span>
         </div>
         <div class="text-[14.5px] text-car-sub font-bold leading-normal">
           一键管控全车车门、尾门、挡位与驾驶模式语音播报。关闭后全车物理静音，独立生效。

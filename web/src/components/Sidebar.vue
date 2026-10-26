@@ -17,8 +17,10 @@
       <span class="truncate">{{ item.name }}</span>
       <span
         :class="[
-          'text-[14px] px-2.5 py-1 rounded-lg font-extrabold shrink-0',
-          store.currentNav === item.id ? 'border border-car-accent text-car-accent font-black bg-car-card' : 'bg-car-card border border-car-border text-car-sub'
+          'text-[14px] px-2.5 py-1 rounded-lg font-extrabold shrink-0 transition-all',
+          store.currentNav === item.id
+            ? 'border-2 border-car-accent text-car-accent font-black bg-car-card shadow-sm'
+            : 'bg-car-card/60 border border-car-border/60 text-car-sub/70 opacity-75'
         ]"
       >
         {{ item.badge }}
