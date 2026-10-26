@@ -44,14 +44,14 @@
         </div>
       </div>
 
-      <!-- 核心日志控制台输出屏 (独立平滑滚动，白天/黑夜双主题护眼自适应，消除挤压开阔视界) -->
+      <!-- 核心日志控制台输出屏 (独立平滑滚动，全量接入当前主题系统，消除生硬底色) -->
       <pre 
         ref="logContainer"
         class="h-[480px] overflow-y-auto rounded-2xl p-5 font-mono text-[14.5px] font-semibold leading-[1.75] select-text whitespace-pre-wrap shadow-inner transition-colors duration-200"
         :class="[
           store.isNight 
-            ? 'bg-[#0B101B] border-2 border-white/15 text-[#E2E8F0] shadow-black/80' 
-            : 'bg-[#F8FAFC] border-2 border-[#CBD5E1] text-[#0F172A] shadow-slate-200'
+            ? 'bg-car-card border-2 border-car-border text-car-text shadow-black/80' 
+            : 'bg-car-item border-2 border-car-border text-car-text shadow-sm'
         ]"
       >{{ logContent || '暂无日志记录...' }}</pre>
 

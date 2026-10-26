@@ -1049,6 +1049,10 @@ function onPlateConfirmed(newPlate) {
     store.fuelLedger.config.plate_number = newPlate;
     saveFuelConfig(store.fuelLedger.config);
   }
+  // 本地 localStorage 兜底秒级持久化，杜绝重开助手时桥接异步偶发为空
+  try {
+    localStorage.setItem('fuel_plate_number', newPlate);
+  } catch (e) {}
   showPlateModal.value = false;
   setTimeout(() => {
     openModal('confirm', {

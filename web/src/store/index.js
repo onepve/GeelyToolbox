@@ -564,7 +564,19 @@ export function loadFuelData() {
     const raw = bridge.call('getFuelData');
     if (raw) {
       const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      if (data.config) Object.assign(store.fuelLedger.config, data.config);
+      if (data.config) {
+        Object.assign(store.fuelLedger.config, data.config);
+        // 若从后端读取的车牌为空，尝试从前端 localStorage 本地持久化兜底恢复
+        if (!store.fuelLedger.config.plate_number) {
+          try {
+            const localPlate = localStorage.getItem('fuel_plate_number');
+            if (localPlate) {
+              store.fuelLedger.config.plate_number = localPlate;
+              saveFuelConfig(store.fuelLedger.config);
+            }
+          } catch (e) {}
+        }
+      }
       if (data.current_odo !== undefined) store.fuelLedger.current_odo = data.current_odo;
       if (typeof data.is_car_device === 'boolean') store.deviceInfo.is_car_device = data.is_car_device;
       if (data.fuel_percent !== undefined && data.fuel_percent !== null) store.deviceInfo.fuel_percent = data.fuel_percent;

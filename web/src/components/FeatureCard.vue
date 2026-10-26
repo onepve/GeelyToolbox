@@ -1,6 +1,6 @@
 <template>
   <div :class="[
-    'rounded-3xl border-2 p-5 shadow-2xl transition-all bg-car-card',
+    'rounded-3xl border-2 p-5 shadow-2xl transition-all bg-car-card min-h-[170px] flex flex-col justify-between',
     active ? 'border-car-accent' : 'border-car-border'
   ]">
     <!-- 头部标题与说明：内嵌在卡片顶端 (仅在声明 title 或 header slot 时渲染) -->

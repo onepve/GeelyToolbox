@@ -73,6 +73,19 @@ public class FuelManager {
                         cfg.put("car_id", persistentCarId);
                         saveConfig(context, cfg);
                     }
+                    // 车牌持久化保护：若文件中车牌为空，尝试从应用存储 (toolbox_settings) 回补
+                    if (cfg.optString("plate_number", "").trim().isEmpty()) {
+                        try {
+                            android.content.SharedPreferences sp = PrefUtils.getAppPreferences(context);
+                            if (sp != null) {
+                                String cachedPlate = sp.getString("fuel_plate_number", "");
+                                if (cachedPlate != null && !cachedPlate.trim().isEmpty()) {
+                                    cfg.put("plate_number", cachedPlate.trim());
+                                    saveConfig(context, cfg);
+                                }
+                            }
+                        } catch (Throwable ignored) {}
+                    }
                     return cfg;
                 } catch (Throwable t) {
                     Log.w(TAG, "读取 fuel_config.json 异常，生成默认配置: " + t.getMessage());
@@ -87,7 +100,13 @@ public class FuelManager {
                 def.put("default_province", "浙江");     // 默认发改委省份
                 def.put("refuel_threshold_l", 4.0);      // 加油检测跃变阈值 (4.0L)
                 def.put("car_id", getHardwareCarIdentity(context)); // 原车出厂芯片/总线硬件唯一指纹
-                def.put("plate_number", "");             // 车牌号 (支持车规软键盘录入)
+                // 优先从应用持久化配置 (toolbox_settings) 读取已保存车牌号，双重保险防重置
+                String cachedPlate = "";
+                try {
+                    android.content.SharedPreferences sp = PrefUtils.getAppPreferences(context);
+                    if (sp != null) cachedPlate = sp.getString("fuel_plate_number", "");
+                } catch (Throwable ignored) {}
+                def.put("plate_number", cachedPlate != null ? cachedPlate : ""); // 车牌号 (支持车规软键盘录入)
                 def.put("bind_token", UUID.randomUUID().toString().substring(0, 8));
                 def.put("cloud_sync_enabled", false);
                 saveConfig(context, def);
@@ -330,6 +349,18 @@ public class FuelManager {
     public static boolean saveConfig(Context context, JSONObject config) {
         synchronized (LOCK) {
             try {
+                // 双重持久化：若包含 plate_number，同步备份到内部 SharedPreferences 杜绝 SD 卡或重启偶发丢配置
+                if (config != null && config.has("plate_number")) {
+                    String p = config.optString("plate_number", "").trim();
+                    if (!p.isEmpty()) {
+                        try {
+                            android.content.SharedPreferences sp = PrefUtils.getAppPreferences(context);
+                            if (sp != null) {
+                                sp.edit().putString("fuel_plate_number", p).apply();
+                            }
+                        } catch (Throwable ignored) {}
+                    }
+                }
                 File configFile = new File(getFuelDir(), FILE_CONFIG);
                 writeFileContent(configFile, config.toString(2));
                 AppLogger.i("行程油耗", "已持久化更新 fuel_config.json 至共享存储");

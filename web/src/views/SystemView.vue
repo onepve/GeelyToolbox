@@ -131,147 +131,167 @@
     </FeatureCard>
     </div>
 
-    <!-- Tab 4: 系统底层运维 (2x2网格工具矩阵，整卡触控高饱满交互，v-if 彻底杜绝幽灵重叠) -->
-    <div v-if="activeTab === 'tools'" class="flex flex-col space-y-4">
-    <div class="grid grid-cols-2 gap-4">
-      <!-- 1. 运行与守护日志 (整卡触控) -->
+    <!-- Tab 4: 系统底层运维 (2x2网格大卡片矩阵，一屏收尽，整卡触控高饱满交互，v-if 彻底杜绝幽灵重叠) -->
+    <div v-if="activeTab === 'tools'" class="grid grid-cols-2 gap-4">
+      <!-- 1. 运行与守护日志 (整卡触控大卡片，min-h-[220px]) -->
       <div 
         @click="openLogModal"
-        class="rounded-3xl border-2 border-car-border p-6 shadow-2xl transition-all bg-car-card hover:border-car-border-light active:scale-[0.985] cursor-pointer select-none flex items-center justify-between space-x-5 min-h-[110px]"
+        class="rounded-3xl border-2 border-car-border p-6 shadow-2xl transition-all bg-car-card hover:border-car-border-light active:scale-[0.985] cursor-pointer select-none flex flex-col justify-between min-h-[220px] group"
       >
-        <div class="flex-1 min-w-0 flex flex-col space-y-2">
-          <div class="flex items-center space-x-2.5">
-            <span class="text-[21px] font-black text-car-text tracking-wide truncate">运行与守护日志</span>
-            <HelpDot @click.stop="openModal('confirm', {
-              title: '【功能指南】运行与守护日志',
-              desc: '1. 运行记录：\n自动记录车门、挡位、方向盘按键等状态，遇到功能异常时可一键导出给作者排查。\n\n2. 隐私安全保护：\n日志导出时会自动抹除车牌、手机号、行车轨迹等敏感信息，充分保护车主隐私。\n\n3. 不占存储：\n平时仅保存在临时运行内存中，不占车机存储空间，重启后自动释放。',
-              tip: '日常无需理会，只有在排查问题时按需导出即可。',
-              showCancel: false,
-              confirmText: '我知道了'
-            })" title="查看运行与守护日志说明" />
+        <div class="flex flex-col space-y-3">
+          <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">运行与守护日志</span>
+              <HelpDot @click.stop="openModal('confirm', {
+                title: '【功能指南】运行与守护日志',
+                desc: '1. 运行记录：\n自动记录车门、挡位、方向盘按键等状态，遇到功能异常时可一键导出给作者排查。\n\n2. 隐私安全保护：\n日志导出时会自动抹除车牌、手机号、行车轨迹等敏感信息，充分保护车主隐私。\n\n3. 不占存储：\n平时仅保存在临时运行内存中，不占车机存储空间，重启后自动释放。',
+                tip: '日常无需理会，只有在排查问题时按需导出即可。',
+                showCancel: false,
+                confirmText: '我知道了'
+              })" title="查看运行与守护日志说明" />
+            </div>
+            <span class="text-[12.5px] font-extrabold px-3 py-1 rounded-xl bg-car-item border border-car-border text-car-accent flex items-center space-x-1.5">
+              <span>点击查看</span>
+              <span class="text-[14px]">➔</span>
+            </span>
           </div>
-          <div class="text-[14px] text-car-sub font-bold leading-relaxed line-clamp-2">
-            实时采集挡位与方控信号，支持一键导出排查
+          <div class="text-[15px] text-car-sub font-bold leading-relaxed">
+            实时采集挡位、方控按键与车身底盘信号，自动脱敏保护车主隐私；遇到功能异常时支持一键导出排查。
           </div>
         </div>
 
-        <div class="flex items-center space-x-2 shrink-0 pr-2">
-          <span class="font-black text-[15.5px] text-car-accent flex items-center">
-            查看守护日志 <span class="ml-1 text-[18px]">➔</span>
+        <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
+          <div class="flex items-center text-[13.5px] text-emerald-400 font-extrabold">
+            <StatusDot class="mr-2" size="sm" color="ok" :glow-px="6" />
+            <span>内存循环缓存 · 重启自动清空</span>
+          </div>
+          <span class="text-[14px] font-black text-car-accent group-hover:underline">
+            进入守护日志 ➔
           </span>
         </div>
       </div>
 
-      <!-- 2. 车机 ADB 交互终端 (整卡点击开关，右侧集成独立进入终端按钮) -->
+      <!-- 2. 车机 ADB 终端 (整卡点击开关，右侧集成独立进入终端按钮，min-h-[220px]) -->
       <div
         @click="toggleAdbMasterSwitch"
         :class="[
-          'rounded-3xl border-2 p-6 shadow-2xl transition-all flex items-center justify-between space-x-5 cursor-pointer select-none active:scale-[0.985] min-h-[110px]',
+          'rounded-3xl border-2 p-6 shadow-2xl transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[220px] group',
           store.deviceInfo.adb_master_switch !== false
             ? 'bg-car-item border-car-accent shadow-md'
             : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
         ]"
       >
-        <div class="flex-1 min-w-0 flex flex-col space-y-2">
-          <div class="flex items-center space-x-2.5">
-            <span class="text-[21px] font-black text-car-text tracking-wide truncate">车机 ADB 终端</span>
-            <HelpDot @click.stop="showAdbHelp" title="查看 ADB 总开关与失效功能说明" />
+        <div class="flex flex-col space-y-3">
+          <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">车机 ADB 终端</span>
+              <HelpDot @click.stop="showAdbHelp" title="查看 ADB 总开关与失效功能说明" />
+            </div>
+            <div class="flex items-center space-x-2">
+              <StatusDot size="sm" :color="store.deviceInfo.adb_master_switch !== false ? 'ok' : 'off'" :glow="store.deviceInfo.adb_master_switch !== false" :glow-px="store.deviceInfo.adb_master_switch !== false ? 6 : 0" />
+              <span :class="['font-black text-[13.5px]', store.deviceInfo.adb_master_switch !== false ? 'text-car-text' : 'text-car-sub']">
+                {{ store.deviceInfo.adb_master_switch !== false ? '已开启总开关' : '已关闭总开关' }}
+              </span>
+            </div>
           </div>
-          <div class="text-[14px] text-car-sub font-bold leading-relaxed line-clamp-2">
-            本地特权调试交互终端；若遇其他车型无限弹调试授权窗，请关闭 ADB 总开关
+          <div class="text-[15px] text-car-sub font-bold leading-relaxed">
+            本地特权调试交互终端；若遇其他车型无限弹调试授权窗，请关闭 ADB 总开关，避免弹窗打扰。
           </div>
         </div>
 
-        <div class="flex items-center space-x-3 shrink-0 pr-2">
-          <div class="flex items-center space-x-2">
-            <StatusDot size="sm" :color="store.deviceInfo.adb_master_switch !== false ? 'ok' : 'off'" :glow="store.deviceInfo.adb_master_switch !== false" :glow-px="store.deviceInfo.adb_master_switch !== false ? 6 : 0" />
-            <span :class="['font-black text-[16px]', store.deviceInfo.adb_master_switch !== false ? 'text-car-text' : 'text-car-sub']">
-              {{ store.deviceInfo.adb_master_switch !== false ? '已开启总开关' : '已关闭总开关' }}
-            </span>
-          </div>
-
+        <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
+          <span class="text-[13px] text-car-sub font-bold">
+            点卡片切换总开关
+          </span>
           <button 
             @click.stop="openDeepTools"
-            class="min-h-[52px] px-4 rounded-2xl border-2 border-car-border bg-car-item text-car-text hover:border-car-accent font-black text-[14.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap ml-2"
+            class="h-[52px] px-5 rounded-xl border-2 border-car-border bg-car-card text-car-text hover:border-car-accent font-black text-[14px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
           >
             <span>打开终端 ➔</span>
           </button>
         </div>
       </div>
 
-      <!-- 3. 整车硬件冷重启控制台 (整卡触控) -->
+      <!-- 3. 整车硬件冷重启控制台 (整卡触控大卡片，min-h-[220px]) -->
       <div 
         @click="confirmHardReboot"
-        class="rounded-3xl border-2 border-car-border p-6 shadow-2xl transition-all bg-car-card hover:border-rose-500/80 active:scale-[0.985] cursor-pointer select-none flex items-center justify-between space-x-5 min-h-[110px]"
+        class="rounded-3xl border-2 border-car-border p-6 shadow-2xl transition-all bg-car-card hover:border-rose-500/80 active:scale-[0.985] cursor-pointer select-none flex flex-col justify-between min-h-[220px] group"
       >
-        <div class="flex-1 min-w-0 flex flex-col space-y-2">
-          <div class="flex items-center space-x-2.5">
-            <span class="text-[21px] font-black text-car-text tracking-wide truncate">整车硬件冷重启</span>
-            <HelpDot @click.stop="openModal('confirm', {
-              title: '【功能指南】整车硬件冷重启',
-              desc: '1. 彻底重启车机：\n像拔插钥匙一样彻底断电重启中控屏幕和底层系统，解决系统卡顿或刚改的配置没生效的问题。\n\n2. 安全提醒：\n行车过程中严禁操作！请在车辆安全停稳、挂入 P 挡后再点击重启。\n\n3. 重启耗时：\n整个过程大约 25~35 秒，期间屏幕暂时黑屏属于正常现象，请耐心等待重新点亮。',
-              tip: '车辆停稳挂 P 挡后再点重启，期间黑屏请耐心等待。',
-              showCancel: false,
-              confirmText: '我知道了'
-            })" title="查看整车硬件冷重启说明" />
+        <div class="flex flex-col space-y-3">
+          <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-rose-500 transition-colors">整车硬件冷重启</span>
+              <HelpDot @click.stop="openModal('confirm', {
+                title: '【功能指南】整车硬件冷重启',
+                desc: '1. 彻底重启车机：\n像拔插钥匙一样彻底断电重启中控屏幕和底层系统，解决系统卡顿或刚改的配置没生效的问题。\n\n2. 安全提醒：\n行车过程中严禁操作！请在车辆安全停稳、挂入 P 挡后再点击重启。\n\n3. 重启耗时：\n整个过程大约 25~35 秒，期间屏幕暂时黑屏属于正常现象，请耐心等待重新点亮。',
+                tip: '车辆停稳挂 P 挡后再点重启，期间黑屏请耐心等待。',
+                showCancel: false,
+                confirmText: '我知道了'
+              })" title="查看整车硬件冷重启说明" />
+            </div>
+            <span class="text-[12.5px] font-extrabold px-3 py-1 rounded-xl bg-car-item border border-car-border text-rose-500 flex items-center space-x-1.5">
+              <span>安全冷重启</span>
+              <span class="text-[14px]">➔</span>
+            </span>
           </div>
-          <div class="text-[14px] text-car-sub font-bold leading-relaxed line-clamp-2">
-            彻底断电重置 MCU 与系统，安全保护需停稳挂 P 挡
+          <div class="text-[15px] text-car-sub font-bold leading-relaxed">
+            彻底断电重置 MCU 与系统，安全保护需车辆停稳挂 P 挡；长按方向盘静音键 10 秒亦可触发硬件自愈。
           </div>
         </div>
 
-        <div class="flex items-center space-x-2 shrink-0 pr-2">
-          <span class="font-black text-[15.5px] text-rose-500 dark:text-rose-400 flex items-center">
-            硬件冷重启 <span class="ml-1 text-[18px]">➔</span>
+        <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
+          <div class="flex items-center text-[13.5px] text-rose-500 font-extrabold">
+            <span>⚠️ 停稳挂 P 挡使用</span>
+          </div>
+          <span class="text-[14px] font-black text-rose-500 dark:text-rose-400 group-hover:underline">
+            立即硬件冷重启 ➔
           </span>
         </div>
       </div>
 
-      <!-- 4. 工具箱开机自启动与后台守护 (整卡点击开关) -->
+      <!-- 4. 工具箱开机自启动与后台守护 (整卡点击开关大卡片，min-h-[220px]) -->
       <div
         @click="toggleAutostart"
         :class="[
-          'rounded-3xl border-2 p-6 shadow-2xl transition-all flex items-center justify-between space-x-5 cursor-pointer select-none active:scale-[0.985] min-h-[110px]',
+          'rounded-3xl border-2 p-6 shadow-2xl transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[220px] group',
           store.deviceInfo.autostart
             ? 'bg-car-item border-car-accent shadow-md'
             : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
         ]"
       >
-        <div class="flex-1 min-w-0 flex flex-col space-y-2">
-          <div class="flex items-center space-x-2.5">
-            <span class="text-[21px] font-black text-car-text tracking-wide truncate">开机自启静默守护</span>
-            <HelpDot @click.stop="openModal('confirm', {
-              title: '【功能指南】工具箱开机自启动与后台守护',
-              desc: '1. 开机后台自启：\n车辆打火通电后，工具箱自动在后台安静启动，让各项自动化联动功能上车就能直接用。\n\n2. 关闭说明：\n关闭后车辆通电将不再自启工具箱，完全不占用后台资源；仅在您桌面主动打开时运行。\n\n3. 推荐常开：\n默认保持常开，确保上车后一切功能运转顺畅。',
-              tip: '这是自动化功能的基础开关，可按需开启或关闭。',
-              showCancel: false,
-              confirmText: '我知道了'
-            })" title="查看开机自启守护说明" />
+        <div class="flex flex-col space-y-3">
+          <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">开机自启静默守护</span>
+              <HelpDot @click.stop="openModal('confirm', {
+                title: '【功能指南】工具箱开机自启动与后台守护',
+                desc: '1. 开机后台自启：\n车辆打火通电后，工具箱自动在后台安静启动，让各项自动化联动功能上车就能直接用。\n\n2. 关闭说明：\n关闭后车辆通电将不再自启工具箱，完全不占用后台资源；仅在您桌面主动打开时运行。\n\n3. 推荐常开：\n默认保持常开，确保上车后一切功能运转顺畅。',
+                tip: '这是自动化功能的基础开关，可按需开启或关闭。',
+                showCancel: false,
+                confirmText: '我知道了'
+              })" title="查看开机自启守护说明" />
+            </div>
+            <div class="flex items-center space-x-2">
+              <StatusDot size="sm" :color="store.deviceInfo.autostart ? 'ok' : 'off'" :glow="store.deviceInfo.autostart" :glow-px="store.deviceInfo.autostart ? 6 : 0" />
+              <span :class="['font-black text-[13.5px]', store.deviceInfo.autostart ? 'text-car-text' : 'text-car-sub']">
+                {{ store.deviceInfo.autostart ? '已开启守护' : '已关闭守护' }}
+              </span>
+            </div>
           </div>
-          <div class="text-[14px] text-car-sub font-bold leading-relaxed line-clamp-2">
-            通电静默运行 · 联动项上车即用；关闭不占用后台
+          <div class="text-[15px] text-car-sub font-bold leading-relaxed">
+            打火通电静默运行，各项车身自动化联动与方控映射上车即用；关闭后完全不占用后台资源。
           </div>
         </div>
 
-        <div class="flex items-center space-x-2 shrink-0 pr-2">
-          <StatusDot size="sm" :color="store.deviceInfo.autostart ? 'ok' : 'off'" :glow="store.deviceInfo.autostart" :glow-px="store.deviceInfo.autostart ? 6 : 0" />
-          <span :class="['font-black text-[16px]', store.deviceInfo.autostart ? 'text-car-text' : 'text-car-sub']">
-            {{ store.deviceInfo.autostart ? '已开启守护' : '已关闭守护' }}
+        <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
+          <span class="text-[13px] text-car-sub font-bold">
+            点卡片任意位置切换
+          </span>
+          <span class="text-[14px] font-black text-car-accent group-hover:underline">
+            {{ store.deviceInfo.autostart ? '守护运行中 ➔' : '点击开启守护 ➔' }}
           </span>
         </div>
       </div>
-    </div>
-
-    <!-- 底部运维与安装说明 -->
-    <div class="bg-car-item border border-car-border rounded-2xl p-5 text-[14.5px] text-car-sub font-bold leading-relaxed space-y-1.5 shadow-sm">
-      <div class="text-[16px] text-car-text font-black mb-1 flex items-center">
-        车机维护与运行须知：
-      </div>
-      <div>• <b>整车冷重启</b>：长按方向盘静音键 10 秒彻底重启车机硬件与系统，消除卡顿与播报延迟；</div>
-      <div>• <b>第三方软件安装</b>：原厂应用商店会破坏安装白名单，安装外部应用时须保持冻结；</div>
-      <div>• <b>功能独立生效</b>：桌面悬浮胶囊、车身语音播报与方控按键接管相互独立，互不影响；</div>
-      <div>• <b>系统安全防护</b>：核心底层服务已受安全保护，防止误操作影响车机正常运行。</div>
-    </div>
     </div>
   </div>
 </template>
@@ -292,9 +312,9 @@ import { ICON_PREVIEW_DEFAULT, ICON_PREVIEW_COOL } from '../utils/launcherIcons'
 const activeTab = ref('desktop');
 const systemTabs = [
   { id: 'desktop', name: '桌面胶囊悬浮', tag: '悬浮/屏保' },
-  { id: 'icon', name: '桌面应用车标', tag: '专属车标' },
+  { id: 'tools', name: '系统底层运维', tag: '日志/ADB' },
   { id: 'theme', name: '外观主题风格', tag: '双模高质感' },
-  { id: 'tools', name: '系统底层运维', tag: '日志/ADB' }
+  { id: 'icon', name: '桌面应用车标', tag: '专属车标' }
 ];
 
 function onSelectAppIconStyle(style) {
