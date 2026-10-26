@@ -20,8 +20,14 @@
             <HelpDot @click="openFloatingHelp" title="查看桌面悬浮微胶囊机制" />
           </div>
           <div class="flex items-center space-x-2">
-            <span :class="['text-[15.5px] font-black', store.deviceInfo.floating_enabled ? 'text-car-accent' : 'text-car-sub']">
-              {{ store.deviceInfo.floating_enabled ? '常驻已开启' : '常驻已关闭' }}
+            <span :class="[
+              'px-3 py-1 rounded-full text-[14px] font-black tracking-wide border flex items-center space-x-1.5 transition-colors',
+              store.deviceInfo.floating_enabled 
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
+                : 'bg-car-item border-car-border text-car-sub'
+            ]">
+              <StatusDot size="xs" :color="store.deviceInfo.floating_enabled ? 'ok' : 'off'" />
+              <span>{{ store.deviceInfo.floating_enabled ? '已开启' : '已关闭' }}</span>
             </span>
           </div>
         </div>
@@ -97,8 +103,14 @@
             <HelpDot @click="openScreensaverHelp" title="查看自动屏保核心原理" />
           </div>
           <div class="flex items-center space-x-2">
-            <span :class="['text-[15.5px] font-black', ssEnabled ? 'text-car-accent' : 'text-car-sub']">
-              {{ ssEnabled ? '屏保总闸已开启' : '屏保总闸已关闭' }}
+            <span :class="[
+              'px-3 py-1 rounded-full text-[14px] font-black tracking-wide border flex items-center space-x-1.5 transition-colors',
+              ssEnabled 
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
+                : 'bg-car-item border-car-border text-car-sub'
+            ]">
+              <StatusDot size="xs" :color="ssEnabled ? 'ok' : 'off'" />
+              <span>{{ ssEnabled ? '已开启' : '已关闭' }}</span>
             </span>
           </div>
         </div>

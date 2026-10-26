@@ -3141,6 +3141,32 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public String uploadDiagnosticLog(final String filePath) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    final JSONObject res = SystemUtils.uploadDiagnosticLog(MainActivity.this, filePath);
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            boolean ok = res.optBoolean("success", false);
+                            String code = res.optString("code", "");
+                            if (ok) {
+                                showToast("✓ 日志上传成功，提取码: " + code);
+                            } else {
+                                showToast("❌ 日志上传失败: " + res.optString("message", ""));
+                            }
+                            if (webView != null) {
+                                webView.evaluateJavascript("if (window.onLogUploadFinished) window.onLogUploadFinished(" + res.toString() + ");", null);
+                            }
+                        }
+                    });
+                }
+            }, "AsyncLogUpload").start();
+            return "{\"success\":true,\"message\":\"已发起后台上传\"}";
+        }
+
+        @JavascriptInterface
         public String exportGuardLogZip() {
             final JSONObject res = AppLogger.exportGuardLogZip(MainActivity.this);
             boolean ok = res.optBoolean("success", false);

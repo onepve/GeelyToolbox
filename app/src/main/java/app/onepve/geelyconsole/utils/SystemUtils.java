@@ -1448,6 +1448,61 @@ public class SystemUtils {
         return sb.toString();
     }
 
+    public static String getSystemProp(String key, String def) {
+        try {
+            Class<?> sp = Class.forName("android.os.SystemProperties");
+            java.lang.reflect.Method m = sp.getMethod("get", String.class, String.class);
+            String val = (String) m.invoke(null, key, def);
+            if (val != null && !val.trim().isEmpty()) {
+                return val.trim();
+            }
+        } catch (Throwable ignored) {}
+        try {
+            String val = executeShell("getprop " + key);
+            if (val != null && !val.trim().isEmpty()) {
+                return val.trim();
+            }
+        } catch (Throwable ignored) {}
+        return def;
+    }
+
+    public static String getHardwareChip() {
+        String projectInfo = getSystemProp("ro.boot.ecarx_projectinfo", "");
+        if (projectInfo.contains("624")) return "IHU624";
+        if (projectInfo.contains("516")) return "IHU516";
+        if (projectInfo.contains("8155")) return "IHU8155";
+        
+        String model = getCleanDeviceModel();
+        if (model.toUpperCase().contains("516")) return "IHU516";
+        if (model.toUpperCase().contains("624")) return "IHU624";
+        if (model.toUpperCase().contains("8155")) return "IHU8155";
+        
+        String platform = getSystemProp("ro.board.platform", "");
+        if (!platform.isEmpty()) {
+            return platform.toUpperCase().replaceAll("[^A-Z0-9]", "");
+        }
+        return "IHU516";
+    }
+
+    public static String getVinLast6() {
+        String sn = getSystemProp("ro.boot.serialno", "");
+        if (sn.isEmpty()) sn = getSystemProp("ro.serialno", "");
+        if (sn.isEmpty()) {
+            try {
+                sn = android.os.Build.SERIAL;
+            } catch (Throwable ignored) {}
+        }
+        if (sn.isEmpty()) sn = getSystemProp("ro.ecarx.ihuid", "");
+        
+        String clean = (sn != null) ? sn.replaceAll("[^a-zA-Z0-9]", "") : "";
+        if (clean.length() >= 6) {
+            return clean.substring(clean.length() - 6).toUpperCase();
+        } else if (clean.length() > 0) {
+            return String.format(java.util.Locale.US, "%6s", clean).replace(' ', '0').toUpperCase();
+        }
+        return "000000";
+    }
+
     public static String getCleanDeviceModel() {
         try {
             Class<?> sp = Class.forName("android.os.SystemProperties");
@@ -1560,7 +1615,7 @@ public class SystemUtils {
             File[] oldLogs = downloadDir.listFiles(new java.io.FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
-                    return name.startsWith("Geely_Log_") && name.endsWith(".zip");
+                    return (name.startsWith("Geely_Log_") || name.endsWith("_log.zip")) && name.endsWith(".zip");
                 }
             });
             if (oldLogs != null) {
@@ -1570,7 +1625,8 @@ public class SystemUtils {
             }
 
             String modelName = getCleanDeviceModel();
-            String zipFileName = "Geely_Log_Full_" + modelName + ".zip";
+            String chipName = getHardwareChip();
+            String zipFileName = modelName + "_" + chipName + "_log.zip";
             File zipFile = new File(downloadDir, zipFileName);
             if (zipFile.exists()) zipFile.delete();
 
@@ -1597,6 +1653,9 @@ public class SystemUtils {
                 double mb = zipFile.length() / (1024.0 * 1024.0);
                 String sizeStr = (mb >= 1.0) ? String.format(java.util.Locale.CHINA, "%.2f MB", mb) : (zipFile.length() / 1024 + " KB");
                 result.put("sizeStr", sizeStr);
+                result.put("chip", getHardwareChip());
+                result.put("modelCode", modelName);
+                result.put("vinLast6", getVinLast6());
                 result.put("message", "全量脱敏日志已打包: " + zipFileName);
                 if (listener != null) listener.onProgress(100, "✓ 全量脱敏日志已打包完成: " + zipFileName);
             } else {
@@ -2379,5 +2438,95 @@ public class SystemUtils {
         naviAppsCache = naviApps;
         naviAppsCacheTime = System.currentTimeMillis();
         return naviApps;
+    }
+
+    /**
+     * 免密上传诊断日志到 Cloudflare 专属私有存储库（R2）：
+     * 1. 严格使用单层下划线文件流命名：芯片_车型_VIN后6位_14位年月日时分秒_8位纯数字提取码.zip
+     * 2. 本地物理文件保持唯一不改名、不产生垃圾冗余
+     * 3. 存储库 100% 纯私有，公网禁止直接访问，30天后全自动彻底销毁
+     */
+    public static JSONObject uploadDiagnosticLog(Context context, String filePath) {
+        JSONObject res = new JSONObject();
+        if (filePath == null || filePath.trim().isEmpty()) {
+            try {
+                res.put("success", false);
+                res.put("message", "未找到待上传的日志文件路径");
+            } catch (Throwable ignored) {}
+            return res;
+        }
+        File file = new File(filePath);
+        if (!file.exists() || file.length() == 0) {
+            try {
+                res.put("success", false);
+                res.put("message", "日志文件不存在或内容为空");
+            } catch (Throwable ignored) {}
+            return res;
+        }
+
+        String chip = getHardwareChip();
+        String model = getCleanDeviceModel();
+        String vin6 = getVinLast6();
+        String timestamp = new java.text.SimpleDateFormat("yyyyMMddHHmmss", java.util.Locale.US).format(new java.util.Date());
+
+        java.net.HttpURLConnection conn = null;
+        try {
+            java.net.URL url = new java.net.URL("https://log.onepve.com/upload");
+            conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.setDoInput(true);
+            conn.setUseCaches(false);
+            conn.setConnectTimeout(15000);
+            conn.setReadTimeout(30000);
+            conn.setRequestProperty("Content-Type", "application/zip");
+            conn.setRequestProperty("X-Hardware-Chip", chip);
+            conn.setRequestProperty("X-Model-Code", model);
+            conn.setRequestProperty("X-Vin-Last6", vin6);
+            conn.setRequestProperty("X-Timestamp", timestamp);
+            conn.setFixedLengthStreamingMode((int) file.length());
+
+            java.io.OutputStream os = conn.getOutputStream();
+            java.io.FileInputStream fis = new java.io.FileInputStream(file);
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = fis.read(buf)) != -1) {
+                os.write(buf, 0, len);
+            }
+            os.flush();
+            fis.close();
+            os.close();
+
+            int code = conn.getResponseCode();
+            java.io.InputStream is = (code >= 200 && code < 400) ? conn.getInputStream() : conn.getErrorStream();
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(is, "UTF-8"));
+            StringBuilder respSb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                respSb.append(line);
+            }
+            reader.close();
+
+            if (code == 200) {
+                JSONObject jsonResp = new JSONObject(respSb.toString());
+                res.put("success", jsonResp.optBoolean("success", true));
+                res.put("code", jsonResp.optString("code", ""));
+                res.put("filename", jsonResp.optString("filename", ""));
+                res.put("message", jsonResp.optString("message", "上传成功"));
+            } else {
+                res.put("success", false);
+                res.put("message", "服务器响应错误 (" + code + "): " + respSb.toString());
+            }
+        } catch (Throwable t) {
+            try {
+                res.put("success", false);
+                res.put("message", "网络上传失败: " + t.getMessage());
+            } catch (Throwable ignored) {}
+        } finally {
+            if (conn != null) {
+                try { conn.disconnect(); } catch (Throwable ignored) {}
+            }
+        }
+        return res;
     }
 }
