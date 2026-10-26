@@ -6,11 +6,11 @@
     maxWidthClass="max-w-[960px]"
     @close="closeModal('about')"
   >
-    <div class="flex flex-col space-y-5">
-      <!-- 品牌、版本与 5 连击彩蛋区域 -->
-      <div class="p-6 rounded-3xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center shadow-md relative">
-        <div class="flex items-center space-x-3 mb-2">
-          <span class="text-[26px] font-black text-car-text">缤越助手 (GeelyToolbox)</span>
+    <div class="flex flex-col space-y-3.5">
+      <!-- 品牌、版本与 5 连击彩蛋区域 (极简精致，高度缩减，释放视口空间) -->
+      <div class="py-3.5 px-5 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center shadow-md relative">
+        <div class="flex items-center space-x-3 mb-1">
+          <span class="text-[25px] font-black text-car-text">缤越助手 (GeelyToolbox)</span>
           <span 
             @click="handleVersionClick"
             class="text-[14px] px-3 py-1 rounded-full bg-car-card text-car-text font-black border border-car-border cursor-pointer hover:border-car-border-light transition-all shadow-sm select-none"
@@ -26,39 +26,9 @@
           </span>
         </div>
 
-        <span class="text-[14.5px] text-car-sub font-bold">
+        <span class="text-[14px] text-car-sub font-bold">
           吉利缤越cool 2022款 专车打造，其他车型仅供测试
         </span>
-
-        <!-- 真实屏幕参数采集与是否检测更新开关 -->
-        <div class="mt-3 pt-3 border-t border-car-border/60 w-full px-2 flex items-center justify-between">
-          <div class="flex flex-col items-start space-y-1">
-            <span class="text-[15.5px] text-car-text font-black">屏幕参数 (实车采集):</span>
-            <div class="flex flex-wrap items-center space-x-3 space-y-1 text-[14.5px] font-mono text-car-sub">
-              <span>分辨率 <b class="text-car-text">{{ screenInfo.size }}</b></span>
-              <span>DPI <b class="text-car-text">{{ screenInfo.dpi }}</b></span>
-              <span>应用边界 <b class="text-car-text">{{ screenInfo.appBounds }}</b></span>
-            </div>
-            <span v-if="screenInfo.wm" class="text-[13.5px] text-car-text font-mono truncate max-w-full font-bold pt-0.5">{{ screenInfo.wm }}</span>
-          </div>
-
-          <!-- 是否检测更新开关 (放置在屏幕参数右侧空位) -->
-          <div class="flex items-center space-x-2.5 pl-4 shrink-0">
-            <span class="text-[14.5px] font-bold text-car-text whitespace-nowrap">是否检测更新:</span>
-            <button 
-              @click="toggleAutoCheckUpdate"
-              :class="[
-                'h-[50px] px-5 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all shadow-sm flex items-center',
-                autoCheckUpdateEnabled 
-                  ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/20' 
-                  : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-              ]"
-            >
-              <StatusDot size="xs" :color="autoCheckUpdateEnabled ? 'success' : 'neutral'" class="mr-1.5" />
-              {{ autoCheckUpdateEnabled ? '开' : '关' }}
-            </button>
-          </div>
-        </div>
       </div>
 
       <!-- 内测特权卡片 (仅在测试通道激活时展示，切回正式通道自动隐藏) -->
@@ -146,7 +116,34 @@
     </div>
 
     <template #footer>
-      <div class="flex items-center justify-end w-full">
+      <div class="flex items-center justify-between w-full">
+        <!-- 左侧单行平铺：实车屏幕参数徽章 + 自动检查更新胶囊开关 (严格单行，车规标准 54px 高度对齐，完全不换行) -->
+        <div class="flex items-center space-x-3">
+          <!-- 屏幕参数紧凑徽章 -->
+          <div class="h-[54px] px-4 rounded-xl bg-car-item border-2 border-car-border flex items-center space-x-2 text-[14px] text-car-sub shadow-sm select-none">
+            <span class="font-bold text-car-text">实车屏幕:</span>
+            <span class="font-mono font-bold text-car-text">{{ screenInfo.size }}</span>
+            <span class="text-car-border">|</span>
+            <span class="font-mono font-bold text-car-text">{{ screenInfo.dpi }}</span>
+          </div>
+
+          <!-- 自动检查更新开关胶囊 -->
+          <button 
+            @click="toggleAutoCheckUpdate"
+            :class="[
+              'h-[54px] px-4 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all shadow-sm flex items-center space-x-2 select-none',
+              autoCheckUpdateEnabled 
+                ? 'bg-car-item border-car-accent text-car-accent' 
+                : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+            ]"
+            title="点击切换是否自动检测更新"
+          >
+            <StatusDot size="xs" :color="autoCheckUpdateEnabled ? 'success' : 'neutral'" class="mr-0.5" />
+            <span>自动检查更新: <b>{{ autoCheckUpdateEnabled ? '开启' : '关闭' }}</b></span>
+          </button>
+        </div>
+
+        <!-- 右侧单行操作按钮组 (移除冗余关闭按钮，聚焦核心更新操作) -->
         <div class="flex items-center space-x-2.5">
           <button 
             @click="forceDownloadCurrent"
@@ -159,12 +156,6 @@
             class="min-h-[54px] px-6 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[16.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md"
           >
             检查版本更新
-          </button>
-          <button 
-            @click="closeModal('about')"
-            class="min-h-[54px] px-6 bg-car-card border-2 border-car-border rounded-xl text-car-sub hover:text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light shadow-sm"
-          >
-            关闭
           </button>
         </div>
       </div>
