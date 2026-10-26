@@ -29,6 +29,12 @@ const props = defineProps({
 
 const { getGestureAction } = useWheelGesture();
 const isKeyActive = computed(() => {
+  // 原厂放行与默认状态不作为激活高亮，仅当用户自定义绑定了非原厂动作时才高亮激活
+  if (props.keyName === 'mode') {
+    // MODE 键若为原厂 open_360 或 default，视为默认常规状态
+    const currentAction = getGestureAction(props.keyName, 'single');
+    return currentAction && currentAction !== 'default' && currentAction !== 'open_360';
+  }
   const currentAction = getGestureAction(props.keyName, 'single');
   return currentAction && currentAction !== 'default';
 });

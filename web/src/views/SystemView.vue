@@ -8,7 +8,7 @@
       <FloatingView />
     </div>
 
-    <!-- Tab 2: 桌面应用车标 (独占单屏展示，彻底告别滚动) -->
+    <!-- Tab 2: 桌面车标与启动项 (车标定制 + 启动首屏默认视图) -->
     <div v-if="activeTab === 'icon'" class="flex flex-col space-y-4">
       <FeatureCard 
         title="桌面应用图标"
@@ -79,9 +79,46 @@
           </div>
         </div>
       </FeatureCard>
+
+      <!-- 启动首屏默认视图 (移至此处，充分利用空间免多余滚动) -->
+      <FeatureCard 
+        title="启动首屏默认视图"
+        desc="设置缤越助手每次启动时默认呈现的主功能页。配置后立即生效并持久记忆。"
+        helpTitle="【功能指南】启动首屏默认视图"
+        helpText="1. 智能跟随：&#10;选择「智能跟随」后，每次启动自动恢复到您上次退出时停留的功能页。&#10;&#10;2. 固定主菜单：&#10;也可以固定为方控按键、车身联动、车载语音、精选商城、车载音频、特权安装或系统维护等任意页面。&#10;&#10;3. 立即生效：&#10;点击相应项即刻完成设置并永久记忆，下次打开软件直接进入该页面。" helpTip="建议经常传歌/装软件的车主设置为「特权安装」，常玩车机设为「精选商城」。"
+      >
+        <div class="w-full">
+          <!-- 6 宫格车规对称矩阵 (2行 x 3列，完美契合 5 大分类 + 智能跟随) -->
+          <div class="w-full flex flex-wrap -m-1">
+            <div
+              v-for="item in STARTUP_NAV_ITEMS"
+              :key="item.id"
+              class="p-1 w-1/3"
+            >
+              <button
+                @click="onSelectStartupNav(item.id)"
+                :class="[
+                  'w-full min-h-[64px] p-2 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm',
+                  store.settings.startup_nav === item.id
+                    ? 'bg-car-item border-car-accent text-car-accent shadow-md font-black'
+                    : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
+                ]"
+              >
+                <div class="flex items-center space-x-1.5 leading-none">
+                  <span v-if="item.id === 'remember'" class="text-[14.5px] text-car-accent">★</span>
+                  <span class="text-[16.5px] font-black leading-none">{{ item.name }}</span>
+                </div>
+                <span class="text-[12px] font-bold text-car-sub leading-none truncate max-w-full">
+                  {{ item.id === 'remember' ? (store.settings.startup_nav === 'remember' ? `上次: ${getNavName(store.settings.last_active_nav)}` : '记忆上次停留') : item.desc }}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </FeatureCard>
     </div>
 
-    <!-- Tab 3: 外观主题风格 (新版自绘高质感车规皮肤 + 默认首屏) -->
+    <!-- Tab 3: 外观主题风格 (新版自绘高质感车规皮肤) -->
     <div v-if="activeTab === 'theme'" class="flex flex-col space-y-4">
       <ThemeV2Panel />
 
@@ -93,42 +130,6 @@
           <div class="'m-2 w-[150px] h-[150px] rounded-3xl border-2"></div>
         </div>
       </div>
-
-      <FeatureCard 
-        title="启动首屏默认视图"
-      desc="设置缤越助手每次启动时默认呈现的主功能页。配置后立即生效并持久记忆。"
-      helpTitle="【功能指南】启动首屏默认视图"
-      helpText="1. 智能跟随：&#10;选择「智能跟随」后，每次启动自动恢复到您上次退出时停留的功能页。&#10;&#10;2. 固定主菜单：&#10;也可以固定为方控按键、车身联动、车载语音、精选商城、车载音频、特权安装或系统维护等任意页面。&#10;&#10;3. 立即生效：&#10;点击相应项即刻完成设置并永久记忆，下次打开软件直接进入该页面。" helpTip="建议经常传歌/装软件的车主设置为「特权安装」，常玩车机设为「精选商城」。"
-    >
-      <div class="w-full">
-        <!-- 6 宫格车规对称矩阵 (2行 x 3列，完美契合 5 大分类 + 智能跟随) -->
-        <div class="w-full flex flex-wrap -m-1">
-          <div
-            v-for="item in STARTUP_NAV_ITEMS"
-            :key="item.id"
-            class="p-1 w-1/3"
-          >
-            <button
-              @click="onSelectStartupNav(item.id)"
-              :class="[
-                'w-full min-h-[64px] p-2 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm',
-                store.settings.startup_nav === item.id
-                  ? 'bg-car-item border-car-accent text-car-accent shadow-md font-black'
-                  : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
-              ]"
-            >
-              <div class="flex items-center space-x-1.5 leading-none">
-                <span v-if="item.id === 'remember'" class="text-[14.5px] text-car-accent">★</span>
-                <span class="text-[16.5px] font-black leading-none">{{ item.name }}</span>
-              </div>
-              <span class="text-[12px] font-bold text-car-sub leading-none truncate max-w-full">
-                {{ item.id === 'remember' ? (store.settings.startup_nav === 'remember' ? `上次: ${getNavName(store.settings.last_active_nav)}` : '记忆上次停留') : item.desc }}
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </FeatureCard>
     </div>
 
     <!-- Tab 4: 系统底层运维 (2x2网格大卡片矩阵，一屏收尽，整卡触控高饱满交互，v-if 彻底杜绝幽灵重叠) -->
@@ -314,7 +315,7 @@ const systemTabs = [
   { id: 'desktop', name: '桌面胶囊悬浮', tag: '悬浮/屏保' },
   { id: 'tools', name: '系统底层运维', tag: '日志/ADB' },
   { id: 'theme', name: '外观主题风格', tag: '双模高质感' },
-  { id: 'icon', name: '桌面应用车标', tag: '专属车标' }
+  { id: 'icon', name: '车标与启动项', tag: '图标/首屏' }
 ];
 
 function onSelectAppIconStyle(style) {
