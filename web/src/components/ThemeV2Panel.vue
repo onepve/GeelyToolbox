@@ -63,26 +63,26 @@
         </div>
 
         <!-- 4 套新版皮肤矩阵卡片 (2x2) -->
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-3.5">
           <div
             v-for="(info, key) in V2_THEME_INFO"
             :key="key"
             @click="onSetPalette(key)"
             :class="[
-              'p-3 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between space-y-2',
+              'p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between space-y-3',
               store.theme.palette === key
                 ? 'bg-car-item border-car-accent shadow-lg'
                 : 'bg-car-card border-car-border hover:border-car-border-light'
             ]"
           >
             <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2">
-                <span class="w-3.5 h-3.5 rounded-full border border-black/20 shadow-xs shrink-0" :style="{ background: info.accent }"></span>
-                <span class="text-[16.5px] font-black text-car-text">{{ info.name }}</span>
+              <div class="flex items-center space-x-2.5">
+                <span class="w-4 h-4 rounded-full border border-black/20 shadow-xs shrink-0" :style="{ background: info.accent }"></span>
+                <span class="text-[17.5px] font-black text-car-text">{{ info.name }}</span>
               </div>
               <span
                 :class="[
-                  'text-[11px] px-2 py-0.5 rounded-md font-extrabold border',
+                  'text-[12px] px-2.5 py-0.5 rounded-md font-extrabold border',
                   store.theme.palette === key
                     ? 'bg-car-accent text-white border-car-accent'
                     : 'bg-car-card border-car-border text-car-sub'
@@ -92,18 +92,8 @@
               </span>
             </div>
 
-            <div class="text-[12px] font-bold text-car-sub leading-snug">
+            <div class="text-[13.5px] font-bold text-car-sub leading-snug">
               {{ info.desc }}
-            </div>
-
-            <!-- 双模色相迷你条 (使用自然间距，避免 border-t 触发贴脸紧凑警报) -->
-            <div class="flex items-center space-x-2 pt-1">
-              <div class="flex items-center justify-center flex-1 py-1 rounded-md border border-black/10" :style="{ background: info.dayBg }">
-                <span class="text-[11px] font-black" style="color: #0f172a;">日模：柔光防眩</span>
-              </div>
-              <div class="flex items-center justify-center flex-1 py-1 rounded-md border border-white/10" :style="{ background: info.nightBg }">
-                <span class="text-[11px] font-black" style="color: #f8fafc;">夜模：黑晶超清</span>
-              </div>
             </div>
           </div>
         </div>
