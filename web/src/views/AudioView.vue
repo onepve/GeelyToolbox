@@ -11,7 +11,7 @@
               <span class="text-[17px] font-black text-car-text shrink-0">当前首选音源：</span>
               <span class="text-[18px] font-black text-car-accent truncate">{{ primaryMediaName }}</span>
               <span class="px-2 py-0.5 text-[11.5px] font-black rounded-full bg-car-card border border-car-border text-car-sub shrink-0">
-                依次回退调度
+                按顺序自动播放
               </span>
             </div>
           </div>
@@ -59,7 +59,7 @@
         <!-- 底部提示 -->
         <div class="pt-3 border-t border-car-border/50 flex items-center justify-between text-car-sub">
           <div class="text-[12.5px] font-bold">
-            调度策略：行车车速达标或方向盘切歌时优先播放首选音源；若需新增或调整音源次序，请点击右上角「调整优先级」。
+            播放规则：行车车速达标或方向盘切歌时优先播放首选音源；若需调整音源先后顺序，请点击右上角「调整优先级」。
           </div>
         </div>
       </div>
@@ -82,7 +82,7 @@
             <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)]"></span>
             <span class="text-[20px] font-black tracking-wide">多媒体音源优先级排序</span>
             <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full bg-car-item border border-car-accent text-car-accent">
-              依次回退调度
+              按顺序自动播放
             </span>
           </div>
           <button 
@@ -94,7 +94,7 @@
         </div>
 
         <div class="text-[13.5px] text-car-sub font-bold">
-          整车按下方顺序依次回退尝试播放；排在最前方的应用将同步呈现在外层面板。
+          按下方顺序依次尝试播放；排在最上方的应用将作为默认首选。
         </div>
 
         <!-- 应用排序列表 -->
@@ -165,7 +165,7 @@ import { store, bridge, openModal, showToast, getInstalledMusicAppsCached, updat
 function showBluetoothCoexistHelp() {
   openModal('confirm', {
     title: '【使用说明】车载音乐与手机蓝牙语音共存机制',
-    desc: '1. 为什么播完微信语音后，车机自带音乐不会自动继续唱？\n・跨设备通道互斥：车机自带音乐（如车机 QQ音乐/网易云）与手机微信分别运行在车机和手机两个独立设备上。\n・手机微信放语音时，蓝牙推流会向车机申请独占声道，车机自带音乐会被系统自动暂停；但微信播完后，手机蓝牙不会通知车机已结束，车机无法得知何时恢复。\n\n2. 为什么语音播完后突然唱起了手机里的歌？\n・手机系统优先机制：如果您的手机后台驻留了音乐软件（哪怕处于暂停状态），手机微信放完语音后，手机系统会自动判定优先唤醒手机自带的音乐继续播放，并持续通过蓝牙推流给车机，而绝不会自动切回车机之前放的歌。\n・若您当前只想听车机自带音乐，建议将手机后台的音乐 App 彻底划掉关闭。\n\n3. 听完手机语音后，如何继续听车机自带音乐？\n・听完微信/导航语音后，若想继续听车机自带音乐，只需随手按一下方向盘上的切歌/播放键，或在车机屏幕上轻触一下播放即可继续。\n\n4. 如何获得「语音播完自动无缝续播」的体验？\n・推荐使用手机蓝牙播放音乐：直接在手机上听歌 + 听微信语音，手机系统即可原生实现语音播完秒级恢复音乐。',
+    desc: '1. 为什么播完微信语音后，车机自带音乐不会自动继续唱？\n・设备声音独立：车机自带音乐（如车机 QQ音乐/网易云）与手机微信分别运行在车机和手机两个不同设备上。\n・手机微信播放语音时，手机蓝牙声音会接入车机喇叭，车机自带音乐会被系统自动暂停；但微信播完后，手机并不会通知车机已结束，车机无法得知何时恢复播放。\n\n2. 为什么语音播完后突然唱起了手机里的歌？\n・手机系统优先机制：如果您的手机后台驻留了音乐软件（哪怕处于暂停状态），手机微信放完语音后，手机系统会自动判定优先唤醒手机自带的音乐继续播放，并通过蓝牙传给车机播放，而绝不会自动切回车机之前放的歌。\n・若您当前只想听车机自带音乐，建议将手机后台的音乐 App 彻底划掉关闭。\n\n3. 听完手机语音后，如何继续听车机自带音乐？\n・听完微信/导航语音后，若想继续听车机自带音乐，只需随手按一下方向盘上的切歌/播放键，或在车机屏幕上轻触一下播放即可继续。\n\n4. 如何获得「语音播完自动无缝续播」的体验？\n・推荐使用手机蓝牙播放音乐：直接在手机上听歌 + 听微信语音，手机系统即可原生实现语音播完秒级恢复音乐。',
     tip: '听完手机语音想继续听车机音乐，随手按一下方向盘切歌键即可继续播放。',
     showCancel: false,
     confirmText: '我知道了'
@@ -366,7 +366,7 @@ function rescanMediaApps() {
   try {
     bridge.call('refreshInstalledApps');
   } catch (e) {}
-  showToast('正在全仓重新扫描整车媒体应用...');
+  showToast('正在扫描车机已安装的音乐软件...');
   setTimeout(() => {
     loadMediaApps(true);
     showToast('媒体应用列表与音源已更新');
@@ -469,7 +469,7 @@ function launchSystemSettingsPage(kind) {
   if (now < settingsLaunchLockUntil) return;   // 闸门内重复点击直接吞掉
   settingsLaunchLockUntil = now + 900;
   bridge.call(kind === 'bluetooth' ? 'openBluetoothSettings' : 'openWifiSettings');
-  showToast(kind === 'bluetooth' ? '正在打开原厂系统蓝牙设置...' : '正在打开原厂系统 Wi-Fi 设置...');
+  showToast(kind === 'bluetooth' ? '正在打开系统蓝牙设置...' : '正在打开系统 Wi-Fi 设置...');
 }
 
 function openBluetoothSettings() {

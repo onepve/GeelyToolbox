@@ -19,7 +19,7 @@
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">全车语音播报总开关</span>
         </div>
         <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-          一键管控全车车门、尾门、挡位与驾驶模式语音播报。关闭后全车物理静音，独立生效。
+          一键管控全车车门、尾门、挡位与驾驶模式语音播报。关闭后全车安静不发声，互不影响。
         </div>
       </div>
 
@@ -27,7 +27,7 @@
       <div class="flex items-center space-x-3 shrink-0 pr-2">
         <StatusDot size="md" :color="store.vehicleAuto.voice_master_switch ? 'ok' : 'off'" :glow-px="8" />
         <span :class="['text-[20px] font-black tracking-wide', store.vehicleAuto.voice_master_switch ? 'text-car-text' : 'text-car-sub']">
-          {{ store.vehicleAuto.voice_master_switch ? '全车播报已开启' : '全车已物理静音' }}
+          {{ store.vehicleAuto.voice_master_switch ? '全车播报已开启' : '全车已静音' }}
         </span>
       </div>
     </div>
@@ -53,7 +53,7 @@
         />
         <VoiceItemCard
           title="驻车挡 (P 挡)"
-          desc="挂回驻车 P 挡播报，并立即安全归零行程状态机"
+          desc="挂回驻车 P 挡播报，并结束本次行程"
           :active="!!store.vehicleAuto.voice_enable_gear_p"
           @toggle="toggleSetting('voice_enable_gear_p')"
           @test="testVoice('gear_p')"
@@ -99,7 +99,7 @@
         />
         <VoiceItemCard
           title="智能模式"
-          desc="中控旋钮切入智能模式，自适应工况智能调度播报"
+          desc="中控旋钮切入智能模式，智能识别路况自适应播报"
           :active="!!store.vehicleAuto.voice_enable_mode_smart"
           @toggle="toggleSetting('voice_enable_mode_smart')"
           @test="testVoice('mode_smart')"
@@ -282,7 +282,7 @@
                   </span>
                 </div>
                 <span class="text-[12.5px] text-car-sub font-bold mt-0.5">
-                  {{ activeThemeName ? `专属目录: /sdcard/GeelyPilot/voices/${activeThemeName}/` : '吉利智驾出厂原声 · 未包含项自动补齐兜底' }}
+                  {{ activeThemeName ? `专属目录: /sdcard/GeelyPilot/voices/${activeThemeName}/` : '吉利官方出厂原声 · 缺失项自动补齐' }}
                 </span>
               </div>
             </div>
@@ -322,7 +322,7 @@
                   </span>
                 </div>
                 <span class="text-[13px] text-car-sub font-bold">
-                  吉利原车温婉知性原声，端庄舒缓温润。零音频丢失，全场景兜底保障。
+                  吉利原车温婉原声，端庄舒缓温润，各场景稳定发声。
                 </span>
               </div>
 
@@ -571,7 +571,7 @@ function confirmClearAllCustomVoices() {
   openModal('confirm', {
     title: '一键清空所有自定义音频',
     desc: '确定要彻底清空所有个性化单体音频并释放闪存空间吗？',
-    tip: '清空后全车所有按键、车门与联动将完整还原为吉利出厂官方晓晓原声，并物理删除 custom 目录下的所有音频文件。',
+    tip: '清空后全车所有按键、车门与联动将完整还原为吉利出厂官方晓晓原声，并彻底删除 custom 目录下的所有音频文件。',
     confirmText: '确认清空释放',
     isDanger: true,
     onConfirm: () => {

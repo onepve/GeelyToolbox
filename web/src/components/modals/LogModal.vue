@@ -531,7 +531,7 @@ function confirmUpload() {
     bridge.call('uploadDiagnosticLog', targetPath);
   } catch (e) {
     uploadStatus.value = 'error';
-    uploadErrorMsg.value = '调用底层上传失败: ' + e;
+    uploadErrorMsg.value = '上传日志失败: ' + e;
   }
 }
 

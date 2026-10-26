@@ -240,8 +240,8 @@
           </div>
 
           <div class="text-[12px] text-car-sub font-bold text-right hidden sm:block">
-            <span v-if="!isPastYearView">本年支持详细小票与单月筛选 · 跨年后自动压缩归档释放槽位</span>
-            <span v-else class="text-car-accent">往年年度已压实归档 · 详细槽位已全量释放</span>
+            <span v-if="!isPastYearView">本年支持查看详细记录与单月筛选 · 跨年后自动归档汇总</span>
+            <span v-else class="text-car-accent">往年已汇总归档 · 仅展示年度总览</span>
           </div>
         </div>
 
@@ -283,7 +283,7 @@
           <!-- 往年月度收敛分布网格 -->
           <div class="flex flex-col space-y-2">
             <div class="flex items-center justify-between text-[13px] text-car-sub font-bold px-1">
-              <span>{{ selectedPastYearData.year }} 年各月份用油分布 (已收敛汇总)</span>
+              <span>{{ selectedPastYearData.year }} 年各月份用油分布 (已月度汇总)</span>
               <span>历史年份不保留零碎小票，只留完整月度台账</span>
             </div>
 
@@ -315,8 +315,8 @@
         <!-- 月度聚合统计清单 (按月收敛，车机轻量化秒览) -->
         <div v-if="store.fuelLedger.monthly_stats && store.fuelLedger.monthly_stats.length > 0" class="flex flex-col space-y-1.5 pb-2 border-b border-car-border/60">
           <div class="flex items-center justify-between text-[13px] text-car-sub font-bold px-1">
-            <span>月度花费汇总清单 (按月聚合)</span>
-            <span class="text-car-accent">单击筛选 · 双击管理/校准本月 · 车机本地扩容至 120 笔</span>
+            <span>月度花费汇总清单 (按月汇总)</span>
+            <span class="text-car-accent">单击筛选 · 双击管理/校准本月</span>
           </div>
 
           <div class="flex flex-wrap -m-1">
@@ -528,7 +528,7 @@
         </div>
 
         <div class="text-[13.5px] text-car-sub font-bold bg-car-item/70 p-3 rounded-xl border border-car-border leading-relaxed">
-          说明：本月数据由当前本地明细与历史归档基底实时合并生成。若本月存在漏记的发票或想统一校准，可直接修改下方实付总金额与总升数；亦可仅清空本月的所有流水记录，其他月份不受任何影响。
+          说明：本月数据由当前本地明细与历史汇总合并生成。若本月存在漏记的发票或想统一校准，可直接修改下方实付总金额与总升数；亦可仅清空本月的所有记录，其他月份不受任何影响。
         </div>
 
         <!-- 手动校准输入区 -->
@@ -1097,7 +1097,7 @@ function showTankCalcHelp() {
   }
 
   openModal('confirm', {
-    title: '【计算公式】油箱加注与成本核算逻辑',
+    title: '【使用指南】油箱加注与花费估算',
     desc: descText,
     tip: '所有油价均以当前所选省份发改委官方最高限价核算。',
     showCancel: false,

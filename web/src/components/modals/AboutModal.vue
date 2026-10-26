@@ -88,7 +88,7 @@
             <span>安全与免责底线</span>
           </div>
           <div class="text-[13.5px] text-car-sub font-bold leading-relaxed mt-2">
-            各项功能直接与底层车辆协议联动。请务必在 <b class="text-car-accent">安全停车（P 挡）</b> 下配置，行车途中严禁分心操作屏幕。
+            各项功能直接与车辆系统联动。请务必在 <b class="text-car-accent">安全停车（P 挡）</b> 下配置，行车途中严禁分心操作屏幕。
           </div>
         </div>
       </div>

@@ -90,8 +90,8 @@
 
     <template #footer>
       <div class="flex items-center justify-between w-full">
-        <span class="text-[14px] text-car-sub font-bold">
-          物理隔离保障：语音包解压后锁定在 /sdcard/GeelyPilot/voices/，清空下载目录永不丢失
+        <span class="text-[13px] text-car-sub font-bold">
+          语音包解压后保存在 /sdcard/GeelyPilot/voices/，即使清空下载目录也不会丢失
         </span>
         <button 
           @click="closeModal('voiceThemeImport')"

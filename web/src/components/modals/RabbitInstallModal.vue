@@ -47,7 +47,7 @@
           class="flex-1 min-h-[84px] p-4 rounded-2xl bg-car-item border border-car-border flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-border-light shadow-sm"
         >
           <span class="text-[20px] font-black text-car-text">仅重新注入伪装主题</span>
-          <span class="text-[14.5px] font-bold text-car-sub mt-1">不唤起向导，仅重写底层兔子屏保包</span>
+          <span class="text-[14.5px] font-bold text-car-sub mt-1">不唤起向导，仅更新兔子屏保包</span>
         </button>
       </div>
     </div>

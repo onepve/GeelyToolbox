@@ -9,10 +9,10 @@
   >
     <div v-if="confirmData" class="flex flex-col py-2 space-y-5">
       <div 
-        v-if="confirmData.isDanger"
+        v-if="confirmData.isDanger" 
         class="bg-rose-500/15 border-2 border-rose-500/40 rounded-2xl p-5 text-rose-500 text-[18px] font-black"
       >
-        <b>【高危操作警告】</b>该操作涉及整车底层硬件或系统核心，请确保已充分知晓实际影响！
+        <b>【重要提示】</b>该操作涉及车辆重要功能或系统设置，请确保已充分知晓实际影响！
       </div>
 
       <div class="text-[18px] text-car-text font-bold leading-relaxed whitespace-pre-wrap">

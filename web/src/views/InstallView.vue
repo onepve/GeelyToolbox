@@ -201,7 +201,7 @@
             <div class="bg-car-item border border-car-border rounded-2xl p-4 space-y-1.5">
               <div class="text-car-text font-black text-[16px] flex items-center space-x-2">
                 <span class="text-car-accent font-black">【3】</span>
-                <span>安装、冻结与卸载全闭环</span>
+                <span>安装、冻结与卸载一站搞定</span>
               </div>
               <p class="text-[14px]">
                 在本模块内即可无缝完成局域网无线传包、特权安全直装、无用预装软件冻结以及旧版本残留卸载，无需依赖任何电脑与外接设备。
@@ -290,9 +290,9 @@ function confirmUnlockExpert() {
   } catch (e) {}
 
   openModal('confirm', {
-    title: '【高危警告】解锁专家模式 (第 1/3 次确认)',
-    desc: '【专家模式】解除系统原生安全边界，开放直接向车机底层屏保主题注入任意第三方应用的高级权限。非玩车专业人员误操作可能导致屏保黑屏或组件冲突。是否确认继续？',
-    tip: '【安全建议】普通车友使用自带白名单与精选安装即可满足全部日常需求。',
+    title: '【风险提示】解锁专家模式 (第 1/3 次确认)',
+    desc: '【专家模式】解除安全限制，允许直接向车机屏保主题替换或注入任意第三方应用。如果设置了不兼容的软件，可能导致屏保黑屏或异常闪退。是否确认继续？',
+    tip: '【安全建议】建议普通车友使用精选推荐应用，稳定省心。',
     isDanger: true,
     countdown: 10,
     confirmText: '我已知晓风险，下一步',

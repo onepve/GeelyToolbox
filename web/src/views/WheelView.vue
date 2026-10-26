@@ -16,7 +16,7 @@
       <div class="w-[65%] max-w-[65%] flex flex-col space-y-1.5 shrink-0">
         <div class="flex items-center space-x-3">
           <StatusDot size="lg" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
-          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">方向盘按键方控接管总开关</span>
+          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">方向盘按键接管总开关</span>
         </div>
         <div class="text-[14.5px] text-car-sub font-bold leading-normal">
           全面接管静音键、Mode键、切歌键与主页返回键。单击即发，零延迟触发。
@@ -27,7 +27,7 @@
       <div class="flex items-center space-x-3 shrink-0 pr-2">
         <StatusDot size="md" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" :glow-px="8" />
         <span :class="['text-[20px] font-black tracking-wide', store.vehicleAuto.wheel_master_switch ? 'text-car-text' : 'text-car-sub']">
-          {{ store.vehicleAuto.wheel_master_switch ? '方控接管已启用' : '方控彻底放行' }}
+          {{ store.vehicleAuto.wheel_master_switch ? '按键接管已启用' : '原车默认未接管' }}
         </span>
       </div>
     </div>
@@ -69,8 +69,8 @@
           card-title="右方向盘 ③ 静音按键"
           card-desc="右盘 ③ 号静音键，单击自定义；长按 10 秒仍为原车冷重启。"
           helpTitle="【功能指南】静音按键映射与 10 秒冷重启"
-          helpText="1. 静音键自定义：&#10;原车点按为全局静音，可改绑为打开 360 全景、高德导航、小爱同学或切歌。&#10;&#10;2. 硬件看门狗救砖：&#10;长按静音键 10 秒是吉利座舱底层的强制硬件冷重启，无论在此如何设置，该应急功能永久有效，安全无忧。"
-          helpTip="长按 10 秒强制重启是车机硬件看门狗，任何设置都不会影响它。"
+          helpText="1. 静音键自定义：&#10;原车点按为全局静音，可改绑为打开 360 全景、高德导航、小爱同学或切歌。&#10;&#10;2. 强制重启救急：&#10;长按静音键 10 秒是车机自带的强制重启功能，无论在此如何设置，该应急功能始终有效，遇到车机卡死可随时使用。"
+          helpTip="长按 10 秒是车机自带的应急重启，任何设置都不会影响它。"
         />
 
         <!-- ⑥ 右方向盘 MODE 键 -->
@@ -149,19 +149,19 @@
         />
         <MatrixButton 
           title="控制台独立接管"
-          subtitle="全量接管按键，自动选通蓝牙通道"
+          subtitle="全量接管按键，保持蓝牙声音正常"
           :active="store.vehicleAuto.wheel_control_mode === 'toolbox_alone' || (!store.vehicleAuto.wheel_control_mode && store.vehicleAuto.wheel_control_mode !== 'factory_default' && store.vehicleAuto.wheel_control_mode !== 'bt_only')"
           @click="setWheelMode('toolbox_alone')"
         />
         <MatrixButton 
           title="仅接管蓝牙"
-          subtitle="不接管方控按键，仅选通蓝牙防断流"
+          subtitle="不接管方向盘按键，仅保持蓝牙声音正常"
           :active="store.vehicleAuto.wheel_control_mode === 'bt_only'"
           @click="setWheelMode('bt_only')"
         />
         <MatrixButton 
           title="恢复原厂默认"
-          subtitle="解禁原厂广播接收，完全不拦截"
+          subtitle="恢复原车按键功能，不拦截按键"
           :active="store.vehicleAuto.wheel_control_mode === 'factory_default'"
           @click="setWheelMode('factory_default')"
         />
@@ -227,9 +227,9 @@
         <div class="flex items-center">
           <StatusDot class="mr-3" size="md" color="accent" :glow-px="8" />
           <div class="flex flex-col">
-            <span class="text-[18px] font-black text-car-text">吉利缤越 COOL (IHU516G / E02) 原厂方控图解</span>
+            <span class="text-[18px] font-black text-car-text">吉利缤越 COOL 方向盘多媒体按键图解</span>
             <span class="text-[14px] text-car-sub font-bold mt-0.5">
-              右方向盘多媒体控制区 (SX-0017)：静音、切歌、MODE、返回键全量打通单击极速接管
+              方向盘右侧多媒体按键：静音、切歌、MODE、返回键均可一键接管并自定义
             </span>
           </div>
         </div>
@@ -257,7 +257,7 @@
         <div class="p-3 bg-car-item rounded-2xl shadow-md border-2 border-car-border w-[320px] min-w-[320px] max-w-[320px] shrink-0">
           <img 
             :src="wheelGuideImg" 
-            alt="吉利缤越 COOL 右侧多媒体 SX-0017" 
+            alt="吉利缤越 COOL 右侧多媒体按键图解" 
             class="guide-img w-full h-auto rounded-xl object-contain block" 
           />
         </div>
@@ -282,7 +282,7 @@
           </div>
           <div class="flex space-x-3">
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
-              <span class="text-car-accent font-black mr-1.5">⑤ 自定义键:</span> 0x37 硬件按键 / 默认原厂 (单击自定义)
+              <span class="text-car-accent font-black mr-1.5">⑤ 自定义键:</span> 方向盘预留自定义键 (单击自定义)
             </div>
             <div class="flex-1 p-3 rounded-xl bg-car-card border border-car-border whitespace-nowrap">
               <span class="text-car-accent font-black mr-1.5">⑥ MODE键:</span> 音源切换 / 自定义 (单击自定义)
@@ -445,7 +445,7 @@ function toggleWheelMasterSwitch() {
   const next = !store.vehicleAuto.wheel_master_switch;
   store.vehicleAuto.wheel_master_switch = next;
   bridge.call('setVehicleAutomationSetting', 'wheel_master_switch', next);
-  showToast(next ? '方控接管总开关: 已开启 (接管分发)' : '方控接管总开关: 已关闭 (彻底放行)');
+  showToast(next ? '按键接管总开关: 已开启' : '按键接管总开关: 已关闭 (原车控制)');
 }
 
 function setWheelMode(mode) {
@@ -454,7 +454,7 @@ function setWheelMode(mode) {
   const modeNames = {
     carmedia_first: '米小江优先',
     toolbox_alone: '控制台独立接管',
-    bt_only: '仅接管蓝牙(放行方控)',
+    bt_only: '仅接管蓝牙(不改按键)',
     factory_default: '恢复原厂'
   };
   showToast('方控模式已切换: ' + (modeNames[mode] || mode));
@@ -464,13 +464,13 @@ function toggleClusterPlayback() {
   const next = !store.vehicleAuto.wheel_push_playback_cluster;
   if (next) {
     openModal('confirm', {
-      title: '媒体通道退让提示',
-      desc: '开启息屏音乐卡片需要将多媒体中心（EAS）通道完整交还给车机自带播放器（如酷我/QQ音乐）自行投递，助手的【后台蓝牙声道接管】将主动解绑释放。您的方控按键模式将保持不变。是否确认开启？',
+      title: '提示',
+      desc: '开启息屏音乐卡片需要将音乐通道交由车机自带播放器自行处理，助手的后台蓝牙保活功能将自动让位。您的方向盘按键设置仍会保持不变。是否确认开启？',
       confirmText: '确认开启',
       onConfirm: () => {
         store.vehicleAuto.wheel_push_playback_cluster = true;
         bridge.call('setVehicleAutomationSetting', 'wheel_push_playback_cluster', true);
-        showToast('已开启屏保音乐卡片，EAS 媒体通道已解绑归还给音乐播放器');
+        showToast('已开启屏保音乐卡片');
       }
     });
     return;
@@ -478,20 +478,20 @@ function toggleClusterPlayback() {
 
   store.vehicleAuto.wheel_push_playback_cluster = false;
   bridge.call('setVehicleAutomationSetting', 'wheel_push_playback_cluster', false);
-  showToast('已关闭屏保播放状态投递');
+  showToast('已关闭屏保音乐卡片');
 }
 
 function toggleClusterLyrics() {
   const next = !store.vehicleAuto.wheel_push_lyrics_cluster;
   if (next) {
     openModal('confirm', {
-      title: '媒体通道退让提示',
-      desc: '开启仪表盘歌词需要将多媒体中心（EAS）通道完整交还给车机自带播放器（如酷我/QQ音乐）自行投递，助手的【后台蓝牙声道接管】将主动解绑释放。您的方控按键模式将保持不变。是否确认开启？',
+      title: '提示',
+      desc: '开启仪表盘歌词需要将音乐通道交由车机自带播放器自行处理，助手的后台蓝牙保活功能将自动让位。您的方向盘按键设置仍会保持不变。是否确认开启？',
       confirmText: '确认开启',
       onConfirm: () => {
         store.vehicleAuto.wheel_push_lyrics_cluster = true;
         bridge.call('setVehicleAutomationSetting', 'wheel_push_lyrics_cluster', true);
-        showToast('已开启仪表盘歌词投递，EAS 媒体通道已解绑归还给音乐播放器');
+        showToast('已开启仪表盘歌词推送');
       }
     });
     return;
@@ -499,15 +499,15 @@ function toggleClusterLyrics() {
 
   store.vehicleAuto.wheel_push_lyrics_cluster = false;
   bridge.call('setVehicleAutomationSetting', 'wheel_push_lyrics_cluster', false);
-  showToast('已关闭仪表盘歌词投递');
+  showToast('已关闭仪表盘歌词推送');
 }
 
 function resetAllToFactory() {
   openModal('confirm', {
-    title: '一键恢复全车原厂默认',
-    desc: '将方向盘所有按键全部恢复为系统原厂默认动作，工具箱将不拦截任何物理按键。是否确认？',
+    title: '恢复原车默认设置',
+    desc: '将方向盘所有按键全部恢复为原车默认动作，不再拦截任何按键。是否确认？',
     isDanger: true,
-    confirmText: '确认恢复原厂',
+    confirmText: '确认恢复',
     onConfirm: () => {
       const keys = ['ok', 'mute', 'mode', 'next', 'prev', 'back', 'call', 'voice', 'home', 'custom'];
       const gestures = ['single', 'double', 'long'];
@@ -516,7 +516,7 @@ function resetAllToFactory() {
           setGestureAction(k, g, 'default');
         }
       }
-      showToast('所有方向盘按键已恢复原厂默认直通！');
+      showToast('所有方向盘按键已恢复原车默认！');
     }
   });
 }

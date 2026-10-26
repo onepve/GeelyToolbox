@@ -176,7 +176,7 @@
         <!-- 底部提示信息：拉大留白 -->
         <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0 flex items-center justify-between" @click.stop>
           <span class="text-[14px] text-car-sub font-bold">桌面闲置自动唤醒原厂屏保</span>
-          <span class="text-[13.5px] text-car-accent font-black">运行中即时感知前台全屏</span>
+          <span class="text-[13.5px] text-car-accent font-black">全屏应用中绝不打扰</span>
         </div>
       </div>
     </div>
@@ -202,7 +202,7 @@ function openFloatingHelp() {
 function openScreensaverHelp() {
   openModal('confirm', {
     title: '【功能指南】闲置自动屏保与前台主页感知',
-    desc: '1. 原生 Service 调用：无需通过 ADB 命令强行熄屏，直接调用车载原生屏保服务，纯净稳定。\n\n2. 自由秒数调节：收敛至 3秒 ~ 3分钟（180秒），左右加减步进，想常亮直接关掉上方总开关，彻底停止后台计时器。\n\n3. 主页面保护模式：仅在停留在车机主页面（桌面）闲置时才触发屏保；导航、音乐等应用前台运行时绝不打扰。',
+    desc: '1. 稳定省电：直接调用车机原生屏保功能，安全稳定。\n\n2. 自由时间调节：支持 3秒 ~ 3分钟（180秒）自由调节，左右加减步进，想保持常亮直接关闭上方开关即可。\n\n3. 智能主页感知：仅在停留在车机主页面（桌面）闲置时才触发屏保；导航、音乐等应用在前台运行时绝不打扰。',
     tip: '需要授予一次「使用情况访问权限」，授权永久生效，仅本机读取，不联网、不上传任何数据。',
     showCancel: false,
     confirmText: '我知道了'
@@ -314,7 +314,7 @@ function openUsageAccess() {
 
 function testScreensaver() {
   bridge.call('triggerScreenSaverNow');
-  showToast('正在唤起车载屏幕保护...');
+  showToast('正在启动屏幕保护...');
 }
 
 function fetchScreensaverState() {

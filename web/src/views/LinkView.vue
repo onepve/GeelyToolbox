@@ -15,8 +15,8 @@
         title="前进 D 挡起步联动 360"
         tag="起步盲区"
         help-text="gear_d_360"
-        flow-sub="从 P 挡或 R 挡切入前进 D 挡起步 (单次跃变锁)"
-        flow-main="唤醒 360 扫除起步盲区；车速超 15 km/h 自动还原"
+        flow-sub="从 P 挡或 R 挡切入前进 D 挡起步 (本次起步仅触发一次)"
+        flow-main="自动打开 360 扫除起步盲区；车速超 15 km/h 自动退出全景"
         :clickable="true"
         :active="store.vehicleAuto.vehicle_d_gear_360_enabled"
         @toggle="toggleSetting('vehicle_d_gear_360_enabled')"
@@ -589,7 +589,7 @@ const isCustomAutoplaySelected = computed(() => {
 
 const currentPrimaryMusicName = computed(() => {
   const pkg = store.vehicleAuto.vehicle_speed_autoplay_pkg;
-  if (!pkg || pkg === 'com.android.bluetooth') return '手机蓝牙 (无线推流)';
+  if (!pkg || pkg === 'com.android.bluetooth') return '手机蓝牙 (无线音频)';
   if (pkg === 'com.tencent.qqmusiccar') return 'QQ音乐车机版';
   if (pkg === 'com.netease.cloudmusiccar') return '网易云音乐车机版';
   const saved = localStorage.getItem('vehicle_speed_autoplay_app_name');
@@ -664,7 +664,7 @@ function toggleSetting(key) {
 function setAutoplaySpeed(speed) {
   store.vehicleAuto.vehicle_speed_autoplay_threshold = speed;
   bridge.call('setVehicleAutomationIntSetting', 'vehicle_speed_autoplay_threshold', speed);
-  showToast(`自启车速阈值已设为: ${speed} km/h`);
+  showToast(`自动播放车速已设为: ${speed} km/h`);
 }
 
 function adjustAutoplaySpeed(delta) {
@@ -676,7 +676,7 @@ function adjustAutoplaySpeed(delta) {
 function setCustomActionSpeed(speed) {
   store.vehicleAuto.vehicle_speed_custom_action_threshold = speed;
   bridge.call('setVehicleAutomationIntSetting', 'vehicle_speed_custom_action_threshold', speed);
-  showToast(`联动触发时速已设为: ${speed} km/h`);
+  showToast(`触发车速已设为: ${speed} km/h`);
 }
 
 function adjustCustomActionSpeed(delta) {
@@ -700,7 +700,7 @@ function setAutoplayApp(pkg, name) {
     localStorage.setItem('vehicle_speed_autoplay_app_name', name);
   }
   loadCustomAutoplayAppName();
-  showToast(`自启首选主力已设为: ${name || pkg}`);
+  showToast(`自动播放应用已设为: ${name || pkg}`);
 }
 
 function setAutoplayFullscreen(fullscreen) {
@@ -717,8 +717,8 @@ function showHelp(key) {
   const helpData = {
     gear_d_360: {
       title: '【功能指南】前进 D 挡起步 360 全景',
-      desc: '1. 单次跃变锁：从 P 挡或 R 挡切入前进 D 挡瞬间自动唤醒 360 环视四周；触发一次即锁定，手动退出绝不重复弹出。\n\n2. 自动退出：起步车速超 15km/h 自动退出全景，保持导航视线。',
-      tip: '切出 D 挡离开后才会重新武装待命。'
+      desc: '1. 智能单次触发：从 P 挡或 R 挡切入前进 D 挡瞬间自动打开 360 环视四周；本次起步仅触发一次，手动退出后绝不反复弹出。\n\n2. 自动退出：起步车速超过 15km/h 自动退出全景，保持导航视线。',
+      tip: '换出 D 挡（如重新挂入 P 挡）后才会进入下一次待命。'
     },
     door_pause: {
       title: '【功能指南】P 挡开门音乐暂停',
@@ -727,12 +727,12 @@ function showHelp(key) {
     },
     speed_music: {
       title: '【功能指南】车速达标智能启播音乐',
-      desc: '1. 智能起步判断：挂入 D 挡起步行驶，实时车速突破设定阈值瞬间自动触发首选主力音乐软件播放。\n\n2. 单次行程防抖：单次行驶过程中仅触发一次，中途红绿灯停车或减速再次起步绝不重复触发。\n\n3. 自动待命重置：车辆停稳重新挂入 P 挡后，自动重置状态，等待下一次起步。\n\n4. 播放时效说明：车机刚开机且音乐软件从未打开过（冷态），第三方软件（如 QQ 音乐）需在后台加载组件、等待车机 4G 联网并向腾讯云鉴权拉取歌曲，耗时约需 15~30 秒，此属第三方播放器冷启动客观现象；若软件此前已打开过（热态），车速达标瞬间即可秒级恢复播放。',
-      tip: '支持后台静默播放（不抢导航视线）或前台全屏大屏沉浸播放。冷态起步需等待第三方软件 4G 鉴权出声，热态秒播。'
+      desc: '1. 智能起步判断：挂入 D 挡起步行驶，车速达到设定速度瞬间自动播放选择的音乐软件。\n\n2. 单次行程防抖：单次行驶过程中仅触发一次，中途等红绿灯停下或减速再次起步绝不重复触发。\n\n3. 自动重置状态：车辆停稳重新挂入 P 挡后，自动重置状态，等待下一次起步。\n\n4. 播放说明：车机刚打火开机且音乐软件从未打开过时，部分三方音乐软件需要联网加载账号信息，需要几秒时间；若平时软件已经在后台，达到设定时速即可瞬间恢复播放。',
+      tip: '支持后台静默播放（不抢导航视线）或前台全屏大屏沉浸播放。刚开机时稍等片刻联网，平时在后台秒播。'
     },
     speed_custom: {
       title: '【功能指南】车速达标自定义动作',
-      desc: '车速达到设定阈值后，自动打开高德车机地图或自选的任意第三方应用。单次行程仅触发一次。',
+      desc: '车速达到设定数值后，自动打开高德车机地图或自选的任意第三方应用。单次行程仅触发一次。',
       tip: '常用导航建议设为「高德车机地图」。'
     },
     light_nav: {
@@ -747,7 +747,7 @@ function showHelp(key) {
     },
     network_policy: {
       title: '【功能指南】车载网络与外设连接中枢',
-      desc: '1. 瞬时控制：随时手动点击开关，底层毫秒级选通，状态实时反馈。\n\n2. 开机策略：支持选择保持现状、默认开启或默认关闭。例如设置开机默认打开热点，手机上车即可无感自动连入车机网络；设置开机默认关闭 Wi-Fi，可彻底根除后台频繁扫描周围热点产生的算力消耗。\n\n3. 硬件自检探针：开机采用后台异步硬件就绪探测机制，无需死等，底层网卡与通讯模组就绪瞬间即刻安全拉起，零卡顿零报错。',
+      desc: '1. 快速控制：随时手动点击开关，状态实时同步更新。\n\n2. 开机策略：支持选择保持现状、默认开启或默认关闭。例如设置开机默认打开热点，手机上车即可无感自动连入车机网络；设置开机默认关闭 Wi-Fi，可避免车机在后台频繁扫描周围热点带来的卡顿。\n\n3. 智能就绪启动：车机开机后会在后台等待网络硬件准备完毕，随后平稳开启，流畅不卡顿。',
       tip: '支持 Wi-Fi、热点与蓝牙三通道独立策略管理。'
     }
   };

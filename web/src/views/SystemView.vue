@@ -221,10 +221,10 @@
         <div class="flex flex-col space-y-3">
           <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
             <div class="flex items-center space-x-2.5">
-              <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-rose-500 transition-colors">整车硬件冷重启</span>
+              <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-rose-500 transition-colors">整车重新启动</span>
               <HelpDot @click.stop="openModal('confirm', {
-                title: '【功能指南】整车硬件冷重启',
-                desc: '1. 彻底重启车机：\n像拔插钥匙一样彻底断电重启中控屏幕和底层系统，解决系统卡顿或刚改的配置没生效的问题。\n\n2. 安全提醒：\n行车过程中严禁操作！请在车辆安全停稳、挂入 P 挡后再点击重启。\n\n3. 重启耗时：\n整个过程大约 25~35 秒，期间屏幕暂时黑屏属于正常现象，请耐心等待重新点亮。',
+                title: '【功能指南】整车重新启动',
+                desc: '1. 彻底重启车机：\n像重新打火一样彻底重启中控屏幕和车机系统，解决系统卡顿或刚改的配置没生效的问题。\n\n2. 安全提醒：\n行车过程中严禁操作！请在车辆安全停稳、挂入 P 挡后再点击重启。\n\n3. 重启耗时：\n整个过程大约 25~35 秒，期间屏幕暂时黑屏属于正常现象，请耐心等待重新点亮。',
                 tip: '车辆停稳挂 P 挡后再点重启，期间黑屏请耐心等待。',
                 showCancel: false,
                 confirmText: '我知道了'
@@ -313,7 +313,7 @@ import { ICON_PREVIEW_DEFAULT, ICON_PREVIEW_COOL } from '../utils/launcherIcons'
 const activeTab = ref('desktop');
 const systemTabs = [
   { id: 'desktop', name: '桌面胶囊悬浮', tag: '悬浮/屏保' },
-  { id: 'tools', name: '系统底层运维', tag: '日志/ADB' },
+  { id: 'tools', name: '系统维护与工具', tag: '日志/ADB' },
   { id: 'theme', name: '外观主题风格', tag: '双模高质感' },
   { id: 'icon', name: '车标与启动项', tag: '图标/首屏' }
 ];
@@ -361,9 +361,9 @@ function toggleAdbMasterSwitch() {
 
 function showAdbHelp() {
   openModal('confirm', {
-    title: '【功能指南】ADB 特权总开关与防弹窗说明',
-    desc: '1. 为什么需要总开关：\n部分车型（或特定车机固件）底层 ADB 鉴权存在异常，连接 5555 端口会导致中控屏反复弹出“允许 USB 调试”授权弹窗，严重干扰正常行车。关闭此开关可彻底切断 ADB 探测与通信，从根源消除弹窗。\n\n2. 关闭后将失效的功能清单：\n• 车机全量应用高级管理（应用安全冻结/解冻/清空数据/静默卸载）\n• 第三方应用免签白名单（apk_verify 签名放行）\n• 整车硬件冷重启（底层掉电 reboot）\n• 车机 ADB 交互终端（命令行调试与方控按键码抓取）\n• 悬浮窗最高权限/日志读取权限一键授权\n• 倒车/切歌退出时强力终止原厂抢声音频\n\n3. 不受影响的基础核心功能：\n方控按键监听与切歌、原生蓝牙伴随播放与焦点守护、D挡/低速调起360影像、开机自启动守护、全国实时油价等均完全正常可用。',
-    tip: '日常建议保持开启；若遇车机无限弹窗请关闭此开关。',
+    title: '【功能指南】ADB 高级调试开关与防弹窗说明',
+    desc: '1. 为什么需要总开关：\n部分车型（或特定车机版本）连接内部调试通道时，中控屏会反复弹出“允许 USB 调试”授权弹窗，干扰正常看屏幕。关闭此开关可彻底切断调试连接，消除弹窗。\n\n2. 关闭后将失效的功能清单：\n• 车机应用高级管理（应用安全冻结/解冻/清空数据/静默卸载）\n• 第三方应用免签白名单\n• 整车重新启动（reboot）\n• 车机调试命令行终端\n• 悬浮窗最高权限/日志读取权限一键授权\n\n3. 不受影响的基础核心功能：\n方向盘按键切歌、蓝牙音乐播放与声音守护、D挡起步/打转向灯调起360影像、开机自启、全国实时油价等均完全正常可用。',
+    tip: '日常建议保持开启；若遇车机反复弹出授权弹窗，可关闭此开关。',
     showCancel: false,
     confirmText: '我知道了'
   });

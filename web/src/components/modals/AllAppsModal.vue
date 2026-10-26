@@ -513,7 +513,7 @@ function confirmPresetFreeze(pkg, pkgName) {
 
 function executePresetToggle(pkg) {
   freezingPackages.value[pkg] = true;
-  showToast('正在下发底层 ADB 冻结指令，请稍候...');
+  showToast('正在冻结应用，请稍候...');
 
   try {
     bridge.call('togglePackageFreeze', pkg);
