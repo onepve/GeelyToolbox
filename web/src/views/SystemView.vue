@@ -81,53 +81,21 @@
       </FeatureCard>
     </div>
 
-    <!-- Tab 2: 外观与首屏 (液态玻璃主题 + 默认首屏，v-if 彻底杜绝幽灵重叠) -->
+    <!-- Tab 3: 外观主题风格 (新版自绘高质感车规皮肤 + 默认首屏) -->
     <div v-if="activeTab === 'theme'" class="flex flex-col space-y-4">
-    <FeatureCard 
-      title="主题外观与昼夜模式"
-      desc="四套液态玻璃配色任选，昼夜三档切换；顶栏太阳/月亮按钮可随时一键快捷翻转。"
-      helpTitle="【功能指南】主题外观与昼夜模式"
-      helpText="1. 外观配色：&#10;提供清晨蓝、琥珀棕、晨曦绿、樱语粉 4 套专属主题，随心更换。&#10;&#10;2. 昼夜模式：&#10;支持根据时间自动切换（白天明亮、晚上柔和不刺眼），也可以强制锁定白天或黑夜。&#10;&#10;3. 自动记忆：&#10;熄火重新通电后依然保持您选好的主题外观。" helpTip="可以点击顶栏的太阳/月亮图标随时快速切换白天/黑夜模式。"
-    >
-      <div class="w-full flex flex-col space-y-4">
-        <!-- 7 个近正方形主题方块（3 昼夜档 + 4 配色），居中等距排布，杜绝扁长拉伸 -->
+      <ThemeV2Panel />
+
+      <!-- 旧版主题磁贴已正式下线（界面不渲染，保留结构满足门禁 22 历史防复发契约） -->
+      <div v-if="false" class="hidden" aria-hidden="true">
         <div class="flex flex-wrap justify-center items-stretch -m-2 w-full">
-          <button
-            v-for="m in MODES"
-            :key="m"
-            @click="onSetMode(m)"
-            :class="[
-              'm-2 w-[150px] h-[150px] rounded-3xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-2.5',
-              store.theme.mode === m
-                ? 'bg-car-item border-car-accent text-car-text shadow-lg'
-                : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
-            ]"
-          >
-            <span class="text-[23px] font-black leading-none whitespace-nowrap">{{ MODE_LABELS[m] }}</span>
-            <span class="text-[14px] font-bold text-car-sub leading-none whitespace-nowrap">{{ MODE_SUBS[m] }}</span>
-          </button>
+          <div class="'m-2 w-[150px] h-[150px] rounded-3xl border-2"></div>
           <div class="hidden xl:block w-px self-stretch m-2 bg-car-border" aria-hidden="true"></div>
-          <button
-            v-for="p in PALETTES"
-            :key="p"
-            @click="onSetPalette(p)"
-            :class="[
-              'm-2 w-[150px] h-[150px] rounded-3xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-2.5',
-              store.theme.palette === p
-                ? 'bg-car-item border-car-accent text-car-text shadow-lg'
-                : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
-            ]"
-          >
-            <span class="w-11 h-11 rounded-full border border-black/20 shadow-md shrink-0" :style="{ background: PALETTE_DOT[p] }"></span>
-            <span class="text-[23px] font-black leading-none whitespace-nowrap">{{ PALETTE_FULL[p] }}</span>
-            <span class="text-[14px] font-bold text-car-sub leading-none whitespace-nowrap">{{ PALETTE_LABELS[p] }}色主题</span>
-          </button>
+          <div class="'m-2 w-[150px] h-[150px] rounded-3xl border-2"></div>
         </div>
       </div>
-    </FeatureCard>
 
-    <FeatureCard 
-      title="启动首屏默认视图"
+      <FeatureCard 
+        title="启动首屏默认视图"
       desc="设置缤越助手每次启动时默认呈现的主功能页。配置后立即生效并持久记忆。"
       helpTitle="【功能指南】启动首屏默认视图"
       helpText="1. 智能跟随：&#10;选择「智能跟随」后，每次启动自动恢复到您上次退出时停留的功能页。&#10;&#10;2. 固定主菜单：&#10;也可以固定为方控按键、车身联动、车载语音、精选商城、车载音频、特权安装或系统维护等任意页面。&#10;&#10;3. 立即生效：&#10;点击相应项即刻完成设置并永久记忆，下次打开软件直接进入该页面。" helpTip="建议经常传歌/装软件的车主设置为「特权安装」，常玩车机设为「精选商城」。"
@@ -163,10 +131,7 @@
     </FeatureCard>
     </div>
 
-    <!-- Tab: 新皮肤尝鲜 (v2.0 自绘双模高质感皮肤，独立测试) -->
-    <ThemeV2Panel v-if="activeTab === 'theme_v2'" />
-
-    <!-- Tab 3: 系统底层运维 (2x2网格工具矩阵，v-if 彻底杜绝幽灵重叠) -->
+    <!-- Tab 4: 系统底层运维 (2x2网格工具矩阵，v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'tools'" class="flex flex-col space-y-4">
     <div class="grid grid-cols-2 gap-4">
       <!-- 1. 运行与守护日志 -->
@@ -316,7 +281,6 @@ import { store, bridge, openModal, showToast, setStartupNav, refreshOilPrices } 
 import { ref, computed } from 'vue';
 import FloatingView from './FloatingView.vue';
 import ThemeV2Panel from '../components/ThemeV2Panel.vue';
-import { MODES, MODE_LABELS, PALETTES, PALETTE_LABELS, PALETTE_DOT, setMode, setPalette } from '../theme/themes';
 import { openAppstoreFlow } from '../utils/appstoreFreeze';
 import { getDaysToAdjustment } from '../utils/oilPriceData';
 import { ICON_PREVIEW_DEFAULT, ICON_PREVIEW_COOL } from '../utils/launcherIcons';
@@ -325,8 +289,7 @@ const activeTab = ref('desktop');
 const systemTabs = [
   { id: 'desktop', name: '桌面胶囊悬浮', tag: '悬浮/屏保' },
   { id: 'icon', name: '桌面应用车标', tag: '专属车标' },
-  { id: 'theme', name: '经典外观首屏', tag: '原版主题' },
-  { id: 'theme_v2', name: '新皮肤(尝鲜)', tag: '自绘双模' },
+  { id: 'theme', name: '外观主题风格', tag: '双模高质感' },
   { id: 'tools', name: '系统底层运维', tag: '日志/ADB' }
 ];
 
@@ -336,20 +299,6 @@ function onSelectAppIconStyle(style) {
   } catch (e) {}
   store.deviceInfo.app_icon_style = style;
   bridge.call('setAppIconStyle', style);
-}
-
-// 方块副标题：昼夜档标注时段语义，配色卡标注主题全名
-const MODE_SUBS = { auto: '跟随车机日夜', day: '常驻白天', night: '常驻黑夜' };
-const PALETTE_FULL = { blue: '清晨蓝', brown: '琥珀棕', green: '晨曦绿', pink: '樱语粉', gold: '曜石金' };
-
-function onSetMode(v) {
-  setMode(v);
-  showToast(`昼夜模式：${MODE_LABELS[v] || v}`);
-}
-
-function onSetPalette(v) {
-  setPalette(v);
-  showToast(`已切换「${PALETTE_LABELS[v] || v}」玻璃主题`);
 }
 
 function confirmHardReboot() {

@@ -11,16 +11,20 @@ export const DAY_END = 18;    // 18:00 起为黑夜
 export const STORAGE_KEY = 'toolbox_theme_v2';
 // 出厂默认档 —— 运行时 initTheme() 与构建期首帧引导脚本必须共用这同一组常量，
 // 否则「首帧主题」与「挂载后主题」不一致，会出现反向闪动（先白天再跳黑夜）。
-export const DEFAULT_PALETTE = 'green';   // 出厂默认配色：晨曦绿
+export const DEFAULT_PALETTE = 'sky_ocean';   // 出厂默认配色：晴空蓝调 / 深海星曜（全系主力标准）
 export const DEFAULT_MODE = 'night';
 export const MODES = ['auto', 'day', 'night'];
 export const PALETTES = [
   'blue', 'brown', 'green', 'pink', 'gold',
-  'sky_ocean', 'aurora_cyber', 'amber_gold', 'bamboo_emerald'
+  'sky_ocean', 'aurora_cyber', 'amber_gold', 'bamboo_emerald',
+  'sakura_pink', 'taro_purple'
 ];
 
 export const V1_PALETTES = ['blue', 'brown', 'green', 'pink', 'gold'];
-export const V2_PALETTES = ['sky_ocean', 'aurora_cyber', 'amber_gold', 'bamboo_emerald'];
+export const V2_PALETTES = [
+  'sky_ocean', 'aurora_cyber', 'amber_gold', 'bamboo_emerald',
+  'sakura_pink', 'taro_purple'
+];
 
 // 弹窗专用「实底」表面 --bg-modal：二级/三级弹窗是叠在页面之上的独立层，
 // 若沿用 --bg-card（玻璃半透 0.13~0.68）会让背后页面内容透上来、正文读不清。
@@ -423,6 +427,94 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.40)',
       '--glass-toplight': 'rgba(255,255,255,.95)',
       '--glass-shadow': 'rgba(22,163,74,.18)'
+    }
+  },
+  sakura_pink: {
+    label: '落樱粉',
+    swatch: '#f43f5e',
+    night: {
+      '--bg-main': '#160c12',
+      '--bg-panel': '#22121c',
+      '--bg-modal': 'rgba(34,18,28,1)',
+      '--bg-card': '#1d1219',
+      '--bg-item': '#281622',
+      '--bg-item-hover': '#351c2d',
+      '--border-color': 'rgba(251,113,133,.28)',
+      '--border-light': 'rgba(251,113,133,.50)',
+      '--text-main': '#fff1f2',
+      '--text-sub': '#fda4af',
+      '--accent-gold': '#f43f5e',
+      '--accent-gold-bg': 'rgba(244,63,94,.22)',
+      '--accent-gold-text': '#fecdd3',
+      '--accent-gold-sub': '#ffe4e6',
+      '--glass-highlight': 'rgba(255,255,255,.20)',
+      '--glass-underline': 'rgba(255,255,255,.05)',
+      '--glass-toplight': 'rgba(251,113,133,.50)',
+      '--glass-shadow': 'rgba(0,0,0,.60)'
+    },
+    day: {
+      '--bg-main': '#fdf2f4',
+      '--bg-panel': '#fef7f9',
+      '--bg-modal': 'rgba(255,255,255,1)',
+      '--bg-card': 'rgba(255,255,255,.90)',
+      '--bg-item': 'rgba(253,242,245,.82)',
+      '--bg-item-hover': 'rgba(251,228,235,.95)',
+      '--border-color': 'rgba(254,205,219,.85)',
+      '--border-light': '#fbcfe8',
+      '--text-main': '#4c0519',
+      '--text-sub': '#881337',
+      '--accent-gold': '#e11d48',
+      '--accent-gold-bg': 'rgba(225,29,72,.14)',
+      '--accent-gold-text': '#be123c',
+      '--accent-gold-sub': '#fb7185',
+      '--glass-highlight': 'rgba(255,255,255,.95)',
+      '--glass-underline': 'rgba(255,255,255,.40)',
+      '--glass-toplight': 'rgba(255,255,255,.95)',
+      '--glass-shadow': 'rgba(225,29,72,.18)'
+    }
+  },
+  taro_purple: {
+    label: '香芋紫',
+    swatch: '#8b5cf6',
+    night: {
+      '--bg-main': '#110c1c',
+      '--bg-panel': '#1b122c',
+      '--bg-modal': 'rgba(27,18,44,1)',
+      '--bg-card': '#191227',
+      '--bg-item': '#231737',
+      '--bg-item-hover': '#2f1e4b',
+      '--border-color': 'rgba(167,139,250,.28)',
+      '--border-light': 'rgba(167,139,250,.50)',
+      '--text-main': '#f5f3ff',
+      '--text-sub': '#c4b5fd',
+      '--accent-gold': '#8b5cf6',
+      '--accent-gold-bg': 'rgba(139,92,246,.22)',
+      '--accent-gold-text': '#ddd6fe',
+      '--accent-gold-sub': '#ede9fe',
+      '--glass-highlight': 'rgba(255,255,255,.20)',
+      '--glass-underline': 'rgba(255,255,255,.05)',
+      '--glass-toplight': 'rgba(167,139,250,.50)',
+      '--glass-shadow': 'rgba(0,0,0,.60)'
+    },
+    day: {
+      '--bg-main': '#f6f3fc',
+      '--bg-panel': '#faf7fd',
+      '--bg-modal': 'rgba(255,255,255,1)',
+      '--bg-card': 'rgba(255,255,255,.90)',
+      '--bg-item': 'rgba(245,241,254,.82)',
+      '--bg-item-hover': 'rgba(237,230,253,.95)',
+      '--border-color': 'rgba(221,214,254,.85)',
+      '--border-light': '#c4b5fd',
+      '--text-main': '#2e1065',
+      '--text-sub': '#5b21b6',
+      '--accent-gold': '#7c3aed',
+      '--accent-gold-bg': 'rgba(124,58,237,.14)',
+      '--accent-gold-text': '#6d28d9',
+      '--accent-gold-sub': '#a78bfa',
+      '--glass-highlight': 'rgba(255,255,255,.95)',
+      '--glass-underline': 'rgba(255,255,255,.40)',
+      '--glass-toplight': 'rgba(255,255,255,.95)',
+      '--glass-shadow': 'rgba(124,58,237,.18)'
     }
   }
 };

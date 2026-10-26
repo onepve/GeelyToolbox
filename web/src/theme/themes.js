@@ -11,12 +11,14 @@ export { MODES, PALETTES, V1_PALETTES, V2_PALETTES };
 export const MODE_LABELS = { auto: '跟随车机', day: '白天', night: '黑夜' };
 export const PALETTE_LABELS = {
   blue: '蓝', brown: '棕', green: '绿', pink: '粉', gold: '金',
-  sky_ocean: '蓝', aurora_cyber: '青', amber_gold: '金', bamboo_emerald: '绿'
+  sky_ocean: '蓝', aurora_cyber: '青', amber_gold: '金', bamboo_emerald: '绿',
+  sakura_pink: '粉', taro_purple: '紫'
 };
 // 色卡小圆点取色（各配色主色，取自认可效果图）
 export const PALETTE_DOT = {
   blue: '#5b8cff', brown: '#d4a04a', green: '#3fbf88', pink: '#d46a8c', gold: '#d99a26',
-  sky_ocean: '#2563eb', aurora_cyber: '#059669', amber_gold: '#d97706', bamboo_emerald: '#16a34a'
+  sky_ocean: '#2563eb', aurora_cyber: '#059669', amber_gold: '#d97706', bamboo_emerald: '#16a34a',
+  sakura_pink: '#f43f5e', taro_purple: '#8b5cf6'
 };
 
 export const V2_THEME_INFO = {
@@ -55,6 +57,24 @@ export const V2_THEME_INFO = {
     dayBg: '#f0fdf4',
     nightBg: '#0a140f',
     accent: '#16a34a'
+  },
+  sakura_pink: {
+    name: '落樱暖粉 / 暮樱星河',
+    shortName: '落樱粉',
+    tag: '甜心柔粉',
+    desc: '白天落樱温润漫反射，夜间暮樱黑晶微光',
+    dayBg: '#fdf2f4',
+    nightBg: '#160c12',
+    accent: '#f43f5e'
+  },
+  taro_purple: {
+    name: '香芋紫霞 / 暮霭紫晶',
+    shortName: '香芋紫',
+    tag: '梦幻紫晶',
+    desc: '白天香芋奶霜柔和护眼，夜间紫晶曜石流光溢彩',
+    dayBg: '#f6f3fc',
+    nightBg: '#110c1c',
+    accent: '#8b5cf6'
   }
 };
 
@@ -75,12 +95,25 @@ export function setDayBrightness(val) {
 }
 
 
+const OLD_TO_NEW_PALETTE = {
+  blue: 'sky_ocean',
+  brown: 'amber_gold',
+  green: 'bamboo_emerald',
+  pink: 'sakura_pink',
+  gold: 'amber_gold'
+};
+
 function loadSaved() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const obj = JSON.parse(raw);
-    if (obj && PALETTES.includes(obj.palette) && MODES.includes(obj.mode)) return obj;
+    if (obj) {
+      if (OLD_TO_NEW_PALETTE[obj.palette]) {
+        obj.palette = OLD_TO_NEW_PALETTE[obj.palette];
+      }
+      if (PALETTES.includes(obj.palette) && MODES.includes(obj.mode)) return obj;
+    }
   } catch (e) { /* WebView 存储不可用时静默降级为默认 */ }
   return null;
 }

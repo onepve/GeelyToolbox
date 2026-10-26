@@ -1,21 +1,11 @@
 <template>
   <div class="flex flex-col space-y-4">
     <FeatureCard
-      title="v2.0 自绘高质感新皮肤 (尝鲜测试)"
-      desc="全新米小江自绘质感：白天多层漫反射柔光防眩，夜间黑晶超清冷光字；独立双轨尝鲜，不影响经典主题。"
-      helpTitle="【功能指南】v2.0 自绘新质感皮肤"
-      helpText="1. 独立双轨：&#10;新版皮肤采用高动态光感与黑晶底色，与经典原版并存，供车友提前实车盲测。&#10;&#10;2. 防眩调光：&#10;若夜间偏好白天白色主题，可使用下方的「白天柔光亮度」滑块适度压暗，护眼不刺眼。&#10;&#10;3. 一键还原：&#10;随时可点击右上角按钮无缝切回经典原厂皮肤。"
+      title="高质感自绘车规主题"
+      desc="吉利全系车型标准双模外观：白天漫反射温润防眩目，夜间黑晶超清冷光字；支持白天柔光微调。"
+      helpTitle="【功能指南】车规双模外观系统"
+      helpText="1. 昼夜自适应：&#10;支持跟随车机大灯/时间自动切换，也可随时强制锁定白天高透或黑夜黑晶模式。&#10;&#10;2. 防眩调光：&#10;夜间偏好白色底色的车友，可使用「白天柔光亮度」滑块适度压暗，护眼不刺眼。&#10;&#10;3. 6套质感配色：&#10;包含晴空蓝、极光青、暖阳金、翡翠绿，以及专属女性向落樱粉、香芋紫，纯自绘抗暴晒不掉帧。"
     >
-      <template #badge>
-        <button
-          @click="resetToClassicTheme"
-          class="px-3 py-1.5 rounded-xl bg-car-item border border-car-border text-car-sub hover:text-car-text hover:border-car-accent text-[12.5px] font-black cursor-pointer transition-all"
-          title="一键切回出厂经典晨曦绿"
-        >
-          切回经典原版 ↺
-        </button>
-      </template>
-
       <div class="w-full flex flex-col space-y-3">
         <!-- 昼夜模式切换三档 + 白天柔光亮度滑动调节（单行紧凑并列，高度更省空间） -->
         <div class="grid grid-cols-2 gap-3">
@@ -46,43 +36,64 @@
               <span class="text-[15.5px] font-black text-car-text">白天柔光亮度 ({{ dayBrightness }}%)</span>
               <span class="text-[12px] font-medium text-car-sub">夜驾白底适度压暗防眩目</span>
             </div>
-            <div class="flex items-center space-x-2 w-48">
-              <span class="text-[11px] text-car-sub font-bold">70%</span>
-              <input
-                type="range"
-                min="70"
-                max="100"
-                step="5"
-                :value="dayBrightness"
-                @input="onBrightnessChange"
-                class="w-full accent-car-accent cursor-pointer h-1.5"
-              />
-              <span class="text-[11px] text-car-sub font-bold">100%</span>
+            <!-- 自定义车规平滑滑块（彻底解决 Android 9 WebView 原生 input[type=range] 无法触摸拖动的问题） -->
+            <div class="flex items-center space-x-2">
+              <button
+                @click="stepBrightness(-5)"
+                class="w-7 h-7 rounded-lg bg-car-card border border-car-border flex items-center justify-center text-car-sub hover:text-car-text hover:border-car-accent text-[13px] font-black cursor-pointer active:scale-95 transition-all select-none"
+                title="减小亮度"
+              >-</button>
+              <div
+                ref="sliderRef"
+                @mousedown="onSliderMouseDown"
+                @touchstart.prevent="onSliderTouchStart"
+                class="relative w-36 sm:w-44 h-7 flex items-center cursor-pointer select-none py-1"
+                style="touch-action: none;"
+              >
+                <!-- 轨道槽线 -->
+                <div class="w-full h-2 rounded-full bg-car-card border border-car-border overflow-hidden">
+                  <!-- 激活填充 -->
+                  <div
+                    class="h-full bg-car-accent transition-none"
+                    :style="{ width: `${brightnessPercent}%` }"
+                  ></div>
+                </div>
+                <!-- 拖动圆钮 (车规大触控 Thumb，带边框与阴影，支持平滑抓取) -->
+                <div
+                  class="absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#f8fafc] border-2 border-car-accent shadow-md pointer-events-none transition-none"
+                  :style="{ left: `calc(${brightnessPercent}% - 10px)` }"
+                ></div>
+              </div>
+              <button
+                @click="stepBrightness(5)"
+                class="w-7 h-7 rounded-lg bg-car-card border border-car-border flex items-center justify-center text-car-sub hover:text-car-text hover:border-car-accent text-[13px] font-black cursor-pointer active:scale-95 transition-all select-none"
+                title="增加亮度"
+              >+</button>
             </div>
           </div>
         </div>
 
-        <!-- 4 套新版皮肤矩阵卡片 (2x2) -->
-        <div class="grid grid-cols-2 gap-3.5">
+        <!-- 6 套新版皮肤矩阵卡片 (2列 x 3行，首屏免滚动全景呈现) -->
+        <div class="grid grid-cols-2 gap-2.5">
           <div
             v-for="(info, key) in V2_THEME_INFO"
             :key="key"
             @click="onSetPalette(key)"
             :class="[
-              'p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between space-y-3',
+              'p-2.5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between space-y-1.5',
               store.theme.palette === key
                 ? 'bg-car-item border-car-accent shadow-lg'
                 : 'bg-car-card border-car-border hover:border-car-border-light'
             ]"
           >
             <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2.5">
-                <span class="w-4 h-4 rounded-full border border-black/20 shadow-xs shrink-0" :style="{ background: info.accent }"></span>
-                <span class="text-[17.5px] font-black text-car-text">{{ info.name }}</span>
+              <div class="flex items-center space-x-2">
+                <span class="w-3.5 h-3.5 rounded-full border border-black/20 shadow-xs shrink-0" :style="{ background: info.accent }"></span>
+                <span class="text-[16px] font-black text-car-text">{{ info.name }}</span>
               </div>
               <span
                 :class="[
-                  'text-[12px] px-2.5 py-0.5 rounded-md font-extrabold border',
+                  'text-[11px] px-2 py-0.5 rounded-md font-extrabold border',
                   store.theme.palette === key
                     ? 'bg-car-accent text-white border-car-accent'
                     : 'bg-car-card border-car-border text-car-sub'
@@ -92,7 +103,7 @@
               </span>
             </div>
 
-            <div class="text-[13.5px] font-bold text-car-sub leading-snug">
+            <div class="text-[12px] font-bold text-car-sub leading-snug">
               {{ info.desc }}
             </div>
           </div>
@@ -103,8 +114,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { store, showToast } from '../store';
+import { ref, computed, onUnmounted } from 'vue';
+import { store } from '../store';
 import FeatureCard from './FeatureCard.vue';
 import {
   MODES, MODE_LABELS,
@@ -113,6 +124,12 @@ import {
 } from '../theme/themes';
 
 const dayBrightness = ref(Math.round(getDayBrightness() * 100));
+const sliderRef = ref(null);
+
+const brightnessPercent = computed(() => {
+  const clamped = Math.max(70, Math.min(100, dayBrightness.value));
+  return ((clamped - 70) / 30) * 100;
+});
 
 function onSetMode(m) {
   setMode(m);
@@ -122,14 +139,82 @@ function onSetPalette(p) {
   setPalette(p);
 }
 
-function onBrightnessChange(e) {
-  const val = parseInt(e.target.value, 10);
+function stepBrightness(delta) {
+  const next = Math.max(70, Math.min(100, dayBrightness.value + delta));
+  applyBrightnessValue(next);
+}
+
+function applyBrightnessValue(val) {
   dayBrightness.value = val;
   setDayBrightness(val / 100);
 }
 
-function resetToClassicTheme() {
-  setPalette('green');
-  showToast('已切回经典晨曦绿主题');
+function updateBrightnessFromCoord(clientX) {
+  if (!sliderRef.value) return;
+  const rect = sliderRef.value.getBoundingClientRect();
+  if (rect.width <= 0) return;
+  const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  const rawVal = 70 + ratio * 30;
+  const val = Math.round(rawVal);
+  if (val !== dayBrightness.value) {
+    applyBrightnessValue(val);
+  }
 }
+
+// 拖拽与触摸事件闭环管理
+let isDragging = false;
+
+function onSliderTouchStart(e) {
+  isDragging = true;
+  if (e.touches && e.touches[0]) {
+    updateBrightnessFromCoord(e.touches[0].clientX);
+  }
+  window.addEventListener('touchmove', onTouchMove, { passive: false });
+  window.addEventListener('touchend', onTouchEnd);
+  window.addEventListener('touchcancel', onTouchEnd);
+}
+
+function onTouchMove(e) {
+  if (!isDragging) return;
+  // 彻底阻止系统手势截断/垂直滚动劫持，确保横向顺滑拖动
+  if (e.cancelable) e.preventDefault();
+  if (e.touches && e.touches[0]) {
+    updateBrightnessFromCoord(e.touches[0].clientX);
+  }
+}
+
+function onTouchEnd() {
+  if (!isDragging) return;
+  isDragging = false;
+  window.removeEventListener('touchmove', onTouchMove);
+  window.removeEventListener('touchend', onTouchEnd);
+  window.removeEventListener('touchcancel', onTouchEnd);
+}
+
+function onSliderMouseDown(e) {
+  isDragging = true;
+  updateBrightnessFromCoord(e.clientX);
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('mouseup', onMouseUp);
+}
+
+function onMouseMove(e) {
+  if (!isDragging) return;
+  updateBrightnessFromCoord(e.clientX);
+}
+
+function onMouseUp() {
+  if (!isDragging) return;
+  isDragging = false;
+  window.removeEventListener('mousemove', onMouseMove);
+  window.removeEventListener('mouseup', onMouseUp);
+}
+
+onUnmounted(() => {
+  window.removeEventListener('touchmove', onTouchMove);
+  window.removeEventListener('touchend', onTouchEnd);
+  window.removeEventListener('touchcancel', onTouchEnd);
+  window.removeEventListener('mousemove', onMouseMove);
+  window.removeEventListener('mouseup', onMouseUp);
+});
 </script>
