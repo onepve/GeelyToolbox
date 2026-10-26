@@ -89,63 +89,81 @@
     <ModalWrapper
       :show="showUploadModal"
       title="诊断日志已准备就绪"
-      :badge="uploadStatus === 'success' ? '上传成功' : (uploadStatus === 'uploading' ? '正在上传' : '仅保留30天')"
-      maxWidthClass="max-w-[880px]"
+      :badge="uploadStatus === 'success' ? '上传成功' : (uploadStatus === 'uploading' ? '正在上传' : (isPausedCountdown ? '倒计时已暂停' : `仅保留30天 · ${uploadCountdown}s`))"
+      maxWidthClass="max-w-[1100px]"
       zIndexClass="z-[9999]"
       :showCloseButton="uploadStatus !== 'uploading'"
       :closeOnBackdrop="uploadStatus !== 'uploading'"
       @close="cancelUpload"
     >
-      <!-- 阶段 1：确认与安全说明（20s 倒计时） -->
-      <div v-if="uploadStatus === 'confirm'" class="flex flex-col space-y-4 py-1">
-        <div class="flex items-center justify-between bg-car-item rounded-2xl px-5 py-3 border border-car-border text-[14px] font-bold font-mono">
+      <!-- 阶段 1：确认与安全说明（左右两列排开，单页尽收眼底） -->
+      <div 
+        v-if="uploadStatus === 'confirm'" 
+        class="flex flex-col space-y-3.5 py-1"
+        @click="pauseCountdown"
+      >
+        <div class="flex items-center justify-between bg-car-item rounded-2xl px-5 py-2.5 border border-car-border text-[14px] font-bold font-mono">
           <span>车型平台：<strong class="text-car-accent">{{ logMeta.modelCode || 'SX11A3' }} ({{ logMeta.chip || 'IHU516' }})</strong></span>
-          <span>文件大小：<strong class="text-emerald-400">{{ logMeta.sizeStr || exportSizeStr || '约 450 KB' }}</strong></span>
+          <div class="flex items-center space-x-4">
+            <span>文件大小：<strong class="text-emerald-400">{{ logMeta.sizeStr || exportSizeStr || '约 450 KB' }}</strong></span>
+            <span v-if="isPausedCountdown" class="text-[12px] font-normal text-amber-500 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+              已停止倒计时，方便您从容阅读
+            </span>
+          </div>
         </div>
 
-        <div class="space-y-3 text-[13.5px] leading-relaxed select-none">
-          <!-- 排查提示 -->
-          <div class="p-3.5 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-500 dark:text-amber-300">
-            <div class="font-black text-[14.5px] mb-1 flex items-center">
-              <span class="mr-1.5">💡</span>【排查提示：先复现，再抓取】
+        <!-- 左右并列 2 列栅格，全一屏完整展示杜绝滚动 -->
+        <div class="grid grid-cols-2 gap-3.5 text-[13px] leading-relaxed select-none">
+          <!-- 左列 1：排查提示 -->
+          <div class="p-3.5 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-500 dark:text-amber-300 flex flex-col justify-between">
+            <div>
+              <div class="font-black text-[14.5px] mb-1 flex items-center">
+                <span class="mr-1.5">💡</span>【排查提示：先复现，再抓取】
+              </div>
+              <p class="text-[12.5px] leading-relaxed">
+                如果某个功能异常（如方控不灵、倒车没反应），请务必先将异常操作真实按一遍，确保车机已经记录下当时的按键与信号，这样开发者才能帮您对症下药排查！
+              </p>
             </div>
-            <p class="text-[13px] leading-relaxed">
-              如果某个功能异常（如方控不灵、倒车没反应），请务必先将异常操作真实按一遍，确保车机已经记录下当时的按键与信号，这样开发者才能帮您对症下药排查！
-            </p>
           </div>
 
-          <!-- 隐私安全承诺 -->
-          <div class="p-3.5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
-            <div class="font-black text-[14.5px] mb-1 flex items-center">
-              <span class="mr-1.5">🛡️</span>【隐私安全承诺：不取任何车主个人信息】
+          <!-- 右列 1：隐私安全承诺 -->
+          <div class="p-3.5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 flex flex-col justify-between">
+            <div>
+              <div class="font-black text-[14.5px] mb-1 flex items-center">
+                <span class="mr-1.5">🛡️</span>【隐私安全承诺：不取任何车主个人信息】
+              </div>
+              <p class="text-[12.5px] leading-relaxed">
+                本工具箱在本地已完成 5 重脱敏过滤，日志中：<br>
+                • 自动抹除手机号、导航历史记录、家庭/公司等真实位置与轨迹；<br>
+                • 隐藏完整车架号（仅留末尾6位用于区分不同车辆，绝不关联个人身份）；<br>
+                • 仅记录按键键码、挡位与车身信号，纯用于技术排查，绝无泄露风险。
+              </p>
             </div>
-            <p class="text-[13px] leading-relaxed">
-              本工具箱在本地已完成 5 重脱敏过滤，日志中：<br>
-              • 自动抹除手机号、导航历史记录、家庭/公司等真实位置与经纬度轨迹；<br>
-              • 隐藏完整车架号（仅留末尾6位用于区分不同车辆，绝不关联个人身份）；<br>
-              • 仅记录按键键码、挡位与车身信号，纯用于技术排查，绝无隐私泄露风险。
-            </p>
           </div>
 
-          <!-- 存放规则 -->
-          <div class="p-3.5 rounded-2xl border border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-300">
-            <div class="font-black text-[14.5px] mb-1 flex items-center">
-              <span class="mr-1.5">⏳</span>【存放规则：仅保留 30 天，到期全自动销毁】
+          <!-- 左列 2：存放规则 -->
+          <div class="p-3.5 rounded-2xl border border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-300 flex flex-col justify-between">
+            <div>
+              <div class="font-black text-[14.5px] mb-1 flex items-center">
+                <span class="mr-1.5">⏳</span>【存放规则：仅保留 30 天，到期全自动销毁】
+              </div>
+              <p class="text-[12.5px] leading-relaxed">
+                • 日志直接传送至开发者专属私有存储库，外界不可见、无法公开下载；<br>
+                • 云端仅保留 30 天供技术分析，到期后系统将自动彻底清除，不留任何备份。
+              </p>
             </div>
-            <p class="text-[13px] leading-relaxed">
-              • 日志直接传送至开发者专属私有存储库，外界不可见、无法公开下载；<br>
-              • 云端仅保留 30 天供技术分析，到期后系统将自动彻底清除，不留任何备份。
-            </p>
           </div>
 
-          <!-- 适配须知 -->
-          <div class="p-3 rounded-2xl border border-car-border bg-car-item text-car-sub">
-            <div class="font-bold text-[13.5px] mb-0.5 flex items-center text-car-text">
-              <span class="mr-1.5">📢</span>【适配须知：部分车型可能存在物理限制】
+          <!-- 右列 2：适配须知 -->
+          <div class="p-3.5 rounded-2xl border border-car-border bg-car-item text-car-sub flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-[14px] mb-1 flex items-center text-car-text">
+                <span class="mr-1.5">📢</span>【适配须知：部分车型可能存在物理限制】
+              </div>
+              <p class="text-[12.5px] leading-relaxed">
+                因不同车型的硬件总线和原厂安全协议各不相同，部分功能若受硬件物理隔离，助手可能确实无法实现修复或兼容，敬请各位车友理解。
+              </p>
             </div>
-            <p class="text-[12.5px] leading-relaxed">
-              因不同车型的硬件总线和原厂安全协议各不相同，部分功能若受硬件物理隔离，助手可能确实无法实现修复或兼容，敬请各位车友理解。
-            </p>
           </div>
         </div>
       </div>
@@ -193,7 +211,7 @@
               @click="cancelUpload"
               class="min-h-[54px] px-6 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-sub hover:text-car-text font-black text-[16px] cursor-pointer transition-all shadow-sm flex items-center"
             >
-              <span>放弃上传 ({{ uploadCountdown }}s)</span>
+              <span>放弃上传 {{ isPausedCountdown ? '(已暂停)' : `(${uploadCountdown}s)` }}</span>
             </button>
 
             <button 
@@ -447,6 +465,7 @@ const logMeta = ref({
 const showUploadModal = ref(false);
 const uploadStatus = ref('confirm'); // 'confirm' | 'uploading' | 'success' | 'error'
 const uploadCountdown = ref(20);
+const isPausedCountdown = ref(false);
 let countdownTimer = null;
 const extractedCode = ref('');
 const uploadErrorMsg = ref('');
@@ -454,6 +473,7 @@ const uploadErrorMsg = ref('');
 function startCountdown() {
   stopCountdown();
   uploadCountdown.value = 20;
+  isPausedCountdown.value = false;
   countdownTimer = setInterval(() => {
     if (uploadCountdown.value > 1) {
       uploadCountdown.value--;
@@ -462,6 +482,14 @@ function startCountdown() {
       cancelUpload(true);
     }
   }, 1000);
+}
+
+function pauseCountdown() {
+  if (!isPausedCountdown.value && countdownTimer) {
+    stopCountdown();
+    isPausedCountdown.value = true;
+    showToast('💡 倒计时已暂停，您可以从容查阅说明');
+  }
 }
 
 function stopCountdown() {
@@ -480,6 +508,7 @@ function openUploadConfirm() {
 function cancelUpload(isTimeout = false) {
   stopCountdown();
   showUploadModal.value = false;
+  isPausedCountdown.value = false;
   if (isTimeout) {
     showToast('倒计时结束：日志已保存在车机，未上传云端');
   } else {
@@ -491,6 +520,7 @@ function closeUploadModal() {
   stopCountdown();
   showUploadModal.value = false;
   uploadStatus.value = 'confirm';
+  isPausedCountdown.value = false;
 }
 
 function confirmUpload() {
