@@ -85,158 +85,155 @@
       </div>
     </div>
 
-    <!-- 诊断日志上传确认与结果弹窗 (带20s倒计时与全套隐私安全说明) -->
-    <div 
-      v-if="showUploadModal"
-      class="fixed top-0 left-0 right-0 bottom-0 z-[60] flex items-center justify-center p-4 bg-[rgba(0,0,0,0.8)] backdrop-blur-md"
+    <!-- 诊断日志上传确认与结果弹窗 (全量接入车机主题系统，使用 ModalWrapper 标准高实底与主题色) -->
+    <ModalWrapper
+      :show="showUploadModal"
+      title="诊断日志已准备就绪"
+      :badge="uploadStatus === 'success' ? '上传成功' : (uploadStatus === 'uploading' ? '正在上传' : '仅保留30天')"
+      maxWidthClass="max-w-[880px]"
+      zIndexClass="z-[9999]"
+      :showCloseButton="uploadStatus !== 'uploading'"
+      :closeOnBackdrop="uploadStatus !== 'uploading'"
+      @close="cancelUpload"
     >
-      <div 
-        class="w-full max-w-[840px] rounded-3xl border-2 shadow-2xl p-6 transition-all duration-300"
-        :class="store.isNight ? 'bg-[#0F172A] border-white/20 text-[#F1F5F9]' : 'bg-[#FFFFFF] border-[#CBD5E1] text-[#0F172A]'"
-      >
-        <!-- 阶段 1：确认与安全说明（20s 倒计时） -->
+      <!-- 阶段 1：确认与安全说明（20s 倒计时） -->
+      <div v-if="uploadStatus === 'confirm'" class="flex flex-col space-y-4 py-1">
+        <div class="flex items-center justify-between bg-car-item rounded-2xl px-5 py-3 border border-car-border text-[14px] font-bold font-mono">
+          <span>车型平台：<strong class="text-car-accent">{{ logMeta.modelCode || 'SX11A3' }} ({{ logMeta.chip || 'IHU516' }})</strong></span>
+          <span>文件大小：<strong class="text-emerald-400">{{ logMeta.sizeStr || exportSizeStr || '约 450 KB' }}</strong></span>
+        </div>
+
+        <div class="space-y-3 text-[13.5px] leading-relaxed select-none">
+          <!-- 排查提示 -->
+          <div class="p-3.5 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-500 dark:text-amber-300">
+            <div class="font-black text-[14.5px] mb-1 flex items-center">
+              <span class="mr-1.5">💡</span>【排查提示：先复现，再抓取】
+            </div>
+            <p class="text-[13px] leading-relaxed">
+              如果某个功能异常（如方控不灵、倒车没反应），请务必先将异常操作真实按一遍，确保车机已经记录下当时的按键与信号，这样开发者才能帮您对症下药排查！
+            </p>
+          </div>
+
+          <!-- 隐私安全承诺 -->
+          <div class="p-3.5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+            <div class="font-black text-[14.5px] mb-1 flex items-center">
+              <span class="mr-1.5">🛡️</span>【隐私安全承诺：不取任何车主个人信息】
+            </div>
+            <p class="text-[13px] leading-relaxed">
+              本工具箱在本地已完成 5 重脱敏过滤，日志中：<br>
+              • 自动抹除手机号、导航历史记录、家庭/公司等真实位置与经纬度轨迹；<br>
+              • 隐藏完整车架号（仅留末尾6位用于区分不同车辆，绝不关联个人身份）；<br>
+              • 仅记录按键键码、挡位与车身信号，纯用于技术排查，绝无隐私泄露风险。
+            </p>
+          </div>
+
+          <!-- 存放规则 -->
+          <div class="p-3.5 rounded-2xl border border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-300">
+            <div class="font-black text-[14.5px] mb-1 flex items-center">
+              <span class="mr-1.5">⏳</span>【存放规则：仅保留 30 天，到期全自动销毁】
+            </div>
+            <p class="text-[13px] leading-relaxed">
+              • 日志直接传送至开发者专属私有存储库，外界不可见、无法公开下载；<br>
+              • 云端仅保留 30 天供技术分析，到期后系统将自动彻底清除，不留任何备份。
+            </p>
+          </div>
+
+          <!-- 适配须知 -->
+          <div class="p-3 rounded-2xl border border-car-border bg-car-item text-car-sub">
+            <div class="font-bold text-[13.5px] mb-0.5 flex items-center text-car-text">
+              <span class="mr-1.5">📢</span>【适配须知：部分车型可能存在物理限制】
+            </div>
+            <p class="text-[12.5px] leading-relaxed">
+              因不同车型的硬件总线和原厂安全协议各不相同，部分功能若受硬件物理隔离，助手可能确实无法实现修复或兼容，敬请各位车友理解。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 阶段 2：上传中 -->
+      <div v-else-if="uploadStatus === 'uploading'" class="py-14 flex flex-col items-center justify-center text-center space-y-4">
+        <div class="w-14 h-14 border-4 border-car-accent/30 border-t-car-accent rounded-full animate-spin"></div>
+        <div class="text-[19px] font-black text-car-text">正在安全传输至私有存储库...</div>
+        <div class="text-[14px] text-car-sub font-mono">正在流式写入专属隔离桶，请稍候</div>
+      </div>
+
+      <!-- 阶段 3：上传成功，展示 8 位纯数字提取码 -->
+      <div v-else-if="uploadStatus === 'success'" class="py-4 flex flex-col items-center text-center select-none">
+        <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl font-black mb-3">
+          ✓
+        </div>
+        <h3 class="text-[22px] font-black text-car-text mb-1">诊断日志已安全上传！</h3>
+        <p class="text-[14px] text-car-sub mb-4">已归档至私有存储库 · 30天后全自动彻底物理销毁</p>
+
+        <div class="p-6 rounded-2xl bg-car-item border-2 border-emerald-500/50 w-full max-w-[480px] shadow-lg mb-2">
+          <div class="text-[13px] font-bold text-car-sub mb-1 uppercase tracking-wider">专属 8 位诊断提取码</div>
+          <div class="text-[40px] font-mono font-black text-emerald-400 tracking-[0.2em] my-1">
+            {{ extractedCode }}
+          </div>
+          <div class="text-[13px] text-car-sub mt-2">
+            请将上方 8 位数字直接发送给开发者或在交流群反馈
+          </div>
+        </div>
+      </div>
+
+      <!-- 阶段 4：上传失败 -->
+      <div v-else-if="uploadStatus === 'error'" class="py-6 flex flex-col items-center text-center">
+        <div class="w-16 h-16 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-3xl font-black mb-3">
+          ✕
+        </div>
+        <h3 class="text-[20px] font-black text-car-text mb-2">上传暂时受阻</h3>
+        <p class="text-[14px] text-rose-400 mb-2 max-w-[500px]">{{ uploadErrorMsg }}</p>
+      </div>
+
+      <!-- 底部操作按钮插槽 (全量继承主题样式与基线) -->
+      <template #footer>
         <template v-if="uploadStatus === 'confirm'">
-          <div class="flex items-center justify-between pb-3.5 border-b border-car-border/60">
-            <div class="flex items-center space-x-3">
-              <span class="text-2xl">📦</span>
-              <span class="text-[18.5px] font-black tracking-tight">诊断日志已准备就绪 · 是否上传协助分析？</span>
-            </div>
-            <div class="px-3 py-1 rounded-full text-[12.5px] font-bold font-mono bg-sky-500/15 text-sky-400 border border-sky-500/30">
-              仅保留30天 · 自动销毁
-            </div>
-          </div>
-
-          <div class="mt-3.5 flex items-center justify-between bg-car-item/70 rounded-xl px-4 py-2 border border-car-border/50 text-[13.5px] font-bold font-mono">
-            <span>车型平台：<strong class="text-car-accent">{{ logMeta.modelCode || 'SX11A3' }} ({{ logMeta.chip || 'IHU516' }})</strong></span>
-            <span>文件大小：<strong class="text-emerald-400">{{ logMeta.sizeStr || exportSizeStr || '约 450 KB' }}</strong></span>
-          </div>
-
-          <div class="mt-3.5 space-y-2.5 text-[13px] leading-relaxed select-none">
-            <!-- 排查提示 -->
-            <div class="p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300">
-              <div class="font-black text-[14px] mb-0.5 flex items-center">
-                <span class="mr-1.5">💡</span>【排查提示：先复现，再抓取】
-              </div>
-              <p class="text-[12.5px] leading-relaxed">
-                如果某个功能异常（如方控不灵、倒车没反应），请务必先将异常操作真实按一遍，确保车机已经记录下当时的按键与信号，这样开发者才能帮您对症下药排查！
-              </p>
-            </div>
-
-            <!-- 隐私安全承诺 -->
-            <div class="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-              <div class="font-black text-[14px] mb-0.5 flex items-center">
-                <span class="mr-1.5">🛡️</span>【隐私安全承诺：不取任何车主个人信息】
-              </div>
-              <p class="text-[12.5px] leading-relaxed">
-                本工具箱在本地已完成 5 重脱敏过滤，日志中：<br>
-                • 自动抹除手机号、导航历史记录、家庭/公司等真实位置与经纬度轨迹；<br>
-                • 隐藏完整车架号（仅留末尾6位用于区分不同车辆，绝不关联个人身份）；<br>
-                • 仅记录按键键码、挡位与车身信号，纯用于技术排查，绝无隐私泄露风险。
-              </p>
-            </div>
-
-            <!-- 存放规则 -->
-            <div class="p-3 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300">
-              <div class="font-black text-[14px] mb-0.5 flex items-center">
-                <span class="mr-1.5">⏳</span>【存放规则：仅保留 30 天，到期全自动销毁】
-              </div>
-              <p class="text-[12.5px] leading-relaxed">
-                • 日志直接传送至开发者专属私有存储库，外界不可见、无法公开下载；<br>
-                • 云端仅保留 30 天供技术分析，到期后系统将自动彻底清除，不留任何备份。
-              </p>
-            </div>
-
-            <!-- 适配须知 -->
-            <div class="p-2.5 rounded-xl border border-car-border bg-car-item/50 text-car-sub">
-              <div class="font-bold text-[13px] mb-0.5 flex items-center text-car-text">
-                <span class="mr-1.5">📢</span>【适配须知：部分车型可能存在物理限制】
-              </div>
-              <p class="text-[12px] leading-relaxed">
-                因不同车型的硬件总线和原厂安全协议各不相同，部分功能若受硬件物理隔离，助手可能确实无法实现修复或兼容，敬请各位车友理解。
-              </p>
-            </div>
-          </div>
-
-          <div class="mt-4 flex items-center justify-between pt-3.5 border-t border-car-border/60">
+          <div class="flex items-center justify-between w-full">
             <button 
               @click="cancelUpload"
-              class="min-h-[50px] px-6 rounded-xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-sub hover:text-car-text font-black text-[15px] cursor-pointer transition-all shadow-sm flex items-center"
+              class="min-h-[54px] px-6 rounded-2xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-sub hover:text-car-text font-black text-[16px] cursor-pointer transition-all shadow-sm flex items-center"
             >
               <span>放弃上传 ({{ uploadCountdown }}s)</span>
             </button>
 
             <button 
               @click="confirmUpload"
-              class="min-h-[50px] px-7 rounded-xl bg-car-accent hover:opacity-90 text-white font-black text-[15.5px] cursor-pointer transition-all shadow-lg flex items-center"
+              class="min-h-[54px] px-8 rounded-2xl bg-car-accent hover:opacity-90 text-white font-black text-[16.5px] cursor-pointer transition-all shadow-lg flex items-center"
             >
               <span>立即上传并获取提取码</span>
             </button>
           </div>
         </template>
 
-        <!-- 阶段 2：上传中 -->
-        <template v-else-if="uploadStatus === 'uploading'">
-          <div class="py-12 flex flex-col items-center justify-center text-center space-y-4">
-            <div class="w-14 h-14 border-4 border-car-accent/30 border-t-car-accent rounded-full animate-spin"></div>
-            <div class="text-[18px] font-black text-car-text">正在安全传输至私有存储库...</div>
-            <div class="text-[13.5px] text-car-sub font-mono">正在流式写入专属隔离桶，请稍候</div>
-          </div>
-        </template>
-
-        <!-- 阶段 3：上传成功，展示 8 位纯数字提取码 -->
         <template v-else-if="uploadStatus === 'success'">
-          <div class="py-6 flex flex-col items-center text-center select-none">
-            <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl font-black mb-3">
-              ✓
-            </div>
-            <h3 class="text-[22px] font-black text-car-text mb-1">诊断日志已安全上传！</h3>
-            <p class="text-[13.5px] text-car-sub mb-4">已归档至私有存储库 · 30天后全自动彻底物理销毁</p>
-
-            <div class="p-5 rounded-2xl bg-car-item border-2 border-emerald-500/50 w-full max-w-[460px] shadow-lg mb-5">
-              <div class="text-[12.5px] font-bold text-car-sub mb-1 uppercase tracking-wider">专属 8 位诊断提取码</div>
-              <div class="text-[38px] font-mono font-black text-emerald-400 tracking-[0.2em] my-1">
-                {{ extractedCode }}
-              </div>
-              <div class="text-[12.5px] text-car-sub mt-2">
-                请将上方 8 位数字直接发送给开发者或在交流群反馈
-              </div>
-            </div>
-
+          <div class="flex items-center justify-end w-full">
             <button 
               @click="closeUploadModal"
-              class="min-h-[50px] px-10 rounded-xl bg-car-accent text-white font-black text-[15.5px] cursor-pointer hover:opacity-90 shadow-md"
+              class="min-h-[54px] px-10 rounded-2xl bg-car-accent text-white font-black text-[16.5px] cursor-pointer hover:opacity-90 shadow-md"
             >
               我已知晓并关闭
             </button>
           </div>
         </template>
 
-        <!-- 阶段 4：上传失败 -->
         <template v-else-if="uploadStatus === 'error'">
-          <div class="py-6 flex flex-col items-center text-center">
-            <div class="w-16 h-16 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-3xl font-black mb-3">
-              ✕
-            </div>
-            <h3 class="text-[20px] font-black text-car-text mb-2">上传暂时受阻</h3>
-            <p class="text-[13.5px] text-rose-400 mb-5 max-w-[480px]">{{ uploadErrorMsg }}</p>
-            <div class="flex items-center space-x-4">
-              <button 
-                @click="confirmUpload"
-                class="min-h-[50px] px-6 rounded-xl bg-car-accent text-white font-black text-[15px] cursor-pointer"
-              >
-                重试上传
-              </button>
-              <button 
-                @click="closeUploadModal"
-                class="min-h-[50px] px-6 rounded-xl bg-car-item border border-car-border text-car-sub font-black text-[15px] cursor-pointer"
-              >
-                关闭
-              </button>
-            </div>
+          <div class="flex items-center justify-end space-x-4 w-full">
+            <button 
+              @click="closeUploadModal"
+              class="min-h-[54px] px-6 rounded-2xl bg-car-item border-2 border-car-border text-car-sub font-black text-[15.5px] cursor-pointer hover:border-car-border-light"
+            >
+              关闭
+            </button>
+            <button 
+              @click="confirmUpload"
+              class="min-h-[54px] px-8 rounded-2xl bg-car-accent text-white font-black text-[16px] cursor-pointer"
+            >
+              重试上传
+            </button>
           </div>
         </template>
-      </div>
-    </div>
+      </template>
+    </ModalWrapper>
 
     <!-- 底部固定常驻操作栏 (shrink-0 物理吸底，绝不随内容滚动丢失) -->
     <template #footer>
