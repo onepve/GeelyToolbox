@@ -1,42 +1,33 @@
 <template>
   <div class="flex flex-col space-y-7 shrink-0">
-    <!-- 双列对称：左列【桌面悬浮微胶囊】 + 右列【闲置自动息屏保护】 -->
+    <!-- 双列对称：左列【桌面迷你悬浮胶囊】整卡开关 + 右列【闲置自动屏保】整卡开关 -->
     <div class="grid grid-cols-2 gap-5 items-stretch">
-      <!-- 左列：桌面迷你悬浮胶囊 (紧凑自适应车规排布) -->
-      <div class="rounded-3xl border-2 border-car-border bg-car-card p-5 shadow-xl h-full flex flex-col justify-between transition-all duration-200">
-        <!-- 头部标题 + 帮助 -->
-        <div class="flex items-center justify-between shrink-0 mb-4">
+      <!-- 左列：桌面迷你悬浮胶囊 (标准整卡开关架构) -->
+      <div 
+        @click="toggleFloatingWindow"
+        :class="[
+          'rounded-3xl border-2 p-5 shadow-xl h-full flex flex-col justify-between transition-all duration-200 cursor-pointer select-none active:scale-[0.99]',
+          store.deviceInfo.floating_enabled
+            ? 'bg-car-card border-car-accent shadow-car-accent/10'
+            : 'bg-car-card border-car-border hover:border-car-border-light'
+        ]"
+      >
+        <!-- 头部标题 + 状态指示灯 + 帮助 -->
+        <div class="flex items-center justify-between shrink-0 mb-4 pb-3 border-b border-car-border/60">
           <div class="flex items-center space-x-3">
+            <StatusDot size="sm" :color="store.deviceInfo.floating_enabled ? 'ok' : 'off'" :glow="store.deviceInfo.floating_enabled" :glow-px="store.deviceInfo.floating_enabled ? 6 : 0" />
             <span class="text-[22px] font-black text-car-text tracking-wide">桌面迷你悬浮胶囊</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">桌面常驻</span>
             <HelpDot @click="openFloatingHelp" title="查看桌面悬浮微胶囊机制" />
           </div>
-        </div>
-
-        <!-- 胶囊整卡一体化卡片开关 -->
-        <div 
-          @click="toggleFloatingWindow"
-          :class="[
-            'p-4 rounded-2xl border-2 cursor-pointer select-none active:scale-[0.985] transition-all flex items-center justify-between mb-4',
-            store.deviceInfo.floating_enabled
-              ? 'bg-car-item border-car-accent shadow-md'
-              : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
-          ]"
-        >
-          <div class="flex flex-col space-y-0.5">
-            <span class="text-[17.5px] font-black text-car-text">悬浮胶囊常驻开关</span>
-            <span class="text-[13.5px] text-car-sub font-bold">常驻屏幕顶层，支持自由拖拽并贴边智能吸附</span>
-          </div>
-          <div class="flex items-center space-x-2 shrink-0 pl-3">
-            <StatusDot size="sm" :color="store.deviceInfo.floating_enabled ? 'ok' : 'off'" :glow="store.deviceInfo.floating_enabled" :glow-px="store.deviceInfo.floating_enabled ? 6 : 0" />
-            <span :class="['text-[16px] font-black', store.deviceInfo.floating_enabled ? 'text-car-text' : 'text-car-sub']">
-              {{ store.deviceInfo.floating_enabled ? '胶囊已常驻' : '胶囊已隐藏' }}
+          <div class="flex items-center space-x-2">
+            <span :class="['text-[15.5px] font-black', store.deviceInfo.floating_enabled ? 'text-car-accent' : 'text-car-sub']">
+              {{ store.deviceInfo.floating_enabled ? '常驻已开启' : '常驻已关闭' }}
             </span>
           </div>
         </div>
 
-        <!-- 中部：3 选 1 纯净车规展示模式 (拔除所有违规 Emoji，加高车规大靶区) -->
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2">
+        <!-- 中部：3 选 1 纯净车规展示模式 (点击阻止冒泡避免触发整卡开关) -->
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2" @click.stop>
           <div class="flex items-center justify-between">
             <span class="text-[16px] font-black text-car-text">胶囊核心实时数据呈现</span>
             <span class="text-[13px] text-car-accent font-bold px-3 py-0.5 rounded-lg bg-car-item border border-car-border">
@@ -82,50 +73,39 @@
         </div>
 
         <!-- 底部提示信息：拉大留白 -->
-        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0 flex items-center justify-between">
-          <span class="text-[14px] text-car-sub font-bold">点击胶囊秒开缤越助手控制台</span>
-          <span class="text-[13.5px] text-car-accent font-black">支持手指自由拖拽贴边吸附</span>
+        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0 flex items-center justify-between" @click.stop>
+          <span class="text-[14px] text-car-sub font-bold">常驻屏幕顶层，点击秒开控制台</span>
+          <span class="text-[13.5px] text-car-accent font-black">手指自由拖拽贴边智能吸附</span>
         </div>
       </div>
 
-      <!-- 右列：闲置自动屏保息屏 (紧凑自适应车规排布) -->
-      <div class="rounded-3xl border-2 border-car-border bg-car-card p-5 shadow-xl h-full flex flex-col justify-between transition-all duration-200">
-        <!-- 头部标题 + 帮助 -->
-        <div class="flex items-center justify-between shrink-0 mb-4">
+      <!-- 右列：闲置自动屏保息屏 (标准整卡开关架构) -->
+      <div 
+        @click="toggleScreensaver"
+        :class="[
+          'rounded-3xl border-2 p-5 shadow-xl h-full flex flex-col justify-between transition-all duration-200 cursor-pointer select-none active:scale-[0.99]',
+          ssEnabled
+            ? 'bg-car-card border-car-accent shadow-car-accent/10'
+            : 'bg-car-card border-car-border hover:border-car-border-light'
+        ]"
+      >
+        <!-- 头部标题 + 状态指示灯 + 帮助 -->
+        <div class="flex items-center justify-between shrink-0 mb-4 pb-3 border-b border-car-border/60">
           <div class="flex items-center space-x-3">
+            <StatusDot size="sm" :color="ssEnabled ? 'ok' : 'off'" :glow="ssEnabled" :glow-px="ssEnabled ? 6 : 0" />
             <span class="text-[22px] font-black text-car-text tracking-wide">闲置自动屏保</span>
-            <span class="px-3 py-0.5 text-[13.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent inline-flex items-center shrink-0">
-              <StatusDot class="mr-2" size="sm" :color="ssStatusDot" :glow="false" />{{ ssStatusText }}
-            </span>
             <HelpDot @click="openScreensaverHelp" title="查看自动屏保核心原理" />
           </div>
-        </div>
-
-        <!-- 屏保整卡一体化卡片开关 -->
-        <div 
-          @click="toggleScreensaver"
-          :class="[
-            'p-4 rounded-2xl border-2 cursor-pointer select-none active:scale-[0.985] transition-all flex items-center justify-between mb-4',
-            ssEnabled
-              ? 'bg-car-item border-car-accent shadow-md'
-              : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
-          ]"
-        >
-          <div class="flex flex-col space-y-0.5">
-            <span class="text-[17.5px] font-black text-car-text">自动屏保息屏总闸</span>
-            <span class="text-[13.5px] text-car-sub font-bold">桌面闲置自动唤醒原厂屏保，关闭时零 CPU 占用</span>
-          </div>
-          <div class="flex items-center space-x-2 shrink-0 pl-3">
-            <StatusDot size="sm" :color="ssEnabled ? 'ok' : 'off'" :glow="ssEnabled" :glow-px="ssEnabled ? 6 : 0" />
-            <span :class="['text-[16px] font-black', ssEnabled ? 'text-car-text' : 'text-car-sub']">
-              {{ ssEnabled ? '自动屏保已开启' : '自动屏保已关闭' }}
+          <div class="flex items-center space-x-2">
+            <span :class="['text-[15.5px] font-black', ssEnabled ? 'text-car-accent' : 'text-car-sub']">
+              {{ ssEnabled ? '屏保总闸已开启' : '屏保总闸已关闭' }}
             </span>
           </div>
         </div>
 
-        <!-- 中部：纯加减时长控制器 + 5档预设 (彻底拉开安全间距，杜绝贴脸) -->
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-4 py-2">
-          <!-- 纯加减微调器 (取消下方5档预设后，微调器居中展现更通透，上下留白充足) -->
+        <!-- 中部：纯加减时长控制器 + 3 档触发策略 (点击阻止冒泡) -->
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2" @click.stop>
+          <!-- 纯加减微调器 -->
           <div class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl p-3 my-auto">
             <div class="flex items-center space-x-2.5">
               <button 
@@ -152,11 +132,9 @@
               >+15s</button>
             </div>
           </div>
-        </div>
 
-        <!-- 底部操作栏：按钮一排显示 (3 档触发策略单选 + 独立屏保测试动作) -->
-        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
-          <div :class="['grid gap-2 w-full', isBeta ? 'grid-cols-4' : 'grid-cols-3']">
+          <!-- 3 档触发策略单选 + 测试屏保 -->
+          <div :class="['grid gap-2 w-full pt-1', isBeta ? 'grid-cols-4' : 'grid-cols-3']">
             <button
               v-for="p in ssPolicyOptions"
               :key="p.value"
@@ -172,7 +150,7 @@
               <span>{{ p.label }}</span>
             </button>
 
-            <!-- 独立测试屏保动作按钮 (第 4 按钮，仅在测试版中呈现供调试体验，正式版保持极简不展示) -->
+            <!-- 独立测试屏保动作按钮 -->
             <button
               v-if="isBeta"
               @click="testScreensaver"
@@ -181,6 +159,12 @@
               <span>屏保测试</span>
             </button>
           </div>
+        </div>
+
+        <!-- 底部提示信息：拉大留白 -->
+        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0 flex items-center justify-between" @click.stop>
+          <span class="text-[14px] text-car-sub font-bold">桌面闲置自动唤醒原厂屏保</span>
+          <span class="text-[13.5px] text-car-accent font-black">运行中即时感知前台全屏</span>
         </div>
       </div>
     </div>

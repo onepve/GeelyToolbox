@@ -8,7 +8,7 @@
       <div class="flex items-center justify-between mb-1">
         <slot name="header">
           <div class="flex items-center space-x-2.5">
-            <StatusDot size="sm" :color="active ? 'ok' : 'off'" :glow-px="active ? 6 : 0" />
+            <StatusDot v-if="isSwitch" size="sm" :color="active ? 'ok' : 'off'" :glow-px="active ? 6 : 0" />
             <div class="text-[21px] font-black text-car-text tracking-wide">
               {{ title }}
             </div>
@@ -45,7 +45,8 @@ const props = defineProps({
   helpText: String,
   helpTitle: String,
   helpTip: String,
-  active: { type: Boolean, default: false }
+  active: { type: Boolean, default: false },
+  isSwitch: { type: Boolean, default: false }
 });
 
 function showHelp() {

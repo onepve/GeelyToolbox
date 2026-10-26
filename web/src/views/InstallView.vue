@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col space-y-4">
-    <!-- 顶部车规二级分段胶囊：一页全景掌控 -->
-    <SubTabs :tabs="installTabs" v-model="activeTab" />
+    <!-- 仅在未指定 initialTab 时作为独立页面展示二级分段胶囊 -->
+    <SubTabs v-if="!initialTab" :tabs="installTabs" v-model="activeTab" />
 
     <!-- Tab 1: 特权安装通道 (v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'channels'" class="grid grid-cols-2 gap-4 items-stretch">
@@ -160,7 +160,11 @@ import { store, bridge, openModal, showToast } from '../store';
 
 
 
-const activeTab = ref('channels');
+const props = defineProps({
+  initialTab: { type: String, default: '' }
+});
+
+const activeTab = ref(props.initialTab || 'channels');
 const installTabs = [
   { id: 'channels', name: '特权安装通道', tag: '文件/快传' },
   { id: 'manage', name: '整车应用管理', tag: '卸载/主题' }
