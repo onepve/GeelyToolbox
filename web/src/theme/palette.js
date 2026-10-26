@@ -409,24 +409,24 @@ export const THEMES = {
       '--glass-shadow': 'rgba(0,0,0,.60)'
     },
     day: {
-      '--bg-main': '#f0fdf4',
-      '--bg-panel': '#f7fee7',
+      '--bg-main': '#ecfdf5',
+      '--bg-panel': '#f0fdf4',
       '--bg-modal': 'rgba(255,255,255,1)',
-      '--bg-card': 'rgba(255,255,255,.90)',
-      '--bg-item': 'rgba(240,253,244,.82)',
-      '--bg-item-hover': 'rgba(220,252,231,.95)',
-      '--border-color': 'rgba(187,247,208,.85)',
-      '--border-light': '#86efac',
-      '--text-main': '#14532d',
-      '--text-sub': '#365314',
-      '--accent-gold': '#16a34a',
-      '--accent-gold-bg': 'rgba(22,163,74,.15)',
-      '--accent-gold-text': '#15803d',
-      '--accent-gold-sub': '#4ade80',
+      '--bg-card': 'rgba(255,255,255,.92)',
+      '--bg-item': 'rgba(236,253,245,.85)',
+      '--bg-item-hover': 'rgba(209,250,229,.95)',
+      '--border-color': 'rgba(167,243,208,.85)',
+      '--border-light': '#6ee7b7',
+      '--text-main': '#064e3b',
+      '--text-sub': '#166534',
+      '--accent-gold': '#10b981',
+      '--accent-gold-bg': 'rgba(16,185,129,.14)',
+      '--accent-gold-text': '#047857',
+      '--accent-gold-sub': '#34d399',
       '--glass-highlight': 'rgba(255,255,255,.95)',
       '--glass-underline': 'rgba(255,255,255,.40)',
       '--glass-toplight': 'rgba(255,255,255,.95)',
-      '--glass-shadow': 'rgba(22,163,74,.18)'
+      '--glass-shadow': 'rgba(16,185,129,.18)'
     }
   },
   sakura_pink: {

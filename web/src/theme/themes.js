@@ -54,9 +54,9 @@ export const V2_THEME_INFO = {
     shortName: '翡翠绿',
     tag: '清新舒缓',
     desc: '白天青翠生机漫反射，夜间沉浸墨绿质感',
-    dayBg: '#f0fdf4',
+    dayBg: '#ecfdf5',
     nightBg: '#0a140f',
-    accent: '#16a34a'
+    accent: '#10b981'
   },
   sakura_pink: {
     name: '落樱暖粉 / 暮樱星河',
