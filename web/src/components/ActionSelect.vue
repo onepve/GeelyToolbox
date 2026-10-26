@@ -3,10 +3,7 @@
     <!-- 触发按钮：车规大磁贴 (80px 高)，显示当前选中动作 -->
     <button
       @click="toggle"
-      class="w-full rounded-2xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-md"
-      :class="isCustom
-        ? 'bg-car-item border-car-accent text-car-text'
-        : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
+      class="w-full rounded-2xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-md bg-car-item border-car-border text-car-text hover:border-car-border-light"
       style="min-height: 80px; height: 80px; padding: 12px 20px; box-sizing: border-box;"
     >
       <span class="flex flex-col items-start min-w-0">
