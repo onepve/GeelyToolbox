@@ -2572,6 +2572,10 @@ public class VehicleAutomationService extends Service {
      */
     private void handleFuelLevelSignal(int val) {
         if (val < 0) return;
+        // 熄火/传感器断电离线防抖：熄火状态或未启动时收到 0 属于总线探针离线心跳，不覆盖有效燃油存量
+        if (val == 0 && (currentFuelPercent > 0 || !isEngineRunning())) {
+            return;
+        }
         try {
             int pct;
             float liters;

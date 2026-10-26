@@ -11,10 +11,10 @@
     <div class="flex flex-col space-y-2.5">
       <!-- 顶部紧凑卡片：硬件芯片码 + 8格车牌预览 + 绿牌/蓝牌切换 (横向集成，不占垂直高度) -->
       <div class="flex items-center justify-between p-3 rounded-2xl bg-car-card border-2 border-car-border">
-        <!-- 左侧：硬件芯片码 (单行紧凑) -->
+        <!-- 左侧：硬件芯片识别码 (单行紧凑) -->
         <div class="flex items-center space-x-2">
           <span class="text-[12px] text-car-sub font-bold whitespace-nowrap">硬件芯片码:</span>
-          <span class="text-[15px] font-mono font-black text-car-accent tracking-wide">{{ carId }}</span>
+          <span class="text-[14px] font-mono font-black text-car-accent tracking-wide">{{ carId }}</span>
         </div>
 
         <!-- 中间：8格车牌实时预览 (车规大字体但高度紧凑 50px) -->
@@ -317,5 +317,6 @@ function onClearAll() {
 function onConfirmSave() {
   if (!isPlateComplete.value) return;
   emit('confirm', assembledPlate.value);
+  emit('close');
 }
 </script>

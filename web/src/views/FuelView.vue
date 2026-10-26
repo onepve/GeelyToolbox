@@ -1050,12 +1050,14 @@ function onPlateConfirmed(newPlate) {
     saveFuelConfig(store.fuelLedger.config);
   }
   showPlateModal.value = false;
-  openModal('confirm', {
-    title: '车牌绑定成功',
-    desc: `已成功将车牌【 ${newPlate} 】绑定至当前出厂硬件芯片 (${store.fuelLedger.config.car_id || 'COOL'})。后续手机端扫码即可同步该车。`,
-    showCancel: false,
-    confirmText: '好的'
-  });
+  setTimeout(() => {
+    openModal('confirm', {
+      title: '车牌绑定成功',
+      desc: `已成功将车牌【 ${newPlate} 】绑定至当前出厂硬件芯片 (${store.fuelLedger.config.car_id || 'COOL'})。后续手机端扫码即可同步该车。`,
+      showCancel: false,
+      confirmText: '好的'
+    });
+  }, 100);
 }
 
 function showCloudPairModal() {

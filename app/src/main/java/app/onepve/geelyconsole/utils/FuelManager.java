@@ -279,13 +279,13 @@ public class FuelManager {
      */
     public static int fetchLatestFuelFromLogcat() {
         try {
-            String out = SystemUtils.executeShell("logcat -d -v time | grep -iE 'P_REMAINING_OIL|0x00201100|0x11600407|mModelFuel' | tail -n 5");
+            String out = SystemUtils.executeShell("logcat -d -v time | grep -iE 'INFO_ID_REMAINING_OIL|RemainingOil|0x11600407|mModelFuel' | tail -n 5");
             if (out != null && !out.isEmpty()) {
                 String[] lines = out.split("\n");
                 for (int i = lines.length - 1; i >= 0; i--) {
                     String line = lines[i];
                     // 1. 匹配 SensorModule 格式 (funValue / funcValue / hex)
-                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?:P_REMAINING_OIL|0x00201100|0x11600407).*?(?:(?:funValue|funcValue)\\((?:0x)?([0-9a-fA-F]+)\\)|[:=]\\s*([0-9.]+))", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(line);
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?:INFO_ID_REMAINING_OIL|RemainingOil|remaining_oil|0x11600407).*?(?:(?:funValue|funcValue)\\((?:0x)?([0-9a-fA-F]+)\\)|[:=]\\s*([0-9.]+))", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(line);
                     if (m.find()) {
                         String hexStr = m.group(1);
                         String decStr = m.group(2);
@@ -295,7 +295,8 @@ public class FuelManager {
                         } else if (decStr != null && !decStr.isEmpty()) {
                             val = (int) Double.parseDouble(decStr);
                         }
-                        if (val >= 0 && val <= 100) return val;
+                        // 熄火断电时传感器离线常发 0 值，过滤无效 0 避免跳动
+                        if (val > 0 && val <= 100) return val;
                         if (val > 100 && val <= 1000) return Math.min(100, val / 10);
                     }
                     // 2. 匹配 ecarx_core_server mModelFuel 格式
@@ -311,7 +312,7 @@ public class FuelManager {
                             }
                             if (num.length() > 0) {
                                 int v = Integer.parseInt(num.toString());
-                                if (v >= 0 && v <= 100) return v;
+                                if (v > 0 && v <= 100) return v;
                             }
                         }
                     }
