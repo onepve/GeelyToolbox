@@ -140,22 +140,28 @@
       helpText="1. 接管模式选择：&#10;• 控制台独立接管（推荐）：方向盘按键直接控制切歌与播放，自动唤醒车载喇叭，体验最流畅。&#10;• 米小江方控优先：如果车机上装了米小江 CarMedia，选这项让它优先处理切歌，两者互不打扰。&#10;• 恢复原厂默认：不拦截方向盘按键，全部交回原车控制。&#10;&#10;2. 蓝牙无声问题解决：&#10;独立接管模式下，手机连车机蓝牙放微信语音或音乐没声音时，会自动帮您接通车载喇叭。&#10;&#10;3. 仪表与屏保显示：&#10;可自由选择是否把当前歌名和歌词推送到仪表盘或屏保上显示。" 
       helpTip="如果同时装了米小江请选「米小江方控优先」；只用本工具箱建议选「控制台独立接管」。"
     >
-      <div class="grid grid-cols-3 gap-4" style="grid-gap: 14px; -webkit-column-gap: 14px;">
+      <div class="grid grid-cols-4 gap-3.5" style="grid-gap: 12px; -webkit-column-gap: 12px;">
         <MatrixButton 
           title="米小江方控优先"
-          subtitle="放行切歌与Mode键，工具箱补充静音键接管"
+          subtitle="放行切歌与Mode键，补充静音键接管"
           :active="store.vehicleAuto.wheel_control_mode === 'carmedia_first'"
           @click="setWheelMode('carmedia_first')"
         />
         <MatrixButton 
-          title="控制台独立接管 (推荐)"
-          subtitle="全量接管切歌与按键，并自动选通原车蓝牙音频硬件通道"
-          :active="store.vehicleAuto.wheel_control_mode === 'toolbox_alone' || (!store.vehicleAuto.wheel_control_mode && store.vehicleAuto.wheel_control_mode !== 'factory_default')"
+          title="控制台独立接管"
+          subtitle="全量接管按键，自动选通蓝牙通道"
+          :active="store.vehicleAuto.wheel_control_mode === 'toolbox_alone' || (!store.vehicleAuto.wheel_control_mode && store.vehicleAuto.wheel_control_mode !== 'factory_default' && store.vehicleAuto.wheel_control_mode !== 'bt_only')"
           @click="setWheelMode('toolbox_alone')"
         />
         <MatrixButton 
+          title="仅接管蓝牙"
+          subtitle="不接管方控按键，仅选通蓝牙防断流"
+          :active="store.vehicleAuto.wheel_control_mode === 'bt_only'"
+          @click="setWheelMode('bt_only')"
+        />
+        <MatrixButton 
           title="恢复原厂默认"
-          subtitle="解禁原厂广播接收器，完全不拦截任何按键"
+          subtitle="解禁原厂广播接收，完全不拦截"
           :active="store.vehicleAuto.wheel_control_mode === 'factory_default'"
           @click="setWheelMode('factory_default')"
         />
@@ -445,7 +451,13 @@ function toggleWheelMasterSwitch() {
 function setWheelMode(mode) {
   store.vehicleAuto.wheel_control_mode = mode;
   bridge.call('setWheelControlStringSetting', 'wheel_control_mode', mode);
-  showToast('方控模式已切换: ' + (mode === 'carmedia_first' ? '米小江优先' : (mode === 'toolbox_alone' ? '控制台独立接管' : '恢复原厂')));
+  const modeNames = {
+    carmedia_first: '米小江优先',
+    toolbox_alone: '控制台独立接管',
+    bt_only: '仅接管蓝牙(放行方控)',
+    factory_default: '恢复原厂'
+  };
+  showToast('方控模式已切换: ' + (modeNames[mode] || mode));
 }
 
 function toggleClusterPlayback() {

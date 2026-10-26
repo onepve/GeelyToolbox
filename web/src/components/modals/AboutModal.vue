@@ -117,7 +117,23 @@
 
     <template #footer>
       <div class="flex items-center justify-between w-full">
-        <!-- 左侧单行平铺：实车屏幕参数徽章 + 自动检查更新胶囊开关 (严格单行，车规标准 54px 高度对齐，完全不换行) -->
+        <!-- 左侧单行操作按钮组 (靠主驾侧方便盲操点击，顺序原样保持：强制重新下载 + 检查版本更新) -->
+        <div class="flex items-center space-x-2.5">
+          <button 
+            @click="forceDownloadCurrent"
+            class="min-h-[54px] px-5 bg-car-item border-2 border-car-border rounded-xl text-car-sub hover:text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+          >
+            强制重新下载
+          </button>
+          <button 
+            @click="checkUpdate"
+            class="min-h-[54px] px-6 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[16.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md"
+          >
+            检查版本更新
+          </button>
+        </div>
+
+        <!-- 右侧单行平铺：实车屏幕参数徽章 + 自动检查更新胶囊开关 (严格单行，车规标准 54px 高度对齐，完全不换行) -->
         <div class="flex items-center space-x-3">
           <!-- 屏幕参数紧凑徽章 -->
           <div class="h-[54px] px-4 rounded-xl bg-car-item border-2 border-car-border flex items-center space-x-2 text-[14px] text-car-sub shadow-sm select-none">
@@ -140,22 +156,6 @@
           >
             <StatusDot size="xs" :color="autoCheckUpdateEnabled ? 'success' : 'neutral'" class="mr-0.5" />
             <span>自动检查更新: <b>{{ autoCheckUpdateEnabled ? '开启' : '关闭' }}</b></span>
-          </button>
-        </div>
-
-        <!-- 右侧单行操作按钮组 (移除冗余关闭按钮，聚焦核心更新操作) -->
-        <div class="flex items-center space-x-2.5">
-          <button 
-            @click="forceDownloadCurrent"
-            class="min-h-[54px] px-5 bg-car-item border-2 border-car-border rounded-xl text-car-sub hover:text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
-          >
-            强制重新下载
-          </button>
-          <button 
-            @click="checkUpdate"
-            class="min-h-[54px] px-6 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[16.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md"
-          >
-            检查版本更新
           </button>
         </div>
       </div>

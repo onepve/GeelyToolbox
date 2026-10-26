@@ -151,8 +151,8 @@ public class EasMediaBridge {
             return;
         }
 
-        if ("toolbox_alone".equals(mode) || a2dpSinkConnected) {
-            // 控制台独立接管或手机蓝牙已连接：确保 EAS 初始化并注册选通蓝牙通道
+        if ("toolbox_alone".equals(mode) || "bt_only".equals(mode) || a2dpSinkConnected) {
+            // 控制台独立接管、仅接管蓝牙或手机蓝牙已连接：确保 EAS 初始化并注册选通蓝牙通道
             ensureEasReady();
             if (a2dpSinkConnected && a2dpStreaming) {
                 activateBluetoothChannel();

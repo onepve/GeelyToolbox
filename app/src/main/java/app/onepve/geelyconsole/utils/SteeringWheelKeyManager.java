@@ -65,6 +65,7 @@ public class SteeringWheelKeyManager {
     // 接管模式
     public static final String MODE_CARMEDIA_FIRST = "carmedia_first"; // 米小江方控优先
     public static final String MODE_TOOLBOX_ALONE = "toolbox_alone";   // 控制台接管
+    public static final String MODE_BT_ONLY = "bt_only";               // 仅接管蓝牙(放行方控)
     public static final String MODE_FACTORY_DEFAULT = "factory_default"; // 恢复原厂
 
     // 按键功能选项
@@ -374,8 +375,8 @@ public class SteeringWheelKeyManager {
         }
         lastKeyTriggerTime.put(keyCode, now);
 
-        if (MODE_FACTORY_DEFAULT.equals(wheelModeCached)) {
-            AppLogger.i("方控按键", "处于[恢复原厂默认]模式，放行按键事件: " + getKeyName(keyCode));
+        if (MODE_FACTORY_DEFAULT.equals(wheelModeCached) || MODE_BT_ONLY.equals(wheelModeCached)) {
+            AppLogger.i("方控按键", "处于[" + (MODE_BT_ONLY.equals(wheelModeCached) ? "仅接管蓝牙" : "恢复原厂默认") + "]模式，放行按键事件: " + getKeyName(keyCode));
             return;
         }
 

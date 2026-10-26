@@ -11,13 +11,13 @@ export { MODES, PALETTES, V1_PALETTES, V2_PALETTES };
 export const MODE_LABELS = { auto: '跟随车机', day: '白天', night: '黑夜' };
 export const PALETTE_LABELS = {
   blue: '蓝', brown: '棕', green: '绿', pink: '粉', gold: '金',
-  sky_ocean: '蓝', aurora_cyber: '青', amber_gold: '金', bamboo_emerald: '绿',
+  sky_ocean: '蓝', aurora_cyber: '霓虹', amber_gold: '金', bamboo_emerald: '绿',
   sakura_pink: '粉', taro_purple: '紫'
 };
 // 色卡小圆点取色（各配色主色，取自认可效果图）
 export const PALETTE_DOT = {
   blue: '#5b8cff', brown: '#d4a04a', green: '#3fbf88', pink: '#d46a8c', gold: '#d99a26',
-  sky_ocean: '#2563eb', aurora_cyber: '#059669', amber_gold: '#d97706', bamboo_emerald: '#16a34a',
+  sky_ocean: '#2563eb', aurora_cyber: '#06b6d4', amber_gold: '#d97706', bamboo_emerald: '#16a34a',
   sakura_pink: '#f43f5e', taro_purple: '#8b5cf6'
 };
 
@@ -32,13 +32,13 @@ export const V2_THEME_INFO = {
     accent: '#2563eb'
   },
   aurora_cyber: {
-    name: '极光幻境 / 霓虹深空',
-    shortName: '极光青',
-    tag: '电竞赛博',
-    desc: '白天淡青护眼漫射，夜间深邃青绿呼吸环',
-    dayBg: '#edf9f5',
-    nightBg: '#081412',
-    accent: '#059669'
+    name: '极光霓虹 / 幻境星海',
+    shortName: '极光霓虹',
+    tag: '旗舰创新',
+    desc: '白天淡青抗眩强漫射，夜间深沉曜黑青紫流光',
+    dayBg: '#f0f9fa',
+    nightBg: '#080812',
+    accent: '#06b6d4'
   },
   amber_gold: {
     name: '暖阳琥珀 / 曜石流金',
