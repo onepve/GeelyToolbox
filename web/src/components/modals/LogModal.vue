@@ -207,21 +207,67 @@
         </div>
       </div>
 
-      <!-- 阶段 3：上传成功，展示 8 位纯数字车机日志识别码 -->
-      <div v-else-if="uploadStatus === 'success'" class="py-4 flex flex-col items-center text-center select-none">
-        <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl font-black mb-3">
-          ✓
-        </div>
-        <h3 class="text-[22px] font-black text-car-text mb-1">诊断日志已安全上传！</h3>
-        <p class="text-[14px] text-car-sub mb-4">已归档至开发者诊断库 · 30天后全自动彻底物理销毁</p>
+      <!-- 阶段 3：上传成功，展示 8 位纯数字车机日志识别码与新车型适配赞赏支持 -->
+      <div v-else-if="uploadStatus === 'success'" class="py-3 flex flex-col items-center select-none w-full">
+        <!-- 左右两列排开：左侧日志识别码与指引，右侧赞赏码与车型适配支持 -->
+        <div class="grid grid-cols-2 gap-4 w-full">
+          <!-- 左列：识别码与联系指引 -->
+          <div class="flex flex-col justify-between p-5 rounded-2xl bg-car-item border border-emerald-500/40">
+            <div>
+              <div class="flex items-center space-x-2 mb-2">
+                <span class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[16px] font-black">✓</span>
+                <span class="text-[17px] font-black text-car-text">日志已安全送达云端</span>
+              </div>
+              <div class="text-[12.5px] text-car-sub mb-3">
+                车型平台: <strong class="text-car-accent font-mono">{{ logMeta.modelCode }}</strong> · 30天全自动彻底物理销毁
+              </div>
 
-        <div class="p-6 rounded-2xl bg-car-item border-2 border-emerald-500/50 w-full max-w-[480px] shadow-lg mb-2">
-          <div class="text-[13px] font-bold text-car-sub mb-1 uppercase tracking-wider">专属 8 位车机日志识别码</div>
-          <div class="text-[40px] font-mono font-black text-emerald-400 tracking-[0.2em] my-1">
-            {{ extractedCode }}
+              <div class="p-4 rounded-xl bg-car-card border border-car-border/60 text-center mb-3">
+                <div class="text-[12px] font-bold text-car-sub uppercase tracking-wider mb-0.5">专属 8 位车机日志识别码</div>
+                <div class="text-[34px] font-mono font-black text-emerald-400 tracking-[0.18em]">
+                  {{ extractedCode }}
+                </div>
+              </div>
+
+              <div class="space-y-1.5 text-[12.5px] text-car-sub leading-relaxed">
+                <p>• <strong>如何排查</strong>：请复制或拍照记下这 <strong class="text-emerald-400">{{ extractedCode }}</strong> 识别码，联系作者并详细描述您的故障现象。</p>
+                <p>• <strong>静默机制</strong>：未联系作者说明具体诉求的日志将静止留存，30天后自动焚毁。</p>
+              </div>
+            </div>
+
+            <div class="text-[12px] text-car-sub/80 mt-3 pt-2.5 border-t border-car-border/50">
+              车友交流 QQ 群：<span class="font-mono text-car-text font-bold">564654011</span>
+            </div>
           </div>
-          <div class="text-[13px] text-car-sub mt-2">
-            请将此 8 位识别码发送给作者，作者即可精准定位并分析您车机的诊断日志
+
+          <!-- 右列：微信赞赏码与车型适配加速支持 -->
+          <div class="flex flex-col items-center justify-between p-4 rounded-2xl bg-car-item border border-car-border">
+            <div class="w-full flex items-center justify-between mb-2 px-1">
+              <span class="text-[15px] font-black text-car-text flex items-center">
+                <span class="mr-1.5 text-amber-400">☕</span> 赞赏支持与排错加速
+              </span>
+              <span class="text-[11.5px] text-amber-500 bg-amber-500/15 px-2 py-0.5 rounded-full border border-amber-500/30 font-bold">
+                赞赏备注需求
+              </span>
+            </div>
+
+            <!-- 微信赞赏二维码 -->
+            <div class="p-2.5 bg-white rounded-xl shadow-md my-1">
+              <img 
+                :src="rewardQrImg" 
+                alt="微信赞赏码" 
+                class="w-36 h-36 object-contain rounded-lg block"
+              />
+            </div>
+
+            <div class="w-full text-center space-y-1 mt-2">
+              <div class="text-[12.5px] font-bold text-car-accent">
+                微信扫码赞赏 · 备注您的 8 位识别码与车型
+              </div>
+              <p class="text-[11.5px] text-car-sub leading-normal px-2">
+                可扫码赞赏作者以<strong>加速在现有功能上排查修复车型不适配 Bug</strong>（请在备注中留下识别码与诉求）；同时说明：部分车型若受<strong>硬件物理隔离或原厂协议限制确实不支持</strong>，则客观上无法实现修复，敬请车友理解。
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -361,6 +407,7 @@
 <script setup>
 import { ref, watch, nextTick, onUnmounted } from 'vue';
 import ModalWrapper from './ModalWrapper.vue';
+import rewardQrImg from '../../assets/img_reward_code.webp';
 import StatusDot from '../StatusDot.vue';
 import { store, bridge, closeModal, showToast, openModal } from '../../store';
 
