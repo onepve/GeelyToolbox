@@ -31,23 +31,23 @@
             </div>
           </div>
 
-          <div class="flex items-center justify-between p-3 rounded-2xl bg-car-item border border-car-border">
-            <div class="flex flex-col">
-              <span class="text-[15.5px] font-black text-car-text">{{ currentBrightnessLabel }} ({{ currentBrightness }}%)</span>
-              <span class="text-[12px] font-medium text-car-sub">{{ isNightMode ? '黑夜深色适度压暗防眩目' : '白天白底适度压暗防眩目' }}</span>
+          <div class="flex items-center p-3 rounded-2xl bg-car-item border border-car-border space-x-3">
+            <div class="flex flex-col shrink-0 min-w-0">
+              <span class="text-[15px] font-black text-car-text whitespace-nowrap">{{ currentBrightnessLabel }} ({{ currentBrightness }}%)</span>
+              <span class="text-[11.5px] font-medium text-car-sub whitespace-nowrap">{{ isNightMode ? '黑夜深色适度压暗防眩目' : '白天白底适度压暗防眩目' }}</span>
             </div>
             <!-- 自定义车规平滑滑块（彻底解决 Android 9 WebView 原生 input[type=range] 无法触摸拖动的问题） -->
-            <div class="flex items-center space-x-2">
+            <div class="flex-1 flex items-center justify-end space-x-2 min-w-0">
               <button
                 @click="stepBrightness(-5)"
-                class="w-7 h-7 rounded-lg bg-car-card border border-car-border flex items-center justify-center text-car-sub hover:text-car-text hover:border-car-accent text-[13px] font-black cursor-pointer active:scale-95 transition-all select-none"
+                class="w-7 h-7 shrink-0 rounded-lg bg-car-card border border-car-border flex items-center justify-center text-car-sub hover:text-car-text hover:border-car-accent text-[13px] font-black cursor-pointer active:scale-95 transition-all select-none"
                 title="减小亮度"
               >-</button>
               <div
                 ref="sliderRef"
                 @mousedown="onSliderMouseDown"
                 @touchstart.prevent="onSliderTouchStart"
-                class="relative w-36 sm:w-44 h-7 flex items-center cursor-pointer select-none py-1"
+                class="relative flex-1 max-w-[260px] h-7 flex items-center cursor-pointer select-none py-1"
                 style="touch-action: none;"
               >
                 <!-- 轨道槽线 -->
@@ -66,7 +66,7 @@
               </div>
               <button
                 @click="stepBrightness(5)"
-                class="w-7 h-7 rounded-lg bg-car-card border border-car-border flex items-center justify-center text-car-sub hover:text-car-text hover:border-car-accent text-[13px] font-black cursor-pointer active:scale-95 transition-all select-none"
+                class="w-7 h-7 shrink-0 rounded-lg bg-car-card border border-car-border flex items-center justify-center text-car-sub hover:text-car-text hover:border-car-accent text-[13px] font-black cursor-pointer active:scale-95 transition-all select-none"
                 title="增加亮度"
               >+</button>
             </div>
