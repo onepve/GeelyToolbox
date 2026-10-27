@@ -128,7 +128,7 @@ jobs:
 
           # 如果是正式版发布，预先拉取线上 apps.json 供脚本更新
           if [[ "$TAG_NAME" != beta-* ]]; then
-            curl -s "https://dl.onepve.com/GeelyToolbox/apps.json?t=$(date +%s)" -o /tmp/apps.json || true
+            curl -sSL -f "https://dl.onepve.com/GeelyToolbox/apps.json?t=$(date +%s)" -o /tmp/apps.json || rm -f /tmp/apps.json
           fi
 
           # 统一由独立 Python 脚本生成规范元数据，彻底避免 shell heredoc 缩进问题

@@ -112,25 +112,30 @@ def main():
 
         # 更新 apps.json toolbox 字段
         apps_json_path = "/tmp/apps.json"
-        if os.path.exists(apps_json_path):
-            with open(apps_json_path, "r", encoding="utf-8") as f:
-                apps_data = json.load(f)
-            apps_data["version"] = version_name
-            apps_data["updated_at"] = today
-            tb = apps_data.get("toolbox", {})
-            tb.update({
-                "version": version_name,
-                "version_code": version_code,
-                "md5": md5,
-                "sha256": sha256,
-                "bytes": bytes_len,
-                "size": size_mb,
-                "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v={version_name}"
-            })
-            apps_data["toolbox"] = tb
-            with open(apps_json_path, "w", encoding="utf-8") as f:
-                json.dump(apps_data, f, ensure_ascii=False, indent=4)
-            print(">> /tmp/apps.json updated.")
+        if os.path.exists(apps_json_path) and os.path.getsize(apps_json_path) > 0:
+            try:
+                with open(apps_json_path, "r", encoding="utf-8") as f:
+                    apps_data = json.load(f)
+                apps_data["version"] = version_name
+                apps_data["updated_at"] = today
+                tb = apps_data.get("toolbox", {})
+                tb.update({
+                    "version": version_name,
+                    "version_code": version_code,
+                    "md5": md5,
+                    "sha256": sha256,
+                    "bytes": bytes_len,
+                    "size": size_mb,
+                    "download_url": f"https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk?v={version_name}"
+                })
+                apps_data["toolbox"] = tb
+                with open(apps_json_path, "w", encoding="utf-8") as f:
+                    json.dump(apps_data, f, ensure_ascii=False, indent=4)
+                print(">> /tmp/apps.json updated.")
+            except Exception as e:
+                print(f"[WARN] Failed to parse /tmp/apps.json: {e}, removing invalid file")
+                if os.path.exists(apps_json_path):
+                    os.remove(apps_json_path)
 
     # 无论测试版还是正式版，统一生成全国实时油价权威基准 /tmp/oil-price.json
     export_oil_prices()
