@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 
+import app.onepve.geelyconsole.hal.platform.BinruiCoolPlatform;
 import app.onepve.geelyconsole.hal.platform.BinyueCoolPlatform;
 import app.onepve.geelyconsole.hal.platform.BinyueLPlatform;
 import app.onepve.geelyconsole.hal.platform.GenericAospPlatform;
@@ -55,7 +56,14 @@ public class VehiclePlatformFactory {
                 return new app.onepve.geelyconsole.hal.platform.EmgrandLPlatform();
             }
 
-            // 3. 缤越 COOL / 亿咖通 E02 / IHU516G 特征检测
+            // 3. 缤瑞 COOL / 亿咖通 E02 / IHU510G (FE6A3) 特征检测
+            if (model.contains("FE6A") || model.contains("FE-6") || model.contains("BINRUI")
+                    || fingerprint.contains("fe6a") || fingerprint.contains("binrui")) {
+                Log.i(TAG, "Detected Geely Binrui COOL (E02 / IHU510G / FE6A3) Platform");
+                return new BinruiCoolPlatform();
+            }
+
+            // 4. 缤越 COOL / 亿咖通 E02 / IHU516G 特征检测
             if (model.contains("SX11") || model.contains("IHU516") || fingerprint.contains("ecarx")
                     || manufacturer.contains("ecarx") || fingerprint.contains("geely")) {
                 Log.i(TAG, "Detected Geely Binyue COOL (E02 / IHU516G) Platform");

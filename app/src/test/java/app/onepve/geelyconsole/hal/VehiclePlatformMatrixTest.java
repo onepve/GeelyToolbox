@@ -1,5 +1,6 @@
 package app.onepve.geelyconsole.hal;
 
+import app.onepve.geelyconsole.hal.baselines.BinruiCoolBaselineTest;
 import app.onepve.geelyconsole.hal.baselines.BinyueCool2022BaselineTest;
 import app.onepve.geelyconsole.hal.baselines.BinyueLBaselineTest;
 import app.onepve.geelyconsole.hal.baselines.EmgrandLBaselineTest;
@@ -20,10 +21,13 @@ public class VehiclePlatformMatrixTest {
         // 1. 缤越 COOL 2022 核心黄金基线回归
         totalFailures += BinyueCool2022BaselineTest.runBaselineChecks();
 
-        // 2. 帝豪 L 核心基线回归
+        // 2. 缤瑞 COOL 核心基线回归
+        totalFailures += BinruiCoolBaselineTest.runBaselineChecks();
+
+        // 3. 帝豪 L 核心基线回归
         totalFailures += EmgrandLBaselineTest.runBaselineChecks();
 
-        // 3. 缤越 L 核心基线回归
+        // 4. 缤越 L 核心基线回归
         totalFailures += BinyueLBaselineTest.runBaselineChecks();
 
         if (totalFailures > 0) {

@@ -738,8 +738,8 @@ public class VehicleAutomationService extends Service {
         "reportkeytoadaptapi", "shouldcallback", "swc_trip", "do nothing for this key", "onalreadyhome", "cmd_data[",
         // 2. 车辆实时车速
         "caraudioinfo", "get speed", "ipkinfo_instant_speed", "vehiclespeed", "carspeed", "vehicle_speed", "ipkspeed",
-        // 3. 挡位状态 (彻底锁定原厂唯一真源: VehId=Vehicle_Gear)
-        "vehicle_gear",
+        // 3. 挡位状态 (彻底锁定原厂唯一真源: VehId=Vehicle_Gear 与 INFO_ID_VDRIVEINFO_GEAR_POSITION)
+        "vehicle_gear", "info_id_vdriveinfo_gear_position",
         // 4. 车门、后尾箱与乘员安全带
         "91 02 01", "mcu->mpu", "_door_sts", "mmodellfdoor", "mmodelrfdoor", "mmodellrdoor", "mmodelrrdoor", "seat_belt", "0x002012", "0x002013",
         // 5. 驾驶模式切换
@@ -1014,8 +1014,8 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // 3. 解析车辆挡位报文 (唯一法定真源: VehId=Vehicle_Gear)
-        // 核心铁律：仅信赖原厂底盘总线 VehId=Vehicle_Gear (0x02=D, 0x03=N, 0x04=R, 0x05=P)，绝不杂糅任何上层伪信号！
+        // 3. 解析车辆挡位报文 (法定真源通道: VehId=Vehicle_Gear 与 SensorModule INFO_ID_VDRIVEINFO_GEAR_POSITION)
+        // 核心铁律：仅信赖原厂底盘总线 VehId=Vehicle_Gear (0x02=D, 0x03=N, 0x04=R, 0x05=P) 与 E02 底盘挡位报文 (0x10=P, 0x20=D, 0x30=N, 0x40=R)，绝不杂糅任何上层伪信号！
         int gearVal = -1;
 
         if (line.contains("VehId=Vehicle_Gear")) {
@@ -1030,6 +1030,20 @@ public class VehicleAutomationService extends Service {
                     else if (low == 0x02) gearVal = 2; // D 挡 (前进)
                     else if (low == 0x06 || low == 0x07) gearVal = 6; // S 挡
                     else if (low >= 2 && low <= 7) gearVal = low;
+                }
+            } catch (Exception ignored) {}
+        } else if (line.contains("INFO_ID_VDRIVEINFO_GEAR_POSITION")) {
+            // 吉利 E02 底盘挡位报文 (如缤瑞 COOL FE6A3 平台: return funValue(0x00200230))
+            // 权威映射：低字节 0x10=P, 0x20=D, 0x30=N, 0x40=R
+            try {
+                Matcher m = P_FUNVALUE.matcher(line);
+                if (m.find()) {
+                    long rawVal = Long.parseLong(m.group(1), 16);
+                    int low = (int) (rawVal & 0xFF);
+                    if (low == 0x10) gearVal = 5;      // P 挡
+                    else if (low == 0x40) gearVal = 4; // R 挡
+                    else if (low == 0x30) gearVal = 3; // N 挡
+                    else if (low == 0x20) gearVal = 2; // D 挡
                 }
             } catch (Exception ignored) {}
         }

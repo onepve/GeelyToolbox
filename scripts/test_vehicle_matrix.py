@@ -91,6 +91,59 @@ def test_binyue_cool_2022():
         print("     [PASS] 缤越 COOL (2022) 核心门禁 100% 通过！")
     return failures
 
+def test_binrui_cool():
+    print("  >> [基线回归] 吉利缤瑞 COOL (2022 / E02 / IHU510G / FE6A3) 核心门禁测试...")
+    failures = 0
+    content = read_file("app/src/main/java/app/onepve/geelyconsole/hal/platform/BinruiCoolPlatform.java")
+    if not content:
+        print("     [FAIL] BinruiCoolPlatform.java 不存在！")
+        return 1
+    if 'PLATFORM_CODE = "binrui_cool_e02"' not in content:
+        print("     [FAIL] 缤瑞 COOL 平台代码不匹配！")
+        failures += 1
+    if "return 50.0;" not in content:
+        print("     [FAIL] 缤瑞 COOL 标称油箱容积必须为 50.0L！")
+        failures += 1
+    if "AudioDecodeStrategy.HARD_FIRST_WITH_SOFT_FALLBACK" not in content:
+        print("     [FAIL] 缤瑞 COOL 音频策略必须为 HARD_FIRST_WITH_SOFT_FALLBACK！")
+        failures += 1
+
+    # 实车 Logcat 抓包仿真 (INFO_ID_VDRIVEINFO_GEAR_POSITION return funValue(0x00200230))
+    p_funvalue = re.compile(r"funValue\((?:0x)?([0-9a-fA-F]+)\)")
+    binrui_logs = [
+        "10-27 16:38:00.000 I/SensorModule( 5486): getFunctionValue:funId(0x00200200) zone(0x00000000) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) return funValue(0x00200210)", # P
+        "10-27 16:38:05.000 I/SensorModule( 5486): getFunctionValue:funId(0x00200200) zone(0x00000000) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) return funValue(0x00200240)", # R
+        "10-27 16:38:10.000 I/SensorModule( 5486): getFunctionValue:funId(0x00200200) zone(0x00000000) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) return funValue(0x00200230)", # N
+        "10-27 16:38:15.000 I/SensorModule( 5486): getFunctionValue:funId(0x00200200) zone(0x00000000) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) return funValue(0x00200220)", # D
+    ]
+
+    current_gear = 5
+    announcements = []
+    gear_map = {2: "D", 3: "N", 4: "R", 5: "P"}
+
+    for log in binrui_logs:
+        if "INFO_ID_VDRIVEINFO_GEAR_POSITION" in log:
+            m = p_funvalue.search(log)
+            if m:
+                raw_val = int(m.group(1), 16)
+                low = raw_val & 0xFF
+                g = -1
+                if low == 0x10: g = 5
+                elif low == 0x40: g = 4
+                elif low == 0x30: g = 3
+                elif low == 0x20: g = 2
+                if g > 0 and g != current_gear:
+                    current_gear = g
+                    announcements.append(gear_map.get(g, "UNKNOWN"))
+
+    if current_gear != 2 or announcements != ["R", "N", "D"]:
+        print(f"     [FAIL] 缤瑞 COOL 挡位流解析异常: gear={current_gear}, ann={announcements}")
+        failures += 1
+
+    if failures == 0:
+        print("     [PASS] 缤瑞 COOL (FE6A3) 核心门禁 100% 通过！")
+    return failures
+
 def test_emgrand_l():
     print("  >> [基线回归] 吉利帝豪 L (E02 / IHU521G / SS13) 核心门禁测试...")
     failures = 0
@@ -141,6 +194,7 @@ def main():
     
     total = 0
     total += test_binyue_cool_2022()
+    total += test_binrui_cool()
     total += test_emgrand_l()
     total += test_binyue_l()
 

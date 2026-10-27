@@ -10,8 +10,8 @@ android {
         applicationId "app.onepve.geelyconsole"
         minSdk 28
         targetSdk 28
-        versionCode 1080299
-        versionName "1.8.2"
+        versionCode 1080399
+        versionName "1.8.3"
 
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -61,6 +61,7 @@ android {
 }
 
 dependencies {
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'javazoom:jlayer:1.0.1'
     testImplementation 'junit:junit:4.13.2'
 }
