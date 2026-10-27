@@ -33,8 +33,8 @@
 
           <div class="flex items-center justify-between p-3 rounded-2xl bg-car-item border border-car-border">
             <div class="flex flex-col">
-              <span class="text-[15.5px] font-black text-car-text">白天柔光亮度 ({{ dayBrightness }}%)</span>
-              <span class="text-[12px] font-medium text-car-sub">夜驾白底适度压暗防眩目</span>
+              <span class="text-[15.5px] font-black text-car-text">{{ currentBrightnessLabel }} ({{ currentBrightness }}%)</span>
+              <span class="text-[12px] font-medium text-car-sub">{{ isNightMode ? '黑夜深色适度压暗防眩目' : '白天白底适度压暗防眩目' }}</span>
             </div>
             <!-- 自定义车规平滑滑块（彻底解决 Android 9 WebView 原生 input[type=range] 无法触摸拖动的问题） -->
             <div class="flex items-center space-x-2">
@@ -120,14 +120,29 @@ import FeatureCard from './FeatureCard.vue';
 import {
   MODES, MODE_LABELS,
   V2_THEME_INFO,
-  setMode, setPalette, getDayBrightness, setDayBrightness
+  setMode, setPalette, getDayBrightness, setDayBrightness,
+  getNightBrightness, setNightBrightness, resolvedMode
 } from '../theme/themes';
 
 const dayBrightness = ref(Math.round(getDayBrightness() * 100));
+const nightBrightness = ref(Math.round(getNightBrightness() * 100));
 const sliderRef = ref(null);
 
+const isNightMode = computed(() => {
+  return resolvedMode() === 'night';
+});
+
+const currentBrightnessLabel = computed(() => {
+  return isNightMode.value ? '黑夜柔光亮度' : '白天柔光亮度';
+});
+
+const currentBrightness = computed(() => {
+  return isNightMode.value ? nightBrightness.value : dayBrightness.value;
+});
+
 const brightnessPercent = computed(() => {
-  const clamped = Math.max(70, Math.min(100, dayBrightness.value));
+  const val = currentBrightness.value;
+  const clamped = Math.max(70, Math.min(100, val));
   return ((clamped - 70) / 30) * 100;
 });
 
@@ -140,13 +155,19 @@ function onSetPalette(p) {
 }
 
 function stepBrightness(delta) {
-  const next = Math.max(70, Math.min(100, dayBrightness.value + delta));
+  const cur = currentBrightness.value;
+  const next = Math.max(70, Math.min(100, cur + delta));
   applyBrightnessValue(next);
 }
 
 function applyBrightnessValue(val) {
-  dayBrightness.value = val;
-  setDayBrightness(val / 100);
+  if (isNightMode.value) {
+    nightBrightness.value = val;
+    setNightBrightness(val / 100);
+  } else {
+    dayBrightness.value = val;
+    setDayBrightness(val / 100);
+  }
 }
 
 function updateBrightnessFromCoord(clientX) {
@@ -156,7 +177,7 @@ function updateBrightnessFromCoord(clientX) {
   const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
   const rawVal = 70 + ratio * 30;
   const val = Math.round(rawVal);
-  if (val !== dayBrightness.value) {
+  if (val !== currentBrightness.value) {
     applyBrightnessValue(val);
   }
 }

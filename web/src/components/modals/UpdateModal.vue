@@ -44,7 +44,7 @@
 
       <!-- 错误提示 -->
       <div v-if="downloadError" class="bg-rose-500/15 border border-rose-500 text-rose-400 p-4 rounded-xl font-bold text-[15px]">
-        下载中断：{{ downloadError }}，请检查车机网络后重试。
+        {{ downloadError }}
       </div>
 
       <!-- 更新日志卡片 -->

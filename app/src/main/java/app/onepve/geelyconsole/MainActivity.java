@@ -2522,9 +2522,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                                 mainHandler.post(new Runnable() {
                                                     @Override
                                                     public void run() {
-                                                        String script = "if(window.updateToolboxSelfError){window.updateToolboxSelfError('安装包校验失败，文件损坏，请重新下载');}";
+                                                        String detailMsg = "安装包校验失败 (MD5不匹配: 期望 " + expectedMd5.substring(0, Math.min(8, expectedMd5.length())) + "... 实际 " + fileMd5.substring(0, Math.min(8, fileMd5.length())) + "...)，请重试";
+                                                        String script = "if(window.updateToolboxSelfError){window.updateToolboxSelfError('" + detailMsg + "');}";
                                                         webView.evaluateJavascript(script, null);
-                                                        showToast("安装包校验失败，文件损坏，请重新下载");
+                                                        showToast("安装包校验失败，文件不匹配");
                                                     }
                                                 });
                                                 return;

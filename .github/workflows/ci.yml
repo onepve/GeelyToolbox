@@ -162,6 +162,27 @@ jobs:
               --endpoint-url "${{ secrets.R2_ENDPOINT }}" --no-progress
           fi
 
+      - name: Purge Cloudflare CDN Cache
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$CF_API_TOKEN" ]; then
+            echo ">> 正在强刷 Cloudflare CDN 边缘节点缓存，杜绝旧版本安装包与元数据脏读..."
+            curl -s -X POST "https://api.cloudflare.com/client/v4/zones/11e721ee98e46e59da3e50fe90eef7ce/purge_cache" \
+              -H "Authorization: Bearer ***" \
+              -H "Content-Type: application/json" \
+              --data '{"files":[
+                "https://dl.onepve.com/GeelyToolbox/version.json",
+                "https://dl.onepve.com/GeelyToolbox/version-beta.json",
+                "https://dl.onepve.com/GeelyToolbox/apps.json",
+                "https://dl.onepve.com/GeelyToolbox/GeelyToolbox.apk",
+                "https://dl.onepve.com/GeelyToolbox/GeelyPilot.apk",
+                "https://dl.onepve.com/GeelyToolbox/GeelyToolbox-beta.apk",
+                "https://dl.onepve.com/GeelyToolbox/GeelyPilot-beta.apk"
+              ]}' || true
+            echo ">> Cloudflare CDN 刷新指令已下发！"
+          fi
+
       - name: Publish Official Release on Tag
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2

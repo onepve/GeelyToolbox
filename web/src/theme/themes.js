@@ -94,6 +94,22 @@ export function setDayBrightness(val) {
   applyTheme();
 }
 
+export function getNightBrightness() {
+  try {
+    const val = localStorage.getItem('toolbox_night_brightness');
+    if (val) return parseFloat(val);
+  } catch (e) {}
+  return 1.0;
+}
+
+export function setNightBrightness(val) {
+  const clamped = Math.max(0.65, Math.min(1.0, val));
+  try {
+    localStorage.setItem('toolbox_night_brightness', clamped.toString());
+  } catch (e) {}
+  applyTheme();
+}
+
 
 const OLD_TO_NEW_PALETTE = {
   blue: 'sky_ocean',
@@ -177,7 +193,12 @@ export function applyTheme() {
   } else {
     root.classList.remove('light');
     document.body.classList.remove('light');
-    root.style.filter = '';
+    const nb = getNightBrightness();
+    if (nb < 0.99) {
+      root.style.filter = `brightness(${nb})`;
+    } else {
+      root.style.filter = '';
+    }
   }
 }
 
