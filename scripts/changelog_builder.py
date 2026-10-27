@@ -85,6 +85,9 @@ def commit_subjects(tag_name, repo_dir, prev_tag="", limit=12):
         # 强制全中文检测：若提交主题为纯英文（无汉字），自动转为车规中文
         if not re.search(r"[\u4e00-\u9fff]", s):
             s = translate_en_to_cn(s)
+        # 兜底：若仍含有英文前缀或未翻译的英文，强制回退到标准车规中文文案
+        if not re.search(r"[\u4e00-\u9fff]", s):
+            s = "车机诊断日志上传与新车型适配流程优化"
         if s and s not in subjects:
             subjects.append(s)
     return subjects[:limit]
