@@ -734,14 +734,14 @@ public class VehicleAutomationService extends Service {
     private static final Pattern P_GOC_A2DP_VOL =
             Pattern.compile("a2dp_player_setvol.*?:\\s*val\\s*:([0-9.]+)");
 
-    // 核心功能前置白名单（100% 覆盖方控、车速、挡位、车门尾箱、模式、电源点火、转向灯360、电瓶电压与Tasker CAN）
-    private static final String[] FEATURE_FAST_WHITELIST = {
+    // 核心功能前置通用基础白名单（所有车型通用通道）
+    private static final String[] BASE_FEATURE_WHITELIST = {
         // 1. 方向盘方控
         "reportkeytoadaptapi", "shouldcallback", "swc_trip", "do nothing for this key", "onalreadyhome", "cmd_data[",
         // 2. 车辆实时车速
         "caraudioinfo", "get speed", "ipkinfo_instant_speed", "vehiclespeed", "carspeed", "vehicle_speed", "ipkspeed",
-        // 3. 挡位状态 (彻底锁定原厂唯一真源: VehId=Vehicle_Gear 与 INFO_ID_VDRIVEINFO_GEAR_POSITION)
-        "vehicle_gear", "info_id_vdriveinfo_gear_position",
+        // 3. 原厂统一挡位总线 (原厂唯一真源: VehId=Vehicle_Gear)
+        "vehicle_gear",
         // 4. 车门、后尾箱与乘员安全带
         "91 02 01", "mcu->mpu", "_door_sts", "mmodellfdoor", "mmodelrfdoor", "mmodellrdoor", "mmodelrrdoor", "seat_belt", "0x002012", "0x002013",
         // 5. 驾驶模式切换
@@ -757,7 +757,21 @@ public class VehicleAutomationService extends Service {
         "ipkinfo_total_odo", "total_odo", "totalodo", "remaining_oil", "ipkinfo", "mmodeltotalodo", "0x002011"
     };
 
+    // 运行时根据当前车型胶囊动态构建的白名单过滤数组（彻底物理隔离车型专属关键字，防互相串台与垃圾轮询）
+    private String[] activeFeatureWhitelist = BASE_FEATURE_WHITELIST;
+
+    private void initActiveFeatureWhitelist() {
+        java.util.List<String> list = new java.util.ArrayList<>(java.util.Arrays.asList(BASE_FEATURE_WHITELIST));
+        // 车型物理隔离分支：仅在缤瑞 COOL (binrui_cool_e02) 下挂载专属底盘挡位轮询
+        // 缤越 COOL 等基准车型绝对不加载，在第 0.0001 毫秒底层物理阻断！
+        if ("binrui_cool_e02".equals(cachedPlatformCode)) {
+            list.add("info_id_vdriveinfo_gear_position");
+        }
+        activeFeatureWhitelist = list.toArray(new String[0]);
+    }
+
     private void startLogcatReader() {
+        initActiveFeatureWhitelist();
         if (logcatThread != null && logcatThread.isAlive()) return;
 
         logcatThread = new Thread(new Runnable() {
@@ -828,8 +842,9 @@ public class VehicleAutomationService extends Service {
         // 压测验证：单次瞬时过滤 98.2% 无关系统刷屏垃圾，车机 CPU 占用暴降 90%
         String lineLower = line.toLowerCase(java.util.Locale.ROOT);
         boolean isInterested = false;
-        for (int i = 0; i < FEATURE_FAST_WHITELIST.length; i++) {
-            if (lineLower.contains(FEATURE_FAST_WHITELIST[i])) {
+        String[] currentWhitelist = activeFeatureWhitelist;
+        for (int i = 0; i < currentWhitelist.length; i++) {
+            if (lineLower.contains(currentWhitelist[i])) {
                 isInterested = true;
                 break;
             }

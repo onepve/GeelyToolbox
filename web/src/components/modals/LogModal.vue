@@ -284,12 +284,6 @@
             {{ autoScroll ? '最新置顶: 开启' : '最新置顶: 暂停' }}
           </button>
           <button 
-            @click="manualRefresh"
-            class="min-h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-border text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm transition-all flex items-center"
-          >
-            刷新日志
-          </button>
-          <button 
             @click="exportFullLogs"
             :disabled="isExporting"
             class="min-h-[50px] px-5 rounded-xl border-2 font-black text-[15.5px] transition-all flex items-center shadow-sm"

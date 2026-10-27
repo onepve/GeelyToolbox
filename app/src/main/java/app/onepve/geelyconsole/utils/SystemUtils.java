@@ -1623,7 +1623,7 @@ public class SystemUtils {
             File[] oldLogs = downloadDir.listFiles(new java.io.FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
-                    return (name.startsWith("Geely_Log_") || name.endsWith("_log.zip")) && name.endsWith(".zip");
+                    return (name.startsWith("Geely_Log_") || name.endsWith("_log.zip") || (name.contains("_IHU") && name.endsWith(".zip"))) && name.endsWith(".zip");
                 }
             });
             if (oldLogs != null) {
@@ -1634,7 +1634,8 @@ public class SystemUtils {
 
             String modelName = getCleanDeviceModel();
             String chipName = getHardwareChip();
-            String zipFileName = modelName + "_" + chipName + "_log.zip";
+            // 规范命名格式：去掉多余的 _log，直接按 [车型]_[平台].zip 命名，如 SX11A3_IHU516G.zip
+            String zipFileName = modelName + "_" + chipName + ".zip";
             File zipFile = new File(downloadDir, zipFileName);
             if (zipFile.exists()) zipFile.delete();
 
@@ -2509,7 +2510,7 @@ public class SystemUtils {
 
             okhttp3.Request request = new okhttp3.Request.Builder()
                     .url("https://log.onepve.com/upload")
-                    .header("User-Agent", "GeelyToolbox/1.8.3 (Linux; U; Android " + android.os.Build.VERSION.RELEASE + ")")
+                    .header("User-Agent", "GeelyToolbox/1.8.4-beta.1 (Linux; U; Android " + android.os.Build.VERSION.RELEASE + ")")
                     .header("Connection", "close")
                     .header("X-Hardware-Chip", safeChip)
                     .header("X-Model-Code", safeModel)
