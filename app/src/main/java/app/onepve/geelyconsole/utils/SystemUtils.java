@@ -2484,58 +2484,25 @@ public class SystemUtils {
             String safeModel = model != null ? model.replaceAll("[^a-zA-Z0-9_-]", "") : "CAR";
             String safeVin = vin6 != null ? vin6.replaceAll("[^a-zA-Z0-9]", "") : "000000";
 
+            // 关键：强制锁定 HTTP/1.1，杜绝 HTTP/2 在车载 4G / 弱网下因 MTU 限制和流控死等超时的缺陷
             okhttp3.OkHttpClient client = new okhttp3.OkHttpClient.Builder()
-                    .connectTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
-                    .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+                    .protocols(java.util.Collections.singletonList(okhttp3.Protocol.HTTP_1_1))
+                    .connectTimeout(25, java.util.concurrent.TimeUnit.SECONDS)
+                    .writeTimeout(45, java.util.concurrent.TimeUnit.SECONDS)
                     .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
                     .retryOnConnectionFailure(true)
                     .build();
 
             okhttp3.MediaType mediaType = okhttp3.MediaType.parse("application/zip");
             final long totalLen = file.length();
+            okhttp3.RequestBody requestBody = okhttp3.RequestBody.create(file, mediaType);
 
-            okhttp3.RequestBody requestBody = new okhttp3.RequestBody() {
-                @Override
-                public okhttp3.MediaType contentType() {
-                    return mediaType;
-                }
-
-                @Override
-                public long contentLength() {
-                    return totalLen;
-                }
-
-                @Override
-                public void writeTo(okio.BufferedSink sink) throws java.io.IOException {
-                    okio.Source source = null;
-                    try {
-                        source = okio.Okio.source(file);
-                        okio.Buffer buf = new okio.Buffer();
-                        long uploaded = 0;
-                        long lastReportTime = 0;
-                        long read;
-                        while ((read = source.read(buf, 8192)) != -1) {
-                            sink.write(buf, read);
-                            uploaded += read;
-                            long now = System.currentTimeMillis();
-                            if (listener != null && (now - lastReportTime > 120 || uploaded == totalLen)) {
-                                lastReportTime = now;
-                                int pct = totalLen > 0 ? (int) (uploaded * 100 / totalLen) : 0;
-                                listener.onProgress(pct, uploaded, totalLen, "正在流式上传诊断数据...");
-                            }
-                        }
-                        sink.flush();
-                    } finally {
-                        if (source != null) {
-                            try { source.close(); } catch (Throwable ignored) {}
-                        }
-                    }
-                }
-            };
+            if (listener != null) listener.onProgress(30, totalLen / 3, totalLen, "正在上传日志至云端...");
 
             okhttp3.Request request = new okhttp3.Request.Builder()
                     .url("https://log.onepve.com/upload")
                     .header("User-Agent", "GeelyToolbox/1.8.3 (Linux; U; Android " + android.os.Build.VERSION.RELEASE + ")")
+                    .header("Connection", "close")
                     .header("X-Hardware-Chip", safeChip)
                     .header("X-Model-Code", safeModel)
                     .header("X-Vin-Last6", safeVin)
@@ -2543,12 +2510,11 @@ public class SystemUtils {
                     .post(requestBody)
                     .build();
 
-            if (listener != null) listener.onProgress(100, totalLen, totalLen, "数据传输完成，等待云端存证入库...");
-
             try (okhttp3.Response response = client.newCall(request).execute()) {
                 int code = response.code();
                 String bodyStr = response.body() != null ? response.body().string() : "";
                 if (code == 200) {
+                    if (listener != null) listener.onProgress(100, totalLen, totalLen, "上传成功");
                     JSONObject jsonResp = new JSONObject(bodyStr);
                     res.put("success", jsonResp.optBoolean("success", true));
                     res.put("code", jsonResp.optString("code", ""));
@@ -2562,7 +2528,7 @@ public class SystemUtils {
         } catch (java.net.SocketTimeoutException ste) {
             try {
                 res.put("success", false);
-                res.put("message", "网络传输超时(60秒)，请检查手机热点或Wi-Fi网络信号");
+                res.put("message", "网络连接超时，请检查车机网络信号后重试");
             } catch (Throwable ignored) {}
         } catch (javax.net.ssl.SSLException ssle) {
             try {
