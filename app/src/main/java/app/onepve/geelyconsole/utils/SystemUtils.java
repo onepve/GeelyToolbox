@@ -1688,12 +1688,13 @@ public class SystemUtils {
     public static JSONObject getExistingDiagnosticLog(Context context) {
         JSONObject res = new JSONObject();
         try {
-            File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            ensureAppDirectories(context);
+            File downloadDir = getAppDownloadDir();
             if (downloadDir == null || !downloadDir.exists()) {
                 res.put("exists", false);
                 return res;
             }
-            String model = getVehicleModelName();
+            String model = getCleanDeviceModel();
             String chip = getHardwareChip();
             File target = new File(downloadDir, model + "_" + chip + ".zip");
             if (!target.exists()) {
