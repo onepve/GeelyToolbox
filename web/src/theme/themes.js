@@ -124,20 +124,33 @@ function save() {
   } catch (e) { /* 同上 */ }
 }
 
+export function getCarOrSystemNightStatus() {
+  // 1. 优先从车机原生 Bridge 读取实时原厂昼夜信号 (大灯/系统暗黑模式联动)
+  try {
+    if (typeof window !== 'undefined' && window.ToolboxBridge && typeof window.ToolboxBridge.isNightMode === 'function') {
+      const isNight = window.ToolboxBridge.isNightMode();
+      if (typeof isNight === 'boolean') {
+        return isNight;
+      }
+    }
+  } catch (e) {}
+
+  // 2. 其次读取系统媒体查询（深色模式）
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) return true;
+    if (window.matchMedia('(prefers-color-scheme: light)').matches) return false;
+  }
+
+  // 3. 最后以本地时间兜底（18:00 - 06:00 为夜间）
+  const h = new Date().getHours();
+  return (h < DAY_START || h >= DAY_END);
+}
+
 export function resolvedMode() {
   const mode = store.theme.mode;
   if (mode === 'day' || mode === 'night') return mode;
-  // auto 模式：以车机系统原生日夜模式信号 store.isNight 为绝对真源
-  if (typeof store.isNight === 'boolean') {
-    return store.isNight ? 'night' : 'day';
-  }
-  // 若脱离车机/在电脑浏览器等调试环境，优先读取系统的 prefers-color-scheme，最后时间兜底
-  if (typeof window !== 'undefined' && window.matchMedia) {
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'night';
-    if (window.matchMedia('(prefers-color-scheme: light)').matches) return 'day';
-  }
-  const h = new Date().getHours();
-  return (h >= DAY_START && h < DAY_END) ? 'day' : 'night';
+  // auto 模式：即时毫秒级判定车机原厂昼夜信号，杜绝延迟与历史旧值遮蔽
+  return getCarOrSystemNightStatus() ? 'night' : 'day';
 }
 
 let applyTimer = null;
@@ -187,16 +200,14 @@ export function initTheme() {
   applyTimer = setInterval(() => {
     if (store.theme.mode === 'auto') {
       try {
-        if (window.ToolboxBridge && typeof window.ToolboxBridge.isNightMode === 'function') {
-          const isNight = window.ToolboxBridge.isNightMode();
-          if (typeof isNight === 'boolean' && isNight !== store.isNight) {
-            store.isNight = isNight;
-            applyTheme();
-          }
+        const isNight = getCarOrSystemNightStatus();
+        if (typeof isNight === 'boolean' && isNight !== store.isNight) {
+          store.isNight = isNight;
+          applyTheme();
         }
       } catch (e) {}
     }
-  }, 30000);
+  }, 10000);
 }
 
 export function setPalette(p) {
@@ -206,10 +217,15 @@ export function setPalette(p) {
   applyTheme();
 }
 
-export function setMode(m) {
-  if (!MODES.includes(m)) return;
-  store.theme.mode = m;
+export function setMode(mode) {
+  if (!MODES.includes(mode)) return;
+  store.theme.mode = mode;
   save();
+  // 当切到 auto 模式时，立即通过原生 Bridge 抓取当前车机最新昼夜状态，更新 store.isNight
+  if (mode === 'auto') {
+    store.isNight = getCarOrSystemNightStatus();
+  }
+  // 无论切到 auto 还是手动模式，立即无延迟重新解析并刷写 DOM 主题
   applyTheme();
 }
 

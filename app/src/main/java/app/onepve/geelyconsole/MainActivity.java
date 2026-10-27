@@ -2623,8 +2623,26 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public boolean isNightMode() {
             try {
+                // 1. 优先通过 UiModeManager 获取当前系统的暗黑夜间状态
+                android.app.UiModeManager uiModeManager = (android.app.UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+                if (uiModeManager != null) {
+                    int mode = uiModeManager.getNightMode();
+                    if (mode == android.app.UiModeManager.MODE_NIGHT_YES) {
+                        return true;
+                    } else if (mode == android.app.UiModeManager.MODE_NIGHT_NO) {
+                        return false;
+                    }
+                }
+                // 2. 读取当前 Activity Configuration 的夜间模式标志
                 int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
-                return nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
+                if (nightModeFlags == Configuration.UI_MODE_NIGHT_YES) {
+                    return true;
+                } else if (nightModeFlags == Configuration.UI_MODE_NIGHT_NO) {
+                    return false;
+                }
+                // 3. 读取 ApplicationContext 的 Configuration 进行双重比对
+                int appNightFlags = getApplicationContext().getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+                return appNightFlags == Configuration.UI_MODE_NIGHT_YES;
             } catch (Exception e) {
                 return false;
             }

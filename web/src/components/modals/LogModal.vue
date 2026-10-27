@@ -102,11 +102,11 @@
         class="flex flex-col space-y-3.5 py-1"
         @click="pauseCountdown"
       >
-        <div class="flex items-center justify-between bg-car-item rounded-2xl px-5 py-2.5 border border-car-border text-[13.5px] font-bold font-mono">
+        <div class="flex items-center justify-between bg-car-item rounded-2xl px-5 py-2.5 border border-car-border text-[13.5px] font-bold font-mono text-car-text">
           <div class="flex items-center space-x-4">
-            <span>车型平台：<strong class="text-car-accent">{{ logMeta.modelCode || 'SX11A3' }} ({{ logMeta.chip || 'IHU516G' }})</strong></span>
-            <span>大小：<strong class="text-emerald-400">{{ logMeta.sizeStr || exportSizeStr || '约 500 KB' }}</strong></span>
-            <span>抓取时间：<strong class="text-sky-400">{{ logMeta.capturedTime || '刚刚抓取' }}</strong></span>
+            <span class="text-car-sub">车型平台：<strong class="text-car-accent">{{ logMeta.modelCode || 'SX11A3' }} ({{ logMeta.chip || 'IHU516G' }})</strong></span>
+            <span class="text-car-sub">大小：<strong class="text-car-accent">{{ logMeta.sizeStr || exportSizeStr || '约 500 KB' }}</strong></span>
+            <span class="text-car-sub">抓取时间：<strong class="text-car-accent">{{ logMeta.capturedTime || '刚刚抓取' }}</strong></span>
           </div>
           <div class="flex items-center space-x-3">
             <span v-if="logMeta.isUploaded" class="text-[12px] font-bold text-emerald-400 bg-emerald-500/15 px-3 py-1 rounded-full border border-emerald-500/30 flex items-center space-x-1">
@@ -322,7 +322,7 @@
             class="min-h-[50px] px-5 rounded-xl border-2 font-black text-[15.5px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
             :class="logMeta.isUploaded 
               ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-400 hover:text-emerald-300' 
-              : 'bg-gradient-to-r from-sky-500/20 to-indigo-500/20 border-sky-500/50 text-sky-400 hover:text-sky-300 hover:border-sky-400'"
+              : 'bg-car-accent-bg border-car-accent text-car-accent hover:opacity-90'"
           >
             <span>{{ logMeta.isUploaded ? '☁️ 日志已上传' : '☁️ 一键上传分析' }}</span>
           </button>

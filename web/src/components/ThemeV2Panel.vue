@@ -22,7 +22,7 @@
                 :class="[
                   'px-3.5 py-1.5 rounded-lg border text-[13px] font-black cursor-pointer transition-all',
                   store.theme.mode === m
-                    ? 'bg-car-accent-light border-car-accent text-car-accent shadow-sm'
+                    ? 'bg-car-accent-bg border-car-accent text-car-accent shadow-sm'
                     : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
                 ]"
               >
@@ -95,7 +95,7 @@
                 :class="[
                   'text-[12px] px-2.5 py-0.5 rounded-lg font-extrabold border',
                   store.theme.palette === key
-                    ? 'bg-car-accent-light border-car-accent text-car-accent'
+                    ? 'bg-car-accent-bg border-car-accent text-car-accent'
                     : 'bg-car-card border-car-border text-car-sub'
                 ]"
               >
