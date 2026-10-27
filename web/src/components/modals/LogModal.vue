@@ -446,11 +446,6 @@ function stopPolling() {
   }
 }
 
-function manualRefresh() {
-  fetchLogs(true);
-  showToast('已刷新最新运行日志 (置顶显示)');
-}
-
 const isExporting = ref(false);
 const exportPercent = ref(0);
 const exportStepText = ref('');
