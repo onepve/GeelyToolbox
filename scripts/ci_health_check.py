@@ -1305,7 +1305,7 @@ _g25 = []
 _builder_25_path = os.path.join(ROOT_DIR, "scripts", "changelog_builder.py")
 with open(_builder_25_path, encoding="utf-8") as _f25:
     _builder_25 = _f25.read()
-if 're.sub(r"^\d+\s*[.、．)]\s*", "", ln' not in _builder_25:
+if r're.sub(r"^\d+\s*[.、．)]\s*", "", ln' not in _builder_25:
     _g25.append("[25a] changelog_builder.py 缺少旧序号前缀剥离容错（手写覆盖带「N. 」会被二次编号成「1. 1.」）")
 # 25b: 用真实 docs/changelog/*.txt 覆盖文件动态跑构建器，产物严禁出现双序号
 sys.path.insert(0, os.path.join(ROOT_DIR, "scripts"))

@@ -2477,8 +2477,8 @@ public class SystemUtils {
             conn.setDoOutput(true);
             conn.setDoInput(true);
             conn.setUseCaches(false);
-            conn.setConnectTimeout(15000);
-            conn.setReadTimeout(30000);
+            conn.setConnectTimeout(30000);
+            conn.setReadTimeout(90000);
             conn.setRequestProperty("Content-Type", "application/zip");
             conn.setRequestProperty("X-Hardware-Chip", chip);
             conn.setRequestProperty("X-Model-Code", model);
@@ -2517,6 +2517,16 @@ public class SystemUtils {
                 res.put("success", false);
                 res.put("message", "服务器响应错误 (" + code + "): " + respSb.toString());
             }
+        } catch (java.net.SocketTimeoutException ste) {
+            try {
+                res.put("success", false);
+                res.put("message", "网络传输超时(90秒)，请检查手机热点或Wi-Fi网络信号");
+            } catch (Throwable ignored) {}
+        } catch (javax.net.ssl.SSLException ssle) {
+            try {
+                res.put("success", false);
+                res.put("message", "车机安全连接握手受阻，请确认车机已连接手机热点/Wi-Fi且时间正常: " + ssle.getMessage());
+            } catch (Throwable ignored) {}
         } catch (Throwable t) {
             try {
                 res.put("success", false);
