@@ -52,6 +52,7 @@ import app.onepve.geelyconsole.utils.IdleScreensaverManager;
 import app.onepve.geelyconsole.utils.VehicleConfigHelper;
 import app.onepve.geelyconsole.utils.AppFilterUtils;
 import app.onepve.geelyconsole.utils.SystemUtils;
+import app.onepve.geelyconsole.utils.SystemUtils.OnUploadProgressListener;
 import app.onepve.geelyconsole.utils.SystemUtils.LogDumpProgressListener;
 import app.onepve.geelyconsole.utils.ThemePatcher;
 import app.onepve.geelyconsole.utils.VehicleVoicePlayer;
@@ -3145,7 +3146,24 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    final JSONObject res = SystemUtils.uploadDiagnosticLog(MainActivity.this, filePath);
+                    final JSONObject res = SystemUtils.uploadDiagnosticLog(MainActivity.this, filePath, new OnUploadProgressListener() {
+                        @Override
+                        public void onProgress(final int percent, final long uploadedBytes, final long totalBytes, final String statusText) {
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (webView != null) {
+                                        long upKb = uploadedBytes / 1024;
+                                        long totKb = totalBytes / 1024;
+                                        String js = String.format(java.util.Locale.US,
+                                                "if (window.onLogUploadProgress) window.onLogUploadProgress(%d, %d, %d, '%s');",
+                                                percent, upKb, totKb, statusText.replace("'", "\\'"));
+                                        webView.evaluateJavascript(js, null);
+                                    }
+                                }
+                            });
+                        }
+                    });
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {

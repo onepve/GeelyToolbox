@@ -168,11 +168,25 @@
         </div>
       </div>
 
-      <!-- 阶段 2：上传中 -->
-      <div v-else-if="uploadStatus === 'uploading'" class="py-14 flex flex-col items-center justify-center text-center space-y-4">
+      <!-- 阶段 2：上传中 (清晰步骤与流式进度条) -->
+      <div v-else-if="uploadStatus === 'uploading'" class="py-10 flex flex-col items-center justify-center text-center space-y-5 select-none w-full max-w-[500px] mx-auto">
         <div class="w-14 h-14 border-4 border-car-accent/30 border-t-car-accent rounded-full animate-spin"></div>
-        <div class="text-[19px] font-black text-car-text">正在安全传输至私有存储库...</div>
-        <div class="text-[14px] text-car-sub font-mono">正在流式写入专属隔离桶，请稍候</div>
+        <div class="space-y-1">
+          <div class="text-[20px] font-black text-car-text">正在安全传输至云端...</div>
+          <div class="text-[14px] text-car-sub font-mono font-medium">{{ uploadStepText }}</div>
+        </div>
+
+        <!-- 动态流式进度条 -->
+        <div class="w-full bg-car-item border border-car-border/60 rounded-full h-4 overflow-hidden p-0.5 shadow-inner">
+          <div 
+            class="bg-gradient-to-r from-sky-500 to-car-accent h-full rounded-full transition-all duration-200 ease-out"
+            :style="{ width: `${uploadPercent}%` }"
+          ></div>
+        </div>
+        <div class="flex items-center justify-between w-full text-[13px] font-mono font-bold text-car-sub px-1">
+          <span>{{ uploadedKbStr || '准备建立连接...' }}</span>
+          <span class="text-car-accent font-black">{{ uploadPercent }}%</span>
+        </div>
       </div>
 
       <!-- 阶段 3：上传成功，展示 8 位纯数字提取码 -->
@@ -314,9 +328,6 @@
         </div>
 
         <div class="flex items-center space-x-4">
-          <span class="text-[13px] text-car-sub font-mono font-bold hidden md:inline-block">
-            {{ autoScroll ? '1.5s 自动置顶最新上报' : '轮转已暂停' }}
-          </span>
           <button 
             @click="closeModal('log')"
             class="min-h-[50px] px-8 bg-car-item border-2 border-car-border text-car-text font-black text-[16.5px] rounded-xl cursor-pointer hover:border-car-border-light shadow-sm"
@@ -469,6 +480,9 @@ const isPausedCountdown = ref(false);
 let countdownTimer = null;
 const extractedCode = ref('');
 const uploadErrorMsg = ref('');
+const uploadPercent = ref(0);
+const uploadStepText = ref('正在准备连接云端...');
+const uploadedKbStr = ref('');
 
 function startCountdown() {
   stopCountdown();
@@ -526,6 +540,9 @@ function closeUploadModal() {
 function confirmUpload() {
   stopCountdown();
   uploadStatus.value = 'uploading';
+  uploadPercent.value = 0;
+  uploadStepText.value = '正在建立云端安全通道...';
+  uploadedKbStr.value = '准备连接...';
   const targetPath = logMeta.value.path || ('/sdcard/Download/' + (exportFileName.value || 'SX11A3_IHU516_log.zip'));
   try {
     bridge.call('uploadDiagnosticLog', targetPath);
@@ -534,6 +551,18 @@ function confirmUpload() {
     uploadErrorMsg.value = '上传日志失败: ' + e;
   }
 }
+
+// 接收底层上传流式进度
+window.onLogUploadProgress = (percent, upKb, totKb, text) => {
+  uploadStatus.value = 'uploading';
+  uploadPercent.value = Math.min(100, Math.max(0, percent));
+  if (totKb > 0) {
+    uploadedKbStr.value = `${upKb} KB / ${totKb} KB`;
+  }
+  if (text) {
+    uploadStepText.value = text;
+  }
+};
 
 // 接收底层上传回调
 window.onLogUploadFinished = (res) => {

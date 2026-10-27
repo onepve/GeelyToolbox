@@ -2440,6 +2440,10 @@ public class SystemUtils {
         return naviApps;
     }
 
+    public interface OnUploadProgressListener {
+        void onProgress(int percent, long uploadedBytes, long totalBytes, String statusText);
+    }
+
     /**
      * 免密上传诊断日志到 Cloudflare 专属私有存储库（R2）：
      * 1. 严格使用单层下划线文件流命名：芯片_车型_VIN后6位_14位年月日时分秒_8位纯数字提取码.zip
@@ -2447,6 +2451,10 @@ public class SystemUtils {
      * 3. 存储库 100% 纯私有，公网禁止直接访问，30天后全自动彻底销毁
      */
     public static JSONObject uploadDiagnosticLog(Context context, String filePath) {
+        return uploadDiagnosticLog(context, filePath, null);
+    }
+
+    public static JSONObject uploadDiagnosticLog(Context context, String filePath, OnUploadProgressListener listener) {
         JSONObject res = new JSONObject();
         if (filePath == null || filePath.trim().isEmpty()) {
             try {
@@ -2471,31 +2479,56 @@ public class SystemUtils {
 
         java.net.HttpURLConnection conn = null;
         try {
+            if (listener != null) listener.onProgress(0, 0, file.length(), "正在建立云端安全链路...");
             java.net.URL url = new java.net.URL("https://log.onepve.com/upload");
             conn = (java.net.HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
             conn.setDoInput(true);
             conn.setUseCaches(false);
-            conn.setConnectTimeout(30000);
-            conn.setReadTimeout(90000);
+            conn.setConnectTimeout(20000);
+            conn.setReadTimeout(45000);
+
+            // 彻底防止老旧 Android HttpURLConnection 在 HTTP/1.1 下因 Keep-Alive 管道挂起傻等 getResponseCode()
+            conn.setRequestProperty("Connection", "close");
+            conn.setRequestProperty("User-Agent", "GeelyToolbox/1.8.2 (Linux; U; Android " + android.os.Build.VERSION.RELEASE + ")");
             conn.setRequestProperty("Content-Type", "application/zip");
-            conn.setRequestProperty("X-Hardware-Chip", chip);
-            conn.setRequestProperty("X-Model-Code", model);
-            conn.setRequestProperty("X-Vin-Last6", vin6);
+
+            // 纯化自定义请求头，杜绝任何非 ASCII 字符破坏 HTTP 传输
+            String safeChip = chip != null ? chip.replaceAll("[^a-zA-Z0-9_-]", "") : "UNKNOWN";
+            String safeModel = model != null ? model.replaceAll("[^a-zA-Z0-9_-]", "") : "CAR";
+            String safeVin = vin6 != null ? vin6.replaceAll("[^a-zA-Z0-9]", "") : "000000";
+
+            conn.setRequestProperty("X-Hardware-Chip", safeChip);
+            conn.setRequestProperty("X-Model-Code", safeModel);
+            conn.setRequestProperty("X-Vin-Last6", safeVin);
             conn.setRequestProperty("X-Timestamp", timestamp);
-            conn.setFixedLengthStreamingMode((int) file.length());
+
+            long totalLen = file.length();
+            conn.setFixedLengthStreamingMode((int) totalLen);
 
             java.io.OutputStream os = conn.getOutputStream();
             java.io.FileInputStream fis = new java.io.FileInputStream(file);
             byte[] buf = new byte[8192];
             int len;
+            long uploaded = 0;
+            long lastReportTime = 0;
+
             while ((len = fis.read(buf)) != -1) {
                 os.write(buf, 0, len);
+                uploaded += len;
+                long now = System.currentTimeMillis();
+                if (listener != null && (now - lastReportTime > 120 || uploaded == totalLen)) {
+                    lastReportTime = now;
+                    int pct = totalLen > 0 ? (int) (uploaded * 100 / totalLen) : 0;
+                    listener.onProgress(pct, uploaded, totalLen, "正在流式上传诊断数据...");
+                }
             }
             os.flush();
             fis.close();
             os.close();
+
+            if (listener != null) listener.onProgress(100, totalLen, totalLen, "数据传输完成，等待云端存证入库...");
 
             int code = conn.getResponseCode();
             java.io.InputStream is = (code >= 200 && code < 400) ? conn.getInputStream() : conn.getErrorStream();
