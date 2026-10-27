@@ -45,6 +45,11 @@ public class BinyueLPlatform implements IVehiclePlatform {
     }
 
     @Override
+    public AudioDecodeStrategy getAudioDecodeStrategy() {
+        return AudioDecodeStrategy.HARD_FIRST_WITH_SOFT_FALLBACK;
+    }
+
+    @Override
     public synchronized IVehicleKeyAdapter getKeyAdapter(Context context) {
         if (keyAdapter == null) {
             keyAdapter = new BinyueLKeyAdapterImpl(context);

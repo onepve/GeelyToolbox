@@ -16,6 +16,19 @@ public interface IVehiclePlatform {
     /** 获取当前车型的官方标称油箱容积 (Liters) */
     double getDefaultFuelCapacityLiters();
 
+    /** 音频解码策略：用于区分健康车型（系统硬解优先）与裁剪ROM车型（必须纯软解防静音） */
+    enum AudioDecodeStrategy {
+        /** 正常车机：系统 MediaPlayer 硬解优先，软解为异常兜底 (缤越 COOL, 缤越 L 等) */
+        HARD_FIRST_WITH_SOFT_FALLBACK,
+        /** 裁剪 ROM：车机系统裁剪裁除了 audio/mpeg 软解组件，从第 1 毫秒起直走纯 Java JLayer 软解 (帝豪 L 等) */
+        DIRECT_SOFT_ONLY,
+        /** 纯硬解 */
+        HARD_ONLY
+    }
+
+    /** 获取当前车型的车载语音音频解码策略 */
+    AudioDecodeStrategy getAudioDecodeStrategy();
+
     /** 获取方控按键适配器 */
     IVehicleKeyAdapter getKeyAdapter(Context context);
 

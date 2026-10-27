@@ -166,52 +166,52 @@
           @click="setWheelMode('factory_default')"
         />
       </div>
+    </FeatureCard>
 
-      <!-- 仪表盘与屏保显示扩展 (左右对称双卡，彻底消除纵向拉长，整卡点击开关) -->
-      <div class="mt-4 pt-4 border-t border-car-border/60 grid grid-cols-2 gap-4 items-stretch">
-        <div
-          @click="toggleClusterPlayback"
-          :class="[
-            'flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer select-none active:scale-[0.985] transition-all',
-            store.vehicleAuto.wheel_push_playback_cluster
-              ? 'bg-car-item border-car-accent shadow-md'
-              : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
-          ]"
-        >
-          <div class="flex flex-col space-y-1 pr-3">
-            <span class="text-[17px] font-black text-car-text">息屏时钟显示音乐卡片</span>
-            <span class="text-[13px] text-car-sub font-bold">息屏/时钟屏保时展示当前歌名歌手</span>
-          </div>
-          <div class="flex items-center space-x-2 shrink-0">
-            <StatusDot size="sm" :color="store.vehicleAuto.wheel_push_playback_cluster ? 'ok' : 'off'" :glow-px="6" />
-            <span :class="['text-[15px] font-black', store.vehicleAuto.wheel_push_playback_cluster ? 'text-car-text' : 'text-car-sub']">
-              {{ store.vehicleAuto.wheel_push_playback_cluster ? '已开启' : '已关闭' }}
-            </span>
-          </div>
+    <!-- 2. 仪表盘与屏保显示扩展 (独立双列卡片，左右等高对称，整卡点击开关) -->
+    <div class="grid grid-cols-2 gap-4 items-stretch">
+      <div
+        @click="toggleClusterPlayback"
+        :class="[
+          'flex items-center justify-between p-5 rounded-3xl border-2 cursor-pointer select-none active:scale-[0.985] transition-all shadow-xl',
+          store.vehicleAuto.wheel_push_playback_cluster
+            ? 'bg-car-item border-car-accent shadow-md'
+            : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+        ]"
+      >
+        <div class="flex flex-col space-y-1 pr-3">
+          <span class="text-[17px] font-black text-car-text">息屏时钟显示音乐卡片</span>
+          <span class="text-[13px] text-car-sub font-bold">息屏/时钟屏保时展示当前歌名歌手</span>
         </div>
-
-        <div
-          @click="toggleClusterLyrics"
-          :class="[
-            'flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer select-none active:scale-[0.985] transition-all',
-            store.vehicleAuto.wheel_push_lyrics_cluster
-              ? 'bg-car-item border-car-accent shadow-md'
-              : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
-          ]"
-        >
-          <div class="flex flex-col space-y-1 pr-3">
-            <span class="text-[17px] font-black text-car-text">液晶仪表盘同步滚动歌词</span>
-            <span class="text-[13px] text-car-sub font-bold">向仪表盘中间卡片推送实时歌词</span>
-          </div>
-          <div class="flex items-center space-x-2 shrink-0">
-            <StatusDot size="sm" :color="store.vehicleAuto.wheel_push_lyrics_cluster ? 'ok' : 'off'" :glow-px="6" />
-            <span :class="['text-[15px] font-black', store.vehicleAuto.wheel_push_lyrics_cluster ? 'text-car-text' : 'text-car-sub']">
-              {{ store.vehicleAuto.wheel_push_lyrics_cluster ? '已开启' : '已关闭' }}
-            </span>
-          </div>
+        <div class="flex items-center space-x-2 shrink-0">
+          <StatusDot size="sm" :color="store.vehicleAuto.wheel_push_playback_cluster ? 'ok' : 'off'" :glow-px="6" />
+          <span :class="['text-[15px] font-black', store.vehicleAuto.wheel_push_playback_cluster ? 'text-car-text' : 'text-car-sub']">
+            {{ store.vehicleAuto.wheel_push_playback_cluster ? '已开启' : '已关闭' }}
+          </span>
         </div>
       </div>
-    </FeatureCard>
+
+      <div
+        @click="toggleClusterLyrics"
+        :class="[
+          'flex items-center justify-between p-5 rounded-3xl border-2 cursor-pointer select-none active:scale-[0.985] transition-all shadow-xl',
+          store.vehicleAuto.wheel_push_lyrics_cluster
+            ? 'bg-car-item border-car-accent shadow-md'
+            : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+        ]"
+      >
+        <div class="flex flex-col space-y-1 pr-3">
+          <span class="text-[17px] font-black text-car-text">液晶仪表盘同步滚动歌词</span>
+          <span class="text-[13px] text-car-sub font-bold">向仪表盘中间卡片推送实时歌词</span>
+        </div>
+        <div class="flex items-center space-x-2 shrink-0">
+          <StatusDot size="sm" :color="store.vehicleAuto.wheel_push_lyrics_cluster ? 'ok' : 'off'" :glow-px="6" />
+          <span :class="['text-[15px] font-black', store.vehicleAuto.wheel_push_lyrics_cluster ? 'text-car-text' : 'text-car-sub']">
+            {{ store.vehicleAuto.wheel_push_lyrics_cluster ? '已开启' : '已关闭' }}
+          </span>
+        </div>
+      </div>
+    </div>
 
 
     <div

@@ -902,6 +902,7 @@ regression_scripts = [
     "test_recent_decisions.py",
     "test_update_filename.py",
     "test_screen_collect_once.py",
+    "test_vehicle_matrix.py",
     "test_regression_mutations.py",
     "test_voice_gain_resolver.py",
 ]

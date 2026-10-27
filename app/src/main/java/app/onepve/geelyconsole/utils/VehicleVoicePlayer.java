@@ -967,14 +967,16 @@ public class VehicleVoicePlayer {
             public void run() {
                 if (playSessionId.get() != sessionId) return;
 
-                // 帝豪 L (SS13 / IHU521G) 固件缺失系统 audio/mpeg 软解组件，MP3 直接强制走 JLayer 纯软解
-                boolean isEmgrandL = false;
+                // 硬件平台解耦契约：若当前车型声明 DIRECT_SOFT_ONLY（如帝豪L等被厂商裁除系统软解组件），直接走 JLayer 纯软解
+                boolean directSoft = false;
                 try {
-                    isEmgrandL = app.onepve.geelyconsole.hal.platform.EmgrandLPlatform.PLATFORM_CODE.equals(
-                            app.onepve.geelyconsole.hal.VehiclePlatformFactory.getPlatform(context).getPlatformCode());
+                    app.onepve.geelyconsole.hal.IVehiclePlatform platform =
+                            app.onepve.geelyconsole.hal.VehiclePlatformFactory.getPlatform(context);
+                    directSoft = platform != null && platform.getAudioDecodeStrategy() ==
+                            app.onepve.geelyconsole.hal.IVehiclePlatform.AudioDecodeStrategy.DIRECT_SOFT_ONLY;
                 } catch (Throwable ignored) {}
 
-                if (isEmgrandL && file != null && file.getName().toLowerCase().endsWith(".mp3")) {
+                if (directSoft && file != null && file.getName().toLowerCase().endsWith(".mp3")) {
                     playViaSoftDecode(file, voiceType, sessionId, arbiterGen);
                     return;
                 }

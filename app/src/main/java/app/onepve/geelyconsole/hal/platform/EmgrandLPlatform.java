@@ -35,6 +35,11 @@ public class EmgrandLPlatform implements IVehiclePlatform {
     }
 
     @Override
+    public AudioDecodeStrategy getAudioDecodeStrategy() {
+        return AudioDecodeStrategy.DIRECT_SOFT_ONLY;
+    }
+
+    @Override
     public synchronized IVehicleKeyAdapter getKeyAdapter(Context context) {
         if (keyAdapter == null) {
             keyAdapter = new EmgrandKeyAdapterImpl(context);
