@@ -1468,20 +1468,28 @@ public class SystemUtils {
 
     public static String getHardwareChip() {
         String projectInfo = getSystemProp("ro.boot.ecarx_projectinfo", "");
-        if (projectInfo.contains("624")) return "IHU624";
-        if (projectInfo.contains("516")) return "IHU516";
+        if (projectInfo.contains("624")) return "IHU624G";
+        if (projectInfo.contains("521")) return "IHU521G";
+        if (projectInfo.contains("516")) return "IHU516G";
+        if (projectInfo.contains("510")) return "IHU510G";
         if (projectInfo.contains("8155")) return "IHU8155";
         
-        String model = getCleanDeviceModel();
-        if (model.toUpperCase().contains("516")) return "IHU516";
-        if (model.toUpperCase().contains("624")) return "IHU624";
-        if (model.toUpperCase().contains("8155")) return "IHU8155";
+        String model = getCleanDeviceModel().toUpperCase();
+        if (model.contains("SX11") || model.contains("516")) return "IHU516G";
+        if (model.contains("SS13") || model.contains("521")) return "IHU521G";
+        if (model.contains("FE6A") || model.contains("510")) return "IHU510G";
+        if (model.contains("624")) return "IHU624G";
+        if (model.contains("8155")) return "IHU8155";
         
         String platform = getSystemProp("ro.board.platform", "");
         if (!platform.isEmpty()) {
-            return platform.toUpperCase().replaceAll("[^A-Z0-9]", "");
+            String clean = platform.toUpperCase().replaceAll("[^A-Z0-9]", "");
+            if ("ECARXP".equals(clean) || "ECARX".equals(clean)) {
+                return "IHU516G"; // 亿咖通 E02 核心默认平台代号
+            }
+            return clean;
         }
-        return "IHU516";
+        return "IHU516G";
     }
 
     public static String getVinLast6() {

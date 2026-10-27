@@ -135,6 +135,7 @@ public class VehicleAutomationService extends Service {
     /** 电源聚合状态字符串（仅变化时才写日志，杜绝心跳刷屏） */
     private String lastPowerStateAggregate = "";
 
+    private String cachedPlatformCode = "";
     private Thread logcatThread;
     private Process logcatProcess;
     private VehicleVoicePlayer voicePlayer;
@@ -426,6 +427,7 @@ public class VehicleAutomationService extends Service {
 
         registerPowerStateReceiver();
         IVehiclePlatform currentPlatform = VehiclePlatformFactory.getPlatform(this);
+        cachedPlatformCode = currentPlatform != null ? currentPlatform.getPlatformCode() : "";
         if (currentPlatform instanceof BinyueLPlatform) {
             AppLogger.i("车身联动", "检测到缤越 L (IHU624G / Flyme Auto)，通过 HAL 启动 VHAL 感知驱动 (免 logcat)");
             currentPlatform.getSensorAdapter(this).startListening(this, null);
@@ -1033,19 +1035,24 @@ public class VehicleAutomationService extends Service {
                 }
             } catch (Exception ignored) {}
         } else if (line.contains("INFO_ID_VDRIVEINFO_GEAR_POSITION")) {
-            // 吉利 E02 底盘挡位报文 (如缤瑞 COOL FE6A3 平台: return funValue(0x00200230))
-            // 权威映射：低字节 0x10=P, 0x20=D, 0x30=N, 0x40=R
-            try {
-                Matcher m = P_FUNVALUE.matcher(line);
-                if (m.find()) {
-                    long rawVal = Long.parseLong(m.group(1), 16);
-                    int low = (int) (rawVal & 0xFF);
-                    if (low == 0x10) gearVal = 5;      // P 挡
-                    else if (low == 0x40) gearVal = 4; // R 挡
-                    else if (low == 0x30) gearVal = 3; // N 挡
-                    else if (low == 0x20) gearVal = 2; // D 挡
+            // 吉利 E02 底盘挡位报文 (专属于缤瑞 COOL FE6A3 平台: return funValue(0x00200230))
+            // 车型分支物理隔离铁律：缤越 COOL 等原车型总线走 VehId=Vehicle_Gear，严禁被 SensorModule 轮询误触发！
+            if ("binrui_cool_e02".equals(cachedPlatformCode)) {
+                // 熄火安全防线：未点火且车速为0时，直接忽略底层传感器轮询，绝不播报！
+                if (isEngineRunning() || currentSpeedKmH > 0) {
+                    try {
+                        Matcher m = P_FUNVALUE.matcher(line);
+                        if (m.find()) {
+                            long rawVal = Long.parseLong(m.group(1), 16);
+                            int low = (int) (rawVal & 0xFF);
+                            if (low == 0x10) gearVal = 5;      // P 挡
+                            else if (low == 0x40) gearVal = 4; // R 挡
+                            else if (low == 0x30) gearVal = 3; // N 挡
+                            else if (low == 0x20) gearVal = 2; // D 挡
+                        }
+                    } catch (Exception ignored) {}
                 }
-            } catch (Exception ignored) {}
+            }
         }
 
         if (gearVal > 0) {

@@ -87,6 +87,13 @@ def test_binyue_cool_2022():
         print("     [FAIL] 缤越 COOL MCU 串口左前门开启信号解析失败！")
         failures += 1
 
+    # 4. 车型隔离回归：缤越 COOL 绝不可解析 INFO_ID_VDRIVEINFO_GEAR_POSITION
+    binrui_poll_log = "10-27 16:38:00.000 I/SensorModule( 5486): getFunctionValue:funId(0x00200200) zone(0x00000000) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) return funValue(0x00200230)"
+    vas_source = read_file("app/src/main/java/app/onepve/geelyconsole/services/VehicleAutomationService.java")
+    if not vas_source or 'if ("binrui_cool_e02".equals(cachedPlatformCode))' not in vas_source:
+        print("     [FAIL] 车型分支隔离门禁缺失！INFO_ID_VDRIVEINFO_GEAR_POSITION 未绑定 binrui_cool_e02 车型代码！")
+        failures += 1
+
     if failures == 0:
         print("     [PASS] 缤越 COOL (2022) 核心门禁 100% 通过！")
     return failures
