@@ -2543,35 +2543,66 @@ public class SystemUtils {
             String safeModel = model != null ? model.replaceAll("[^a-zA-Z0-9_-]", "") : "CAR";
             String safeVin = vin6 != null ? vin6.replaceAll("[^a-zA-Z0-9]", "") : "000000";
 
-            // 关键：强制锁定 HTTP/1.1，杜绝 HTTP/2 在车载 4G / 弱网下因 MTU 限制和流控死等超时的缺陷
-            okhttp3.OkHttpClient client = new okhttp3.OkHttpClient.Builder()
-                    .protocols(java.util.Collections.singletonList(okhttp3.Protocol.HTTP_1_1))
-                    .connectTimeout(25, java.util.concurrent.TimeUnit.SECONDS)
-                    .writeTimeout(45, java.util.concurrent.TimeUnit.SECONDS)
-                    .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-                    .retryOnConnectionFailure(true)
-                    .build();
-
-            okhttp3.MediaType mediaType = okhttp3.MediaType.parse("application/zip");
             final long totalLen = file.length();
-            okhttp3.RequestBody requestBody = okhttp3.RequestBody.create(file, mediaType);
+            java.net.URL url = new java.net.URL("https://log.onepve.com/upload");
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            try {
+                conn.setRequestMethod("POST");
+                conn.setConnectTimeout(25000);
+                conn.setReadTimeout(45000);
+                conn.setDoOutput(true);
+                conn.setDoInput(true);
+                conn.setUseCaches(false);
 
-            if (listener != null) listener.onProgress(30, totalLen / 3, totalLen, "正在上传日志至云端...");
+                // 核心：复刻 OkHttp RequestBody 的零内存流式直写机制，彻底杜绝内存溢出与进度倒跳
+                conn.setFixedLengthStreamingMode(totalLen);
 
-            okhttp3.Request request = new okhttp3.Request.Builder()
-                    .url("https://log.onepve.com/upload")
-                    .header("User-Agent", "GeelyToolbox/1.8.4 (Linux; U; Android " + android.os.Build.VERSION.RELEASE + ")")
-                    .header("Connection", "close")
-                    .header("X-Hardware-Chip", safeChip)
-                    .header("X-Model-Code", safeModel)
-                    .header("X-Vin-Last6", safeVin)
-                    .header("X-Timestamp", timestamp)
-                    .post(requestBody)
-                    .build();
+                conn.setRequestProperty("User-Agent", "GeelyToolbox/1.8.5 (Linux; U; Android " + android.os.Build.VERSION.RELEASE + ")");
+                conn.setRequestProperty("Content-Type", "application/zip");
+                conn.setRequestProperty("Connection", "close");
+                conn.setRequestProperty("X-Hardware-Chip", safeChip);
+                conn.setRequestProperty("X-Model-Code", safeModel);
+                conn.setRequestProperty("X-Vin-Last6", safeVin);
+                conn.setRequestProperty("X-Timestamp", timestamp);
 
-            try (okhttp3.Response response = client.newCall(request).execute()) {
-                int code = response.code();
-                String bodyStr = response.body() != null ? response.body().string() : "";
+                // 零内存占用轻量流式写出（64KB 缓冲区）
+                try (java.io.FileInputStream fis = new java.io.FileInputStream(file);
+                     java.io.OutputStream os = conn.getOutputStream()) {
+                    byte[] buffer = new byte[64 * 1024];
+                    long uploaded = 0;
+                    int read;
+                    long lastUpdateTime = System.currentTimeMillis();
+
+                    while ((read = fis.read(buffer)) != -1) {
+                        os.write(buffer, 0, read);
+                        uploaded += read;
+
+                        long now = System.currentTimeMillis();
+                        if (now - lastUpdateTime >= 250 || uploaded == totalLen) {
+                            int pct = totalLen > 0 ? (int) (uploaded * 100 / totalLen) : 0;
+                            if (listener != null) {
+                                listener.onProgress(pct, uploaded, totalLen, "正在上传日志至云端 (" + pct + "%)...");
+                            }
+                            lastUpdateTime = now;
+                        }
+                    }
+                    os.flush();
+                }
+
+                int code = conn.getResponseCode();
+                java.io.InputStream respStream = (code >= 200 && code < 400) ? conn.getInputStream() : conn.getErrorStream();
+                String bodyStr = "";
+                if (respStream != null) {
+                    try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(respStream, java.nio.charset.StandardCharsets.UTF_8))) {
+                        StringBuilder sb = new StringBuilder();
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            sb.append(line);
+                        }
+                        bodyStr = sb.toString();
+                    }
+                }
+
                 if (code == 200) {
                     if (listener != null) listener.onProgress(100, totalLen, totalLen, "上传成功");
                     JSONObject jsonResp = new JSONObject(bodyStr);
@@ -2583,6 +2614,8 @@ public class SystemUtils {
                     res.put("success", false);
                     res.put("message", "服务器响应错误 (" + code + "): " + bodyStr);
                 }
+            } finally {
+                conn.disconnect();
             }
         } catch (java.net.SocketTimeoutException ste) {
             try {
