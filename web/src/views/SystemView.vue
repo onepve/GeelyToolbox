@@ -8,6 +8,178 @@
       <FloatingView />
     </div>
 
+    <!-- Tab: 顶栏状态胶囊显隐控制 (6项顶栏胶囊独立开关，默认全激活，支持用户自选) -->
+    <div v-if="activeTab === 'capsules'" class="flex flex-col space-y-4">
+      <FeatureCard
+        title="顶端状态胶囊显隐管理"
+        desc="灵活定制顶部标题栏常驻的状态胶囊。支持按需开启或关闭特定胶囊卡片，设置立即生效并在本地持久化保存。"
+        helpTitle="【功能指南】顶栏胶囊显隐控制"
+        helpText="1. 默认状态说明：&#10;所有顶栏胶囊（电瓶电压、全国油价、拨号暗码、商店冻结、免签白名单、车机IP）默认全部激活显示。&#10;&#10;2. 独立开关与生效：&#10;点击下方任意卡片即可快速切换该胶囊的显示与隐藏状态，顶栏将即时刷新重绘。&#10;&#10;3. 一键重置：&#10;右上角提供一键全部恢复显示的快捷重置按钮。"
+        helpTip="建议保持电瓶电压与白名单胶囊显示，便于日常排查车辆健康状况与应用安装权限。"
+      >
+        <template #action>
+          <button
+            @click="resetAllCapsules"
+            class="h-[50px] px-5 rounded-2xl bg-car-item border border-car-border text-car-text hover:border-car-accent hover:text-car-accent transition-all text-[14px] font-bold cursor-pointer flex items-center space-x-2 shadow-sm"
+          >
+            <span>恢复全部默认显示</span>
+          </button>
+        </template>
+
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-3.5 w-full">
+          <!-- 1. 电瓶电压胶囊 -->
+          <div
+            @click="toggleCapsuleVisibility('battery')"
+            :class="[
+              'rounded-2xl border-2 p-5 transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[170px]',
+              store.capsuleVisibility.battery !== false
+                ? 'bg-car-item border-car-accent shadow-md'
+                : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+            ]"
+          >
+            <div class="flex items-center justify-between pb-3 border-b border-car-border/50">
+              <span class="text-[17px] font-black text-car-text">电瓶电压胶囊</span>
+              <StatusDot size="sm" :color="store.capsuleVisibility.battery !== false ? 'ok' : 'off'" />
+            </div>
+            <div class="text-[13.5px] text-car-sub font-medium leading-relaxed my-2">
+              实时监测车机蓄电池电压（健康/充能/亏电），点击可调阅电瓶健康状态说明。
+            </div>
+            <div class="pt-4 border-t border-car-border/40 flex items-center justify-between">
+              <span class="text-[12.5px] font-bold text-car-sub">默认状态：激活</span>
+              <span class="text-[13.5px] font-black" :class="store.capsuleVisibility.battery !== false ? 'text-car-accent' : 'text-car-sub'">
+                {{ store.capsuleVisibility.battery !== false ? '正在显示' : '已隐藏' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 2. 全国油价胶囊 -->
+          <div
+            @click="toggleCapsuleVisibility('oilPrice')"
+            :class="[
+              'rounded-2xl border-2 p-5 transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[170px]',
+              store.capsuleVisibility.oilPrice !== false
+                ? 'bg-car-item border-car-accent shadow-md'
+                : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+            ]"
+          >
+            <div class="flex items-center justify-between pb-3 border-b border-car-border/50">
+              <span class="text-[17px] font-black text-car-text">全国油价胶囊</span>
+              <StatusDot size="sm" :color="store.capsuleVisibility.oilPrice !== false ? 'ok' : 'off'" />
+            </div>
+            <div class="text-[13.5px] text-car-sub font-medium leading-relaxed my-2">
+              展示各省份 92#/95# 实时油价与调价倒计时天数，点击可切换省份或手动刷新。
+            </div>
+            <div class="pt-4 border-t border-car-border/40 flex items-center justify-between">
+              <span class="text-[12.5px] font-bold text-car-sub">默认状态：激活</span>
+              <span class="text-[13.5px] font-black" :class="store.capsuleVisibility.oilPrice !== false ? 'text-car-accent' : 'text-car-sub'">
+                {{ store.capsuleVisibility.oilPrice !== false ? '正在显示' : '已隐藏' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 3. 工程暗码胶囊 -->
+          <div
+            @click="toggleCapsuleVisibility('secretCode')"
+            :class="[
+              'rounded-2xl border-2 p-5 transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[170px]',
+              store.capsuleVisibility.secretCode !== false
+                ? 'bg-car-item border-car-accent shadow-md'
+                : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+            ]"
+          >
+            <div class="flex items-center justify-between pb-3 border-b border-car-border/50">
+              <span class="text-[17px] font-black text-car-text">工程暗码胶囊</span>
+              <StatusDot size="sm" :color="store.capsuleVisibility.secretCode !== false ? 'ok' : 'off'" />
+            </div>
+            <div class="text-[13.5px] text-car-sub font-medium leading-relaxed my-2">
+              随时间动态计算的原厂工程拨号暗码（+10 偏移），点击可调起快速拨号盘。
+            </div>
+            <div class="pt-4 border-t border-car-border/40 flex items-center justify-between">
+              <span class="text-[12.5px] font-bold text-car-sub">默认状态：激活</span>
+              <span class="text-[13.5px] font-black" :class="store.capsuleVisibility.secretCode !== false ? 'text-car-accent' : 'text-car-sub'">
+                {{ store.capsuleVisibility.secretCode !== false ? '正在显示' : '已隐藏' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 4. 应用商店胶囊 -->
+          <div
+            @click="toggleCapsuleVisibility('store')"
+            :class="[
+              'rounded-2xl border-2 p-5 transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[170px]',
+              store.capsuleVisibility.store !== false
+                ? 'bg-car-item border-car-accent shadow-md'
+                : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+            ]"
+          >
+            <div class="flex items-center justify-between pb-3 border-b border-car-border/50">
+              <span class="text-[17px] font-black text-car-text">应用商店状态</span>
+              <StatusDot size="sm" :color="store.capsuleVisibility.store !== false ? 'ok' : 'off'" />
+            </div>
+            <div class="text-[13.5px] text-car-sub font-medium leading-relaxed my-2">
+              展示原厂应用商店冻结/正常状态，点击可直接触发安全冻结与解冻流程。
+            </div>
+            <div class="pt-4 border-t border-car-border/40 flex items-center justify-between">
+              <span class="text-[12.5px] font-bold text-car-sub">默认状态：激活</span>
+              <span class="text-[13.5px] font-black" :class="store.capsuleVisibility.store !== false ? 'text-car-accent' : 'text-car-sub'">
+                {{ store.capsuleVisibility.store !== false ? '正在显示' : '已隐藏' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 5. 白名单状态胶囊 -->
+          <div
+            @click="toggleCapsuleVisibility('whitelist')"
+            :class="[
+              'rounded-2xl border-2 p-5 transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[170px]',
+              store.capsuleVisibility.whitelist !== false
+                ? 'bg-car-item border-car-accent shadow-md'
+                : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+            ]"
+          >
+            <div class="flex items-center justify-between pb-3 border-b border-car-border/50">
+              <span class="text-[17px] font-black text-car-text">白名单状态胶囊</span>
+              <StatusDot size="sm" :color="store.capsuleVisibility.whitelist !== false ? 'ok' : 'off'" />
+            </div>
+            <div class="text-[13.5px] text-car-sub font-medium leading-relaxed my-2">
+              指示第三方免签白名单是否放行，点击可调起快速授权与放行确认。
+            </div>
+            <div class="pt-4 border-t border-car-border/40 flex items-center justify-between">
+              <span class="text-[12.5px] font-bold text-car-sub">默认状态：激活</span>
+              <span class="text-[13.5px] font-black" :class="store.capsuleVisibility.whitelist !== false ? 'text-car-accent' : 'text-car-sub'">
+                {{ store.capsuleVisibility.whitelist !== false ? '正在显示' : '已隐藏' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 6. IP 网络状态胶囊 -->
+          <div
+            @click="toggleCapsuleVisibility('ip')"
+            :class="[
+              'rounded-2xl border-2 p-5 transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[170px]',
+              store.capsuleVisibility.ip !== false
+                ? 'bg-car-item border-car-accent shadow-md'
+                : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+            ]"
+          >
+            <div class="flex items-center justify-between pb-3 border-b border-car-border/50">
+              <span class="text-[17px] font-black text-car-text">IP 网络状态胶囊</span>
+              <StatusDot size="sm" :color="store.capsuleVisibility.ip !== false ? 'ok' : 'off'" />
+            </div>
+            <div class="text-[13.5px] text-car-sub font-medium leading-relaxed my-2">
+              指示当前 Wi-Fi 热点 IP、4G SIM 流量卡在线状态或未连热点，点击调起快传二维码。
+            </div>
+            <div class="pt-4 border-t border-car-border/40 flex items-center justify-between">
+              <span class="text-[12.5px] font-bold text-car-sub">默认状态：激活</span>
+              <span class="text-[13.5px] font-black" :class="store.capsuleVisibility.ip !== false ? 'text-car-accent' : 'text-car-sub'">
+                {{ store.capsuleVisibility.ip !== false ? '正在显示' : '已隐藏' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </FeatureCard>
+    </div>
+
     <!-- Tab 2: 桌面车标与启动项 (车标定制 + 启动首屏默认视图) -->
     <div v-if="activeTab === 'icon'" class="flex flex-col space-y-4">
       <FeatureCard 
@@ -313,10 +485,45 @@ import { ICON_PREVIEW_DEFAULT, ICON_PREVIEW_COOL } from '../utils/launcherIcons'
 const activeTab = ref('desktop');
 const systemTabs = [
   { id: 'desktop', name: '桌面胶囊悬浮', tag: '悬浮/屏保' },
+  { id: 'capsules', name: '顶栏状态胶囊', tag: '显隐控制' },
   { id: 'tools', name: '系统维护与工具', tag: '日志/ADB' },
   { id: 'theme', name: '外观主题风格', tag: '双模高质感' },
   { id: 'icon', name: '车标与启动项', tag: '图标/首屏' }
 ];
+
+function toggleCapsuleVisibility(key) {
+  if (!store.capsuleVisibility) {
+    store.capsuleVisibility = {
+      battery: true,
+      oilPrice: true,
+      secretCode: true,
+      store: true,
+      whitelist: true,
+      ip: true
+    };
+  }
+  const current = store.capsuleVisibility[key] !== false;
+  store.capsuleVisibility[key] = !current;
+  try {
+    localStorage.setItem('geely_capsule_visibility', JSON.stringify(store.capsuleVisibility));
+  } catch (e) {}
+  showToast(store.capsuleVisibility[key] ? '已显示该顶栏胶囊' : '已隐藏该顶栏胶囊');
+}
+
+function resetAllCapsules() {
+  store.capsuleVisibility = {
+    battery: true,
+    oilPrice: true,
+    secretCode: true,
+    store: true,
+    whitelist: true,
+    ip: true
+  };
+  try {
+    localStorage.setItem('geely_capsule_visibility', JSON.stringify(store.capsuleVisibility));
+  } catch (e) {}
+  showToast('已恢复全部顶栏胶囊显示 (默认全部激活)');
+}
 
 function onSelectAppIconStyle(style) {
   try {

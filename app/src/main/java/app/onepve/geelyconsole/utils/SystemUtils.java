@@ -1665,6 +1665,9 @@ public class SystemUtils {
                 result.put("chip", getHardwareChip());
                 result.put("modelCode", modelName);
                 result.put("vinLast6", getVinLast6());
+                long lastMod = zipFile.lastModified();
+                String capturedTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.CHINA).format(new java.util.Date(lastMod > 0 ? lastMod : System.currentTimeMillis()));
+                result.put("capturedTime", capturedTime);
                 result.put("message", "全量脱敏日志已打包: " + zipFileName);
                 if (listener != null) listener.onProgress(100, "✓ 全量脱敏日志已打包完成: " + zipFileName);
             } else {
@@ -1680,6 +1683,52 @@ public class SystemUtils {
             if (listener != null) listener.onProgress(100, "❌ 采集异常: " + e.getMessage());
         }
         return result;
+    }
+
+    public static JSONObject getExistingDiagnosticLog(Context context) {
+        JSONObject res = new JSONObject();
+        try {
+            File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            if (downloadDir == null || !downloadDir.exists()) {
+                res.put("exists", false);
+                return res;
+            }
+            String model = getVehicleModelName();
+            String chip = getHardwareChip();
+            File target = new File(downloadDir, model + "_" + chip + ".zip");
+            if (!target.exists()) {
+                target = new File(downloadDir, model + "_" + chip + "_log.zip");
+            }
+            if (!target.exists()) {
+                File[] files = downloadDir.listFiles();
+                if (files != null) {
+                    for (File f : files) {
+                        if (f != null && f.isFile() && f.getName().startsWith(model) && f.getName().endsWith(".zip")) {
+                            target = f;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (target != null && target.exists() && target.length() > 0) {
+                res.put("exists", true);
+                res.put("path", target.getAbsolutePath());
+                res.put("filename", target.getName());
+                double mb = target.length() / (1024.0 * 1024.0);
+                String sizeStr = (mb >= 1.0) ? String.format(java.util.Locale.CHINA, "%.2f MB", mb) : (target.length() / 1024 + " KB");
+                res.put("sizeStr", sizeStr);
+                res.put("chip", chip);
+                res.put("modelCode", model);
+                res.put("vinLast6", getVinLast6());
+                String capturedTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.CHINA).format(new java.util.Date(target.lastModified()));
+                res.put("capturedTime", capturedTime);
+                return res;
+            }
+        } catch (Exception ignored) {}
+        try {
+            res.put("exists", false);
+        } catch (Exception ignored) {}
+        return res;
     }
 
     private static File filterLogByKeywords(File src, File dest, String... keywords) {
@@ -2510,7 +2559,7 @@ public class SystemUtils {
 
             okhttp3.Request request = new okhttp3.Request.Builder()
                     .url("https://log.onepve.com/upload")
-                    .header("User-Agent", "GeelyToolbox/1.8.4-beta.1 (Linux; U; Android " + android.os.Build.VERSION.RELEASE + ")")
+                    .header("User-Agent", "GeelyToolbox/1.8.4 (Linux; U; Android " + android.os.Build.VERSION.RELEASE + ")")
                     .header("Connection", "close")
                     .header("X-Hardware-Chip", safeChip)
                     .header("X-Model-Code", safeModel)

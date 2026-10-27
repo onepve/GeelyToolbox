@@ -3105,6 +3105,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public String getDiagnosticLogMetadata() {
+            JSONObject res = SystemUtils.getExistingDiagnosticLog(MainActivity.this);
+            return res != null ? res.toString() : "{\"exists\":false}";
+        }
+
+        @JavascriptInterface
         public String dumpFullSystemLogcat() {
             new Thread(new Runnable() {
                 @Override

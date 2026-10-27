@@ -55,8 +55,30 @@ function getInitialLastActiveNav() {
   return 'link';
 }
 
+function getInitialCapsuleVisibility() {
+  const defaults = {
+    battery: true,
+    oilPrice: true,
+    secretCode: true,
+    store: true,
+    whitelist: true,
+    ip: true
+  };
+  try {
+    const raw = localStorage.getItem('geely_capsule_visibility');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return Object.assign(defaults, parsed);
+      }
+    }
+  } catch (e) {}
+  return defaults;
+}
+
 // 全局响应式状态
 export const store = reactive({
+  capsuleVisibility: getInitialCapsuleVisibility(),
   currentNav: (() => {
     const startup = getInitialStartupNav();
     if (startup === 'remember') {

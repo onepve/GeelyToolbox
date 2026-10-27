@@ -102,14 +102,32 @@
         class="flex flex-col space-y-3.5 py-1"
         @click="pauseCountdown"
       >
-        <div class="flex items-center justify-between bg-car-item rounded-2xl px-5 py-2.5 border border-car-border text-[14px] font-bold font-mono">
-          <span>车型平台：<strong class="text-car-accent">{{ logMeta.modelCode || 'SX11A3' }} ({{ logMeta.chip || 'IHU516' }})</strong></span>
+        <div class="flex items-center justify-between bg-car-item rounded-2xl px-5 py-2.5 border border-car-border text-[13.5px] font-bold font-mono">
           <div class="flex items-center space-x-4">
-            <span>文件大小：<strong class="text-emerald-400">{{ logMeta.sizeStr || exportSizeStr || '约 450 KB' }}</strong></span>
+            <span>车型平台：<strong class="text-car-accent">{{ logMeta.modelCode || 'SX11A3' }} ({{ logMeta.chip || 'IHU516G' }})</strong></span>
+            <span>大小：<strong class="text-emerald-400">{{ logMeta.sizeStr || exportSizeStr || '约 500 KB' }}</strong></span>
+            <span>抓取时间：<strong class="text-sky-400">{{ logMeta.capturedTime || '刚刚抓取' }}</strong></span>
+          </div>
+          <div class="flex items-center space-x-3">
+            <span v-if="logMeta.isUploaded" class="text-[12px] font-bold text-emerald-400 bg-emerald-500/15 px-3 py-1 rounded-full border border-emerald-500/30 flex items-center space-x-1">
+              <span>✓ 本日志已上传 (识别码: {{ logMeta.uploadedCode }})</span>
+            </span>
+            <span v-else class="text-[12px] font-bold text-amber-400 bg-amber-500/15 px-3 py-1 rounded-full border border-amber-500/30">
+              ● 待上传云端
+            </span>
             <span v-if="isPausedCountdown" class="text-[12px] font-normal text-amber-500 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/30">
-              已停止倒计时，方便您从容阅读
+              已停止倒计时
             </span>
           </div>
+        </div>
+
+        <!-- 已上传友好提示横幅，避免重复上传 -->
+        <div v-if="logMeta.isUploaded" class="px-4 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[13px] font-bold flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span>✓</span>
+            <span>该份日志已成功上传至云端（车机识别码: <strong class="underline">{{ logMeta.uploadedCode }}</strong>），作者可直接调阅分析，无需重复上传。</span>
+          </div>
+          <span class="text-[12px] text-car-sub">如遇新问题请重新点击下方抓取</span>
         </div>
 
         <!-- 左右并列 2 列栅格，全一屏完整展示杜绝滚动 -->
@@ -189,21 +207,21 @@
         </div>
       </div>
 
-      <!-- 阶段 3：上传成功，展示 8 位纯数字提取码 -->
+      <!-- 阶段 3：上传成功，展示 8 位纯数字车机日志识别码 -->
       <div v-else-if="uploadStatus === 'success'" class="py-4 flex flex-col items-center text-center select-none">
         <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl font-black mb-3">
           ✓
         </div>
         <h3 class="text-[22px] font-black text-car-text mb-1">诊断日志已安全上传！</h3>
-        <p class="text-[14px] text-car-sub mb-4">已归档至私有存储库 · 30天后全自动彻底物理销毁</p>
+        <p class="text-[14px] text-car-sub mb-4">已归档至开发者诊断库 · 30天后全自动彻底物理销毁</p>
 
         <div class="p-6 rounded-2xl bg-car-item border-2 border-emerald-500/50 w-full max-w-[480px] shadow-lg mb-2">
-          <div class="text-[13px] font-bold text-car-sub mb-1 uppercase tracking-wider">专属 8 位诊断提取码</div>
+          <div class="text-[13px] font-bold text-car-sub mb-1 uppercase tracking-wider">专属 8 位车机日志识别码</div>
           <div class="text-[40px] font-mono font-black text-emerald-400 tracking-[0.2em] my-1">
             {{ extractedCode }}
           </div>
           <div class="text-[13px] text-car-sub mt-2">
-            请将上方 8 位数字直接发送给开发者或在交流群反馈
+            请将此 8 位识别码发送给作者，作者即可精准定位并分析您车机的诊断日志
           </div>
         </div>
       </div>
@@ -230,9 +248,12 @@
 
             <button 
               @click="confirmUpload"
-              class="min-h-[54px] px-8 rounded-2xl bg-car-accent hover:opacity-90 text-white font-black text-[16.5px] cursor-pointer transition-all shadow-lg flex items-center"
+              class="min-h-[54px] px-8 rounded-2xl bg-car-accent hover:opacity-90 text-white font-black text-[16.5px] cursor-pointer transition-all shadow-lg flex items-center space-x-2"
             >
-              <span>立即上传并获取提取码</span>
+              <span>{{ logMeta.isUploaded ? '重新上传该日志' : '立即上传并获取识别码' }}</span>
+              <span v-if="!isPausedCountdown && !logMeta.isUploaded" class="px-2 py-0.5 rounded-full text-[13px] font-mono" style="background-color: rgba(255, 255, 255, 0.2);">
+                {{ uploadCountdown }}s
+              </span>
             </button>
           </div>
         </template>
@@ -298,9 +319,12 @@
           <button 
             v-if="logMeta.path || exportFileName"
             @click="openUploadConfirm"
-            class="min-h-[50px] px-5 rounded-xl bg-gradient-to-r from-sky-500/20 to-indigo-500/20 border-2 border-sky-500/50 text-sky-400 hover:text-sky-300 hover:border-sky-400 font-black text-[15.5px] cursor-pointer shadow-sm transition-all flex items-center"
+            class="min-h-[50px] px-5 rounded-xl border-2 font-black text-[15.5px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
+            :class="logMeta.isUploaded 
+              ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-400 hover:text-emerald-300' 
+              : 'bg-gradient-to-r from-sky-500/20 to-indigo-500/20 border-sky-500/50 text-sky-400 hover:text-sky-300 hover:border-sky-400'"
           >
-            <span>☁️ 一键上传分析</span>
+            <span>{{ logMeta.isUploaded ? '☁️ 日志已上传' : '☁️ 一键上传分析' }}</span>
           </button>
           <button 
             @click="clearLogs"
@@ -433,6 +457,8 @@ function fetchLogs(isManual = false) {
 function startPolling() {
   stopPolling();
   loadModuleSwitches();
+  checkWifiState();
+  checkExistingLog();
   fetchLogs();
   pollTimer = setInterval(() => {
     fetchLogs();
@@ -455,13 +481,74 @@ const exportSizeStr = ref('');
 
 // 云端免密上传与 20s 倒计时相关状态
 const logMeta = ref({
-  chip: 'IHU516',
+  chip: 'IHU516G',
   modelCode: 'SX11A3',
   vinLast6: '000000',
   path: '',
   filename: '',
-  sizeStr: ''
+  sizeStr: '',
+  capturedTime: '',
+  isUploaded: false,
+  uploadedCode: ''
 });
+
+function syncUploadedState(filename, capturedTime) {
+  if (!filename) return;
+  try {
+    const raw = localStorage.getItem('geely_log_upload_history');
+    if (raw) {
+      const history = JSON.parse(raw);
+      if (history && history[filename]) {
+        const item = history[filename];
+        if (!capturedTime || item.capturedTime === capturedTime) {
+          logMeta.value.isUploaded = true;
+          logMeta.value.uploadedCode = item.code || '';
+          return;
+        }
+      }
+    }
+  } catch (e) {}
+  logMeta.value.isUploaded = false;
+  logMeta.value.uploadedCode = '';
+}
+
+function recordUploadedState(filename, capturedTime, code) {
+  if (!filename) return;
+  try {
+    let history = {};
+    const raw = localStorage.getItem('geely_log_upload_history');
+    if (raw) {
+      history = JSON.parse(raw) || {};
+    }
+    history[filename] = {
+      capturedTime: capturedTime || '',
+      code: code || '',
+      time: Date.now()
+    };
+    localStorage.setItem('geely_log_upload_history', JSON.stringify(history));
+  } catch (e) {}
+}
+
+function checkExistingLog() {
+  try {
+    const raw = bridge.call('getDiagnosticLogMetadata');
+    if (raw) {
+      const res = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (res && res.exists && res.path) {
+        logMeta.value.chip = res.chip || 'IHU516G';
+        logMeta.value.modelCode = res.modelCode || 'SX11A3';
+        logMeta.value.vinLast6 = res.vinLast6 || '000000';
+        logMeta.value.path = res.path;
+        logMeta.value.filename = res.filename || '';
+        logMeta.value.sizeStr = res.sizeStr || '';
+        logMeta.value.capturedTime = res.capturedTime || '';
+        exportFileName.value = res.filename || '';
+        exportSizeStr.value = res.sizeStr || '';
+        syncUploadedState(res.filename, res.capturedTime);
+      }
+    }
+  } catch (e) {}
+}
 const showUploadModal = ref(false);
 const uploadStatus = ref('confirm'); // 'confirm' | 'uploading' | 'success' | 'error'
 const uploadCountdown = ref(20);
@@ -558,6 +645,9 @@ window.onLogUploadFinished = (res) => {
   if (res && res.success) {
     uploadStatus.value = 'success';
     extractedCode.value = res.code || '88888888';
+    logMeta.value.isUploaded = true;
+    logMeta.value.uploadedCode = extractedCode.value;
+    recordUploadedState(logMeta.value.filename, logMeta.value.capturedTime, extractedCode.value);
   } else {
     uploadStatus.value = 'error';
     uploadErrorMsg.value = (res && res.message) || '上传遇到未知错误，请检查车机网络连接';
@@ -597,14 +687,19 @@ window.onLogcatDumpFinished = (res) => {
     exportStepText.value = '✓ ' + (res.message || '全量脱敏日志打包完成');
     
     // 更新元数据
+    const capturedTime = res.capturedTime || new Date().toLocaleString();
     logMeta.value = {
-      chip: res.chip || 'IHU516',
+      chip: res.chip || 'IHU516G',
       modelCode: res.modelCode || 'SX11A3',
       vinLast6: res.vinLast6 || '000000',
       path: res.path || ('/sdcard/Download/' + exportFileName.value),
       filename: exportFileName.value,
-      sizeStr: exportSizeStr.value
+      sizeStr: exportSizeStr.value,
+      capturedTime: capturedTime,
+      isUploaded: false,
+      uploadedCode: ''
     };
+    syncUploadedState(exportFileName.value, capturedTime);
 
     // 延迟 400ms 弹出润色后的上传确认与 20s 倒计时弹窗
     setTimeout(() => {

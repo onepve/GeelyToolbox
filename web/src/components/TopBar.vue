@@ -128,6 +128,7 @@ const isBeta = computed(() => {
 });
 
 const statusPills = computed(() => {
+  const vis = store.capsuleVisibility || {};
   let v = null;
   if (store.batteryVoltage && store.batteryVoltage > 0) {
     v = store.batteryVoltage;
@@ -159,13 +160,22 @@ const statusPills = computed(() => {
     batteryText = `电瓶: ${voltStr}V (${batteryStatus})`;
   }
 
-  return [
-    { 
+  const pills = [];
+
+  // 1. 电瓶胶囊
+  if (vis.battery !== false) {
+    pills.push({ 
+      id: 'battery',
       text: batteryText, 
       dot,
       onClick: () => openModal('battery') 
-    },
-    {
+    });
+  }
+
+  // 2. 油价胶囊
+  if (vis.oilPrice !== false) {
+    pills.push({
+      id: 'oilPrice',
       text: (() => {
         if (!store.oilPrice.nextAdjustment || !store.oilPrice.nextAdjustment.date) {
           return '油价: 获取中...';
@@ -179,23 +189,43 @@ const statusPills = computed(() => {
       })(),
       dot: { color: 'accent' },
       onClick: () => openModal('oilPrice')
-    },
-    { 
+    });
+  }
+
+  // 3. 暗码胶囊
+  if (vis.secretCode !== false) {
+    pills.push({ 
+      id: 'secretCode',
       text: `暗码(+10): ${store.dynamicCode}`, 
       dot: { color: 'accent' },
       onClick: () => openModal('dialer') 
-    },
-    { 
+    });
+  }
+
+  // 4. 商店胶囊
+  if (vis.store !== false) {
+    pills.push({ 
+      id: 'store',
       text: `商店: ${store.deviceInfo.appstore_frozen ? '已冻结' : '未冻结'}`, 
       dot: { color: store.deviceInfo.appstore_frozen ? 'ok' : 'warn' },
       onClick: () => handleStoreCapsuleClick() 
-    },
-    { 
+    });
+  }
+
+  // 5. 白名单胶囊
+  if (vis.whitelist !== false) {
+    pills.push({ 
+      id: 'whitelist',
       text: `白名单: ${store.deviceInfo.whitelist ? '已放行' : '未放行'}`, 
       dot: { color: store.deviceInfo.whitelist ? 'ok' : 'warn' },
       onClick: () => handleWhitelistCapsuleClick() 
-    },
-    { 
+    });
+  }
+
+  // 6. IP/网络胶囊
+  if (vis.ip !== false) {
+    pills.push({ 
+      id: 'ip',
       text: (() => {
         const ip = store.deviceInfo.car_ip || store.deviceInfo.ip || '';
         const isWifi = store.deviceInfo.is_wifi || (ip && (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')));
@@ -213,8 +243,10 @@ const statusPills = computed(() => {
         return { color: 'off' };
       })(),
       onClick: () => openModal('qrCode') 
-    }
-  ];
+    });
+  }
+
+  return pills;
 });
 
 function handleWhitelistCapsuleClick() {
