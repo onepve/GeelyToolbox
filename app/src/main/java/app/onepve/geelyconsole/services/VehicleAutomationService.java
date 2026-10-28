@@ -152,6 +152,10 @@ public class VehicleAutomationService extends Service {
     private volatile int consecutiveValidOilSamples = 0;
     private static final double MIN_REFUEL_DELTA_LITERS = 8.0; // 最小跃变有效阈值 (>=8.0L)
     private static final double MAX_REASONABLE_FUEL_CAPACITY = 75.0; // 宽限油箱物理冗余安全上限 (容纳油箱颈与各车型公差)
+    private volatile double parkedBaselineOil = -1.0; // P挡驻车期间初始油量基准 (支持不关车机/快速休眠加油感知)
+    private volatile long lastRefuelAutoRecordTime = 0L; // 上次自动记账时间戳 (5分钟防重复)
+    private int consecutiveRefuelHighSamples = 0;
+    private double lastDetectedRefuelOil = 0.0;
 
     // 服务启动时间戳（用于时间戳软栅栏，毫秒级丢弃开机前的陈旧日志）
     private long serviceBootTimestampMs = 0;
@@ -1852,10 +1856,28 @@ public class VehicleAutomationService extends Service {
             int threshold = prefs.getInt("vehicle_speed_autoplay_threshold", 20);
             if (speed >= threshold) {
                 speedAutoplayTriggeredInTrip = true; // 严格单次行程达标即刻闭锁，杜绝后台冷态时高频疯狂拉活与狂发广播
-                String targetPkg = getDefaultAutoplayPkg();
-                boolean fullscreen = prefs.getBoolean("vehicle_speed_autoplay_fullscreen", false);
-                AppLogger.i("车身联动", "【车速自启多媒体】单次行程首次达标 " + threshold + "km/h，拉起音源并闭锁: " + targetPkg);
-                triggerMusicAutoplay(targetPkg, fullscreen);
+                final String targetPkg = getDefaultAutoplayPkg();
+                final boolean fullscreen = prefs.getBoolean("vehicle_speed_autoplay_fullscreen", false);
+
+                long uptime = android.os.SystemClock.elapsedRealtime();
+                // 车机开机预热延时保护：若系统开机未满 22 秒，第三方媒体应用与音频通路尚未初始化完成，智能延时 6~8 秒平滑拉起
+                long bootWarmupDelay = 0L;
+                if (uptime < 22000L) {
+                    bootWarmupDelay = Math.min(8000L, Math.max(5000L, 22000L - uptime));
+                }
+
+                if (bootWarmupDelay > 0) {
+                    AppLogger.i("车身联动", "【车速自启多媒体】单次行程首次达标 " + threshold + "km/h，系统开机仅 " + (uptime / 1000) + "s，智能延时 " + (bootWarmupDelay / 1000) + "s 待车机与播放器完全就绪后拉起: " + targetPkg);
+                    mainHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            triggerMusicAutoplay(targetPkg, fullscreen);
+                        }
+                    }, bootWarmupDelay);
+                } else {
+                    AppLogger.i("车身联动", "【车速自启多媒体】单次行程首次达标 " + threshold + "km/h，拉起音源并闭锁: " + targetPkg);
+                    triggerMusicAutoplay(targetPkg, fullscreen);
+                }
             }
         }
 
@@ -1878,6 +1900,16 @@ public class VehicleAutomationService extends Service {
      */
     private void snapshotFuelStateOnStop(String triggerReason) {
         if (currentRemainingOilLiters > 0 && currentRemainingOilLiters <= MAX_REASONABLE_FUEL_CAPACITY) {
+            // 保护现有基准：如果当前油量比历史基准大（表明正在加注或已加注），绝不能覆盖原有偏小的基准！
+            try {
+                JSONObject state = FuelManager.getLastFuelState(this);
+                double savedOil = state.optDouble("oil", -1.0);
+                if (savedOil > 0 && currentRemainingOilLiters >= savedOil + 4.0) {
+                    AppLogger.i("加油基准", "【保护低位基准】检测到当前油位(" + currentRemainingOilLiters + "L)显著高于上次快照(" + savedOil + "L)，跳过覆写防止抹平加油跃变！");
+                    return;
+                }
+            } catch (Throwable ignored) {}
+
             FuelManager.saveLastFuelState(this, currentRemainingOilLiters, currentTotalOdoKm);
             AppLogger.i("加油基准", "【双保险第1重】" + triggerReason + "，预热保存当前油位快照: " + currentRemainingOilLiters + "L, 里程=" + currentTotalOdoKm + "km");
         }
@@ -1890,14 +1922,17 @@ public class VehicleAutomationService extends Service {
      * 2. 判定完毕立刻闭锁 (tripRefuelEvaluatedInThisTrip = true)，整段行车/停车/等灯绝不重复计算！
      * 3. 严格过滤 <=0L 或异常超标的无效读数，油箱冗余上限宽限至 75L。
      */
+    /**
+     * 智能加油跃变感知与自动静默记账引擎 (真车物理状态机)
+     * 核心设计：
+     * 1. 支持标准冷启动比对（上次熄火快照 vs 本次开机初检）；
+     * 2. 全面支持【不关车机/人坐在车内加油/STR快速休眠】：挂 P 挡停稳期间，油量跃变 >= 8L 即刻捕获；
+     * 3. 严格过滤 <=0L 或异常超标的无效读数，油箱冗余上限宽限至 75L；
+     * 4. 连续 3 包稳定读数防抖，5 分钟防重记账防抖。
+     */
     private void processRefuelDetection(double currentOil) {
         // 非法读数直接丢弃 (油不可能 <= 0，且不超过油箱冗余宽限)
         if (currentOil <= 0 || currentOil > MAX_REASONABLE_FUEL_CAPACITY) {
-            return;
-        }
-
-        // 核心闭锁铁律：本次点火行程已经判定过，彻底静默跳过！
-        if (tripRefuelEvaluatedInThisTrip) {
             return;
         }
 
@@ -1907,33 +1942,68 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // 标记本次行程已判定，立即闭锁！
-        tripRefuelEvaluatedInThisTrip = true;
+        long now = System.currentTimeMillis();
 
-        try {
-            JSONObject state = FuelManager.getLastFuelState(this);
-            double savedOil = state.optDouble("oil", -1.0);
-            double savedOdo = state.optDouble("odo", -1.0);
-
-            if (savedOil > 0 && savedOil <= MAX_REASONABLE_FUEL_CAPACITY) {
-                double delta = currentOil - savedOil;
-                AppLogger.i("加油感知", "【点火初检】读取上次熄火双保险基准=" + savedOil + "L，本次点火稳定油位=" + currentOil + "L (差值=" + delta + "L)");
-
-                if (delta >= MIN_REFUEL_DELTA_LITERS) {
-                    double addedLiters = Math.round(delta * 10.0) / 10.0;
-                    AppLogger.i("加油感知", "【命中加油事件】检测到熄火加注: " + addedLiters + "L，静默入账！");
-                    autoRecordRefuelSilently(addedLiters, currentOil);
+        // 【模式一：开机/点火初检】(仅在单次行程首发执行一次)
+        if (!tripRefuelEvaluatedInThisTrip) {
+            tripRefuelEvaluatedInThisTrip = true;
+            try {
+                JSONObject state = FuelManager.getLastFuelState(this);
+                double savedOil = state.optDouble("oil", -1.0);
+                if (savedOil > 0 && savedOil <= MAX_REASONABLE_FUEL_CAPACITY) {
+                    double delta = currentOil - savedOil;
+                    AppLogger.i("加油感知", "【点火初检】读取上次熄火双保险基准=" + savedOil + "L，本次点火稳定油位=" + currentOil + "L (差值=" + delta + "L)");
+                    if (delta >= MIN_REFUEL_DELTA_LITERS) {
+                        double addedLiters = Math.round(delta * 10.0) / 10.0;
+                        AppLogger.i("加油感知", "【命中冷启动加油事件】检测到熄火加注: " + addedLiters + "L，静默入账！");
+                        autoRecordRefuelSilently(addedLiters, currentOil);
+                        lastRefuelAutoRecordTime = now;
+                    } else {
+                        AppLogger.i("加油感知", "【正常点火】未检测到有效加油跃变 (差值 " + delta + "L < " + MIN_REFUEL_DELTA_LITERS + "L)");
+                    }
                 } else {
-                    AppLogger.i("加油感知", "【正常冷启动】未检测到有效加油跃变 (差值 " + delta + "L < " + MIN_REFUEL_DELTA_LITERS + "L)，行程锁定。");
+                    AppLogger.i("加油感知", "【首次启动/无历史基准】当前有效油位 " + currentOil + "L 已作为下次基准");
                 }
-            } else {
-                AppLogger.i("加油感知", "【首次启动/无历史基准】当前有效油位 " + currentOil + "L 已作为下次基准，行程锁定。");
+            } catch (Throwable t) {
+                AppLogger.w("加油感知", "读取上次油位基准失败: " + t.getMessage());
             }
+            parkedBaselineOil = currentOil;
+            return;
+        }
 
-            // 更新当前最新油位为下一次准备
-            FuelManager.saveLastFuelState(this, currentOil, currentTotalOdoKm);
-        } catch (Throwable t) {
-            AppLogger.w("加油感知", "读取上次油位基准失败: " + t.getMessage());
+        // 【模式二：P挡驻车/不熄火加油/STR休眠加油跃变实时感知】
+        // 当车辆挂 P 挡且车速为 0 时，车机可能一直处于工作或快速休眠亮屏状态
+        int currentGear = (gearStateMachine != null) ? gearStateMachine.getCurrentGear() : 0;
+        if (currentGear == 5 && currentSpeedKmH == 0) {
+            if (parkedBaselineOil <= 0) {
+                parkedBaselineOil = currentOil;
+            } else if (currentOil < parkedBaselineOil) {
+                // 停车耗油或液面轻微波动回落，自适应调低驻车基准
+                parkedBaselineOil = currentOil;
+                consecutiveRefuelHighSamples = 0;
+            } else if (currentOil - parkedBaselineOil >= MIN_REFUEL_DELTA_LITERS) {
+                // 油量比 P 挡初始基准高出 8L 以上
+                if (Math.abs(currentOil - lastDetectedRefuelOil) < 0.5) {
+                    consecutiveRefuelHighSamples++;
+                } else {
+                    lastDetectedRefuelOil = currentOil;
+                    consecutiveRefuelHighSamples = 1;
+                }
+
+                // 连续 3 包稳定高油位，判定加油完成，5分钟内不重复记账
+                if (consecutiveRefuelHighSamples >= 3 && (now - lastRefuelAutoRecordTime > 300000L)) {
+                    double addedLiters = Math.round((currentOil - parkedBaselineOil) * 10.0) / 10.0;
+                    AppLogger.i("加油感知", "【命中P挡驻车加油事件】驻车基准=" + parkedBaselineOil + "L, 当前稳定油位=" + currentOil + "L, 加注量=" + addedLiters + "L，静默入账！");
+                    autoRecordRefuelSilently(addedLiters, currentOil);
+                    lastRefuelAutoRecordTime = now;
+                    parkedBaselineOil = currentOil; // 刷新基准
+                    consecutiveRefuelHighSamples = 0;
+                }
+            }
+        } else if (currentGear == 2 || currentSpeedKmH > 5) {
+            // 切入 D 挡行车起步：将当前油位作为新行程基准，重置连续样本计数
+            parkedBaselineOil = currentOil;
+            consecutiveRefuelHighSamples = 0;
         }
     }
 

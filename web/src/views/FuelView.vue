@@ -451,7 +451,12 @@
               <div class="flex items-center space-x-3 shrink-0">
                 <div class="flex flex-col text-right">
                   <span class="text-[17px] font-black text-car-accent font-mono leading-tight whitespace-nowrap">¥{{ rec.actual_paid ? rec.actual_paid.toFixed(1) : (rec.amount ? rec.amount.toFixed(1) : '0.0') }}</span>
-                  <span class="text-[11px] text-car-sub font-bold whitespace-nowrap">{{ rec.gas_station === '智能自动感知' ? '自动' : '手动' }}</span>
+                  <div class="flex items-center justify-end space-x-1">
+                    <span v-if="Number(rec.coupon || 0) > 0" class="text-[10px] px-1 py-0.2 rounded bg-amber-500/15 border border-amber-500/40 text-amber-400 font-bold whitespace-nowrap">
+                      省¥{{ Number(rec.coupon).toFixed(1) }}
+                    </span>
+                    <span class="text-[11px] text-car-sub font-bold whitespace-nowrap">{{ rec.gas_station === '智能自动感知' ? '自动' : '手动' }}</span>
+                  </div>
                 </div>
 
                 <span class="px-2.5 py-1.5 rounded-lg bg-car-card border border-car-border text-car-sub text-[12px] font-bold hover:text-car-text whitespace-nowrap">
@@ -901,20 +906,26 @@ function onEditFuelTypeChange() {
 }
 
 function onEditPaidChange() {
-  if (editingRecord.value.price > 0 && editingRecord.value.actual_paid > 0) {
-    editingRecord.value.liters = Math.round((editingRecord.value.actual_paid / editingRecord.value.price) * 100) / 100;
+  const coupon = Number(editingRecord.value.coupon) || 0;
+  const total = (Number(editingRecord.value.actual_paid) || 0) + coupon;
+  if (editingRecord.value.price > 0 && total > 0) {
+    editingRecord.value.liters = Math.round((total / editingRecord.value.price) * 100) / 100;
   }
 }
 
 function onEditLitersChange() {
+  const coupon = Number(editingRecord.value.coupon) || 0;
   if (editingRecord.value.price > 0 && editingRecord.value.liters > 0) {
-    editingRecord.value.actual_paid = Math.round(editingRecord.value.liters * editingRecord.value.price * 10) / 10;
+    const total = Math.round(editingRecord.value.liters * editingRecord.value.price * 10) / 10;
+    editingRecord.value.actual_paid = Math.max(0, Math.round((total - coupon) * 10) / 10);
   }
 }
 
 function onEditPriceChange() {
-  if (editingRecord.value.liters > 0 && editingRecord.value.price > 0) {
-    editingRecord.value.actual_paid = Math.round(editingRecord.value.liters * editingRecord.value.price * 10) / 10;
+  const coupon = Number(editingRecord.value.coupon) || 0;
+  const total = (Number(editingRecord.value.actual_paid) || 0) + coupon;
+  if (editingRecord.value.price > 0 && total > 0) {
+    editingRecord.value.liters = Math.round((total / editingRecord.value.price) * 100) / 100;
   }
 }
 
@@ -951,6 +962,7 @@ function onDeleteCurrentRecord() {
 const showAddModal = ref(false);
 const newRecord = ref({
   actual_paid: 200,
+  coupon: 0,
   liters: 26.5,
   price: 7.55,
   province: '北京',
@@ -967,6 +979,7 @@ function openAddRecordModal() {
   const odoVal = Math.round(Number(store.fuelLedger.current_odo) || 0);
   newRecord.value = {
     actual_paid: initialPaid,
+    coupon: 0,
     liters: Math.round((initialPaid / p92) * 100) / 100,
     price: p92,
     province: currentProvinceName.value,
@@ -983,7 +996,8 @@ function setQuickAmount(amt) {
   newRecord.value.actual_paid = amt;
   newRecord.value.is_full = false;
   if (newRecord.value.price > 0) {
-    newRecord.value.liters = Math.round((amt / newRecord.value.price) * 100) / 100;
+    const total = amt + (Number(newRecord.value.coupon) || 0);
+    newRecord.value.liters = Math.round((total / newRecord.value.price) * 100) / 100;
   }
 }
 
@@ -992,7 +1006,9 @@ function setQuickFull() {
   const gap = Number(fillGapLiters.value) || 35.0;
   newRecord.value.liters = gap;
   if (newRecord.value.price > 0) {
-    newRecord.value.actual_paid = Math.round(gap * newRecord.value.price * 10) / 10;
+    const total = Math.round(gap * newRecord.value.price * 10) / 10;
+    const coupon = Number(newRecord.value.coupon) || 0;
+    newRecord.value.actual_paid = Math.max(0, Math.round((total - coupon) * 10) / 10);
   }
 }
 
@@ -1005,8 +1021,11 @@ function onNewProvinceChange() {
     else if (fuelType.includes('98')) newRecord.value.price = pData.p98 || 9.10;
     else newRecord.value.price = pData.p92 || 7.55;
 
-    if (newRecord.value.actual_paid > 0 && newRecord.value.price > 0) {
-      newRecord.value.liters = Math.round((newRecord.value.actual_paid / newRecord.value.price) * 100) / 100;
+    if (newRecord.value.price > 0) {
+      const total = (Number(newRecord.value.actual_paid) || 0) + (Number(newRecord.value.coupon) || 0);
+      if (total > 0) {
+        newRecord.value.liters = Math.round((total / newRecord.value.price) * 100) / 100;
+      }
     }
   }
 }
@@ -1016,20 +1035,26 @@ function onNewFuelTypeChange() {
 }
 
 function onNewPaidChange() {
-  if (newRecord.value.price > 0 && newRecord.value.actual_paid > 0) {
-    newRecord.value.liters = Math.round((newRecord.value.actual_paid / newRecord.value.price) * 100) / 100;
+  const coupon = Number(newRecord.value.coupon) || 0;
+  const total = (Number(newRecord.value.actual_paid) || 0) + coupon;
+  if (newRecord.value.price > 0 && total > 0) {
+    newRecord.value.liters = Math.round((total / newRecord.value.price) * 100) / 100;
   }
 }
 
 function onNewLitersChange() {
+  const coupon = Number(newRecord.value.coupon) || 0;
   if (newRecord.value.price > 0 && newRecord.value.liters > 0) {
-    newRecord.value.actual_paid = Math.round(newRecord.value.liters * newRecord.value.price * 10) / 10;
+    const total = Math.round(newRecord.value.liters * newRecord.value.price * 10) / 10;
+    newRecord.value.actual_paid = Math.max(0, Math.round((total - coupon) * 10) / 10);
   }
 }
 
 function onNewPriceChange() {
-  if (newRecord.value.actual_paid > 0 && newRecord.value.price > 0) {
-    newRecord.value.liters = Math.round((newRecord.value.actual_paid / newRecord.value.price) * 100) / 100;
+  const coupon = Number(newRecord.value.coupon) || 0;
+  const total = (Number(newRecord.value.actual_paid) || 0) + coupon;
+  if (newRecord.value.price > 0 && total > 0) {
+    newRecord.value.liters = Math.round((total / newRecord.value.price) * 100) / 100;
   }
 }
 
