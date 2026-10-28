@@ -35,7 +35,6 @@ import javax.crypto.Cipher;
  */
 public class AdbClient {
     private static final String TAG = "AdbClient";
-    private static final String ADB_HOST = "127.0.0.1";
     private static final int ADB_PORT = 5555;
     private static final int TIMEOUT_MS = 5000;
 
@@ -93,7 +92,7 @@ public class AdbClient {
     /** 带缓存的端口探测（供 executePrivileged 等高频调用使用） */
     public static boolean isAdbPortOpenCached() {
         long now = System.currentTimeMillis();
-        if (probeCachedResult && (now - probeCachedAt) < 5_000L) {
+        if (probeCachedResult && (now - probeCachedAt) < PROBE_CACHE_TTL_MS) {
             return true;
         }
         boolean r = isAdbPortOpen(null);

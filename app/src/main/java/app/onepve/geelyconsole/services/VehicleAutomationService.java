@@ -125,13 +125,6 @@ public class VehicleAutomationService extends Service {
     public static volatile int currentFuelPercent = -1; // 实时油箱剩余百分比 (-1 表示等待总线信号读取中)
     public static volatile float currentFuelLiters = -1f; // 实时剩余升数 (-1 表示等待总线信号)
 
-    // 同状态接触微抖动过滤 (毫秒)
-    private long lastTriggerFL = 0;
-    private long lastTriggerFR = 0;
-    private long lastTriggerRL = 0;
-    private long lastTriggerRR = 0;
-    private long lastTriggerTrunk = 0;
-    private long lastTriggerGear = 0;
     /** 电源聚合状态字符串（仅变化时才写日志，杜绝心跳刷屏） */
     private String lastPowerStateAggregate = "";
 
@@ -167,9 +160,6 @@ public class VehicleAutomationService extends Service {
     private boolean enableTurnSignal360 = false;
     private boolean isTurnSignal360Active = false;
     public static volatile boolean isAvmCameraShowing = false; // 真实原厂 360 画面前台状态 (来自 ecarx_avm_SocketCommand)
-
-    /** 桥接只读快照 (供 MainActivity 同步读取，不加锁只写 volatile) */
-    private volatile boolean lastEngineRunningSnapshot = false;
 
     /** 桥接辅助: MainActivity 同步读取发动机运行判定 */
     public static boolean isEngineRunningForBridge() {
@@ -691,8 +681,6 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("91\\s+02\\s+01(?:\\s+[0-9a-fA-F]{1,2}){3}\\s+([0-9a-fA-F]{1,2})\\s+([0-9a-fA-F]{1,2})");
     private static final Pattern P_TASKER_SPEED =
             Pattern.compile("(?:getVehicleSpeed:speed|carSpeed)\\s*==\\s*([0-9.]+)");
-    private static final Pattern P_GET_SPEED =
-            Pattern.compile("Get Speed\\s+(\\d+)km/h");
     private static final Pattern P_CARAUDIO_SPEED =
             Pattern.compile("CarAudioInfo.*?(?:,\\s*speed=(\\d+)|Get Speed\\s+(\\d+)km/h)");
     private static final Pattern P_JSON_VEHICLE_SPEED =
@@ -701,10 +689,6 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("(?:onVehicleEventIpkSpeed[^0-9a-fA-F]*state=(?:0x)?([0-9a-fA-F]+)|VehId=Vehicle_IPK_Speed\\s+value=(?:0x)?([0-9a-fA-F]+)|INFO_ID_IPKINFO_INSTANT_SPEED.*?(?:funcValue\\((?:0x)?([0-9a-fA-F]+)\\)|value\\s*[:=]\\s*(?:0x)?([0-9a-fA-F]+)))");
     private static final Pattern P_VEHICLE_GEAR =
             Pattern.compile("VehId=Vehicle_Gear\\s+value=(?:0x)?([0-9a-fA-F]+)");
-    private static final Pattern P_GEAR_EQ =
-            Pattern.compile("gear=(\\d+)");
-    private static final Pattern P_GEAR_POS =
-            Pattern.compile("(?:func?Value\\((?:0x)?([0-9a-fA-F]+)\\)|(?:mModelGearPos|GearPos)\\s*[:=]\\s*(?:0x)?([0-9a-fA-F]+))");
     private static final Pattern P_FUNVALUE =
             Pattern.compile("funValue\\((?:0x)?([0-9a-fA-F]+)\\)");
     private static final Pattern P_IPK_TOTAL_ODO =
@@ -715,10 +699,6 @@ public class VehicleAutomationService extends Service {
             Pattern.compile("(?:DirveMode|DriveMode)\\s*=\\s*(\\d+)");
     private static final Pattern P_COMFORT_DRIVE_MODE =
             Pattern.compile("DM_FUNC_DRIVE_MODE_SELECT\\s+value\\s*=\\s*(\\d+)");
-    private static final Pattern P_HAL_DRIVE_MODE =
-            Pattern.compile("parseRxProtoBuf:\\s+vp->ap\\s*\\(0x287000eb,\\s*(?:0x)?([0-9a-fA-F]+)\\s*\\)");
-    private static final Pattern P_MCU_DRIVE_MODE_FRAME =
-            Pattern.compile("read data:\\s*91\\s+09\\s+02\\s+00\\s+05\\s+00\\s+[0-9a-fA-F]{2}\\s+([0-9a-fA-F]{2})");
     private static final Pattern P_PEPS_POWERMODE =
             Pattern.compile("peps_powermode[^0-9]*(\\d+)");
     private static final Pattern P_KEY_STATE =

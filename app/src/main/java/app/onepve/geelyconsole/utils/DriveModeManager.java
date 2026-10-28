@@ -39,7 +39,6 @@ public class DriveModeManager {
     // 初始基准直接锁定 MODE_SMART，杜绝使用 -1 导致开机后车主第一次旋转旋钮被当成开机对齐而吞音！
     private int lastDriveMode = MODE_SMART;
     private boolean isSmartModeArmed = false; // 智能模式闭锁标志：默认锁定(false)，切到其他模式时武装(true)，切回智能并播报一次后立即恢复锁定值(false)，彻底杜绝驻车循环播报
-    private long creationTimeMs = System.currentTimeMillis();
     private Runnable pendingModeTask = null;
     private int pendingTargetMode = -1; // 防抖期目标模式：同目标信号不重置计时器
     private static final long MODE_DEBOUNCE_MS = 160; // 模式切换防抖滤波窗口 (160ms 滤除旋钮极速滑动过渡态)

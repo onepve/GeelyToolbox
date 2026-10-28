@@ -532,26 +532,6 @@ public class VehicleVoicePlayer {
         }
     }
 
-    private static String getFileMd5(File file) {
-        if (file == null || !file.exists() || !file.isFile()) return "";
-        try (InputStream fis = new FileInputStream(file)) {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] buffer = new byte[8192];
-            int read;
-            while ((read = fis.read(buffer)) > 0) {
-                md.update(buffer, 0, read);
-            }
-            byte[] digest = md.digest();
-            StringBuilder sb = new StringBuilder();
-            for (byte b : digest) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            return "";
-        }
-    }
-
     /**
      * 把 assets/audio 里的内置原声同步到私有目录。
      *

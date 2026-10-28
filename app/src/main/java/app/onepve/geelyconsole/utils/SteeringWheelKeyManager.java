@@ -103,8 +103,6 @@ public class SteeringWheelKeyManager {
     private final Context context;
     private final SharedPreferences prefs;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private long lastTriggerTime = 0;
-    private int lastTriggerKey = -1;
 
     private final Map<Integer, Long> lastKeyTriggerTime = new HashMap<>();
     private static final long KEY_DEBOUNCE_MS = 260L; // 260ms 单键防抖（过滤多源并发日志与物理接触抖动）
@@ -702,20 +700,6 @@ public class SteeringWheelKeyManager {
         } catch (Exception e) {
             AppLogger.e("方控按键", "调起自定义应用失败: " + e.getMessage());
         }
-    }
-
-    private void cancelNativeMute() {
-        mainHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-                    if (am != null) {
-                        am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
-                    }
-                } catch (Exception ignored) {}
-            }
-        }, 150);
     }
 
     public boolean isBinyueCoolPlatform() {

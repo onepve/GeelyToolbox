@@ -60,7 +60,6 @@ public class EasMediaBridge {
 
     private static volatile EasMediaBridge sInstance;
     private final Context appContext;
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private MediaCenterAPI mApi;
     private Object mToken;
@@ -77,7 +76,6 @@ public class EasMediaBridge {
     private MediaBrowser btMediaBrowser;
     private MediaController btMediaController;
     private volatile boolean btMediaBrowserConnected = false;
-    private volatile boolean isDucked = false;
     private volatile boolean voiceCompensationEnabled = true;
     private volatile int voiceCompensationOffset = 3;
 
