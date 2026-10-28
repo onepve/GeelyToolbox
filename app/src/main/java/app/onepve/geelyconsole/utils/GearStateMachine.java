@@ -99,6 +99,10 @@ public class GearStateMachine {
         }
     }
 
+    public synchronized int getCurrentGear() {
+        return lastGearPos;
+    }
+
     public synchronized void updateGear(int rawGear, final boolean voiceMasterSwitch, final SharedPreferences prefs) {
         if (rawGear <= 0) return;
         final int gear = normalizeGear(rawGear);
