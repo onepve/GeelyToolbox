@@ -561,7 +561,7 @@
                   type="button"
                   @click="toggleNoteTag(editingRecord, tag)"
                   :class="[
-                    'min-h-[44px] rounded-lg border-2 text-[12.5px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    'min-h-[50px] rounded-lg border-2 text-[12.5px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(editingRecord, tag)
                       ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
                       : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
@@ -1149,7 +1149,7 @@
                   type="button"
                   @click="toggleNoteTag(newRecord, tag)"
                   :class="[
-                    'min-h-[44px] rounded-lg border-2 text-[12.5px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    'min-h-[50px] rounded-lg border-2 text-[12.5px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(newRecord, tag)
                       ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
                       : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
