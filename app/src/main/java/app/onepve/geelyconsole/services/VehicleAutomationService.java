@@ -51,6 +51,7 @@ import app.onepve.geelyconsole.utils.DriveModeManager;
 import app.onepve.geelyconsole.utils.EasMediaBridge;
 import app.onepve.geelyconsole.utils.ForegroundAppDetector;
 import app.onepve.geelyconsole.utils.FuelManager;
+import app.onepve.geelyconsole.utils.OilPriceHelper;
 import app.onepve.geelyconsole.utils.GearStateMachine;
 import app.onepve.geelyconsole.utils.IdleScreensaverManager;
 import app.onepve.geelyconsole.utils.PrefUtils;
