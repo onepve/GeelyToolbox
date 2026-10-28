@@ -1370,8 +1370,10 @@ public class VehicleAutomationService extends Service {
         }
 
         // D挡起步联动 360 严格单次跃变状态机：切入D挡仅触发1次，锁死不循环调起；切出D挡重新武装
-        if (gear == 2) {
-            if (gearD360Armed) {
+        if (gear == 2 || gear == 4) {
+            // 起步离场保底结算：挂入前进挡 D 或倒挡 R 离开加油枪位时，若有未结算的加油跃变，毫秒级保底入账！
+            checkAndSettlePendingRefuel("起步挂挡离开(D/R挡保底结算)");
+            if (gear == 2 && gearD360Armed) {
                 gearD360Armed = false; // 触发后立即闭锁，车主手动退出360绝不反复调起！
                 boolean gearD360 = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
                         .getBoolean("vehicle_gear_d_360_enabled", true);
@@ -1991,19 +1993,41 @@ public class VehicleAutomationService extends Service {
                 }
 
                 // 连续 3 包稳定高油位，判定加油完成，5分钟内不重复记账
-                if (consecutiveRefuelHighSamples >= 3 && (now - lastRefuelAutoRecordTime > 300000L)) {
-                    double addedLiters = Math.round((currentOil - parkedBaselineOil) * 10.0) / 10.0;
-                    AppLogger.i("加油感知", "【命中P挡驻车加油事件】驻车基准=" + parkedBaselineOil + "L, 当前稳定油位=" + currentOil + "L, 加注量=" + addedLiters + "L，静默入账！");
-                    autoRecordRefuelSilently(addedLiters, currentOil);
-                    lastRefuelAutoRecordTime = now;
-                    parkedBaselineOil = currentOil; // 刷新基准
-                    consecutiveRefuelHighSamples = 0;
+                if (consecutiveRefuelHighSamples >= 3) {
+                    checkAndSettlePendingRefuel("命中P挡跳枪稳态感知");
                 }
             }
-        } else if (currentGear == 2 || currentSpeedKmH > 5) {
-            // 切入 D 挡行车起步：将当前油位作为新行程基准，重置连续样本计数
+        } else if (currentGear == 2 || currentGear == 4 || currentSpeedKmH > 5) {
+            // 切入 D/R 挡行车起步：保底结算潜在未结算加油事件，随后将当前油位作为新行程基准
+            checkAndSettlePendingRefuel("起步离场行车保底结算");
             parkedBaselineOil = currentOil;
             consecutiveRefuelHighSamples = 0;
+            lastDetectedRefuelOil = 0.0;
+        }
+    }
+
+    /**
+     * 统一原子结算加油事件并生成台账 (双值事务闭环)
+     */
+    private synchronized void checkAndSettlePendingRefuel(String triggerSource) {
+        long now = System.currentTimeMillis();
+        if (now - lastRefuelAutoRecordTime < 300000L) {
+            return; // 5分钟防重复入账
+        }
+        double highOil = (lastDetectedRefuelOil > 0) ? lastDetectedRefuelOil : currentRemainingOilLiters;
+        if (parkedBaselineOil > 0 && highOil > parkedBaselineOil) {
+            double delta = highOil - parkedBaselineOil;
+            if (delta >= MIN_REFUEL_DELTA_LITERS && delta <= MAX_REASONABLE_FUEL_CAPACITY) {
+                double addedLiters = Math.round(delta * 10.0) / 10.0;
+                AppLogger.i("加油感知", "【" + triggerSource + "】加前基准=" + parkedBaselineOil + "L, 加后基准=" + highOil + "L, 加注量=" + addedLiters + "L，静默入账！");
+                autoRecordRefuelSilently(addedLiters, highOil);
+                lastRefuelAutoRecordTime = now;
+                // 事务原子交接：加后基准成为下一次行程的初始基准，并落盘持久化
+                parkedBaselineOil = highOil;
+                FuelManager.saveLastFuelState(this, highOil, currentTotalOdoKm);
+                lastDetectedRefuelOil = 0.0;
+                consecutiveRefuelHighSamples = 0;
+            }
         }
     }
 
@@ -2037,6 +2061,8 @@ public class VehicleAutomationService extends Service {
             record.put("note", "【智能感知自动记账·待车主核对】");
             record.put("source", "auto");
             record.put("is_auto_detected", true);
+            record.put("fuel_before", Math.round(parkedBaselineOil * 10.0) / 10.0);
+            record.put("fuel_after", Math.round(currentOil * 10.0) / 10.0);
 
             FuelManager.addRecord(this, record);
             AppLogger.i("加油感知", "【智能静默记账成功】加油=" + addedLiters + "L, 当前总里程=" + odo + "km, 预估金额=" + amount + "元(免打扰入账)");
