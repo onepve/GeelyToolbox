@@ -792,8 +792,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("has_system_settings", SystemUtils.isPackageInstalled(MainActivity.this, "com.android.settings"));
                     obj.put("is_car_device", isCarDevice(MainActivity.this));
                     try {
-                        obj.put("platform_code", VehiclePlatformFactory.getPlatform(MainActivity.this).getPlatformCode());
-                        obj.put("platform_name", VehiclePlatformFactory.getPlatform(MainActivity.this).getPlatformName());
+                        app.onepve.geelyconsole.hal.IVehiclePlatform currentPlat = VehiclePlatformFactory.getPlatform(MainActivity.this);
+                        if (currentPlat != null) {
+                            obj.put("platform_code", currentPlat.getPlatformCode());
+                            obj.put("platform_name", currentPlat.getPlatformName());
+                            obj.put("fuel_capacity", currentPlat.getDefaultFuelCapacityLiters());
+                        }
                     } catch (Throwable ignored) {}
                     obj.put("fuel_percent", VehicleAutomationService.currentFuelPercent);
                     obj.put("fuel_liters", (double) VehicleAutomationService.currentFuelLiters);
@@ -1253,8 +1257,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("multimedia_frozen", isMediaFrozen);
                 obj.put("appstore_frozen", isAppstoreFrozen);
                 try {
-                    obj.put("platform_code", VehiclePlatformFactory.getPlatform(MainActivity.this).getPlatformCode());
-                    obj.put("platform_name", VehiclePlatformFactory.getPlatform(MainActivity.this).getPlatformName());
+                    app.onepve.geelyconsole.hal.IVehiclePlatform currentPlat = VehiclePlatformFactory.getPlatform(MainActivity.this);
+                    if (currentPlat != null) {
+                        obj.put("platform_code", currentPlat.getPlatformCode());
+                        obj.put("platform_name", currentPlat.getPlatformName());
+                        obj.put("fuel_capacity", currentPlat.getDefaultFuelCapacityLiters());
+                    }
                 } catch (Throwable ignored) {}
                 // 真实屏幕参数：每次启动只采一次，之后复用缓存（与 pushDeviceInfoToWeb 同步）
                 org.json.JSONObject scr = ensureScreenInfoOnce(ver);

@@ -478,7 +478,7 @@ public class VehicleAutomationService extends Service {
         AppLogger.i("车辆迎宾", "钥匙开门/靠近唤醒生效，物理基准已建立 (登车态)");
         AppLogger.i("系统启动", "软件启动时间: " + startupTimeStr);
         AppLogger.i("系统启动", "缤越助手守护就绪 (PID: " + android.os.Process.myPid() + " | VHAL/Logcat双通道)");
-        String verName = "v2.5.3";
+        String verName = app.onepve.geelyconsole.BuildConfig.VERSION_NAME;
         try {
             verName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception ignored) {}

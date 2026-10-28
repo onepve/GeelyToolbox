@@ -1614,7 +1614,17 @@ public class SystemUtils {
             if (listener != null) listener.onProgress(75, "正在生成车辆诊断健康体检摘要 (JSON)...");
             summaryFile = new File(tempDir, "summary.json");
             JSONObject summary = buildLogSummary(logFile, wheelFile, doorFile, gearFile, powerFile, appFile);
+            summary.put("app_version", app.onepve.geelyconsole.BuildConfig.VERSION_NAME);
+            summary.put("app_version_code", app.onepve.geelyconsole.BuildConfig.VERSION_CODE);
             summary.put("device_model", getCleanDeviceModel());
+            summary.put("hardware_chip", getHardwareChip());
+            try {
+                app.onepve.geelyconsole.hal.IVehiclePlatform currentPlat = app.onepve.geelyconsole.hal.VehiclePlatformFactory.getPlatform(context);
+                if (currentPlat != null) {
+                    summary.put("platform_name", currentPlat.getPlatformName());
+                    summary.put("platform_code", currentPlat.getPlatformCode());
+                }
+            } catch (Throwable ignored) {}
             summary.put("privacy_status", "100%_desensitized_phone_vin_location_redacted");
             writeTextFile(summaryFile, summary.toString(2));
 
@@ -2557,7 +2567,7 @@ public class SystemUtils {
                 // 核心：复刻 OkHttp RequestBody 的零内存流式直写机制，彻底杜绝内存溢出与进度倒跳
                 conn.setFixedLengthStreamingMode(totalLen);
 
-                conn.setRequestProperty("User-Agent", "GeelyToolbox/1.8.5 (Linux; U; Android " + android.os.Build.VERSION.RELEASE + ")");
+                conn.setRequestProperty("User-Agent", "GeelyToolbox/" + app.onepve.geelyconsole.BuildConfig.VERSION_NAME + " (Linux; U; Android " + android.os.Build.VERSION.RELEASE + ")");
                 conn.setRequestProperty("Content-Type", "application/zip");
                 conn.setRequestProperty("Connection", "close");
                 conn.setRequestProperty("X-Hardware-Chip", safeChip);
