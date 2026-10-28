@@ -588,14 +588,28 @@ export function loadFuelData() {
       const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
       if (data.config) {
         Object.assign(store.fuelLedger.config, data.config);
-        // 若从后端读取的车牌为空，尝试从前端 localStorage 本地持久化兜底恢复
+        // 若从后端读取的车牌为空，先尝试通过原生专享接口 getPlateNumber 获取
+        if (!store.fuelLedger.config.plate_number) {
+          try {
+            const nativePlate = bridge.call('getPlateNumber');
+            if (nativePlate && nativePlate.trim()) {
+              store.fuelLedger.config.plate_number = nativePlate.trim();
+            }
+          } catch (e) {}
+        }
+        // 依然为空则尝试从前端 localStorage 本地持久化兜底恢复
         if (!store.fuelLedger.config.plate_number) {
           try {
             const localPlate = localStorage.getItem('fuel_plate_number');
-            if (localPlate) {
-              store.fuelLedger.config.plate_number = localPlate;
+            if (localPlate && localPlate.trim()) {
+              store.fuelLedger.config.plate_number = localPlate.trim();
               saveFuelConfig(store.fuelLedger.config);
             }
+          } catch (e) {}
+        } else {
+          // 同步缓存到 localStorage
+          try {
+            localStorage.setItem('fuel_plate_number', store.fuelLedger.config.plate_number);
           } catch (e) {}
         }
       }

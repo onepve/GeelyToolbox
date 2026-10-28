@@ -2078,22 +2078,16 @@ public class VehicleAutomationService extends Service {
     private long autoRecordRefuelSilently(double addedLiters, double currentOil) {
         try {
             JSONObject config = FuelManager.getConfig(this);
-            String province = config.optString("province", "guangdong");
             String fuelType = config.optString("fuel_type", "92#");
+            String province = OilPriceHelper.getFavoriteProvince(this);
             double defaultCapacity = VehiclePlatformFactory.getPlatform(this).getDefaultFuelCapacityLiters();
             double capacity = config.optDouble("fuel_capacity", defaultCapacity);
-            double price = 7.60; // 默认均价兜底
-            // 优先继承车友在台账中录入的最近一次成交单价，贴合真实油价
-            try {
-                JSONArray records = FuelManager.getRecords(this);
-                if (records != null && records.length() > 0) {
-                    JSONObject last = records.getJSONObject(0);
-                    double lastPrice = last.optDouble("price", 0.0);
-                    if (lastPrice > 4.0 && lastPrice < 20.0) {
-                        price = lastPrice;
-                    }
-                }
-            } catch (Throwable ignored) {}
+            
+            // 铁律：优先使用车主收藏的基准省份及对应标号的当日真实油价
+            double price = OilPriceHelper.getFavoriteOilPrice(this, fuelType);
+            if (price <= 4.0 || price >= 25.0) {
+                price = 7.60; // 极度异常时安全兜底
+            }
             double amount = Math.round(addedLiters * price * 10.0) / 10.0;
             double odo = currentTotalOdoKm > 0 ? Math.round(currentTotalOdoKm * 10.0) / 10.0 : 0.0;
             long recordId = System.currentTimeMillis();

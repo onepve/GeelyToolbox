@@ -96,7 +96,7 @@
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-2">
                   <span class="text-[14px] text-car-text font-black">当前油箱实际估算：</span>
-                  <span v-if="hasFuelSignal" class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-emerald-400 font-mono text-[12px] font-black">
+                  <span v-if="hasFuelSignal" class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent font-mono text-[12px] font-black">
                     余 {{ currentFuelLiters }}L ({{ currentFuelPercent }}%)
                   </span>
                   <span v-else class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-car-sub font-bold text-[12px]">
@@ -122,8 +122,8 @@
             <div class="p-3.5 bg-car-item border border-car-border rounded-2xl flex items-center justify-between">
               <span class="text-[14px] text-car-sub font-bold">日常加 200 元可加：</span>
               <div class="flex items-baseline space-x-3">
-                <span class="text-[13px] text-car-sub font-bold">92# <span class="text-[20px] font-black text-emerald-400 font-mono">{{ (currentOilData?.p92 ? 200 / currentOilData.p92 : 26.3).toFixed(1) }}</span> <span class="text-[12px]">L</span></span>
-                <span class="text-[13px] text-car-sub font-bold">95# <span class="text-[18px] font-black text-car-text font-mono">{{ (currentOilData?.p95 ? 200 / currentOilData.p95 : 24.6).toFixed(1) }}</span> <span class="text-[12px]">L</span></span>
+                <span class="text-[13px] text-car-sub font-bold">92# <span class="text-[20px] font-black text-car-accent font-mono">{{ (currentOilData?.p92 ? 200 / currentOilData.p92 : 26.3).toFixed(1) }}</span> <span class="text-[12px]">L</span></span>
+                <span class="text-[13px] text-car-sub font-bold">95# <span class="text-[20px] font-black text-car-accent font-mono">{{ (currentOilData?.p95 ? 200 / currentOilData.p95 : 24.6).toFixed(1) }}</span> <span class="text-[12px]">L</span></span>
               </div>
             </div>
           </div>
@@ -156,7 +156,7 @@
           <div class="flex flex-col">
             <span class="text-[12.5px] text-car-sub font-bold">综合百公里真实油耗</span>
             <div class="flex items-baseline space-x-1.5 mt-0.5">
-              <span v-if="store.fuelLedger.stats.is_calculable" class="text-[26px] font-black text-emerald-400 font-mono leading-none">
+              <span v-if="store.fuelLedger.stats.is_calculable" class="text-[26px] font-black text-car-accent font-mono leading-none">
                 {{ store.fuelLedger.stats.avg_consumption }}
               </span>
               <span v-else class="text-[20px] font-black text-car-text leading-none">
@@ -173,7 +173,7 @@
           <div class="flex flex-col">
             <span class="text-[12.5px] text-car-sub font-bold">每公里平均花费</span>
             <div class="flex items-baseline space-x-1 mt-0.5">
-              <span v-if="store.fuelLedger.stats.is_calculable" class="text-[22px] font-black text-amber-400 font-mono leading-none">
+              <span v-if="store.fuelLedger.stats.is_calculable" class="text-[22px] font-black text-car-text font-mono leading-none">
                 ¥{{ store.fuelLedger.stats.cost_per_km }}
               </span>
               <span v-else class="text-[20px] font-black text-car-sub font-mono leading-none">--</span>
@@ -184,10 +184,17 @@
           <div class="h-10 w-px bg-car-border"></div>
 
           <div class="flex flex-col">
-            <span class="text-[12.5px] text-car-sub font-bold">累计加油总支出 / 升数</span>
-            <div class="flex items-baseline space-x-2 mt-0.5">
-              <span class="text-[22px] font-black text-car-accent font-mono leading-none">¥{{ store.fuelLedger.stats.total_spend || '0.0' }}</span>
-              <span class="text-[13px] text-car-sub font-bold">共 {{ store.fuelLedger.stats.total_liters || '0.0' }} L</span>
+            <div class="flex items-baseline space-x-1.5">
+              <span class="text-[12px] text-car-sub font-bold whitespace-nowrap">实际加油:</span>
+              <span class="text-[21px] font-black text-car-text font-mono leading-none">
+                ¥{{ Number(store.fuelLedger.stats.total_original || store.fuelLedger.stats.total_spend || 0).toFixed(1) }}
+              </span>
+            </div>
+            <div class="flex items-center space-x-1.5 mt-1 text-[11.5px] font-mono leading-tight whitespace-nowrap">
+              <span class="text-car-sub font-bold">实付:</span>
+              <span class="text-car-accent font-black">¥{{ Number(store.fuelLedger.stats.total_spend || 0).toFixed(1) }}</span>
+              <span v-if="Number(store.fuelLedger.stats.total_saved || 0) > 0" class="text-car-accent font-black">· 省¥{{ Number(store.fuelLedger.stats.total_saved).toFixed(1) }}</span>
+              <span class="text-car-sub">({{ Number(store.fuelLedger.stats.total_liters || 0).toFixed(1) }}L)</span>
             </div>
           </div>
         </div>
@@ -355,6 +362,7 @@
                 </div>
                 <div class="flex flex-col text-right">
                   <span class="text-[14px] font-mono font-black text-car-accent whitespace-nowrap">¥{{ m.total_paid }}</span>
+                  <span v-if="m.total_saved > 0" class="text-[10.5px] text-car-accent font-bold whitespace-nowrap">省¥{{ m.total_saved }}</span>
                 </div>
               </div>
             </div>
@@ -426,7 +434,7 @@
                   <span class="text-[15px] font-black text-car-text font-mono leading-tight whitespace-nowrap">加 {{ rec.liters }} L</span>
                   <div class="flex items-center space-x-1 mt-0.5">
                     <span 
-                      :class="rec.gas_station === '智能自动感知' ? 'border-amber-500/50 text-amber-400 bg-amber-500/10' : 'bg-car-card border-car-border text-car-sub'"
+                      :class="rec.gas_station === '智能自动感知' ? 'border-car-accent/60 text-car-accent bg-car-accent-light' : 'bg-car-card border-car-border text-car-sub'"
                       class="text-[10.5px] px-1.5 py-0.2 rounded font-black border whitespace-nowrap"
                     >
                       {{ rec.gas_station === '智能自动感知' ? '⚡自动' : (rec.fuel_type || '92#') + (rec.is_full ? '·满' : '') }}
@@ -452,15 +460,15 @@
                 <div class="flex flex-col text-right">
                   <span class="text-[17px] font-black text-car-accent font-mono leading-tight whitespace-nowrap">¥{{ rec.actual_paid ? rec.actual_paid.toFixed(1) : (rec.amount ? rec.amount.toFixed(1) : '0.0') }}</span>
                   <div class="flex items-center justify-end space-x-1">
-                    <span v-if="Number(rec.coupon || 0) > 0" class="text-[10px] px-1 py-0.2 rounded bg-amber-500/15 border border-amber-500/40 text-amber-400 font-bold whitespace-nowrap">
+                    <span v-if="Number(rec.coupon || 0) > 0" class="text-[10px] px-1 py-0.2 rounded bg-car-accent-light border border-car-accent/40 text-car-accent font-bold whitespace-nowrap">
                       {{ (Number(rec.discount || 10) < 10 && Number(rec.discount || 10) > 0) ? `${Number(rec.discount).toFixed(1)}折·` : '' }}省¥{{ Number(rec.coupon).toFixed(1) }}
                     </span>
                     <span class="text-[11px] text-car-sub font-bold whitespace-nowrap">{{ rec.gas_station === '智能自动感知' ? '自动' : '手动' }}</span>
                   </div>
                 </div>
 
-                <span class="px-2.5 py-1.5 rounded-lg bg-car-card border border-car-border text-car-sub text-[12px] font-bold hover:text-car-text whitespace-nowrap">
-                  改
+                <span class="px-2.5 py-1.5 rounded-lg bg-car-card border border-car-border text-car-accent text-[12px] font-bold hover:border-car-accent whitespace-nowrap">
+                  编辑
                 </span>
               </div>
             </div>
@@ -838,7 +846,13 @@ const displayCost95 = computed(() => {
 });
 
 // 油价计算属性
-const currentProvinceName = computed(() => store.oilPrice.selectedProvince || '北京');
+const currentProvinceName = computed(() => {
+  if (store.oilPrice.selectedProvince) return store.oilPrice.selectedProvince;
+  if (store.oilPrice.favProvinces && store.oilPrice.favProvinces.length > 0) {
+    return store.oilPrice.favProvinces[0];
+  }
+  return '北京';
+});
 const currentOilData = computed(() => {
   const p = currentProvinceName.value;
   return store.oilPrice.regionalPrices[p] || store.oilPrice.regionalPrices['北京'];
@@ -896,17 +910,20 @@ function clearAllRecords() {
 }
 
 function onEditProvinceChange() {
-  const prov = editingRecord.value.province;
-  const pData = store.oilPrice.regionalPrices[prov];
+  const prov = editingRecord.value.province || currentProvinceName.value;
+  const pData = store.oilPrice.regionalPrices[prov] || store.oilPrice.regionalPrices['北京'];
   if (pData) {
     const fuelType = editingRecord.value.fuel_type || '92#';
     if (fuelType.includes('95')) editingRecord.value.price = pData.p95 || 8.05;
     else if (fuelType.includes('98')) editingRecord.value.price = pData.p98 || 9.10;
+    else if (fuelType.includes('0#') || fuelType.includes('柴')) editingRecord.value.price = pData.p0 || 7.20;
     else editingRecord.value.price = pData.p92 || 7.55;
 
-    // 智能联动实付金额
-    if (editingRecord.value.liters > 0) {
-      editingRecord.value.actual_paid = Math.round(editingRecord.value.liters * editingRecord.value.price * 10) / 10;
+    // 智能联动实付金额与加注升数
+    const coupon = Number(editingRecord.value.coupon) || 0;
+    const total = (Number(editingRecord.value.actual_paid) || 0) + coupon;
+    if (editingRecord.value.price > 0 && total > 0) {
+      editingRecord.value.liters = Math.round((total / editingRecord.value.price) * 100) / 100;
     }
   }
 }
@@ -984,17 +1001,26 @@ const newRecord = ref({
 });
 
 function openAddRecordModal() {
-  const p92 = currentOilData.value?.p92 || 7.55;
+  const prov = currentProvinceName.value;
+  const pData = store.oilPrice.regionalPrices[prov] || store.oilPrice.regionalPrices['北京'];
+  const userFuelType = store.fuelLedger.config?.default_fuel_type || '92#';
+  let initPrice = 7.55;
+  if (pData) {
+    if (userFuelType.includes('95')) initPrice = pData.p95 || 8.05;
+    else if (userFuelType.includes('98')) initPrice = pData.p98 || 9.10;
+    else if (userFuelType.includes('0#') || userFuelType.includes('柴')) initPrice = pData.p0 || 7.20;
+    else initPrice = pData.p92 || 7.55;
+  }
   const initialPaid = 200;
   const odoVal = Math.round(Number(store.fuelLedger.current_odo) || 0);
   newRecord.value = {
     actual_paid: initialPaid,
     discount: 10,
     coupon: 0,
-    liters: Math.round((initialPaid / p92) * 100) / 100,
-    price: p92,
-    province: currentProvinceName.value,
-    fuel_type: '92#',
+    liters: Math.round((initialPaid / initPrice) * 100) / 100,
+    price: initPrice,
+    province: prov,
+    fuel_type: userFuelType,
     is_full: false,
     odo: odoVal > 0 ? odoVal : 0,
     note: '',
@@ -1024,12 +1050,13 @@ function setQuickFull() {
 }
 
 function onNewProvinceChange() {
-  const prov = newRecord.value.province;
-  const pData = store.oilPrice.regionalPrices[prov];
+  const prov = newRecord.value.province || currentProvinceName.value;
+  const pData = store.oilPrice.regionalPrices[prov] || store.oilPrice.regionalPrices['北京'];
   if (pData) {
     const fuelType = newRecord.value.fuel_type || '92#';
     if (fuelType.includes('95')) newRecord.value.price = pData.p95 || 8.05;
     else if (fuelType.includes('98')) newRecord.value.price = pData.p98 || 9.10;
+    else if (fuelType.includes('0#') || fuelType.includes('柴')) newRecord.value.price = pData.p0 || 7.20;
     else newRecord.value.price = pData.p92 || 7.55;
 
     if (newRecord.value.price > 0) {
@@ -1088,7 +1115,11 @@ function onPlateConfirmed(newPlate) {
     store.fuelLedger.config.plate_number = newPlate;
     saveFuelConfig(store.fuelLedger.config);
   }
-  // 本地 localStorage 兜底秒级持久化，杜绝重开助手时桥接异步偶发为空
+  // 1. 原生专享接口多重持久化 (CE/DE SharedPreferences + 内部私有存储 + 外部存储)
+  try {
+    bridge.call('savePlateNumber', newPlate);
+  } catch (e) {}
+  // 2. 本地 localStorage 兜底秒级持久化，杜绝重开助手时桥接异步偶发为空
   try {
     localStorage.setItem('fuel_plate_number', newPlate);
   } catch (e) {}

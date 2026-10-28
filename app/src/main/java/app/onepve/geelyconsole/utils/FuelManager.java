@@ -58,10 +58,171 @@ public class FuelManager {
     }
 
     /**
+     * 获取应用内部私有持久化目录 (绝无读写权限问题，开机即可用)
+     */
+    public static File getInternalFuelDir(Context context) {
+        if (context == null) return null;
+        File dir = new File(context.getFilesDir(), "fuel");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        return dir;
+    }
+
+    /**
+     * 读取持久化车牌号 (多层级互为镜像嗅探，确保关机开机绝对不丢)
+     */
+    public static String getPlateNumber(Context context) {
+        if (context == null) return "";
+        synchronized (LOCK) {
+            // 1. 优先从专属单文件 plate.txt (应用私有目录) 读取 (最稳，开机即在)
+            try {
+                File internalDir = getInternalFuelDir(context);
+                if (internalDir != null) {
+                    File pFile = new File(internalDir, "plate.txt");
+                    if (pFile.exists() && pFile.length() > 0) {
+                        String p = readFileContent(pFile).trim();
+                        if (!p.isEmpty()) return p;
+                    }
+                }
+            } catch (Throwable ignored) {}
+
+            // 2. 从专属单文件 plate.txt (外部共享存储) 读取
+            try {
+                File extDir = getFuelDir();
+                if (extDir != null) {
+                    File pFile = new File(extDir, "plate.txt");
+                    if (pFile.exists() && pFile.length() > 0) {
+                        String p = readFileContent(pFile).trim();
+                        if (!p.isEmpty()) return p;
+                    }
+                }
+            } catch (Throwable ignored) {}
+
+            // 3. 从 SharedPreferences (CE) 读取
+            try {
+                android.content.SharedPreferences sp = PrefUtils.getAppPreferences(context);
+                if (sp != null) {
+                    String p = sp.getString("fuel_plate_number", "");
+                    if (p != null && !p.trim().isEmpty()) return p.trim();
+                }
+            } catch (Throwable ignored) {}
+
+            // 4. 从 Direct Boot (DE) 读取 (防开机锁定时未解密)
+            try {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                    android.content.SharedPreferences deSp = context.createDeviceProtectedStorageContext().getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                    if (deSp != null) {
+                        String p = deSp.getString("fuel_plate_number", "");
+                        if (p != null && !p.trim().isEmpty()) return p.trim();
+                    }
+                }
+            } catch (Throwable ignored) {}
+
+            // 5. 从内部私有 fuel_config.json 读取
+            try {
+                File internalDir = getInternalFuelDir(context);
+                if (internalDir != null) {
+                    File intConfigFile = new File(internalDir, FILE_CONFIG);
+                    if (intConfigFile.exists() && intConfigFile.length() > 0) {
+                        JSONObject cfg = new JSONObject(readFileContent(intConfigFile));
+                        String p = cfg.optString("plate_number", "").trim();
+                        if (!p.isEmpty()) return p;
+                    }
+                }
+            } catch (Throwable ignored) {}
+
+            // 6. 从外部共享 fuel_config.json 读取
+            try {
+                File extConfigFile = new File(getFuelDir(), FILE_CONFIG);
+                if (extConfigFile.exists() && extConfigFile.length() > 0) {
+                    JSONObject cfg = new JSONObject(readFileContent(extConfigFile));
+                    String p = cfg.optString("plate_number", "").trim();
+                    if (!p.isEmpty()) return p;
+                }
+            } catch (Throwable ignored) {}
+
+            return "";
+        }
+    }
+
+    /**
+     * 强力车牌专属持久化：多重加固（commit同步落盘 + 独立plate.txt文件 + CE/DE SharedPreferences）
+     */
+    public static boolean setPlateNumber(Context context, String plate) {
+        if (context == null) return false;
+        String p = (plate == null) ? "" : plate.trim();
+        if (p.isEmpty()) return false; // 严禁空字符串抹除已有车牌
+        synchronized (LOCK) {
+            try {
+                // 1. 独立写入私有目录 plate.txt 单文件 (绝无权限问题，开机秒读)
+                try {
+                    File internalDir = getInternalFuelDir(context);
+                    if (internalDir != null) {
+                        File pFile = new File(internalDir, "plate.txt");
+                        writeFileContent(pFile, p);
+                    }
+                } catch (Throwable ignored) {}
+
+                // 2. 独立写入外部共享目录 plate.txt 单文件
+                try {
+                    File extDir = getFuelDir();
+                    if (extDir != null) {
+                        File pFile = new File(extDir, "plate.txt");
+                        writeFileContent(pFile, p);
+                    }
+                } catch (Throwable ignored) {}
+
+                // 3. commit 同步强制刷入磁盘 (CE 存储，不用异步 apply 杜绝断电丢失)
+                try {
+                    android.content.SharedPreferences sp = PrefUtils.getAppPreferences(context);
+                    if (sp != null) {
+                        sp.edit().putString("fuel_plate_number", p).commit();
+                    }
+                } catch (Throwable ignored) {}
+
+                // 4. commit 同步强制刷入 Direct Boot (DE 存储)
+                try {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                        android.content.SharedPreferences deSp = context.createDeviceProtectedStorageContext().getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                        if (deSp != null) {
+                            deSp.edit().putString("fuel_plate_number", p).commit();
+                        }
+                    }
+                } catch (Throwable ignored) {}
+
+                // 5. 更新内部私有存储 fuel_config.json
+                JSONObject cfg = getConfig(context);
+                cfg.put("plate_number", p);
+                try {
+                    File internalDir = getInternalFuelDir(context);
+                    if (internalDir != null) {
+                        File intConfigFile = new File(internalDir, FILE_CONFIG);
+                        writeFileContent(intConfigFile, cfg.toString(2));
+                    }
+                } catch (Throwable ignored) {}
+
+                // 6. 同步更新外部共享存储 fuel_config.json
+                try {
+                    File extConfigFile = new File(getFuelDir(), FILE_CONFIG);
+                    writeFileContent(extConfigFile, cfg.toString(2));
+                } catch (Throwable ignored) {}
+
+                AppLogger.i("行程油耗", "已完成车牌号多重加固物理落盘持久化: " + p);
+                return true;
+            } catch (Throwable t) {
+                Log.e(TAG, "setPlateNumber error: " + t.getMessage());
+                return false;
+            }
+        }
+    }
+
+    /**
      * 读取燃油配置 (若无则自动生成初始默认配置)
      */
     public static JSONObject getConfig(Context context) {
         synchronized (LOCK) {
+            String reliablePlate = getPlateNumber(context);
             File configFile = new File(getFuelDir(), FILE_CONFIG);
             if (configFile.exists() && configFile.length() > 0) {
                 try {
@@ -73,24 +234,31 @@ public class FuelManager {
                         cfg.put("car_id", persistentCarId);
                         saveConfig(context, cfg);
                     }
-                    // 车牌持久化保护：若文件中车牌为空，尝试从应用存储 (toolbox_settings) 回补
-                    if (cfg.optString("plate_number", "").trim().isEmpty()) {
-                        try {
-                            android.content.SharedPreferences sp = PrefUtils.getAppPreferences(context);
-                            if (sp != null) {
-                                String cachedPlate = sp.getString("fuel_plate_number", "");
-                                if (cachedPlate != null && !cachedPlate.trim().isEmpty()) {
-                                    cfg.put("plate_number", cachedPlate.trim());
-                                    saveConfig(context, cfg);
-                                }
-                            }
-                        } catch (Throwable ignored) {}
+                    // 车牌持久化保护：若配置文件中的车牌为空或不匹配，以高可信车牌回补对齐
+                    if (!reliablePlate.isEmpty()) {
+                        cfg.put("plate_number", reliablePlate);
                     }
                     return cfg;
                 } catch (Throwable t) {
-                    Log.w(TAG, "读取 fuel_config.json 异常，生成默认配置: " + t.getMessage());
+                    Log.w(TAG, "读取 fuel_config.json 异常，尝试从内部私有文件恢复: " + t.getMessage());
                 }
             }
+
+            // 外部文件不可用时，尝试从内部私有存储恢复
+            try {
+                File internalDir = getInternalFuelDir(context);
+                if (internalDir != null) {
+                    File intConfigFile = new File(internalDir, FILE_CONFIG);
+                    if (intConfigFile.exists() && intConfigFile.length() > 0) {
+                        JSONObject intCfg = new JSONObject(readFileContent(intConfigFile));
+                        if (!reliablePlate.isEmpty()) {
+                            intCfg.put("plate_number", reliablePlate);
+                        }
+                        return intCfg;
+                    }
+                }
+            } catch (Throwable ignored) {}
+
             // 默认初始配置
             JSONObject def = new JSONObject();
             try {
@@ -100,13 +268,7 @@ public class FuelManager {
                 def.put("default_province", "浙江");     // 默认发改委省份
                 def.put("refuel_threshold_l", 4.0);      // 加油检测跃变阈值 (4.0L)
                 def.put("car_id", getHardwareCarIdentity(context)); // 原车出厂芯片/总线硬件唯一指纹
-                // 优先从应用持久化配置 (toolbox_settings) 读取已保存车牌号，双重保险防重置
-                String cachedPlate = "";
-                try {
-                    android.content.SharedPreferences sp = PrefUtils.getAppPreferences(context);
-                    if (sp != null) cachedPlate = sp.getString("fuel_plate_number", "");
-                } catch (Throwable ignored) {}
-                def.put("plate_number", cachedPlate != null ? cachedPlate : ""); // 车牌号 (支持车规软键盘录入)
+                def.put("plate_number", reliablePlate);  // 车牌号 (多重加固保障)
                 def.put("bind_token", UUID.randomUUID().toString().substring(0, 8));
                 def.put("cloud_sync_enabled", false);
                 saveConfig(context, def);
@@ -349,21 +511,34 @@ public class FuelManager {
     public static boolean saveConfig(Context context, JSONObject config) {
         synchronized (LOCK) {
             try {
-                // 双重持久化：若包含 plate_number，同步备份到内部 SharedPreferences 杜绝 SD 卡或重启偶发丢配置
-                if (config != null && config.has("plate_number")) {
+                // 车牌防抹除核心防护：若传入的车牌非空，触发多重固化；若传入为空但本地已有车牌，强制回填防护
+                if (config != null) {
                     String p = config.optString("plate_number", "").trim();
                     if (!p.isEmpty()) {
-                        try {
-                            android.content.SharedPreferences sp = PrefUtils.getAppPreferences(context);
-                            if (sp != null) {
-                                sp.edit().putString("fuel_plate_number", p).apply();
-                            }
-                        } catch (Throwable ignored) {}
+                        setPlateNumber(context, p);
+                    } else {
+                        String reliable = getPlateNumber(context);
+                        if (!reliable.isEmpty()) {
+                            config.put("plate_number", reliable);
+                        }
                     }
                 }
-                File configFile = new File(getFuelDir(), FILE_CONFIG);
-                writeFileContent(configFile, config.toString(2));
-                AppLogger.i("行程油耗", "已持久化更新 fuel_config.json 至共享存储");
+                // 1. 同步写入内部私有存储 (绝无权限问题，开机即读)
+                try {
+                    File internalDir = getInternalFuelDir(context);
+                    if (internalDir != null) {
+                        File intConfigFile = new File(internalDir, FILE_CONFIG);
+                        writeFileContent(intConfigFile, config.toString(2));
+                    }
+                } catch (Throwable ignored) {}
+
+                // 2. 同步写入外部共享存储
+                try {
+                    File configFile = new File(getFuelDir(), FILE_CONFIG);
+                    writeFileContent(configFile, config.toString(2));
+                } catch (Throwable ignored) {}
+
+                AppLogger.i("行程油耗", "已持久化更新 fuel_config.json 至多重存储");
                 return true;
             } catch (Throwable t) {
                 Log.e(TAG, "保存 fuel_config.json 失败: " + t.getMessage());
@@ -682,14 +857,19 @@ public class FuelManager {
         try {
             int len = records.length();
             double totalPaid = 0.0;
+            double totalOriginal = 0.0;
+            double totalSaved = 0.0;
             double totalLiters = 0.0;
             int fullCount = 0;
 
             for (int i = 0; i < len; i++) {
                 JSONObject r = records.getJSONObject(i);
                 double paid = r.optDouble("actual_paid", r.optDouble("amount", 0.0));
+                double coupon = r.optDouble("coupon", 0.0);
                 double l = r.optDouble("liters", 0.0);
                 totalPaid += paid;
+                totalSaved += coupon;
+                totalOriginal += (paid + coupon);
                 totalLiters += l;
                 if (r.optBoolean("is_full", false)) {
                     fullCount++;
@@ -698,6 +878,8 @@ public class FuelManager {
 
             stats.put("total_records", len);
             stats.put("total_spend", Math.round(totalPaid * 100.0) / 100.0);
+            stats.put("total_original", Math.round(totalOriginal * 100.0) / 100.0);
+            stats.put("total_saved", Math.round(totalSaved * 100.0) / 100.0);
             stats.put("total_liters", Math.round(totalLiters * 10.0) / 10.0);
             stats.put("full_count", fullCount);
 
@@ -822,12 +1004,19 @@ public class FuelManager {
                 }
 
                 int c = mObj.optInt("count", 0) + 1;
-                double p = mObj.optDouble("total_paid", 0.0) + r.optDouble("actual_paid", r.optDouble("amount", 0.0));
-                double l = mObj.optDouble("total_liters", 0.0) + r.optDouble("liters", 0.0);
+                double p = r.optDouble("actual_paid", r.optDouble("amount", 0.0));
+                double coup = r.optDouble("coupon", 0.0);
+                double l = r.optDouble("liters", 0.0);
+                double currentPaid = mObj.optDouble("total_paid", 0.0) + p;
+                double currentSaved = mObj.optDouble("total_saved", 0.0) + coup;
+                double currentOriginal = mObj.optDouble("total_original", 0.0) + (p + coup);
+                double currentLiters = mObj.optDouble("total_liters", 0.0) + l;
 
                 mObj.put("count", c);
-                mObj.put("total_paid", Math.round(p * 100.0) / 100.0);
-                mObj.put("total_liters", Math.round(l * 10.0) / 10.0);
+                mObj.put("total_paid", Math.round(currentPaid * 100.0) / 100.0);
+                mObj.put("total_saved", Math.round(currentSaved * 100.0) / 100.0);
+                mObj.put("total_original", Math.round(currentOriginal * 100.0) / 100.0);
+                mObj.put("total_liters", Math.round(currentLiters * 10.0) / 10.0);
             }
 
             // 按月份降序排序 (最新月份排最前)

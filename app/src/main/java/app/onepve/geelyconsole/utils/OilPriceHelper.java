@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -26,6 +27,70 @@ public class OilPriceHelper {
 
     public interface OnOilPriceSyncedListener {
         void onSynced(String summary);
+    }
+
+    /**
+     * 获取用户收藏或选中的基准省份
+     */
+    public static String getFavoriteProvince(Context context) {
+        if (context == null) return "北京";
+        try {
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            String favsJson = prefs.getString("geely_oil_fav_provinces", null);
+            if (favsJson == null) {
+                prefs = context.getSharedPreferences("app_preferences", Context.MODE_PRIVATE);
+                favsJson = prefs.getString("geely_oil_fav_provinces", null);
+            }
+            if (favsJson != null && !favsJson.trim().isEmpty()) {
+                JSONArray arr = new JSONArray(favsJson);
+                if (arr.length() > 0) {
+                    String fav = arr.optString(0);
+                    if (fav != null && !fav.trim().isEmpty()) {
+                        return fav;
+                    }
+                }
+            }
+            return prefs.getString("geely_oil_selected_province", "北京");
+        } catch (Exception ignored) {
+            return "北京";
+        }
+    }
+
+    /**
+     * 获取指定标号（92#/95#/98#/0#）当前收藏省份的油价单价
+     */
+    public static double getFavoriteOilPrice(Context context, String fuelType) {
+        if (context == null) return 7.55;
+        try {
+            SharedPreferences sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            String rawJson = sp.getString("key_oil_raw_json", null);
+            if (rawJson == null) return 7.55;
+
+            JSONObject root = new JSONObject(rawJson);
+            JSONObject regional = root.optJSONObject("regionalPrices");
+            if (regional == null) regional = root.optJSONObject("prices");
+            if (regional == null) return 7.55;
+
+            String favProv = getFavoriteProvince(context);
+            JSONObject pObj = regional.optJSONObject(favProv);
+            if (pObj == null) pObj = regional.optJSONObject("北京");
+            if (pObj == null && regional.keys().hasNext()) {
+                pObj = regional.getJSONObject(regional.keys().next());
+            }
+
+            if (pObj != null) {
+                if (fuelType != null && fuelType.contains("95")) {
+                    return pObj.optDouble("p95", pObj.optDouble("95h", 8.05));
+                } else if (fuelType != null && fuelType.contains("98")) {
+                    return pObj.optDouble("p98", pObj.optDouble("98h", 9.25));
+                } else if (fuelType != null && (fuelType.contains("0#") || fuelType.contains("柴"))) {
+                    return pObj.optDouble("p0", pObj.optDouble("0h", 7.20));
+                } else {
+                    return pObj.optDouble("p92", pObj.optDouble("92h", 7.55));
+                }
+            }
+        } catch (Exception ignored) {}
+        return 7.55;
     }
 
     /**
@@ -64,17 +129,22 @@ public class OilPriceHelper {
                     JSONObject root = new JSONObject(sb.toString());
                     String summary = "92# 油价关注中";
 
-                    if (root.has("prices")) {
-                        JSONObject prices = root.getJSONObject("prices");
-                        // 优先尝试读取北京或首个省份作为全国基准参考
-                        JSONObject defaultProv = prices.optJSONObject("北京");
-                        if (defaultProv == null && prices.keys().hasNext()) {
-                            defaultProv = prices.getJSONObject(prices.keys().next());
+                    JSONObject regional = root.optJSONObject("regionalPrices");
+                    if (regional == null) regional = root.optJSONObject("prices");
+
+                    if (regional != null) {
+                        String favProv = getFavoriteProvince(context);
+                        JSONObject defaultProv = regional.optJSONObject(favProv);
+                        if (defaultProv == null) defaultProv = regional.optJSONObject("北京");
+                        if (defaultProv == null && regional.keys().hasNext()) {
+                            defaultProv = regional.getJSONObject(regional.keys().next());
                         }
 
-                        if (defaultProv != null && defaultProv.has("92h")) {
-                            double p92 = defaultProv.getDouble("92h");
-                            summary = String.format("92# %.2f元", p92);
+                        if (defaultProv != null) {
+                            double p92 = defaultProv.optDouble("p92", defaultProv.optDouble("92h", 0.0));
+                            if (p92 > 0) {
+                                summary = String.format("92# %.2f元", p92);
+                            }
                         }
                     }
 
@@ -92,6 +162,7 @@ public class OilPriceHelper {
                     SharedPreferences sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
                     sp.edit()
                             .putString(KEY_OIL_SUMMARY, summary)
+                            .putString("key_oil_raw_json", sb.toString())
                             .putLong(KEY_LAST_SYNC, System.currentTimeMillis())
                             .apply();
 

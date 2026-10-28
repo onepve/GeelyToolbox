@@ -5,9 +5,9 @@
       :show="showEditModal"
       title="编辑与校对加油台账"
       badge="车载工作台"
-      maxWidthClass="max-w-[1360px]"
+      maxWidthClass="max-w-[1280px]"
       headerClass="min-h-[64px] px-6 py-2"
-      bodyClass="p-3.5 space-y-2"
+      bodyClass="p-4 space-y-3"
       zIndexClass="z-[9990]"
       @close="$emit('close-edit')"
     >
@@ -21,21 +21,21 @@
           >
             <span class="text-[17px]">🚗</span>
             <div class="flex flex-col text-left">
-              <span class="text-[10.5px] text-car-sub font-bold leading-tight">车机仪表总里程</span>
+              <span class="text-[10.5px] text-car-sub font-bold leading-tight">仪表总里程</span>
               <span class="text-[14.5px] font-mono font-black text-car-accent leading-tight">
                 {{ currentOdo > 0 ? Math.round(currentOdo) + ' km' : '等待获取' }}
               </span>
             </div>
             <span v-if="currentOdo > 0" class="text-[11px] px-1.5 py-0.5 rounded bg-car-accent-bg text-car-accent font-bold border border-car-accent/40 ml-1">
-              填入
+              带入
             </span>
           </div>
 
           <button
             type="button"
             @click.stop="$emit('refresh-odo')"
-            class="min-h-[50px] min-w-[50px] px-3 rounded-xl border-2 border-car-accent bg-car-item text-car-accent hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center justify-center text-[18px] font-black shadow-sm"
-            title="重新从车规总线抓取里程"
+            class="min-h-[50px] min-w-[50px] px-3 rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-accent active:scale-95 transition-all cursor-pointer flex items-center justify-center text-[18px] font-black shadow-sm"
+            title="重新抓取仪表里程"
           >
             ⟳
           </button>
@@ -57,41 +57,140 @@
         </button>
       </template>
 
-      <div v-if="editingRecord" class="flex flex-col space-y-2">
-        <!-- 左右双翼工作台 (横向展开，消除垂直滚动条) -->
-        <div class="grid grid-cols-12 gap-3.5 items-stretch">
-          
-          <!-- 左翼：数值槽位 + 大号数字软键盘 + 填补空白的加满/补油卡片 (占 6 列) -->
-          <div class="col-span-6 flex flex-col space-y-2">
-            <!-- 6 个数值槽位 (3+3 触控直选，带折扣折率与优惠抵扣) -->
+      <div v-if="editingRecord" class="flex flex-col space-y-3">
+        <!-- 车规三段 Tab 导航栏 (分页收敛，杜绝上下滚动拖拽) -->
+        <div class="flex items-center justify-between border-b border-car-border/80 pb-2.5">
+          <div class="flex items-center space-x-2">
+            <button
+              v-for="tab in [
+                { id: 'amount', label: '💰 金额与小键盘', desc: '原价/实付/优惠/升数/键盘' },
+                { id: 'fuel', label: '⛽ 油品与加油站', desc: `${editingRecord.fuel_type || '92#'} · ${editingRecord.gas_station || '选择油站'}` },
+                { id: 'note', label: '📝 实用功能备注', desc: editingRecord.note ? editingRecord.note : '通勤/洗车/发票等' }
+              ]"
+              :key="tab.id"
+              type="button"
+              @click="activeModalTab = tab.id"
+              :class="[
+                'min-h-[50px] px-4 py-1.5 rounded-xl border-2 flex items-center space-x-2 text-left cursor-pointer transition-all shadow-sm select-none',
+                activeModalTab === tab.id
+                  ? 'border-car-accent bg-car-accent-light text-car-accent'
+                  : 'border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-border-light'
+              ]"
+            >
+              <div class="flex flex-col">
+                <span class="text-[14px] font-black leading-tight">{{ tab.label }}</span>
+                <span class="text-[11px] text-car-sub font-bold mt-0.5 max-w-[170px] truncate">{{ tab.desc }}</span>
+              </div>
+            </button>
+          </div>
+
+          <!-- 顶部紧凑公式看板 (实时反馈) -->
+          <div class="hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-car-item border border-car-border text-[12.5px] font-mono">
+            <span class="text-car-sub font-bold">实际加油:</span>
+            <span class="text-car-text font-black">¥{{ getOriginalTotal(editingRecord).toFixed(1) }}</span>
+            <span class="text-car-sub font-bold">- 优惠:</span>
+            <span class="text-car-accent font-black">¥{{ Number(editingRecord.coupon || 0).toFixed(1) }}</span>
+            <span class="text-car-sub font-bold">= 实付:</span>
+            <span class="text-car-accent font-black">¥{{ Number(editingRecord.actual_paid || 0).toFixed(1) }}</span>
+            <span class="text-car-sub">({{ Number(editingRecord.liters || 0).toFixed(1) }}L)</span>
+          </div>
+        </div>
+
+        <!-- Tab 1: 💰 金额与小键盘 (横向左右双翼，单屏全景录入) -->
+        <div v-show="activeModalTab === 'amount'" class="grid grid-cols-12 gap-3.5 items-stretch">
+          <!-- 左侧：6 个数值大槽位 (3+3 触控大格) -->
+          <div class="col-span-6 flex flex-col space-y-2.5">
+            <div class="flex items-center justify-between text-[12px] font-bold text-car-sub px-1">
+              <span>点击槽位选中，在右侧数字小键盘直接输入：</span>
+              <span class="text-car-accent">当前激活: {{ getFieldLabel(activeField) }}</span>
+            </div>
+
+            <!-- 第一排 3 槽位：实际加油(原价)、优惠减免、车主实付现金 -->
             <div class="grid grid-cols-3 gap-2">
-              <!-- 实付金额 -->
-              <div 
+              <!-- 槽位 1: 实际加油金额 (原价) -->
+              <div
+                @click="activeField = 'total_amount'"
+                :class="[
+                  'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'total_amount'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11px] text-car-sub font-bold">加油原价 (表显)</span>
+                  <span class="text-[17px] font-mono font-black text-car-text leading-tight">
+                    ¥{{ getOriginalTotal(editingRecord).toFixed(1) }}
+                  </span>
+                </div>
+                <span class="text-[11px] font-bold text-car-sub font-mono">元</span>
+              </div>
+
+              <!-- 槽位 2: 优惠券抵扣 / 减免 -->
+              <div
+                @click="activeField = 'coupon'"
+                :class="[
+                  'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'coupon'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11px] text-car-sub font-bold">优惠立减 (券)</span>
+                  <span class="text-[17px] font-mono font-black text-car-accent leading-tight">
+                    -¥{{ Number(editingRecord.coupon || 0).toFixed(1) }}
+                  </span>
+                </div>
+                <span class="text-[11px] font-bold text-car-sub font-mono">元</span>
+              </div>
+
+              <!-- 槽位 3: 实付现金 (大字高亮) -->
+              <div
                 @click="activeField = 'actual_paid'"
                 :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'actual_paid'
                     ? 'border-car-accent bg-car-accent-light'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
                 <div class="flex flex-col text-left">
-                  <span class="text-[11px] text-car-sub font-bold">实付金额 *</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'actual_paid' ? 'text-car-accent' : 'text-car-text'">
-                      {{ editingRecord.actual_paid !== undefined && editingRecord.actual_paid !== null ? editingRecord.actual_paid : '0.0' }}
-                    </span>
-                    <span v-if="activeField === 'actual_paid'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
-                  </div>
+                  <span class="text-[11px] text-car-accent font-bold">车主实付 (现金) *</span>
+                  <span class="text-[18px] font-mono font-black text-car-accent leading-tight">
+                    ¥{{ Number(editingRecord.actual_paid || 0).toFixed(1) }}
+                  </span>
                 </div>
-                <span class="text-[11.5px] font-mono font-bold text-car-sub">元</span>
+                <span class="text-[11px] font-bold text-car-accent font-mono">元</span>
+              </div>
+            </div>
+
+            <!-- 第二排 3 槽位：会员折扣、加注升数、成交单价 -->
+            <div class="grid grid-cols-3 gap-2">
+              <!-- 槽位 4: 会员折扣 (折) -->
+              <div
+                @click="activeField = 'discount'"
+                :class="[
+                  'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'discount'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11px] text-car-sub font-bold">会员折扣 (打折)</span>
+                  <span class="text-[17px] font-mono font-black text-car-text leading-tight">
+                    {{ (Number(editingRecord.discount || 10) >= 10 || Number(editingRecord.discount || 10) <= 0) ? '无打折' : Number(editingRecord.discount).toFixed(1) + ' 折' }}
+                  </span>
+                </div>
+                <span class="text-[11px] font-bold text-car-sub font-mono">折</span>
               </div>
 
-              <!-- 加注升数 -->
-              <div 
+              <!-- 槽位 5: 加注升数 -->
+              <div
                 @click="activeField = 'liters'"
                 :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'liters'
                     ? 'border-car-accent bg-car-accent-light'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
@@ -99,21 +198,18 @@
               >
                 <div class="flex flex-col text-left">
                   <span class="text-[11px] text-car-sub font-bold">加注升数 *</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'liters' ? 'text-car-accent' : 'text-car-text'">
-                      {{ editingRecord.liters !== undefined && editingRecord.liters !== null ? editingRecord.liters : '0.0' }}
-                    </span>
-                    <span v-if="activeField === 'liters'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
-                  </div>
+                  <span class="text-[17px] font-mono font-black text-car-text leading-tight">
+                    {{ Number(editingRecord.liters || 0).toFixed(2) }}
+                  </span>
                 </div>
-                <span class="text-[11.5px] font-mono font-bold text-car-sub">L</span>
+                <span class="text-[11px] font-bold text-car-sub font-mono">L</span>
               </div>
 
-              <!-- 实际单价 -->
-              <div 
+              <!-- 槽位 6: 成交单价 -->
+              <div
                 @click="activeField = 'price'"
                 :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'price'
                     ? 'border-car-accent bg-car-accent-light'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
@@ -121,108 +217,64 @@
               >
                 <div class="flex flex-col text-left">
                   <span class="text-[11px] text-car-sub font-bold">实际单价</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'price' ? 'text-car-accent' : 'text-car-text'">
-                      {{ editingRecord.price !== undefined && editingRecord.price !== null ? editingRecord.price : '0.00' }}
-                    </span>
-                    <span v-if="activeField === 'price'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
-                  </div>
+                  <span class="text-[17px] font-mono font-black text-car-text leading-tight">
+                    ¥{{ Number(editingRecord.price || 0).toFixed(2) }}
+                  </span>
                 </div>
-                <span class="text-[11.5px] font-mono font-bold text-car-sub">元/L</span>
+                <span class="text-[11px] font-bold text-car-sub font-mono">元/L</span>
               </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-2">
-              <!-- 会员折扣 (折) -->
-              <div 
-                @click="activeField = 'discount'"
-                :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-                  activeField === 'discount'
-                    ? 'border-amber-400 bg-amber-500/15'
-                    : (Number(editingRecord.discount || 10) < 10 && Number(editingRecord.discount || 10) > 0 ? 'border-amber-500/50 bg-amber-500/10' : 'border-car-border bg-car-card hover:border-car-border-light')
-                ]"
-              >
-                <div class="flex flex-col text-left">
-                  <span class="text-[11px] font-bold" :class="Number(editingRecord.discount || 10) < 10 && Number(editingRecord.discount || 10) > 0 ? 'text-amber-400' : 'text-car-sub'">会员折扣</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'discount' ? 'text-amber-400' : (Number(editingRecord.discount || 10) < 10 && Number(editingRecord.discount || 10) > 0 ? 'text-amber-400' : 'text-car-text')">
-                      {{ (editingRecord.discount !== undefined && editingRecord.discount !== null && Number(editingRecord.discount) > 0 && Number(editingRecord.discount) < 10) ? Number(editingRecord.discount).toFixed(1) : '10.0' }}
-                    </span>
-                    <span v-if="activeField === 'discount'" class="w-1.5 h-4 bg-amber-400 animate-pulse inline-block"></span>
-                  </div>
-                </div>
-                <span class="text-[11.5px] font-mono font-bold text-car-sub">{{ (Number(editingRecord.discount || 10) >= 10 || !editingRecord.discount) ? '无折' : '折' }}</span>
-              </div>
-
-              <!-- 优惠抵扣 (元) -->
-              <div 
-                @click="activeField = 'coupon'"
-                :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-                  activeField === 'coupon'
-                    ? 'border-amber-400 bg-amber-500/15'
-                    : (Number(editingRecord.coupon || 0) > 0 ? 'border-amber-500/50 bg-amber-500/10' : 'border-car-border bg-car-card hover:border-car-border-light')
-                ]"
-              >
-                <div class="flex flex-col text-left">
-                  <span class="text-[11px] font-bold" :class="Number(editingRecord.coupon || 0) > 0 ? 'text-amber-400' : 'text-car-sub'">优惠立减</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'coupon' ? 'text-amber-400' : (Number(editingRecord.coupon || 0) > 0 ? 'text-amber-400' : 'text-car-text')">
-                      {{ editingRecord.coupon !== undefined && editingRecord.coupon !== null ? editingRecord.coupon : '0.0' }}
-                    </span>
-                    <span v-if="activeField === 'coupon'" class="w-1.5 h-4 bg-amber-400 animate-pulse inline-block"></span>
-                  </div>
-                </div>
-                <span class="text-[11.5px] font-mono font-bold text-car-sub">元</span>
-              </div>
-
-              <!-- 仪表总里程 -->
-              <div 
-                @click="activeField = 'odo'"
-                :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-                  activeField === 'odo'
-                    ? 'border-car-accent bg-car-accent-light'
-                    : 'border-car-border bg-car-card hover:border-car-border-light'
-                ]"
-              >
-                <div class="flex flex-col text-left">
-                  <span class="text-[11px] text-car-sub font-bold">仪表总里程</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
-                      {{ editingRecord.odo !== undefined && editingRecord.odo !== null && editingRecord.odo > 0 ? editingRecord.odo : (currentOdo > 0 ? Math.round(currentOdo) : '未记录') }}
-                    </span>
-                    <span v-if="activeField === 'odo'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
-                  </div>
-                </div>
-                <span class="text-[11px] font-mono font-bold text-car-sub">km</span>
-              </div>
-            </div>
-
-            <!-- 优惠立省与总原价体现栏 -->
-            <div class="px-3 py-1.5 rounded-xl bg-car-card border border-car-border flex items-center justify-between text-[11.5px] font-bold shadow-sm">
-              <div class="flex items-center space-x-1.5">
-                <span class="text-car-sub">加注总价值 (原价):</span>
-                <span class="font-mono text-car-text font-black text-[13.5px]">
-                  ¥{{ (Number(editingRecord.actual_paid || 0) + Number(editingRecord.coupon || 0)).toFixed(1) }}
+            <!-- 第三排：仪表里程专属行 (带快速带入按键) -->
+            <div
+              @click="activeField = 'odo'"
+              :class="[
+                'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                activeField === 'odo'
+                  ? 'border-car-accent bg-car-accent-light'
+                  : 'border-car-border bg-car-card hover:border-car-border-light'
+              ]"
+            >
+              <div class="flex items-center space-x-2">
+                <span class="text-[15px]">📟</span>
+                <span class="text-[12px] text-car-sub font-bold">记录时仪表总里程:</span>
+                <span class="text-[16px] font-mono font-black text-car-text">
+                  {{ editingRecord.odo ? editingRecord.odo + ' km' : '未记录' }}
                 </span>
               </div>
-              <div class="flex items-center space-x-1.5">
-                <span 
-                  :class="Number(editingRecord.coupon || 0) > 0 ? 'text-amber-400 bg-amber-500/15 border border-amber-500/40' : 'text-car-sub/60 bg-car-item border border-car-border/40'" 
-                  class="px-2 py-0.5 rounded-lg text-[11px] font-black transition-all"
+              <button
+                type="button"
+                @click.stop="applyCurrentOdo(editingRecord)"
+                class="min-h-[50px] px-3 rounded-lg border border-car-accent bg-car-item text-car-accent text-[12px] font-bold hover:opacity-90 active:scale-95 transition-all"
+              >
+                带入实车最新里程
+              </button>
+            </div>
+
+            <!-- 常用加油金额档位 (纯净标准档位，彻底剔除 250) -->
+            <div class="flex flex-col space-y-1 pt-1">
+              <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
+                <span>常用加油金额快捷填入 (原价):</span>
+                <span class="text-car-accent">点击自动扣减优惠并推算升数</span>
+              </div>
+              <div class="grid grid-cols-6 gap-1.5">
+                <button
+                  v-for="amt in [200, 220, 230, 240, 260, 300]"
+                  :key="amt"
+                  type="button"
+                  @click="onQuickAmountSelect(editingRecord, amt, 'edit')"
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent font-mono text-[15px] font-black cursor-pointer transition-all flex items-center justify-center shadow-sm select-none"
                 >
-                  {{ Number(editingRecord.coupon || 0) > 0 ? `✨ 享 ${Number(editingRecord.discount || 10) < 10 ? Number(editingRecord.discount).toFixed(1) + '折·' : ''}立省 ¥` + Number(editingRecord.coupon || 0).toFixed(1) : '○ 原价无折扣' }}
-                </span>
+                  ¥{{ amt }}
+                </button>
               </div>
             </div>
 
-            <!-- 会员折率快捷档位 (7档一键换算) -->
+            <!-- 会员常用折扣率快捷选 (一键免心算优惠券) -->
             <div class="flex flex-col space-y-1">
               <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
-                <span>会员折扣 / 折率直选:</span>
-                <span class="text-[10.5px] text-amber-400/80">一键换算免算优惠券</span>
+                <span>会员折扣快捷直选:</span>
+                <span class="text-car-sub/80">自动折算立减金额</span>
               </div>
               <div class="grid grid-cols-7 gap-1">
                 <button
@@ -237,276 +289,240 @@
                   ]"
                   :key="d.val"
                   type="button"
-                  @click="onQuickDiscount(editingRecord, d.val, 'edit')"
+                  @click="onQuickDiscountSelect(editingRecord, d.val, 'edit')"
                   :class="[
-                    'min-h-[50px] rounded-xl border-2 font-mono font-bold text-[12px] flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95',
-                    (d.val === 10 ? (!editingRecord.discount || Number(editingRecord.discount) === 10) : Number(editingRecord.discount) === d.val)
-                      ? 'bg-amber-500 text-slate-900 border-amber-400 font-black shadow-md'
-                      : 'bg-car-item border-car-border text-amber-400 hover:border-amber-400/60'
+                    'min-h-[50px] rounded-lg border font-mono text-[12px] font-bold cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
+                    Number(editingRecord.discount || 10) === d.val
+                      ? 'border-car-accent bg-car-accent text-car-text'
+                      : 'border-car-border bg-car-item text-car-sub hover:text-car-text'
                   ]"
                 >
                   {{ d.label }}
                 </button>
               </div>
             </div>
+          </div>
 
-            <!-- 中石油与常用充值快捷金额 6 档 (去除 250，使用 260) -->
-            <div class="flex flex-col space-y-1">
-              <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
-                <span>常用实付充值优惠档位:</span>
-                <span class="text-[10.5px] text-car-sub/60">一键填入实付金额</span>
-              </div>
-              <div class="grid grid-cols-6 gap-1.5">
+          <!-- 右侧：车规大号数字软键盘 (4x4 紧凑排列，无重复 200/300 按钮) -->
+          <div class="col-span-6 flex flex-col justify-between p-3 rounded-2xl bg-car-card border-2 border-car-border shadow-md">
+            <div class="flex items-center justify-between px-1 pb-2 border-b border-car-border/60 text-[12px] font-bold text-car-sub">
+              <span>车载软键盘 · 当前修改: <b class="text-car-accent text-[13px]">{{ getFieldLabel(activeField) }}</b></span>
+              <span class="text-[11px]">按键高度车规 ≥ 50px</span>
+            </div>
+
+            <!-- 4x4 纯净软键盘 -->
+            <div class="grid grid-cols-4 gap-2 pt-2">
+              <button 
+                v-for="k in ['1', '2', '3']" 
+                :key="k" 
+                type="button" 
+                @click="onInputKey(editingRecord, k, 'edit')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95"
+              >
+                {{ k }}
+              </button>
+              <button 
+                type="button" 
+                @click="onBackspace(editingRecord, 'edit')" 
+                class="min-h-[54px] rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[15px] flex items-center justify-center cursor-pointer hover:bg-rose-500/20 active:scale-95 transition-all shadow-sm"
+              >
+                ⌫ 退格
+              </button>
+
+              <button 
+                v-for="k in ['4', '5', '6']" 
+                :key="k" 
+                type="button" 
+                @click="onInputKey(editingRecord, k, 'edit')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95"
+              >
+                {{ k }}
+              </button>
+              <button 
+                type="button" 
+                @click="onClearCurrent(editingRecord, 'edit')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text text-[14px] font-bold flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-sm"
+              >
+                清空
+              </button>
+
+              <button 
+                v-for="k in ['7', '8', '9']" 
+                :key="k" 
+                type="button" 
+                @click="onInputKey(editingRecord, k, 'edit')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95"
+              >
+                {{ k }}
+              </button>
+              <button 
+                type="button" 
+                @click="onNextField" 
+                class="min-h-[54px] rounded-xl border-2 border-car-accent/60 bg-car-item text-car-accent text-[14px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-sm"
+              >
+                下项 ➔
+              </button>
+
+              <button 
+                type="button" 
+                @click="onInputKey(editingRecord, '.', 'edit')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[24px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95"
+              >
+                .
+              </button>
+              <button 
+                type="button" 
+                @click="onInputKey(editingRecord, '0', 'edit')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95"
+              >
+                0
+              </button>
+              <button 
+                type="button" 
+                @click="onInputKey(editingRecord, '00', 'edit')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[17px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95"
+              >
+                00
+              </button>
+              <button 
+                type="button" 
+                @click="activeModalTab = 'fuel'" 
+                class="min-h-[54px] rounded-xl border-2 border-car-accent bg-car-accent text-car-text text-[15px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-md"
+              >
+                油品 ➔
+              </button>
+            </div>
+
+            <!-- 底部快速指引 -->
+            <div class="mt-3 p-2.5 rounded-xl bg-car-item/70 border border-car-border text-[12px] text-car-sub flex items-center justify-between">
+              <span>💡 提示：输入加油原价与优惠券后，系统将自动算出实付金额与加注升数。</span>
+              <button 
+                type="button" 
+                @click="$emit('save-edit')" 
+                class="px-3 py-1 rounded-lg bg-car-accent text-car-text font-bold text-[12px] hover:opacity-90"
+              >
+                直接保存
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: ⛽ 油品与加油站 (精简国营/民营/外资，省份主题色适配夜间) -->
+        <div v-show="activeModalTab === 'fuel'" class="grid grid-cols-12 gap-3.5 items-stretch">
+          <!-- 左侧：加注标号 + 加注状态 + 精简加油站 -->
+          <div class="col-span-6 flex flex-col space-y-3 p-3.5 rounded-2xl bg-car-card border-2 border-car-border shadow-sm">
+            <!-- 加注标号 -->
+            <div class="flex flex-col space-y-1.5">
+              <span class="text-[12px] font-bold text-car-sub px-0.5">加注汽柴油标号:</span>
+              <div class="grid grid-cols-4 gap-2">
                 <button
-                  v-for="amt in [200, 220, 230, 240, 260, 300]"
-                  :key="amt"
+                  v-for="f in ['92#', '95#', '98#', '0# 柴油']"
+                  :key="f"
                   type="button"
-                  @click="onQuickAmount(editingRecord, amt, 'edit')"
+                  @click="onSelectFuelType(editingRecord, f, 'edit')"
                   :class="[
-                    'min-h-[50px] rounded-xl border-2 font-mono font-black text-[13.5px] flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95',
-                    Number(editingRecord.actual_paid) === amt
-                      ? 'bg-amber-500 text-slate-900 border-amber-400 font-black shadow-md'
-                      : 'bg-car-item border-car-border text-amber-400 hover:border-amber-400/60'
+                    'min-h-[50px] rounded-xl border-2 font-mono text-[15px] font-black cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
+                    editingRecord.fuel_type === f
+                      ? 'border-car-accent bg-car-accent text-car-text'
+                      : 'border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-border-light'
                   ]"
                 >
-                  ¥{{ amt }}
+                  {{ f }}
                 </button>
               </div>
             </div>
 
-            <!-- 车载大号数字键盘面板 -->
-            <div class="p-2.5 rounded-2xl bg-car-card border-2 border-car-border shadow-md flex flex-col space-y-1.5">
-              <div class="flex items-center justify-between px-1 text-[12px] font-bold text-car-sub pb-1 border-b border-car-border/60">
-                <span>当前录入: <b class="text-car-accent text-[13px]">{{ getFieldLabel(activeField) }}</b></span>
-                <span class="text-[11px] text-car-sub/70">内置软键盘 · 免调车机输入法</span>
-              </div>
-
-              <!-- 4x4 紧凑数字键阵 -->
-              <div class="grid grid-cols-4 gap-1.5">
-                <button 
-                  v-for="k in ['1', '2', '3']" 
-                  :key="k" 
-                  type="button" 
-                  @click="onInputKey(editingRecord, k, 'edit')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  {{ k }}
-                </button>
-                <button 
-                  type="button" 
-                  @click="onBackspace(editingRecord, 'edit')" 
-                  class="min-h-[50px] rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[14px] flex items-center justify-center cursor-pointer hover:bg-rose-500/20 active:scale-95 transition-all shadow-sm"
-                >
-                  ⌫ 退格
-                </button>
-
-                <button 
-                  v-for="k in ['4', '5', '6']" 
-                  :key="k" 
-                  type="button" 
-                  @click="onInputKey(editingRecord, k, 'edit')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  {{ k }}
-                </button>
-                <button 
-                  type="button" 
-                  @click="onClearCurrent(editingRecord, 'edit')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text text-[13.5px] font-bold flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  清空
-                </button>
-
-                <button 
-                  v-for="k in ['7', '8', '9']" 
-                  :key="k" 
-                  type="button" 
-                  @click="onInputKey(editingRecord, k, 'edit')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  {{ k }}
-                </button>
-                <button 
-                  v-if="activeField === 'odo'"
-                  type="button" 
-                  @click="currentOdo > 0 ? applyCurrentOdo(editingRecord) : onInputKey(editingRecord, '00', 'edit')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-mono text-[13px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  {{ currentOdo > 0 ? '带入实车' : '00' }}
-                </button>
-                <button 
-                  v-else-if="activeField === 'discount'"
-                  type="button" 
-                  @click="onQuickDiscount(editingRecord, 9.5, 'edit')" 
-                  class="min-h-[50px] rounded-xl border-2 border-amber-400/50 bg-amber-500/10 text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  95折
-                </button>
-                <button 
-                  v-else
-                  type="button" 
-                  @click="onQuickAmount(editingRecord, 200, 'edit')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  ¥200
-                </button>
-
-                <button 
-                  type="button" 
-                  @click="onInputKey(editingRecord, '.', 'edit')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  .
-                </button>
-                <button 
-                  type="button" 
-                  @click="onInputKey(editingRecord, '0', 'edit')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  0
-                </button>
-                <button 
-                  type="button" 
-                  @click="onNextField" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-accent/40 bg-car-item text-car-accent text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  下项 ➔
-                </button>
-                <button 
-                  v-if="activeField === 'odo'"
-                  type="button" 
-                  @click="currentOdo > 0 ? applyCurrentOdo(editingRecord) : onInputKey(editingRecord, '000', 'edit')" 
-                  class="min-h-[50px] rounded-xl border-2 border-emerald-500/50 bg-emerald-500/10 text-emerald-400 font-mono text-[11.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  {{ currentOdo > 0 ? Math.round(currentOdo) + 'km' : '000' }}
-                </button>
-                <button 
-                  v-else
-                  type="button" 
-                  @click="onQuickAmount(editingRecord, 300, 'edit')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  ¥300
-                </button>
-              </div>
-            </div>
-
-            <!-- 填补键盘下方多余空白：【跳枪加满】与【阶段补油】带状态胶囊双卡片 -->
-            <div class="grid grid-cols-2 gap-2">
-              <!-- 跳枪加满卡片 -->
-              <div
-                @click="editingRecord.is_full = true"
-                :class="[
-                  'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-                  editingRecord.is_full
-                    ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-car-border bg-car-card hover:border-car-border-light'
-                ]"
-              >
-                <div class="flex flex-col text-left">
-                  <span class="text-[13px] font-black" :class="editingRecord.is_full ? 'text-emerald-400' : 'text-car-text'">
-                    跳枪加满
-                  </span>
-                  <span class="text-[10.5px] text-car-sub font-bold">精准核算百公里油耗</span>
-                </div>
-                <!-- 专属状态小胶囊 -->
-                <span 
+            <!-- 加注状态：跳枪加满 vs 阶段补油 -->
+            <div class="flex flex-col space-y-1.5 pt-1">
+              <span class="text-[12px] font-bold text-car-sub px-0.5">本次加注工况 (用于计算百公里油耗):</span>
+              <div class="grid grid-cols-2 gap-2">
+                <div
+                  @click="editingRecord.is_full = true"
                   :class="[
-                    'px-2.5 py-1 rounded-full text-[11.5px] font-black whitespace-nowrap transition-all shadow-sm',
+                    'min-h-[54px] p-2.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between shadow-sm select-none',
                     editingRecord.is_full
-                      ? 'bg-emerald-500 text-white'
-                      : 'border border-car-border bg-car-item text-car-sub/60'
+                      ? 'border-car-accent bg-car-accent-light'
+                      : 'border-car-border bg-car-item hover:border-car-border-light'
                   ]"
                 >
-                  {{ editingRecord.is_full ? '● 已加满' : '○ 未激活' }}
-                </span>
-              </div>
-
-              <!-- 阶段补油卡片 -->
-              <div
-                @click="editingRecord.is_full = false"
-                :class="[
-                  'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-                  !editingRecord.is_full
-                    ? 'border-amber-500 bg-amber-500/10'
-                    : 'border-car-border bg-car-card hover:border-car-border-light'
-                ]"
-              >
-                <div class="flex flex-col text-left">
-                  <span class="text-[13px] font-black" :class="!editingRecord.is_full ? 'text-amber-400' : 'text-car-text'">
-                    阶段补油
+                  <div class="flex flex-col text-left">
+                    <span :class="editingRecord.is_full ? 'text-car-accent' : 'text-car-text'" class="text-[14px] font-black">⛽ 跳枪加满</span>
+                    <span class="text-[11px] text-car-sub font-bold">精准跳枪基准线</span>
+                  </div>
+                  <span :class="editingRecord.is_full ? 'bg-car-accent text-car-text' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11px] px-2 py-0.5 rounded-md font-bold">
+                    {{ editingRecord.is_full ? '✓ 已标记' : '点此设为' }}
                   </span>
-                  <span class="text-[10.5px] text-car-sub font-bold">临时补充 · 不计油耗</span>
                 </div>
-                <!-- 专属状态小胶囊 -->
-                <span 
+
+                <div
+                  @click="editingRecord.is_full = false"
                   :class="[
-                    'px-2.5 py-1 rounded-full text-[11.5px] font-black whitespace-nowrap transition-all shadow-sm',
+                    'min-h-[54px] p-2.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between shadow-sm select-none',
                     !editingRecord.is_full
-                      ? 'bg-amber-500 text-slate-900'
-                      : 'border border-car-border bg-car-item text-car-sub/60'
+                      ? 'border-car-accent bg-car-accent-light'
+                      : 'border-car-border bg-car-item hover:border-car-border-light'
                   ]"
                 >
-                  {{ !editingRecord.is_full ? '● 补油中' : '○ 未激活' }}
-                </span>
+                  <div class="flex flex-col text-left">
+                    <span :class="!editingRecord.is_full ? 'text-car-accent' : 'text-car-text'" class="text-[14px] font-black">💧 阶段补油</span>
+                    <span class="text-[11px] text-car-sub font-bold">普通日常按金额补充</span>
+                  </div>
+                  <span :class="!editingRecord.is_full ? 'bg-car-accent text-car-text' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11px] px-2 py-0.5 rounded-md font-bold">
+                    {{ !editingRecord.is_full ? '✓ 已标记' : '点此设为' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 精简实用加油站选择 (去臃肿，保留高频国营/民营) -->
+            <div class="flex flex-col space-y-1.5 pt-1">
+              <div class="flex items-center justify-between px-0.5 text-[12px] font-bold text-car-sub">
+                <span>所属加油站品牌 (已精简实用):</span>
+                <span class="text-car-accent">{{ editingRecord.gas_station || '未指定' }}</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  v-for="st in ['中国石化', '中国石油', '中国海油', '民营油站', '壳牌/外资', '其他加油站']"
+                  :key="st"
+                  type="button"
+                  @click="editingRecord.gas_station = st"
+                  :class="[
+                    'min-h-[50px] rounded-xl border-2 font-bold text-[13.5px] cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
+                    editingRecord.gas_station === st
+                      ? 'border-car-accent bg-car-accent text-car-text'
+                      : 'border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-border-light'
+                  ]"
+                >
+                  {{ st }}
+                </button>
               </div>
             </div>
           </div>
 
-          <!-- 右翼：油品标号 + 快捷省份折叠 + 免打字多选组合备注工作台 (占 6 列) -->
-          <div class="col-span-6 flex flex-col space-y-2">
-            
-            <!-- 油品标号 3 选 1 -->
-            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex items-center justify-between shadow-sm">
-              <span class="text-[12px] text-car-sub font-bold whitespace-nowrap mr-2">油品标号:</span>
-              <div class="grid grid-cols-3 gap-1.5 w-[75%]">
-                <button
-                  v-for="ft in ['92#', '95#', '98#']"
-                  :key="ft"
-                  type="button"
-                  @click="editingRecord.fuel_type = ft; $emit('edit-fuel-type-change')"
-                  :class="[
-                    'min-h-[50px] rounded-xl border-2 font-black text-[14px] transition-all flex items-center justify-center cursor-pointer shadow-sm',
-                    editingRecord.fuel_type === ft
-                      ? 'bg-car-item border-car-accent text-car-accent'
-                      : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-                  ]"
-                >
-                  {{ ft }}
-                </button>
-              </div>
-            </div>
-
-            <!-- 省份快捷联动 (默认单行，可折叠切换，杜绝挤占空间) -->
-            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex flex-col space-y-1.5 shadow-sm">
-              <div class="flex items-center justify-between text-[12px] font-bold px-0.5">
-                <div class="flex items-center space-x-1.5">
-                  <span class="text-car-sub whitespace-nowrap">加油省份:</span>
-                  <span class="px-2 py-0.5 rounded-lg bg-car-accent-light border border-car-accent text-car-accent font-black text-[12.5px]">
+          <!-- 右侧：省份切换与官方最高零售限价对齐 (夜间皮肤文字高对比度适配) -->
+          <div class="col-span-6 flex flex-col justify-between p-3.5 rounded-2xl bg-car-card border-2 border-car-border shadow-sm">
+            <div class="flex flex-col space-y-2">
+              <div class="flex items-center justify-between pb-2 border-b border-car-border/60">
+                <div class="flex items-center space-x-2">
+                  <span class="text-[13px] font-black text-car-text">加油所在省份:</span>
+                  <span class="px-2.5 py-1 rounded-lg border border-car-accent bg-car-accent-light text-car-accent font-black text-[13px]">
                     {{ editingRecord.province || '浙江' }}
                   </span>
-                  <span class="text-[11px] text-car-sub/70">限价自动对齐</span>
                 </div>
-                <button
-                  type="button"
-                  @click="showEditProvincePicker = !showEditProvincePicker"
-                  class="min-h-[50px] px-3.5 rounded-lg border border-car-border bg-car-item text-car-sub hover:text-car-text text-[12px] font-bold cursor-pointer whitespace-nowrap"
-                >
-                  {{ showEditProvincePicker ? '收起省份 ▲' : '切换省份 ▾' }}
-                </button>
+                <span class="text-[12px] text-car-sub font-bold">发改委限价联动</span>
               </div>
 
-              <!-- 折叠展开的 31 省市网格 -->
-              <div v-if="showEditProvincePicker" class="flex flex-wrap -m-0.5 pt-4 border-t border-car-border/60">
-                <div v-for="prov in allProvinceNames" :key="prov" class="w-[12.5%] p-0.5">
-                  <button 
+              <!-- 31 省市网格 (文字颜色全量采用 text-car-text，暗黑模式下清晰可见，无黑色看不清字体) -->
+              <div class="flex flex-wrap -m-1 pt-1 max-h-[260px] overflow-y-auto">
+                <div v-for="prov in allProvinceNames" :key="prov" class="w-[12.5%] p-1">
+                  <button
                     type="button"
                     @click="onSelectProvince(editingRecord, prov, 'edit')"
                     :class="[
-                      'w-full min-h-[50px] rounded-lg border font-black text-[12px] cursor-pointer transition-all flex items-center justify-center truncate',
+                      'w-full min-h-[50px] rounded-xl border text-[13px] font-black cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                       editingRecord.province === prov
-                        ? 'bg-car-accent border-car-accent text-car-text shadow-sm'
-                        : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+                        ? 'border-car-accent bg-car-accent text-car-text'
+                        : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                     ]"
                   >
                     {{ prov }}
@@ -515,57 +531,129 @@
               </div>
             </div>
 
-            <!-- 免打字组合备注工作台 (多选组合、反选剔除、一键清空) -->
-            <div class="p-2.5 rounded-2xl bg-car-card border-2 border-car-border flex flex-col space-y-2 flex-1 shadow-md">
-              <div class="flex items-center justify-between text-[12px] font-bold text-car-sub px-0.5 border-b border-car-border/60 pb-1.5">
-                <div class="flex items-center space-x-1.5 truncate">
-                  <span class="whitespace-nowrap">组合备注:</span>
-                  <span v-if="editingRecord.note" class="text-car-accent font-black truncate max-w-[360px] text-[13px]">
-                    {{ editingRecord.note }}
-                  </span>
-                  <span v-else class="text-car-sub/60">可点击下方标签多选自由组合</span>
-                </div>
-                <button
-                  type="button"
-                  @click="onClearNote(editingRecord)"
-                  class="min-h-[50px] px-3.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-[12px] font-black cursor-pointer whitespace-nowrap transition-all shadow-sm"
-                >
-                  清空备注
-                </button>
-              </div>
+            <div class="flex items-center justify-between pt-4 border-t border-car-border/60 text-[12px] text-car-sub">
+              <span>选择省份将自动同步当地发改委最高限价至单价槽位。</span>
+              <button 
+                type="button" 
+                @click="activeModalTab = 'note'" 
+                class="px-3.5 py-1.5 rounded-xl border border-car-border bg-car-item text-car-accent font-bold hover:border-car-accent"
+              >
+                前往备注 ➔
+              </button>
+            </div>
+          </div>
+        </div>
 
-              <!-- 15 组车规级高频常用标签矩阵 (3 列 x 5 行) -->
-              <div class="grid grid-cols-3 gap-1.5">
-                <button 
-                  v-for="tag in NOTE_TAGS" 
-                  :key="tag" 
+        <!-- Tab 3: 📝 实用功能备注 (常见都能用上的高频标签) -->
+        <div v-show="activeModalTab === 'note'" class="flex flex-col space-y-3 p-4 rounded-2xl bg-car-card border-2 border-car-border shadow-sm">
+          <div class="flex items-center justify-between text-[12.5px] font-bold text-car-sub">
+            <span>常见车主实用备注标签 (点击快捷添加/取消):</span>
+            <button 
+              type="button" 
+              @click="onClearNote(editingRecord)" 
+              class="px-2.5 py-1 rounded-lg border border-car-border text-car-sub hover:text-rose-400 text-[11.5px]"
+            >
+              清空备注
+            </button>
+          </div>
+
+          <!-- 精简实用标签库 (3类高频场景，整齐统一接入主题色) -->
+          <div class="grid grid-cols-3 gap-3">
+            <!-- 分组 1: 出行场景 -->
+            <div class="flex flex-col space-y-1.5 p-3 rounded-xl bg-car-item border border-car-border">
+              <span class="text-[11.5px] font-black text-car-sub">🚗 出行场景</span>
+              <div class="grid grid-cols-1 gap-1.5">
+                <button
+                  v-for="tag in ['日常通勤', '高速长途', '自驾出游']"
+                  :key="tag"
                   type="button"
                   @click="toggleNoteTag(editingRecord, tag)"
                   :class="[
-                    'min-h-[50px] px-2 rounded-xl border font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-center whitespace-nowrap shadow-sm',
+                    'min-h-[50px] rounded-lg border text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(editingRecord, tag)
-                      ? 'bg-car-item border-2 border-car-accent text-car-accent'
-                      : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
+                      ? 'border-car-accent bg-car-accent text-car-text'
+                      : 'border-car-border bg-car-card text-car-sub hover:text-car-text hover:border-car-border-light'
                   ]"
                 >
-                  {{ isTagSelected(editingRecord, tag) ? '✓ ' + tag : '+ ' + tag }}
+                  {{ isTagSelected(editingRecord, tag) ? '✓ ' + tag : tag }}
                 </button>
               </div>
             </div>
 
+            <!-- 分组 2: 优惠形式 -->
+            <div class="flex flex-col space-y-1.5 p-3 rounded-xl bg-car-item border border-car-border">
+              <span class="text-[11.5px] font-black text-car-sub">🏷️ 优惠形式</span>
+              <div class="grid grid-cols-1 gap-1.5">
+                <button
+                  v-for="tag in ['周五特惠', '会员折扣', '银行立减']"
+                  :key="tag"
+                  type="button"
+                  @click="toggleNoteTag(editingRecord, tag)"
+                  :class="[
+                    'min-h-[50px] rounded-lg border text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    isTagSelected(editingRecord, tag)
+                      ? 'border-car-accent bg-car-accent text-car-text'
+                      : 'border-car-border bg-car-card text-car-sub hover:text-car-text hover:border-car-border-light'
+                  ]"
+                >
+                  {{ isTagSelected(editingRecord, tag) ? '✓ ' + tag : tag }}
+                </button>
+              </div>
+            </div>
+
+            <!-- 分组 3: 便民服务 -->
+            <div class="flex flex-col space-y-1.5 p-3 rounded-xl bg-car-item border border-car-border">
+              <span class="text-[11.5px] font-black text-car-sub">🧰 便民服务</span>
+              <div class="grid grid-cols-1 gap-1.5">
+                <button
+                  v-for="tag in ['免费洗车', '加玻璃水', '开具发票']"
+                  :key="tag"
+                  type="button"
+                  @click="toggleNoteTag(editingRecord, tag)"
+                  :class="[
+                    'min-h-[50px] rounded-lg border text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    isTagSelected(editingRecord, tag)
+                      ? 'border-car-accent bg-car-accent text-car-text'
+                      : 'border-car-border bg-car-card text-car-sub hover:text-car-text hover:border-car-border-light'
+                  ]"
+                >
+                  {{ isTagSelected(editingRecord, tag) ? '✓ ' + tag : tag }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 备注预览框 (夜间模式高对比度底座) -->
+          <div class="flex items-center space-x-2 p-3 rounded-xl bg-car-item border border-car-border">
+            <span class="text-[12.5px] text-car-sub font-bold shrink-0">当前已选备注:</span>
+            <div class="flex-1 flex flex-wrap items-center">
+              <span 
+                v-if="!editingRecord.note || !String(editingRecord.note).trim()" 
+                class="text-[12px] text-car-sub/60"
+              >
+                (暂无备注，点击上方标签即可直接添加)
+              </span>
+              <span
+                v-for="t in String(editingRecord.note || '').trim().split(/\s+/).filter(Boolean)"
+                :key="t"
+                class="px-2 py-0.5 m-0.5 rounded-md bg-car-accent-light border border-car-accent text-car-accent font-bold text-[11.5px]"
+              >
+                {{ t }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
     </ModalWrapper>
 
-    <!-- 车规标准弹窗 2: 手动补录一笔加油台账 -->
+    <!-- 车规标准弹窗 2: 手动补录一笔加油台账 (与编辑共享相同的分页架构) -->
     <ModalWrapper
       :show="showAddModal"
       title="手动补录一笔加油台账"
       badge="车载工作台"
-      maxWidthClass="max-w-[1360px]"
+      maxWidthClass="max-w-[1280px]"
       headerClass="min-h-[64px] px-6 py-2"
-      bodyClass="p-3.5 space-y-2"
+      bodyClass="p-4 space-y-3"
       zIndexClass="z-[9990]"
       @close="$emit('close-add')"
     >
@@ -579,21 +667,21 @@
           >
             <span class="text-[17px]">🚗</span>
             <div class="flex flex-col text-left">
-              <span class="text-[10.5px] text-car-sub font-bold leading-tight">车机仪表总里程</span>
+              <span class="text-[10.5px] text-car-sub font-bold leading-tight">仪表总里程</span>
               <span class="text-[14.5px] font-mono font-black text-car-accent leading-tight">
                 {{ currentOdo > 0 ? Math.round(currentOdo) + ' km' : '等待获取' }}
               </span>
             </div>
             <span v-if="currentOdo > 0" class="text-[11px] px-1.5 py-0.5 rounded bg-car-accent-bg text-car-accent font-bold border border-car-accent/40 ml-1">
-              填入
+              带入
             </span>
           </div>
 
           <button
             type="button"
             @click.stop="$emit('refresh-odo')"
-            class="min-h-[50px] min-w-[50px] px-3 rounded-xl border-2 border-car-accent bg-car-item text-car-accent hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center justify-center text-[18px] font-black shadow-sm"
-            title="重新从车规总线抓取里程"
+            class="min-h-[50px] min-w-[50px] px-3 rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-accent active:scale-95 transition-all cursor-pointer flex items-center justify-center text-[18px] font-black shadow-sm"
+            title="重新抓取仪表里程"
           >
             ⟳
           </button>
@@ -601,48 +689,149 @@
 
         <button 
           type="button"
+          @click="$emit('close-add')"
+          class="min-h-[50px] px-4 rounded-xl border-2 border-car-border bg-car-item text-car-sub font-black text-[14px] hover:text-car-text active:scale-95 transition-all cursor-pointer whitespace-nowrap shadow-sm"
+        >
+          取消
+        </button>
+        <button 
+          type="button"
           @click="$emit('save-new')"
           class="min-h-[50px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md whitespace-nowrap"
         >
-          确认记入账本
+          确认保存入账
         </button>
       </template>
 
-      <div v-if="newRecord" class="flex flex-col space-y-2">
-        <!-- 左右双翼工作台 (横向展开，消除垂直滚动条) -->
-        <div class="grid grid-cols-12 gap-3.5 items-stretch">
-          
-          <!-- 左翼：数值槽位 + 大号数字软键盘 + 填补空白的加满/补油卡片 (占 6 列) -->
-          <div class="col-span-6 flex flex-col space-y-2">
-            <!-- 6 个数值槽位 (3+3 触控直选，带折扣折率与优惠抵扣) -->
+      <div v-if="newRecord" class="flex flex-col space-y-3">
+        <!-- 车规三段 Tab 导航栏 (分页收敛，杜绝上下滚动拖拽) -->
+        <div class="flex items-center justify-between border-b border-car-border/80 pb-2.5">
+          <div class="flex items-center space-x-2">
+            <button
+              v-for="tab in [
+                { id: 'amount', label: '💰 金额与小键盘', desc: '原价/实付/优惠/升数/键盘' },
+                { id: 'fuel', label: '⛽ 油品与加油站', desc: `${newRecord.fuel_type || '92#'} · ${newRecord.gas_station || '选择油站'}` },
+                { id: 'note', label: '📝 实用功能备注', desc: newRecord.note ? newRecord.note : '通勤/洗车/发票等' }
+              ]"
+              :key="tab.id"
+              type="button"
+              @click="activeModalTab = tab.id"
+              :class="[
+                'min-h-[50px] px-4 py-1.5 rounded-xl border-2 flex items-center space-x-2 text-left cursor-pointer transition-all shadow-sm select-none',
+                activeModalTab === tab.id
+                  ? 'border-car-accent bg-car-accent-light text-car-accent'
+                  : 'border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-border-light'
+              ]"
+            >
+              <div class="flex flex-col">
+                <span class="text-[14px] font-black leading-tight">{{ tab.label }}</span>
+                <span class="text-[11px] text-car-sub font-bold mt-0.5 max-w-[170px] truncate">{{ tab.desc }}</span>
+              </div>
+            </button>
+          </div>
+
+          <!-- 顶部紧凑公式看板 (实时反馈) -->
+          <div class="hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-car-item border border-car-border text-[12.5px] font-mono">
+            <span class="text-car-sub font-bold">实际加油:</span>
+            <span class="text-car-text font-black">¥{{ getOriginalTotal(newRecord).toFixed(1) }}</span>
+            <span class="text-car-sub font-bold">- 优惠:</span>
+            <span class="text-car-accent font-black">¥{{ Number(newRecord.coupon || 0).toFixed(1) }}</span>
+            <span class="text-car-sub font-bold">= 实付:</span>
+            <span class="text-car-accent font-black">¥{{ Number(newRecord.actual_paid || 0).toFixed(1) }}</span>
+            <span class="text-car-sub">({{ Number(newRecord.liters || 0).toFixed(1) }}L)</span>
+          </div>
+        </div>
+
+        <!-- Tab 1: 💰 金额与小键盘 -->
+        <div v-show="activeModalTab === 'amount'" class="grid grid-cols-12 gap-3.5 items-stretch">
+          <!-- 左侧：6 个数值大槽位 (3+3 触控大格) -->
+          <div class="col-span-6 flex flex-col space-y-2.5">
+            <div class="flex items-center justify-between text-[12px] font-bold text-car-sub px-1">
+              <span>点击槽位选中，在右侧数字小键盘直接输入：</span>
+              <span class="text-car-accent">当前激活: {{ getFieldLabel(activeField) }}</span>
+            </div>
+
+            <!-- 第一排 3 槽位：实际加油(原价)、优惠减免、车主实付现金 -->
             <div class="grid grid-cols-3 gap-2">
-              <!-- 实付金额 -->
-              <div 
+              <div
+                @click="activeField = 'total_amount'"
+                :class="[
+                  'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'total_amount'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11px] text-car-sub font-bold">加油原价 (表显)</span>
+                  <span class="text-[17px] font-mono font-black text-car-text leading-tight">
+                    ¥{{ getOriginalTotal(newRecord).toFixed(1) }}
+                  </span>
+                </div>
+                <span class="text-[11px] font-bold text-car-sub font-mono">元</span>
+              </div>
+
+              <div
+                @click="activeField = 'coupon'"
+                :class="[
+                  'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'coupon'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11px] text-car-sub font-bold">优惠立减 (券)</span>
+                  <span class="text-[17px] font-mono font-black text-car-accent leading-tight">
+                    -¥{{ Number(newRecord.coupon || 0).toFixed(1) }}
+                  </span>
+                </div>
+                <span class="text-[11px] font-bold text-car-sub font-mono">元</span>
+              </div>
+
+              <div
                 @click="activeField = 'actual_paid'"
                 :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'actual_paid'
                     ? 'border-car-accent bg-car-accent-light'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
                 <div class="flex flex-col text-left">
-                  <span class="text-[11px] text-car-sub font-bold">实付金额 *</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'actual_paid' ? 'text-car-accent' : 'text-car-text'">
-                      {{ newRecord.actual_paid !== undefined && newRecord.actual_paid !== null ? newRecord.actual_paid : '0.0' }}
-                    </span>
-                    <span v-if="activeField === 'actual_paid'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
-                  </div>
+                  <span class="text-[11px] text-car-accent font-bold">车主实付 (现金) *</span>
+                  <span class="text-[18px] font-mono font-black text-car-accent leading-tight">
+                    ¥{{ Number(newRecord.actual_paid || 0).toFixed(1) }}
+                  </span>
                 </div>
-                <span class="text-[11.5px] font-mono font-bold text-car-sub">元</span>
+                <span class="text-[11px] font-bold text-car-accent font-mono">元</span>
+              </div>
+            </div>
+
+            <!-- 第二排 3 槽位：会员折扣、加注升数、成交单价 -->
+            <div class="grid grid-cols-3 gap-2">
+              <div
+                @click="activeField = 'discount'"
+                :class="[
+                  'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'discount'
+                    ? 'border-car-accent bg-car-accent-light'
+                    : 'border-car-border bg-car-card hover:border-car-border-light'
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11px] text-car-sub font-bold">会员折扣 (打折)</span>
+                  <span class="text-[17px] font-mono font-black text-car-text leading-tight">
+                    {{ (Number(newRecord.discount || 10) >= 10 || Number(newRecord.discount || 10) <= 0) ? '无打折' : Number(newRecord.discount).toFixed(1) + ' 折' }}
+                  </span>
+                </div>
+                <span class="text-[11px] font-bold text-car-sub font-mono">折</span>
               </div>
 
-              <!-- 加注升数 -->
-              <div 
+              <div
                 @click="activeField = 'liters'"
                 :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'liters'
                     ? 'border-car-accent bg-car-accent-light'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
@@ -650,21 +839,17 @@
               >
                 <div class="flex flex-col text-left">
                   <span class="text-[11px] text-car-sub font-bold">加注升数 *</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'liters' ? 'text-car-accent' : 'text-car-text'">
-                      {{ newRecord.liters !== undefined && newRecord.liters !== null ? newRecord.liters : '0.0' }}
-                    </span>
-                    <span v-if="activeField === 'liters'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
-                  </div>
+                  <span class="text-[17px] font-mono font-black text-car-text leading-tight">
+                    {{ Number(newRecord.liters || 0).toFixed(2) }}
+                  </span>
                 </div>
-                <span class="text-[11.5px] font-mono font-bold text-car-sub">L</span>
+                <span class="text-[11px] font-bold text-car-sub font-mono">L</span>
               </div>
 
-              <!-- 实际单价 -->
-              <div 
+              <div
                 @click="activeField = 'price'"
                 :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'price'
                     ? 'border-car-accent bg-car-accent-light'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
@@ -672,108 +857,64 @@
               >
                 <div class="flex flex-col text-left">
                   <span class="text-[11px] text-car-sub font-bold">实际单价</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'price' ? 'text-car-accent' : 'text-car-text'">
-                      {{ newRecord.price !== undefined && newRecord.price !== null ? newRecord.price : '0.00' }}
-                    </span>
-                    <span v-if="activeField === 'price'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
-                  </div>
+                  <span class="text-[17px] font-mono font-black text-car-text leading-tight">
+                    ¥{{ Number(newRecord.price || 0).toFixed(2) }}
+                  </span>
                 </div>
-                <span class="text-[11.5px] font-mono font-bold text-car-sub">元/L</span>
+                <span class="text-[11px] font-bold text-car-sub font-mono">元/L</span>
               </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-2">
-              <!-- 会员折扣 (折) -->
-              <div 
-                @click="activeField = 'discount'"
-                :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-                  activeField === 'discount'
-                    ? 'border-amber-400 bg-amber-500/15'
-                    : (Number(newRecord.discount || 10) < 10 && Number(newRecord.discount || 10) > 0 ? 'border-amber-500/50 bg-amber-500/10' : 'border-car-border bg-car-card hover:border-car-border-light')
-                ]"
-              >
-                <div class="flex flex-col text-left">
-                  <span class="text-[11px] font-bold" :class="Number(newRecord.discount || 10) < 10 && Number(newRecord.discount || 10) > 0 ? 'text-amber-400' : 'text-car-sub'">会员折扣</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'discount' ? 'text-amber-400' : (Number(newRecord.discount || 10) < 10 && Number(newRecord.discount || 10) > 0 ? 'text-amber-400' : 'text-car-text')">
-                      {{ (newRecord.discount !== undefined && newRecord.discount !== null && Number(newRecord.discount) > 0 && Number(newRecord.discount) < 10) ? Number(newRecord.discount).toFixed(1) : '10.0' }}
-                    </span>
-                    <span v-if="activeField === 'discount'" class="w-1.5 h-4 bg-amber-400 animate-pulse inline-block"></span>
-                  </div>
-                </div>
-                <span class="text-[11.5px] font-mono font-bold text-car-sub">{{ (Number(newRecord.discount || 10) >= 10 || !newRecord.discount) ? '无折' : '折' }}</span>
-              </div>
-
-              <!-- 优惠抵扣 (元) -->
-              <div 
-                @click="activeField = 'coupon'"
-                :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-                  activeField === 'coupon'
-                    ? 'border-amber-400 bg-amber-500/15'
-                    : (Number(newRecord.coupon || 0) > 0 ? 'border-amber-500/50 bg-amber-500/10' : 'border-car-border bg-car-card hover:border-car-border-light')
-                ]"
-              >
-                <div class="flex flex-col text-left">
-                  <span class="text-[11px] font-bold" :class="Number(newRecord.coupon || 0) > 0 ? 'text-amber-400' : 'text-car-sub'">优惠立减</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'coupon' ? 'text-amber-400' : (Number(newRecord.coupon || 0) > 0 ? 'text-amber-400' : 'text-car-text')">
-                      {{ newRecord.coupon !== undefined && newRecord.coupon !== null ? newRecord.coupon : '0.0' }}
-                    </span>
-                    <span v-if="activeField === 'coupon'" class="w-1.5 h-4 bg-amber-400 animate-pulse inline-block"></span>
-                  </div>
-                </div>
-                <span class="text-[11.5px] font-mono font-bold text-car-sub">元</span>
-              </div>
-
-              <!-- 仪表总里程 -->
-              <div 
-                @click="activeField = 'odo'"
-                :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-                  activeField === 'odo'
-                    ? 'border-car-accent bg-car-accent-light'
-                    : 'border-car-border bg-car-card hover:border-car-border-light'
-                ]"
-              >
-                <div class="flex flex-col text-left">
-                  <span class="text-[11px] text-car-sub font-bold">仪表总里程</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
-                      {{ newRecord.odo !== undefined && newRecord.odo !== null && newRecord.odo > 0 ? newRecord.odo : (currentOdo > 0 ? Math.round(currentOdo) : '未记录') }}
-                    </span>
-                    <span v-if="activeField === 'odo'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
-                  </div>
-                </div>
-                <span class="text-[11px] font-mono font-bold text-car-sub">km</span>
-              </div>
-            </div>
-
-            <!-- 优惠立省与总原价体现栏 -->
-            <div class="px-3 py-1.5 rounded-xl bg-car-card border border-car-border flex items-center justify-between text-[11.5px] font-bold shadow-sm">
-              <div class="flex items-center space-x-1.5">
-                <span class="text-car-sub">加注总价值 (原价):</span>
-                <span class="font-mono text-car-text font-black text-[13.5px]">
-                  ¥{{ (Number(newRecord.actual_paid || 0) + Number(newRecord.coupon || 0)).toFixed(1) }}
+            <!-- 第三排：仪表里程专属行 -->
+            <div
+              @click="activeField = 'odo'"
+              :class="[
+                'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                activeField === 'odo'
+                  ? 'border-car-accent bg-car-accent-light'
+                  : 'border-car-border bg-car-card hover:border-car-border-light'
+              ]"
+            >
+              <div class="flex items-center space-x-2">
+                <span class="text-[15px]">📟</span>
+                <span class="text-[12px] text-car-sub font-bold">记录时仪表总里程:</span>
+                <span class="text-[16px] font-mono font-black text-car-text">
+                  {{ newRecord.odo ? newRecord.odo + ' km' : '未记录' }}
                 </span>
               </div>
-              <div class="flex items-center space-x-1.5">
-                <span 
-                  :class="Number(newRecord.coupon || 0) > 0 ? 'text-amber-400 bg-amber-500/15 border border-amber-500/40' : 'text-car-sub/60 bg-car-item border border-car-border/40'" 
-                  class="px-2 py-0.5 rounded-lg text-[11px] font-black transition-all"
+              <button
+                type="button"
+                @click.stop="applyCurrentOdo(newRecord)"
+                class="min-h-[50px] px-3 rounded-lg border border-car-accent bg-car-item text-car-accent text-[12px] font-bold hover:opacity-90 active:scale-95 transition-all"
+              >
+                带入实车最新里程
+              </button>
+            </div>
+
+            <!-- 常用加油金额档位 (纯净标准档位，彻底剔除 250) -->
+            <div class="flex flex-col space-y-1 pt-1">
+              <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
+                <span>常用加油金额快捷填入 (原价):</span>
+                <span class="text-car-accent">点击自动扣减优惠并推算升数</span>
+              </div>
+              <div class="grid grid-cols-6 gap-1.5">
+                <button
+                  v-for="amt in [200, 220, 230, 240, 260, 300]"
+                  :key="amt"
+                  type="button"
+                  @click="onQuickAmountSelect(newRecord, amt, 'new')"
+                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent font-mono text-[15px] font-black cursor-pointer transition-all flex items-center justify-center shadow-sm select-none"
                 >
-                  {{ Number(newRecord.coupon || 0) > 0 ? `✨ 享 ${Number(newRecord.discount || 10) < 10 ? Number(newRecord.discount).toFixed(1) + '折·' : ''}立省 ¥` + Number(newRecord.coupon || 0).toFixed(1) : '○ 原价无折扣' }}
-                </span>
+                  ¥{{ amt }}
+                </button>
               </div>
             </div>
 
-            <!-- 会员折率快捷档位 (7档一键换算) -->
+            <!-- 会员常用折扣率快捷选 -->
             <div class="flex flex-col space-y-1">
               <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
-                <span>会员折扣 / 折率直选:</span>
-                <span class="text-[10.5px] text-amber-400/80">一键换算免算优惠券</span>
+                <span>会员折扣快捷直选:</span>
+                <span class="text-car-sub/80">自动折算立减金额</span>
               </div>
               <div class="grid grid-cols-7 gap-1">
                 <button
@@ -788,276 +929,238 @@
                   ]"
                   :key="d.val"
                   type="button"
-                  @click="onQuickDiscount(newRecord, d.val, 'new')"
+                  @click="onQuickDiscountSelect(newRecord, d.val, 'new')"
                   :class="[
-                    'min-h-[50px] rounded-xl border-2 font-mono font-bold text-[12px] flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95',
-                    (d.val === 10 ? (!newRecord.discount || Number(newRecord.discount) === 10) : Number(newRecord.discount) === d.val)
-                      ? 'bg-amber-500 text-slate-900 border-amber-400 font-black shadow-md'
-                      : 'bg-car-item border-car-border text-amber-400 hover:border-amber-400/60'
+                    'min-h-[50px] rounded-lg border font-mono text-[12px] font-bold cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
+                    Number(newRecord.discount || 10) === d.val
+                      ? 'border-car-accent bg-car-accent text-car-text'
+                      : 'border-car-border bg-car-item text-car-sub hover:text-car-text'
                   ]"
                 >
                   {{ d.label }}
                 </button>
               </div>
             </div>
+          </div>
 
-            <!-- 中石油与常用充值快捷金额 6 档 (去除 250，使用 260) -->
-            <div class="flex flex-col space-y-1">
-              <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
-                <span>常用实付充值优惠档位:</span>
-                <span class="text-[10.5px] text-car-sub/60">一键填入实付金额</span>
-              </div>
-              <div class="grid grid-cols-6 gap-1.5">
+          <!-- 右侧：车规大号数字软键盘 (4x4 纯净版，无重复 200/300 按钮) -->
+          <div class="col-span-6 flex flex-col justify-between p-3 rounded-2xl bg-car-card border-2 border-car-border shadow-md">
+            <div class="flex items-center justify-between px-1 pb-2 border-b border-car-border/60 text-[12px] font-bold text-car-sub">
+              <span>车载软键盘 · 当前修改: <b class="text-car-accent text-[13px]">{{ getFieldLabel(activeField) }}</b></span>
+              <span class="text-[11px]">按键高度车规 ≥ 50px</span>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 pt-2">
+              <button 
+                v-for="k in ['1', '2', '3']" 
+                :key="k" 
+                type="button" 
+                @click="onInputKey(newRecord, k, 'new')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95"
+              >
+                {{ k }}
+              </button>
+              <button 
+                type="button" 
+                @click="onBackspace(newRecord, 'new')" 
+                class="min-h-[54px] rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[15px] flex items-center justify-center cursor-pointer hover:bg-rose-500/20 active:scale-95 transition-all shadow-sm"
+              >
+                ⌫ 退格
+              </button>
+
+              <button 
+                v-for="k in ['4', '5', '6']" 
+                :key="k" 
+                type="button" 
+                @click="onInputKey(newRecord, k, 'new')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95"
+              >
+                {{ k }}
+              </button>
+              <button 
+                type="button" 
+                @click="onClearCurrent(newRecord, 'new')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text text-[14px] font-bold flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-sm"
+              >
+                清空
+              </button>
+
+              <button 
+                v-for="k in ['7', '8', '9']" 
+                :key="k" 
+                type="button" 
+                @click="onInputKey(newRecord, k, 'new')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95"
+              >
+                {{ k }}
+              </button>
+              <button 
+                type="button" 
+                @click="onNextField" 
+                class="min-h-[54px] rounded-xl border-2 border-car-accent/60 bg-car-item text-car-accent text-[14px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-sm"
+              >
+                下项 ➔
+              </button>
+
+              <button 
+                type="button" 
+                @click="onInputKey(newRecord, '.', 'new')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[24px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95"
+              >
+                .
+              </button>
+              <button 
+                type="button" 
+                @click="onInputKey(newRecord, '0', 'new')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95"
+              >
+                0
+              </button>
+              <button 
+                type="button" 
+                @click="onInputKey(newRecord, '00', 'new')" 
+                class="min-h-[54px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[17px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95"
+              >
+                00
+              </button>
+              <button 
+                type="button" 
+                @click="activeModalTab = 'fuel'" 
+                class="min-h-[54px] rounded-xl border-2 border-car-accent bg-car-accent text-car-text text-[15px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-md"
+              >
+                油品 ➔
+              </button>
+            </div>
+
+            <!-- 底部快速指引 -->
+            <div class="mt-3 p-2.5 rounded-xl bg-car-item/70 border border-car-border text-[12px] text-car-sub flex items-center justify-between">
+              <span>💡 提示：输入加油原价与优惠券后，系统将自动算出实付金额与加注升数。</span>
+              <button 
+                type="button" 
+                @click="$emit('save-new')" 
+                class="px-3 py-1 rounded-lg bg-car-accent text-car-text font-bold text-[12px] hover:opacity-90"
+              >
+                直接入账
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: ⛽ 油品与加油站 -->
+        <div v-show="activeModalTab === 'fuel'" class="grid grid-cols-12 gap-3.5 items-stretch">
+          <div class="col-span-6 flex flex-col space-y-3 p-3.5 rounded-2xl bg-car-card border-2 border-car-border shadow-sm">
+            <!-- 加注标号 -->
+            <div class="flex flex-col space-y-1.5">
+              <span class="text-[12px] font-bold text-car-sub px-0.5">加注汽柴油标号:</span>
+              <div class="grid grid-cols-4 gap-2">
                 <button
-                  v-for="amt in [200, 220, 230, 240, 260, 300]"
-                  :key="amt"
+                  v-for="f in ['92#', '95#', '98#', '0# 柴油']"
+                  :key="f"
                   type="button"
-                  @click="onQuickAmount(newRecord, amt, 'new')"
+                  @click="onSelectFuelType(newRecord, f, 'new')"
                   :class="[
-                    'min-h-[50px] rounded-xl border-2 font-mono font-black text-[13.5px] flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95',
-                    Number(newRecord.actual_paid) === amt
-                      ? 'bg-amber-500 text-slate-900 border-amber-400 font-black shadow-md'
-                      : 'bg-car-item border-car-border text-amber-400 hover:border-amber-400/60'
+                    'min-h-[50px] rounded-xl border-2 font-mono text-[15px] font-black cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
+                    newRecord.fuel_type === f
+                      ? 'border-car-accent bg-car-accent text-car-text'
+                      : 'border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-border-light'
                   ]"
                 >
-                  ¥{{ amt }}
+                  {{ f }}
                 </button>
               </div>
             </div>
 
-            <!-- 车载大号数字键盘面板 -->
-            <div class="p-2.5 rounded-2xl bg-car-card border-2 border-car-border shadow-md flex flex-col space-y-1.5">
-              <div class="flex items-center justify-between px-1 text-[12px] font-bold text-car-sub pb-1 border-b border-car-border/60">
-                <span>当前录入: <b class="text-car-accent text-[13px]">{{ getFieldLabel(activeField) }}</b></span>
-                <span class="text-[11px] text-car-sub/70">内置软键盘 · 免调车机输入法</span>
-              </div>
-
-              <!-- 4x4 紧凑数字键阵 -->
-              <div class="grid grid-cols-4 gap-1.5">
-                <button 
-                  v-for="k in ['1', '2', '3']" 
-                  :key="k" 
-                  type="button" 
-                  @click="onInputKey(newRecord, k, 'new')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  {{ k }}
-                </button>
-                <button 
-                  type="button" 
-                  @click="onBackspace(newRecord, 'new')" 
-                  class="min-h-[50px] rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[14px] flex items-center justify-center cursor-pointer hover:bg-rose-500/20 active:scale-95 transition-all shadow-sm"
-                >
-                  ⌫ 退格
-                </button>
-
-                <button 
-                  v-for="k in ['4', '5', '6']" 
-                  :key="k" 
-                  type="button" 
-                  @click="onInputKey(newRecord, k, 'new')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  {{ k }}
-                </button>
-                <button 
-                  type="button" 
-                  @click="onClearCurrent(newRecord, 'new')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text text-[13.5px] font-bold flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  清空
-                </button>
-
-                <button 
-                  v-for="k in ['7', '8', '9']" 
-                  :key="k" 
-                  type="button" 
-                  @click="onInputKey(newRecord, k, 'new')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  {{ k }}
-                </button>
-                <button 
-                  v-if="activeField === 'odo'"
-                  type="button" 
-                  @click="currentOdo > 0 ? applyCurrentOdo(newRecord) : onInputKey(newRecord, '00', 'new')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-mono text-[13px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  {{ currentOdo > 0 ? '带入实车' : '00' }}
-                </button>
-                <button 
-                  v-else-if="activeField === 'discount'"
-                  type="button" 
-                  @click="onQuickDiscount(newRecord, 9.5, 'new')" 
-                  class="min-h-[50px] rounded-xl border-2 border-amber-400/50 bg-amber-500/10 text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  95折
-                </button>
-                <button 
-                  v-else
-                  type="button" 
-                  @click="onQuickAmount(newRecord, 200, 'new')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  ¥200
-                </button>
-
-                <button 
-                  type="button" 
-                  @click="onInputKey(newRecord, '.', 'new')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[22px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  .
-                </button>
-                <button 
-                  type="button" 
-                  @click="onInputKey(newRecord, '0', 'new')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  0
-                </button>
-                <button 
-                  type="button" 
-                  @click="onNextField" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-accent/40 bg-car-item text-car-accent text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  下项 ➔
-                </button>
-                <button 
-                  v-if="activeField === 'odo'"
-                  type="button" 
-                  @click="currentOdo > 0 ? applyCurrentOdo(newRecord) : onInputKey(newRecord, '000', 'new')" 
-                  class="min-h-[50px] rounded-xl border-2 border-emerald-500/50 bg-emerald-500/10 text-emerald-400 font-mono text-[11.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  {{ currentOdo > 0 ? Math.round(currentOdo) + 'km' : '000' }}
-                </button>
-                <button 
-                  v-else
-                  type="button" 
-                  @click="onQuickAmount(newRecord, 300, 'new')" 
-                  class="min-h-[50px] rounded-xl border-2 border-car-border bg-car-item text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
-                >
-                  ¥300
-                </button>
-              </div>
-            </div>
-
-            <!-- 填补键盘下方多余空白：【跳枪加满】与【阶段补油】带状态胶囊双卡片 -->
-            <div class="grid grid-cols-2 gap-2">
-              <!-- 跳枪加满卡片 -->
-              <div
-                @click="newRecord.is_full = true"
-                :class="[
-                  'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-                  newRecord.is_full
-                    ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-car-border bg-car-card hover:border-car-border-light'
-                ]"
-              >
-                <div class="flex flex-col text-left">
-                  <span class="text-[13px] font-black" :class="newRecord.is_full ? 'text-emerald-400' : 'text-car-text'">
-                    跳枪加满
-                  </span>
-                  <span class="text-[10.5px] text-car-sub font-bold">精准核算百公里油耗</span>
-                </div>
-                <!-- 专属状态小胶囊 -->
-                <span 
+            <!-- 加注状态 -->
+            <div class="flex flex-col space-y-1.5 pt-1">
+              <span class="text-[12px] font-bold text-car-sub px-0.5">本次加注工况 (用于计算百公里油耗):</span>
+              <div class="grid grid-cols-2 gap-2">
+                <div
+                  @click="newRecord.is_full = true"
                   :class="[
-                    'px-2.5 py-1 rounded-full text-[11.5px] font-black whitespace-nowrap transition-all shadow-sm',
+                    'min-h-[54px] p-2.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between shadow-sm select-none',
                     newRecord.is_full
-                      ? 'bg-emerald-500 text-white'
-                      : 'border border-car-border bg-car-item text-car-sub/60'
+                      ? 'border-car-accent bg-car-accent-light'
+                      : 'border-car-border bg-car-item hover:border-car-border-light'
                   ]"
                 >
-                  {{ newRecord.is_full ? '● 已加满' : '○ 未激活' }}
-                </span>
-              </div>
-
-              <!-- 阶段补油卡片 -->
-              <div
-                @click="newRecord.is_full = false"
-                :class="[
-                  'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-                  !newRecord.is_full
-                    ? 'border-amber-500 bg-amber-500/10'
-                    : 'border-car-border bg-car-card hover:border-car-border-light'
-                ]"
-              >
-                <div class="flex flex-col text-left">
-                  <span class="text-[13px] font-black" :class="!newRecord.is_full ? 'text-amber-400' : 'text-car-text'">
-                    阶段补油
+                  <div class="flex flex-col text-left">
+                    <span :class="newRecord.is_full ? 'text-car-accent' : 'text-car-text'" class="text-[14px] font-black">⛽ 跳枪加满</span>
+                    <span class="text-[11px] text-car-sub font-bold">精准跳枪基准线</span>
+                  </div>
+                  <span :class="newRecord.is_full ? 'bg-car-accent text-car-text' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11px] px-2 py-0.5 rounded-md font-bold">
+                    {{ newRecord.is_full ? '✓ 已标记' : '点此设为' }}
                   </span>
-                  <span class="text-[10.5px] text-car-sub font-bold">临时补充 · 不计油耗</span>
                 </div>
-                <!-- 专属状态小胶囊 -->
-                <span 
+
+                <div
+                  @click="newRecord.is_full = false"
                   :class="[
-                    'px-2.5 py-1 rounded-full text-[11.5px] font-black whitespace-nowrap transition-all shadow-sm',
+                    'min-h-[54px] p-2.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between shadow-sm select-none',
                     !newRecord.is_full
-                      ? 'bg-amber-500 text-slate-900'
-                      : 'border border-car-border bg-car-item text-car-sub/60'
+                      ? 'border-car-accent bg-car-accent-light'
+                      : 'border-car-border bg-car-item hover:border-car-border-light'
                   ]"
                 >
-                  {{ !newRecord.is_full ? '● 补油中' : '○ 未激活' }}
-                </span>
+                  <div class="flex flex-col text-left">
+                    <span :class="!newRecord.is_full ? 'text-car-accent' : 'text-car-text'" class="text-[14px] font-black">💧 阶段补油</span>
+                    <span class="text-[11px] text-car-sub font-bold">普通日常按金额补充</span>
+                  </div>
+                  <span :class="!newRecord.is_full ? 'bg-car-accent text-car-text' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11px] px-2 py-0.5 rounded-md font-bold">
+                    {{ !newRecord.is_full ? '✓ 已标记' : '点此设为' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 精简实用加油站选择 -->
+            <div class="flex flex-col space-y-1.5 pt-1">
+              <div class="flex items-center justify-between px-0.5 text-[12px] font-bold text-car-sub">
+                <span>所属加油站品牌 (已精简实用):</span>
+                <span class="text-car-accent">{{ newRecord.gas_station || '未指定' }}</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  v-for="st in ['中国石化', '中国石油', '中国海油', '民营油站', '壳牌/外资', '其他加油站']"
+                  :key="st"
+                  type="button"
+                  @click="newRecord.gas_station = st"
+                  :class="[
+                    'min-h-[50px] rounded-xl border-2 font-bold text-[13.5px] cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
+                    newRecord.gas_station === st
+                      ? 'border-car-accent bg-car-accent text-car-text'
+                      : 'border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-border-light'
+                  ]"
+                >
+                  {{ st }}
+                </button>
               </div>
             </div>
           </div>
 
-          <!-- 右翼：油品标号 + 快捷省份折叠 + 免打字多选组合备注工作台 (占 6 列) -->
-          <div class="col-span-6 flex flex-col space-y-2">
-            
-            <!-- 油品标号 3 选 1 -->
-            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex items-center justify-between shadow-sm">
-              <span class="text-[12px] text-car-sub font-bold whitespace-nowrap mr-2">油品标号:</span>
-              <div class="grid grid-cols-3 gap-1.5 w-[75%]">
-                <button
-                  v-for="ft in ['92#', '95#', '98#']"
-                  :key="ft"
-                  type="button"
-                  @click="newRecord.fuel_type = ft; $emit('new-fuel-type-change')"
-                  :class="[
-                    'min-h-[50px] rounded-xl border-2 font-black text-[14px] transition-all flex items-center justify-center cursor-pointer shadow-sm',
-                    newRecord.fuel_type === ft
-                      ? 'bg-car-item border-car-accent text-car-accent'
-                      : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-                  ]"
-                >
-                  {{ ft }}
-                </button>
-              </div>
-            </div>
-
-            <!-- 省份快捷联动 (默认单行，可折叠切换，杜绝挤占空间) -->
-            <div class="p-2 rounded-xl bg-car-card border-2 border-car-border flex flex-col space-y-1.5 shadow-sm">
-              <div class="flex items-center justify-between text-[12px] font-bold px-0.5">
-                <div class="flex items-center space-x-1.5">
-                  <span class="text-car-sub whitespace-nowrap">加油省份:</span>
-                  <span class="px-2 py-0.5 rounded-lg bg-car-accent-light border border-car-accent text-car-accent font-black text-[12.5px]">
+          <!-- 右侧：省份切换与官方最高零售限价对齐 -->
+          <div class="col-span-6 flex flex-col justify-between p-3.5 rounded-2xl bg-car-card border-2 border-car-border shadow-sm">
+            <div class="flex flex-col space-y-2">
+              <div class="flex items-center justify-between pb-2 border-b border-car-border/60">
+                <div class="flex items-center space-x-2">
+                  <span class="text-[13px] font-black text-car-text">加油所在省份:</span>
+                  <span class="px-2.5 py-1 rounded-lg border border-car-accent bg-car-accent-light text-car-accent font-black text-[13px]">
                     {{ newRecord.province || '浙江' }}
                   </span>
-                  <span class="text-[11px] text-car-sub/70">限价自动对齐</span>
                 </div>
-                <button
-                  type="button"
-                  @click="showAddProvincePicker = !showAddProvincePicker"
-                  class="min-h-[50px] px-3.5 rounded-lg border border-car-border bg-car-item text-car-sub hover:text-car-text text-[12px] font-bold cursor-pointer whitespace-nowrap"
-                >
-                  {{ showAddProvincePicker ? '收起省份 ▲' : '切换省份 ▾' }}
-                </button>
+                <span class="text-[12px] text-car-sub font-bold">发改委限价联动</span>
               </div>
 
-              <!-- 折叠展开的 31 省市网格 -->
-              <div v-if="showAddProvincePicker" class="flex flex-wrap -m-0.5 pt-4 border-t border-car-border/60">
-                <div v-for="prov in allProvinceNames" :key="prov" class="w-[12.5%] p-0.5">
-                  <button 
+              <!-- 31 省市网格 -->
+              <div class="flex flex-wrap -m-1 pt-1 max-h-[260px] overflow-y-auto">
+                <div v-for="prov in allProvinceNames" :key="prov" class="w-[12.5%] p-1">
+                  <button
                     type="button"
                     @click="onSelectProvince(newRecord, prov, 'new')"
                     :class="[
-                      'w-full min-h-[50px] rounded-lg border font-black text-[12px] cursor-pointer transition-all flex items-center justify-center truncate',
+                      'w-full min-h-[50px] rounded-xl border text-[13px] font-black cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                       newRecord.province === prov
-                        ? 'bg-car-accent border-car-accent text-car-text shadow-sm'
-                        : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
+                        ? 'border-car-accent bg-car-accent text-car-text'
+                        : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                     ]"
                   >
                     {{ prov }}
@@ -1066,44 +1169,114 @@
               </div>
             </div>
 
-            <!-- 免打字组合备注工作台 (多选组合、反选剔除、一键清空) -->
-            <div class="p-2.5 rounded-2xl bg-car-card border-2 border-car-border flex flex-col space-y-2 flex-1 shadow-md">
-              <div class="flex items-center justify-between text-[12px] font-bold text-car-sub px-0.5 border-b border-car-border/60 pb-1.5">
-                <div class="flex items-center space-x-1.5 truncate">
-                  <span class="whitespace-nowrap">组合备注:</span>
-                  <span v-if="newRecord.note" class="text-car-accent font-black truncate max-w-[360px] text-[13px]">
-                    {{ newRecord.note }}
-                  </span>
-                  <span v-else class="text-car-sub/60">可点击下方标签多选自由组合</span>
-                </div>
-                <button
-                  type="button"
-                  @click="onClearNote(newRecord)"
-                  class="min-h-[50px] px-3.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-[12px] font-black cursor-pointer whitespace-nowrap transition-all shadow-sm"
-                >
-                  清空备注
-                </button>
-              </div>
+            <div class="flex items-center justify-between pt-4 border-t border-car-border/60 text-[12px] text-car-sub">
+              <span>选择省份将自动同步当地发改委最高限价至单价槽位。</span>
+              <button 
+                type="button" 
+                @click="activeModalTab = 'note'" 
+                class="px-3.5 py-1.5 rounded-xl border border-car-border bg-car-item text-car-accent font-bold hover:border-car-accent"
+              >
+                前往备注 ➔
+              </button>
+            </div>
+          </div>
+        </div>
 
-              <!-- 15 组车规级高频常用标签矩阵 (3 列 x 5 行) -->
-              <div class="grid grid-cols-3 gap-1.5">
-                <button 
-                  v-for="tag in NOTE_TAGS" 
-                  :key="tag" 
+        <!-- Tab 3: 📝 实用功能备注 -->
+        <div v-show="activeModalTab === 'note'" class="flex flex-col space-y-3 p-4 rounded-2xl bg-car-card border-2 border-car-border shadow-sm">
+          <div class="flex items-center justify-between text-[12.5px] font-bold text-car-sub">
+            <span>常见车主实用备注标签 (点击快捷添加/取消):</span>
+            <button 
+              type="button" 
+              @click="onClearNote(newRecord)" 
+              class="px-2.5 py-1 rounded-lg border border-car-border text-car-sub hover:text-rose-400 text-[11.5px]"
+            >
+              清空备注
+            </button>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3">
+            <!-- 分组 1: 出行场景 -->
+            <div class="flex flex-col space-y-1.5 p-3 rounded-xl bg-car-item border border-car-border">
+              <span class="text-[11.5px] font-black text-car-sub">🚗 出行场景</span>
+              <div class="grid grid-cols-1 gap-1.5">
+                <button
+                  v-for="tag in ['日常通勤', '高速长途', '自驾出游']"
+                  :key="tag"
                   type="button"
                   @click="toggleNoteTag(newRecord, tag)"
                   :class="[
-                    'min-h-[50px] px-2 rounded-xl border font-black text-[12.5px] cursor-pointer transition-all flex items-center justify-center whitespace-nowrap shadow-sm',
+                    'min-h-[50px] rounded-lg border text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(newRecord, tag)
-                      ? 'bg-car-item border-2 border-car-accent text-car-accent'
-                      : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
+                      ? 'border-car-accent bg-car-accent text-car-text'
+                      : 'border-car-border bg-car-card text-car-sub hover:text-car-text hover:border-car-border-light'
                   ]"
                 >
-                  {{ isTagSelected(newRecord, tag) ? '✓ ' + tag : '+ ' + tag }}
+                  {{ isTagSelected(newRecord, tag) ? '✓ ' + tag : tag }}
                 </button>
               </div>
             </div>
 
+            <!-- 分组 2: 优惠形式 -->
+            <div class="flex flex-col space-y-1.5 p-3 rounded-xl bg-car-item border border-car-border">
+              <span class="text-[11.5px] font-black text-car-sub">🏷️ 优惠形式</span>
+              <div class="grid grid-cols-1 gap-1.5">
+                <button
+                  v-for="tag in ['周五特惠', '会员折扣', '银行立减']"
+                  :key="tag"
+                  type="button"
+                  @click="toggleNoteTag(newRecord, tag)"
+                  :class="[
+                    'min-h-[50px] rounded-lg border text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    isTagSelected(newRecord, tag)
+                      ? 'border-car-accent bg-car-accent text-car-text'
+                      : 'border-car-border bg-car-card text-car-sub hover:text-car-text hover:border-car-border-light'
+                  ]"
+                >
+                  {{ isTagSelected(newRecord, tag) ? '✓ ' + tag : tag }}
+                </button>
+              </div>
+            </div>
+
+            <!-- 分组 3: 便民服务 -->
+            <div class="flex flex-col space-y-1.5 p-3 rounded-xl bg-car-item border border-car-border">
+              <span class="text-[11.5px] font-black text-car-sub">🧰 便民服务</span>
+              <div class="grid grid-cols-1 gap-1.5">
+                <button
+                  v-for="tag in ['免费洗车', '加玻璃水', '开具发票']"
+                  :key="tag"
+                  type="button"
+                  @click="toggleNoteTag(newRecord, tag)"
+                  :class="[
+                    'min-h-[50px] rounded-lg border text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    isTagSelected(newRecord, tag)
+                      ? 'border-car-accent bg-car-accent text-car-text'
+                      : 'border-car-border bg-car-card text-car-sub hover:text-car-text hover:border-car-border-light'
+                  ]"
+                >
+                  {{ isTagSelected(newRecord, tag) ? '✓ ' + tag : tag }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2 p-3 rounded-xl bg-car-item border border-car-border">
+            <span class="text-[12.5px] text-car-sub font-bold shrink-0">当前已选备注:</span>
+            <div class="flex-1 flex flex-wrap items-center">
+              <span 
+                v-if="!newRecord.note || !String(newRecord.note).trim()" 
+                class="text-[12px] text-car-sub/60"
+              >
+                (暂无备注，点击上方标签即可直接添加)
+              </span>
+              <span
+                v-for="t in String(newRecord.note || '').trim().split(/\s+/).filter(Boolean)"
+                :key="t"
+                class="px-2 py-0.5 m-0.5 rounded-md bg-car-accent-light border border-car-accent text-car-accent font-bold text-[11.5px]"
+              >
+                {{ t }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -1153,152 +1326,228 @@ const emit = defineEmits([
   'new-liters-change',
   'new-price-change',
   'new-fuel-type-change',
-  'new-province-change'
+  'new-province-change',
+  'refresh-odo'
 ]);
 
-// 当前选中的输入字段: 'actual_paid' | 'liters' | 'price' | 'odo'
-const activeField = ref('actual_paid');
+// 弹窗内的 3 个分页 Tab: 'amount' | 'fuel' | 'note'
+const activeModalTab = ref('amount');
 
-// 省份折叠开关状态
-const showEditProvincePicker = ref(false);
-const showAddProvincePicker = ref(false);
+// 当前选中的输入字段: 'total_amount' | 'actual_paid' | 'coupon' | 'discount' | 'liters' | 'price' | 'odo'
+const activeField = ref('total_amount');
 
-// 监听弹窗打开，重置聚焦到实付金额，并尝试为新记录带入实车最新总里程
+// 监听弹窗打开，重置聚焦到实际加油金额 (原价)，默认切到第一页
+watch(() => props.showEditModal, (val) => {
+  if (val) {
+    activeModalTab.value = 'amount';
+    activeField.value = 'total_amount';
+  }
+});
+
 watch(() => props.showAddModal, (val) => {
   if (val) {
-    activeField.value = 'actual_paid';
-    showAddProvincePicker.value = false;
+    activeModalTab.value = 'amount';
+    activeField.value = 'total_amount';
     if (props.newRecord && (!props.newRecord.odo || props.newRecord.odo === 0) && props.currentOdo > 0) {
       props.newRecord.odo = Math.round(Number(props.currentOdo));
     }
   }
 });
-watch(() => props.showEditModal, (val) => {
-  if (val) {
-    activeField.value = 'actual_paid';
-    showEditProvincePicker.value = false;
-  }
-});
 
-// 一键填入/同步车机采集到的当前真实总里程
-function applyCurrentOdo(record) {
-  if (!record || !props.currentOdo) return;
-  record.odo = Math.round(Number(props.currentOdo));
-  activeField.value = 'odo';
+// 计算加油原价总值 (表显实际加油金额)
+function getOriginalTotal(record) {
+  if (!record) return 0;
+  const paid = Number(record.actual_paid || 0);
+  const coupon = Number(record.coupon || 0);
+  const discount = Number(record.discount || 10);
+  
+  if (discount > 0 && discount < 10) {
+    // 若有折扣，原价 = (实付 + 券) / (discount / 10)
+    return parseFloat(((paid + coupon) / (discount / 10.0)).toFixed(1));
+  }
+  return parseFloat((paid + coupon).toFixed(1));
 }
 
+// 标签映射
 function getFieldLabel(f) {
   switch (f) {
-    case 'actual_paid': return '实付金额 (元)';
-    case 'discount': return '会员折扣 (折，如9.5)';
-    case 'coupon': return '优惠立减 (元)';
+    case 'total_amount': return '加油原价 (表显)';
+    case 'actual_paid': return '车主实付 (现金)';
+    case 'coupon': return '优惠立减 (券)';
+    case 'discount': return '会员折扣 (折)';
     case 'liters': return '加注升数 (L)';
-    case 'price': return '实际单价 (元/L)';
+    case 'price': return '成交单价 (元/L)';
     case 'odo': return '仪表总里程 (km)';
-    default: return '实付金额';
+    default: return '数值输入';
   }
+}
+
+// 带入最新实车里程
+function applyCurrentOdo(record) {
+  if (!record) return;
+  const odoVal = Math.round(Number(props.currentOdo) || 0);
+  if (odoVal > 0) {
+    record.odo = odoVal;
+  }
+}
+
+// 选择油品
+function onSelectFuelType(record, type, mode) {
+  if (!record) return;
+  record.fuel_type = type;
+  if (mode === 'edit') emit('edit-fuel-type-change');
+  else emit('new-fuel-type-change');
+}
+
+// 选择省份
+function onSelectProvince(record, prov, mode) {
+  if (!record) return;
+  record.province = prov;
+  if (mode === 'edit') emit('edit-province-change');
+  else emit('new-province-change');
+}
+
+// 快捷充值档位选择 (加了多少原价油)
+function onQuickAmountSelect(record, amt, mode) {
+  if (!record) return;
+  // 保持当前优惠减免与折扣，重新推导实付与升数
+  const coupon = Number(record.coupon || 0);
+  const discount = Number(record.discount || 10);
+  const price = Number(record.price || 0);
+
+  // 设定原价总额为 amt (如 240 元)
+  let paid = amt;
+  if (discount > 0 && discount < 10) {
+    paid = amt * (discount / 10.0);
+  }
+  paid = Math.max(0, parseFloat((paid - coupon).toFixed(1)));
+  record.actual_paid = paid;
+
+  if (price > 0) {
+    record.liters = parseFloat((amt / price).toFixed(2));
+  }
+
+  if (mode === 'edit') emit('edit-paid-change');
+  else emit('new-paid-change');
+}
+
+// 快捷折扣选择
+function onQuickDiscountSelect(record, dVal, mode) {
+  if (!record) return;
+  record.discount = dVal;
+  handleFieldCalculation(record, 'discount', mode);
+}
+
+// 软键盘输入键
+function onInputKey(record, char, mode) {
+  if (!record) return;
+  const f = activeField.value;
+
+  if (f === 'total_amount') {
+    // 修改原价总额
+    let curVal = String(getOriginalTotal(record));
+    if (curVal === '0') curVal = '';
+    if (char === '.' && curVal.includes('.')) return;
+    let nextStr = curVal + char;
+    const nextTotal = parseFloat(nextStr) || 0;
+    
+    // 换算: 保持优惠券与折扣不变，反算实付与升数
+    const coupon = Number(record.coupon || 0);
+    const discount = Number(record.discount || 10);
+    const price = Number(record.price || 0);
+
+    let nextPaid = nextTotal;
+    if (discount > 0 && discount < 10) {
+      nextPaid = nextTotal * (discount / 10.0);
+    }
+    nextPaid = Math.max(0, parseFloat((nextPaid - coupon).toFixed(1)));
+    record.actual_paid = nextPaid;
+
+    if (price > 0 && nextTotal > 0) {
+      record.liters = parseFloat((nextTotal / price).toFixed(2));
+    }
+    if (mode === 'edit') emit('edit-paid-change');
+    else emit('new-paid-change');
+    return;
+  }
+
+  let curVal = String(record[f] !== undefined ? record[f] : '');
+  if (curVal === '0') curVal = '';
+  if (char === '.' && curVal.includes('.')) return;
+  const nextStr = curVal + char;
+  record[f] = f === 'odo' ? parseInt(nextStr, 10) || 0 : (nextStr.endsWith('.') ? nextStr : parseFloat(nextStr) || 0);
+
+  handleFieldCalculation(record, f, mode);
+}
+
+// 退格
+function onBackspace(record, mode) {
+  if (!record) return;
+  const f = activeField.value;
+
+  if (f === 'total_amount') {
+    let curVal = String(getOriginalTotal(record));
+    if (curVal.length <= 1) curVal = '0';
+    else curVal = curVal.slice(0, -1);
+    const nextTotal = parseFloat(curVal) || 0;
+
+    const coupon = Number(record.coupon || 0);
+    const discount = Number(record.discount || 10);
+    const price = Number(record.price || 0);
+
+    let nextPaid = nextTotal;
+    if (discount > 0 && discount < 10) {
+      nextPaid = nextTotal * (discount / 10.0);
+    }
+    nextPaid = Math.max(0, parseFloat((nextPaid - coupon).toFixed(1)));
+    record.actual_paid = nextPaid;
+
+    if (price > 0 && nextTotal > 0) {
+      record.liters = parseFloat((nextTotal / price).toFixed(2));
+    }
+    if (mode === 'edit') emit('edit-paid-change');
+    else emit('new-paid-change');
+    return;
+  }
+
+  let curVal = String(record[f] !== undefined ? record[f] : '');
+  if (curVal.length <= 1) {
+    record[f] = 0;
+  } else {
+    const nextStr = curVal.slice(0, -1);
+    record[f] = f === 'odo' ? parseInt(nextStr, 10) || 0 : parseFloat(nextStr) || 0;
+  }
+  handleFieldCalculation(record, f, mode);
+}
+
+// 清空当前字段
+function onClearCurrent(record, mode) {
+  if (!record) return;
+  const f = activeField.value;
+  if (f === 'total_amount') {
+    record.actual_paid = 0;
+    record.coupon = 0;
+    record.liters = 0;
+  } else if (f === 'discount') {
+    record[f] = 10;
+  } else {
+    record[f] = 0;
+  }
+  handleFieldCalculation(record, f, mode);
 }
 
 // 切换到下一个输入字段
 function onNextField() {
-  const fields = ['actual_paid', 'discount', 'coupon', 'liters', 'price', 'odo'];
-  const curIdx = fields.indexOf(activeField.value);
-  const nextIdx = (curIdx + 1) % fields.length;
-  activeField.value = fields[nextIdx];
-}
-
-// 车载小键盘输入数字或小数点
-function onInputKey(record, char, mode) {
-  if (!record) return;
-  const field = activeField.value;
-  let curVal = record[field];
-  let strVal = (curVal !== undefined && curVal !== null) ? String(curVal) : '';
-
-  // 如果原本是 0 且输入的不是小数点，直接替换
-  if (strVal === '0' && char !== '.') {
-    if (char === '00' || char === '000') return;
-    strVal = '';
-  }
-
-  // 小数点去重
-  if (char === '.' && strVal.includes('.')) {
-    return;
-  }
-
-  // 限制长度防溢出
-  if (strVal.length + char.length > 8) return;
-
-  strVal += char;
-  
-  if (field === 'odo') {
-    record.odo = parseInt(strVal, 10) || 0;
+  const fields = ['total_amount', 'coupon', 'actual_paid', 'discount', 'liters', 'price', 'odo'];
+  const idx = fields.indexOf(activeField.value);
+  if (idx >= 0 && idx < fields.length - 1) {
+    activeField.value = fields[idx + 1];
   } else {
-    const num = parseFloat(strVal);
-    record[field] = isNaN(num) ? 0 : (strVal.endsWith('.') ? strVal : num);
-  }
-
-  handleFieldCalculation(record, field, mode);
-}
-
-// ⌫ 退格删除一个字符
-function onBackspace(record, mode) {
-  if (!record) return;
-  const field = activeField.value;
-  let strVal = String(record[field] || '');
-  if (strVal.length > 0) {
-    strVal = strVal.slice(0, -1);
-    if (strVal === '' || strVal === '-') {
-      record[field] = 0;
-    } else {
-      if (field === 'odo') {
-        record.odo = parseInt(strVal, 10) || 0;
-      } else {
-        const num = parseFloat(strVal);
-        record[field] = isNaN(num) ? 0 : num;
-      }
-    }
-    handleFieldCalculation(record, field, mode);
+    activeField.value = fields[0];
   }
 }
 
-// C 清空当前选定字段
-function onClearCurrent(record, mode) {
-  if (!record) return;
-  const field = activeField.value;
-  record[field] = 0;
-  handleFieldCalculation(record, field, mode);
-}
-
-// 快捷金额 (¥200, ¥220, ¥230, ¥240, ¥260, ¥300)
-function onQuickAmount(record, amount, mode) {
-  if (!record) return;
-  record.actual_paid = amount;
-  activeField.value = 'actual_paid';
-  handleFieldCalculation(record, 'actual_paid', mode);
-}
-
-// 快捷会员折扣/折率一键换算 (如 9.5折, 9折, 8.8折)
-function onQuickDiscount(record, discountVal, mode) {
-  if (!record) return;
-  record.discount = discountVal;
-  activeField.value = 'discount';
-  handleFieldCalculation(record, 'discount', mode);
-}
-
-// 省份选择事件
-function onSelectProvince(record, prov, mode) {
-  if (!record) return;
-  record.province = prov;
-  if (mode === 'edit') {
-    emit('edit-province-change');
-    showEditProvincePicker.value = false;
-  } else {
-    emit('new-province-change');
-    showAddProvincePicker.value = false;
-  }
-}
-
-// 触发联动重算
+// 核心数值计算联动逻辑 (原价、优惠、实付、升数完全自洽)
 function handleFieldCalculation(record, field, mode) {
   const price = parseFloat(record.price) || 0;
   let paid = parseFloat(record.actual_paid) || 0;
@@ -1307,104 +1556,66 @@ function handleFieldCalculation(record, field, mode) {
   let liters = parseFloat(record.liters) || 0;
 
   if (field === 'discount') {
-    // 用户直接输入折扣值 (如 9.5 或 8.8)
-    // 换算公式: 若用户已输入实付金额 paid，原价 total = paid / (discount / 10)，立省 coupon = total - paid
-    // 若尚未输入实付，但有加注升数和单价: total = liters * price，实付 paid = total * (discount / 10)，立省 coupon = total - paid
+    // 用户调了折扣率 (如 9.5 折)
     if (discount > 0 && discount < 10) {
       const discountRatio = discount / 10.0;
-      if (paid > 0) {
-        const total = parseFloat((paid / discountRatio).toFixed(1));
-        coupon = Math.max(0, parseFloat((total - paid).toFixed(1)));
-        record.coupon = coupon;
-        if (price > 0) {
-          record.liters = parseFloat((total / price).toFixed(2));
-        }
-      } else if (liters > 0 && price > 0) {
-        const total = parseFloat((liters * price).toFixed(1));
+      // 保持当前的原价总值不变，更新实付与立省
+      let total = paid + coupon;
+      if (total <= 0 && liters > 0 && price > 0) {
+        total = liters * price;
+      }
+      if (total > 0) {
         paid = parseFloat((total * discountRatio).toFixed(1));
         coupon = Math.max(0, parseFloat((total - paid).toFixed(1)));
         record.actual_paid = paid;
         record.coupon = coupon;
-      }
-    } else if (discount >= 10) {
-      // 恢复原价无折扣
-      record.coupon = 0;
-      coupon = 0;
-      if (paid > 0 && price > 0) {
-        record.liters = parseFloat((paid / price).toFixed(2));
-      }
-    }
-    if (mode === 'edit') emit('edit-paid-change');
-    else emit('new-paid-change');
-    return;
-  }
-
-  if (field === 'actual_paid') {
-    // 用户改动了实付金额
-    if (discount > 0 && discount < 10) {
-      // 按折扣自动联动计算抵扣与总升数
-      const total = parseFloat((paid / (discount / 10.0)).toFixed(1));
-      coupon = Math.max(0, parseFloat((total - paid).toFixed(1)));
-      record.coupon = coupon;
-      if (price > 0 && total > 0) {
-        record.liters = parseFloat((total / price).toFixed(2));
+        if (price > 0) {
+          record.liters = parseFloat((total / price).toFixed(2));
+        }
       }
     } else {
-      const totalAmount = paid + coupon;
-      if (price > 0 && totalAmount > 0) {
-        record.liters = parseFloat((totalAmount / price).toFixed(2));
-      }
-    }
-    if (mode === 'edit') emit('edit-paid-change');
-    else emit('new-paid-change');
-  } else if (field === 'coupon') {
-    // 用户手动输入了优惠金额，反向推导有效折扣
-    const totalAmount = paid + coupon;
-    if (totalAmount > 0 && paid > 0 && coupon > 0) {
-      record.discount = parseFloat(((paid / totalAmount) * 10).toFixed(1));
-    } else if (coupon <= 0) {
+      // 恢复 10 折无折扣
       record.discount = 10;
     }
-    if (price > 0 && totalAmount > 0) {
-      record.liters = parseFloat((totalAmount / price).toFixed(2));
+  } else if (field === 'coupon') {
+    // 用户改动了优惠立减金额 (例如加了 240，优惠了 20，实付应为 220)
+    // 保持原价不变: total = paid + (旧券) 或根据当前原价推导
+    let total = getOriginalTotal(record);
+    if (total > 0 && total >= coupon) {
+      record.actual_paid = parseFloat((total - coupon).toFixed(1));
     }
-    if (mode === 'edit') emit('edit-paid-change');
-    else emit('new-paid-change');
+  } else if (field === 'actual_paid') {
+    // 用户改动了实付金额
+    const total = paid + coupon;
+    if (price > 0 && total > 0) {
+      record.liters = parseFloat((total / price).toFixed(2));
+    }
   } else if (field === 'liters') {
-    liters = parseFloat(record.liters) || 0;
+    // 用户改动了升数: 原价 total = liters * price
     if (price > 0 && liters > 0) {
-      const totalAmount = parseFloat((liters * price).toFixed(1));
+      const total = parseFloat((liters * price).toFixed(1));
       if (discount > 0 && discount < 10) {
-        paid = parseFloat((totalAmount * (discount / 10.0)).toFixed(1));
-        coupon = Math.max(0, parseFloat((totalAmount - paid).toFixed(1)));
+        paid = parseFloat((total * (discount / 10.0)).toFixed(1));
+        coupon = Math.max(0, parseFloat((total - paid).toFixed(1)));
         record.actual_paid = paid;
         record.coupon = coupon;
       } else {
-        record.actual_paid = Math.max(0, parseFloat((totalAmount - coupon).toFixed(1)));
+        record.actual_paid = Math.max(0, parseFloat((total - coupon).toFixed(1)));
       }
     }
-    if (mode === 'edit') emit('edit-liters-change');
-    else emit('new-liters-change');
   } else if (field === 'price') {
-    const totalAmount = paid + coupon;
-    if (price > 0 && totalAmount > 0) {
-      record.liters = parseFloat((totalAmount / price).toFixed(2));
+    // 用户改动了单价
+    const total = paid + coupon;
+    if (price > 0 && total > 0) {
+      record.liters = parseFloat((total / price).toFixed(2));
     }
-    if (mode === 'edit') emit('edit-price-change');
-    else emit('new-price-change');
   }
+
+  if (mode === 'edit') emit('edit-paid-change');
+  else emit('new-paid-change');
 }
 
-// 常用免打字多选组合备注库 (涵盖加油站、用券优惠、场景)
-const NOTE_TAGS = [
-  '中石化', '中石油', '中海油',
-  '壳牌', '民营小站', '其他加油站',
-  '山姆加油', '道达尔', 'BP石油',
-  '用券', '周五特惠', '会员折扣',
-  '直降促销', '银行满减', '送洗车',
-  '日常通勤', '高速服务区', '长途自驾'
-];
-
+// 实用备注标签相关
 function isTagSelected(record, tag) {
   if (!record || !record.note) return false;
   const parts = String(record.note).trim().split(/\s+/);

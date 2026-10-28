@@ -2258,6 +2258,22 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public boolean savePlateNumber(String plate) {
+            try {
+                if (plate == null) return false;
+                return FuelManager.setPlateNumber(MainActivity.this, plate);
+            } catch (Exception e) {
+                Log.w(TAG, "savePlateNumber error", e);
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public String getPlateNumber() {
+            return safeCall("", () -> FuelManager.getPlateNumber(MainActivity.this));
+        }
+
+        @JavascriptInterface
         public boolean addFuelRecord(String recordJson) {
             try {
                 if (recordJson == null || recordJson.trim().isEmpty()) return false;
