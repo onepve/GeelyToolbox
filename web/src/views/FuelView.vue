@@ -453,7 +453,7 @@
                   <span class="text-[17px] font-black text-car-accent font-mono leading-tight whitespace-nowrap">¥{{ rec.actual_paid ? rec.actual_paid.toFixed(1) : (rec.amount ? rec.amount.toFixed(1) : '0.0') }}</span>
                   <div class="flex items-center justify-end space-x-1">
                     <span v-if="Number(rec.coupon || 0) > 0" class="text-[10px] px-1 py-0.2 rounded bg-amber-500/15 border border-amber-500/40 text-amber-400 font-bold whitespace-nowrap">
-                      省¥{{ Number(rec.coupon).toFixed(1) }}
+                      {{ (Number(rec.discount || 10) < 10 && Number(rec.discount || 10) > 0) ? `${Number(rec.discount).toFixed(1)}折·` : '' }}省¥{{ Number(rec.coupon).toFixed(1) }}
                     </span>
                     <span class="text-[11px] text-car-sub font-bold whitespace-nowrap">{{ rec.gas_station === '智能自动感知' ? '自动' : '手动' }}</span>
                   </div>
@@ -870,6 +870,16 @@ function openEditRecordModal(rec) {
   if (!editingRecord.value.province) {
     editingRecord.value.province = currentProvinceName.value;
   }
+  // 如果历史记录已有 coupon，但未计算 discount，自动反推有效折扣率
+  const paid = parseFloat(editingRecord.value.actual_paid || editingRecord.value.amount) || 0;
+  const coupon = parseFloat(editingRecord.value.coupon) || 0;
+  if (!editingRecord.value.discount) {
+    if (paid > 0 && coupon > 0) {
+      editingRecord.value.discount = parseFloat(((paid / (paid + coupon)) * 10).toFixed(1));
+    } else {
+      editingRecord.value.discount = 10;
+    }
+  }
   showEditModal.value = true;
 }
 
@@ -979,6 +989,7 @@ function openAddRecordModal() {
   const odoVal = Math.round(Number(store.fuelLedger.current_odo) || 0);
   newRecord.value = {
     actual_paid: initialPaid,
+    discount: 10,
     coupon: 0,
     liters: Math.round((initialPaid / p92) * 100) / 100,
     price: p92,

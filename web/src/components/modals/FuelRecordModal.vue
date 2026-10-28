@@ -63,7 +63,7 @@
           
           <!-- 左翼：数值槽位 + 大号数字软键盘 + 填补空白的加满/补油卡片 (占 6 列) -->
           <div class="col-span-6 flex flex-col space-y-2">
-            <!-- 5 个数值槽位 (3+2 触控直选，带用券抵扣) -->
+            <!-- 6 个数值槽位 (3+3 触控直选，带折扣折率与优惠抵扣) -->
             <div class="grid grid-cols-3 gap-2">
               <!-- 实付金额 -->
               <div 
@@ -82,28 +82,6 @@
                       {{ editingRecord.actual_paid !== undefined && editingRecord.actual_paid !== null ? editingRecord.actual_paid : '0.0' }}
                     </span>
                     <span v-if="activeField === 'actual_paid'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
-                  </div>
-                </div>
-                <span class="text-[11.5px] font-mono font-bold text-car-sub">元</span>
-              </div>
-
-              <!-- 用券抵扣 (新增) -->
-              <div 
-                @click="activeField = 'coupon'"
-                :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-                  activeField === 'coupon'
-                    ? 'border-amber-400 bg-amber-500/15'
-                    : (Number(editingRecord.coupon || 0) > 0 ? 'border-amber-500/50 bg-amber-500/10' : 'border-car-border bg-car-card hover:border-car-border-light')
-                ]"
-              >
-                <div class="flex flex-col text-left">
-                  <span class="text-[11px] font-bold" :class="Number(editingRecord.coupon || 0) > 0 ? 'text-amber-400' : 'text-car-sub'">用券抵扣</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'coupon' ? 'text-amber-400' : (Number(editingRecord.coupon || 0) > 0 ? 'text-amber-400' : 'text-car-text')">
-                      {{ editingRecord.coupon !== undefined && editingRecord.coupon !== null ? editingRecord.coupon : '0.0' }}
-                    </span>
-                    <span v-if="activeField === 'coupon'" class="w-1.5 h-4 bg-amber-400 animate-pulse inline-block"></span>
                   </div>
                 </div>
                 <span class="text-[11.5px] font-mono font-bold text-car-sub">元</span>
@@ -130,45 +108,89 @@
                 </div>
                 <span class="text-[11.5px] font-mono font-bold text-car-sub">L</span>
               </div>
-            </div>
 
-            <div class="grid grid-cols-2 gap-2">
               <!-- 实际单价 -->
               <div 
                 @click="activeField = 'price'"
                 :class="[
-                  'min-h-[46px] px-3 py-1 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'price'
                     ? 'border-car-accent bg-car-accent-light'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
                 <div class="flex flex-col text-left">
-                  <span class="text-[10.5px] text-car-sub font-bold">实际单价</span>
+                  <span class="text-[11px] text-car-sub font-bold">实际单价</span>
                   <div class="flex items-center space-x-1">
-                    <span class="text-[17px] font-mono font-black" :class="activeField === 'price' ? 'text-car-accent' : 'text-car-text'">
+                    <span class="text-[18px] font-mono font-black" :class="activeField === 'price' ? 'text-car-accent' : 'text-car-text'">
                       {{ editingRecord.price !== undefined && editingRecord.price !== null ? editingRecord.price : '0.00' }}
                     </span>
                     <span v-if="activeField === 'price'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
                   </div>
                 </div>
-                <span class="text-[11px] font-mono font-bold text-car-sub">元/L</span>
+                <span class="text-[11.5px] font-mono font-bold text-car-sub">元/L</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <!-- 会员折扣 (折) -->
+              <div 
+                @click="activeField = 'discount'"
+                :class="[
+                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'discount'
+                    ? 'border-amber-400 bg-amber-500/15'
+                    : (Number(editingRecord.discount || 10) < 10 && Number(editingRecord.discount || 10) > 0 ? 'border-amber-500/50 bg-amber-500/10' : 'border-car-border bg-car-card hover:border-car-border-light')
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11px] font-bold" :class="Number(editingRecord.discount || 10) < 10 && Number(editingRecord.discount || 10) > 0 ? 'text-amber-400' : 'text-car-sub'">会员折扣</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[18px] font-mono font-black" :class="activeField === 'discount' ? 'text-amber-400' : (Number(editingRecord.discount || 10) < 10 && Number(editingRecord.discount || 10) > 0 ? 'text-amber-400' : 'text-car-text')">
+                      {{ (editingRecord.discount !== undefined && editingRecord.discount !== null && Number(editingRecord.discount) > 0 && Number(editingRecord.discount) < 10) ? Number(editingRecord.discount).toFixed(1) : '10.0' }}
+                    </span>
+                    <span v-if="activeField === 'discount'" class="w-1.5 h-4 bg-amber-400 animate-pulse inline-block"></span>
+                  </div>
+                </div>
+                <span class="text-[11.5px] font-mono font-bold text-car-sub">{{ (Number(editingRecord.discount || 10) >= 10 || !editingRecord.discount) ? '无折' : '折' }}</span>
+              </div>
+
+              <!-- 优惠抵扣 (元) -->
+              <div 
+                @click="activeField = 'coupon'"
+                :class="[
+                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'coupon'
+                    ? 'border-amber-400 bg-amber-500/15'
+                    : (Number(editingRecord.coupon || 0) > 0 ? 'border-amber-500/50 bg-amber-500/10' : 'border-car-border bg-car-card hover:border-car-border-light')
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11px] font-bold" :class="Number(editingRecord.coupon || 0) > 0 ? 'text-amber-400' : 'text-car-sub'">优惠立减</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[18px] font-mono font-black" :class="activeField === 'coupon' ? 'text-amber-400' : (Number(editingRecord.coupon || 0) > 0 ? 'text-amber-400' : 'text-car-text')">
+                      {{ editingRecord.coupon !== undefined && editingRecord.coupon !== null ? editingRecord.coupon : '0.0' }}
+                    </span>
+                    <span v-if="activeField === 'coupon'" class="w-1.5 h-4 bg-amber-400 animate-pulse inline-block"></span>
+                  </div>
+                </div>
+                <span class="text-[11.5px] font-mono font-bold text-car-sub">元</span>
               </div>
 
               <!-- 仪表总里程 -->
               <div 
                 @click="activeField = 'odo'"
                 :class="[
-                  'min-h-[46px] px-3 py-1 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'odo'
                     ? 'border-car-accent bg-car-accent-light'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
                 <div class="flex flex-col text-left">
-                  <span class="text-[10.5px] text-car-sub font-bold">仪表总里程</span>
+                  <span class="text-[11px] text-car-sub font-bold">仪表总里程</span>
                   <div class="flex items-center space-x-1">
-                    <span class="text-[17px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
+                    <span class="text-[18px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
                       {{ editingRecord.odo !== undefined && editingRecord.odo !== null && editingRecord.odo > 0 ? editingRecord.odo : (currentOdo > 0 ? Math.round(currentOdo) : '未记录') }}
                     </span>
                     <span v-if="activeField === 'odo'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
@@ -191,20 +213,52 @@
                   :class="Number(editingRecord.coupon || 0) > 0 ? 'text-amber-400 bg-amber-500/15 border border-amber-500/40' : 'text-car-sub/60 bg-car-item border border-car-border/40'" 
                   class="px-2 py-0.5 rounded-lg text-[11px] font-black transition-all"
                 >
-                  {{ Number(editingRecord.coupon || 0) > 0 ? '✨ 券已抵扣省 ¥' + Number(editingRecord.coupon || 0).toFixed(1) : '○ 未使用优惠券' }}
+                  {{ Number(editingRecord.coupon || 0) > 0 ? `✨ 享 ${Number(editingRecord.discount || 10) < 10 ? Number(editingRecord.discount).toFixed(1) + '折·' : ''}立省 ¥` + Number(editingRecord.coupon || 0).toFixed(1) : '○ 原价无折扣' }}
                 </span>
               </div>
             </div>
 
-            <!-- 中石油与常用充值快捷金额 6 档 -->
+            <!-- 会员折率快捷档位 (7档一键换算) -->
             <div class="flex flex-col space-y-1">
               <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
-                <span>中石油 / 常用充值优惠档位:</span>
+                <span>会员折扣 / 折率直选:</span>
+                <span class="text-[10.5px] text-amber-400/80">一键换算免算优惠券</span>
+              </div>
+              <div class="grid grid-cols-7 gap-1">
+                <button
+                  v-for="d in [
+                    { label: '无折扣', val: 10 },
+                    { label: '98折', val: 9.8 },
+                    { label: '95折', val: 9.5 },
+                    { label: '92折', val: 9.2 },
+                    { label: '9折', val: 9.0 },
+                    { label: '88折', val: 8.8 },
+                    { label: '85折', val: 8.5 }
+                  ]"
+                  :key="d.val"
+                  type="button"
+                  @click="onQuickDiscount(editingRecord, d.val, 'edit')"
+                  :class="[
+                    'min-h-[50px] rounded-xl border-2 font-mono font-bold text-[12px] flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95',
+                    (d.val === 10 ? (!editingRecord.discount || Number(editingRecord.discount) === 10) : Number(editingRecord.discount) === d.val)
+                      ? 'bg-amber-500 text-slate-900 border-amber-400 font-black shadow-md'
+                      : 'bg-car-item border-car-border text-amber-400 hover:border-amber-400/60'
+                  ]"
+                >
+                  {{ d.label }}
+                </button>
+              </div>
+            </div>
+
+            <!-- 中石油与常用充值快捷金额 6 档 (去除 250，使用 260) -->
+            <div class="flex flex-col space-y-1">
+              <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
+                <span>常用实付充值优惠档位:</span>
                 <span class="text-[10.5px] text-car-sub/60">一键填入实付金额</span>
               </div>
               <div class="grid grid-cols-6 gap-1.5">
                 <button
-                  v-for="amt in [200, 220, 230, 240, 250, 300]"
+                  v-for="amt in [200, 220, 230, 240, 260, 300]"
                   :key="amt"
                   type="button"
                   @click="onQuickAmount(editingRecord, amt, 'edit')"
@@ -279,6 +333,14 @@
                   class="min-h-[50px] rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-mono text-[13px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
                 >
                   {{ currentOdo > 0 ? '带入实车' : '00' }}
+                </button>
+                <button 
+                  v-else-if="activeField === 'discount'"
+                  type="button" 
+                  @click="onQuickDiscount(editingRecord, 9.5, 'edit')" 
+                  class="min-h-[50px] rounded-xl border-2 border-amber-400/50 bg-amber-500/10 text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  95折
                 </button>
                 <button 
                   v-else
@@ -552,7 +614,7 @@
           
           <!-- 左翼：数值槽位 + 大号数字软键盘 + 填补空白的加满/补油卡片 (占 6 列) -->
           <div class="col-span-6 flex flex-col space-y-2">
-            <!-- 5 个数值槽位 (3+2 触控直选，带用券抵扣) -->
+            <!-- 6 个数值槽位 (3+3 触控直选，带折扣折率与优惠抵扣) -->
             <div class="grid grid-cols-3 gap-2">
               <!-- 实付金额 -->
               <div 
@@ -571,28 +633,6 @@
                       {{ newRecord.actual_paid !== undefined && newRecord.actual_paid !== null ? newRecord.actual_paid : '0.0' }}
                     </span>
                     <span v-if="activeField === 'actual_paid'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
-                  </div>
-                </div>
-                <span class="text-[11.5px] font-mono font-bold text-car-sub">元</span>
-              </div>
-
-              <!-- 用券抵扣 (新增) -->
-              <div 
-                @click="activeField = 'coupon'"
-                :class="[
-                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
-                  activeField === 'coupon'
-                    ? 'border-amber-400 bg-amber-500/15'
-                    : (Number(newRecord.coupon || 0) > 0 ? 'border-amber-500/50 bg-amber-500/10' : 'border-car-border bg-car-card hover:border-car-border-light')
-                ]"
-              >
-                <div class="flex flex-col text-left">
-                  <span class="text-[11px] font-bold" :class="Number(newRecord.coupon || 0) > 0 ? 'text-amber-400' : 'text-car-sub'">用券抵扣</span>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[18px] font-mono font-black" :class="activeField === 'coupon' ? 'text-amber-400' : (Number(newRecord.coupon || 0) > 0 ? 'text-amber-400' : 'text-car-text')">
-                      {{ newRecord.coupon !== undefined && newRecord.coupon !== null ? newRecord.coupon : '0.0' }}
-                    </span>
-                    <span v-if="activeField === 'coupon'" class="w-1.5 h-4 bg-amber-400 animate-pulse inline-block"></span>
                   </div>
                 </div>
                 <span class="text-[11.5px] font-mono font-bold text-car-sub">元</span>
@@ -619,45 +659,89 @@
                 </div>
                 <span class="text-[11.5px] font-mono font-bold text-car-sub">L</span>
               </div>
-            </div>
 
-            <div class="grid grid-cols-2 gap-2">
               <!-- 实际单价 -->
               <div 
                 @click="activeField = 'price'"
                 :class="[
-                  'min-h-[46px] px-3 py-1 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'price'
                     ? 'border-car-accent bg-car-accent-light'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
                 <div class="flex flex-col text-left">
-                  <span class="text-[10.5px] text-car-sub font-bold">实际单价</span>
+                  <span class="text-[11px] text-car-sub font-bold">实际单价</span>
                   <div class="flex items-center space-x-1">
-                    <span class="text-[17px] font-mono font-black" :class="activeField === 'price' ? 'text-car-accent' : 'text-car-text'">
+                    <span class="text-[18px] font-mono font-black" :class="activeField === 'price' ? 'text-car-accent' : 'text-car-text'">
                       {{ newRecord.price !== undefined && newRecord.price !== null ? newRecord.price : '0.00' }}
                     </span>
                     <span v-if="activeField === 'price'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
                   </div>
                 </div>
-                <span class="text-[11px] font-mono font-bold text-car-sub">元/L</span>
+                <span class="text-[11.5px] font-mono font-bold text-car-sub">元/L</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <!-- 会员折扣 (折) -->
+              <div 
+                @click="activeField = 'discount'"
+                :class="[
+                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'discount'
+                    ? 'border-amber-400 bg-amber-500/15'
+                    : (Number(newRecord.discount || 10) < 10 && Number(newRecord.discount || 10) > 0 ? 'border-amber-500/50 bg-amber-500/10' : 'border-car-border bg-car-card hover:border-car-border-light')
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11px] font-bold" :class="Number(newRecord.discount || 10) < 10 && Number(newRecord.discount || 10) > 0 ? 'text-amber-400' : 'text-car-sub'">会员折扣</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[18px] font-mono font-black" :class="activeField === 'discount' ? 'text-amber-400' : (Number(newRecord.discount || 10) < 10 && Number(newRecord.discount || 10) > 0 ? 'text-amber-400' : 'text-car-text')">
+                      {{ (newRecord.discount !== undefined && newRecord.discount !== null && Number(newRecord.discount) > 0 && Number(newRecord.discount) < 10) ? Number(newRecord.discount).toFixed(1) : '10.0' }}
+                    </span>
+                    <span v-if="activeField === 'discount'" class="w-1.5 h-4 bg-amber-400 animate-pulse inline-block"></span>
+                  </div>
+                </div>
+                <span class="text-[11.5px] font-mono font-bold text-car-sub">{{ (Number(newRecord.discount || 10) >= 10 || !newRecord.discount) ? '无折' : '折' }}</span>
+              </div>
+
+              <!-- 优惠抵扣 (元) -->
+              <div 
+                @click="activeField = 'coupon'"
+                :class="[
+                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  activeField === 'coupon'
+                    ? 'border-amber-400 bg-amber-500/15'
+                    : (Number(newRecord.coupon || 0) > 0 ? 'border-amber-500/50 bg-amber-500/10' : 'border-car-border bg-car-card hover:border-car-border-light')
+                ]"
+              >
+                <div class="flex flex-col text-left">
+                  <span class="text-[11px] font-bold" :class="Number(newRecord.coupon || 0) > 0 ? 'text-amber-400' : 'text-car-sub'">优惠立减</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[18px] font-mono font-black" :class="activeField === 'coupon' ? 'text-amber-400' : (Number(newRecord.coupon || 0) > 0 ? 'text-amber-400' : 'text-car-text')">
+                      {{ newRecord.coupon !== undefined && newRecord.coupon !== null ? newRecord.coupon : '0.0' }}
+                    </span>
+                    <span v-if="activeField === 'coupon'" class="w-1.5 h-4 bg-amber-400 animate-pulse inline-block"></span>
+                  </div>
+                </div>
+                <span class="text-[11.5px] font-mono font-bold text-car-sub">元</span>
               </div>
 
               <!-- 仪表总里程 -->
               <div 
                 @click="activeField = 'odo'"
                 :class="[
-                  'min-h-[46px] px-3 py-1 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                  'min-h-[50px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'odo'
                     ? 'border-car-accent bg-car-accent-light'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
                 <div class="flex flex-col text-left">
-                  <span class="text-[10.5px] text-car-sub font-bold">仪表总里程</span>
+                  <span class="text-[11px] text-car-sub font-bold">仪表总里程</span>
                   <div class="flex items-center space-x-1">
-                    <span class="text-[17px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
+                    <span class="text-[18px] font-mono font-black" :class="activeField === 'odo' ? 'text-car-accent' : 'text-car-text'">
                       {{ newRecord.odo !== undefined && newRecord.odo !== null && newRecord.odo > 0 ? newRecord.odo : (currentOdo > 0 ? Math.round(currentOdo) : '未记录') }}
                     </span>
                     <span v-if="activeField === 'odo'" class="w-1.5 h-4 bg-car-accent animate-pulse inline-block"></span>
@@ -680,20 +764,52 @@
                   :class="Number(newRecord.coupon || 0) > 0 ? 'text-amber-400 bg-amber-500/15 border border-amber-500/40' : 'text-car-sub/60 bg-car-item border border-car-border/40'" 
                   class="px-2 py-0.5 rounded-lg text-[11px] font-black transition-all"
                 >
-                  {{ Number(newRecord.coupon || 0) > 0 ? '✨ 券已抵扣省 ¥' + Number(newRecord.coupon || 0).toFixed(1) : '○ 未使用优惠券' }}
+                  {{ Number(newRecord.coupon || 0) > 0 ? `✨ 享 ${Number(newRecord.discount || 10) < 10 ? Number(newRecord.discount).toFixed(1) + '折·' : ''}立省 ¥` + Number(newRecord.coupon || 0).toFixed(1) : '○ 原价无折扣' }}
                 </span>
               </div>
             </div>
 
-            <!-- 中石油与常用充值快捷金额 6 档 -->
+            <!-- 会员折率快捷档位 (7档一键换算) -->
             <div class="flex flex-col space-y-1">
               <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
-                <span>中石油 / 常用充值优惠档位:</span>
+                <span>会员折扣 / 折率直选:</span>
+                <span class="text-[10.5px] text-amber-400/80">一键换算免算优惠券</span>
+              </div>
+              <div class="grid grid-cols-7 gap-1">
+                <button
+                  v-for="d in [
+                    { label: '无折扣', val: 10 },
+                    { label: '98折', val: 9.8 },
+                    { label: '95折', val: 9.5 },
+                    { label: '92折', val: 9.2 },
+                    { label: '9折', val: 9.0 },
+                    { label: '88折', val: 8.8 },
+                    { label: '85折', val: 8.5 }
+                  ]"
+                  :key="d.val"
+                  type="button"
+                  @click="onQuickDiscount(newRecord, d.val, 'new')"
+                  :class="[
+                    'min-h-[50px] rounded-xl border-2 font-mono font-bold text-[12px] flex items-center justify-center cursor-pointer transition-all shadow-sm active:scale-95',
+                    (d.val === 10 ? (!newRecord.discount || Number(newRecord.discount) === 10) : Number(newRecord.discount) === d.val)
+                      ? 'bg-amber-500 text-slate-900 border-amber-400 font-black shadow-md'
+                      : 'bg-car-item border-car-border text-amber-400 hover:border-amber-400/60'
+                  ]"
+                >
+                  {{ d.label }}
+                </button>
+              </div>
+            </div>
+
+            <!-- 中石油与常用充值快捷金额 6 档 (去除 250，使用 260) -->
+            <div class="flex flex-col space-y-1">
+              <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
+                <span>常用实付充值优惠档位:</span>
                 <span class="text-[10.5px] text-car-sub/60">一键填入实付金额</span>
               </div>
               <div class="grid grid-cols-6 gap-1.5">
                 <button
-                  v-for="amt in [200, 220, 230, 240, 250, 300]"
+                  v-for="amt in [200, 220, 230, 240, 260, 300]"
                   :key="amt"
                   type="button"
                   @click="onQuickAmount(newRecord, amt, 'new')"
@@ -768,6 +884,14 @@
                   class="min-h-[50px] rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-mono text-[13px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
                 >
                   {{ currentOdo > 0 ? '带入实车' : '00' }}
+                </button>
+                <button 
+                  v-else-if="activeField === 'discount'"
+                  type="button" 
+                  @click="onQuickDiscount(newRecord, 9.5, 'new')" 
+                  class="min-h-[50px] rounded-xl border-2 border-amber-400/50 bg-amber-500/10 text-amber-400 font-mono text-[13.5px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+                >
+                  95折
                 </button>
                 <button 
                   v-else
@@ -1066,7 +1190,8 @@ function applyCurrentOdo(record) {
 function getFieldLabel(f) {
   switch (f) {
     case 'actual_paid': return '实付金额 (元)';
-    case 'coupon': return '用券抵扣 (元)';
+    case 'discount': return '会员折扣 (折，如9.5)';
+    case 'coupon': return '优惠立减 (元)';
     case 'liters': return '加注升数 (L)';
     case 'price': return '实际单价 (元/L)';
     case 'odo': return '仪表总里程 (km)';
@@ -1076,7 +1201,7 @@ function getFieldLabel(f) {
 
 // 切换到下一个输入字段
 function onNextField() {
-  const fields = ['actual_paid', 'coupon', 'liters', 'price', 'odo'];
+  const fields = ['actual_paid', 'discount', 'coupon', 'liters', 'price', 'odo'];
   const curIdx = fields.indexOf(activeField.value);
   const nextIdx = (curIdx + 1) % fields.length;
   activeField.value = fields[nextIdx];
@@ -1144,12 +1269,20 @@ function onClearCurrent(record, mode) {
   handleFieldCalculation(record, field, mode);
 }
 
-// 快捷金额 (¥200, ¥300)
+// 快捷金额 (¥200, ¥220, ¥230, ¥240, ¥260, ¥300)
 function onQuickAmount(record, amount, mode) {
   if (!record) return;
   record.actual_paid = amount;
   activeField.value = 'actual_paid';
   handleFieldCalculation(record, 'actual_paid', mode);
+}
+
+// 快捷会员折扣/折率一键换算 (如 9.5折, 9折, 8.8折)
+function onQuickDiscount(record, discountVal, mode) {
+  if (!record) return;
+  record.discount = discountVal;
+  activeField.value = 'discount';
+  handleFieldCalculation(record, 'discount', mode);
 }
 
 // 省份选择事件
@@ -1168,25 +1301,91 @@ function onSelectProvince(record, prov, mode) {
 // 触发联动重算
 function handleFieldCalculation(record, field, mode) {
   const price = parseFloat(record.price) || 0;
-  const coupon = parseFloat(record.coupon) || 0;
-  if (field === 'actual_paid' || field === 'coupon') {
-    const paid = parseFloat(record.actual_paid) || 0;
+  let paid = parseFloat(record.actual_paid) || 0;
+  let coupon = parseFloat(record.coupon) || 0;
+  let discount = parseFloat(record.discount) || 10;
+  let liters = parseFloat(record.liters) || 0;
+
+  if (field === 'discount') {
+    // 用户直接输入折扣值 (如 9.5 或 8.8)
+    // 换算公式: 若用户已输入实付金额 paid，原价 total = paid / (discount / 10)，立省 coupon = total - paid
+    // 若尚未输入实付，但有加注升数和单价: total = liters * price，实付 paid = total * (discount / 10)，立省 coupon = total - paid
+    if (discount > 0 && discount < 10) {
+      const discountRatio = discount / 10.0;
+      if (paid > 0) {
+        const total = parseFloat((paid / discountRatio).toFixed(1));
+        coupon = Math.max(0, parseFloat((total - paid).toFixed(1)));
+        record.coupon = coupon;
+        if (price > 0) {
+          record.liters = parseFloat((total / price).toFixed(2));
+        }
+      } else if (liters > 0 && price > 0) {
+        const total = parseFloat((liters * price).toFixed(1));
+        paid = parseFloat((total * discountRatio).toFixed(1));
+        coupon = Math.max(0, parseFloat((total - paid).toFixed(1)));
+        record.actual_paid = paid;
+        record.coupon = coupon;
+      }
+    } else if (discount >= 10) {
+      // 恢复原价无折扣
+      record.coupon = 0;
+      coupon = 0;
+      if (paid > 0 && price > 0) {
+        record.liters = parseFloat((paid / price).toFixed(2));
+      }
+    }
+    if (mode === 'edit') emit('edit-paid-change');
+    else emit('new-paid-change');
+    return;
+  }
+
+  if (field === 'actual_paid') {
+    // 用户改动了实付金额
+    if (discount > 0 && discount < 10) {
+      // 按折扣自动联动计算抵扣与总升数
+      const total = parseFloat((paid / (discount / 10.0)).toFixed(1));
+      coupon = Math.max(0, parseFloat((total - paid).toFixed(1)));
+      record.coupon = coupon;
+      if (price > 0 && total > 0) {
+        record.liters = parseFloat((total / price).toFixed(2));
+      }
+    } else {
+      const totalAmount = paid + coupon;
+      if (price > 0 && totalAmount > 0) {
+        record.liters = parseFloat((totalAmount / price).toFixed(2));
+      }
+    }
+    if (mode === 'edit') emit('edit-paid-change');
+    else emit('new-paid-change');
+  } else if (field === 'coupon') {
+    // 用户手动输入了优惠金额，反向推导有效折扣
     const totalAmount = paid + coupon;
+    if (totalAmount > 0 && paid > 0 && coupon > 0) {
+      record.discount = parseFloat(((paid / totalAmount) * 10).toFixed(1));
+    } else if (coupon <= 0) {
+      record.discount = 10;
+    }
     if (price > 0 && totalAmount > 0) {
       record.liters = parseFloat((totalAmount / price).toFixed(2));
     }
     if (mode === 'edit') emit('edit-paid-change');
     else emit('new-paid-change');
   } else if (field === 'liters') {
-    const liters = parseFloat(record.liters) || 0;
+    liters = parseFloat(record.liters) || 0;
     if (price > 0 && liters > 0) {
       const totalAmount = parseFloat((liters * price).toFixed(1));
-      record.actual_paid = Math.max(0, parseFloat((totalAmount - coupon).toFixed(1)));
+      if (discount > 0 && discount < 10) {
+        paid = parseFloat((totalAmount * (discount / 10.0)).toFixed(1));
+        coupon = Math.max(0, parseFloat((totalAmount - paid).toFixed(1)));
+        record.actual_paid = paid;
+        record.coupon = coupon;
+      } else {
+        record.actual_paid = Math.max(0, parseFloat((totalAmount - coupon).toFixed(1)));
+      }
     }
     if (mode === 'edit') emit('edit-liters-change');
     else emit('new-liters-change');
   } else if (field === 'price') {
-    const paid = parseFloat(record.actual_paid) || 0;
     const totalAmount = paid + coupon;
     if (price > 0 && totalAmount > 0) {
       record.liters = parseFloat((totalAmount / price).toFixed(2));

@@ -155,7 +155,6 @@ public class VehicleAutomationService extends Service {
     private static final double MAX_REASONABLE_FUEL_CAPACITY = 75.0; // 宽限油箱物理冗余安全上限 (容纳油箱颈与各车型公差)
     private volatile double parkedBaselineOil = -1.0; // P挡驻车期间初始油量基准 (支持不关车机/快速休眠加油感知)
     private volatile long lastRefuelAutoRecordTime = 0L; // 上次自动记账时间戳 (5分钟防重复)
-    private int consecutiveRefuelHighSamples = 0;
     private double lastDetectedRefuelOil = 0.0;
     // 智能加油微记账与D挡离场终审状态机
     private volatile long provisionalRefuelRecordId = 0L; // 初次微记账的台账 ID
@@ -1982,6 +1981,10 @@ public class VehicleAutomationService extends Service {
         // 当车辆挂 P 挡且车速为 0 时，车机可能一直处于工作或快速休眠亮屏状态
         int currentGear = (gearStateMachine != null) ? gearStateMachine.getCurrentGear() : 0;
         if (currentGear == 5 && currentSpeedKmH == 0) {
+            // 防高频抖动：若 5 分钟内刚完成过一次完整记账且未处于待终审状态，则忽略
+            if (lastRefuelAutoRecordTime > 0 && (now - lastRefuelAutoRecordTime) < 300000L && provisionalRefuelRecordId <= 0) {
+                return;
+            }
             if (parkedBaselineOil <= 0) {
                 parkedBaselineOil = currentOil;
                 refuelHighStableStartTimeMs = 0L;
@@ -2065,7 +2068,6 @@ public class VehicleAutomationService extends Service {
         if (currentOil > 0) {
             parkedBaselineOil = currentOil;
         }
-        consecutiveRefuelHighSamples = 0;
         lastDetectedRefuelOil = 0.0;
         refuelHighStableStartTimeMs = 0L;
     }
@@ -2081,6 +2083,17 @@ public class VehicleAutomationService extends Service {
             double defaultCapacity = VehiclePlatformFactory.getPlatform(this).getDefaultFuelCapacityLiters();
             double capacity = config.optDouble("fuel_capacity", defaultCapacity);
             double price = 7.60; // 默认均价兜底
+            // 优先继承车友在台账中录入的最近一次成交单价，贴合真实油价
+            try {
+                JSONArray records = FuelManager.getRecords(this);
+                if (records != null && records.length() > 0) {
+                    JSONObject last = records.getJSONObject(0);
+                    double lastPrice = last.optDouble("price", 0.0);
+                    if (lastPrice > 4.0 && lastPrice < 20.0) {
+                        price = lastPrice;
+                    }
+                }
+            } catch (Throwable ignored) {}
             double amount = Math.round(addedLiters * price * 10.0) / 10.0;
             double odo = currentTotalOdoKm > 0 ? Math.round(currentTotalOdoKm * 10.0) / 10.0 : 0.0;
             long recordId = System.currentTimeMillis();
