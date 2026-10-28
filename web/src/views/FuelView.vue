@@ -884,9 +884,12 @@ function openEditRecordModal(rec) {
   if (!editingRecord.value.province) {
     editingRecord.value.province = currentProvinceName.value;
   }
-  // 如果历史记录已有 coupon，但未计算 discount，自动反推有效折扣率
   const paid = parseFloat(editingRecord.value.actual_paid || editingRecord.value.amount) || 0;
   const coupon = parseFloat(editingRecord.value.coupon) || 0;
+  if (!editingRecord.value.total_amount) {
+    editingRecord.value.total_amount = parseFloat((paid + coupon).toFixed(1));
+  }
+  // 如果历史记录已有 coupon，但未计算 discount，自动反推有效折扣率
   if (!editingRecord.value.discount) {
     if (paid > 0 && coupon > 0) {
       editingRecord.value.discount = parseFloat(((paid / (paid + coupon)) * 10).toFixed(1));
@@ -1014,6 +1017,7 @@ function openAddRecordModal() {
   const initialPaid = 200;
   const odoVal = Math.round(Number(store.fuelLedger.current_odo) || 0);
   newRecord.value = {
+    total_amount: initialPaid,
     actual_paid: initialPaid,
     discount: 10,
     coupon: 0,

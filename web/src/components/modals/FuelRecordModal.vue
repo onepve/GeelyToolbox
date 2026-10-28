@@ -546,61 +546,22 @@
             </button>
           </div>
 
-          <!-- 精简实用标签库 (3类高频场景，整齐统一接入主题色) -->
-          <div class="grid grid-cols-3 gap-3">
-            <!-- 分组 1: 出行场景 -->
-            <div class="flex flex-col space-y-1.5 p-3 rounded-xl bg-car-item border border-car-border">
-              <span class="text-[11.5px] font-black text-car-sub">🚗 出行场景</span>
+          <!-- 精选实用标签库 (4类高频场景，整齐统一接入主题色) -->
+          <div class="grid grid-cols-4 gap-2.5">
+            <div
+              v-for="cat in NOTE_CATEGORIES"
+              :key="cat.title"
+              class="flex flex-col space-y-1.5 p-2.5 rounded-xl bg-car-item border border-car-border"
+            >
+              <span class="text-[11.5px] font-black text-car-sub">{{ cat.title }}</span>
               <div class="grid grid-cols-1 gap-1.5">
                 <button
-                  v-for="tag in ['日常通勤', '高速长途', '自驾出游']"
+                  v-for="tag in cat.tags"
                   :key="tag"
                   type="button"
                   @click="toggleNoteTag(editingRecord, tag)"
                   :class="[
-                    'min-h-[50px] rounded-lg border-2 text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
-                    isTagSelected(editingRecord, tag)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
-                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
-                  ]"
-                >
-                  {{ isTagSelected(editingRecord, tag) ? '✓ ' + tag : tag }}
-                </button>
-              </div>
-            </div>
-
-            <!-- 分组 2: 优惠形式 -->
-            <div class="flex flex-col space-y-1.5 p-3 rounded-xl bg-car-item border border-car-border">
-              <span class="text-[11.5px] font-black text-car-sub">🏷️ 优惠形式</span>
-              <div class="grid grid-cols-1 gap-1.5">
-                <button
-                  v-for="tag in ['周五特惠', '会员折扣', '银行立减']"
-                  :key="tag"
-                  type="button"
-                  @click="toggleNoteTag(editingRecord, tag)"
-                  :class="[
-                    'min-h-[50px] rounded-lg border-2 text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
-                    isTagSelected(editingRecord, tag)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
-                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
-                  ]"
-                >
-                  {{ isTagSelected(editingRecord, tag) ? '✓ ' + tag : tag }}
-                </button>
-              </div>
-            </div>
-
-            <!-- 分组 3: 便民服务 -->
-            <div class="flex flex-col space-y-1.5 p-3 rounded-xl bg-car-item border border-car-border">
-              <span class="text-[11.5px] font-black text-car-sub">🧰 便民服务</span>
-              <div class="grid grid-cols-1 gap-1.5">
-                <button
-                  v-for="tag in ['免费洗车', '加玻璃水', '开具发票']"
-                  :key="tag"
-                  type="button"
-                  @click="toggleNoteTag(editingRecord, tag)"
-                  :class="[
-                    'min-h-[50px] rounded-lg border-2 text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    'min-h-[44px] rounded-lg border-2 text-[12.5px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(editingRecord, tag)
                       ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
                       : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
@@ -1173,60 +1134,22 @@
             </button>
           </div>
 
-          <div class="grid grid-cols-3 gap-3">
-            <!-- 分组 1: 出行场景 -->
-            <div class="flex flex-col space-y-1.5 p-3 rounded-xl bg-car-item border border-car-border">
-              <span class="text-[11.5px] font-black text-car-sub">🚗 出行场景</span>
+          <!-- 精选实用标签库 (4类高频场景，整齐统一接入主题色) -->
+          <div class="grid grid-cols-4 gap-2.5">
+            <div
+              v-for="cat in NOTE_CATEGORIES"
+              :key="cat.title"
+              class="flex flex-col space-y-1.5 p-2.5 rounded-xl bg-car-item border border-car-border"
+            >
+              <span class="text-[11.5px] font-black text-car-sub">{{ cat.title }}</span>
               <div class="grid grid-cols-1 gap-1.5">
                 <button
-                  v-for="tag in ['日常通勤', '高速长途', '自驾出游']"
+                  v-for="tag in cat.tags"
                   :key="tag"
                   type="button"
                   @click="toggleNoteTag(newRecord, tag)"
                   :class="[
-                    'min-h-[50px] rounded-lg border-2 text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
-                    isTagSelected(newRecord, tag)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
-                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
-                  ]"
-                >
-                  {{ isTagSelected(newRecord, tag) ? '✓ ' + tag : tag }}
-                </button>
-              </div>
-            </div>
-
-            <!-- 分组 2: 优惠形式 -->
-            <div class="flex flex-col space-y-1.5 p-3 rounded-xl bg-car-item border border-car-border">
-              <span class="text-[11.5px] font-black text-car-sub">🏷️ 优惠形式</span>
-              <div class="grid grid-cols-1 gap-1.5">
-                <button
-                  v-for="tag in ['周五特惠', '会员折扣', '银行立减']"
-                  :key="tag"
-                  type="button"
-                  @click="toggleNoteTag(newRecord, tag)"
-                  :class="[
-                    'min-h-[50px] rounded-lg border-2 text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
-                    isTagSelected(newRecord, tag)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
-                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
-                  ]"
-                >
-                  {{ isTagSelected(newRecord, tag) ? '✓ ' + tag : tag }}
-                </button>
-              </div>
-            </div>
-
-            <!-- 分组 3: 便民服务 -->
-            <div class="flex flex-col space-y-1.5 p-3 rounded-xl bg-car-item border border-car-border">
-              <span class="text-[11.5px] font-black text-car-sub">🧰 便民服务</span>
-              <div class="grid grid-cols-1 gap-1.5">
-                <button
-                  v-for="tag in ['免费洗车', '加玻璃水', '开具发票']"
-                  :key="tag"
-                  type="button"
-                  @click="toggleNoteTag(newRecord, tag)"
-                  :class="[
-                    'min-h-[50px] rounded-lg border-2 text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    'min-h-[44px] rounded-lg border-2 text-[12.5px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(newRecord, tag)
                       ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
                       : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
@@ -1308,25 +1231,51 @@ const emit = defineEmits([
   'refresh-odo'
 ]);
 
+// 常用车主实用功能备注库 (4类高频场景，整齐统一接入车规设计体系)
+const NOTE_CATEGORIES = [
+  {
+    title: '🚗 出行场景',
+    tags: ['日常通勤', '高速长途', '自驾出游', '节假日自驾', '早晚高峰', '满载出行']
+  },
+  {
+    title: '🏷️ 优惠立减',
+    tags: ['周五特惠', '会员折扣', '银行立减', '直降优惠', '积分抵扣', '油卡充值']
+  },
+  {
+    title: '🧰 便民养护',
+    tags: ['免费洗车', '加玻璃水', '开具发票', '加燃油宝', '检查胎压', '顺道加油']
+  },
+  {
+    title: '⛽ 加油时机',
+    tags: ['油价上涨前', '跳枪加满', '亮灯补油', '临时补油', '节前加满', '借车还车']
+  }
+];
+
 // 弹窗内的 3 个分页 Tab: 'amount' | 'fuel' | 'note'
 const activeModalTab = ref('amount');
 
 // 当前选中的输入字段: 'total_amount' | 'actual_paid' | 'coupon' | 'discount' | 'liters' | 'price' | 'odo'
 const activeField = ref('total_amount');
 
-// 监听弹窗打开，重置聚焦到实际加油金额 (原价)，默认切到第一页
+// 监听弹窗打开，重置聚焦到实际加油金额 (原价)，默认切到第一页，确立原价基准
 watch(() => props.showEditModal, (val) => {
-  if (val) {
+  if (val && props.editingRecord) {
     activeModalTab.value = 'amount';
     activeField.value = 'total_amount';
+    if (props.editingRecord.total_amount === undefined || props.editingRecord.total_amount === null) {
+      props.editingRecord.total_amount = getOriginalTotal(props.editingRecord);
+    }
   }
 });
 
 watch(() => props.showAddModal, (val) => {
-  if (val) {
+  if (val && props.newRecord) {
     activeModalTab.value = 'amount';
     activeField.value = 'total_amount';
-    if (props.newRecord && (!props.newRecord.odo || props.newRecord.odo === 0) && props.currentOdo > 0) {
+    if (props.newRecord.total_amount === undefined || props.newRecord.total_amount === null) {
+      props.newRecord.total_amount = getOriginalTotal(props.newRecord);
+    }
+    if ((!props.newRecord.odo || props.newRecord.odo === 0) && props.currentOdo > 0) {
       props.newRecord.odo = Math.round(Number(props.currentOdo));
     }
   }
@@ -1335,6 +1284,9 @@ watch(() => props.showAddModal, (val) => {
 // 计算加油原价总值 (表显实际加油金额)
 function getOriginalTotal(record) {
   if (!record) return 0;
+  if (record.total_amount !== undefined && record.total_amount !== null && !isNaN(Number(record.total_amount)) && Number(record.total_amount) > 0) {
+    return parseFloat(Number(record.total_amount).toFixed(1));
+  }
   const paid = Number(record.actual_paid || 0);
   const coupon = Number(record.coupon || 0);
   const discount = Number(record.discount || 10);
@@ -1388,7 +1340,7 @@ function onSelectProvince(record, prov, mode) {
 // 快捷充值档位选择 (加了多少原价油)
 function onQuickAmountSelect(record, amt, mode) {
   if (!record) return;
-  // 保持当前优惠减免与折扣，重新推导实付与升数
+  record.total_amount = amt;
   const coupon = Number(record.coupon || 0);
   const discount = Number(record.discount || 10);
   const price = Number(record.price || 0);
@@ -1483,11 +1435,12 @@ function onInputKey(record, char, mode) {
 
   if (f === 'total_amount') {
     // 修改原价总额
-    let curVal = String(getOriginalTotal(record));
+    let curVal = String(record.total_amount !== undefined && record.total_amount !== null ? record.total_amount : getOriginalTotal(record));
     if (curVal === '0') curVal = '';
     if (char === '.' && curVal.includes('.')) return;
     let nextStr = curVal + char;
     const nextTotal = parseFloat(nextStr) || 0;
+    record.total_amount = nextStr.endsWith('.') ? nextStr : nextTotal;
     
     // 换算: 保持优惠券与折扣不变，反算实付与升数
     const coupon = Number(record.coupon || 0);
@@ -1509,7 +1462,30 @@ function onInputKey(record, char, mode) {
     return;
   }
 
-  let curVal = String(record[f] !== undefined ? record[f] : '');
+  if (f === 'coupon') {
+    let curVal = String(record.coupon !== undefined && record.coupon !== null ? record.coupon : '');
+    if (curVal === '0') curVal = '';
+    if (char === '.' && curVal.includes('.')) return;
+    let nextStr = curVal + char;
+    const nextCoupon = parseFloat(nextStr) || 0;
+    record.coupon = nextStr.endsWith('.') ? nextStr : nextCoupon;
+
+    // 重点铁律：以输入的加油原价为基准，原价绝对保持不变！车主实付 = 原价 * 折扣 - 优惠立减
+    const origTotal = Number(record.total_amount !== undefined && record.total_amount !== null ? record.total_amount : getOriginalTotal(record));
+    record.total_amount = origTotal;
+    const discount = Number(record.discount || 10);
+    let baseAmt = origTotal;
+    if (discount > 0 && discount < 10) {
+      baseAmt = origTotal * (discount / 10.0);
+    }
+    record.actual_paid = Math.max(0, parseFloat((baseAmt - nextCoupon).toFixed(1)));
+
+    if (mode === 'edit') emit('edit-paid-change');
+    else emit('new-paid-change');
+    return;
+  }
+
+  let curVal = String(record[f] !== undefined && record[f] !== null ? record[f] : '');
   if (curVal === '0') curVal = '';
   if (char === '.' && curVal.includes('.')) return;
   const nextStr = curVal + char;
@@ -1536,10 +1512,11 @@ function onBackspace(record, mode) {
   }
 
   if (f === 'total_amount') {
-    let curVal = String(getOriginalTotal(record));
+    let curVal = String(record.total_amount !== undefined && record.total_amount !== null ? record.total_amount : getOriginalTotal(record));
     if (curVal.length <= 1) curVal = '0';
     else curVal = curVal.slice(0, -1);
     const nextTotal = parseFloat(curVal) || 0;
+    record.total_amount = nextTotal;
 
     const coupon = Number(record.coupon || 0);
     const discount = Number(record.discount || 10);
@@ -1560,7 +1537,32 @@ function onBackspace(record, mode) {
     return;
   }
 
-  let curVal = String(record[f] !== undefined ? record[f] : '');
+  if (f === 'coupon') {
+    let curVal = String(record.coupon !== undefined && record.coupon !== null ? record.coupon : '');
+    if (curVal.length <= 1) {
+      record.coupon = 0;
+    } else {
+      const nextStr = curVal.slice(0, -1);
+      record.coupon = nextStr.endsWith('.') ? nextStr : (parseFloat(nextStr) || 0);
+    }
+    const nextCoupon = Number(record.coupon || 0);
+
+    // 保持原价不变，重新计算实付
+    const origTotal = Number(record.total_amount !== undefined && record.total_amount !== null ? record.total_amount : getOriginalTotal(record));
+    record.total_amount = origTotal;
+    const discount = Number(record.discount || 10);
+    let baseAmt = origTotal;
+    if (discount > 0 && discount < 10) {
+      baseAmt = origTotal * (discount / 10.0);
+    }
+    record.actual_paid = Math.max(0, parseFloat((baseAmt - nextCoupon).toFixed(1)));
+
+    if (mode === 'edit') emit('edit-paid-change');
+    else emit('new-paid-change');
+    return;
+  }
+
+  let curVal = String(record[f] !== undefined && record[f] !== null ? record[f] : '');
   if (curVal.length <= 1) {
     record[f] = 0;
   } else {
@@ -1575,15 +1577,35 @@ function onClearCurrent(record, mode) {
   if (!record) return;
   const f = activeField.value;
   if (f === 'total_amount') {
+    record.total_amount = 0;
     record.actual_paid = 0;
     record.coupon = 0;
     record.liters = 0;
+    if (mode === 'edit') emit('edit-paid-change');
+    else emit('new-paid-change');
+    return;
+  } else if (f === 'coupon') {
+    record.coupon = 0;
+    const origTotal = Number(record.total_amount !== undefined && record.total_amount !== null ? record.total_amount : getOriginalTotal(record));
+    record.total_amount = origTotal;
+    const discount = Number(record.discount || 10);
+    let baseAmt = origTotal;
+    if (discount > 0 && discount < 10) {
+      baseAmt = origTotal * (discount / 10.0);
+    }
+    record.actual_paid = Math.max(0, parseFloat(baseAmt.toFixed(1)));
+    if (mode === 'edit') emit('edit-paid-change');
+    else emit('new-paid-change');
+    return;
   } else if (f === 'discount') {
-    record[f] = 10;
+    record.discount = 10;
+    handleFieldCalculation(record, 'discount', mode);
+    return;
   } else {
     record[f] = 0;
+    handleFieldCalculation(record, f, mode);
+    return;
   }
-  handleFieldCalculation(record, f, mode);
 }
 
 // 切换到下一个输入字段
@@ -1610,67 +1632,74 @@ function handleFieldCalculation(record, field, mode) {
     let dVal = parseFloat(record.discount);
     if (!isNaN(dVal) && dVal > 0 && dVal < 10) {
       const discountRatio = dVal / 10.0;
-      // 保持当前的原价总值不变，更新实付与立省
-      let total = getOriginalTotal(record);
+      let total = Number(record.total_amount !== undefined && record.total_amount !== null ? record.total_amount : getOriginalTotal(record));
       if (total <= 0 && liters > 0 && price > 0) {
         total = liters * price;
       }
+      record.total_amount = total;
       if (total > 0) {
-        paid = parseFloat((total * discountRatio).toFixed(1));
-        coupon = Math.max(0, parseFloat((total - paid).toFixed(1)));
+        paid = Math.max(0, parseFloat(((total * discountRatio) - coupon).toFixed(1)));
         record.actual_paid = paid;
-        record.coupon = coupon;
         if (price > 0) {
           record.liters = parseFloat((total / price).toFixed(2));
         }
       }
     } else if (dVal >= 10) {
-      // 恢复 10 折无折扣
       record.discount = 10;
-      let total = getOriginalTotal(record);
+      let total = Number(record.total_amount !== undefined && record.total_amount !== null ? record.total_amount : getOriginalTotal(record));
+      record.total_amount = total;
       if (total > 0) {
-        record.actual_paid = total;
-        record.coupon = 0;
+        record.actual_paid = Math.max(0, parseFloat((total - coupon).toFixed(1)));
       }
     }
     if (mode === 'edit') emit('edit-paid-change');
     else emit('new-paid-change');
   } else if (field === 'coupon') {
     // 用户改动了优惠立减金额 (例如加了 240，优惠了 20，实付应为 220)
-    // 保持原价不变: total = paid + (旧券) 或根据当前原价推导
-    let total = getOriginalTotal(record);
-    if (total > 0 && total >= coupon) {
-      record.actual_paid = parseFloat((total - coupon).toFixed(1));
+    // 保持原价不变: 以当前原价为基准计算实付
+    let origTotal = Number(record.total_amount !== undefined && record.total_amount !== null ? record.total_amount : getOriginalTotal(record));
+    record.total_amount = origTotal;
+    let baseAmt = origTotal;
+    if (discount > 0 && discount < 10) {
+      baseAmt = origTotal * (discount / 10.0);
     }
+    record.actual_paid = Math.max(0, parseFloat((baseAmt - coupon).toFixed(1)));
+    if (mode === 'edit') emit('edit-paid-change');
+    else emit('new-paid-change');
   } else if (field === 'actual_paid') {
-    // 用户改动了实付金额
-    const total = paid + coupon;
+    // 用户主动修改了实付金额，反推原价与升数
+    let total = paid + coupon;
+    if (discount > 0 && discount < 10) {
+      total = total / (discount / 10.0);
+    }
+    record.total_amount = parseFloat(total.toFixed(1));
     if (price > 0 && total > 0) {
       record.liters = parseFloat((total / price).toFixed(2));
     }
+    if (mode === 'edit') emit('edit-paid-change');
+    else emit('new-paid-change');
   } else if (field === 'liters') {
     // 用户改动了升数: 原价 total = liters * price
     if (price > 0 && liters > 0) {
       const total = parseFloat((liters * price).toFixed(1));
+      record.total_amount = total;
+      let p = total;
       if (discount > 0 && discount < 10) {
-        paid = parseFloat((total * (discount / 10.0)).toFixed(1));
-        coupon = Math.max(0, parseFloat((total - paid).toFixed(1)));
-        record.actual_paid = paid;
-        record.coupon = coupon;
-      } else {
-        record.actual_paid = Math.max(0, parseFloat((total - coupon).toFixed(1)));
+        p = total * (discount / 10.0);
       }
+      record.actual_paid = Math.max(0, parseFloat((p - coupon).toFixed(1)));
     }
+    if (mode === 'edit') emit('edit-liters-change');
+    else emit('new-liters-change');
   } else if (field === 'price') {
-    // 用户改动了单价
-    const total = paid + coupon;
+    // 用户改动了单价，以原价联动升数
+    let total = Number(record.total_amount !== undefined && record.total_amount !== null ? record.total_amount : (paid + coupon));
     if (price > 0 && total > 0) {
       record.liters = parseFloat((total / price).toFixed(2));
     }
+    if (mode === 'edit') emit('edit-price-change');
+    else emit('new-price-change');
   }
-
-  if (mode === 'edit') emit('edit-paid-change');
-  else emit('new-paid-change');
 }
 
 // 实用备注标签相关
