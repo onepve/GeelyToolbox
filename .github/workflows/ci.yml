@@ -192,31 +192,51 @@ jobs:
           files: |
             output/GeelyConsole.apk
           draft: false
-          prerelease: false
+          prerelease: ${{ startsWith(github.ref, 'refs/tags/beta-') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 发新版时自动清理旧版 Release/Draft 发行版与旧远程 Git Tags，永不堆积
+      # 发正式版时自动销毁所有旧测试版 Release与Tag；发测试版时仅替换旧测试版，历史正式版永久保留
       - name: Cleanup Old Releases & Tags on Tag
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           set +e
           CURRENT_TAG="${{ github.ref_name }}"
-          echo "1. Cleaning up older releases and drafts (except $CURRENT_TAG)..."
-          gh release list -R "${{ github.repository }}" --exclude-drafts=false --json tagName -q ".[].tagName" | while read -r tag; do
-            if [ -n "$tag" ] && [ "$tag" != "$CURRENT_TAG" ]; then
-              echo "Deleting old release: $tag"
-              gh release delete "$tag" -R "${{ github.repository }}" -y 2>/dev/null || true
-            fi
-          done
+          echo ">> 执行 Release & Tag 生命周期管控 (当前: $CURRENT_TAG)..."
 
-          echo "2. Cleaning up older remote git tags (except $CURRENT_TAG)..."
-          git ls-remote --tags origin | awk '{print $2}' | sed 's@refs/tags/@@' | grep -v '\^{}' | while read -r tag; do
-            if [ -n "$tag" ] && [ "$tag" != "$CURRENT_TAG" ]; then
-              echo "Deleting old remote tag: $tag"
-              git push origin --delete "$tag" 2>/dev/null || true
-            fi
-          done
+          if [[ "$CURRENT_TAG" != beta-* ]]; then
+            echo "1. 当前为【正式版发版】：历史正式版永久归档保留，全面销毁所有历史临时测试版..."
+            gh release list -R "${{ github.repository }}" --exclude-drafts=false --limit 100 --json tagName -q ".[].tagName" | grep '^beta-' | while read -r tag; do
+              if [ -n "$tag" ]; then
+                echo "销毁临时测试版 Release: $tag"
+                gh release delete "$tag" -R "${{ github.repository }}" -y 2>/dev/null || true
+              fi
+            done
+
+            git ls-remote --tags origin | awk '{print $2}' | sed 's@refs/tags/@@' | grep -v '\^{}' | grep '^beta-' | while read -r tag; do
+              if [ -n "$tag" ]; then
+                echo "删除临时测试版 Git Tag: $tag"
+                git push origin --delete "$tag" 2>/dev/null || true
+              fi
+            done
+            echo ">> 正式版归档完成，历史测试版已全量销毁清空。"
+          else
+            echo "2. 当前为【测试版发版】：严禁触碰正式版，仅自动清理除当前测试版外的旧测试版..."
+            gh release list -R "${{ github.repository }}" --exclude-drafts=false --limit 100 --json tagName -q ".[].tagName" | grep '^beta-' | while read -r tag; do
+              if [ -n "$tag" ] && [ "$tag" != "$CURRENT_TAG" ]; then
+                echo "清理旧测试版 Release: $tag"
+                gh release delete "$tag" -R "${{ github.repository }}" -y 2>/dev/null || true
+              fi
+            done
+
+            git ls-remote --tags origin | awk '{print $2}' | sed 's@refs/tags/@@' | grep -v '\^{}' | grep '^beta-' | while read -r tag; do
+              if [ -n "$tag" ] && [ "$tag" != "$CURRENT_TAG" ]; then
+                echo "清理旧测试版 Git Tag: $tag"
+                git push origin --delete "$tag" 2>/dev/null || true
+              fi
+            done
+            echo ">> 测试通道更新完成，历史正式版完好无损。"
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
