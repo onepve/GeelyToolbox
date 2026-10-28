@@ -123,7 +123,7 @@
               :key="num"
               type="button"
               @click="onSelectAlphanumeric(num)"
-              class="flex-1 min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-amber-400 font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
+              class="flex-1 min-h-[50px] rounded-xl border-2 border-car-border bg-car-item hover:border-car-accent text-car-text font-mono text-[20px] font-black flex items-center justify-center cursor-pointer transition-all shadow-sm"
             >
               {{ num }}
             </button>
