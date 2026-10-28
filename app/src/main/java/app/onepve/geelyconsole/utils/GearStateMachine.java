@@ -32,7 +32,7 @@ public class GearStateMachine {
     private long bootInitTimeMs = System.currentTimeMillis(); // 开机/重置时间戳，用于冷启动自检毛刺吸收
     private Runnable pendingGearTask = null;
     private int pendingTargetGear = -1; // 防抖期目标挡位：同目标心跳不重置计时器
-    private static final long GEAR_DEBOUNCE_MS = 0; // 目标挡位(D/R/P/S) 0ms 瞬发响应，硬件跳变即刻播报
+    private static final long GEAR_DEBOUNCE_MS = 120; // 换挡微窗口消抖 (120ms 瞬态收敛，快速拨挡过滤中间过渡态，避免破音掐断)
 
     public static int normalizeGear(int rawGear) {
         int low = rawGear & 0x0F;

@@ -1823,10 +1823,23 @@ public class VehicleAutomationService extends Service {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
 
         // 核心铁律门禁：仅允许在前进挡(D挡/2 或 S挡/6/7)触发前进车速多媒体自启与自定义动作！
-        // 挂入驻车挡(P挡/5)、倒车挡(R挡/4)或空挡(N挡/3)期间，直接忽略返回，绝不触发！
+        // 挂入驻车挡(P挡/5)、倒车挡(R挡/4)或空挡(N挡/3)期间，执行实车状态二次校验与门禁动态自愈：
         int currentGear = (gearStateMachine != null) ? gearStateMachine.getGear() : lastGearPos;
         if (currentGear != 2 && currentGear != 6 && currentGear != 7) {
-            return;
+            // 撞上门禁 ➔ 启动实车物理状态二次校验与动态纠偏机制：
+            // 物理铁律：车辆时速已稳步提升 (speed >= 15km/h)，在物理上绝不可能处于 P 挡驻车状态！
+            // 此场景通常发生在冷启动起步前已挂入 D 挡，或车机开机启动期间漏收/未触发换挡瞬态报文。
+            if (speed >= 15 && currentGear != 4) {
+                // 非明确倒车挡 (R挡/4)，且物理车速已达前进合理速度：判定挡位仍维持开机未刷新的陈旧缓存
+                AppLogger.i("车身联动", "【门禁动态复核】车速已达 " + speed + "km/h，挡位缓存异常维持【" + currentGear + "】，启动自愈纠偏放行前进自启");
+                if (gearStateMachine != null) {
+                    gearStateMachine.updateGear(2, false, prefs); // 静默校正为前进挡基准
+                }
+                lastGearPos = 2;
+                currentGear = 2;
+            } else {
+                return;
+            }
         }
 
         // 核心铁律：严禁在车速回落 (<=5km/h) 时重新武装或重置手动暂停标记！
