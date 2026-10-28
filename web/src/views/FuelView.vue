@@ -330,14 +330,17 @@
             <div class="p-1">
               <div 
                 @click="toggleMonthFilter('')"
-                class="h-[50px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center space-x-2.5 shadow-sm"
+                class="h-[50px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center space-x-3 shadow-sm"
                 :class="selectedMonth === '' ? 'bg-car-accent-light border-car-accent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
               >
-                <div class="flex flex-col">
+                <div class="flex flex-col text-left">
                   <span class="text-[13px] font-black leading-tight whitespace-nowrap">全部汇总</span>
                   <span class="text-[11px] text-car-sub font-bold whitespace-nowrap">共 {{ store.fuelLedger.records.length }} 笔</span>
                 </div>
-                <span class="text-[13.5px] font-mono font-black text-car-accent whitespace-nowrap">¥{{ store.fuelLedger.stats.total_spend || '0.0' }}</span>
+                <div class="flex flex-col text-right">
+                  <span class="text-[14px] font-mono font-black text-car-accent whitespace-nowrap">¥{{ store.fuelLedger.stats.total_spend || '0.0' }}</span>
+                  <span v-if="Number(store.fuelLedger.stats.total_saved || 0) > 0" class="text-[10.5px] text-car-accent font-bold whitespace-nowrap">省¥{{ Number(store.fuelLedger.stats.total_saved).toFixed(1) }}</span>
+                </div>
               </div>
             </div>
 
@@ -455,8 +458,8 @@
                 </div>
               </div>
 
-              <!-- 右侧：实付金额与编辑入口 -->
-              <div class="flex items-center space-x-3 shrink-0">
+              <!-- 右侧：实付金额与明细 (卡片整体可点，移除多余编辑按钮) -->
+              <div class="flex items-center shrink-0">
                 <div class="flex flex-col text-right">
                   <span class="text-[17px] font-black text-car-accent font-mono leading-tight whitespace-nowrap">¥{{ rec.actual_paid ? rec.actual_paid.toFixed(1) : (rec.amount ? rec.amount.toFixed(1) : '0.0') }}</span>
                   <div class="flex items-center justify-end space-x-1">
@@ -466,10 +469,6 @@
                     <span class="text-[11px] text-car-sub font-bold whitespace-nowrap">{{ rec.gas_station === '智能自动感知' ? '自动' : '手动' }}</span>
                   </div>
                 </div>
-
-                <span class="px-2.5 py-1.5 rounded-lg bg-car-card border border-car-border text-car-accent text-[12px] font-bold hover:border-car-accent whitespace-nowrap">
-                  编辑
-                </span>
               </div>
             </div>
           </div>
@@ -1115,23 +1114,33 @@ function onSaveNewRecord() {
 }
 
 function onPlateConfirmed(newPlate) {
-  if (store.fuelLedger.config) {
-    store.fuelLedger.config.plate_number = newPlate;
-    saveFuelConfig(store.fuelLedger.config);
+  if (!newPlate || !newPlate.trim()) return;
+  const plate = newPlate.trim();
+
+  // 1. 立即同步到 Vue 响应式状态与前端本地缓存 (绝对优先，界面零延迟显示)
+  if (!store.fuelLedger.config) {
+    store.fuelLedger.config = {};
   }
-  // 1. 原生专享接口多重持久化 (CE/DE SharedPreferences + 内部私有存储 + 外部存储)
+  store.fuelLedger.config.plate_number = plate;
   try {
-    bridge.call('savePlateNumber', newPlate);
+    localStorage.setItem('fuel_plate_number', plate);
   } catch (e) {}
-  // 2. 本地 localStorage 兜底秒级持久化，杜绝重开助手时桥接异步偶发为空
+
+  // 2. 立即调用原生专属接口多重落盘 (commit 同步写 plate.txt + CE/DE SharedPreferences)
   try {
-    localStorage.setItem('fuel_plate_number', newPlate);
+    bridge.call('savePlateNumber', plate);
   } catch (e) {}
+
+  // 3. 同步写入完整 fuel_config.json
+  try {
+    saveFuelConfig(store.fuelLedger.config);
+  } catch (e) {}
+
   showPlateModal.value = false;
   setTimeout(() => {
     openModal('confirm', {
       title: '车牌绑定成功',
-      desc: `已成功将车牌【 ${newPlate} 】绑定至当前出厂硬件芯片 (${store.fuelLedger.config.car_id || 'COOL'})。后续手机端扫码即可同步该车。`,
+      desc: `已成功将车牌【 ${plate} 】绑定至当前出厂硬件芯片 (${store.fuelLedger.config.car_id || 'COOL'})。后续手机端扫码即可同步该车。`,
       showCancel: false,
       confirmText: '好的'
     });

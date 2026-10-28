@@ -603,7 +603,8 @@ export function loadFuelData() {
             const localPlate = localStorage.getItem('fuel_plate_number');
             if (localPlate && localPlate.trim()) {
               store.fuelLedger.config.plate_number = localPlate.trim();
-              saveFuelConfig(store.fuelLedger.config);
+              bridge.call('savePlateNumber', localPlate.trim());
+              bridge.call('saveFuelConfig', JSON.stringify(store.fuelLedger.config));
             }
           } catch (e) {}
         } else {
@@ -716,7 +717,6 @@ export function saveMonthlyAdjustment(month, totalPaid, totalLiters) {
 export function saveFuelConfig(cfg) {
   try {
     const ok = bridge.call('saveFuelConfig', JSON.stringify(cfg));
-    loadFuelData();
     return ok;
   } catch (e) {
     console.error('saveFuelConfig error', e);

@@ -228,15 +228,15 @@ public class FuelManager {
                 try {
                     String content = readFileContent(configFile);
                     JSONObject cfg = new JSONObject(content);
+                    // 车牌持久化保护：若配置文件中的车牌为空或不匹配，以高可信车牌回补对齐
+                    if (!reliablePlate.isEmpty()) {
+                        cfg.put("plate_number", reliablePlate);
+                    }
                     // 确保爱车识别码与出厂硬件身份同步对齐 (防重置/刷机防漂移)
                     String persistentCarId = getHardwareCarIdentity(context);
                     if (!persistentCarId.isEmpty() && (!cfg.has("car_id") || cfg.optString("car_id", "").startsWith("COOL_"))) {
                         cfg.put("car_id", persistentCarId);
                         saveConfig(context, cfg);
-                    }
-                    // 车牌持久化保护：若配置文件中的车牌为空或不匹配，以高可信车牌回补对齐
-                    if (!reliablePlate.isEmpty()) {
-                        cfg.put("plate_number", reliablePlate);
                     }
                     return cfg;
                 } catch (Throwable t) {

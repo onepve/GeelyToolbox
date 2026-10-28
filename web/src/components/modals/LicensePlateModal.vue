@@ -22,14 +22,16 @@
           <div
             v-for="(char, idx) in plateSlots"
             :key="idx"
+            @click="onSlotClick(idx)"
             :class="[
-              'w-[46px] h-[50px] rounded-xl border-2 flex items-center justify-center font-black transition-all shadow-sm',
+              'w-[46px] h-[50px] rounded-xl border-2 flex items-center justify-center font-black transition-all shadow-sm cursor-pointer select-none',
               idx === currentSlotIndex
                 ? 'border-car-accent bg-car-card scale-105 shadow-car-accent/20'
-                : 'border-car-border bg-car-card/60',
+                : 'border-car-border bg-car-card/60 hover:border-car-border-light',
               idx === 0 ? 'text-[22px] text-car-accent' : 'text-[24px] font-mono text-car-text',
               isGreenPlate && idx === 7 ? 'text-emerald-400' : ''
             ]"
+            :title="idx === 0 ? '点击选择省份简称' : '点击录入字母数字'"
           >
             {{ char || (idx === currentSlotIndex ? '·' : '') }}
           </div>
@@ -261,9 +263,16 @@ const isPlateComplete = computed(() => plateChars.value.length === maxSlots.valu
 // 监听弹窗打开，初始化车牌数据
 watch(() => props.show, (newVal) => {
   if (newVal) {
-    if (props.initialPlate && props.initialPlate.length >= 7) {
-      isGreenPlate.value = props.initialPlate.length >= 8;
-      plateChars.value = props.initialPlate.split('').slice(0, maxSlots.value);
+    let raw = props.initialPlate ? String(props.initialPlate).trim() : '';
+    if (!raw) {
+      try {
+        raw = localStorage.getItem('fuel_plate_number') || '';
+      } catch (e) {}
+    }
+    const clean = raw.replace(/[·\s\-_]/g, '').toUpperCase();
+    if (clean.length >= 7) {
+      isGreenPlate.value = clean.length >= 8;
+      plateChars.value = clean.split('').slice(0, isGreenPlate.value ? 8 : 7);
       keyboardMode.value = 'alpha';
     } else {
       plateChars.value = [];
@@ -282,6 +291,14 @@ watch(isGreenPlate, (isGreen) => {
 
 function toggleKeyboardMode() {
   keyboardMode.value = keyboardMode.value === 'province' ? 'alpha' : 'province';
+}
+
+function onSlotClick(idx) {
+  if (idx === 0) {
+    keyboardMode.value = 'province';
+  } else {
+    keyboardMode.value = 'alpha';
+  }
 }
 
 function onSelectProvince(prov) {
