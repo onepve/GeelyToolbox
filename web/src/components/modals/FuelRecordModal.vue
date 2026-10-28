@@ -12,35 +12,6 @@
       @close="$emit('close-edit')"
     >
       <template #header-actions>
-        <!-- 仪表总里程主题小胶囊与大尺寸刷新按钮 -->
-        <div class="flex items-center space-x-2">
-          <div 
-            @click="applyCurrentOdo(editingRecord)"
-            class="min-h-[50px] px-3.5 py-1.5 rounded-xl border-2 border-car-accent bg-car-item text-car-accent hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center space-x-2 shadow-sm select-none"
-            title="点击将当前仪表里程填入"
-          >
-            <span class="text-[17px]">🚗</span>
-            <div class="flex flex-col text-left">
-              <span class="text-[10.5px] text-car-sub font-bold leading-tight">仪表总里程</span>
-              <span class="text-[14.5px] font-mono font-black text-car-accent leading-tight">
-                {{ currentOdo > 0 ? Math.round(currentOdo) + ' km' : '等待获取' }}
-              </span>
-            </div>
-            <span v-if="currentOdo > 0" class="text-[11px] px-1.5 py-0.5 rounded bg-car-accent-bg text-car-accent font-bold border border-car-accent/40 ml-1">
-              带入
-            </span>
-          </div>
-
-          <button
-            type="button"
-            @click.stop="$emit('refresh-odo')"
-            class="min-h-[50px] min-w-[50px] px-3 rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-accent active:scale-95 transition-all cursor-pointer flex items-center justify-center text-[18px] font-black shadow-sm"
-            title="重新抓取仪表里程"
-          >
-            ⟳
-          </button>
-        </div>
-
         <button 
           type="button"
           @click="$emit('delete-record')"
@@ -51,7 +22,7 @@
         <button 
           type="button"
           @click="$emit('save-edit')"
-          class="min-h-[50px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md whitespace-nowrap"
+          class="min-h-[50px] px-6 rounded-xl border-2 border-car-accent bg-car-accent-bg text-car-accent font-black text-[16px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md whitespace-nowrap"
         >
           保存修改
         </button>
@@ -225,11 +196,11 @@
               </div>
             </div>
 
-            <!-- 第三排：仪表里程专属行 (带快速带入按键) -->
+            <!-- 第三排：仪表里程专属行 (带快速带入按键与实车里程刷新) -->
             <div
               @click="activeField = 'odo'"
               :class="[
-                'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                'min-h-[58px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm select-none',
                 activeField === 'odo'
                   ? 'border-car-accent bg-car-accent-light'
                   : 'border-car-border bg-car-card hover:border-car-border-light'
@@ -238,17 +209,27 @@
               <div class="flex items-center space-x-2">
                 <span class="text-[15px]">📟</span>
                 <span class="text-[12px] text-car-sub font-bold">记录时仪表总里程:</span>
-                <span class="text-[16px] font-mono font-black text-car-text">
-                  {{ editingRecord.odo ? editingRecord.odo + ' km' : '未记录' }}
+                <span class="text-[17px] font-mono font-black text-car-text">
+                  {{ editingRecord.odo ? editingRecord.odo + ' km' : '未记录 (点击小键盘输入)' }}
                 </span>
               </div>
-              <button
-                type="button"
-                @click.stop="applyCurrentOdo(editingRecord)"
-                class="min-h-[50px] px-3 rounded-lg border border-car-accent bg-car-item text-car-accent text-[12px] font-bold hover:opacity-90 active:scale-95 transition-all"
-              >
-                带入实车最新里程
-              </button>
+              <div class="flex items-center space-x-2">
+                <button
+                  type="button"
+                  @click.stop="$emit('refresh-odo')"
+                  class="min-h-[50px] px-3 rounded-lg border border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-accent active:scale-95 transition-all text-[12px] font-bold cursor-pointer"
+                  title="重新抓取实车仪表总里程"
+                >
+                  ⟳ 刷新实车
+                </button>
+                <button
+                  type="button"
+                  @click.stop="applyCurrentOdo(editingRecord)"
+                  class="min-h-[50px] px-3.5 rounded-lg border-2 border-car-accent bg-car-accent-bg text-car-accent text-[12.5px] font-black hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-sm"
+                >
+                  带入实车最新里程{{ currentOdo > 0 ? ' (' + Math.round(currentOdo) + 'km)' : '' }}
+                </button>
+              </div>
             </div>
 
             <!-- 常用加油金额档位 (纯净标准档位，彻底剔除 250) -->
@@ -270,34 +251,42 @@
               </div>
             </div>
 
-            <!-- 会员常用折扣率快捷选 (一键免心算优惠券) -->
+            <!-- 会员常用折扣率快捷选与自定义手动输入 -->
             <div class="flex flex-col space-y-1">
               <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
-                <span>会员折扣快捷直选:</span>
-                <span class="text-car-sub/80">自动折算立减金额</span>
+                <span>会员折扣快捷直选 / 手动输入:</span>
+                <span class="text-car-sub/80">点击下方快捷项或手动输入任意折扣</span>
               </div>
-              <div class="grid grid-cols-7 gap-1">
+              <div class="grid grid-cols-8 gap-1">
                 <button
-                  v-for="d in [
-                    { label: '无折扣', val: 10 },
-                    { label: '98折', val: 9.8 },
-                    { label: '95折', val: 9.5 },
-                    { label: '92折', val: 9.2 },
-                    { label: '9折', val: 9.0 },
-                    { label: '88折', val: 8.8 },
-                    { label: '85折', val: 8.5 }
-                  ]"
+                  v-for="d in QUICK_DISCOUNTS"
                   :key="d.val"
                   type="button"
                   @click="onQuickDiscountSelect(editingRecord, d.val, 'edit')"
                   :class="[
-                    'min-h-[50px] rounded-lg border font-mono text-[12px] font-bold cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
-                    Number(editingRecord.discount || 10) === d.val
-                      ? 'border-car-accent bg-car-accent text-car-text'
-                      : 'border-car-border bg-car-item text-car-sub hover:text-car-text'
+                    'min-h-[50px] rounded-lg border-2 font-mono text-[12px] font-bold cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
+                    isQuickDiscountActive(editingRecord, d.val)
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
                   {{ d.label }}
+                </button>
+                <button
+                  type="button"
+                  @click="onSelectCustomDiscount(editingRecord, 'edit')"
+                  :class="[
+                    'min-h-[50px] rounded-lg border-2 text-[12px] cursor-pointer transition-all flex flex-col items-center justify-center shadow-sm select-none px-1',
+                    isCustomDiscountActive(editingRecord)
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      : (activeField === 'discount'
+                          ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
+                          : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent')
+                  ]"
+                  title="点击在右侧小键盘手动输入任意折扣数字"
+                >
+                  <span class="font-black">{{ isCustomDiscountActive(editingRecord) ? editingRecord.discount + '折' : '✏️ 手动' }}</span>
+                  <span class="text-[9.5px] opacity-75">自定义</span>
                 </button>
               </div>
             </div>
@@ -387,7 +376,7 @@
               <button 
                 type="button" 
                 @click="activeModalTab = 'fuel'" 
-                class="min-h-[54px] rounded-xl border-2 border-car-accent bg-car-accent text-car-text text-[15px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-md"
+                class="min-h-[54px] rounded-xl border-2 border-car-accent bg-car-accent-light text-car-accent text-[15px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-md hover:opacity-90"
               >
                 油品 ➔
               </button>
@@ -399,7 +388,7 @@
               <button 
                 type="button" 
                 @click="$emit('save-edit')" 
-                class="px-3 py-1 rounded-lg bg-car-accent text-car-text font-bold text-[12px] hover:opacity-90"
+                class="px-3.5 py-1.5 rounded-lg border-2 border-car-accent bg-car-accent-light text-car-accent font-black text-[12px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-sm"
               >
                 直接保存
               </button>
@@ -423,8 +412,8 @@
                   :class="[
                     'min-h-[50px] rounded-xl border-2 font-mono text-[15px] font-black cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     editingRecord.fuel_type === f
-                      ? 'border-car-accent bg-car-accent text-car-text'
-                      : 'border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-border-light'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent ring-1 ring-car-accent/30'
+                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
                   {{ f }}
@@ -449,7 +438,7 @@
                     <span :class="editingRecord.is_full ? 'text-car-accent' : 'text-car-text'" class="text-[14px] font-black">⛽ 跳枪加满</span>
                     <span class="text-[11px] text-car-sub font-bold">精准跳枪基准线</span>
                   </div>
-                  <span :class="editingRecord.is_full ? 'bg-car-accent text-car-text' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11px] px-2 py-0.5 rounded-md font-bold">
+                  <span :class="editingRecord.is_full ? 'border-2 border-car-accent bg-car-accent-light text-car-accent shadow-sm' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11.5px] px-2.5 py-1 rounded-lg font-black">
                     {{ editingRecord.is_full ? '✓ 已标记' : '点此设为' }}
                   </span>
                 </div>
@@ -467,7 +456,7 @@
                     <span :class="!editingRecord.is_full ? 'text-car-accent' : 'text-car-text'" class="text-[14px] font-black">💧 阶段补油</span>
                     <span class="text-[11px] text-car-sub font-bold">普通日常按金额补充</span>
                   </div>
-                  <span :class="!editingRecord.is_full ? 'bg-car-accent text-car-text' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11px] px-2 py-0.5 rounded-md font-bold">
+                  <span :class="!editingRecord.is_full ? 'border-2 border-car-accent bg-car-accent-light text-car-accent shadow-sm' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11.5px] px-2.5 py-1 rounded-lg font-black">
                     {{ !editingRecord.is_full ? '✓ 已标记' : '点此设为' }}
                   </span>
                 </div>
@@ -489,8 +478,8 @@
                   :class="[
                     'min-h-[50px] rounded-xl border-2 font-bold text-[13.5px] cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     editingRecord.gas_station === st
-                      ? 'border-car-accent bg-car-accent text-car-text'
-                      : 'border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-border-light'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
                   {{ st }}
@@ -519,10 +508,10 @@
                     type="button"
                     @click="onSelectProvince(editingRecord, prov, 'edit')"
                     :class="[
-                      'w-full min-h-[50px] rounded-xl border text-[13px] font-black cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                      'w-full min-h-[50px] rounded-xl border-2 text-[13px] font-black cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                       editingRecord.province === prov
-                        ? 'border-car-accent bg-car-accent text-car-text'
-                        : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
+                        ? 'border-car-accent bg-car-accent-light text-car-accent ring-1 ring-car-accent/30'
+                        : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                     ]"
                   >
                     {{ prov }}
@@ -569,10 +558,10 @@
                   type="button"
                   @click="toggleNoteTag(editingRecord, tag)"
                   :class="[
-                    'min-h-[50px] rounded-lg border text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    'min-h-[50px] rounded-lg border-2 text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(editingRecord, tag)
-                      ? 'border-car-accent bg-car-accent text-car-text'
-                      : 'border-car-border bg-car-card text-car-sub hover:text-car-text hover:border-car-border-light'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
                   {{ isTagSelected(editingRecord, tag) ? '✓ ' + tag : tag }}
@@ -590,10 +579,10 @@
                   type="button"
                   @click="toggleNoteTag(editingRecord, tag)"
                   :class="[
-                    'min-h-[50px] rounded-lg border text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    'min-h-[50px] rounded-lg border-2 text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(editingRecord, tag)
-                      ? 'border-car-accent bg-car-accent text-car-text'
-                      : 'border-car-border bg-car-card text-car-sub hover:text-car-text hover:border-car-border-light'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
                   {{ isTagSelected(editingRecord, tag) ? '✓ ' + tag : tag }}
@@ -611,10 +600,10 @@
                   type="button"
                   @click="toggleNoteTag(editingRecord, tag)"
                   :class="[
-                    'min-h-[50px] rounded-lg border text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    'min-h-[50px] rounded-lg border-2 text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(editingRecord, tag)
-                      ? 'border-car-accent bg-car-accent text-car-text'
-                      : 'border-car-border bg-car-card text-car-sub hover:text-car-text hover:border-car-border-light'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
                   {{ isTagSelected(editingRecord, tag) ? '✓ ' + tag : tag }}
@@ -658,35 +647,6 @@
       @close="$emit('close-add')"
     >
       <template #header-actions>
-        <!-- 仪表总里程主题小胶囊与大尺寸刷新按钮 -->
-        <div class="flex items-center space-x-2">
-          <div 
-            @click="applyCurrentOdo(newRecord)"
-            class="min-h-[50px] px-3.5 py-1.5 rounded-xl border-2 border-car-accent bg-car-item text-car-accent hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center space-x-2 shadow-sm select-none"
-            title="点击将当前仪表里程填入"
-          >
-            <span class="text-[17px]">🚗</span>
-            <div class="flex flex-col text-left">
-              <span class="text-[10.5px] text-car-sub font-bold leading-tight">仪表总里程</span>
-              <span class="text-[14.5px] font-mono font-black text-car-accent leading-tight">
-                {{ currentOdo > 0 ? Math.round(currentOdo) + ' km' : '等待获取' }}
-              </span>
-            </div>
-            <span v-if="currentOdo > 0" class="text-[11px] px-1.5 py-0.5 rounded bg-car-accent-bg text-car-accent font-bold border border-car-accent/40 ml-1">
-              带入
-            </span>
-          </div>
-
-          <button
-            type="button"
-            @click.stop="$emit('refresh-odo')"
-            class="min-h-[50px] min-w-[50px] px-3 rounded-xl border-2 border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-accent active:scale-95 transition-all cursor-pointer flex items-center justify-center text-[18px] font-black shadow-sm"
-            title="重新抓取仪表里程"
-          >
-            ⟳
-          </button>
-        </div>
-
         <button 
           type="button"
           @click="$emit('close-add')"
@@ -697,7 +657,7 @@
         <button 
           type="button"
           @click="$emit('save-new')"
-          class="min-h-[50px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md whitespace-nowrap"
+          class="min-h-[50px] px-6 rounded-xl border-2 border-car-accent bg-car-accent-bg text-car-accent font-black text-[16px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-md whitespace-nowrap"
         >
           确认保存入账
         </button>
@@ -865,11 +825,11 @@
               </div>
             </div>
 
-            <!-- 第三排：仪表里程专属行 -->
+            <!-- 第三排：仪表里程专属行 (带快速带入按键与实车里程刷新) -->
             <div
               @click="activeField = 'odo'"
               :class="[
-                'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
+                'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm select-none',
                 activeField === 'odo'
                   ? 'border-car-accent bg-car-accent-light'
                   : 'border-car-border bg-car-card hover:border-car-border-light'
@@ -878,17 +838,27 @@
               <div class="flex items-center space-x-2">
                 <span class="text-[15px]">📟</span>
                 <span class="text-[12px] text-car-sub font-bold">记录时仪表总里程:</span>
-                <span class="text-[16px] font-mono font-black text-car-text">
-                  {{ newRecord.odo ? newRecord.odo + ' km' : '未记录' }}
+                <span class="text-[17px] font-mono font-black text-car-text">
+                  {{ newRecord.odo ? newRecord.odo + ' km' : '未记录 (点击小键盘输入)' }}
                 </span>
               </div>
-              <button
-                type="button"
-                @click.stop="applyCurrentOdo(newRecord)"
-                class="min-h-[50px] px-3 rounded-lg border border-car-accent bg-car-item text-car-accent text-[12px] font-bold hover:opacity-90 active:scale-95 transition-all"
-              >
-                带入实车最新里程
-              </button>
+              <div class="flex items-center space-x-2">
+                <button
+                  type="button"
+                  @click.stop="$emit('refresh-odo')"
+                  class="min-h-[50px] px-3 rounded-lg border border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-accent active:scale-95 transition-all text-[12px] font-bold cursor-pointer"
+                  title="重新抓取实车仪表总里程"
+                >
+                  ⟳ 刷新实车
+                </button>
+                <button
+                  type="button"
+                  @click.stop="applyCurrentOdo(newRecord)"
+                  class="min-h-[50px] px-3.5 rounded-lg border-2 border-car-accent bg-car-accent-bg text-car-accent text-[12.5px] font-black hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-sm"
+                >
+                  带入实车最新里程{{ currentOdo > 0 ? ' (' + Math.round(currentOdo) + 'km)' : '' }}
+                </button>
+              </div>
             </div>
 
             <!-- 常用加油金额档位 (纯净标准档位，彻底剔除 250) -->
@@ -910,34 +880,42 @@
               </div>
             </div>
 
-            <!-- 会员常用折扣率快捷选 -->
+            <!-- 会员常用折扣率快捷选与自定义手动输入 -->
             <div class="flex flex-col space-y-1">
               <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
-                <span>会员折扣快捷直选:</span>
-                <span class="text-car-sub/80">自动折算立减金额</span>
+                <span>会员折扣快捷直选 / 手动输入:</span>
+                <span class="text-car-sub/80">点击下方快捷项或手动输入任意折扣</span>
               </div>
-              <div class="grid grid-cols-7 gap-1">
+              <div class="grid grid-cols-8 gap-1">
                 <button
-                  v-for="d in [
-                    { label: '无折扣', val: 10 },
-                    { label: '98折', val: 9.8 },
-                    { label: '95折', val: 9.5 },
-                    { label: '92折', val: 9.2 },
-                    { label: '9折', val: 9.0 },
-                    { label: '88折', val: 8.8 },
-                    { label: '85折', val: 8.5 }
-                  ]"
+                  v-for="d in QUICK_DISCOUNTS"
                   :key="d.val"
                   type="button"
                   @click="onQuickDiscountSelect(newRecord, d.val, 'new')"
                   :class="[
-                    'min-h-[50px] rounded-lg border font-mono text-[12px] font-bold cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
-                    Number(newRecord.discount || 10) === d.val
-                      ? 'border-car-accent bg-car-accent text-car-text'
-                      : 'border-car-border bg-car-item text-car-sub hover:text-car-text'
+                    'min-h-[50px] rounded-lg border-2 font-mono text-[12px] font-bold cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
+                    isQuickDiscountActive(newRecord, d.val)
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
                   {{ d.label }}
+                </button>
+                <button
+                  type="button"
+                  @click="onSelectCustomDiscount(newRecord, 'new')"
+                  :class="[
+                    'min-h-[50px] rounded-lg border-2 text-[12px] cursor-pointer transition-all flex flex-col items-center justify-center shadow-sm select-none px-1',
+                    isCustomDiscountActive(newRecord)
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      : (activeField === 'discount'
+                          ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
+                          : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent')
+                  ]"
+                  title="点击在右侧小键盘手动输入任意折扣数字"
+                >
+                  <span class="font-black">{{ isCustomDiscountActive(newRecord) ? newRecord.discount + '折' : '✏️ 手动' }}</span>
+                  <span class="text-[9.5px] opacity-75">自定义</span>
                 </button>
               </div>
             </div>
@@ -1026,7 +1004,7 @@
               <button 
                 type="button" 
                 @click="activeModalTab = 'fuel'" 
-                class="min-h-[54px] rounded-xl border-2 border-car-accent bg-car-accent text-car-text text-[15px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-md"
+                class="min-h-[54px] rounded-xl border-2 border-car-accent bg-car-accent-light text-car-accent text-[15px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-md hover:opacity-90"
               >
                 油品 ➔
               </button>
@@ -1038,7 +1016,7 @@
               <button 
                 type="button" 
                 @click="$emit('save-new')" 
-                class="px-3 py-1 rounded-lg bg-car-accent text-car-text font-bold text-[12px] hover:opacity-90"
+                class="px-3.5 py-1.5 rounded-lg border-2 border-car-accent bg-car-accent-light text-car-accent font-black text-[12px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-sm"
               >
                 直接入账
               </button>
@@ -1061,8 +1039,8 @@
                   :class="[
                     'min-h-[50px] rounded-xl border-2 font-mono text-[15px] font-black cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     newRecord.fuel_type === f
-                      ? 'border-car-accent bg-car-accent text-car-text'
-                      : 'border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-border-light'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent ring-1 ring-car-accent/30'
+                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
                   {{ f }}
@@ -1087,7 +1065,7 @@
                     <span :class="newRecord.is_full ? 'text-car-accent' : 'text-car-text'" class="text-[14px] font-black">⛽ 跳枪加满</span>
                     <span class="text-[11px] text-car-sub font-bold">精准跳枪基准线</span>
                   </div>
-                  <span :class="newRecord.is_full ? 'bg-car-accent text-car-text' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11px] px-2 py-0.5 rounded-md font-bold">
+                  <span :class="newRecord.is_full ? 'border-2 border-car-accent bg-car-accent-light text-car-accent shadow-sm' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11.5px] px-2.5 py-1 rounded-lg font-black">
                     {{ newRecord.is_full ? '✓ 已标记' : '点此设为' }}
                   </span>
                 </div>
@@ -1105,7 +1083,7 @@
                     <span :class="!newRecord.is_full ? 'text-car-accent' : 'text-car-text'" class="text-[14px] font-black">💧 阶段补油</span>
                     <span class="text-[11px] text-car-sub font-bold">普通日常按金额补充</span>
                   </div>
-                  <span :class="!newRecord.is_full ? 'bg-car-accent text-car-text' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11px] px-2 py-0.5 rounded-md font-bold">
+                  <span :class="!newRecord.is_full ? 'border-2 border-car-accent bg-car-accent-light text-car-accent shadow-sm' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11.5px] px-2.5 py-1 rounded-lg font-black">
                     {{ !newRecord.is_full ? '✓ 已标记' : '点此设为' }}
                   </span>
                 </div>
@@ -1127,8 +1105,8 @@
                   :class="[
                     'min-h-[50px] rounded-xl border-2 font-bold text-[13.5px] cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     newRecord.gas_station === st
-                      ? 'border-car-accent bg-car-accent text-car-text'
-                      : 'border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-border-light'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
                   {{ st }}
@@ -1157,10 +1135,10 @@
                     type="button"
                     @click="onSelectProvince(newRecord, prov, 'new')"
                     :class="[
-                      'w-full min-h-[50px] rounded-xl border text-[13px] font-black cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                      'w-full min-h-[50px] rounded-xl border-2 text-[13px] font-black cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                       newRecord.province === prov
-                        ? 'border-car-accent bg-car-accent text-car-text'
-                        : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
+                        ? 'border-car-accent bg-car-accent-light text-car-accent ring-1 ring-car-accent/30'
+                        : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                     ]"
                   >
                     {{ prov }}
@@ -1206,10 +1184,10 @@
                   type="button"
                   @click="toggleNoteTag(newRecord, tag)"
                   :class="[
-                    'min-h-[50px] rounded-lg border text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    'min-h-[50px] rounded-lg border-2 text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(newRecord, tag)
-                      ? 'border-car-accent bg-car-accent text-car-text'
-                      : 'border-car-border bg-car-card text-car-sub hover:text-car-text hover:border-car-border-light'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
                   {{ isTagSelected(newRecord, tag) ? '✓ ' + tag : tag }}
@@ -1227,10 +1205,10 @@
                   type="button"
                   @click="toggleNoteTag(newRecord, tag)"
                   :class="[
-                    'min-h-[50px] rounded-lg border text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    'min-h-[50px] rounded-lg border-2 text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(newRecord, tag)
-                      ? 'border-car-accent bg-car-accent text-car-text'
-                      : 'border-car-border bg-car-card text-car-sub hover:text-car-text hover:border-car-border-light'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
                   {{ isTagSelected(newRecord, tag) ? '✓ ' + tag : tag }}
@@ -1248,10 +1226,10 @@
                   type="button"
                   @click="toggleNoteTag(newRecord, tag)"
                   :class="[
-                    'min-h-[50px] rounded-lg border text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
+                    'min-h-[50px] rounded-lg border-2 text-[13px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(newRecord, tag)
-                      ? 'border-car-accent bg-car-accent text-car-text'
-                      : 'border-car-border bg-car-card text-car-sub hover:text-car-text hover:border-car-border-light'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
                   {{ isTagSelected(newRecord, tag) ? '✓ ' + tag : tag }}
@@ -1431,6 +1409,41 @@ function onQuickAmountSelect(record, amt, mode) {
   else emit('new-paid-change');
 }
 
+// 会员快捷折扣列表
+const QUICK_DISCOUNTS = [
+  { label: '无折扣', val: 10 },
+  { label: '98折', val: 9.8 },
+  { label: '95折', val: 9.5 },
+  { label: '92折', val: 9.2 },
+  { label: '9折', val: 9.0 },
+  { label: '88折', val: 8.8 },
+  { label: '85折', val: 8.5 }
+];
+
+// 是否属于某个常用快捷折扣
+function isQuickDiscountActive(record, val) {
+  if (!record) return false;
+  const d = Number(record.discount !== undefined && record.discount !== null ? record.discount : 10);
+  return d === val;
+}
+
+// 是否当前是自定义折扣 (即用户手动输入的折扣，不在常用列表且有打折)
+function isCustomDiscountActive(record) {
+  if (!record) return false;
+  const d = Number(record.discount);
+  if (isNaN(d) || d >= 10 || d <= 0) return false;
+  return !QUICK_DISCOUNTS.some(item => item.val === d);
+}
+
+// 激活自定义折扣输入
+function onSelectCustomDiscount(record, mode) {
+  if (!record) return;
+  activeField.value = 'discount';
+  if (Number(record.discount || 10) >= 10) {
+    record.discount = '';
+  }
+}
+
 // 快捷折扣选择
 function onQuickDiscountSelect(record, dVal, mode) {
   if (!record) return;
@@ -1442,6 +1455,31 @@ function onQuickDiscountSelect(record, dVal, mode) {
 function onInputKey(record, char, mode) {
   if (!record) return;
   const f = activeField.value;
+
+  if (f === 'discount') {
+    let curVal = String(record.discount !== undefined && record.discount !== null ? record.discount : '');
+    if (curVal === '10' || curVal === '0') curVal = '';
+    if (char === '.' && curVal.includes('.')) return;
+    if (curVal.includes('.') && curVal.split('.')[1].length >= 1) return;
+
+    let nextStr = curVal + char;
+    let numVal = parseFloat(nextStr) || 0;
+
+    // 智能识别车主输入：如果用户直接按两位整数(如 95、92、88、85、75)，自动识别为 9.5、9.2、8.8、8.5、7.5 折
+    if (nextStr.length === 2 && !nextStr.includes('.') && numVal >= 11 && numVal <= 99) {
+      nextStr = (numVal / 10).toFixed(1);
+      numVal = parseFloat(nextStr);
+    }
+
+    if (numVal > 10) {
+      nextStr = '10';
+      numVal = 10;
+    }
+
+    record.discount = nextStr.endsWith('.') ? nextStr : (numVal || nextStr);
+    handleFieldCalculation(record, 'discount', mode);
+    return;
+  }
 
   if (f === 'total_amount') {
     // 修改原价总额
@@ -1484,6 +1522,18 @@ function onInputKey(record, char, mode) {
 function onBackspace(record, mode) {
   if (!record) return;
   const f = activeField.value;
+
+  if (f === 'discount') {
+    let curVal = String(record.discount !== undefined && record.discount !== null ? record.discount : '');
+    if (curVal.length <= 1) {
+      record.discount = 10;
+    } else {
+      let nextStr = curVal.slice(0, -1);
+      record.discount = nextStr.endsWith('.') ? nextStr : (parseFloat(nextStr) || 10);
+    }
+    handleFieldCalculation(record, 'discount', mode);
+    return;
+  }
 
   if (f === 'total_amount') {
     let curVal = String(getOriginalTotal(record));
@@ -1556,11 +1606,12 @@ function handleFieldCalculation(record, field, mode) {
   let liters = parseFloat(record.liters) || 0;
 
   if (field === 'discount') {
-    // 用户调了折扣率 (如 9.5 折)
-    if (discount > 0 && discount < 10) {
-      const discountRatio = discount / 10.0;
+    // 用户调了折扣率 (如 9.5 折、9.3 折、8.5 折)
+    let dVal = parseFloat(record.discount);
+    if (!isNaN(dVal) && dVal > 0 && dVal < 10) {
+      const discountRatio = dVal / 10.0;
       // 保持当前的原价总值不变，更新实付与立省
-      let total = paid + coupon;
+      let total = getOriginalTotal(record);
       if (total <= 0 && liters > 0 && price > 0) {
         total = liters * price;
       }
@@ -1573,10 +1624,17 @@ function handleFieldCalculation(record, field, mode) {
           record.liters = parseFloat((total / price).toFixed(2));
         }
       }
-    } else {
+    } else if (dVal >= 10) {
       // 恢复 10 折无折扣
       record.discount = 10;
+      let total = getOriginalTotal(record);
+      if (total > 0) {
+        record.actual_paid = total;
+        record.coupon = 0;
+      }
     }
+    if (mode === 'edit') emit('edit-paid-change');
+    else emit('new-paid-change');
   } else if (field === 'coupon') {
     // 用户改动了优惠立减金额 (例如加了 240，优惠了 20，实付应为 220)
     // 保持原价不变: total = paid + (旧券) 或根据当前原价推导

@@ -6,6 +6,16 @@
     maxWidthClass="max-w-[960px]"
     @close="closeModal('about')"
   >
+    <template #header-actions>
+      <!-- 实车屏幕参数紧凑徽章 (纯粹展示非点击按钮，置于右上角关闭按钮左侧) -->
+      <div class="h-[48px] px-3 rounded-xl bg-car-item border border-car-border flex items-center space-x-1.5 text-[13px] text-car-sub shadow-sm select-none">
+        <span class="font-bold text-car-text">实车屏幕:</span>
+        <span class="font-mono font-bold text-car-text">{{ screenInfo.size }}</span>
+        <span class="text-car-border">|</span>
+        <span class="font-mono font-bold text-car-text">{{ screenInfo.dpi }}</span>
+      </div>
+    </template>
+
     <div class="flex flex-col space-y-3.5">
       <!-- 品牌、版本与 5 连击彩蛋区域 (极简精致，高度缩减，释放视口空间) -->
       <div class="py-3.5 px-5 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center shadow-md relative">
@@ -133,31 +143,20 @@
           </button>
         </div>
 
-        <!-- 右侧单行平铺：实车屏幕参数徽章 + 自动检查更新胶囊开关 (严格单行，车规标准 54px 高度对齐，完全不换行) -->
-        <div class="flex items-center space-x-3">
-          <!-- 屏幕参数紧凑徽章 -->
-          <div class="h-[54px] px-4 rounded-xl bg-car-item border-2 border-car-border flex items-center space-x-2 text-[14px] text-car-sub shadow-sm select-none">
-            <span class="font-bold text-car-text">实车屏幕:</span>
-            <span class="font-mono font-bold text-car-text">{{ screenInfo.size }}</span>
-            <span class="text-car-border">|</span>
-            <span class="font-mono font-bold text-car-text">{{ screenInfo.dpi }}</span>
-          </div>
-
-          <!-- 自动检查更新开关胶囊 -->
-          <button 
-            @click="toggleAutoCheckUpdate"
-            :class="[
-              'h-[54px] px-4 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all shadow-sm flex items-center space-x-2 select-none',
-              autoCheckUpdateEnabled 
-                ? 'bg-car-item border-car-accent text-car-accent' 
-                : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
-            ]"
-            title="点击切换是否自动检测更新"
-          >
-            <StatusDot size="xs" :color="autoCheckUpdateEnabled ? 'success' : 'neutral'" class="mr-0.5" />
-            <span>自动检查更新: <b>{{ autoCheckUpdateEnabled ? '开启' : '关闭' }}</b></span>
-          </button>
-        </div>
+        <!-- 右侧操作项：自动检查更新胶囊开关 (车规标准 54px 高度对齐) -->
+        <button 
+          @click="toggleAutoCheckUpdate"
+          :class="[
+            'h-[54px] px-4 rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all shadow-sm flex items-center space-x-2 select-none',
+            autoCheckUpdateEnabled 
+              ? 'bg-car-item border-car-accent text-car-accent' 
+              : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light'
+          ]"
+          title="点击切换是否自动检测更新"
+        >
+          <StatusDot size="xs" :color="autoCheckUpdateEnabled ? 'success' : 'neutral'" class="mr-0.5" />
+          <span>自动检查更新: <b>{{ autoCheckUpdateEnabled ? '开启' : '关闭' }}</b></span>
+        </button>
       </div>
     </template>
   </ModalWrapper>
