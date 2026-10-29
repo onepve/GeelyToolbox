@@ -361,6 +361,9 @@ export function showToast(msg, kind = 'info') {
     store.toast.show = false;
   }, 2200);
 }
+if (typeof window !== 'undefined') {
+  window.showToast = showToast;
+}
 
 export function initOilPersistentSettings() {
   try {

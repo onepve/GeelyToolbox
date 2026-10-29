@@ -44,17 +44,6 @@
         <span class="text-[13px] font-bold text-car-sub mt-1">生成 .xtz 文件保存至 Download，可直接分享给其他车友</span>
       </button>
     </div>
-
-    <template #footer>
-      <div class="flex items-center justify-end w-full">
-        <button
-          @click="handleClose"
-          class="min-h-[50px] px-8 rounded-xl bg-car-item border border-car-border text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light transition-all"
-        >
-          关闭
-        </button>
-      </div>
-    </template>
   </ModalWrapper>
 </template>
 

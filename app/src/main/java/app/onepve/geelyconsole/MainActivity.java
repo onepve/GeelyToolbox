@@ -663,10 +663,22 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     }
 
     public void showToast(final String msg) {
+        showToast(msg, "info");
+    }
+
+    public void showToast(final String msg, final String kind) {
         if (isFinishing()) return;
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
+                if (webView != null) {
+                    try {
+                        String k = (kind != null) ? kind : "info";
+                        String script = "if(window.showToast){window.showToast(" + org.json.JSONObject.quote(msg) + ",'" + k + "');}";
+                        webView.evaluateJavascript(script, null);
+                        return;
+                    } catch (Exception ignored) {}
+                }
                 Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
             }
         });
@@ -980,7 +992,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(MainActivity.this, "处理所选文件失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            showToast("处理所选文件失败: " + e.getMessage(), "error");
                         }
                     });
                 }
@@ -989,12 +1001,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     }
 
     private void handleSelectedApkForExport(final Uri uri) {
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(MainActivity.this, "正在读取安装包，请稍候...", Toast.LENGTH_SHORT).show();
-            }
-        });
+        showToast("正在读取安装包，请稍候...", "info");
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -1019,34 +1026,19 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         PackageInfo pi = pm.getPackageArchiveInfo(tempApk.getAbsolutePath(), 0);
                         if (pi != null && pi.packageName != null) {
                             if (isDangerousSystemPackage(pi.packageName) || isProtectedCriticalPackage(pi.packageName)) {
-                                mainHandler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(MainActivity.this, "【安全拦截】该 APK 为系统核心组件，禁止打包！", Toast.LENGTH_LONG).show();
-                                    }
-                                });
+                                showToast("【安全拦截】该 APK 为系统核心组件，禁止打包！", "warn");
                                 return;
                             }
                         }
                     } catch (Exception ignored) {}
 
                     // 3. 生成提示
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(MainActivity.this, "正在打包生成兔子主题包，请稍候...", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                    showToast("正在打包生成兔子主题包，请稍候...", "info");
 
                     // 4. 打包并校验
                     final File stagedXtz = ThemePatcher.buildRabbitThemeToTemp(MainActivity.this, tempApk);
                     if (stagedXtz == null || !stagedXtz.exists()) {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(MainActivity.this, "主题包打包失败，请检查机身存储权限！", Toast.LENGTH_LONG).show();
-                            }
-                        });
+                        showToast("主题包打包失败，请检查机身存储权限！", "error");
                         return;
                     }
 
@@ -1078,28 +1070,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         stagedXtz.delete();
                         moved = outXtz.exists() && outXtz.length() > 0;
                     }
-                    final boolean success = moved;
-                    final File finalOut = outXtz;
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (success) {
-                                Toast.makeText(MainActivity.this,
-                                        "主题包已导出到下载目录：\nclock.rabbit." + finalBaseName + ".xtz\n可直接分享给其他车友使用！",
-                                        Toast.LENGTH_LONG).show();
-                            } else {
-                                Toast.makeText(MainActivity.this, "主题包写入下载目录失败，请检查存储权限！", Toast.LENGTH_LONG).show();
-                            }
-                        }
-                    });
-                } catch (Exception e) {
-                    final String err = e.getMessage();
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(MainActivity.this, "导出失败：" + err, Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                    if (moved) {
+                        showToast("主题包已导出至 Download 目录：clock.rabbit." + finalBaseName + ".xtz", "success");
+                    } else {
+                        showToast("主题包写入下载目录失败，请检查存储权限！", "error");
+                    }
+                } catch (final Exception e) {
+                    showToast("导出失败：" + e.getMessage(), "error");
                 }
             }
         }).start();
@@ -3901,13 +3878,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public void showToast(String msg) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
-                }
-            });
+        public void showToast(final String msg) {
+            MainActivity.this.showToast(msg, "info");
+        }
+
+        @JavascriptInterface
+        public void showToast(final String msg, final String kind) {
+            MainActivity.this.showToast(msg, kind);
         }
 
         @JavascriptInterface
