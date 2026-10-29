@@ -126,6 +126,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
     };
 
+    private String pendingExportOutputName;
+    private String pendingExportStagedPath;
+
     private final BroadcastReceiver networkChangeReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -684,6 +687,19 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         });
     }
 
+    private void pushRabbitProgress(final org.json.JSONObject data) {
+        if (isFinishing() || webView == null) return;
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    webView.evaluateJavascript(
+                        "if(window.updateRabbitProgress){window.updateRabbitProgress(" + data.toString() + ");}", null);
+                } catch (Exception ignored) {}
+            }
+        });
+    }
+
     private void checkAndRequestStoragePermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
@@ -942,10 +958,28 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     }
 
     private void handleSelectedApkForRabbit(final Uri uri) {
+        // 打开进度弹窗（inject 模式）
+        try {
+            org.json.JSONObject init = new org.json.JSONObject();
+            init.put("show", true);
+            init.put("mode", "inject");
+            init.put("step", 0);
+            init.put("progress", 0);
+            init.put("stepMsg", "正在读取安装包...");
+            init.put("done", false);
+            init.put("error", false);
+            init.put("showNaming", false);
+            init.put("showOverwrite", false);
+            init.put("themeCenterLaunched", false);
+            pushRabbitProgress(init);
+        } catch (Exception ignored) {}
+
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
+                    // Step 1: 读取 APK
+                    updateRabbitStep(1, 10, "正在读取安装包...");
                     File tempApk = new File(getCacheDir(), "selected_inject.apk");
                     InputStream is = getContentResolver().openInputStream(uri);
                     FileOutputStream fos = new FileOutputStream(tempApk);
@@ -959,54 +993,111 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
                     fos.close();
 
-                    // 1. 系统核心组件永久硬拦截：无论是否开启安全模式，坚决禁止替换系统设置与核心服务
-                    String pkg = null;
+                    // Step 2: 安全校验
+                    updateRabbitStep(2, 30, "正在执行核心系统防砖安全校验...");
+                    final String pkgName;
+                    String detectedPkg = null;
                     try {
                         PackageManager pm = getPackageManager();
                         PackageInfo pi = pm.getPackageArchiveInfo(tempApk.getAbsolutePath(), 0);
                         if (pi != null && pi.packageName != null) {
-                            pkg = pi.packageName;
-                            if (isDangerousSystemPackage(pkg) || isProtectedCriticalPackage(pkg)) {
-                                mainHandler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        showToast("【安全拦截】检测到该 APK 为系统核心组件，禁止伪装注入！");
-                                    }
-                                });
-                                return;
-                            }
+                            detectedPkg = pi.packageName;
                         }
                     } catch (Exception ignored) {}
+                    pkgName = detectedPkg;
+                    if (pkgName != null && (isDangerousSystemPackage(pkgName) || isProtectedCriticalPackage(pkgName))) {
+                        updateRabbitError("【安全拦截】该 APK 为系统核心组件，禁止注入！");
+                        return;
+                    }
 
-                    // 2. 接入 AutoPilotManager 30秒延迟覆盖流程：
-                    //    先生成临时伪装文件，等车主打开主题中心停在兔子时钟详情页后，
-                    //    30秒定时器到期再原子替换，防止主题中心自愈覆写。
-                    final File finalTempApk = tempApk;
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            AutoPilotManager.getInstance().startAutoInject(MainActivity.this, finalTempApk);
-                        }
-                    });
-                } catch (Exception e) {
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            showToast("处理所选文件失败: " + e.getMessage(), "error");
-                        }
-                    });
+                    // Step 3: 伪装打包
+                    updateRabbitStep(3, 55, "正在伪装打包成兔子时钟主题...");
+                    // 直接构建临时主题（不走 AutoPilotManager，由本方法控制节奏）
+                    final File stagedXtz = ThemePatcher.buildRabbitThemeToTemp(MainActivity.this, tempApk);
+                    if (stagedXtz == null || !stagedXtz.exists()) {
+                        updateRabbitError("主题包打包失败，请检查机身存储权限！");
+                        return;
+                    }
+
+                    // Step 4: 完整性校验
+                    updateRabbitStep(4, 85, "正在校验主题包完整性...");
+                    if (!ThemePatcher.verifyRabbitThemeZip(stagedXtz, tempApk.length())) {
+                        stagedXtz.delete();
+                        updateRabbitError("主题包完整性校验失败，已自动清理，请重试！");
+                        return;
+                    }
+
+                    // 完成：等用户点击「前往主题中心」
+                    updateRabbitDone("inject", null);
+
+                } catch (final Exception e) {
+                    updateRabbitError("处理所选文件失败: " + e.getMessage());
                 }
             }
         }).start();
     }
 
+    private void updateRabbitStep(int step, int progress, String msg) {
+        try {
+            org.json.JSONObject d = new org.json.JSONObject();
+            d.put("step", step);
+            d.put("progress", progress);
+            d.put("stepMsg", msg);
+            pushRabbitProgress(d);
+        } catch (Exception ignored) {}
+    }
+
+    private void updateRabbitDone(String mode, String outputName) {
+        try {
+            org.json.JSONObject d = new org.json.JSONObject();
+            d.put("step", 4);
+            d.put("progress", 100);
+            d.put("stepMsg", "全部完成！");
+            d.put("done", true);
+            if (outputName != null) d.put("outputName", outputName);
+            pushRabbitProgress(d);
+        } catch (Exception ignored) {}
+    }
+
+    private void updateRabbitError(String msg) {
+        try {
+            org.json.JSONObject d = new org.json.JSONObject();
+            d.put("error", true);
+            d.put("errorMsg", msg);
+            d.put("stepMsg", "操作失败");
+            pushRabbitProgress(d);
+        } catch (Exception ignored) {}
+    }
+        }).start();
+    }
+
     private void handleSelectedApkForExport(final Uri uri) {
-        showToast("正在读取安装包，请稍候...", "info");
+        // 先打开进度弹窗（export 模式，显示命名配置）
+        try {
+            org.json.JSONObject init = new org.json.JSONObject();
+            init.put("show", true);
+            init.put("mode", "export");
+            init.put("step", 0);
+            init.put("progress", 0);
+            init.put("stepMsg", "正在读取安装包...");
+            init.put("done", false);
+            init.put("error", false);
+            init.put("showNaming", false);
+            init.put("showOverwrite", false);
+            init.put("apkLabel", "");
+            init.put("apkPkg", "");
+            init.put("nameMode", "standard");
+            init.put("nameLang", "cn");
+            init.put("outputName", "clock.rabbit.xtz");
+            pushRabbitProgress(init);
+        } catch (Exception ignored) {}
+
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    // 1. 缓存 APK
+                    // Step 1: 读取 APK
+                    updateRabbitStep(1, 10, "正在读取安装包...");
                     File tempApk = new File(getCacheDir(), "export_source.apk");
                     InputStream is = getContentResolver().openInputStream(uri);
                     FileOutputStream fos = new FileOutputStream(tempApk);
@@ -1020,66 +1111,71 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
                     fos.close();
 
-                    // 2. 防砖拦截
+                    // Step 2: 安全校验 + 解析应用信息
+                    updateRabbitStep(2, 30, "正在解析应用信息...");
+                    String label = "";
+                    String pkg = "";
                     try {
                         PackageManager pm = getPackageManager();
                         PackageInfo pi = pm.getPackageArchiveInfo(tempApk.getAbsolutePath(), 0);
                         if (pi != null && pi.packageName != null) {
-                            if (isDangerousSystemPackage(pi.packageName) || isProtectedCriticalPackage(pi.packageName)) {
-                                showToast("【安全拦截】该 APK 为系统核心组件，禁止打包！", "warn");
+                            pkg = pi.packageName;
+                            if (isDangerousSystemPackage(pkg) || isProtectedCriticalPackage(pkg)) {
+                                updateRabbitError("【安全拦截】该 APK 为系统核心组件，禁止打包！");
                                 return;
                             }
-                        }
-                    } catch (Exception ignored) {}
-
-                    // 3. 生成提示
-                    showToast("正在打包生成兔子主题包，请稍候...", "info");
-
-                    // 4. 打包并校验
-                    final File stagedXtz = ThemePatcher.buildRabbitThemeToTemp(MainActivity.this, tempApk);
-                    if (stagedXtz == null || !stagedXtz.exists()) {
-                        showToast("主题包打包失败，请检查机身存储权限！", "error");
-                        return;
-                    }
-
-                    // 5. 输出到 Download 目录，文件名含 APK 名前缀方便识别
-                    String baseName = tempApk.getName().replace(".apk", "");
-                    try {
-                        PackageManager pm = getPackageManager();
-                        PackageInfo pi = pm.getPackageArchiveInfo(tempApk.getAbsolutePath(), 0);
-                        if (pi != null && pi.packageName != null) {
-                            baseName = pi.packageName;
-                        }
-                    } catch (Exception ignored) {}
-                    final String finalBaseName = baseName;
-                    File downloadDir = new File(android.os.Environment.getExternalStorageDirectory(), "Download");
-                    if (!downloadDir.exists()) downloadDir.mkdirs();
-                    File outXtz = new File(downloadDir, "clock.rabbit." + finalBaseName + ".xtz");
-                    if (outXtz.exists()) outXtz.delete();
-                    boolean moved = stagedXtz.renameTo(outXtz);
-                    if (!moved) {
-                        // 跨分区 fallback：流式复制
-                        try (java.io.FileInputStream fin = new java.io.FileInputStream(stagedXtz);
-                             java.io.FileOutputStream fout = new java.io.FileOutputStream(outXtz)) {
-                            byte[] cbuf = new byte[64 * 1024];
-                            int cr;
-                            while ((cr = fin.read(cbuf)) != -1) {
-                                fout.write(cbuf, 0, cr);
+                            // 读取中文标签
+                            if (pi.applicationInfo != null) {
+                                pi.applicationInfo.sourceDir = tempApk.getAbsolutePath();
+                                pi.applicationInfo.publicSourceDir = tempApk.getAbsolutePath();
+                                CharSequence cs = pi.applicationInfo.loadLabel(pm);
+                                if (cs != null) label = cs.toString();
                             }
                         }
-                        stagedXtz.delete();
-                        moved = outXtz.exists() && outXtz.length() > 0;
-                    }
-                    if (moved) {
-                        showToast("主题包已导出至 Download 目录：clock.rabbit." + finalBaseName + ".xtz", "success");
-                    } else {
-                        showToast("主题包写入下载目录失败，请检查存储权限！", "error");
-                    }
+                    } catch (Exception ignored) {}
+
+                    // 推送应用信息到前端，展示命名配置面板
+                    try {
+                        org.json.JSONObject info = new org.json.JSONObject();
+                        info.put("apkLabel", label);
+                        info.put("apkPkg", pkg);
+                        info.put("showNaming", true);
+                        info.put("stepMsg", "请选择输出文件名格式");
+                        pushRabbitProgress(info);
+                    } catch (Exception ignored) {}
+
+                    // 暂存 tempApk 路径，等 confirmRabbitExport 回调继续
+                    pendingExportStagedPath = tempApk.getAbsolutePath();
+
                 } catch (final Exception e) {
-                    showToast("导出失败：" + e.getMessage(), "error");
+                    updateRabbitError("处理所选文件失败: " + e.getMessage());
                 }
             }
         }).start();
+    }
+
+    private void finishExport(File stagedXtz, File outXtz) {
+        boolean moved = stagedXtz.renameTo(outXtz);
+        if (!moved) {
+            try (java.io.FileInputStream fin = new java.io.FileInputStream(stagedXtz);
+                 java.io.FileOutputStream fout = new java.io.FileOutputStream(outXtz)) {
+                byte[] cbuf = new byte[64 * 1024];
+                int cr;
+                while ((cr = fin.read(cbuf)) != -1) {
+                    fout.write(cbuf, 0, cr);
+                }
+            } catch (Exception e) {
+                updateRabbitError("写入下载目录失败：" + e.getMessage());
+                return;
+            }
+            stagedXtz.delete();
+            moved = outXtz.exists() && outXtz.length() > 0;
+        }
+        if (moved) {
+            updateRabbitDone("export", outXtz.getName());
+        } else {
+            updateRabbitError("主题包写入下载目录失败，请检查存储权限！");
+        }
     }
 
     // WebServer Callbacks
@@ -1853,6 +1949,95 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     } catch (Exception e) {
                         Toast.makeText(context, "打开文件选择器失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void confirmRabbitExport(final String outputName) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        File tempApk = new File(pendingExportStagedPath != null ? pendingExportStagedPath : "");
+                        if (!tempApk.exists()) {
+                            updateRabbitError("安装包缓存已失效，请重新选择！");
+                            return;
+                        }
+                        pendingExportOutputName = outputName;
+
+                        // Step 3: 打包
+                        updateRabbitStep(3, 55, "正在伪装打包成兔子时钟主题...");
+                        File stagedXtz = ThemePatcher.buildRabbitThemeToTemp(MainActivity.this, tempApk);
+                        if (stagedXtz == null || !stagedXtz.exists()) {
+                            updateRabbitError("主题包打包失败，请检查机身存储权限！");
+                            return;
+                        }
+
+                        // Step 4: 校验
+                        updateRabbitStep(4, 85, "正在校验主题包完整性...");
+                        if (!ThemePatcher.verifyRabbitThemeZip(stagedXtz, tempApk.length())) {
+                            stagedXtz.delete();
+                            updateRabbitError("主题包完整性校验失败，已自动清理，请重试！");
+                            return;
+                        }
+
+                        // 检查目标文件是否已存在
+                        File downloadDir = new File(android.os.Environment.getExternalStorageDirectory(), "Download");
+                        if (!downloadDir.exists()) downloadDir.mkdirs();
+                        File outXtz = new File(downloadDir, outputName);
+                        if (outXtz.exists()) {
+                            // 推送覆盖确认到前端
+                            try {
+                                org.json.JSONObject d = new org.json.JSONObject();
+                                d.put("showOverwrite", true);
+                                d.put("outputName", outputName);
+                                pushRabbitProgress(d);
+                            } catch (Exception ignored) {}
+                            // 暂存 stagedXtz 路径，等 confirmRabbitExportOverwrite 回调
+                            pendingExportStagedPath = stagedXtz.getAbsolutePath();
+                            return;
+                        }
+
+                        // 无冲突，直接写入
+                        finishExport(stagedXtz, outXtz);
+
+                    } catch (Exception e) {
+                        updateRabbitError("导出失败：" + e.getMessage());
+                    }
+                }
+            }).start();
+        }
+
+        @JavascriptInterface
+        public void confirmRabbitExportOverwrite() {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        File stagedXtz = new File(pendingExportStagedPath != null ? pendingExportStagedPath : "");
+                        if (!stagedXtz.exists()) {
+                            updateRabbitError("临时主题包已失效，请重新操作！");
+                            return;
+                        }
+                        File downloadDir = new File(android.os.Environment.getExternalStorageDirectory(), "Download");
+                        File outXtz = new File(downloadDir, pendingExportOutputName != null ? pendingExportOutputName : "clock.rabbit.xtz");
+                        if (outXtz.exists()) outXtz.delete();
+                        finishExport(stagedXtz, outXtz);
+                    } catch (Exception e) {
+                        updateRabbitError("覆盖导出失败：" + e.getMessage());
+                    }
+                }
+            }).start();
+        }
+
+        @JavascriptInterface
+        public void launchThemeCenterForRabbit() {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    // 调起主题中心并启动 30 秒延迟替换
+                    AutoPilotManager.getInstance().scheduleThemeCenterAndCommit(MainActivity.this);
                 }
             });
         }

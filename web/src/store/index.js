@@ -94,6 +94,24 @@ export const store = reactive({
     mode: 'night'
   },
   toast: { show: false, msg: '', kind: 'info' },
+  rabbitProgress: {
+    show: false,
+    mode: 'export',       // 'inject' | 'export'
+    step: 0,              // 0..4
+    stepMsg: '',
+    progress: 0,          // 0..100
+    done: false,
+    error: false,
+    errorMsg: '',
+    apkLabel: '',
+    apkPkg: '',
+    nameMode: 'standard', // 'standard' | 'left' | 'right'
+    nameLang: 'cn',       // 'cn' | 'pkg'
+    outputName: '',
+    showNaming: false,
+    showOverwrite: false,
+    themeCenterLaunched: false
+  },
   
   // 顶栏状态
   isTester: (() => {
@@ -363,6 +381,13 @@ export function showToast(msg, kind = 'info') {
 }
 if (typeof window !== 'undefined') {
   window.showToast = showToast;
+  window.updateRabbitProgress = function(obj) {
+    if (typeof obj === 'object' && obj !== null) {
+      Object.keys(obj).forEach(function(k) {
+        store.rabbitProgress[k] = obj[k];
+      });
+    }
+  };
 }
 
 export function initOilPersistentSettings() {

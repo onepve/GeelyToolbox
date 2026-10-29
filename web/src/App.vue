@@ -50,6 +50,7 @@
     <AppDetailModal />
     <ConfirmModal />
     <RabbitInstallModal />
+    <RabbitProgressModal />
     <UpdateModal />
     <LogModal />
     <VoiceItemSettingsModal />
@@ -149,6 +150,7 @@ import DialerModal from './components/modals/DialerModal.vue';
 import AppDetailModal from './components/modals/AppDetailModal.vue';
 import ConfirmModal from './components/modals/ConfirmModal.vue';
 import RabbitInstallModal from './components/modals/RabbitInstallModal.vue';
+import RabbitProgressModal from './components/modals/RabbitProgressModal.vue';
 import UpdateModal from './components/modals/UpdateModal.vue';
 import LogModal from './components/modals/LogModal.vue';
 import VoiceItemSettingsModal from './components/modals/VoiceItemSettingsModal.vue';

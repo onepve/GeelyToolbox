@@ -110,6 +110,61 @@ public class AutoPilotManager {
         workerThread.start();
     }
 
+    /**
+     * 供 MainActivity 的进度弹窗按钮调起：
+     * 临时主题包已由 MainActivity 提前打包好（clock.rabbit.xtz.tmp），
+     * 此方法只负责：调起主题中心 + 30秒后提交替换。
+     */
+    public synchronized void scheduleThemeCenterAndCommit(final Context context) {
+        if (isRunning) {
+            Toast.makeText(context, "半自动向导已在运行中...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        isRunning = true;
+        isCancelled = false;
+        ensureOverlayPermission(context);
+
+        final File stagedXtz = new File(
+            android.os.Environment.getExternalStorageDirectory(), "XUI/theme/clock.rabbit.xtz.tmp");
+        if (!stagedXtz.exists() || stagedXtz.length() < 10 * 1024) {
+            isRunning = false;
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(context, "临时主题包不存在，请重新操作！", Toast.LENGTH_LONG).show();
+                }
+            });
+            return;
+        }
+
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (isCancelled) { isRunning = false; return; }
+                boolean opened = ThemePatcher.openRabbitThemeSetting(context);
+                if (!opened) {
+                    Toast.makeText(context, "【向导已启动】请在 30 秒内打开主题中心，进入【屏保时钟 ➔ 兔子时钟】等待...", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(context, "【向导已启动】请在 30 秒内进入【屏保时钟 ➔ 兔子时钟】等待...", Toast.LENGTH_LONG).show();
+                }
+
+                delayedCommitRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        if (isCancelled) { isRunning = false; return; }
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                executeDelayedCommit(context, stagedXtz, null);
+                            }
+                        }).start();
+                    }
+                };
+                mainHandler.postDelayed(delayedCommitRunnable, 30000);
+            }
+        });
+    }
+
     public synchronized void cancel(Context context) {
         isCancelled = true;
         isRunning = false;
