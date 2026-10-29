@@ -63,7 +63,7 @@ CARD_BUTTON_CONTRACTS = [
         "private void triggerMusicAutoplay",
         [r"sendMediaKeyEventPublic\(KeyEvent\.KEYCODE_MEDIA_NEXT\)", r"sendExplicitMediaButtonToPackage"],
         [],
-        "b4b6e7eb411ecc440836e304144dfe5b14a56e0c56041bfd0241f70b21c541f9",
+        "667d4d3a52c8376079af93bf719b7c9329e0f3069d0d81e35a45da162852c989",
     ),
     (
         "车身联动卡片", "主驾车门开关联动 (door_fl)",

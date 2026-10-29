@@ -2302,22 +2302,26 @@ public class VehicleAutomationService extends Service {
         SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
         // 核心互斥守卫 0：若当前处于电话通话或 VoIP 通话（微信语音/QQ语音等），绝不自启音乐打扰通话
         if (VehicleVoicePlayer.isInPhoneCall(this)) {
-            AppLogger.i("车身联动", "车速达到阈值，但系统正处于通话中 (蓝牙电话/微信/QQ语音)，静默跳过音乐自启");
+            AppLogger.i("车身联动", "车速达到阈值，但系统正处于通话中 (蓝牙电话/微信/QQ语音)，静默跳过音乐自启，已挂载阶梯重试待通话结束后补播");
+            scheduleMusicRetryLadderForTransientSkip(pkg);
             return;
         }
         // 用户主动暂停守卫：仅当处于用户主动暂停抑制窗口内（8秒内）才跳过，绝不能被历史标记永久阻断起步放歌
         if (EasMediaBridge.getInstance(this).isAutoWakeSuppressed()) {
-            AppLogger.i("车身联动", "车速达到阈值，但处于用户主动暂停抑制窗口内，跳过自动播放（尊重用户暂停意图）");
+            AppLogger.i("车身联动", "车速达到阈值，但处于用户主动暂停抑制窗口内，跳过自动播放（尊重用户暂停意图），已挂载阶梯重试待意图窗口结束后补播");
+            scheduleMusicRetryLadderForTransientSkip(pkg);
             return;
         }
         // 核心互斥守卫 1：若当前系统已有任意媒体在播放，绝对不重复触发，静默放行防冲突
         if (isAnyMediaPlaying()) {
-            AppLogger.i("车身联动", "车速达到阈值，但系统已有媒体在播放中，静默跳过自启防冲突");
+            AppLogger.i("车身联动", "车速达到阈值，但系统已有媒体在播放中，静默跳过自启防冲突，已挂载阶梯重试待瞬态媒体结束后补播");
+            scheduleMusicRetryLadderForTransientSkip(pkg);
             return;
         }
         // 核心互斥守卫 2：若手机蓝牙当前正处于推流播放态，绝不自启车机本地媒体，坚决杜绝双音并发
         if (EasMediaBridge.getInstance(this).isA2dpStreaming()) {
-            AppLogger.i("车身联动", "车速达到阈值，手机蓝牙音频正在推流播放中，跳过车机本地音乐自启");
+            AppLogger.i("车身联动", "车速达到阈值，手机蓝牙音频正在推流播放中，跳过车机本地音乐自启，已挂载阶梯重试待手机推流结束后补播");
+            scheduleMusicRetryLadderForTransientSkip(pkg);
             return;
         }
         if (isTargetMediaPlaying(pkg)) {
@@ -2426,6 +2430,18 @@ public class VehicleAutomationService extends Service {
         }, 1500);
 
         // 核心架构：落地 3 次阶梯重试 (30s / 60s / 90s) 与出声熔断闭锁
+        scheduleMusicRetryLadder(pkg);
+    }
+
+    /**
+     * 音乐起播阶梯重试调度器 (30s/60s/90s 三级兜底 + 四重熔断守卫)。
+     * 「确认出声后才算完成」语义：任何未确认目标音源出声的提前退出
+     * (通话中/用户暂停抑制窗口/瞬态媒体残响/手机蓝牙瞬态推流抢占) 均可挂载本阶梯，
+     * 由重试时刻的挡位/手动暂停/通话/出声四重熔断守卫自动裁决补播或熔断，
+     * 彻底根除「达标瞬间被蓝牙残响抢占空跳过后、整段行程静音」的竞态缺陷。
+     */
+    private void scheduleMusicRetryLadder(final String pkg) {
+        if (pkg == null || pkg.isEmpty()) return;
         cancelPendingMusicRetries("发起新一轮车速达标唤醒");
         long[] retryDelays = new long[] { 30000L, 60000L, 90000L };
         for (int i = 0; i < retryDelays.length; i++) {
@@ -2474,6 +2490,16 @@ public class VehicleAutomationService extends Service {
             }
             mainHandler.postDelayed(retryRunnable, delayMs);
         }
+    }
+
+    /**
+     * 瞬态跳过分支专用阶梯重试挂载：仅对车机本地音源生效。
+     * 目标为手机蓝牙 (com.android.bluetooth) 时无需补播 (推流即目标本身)，直接跳过。
+     */
+    private void scheduleMusicRetryLadderForTransientSkip(String pkg) {
+        if (pkg == null || pkg.isEmpty()) return;
+        if ("com.android.bluetooth".equals(pkg)) return;
+        scheduleMusicRetryLadder(pkg);
     }
 
     /**
