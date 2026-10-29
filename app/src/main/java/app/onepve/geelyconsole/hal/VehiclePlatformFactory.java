@@ -114,4 +114,32 @@ public class VehiclePlatformFactory {
         Log.i(TAG, "Fallback to Generic AOSP Vehicle Platform");
         return new GenericAospPlatform();
     }
+
+    /**
+     * 车型代号 → 车型名称 预注册表（公开资料层：仅做显示名映射，不做任何修补逻辑）
+     *
+     * 数据来源：吉利官网 URL 直用代号（dh.geely.com/SS13）、工信部申报与媒体公开曝光。
+     * 铁律：本表只负责「装了助手的车机配对成功后正确显示车名」；
+     * 任何车型专属修补逻辑（挡位仲裁、按键映射等）必须等实车日志嗅探转正后
+     * 在 hal/platform/ 建独立专属平台类，严禁凭网络资料臆造修补。
+     * 未命中的车型一律回落基准兜底（宁缺勿猜）。
+     */
+    public static String resolveModelDisplayName(String modelCode) {
+        if (modelCode == null) return "未知车型";
+        String code = modelCode.toUpperCase();
+        if (code.contains("SX11")) return "缤越/缤越COOL";
+        if (code.contains("FE6A")) return "缤瑞COOL";
+        if (code.contains("SS13")) return "帝豪L HiP";
+        if (code.contains("SS11")) return "第四代帝豪";
+        if (code.contains("SS12")) return "帝豪L";
+        if (code.contains("FX11")) return "博越/博越L";
+        if (code.contains("NL4")) return "新博越";
+        if (code.contains("NL3")) return "博越PRO";
+        if (code.contains("GS11")) return "帝豪GS";
+        if (code.contains("GE11")) return "帝豪EV/新能源";
+        if (code.contains("VX11")) return "星越L";
+        if (code.contains("FS11")) return "星瑞";
+        if (code.contains("SX12")) return "缤越L/新缤越";
+        return "未知车型";
+    }
 }

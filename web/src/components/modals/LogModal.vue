@@ -207,7 +207,7 @@
         </div>
       </div>
 
-      <!-- 阶段 3：上传成功，展示 8 位纯数字车机日志识别码与新车型适配赞赏支持 -->
+      <!-- 阶段 3：上传成功，展示云端生成的车机日志识别码与新车型适配赞赏支持 -->
       <div v-else-if="uploadStatus === 'success'" class="py-3 flex flex-col items-center select-none w-full">
         <!-- 左右两列排开：左侧日志识别码与指引，右侧赞赏码与车型适配支持 -->
         <div class="grid grid-cols-2 gap-4 w-full">
@@ -223,7 +223,7 @@
               </div>
 
               <div class="p-4 rounded-xl bg-car-card border border-car-border/60 text-center mb-3">
-                <div class="text-[12px] font-bold text-car-sub uppercase tracking-wider mb-0.5">专属 8 位车机日志识别码</div>
+                <div class="text-[12px] font-bold text-car-sub uppercase tracking-wider mb-0.5">专属车机日志识别码</div>
                 <div class="text-[34px] font-mono font-black text-emerald-400 tracking-[0.18em]">
                   {{ extractedCode }}
                 </div>
@@ -262,7 +262,7 @@
 
             <div class="w-full text-center space-y-1 mt-2">
               <div class="text-[12.5px] font-bold text-car-accent">
-                微信扫码赞赏 · 备注您的 8 位识别码与车型
+                微信扫码赞赏 · 备注您的识别码与车型
               </div>
               <p class="text-[11.5px] text-car-sub leading-normal px-2">
                 可扫码赞赏作者以<strong>加速在现有功能上排查修复车型不适配 Bug</strong>（请在备注中留下识别码与诉求）；同时说明：部分车型若受<strong>硬件物理隔离或原厂协议限制确实不支持</strong>，则客观上无法实现修复，敬请车友理解。

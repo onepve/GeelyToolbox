@@ -180,6 +180,12 @@ export function applyTheme() {
   root.setAttribute('data-palette', palette);
   root.setAttribute('data-mode', mode);
   store.isNight = mode === 'night';
+  // 同步当前主题强调色至原生侧（桌面小组件等原生组件动态着色单一真源）
+  try {
+    if (window.ToolboxBridge && typeof window.ToolboxBridge.syncTheme === 'function') {
+      window.ToolboxBridge.syncTheme(vars['--accent-gold'] || '#58c4ff');
+    }
+  } catch (e) { /* Bridge 不可用时静默降级，原生侧使用出厂默认主题色 */ }
   // 兼容旧 .light 机制（部分组件仍按 html.light 判定）
   if (mode === 'day') {
     root.classList.add('light');

@@ -2515,9 +2515,11 @@ public class SystemUtils {
 
     /**
      * 免密上传诊断日志到 Cloudflare 专属私有存储库（R2）：
-     * 1. 严格使用单层下划线文件流命名：芯片_车型_VIN后6位_14位年月日时分秒_8位纯数字提取码.zip
+     * 1. 文件流命名：芯片_车型_VIN后6位_时间戳_提取码.zip
+     *   （提取码由云端统一下发，长度对 App 透明：云端改码长无需再动助手）
      * 2. 本地物理文件保持唯一不改名、不产生垃圾冗余
      * 3. 存储库 100% 纯私有，公网禁止直接访问，30天后全自动彻底销毁
+     * 4. 云端准入：非车机设备（芯片代号非 IHU/ECARX 系）自动分流独立目录，不与车机日志混放
      */
     public static JSONObject uploadDiagnosticLog(Context context, String filePath) {
         return uploadDiagnosticLog(context, filePath, null);

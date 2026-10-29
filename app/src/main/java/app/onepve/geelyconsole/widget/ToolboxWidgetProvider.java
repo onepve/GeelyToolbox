@@ -17,6 +17,7 @@ import app.onepve.geelyconsole.R;
 import app.onepve.geelyconsole.hal.IVehiclePlatform;
 import app.onepve.geelyconsole.hal.VehiclePlatformFactory;
 import app.onepve.geelyconsole.utils.SystemUtils;
+import app.onepve.geelyconsole.utils.ThemeColorHelper;
 
 /**
  * 缤越助手车机原生桌面卡片 (AppWidgetProvider 3x1)
@@ -133,7 +134,7 @@ public class ToolboxWidgetProvider extends AppWidgetProvider {
     private static void updateWidgetView(Context context, AppWidgetManager manager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_toolbox_3x1);
 
-        // 1. 车型徽章计算 (统一车规标准：[ 车型名称 · 车机芯片 ]，颜色遵循系统统一主题蓝 #60A5FA)
+        // 1. 车型徽章计算 (统一车规标准：[ 车型名称 · 车机芯片 ]，颜色动态接入助手全局主题色)
         IVehiclePlatform platform = VehiclePlatformFactory.getPlatform(context);
         String pCode = platform != null ? platform.getPlatformCode() : "";
         String pName = platform != null ? platform.getPlatformName() : "";
@@ -147,10 +148,14 @@ public class ToolboxWidgetProvider extends AppWidgetProvider {
         } else if (pName.contains("COOL") || "binyue_cool_e02".equals(pCode)) {
             badgeText = "[ 缤越COOL · IHU516G ]";
         } else {
-            badgeText = "[ 车规智能座舱 ]";
+            // 预注册车型显示层：未知车机走公开资料车型代号映射（宁缺勿猜，未命中回落通用座舱）
+            String modelCode = SystemUtils.getCleanDeviceModel();
+            String displayName = VehiclePlatformFactory.resolveModelDisplayName(modelCode);
+            badgeText = "未知车型".equals(displayName) ? "[ 车规智能座舱 ]" : "[ " + displayName + " ]";
         }
         views.setTextViewText(R.id.widget_platform_badge, badgeText);
-        views.setTextColor(R.id.widget_platform_badge, 0xFF60A5FA); // 统一遵循标准晨曦天蓝主题色
+        // 徽章颜色 100% 动态接入助手全局主题色（ThemeColorHelper 同步自前端主题体系）
+        views.setTextColor(R.id.widget_platform_badge, ThemeColorHelper.getAccentColor(context));
 
         // 2. 蓄电池电压与健康
         float volt = sLastVolt > 0 ? sLastVolt : 13.1f;

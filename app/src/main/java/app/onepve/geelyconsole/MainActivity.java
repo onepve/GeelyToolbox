@@ -1273,6 +1273,19 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             });
         }
 
+        /**
+         * 前端主题切换时同步当前主题强调色至原生侧（供桌面小组件等原生组件动态着色）
+         */
+        @JavascriptInterface
+        public void syncTheme(final String accentHex) {
+            safeRun(new BridgeTask() {
+                @Override
+                public void run() {
+                    app.onepve.geelyconsole.utils.ThemeColorHelper.setAccentColor(context, accentHex);
+                }
+            });
+        }
+
         @JavascriptInterface
         public String getDeviceInfo() {
             try {
