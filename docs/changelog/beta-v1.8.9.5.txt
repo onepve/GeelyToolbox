@@ -1,0 +1,2 @@
+1. 修复 AutoPilotManager 中 Collections 与 Comparator 未导入导致的 Gradle 编译报错。
+2. 完善全盘广度扫描与手动浏览 APK 选择器，保证编译全绿。

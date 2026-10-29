@@ -561,7 +561,7 @@ public class AutoPilotManager {
             }
 
             // 按最后修改时间倒序排列：刚下载/传进车机的文件排在最前面
-            Collections.sort(list, new Comparator<File>() {
+            java.util.Collections.sort(list, new java.util.Comparator<File>() {
                 @Override
                 public int compare(File f1, File f2) {
                     return Long.compare(f2.lastModified(), f1.lastModified());
