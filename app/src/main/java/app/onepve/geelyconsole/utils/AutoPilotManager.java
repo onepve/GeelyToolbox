@@ -155,7 +155,18 @@ public class AutoPilotManager {
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
-                                executeDelayedCommit(context, stagedXtz, null);
+                                final boolean ok = ThemePatcher.commitStagedRabbitTheme(context, null, stagedXtz);
+                                mainHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        isRunning = false;
+                                        if (ok) {
+                                            Toast.makeText(context, "【注入就绪】请点击【应用】使兔子时钟主题生效！", Toast.LENGTH_LONG).show();
+                                        } else {
+                                            Toast.makeText(context, "主题替换失败，请重试！", Toast.LENGTH_LONG).show();
+                                        }
+                                    }
+                                });
                             }
                         }).start();
                     }
