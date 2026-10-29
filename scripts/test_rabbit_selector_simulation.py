@@ -48,7 +48,7 @@ def test_frontend_state_machine():
 
     # 验证组件包含关键车规元素
     assert "scanApksForRabbit" in vue_content, "Vue 未调用 scanApksForRabbit"
-    assert "未在 Download 目录检测到 APK 安装包" in vue_content, "Vue 缺少空状态说明卡片"
+    assert "未在常用目录检测到 APK 安装包" in vue_content or "未在 Download 目录检测到 APK 安装包" in vue_content, "Vue 缺少空状态说明卡片"
     assert "前往软件商城下载" in vue_content, "Vue 缺少空状态前往商城按钮"
     assert ":disabled=\"!selectedApk\"" in vue_content, "Vue 缺少未选包禁用注入按钮机制"
     assert "当前选定：" in vue_content, "Vue 缺少当前选定指示条"

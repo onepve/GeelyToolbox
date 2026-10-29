@@ -447,75 +447,130 @@ public class AutoPilotManager {
     }
 
     /**
-     * 扫描 Download 目录及其一级子目录下的所有 APK 安装包，不做应用类型过滤
+     * 全盘广度扫描车机 APK 安装包：涵盖 Download 目录、子目录、机身根目录及外接 U 盘，不做应用类型过滤
      */
     public static List<File> scanDownloadedApks(Context context) {
         List<File> list = new ArrayList<>();
         try {
-            File dedicatedDir = SystemUtils.getAppDownloadDir();
-            File legacyDedicatedDir = new File(Environment.getExternalStorageDirectory(), "Download/00_车机应用");
-            File legacySpecialDir = new File(Environment.getExternalStorageDirectory(), "Download/!车机应用");
-            File legacyDir = new File(Environment.getExternalStorageDirectory(), "Download");
-
-            if (legacyDedicatedDir.exists() && legacyDedicatedDir.isDirectory()) {
-                File[] oldFiles = legacyDedicatedDir.listFiles();
-                if (oldFiles != null) {
-                    for (File of : oldFiles) {
-                        File target = new File(dedicatedDir, of.getName());
-                        of.renameTo(target);
-                    }
-                }
-                legacyDedicatedDir.delete();
+            List<File> searchDirs = new ArrayList<>();
+            File sdcard = Environment.getExternalStorageDirectory();
+            if (sdcard != null && sdcard.exists()) {
+                searchDirs.add(sdcard); // 机身根目录 (/sdcard)
+                searchDirs.add(new File(sdcard, "Download"));
+                searchDirs.add(new File(sdcard, "Downloads"));
+                searchDirs.add(new File(sdcard, "Download/00_车机应用"));
+                searchDirs.add(new File(sdcard, "Download/!车机应用"));
+                searchDirs.add(new File(sdcard, "Download/browser"));
+                searchDirs.add(new File(sdcard, "Download/Browser"));
+                searchDirs.add(new File(sdcard, "browser/download"));
+                searchDirs.add(new File(sdcard, "Browser/Download"));
+                searchDirs.add(new File(sdcard, "UCDownloads"));
             }
 
-            if (legacySpecialDir.exists() && legacySpecialDir.isDirectory()) {
-                File[] oldFiles = legacySpecialDir.listFiles();
-                if (oldFiles != null) {
-                    for (File of : oldFiles) {
-                        File target = new File(dedicatedDir, of.getName());
-                        of.renameTo(target);
+            File appDl = SystemUtils.getAppDownloadDir();
+            if (appDl != null && !searchDirs.contains(appDl)) {
+                searchDirs.add(appDl);
+            }
+
+            if (context != null) {
+                try {
+                    File extFiles = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+                    if (extFiles != null && extFiles.exists() && !searchDirs.contains(extFiles)) {
+                        searchDirs.add(extFiles);
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            // 扫描外置 U 盘路径 (/storage/xxx, /mnt/media_rw/xxx)
+            try {
+                File storageRoot = new File("/storage");
+                if (storageRoot.exists() && storageRoot.isDirectory()) {
+                    File[] mounts = storageRoot.listFiles();
+                    if (mounts != null) {
+                        for (File m : mounts) {
+                            if (m.isDirectory() && !m.getName().equalsIgnoreCase("emulated") && !m.getName().equalsIgnoreCase("self")) {
+                                searchDirs.add(m);
+                                File uDl = new File(m, "Download");
+                                if (uDl.exists()) searchDirs.add(uDl);
+                            }
+                        }
                     }
                 }
-            }
+                File mntRoot = new File("/mnt/media_rw");
+                if (mntRoot.exists() && mntRoot.isDirectory()) {
+                    File[] mounts = mntRoot.listFiles();
+                    if (mounts != null) {
+                        for (File m : mounts) {
+                            if (m.isDirectory()) searchDirs.add(m);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
 
             FileFilter apkFilter = new FileFilter() {
                 @Override
                 public boolean accept(File file) {
-                    if (!file.isFile()) return false;
+                    if (file == null || !file.isFile()) return false;
                     String name = file.getName().toLowerCase();
                     return name.endsWith(".apk");
                 }
             };
 
-            java.util.Set<String> addedNames = new java.util.HashSet<>();
-            // 扫描范围：Download 根目录 + 一级子目录（覆盖浏览器/快传缓存目录）
-            List<File> dirsToScan = new ArrayList<>();
-            dirsToScan.add(dedicatedDir);
-            if (legacyDir.exists() && legacyDir.isDirectory()) {
-                dirsToScan.add(legacyDir);
-                File[] subDirs = legacyDir.listFiles(File::isDirectory);
-                if (subDirs != null) {
-                    for (File sub : subDirs) {
-                        dirsToScan.add(sub);
-                    }
+            FileFilter dirFilter = new FileFilter() {
+                @Override
+                public boolean accept(File file) {
+                    if (file == null || !file.isDirectory()) return false;
+                    String name = file.getName();
+                    return !name.startsWith(".") && !name.equalsIgnoreCase("Android");
                 }
-            }
+            };
 
-            for (File d : dirsToScan) {
-                if (d.exists() && d.isDirectory()) {
-                    File[] files = d.listFiles(apkFilter);
-                    if (files != null) {
-                        for (File f : files) {
-                            // 只过滤 50 KB 以下的空/损坏文件，放行所有有效安装包
-                            if (f.length() > 50 * 1024 && !addedNames.contains(f.getName())) {
-                                list.add(f);
-                                addedNames.add(f.getName());
+            java.util.Set<String> scannedDirPaths = new java.util.HashSet<>();
+            List<File> allDirsToScan = new ArrayList<>();
+            for (File d : searchDirs) {
+                if (d != null && d.exists() && d.isDirectory() && scannedDirPaths.add(d.getAbsolutePath())) {
+                    allDirsToScan.add(d);
+                    // 仅对 Download 目录探测一级子目录
+                    if (d.getName().equalsIgnoreCase("Download") || d.getName().equalsIgnoreCase("Downloads")) {
+                        File[] subs = d.listFiles(dirFilter);
+                        if (subs != null) {
+                            for (File s : subs) {
+                                if (scannedDirPaths.add(s.getAbsolutePath())) {
+                                    allDirsToScan.add(s);
+                                }
                             }
                         }
                     }
                 }
             }
-        } catch (Exception ignored) {}
+
+            java.util.Set<String> addedNames = new java.util.HashSet<>();
+            for (File d : allDirsToScan) {
+                try {
+                    File[] files = d.listFiles(apkFilter);
+                    if (files != null) {
+                        for (File f : files) {
+                            // 只要是有效 APK (大于 1 KB 且未重复)，全量纳入备选
+                            if (f.length() > 1024 && !addedNames.contains(f.getName())) {
+                                list.add(f);
+                                addedNames.add(f.getName());
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            // 按最后修改时间倒序排列：刚下载/传进车机的文件排在最前面
+            Collections.sort(list, new Comparator<File>() {
+                @Override
+                public int compare(File f1, File f2) {
+                    return Long.compare(f2.lastModified(), f1.lastModified());
+                }
+            });
+
+        } catch (Exception e) {
+            Log.e(TAG, "scanDownloadedApks error: " + e.getMessage(), e);
+        }
         return list;
     }
 

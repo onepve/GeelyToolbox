@@ -960,20 +960,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         }
                     } catch (Exception ignored) {}
 
-                    // 2. 检查主题伪装安全防护开关（默认仅限车载导航白名单）
-                    android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                    boolean safeMode = prefs.getBoolean("rabbit_safe_mode_enabled", true);
-                    if (safeMode && !isNavigationApp(pkg, tempApk.getName())) {
-                        final String finalPkg = pkg;
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                showToast("【安全保护】当前仅允许导航专车包使用时钟主题伪装，常规应用请直接在文件管理中安装。");
-                            }
-                        });
-                        return;
-                    }
-
+                    // 2. 彻底拔除应用类型限制（用户知晓风险，自主选包）
                     final boolean ok = ThemePatcher.packageToRabbitTheme(MainActivity.this, tempApk);
                     mainHandler.post(new Runnable() {
                         @Override
@@ -1502,18 +1489,23 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
 
                     File targetFile = null;
-                    File dedicatedDir = SystemUtils.getAppDownloadDir();
-                    File legacyDir = new File(Environment.getExternalStorageDirectory(), "Download");
-                    File f1 = new File(dedicatedDir, filename.trim());
-                    File f2 = new File(legacyDir, filename.trim());
-                    if (f1.exists() && f1.length() > 0) {
-                        targetFile = f1;
-                    } else if (f2.exists() && f2.length() > 0) {
-                        targetFile = f2;
+                    String cleanName = filename.trim();
+                    File directFile = new File(cleanName);
+                    if (directFile.exists() && directFile.isFile() && directFile.length() > 0) {
+                        targetFile = directFile;
+                    } else {
+                        // 在全量扫描目录中寻找同名文件
+                        List<File> allApks = AutoPilotManager.scanDownloadedApks(MainActivity.this);
+                        for (File f : allApks) {
+                            if (f != null && (f.getName().equalsIgnoreCase(cleanName) || f.getAbsolutePath().equalsIgnoreCase(cleanName))) {
+                                targetFile = f;
+                                break;
+                            }
+                        }
                     }
 
                     if (targetFile == null) {
-                        Toast.makeText(context, "未找到安装包文件: " + filename.trim() + "，请先下载或传输至机身！", Toast.LENGTH_LONG).show();
+                        Toast.makeText(context, "未找到安装包文件: " + cleanName + "，请先下载或传输至机身！", Toast.LENGTH_LONG).show();
                         return;
                     }
 
