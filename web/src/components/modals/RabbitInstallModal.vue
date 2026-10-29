@@ -24,11 +24,11 @@
         <div class="flex items-center space-x-2 text-[15px] font-bold text-car-sub overflow-x-auto py-1">
           <span class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-text">1. 启动向导</span>
           <span>➔</span>
-          <span class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-text">2. 主题应用兔子时钟</span>
+          <span class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-text">2. 进入兔子时钟等待20秒</span>
           <span>➔</span>
-          <span class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-text">3. 一键重启车机</span>
+          <span class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-accent">3. 提示就绪后点应用</span>
           <span>➔</span>
-          <span class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-accent">4. 开机秒弹覆盖</span>
+          <span class="px-3 py-1.5 rounded-lg bg-car-card border border-car-border text-car-text">4. 一键重启车机</span>
         </div>
       </div>
 
@@ -39,7 +39,7 @@
           class="flex-1 min-h-[84px] p-4 rounded-2xl bg-car-item border-2 border-car-accent flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-accent shadow-lg ring-2 ring-car-accent/20"
         >
           <span class="text-[20px] font-black text-car-text">一键卡兔子向导 (半自动)</span>
-          <span class="text-[14.5px] font-bold text-car-sub mt-1">自动打包注入屏保并唤起主题中心</span>
+          <span class="text-[14.5px] font-bold text-car-sub mt-1">自动打包、唤起主题中心并在20秒后就绪覆盖</span>
         </button>
 
         <button 
@@ -47,7 +47,7 @@
           class="flex-1 min-h-[84px] p-4 rounded-2xl bg-car-item border border-car-border flex flex-col items-center justify-center text-center cursor-pointer hover:border-car-border-light shadow-sm"
         >
           <span class="text-[20px] font-black text-car-text">仅重新注入伪装主题</span>
-          <span class="text-[14.5px] font-bold text-car-sub mt-1">不唤起向导，仅更新兔子屏保包</span>
+          <span class="text-[14.5px] font-bold text-car-sub mt-1">不唤起向导，仅直接更新兔子屏保包</span>
         </button>
       </div>
     </div>
@@ -108,7 +108,7 @@ function startAutoPilot() {
     return;
   }
   closeModal('rabbitInstall');
-  showToast(`正在注入兔子时钟屏保: ${targetApp.value.name}...`);
+  showToast(`向导已启动：正在准备主题并打开主题中心...`);
   bridge.call('startAutoPilotInject', targetApp.value.filename || null);
 }
 
@@ -123,7 +123,7 @@ function reInjectDirectly() {
     return;
   }
   closeModal('rabbitInstall');
-  showToast(`正在重写伪装主题: ${targetApp.value.name}...`);
+  showToast(`正在重写兔子屏保伪装包...`);
   bridge.call('injectApkDirectly', targetApp.value.filename || null);
 }
 

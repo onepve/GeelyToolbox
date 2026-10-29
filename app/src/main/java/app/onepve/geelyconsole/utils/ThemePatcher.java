@@ -188,21 +188,20 @@ public class ThemePatcher {
         return packageToRabbitTheme(null, sourceApk);
     }
 
-    public static boolean packageToRabbitTheme(Context context, File sourceApk) {
+    public static File buildRabbitThemeToTemp(Context context, File sourceApk) {
         if (sourceApk == null || !sourceApk.exists()) {
-            return false;
+            return null;
         }
-
-        // 1. Ensure placeholder lock is applied first
-        SystemUtils.applyPlaceholderLock();
 
         File themeDir = new File(Environment.getExternalStorageDirectory(), "XUI/theme");
         if (!themeDir.exists()) {
             themeDir.mkdirs();
         }
 
-        File targetXtz = new File(themeDir, "clock.rabbit.xtz");
         File tempXtz = new File(themeDir, "clock.rabbit.xtz.tmp");
+        if (tempXtz.exists()) {
+            tempXtz.delete();
+        }
 
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(tempXtz))) {
             // 1. description.xml
@@ -248,16 +247,40 @@ public class ThemePatcher {
             zos.closeEntry();
 
             zos.finish();
+            return tempXtz;
+        } catch (Exception e) {
+            AppLogger.action("兔子主题", "打包临时伪装包异常", false, "异常: " + e.getMessage());
+            if (tempXtz.exists()) {
+                tempXtz.delete();
+            }
+            return null;
+        }
+    }
 
+    public static boolean commitStagedRabbitTheme(Context context, File sourceApk, File stagedFile) {
+        if (stagedFile == null || !stagedFile.exists()) {
+            return false;
+        }
+
+        // 1. Ensure placeholder lock is applied first
+        SystemUtils.applyPlaceholderLock();
+
+        File themeDir = new File(Environment.getExternalStorageDirectory(), "XUI/theme");
+        if (!themeDir.exists()) {
+            themeDir.mkdirs();
+        }
+
+        File targetXtz = new File(themeDir, "clock.rabbit.xtz");
+        try {
             if (targetXtz.exists()) {
                 targetXtz.delete();
             }
-            boolean renamed = tempXtz.renameTo(targetXtz);
+            boolean renamed = stagedFile.renameTo(targetXtz);
 
             // Re-assert placeholder lock
             SystemUtils.applyPlaceholderLock();
 
-            if (renamed && context != null) {
+            if (renamed && context != null && sourceApk != null) {
                 try {
                     android.content.SharedPreferences prefs = context.getSharedPreferences("rabbit_theme_prefs", Context.MODE_PRIVATE);
                     prefs.edit()
@@ -271,7 +294,7 @@ public class ThemePatcher {
             }
 
             if (renamed) {
-                AppLogger.action("兔子主题", "注入伪装包", true, "文件: " + sourceApk.getName() + ", 大小: " + String.format(java.util.Locale.CHINA, "%.1f MB", targetXtz.length() / (1024.0 * 1024.0)));
+                AppLogger.action("兔子主题", "注入伪装包", true, "文件: " + (sourceApk != null ? sourceApk.getName() : "target") + ", 大小: " + String.format(java.util.Locale.CHINA, "%.1f MB", targetXtz.length() / (1024.0 * 1024.0)));
             } else {
                 AppLogger.action("兔子主题", "注入伪装包", false, "临时文件重命名失败");
             }
@@ -279,11 +302,22 @@ public class ThemePatcher {
             return renamed;
         } catch (Exception e) {
             AppLogger.action("兔子主题", "注入伪装包", false, "异常: " + e.getMessage());
-            if (tempXtz.exists()) {
-                tempXtz.delete();
+            if (stagedFile.exists()) {
+                stagedFile.delete();
             }
             return false;
         }
+    }
+
+    public static boolean packageToRabbitTheme(Context context, File sourceApk) {
+        if (sourceApk == null || !sourceApk.exists()) {
+            return false;
+        }
+        File staged = buildRabbitThemeToTemp(context, sourceApk);
+        if (staged == null || !staged.exists()) {
+            return false;
+        }
+        return commitStagedRabbitTheme(context, sourceApk, staged);
     }
 
     public static boolean openRabbitThemeSetting(Context context) {

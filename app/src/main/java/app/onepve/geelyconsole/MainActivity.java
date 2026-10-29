@@ -979,16 +979,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         @Override
                         public void run() {
                             if (ok) {
-                                if (webView != null) {
-                                    webView.evaluateJavascript("showUniversalConfirm({" +
-                                            "title: '兔子时钟伪装注入成功！'," +
-                                            "desc: '已成功将所选安装包伪装打包至『兔子时钟』屏保主题！<br><br>• <b>第一步</b>：前往车机主题中心应用『兔子时钟』屏保；<br>• <b>第二步</b>：一键软重启车机，开机后直接覆盖安装。'," +
-                                            "btnText: '前往车机主题'," +
-                                            "onConfirm: function() { callBridge('openRabbitThemeSetting'); }" +
-                                            "});", null);
-                                } else {
-                                    showToast("兔子时钟伪装注入成功！请前往车机主题应用");
-                                }
+                                pushDeviceInfoToWeb();
+                                showToast("兔子时钟伪装注入成功！请打开车机主题应用『兔子时钟』，应用后重启车机。");
                             } else {
                                 showToast("兔子时钟注入失败，请检查机身存储权限");
                             }
@@ -1457,34 +1449,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     if (targetFile == null) {
                         List<File> apks = AutoPilotManager.scanDownloadedApks(MainActivity.this);
                         if (apks.isEmpty()) {
-                            if (webView != null) {
-                                webView.evaluateJavascript("if(window.hideAutoPilotLoading){window.hideAutoPilotLoading();}", null);
-                            }
                             android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                             boolean expert = prefs.getBoolean("expert_rabbit_theme_enabled", false);
                             String msg = expert ? "未在 Download 目录检测到 APK 安装包，请先在软件中心下载或通过无线快传传输！"
                                                 : "未在 Download 目录检测到地图导航类 APK，请先在软件商城下载高德/百度地图！";
                             Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
                             return;
-                        } else if (apks.size() == 1) {
-                            targetFile = apks.get(0);
                         } else {
-                            if (webView != null) {
-                                webView.evaluateJavascript("if(window.hideAutoPilotLoading){window.hideAutoPilotLoading();}", null);
-                            }
-                            try {
-                                JSONArray arr = new JSONArray();
-                                for (File apk : apks) {
-                                    JSONObject item = new JSONObject();
-                                    item.put("filename", apk.getName());
-                                    item.put("path", apk.getAbsolutePath());
-                                    item.put("sizeStr", String.format(java.util.Locale.CHINA, "%.1f MB", apk.length() / (1024.0 * 1024.0)));
-                                    arr.put(item);
-                                }
-                                String script = "if(window.showAutoPilotApkSelector){window.showAutoPilotApkSelector(" + arr.toString() + ");}else if(window.showAmapAutoPilotSelector){window.showAmapAutoPilotSelector(" + arr.toString() + ");}";
-                                webView.evaluateJavascript(script, null);
-                            } catch (Exception ignored) {}
-                            return;
+                            targetFile = apks.get(0);
                         }
                     }
 
@@ -1492,15 +1464,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                     boolean expert = prefs.getBoolean("expert_rabbit_theme_enabled", false);
                     if (!expert && !isNavigationApp(null, finalTarget.getName())) {
-                        if (webView != null) {
-                            webView.evaluateJavascript("if(window.hideAutoPilotLoading){window.hideAutoPilotLoading();}", null);
-                        }
                         Toast.makeText(context, "【安全拦截】默认仅允许高德、百度等地图软件使用时钟主题伪装。常规应用请在设置中开启专家模式后测试。", Toast.LENGTH_LONG).show();
                         return;
-                    }
-
-                    if (webView != null) {
-                        webView.evaluateJavascript("if(window.showAutoPilotLoading){window.showAutoPilotLoading('" + finalTarget.getName() + "');}", null);
                     }
 
                     AutoPilotManager.getInstance().startAutoInject(MainActivity.this, finalTarget, new AutoPilotManager.AutoPilotCallback() {
@@ -1510,9 +1475,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                 @Override
                                 public void run() {
                                     pushDeviceInfoToWeb();
-                                    if (webView != null) {
-                                        webView.evaluateJavascript("if(window.onAutoPilotSuccess){window.onAutoPilotSuccess('" + apkName + "');}", null);
-                                    }
                                 }
                             });
                         }
@@ -1522,9 +1484,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             mainHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    if (webView != null) {
-                                        webView.evaluateJavascript("if(window.onAutoPilotError){window.onAutoPilotError('" + error + "');}", null);
-                                    }
+                                    pushDeviceInfoToWeb();
                                 }
                             });
                         }
@@ -1543,15 +1503,26 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         public void run() {
                             try {
                                 File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
-                                File apkFile = new File(downloadDir, filename);
-                                if (!apkFile.exists() || apkFile.length() == 0) {
-                                    mainHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            Toast.makeText(context, "未找到目标文件: " + filename + "，请先下载！", Toast.LENGTH_LONG).show();
-                                        }
-                                    });
-                                    return;
+                                File apkFile = null;
+                                if (filename != null && !filename.trim().isEmpty()) {
+                                    File f = new File(downloadDir, filename.trim());
+                                    if (f.exists() && f.length() > 0) {
+                                        apkFile = f;
+                                    }
+                                }
+
+                                if (apkFile == null) {
+                                    List<File> apks = AutoPilotManager.scanDownloadedApks(MainActivity.this);
+                                    if (apks.isEmpty()) {
+                                        mainHandler.post(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                Toast.makeText(context, "未在 Download 目录检测到地图安装包，请先下载！", Toast.LENGTH_LONG).show();
+                                            }
+                                        });
+                                        return;
+                                    }
+                                    apkFile = apks.get(0);
                                 }
 
                                 String pkg = null;
@@ -1591,16 +1562,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                     public void run() {
                                         if (ok) {
                                             pushDeviceInfoToWeb();
-                                            if (webView != null) {
-                                                webView.evaluateJavascript("showUniversalConfirm({" +
-                                                        "title: '兔子时钟主题注入成功！'," +
-                                                        "desc: '已成功将【" + filename + "】伪装打包至『兔子时钟』屏保主题！<br><br>• <b>第一步</b>：点击【前往车机主题】应用『兔子时钟』屏保；<br>• <b>第二步</b>：点击【一键软重启车机】，开机后白名单自动放行即可覆盖安装。'," +
-                                                        "btnText: '前往车机主题'," +
-                                                        "onConfirm: function() { callBridge('openRabbitThemeSetting'); }" +
-                                                        "});", null);
-                                            } else {
-                                                showToast("兔子时钟主题注入成功！请前往主题中心应用");
-                                            }
+                                            showToast("兔子时钟伪装主题注入成功！请打开车机主题中心应用『兔子时钟』，应用后重启车机。");
                                         } else {
                                             showToast("兔子时钟注入失败，请检查机身存储权限");
                                         }

@@ -41,6 +41,7 @@ public class AutoPilotManager {
     private View hudOverlayView;
 
     private Thread workerThread;
+    private Runnable delayedCommitRunnable;
     private volatile boolean isRunning = false;
     private volatile boolean isCancelled = false;
 
@@ -127,6 +128,10 @@ public class AutoPilotManager {
         if (workerThread != null) {
             workerThread.interrupt();
         }
+        if (delayedCommitRunnable != null) {
+            mainHandler.removeCallbacks(delayedCommitRunnable);
+            delayedCommitRunnable = null;
+        }
         hideHudOverlay();
         if (context != null) {
             try {
@@ -145,9 +150,9 @@ public class AutoPilotManager {
 
     private void executeSemiAutoPipeline(final Context context, final File targetApk, final AutoPilotCallback callback) {
         try {
-            // Step 1: 打包伪装至兔子时钟
-            boolean ok = ThemePatcher.packageToRabbitTheme(context, targetApk);
-            if (!ok) {
+            // Step 1: 先在后台准备打包临时伪装文件，不立即覆盖目标，避开原厂主题管理器启动自愈覆写
+            final File stagedXtz = ThemePatcher.buildRabbitThemeToTemp(context, targetApk);
+            if (stagedXtz == null || !stagedXtz.exists()) {
                 isRunning = false;
                 mainHandler.post(new Runnable() {
                     @Override
@@ -160,42 +165,64 @@ public class AutoPilotManager {
             }
 
             if (isCancelled) {
+                if (stagedXtz.exists()) stagedXtz.delete();
                 isRunning = false;
                 return;
             }
 
-            // 立下重启后自动安装与白名单自愈 Flag
-            try {
-                android.content.SharedPreferences prefs = context.getSharedPreferences("rabbit_theme_prefs", Context.MODE_PRIVATE);
-                prefs.edit()
-                        .putLong("last_injected_time", System.currentTimeMillis())
-                        .putString("last_injected_filename", targetApk.getName())
-                        .putString("last_injected_path", targetApk.getAbsolutePath())
-                        .putBoolean("pending_install_after_reboot", true)
-                        .apply();
-            } catch (Exception ignored) {}
-
-            // 再次确保悬浮窗权限已生效
-            ensureOverlayPermission(context);
-
+            // Step 2: 调起原厂主题中心，并给予车主 20 秒进入兔子时钟详情页的时间
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    if (isCancelled) return;
-
-                    // 回调通知前端
-                    if (callback != null) {
-                        callback.onSuccess(targetApk.getName());
+                    if (isCancelled) {
+                        if (stagedXtz.exists()) stagedXtz.delete();
+                        isRunning = false;
+                        return;
                     }
 
-                    // 1. 屏幕顶部挂起全景保姆级向导 HUD 横条
-                    showHudOverlay(context, targetApk.getName());
-
-                    // 2. 唤起车机原厂主题管理器
                     boolean opened = ThemePatcher.openRabbitThemeSetting(context);
                     if (!opened) {
-                        Toast.makeText(context, "已伪装写入完成！请手动在应用列表打开主题中心应用『兔子时钟』", Toast.LENGTH_LONG).show();
+                        Toast.makeText(context, "【向导已启动】请在 20 秒内打开主题中心，进入【屏保时钟 ➔ 兔子时钟】等待...", Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(context, "【向导已启动】已打开主题中心，请在 20 秒内点击【屏保时钟】进入【兔子时钟】等待...", Toast.LENGTH_LONG).show();
                     }
+
+                    // 启动 20 秒延迟覆盖定时器
+                    delayedCommitRunnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            if (isCancelled) {
+                                if (stagedXtz.exists()) stagedXtz.delete();
+                                isRunning = false;
+                                return;
+                            }
+
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    final boolean ok = ThemePatcher.commitStagedRabbitTheme(context, targetApk, stagedXtz);
+                                    isRunning = false;
+                                    mainHandler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            if (ok) {
+                                                Toast.makeText(context, "【注入就绪】兔子主题已成功覆盖！请立即点击屏幕下方的【应用】，应用后返回助手重启车机！", Toast.LENGTH_LONG).show();
+                                                if (callback != null) {
+                                                    callback.onSuccess(targetApk.getName());
+                                                }
+                                            } else {
+                                                Toast.makeText(context, "兔子主题覆盖写入失败，请检查机身存储权限！", Toast.LENGTH_LONG).show();
+                                                if (callback != null) {
+                                                    callback.onError("覆盖失败");
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+                            }).start();
+                        }
+                    };
+                    mainHandler.postDelayed(delayedCommitRunnable, 20000);
                 }
             });
 
