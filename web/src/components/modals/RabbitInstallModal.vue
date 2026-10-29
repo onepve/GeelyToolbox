@@ -340,11 +340,6 @@ function checkSafety(apk) {
     showToast('ADB 总开关已关闭，该功能无法使用', 'warn');
     return false;
   }
-  // 检查是否非地图应用且未开启专家模式
-  if (!apk.isNavigation && !store.settings.expert_rabbit) {
-    showToast('【安全拦截】默认仅允许高德、百度等地图软件伪装。常规应用请在设置中开启专家模式！', 'warn');
-    return false;
-  }
   return true;
 }
 

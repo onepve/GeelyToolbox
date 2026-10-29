@@ -96,19 +96,6 @@ public class AutoPilotManager {
         isRunning = true;
         isCancelled = false;
 
-        boolean expertMode = false;
-        try {
-            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            expertMode = prefs.getBoolean("expert_rabbit_theme_enabled", false);
-        } catch (Exception ignored) {}
-
-        if (!expertMode && !MainActivity.isNavigationApp(null, targetApk.getName())) {
-            isRunning = false;
-            Toast.makeText(context, "【安全拦截】默认仅允许高德、百度等地图软件使用时钟主题伪装。如需测试其他软件请在设置中开启专家模式。", Toast.LENGTH_LONG).show();
-            if (callback != null) callback.onError("默认仅允许地图软件安装主题");
-            return;
-        }
-
         // 确保悬浮窗权限
         ensureOverlayPermission(context);
 
@@ -460,17 +447,9 @@ public class AutoPilotManager {
     }
 
     /**
-     * 扫描 Download 目录下的 APK 安装包（默认模式下仅扫描地图导航类，开启专家模式后放行全部）
+     * 扫描 Download 目录及其一级子目录下的所有 APK 安装包，不做应用类型过滤
      */
     public static List<File> scanDownloadedApks(Context context) {
-        boolean expertMode = false;
-        if (context != null) {
-            try {
-                android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                expertMode = prefs.getBoolean("expert_rabbit_theme_enabled", false);
-            } catch (Exception ignored) {}
-        }
-
         List<File> list = new ArrayList<>();
         try {
             File dedicatedDir = SystemUtils.getAppDownloadDir();
@@ -509,16 +488,26 @@ public class AutoPilotManager {
             };
 
             java.util.Set<String> addedNames = new java.util.HashSet<>();
-            File[] dirsToScan = new File[] { dedicatedDir, legacyDir };
+            // 扫描范围：Download 根目录 + 一级子目录（覆盖浏览器/快传缓存目录）
+            List<File> dirsToScan = new ArrayList<>();
+            dirsToScan.add(dedicatedDir);
+            if (legacyDir.exists() && legacyDir.isDirectory()) {
+                dirsToScan.add(legacyDir);
+                File[] subDirs = legacyDir.listFiles(File::isDirectory);
+                if (subDirs != null) {
+                    for (File sub : subDirs) {
+                        dirsToScan.add(sub);
+                    }
+                }
+            }
+
             for (File d : dirsToScan) {
                 if (d.exists() && d.isDirectory()) {
                     File[] files = d.listFiles(apkFilter);
                     if (files != null) {
                         for (File f : files) {
-                            if (f.length() > 500 * 1024 && !addedNames.contains(f.getName())) {
-                                if (!expertMode && !app.onepve.geelyconsole.MainActivity.isNavigationApp(null, f.getName())) {
-                                    continue;
-                                }
+                            // 只过滤 50 KB 以下的空/损坏文件，放行所有有效安装包
+                            if (f.length() > 50 * 1024 && !addedNames.contains(f.getName())) {
                                 list.add(f);
                                 addedNames.add(f.getName());
                             }

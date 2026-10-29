@@ -148,12 +148,9 @@ def evaluate(files):
     retired_safety_guard_pattern = r'SafetySensorStateMachine|checkSteerAngleOnPark|checkEpbNotEngagedOnPDoorOpen|voice_enable_steer_angle_guard|voice_steer_angle_threshold_deg|voice_enable_epb_guard|steer_angle_guard\.mp3|epb_alarm\.mp3|SafetyGuardVoiceSection'
     if re.search(retired_safety_guard_pattern, all_java) or re.search(retired_safety_guard_pattern, all_web):
         failures.append('retired-safety-guard-card')
-    # 卡兔子主题按钮可见性必须同时受「专业模式」约束
-    # (历史缺陷: v-if 仅判 isMapApp，未开专业模式也会露出卡主题按钮)
+    # 卡兔子主题按钮可见性：仅需受「专家模式」约束即可，不再限制应用类型（用户知晓风险，自主选包）
     appdetail = files.get('web/src/components/modals/AppDetailModal.vue', '')
-    if re.search(r'v-if="isMapApp"', appdetail):
-        failures.append('rabbit-theme-button-expert-gate')
-    if not re.search(r'const canUseRabbitTheme = computed\(\(\) => isMapApp\.value && store\.settings\.expert_rabbit === true\)', appdetail):
+    if not re.search(r'const canUseRabbitTheme = computed\(\(\) => store\.settings\.expert_rabbit === true\)', appdetail):
         failures.append('rabbit-theme-computed-gate')
     logger = clean(files.get(JAVA+'utils/AppLogger.java', ''))
     if not re.search(r'if\s*\(lastLogTime\.size\(\) > 500\)\s*\{\s*lastLogTime\.clear\(\);', logger):

@@ -1518,13 +1518,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
 
                     final File finalTarget = targetFile;
-                    android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                    boolean expert = prefs.getBoolean("expert_rabbit_theme_enabled", false);
-                    if (!expert && !isNavigationApp(null, finalTarget.getName())) {
-                        Toast.makeText(context, "【安全拦截】默认仅允许高德、百度等地图软件使用时钟主题伪装。常规应用请在设置中开启专家模式后测试。", Toast.LENGTH_LONG).show();
-                        return;
-                    }
-
                     AutoPilotManager.getInstance().startAutoInject(MainActivity.this, finalTarget, new AutoPilotManager.AutoPilotCallback() {
                         @Override
                         public void onSuccess(final String apkName) {
@@ -1608,18 +1601,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                         }
                                     }
                                 } catch (Exception ignored) {}
-
-                                android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                                boolean expertMode = prefs.getBoolean("expert_rabbit_theme_enabled", false);
-                                if (!expertMode && !isNavigationApp(pkg, apkFile.getName())) {
-                                    mainHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            showToast("【安全拦截】默认仅允许高德、百度等地图软件使用时钟主题伪装。常规应用请在设置中开启专家模式后测试。");
-                                        }
-                                    });
-                                    return;
-                                }
 
                                 final boolean ok = ThemePatcher.packageToRabbitTheme(context, apkFile);
                                 mainHandler.post(new Runnable() {
