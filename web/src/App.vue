@@ -15,22 +15,22 @@
       <!-- 右侧专属大舞台：开机即全量载入内存常驻，全生命周期绝不销毁重绘，任何大菜单切换 100% 物理 0ms 纯粹秒开 -->
       <section ref="mainContent" class="flex-1 h-full overflow-y-auto p-5 flex flex-col">
         <!-- 1. 行车联动 (集成方向盘按键 + 360联动 + 车速大灯 + 网络外设) -->
-        <LinkView v-show="store.currentNav === 'link' || store.currentNav === 'wheel'" />
+        <LinkView v-if="mountedViews.link" v-show="store.currentNav === 'link' || store.currentNav === 'wheel'" />
 
         <!-- 2. 车载声音 (集成换挡/模式播报 + 车门/尾门开闭 + 音源优先级 + 语音包) -->
-        <BodyView v-show="store.currentNav === 'body' || store.currentNav === 'audio'" />
+        <BodyView v-if="mountedViews.body" v-show="store.currentNav === 'body' || store.currentNav === 'audio'" />
 
         <!-- 3. 行程油耗 (实时油价日历 + 单次行程油耗 + 智能加油账本) -->
-        <FuelView v-show="store.currentNav === 'fuel'" />
+        <FuelView v-if="mountedViews.fuel" v-show="store.currentNav === 'fuel'" />
 
         <!-- 4. 应用生态 (专车精选商城 + 原生安装快传) -->
-        <AppEcosystemView v-show="store.currentNav === 'store' || store.currentNav === 'install'" />
+        <AppEcosystemView v-if="mountedViews.store" v-show="store.currentNav === 'store' || store.currentNav === 'install'" />
 
         <!-- 5. 系统设置 (悬浮胶囊 + 应用车标 + 主题首屏 + 底层运维) -->
-        <SystemView v-show="store.currentNav === 'floating' || store.currentNav === 'system'" />
+        <SystemView v-if="mountedViews.system" v-show="store.currentNav === 'floating' || store.currentNav === 'system'" />
 
         <!-- 历史视图兼容挂载 (满足 CI Gate 28 刚性冻结契约) -->
-        <div class="hidden" aria-hidden="true">
+        <div class="hidden" aria-hidden="true" v-if="mountedViews.legacy">
           <StoreView />
           <WheelView />
           <AudioView />
@@ -83,7 +83,7 @@ const TOAST_SKINS = {
   error:   { text: 'var(--status-err-fg, #FDA4AF)',  border: 'rgba(253, 164, 175, 0.55)', dot: 'var(--status-err, #EF4444)' }
 };
 
-import { ref, watch, nextTick, onMounted } from 'vue';
+import { ref, reactive, watch, nextTick, onMounted } from 'vue';
 import TopBar from './components/TopBar.vue';
 import Sidebar from './components/Sidebar.vue'
 import StoreView from './views/StoreView.vue';
@@ -97,11 +97,40 @@ import SystemView from './views/SystemView.vue';
 import FuelView from './views/FuelView.vue';
 import AppEcosystemView from './views/AppEcosystemView.vue';
 
+// 动态解析启动时车主设定的默认大功能分类（默认先显示哪一个就先挂载哪一个）
+const resolveInitialNavKey = () => {
+  const nav = store.currentNav || 'link';
+  if (nav === 'wheel' || nav === 'link') return 'link';
+  if (nav === 'audio' || nav === 'body') return 'body';
+  if (nav === 'fuel') return 'fuel';
+  if (nav === 'install' || nav === 'store') return 'store';
+  if (nav === 'floating' || nav === 'system') return 'system';
+  return 'link';
+};
+
+const initialNavKey = resolveInitialNavKey();
+
+// 渐进式挂载状态集：首屏仅挂载车主指定的默认主功能，其余大模块在后台闲时排队平滑预热
+const mountedViews = reactive({
+  link: initialNavKey === 'link',
+  body: initialNavKey === 'body',
+  fuel: initialNavKey === 'fuel',
+  store: initialNavKey === 'store',
+  system: initialNavKey === 'system',
+  legacy: false, // 4 个历史兼容视图
+});
+
 const mainContent = ref(null);
 
-// 切换左侧功能导航时，右侧主舞台无条件强制自动回顶，彻底消除翻页位置继承
+// 切换左侧功能导航时：
+// 1. 智能插队：若车主主动点击了尚未挂载的大功能，立即优先挂载！
+// 2. 右侧主舞台无条件强制自动回顶，彻底消除翻页位置继承
 watch(() => store.currentNav, (nav) => {
   recordActiveNav(nav);
+  const targetKey = normalizeNav(nav);
+  if (targetKey && !mountedViews[targetKey]) {
+    mountedViews[targetKey] = true;
+  }
   nextTick(() => {
     if (mainContent.value) {
       mainContent.value.scrollTop = 0;
@@ -134,6 +163,33 @@ import { store, bridge, openModal, recordActiveNav, refreshOilPrices, initOilPer
 import { initTheme, applyTheme, quickToggleDayNight } from './theme/themes';
 
 onMounted(() => {
+  // 极速首屏成画：通知 Android 原生解除启动画屏
+  nextTick(() => {
+    try {
+      bridge.call('dismissSplash');
+    } catch (e) {}
+  });
+
+  // 后台阶梯式静默预热：首屏渲染完成并平稳后，在后台闲时按序逐个挂载剩余大视图与兼容卡片
+  setTimeout(() => {
+    const sequence = ['link', 'body', 'fuel', 'store', 'system'];
+    const pending = sequence.filter(k => !mountedViews[k]);
+    let idx = 0;
+    function preloadNext() {
+      if (idx < pending.length) {
+        const key = pending[idx++];
+        mountedViews[key] = true;
+        setTimeout(preloadNext, 350);
+      } else {
+        // 全量大功能挂载完成后，最后静默载入历史兼容视图
+        setTimeout(() => {
+          mountedViews.legacy = true;
+        }, 400);
+      }
+    }
+    preloadNext();
+  }, 450);
+
   // 从原生 SharedPreferences 同步油价常用省份持久化设置 (防覆盖升级丢失)
   try { initOilPersistentSettings(); } catch (e) {}
 

@@ -111,6 +111,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     private String currentSelectingVoiceKey = null;
 
     private WebView webView;
+    private View splashView;
     private WebServer webServer;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean isWhitelistEnabled = false;
@@ -208,6 +209,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         PrefUtils.sanitizeDoorPreferences(getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
         hideSystemUI();
         setContentView(R.layout.activity_main);
+        splashView = findViewById(R.id.splash_view);
 
         // 异步应用车标策略（自适应车型或保持自定义配置）
         AppIconManager.applyAppIconStyle(this);
@@ -238,7 +240,18 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         // 若是由开机自启静默预热唤起的，立即移入后台，完成渲染准备但不打扰当前屏幕
         if (getIntent() != null && getIntent().getBooleanExtra("silent_boot_preload", false)) {
             AppLogger.i("应用启动", "开机静默预热：已提前绘制就绪，静默退至后台待命");
+            if (splashView != null) {
+                splashView.setVisibility(View.GONE);
+            }
             moveTaskToBack(true);
+        } else {
+            // 兜底安全防线：冷启动后最长 2.5 秒无论前端是否通知，均平滑解除启动层
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    hideSplashView();
+                }
+            }, 2500);
         }
 
         // 启动错峰：包名扫描与白名单探测等重型后台任务延后 20 秒错峰执行，确保前台界面与车门/挡位联动 100% 独占 CPU 与流畅响应
@@ -347,6 +360,23 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         webView.setWebChromeClient(new WebChromeClient());
         webView.addJavascriptInterface(new ToolboxBridge(this), "ToolboxBridge");
         webView.loadUrl("file:///android_asset/toolbox_ui.html");
+    }
+
+    private void hideSplashView() {
+        if (splashView != null && splashView.getVisibility() == View.VISIBLE) {
+            splashView.animate()
+                    .alpha(0f)
+                    .setDuration(220)
+                    .withEndAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (splashView != null) {
+                                splashView.setVisibility(View.GONE);
+                            }
+                        }
+                    })
+                    .start();
+        }
     }
 
     public void fetchCloudAppsAsync(final boolean showToast) {
@@ -1231,6 +1261,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             try {
                 task.run();
             } catch (Exception ignored) {}
+        }
+
+        @JavascriptInterface
+        public void dismissSplash() {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    hideSplashView();
+                }
+            });
         }
 
         @JavascriptInterface
