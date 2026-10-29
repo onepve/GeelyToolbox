@@ -325,10 +325,7 @@ function confirmUnlockExpert() {
 }
 
 function openRabbitGuideModal() {
-  store.modals.rabbitInstall = {
-    name: '高德地图车机版 (默认推荐)',
-    filename: 'AutoMap_9.5.13_FullFeatures_TrafficLight.apk'
-  };
+  store.modals.rabbitInstall = true;
 }
 
 function openFileManager() {

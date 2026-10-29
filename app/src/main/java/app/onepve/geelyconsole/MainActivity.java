@@ -1433,31 +1433,88 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
+        public String scanApksForRabbit() {
+            return safeCall("[]", () -> {
+                List<File> apks = AutoPilotManager.scanDownloadedApks(MainActivity.this);
+                JSONArray arr = new JSONArray();
+                PackageManager pm = context.getPackageManager();
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA);
+                for (File apk : apks) {
+                    if (apk == null || !apk.exists() || apk.length() == 0) continue;
+                    JSONObject obj = new JSONObject();
+                    obj.put("filename", apk.getName());
+                    obj.put("path", apk.getAbsolutePath());
+                    obj.put("sizeBytes", apk.length());
+                    obj.put("sizeStr", String.format(Locale.CHINA, "%.1f MB", apk.length() / (1024.0 * 1024.0)));
+                    obj.put("lastModified", apk.lastModified());
+                    obj.put("timeStr", sdf.format(new Date(apk.lastModified())));
+
+                    String label = apk.getName();
+                    String pkg = "";
+                    String verName = "";
+                    int verCode = 0;
+                    try {
+                        PackageInfo pi = pm.getPackageArchiveInfo(apk.getAbsolutePath(), 0);
+                        if (pi != null) {
+                            pkg = (pi.packageName != null) ? pi.packageName : "";
+                            verName = (pi.versionName != null) ? pi.versionName : "";
+                            verCode = pi.versionCode;
+                            if (pi.applicationInfo != null) {
+                                pi.applicationInfo.sourceDir = apk.getAbsolutePath();
+                                pi.applicationInfo.publicSourceDir = apk.getAbsolutePath();
+                                CharSequence cs = pm.getApplicationLabel(pi.applicationInfo);
+                                if (cs != null && cs.length() > 0) {
+                                    label = cs.toString();
+                                }
+                            }
+                        }
+                    } catch (Exception ignored) {}
+
+                    if (label.equals(apk.getName())) {
+                        String nameLower = apk.getName().toLowerCase();
+                        if (nameLower.contains("automap") || nameLower.contains("amap")) {
+                            label = "高德地图车机版";
+                        } else if (nameLower.contains("baidu") || nameLower.contains("baidumap")) {
+                            label = "百度地图车机版";
+                        }
+                    }
+
+                    boolean isNavi = isNavigationApp(pkg, apk.getName());
+                    obj.put("name", label);
+                    obj.put("packageName", pkg);
+                    obj.put("versionName", verName);
+                    obj.put("versionCode", verCode);
+                    obj.put("isNavigation", isNavi);
+                    arr.put(obj);
+                }
+                return arr.toString();
+            });
+        }
+
+        @JavascriptInterface
         public void startAutoPilotInject(final String filename) {
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
+                    if (filename == null || filename.trim().isEmpty()) {
+                        Toast.makeText(context, "请先在界面上选择需要注入的安装包！", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
                     File targetFile = null;
-                    if (filename != null && !filename.trim().isEmpty()) {
-                        File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
-                        File f = new File(downloadDir, filename.trim());
-                        if (f.exists() && f.length() > 0) {
-                            targetFile = f;
-                        }
+                    File dedicatedDir = SystemUtils.getAppDownloadDir();
+                    File legacyDir = new File(Environment.getExternalStorageDirectory(), "Download");
+                    File f1 = new File(dedicatedDir, filename.trim());
+                    File f2 = new File(legacyDir, filename.trim());
+                    if (f1.exists() && f1.length() > 0) {
+                        targetFile = f1;
+                    } else if (f2.exists() && f2.length() > 0) {
+                        targetFile = f2;
                     }
 
                     if (targetFile == null) {
-                        List<File> apks = AutoPilotManager.scanDownloadedApks(MainActivity.this);
-                        if (apks.isEmpty()) {
-                            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                            boolean expert = prefs.getBoolean("expert_rabbit_theme_enabled", false);
-                            String msg = expert ? "未在 Download 目录检测到 APK 安装包，请先在软件中心下载或通过无线快传传输！"
-                                                : "未在 Download 目录检测到地图导航类 APK，请先在软件商城下载高德/百度地图！";
-                            Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
-                            return;
-                        } else {
-                            targetFile = apks.get(0);
-                        }
+                        Toast.makeText(context, "未找到安装包文件: " + filename.trim() + "，请先下载或传输至机身！", Toast.LENGTH_LONG).show();
+                        return;
                     }
 
                     final File finalTarget = targetFile;
@@ -1502,27 +1559,35 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         @Override
                         public void run() {
                             try {
-                                File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
+                                if (filename == null || filename.trim().isEmpty()) {
+                                    mainHandler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            Toast.makeText(context, "请先在界面上选择需要注入的安装包！", Toast.LENGTH_LONG).show();
+                                        }
+                                    });
+                                    return;
+                                }
+
+                                File dedicatedDir = SystemUtils.getAppDownloadDir();
+                                File legacyDir = new File(Environment.getExternalStorageDirectory(), "Download");
                                 File apkFile = null;
-                                if (filename != null && !filename.trim().isEmpty()) {
-                                    File f = new File(downloadDir, filename.trim());
-                                    if (f.exists() && f.length() > 0) {
-                                        apkFile = f;
-                                    }
+                                File f1 = new File(dedicatedDir, filename.trim());
+                                File f2 = new File(legacyDir, filename.trim());
+                                if (f1.exists() && f1.length() > 0) {
+                                    apkFile = f1;
+                                } else if (f2.exists() && f2.length() > 0) {
+                                    apkFile = f2;
                                 }
 
                                 if (apkFile == null) {
-                                    List<File> apks = AutoPilotManager.scanDownloadedApks(MainActivity.this);
-                                    if (apks.isEmpty()) {
-                                        mainHandler.post(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                Toast.makeText(context, "未在 Download 目录检测到地图安装包，请先下载！", Toast.LENGTH_LONG).show();
-                                            }
-                                        });
-                                        return;
-                                    }
-                                    apkFile = apks.get(0);
+                                    mainHandler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            Toast.makeText(context, "未找到目标安装包: " + filename.trim() + "，请先下载！", Toast.LENGTH_LONG).show();
+                                        }
+                                    });
+                                    return;
                                 }
 
                                 String pkg = null;
