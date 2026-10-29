@@ -19,7 +19,7 @@
                   <span class="text-[19px] font-black text-car-text">{{ currentProvinceName }}</span>
                   <span class="text-[13px] px-2 py-0.5 rounded bg-car-card text-car-accent font-extrabold border border-car-accent/30">当前地区</span>
                 </div>
-                <span class="text-[13px] text-car-sub font-bold mt-0.5">发改委限价 · {{ store.oilPrice.nextAdjustment.lastAdjustmentDate }} 生效</span>
+                <span class="text-[13px] text-car-sub font-bold mt-0.5">发改委限价 · {{ store.oilPrice.nextAdjustment?.lastAdjustmentDate || '--' }} 生效</span>
               </div>
             </div>
 
@@ -1174,9 +1174,9 @@ function showTankCalcHelp() {
     const gap = fillGapLiters.value;
     const dyn92 = dynamicFillCost92.value;
     const dyn95 = dynamicFillCost95.value;
-    descText = `1. 实车动态加满补能公式（当前生效）：\n【公式】：(油箱总容积 - 剩余升数) × 当日油价\n・实车油量：剩余约 ${remPercent}% (约 ${remLiters} L)，距离加满还差 ${gap} L\n・92# 补满需：${gap}L × ¥${p92}/L = ¥${dyn92} 元\n・95# 补满需：${gap}L × ¥${p95}/L = ¥${dyn95} 元\n\n2. 日常加 200 元可加油量公式：\n【公式】：200元 ÷ 当日油价\n・92# 加200元：200 ÷ ¥${p92} = 约 ${lit200_92} 升\n・95# 加200元：200 ÷ ¥${p95} = 约 ${lit200_95} 升\n\n3. 车型标称容积说明：\n・当前匹配车型：${vehicleModelName.value} (官方油箱容积 ${cap}L)\n・其他适配车型：吉利帝豪 L (52L)、吉利缤越 L (51L)、缤越 COOL (45L)`;
+    descText = `1. 实车动态加满补能公式（当前生效）：\n【公式】：(油箱总容积 - 剩余升数) × 当日油价\n・实车油量：剩余约 ${remPercent}% (约 ${remLiters} L)，距离加满还差 ${gap} L\n・92# 补满需：${gap}L × ¥${p92}/L = ¥${dyn92} 元\n・95# 补满需：${gap}L × ¥${p95}/L = ¥${dyn95} 元\n\n2. 日常加 200 元可加油量公式：\n【公式】：200元 ÷ 当日油价\n・92# 加200元：200 ÷ ¥${p92} = 约 ${lit200_92} 升\n・95# 加200元：200 ÷ ¥${p95} = 约 ${lit200_95} 升\n\n3. 车型标称容积说明：\n・当前匹配车型：${vehicleModelDisplay.value} (官方油箱容积 ${cap}L)\n・其他适配车型：吉利帝豪 L (52L)、吉利缤越 L (51L)、缤越 COOL (45L)`;
   } else {
-    descText = '1. 动态加满说明：\n当前车辆尚未启动或正在读取油量，暂按【整箱加满】展示；车辆点火后，会自动按【当前实际油量】算出还需要补多少升。\n\n2. 空箱整箱基准金额公式：\n【公式】：油箱总容积 × 当日油价\n・92# 整箱：' + cap + 'L × ¥' + p92 + '/L = ¥' + cost92 + ' 元\n・95# 整箱：' + cap + 'L × ¥' + p95 + '/L = ¥' + cost95 + ' 元\n\n3. 日常加 200 元可加油量公式：\n【公式】：200元 ÷ 当日油价\n・92# 加200元：200 ÷ ¥' + p92 + ' = 约 ' + lit200_92 + ' 升\n・95# 加200元：200 ÷ ¥' + p95 + ' = 约 ' + lit200_95 + ' 升\n\n4. 适配车型标准油箱：\n・当前匹配车型：' + vehicleModelName.value + ' (官方油箱容积 ' + cap + 'L)\n・其他适配车型：吉利帝豪 L (52L)、吉利缤越 L (51L)、缤越 COOL (45L)';
+    descText = '1. 动态加满说明：\n当前车辆尚未启动或正在读取油量，暂按【整箱加满】展示；车辆点火后，会自动按【当前实际油量】算出还需要补多少升。\n\n2. 空箱整箱基准金额公式：\n【公式】：油箱总容积 × 当日油价\n・92# 整箱：' + cap + 'L × ¥' + p92 + '/L = ¥' + cost92 + ' 元\n・95# 整箱：' + cap + 'L × ¥' + p95 + '/L = ¥' + cost95 + ' 元\n\n3. 日常加 200 元可加油量公式：\n【公式】：200元 ÷ 当日油价\n・92# 加200元：200 ÷ ¥' + p92 + ' = 约 ' + lit200_92 + ' 升\n・95# 加200元：200 ÷ ¥' + p95 + ' = 约 ' + lit200_95 + ' 升\n\n4. 适配车型标准油箱：\n・当前匹配车型：' + vehicleModelDisplay.value + ' (官方油箱容积 ' + cap + 'L)\n・其他适配车型：吉利帝豪 L (52L)、吉利缤越 L (51L)、缤越 COOL (45L)';
   }
 
   openModal('confirm', {
