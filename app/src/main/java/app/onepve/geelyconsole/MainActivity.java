@@ -108,6 +108,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     private static final int REQ_CODE_STORAGE = 1001;
     private static final int REQ_CODE_SELECT_APK = 2001;
     private static final int REQ_CODE_SELECT_VOICE = 2002;
+    private static final int REQ_CODE_EXPORT_THEME = 2003;
     private String currentSelectingVoiceKey = null;
 
     private WebView webView;
@@ -871,6 +872,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             if (uri != null) {
                 handleSelectedApkForRabbit(uri);
             }
+        } else if (requestCode == REQ_CODE_EXPORT_THEME && resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();
+            if (uri != null) {
+                handleSelectedApkForExport(uri);
+            }
         } else if (requestCode == REQ_CODE_SELECT_VOICE && resultCode == RESULT_OK && data != null) {
             Uri uri = data.getData();
             if (uri != null && currentSelectingVoiceKey != null) {
@@ -975,6 +981,123 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         @Override
                         public void run() {
                             Toast.makeText(MainActivity.this, "处理所选文件失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    private void handleSelectedApkForExport(final Uri uri) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(MainActivity.this, "正在读取安装包，请稍候...", Toast.LENGTH_SHORT).show();
+            }
+        });
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // 1. 缓存 APK
+                    File tempApk = new File(getCacheDir(), "export_source.apk");
+                    InputStream is = getContentResolver().openInputStream(uri);
+                    FileOutputStream fos = new FileOutputStream(tempApk);
+                    byte[] buf = new byte[64 * 1024];
+                    int read;
+                    if (is != null) {
+                        while ((read = is.read(buf)) != -1) {
+                            fos.write(buf, 0, read);
+                        }
+                        is.close();
+                    }
+                    fos.close();
+
+                    // 2. 防砖拦截
+                    try {
+                        PackageManager pm = getPackageManager();
+                        PackageInfo pi = pm.getPackageArchiveInfo(tempApk.getAbsolutePath(), 0);
+                        if (pi != null && pi.packageName != null) {
+                            if (isDangerousSystemPackage(pi.packageName) || isProtectedCriticalPackage(pi.packageName)) {
+                                mainHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(MainActivity.this, "【安全拦截】该 APK 为系统核心组件，禁止打包！", Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                                return;
+                            }
+                        }
+                    } catch (Exception ignored) {}
+
+                    // 3. 生成提示
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(MainActivity.this, "正在打包生成兔子主题包，请稍候...", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+                    // 4. 打包并校验
+                    final File stagedXtz = ThemePatcher.buildRabbitThemeToTemp(MainActivity.this, tempApk);
+                    if (stagedXtz == null || !stagedXtz.exists()) {
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(MainActivity.this, "主题包打包失败，请检查机身存储权限！", Toast.LENGTH_LONG).show();
+                            }
+                        });
+                        return;
+                    }
+
+                    // 5. 输出到 Download 目录，文件名含 APK 名前缀方便识别
+                    String baseName = tempApk.getName().replace(".apk", "");
+                    try {
+                        PackageManager pm = getPackageManager();
+                        PackageInfo pi = pm.getPackageArchiveInfo(tempApk.getAbsolutePath(), 0);
+                        if (pi != null && pi.packageName != null) {
+                            baseName = pi.packageName;
+                        }
+                    } catch (Exception ignored) {}
+                    final String finalBaseName = baseName;
+                    File downloadDir = new File(android.os.Environment.getExternalStorageDirectory(), "Download");
+                    if (!downloadDir.exists()) downloadDir.mkdirs();
+                    File outXtz = new File(downloadDir, "clock.rabbit." + finalBaseName + ".xtz");
+                    if (outXtz.exists()) outXtz.delete();
+                    boolean moved = stagedXtz.renameTo(outXtz);
+                    if (!moved) {
+                        // 跨分区 fallback：流式复制
+                        try (FileInputStream fin = new FileInputStream(stagedXtz);
+                             FileOutputStream fout = new FileOutputStream(outXtz)) {
+                            byte[] cbuf = new byte[64 * 1024];
+                            int cr;
+                            while ((cr = fin.read(cbuf)) != -1) {
+                                fout.write(cbuf, 0, cr);
+                            }
+                        }
+                        stagedXtz.delete();
+                        moved = outXtz.exists() && outXtz.length() > 0;
+                    }
+                    final boolean success = moved;
+                    final File finalOut = outXtz;
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (success) {
+                                Toast.makeText(MainActivity.this,
+                                        "主题包已导出到下载目录：\nclock.rabbit." + finalBaseName + ".xtz\n可直接分享给其他车友使用！",
+                                        Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(MainActivity.this, "主题包写入下载目录失败，请检查存储权限！", Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    final String err = e.getMessage();
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(MainActivity.this, "导出失败：" + err, Toast.LENGTH_SHORT).show();
                         }
                     });
                 }
@@ -1733,6 +1856,23 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         intent.setType("*/*");
                         intent.addCategory(Intent.CATEGORY_OPENABLE);
                         startActivityForResult(Intent.createChooser(intent, "选择要注入的高德或应用 APK"), REQ_CODE_SELECT_APK);
+                    } catch (Exception e) {
+                        Toast.makeText(context, "打开文件选择器失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void generateRabbitThemeOnly() {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                        intent.setType("*/*");
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        startActivityForResult(Intent.createChooser(intent, "选择要打包成主题包的 APK"), REQ_CODE_EXPORT_THEME);
                     } catch (Exception e) {
                         Toast.makeText(context, "打开文件选择器失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }

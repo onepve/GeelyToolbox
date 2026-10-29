@@ -42,6 +42,7 @@ public class AutoPilotManager {
 
     private Thread workerThread;
     private Runnable delayedCommitRunnable;
+    private Runnable countdownRunnable;
     private volatile boolean isRunning = false;
     private volatile boolean isCancelled = false;
 
@@ -118,6 +119,10 @@ public class AutoPilotManager {
         if (delayedCommitRunnable != null) {
             mainHandler.removeCallbacks(delayedCommitRunnable);
             delayedCommitRunnable = null;
+        }
+        if (countdownRunnable != null) {
+            mainHandler.removeCallbacks(countdownRunnable);
+            countdownRunnable = null;
         }
         hideHudOverlay();
         if (context != null) {

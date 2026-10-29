@@ -12,6 +12,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 public class ThemePatcher {
@@ -188,6 +189,41 @@ public class ThemePatcher {
         return packageToRabbitTheme(null, sourceApk);
     }
 
+    public static boolean verifyRabbitThemeZip(File zipFile, long expectedApkSize) {
+        if (zipFile == null || !zipFile.exists() || zipFile.length() < 1024) {
+            return false;
+        }
+        try (ZipFile zf = new ZipFile(zipFile)) {
+            ZipEntry descEntry = zf.getEntry("description.xml");
+            if (descEntry == null || descEntry.getSize() == 0) {
+                AppLogger.action("兔子主题", "主题包校验未通过", false, "缺少 description.xml 或大小为0");
+                return false;
+            }
+            ZipEntry apkEntry = zf.getEntry("xcscreensaver.apk");
+            if (apkEntry == null) {
+                AppLogger.action("兔子主题", "主题包校验未通过", false, "缺少 xcscreensaver.apk");
+                return false;
+            }
+            // 校验 APK 流与 CRC32，防止写入中断或截断导致车机解析死机
+            try (InputStream is = zf.getInputStream(apkEntry)) {
+                byte[] buf = new byte[16 * 1024];
+                long totalRead = 0;
+                int r;
+                while ((r = is.read(buf)) != -1) {
+                    totalRead += r;
+                }
+                if (expectedApkSize > 0 && totalRead != expectedApkSize) {
+                    AppLogger.action("兔子主题", "主题包校验未通过", false, "APK 流大小不匹配: 期望 " + expectedApkSize + ", 实际 " + totalRead);
+                    return false;
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            AppLogger.action("兔子主题", "主题包完整性校验异常", false, e.getMessage());
+            return false;
+        }
+    }
+
     public static File buildRabbitThemeToTemp(Context context, File sourceApk) {
         if (sourceApk == null || !sourceApk.exists()) {
             return null;
@@ -247,7 +283,6 @@ public class ThemePatcher {
             zos.closeEntry();
 
             zos.finish();
-            return tempXtz;
         } catch (Exception e) {
             AppLogger.action("兔子主题", "打包临时伪装包异常", false, "异常: " + e.getMessage());
             if (tempXtz.exists()) {
@@ -255,10 +290,30 @@ public class ThemePatcher {
             }
             return null;
         }
+
+        // 核心校验：打包完成后立即深度核验 ZIP 结构与内置 APK 完整性，防损坏导致车机死机
+        if (!verifyRabbitThemeZip(tempXtz, sourceApk.length())) {
+            AppLogger.action("兔子主题", "临时伪装包校验未通过，已清除", false, tempXtz.getAbsolutePath());
+            if (tempXtz.exists()) {
+                tempXtz.delete();
+            }
+            return null;
+        }
+
+        return tempXtz;
     }
 
     public static boolean commitStagedRabbitTheme(Context context, File sourceApk, File stagedFile) {
         if (stagedFile == null || !stagedFile.exists()) {
+            return false;
+        }
+
+        // 提交前校验临时包完整性
+        if (!verifyRabbitThemeZip(stagedFile, sourceApk != null ? sourceApk.length() : -1)) {
+            AppLogger.action("兔子主题", "提交前临时包校验失败", false, stagedFile.getAbsolutePath());
+            if (stagedFile.exists()) {
+                stagedFile.delete();
+            }
             return false;
         }
 
@@ -279,6 +334,16 @@ public class ThemePatcher {
 
             // Re-assert placeholder lock
             SystemUtils.applyPlaceholderLock();
+
+            // 替换后严格回读核验：目标文件必须物理存在且通过完整性校验
+            boolean verified = renamed && targetXtz.exists() && verifyRabbitThemeZip(targetXtz, sourceApk != null ? sourceApk.length() : -1);
+            if (!verified) {
+                AppLogger.action("兔子主题", "注入伪装包回读校验失败", false, "renamed=" + renamed + ", targetExists=" + targetXtz.exists());
+                if (targetXtz.exists()) {
+                    targetXtz.delete();
+                }
+                return false;
+            }
 
             if (renamed && context != null && sourceApk != null) {
                 try {
