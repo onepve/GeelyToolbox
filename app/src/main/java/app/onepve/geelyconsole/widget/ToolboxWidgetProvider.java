@@ -133,28 +133,24 @@ public class ToolboxWidgetProvider extends AppWidgetProvider {
     private static void updateWidgetView(Context context, AppWidgetManager manager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_toolbox_3x1);
 
-        // 1. 车型徽章计算
+        // 1. 车型徽章计算 (统一车规标准：[ 车型名称 · 车机芯片 ]，颜色遵循系统统一主题蓝 #60A5FA)
         IVehiclePlatform platform = VehiclePlatformFactory.getPlatform(context);
         String pCode = platform != null ? platform.getPlatformCode() : "";
         String pName = platform != null ? platform.getPlatformName() : "";
         String badgeText;
         if (pCode.contains("binyue_l") || pName.contains("缤越 L") || pName.contains("缤越L")) {
             badgeText = "[ 缤越L · IHU624G ]";
-            views.setTextColor(R.id.widget_platform_badge, 0xFF4ADE80); // 翡翠绿
         } else if (pCode.contains("fe6a3") || pName.contains("缤瑞") || pCode.contains("binrui")) {
             badgeText = "[ 缤瑞COOL · IHU510G ]";
-            views.setTextColor(R.id.widget_platform_badge, 0xFFA78BFA); // 浅紫
         } else if (pName.contains("帝豪") || pCode.contains("emgrand")) {
             badgeText = "[ 帝豪L · IHU521G ]";
-            views.setTextColor(R.id.widget_platform_badge, 0xFFFBBF24); // 琥珀金
         } else if (pName.contains("COOL") || "binyue_cool_e02".equals(pCode)) {
             badgeText = "[ 缤越COOL · IHU516G ]";
-            views.setTextColor(R.id.widget_platform_badge, 0xFF60A5FA); // 晨曦蓝
         } else {
             badgeText = "[ 车规智能座舱 ]";
-            views.setTextColor(R.id.widget_platform_badge, 0xFF94A3B8);
         }
         views.setTextViewText(R.id.widget_platform_badge, badgeText);
+        views.setTextColor(R.id.widget_platform_badge, 0xFF60A5FA); // 统一遵循标准晨曦天蓝主题色
 
         // 2. 蓄电池电压与健康
         float volt = sLastVolt > 0 ? sLastVolt : 13.1f;
