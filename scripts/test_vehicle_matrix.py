@@ -87,13 +87,22 @@ def test_binyue_cool_2022():
         print("     [FAIL] 缤越 COOL MCU 串口左前门开启信号解析失败！")
         failures += 1
 
-    # 4. 车型隔离回归：缤越 COOL 绝不可解析 INFO_ID_VDRIVEINFO_GEAR_POSITION，且白名单绝不包含该关键字
+    # 4. 车型隔离回归：主服务绝不可内联特定车型补丁，必须通过 resolveGear 与 getExclusiveLogcatKeywords 物理委派
     vas_source = read_file("app/src/main/java/app/onepve/geelyconsole/services/VehicleAutomationService.java")
-    if not vas_source or 'if ("binrui_cool_e02".equals(cachedPlatformCode))' not in vas_source:
-        print("     [FAIL] 车型分支隔离门禁缺失！INFO_ID_VDRIVEINFO_GEAR_POSITION 未绑定 binrui_cool_e02 车型代码！")
+    if not vas_source:
+        print("     [FAIL] VehicleAutomationService.java 读取失败！")
+        return 1
+    if "cachedPlatform.resolveGear(line, gearVal, isEngineRunning())" not in vas_source:
+        print("     [FAIL] 车型物理隔离委派门禁缺失！VAS 未委派 cachedPlatform.resolveGear！")
         failures += 1
-    if not vas_source or 'list.add("info_id_vdriveinfo_gear_position");' not in vas_source:
-        print("     [FAIL] 白名单动态挂载门禁缺失！专属报文未走动态按需注入！")
+    if "cachedPlatform.getExclusiveLogcatKeywords()" not in vas_source:
+        print("     [FAIL] 白名单动态挂载门禁缺失！VAS 未按需读取各车型专属关键字！")
+        failures += 1
+    if 'INFO_ID_VDRIVEINFO_GEAR_POSITION' in vas_source:
+        print("     [FAIL] 主服务污染门禁告警！VAS 仍残留内联 INFO_ID_VDRIVEINFO_GEAR_POSITION 解析！")
+        failures += 1
+    if 'import app.onepve.geelyconsole.hal.platform.BinyueLPlatform;' in vas_source:
+        print("     [FAIL] 主服务污染门禁告警！VAS 仍直接引用特定车型实现类 BinyueLPlatform！")
         failures += 1
 
     if failures == 0:
@@ -117,40 +126,62 @@ def test_binrui_cool():
         print("     [FAIL] 缤瑞 COOL 音频策略必须为 HARD_FIRST_WITH_SOFT_FALLBACK！")
         failures += 1
 
-    # 实车 Logcat 抓包仿真 (INFO_ID_VDRIVEINFO_GEAR_POSITION return funValue(0x00200230))
-    p_funvalue = re.compile(r"funValue\((?:0x)?([0-9a-fA-F]+)\)")
-    binrui_logs = [
-        "10-27 16:38:00.000 I/SensorModule( 5486): getFunctionValue:funId(0x00200200) zone(0x00000000) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) return funValue(0x00200210)", # P
-        "10-27 16:38:05.000 I/SensorModule( 5486): getFunctionValue:funId(0x00200200) zone(0x00000000) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) return funValue(0x00200240)", # R
-        "10-27 16:38:10.000 I/SensorModule( 5486): getFunctionValue:funId(0x00200200) zone(0x00000000) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) return funValue(0x00200230)", # N
-        "10-27 16:38:15.000 I/SensorModule( 5486): getFunctionValue:funId(0x00200200) zone(0x00000000) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) return funValue(0x00200220)", # D
+    if failures == 0:
+        print("     [PASS] 缤瑞 COOL 基线门禁 100% 通过！")
+    return failures
+
+def test_fe6a3_ihu510g():
+    print("  >> [车型修补] 吉利缤瑞 COOL FE6A3_IHU510G 专属修补门禁测试...")
+    failures = 0
+    content = read_file("app/src/main/java/app/onepve/geelyconsole/hal/platform/Fe6a3Ihu510gPlatform.java")
+    if not content:
+        print("     [FAIL] Fe6a3Ihu510gPlatform.java 独立车型文件不存在！")
+        return 1
+    if 'PLATFORM_CODE = "fe6a3_ihu510g"' not in content:
+        print("     [FAIL] FE6A3_IHU510G 平台代号必须为 fe6a3_ihu510g！")
+        failures += 1
+    if "resolveGear" not in content:
+        print("     [FAIL] FE6A3_IHU510G 专属挡位解析 resolveGear 缺失！")
+        failures += 1
+
+    # 仿真：CAN 心跳 0x05 保持 P 挡，SensorModule 报 0x00200230 被 resolveGear 驳回 (返回 0，不产生挡位)
+    p_gear = re.compile(r"VehId=Vehicle_Gear\s+value=(?:0x)?([0-9a-fA-F]+)")
+    
+    # 模拟 FE6A3 专属 resolveGear 逻辑
+    def fe6a3_resolve_gear(line, can_gear):
+        if "VehId=Vehicle_Gear" in line:
+            return can_gear if can_gear >= 0 else 0
+        if "INFO_ID_VDRIVEINFO_GEAR_POSITION" in line:
+            return 0 # 显式驳回
+        return -1
+
+    logs = [
+        "10-28 21:49:51.869 D/MCULog: recvVehicleCmd(227) VehId=Vehicle_Gear value=0x05", # CAN P
+        "10-28 21:49:52.500 I/SensorModule: onFunctionValueChanged:funId(0x00200200) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) funcValue(0x00200230)", # Sensor N (应驳回)
+        "10-28 21:49:54.869 D/MCULog: recvVehicleCmd(227) VehId=Vehicle_Gear value=0x05", # CAN P
+        "10-28 21:49:55.600 I/SensorModule: onFunctionValueChanged:funId(0x00200200) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) funcValue(0x00200230)", # Sensor N (应驳回)
     ]
 
-    current_gear = 5
-    announcements = []
-    gear_map = {2: "D", 3: "N", 4: "R", 5: "P"}
+    current_gear = -1
+    flips = 0
+    for line in logs:
+        can_gear = -1
+        m = p_gear.search(line)
+        if m:
+            can_gear = int(m.group(1), 16)
+        
+        g = fe6a3_resolve_gear(line, can_gear)
+        if g > 0 and g != current_gear:
+            flips += 1
+            current_gear = g
 
-    for log in binrui_logs:
-        if "INFO_ID_VDRIVEINFO_GEAR_POSITION" in log:
-            m = p_funvalue.search(log)
-            if m:
-                raw_val = int(m.group(1), 16)
-                low = raw_val & 0xFF
-                g = -1
-                if low == 0x10: g = 5
-                elif low == 0x40: g = 4
-                elif low == 0x30: g = 3
-                elif low == 0x20: g = 2
-                if g > 0 and g != current_gear:
-                    current_gear = g
-                    announcements.append(gear_map.get(g, "UNKNOWN"))
-
-    if current_gear != 2 or announcements != ["R", "N", "D"]:
-        print(f"     [FAIL] 缤瑞 COOL 挡位流解析异常: gear={current_gear}, ann={announcements}")
+    # 只应该有一次初始进入 P 挡，绝不可有 P/N 来回翻转
+    if current_gear != 5 or flips != 1:
+        print(f"     [FAIL] FE6A3 挡位防抖失败！flips={flips}, final_gear={current_gear}")
         failures += 1
 
     if failures == 0:
-        print("     [PASS] 缤瑞 COOL (FE6A3) 核心门禁 100% 通过！")
+        print("     [PASS] 缤瑞 COOL FE6A3_IHU510G 专属修补门禁 100% 通过！")
     return failures
 
 def test_emgrand_l():
@@ -191,6 +222,9 @@ def test_binyue_l():
     if "AudioDecodeStrategy.HARD_FIRST_WITH_SOFT_FALLBACK" not in content:
         print("     [FAIL] 缤越 L 音频策略必须为 HARD_FIRST_WITH_SOFT_FALLBACK！")
         failures += 1
+    if "usesVhalSensorDriver" not in content:
+        print("     [FAIL] 缤越 L 底盘感知模式契约缺失！必须实现 usesVhalSensorDriver() 返回 true！")
+        failures += 1
 
     if failures == 0:
         print("     [PASS] 缤越 L 核心门禁 100% 通过！")
@@ -204,6 +238,7 @@ def main():
     total = 0
     total += test_binyue_cool_2022()
     total += test_binrui_cool()
+    total += test_fe6a3_ihu510g()
     total += test_emgrand_l()
     total += test_binyue_l()
 

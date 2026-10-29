@@ -42,8 +42,6 @@ import org.json.JSONObject;
 import app.onepve.geelyconsole.R;
 import app.onepve.geelyconsole.hal.IVehiclePlatform;
 import app.onepve.geelyconsole.hal.VehiclePlatformFactory;
-import app.onepve.geelyconsole.hal.platform.BinyueCoolPlatform;
-import app.onepve.geelyconsole.hal.platform.BinyueLPlatform;
 import app.onepve.geelyconsole.utils.AdbClient;
 import app.onepve.geelyconsole.utils.AppLogger;
 import app.onepve.geelyconsole.utils.DoorStateManager;
@@ -131,6 +129,7 @@ public class VehicleAutomationService extends Service {
     private String lastPowerStateAggregate = "";
 
     private String cachedPlatformCode = "";
+    private app.onepve.geelyconsole.hal.IVehiclePlatform cachedPlatform;
     private Thread logcatThread;
     private Process logcatProcess;
     private VehicleVoicePlayer voicePlayer;
@@ -426,10 +425,11 @@ public class VehicleAutomationService extends Service {
 
         registerPowerStateReceiver();
         IVehiclePlatform currentPlatform = VehiclePlatformFactory.getPlatform(this);
+        cachedPlatform = currentPlatform;
         cachedPlatformCode = currentPlatform != null ? currentPlatform.getPlatformCode() : "";
-        if (currentPlatform instanceof BinyueLPlatform) {
-            AppLogger.i("车身联动", "检测到缤越 L (IHU624G / Flyme Auto)，通过 HAL 启动 VHAL 感知驱动 (免 logcat)");
-            currentPlatform.getSensorAdapter(this).startListening(this, null);
+        if (cachedPlatform != null && cachedPlatform.usesVhalSensorDriver()) {
+            AppLogger.i("车身联动", "检测到 " + cachedPlatform.getPlatformName() + "，通过 HAL 启动 VHAL 感知驱动 (免 logcat)");
+            cachedPlatform.getSensorAdapter(this).startListening(this, null);
         } else {
             startLogcatReader();
         }
@@ -751,10 +751,13 @@ public class VehicleAutomationService extends Service {
 
     private void initActiveFeatureWhitelist() {
         java.util.List<String> list = new java.util.ArrayList<>(java.util.Arrays.asList(BASE_FEATURE_WHITELIST));
-        // 车型物理隔离分支：仅在缤瑞 COOL (binrui_cool_e02) 下挂载专属底盘挡位轮询
-        // 缤越 COOL 等基准车型绝对不加载，在第 0.0001 毫秒底层物理阻断！
-        if ("binrui_cool_e02".equals(cachedPlatformCode)) {
-            list.add("info_id_vdriveinfo_gear_position");
+        // 车型物理隔离分支：各车型专属报文关键字由各自独立 Java 文件声明（getExclusiveLogcatKeywords），
+        // 主服务只挂载缤越 COOL 2022 基准关键字。缤越 COOL 等未声明专属关键字的车型绝对不加载额外报文，
+        // 在第 0.0001 毫秒底层物理阻断其它车型的轮询串台！
+        if (cachedPlatform != null) {
+            for (String keyword : cachedPlatform.getExclusiveLogcatKeywords()) {
+                list.add(keyword);
+            }
         }
         activeFeatureWhitelist = list.toArray(new String[0]);
     }
@@ -1020,8 +1023,9 @@ public class VehicleAutomationService extends Service {
             return;
         }
 
-        // 3. 解析车辆挡位报文 (法定真源通道: VehId=Vehicle_Gear 与 SensorModule INFO_ID_VDRIVEINFO_GEAR_POSITION)
-        // 核心铁律：仅信赖原厂底盘总线 VehId=Vehicle_Gear (0x02=D, 0x03=N, 0x04=R, 0x05=P) 与 E02 底盘挡位报文 (0x10=P, 0x20=D, 0x30=N, 0x40=R)，绝不杂糅任何上层伪信号！
+        // 3. 解析车辆挡位报文（基准真源: CAN VehId=Vehicle_Gear；各车型差异由专属 Java 文件 resolveGear 委派接管）
+        // 核心铁律：主服务只保留缤越 COOL 2022 纯净基准（CAN 0x02=D 0x03=N 0x04=R 0x05=P），
+        // 严禁在主文件内联特定车型的 if 补丁！车型专属挡位解析物理下沉到各自独立 Java 文件，此处只识别+委派。
         int gearVal = -1;
 
         if (line.contains("VehId=Vehicle_Gear")) {
@@ -1038,24 +1042,14 @@ public class VehicleAutomationService extends Service {
                     else if (low >= 2 && low <= 7) gearVal = low;
                 }
             } catch (Exception ignored) {}
-        } else if (line.contains("INFO_ID_VDRIVEINFO_GEAR_POSITION")) {
-            // 吉利 E02 底盘挡位报文 (专属于缤瑞 COOL FE6A3 平台: return funValue(0x00200230))
-            // 车型分支物理隔离铁律：缤越 COOL 等原车型总线走 VehId=Vehicle_Gear，严禁被 SensorModule 轮询误触发！
-            if ("binrui_cool_e02".equals(cachedPlatformCode)) {
-                // 熄火安全防线：未点火且车速为0时，直接忽略底层传感器轮询，绝不播报！
-                if (isEngineRunning() || currentSpeedKmH > 0) {
-                    try {
-                        Matcher m = P_FUNVALUE.matcher(line);
-                        if (m.find()) {
-                            long rawVal = Long.parseLong(m.group(1), 16);
-                            int low = (int) (rawVal & 0xFF);
-                            if (low == 0x10) gearVal = 5;      // P 挡
-                            else if (low == 0x40) gearVal = 4; // R 挡
-                            else if (low == 0x30) gearVal = 3; // N 挡
-                            else if (low == 0x20) gearVal = 2; // D 挡
-                        }
-                    } catch (Exception ignored) {}
-                }
+        }
+
+        // 车型专属挡位解析委派：当前车型声明了修补逻辑则由专属 Java 文件完全接管；
+        // 未声明（返回 -1）则沿用主服务基准结果。基准车型（缤越 COOL 2022）resolveGear 默认不接管，零污染。
+        if (cachedPlatform != null) {
+            int platformGear = cachedPlatform.resolveGear(line, gearVal, isEngineRunning());
+            if (platformGear >= 0) {
+                gearVal = platformGear;
             }
         }
 

@@ -50,6 +50,11 @@ public class BinyueLPlatform implements IVehiclePlatform {
     }
 
     @Override
+    public boolean usesVhalSensorDriver() {
+        return true;
+    }
+
+    @Override
     public synchronized IVehicleKeyAdapter getKeyAdapter(Context context) {
         if (keyAdapter == null) {
             keyAdapter = new BinyueLKeyAdapterImpl(context);
