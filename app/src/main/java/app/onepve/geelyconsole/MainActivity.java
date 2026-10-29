@@ -1068,8 +1068,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             pushRabbitProgress(d);
         } catch (Exception ignored) {}
     }
-        }).start();
-    }
 
     private void handleSelectedApkForExport(final Uri uri) {
         // 先打开进度弹窗（export 模式，显示命名配置）
