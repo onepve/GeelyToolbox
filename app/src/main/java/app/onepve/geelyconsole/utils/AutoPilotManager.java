@@ -169,12 +169,12 @@ public class AutoPilotManager {
 
                     boolean opened = ThemePatcher.openRabbitThemeSetting(context);
                     if (!opened) {
-                        Toast.makeText(context, "【向导已启动】请在 20 秒内打开主题中心，进入【屏保时钟 ➔ 兔子时钟】等待...", Toast.LENGTH_LONG).show();
+                        Toast.makeText(context, "【向导已启动】请在 30 秒内打开主题中心，进入【屏保时钟 ➔ 兔子时钟】等待...", Toast.LENGTH_LONG).show();
                     } else {
-                        Toast.makeText(context, "【向导已启动】已打开主题中心，请在 20 秒内点击【屏保时钟】进入【兔子时钟】等待...", Toast.LENGTH_LONG).show();
+                        Toast.makeText(context, "【向导已启动】已打开主题中心，请在 30 秒内点击【屏保时钟】进入【兔子时钟】等待...", Toast.LENGTH_LONG).show();
                     }
 
-                    // 启动 20 秒延迟覆盖定时器
+                    // 启动 30 秒延迟覆盖定时器
                     delayedCommitRunnable = new Runnable() {
                         @Override
                         public void run() {
@@ -209,7 +209,7 @@ public class AutoPilotManager {
                             }).start();
                         }
                     };
-                    mainHandler.postDelayed(delayedCommitRunnable, 20000);
+                    mainHandler.postDelayed(delayedCommitRunnable, 30000);
                 }
             });
 

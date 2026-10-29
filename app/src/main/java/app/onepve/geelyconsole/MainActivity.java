@@ -960,17 +960,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         }
                     } catch (Exception ignored) {}
 
-                    // 2. 彻底拔除应用类型限制（用户知晓风险，自主选包）
-                    final boolean ok = ThemePatcher.packageToRabbitTheme(MainActivity.this, tempApk);
+                    // 2. 接入 AutoPilotManager 30秒延迟覆盖流程：
+                    //    先生成临时伪装文件，等车主打开主题中心停在兔子时钟详情页后，
+                    //    30秒定时器到期再原子替换，防止主题中心自愈覆写。
+                    final File finalTempApk = tempApk;
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            if (ok) {
-                                pushDeviceInfoToWeb();
-                                showToast("兔子时钟伪装注入成功！请打开车机主题应用『兔子时钟』，应用后重启车机。");
-                            } else {
-                                showToast("兔子时钟注入失败，请检查机身存储权限");
-                            }
+                            AutoPilotManager.getInstance().startAutoInject(MainActivity.this, finalTempApk);
                         }
                     });
                 } catch (Exception e) {
