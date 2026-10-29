@@ -1067,8 +1067,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     boolean moved = stagedXtz.renameTo(outXtz);
                     if (!moved) {
                         // 跨分区 fallback：流式复制
-                        try (FileInputStream fin = new FileInputStream(stagedXtz);
-                             FileOutputStream fout = new FileOutputStream(outXtz)) {
+                        try (java.io.FileInputStream fin = new java.io.FileInputStream(stagedXtz);
+                             java.io.FileOutputStream fout = new java.io.FileOutputStream(outXtz)) {
                             byte[] cbuf = new byte[64 * 1024];
                             int cr;
                             while ((cr = fin.read(cbuf)) != -1) {
