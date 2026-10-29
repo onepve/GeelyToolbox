@@ -141,7 +141,13 @@ public class ToolboxWidgetProvider extends AppWidgetProvider {
         if (pCode.contains("binyue_l") || pName.contains("缤越 L") || pName.contains("缤越L")) {
             badgeText = "[ 缤越L · IHU624G ]";
             views.setTextColor(R.id.widget_platform_badge, 0xFF4ADE80); // 翡翠绿
-        } else if (pName.contains("COOL")) {
+        } else if (pCode.contains("fe6a3") || pName.contains("缤瑞") || pCode.contains("binrui")) {
+            badgeText = "[ 缤瑞COOL · IHU510G ]";
+            views.setTextColor(R.id.widget_platform_badge, 0xFFA78BFA); // 浅紫
+        } else if (pName.contains("帝豪") || pCode.contains("emgrand")) {
+            badgeText = "[ 帝豪L · IHU521G ]";
+            views.setTextColor(R.id.widget_platform_badge, 0xFFFBBF24); // 琥珀金
+        } else if (pName.contains("COOL") || "binyue_cool_e02".equals(pCode)) {
             badgeText = "[ 缤越COOL · IHU516G ]";
             views.setTextColor(R.id.widget_platform_badge, 0xFF60A5FA); // 晨曦蓝
         } else {
