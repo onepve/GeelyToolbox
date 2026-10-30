@@ -1493,22 +1493,84 @@ public class SystemUtils {
     }
 
     public static String getVinLast6() {
-        String sn = getSystemProp("ro.boot.serialno", "");
-        if (sn.isEmpty()) sn = getSystemProp("ro.serialno", "");
-        if (sn.isEmpty()) {
+        return getVinLast6(null);
+    }
+
+    public static String getVinLast6(Context context) {
+        // 1. 优先从吉利亿咖通车架号系统属性抓取真实 VIN
+        String vin = getSystemProp("ro.ecarx.vin", "");
+        if (vin.isEmpty() || isDummyVinOrSn(vin)) vin = getSystemProp("persist.sys.vin", "");
+        if (vin.isEmpty() || isDummyVinOrSn(vin)) vin = getSystemProp("ro.vin", "");
+        if (vin.isEmpty() || isDummyVinOrSn(vin)) vin = getSystemProp("persist.sys.ecarx.vin", "");
+
+        // 2. 尝试通过反射亿咖通 AdaptAPI Device 接口抓取底层真实 VIN
+        if (vin.isEmpty() || isDummyVinOrSn(vin)) {
             try {
-                sn = android.os.Build.SERIAL;
+                Class<?> devClass = Class.forName("com.ecarx.xui.adaptapi.device.Device");
+                java.lang.reflect.Method createMethod = devClass.getMethod("create", Context.class);
+                Object devObj = createMethod.invoke(null, context);
+                if (devObj != null) {
+                    java.lang.reflect.Method getVinMethod = devObj.getClass().getMethod("getVin");
+                    Object res = getVinMethod.invoke(devObj);
+                    if (res instanceof String) {
+                        String realVin = (String) res;
+                        if (!realVin.isEmpty() && !isDummyVinOrSn(realVin)) {
+                            vin = realVin;
+                        }
+                    }
+                }
             } catch (Throwable ignored) {}
         }
-        if (sn.isEmpty()) sn = getSystemProp("ro.ecarx.ihuid", "");
-        
-        String clean = (sn != null) ? sn.replaceAll("[^a-zA-Z0-9]", "") : "";
+
+        // 3. 尝试从吉利硬件出厂唯一标识 IHUID 提取
+        if (vin.isEmpty() || isDummyVinOrSn(vin)) {
+            String ihuid = getSystemProp("ro.ecarx.ihuid", "");
+            if (ihuid.isEmpty() || isDummyVinOrSn(ihuid)) {
+                ihuid = getSystemProp("persist.sys.ecarx.ihuid", "");
+            }
+            if (!ihuid.isEmpty() && !isDummyVinOrSn(ihuid)) {
+                vin = ihuid;
+            }
+        }
+
+        // 4. 尝试从芯片通用序列号提取 (严格剔除 0123456789ABCDEF 等芯片出厂通用占位符)
+        if (vin.isEmpty() || isDummyVinOrSn(vin)) {
+            String sn = getSystemProp("ro.boot.serialno", "");
+            if (sn.isEmpty() || isDummyVinOrSn(sn)) sn = getSystemProp("ro.serialno", "");
+            if (sn.isEmpty() || isDummyVinOrSn(sn)) {
+                try {
+                    sn = android.os.Build.SERIAL;
+                } catch (Throwable ignored) {}
+            }
+            if (!sn.isEmpty() && !isDummyVinOrSn(sn)) {
+                vin = sn;
+            }
+        }
+
+        // 5. 格式化提取后 6 位
+        String clean = (vin != null) ? vin.replaceAll("[^a-zA-Z0-9]", "") : "";
         if (clean.length() >= 6) {
-            return clean.substring(clean.length() - 6).toUpperCase();
+            return clean.substring(clean.length() - 6).toUpperCase(java.util.Locale.US);
         } else if (clean.length() > 0) {
-            return String.format(java.util.Locale.US, "%6s", clean).replace(' ', '0').toUpperCase();
+            return String.format(java.util.Locale.US, "%6s", clean).replace(' ', '0').toUpperCase(java.util.Locale.US);
         }
         return "000000";
+    }
+
+    /**
+     * 判断是否为车规芯片/Android通用测试占位序列号 (如 0123456789ABCDEF、unknown、000000 等)
+     */
+    private static boolean isDummyVinOrSn(String val) {
+        if (val == null) return true;
+        String s = val.trim();
+        if (s.isEmpty() || "unknown".equalsIgnoreCase(s) || "null".equalsIgnoreCase(s)) return true;
+        String clean = s.replaceAll("[^a-zA-Z0-9]", "").toUpperCase(java.util.Locale.US);
+        return clean.contains("0123456789ABCDEF")
+                || clean.equals("ABCDEF")
+                || clean.endsWith("ABCDEF")
+                || clean.equals("0123456789")
+                || clean.equals("1234567890")
+                || clean.equals("000000");
     }
 
     public static String getCleanDeviceModel() {
@@ -1674,7 +1736,7 @@ public class SystemUtils {
                 result.put("sizeStr", sizeStr);
                 result.put("chip", getHardwareChip());
                 result.put("modelCode", modelName);
-                result.put("vinLast6", getVinLast6());
+                result.put("vinLast6", getVinLast6(context));
                 long lastMod = zipFile.lastModified();
                 String capturedTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.CHINA).format(new java.util.Date(lastMod > 0 ? lastMod : System.currentTimeMillis()));
                 result.put("capturedTime", capturedTime);
@@ -1730,7 +1792,7 @@ public class SystemUtils {
                 res.put("sizeStr", sizeStr);
                 res.put("chip", chip);
                 res.put("modelCode", model);
-                res.put("vinLast6", getVinLast6());
+                res.put("vinLast6", getVinLast6(context));
                 String capturedTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.CHINA).format(new java.util.Date(target.lastModified()));
                 res.put("capturedTime", capturedTime);
                 return res;
@@ -2545,7 +2607,7 @@ public class SystemUtils {
 
         String chip = getHardwareChip();
         String model = getCleanDeviceModel();
-        String vin6 = getVinLast6();
+        String vin6 = getVinLast6(context);
         String timestamp = new java.text.SimpleDateFormat("yyyyMMddHHmmss", java.util.Locale.US).format(new java.util.Date());
 
         try {

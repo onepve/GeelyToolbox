@@ -1594,10 +1594,10 @@ public class VehicleAutomationService extends Service {
             lastKeyState = val;
             if (val == 2) {
                 lastPowerMode = 1; // 钥匙 ON -> 点火就绪
-                doorStateManager.markDriverInside();
-                doorStateManager.establishCurrentAsBaseline();
                 // 预设门控: KEY ON 只是就绪，不喂发动机边沿 (仅上升沿防抖触发单次预热，绝不每秒循环轰炸)
                 if (prevKey != 2) {
+                    doorStateManager.markDriverInside();
+                    doorStateManager.establishCurrentAsBaseline();
                     AppLogger.i("电源状态", "钥匙 ON (key=2) -> 点火启动就绪 (尊重车速阈值，绝不提前起播)");
                 }
             } else if (val == 0) {
@@ -1616,11 +1616,14 @@ public class VehicleAutomationService extends Service {
         }
         // ENGINE_STATE: 0=停止 1=启动中 2=停止中 3=运行
         if (rawLine.toLowerCase().contains("engine_state") || rawLine.toLowerCase().contains("info_id_vpowerinfo_engine_state")) {
+            int prevEngine = lastEngineState;
             lastEngineState = val;
             if (val == 3) {
                 lastPowerMode = 1;
-                doorStateManager.markDriverInside();
-                doorStateManager.establishCurrentAsBaseline();
+                if (prevEngine != 3) {
+                    doorStateManager.markDriverInside();
+                    doorStateManager.establishCurrentAsBaseline();
+                }
             } else if (val == 0) {
                 // 引擎停止不一定熄火，等待 PEPS_PowerMode=0 或 KEY_STATE=0
             }
@@ -1630,8 +1633,10 @@ public class VehicleAutomationService extends Service {
             int prevPowerMode = lastPowerMode;
             lastPowerMode = val;
             if (val > 0) {
-                doorStateManager.markDriverInside();
-                doorStateManager.establishCurrentAsBaseline();
+                if (prevPowerMode <= 0) {
+                    doorStateManager.markDriverInside();
+                    doorStateManager.establishCurrentAsBaseline();
+                }
             } else if (prevPowerMode != 0) {
                 resetAllStateMachines();
             }
