@@ -1507,7 +1507,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("screen_app_bounds", scr.optString("screen_app_bounds"));
                     obj.put("screen_wm", scr.optString("screen_wm"));
                 }
-                android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                 obj.put("silent_appstore_freeze", prefs.getBoolean("silent_appstore_freeze", false));
                 boolean isBeta = ver.toLowerCase().contains("beta");
                 obj.put("is_beta", isBeta);
