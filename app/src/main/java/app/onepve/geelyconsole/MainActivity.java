@@ -3757,16 +3757,32 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void openHotspotSettings() {
-            // 修复：原厂亿咖通 (ecarx.settings) 无原生 TETHER_SETTINGS，直接拉起整车设置热点页
-            openSystemSettingsPage("android.settings.TETHER_SETTINGS");
-            new Thread(new Runnable() {
+            // 修复：原厂亿咖通 (ecarx.settings) 无原生 TETHER_SETTINGS
+            // 实车日志明确证实原厂设置启动组件为：ecarx.settings/ecarx.settings.setting.CarSettingActivity (标准 LAUNCHER 导出组件)
+            mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        AdbClient.execute(MainActivity.this, "am start -n ecarx.settings/ecarx.settings.setting.CarSettingActivity");
-                    } catch (Exception ignored) {}
+                        Intent intent = getPackageManager().getLaunchIntentForPackage("ecarx.settings");
+                        if (intent == null) {
+                            intent = new Intent(Intent.ACTION_MAIN);
+                            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+                            intent.setComponent(new ComponentName("ecarx.settings", "ecarx.settings.setting.CarSettingActivity"));
+                        }
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                        MainActivity.this.startActivity(intent);
+                        AppLogger.i("系统设置", "已直接拉起原厂整车设置 ecarx.settings.setting.CarSettingActivity");
+                    } catch (Exception e) {
+                        AppLogger.w("系统设置", "直接拉起原厂设置失败，转 ADB 兜底: " + e.getMessage());
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                AdbClient.execute(MainActivity.this, "am start -n ecarx.settings/ecarx.settings.setting.CarSettingActivity");
+                            }
+                        }, "hotspot-settings-adb").start();
+                    }
                 }
-            }, "hotspot-settings-fallback").start();
+            });
         }
 
         @JavascriptInterface
