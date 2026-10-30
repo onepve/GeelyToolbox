@@ -258,11 +258,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             }, 2500);
         }
 
-        // 启动错峰策略解耦：
-        // 若是由开机自启静默预热唤起（后台），避让整车点火洪峰延时 20 秒；
-        // 若是车主主动点开前台界面，说明点火洪峰早已过去，仅延时 500ms（等待 WebView 首帧渲染完成）即在后台轻量复核并推送
-        boolean isSilentPreload = (getIntent() != null && getIntent().getBooleanExtra("silent_boot_preload", false));
-        long warmupDelayMs = isSilentPreload ? 20000L : 500L;
+        // 前后台两条线路完全解耦：
+        // 1. 后台静默预热：界面画好后立即移入后台，白名单等核心注入由 BootReceiver 后台线程 0ms 秒级先行完成，此处仅做轻量设备信息推送（500ms）；
+        // 2. 用户主动点开前台：等待 500ms 首帧渲染完成后，后台异步线程立即无条件补刀复核白名单并推送状态。
+        long warmupDelayMs = 500L;
 
         mainHandler.postDelayed(new Runnable() {
             @Override

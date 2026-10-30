@@ -92,12 +92,30 @@ public class BootReceiver extends BroadcastReceiver {
             AppLogger.e("开机守护", "开机自愈清理异常: " + e.getMessage());
         }
 
-        // 开机点火错峰防洪峰：延时 20 秒等原厂底座与车机各项核心服务完全就绪、车主登车操作完成后，再处理白名单与外设引导
+        // 后台静默启动模式：收到开机/迎宾广播后，立即在后台异步线程执行白名单注入（零延时，毫秒级单条属性写入，极轻量，不与前台争抢算力）
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    SharedPreferences prefs = app.onepve.geelyconsole.utils.PrefUtils.getAppPreferences(context);
+                    boolean autostartEnabled = prefs.getBoolean("autostart_enabled", true);
+                    boolean tempAutostartForRabbit = prefs.getBoolean("temp_autostart_for_rabbit", false);
+                    boolean whitelistPermanentLock = prefs.getBoolean("whitelist_permanent_lock", false);
+                    if (autostartEnabled || tempAutostartForRabbit || whitelistPermanentLock) {
+                        SystemUtils.enableApkVerifyWhitelist(context);
+                        Log.i(TAG, "Apk verify whitelist enabled instantly on background silent boot/wakeup");
+                    }
+                } catch (Throwable e) {
+                    Log.w(TAG, "Failed to enable whitelist instantly on background boot: " + e.getMessage());
+                }
+            }
+        }, "Geely_BootWhitelistThread").start();
+
+        // 后台静默预热 MainActivity：延后 3 秒（仅用于提前画好 WebView 界面，避开广播高峰期，保证迎宾语音零阻塞先行）
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
                 try {
-                    // 后台静默预热 MainActivity：在用户登车点火时提前将界面渲染树与 WebView 画好，用户打开时 0ms 瞬间秒现
                     try {
                         Intent warmUpIntent = new Intent(context, MainActivity.class);
                         warmUpIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
@@ -106,19 +124,6 @@ public class BootReceiver extends BroadcastReceiver {
                     } catch (Throwable ignored) {}
 
                     SharedPreferences prefs = app.onepve.geelyconsole.utils.PrefUtils.getAppPreferences(context);
-                    boolean autostartEnabled = prefs.getBoolean("autostart_enabled", true);
-                    boolean tempAutostartForRabbit = prefs.getBoolean("temp_autostart_for_rabbit", false);
-                    boolean whitelistPermanentLock = prefs.getBoolean("whitelist_permanent_lock", false);
-
-                    // 1. 开机自动放行白名单（开启自启、注入后重启或开启了白名单永久锁定）
-                    if (autostartEnabled || tempAutostartForRabbit || whitelistPermanentLock) {
-                        try {
-                            SystemUtils.enableApkVerifyWhitelist(context);
-                            Log.i(TAG, "Apk verify whitelist auto-enabled on boot");
-                        } catch (Exception e) {
-                            Log.w(TAG, "Failed to enable whitelist on boot: " + e.getMessage());
-                        }
-                    }
 
                     // 2. 自动启动桌面悬浮小胶囊（独立遵循用户开关：只要开启了悬浮胶囊，开机/重启即自动挂载）
                     boolean floatingEnabled = prefs.getBoolean("floating_enabled", false);
@@ -138,7 +143,7 @@ public class BootReceiver extends BroadcastReceiver {
                     }
 
                     // 3. 如果属于兔子时钟一键注入后的重启：直接全屏拉起工具箱，呈现高德安装就绪弹窗！
-                    if (tempAutostartForRabbit) {
+                    if (prefs.getBoolean("temp_autostart_for_rabbit", false)) {
                         try {
                             Intent launchMain = new Intent(context, MainActivity.class);
                             launchMain.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
