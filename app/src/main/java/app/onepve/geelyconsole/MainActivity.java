@@ -258,7 +258,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             }, 2500);
         }
 
-        // 启动错峰：包名扫描与白名单探测等重型后台任务延后 20 秒错峰执行，确保前台界面与车门/挡位联动 100% 独占 CPU 与流畅响应
+        // 启动错峰策略解耦：
+        // 若是由开机自启静默预热唤起（后台），避让整车点火洪峰延时 20 秒；
+        // 若是车主主动点开前台界面，说明点火洪峰早已过去，仅延时 500ms（等待 WebView 首帧渲染完成）即在后台轻量复核并推送
+        boolean isSilentPreload = (getIntent() != null && getIntent().getBooleanExtra("silent_boot_preload", false));
+        long warmupDelayMs = isSilentPreload ? 20000L : 500L;
+
         mainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -268,12 +273,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         try {
                             // 预热「全量禁用包名」缓存（后台一次 pm list packages -d，之后热路径零 shell）
                             SystemUtils.warmDisabledPackagesCache();
-                            if (!SystemUtils.isApkVerifyWhitelistEnabled()) {
-                                SystemUtils.enableApkVerifyWhitelist(MainActivity.this);
-                            }
+                            // 点击打开助手进入前台后，后台异步无条件补刀执行一次白名单注入（幂等操作，双重保险）
+                            SystemUtils.enableApkVerifyWhitelist(MainActivity.this);
+                            android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                             // 启动静默冻结应用商店：仅当用户在「系统维护」里显式开启开关后才执行（默认关闭，
                             // 严禁一启动就自动冻结 —— 是否冻结始终由用户主动决定）
-                            android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
                             if (prefs.getBoolean("silent_appstore_freeze", false) && isCarDevice(MainActivity.this)) {
                                 boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
                                 if (!isAppstoreFrozen && SystemUtils.isPackageInstalled(MainActivity.this, "com.ecarx.appstore")) {
@@ -287,7 +291,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
                 }, "MainActivity_WarmupThread").start();
             }
-        }, 20000);
+        }, warmupDelayMs);
 
         getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(new View.OnSystemUiVisibilityChangeListener() {
             @Override
@@ -811,8 +815,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("net", net.toJson());
                     obj.put("dynamicCode", SystemUtils.calculateDynamicCode());
                     obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
-                    isWhitelistEnabled = SystemUtils.isApkVerifyWhitelistEnabled();
+                    android.content.SharedPreferences prefsLock = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                    boolean whitelistPermanentLock = prefsLock.getBoolean("whitelist_permanent_lock", false);
+                    isWhitelistEnabled = whitelistPermanentLock || SystemUtils.isApkVerifyWhitelistEnabled();
                     obj.put("whitelist", isWhitelistEnabled);
+                    obj.put("whitelist_permanent_lock", whitelistPermanentLock);
                     String currentVer = "1.3.8";
                     try {
                         currentVer = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
@@ -1468,7 +1475,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 obj.put("is_cellular", net.isCellular);
                 obj.put("dynamicCode", SystemUtils.calculateDynamicCode());
                 obj.put("dynamicCodePlus5", SystemUtils.calculateDynamicCodePlus5());
-                obj.put("whitelist", SystemUtils.isApkVerifyWhitelistEnabled());
+                android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                boolean whitelistPermanentLock = prefs.getBoolean("whitelist_permanent_lock", false);
+                obj.put("whitelist", whitelistPermanentLock || SystemUtils.isApkVerifyWhitelistEnabled());
+                obj.put("whitelist_permanent_lock", whitelistPermanentLock);
                 String ver = "1.4.1";
                 try {
                     ver = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
@@ -1837,6 +1847,30 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             prefs.edit().putBoolean("autostart_enabled", enabled).apply();
             pushDeviceInfoToWeb();
+            return enabled;
+        }
+
+        @JavascriptInterface
+        public boolean setWhitelistPermanentLock(final boolean enabled) {
+            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            prefs.edit().putBoolean("whitelist_permanent_lock", enabled).apply();
+            if (enabled) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        SystemUtils.enableApkVerifyWhitelist(context);
+                        isWhitelistEnabled = true;
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                pushDeviceInfoToWeb();
+                            }
+                        });
+                    }
+                }).start();
+            } else {
+                pushDeviceInfoToWeb();
+            }
             return enabled;
         }
 

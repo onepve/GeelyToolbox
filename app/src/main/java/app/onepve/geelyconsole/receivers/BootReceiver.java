@@ -106,11 +106,12 @@ public class BootReceiver extends BroadcastReceiver {
                     } catch (Throwable ignored) {}
 
                     SharedPreferences prefs = app.onepve.geelyconsole.utils.PrefUtils.getAppPreferences(context);
-                    boolean autostartEnabled = prefs.getBoolean("autostart_enabled", false);
+                    boolean autostartEnabled = prefs.getBoolean("autostart_enabled", true);
                     boolean tempAutostartForRabbit = prefs.getBoolean("temp_autostart_for_rabbit", false);
+                    boolean whitelistPermanentLock = prefs.getBoolean("whitelist_permanent_lock", false);
 
-                    // 1. 开机自动放行白名单（只要开启自启或属于注入后重启）
-                    if (autostartEnabled || tempAutostartForRabbit) {
+                    // 1. 开机自动放行白名单（开启自启、注入后重启或开启了白名单永久锁定）
+                    if (autostartEnabled || tempAutostartForRabbit || whitelistPermanentLock) {
                         try {
                             SystemUtils.enableApkVerifyWhitelist(context);
                             Log.i(TAG, "Apk verify whitelist auto-enabled on boot");

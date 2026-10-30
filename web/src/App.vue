@@ -277,6 +277,7 @@ onMounted(() => {
       if (data.floating_display_mode) store.settings.floating_mode = data.floating_display_mode === 'code' ? 'code' : 'title';
       if (typeof data.expert_rabbit_enabled === 'boolean') store.settings.expert_rabbit = data.expert_rabbit_enabled;
       if (typeof data.silent_appstore_freeze === 'boolean') store.settings.silent_appstore_freeze = data.silent_appstore_freeze;
+      if (typeof data.whitelist_permanent_lock === 'boolean') store.settings.whitelist_permanent_lock = data.whitelist_permanent_lock;
       if (typeof data.adb_master_switch === 'boolean') store.deviceInfo.adb_master_switch = data.adb_master_switch;
       if (data.app_icon_style) {
         store.deviceInfo.app_icon_style = data.app_icon_style;

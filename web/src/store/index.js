@@ -346,6 +346,7 @@ export const store = reactive({
     floating_mode: 'battery', // 'name' | 'code' | 'battery'
     expert_rabbit: false,
     silent_appstore_freeze: false,
+    whitelist_permanent_lock: false,
     startup_nav: getInitialStartupNav(),
     last_active_nav: getInitialLastActiveNav()
   }

@@ -210,6 +210,26 @@
           </div>
         </div>
 
+        <!-- 白名单常驻锁定确认条 (车主手动确认已彻底冻结商店) -->
+        <div class="mt-4 pt-4 border-t border-car-border/40 flex items-center justify-between">
+          <div class="flex flex-col space-y-1 pr-3 min-w-0">
+            <div class="flex items-center space-x-2">
+              <StatusDot size="sm" :color="store.settings.whitelist_permanent_lock ? 'ok' : 'sub'" />
+              <span class="text-[16px] font-black text-car-text">彻底冻结商店 · 永久锁定白名单</span>
+            </div>
+            <div class="text-[13px] text-car-sub font-bold leading-normal truncate">
+              {{ store.settings.whitelist_permanent_lock ? '已确认为彻底冻结，启动 0ms 免检直通' : '由车主手动确认已冻结，开启后免去启动等待' }}
+            </div>
+          </div>
+          <button
+            @click.stop="confirmTogglePermanentLock"
+            class="h-[52px] px-5 rounded-xl border font-black text-[13.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+            :class="store.settings.whitelist_permanent_lock ? 'bg-car-item border-car-border text-car-accent' : 'bg-car-item border-car-border text-car-sub hover:text-car-text'"
+          >
+            {{ store.settings.whitelist_permanent_lock ? '已锁定' : '确认锁定' }}
+          </button>
+        </div>
+
         <div class="pt-4 mt-2 border-t border-car-border/40 flex items-center justify-between text-[13px] text-car-sub">
           <span>安全环境就绪 · 本地沙盒无联网泄露风险</span>
           <span class="font-mono text-car-accent font-bold">GeelyOS HMI Safe Guard</span>
@@ -245,6 +265,44 @@ function openHelpModal(title, desc, tip) {
     showCancel: false,
     confirmText: '我知道了'
   });
+}
+
+function confirmTogglePermanentLock() {
+  if (store.deviceInfo.adb_master_switch === false) {
+    showToast('ADB 总开关已关闭，该功能无法使用');
+    return;
+  }
+  const current = !!store.settings.whitelist_permanent_lock;
+  if (!current) {
+    openModal('confirm', {
+      title: '【白名单永久放行】确认原厂商店已彻底冻结？',
+      desc: '您确认已在车机中安全冻结了吉利应用商店。开启后，助手将把白名单状态永久锁定为放行，下次开机或调出界面时将跳过一切重复自检与等待，0 毫秒秒级放行直装！',
+      tip: '【重要提示】若商店未冻结直接开启，可能因原厂商店后台重置导致白名单被破坏。',
+      isDanger: false,
+      confirmText: '确认已彻底冻结并锁定',
+      cancelText: '取消',
+      onConfirm: () => {
+        bridge.call('setWhitelistPermanentLock', true);
+        store.settings.whitelist_permanent_lock = true;
+        store.deviceInfo.whitelist = true;
+        showToast('已开启白名单永久锁定！启动免检直通', 'success');
+      }
+    });
+  } else {
+    openModal('confirm', {
+      title: '解除白名单永久锁定？',
+      desc: '解除后将恢复为开机与启动自动探测模式，每次打开应用时将重新探测系统白名单状态。',
+      tip: '日常使用建议始终保持锁定状态。',
+      isDanger: true,
+      confirmText: '确认解除锁定',
+      cancelText: '取消',
+      onConfirm: () => {
+        bridge.call('setWhitelistPermanentLock', false);
+        store.settings.whitelist_permanent_lock = false;
+        showToast('已恢复为自动探测模式');
+      }
+    });
+  }
 }
 
 function confirmToggleWhitelist() {
