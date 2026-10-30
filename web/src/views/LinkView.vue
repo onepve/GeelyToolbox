@@ -368,9 +368,9 @@
         </div>
       </div>
 
-      <!-- 卡片 2: 车机热点分享 (整卡点击开关) -->
+      <!-- 卡片 2: 车机热点分享 (整卡点击跳转原厂设置) -->
       <div
-        @click="toggleDeviceDirect('hotspot')"
+        @click="openSettings('hotspot')"
         :class="[
           'rounded-3xl border-2 p-5 shadow-xl flex flex-col justify-between transition-all duration-200 cursor-pointer select-none active:scale-[0.985]',
           store.networkDevice.hotspot_enabled
@@ -396,8 +396,8 @@
           </button>
         </div>
 
-        <!-- 中部：状态与开机策略 (阻止冒泡) -->
-        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-3 py-2" @click.stop>
+        <!-- 中部：状态与直达说明 -->
+        <div class="flex-1 min-w-0 flex flex-col justify-center space-y-2.5 py-2">
           <div class="text-[15.5px] leading-relaxed truncate font-mono">
             <span class="text-car-sub font-bold">广播: </span>
             <span class="text-car-text font-black">
@@ -405,32 +405,22 @@
             </span>
           </div>
 
-          <!-- 开机策略三选一 -->
-          <div class="flex flex-col space-y-1.5 p-3 rounded-2xl bg-car-item border border-car-border">
-            <span class="text-[12.5px] font-black text-car-sub">开机自启策略:</span>
-            <div class="grid grid-cols-3 gap-1.5">
-              <button
-                v-for="item in policyOptions"
-                :key="'ap_' + item.value"
-                @click.stop="changeBootPolicy('hotspot', item.value)"
-                :class="[
-                  'h-[50px] rounded-xl font-black text-[14px] cursor-pointer transition-all border-2 text-center flex items-center justify-center',
-                  store.networkDevice.hotspot_policy === item.value
-                    ? 'bg-car-card border-car-accent text-car-accent shadow-sm'
-                    : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
-                ]"
-              >
-                {{ item.label }}
-              </button>
-            </div>
+          <div class="p-3 rounded-2xl bg-car-item border border-car-border text-[13.5px] text-car-sub font-bold leading-relaxed">
+            受原厂安全权限保护，热点开关由整车系统管控。点击卡片可直接直达原厂设置进行开启或关闭。
           </div>
         </div>
 
-        <!-- 底部标准状态灯 -->
-        <div class="pt-4 border-t border-car-border/60 shrink-0 flex items-center space-x-2">
-          <StatusDot size="sm" :color="store.networkDevice.hotspot_enabled ? 'ok' : 'off'" :glow-px="6" />
-          <span :class="['text-[16px] font-black', store.networkDevice.hotspot_enabled ? 'text-car-text' : 'text-car-sub']">
-            {{ store.networkDevice.hotspot_enabled ? '热点分享已开启' : '热点分享已关闭' }}
+        <!-- 底部标准状态灯与直达引导 -->
+        <div class="pt-4 border-t border-car-border/60 shrink-0 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <StatusDot size="sm" :color="store.networkDevice.hotspot_enabled ? 'ok' : 'off'" :glow-px="6" />
+            <span :class="['text-[16px] font-black', store.networkDevice.hotspot_enabled ? 'text-car-text' : 'text-car-sub']">
+              {{ store.networkDevice.hotspot_enabled ? '热点分享已开启' : '热点分享已关闭' }}
+            </span>
+          </div>
+          <span class="text-[13.5px] font-black text-car-accent flex items-center space-x-1">
+            <span>前往原厂设置</span>
+            <span>➔</span>
           </span>
         </div>
       </div>
@@ -751,8 +741,8 @@ function showHelp(key) {
     },
     network_policy: {
       title: '【功能指南】车载网络与外设连接中枢',
-      desc: '1. 快速控制：随时手动点击开关，状态实时同步更新。\n\n2. 开机策略：支持选择保持现状、默认开启或默认关闭。例如设置开机默认打开热点，手机上车即可无感自动连入车机网络；设置开机默认关闭 Wi-Fi，可避免车机在后台频繁扫描周围热点带来的卡顿。\n\n3. 智能就绪启动：车机开机后会在后台等待网络硬件准备完毕，随后平稳开启，流畅不卡顿。',
-      tip: '支持 Wi-Fi、热点与蓝牙三通道独立策略管理。'
+      desc: '1. 快速控制：Wi-Fi 与车载蓝牙支持随时点击开关，状态实时同步更新。\n\n2. 开机策略：Wi-Fi 与车载蓝牙支持独立配置保持现状、默认开启或默认关闭，避免开机频繁扫描卡顿。\n\n3. 车机热点：受原厂系统底层安全权限保护，热点开关由整车系统管控，点击热点卡片即可一键直达原厂设置进行操作。',
+      tip: 'Wi-Fi 与蓝牙支持开机策略管理，热点支持一键直达原厂设置。'
     }
   };
   const item = helpData[key];

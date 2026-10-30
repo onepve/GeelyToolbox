@@ -269,18 +269,9 @@ public class NetworkPolicyManager {
                             BluetoothAdapter bt = BluetoothAdapter.getDefaultAdapter();
                             boolean hasBtReady = (bt != null && bt.getState() != BluetoothAdapter.STATE_TURNING_ON && bt.getState() != BluetoothAdapter.STATE_TURNING_OFF);
 
-                            // 如果热点需要开启，优先保证 wlan0 和 tbox0 物理就绪
-                            int hotspotPolicy = getPolicy(context, "hotspot");
-                            if (hotspotPolicy == POLICY_DEFAULT_ON) {
-                                if (hasWlan && hasTbox) {
-                                    isHardwareReady = true;
-                                    break;
-                                }
-                            } else {
-                                if (hasWlan && hasBtReady) {
-                                    isHardwareReady = true;
-                                    break;
-                                }
+                            if (hasWlan && hasBtReady) {
+                                isHardwareReady = true;
+                                break;
                             }
                         } catch (Throwable ignored) {}
 
@@ -309,12 +300,7 @@ public class NetworkPolicyManager {
                         setBluetoothEnabled(context, false);
                     }
 
-                    int hotspotPolicy = getPolicy(context, "hotspot");
-                    if (hotspotPolicy == POLICY_DEFAULT_ON && !isHotspotEnabled(context)) {
-                        setHotspotEnabled(context, true);
-                    } else if (hotspotPolicy == POLICY_DEFAULT_OFF && isHotspotEnabled(context)) {
-                        setHotspotEnabled(context, false);
-                    }
+                    // 热点由原厂设置管控，开机策略仅管理 Wi-Fi 与蓝牙
 
                     AppLogger.i("网络中枢", "开机网络与外设连接策略执行完成，线程退出");
                 } catch (Throwable t) {
