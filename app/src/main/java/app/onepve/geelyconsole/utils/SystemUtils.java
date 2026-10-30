@@ -272,6 +272,7 @@ public class SystemUtils {
         NetStatus status = new NetStatus();
         String fallbackCellularIp = null;
         String fallbackCellularIface = null;
+        String fallbackHotspotIp = null; // 车机自身热点 (ap0)
 
         try {
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
@@ -283,33 +284,47 @@ public class SystemUtils {
                     } catch (Exception ignored) {}
 
                     String name = iface.getName().toLowerCase();
+                    // 彻底过滤车联网 TBox 内部专用网卡与虚拟网卡，防止 192.168.225.xx 误导车主
+                    if (name.contains("tbox") || name.startsWith("dummy") || name.contains("sit") || name.contains("p2p")) continue;
+
                     Enumeration<InetAddress> addresses = iface.getInetAddresses();
                     while (addresses.hasMoreElements()) {
                         InetAddress addr = addresses.nextElement();
                         if (!addr.isLoopbackAddress() && addr instanceof Inet4Address) {
                             String host = addr.getHostAddress();
                             if (host == null || host.startsWith("127.")) continue;
+                            // 排除车联 TBox 内部私有网段 (192.168.225.x)
+                            if (host.startsWith("192.168.225.")) continue;
 
-                            // 1. 局域网 Wi-Fi / 热点 / USB共享网络 (支持无线快传)
-                            boolean isLan = name.contains("wlan") || name.contains("ap") || name.contains("rndis") || name.contains("eth") || name.contains("br-");
-                            boolean isLanIp = host.startsWith("192.168.") || host.startsWith("10.") || host.startsWith("172.");
-
-                            if (isLan || isLanIp) {
+                            // 1. 优先：Wi-Fi 局域网 / 手机热点客户端 / 有线网络 (wlan0, eth0, rndis)
+                            if (name.contains("wlan") || name.contains("rndis") || name.contains("eth")) {
                                 status.ip = host;
                                 status.ifaceName = name;
                                 status.isWifiOrLan = true;
                                 status.isCellular = false;
-                                if (name.contains("ap") || name.contains("softap")) {
-                                    status.typeName = "车机热点";
-                                } else if (name.contains("wlan")) {
-                                    status.typeName = "Wi-Fi 局域网";
-                                } else {
-                                    status.typeName = "有线/USB 局域网";
-                                }
+                                status.typeName = name.contains("wlan") ? "Wi-Fi / 手机热点" : "有线/USB 局域网";
                                 status.message = "🟢 局域网已就绪，手机连接同一网络后可访问 http://" + host + ":8888";
                                 return status;
+                            }
+
+                            // 2. 车机自身热点模式 (ap0 / softap)
+                            if (name.contains("ap") || name.contains("softap")) {
+                                fallbackHotspotIp = host;
+                                continue;
+                            }
+
+                            // 3. 其它局域网候选
+                            if (host.startsWith("192.168.") || host.startsWith("10.") || host.startsWith("172.")) {
+                                if (status.ip == null) {
+                                    status.ip = host;
+                                    status.ifaceName = name;
+                                    status.isWifiOrLan = true;
+                                    status.isCellular = false;
+                                    status.typeName = "局域网";
+                                    status.message = "🟢 局域网已就绪，手机连接同一网络后可访问 http://" + host + ":8888";
+                                }
                             } else {
-                                // 2. 其它非回环有效 IPv4 统一作为蜂窝移动网/SIM卡候选 (无论网卡名为 rmnet, seth, radio, ccmni, pdp, usb 等)
+                                // 4. 蜂窝网络候选
                                 if (fallbackCellularIp == null) {
                                     fallbackCellularIp = host;
                                     fallbackCellularIface = name;
@@ -319,16 +334,31 @@ public class SystemUtils {
                     }
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception ignored) {}
+
+        if (status.ip != null) {
+            return status;
         }
 
+        // 5. 如果仅检测到车机自身开启了车载热点 (ap0)：
+        if (fallbackHotspotIp != null) {
+            status.ip = fallbackHotspotIp;
+            status.ifaceName = "ap0";
+            status.isWifiOrLan = false; // 标为 false，防止误导为可直接反向连入
+            status.isCellular = false;
+            status.typeName = "车机热点 (仅供上网)";
+            status.message = "⚠️ 当前为车机热点模式。受车载系统防火墙隔离保护，手机无法反向访问助手后台；若需使用网页后台或无线快传，请用手机开启热点，并让车机连接手机 Wi-Fi";
+            return status;
+        }
+
+        // 6. 蜂窝 SIM 流量
         if (fallbackCellularIp != null) {
             status.ip = fallbackCellularIp;
             status.ifaceName = fallbackCellularIface != null ? fallbackCellularIface : "cellular";
             status.isWifiOrLan = false;
             status.isCellular = true;
             status.typeName = "车机内置 SIM 流量";
-            status.message = "⚠️ 当前为车机内置 SIM 移动网络 (" + fallbackCellularIp + ")，手机无法跨公网直连！请连同一 Wi-Fi 或开启手机热点供车机连接";
+            status.message = "⚠️ 当前为车机内置 SIM 移动网络 (" + fallbackCellularIp + ")，手机无法跨公网直连！请开启手机热点供车机连接";
             return status;
         }
 

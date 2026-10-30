@@ -18,7 +18,8 @@
         :style="isWifiConnected ? 'background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4);' : 'background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.4);'"
       >
         <StatusDot class="mr-2.5" size="lg" :color="isWifiConnected ? 'ok' : 'warn'" />
-        <span>{{ isWifiConnected ? `局域网已就绪: ${serverUrl}` : '提示: 请让手机与车机处于同一热点/Wi-Fi' }}</span>
+        <span v-if="isCarHotspot">⚠️ 车机热点仅供手机上网，受防火墙隔离无法访问后台；请用手机开热点供车机连接</span>
+        <span v-else>{{ isWifiConnected ? `局域网已就绪: ${serverUrl}` : '提示: 请用手机开热点供车机连接，或连接同一 Wi-Fi' }}</span>
       </div>
 
       <!-- 快捷 Wi-Fi 控制工具栏 -->
@@ -67,6 +68,11 @@ import { store, bridge, closeModal, showToast } from '../../store';
 
 const canvasRef = ref(null);
 const isWifiOn = ref(false);
+const netType = ref('');
+
+const isCarHotspot = computed(() => {
+  return netType.value.includes('车机热点') || (store.deviceInfo.net_type && store.deviceInfo.net_type.includes('车机热点'));
+});
 
 function checkWifiState() {
   try {
@@ -124,6 +130,8 @@ function refreshNetworkAndRender() {
       const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
       if (data && data.ip) {
         store.deviceInfo.car_ip = data.ip;
+        netType.value = data.net_type || '';
+        store.deviceInfo.net_type = data.net_type || '';
       }
     }
   } catch (e) {}

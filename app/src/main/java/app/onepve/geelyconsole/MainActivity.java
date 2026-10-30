@@ -3757,7 +3757,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public void openHotspotSettings() {
+            // 修复：原厂亿咖通 (ecarx.settings) 无原生 TETHER_SETTINGS，直接拉起整车设置热点页
             openSystemSettingsPage("android.settings.TETHER_SETTINGS");
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        AdbClient.execute(MainActivity.this, "am start -n ecarx.settings/ecarx.settings.setting.CarSettingActivity");
+                    } catch (Exception ignored) {}
+                }
+            }, "hotspot-settings-fallback").start();
         }
 
         @JavascriptInterface

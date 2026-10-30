@@ -541,12 +541,16 @@ const policyOptions = [
   { label: '默认关闭', value: 2 }
 ];
 
-const toggleDeviceDirect = (type) => {
+const toggleDeviceDirect = async (type) => {
   const cur = !!store.networkDevice[`${type}_enabled`];
   const next = !cur;
-  toggleNetworkDeviceDirect(type, next);
+  await toggleNetworkDeviceDirect(type, next);
   const nameMap = { wifi: 'Wi-Fi', hotspot: '热点分享', bluetooth: '蓝牙' };
-  showToast(`${nameMap[type]} 已切换为 ${next ? '开启' : '关闭'}`);
+  if (type === 'hotspot') {
+    showToast(next ? '热点指令已下发。供手机上网用；若需访问助手后台，请用手机开热点供车机连接' : '热点分享已关闭');
+  } else {
+    showToast(`${nameMap[type]} 已切换为 ${next ? '开启' : '关闭'}`);
+  }
 };
 
 const changeBootPolicy = (type, val) => {
