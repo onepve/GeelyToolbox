@@ -87,62 +87,62 @@
         </div>
       </div>
 
-      <!-- 四大标号油价核心矩阵 (4 列并列卡片) -->
+      <!-- 四大标号油价核心矩阵 (4 列并列卡片，点击即可自设为默认油品) -->
       <div v-if="currentPrice" class="flex space-x-3">
-        <!-- 92# 汽油 -->
-        <div class="flex-1 p-4 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
+        <div
+          v-for="item in fuelList"
+          :key="item.id"
+          @click="onSelectDefaultFuel(item.id)"
+          class="flex-1 p-4 rounded-2xl border-2 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden cursor-pointer transition-all active:scale-[0.98]"
+          :class="[
+            defaultFuelType.includes(item.key)
+              ? 'bg-car-card border-car-accent shadow-md'
+              : 'bg-car-item border-car-border hover:border-car-border-light'
+          ]"
+        >
           <div class="flex items-center space-x-1.5 mb-1.5">
-            <span class="text-[12.5px] px-2 py-0.5 rounded bg-car-card text-car-accent font-extrabold border border-car-accent/30">缤越推荐</span>
-            <span class="text-[16px] font-black text-car-text">92# 汽油</span>
+            <span
+              v-if="defaultFuelType.includes(item.key)"
+              class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-accent font-black border border-car-accent"
+            >
+              我的默认
+            </span>
+            <span
+              v-else-if="item.recTag"
+              class="text-[12px] px-2 py-0.5 rounded bg-car-card text-car-accent font-extrabold border border-car-border"
+            >
+              {{ item.recTag }}
+            </span>
+            <span
+              class="text-[16px] font-black"
+              :class="defaultFuelType.includes(item.key) ? 'text-car-accent' : 'text-car-text'"
+            >
+              {{ item.label }}
+            </span>
           </div>
-          <div class="flex items-baseline justify-center my-0.5">
-            <span class="text-[34px] font-black text-car-text font-mono leading-none">{{ currentPrice.p92.toFixed(2) }}</span>
-            <span class="text-[14px] text-car-sub font-bold ml-1">元/升</span>
-          </div>
-          <div class="mt-1 text-[13px] text-rose-400 font-black">
-            上轮: ↑ {{ currentPrice.diff92.toFixed(2) }}
-          </div>
-        </div>
 
-        <!-- 95# 汽油 -->
-        <div class="flex-1 p-4 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
-          <div class="flex items-center space-x-1.5 mb-1.5">
-            <span class="text-[16px] font-black text-car-text">95# 汽油</span>
-          </div>
           <div class="flex items-baseline justify-center my-0.5">
-            <span class="text-[34px] font-black text-car-text font-mono leading-none">{{ currentPrice.p95.toFixed(2) }}</span>
+            <span
+              class="text-[34px] font-black font-mono leading-none"
+              :class="defaultFuelType.includes(item.key) ? 'text-car-accent' : 'text-car-text'"
+            >
+              {{ item.price ? item.price.toFixed(2) : '--' }}
+            </span>
             <span class="text-[14px] text-car-sub font-bold ml-1">元/升</span>
           </div>
-          <div class="mt-1 text-[13px] text-rose-400 font-black">
-            上轮: ↑ {{ currentPrice.diff95.toFixed(2) }}
-          </div>
-        </div>
 
-        <!-- 98# 汽油 -->
-        <div class="flex-1 p-4 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
-          <div class="flex items-center space-x-1.5 mb-1.5">
-            <span class="text-[16px] font-black text-car-text">98# 汽油</span>
-          </div>
-          <div class="flex items-baseline justify-center my-0.5">
-            <span class="text-[34px] font-black text-car-text font-mono leading-none">{{ currentPrice.p98.toFixed(2) }}</span>
-            <span class="text-[14px] text-car-sub font-bold ml-1">元/升</span>
-          </div>
           <div class="mt-1 text-[13px] text-rose-400 font-black">
-            上轮: ↑ {{ currentPrice.diff98.toFixed(2) }}
+            上轮: ↑ {{ item.diff ? item.diff.toFixed(2) : '0.00' }}
           </div>
-        </div>
 
-        <!-- 0# 柴油 -->
-        <div class="flex-1 p-4 rounded-2xl bg-car-item border-2 border-car-border flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
-          <div class="flex items-center space-x-1.5 mb-1.5">
-            <span class="text-[16px] font-black text-car-text">0# 柴油</span>
-          </div>
-          <div class="flex items-baseline justify-center my-0.5">
-            <span class="text-[34px] font-black text-car-text font-mono leading-none">{{ currentPrice.p0.toFixed(2) }}</span>
-            <span class="text-[14px] text-car-sub font-bold ml-1">元/升</span>
-          </div>
-          <div class="mt-1 text-[13px] text-rose-400 font-black">
-            上轮: ↑ {{ currentPrice.diff0.toFixed(2) }}
+          <div class="mt-2.5 pt-2 w-full border-t border-car-border/50 text-[12px] font-bold">
+            <span v-if="defaultFuelType.includes(item.key)" class="text-car-accent font-black flex items-center justify-center space-x-1">
+              <span>●</span>
+              <span>默认基准</span>
+            </span>
+            <span v-else class="text-car-sub hover:text-car-text">
+              点击设为默认
+            </span>
           </div>
         </div>
       </div>
@@ -215,11 +215,33 @@ import {
   closeModal,
   setOilSelectedProvince,
   toggleOilFavProvince,
-  refreshOilPrices
+  refreshOilPrices,
+  setDefaultFuelType,
+  showToast
 } from '../../store';
 import { PROVINCE_LIST, getDaysToAdjustment } from '../../utils/oilPriceData';
 
 const showPicker = ref(false);
+
+const defaultFuelType = computed(() => {
+  return store.fuelLedger?.config?.default_fuel_type || '92#';
+});
+
+const fuelList = computed(() => {
+  if (!currentPrice.value) return [];
+  const cur = currentPrice.value;
+  return [
+    { id: '92#', key: '92', label: '92# 汽油', price: cur.p92, diff: cur.diff92, recTag: '缤越推荐' },
+    { id: '95#', key: '95', label: '95# 汽油', price: cur.p95, diff: cur.diff95, recTag: '' },
+    { id: '98#', key: '98', label: '98# 汽油', price: cur.p98, diff: cur.diff98, recTag: '' },
+    { id: '0# 柴油', key: '0', label: '0# 柴油', price: cur.p0, diff: cur.diff0, recTag: '' }
+  ];
+});
+
+function onSelectDefaultFuel(type) {
+  setDefaultFuelType(type);
+  showToast(`已设为默认油品：${type}，全车测算与记账将以此为准`, 'success');
+}
 
 const daysLeft = computed(() => {
   if (!store.oilPrice.nextAdjustment || !store.oilPrice.nextAdjustment.date) {

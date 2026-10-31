@@ -188,10 +188,24 @@ const statusPills = computed(() => {
         }
         const prov = store.oilPrice.selectedProvince || '北京';
         const p = store.oilPrice.regionalPrices[prov] || store.oilPrice.regionalPrices['北京'];
-        if (!p || !p.p92) return '油价: 获取中...';
-        const p92 = p.p92.toFixed(2);
+        if (!p) return '油价: 获取中...';
+        const fuelType = store.fuelLedger?.config?.default_fuel_type || '92#';
+        let price = p.p92;
+        let typeLabel = '92#';
+        if (fuelType.includes('95')) {
+          price = p.p95 || price;
+          typeLabel = '95#';
+        } else if (fuelType.includes('98')) {
+          price = p.p98 || price;
+          typeLabel = '98#';
+        } else if (fuelType.includes('0#') || fuelType.includes('柴')) {
+          price = p.p0 || price;
+          typeLabel = '0#柴油';
+        }
+        if (!price) return '油价: 获取中...';
+        const priceStr = price.toFixed(2);
         const days = getDaysToAdjustment(store.oilPrice.nextAdjustment.date);
-        return `油价: ${prov} 92# ¥${p92} (${days.days}天后调价)`;
+        return `油价: ${prov} ${typeLabel} ¥${priceStr} (${days.days}天后调价)`;
       })(),
       dot: { color: 'accent' },
       onClick: () => openModal('oilPrice')

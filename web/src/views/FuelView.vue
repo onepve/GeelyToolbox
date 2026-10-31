@@ -27,12 +27,25 @@
 
             <div class="flex items-center space-x-3">
               <div class="flex flex-col">
-                <span class="text-[12.5px] text-car-sub font-bold">92# 汽油</span>
-                <span class="text-[20px] font-black text-car-text font-mono leading-none">¥{{ currentOilP92 }}<span class="text-[13px] font-normal text-car-sub">/L</span></span>
+                <div class="flex items-center space-x-1">
+                  <span class="text-[12.5px] text-car-sub font-bold">92# 汽油</span>
+                  <span v-if="defaultFuelType.includes('92')" class="text-[10px] px-1 rounded bg-car-card border border-car-accent text-car-accent font-black">默认</span>
+                </div>
+                <span class="text-[20px] font-black font-mono leading-none" :class="defaultFuelType.includes('92') ? 'text-car-accent' : 'text-car-text'">¥{{ currentOilP92 }}<span class="text-[13px] font-normal text-car-sub">/L</span></span>
               </div>
               <div class="flex flex-col">
-                <span class="text-[12.5px] text-car-sub font-bold">95# 汽油</span>
-                <span class="text-[20px] font-black text-car-text font-mono leading-none">¥{{ currentOilP95 }}<span class="text-[13px] font-normal text-car-sub">/L</span></span>
+                <div class="flex items-center space-x-1">
+                  <span class="text-[12.5px] text-car-sub font-bold">95# 汽油</span>
+                  <span v-if="defaultFuelType.includes('95')" class="text-[10px] px-1 rounded bg-car-card border border-car-accent text-car-accent font-black">默认</span>
+                </div>
+                <span class="text-[20px] font-black font-mono leading-none" :class="defaultFuelType.includes('95') ? 'text-car-accent' : 'text-car-text'">¥{{ currentOilP95 }}<span class="text-[13px] font-normal text-car-sub">/L</span></span>
+              </div>
+              <div class="flex flex-col">
+                <div class="flex items-center space-x-1">
+                  <span class="text-[12.5px] text-car-sub font-bold">98# 汽油</span>
+                  <span v-if="defaultFuelType.includes('98')" class="text-[10px] px-1 rounded bg-car-card border border-car-accent text-car-accent font-black">默认</span>
+                </div>
+                <span class="text-[20px] font-black font-mono leading-none" :class="defaultFuelType.includes('98') ? 'text-car-accent' : 'text-car-text'">¥{{ currentOilP98 }}<span class="text-[13px] font-normal text-car-sub">/L</span></span>
               </div>
             </div>
 
@@ -86,7 +99,24 @@
               <span class="text-[19px] font-black text-car-text">{{ vehicleModelDisplay }} {{ tankCapacity }}L 油箱测算</span>
               <HelpDot size="sm" @click="showTankCalcHelp" />
             </div>
-            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-car-accent">官方标称</span>
+            <div class="flex items-center space-x-2">
+              <div class="flex items-center p-0.5 rounded-xl bg-car-item border border-car-border">
+                <button
+                  v-for="f in ['92#', '95#', '98#']"
+                  :key="f"
+                  @click="onSelectDefaultFuel(f)"
+                  :class="[
+                    'h-[50px] px-3.5 rounded-lg text-[13px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center',
+                    defaultFuelType.includes(f.replace('#', ''))
+                      ? 'bg-car-card border-2 border-car-accent text-car-accent shadow-sm'
+                      : 'text-car-sub hover:text-car-text'
+                  ]"
+                >
+                  {{ f }}
+                </button>
+              </div>
+              <span class="px-2.5 py-1 text-[12px] font-black rounded-xl border bg-car-item border-car-border text-car-accent">官方标称</span>
+            </div>
           </div>
 
           <!-- 核心双测算：车辆实时加满测算 vs 日常加200元实用换算 -->
@@ -112,8 +142,15 @@
                   {{ hasFuelSignal ? '加满预估需补：' : '空箱加满整箱预估：' }}
                 </span>
                 <div class="flex items-baseline space-x-3">
-                  <span class="text-[13px] text-car-sub font-bold">92# <span class="text-[20px] font-black text-car-accent font-mono">¥{{ displayCost92 }}</span></span>
-                  <span class="text-[13px] text-car-sub font-bold">95# <span class="text-[18px] font-black text-car-text font-mono">¥{{ displayCost95 }}</span></span>
+                  <span class="text-[13px] font-bold" :class="defaultFuelType.includes('92') ? 'text-car-accent' : 'text-car-sub'">
+                    92# <span class="text-[20px] font-black font-mono" :class="defaultFuelType.includes('92') ? 'text-car-accent' : 'text-car-text'">¥{{ displayCost92 }}</span>
+                  </span>
+                  <span class="text-[13px] font-bold" :class="defaultFuelType.includes('95') ? 'text-car-accent' : 'text-car-sub'">
+                    95# <span class="text-[20px] font-black font-mono" :class="defaultFuelType.includes('95') ? 'text-car-accent' : 'text-car-text'">¥{{ displayCost95 }}</span>
+                  </span>
+                  <span class="text-[13px] font-bold" :class="defaultFuelType.includes('98') ? 'text-car-accent' : 'text-car-sub'">
+                    98# <span class="text-[20px] font-black font-mono" :class="defaultFuelType.includes('98') ? 'text-car-accent' : 'text-car-text'">¥{{ displayCost98 }}</span>
+                  </span>
                 </div>
               </div>
             </div>
@@ -122,8 +159,15 @@
             <div class="p-3.5 bg-car-item border border-car-border rounded-2xl flex items-center justify-between">
               <span class="text-[14px] text-car-sub font-bold">日常加 200 元可加：</span>
               <div class="flex items-baseline space-x-3">
-                <span class="text-[13px] text-car-sub font-bold">92# <span class="text-[20px] font-black text-car-accent font-mono">{{ (currentOilData?.p92 ? 200 / currentOilData.p92 : 26.3).toFixed(1) }}</span> <span class="text-[12px]">L</span></span>
-                <span class="text-[13px] text-car-sub font-bold">95# <span class="text-[20px] font-black text-car-accent font-mono">{{ (currentOilData?.p95 ? 200 / currentOilData.p95 : 24.6).toFixed(1) }}</span> <span class="text-[12px]">L</span></span>
+                <span class="text-[13px] font-bold" :class="defaultFuelType.includes('92') ? 'text-car-accent' : 'text-car-sub'">
+                  92# <span class="text-[20px] font-black font-mono" :class="defaultFuelType.includes('92') ? 'text-car-accent' : 'text-car-text'">{{ (currentOilData?.p92 ? 200 / currentOilData.p92 : 26.3).toFixed(1) }}</span> <span class="text-[12px]">L</span>
+                </span>
+                <span class="text-[13px] font-bold" :class="defaultFuelType.includes('95') ? 'text-car-accent' : 'text-car-sub'">
+                  95# <span class="text-[20px] font-black font-mono" :class="defaultFuelType.includes('95') ? 'text-car-accent' : 'text-car-text'">{{ (currentOilData?.p95 ? 200 / currentOilData.p95 : 24.6).toFixed(1) }}</span> <span class="text-[12px]">L</span>
+                </span>
+                <span class="text-[13px] font-bold" :class="defaultFuelType.includes('98') ? 'text-car-accent' : 'text-car-sub'">
+                  98# <span class="text-[20px] font-black font-mono" :class="defaultFuelType.includes('98') ? 'text-car-accent' : 'text-car-text'">{{ (currentOilData?.p98 ? 200 / currentOilData.p98 : 22.0).toFixed(1) }}</span> <span class="text-[12px]">L</span>
+                </span>
               </div>
             </div>
           </div>
@@ -613,7 +657,9 @@ import {
   clearFuelRecords,
   clearMonthlyRecords,
   clearYearlyArchive,
-  saveMonthlyAdjustment
+  saveMonthlyAdjustment,
+  setDefaultFuelType,
+  showToast
 } from '../store';
 import SubTabs from '../components/SubTabs.vue';
 import FeatureCard from '../components/FeatureCard.vue';
@@ -844,6 +890,26 @@ const displayCost95 = computed(() => {
   return (p * tankCapacity.value).toFixed(1);
 });
 
+const dynamicFillCost98 = computed(() => {
+  const p = currentOilData.value?.p98 || 9.10;
+  return (p * Number(fillGapLiters.value)).toFixed(1);
+});
+
+const displayCost98 = computed(() => {
+  if (hasFuelSignal.value) return dynamicFillCost98.value;
+  const p = currentOilData.value?.p98 || 9.10;
+  return (p * tankCapacity.value).toFixed(1);
+});
+
+const defaultFuelType = computed(() => {
+  return store.fuelLedger?.config?.default_fuel_type || '92#';
+});
+
+function onSelectDefaultFuel(type) {
+  setDefaultFuelType(type);
+  showToast(`已设为默认油品：${type}，全车测算与记账将以此为准`, 'success');
+}
+
 // 油价计算属性
 const currentProvinceName = computed(() => {
   if (store.oilPrice.selectedProvince) return store.oilPrice.selectedProvince;
@@ -858,6 +924,7 @@ const currentOilData = computed(() => {
 });
 const currentOilP92 = computed(() => currentOilData.value?.p92 ? currentOilData.value.p92.toFixed(2) : '--');
 const currentOilP95 = computed(() => currentOilData.value?.p95 ? currentOilData.value.p95.toFixed(2) : '--');
+const currentOilP98 = computed(() => currentOilData.value?.p98 ? currentOilData.value.p98.toFixed(2) : '--');
 const oilDaysText = computed(() => {
   if (!store.oilPrice.nextAdjustment?.date) return '同步中';
   const res = getDaysToAdjustment(store.oilPrice.nextAdjustment.date);
@@ -1161,11 +1228,14 @@ function showCloudPairModal() {
 function showTankCalcHelp() {
   const p92 = currentOilData.value?.p92 || 7.55;
   const p95 = currentOilData.value?.p95 || 8.05;
+  const p98 = currentOilData.value?.p98 || 9.10;
   const cap = tankCapacity.value;
   const cost92 = (p92 * cap).toFixed(1);
   const cost95 = (p95 * cap).toFixed(1);
+  const cost98 = (p98 * cap).toFixed(1);
   const lit200_92 = (200 / p92).toFixed(1);
   const lit200_95 = (200 / p95).toFixed(1);
+  const lit200_98 = (200 / p98).toFixed(1);
 
   let descText = '';
   if (hasFuelSignal.value) {
@@ -1174,9 +1244,10 @@ function showTankCalcHelp() {
     const gap = fillGapLiters.value;
     const dyn92 = dynamicFillCost92.value;
     const dyn95 = dynamicFillCost95.value;
-    descText = `1. 实车动态加满补能公式（当前生效）：\n【公式】：(油箱总容积 - 剩余升数) × 当日油价\n・实车油量：剩余约 ${remPercent}% (约 ${remLiters} L)，距离加满还差 ${gap} L\n・92# 补满需：${gap}L × ¥${p92}/L = ¥${dyn92} 元\n・95# 补满需：${gap}L × ¥${p95}/L = ¥${dyn95} 元\n\n2. 日常加 200 元可加油量公式：\n【公式】：200元 ÷ 当日油价\n・92# 加200元：200 ÷ ¥${p92} = 约 ${lit200_92} 升\n・95# 加200元：200 ÷ ¥${p95} = 约 ${lit200_95} 升\n\n3. 车型标称容积说明：\n・当前匹配车型：${vehicleModelDisplay.value} (官方油箱容积 ${cap}L)\n・其他适配车型：吉利帝豪 L (52L)、吉利缤越 L (51L)、缤越 COOL (45L)`;
+    const dyn98 = dynamicFillCost98.value;
+    descText = `1. 实车动态加满补能公式（当前生效）：\n【公式】：(油箱总容积 - 剩余升数) × 当日油价\n・实车油量：剩余约 ${remPercent}% (约 ${remLiters} L)，距离加满还差 ${gap} L\n・92# 补满需：${gap}L × ¥${p92}/L = ¥${dyn92} 元\n・95# 补满需：${gap}L × ¥${p95}/L = ¥${dyn95} 元\n・98# 补满需：${gap}L × ¥${p98}/L = ¥${dyn98} 元\n\n2. 日常加 200 元可加油量公式：\n【公式】：200元 ÷ 当日油价\n・92# 加200元：200 ÷ ¥${p92} = 约 ${lit200_92} 升\n・95# 加200元：200 ÷ ¥${p95} = 约 ${lit200_95} 升\n・98# 加200元：200 ÷ ¥${p98} = 约 ${lit200_98} 升\n\n3. 车型标称容积说明：\n・当前匹配车型：${vehicleModelDisplay.value} (官方油箱容积 ${cap}L)\n・其他适配车型：吉利帝豪 L (52L)、吉利缤越 L (51L)、缤越 COOL (45L)`;
   } else {
-    descText = '1. 动态加满说明：\n当前车辆尚未启动或正在读取油量，暂按【整箱加满】展示；车辆点火后，会自动按【当前实际油量】算出还需要补多少升。\n\n2. 空箱整箱基准金额公式：\n【公式】：油箱总容积 × 当日油价\n・92# 整箱：' + cap + 'L × ¥' + p92 + '/L = ¥' + cost92 + ' 元\n・95# 整箱：' + cap + 'L × ¥' + p95 + '/L = ¥' + cost95 + ' 元\n\n3. 日常加 200 元可加油量公式：\n【公式】：200元 ÷ 当日油价\n・92# 加200元：200 ÷ ¥' + p92 + ' = 约 ' + lit200_92 + ' 升\n・95# 加200元：200 ÷ ¥' + p95 + ' = 约 ' + lit200_95 + ' 升\n\n4. 适配车型标准油箱：\n・当前匹配车型：' + vehicleModelDisplay.value + ' (官方油箱容积 ' + cap + 'L)\n・其他适配车型：吉利帝豪 L (52L)、吉利缤越 L (51L)、缤越 COOL (45L)';
+    descText = '1. 动态加满说明：\n当前车辆尚未启动或正在读取油量，暂按【整箱加满】展示；车辆点火后，会自动按【当前实际油量】算出还需要补多少升。\n\n2. 空箱整箱基准金额公式：\n【公式】：油箱总容积 × 当日油价\n・92# 整箱：' + cap + 'L × ¥' + p92 + '/L = ¥' + cost92 + ' 元\n・95# 整箱：' + cap + 'L × ¥' + p95 + '/L = ¥' + cost95 + ' 元\n・98# 整箱：' + cap + 'L × ¥' + p98 + '/L = ¥' + cost98 + ' 元\n\n3. 日常加 200 元可加油量公式：\n【公式】：200元 ÷ 当日油价\n・92# 加200元：200 ÷ ¥' + p92 + ' = 约 ' + lit200_92 + ' 升\n・95# 加200元：200 ÷ ¥' + p95 + ' = 约 ' + lit200_95 + ' 升\n・98# 加200元：200 ÷ ¥' + p98 + ' = 约 ' + lit200_98 + ' 升\n\n4. 适配车型标准油箱：\n・当前匹配车型：' + vehicleModelDisplay.value + ' (官方油箱容积 ' + cap + 'L)\n・其他适配车型：吉利帝豪 L (52L)、吉利缤越 L (51L)、缤越 COOL (45L)';
   }
 
   openModal('confirm', {

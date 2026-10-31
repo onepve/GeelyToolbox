@@ -244,7 +244,13 @@ export const store = reactive({
     current_odo: 0,
     config: {
       tank_capacity: 45.0,
-      default_fuel_type: '92#',
+      default_fuel_type: (() => {
+        try {
+          const saved = localStorage.getItem('fuel_default_type');
+          if (saved && saved.trim()) return saved.trim();
+        } catch (e) {}
+        return '92#';
+      })(),
       default_province: '浙江',
       car_id: '',
       plate_number: '',
@@ -643,6 +649,22 @@ export function loadFuelData() {
             localStorage.setItem('fuel_plate_number', store.fuelLedger.config.plate_number);
           } catch (e) {}
         }
+        // 默认油号兜底与本地持久化同步
+        if (!store.fuelLedger.config.default_fuel_type) {
+          try {
+            const localType = localStorage.getItem('fuel_default_type');
+            if (localType && localType.trim()) {
+              store.fuelLedger.config.default_fuel_type = localType.trim();
+              bridge.call('saveFuelConfig', JSON.stringify(store.fuelLedger.config));
+            } else {
+              store.fuelLedger.config.default_fuel_type = '92#';
+            }
+          } catch (e) {}
+        } else {
+          try {
+            localStorage.setItem('fuel_default_type', store.fuelLedger.config.default_fuel_type);
+          } catch (e) {}
+        }
       }
       if (data.current_odo !== undefined) store.fuelLedger.current_odo = data.current_odo;
       if (typeof data.is_car_device === 'boolean') store.deviceInfo.is_car_device = data.is_car_device;
@@ -752,6 +774,21 @@ export function saveFuelConfig(cfg) {
     console.error('saveFuelConfig error', e);
     return false;
   }
+}
+
+export function setDefaultFuelType(type) {
+  if (!type) return;
+  const cleanType = type.trim();
+  if (!store.fuelLedger.config) {
+    store.fuelLedger.config = {};
+  }
+  store.fuelLedger.config.default_fuel_type = cleanType;
+  try {
+    localStorage.setItem('fuel_default_type', cleanType);
+  } catch (e) {}
+  try {
+    saveFuelConfig(store.fuelLedger.config);
+  } catch (e) {}
 }
 
 // 历史行程数据清理由 clearFuelRecords 统一接管，保持接口纯粹性
