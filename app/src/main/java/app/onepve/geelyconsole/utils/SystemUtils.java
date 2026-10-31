@@ -2146,28 +2146,50 @@ public class SystemUtils {
 
     /**
      * 车型档位特征探测（专为缤越 COOL 2022 及亿咖通方案）：
-     * 低配：热擎版（原厂无 AVM 360，倒车为普通影像）
-     * 中配：激擎版（标配 AVM 360 与全景天窗，无 L2 领航辅助与电动尾门）
-     * 高配/顶配：Battle版（配 L2 领航辅助、FaceID、电动尾门、排气声浪阀门）
+     * 低配：热擎版（9.98万，标配360、小天窗、手动座椅、定速巡航、无电动尾门）
+     * 中配：激擎版（10.98万，标配 L2 领航辅助、全景天窗+电动遮阳帘、电动尾门、主驾电动座椅、540°透明底盘）
+     * 顶配：Battle版（11.98万，在中配基础上独占 APA 自动泊车、RPA 遥控泊车、循迹倒车、前6驻车雷达/12雷达、BSD盲区监测、原厂内置DVR行车记录仪）
      */
     public static String getVehicleTrimName(Context context) {
         if (context == null) return "";
         try {
+            // 0. 支持用户手动覆盖或持久化偏好
+            android.content.SharedPreferences sp = PrefUtils.getAppPreferences(context);
+            if (sp != null) {
+                String manualTrim = sp.getString("custom_vehicle_trim", "");
+                if (manualTrim != null && !manualTrim.trim().isEmpty()) {
+                    return manualTrim.trim();
+                }
+            }
+
             String model = getCleanDeviceModel().toUpperCase(java.util.Locale.US);
             boolean isBinyueCool = model.contains("SX11") || model.contains("COOL");
             if (!isBinyueCool) {
                 return "";
             }
-            boolean hasAvm = isPackageInstalled(context, "com.geely.pnd.avm")
+
+            // 1. 顶配独占原厂应用特征：原厂内置行车记录仪 (DVR)、APA 自动泊车
+            boolean hasBattleExclusivePkg = isPackageInstalled(context, "ecarx.dvr")
+                    || isPackageInstalled(context, "com.ecarx.dvr")
+                    || isPackageInstalled(context, "com.geely.pnd.dvr")
+                    || isPackageInstalled(context, "ecarx.apa")
+                    || isPackageInstalled(context, "com.ecarx.apa")
+                    || isPackageInstalled(context, "com.android.car.apa");
+            if (hasBattleExclusivePkg) {
+                return "Battle版";
+            }
+
+            // 2. 原厂 360 应用包名完整覆盖（修复漏判 ecarx.camera.calibration 导致被一刀切误判热擎版）
+            boolean hasAvm = isPackageInstalled(context, "ecarx.camera.calibration")
+                    || isPackageInstalled(context, "com.geely.pnd.avm")
                     || isPackageInstalled(context, "com.ecarx.avm")
                     || isPackageInstalled(context, "com.android.car.avm")
                     || isPackageInstalled(context, "com.jsbd.avm");
+
+            // 3. 缤越 COOL 2022 基准主流走中配（激擎版）
+            // 若连 360 都完全未安装，则回退为低配（热擎版）
             if (!hasAvm) {
                 return "热擎版";
-            }
-            boolean hasFaceId = isPackageInstalled(context, "com.ecarx.faceid");
-            if (hasFaceId) {
-                return "Battle版";
             }
             return "激擎版";
         } catch (Throwable ignored) {
@@ -2176,28 +2198,54 @@ public class SystemUtils {
     }
 
     public static String detectVehicleTrim(Context context, File allLog) {
+        // 0. 支持手动指定覆盖优先
+        if (context != null) {
+            android.content.SharedPreferences sp = PrefUtils.getAppPreferences(context);
+            if (sp != null) {
+                String manualTrim = sp.getString("custom_vehicle_trim", "");
+                if (manualTrim != null && !manualTrim.trim().isEmpty()) {
+                    return manualTrim.trim();
+                }
+            }
+        }
+
         String baseTrim = getVehicleTrimName(context);
         String model = getCleanDeviceModel().toUpperCase(java.util.Locale.US);
         boolean isBinyueCool = model.contains("SX11") || model.contains("COOL");
         if (!isBinyueCool) {
             return baseTrim;
         }
+
         if (allLog != null && allLog.exists()) {
-            boolean hasAvmTraffic = countMatches(allLog, "LiteCam") > 0 
-                    || countMatches(allLog, "ecarx_avm") > 0 
-                    || countMatches(allLog, "AvmService") > 0;
-            if (!hasAvmTraffic && "热擎版".equals(baseTrim)) {
-                return "热擎版 (低配)";
-            }
-            boolean hasL2Traffic = countMatches(allLog, "ADAS_FCS_ALAD") > 0 
-                    || countMatches(allLog, "ADAS_FRS_ALOD") > 0 
-                    || countMatches(allLog, "ALAD_SWITCH") > 0;
-            boolean hasTailgate = countMatches(allLog, "POWERTAILGATE") > 0;
-            if (hasL2Traffic || hasTailgate) {
+            // 顶配独占硬件特征：APA 自动泊车、循迹倒车、前泊车雷达或盲区监测 (BSD/DOW)
+            boolean hasBattleExclusive = countMatches(allLog, "APA_") > 0 
+                    || countMatches(allLog, "AutoParking") > 0
+                    || countMatches(allLog, "RPA_") > 0
+                    || countMatches(allLog, "TRACKING_REVERSE") > 0
+                    || countMatches(allLog, "INFO_ID_BLIND_SPOT_MONITORING_SWITCH) return funValue(0x00000001)") > 0;
+            if (hasBattleExclusive) {
                 return "Battle版 (顶配)";
             }
-            return "激擎版 (中配)";
+
+            // 中配（激擎版）与顶配共有的核心硬件特征：
+            // 1. L2 级驾驶辅助（FCS 前向碰撞系统、ALAD 领航辅助、SLIF 交通标识识别）
+            // 2. 电动后备箱 (POWERTAILGATE)
+            // 3. 全景天窗电动遮阳帘 (INFO_ID_WINDOW_ROLLSHADE)
+            boolean hasL2Traffic = countMatches(allLog, "ADAS_FCS_ALAD") > 0 
+                    || countMatches(allLog, "ADAS_FRS_ALOD") > 0 
+                    || countMatches(allLog, "ALAD_SWITCH") > 0
+                    || countMatches(allLog, "INFO_ID_ADAS_FCS_ALAD") > 0;
+            boolean hasTailgate = countMatches(allLog, "POWERTAILGATE") > 0;
+            boolean hasRollshade = countMatches(allLog, "INFO_ID_WINDOW_ROLLSHADE") > 0;
+
+            if (hasL2Traffic || hasTailgate || hasRollshade) {
+                return "激擎版 (中配)";
+            }
+
+            // 无 L2、无电动尾门、无电动遮阳帘时，判定为低配
+            return "热擎版 (低配)";
         }
+
         if ("热擎版".equals(baseTrim)) return "热擎版 (低配)";
         if ("Battle版".equals(baseTrim)) return "Battle版 (顶配)";
         return "激擎版 (中配)";

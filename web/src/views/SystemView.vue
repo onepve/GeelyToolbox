@@ -182,6 +182,75 @@
 
     <!-- Tab 2: 桌面车标与启动项 (车标定制 + 启动首屏默认视图) -->
     <div v-if="activeTab === 'icon'" class="flex flex-col space-y-4">
+      <!-- 车型配置档位校准 (专为缤越COOL提供自动识别与手动校准兜底) -->
+      <FeatureCard 
+        v-if="store.deviceInfo.is_binyue_cool_model"
+        title="车型配置档位"
+        :desc="`当前判定：${store.deviceInfo.trim_name || '中配·激擎版'}${store.deviceInfo.custom_vehicle_trim ? ' (手动指定)' : ' (系统自动识别)'}。支持按实车硬件自由校准。`"
+        helpTitle="【功能指南】车型配置档位校准"
+        helpText="1. 自动智能识别：&#10;基于车机硬件、360影像应用与 L2 领航总线自动匹配档位。&#10;&#10;2. 官方三档物理差异：&#10;• 热擎版（低配 9.98万）：标配 360 影像、小天窗、定速巡航、无电动尾门。&#10;• 激擎版（中配 10.98万）：标配 L2 智能领航（ICC/LKA/AEB）、全景天窗+电动遮阳帘、电动尾门、主驾电动座椅。&#10;• Battle版（顶配 11.98万）：独占 APA 自动泊车、RPA 遥控泊车、盲区监测 (BSD)、原厂行车记录仪。&#10;&#10;3. 手动校准生效：&#10;若自动识别有偏差，点击相应档位即可手动指定并永久记忆；顶栏车标与方控提示将实时刷新。" helpTip="缤越 COOL 2022 款中配车主请选择「激擎版 (中配)」。"
+      >
+        <div class="w-full flex flex-col space-y-3">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 w-full">
+            <!-- 自动探测 -->
+            <button
+              @click="onSelectTrim('')"
+              :class="[
+                'p-3 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm min-h-[92px]',
+                !store.deviceInfo.custom_vehicle_trim
+                  ? 'bg-car-item border-car-accent shadow-md text-car-accent font-black'
+                  : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
+              ]"
+            >
+              <span class="text-[15.5px] font-black leading-tight">自动识别</span>
+              <span class="text-[11.5px] text-car-sub font-bold mt-0.5">跟随车载总线</span>
+            </button>
+
+            <!-- 激擎版 (中配) -->
+            <button
+              @click="onSelectTrim('激擎版')"
+              :class="[
+                'p-3 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm min-h-[92px]',
+                (store.deviceInfo.custom_vehicle_trim === '激擎版' || (!store.deviceInfo.custom_vehicle_trim && store.deviceInfo.trim_name === '激擎版'))
+                  ? 'bg-car-item border-car-accent shadow-md text-car-accent font-black'
+                  : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
+              ]"
+            >
+              <span class="text-[15.5px] font-black leading-tight">激擎版 (中配)</span>
+              <span class="text-[11.5px] text-car-sub font-bold mt-0.5">L2领航/全景天窗</span>
+            </button>
+
+            <!-- Battle版 (顶配) -->
+            <button
+              @click="onSelectTrim('Battle版')"
+              :class="[
+                'p-3 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm min-h-[92px]',
+                (store.deviceInfo.custom_vehicle_trim === 'Battle版' || (!store.deviceInfo.custom_vehicle_trim && store.deviceInfo.trim_name === 'Battle版'))
+                  ? 'bg-car-item border-car-accent shadow-md text-car-accent font-black'
+                  : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
+              ]"
+            >
+              <span class="text-[15.5px] font-black leading-tight">Battle版 (顶配)</span>
+              <span class="text-[11.5px] text-car-sub font-bold mt-0.5">APA泊车/盲区/DVR</span>
+            </button>
+
+            <!-- 热擎版 (低配) -->
+            <button
+              @click="onSelectTrim('热擎版')"
+              :class="[
+                'p-3 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm min-h-[92px]',
+                (store.deviceInfo.custom_vehicle_trim === '热擎版' || (!store.deviceInfo.custom_vehicle_trim && store.deviceInfo.trim_name === '热擎版'))
+                  ? 'bg-car-item border-car-accent shadow-md text-car-accent font-black'
+                  : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
+              ]"
+            >
+              <span class="text-[15.5px] font-black leading-tight">热擎版 (低配)</span>
+              <span class="text-[11.5px] text-car-sub font-bold mt-0.5">普通小天窗/定速</span>
+            </button>
+          </div>
+        </div>
+      </FeatureCard>
+
       <FeatureCard 
         title="桌面应用图标"
         desc="支持根据车型自动匹配或手动指定桌面图标。设置后立即生效，可在车机桌面上展现专属车标。"
@@ -523,6 +592,15 @@ function resetAllCapsules() {
     localStorage.setItem('geely_capsule_visibility', JSON.stringify(store.capsuleVisibility));
   } catch (e) {}
   showToast('已恢复全部顶栏胶囊显示 (默认全部激活)');
+}
+
+function onSelectTrim(trim) {
+  store.deviceInfo.custom_vehicle_trim = trim;
+  if (trim) {
+    store.deviceInfo.trim_name = trim;
+  }
+  bridge.call('setVehicleTrim', trim);
+  showToast(trim ? `已将车型配置档位校准为「${trim}」` : '已恢复系统自动识别车型档位');
 }
 
 function onSelectAppIconStyle(style) {
