@@ -2217,33 +2217,53 @@ public class SystemUtils {
         }
 
         if (allLog != null && allLog.exists()) {
-            // 顶配独占硬件特征：APA 自动泊车、循迹倒车、前泊车雷达或盲区监测 (BSD/DOW)
-            boolean hasBattleExclusive = countMatches(allLog, "APA_") > 0 
-                    || countMatches(allLog, "AutoParking") > 0
-                    || countMatches(allLog, "RPA_") > 0
-                    || countMatches(allLog, "TRACKING_REVERSE") > 0
-                    || countMatches(allLog, "INFO_ID_BLIND_SPOT_MONITORING_SWITCH) return funValue(0x00000001)") > 0;
-            if (hasBattleExclusive) {
-                return "Battle版 (顶配)";
+            // 若传入的是已打包的 ZIP 诊断归档，直接提取读取 summary.json 中已分析的权威结果
+            if (allLog.getName().endsWith(".zip")) {
+                try (java.util.zip.ZipFile zf = new java.util.zip.ZipFile(allLog)) {
+                    java.util.zip.ZipEntry entry = zf.getEntry("summary.json");
+                    if (entry != null) {
+                        try (java.io.InputStream is = zf.getInputStream(entry);
+                             java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(is, "UTF-8"))) {
+                            StringBuilder sb = new StringBuilder();
+                            String l;
+                            while ((l = br.readLine()) != null) sb.append(l);
+                            org.json.JSONObject sj = new org.json.JSONObject(sb.toString());
+                            String t = sj.optString("trim_name", "");
+                            if (t != null && !t.trim().isEmpty()) {
+                                return t.trim();
+                            }
+                        }
+                    }
+                } catch (Throwable ignored) {}
+            } else {
+                // 顶配独占硬件特征：APA 自动泊车、循迹倒车、前泊车雷达或盲区监测 (BSD/DOW)
+                boolean hasBattleExclusive = countMatches(allLog, "APA_") > 0 
+                        || countMatches(allLog, "AutoParking") > 0
+                        || countMatches(allLog, "RPA_") > 0
+                        || countMatches(allLog, "TRACKING_REVERSE") > 0
+                        || countMatches(allLog, "INFO_ID_BLIND_SPOT_MONITORING_SWITCH) return funValue(0x00000001)") > 0;
+                if (hasBattleExclusive) {
+                    return "Battle版 (顶配)";
+                }
+
+                // 中配（激擎版）与顶配共有的核心硬件特征：
+                // 1. L2 级驾驶辅助（FCS 前向碰撞系统、ALAD 领航辅助、SLIF 交通标识识别）
+                // 2. 电动后备箱 (POWERTAILGATE)
+                // 3. 全景天窗电动遮阳帘 (INFO_ID_WINDOW_ROLLSHADE)
+                boolean hasL2Traffic = countMatches(allLog, "ADAS_FCS_ALAD") > 0 
+                        || countMatches(allLog, "ADAS_FRS_ALOD") > 0 
+                        || countMatches(allLog, "ALAD_SWITCH") > 0
+                        || countMatches(allLog, "INFO_ID_ADAS_FCS_ALAD") > 0;
+                boolean hasTailgate = countMatches(allLog, "POWERTAILGATE") > 0;
+                boolean hasRollshade = countMatches(allLog, "INFO_ID_WINDOW_ROLLSHADE") > 0;
+
+                if (hasL2Traffic || hasTailgate || hasRollshade) {
+                    return "激擎版 (中配)";
+                }
+
+                // 无 L2、无电动尾门、无电动遮阳帘时，判定为低配
+                return "热擎版 (低配)";
             }
-
-            // 中配（激擎版）与顶配共有的核心硬件特征：
-            // 1. L2 级驾驶辅助（FCS 前向碰撞系统、ALAD 领航辅助、SLIF 交通标识识别）
-            // 2. 电动后备箱 (POWERTAILGATE)
-            // 3. 全景天窗电动遮阳帘 (INFO_ID_WINDOW_ROLLSHADE)
-            boolean hasL2Traffic = countMatches(allLog, "ADAS_FCS_ALAD") > 0 
-                    || countMatches(allLog, "ADAS_FRS_ALOD") > 0 
-                    || countMatches(allLog, "ALAD_SWITCH") > 0
-                    || countMatches(allLog, "INFO_ID_ADAS_FCS_ALAD") > 0;
-            boolean hasTailgate = countMatches(allLog, "POWERTAILGATE") > 0;
-            boolean hasRollshade = countMatches(allLog, "INFO_ID_WINDOW_ROLLSHADE") > 0;
-
-            if (hasL2Traffic || hasTailgate || hasRollshade) {
-                return "激擎版 (中配)";
-            }
-
-            // 无 L2、无电动尾门、无电动遮阳帘时，判定为低配
-            return "热擎版 (低配)";
         }
 
         if ("热擎版".equals(baseTrim)) return "热擎版 (低配)";
