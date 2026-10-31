@@ -8,7 +8,7 @@
         v-if="isSupportedPlatform"
         class="text-[12px] px-2.5 py-0.5 rounded-full font-black border transition-all inline-flex items-center shadow-sm select-none"
         :class="badgeStyleClass"
-        :title="store.deviceInfo.platform_name || '车载平台'"
+        :title="badgeTitle"
       >
         <span>{{ displayPlatformBadge }}</span>
       </span>
@@ -110,16 +110,22 @@ const isSupportedPlatform = computed(() => {
 });
 
 const displayPlatformBadge = computed(() => {
-  if (isBinyueL.value) return '缤越L';
-  if (isEmgrandL.value) return '帝豪L';
-  if (isBinyueCool.value) return '缤越COOL';
+  const trim = store.deviceInfo.trim_name || '';
+  if (isBinyueL.value) return trim ? `缤越L · ${trim}` : '缤越L';
+  if (isEmgrandL.value) return trim ? `帝豪L · ${trim}` : '帝豪L';
+  if (isBinyueCool.value) return trim ? `缤越COOL · ${trim}` : '缤越COOL';
   return '';
 });
 
+const badgeTitle = computed(() => {
+  const base = store.deviceInfo.platform_name || '车载平台';
+  const trim = store.deviceInfo.trim_name ? ` · ${store.deviceInfo.trim_name}` : '';
+  return `${base}${trim}`;
+});
+
 const badgeStyleClass = computed(() => {
-  if (isBinyueL.value) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-  if (isEmgrandL.value || isBinyueCool.value) return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
-  return '';
+  // 严格继承全系 v2.0 动态主题调色盘 (accent 强调色)，彻底告别固定蓝
+  return 'bg-car-card border-car-accent text-car-accent';
 });
 
 const isBeta = computed(() => {

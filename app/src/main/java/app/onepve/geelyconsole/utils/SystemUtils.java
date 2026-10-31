@@ -1710,6 +1710,8 @@ public class SystemUtils {
             summary.put("app_version_code", app.onepve.geelyconsole.BuildConfig.VERSION_CODE);
             summary.put("device_model", getCleanDeviceModel());
             summary.put("hardware_chip", getHardwareChip());
+            String trimName = detectVehicleTrim(context, logFile);
+            summary.put("trim_name", trimName);
             try {
                 app.onepve.geelyconsole.hal.IVehiclePlatform currentPlat = app.onepve.geelyconsole.hal.VehiclePlatformFactory.getPlatform(context);
                 if (currentPlat != null) {
@@ -2140,6 +2142,65 @@ public class SystemUtils {
 
     public static boolean enableApkVerifyWhitelist() {
         return enableApkVerifyWhitelist(null);
+    }
+
+    /**
+     * 车型档位特征探测（专为缤越 COOL 2022 及亿咖通方案）：
+     * 低配：热擎版（原厂无 AVM 360，倒车为普通影像）
+     * 中配：激擎版（标配 AVM 360 与全景天窗，无 L2 领航辅助与电动尾门）
+     * 高配/顶配：Battle版（配 L2 领航辅助、FaceID、电动尾门、排气声浪阀门）
+     */
+    public static String getVehicleTrimName(Context context) {
+        if (context == null) return "";
+        try {
+            String model = getCleanDeviceModel().toUpperCase(java.util.Locale.US);
+            boolean isBinyueCool = model.contains("SX11") || model.contains("COOL");
+            if (!isBinyueCool) {
+                return "";
+            }
+            boolean hasAvm = isPackageInstalled(context, "com.geely.pnd.avm")
+                    || isPackageInstalled(context, "com.ecarx.avm")
+                    || isPackageInstalled(context, "com.android.car.avm")
+                    || isPackageInstalled(context, "com.jsbd.avm");
+            if (!hasAvm) {
+                return "热擎版";
+            }
+            boolean hasFaceId = isPackageInstalled(context, "com.ecarx.faceid");
+            if (hasFaceId) {
+                return "Battle版";
+            }
+            return "激擎版";
+        } catch (Throwable ignored) {
+            return "";
+        }
+    }
+
+    public static String detectVehicleTrim(Context context, File allLog) {
+        String baseTrim = getVehicleTrimName(context);
+        String model = getCleanDeviceModel().toUpperCase(java.util.Locale.US);
+        boolean isBinyueCool = model.contains("SX11") || model.contains("COOL");
+        if (!isBinyueCool) {
+            return baseTrim;
+        }
+        if (allLog != null && allLog.exists()) {
+            boolean hasAvmTraffic = countMatches(allLog, "LiteCam") > 0 
+                    || countMatches(allLog, "ecarx_avm") > 0 
+                    || countMatches(allLog, "AvmService") > 0;
+            if (!hasAvmTraffic && "热擎版".equals(baseTrim)) {
+                return "热擎版 (低配)";
+            }
+            boolean hasL2Traffic = countMatches(allLog, "ADAS_FCS_ALAD") > 0 
+                    || countMatches(allLog, "ADAS_FRS_ALOD") > 0 
+                    || countMatches(allLog, "ALAD_SWITCH") > 0;
+            boolean hasTailgate = countMatches(allLog, "POWERTAILGATE") > 0;
+            if (hasL2Traffic || hasTailgate) {
+                return "Battle版 (顶配)";
+            }
+            return "激擎版 (中配)";
+        }
+        if ("热擎版".equals(baseTrim)) return "热擎版 (低配)";
+        if ("Battle版".equals(baseTrim)) return "Battle版 (顶配)";
+        return "激擎版 (中配)";
     }
 
     public static String getVehicleModelDetails() {
@@ -2642,6 +2703,7 @@ public class SystemUtils {
         String chip = getHardwareChip();
         String model = getCleanDeviceModel();
         String vin6 = getVinLast6(context);
+        String trimName = detectVehicleTrim(context, file);
         String timestamp = new java.text.SimpleDateFormat("yyyyMMddHHmmss", java.util.Locale.US).format(new java.util.Date());
         String safeChip = chip != null ? chip.replaceAll("[^a-zA-Z0-9_-]", "") : "UNKNOWN";
         String safeModel = model != null ? model.replaceAll("[^a-zA-Z0-9_-]", "") : "CAR";
@@ -2677,6 +2739,9 @@ public class SystemUtils {
                 conn.setRequestProperty("X-Hardware-Chip", safeChip);
                 conn.setRequestProperty("X-Model-Code", safeModel);
                 conn.setRequestProperty("X-Vin-Last6", safeVin);
+                try {
+                    conn.setRequestProperty("X-Vehicle-Trim", java.net.URLEncoder.encode(trimName != null ? trimName : "", "UTF-8"));
+                } catch (Throwable ignored) {}
                 conn.setRequestProperty("X-Timestamp", timestamp);
                 conn.setRequestProperty("X-Upload-Code", uploadCode);
 

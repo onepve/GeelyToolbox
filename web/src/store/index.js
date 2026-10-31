@@ -137,6 +137,7 @@ export const store = reactive({
     })(),
     platform_code: '',
     platform_name: '',
+    trim_name: '',
     is_car_device: true,
     fuel_percent: -1,
     fuel_liters: -1

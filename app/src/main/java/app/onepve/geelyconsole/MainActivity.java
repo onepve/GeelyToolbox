@@ -864,6 +864,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             obj.put("fuel_capacity", currentPlat.getDefaultFuelCapacityLiters());
                         }
                     } catch (Throwable ignored) {}
+                    obj.put("trim_name", SystemUtils.getVehicleTrimName(MainActivity.this));
                     obj.put("fuel_percent", VehicleAutomationService.currentFuelPercent);
                     obj.put("fuel_liters", (double) VehicleAutomationService.currentFuelLiters);
                     obj.put("logPath", AppLogger.getLogFilePath());
@@ -1496,6 +1497,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         obj.put("fuel_capacity", currentPlat.getDefaultFuelCapacityLiters());
                     }
                 } catch (Throwable ignored) {}
+                obj.put("trim_name", SystemUtils.getVehicleTrimName(MainActivity.this));
                 // 真实屏幕参数：每次启动只采一次，之后复用缓存（与 pushDeviceInfoToWeb 同步）
                 org.json.JSONObject scr = ensureScreenInfoOnce(ver);
                 if (scr != null) {

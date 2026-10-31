@@ -287,6 +287,7 @@ onMounted(() => {
       if (typeof data.is_car_device === 'boolean') store.deviceInfo.is_car_device = data.is_car_device;
       if (typeof data.platform_code === 'string') store.deviceInfo.platform_code = data.platform_code;
       if (typeof data.platform_name === 'string') store.deviceInfo.platform_name = data.platform_name;
+      if (typeof data.trim_name === 'string') store.deviceInfo.trim_name = data.trim_name;
       if (typeof data.fuel_capacity === 'number') store.deviceInfo.fuel_capacity = data.fuel_capacity;
       if (data.fuel_percent !== undefined && data.fuel_percent !== null) store.deviceInfo.fuel_percent = data.fuel_percent;
       if (data.fuel_liters !== undefined && data.fuel_liters !== null) store.deviceInfo.fuel_liters = data.fuel_liters;
