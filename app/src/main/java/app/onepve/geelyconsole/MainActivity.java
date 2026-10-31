@@ -3574,10 +3574,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
         @JavascriptInterface
         public String uploadDiagnosticLog(final String filePath) {
+            return uploadDiagnosticLog(filePath, null);
+        }
+
+        @JavascriptInterface
+        public String uploadDiagnosticLog(final String filePath, final String customCode) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    final JSONObject res = SystemUtils.uploadDiagnosticLog(MainActivity.this, filePath, new OnUploadProgressListener() {
+                    final JSONObject res = SystemUtils.uploadDiagnosticLog(MainActivity.this, filePath, customCode, new OnUploadProgressListener() {
                         @Override
                         public void onProgress(final int percent, final long uploadedBytes, final long totalBytes, final String statusText) {
                             mainHandler.post(new Runnable() {
@@ -3600,10 +3605,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         public void run() {
                             boolean ok = res.optBoolean("success", false);
                             String code = res.optString("code", "");
+                            boolean isWeak = res.optBoolean("isWeakNetworkConfirmed", false);
                             if (ok) {
-                                showToast("✓ 日志上传成功，提取码: " + code);
+                                if (isWeak) {
+                                    showToast("✓ 日志数据已送达云端，识别码: " + code);
+                                } else {
+                                    showToast("✓ 日志上传成功，识别码: " + code);
+                                }
                             } else {
-                                showToast("❌ 日志上传失败: " + res.optString("message", ""));
+                                showToast("❌ 日志上传受阻: " + res.optString("message", ""));
                             }
                             if (webView != null) {
                                 webView.evaluateJavascript("if (window.onLogUploadFinished) window.onLogUploadFinished(" + res.toString() + ");", null);

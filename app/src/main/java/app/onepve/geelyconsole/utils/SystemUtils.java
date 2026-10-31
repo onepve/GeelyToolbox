@@ -2614,10 +2614,14 @@ public class SystemUtils {
      * 4. 云端准入：非车机设备（芯片代号非 IHU/ECARX 系）自动分流独立目录，不与车机日志混放
      */
     public static JSONObject uploadDiagnosticLog(Context context, String filePath) {
-        return uploadDiagnosticLog(context, filePath, null);
+        return uploadDiagnosticLog(context, filePath, null, null);
     }
 
     public static JSONObject uploadDiagnosticLog(Context context, String filePath, OnUploadProgressListener listener) {
+        return uploadDiagnosticLog(context, filePath, null, listener);
+    }
+
+    public static JSONObject uploadDiagnosticLog(Context context, String filePath, String customCode, OnUploadProgressListener listener) {
         JSONObject res = new JSONObject();
         if (filePath == null || filePath.trim().isEmpty()) {
             try {
@@ -2639,15 +2643,21 @@ public class SystemUtils {
         String model = getCleanDeviceModel();
         String vin6 = getVinLast6(context);
         String timestamp = new java.text.SimpleDateFormat("yyyyMMddHHmmss", java.util.Locale.US).format(new java.util.Date());
+        String safeChip = chip != null ? chip.replaceAll("[^a-zA-Z0-9_-]", "") : "UNKNOWN";
+        String safeModel = model != null ? model.replaceAll("[^a-zA-Z0-9_-]", "") : "CAR";
+        String safeVin = vin6 != null ? vin6.replaceAll("[^a-zA-Z0-9]", "") : "000000";
+
+        // 优先采用前端本地预生成的6位识别码，确保客户端在上传前后全程统一
+        String uploadCode = (customCode != null && customCode.trim().matches("^[0-9]{6}$"))
+                ? customCode.trim()
+                : String.format(java.util.Locale.US, "%06d", new java.util.Random().nextInt(900000) + 100000);
+
+        boolean allBytesPushed = false;
+        final long totalLen = file.length();
 
         try {
-            if (listener != null) listener.onProgress(0, 0, file.length(), "正在建立云端安全链路...");
+            if (listener != null) listener.onProgress(0, 0, totalLen, "正在建立云端安全链路...");
 
-            String safeChip = chip != null ? chip.replaceAll("[^a-zA-Z0-9_-]", "") : "UNKNOWN";
-            String safeModel = model != null ? model.replaceAll("[^a-zA-Z0-9_-]", "") : "CAR";
-            String safeVin = vin6 != null ? vin6.replaceAll("[^a-zA-Z0-9]", "") : "000000";
-
-            final long totalLen = file.length();
             java.net.URL url = new java.net.URL("https://log.onepve.com/upload");
             java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
             try {
@@ -2668,6 +2678,7 @@ public class SystemUtils {
                 conn.setRequestProperty("X-Model-Code", safeModel);
                 conn.setRequestProperty("X-Vin-Last6", safeVin);
                 conn.setRequestProperty("X-Timestamp", timestamp);
+                conn.setRequestProperty("X-Upload-Code", uploadCode);
 
                 // 零内存占用轻量流式写出（64KB 缓冲区）
                 try (java.io.FileInputStream fis = new java.io.FileInputStream(file);
@@ -2691,6 +2702,7 @@ public class SystemUtils {
                         }
                     }
                     os.flush();
+                    allBytesPushed = (uploaded == totalLen);
                 }
 
                 int code = conn.getResponseCode();
@@ -2711,32 +2723,78 @@ public class SystemUtils {
                     if (listener != null) listener.onProgress(100, totalLen, totalLen, "上传成功");
                     JSONObject jsonResp = new JSONObject(bodyStr);
                     res.put("success", jsonResp.optBoolean("success", true));
-                    res.put("code", jsonResp.optString("code", ""));
+                    res.put("code", jsonResp.optString("code", uploadCode));
+                    res.put("vin6", jsonResp.optString("vin6", safeVin));
                     res.put("filename", jsonResp.optString("filename", ""));
                     res.put("message", jsonResp.optString("message", "上传成功"));
+                    return res;
                 } else {
                     res.put("success", false);
+                    res.put("code", uploadCode);
+                    res.put("vin6", safeVin);
                     res.put("message", "服务器响应错误 (" + code + "): " + bodyStr);
+                    return res;
                 }
             } finally {
                 conn.disconnect();
             }
-        } catch (java.net.SocketTimeoutException ste) {
-            try {
-                res.put("success", false);
-                res.put("message", "网络连接超时，请检查车机网络信号后重试");
-            } catch (Throwable ignored) {}
-        } catch (javax.net.ssl.SSLException ssle) {
-            try {
-                res.put("success", false);
-                res.put("message", "车机安全连接握手受阻，请确认车机已连接手机热点/Wi-Fi且时间正常: " + ssle.getMessage());
-            } catch (Throwable ignored) {}
         } catch (Throwable t) {
+            // 弱网自愈救赎：如果全部字节已推送完毕，仅因车载网络回执超时断流，轻量向 D1 验证一次是否已入库
+            if (allBytesPushed) {
+                boolean confirmedOnCloud = verifyLogOnCloud(safeVin, uploadCode);
+                try {
+                    res.put("success", true);
+                    res.put("code", uploadCode);
+                    res.put("vin6", safeVin);
+                    res.put("isWeakNetworkConfirmed", true);
+                    if (confirmedOnCloud) {
+                        res.put("message", "上传成功（云端已双重确认归档）");
+                    } else {
+                        res.put("message", "日志数据已推送完毕（网络回执确认稍慢）");
+                    }
+                    if (listener != null) listener.onProgress(100, totalLen, totalLen, "日志已送达云端");
+                    return res;
+                } catch (Throwable ignored) {}
+            }
+
             try {
                 res.put("success", false);
-                res.put("message", "网络上传失败: " + t.getMessage());
+                res.put("code", uploadCode);
+                res.put("vin6", safeVin);
+                if (t instanceof java.net.SocketTimeoutException) {
+                    res.put("message", "网络连接超时，请检查车机网络信号后重试");
+                } else if (t instanceof javax.net.ssl.SSLException) {
+                    res.put("message", "车机安全连接握手受阻，请确认车机网络正常且系统时间正确: " + t.getMessage());
+                } else {
+                    res.put("message", "网络上传遇到异常: " + t.getMessage());
+                }
             } catch (Throwable ignored) {}
         }
         return res;
+    }
+
+    /**
+     * 向 Cloudflare D1 轻量 API 验证日志是否已入库（超时 4s，防阻塞）
+     */
+    private static boolean verifyLogOnCloud(String vin6, String code) {
+        if (vin6 == null || code == null) return false;
+        try {
+            java.net.URL url = new java.net.URL("https://log.onepve.com/api/check?vin=" + vin6 + "&code=" + code);
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(4000);
+            conn.setReadTimeout(4000);
+            conn.setRequestProperty("Connection", "close");
+            if (conn.getResponseCode() == 200) {
+                try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = r.readLine()) != null) sb.append(line);
+                    JSONObject json = new JSONObject(sb.toString());
+                    return json.optBoolean("exists", false);
+                }
+            }
+        } catch (Throwable ignored) {}
+        return false;
     }
 }

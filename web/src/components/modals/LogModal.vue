@@ -163,11 +163,11 @@
           <div class="p-3.5 rounded-2xl border border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-300 flex flex-col justify-between">
             <div>
               <div class="font-black text-[14.5px] mb-1 flex items-center">
-                <span class="mr-1.5">⏳</span>【存放规则：仅保留 30 天，到期全自动销毁】
+                <span class="mr-1.5">⏳</span>【存放规则：30天自动销毁 · 支持自主查阅】
               </div>
               <p class="text-[12.5px] leading-relaxed">
-                • 日志直接传送至开发者专属私有存储库，外界不可见、无法公开下载；<br>
-                • 云端仅保留 30 天供技术分析，到期后系统将自动彻底清除，不留任何备份。
+                • 日志已由车机完成脱敏，加密存储至云端，满 30 天后全自动彻底物理销毁；<br>
+                • 车主可在手机或电脑浏览器访问 <strong class="text-sky-400 font-mono">log.onepve.com</strong>，输入车架后6位或随机码随时自主查阅与下载。
               </p>
             </div>
           </div>
@@ -227,10 +227,16 @@
                 <div class="text-[34px] font-mono font-black text-emerald-400 tracking-[0.18em]">
                   {{ extractedCode }}
                 </div>
+                <div class="text-[12px] text-car-sub mt-2 pt-2 border-t border-car-border/50">
+                  车架后6位: <strong class="text-car-text font-mono tracking-[0.1em]">{{ logMeta.vinLast6 }}</strong>
+                  <span class="mx-1 text-car-border">·</span>
+                  自助下载: <strong class="text-sky-400 font-mono">log.onepve.com</strong>
+                </div>
               </div>
 
               <div class="space-y-1.5 text-[12.5px] text-car-sub leading-relaxed">
-                <p>• <strong>如何排查</strong>：请复制或拍照记下这 <strong class="text-emerald-400">{{ extractedCode }}</strong> 识别码，联系作者并详细描述您的故障现象。</p>
+                <p>• <strong>如何排查</strong>：请记下识别码 <strong class="text-emerald-400">{{ extractedCode }}</strong> 与车架后6位 <strong class="text-car-text">{{ logMeta.vinLast6 }}</strong>，联系作者并详细描述您的故障现象。</p>
+                <p>• <strong>自助查阅</strong>：手机/电脑浏览器打开 <strong class="text-sky-400">log.onepve.com</strong>，输入车架后6位即可查看和下载您上传过的全部日志。</p>
                 <p>• <strong>静默机制</strong>：未联系作者说明具体诉求的日志将静止留存，30天后自动焚毁。</p>
               </div>
             </div>
@@ -602,6 +608,7 @@ const uploadCountdown = ref(20);
 const isPausedCountdown = ref(false);
 let countdownTimer = null;
 const extractedCode = ref('');
+const localUploadCode = ref('');
 const uploadErrorMsg = ref('');
 const uploadPercent = ref(0);
 const uploadStepText = ref('正在准备连接云端...');
@@ -666,9 +673,12 @@ function confirmUpload() {
   uploadPercent.value = 0;
   uploadStepText.value = '正在建立云端安全通道...';
   uploadedKbStr.value = '准备连接...';
+  // 本地先行生成 6 位随机识别码：即使弱网回执超时，车机屏幕也能立刻展示双码
+  localUploadCode.value = String(Math.floor(100000 + Math.random() * 900000));
+  extractedCode.value = localUploadCode.value;
   const targetPath = logMeta.value.path || ('/sdcard/Download/' + (exportFileName.value || 'SX11A3_IHU516_log.zip'));
   try {
-    bridge.call('uploadDiagnosticLog', targetPath);
+    bridge.call('uploadDiagnosticLog', targetPath, localUploadCode.value);
   } catch (e) {
     uploadStatus.value = 'error';
     uploadErrorMsg.value = '上传日志失败: ' + e;
@@ -691,9 +701,10 @@ window.onLogUploadProgress = (percent, upKb, totKb, text) => {
 window.onLogUploadFinished = (res) => {
   if (res && res.success) {
     uploadStatus.value = 'success';
-    extractedCode.value = res.code || '88888888';
+    extractedCode.value = res.code || localUploadCode.value || '88888888';
     logMeta.value.isUploaded = true;
     logMeta.value.uploadedCode = extractedCode.value;
+    logMeta.value.vinLast6 = res.vin6 || logMeta.value.vinLast6 || '000000';
     recordUploadedState(logMeta.value.filename, logMeta.value.capturedTime, extractedCode.value);
   } else {
     uploadStatus.value = 'error';
