@@ -138,7 +138,7 @@
           @click="openKeyLearning"
           class="w-full min-h-[72px] rounded-2xl bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25 font-black text-[19px] cursor-pointer shadow-md hover:border-car-border-light transition-all active:scale-[0.99]"
         >
-          🔍 开始学习方向盘按键
+          开始学习方向盘按键
         </button>
       </FeatureCard>
     </div>
