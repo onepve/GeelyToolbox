@@ -267,6 +267,8 @@ function toggleBetaChannel() {
 }
 
 function checkBetaUpdateManually() {
+  window._manualCheckUpdateActive = true;
+  setTimeout(() => { window._manualCheckUpdateActive = false; }, 15000);
   showToast('正在向测试通道检索最新实验包...');
   try {
     bridge.call('checkBetaUpdate');
@@ -274,6 +276,8 @@ function checkBetaUpdateManually() {
 }
 
 function checkUpdate() {
+  window._manualCheckUpdateActive = true;
+  setTimeout(() => { window._manualCheckUpdateActive = false; }, 15000);
   showToast('正在检查最新版本...');
   try {
     if (useBetaChannel.value) {

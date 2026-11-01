@@ -62,17 +62,19 @@
     <AllAppsModal />
     <OilPriceModal />
 
-    <!-- 极简 Toast 提示 -->
-    <transition name="fade">
-      <div 
-        v-if="store.toast.show" 
-        class="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-[var(--bg-card)] border px-6 py-2.5 rounded-full font-black text-[16.5px] shadow-2xl shadow-black/80 inline-flex items-center max-w-[86vw]"
-        :style="{ color: TOAST_SKINS[store.toast.kind]?.text, borderColor: TOAST_SKINS[store.toast.kind]?.border }"
-      >
-        <span class="w-2 h-2 rounded-full shrink-0 mr-2.5" :style="{ background: TOAST_SKINS[store.toast.kind]?.dot, boxShadow: `0 0 6px ${TOAST_SKINS[store.toast.kind]?.dot}` }"></span>
-        <span class="truncate">{{ store.toast.msg }}</span>
-      </div>
-    </transition>
+    <!-- 极简 Toast 提示 (置顶于所有弹窗与遮罩层之上的最高层级) -->
+    <Teleport to="body">
+      <transition name="fade">
+        <div 
+          v-if="store.toast.show" 
+          class="fixed top-8 left-1/2 -translate-x-1/2 z-[100000] bg-[var(--bg-card)] border px-6 py-2.5 rounded-full font-black text-[16.5px] shadow-2xl shadow-black/80 inline-flex items-center max-w-[86vw] select-none pointer-events-none"
+          :style="{ color: TOAST_SKINS[store.toast.kind]?.text, borderColor: TOAST_SKINS[store.toast.kind]?.border }"
+        >
+          <span class="w-2 h-2 rounded-full shrink-0 mr-2.5" :style="{ background: TOAST_SKINS[store.toast.kind]?.dot, boxShadow: `0 0 6px ${TOAST_SKINS[store.toast.kind]?.dot}` }"></span>
+          <span class="truncate">{{ store.toast.msg }}</span>
+        </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 

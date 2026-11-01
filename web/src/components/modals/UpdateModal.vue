@@ -4,6 +4,7 @@
     :title="updateInfo?.is_beta ? '【测试通道】检测到实验新版' : '检测到新版本发布'" 
     :badge="updateInfo?.is_beta ? 'Beta测试' : 'OTA升级'"
     maxWidthClass="max-w-[760px]"
+    zIndexClass="z-[9998]"
     @close="closeUpdate"
   >
     <div v-if="updateInfo" class="flex flex-col space-y-4">
@@ -145,14 +146,15 @@ onMounted(() => {
     // 检查用户是否勾选了“不再自动提示更新”
     const ignoredVer = localStorage.getItem('geely_ignored_update_version');
     const autoCheck = localStorage.getItem('geely_auto_check_update');
+    const isManual = !!window._manualCheckUpdateActive;
     
     // 如果显式关闭了自动检测更新，且本次是前台静默探针触发，则不弹窗
-    if (autoCheck === 'false') {
+    if (autoCheck === 'false' && !isManual) {
       console.log('用户已在设置中关闭自动检测更新，静默跳过弹窗');
       return;
     }
-    // 如果当前版本被用户标记为“不再提醒”，跳过弹窗
-    if (ignoredVer === String(info.version)) {
+    // 如果当前版本被用户标记为“不再提醒”，且非手动点击检查更新，跳过弹窗
+    if (ignoredVer === String(info.version) && !isManual) {
       console.log(`版本 v${info.version} 已被用户设置为不再提醒，跳过弹窗`);
       return;
     }
