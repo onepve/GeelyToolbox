@@ -87,6 +87,11 @@
             <span class="text-[20px] font-black text-car-text tracking-wide">车速达标智能启播音乐</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">起步自启</span>
             <HelpDot size="sm" @click.stop="showHelp('speed_music')" />
+            <!-- 问号后面紧跟的快捷跳转：一点直达「车载声音·音乐音源优先级」去换唤醒歌曲 -->
+            <span
+              @click.stop="goToMediaPrioritySettings"
+              class="text-[14px] font-black text-car-accent cursor-pointer shrink-0"
+            >快速跳转到音乐设置 ➔</span>
           </div>
           <!-- 右上角：轻量状态指示灯 + 文字（消灭独立大按钮） -->
           <div class="flex items-center space-x-2 shrink-0">
@@ -160,25 +165,6 @@
           >
             前台全屏播放
           </button>
-        </div>
-
-        <!-- 唤醒歌曲快捷跳转入口 (直达「车载声音 ➔ 音乐音源优先级」设置页) -->
-        <div 
-          @click.stop="goToMediaPrioritySettings" 
-          class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl px-4 min-h-[54px] cursor-pointer transition-all shrink-0"
-        >
-          <div class="flex items-center space-x-2.5 min-w-0">
-            <StatusDot size="sm" :color="'info'" :glow-px="6" />
-            <span class="text-[15px] font-black text-car-text truncate">
-              唤醒歌曲设置
-            </span>
-          </div>
-          <div class="flex items-center space-x-2 shrink-0">
-            <span class="text-[13.5px] font-bold text-car-sub truncate">
-              想换唤醒播放的歌？去这里
-            </span>
-            <span class="text-car-accent text-[18px] font-black leading-none">➔</span>
-          </div>
         </div>
       </div>
 
