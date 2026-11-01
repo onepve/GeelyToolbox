@@ -35,7 +35,7 @@
 
 
     <!-- Tab 1: 按键独立映射 (v-if 彻底杜绝幽灵重叠) -->
-    <div v-if="activeTab === 'keys'" class="flex flex-col space-y-4">
+    <div v-if="activeTab === 'keys'" class="flex flex-col space-y-4 pb-28">
     <!-- 各按键映射配置 (右方向盘多媒体 SX-0017 物理按键逐项配置) -->
     <div class="flex flex-col space-y-4">
       <!-- 双列规整网格：一排两卡，工整对齐，共三排 -->
