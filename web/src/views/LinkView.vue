@@ -165,7 +165,7 @@
         <!-- 唤醒歌曲快捷跳转入口 (直达「车载声音 ➔ 音乐音源优先级」设置页) -->
         <div 
           @click.stop="goToMediaPrioritySettings" 
-          class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl px-4 min-h-[54px] cursor-pointer hover:border-car-accent transition-all shrink-0 group"
+          class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl px-4 min-h-[54px] cursor-pointer transition-all shrink-0"
         >
           <div class="flex items-center space-x-2.5 min-w-0">
             <StatusDot size="sm" :color="'info'" :glow-px="6" />
@@ -174,7 +174,7 @@
             </span>
           </div>
           <div class="flex items-center space-x-2 shrink-0">
-            <span class="text-[13.5px] font-bold text-car-sub group-hover:text-car-accent transition-colors truncate">
+            <span class="text-[13.5px] font-bold text-car-sub truncate">
               想换唤醒播放的歌？去这里
             </span>
             <span class="text-car-accent text-[18px] font-black leading-none">➔</span>
