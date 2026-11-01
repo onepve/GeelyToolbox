@@ -1,535 +1,438 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""从当前 v1.8.17 车机界面生成博客完整功能图鉴。
+
+只读取内置 toolbox_ui.html，用项目已有 __VUE_STORE__ 注入模拟缤越 COOL 状态；
+不读取真实车主文件，不修改 APK 功能代码，不清理其他浏览器进程。
+输出为压缩 WebP 和 manifest.json，缺失分项或弹窗立即失败，禁止空图冒充完成。
 """
-缤越助手全新 v1.7.92 博客全套实车运行图景自动生成脚本 (V2 完善版)
-- 全面覆盖 5 大主菜单 + 核心 SubTabs + 重点弹窗 + 手机无线快传页
-- 100% 遵循白天高对比日间车规模式
-- 模拟原车实车全量 CAN 日志与硬件参数：12.6V 电瓶、1920x720 160DPI、全国油价、加油账本、专车云端应用
-- 像素级精准裁剪：弹窗精准抓取卡片本体，彻底剔除外围半透明黑色遮罩与大黑边
-- 主页面长图动态探测最后一个卡片元素的真实 bottom + 28px 紧凑收尾，绝无底部多余空白
-"""
+import atexit
+import asyncio
+import base64
+import hashlib
+import io
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import time
+import urllib.request
 
-import os, sys, time, json, base64, asyncio, subprocess, urllib.request, websockets
+import websockets
+from PIL import Image, ImageDraw, ImageFont
 
-OUT_DIR = "/data/projects/fuwari-blog-preview/public/att/geely"
-os.makedirs(OUT_DIR, exist_ok=True)
-
-TOOLBOX_HTML = "file:///data/projects/GeelyToolbox/app/src/main/assets/toolbox_ui.html"
-MOBILE_HTML = "file:///data/projects/GeelyToolbox/app/src/main/assets/mobile_web.html"
+ROOT = Path(__file__).resolve().parents[1]
+OUT_DIR = Path(os.environ.get('GEELY_BLOG_OUT', '/data/projects/fuwari-blog-preview/public/att/geely'))
+TMP_DIR = Path(os.environ.get('GEELY_BLOG_TMP', '/home/onepve/.hermes/cache/scratch/geely-blog-capture'))
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+TMP_DIR.mkdir(parents=True, exist_ok=True)
+TOOLBOX_HTML = (ROOT / 'app/src/main/assets/toolbox_ui.html').as_uri()
+MOBILE_HTML = (ROOT / 'app/src/main/assets/mobile_web.html').as_uri()
 PORT = 9298
+MANIFEST = []
 
-# 获取在线 apps.json 真实专车应用
-apps_json_str = "{}"
-try:
-    req = urllib.request.Request("https://dl.onepve.com/GeelyToolbox/apps.json", headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req, timeout=5) as r:
-        apps_json_str = r.read().decode('utf-8')
-except Exception as e:
-    print("Fetch apps.json error:", e)
 
-def start_edge(url):
-    subprocess.run(["pkill", "-9", "-f", f"--remote-debugging-port={PORT}"], stderr=subprocess.DEVNULL)
-    time.sleep(0.5)
-    proc = subprocess.Popen([
-        "/usr/bin/microsoft-edge",
-        "--headless=new",
-        f"--remote-debugging-port={PORT}",
-        "--no-sandbox",
-        "--disable-gpu",
-        "--hide-scrollbars",
-        "--window-size=1920,2000",
-        url
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(2.5)
+def fetch_apps():
+    try:
+        req = urllib.request.Request('https://dl.onepve.com/GeelyToolbox/apps.json', headers={'User-Agent': 'GeelyBlogCapture/1.8.17'})
+        with urllib.request.urlopen(req, timeout=15) as response:
+            return response.read().decode('utf-8')
+    except Exception as exc:
+        raise RuntimeError(f'无法读取当前应用商城清单，停止生成以免出现空商城: {exc}') from exc
+
+
+BROWSER_CLOSERS = {}
+
+
+def close_browser(proc):
+    close = BROWSER_CLOSERS.pop(proc, None)
+    if close:
+        close()
+
+
+def start_edge(url, width=1920, height=1600):
+    profile = TMP_DIR / f'edge-{time.time_ns()}'
+    args = [
+        '/usr/bin/microsoft-edge', '--headless=new', f'--remote-debugging-port={PORT}',
+        f'--user-data-dir={profile}', '--no-sandbox', '--disable-gpu', '--hide-scrollbars',
+        '--disable-background-networking', '--no-first-run', f'--window-size={width},{height}', url,
+    ]
+    proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+
+    def close():
+        if proc.poll() is not None:
+            return
+        proc.terminate()
+        try:
+            proc.wait(timeout=8)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(timeout=5)
+
+    BROWSER_CLOSERS[proc] = close
+    atexit.register(close)
+
+    def stop(_signum, _frame):
+        close()
+        raise SystemExit(130)
+
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
+    for _ in range(60):
+        if proc.poll() is not None:
+            raise RuntimeError(f'Edge 启动失败，退出码 {proc.returncode}')
+        try:
+            with urllib.request.urlopen(f'http://127.0.0.1:{PORT}/json/list', timeout=1):
+                break
+        except Exception:
+            time.sleep(0.25)
+    else:
+        close()
+        raise RuntimeError('Edge CDP 端口未就绪')
     return proc
 
-async def get_ws():
-    with urllib.request.urlopen(f"http://127.0.0.1:{PORT}/json/list") as resp:
-        tabs = json.loads(resp.read().decode())
-    page_tab = [t for t in tabs if t.get("type") == "page"][0]
-    ws_url = page_tab["webSocketDebuggerUrl"]
-    return await websockets.connect(ws_url, max_size=64 * 1024 * 1024)
 
-# 真实原车模拟数据注入 JS
-INJECT_MOCK_DATA_JS = """(() => {
+async def get_ws():
+    with urllib.request.urlopen(f'http://127.0.0.1:{PORT}/json/list', timeout=5) as response:
+        tabs = json.loads(response.read().decode('utf-8'))
+    page = next(tab for tab in tabs if tab.get('type') == 'page')
+    return await websockets.connect(page['webSocketDebuggerUrl'], max_size=64 * 1024 * 1024)
+
+
+INJECT_MOCK_DATA_JS = r"""(() => {
     localStorage.setItem('has_shown_welcome_donate', 'true');
     localStorage.setItem('toolbox_first_launch_done', 'true');
     localStorage.setItem('geely_tester_unlocked', 'false');
-
+    localStorage.setItem('geely_use_beta_channel', 'false');
+    localStorage.setItem('fuel_default_type', '92#');
+    localStorage.setItem('geely_oil_selected_province', '浙江');
+    localStorage.setItem('geely_oil_fav_provinces', JSON.stringify(['浙江','上海','江苏','北京']));
     const store = window.__VUE_STORE__;
     if (!store) return 'store not found';
-
-    // 1. 强制激活白天模式 + 晴空蓝调 (sky_ocean) 车规主题
     if (window.__TOOLBOX_THEMES__) {
-        if (window.__TOOLBOX_THEMES__.setPalette) window.__TOOLBOX_THEMES__.setPalette('sky_ocean');
-        if (window.__TOOLBOX_THEMES__.setMode) window.__TOOLBOX_THEMES__.setMode('day');
+        window.__TOOLBOX_THEMES__.setPalette?.('sky_ocean');
+        window.__TOOLBOX_THEMES__.setMode?.('day');
     }
     store.isNight = false;
-    if (!store.theme) store.theme = {};
-    store.theme.mode = 'day';
-    store.theme.palette = 'sky_ocean';
-    document.documentElement.classList.remove('dark');
-    document.documentElement.classList.add('light');
-
-    // 2. 注入车机硬件真实参数（绝无“读取中...”）
-    store.batteryVoltage = 12.6;
-    if (!store.deviceInfo) store.deviceInfo = {};
+    Object.assign(store.theme, { palette: 'sky_ocean', mode: 'day' });
     Object.assign(store.deviceInfo, {
-        version: '1.7.93',
-        whitelist: true,
-        multimedia_frozen: false,
-        appstore_frozen: true,
-        battery_volt: 126,
-        real_battery_volt: 12.6,
-        car_ip: '192.168.43.1',
-        adb_master_switch: true,
-        platform_code: 'IHU516G',
-        platform_name: '吉利缤越 COOL (SX11A3)',
-        is_car_device: true,
-        fuel_percent: 76,
-        fuel_liters: 34.2,
-        screen_size: '1920x720',
-        screen_real_size: '1920x720',
-        screen_density: '160 dpi',
-        screen_density_dpi: 160,
-        screen_app_bounds: '1920x720 (无虚拟按键占位)',
-        screen_wm: 'Physical size: 1920x720 · Density: 160',
-        memory_usage: '2.1G / 6.0G (充足)'
+        version: '1.8.17', whitelist: true, multimedia_frozen: true, appstore_frozen: true,
+        battery_volt: 126, real_battery_volt: 12.6, car_ip: '192.168.43.100', adb_master_switch: true,
+        platform_code: 'IHU516G', platform_name: '吉利缤越 COOL (SX11A3)', trim_name: '冠军版',
+        custom_vehicle_trim: '', is_car_device: true, fuel_percent: 76, fuel_liters: 34.2,
+        screen_size: '1920x720', screen_real_size: '1920x720', screen_density: '160 dpi',
+        screen_density_dpi: 160, screen_app_bounds: '1920x720', screen_wm: 'Physical size: 1920x720; density 160',
+        memory_usage: '2.1G / 6.0G'
     });
-
-    // 缓存屏幕参数让 AboutModal 秒显
-    try {
-        localStorage.setItem('geely_toolbox_screen_info', JSON.stringify({
-            size: '1920x720',
-            dpi: '160 dpi',
-            appBounds: '1920x720 (无虚拟按键占位)',
-            wm: 'Physical size: 1920x720'
-        }));
-    } catch(e){}
-
-    // 3. 注入网络与外设连接策略
-    if (!store.networkDevice) store.networkDevice = {};
     Object.assign(store.networkDevice, {
-        wifi_enabled: true,
-        hotspot_enabled: true,
-        bluetooth_enabled: true,
-        wifi_policy: 1, // 默认开启
-        hotspot_policy: 1, // 默认开启
-        bluetooth_policy: 1,
-        wifi_ssid: 'Geely-Binyue-5G',
-        bluetooth_device_name: 'OnePlus 12 (已连接)'
+        wifi_enabled: true, hotspot_enabled: true, bluetooth_enabled: true,
+        wifi_policy: 1, hotspot_policy: 1, bluetooth_policy: 1,
+        wifi_ssid: '演示车机热点', bluetooth_device_name: '演示手机（已连接）'
     });
-
-    // 4. 注入行程与加油台账真实模拟记录
-    if (!store.fuelLedger) store.fuelLedger = {};
+    Object.assign(store.settings, { autostart: true, expert_rabbit: true, whitelist_permanent_lock: true });
     store.fuelLedger.isLoaded = true;
     store.fuelLedger.current_odo = 18560;
     store.fuelLedger.current_year = '2026';
     store.fuelLedger.config = {
-        plate_number: '浙A·8B666',
-        car_id: 'SX11A3_COOL'
+        tank_capacity: 45, default_fuel_type: '92#', default_province: '浙江',
+        plate_number: '演示车', car_id: 'SIM_COOL_1817', cloud_sync_enabled: false
     };
     store.fuelLedger.stats = {
-        is_calculable: true,
-        avg_consumption: '6.82',
-        cost_per_km: '0.53',
-        total_spend: '1,280.00',
-        total_liters: '163.0',
-        status_desc: '数据饱满'
+        is_calculable: true, avg_consumption: '6.82', cost_per_km: '0.53',
+        total_spend: 1280.0, total_original: 1320.0, total_saved: 40.0,
+        total_liters: 163.0, total_records: 4, status_desc: '模拟台账已出账'
     };
     store.fuelLedger.monthly_stats = [
-        { month: '2026-10', total_spend: 580.0, total_liters: 73.8, avg_consumption: '6.75', count: 2 },
-        { month: '2026-09', total_spend: 700.0, total_liters: 89.2, avg_consumption: '6.88', count: 2 }
+        { month: '2026-10', total_spend: 580.0, total_original: 600.0, total_saved: 20.0, total_liters: 73.8, avg_consumption: '6.75', count: 2 },
+        { month: '2026-09', total_spend: 700.0, total_original: 720.0, total_saved: 20.0, total_liters: 89.2, avg_consumption: '6.88', count: 2 }
     ];
     store.fuelLedger.records = [
-        {
-            id: 'rec_01',
-            date: '2026-10-22',
-            brand: '中国石化',
-            oilType: '92#',
-            price: 7.85,
-            liters: 42.0,
-            amount: 329.7,
-            odo: 18560,
-            isFull: true,
-            note: '下班顺路加满'
-        },
-        {
-            id: 'rec_02',
-            date: '2026-10-08',
-            brand: '中国石油',
-            oilType: '92#',
-            price: 7.82,
-            liters: 31.8,
-            amount: 248.6,
-            odo: 17945,
-            isFull: true,
-            note: '国庆返程加油'
-        },
-        {
-            id: 'rec_03',
-            date: '2026-09-24',
-            brand: '壳牌',
-            oilType: '92#',
-            price: 7.85,
-            liters: 45.0,
-            amount: 353.2,
-            odo: 17320,
-            isFull: true,
-            note: '长途出发前加满'
-        }
+        { id:'SIM01', date:'2026-10-22', brand:'中国石化', fuel_type:'92#', oilType:'92#', price:7.85, unit_price:7.85, liters:42.0, amount:329.7, actual_paid:309.7, odo:18560, odometer:18560, isFull:true, is_full:true, note:'模拟数据 下班顺路加满' },
+        { id:'SIM02', date:'2026-10-08', brand:'中国石油', fuel_type:'92#', oilType:'92#', price:7.82, unit_price:7.82, liters:31.8, amount:248.6, actual_paid:238.6, odo:17945, odometer:17945, isFull:true, is_full:true, note:'模拟数据 国庆返程' },
+        { id:'SIM03', date:'2026-09-24', brand:'壳牌', fuel_type:'92#', oilType:'92#', price:7.85, unit_price:7.85, liters:45.0, amount:353.2, actual_paid:343.2, odo:17320, odometer:17320, isFull:true, is_full:true, note:'模拟数据 长途前加满' },
+        { id:'SIM04', date:'2026-09-05', brand:'中国石化', fuel_type:'92#', oilType:'92#', price:7.81, unit_price:7.81, liters:44.2, amount:345.2, actual_paid:335.2, odo:16675, odometer:16675, isFull:true, is_full:true, note:'模拟数据 日常通勤' }
     ];
-
-    // 5. 注入油价信息与全国省份价格（消除“获取中...”）
-    if (!store.oilPrice) store.oilPrice = {};
     store.oilPrice.selectedProvince = '浙江';
-    store.oilPrice.favProvinces = ['浙江', '上海', '江苏', '北京'];
-    if (!store.oilPrice.regionalPrices) store.oilPrice.regionalPrices = {};
-    store.oilPrice.regionalPrices['浙江'] = { p92: 7.85, p95: 8.35, p98: 9.15, p0: 7.52 };
-    store.oilPrice.regionalPrices['北京'] = { p92: 7.88, p95: 8.39, p98: 9.37, p0: 7.59 };
-    store.oilPrice.regionalPrices['上海'] = { p92: 7.82, p95: 8.32, p98: 9.32, p0: 7.50 };
-    store.oilPrice.regionalPrices['江苏'] = { p92: 7.83, p95: 8.33, p98: 9.33, p0: 7.51 };
-    store.oilPrice.nextAdjustment = {
-        date: '2026-10-29',
-        lastAdjustmentDate: '10月11日',
-        trend: 'down',
-        desc: '预计每吨下调 120 元 (折合每升降约 0.10 元)',
-        countdownDays: 3
+    store.oilPrice.favProvinces = ['浙江','上海','江苏','北京'];
+    const prices = {
+        '浙江':{p92:7.85,p95:8.35,p98:9.15,p0:7.52}, '北京':{p92:7.88,p95:8.39,p98:9.37,p0:7.59},
+        '上海':{p92:7.82,p95:8.32,p98:9.32,p0:7.50}, '江苏':{p92:7.83,p95:8.33,p98:9.33,p0:7.51},
+        '广东':{p92:7.88,p95:8.54,p98:10.54,p0:7.55}, '四川':{p92:7.96,p95:8.51,p98:9.25,p0:7.58},
+        '山东':{p92:7.84,p95:8.41,p98:9.13,p0:7.44}, '湖北':{p92:7.89,p95:8.45,p98:9.45,p0:7.53}
     };
-
-    // 6. 重置所有弹窗为关闭状态（保留 keys）
-    if (store.modals) {
-        for (const k in store.modals) {
-            store.modals[k] = false;
-        }
-    }
-
+    Object.assign(store.oilPrice.regionalPrices, prices);
+    store.oilPrice.nextAdjustment = {
+        date:'2026-11-10', lastAdjustmentDate:'10月27日', trend:'down', predictedLiter:'7.75',
+        dateLabel:'11月10日 24时', desc:'预计每吨下调 120 元（折合每升降约 0.10 元）'
+    };
+    store.doors = { fl:0, fr:0, rl:0, rr:0, trunk:0 };
+    if (store.modals) for (const key in store.modals) store.modals[key] = false;
+    document.documentElement.style.background = '#eef2f7';
+    document.body.style.background = '#eef2f7';
     return 'mock injected successfully';
 })()"""
 
-async def capture_toolbox():
+
+class CDP:
+    def __init__(self, ws):
+        self.ws = ws
+        self.msg_id = 0
+
+    async def call(self, method, params=None):
+        self.msg_id += 1
+        current = self.msg_id
+        await self.ws.send(json.dumps({'id': current, 'method': method, 'params': params or {}}))
+        while True:
+            result = json.loads(await self.ws.recv())
+            if result.get('id') == current:
+                if 'error' in result:
+                    raise RuntimeError(f'{method}: {result["error"]}')
+                return result.get('result', {})
+
+    async def evaluate(self, expression):
+        result = await self.call('Runtime.evaluate', {'expression': expression, 'returnByValue': True, 'awaitPromise': True})
+        if result.get('exceptionDetails'):
+            raise RuntimeError(result['exceptionDetails'].get('text', '页面 JS 执行失败'))
+        return result.get('result', {}).get('value')
+
+    async def capture_rect(self, clip, filename, expected_text=None, max_width=1440):
+        if expected_text:
+            text = await self.evaluate('document.body.innerText')
+            assert expected_text in text, f'{filename} 缺少预期内容: {expected_text}'
+        result = await self.call('Page.captureScreenshot', {
+            'format': 'png', 'clip': {'x': float(clip['x']), 'y': float(clip['y']),
+            'width': float(clip['width']), 'height': float(clip['height']), 'scale': 1}
+        })
+        raw = base64.b64decode(result['data'])
+        image = Image.open(io.BytesIO(raw)).convert('RGB')
+        assert image.width >= 300 and image.height >= 100, f'{filename} 图像尺寸异常'
+        if image.width > max_width:
+            height = round(image.height * max_width / image.width)
+            image = image.resize((max_width, height), Image.Resampling.LANCZOS)
+        out_path = OUT_DIR / filename
+        image.save(out_path, 'WEBP', quality=84, method=6)
+        entry = {
+            'file': filename, 'width': image.width, 'height': image.height,
+            'bytes': out_path.stat().st_size, 'sha256': hashlib.sha256(out_path.read_bytes()).hexdigest(),
+            'expected_text': expected_text, 'mock_data': True,
+        }
+        MANIFEST.append(entry)
+        print(f'[OK] {filename} {image.width}x{image.height} {entry["bytes"]} bytes', flush=True)
+
+
+VIEWS = [
+    ('link', '按键映射手势', 'preview_link_full.webp', '方控按键学习'),
+    ('link', '接管模式图解', 'preview_wheel_mode.webp', '接管模式'),
+    ('link', '360全景联动', 'preview_link_360.webp', '360'),
+    ('link', '车速与大灯', 'preview_link_speed.webp', '车速'),
+    ('link', '网络与外设', 'preview_link_network.webp', 'Wi-Fi'),
+    ('body', '换挡语音', 'preview_body_full.webp', '换挡'),
+    ('body', '驾驶模式', 'preview_body_mode.webp', '驾驶模式'),
+    ('body', '车门分门播报', 'preview_body_door.webp', '车门'),
+    ('body', '电动尾门', 'preview_body_trunk.webp', '尾门'),
+    ('body', '音乐音源优先级', 'preview_audio_full.webp', '音源'),
+    ('body', '专属语音包', 'preview_body_packs.webp', '语音包'),
+    ('fuel', '实时油价日历', 'preview_fuel_full.webp', '92#'),
+    ('fuel', '智能加油账本', 'preview_fuel_record.webp', '模拟数据'),
+    ('store', '专车精选商城', 'preview_store_full.webp', '专车'),
+    ('store', '特权安装通道', 'preview_install_full.webp', '车载原生文件管理'),
+    ('store', '整车应用管理', 'preview_all_apps.webp', '应用'),
+    ('system', '桌面胶囊悬浮', 'preview_system_desktop.webp', '桌面'),
+    ('system', '顶栏状态胶囊', 'preview_system_capsules.webp', '胶囊'),
+    ('system', '系统维护与工具', 'preview_system_ops.webp', '日志'),
+    ('system', '外观主题风格', 'preview_system_full.webp', '晴空蓝'),
+    ('system', '车标与启动项', 'preview_system_icon.webp', '启动'),
+]
+
+
+async def capture_toolbox(apps_json):
     proc = start_edge(TOOLBOX_HTML)
+    ws = None
     try:
         ws = await get_ws()
-        msg_id = 0
-        async def evaluate(js):
-            nonlocal msg_id
-            msg_id += 1
-            msg = {"id": msg_id, "method": "Runtime.evaluate",
-                   "params": {"expression": js, "returnByValue": True}}
-            await ws.send(json.dumps(msg))
-            res = json.loads(await ws.recv())
-            return res.get("result", {}).get("result", {}).get("value")
+        cdp = CDP(ws)
+        for _ in range(40):
+            if await cdp.evaluate("typeof window.__VUE_STORE__ !== 'undefined'"):
+                break
+            await asyncio.sleep(0.25)
+        assert await cdp.evaluate(INJECT_MOCK_DATA_JS) == 'mock injected successfully'
+        await cdp.evaluate(f'window.applyCloudAppsJson?.({json.dumps(apps_json)});')
+        await asyncio.sleep(1.2)
 
-        async def capture_rect(clip, filename):
-            nonlocal msg_id
-            msg_id += 1
-            msg = {"id": msg_id, "method": "Page.captureScreenshot",
-                   "params": {
-                       "format": "png",
-                       "clip": {
-                           "x": float(clip["x"]),
-                           "y": float(clip["y"]),
-                           "width": float(clip["width"]),
-                           "height": float(clip["height"]),
-                           "scale": 1
-                       }
-                   }}
-            await ws.send(json.dumps(msg))
-            res = json.loads(await ws.recv())
-            data = base64.b64decode(res["result"]["data"])
-            out_path = os.path.join(OUT_DIR, filename)
-            with open(out_path, "wb") as f:
-                f.write(data)
-            print(f"[OK] Saved {filename} ({int(clip['width'])}x{int(clip['height'])})")
-            return out_path
+        async def capture_active_view(nav, tab, filename, expected_text):
+            expression = f"""(() => {{
+                const store = window.__VUE_STORE__;
+                store.currentNav = {json.dumps(nav)};
+                return true;
+            }})()"""
+            await cdp.evaluate(expression)
+            await asyncio.sleep(0.35)
+            clicked = await cdp.evaluate(f"""(() => {{
+                const candidates = Array.from(document.querySelectorAll('button,[role="tab"]'))
+                    .filter(el => el.offsetParent !== null);
+                const target = candidates.find(el => (el.textContent || '').replace(/\\s+/g,'').includes({json.dumps(tab)}));
+                if (!target) return false;
+                target.click();
+                return true;
+            }})()""")
+            assert clicked, f'找不到功能分项: {tab}'
+            await asyncio.sleep(0.6)
+            bounds = await cdp.evaluate("""(() => {
+                const section = document.querySelector('main section.flex-1');
+                if (!section) return null;
+                const active = Array.from(section.children).find(el => el.offsetParent !== null && getComputedStyle(el).display !== 'none');
+                if (!active) return null;
+                const r = active.getBoundingClientRect();
+                let bottom = r.bottom;
+                if (r.height <= 600) {
+                    // 短面板是自动高度，取其最后一张可见功能卡片的实际底边。
+                    bottom = 0;
+                    for (const el of active.querySelectorAll('div.rounded-2xl,div.rounded-3xl')) {
+                        const card = el.getBoundingClientRect();
+                        if (el.offsetParent !== null && card.width > 200 && card.height > 40) bottom = Math.max(bottom, card.bottom);
+                    }
+                }
+                return {right:Math.ceil(r.right),height:r.height>600?r.bottom:720,bottom:Math.ceil(bottom)};
+            })()""")
+            assert bounds and bounds['bottom'] > 300, f'{filename} 未找到完整功能内容'
+            # 只保留当前功能面板的实际底边，短页面保留原车机 720px 高度。
+            height = max(720, min(1900, bounds['bottom'] + 24))
+            await cdp.capture_rect({'x':0,'y':0,'width':1920,'height':height}, filename, expected_text)
 
-        # 注入 mock 真实车机环境
-        res = await evaluate(INJECT_MOCK_DATA_JS)
-        print("Mock Data Setup:", res)
-        await asyncio.sleep(0.8)
+        for view in VIEWS:
+            await capture_active_view(*view)
 
-        # 注入真实云端商城应用列表
-        if apps_json_str:
-            escaped = json.dumps(apps_json_str)
-            await evaluate(f"if (window.applyCloudAppsJson) window.applyCloudAppsJson({escaped});")
+        async def open_modal(name, payload='true'):
+            await cdp.evaluate(f"""(() => {{
+                const m = window.__VUE_STORE__.modals;
+                for (const key in m) m[key] = false;
+                m[{json.dumps(name)}] = {payload};
+                return true;
+            }})()""")
             await asyncio.sleep(0.8)
 
-        # -------------------------------------------------------------
-        # 1. 主页面长截图：探测右侧真实卡片底部，紧凑裁剪绝无多余空白
-        # -------------------------------------------------------------
-        async def capture_active_view(nav_id, sub_tab_text, filename):
-            await evaluate(f"""(() => {{
-                const store = window.__VUE_STORE__;
-                if (!store) return;
-                store.currentNav = '{nav_id}';
-                if ('{sub_tab_text}') {{
-                    const btns = Array.from(document.querySelectorAll('button, div[role="tab"]'));
-                    const targetBtn = btns.find(b => (b.textContent || '').includes('{sub_tab_text}'));
-                    if (targetBtn) targetBtn.click();
-                }}
-            }})()""")
-            await asyncio.sleep(0.6)
-
-            # 精准探测右侧卡片以及左侧边栏的实际 bottom，杜绝 h-screen 放大
-            mb = await evaluate("""(() => {
-                const sec = document.querySelector('main section.flex-1');
-                if (!sec) return 800;
-                const activeView = Array.from(sec.children).find(el => el.offsetParent !== null && getComputedStyle(el).display !== 'none');
-                if (!activeView) return 800;
-                
-                // 找到真正展示内容的那些卡片
-                const cards = Array.from(activeView.querySelectorAll('div.rounded-2xl, div.rounded-3xl, div.border, p, table, h2, h3'));
-                let maxB = 0;
-                for (const el of cards) {
-                    if (el.offsetParent !== null) {
-                        const r = el.getBoundingClientRect();
-                        // 过滤掉视口级容器
-                        if (r.height < 1500 && r.width > 60 && r.bottom > maxB) {
-                            maxB = r.bottom;
-                        }
-                    }
-                }
-                // 保证至少包含左侧导航栏底部的关于二维码卡片
-                const aside = document.querySelector('aside');
-                if (aside) {
-                    const asideBottom = aside.getBoundingClientRect().bottom;
-                    if (asideBottom > maxB && asideBottom < 1200) {
-                        maxB = asideBottom;
-                    }
-                }
-                return Math.round(maxB);
-            })()""")
-
-            calc_h = int(mb) + 24 if mb else 720
-            if calc_h < 720: calc_h = 720
-            # 宽 1920，高 calc_h 紧凑收尾
-            await capture_rect({"x": 0, "y": 0, "width": 1920, "height": calc_h}, filename)
-
-        print("\n--- 正在截取五大主导航核心功能长图（紧凑无下半部多余空白） ---")
-
-        # 1.1 行车联动：方控按键映射手势
-        await capture_active_view("link", "按键映射", "preview_wheel_full.png")
-        await capture_active_view("link", "按键映射", "preview_link_full.png")
-
-        # 1.2 行车联动：360全景联动
-        await capture_active_view("link", "360全景", "preview_link_360.png")
-
-        # 1.3 行车联动：车速与大灯
-        await capture_active_view("link", "车速与大灯", "preview_link_speed.png")
-
-        # 1.4 行车联动：网络与外设
-        await capture_active_view("link", "网络与外设", "preview_link_network.png")
-
-        # 2.1 车载声音：换挡语音播报
-        await capture_active_view("body", "换挡语音", "preview_body_full.png")
-        await capture_active_view("body", "换挡语音", "shot-03-body.png")
-
-        # 2.2 车载声音：驾驶模式
-        await capture_active_view("body", "驾驶模式", "preview_body_mode.png")
-
-        # 2.3 车载声音：车门开闭播报
-        await capture_active_view("body", "车门", "preview_body_door.png")
-
-        # 2.4 车载声音：音乐音源优先级与 MAY_DUCK 功放守护
-        await capture_active_view("body", "音乐音源", "preview_audio_full.png")
-
-        # 2.5 车载声音：专属语音包
-        await capture_active_view("body", "专属语音包", "preview_body_packs.png")
-
-        # 3.1 行程油耗：全国实时油价日历与调价预警
-        await capture_active_view("fuel", "实时油价日历", "preview_fuel_full.png")
-
-        # 3.2 行程油耗：智能加油账本台账与百公里油耗分析
-        await capture_active_view("fuel", "智能加油账本", "preview_fuel_record.png")
-
-        # 4.1 应用生态：专车精选商城
-        await capture_active_view("store", "精选商城", "preview_store_full.png")
-        await capture_active_view("store", "精选商城", "shot-04-store.png")
-
-        # 4.2 应用生态：特权安装通道
-        await capture_active_view("store", "特权安装", "preview_install_full.png")
-
-        # 4.3 应用生态：整车应用管理
-        await capture_active_view("store", "整车应用管理", "preview_all_apps.png")
-
-        # 5.1 系统设置：桌面胶囊悬浮（悬浮胶囊车速球、原厂时钟屏保）
-        await capture_active_view("system", "桌面胶囊悬浮", "preview_system_desktop.png")
-
-        # 5.2 系统设置：外观主题风格（6款全新自绘高质感皮肤矩阵与车规亮度滑块）
-        await capture_active_view("system", "外观主题风格", "preview_system_full.png")
-        await capture_active_view("system", "外观主题风格", "shot-07-system.png")
-
-        # 5.3 系统设置：底层运维与自检
-        await capture_active_view("system", "底层运维", "preview_system_ops.png")
-
-        # -------------------------------------------------------------
-        # 2. 重点模态卡片截图：精准裁切卡片本身，彻底消除遮罩大黑边
-        # -------------------------------------------------------------
-        print("\n--- 正在截取精美弹窗卡片（彻底剔除外围黑边） ---")
-
-        async def capture_modal_card(modal_name, filename):
-            # 打开弹窗并将外层 backdrop 背景设为全透明
-            await evaluate(f"""(() => {{
-                const store = window.__VUE_STORE__;
-                if (!store) return;
-                if (!store.modals) store.modals = {{}};
-                store.modals['{modal_name}'] = true;
-            }})()""")
-            await asyncio.sleep(0.7)
-
-            # 把背景遮罩变透明并探测卡片真实坐标
-            rect = await evaluate("""(() => {
-                // 寻找弹窗遮罩层
-                const backdrops = Array.from(document.querySelectorAll('div')).filter(el => {
-                    const s = window.getComputedStyle(el);
-                    return s.position === 'fixed' && (s.zIndex >= 40 || s.backgroundColor.includes('rgba(0, 0, 0'));
-                });
-                for (const b of backdrops) {
-                    b.style.backgroundColor = 'transparent';
-                }
-
-                // 找到卡片本体
-                const card = document.querySelector('.tb-modal-surface.rounded-3xl') || 
-                             document.querySelector('div[class*="rounded-3xl"].shadow-2xl') ||
-                             document.querySelector('.tb-modal-surface');
+        async def capture_modal(name, filename, expected_text, payload='true', before=None, pre=None, max_width=1100):
+            if pre:
+                await cdp.evaluate(pre)
+            await open_modal(name, payload)
+            await asyncio.sleep(0.8)
+            if before:
+                await cdp.evaluate(before)
+                await asyncio.sleep(0.6)
+            rect = await cdp.evaluate("""(() => {
+                const cards = Array.from(document.querySelectorAll('.tb-modal-surface.modal-card-anim'))
+                    .filter(el => { const r = el.getBoundingClientRect(); return r.width > 300 && r.height > 100; });
+                const card = cards[cards.length - 1];
                 if (!card) return null;
                 const r = card.getBoundingClientRect();
-                return {
-                    x: Math.round(r.left),
-                    y: Math.round(r.top),
-                    width: Math.round(r.width),
-                    height: Math.round(r.height)
-                };
+                return {x:r.left,y:r.top,width:r.width,height:r.height};
             })()""")
+            assert rect and rect['width'] > 300 and rect['height'] > 100, f'弹窗未出现: {name}'
+            await cdp.evaluate("document.querySelectorAll('.tb-modal-surface.modal-card-anim').forEach(el => { const p = el.parentElement; if (p && getComputedStyle(p).position === 'fixed') p.style.background = 'transparent'; });")
+            await cdp.capture_rect(rect, filename, expected_text, max_width=max_width)
 
-            if rect and rect["width"] > 100 and rect["height"] > 100:
-                print(f"[Modal Found] {modal_name} rect: {rect}")
-                # 紧密贴合卡片边缘，不漏外边
-                clip = {
-                    "x": rect["x"],
-                    "y": rect["y"],
-                    "width": rect["width"],
-                    "height": rect["height"]
-                }
-                await capture_rect(clip, filename)
-            else:
-                print(f"[WARN] Modal {modal_name} rect not found, fallback to center")
-                await capture_rect({"x": 460, "y": 60, "width": 1000, "height": 600}, filename)
-
-            # 关闭弹窗
-            await evaluate(f"""(() => {{
-                const store = window.__VUE_STORE__;
-                if (store && store.modals) store.modals['{modal_name}'] = false;
-            }})()""")
-            await asyncio.sleep(0.3)
-
-        # 2.1 关于车机参数与更新设置（1920x720 160DPI、内存占用，无读取中）
-        await capture_modal_card("about", "preview_about.png")
-
-        # 2.2 12V 蓄电池健康看板（12.6V 大字号健康充沛）
-        await capture_modal_card("battery", "preview_vehicle_health.png")
-
-        # 2.3 全国油价详情弹窗
-        await capture_modal_card("oilPrice", "preview_oil_price.png")
-
-        await ws.close()
+        await capture_modal('about', 'preview_about.webp', '1.8.17')
+        await capture_modal('battery', 'preview_vehicle_health.webp', '12.6')
+        await capture_modal('oilPrice', 'preview_oil_price.webp', '92#')
+        await capture_modal('wheelKeyLearning', 'preview_wheel_learning.webp', '已成功识别按键',
+                            before="window.ToolboxBridge=window.ToolboxBridge||{};window.ToolboxBridge.startWheelKeyLearning=()=>true;window.onWheelKeyLearned({keyCode:349});")
+        await capture_modal('voiceThemeImport', 'preview_voice_import.webp', '一键解压导入',
+                            pre="window.ToolboxBridge=window.ToolboxBridge||{};window.ToolboxBridge.scanVoiceZipsInDownload=()=>JSON.stringify([{name:'SIM_甜美女声.zip',size:'4.2 MB',time:'2026-11-01 20:00'}]);")
+        await capture_modal('cleanDownload', 'preview_clean_download.webp', '智能安全清理',
+                            pre="window.ToolboxBridge.getDownloadDirStats=()=>JSON.stringify({count:12,size_mb:'286.40',path:'/sdcard/Download/'});")
+        await capture_modal('rabbitInstall', 'preview_rabbit_guide.webp', '仅生成主题包', payload='{}')
+        await capture_modal('qrCode', 'preview_mobile_qr.webp', '手机')
+        await capture_modal('deepTools', 'preview_adb_terminal.webp', 'ADB 交互控制台',
+                            pre="window.ToolboxBridge.probeAdbStatus=()=>JSON.stringify({ready:true,title:'ADB 特权终端已就绪',details:'模拟本地通道已连接',privilege:'Shell 2000'});")
+        await capture_modal('log', 'preview_log_main.webp', '抓取全量诊断日志',
+                            pre="window.ToolboxBridge.getRunLogContent=()=>'[SIM] 2026-11-01 20:00 模拟车机启动\\n[SIM] 平台 IHU516G · 缤越 COOL\\n[SIM] P挡 · 电瓶12.6V · 模拟日志已加载';")
+        # 诊断日志上传结果二级弹窗：先触发抓取完成回调（自动弹出上传确认），再触发上传成功回调
+        await open_modal('log')
+        await asyncio.sleep(0.8)
+        await cdp.evaluate("window.onLogcatDumpFinished({success:true,filename:'SIM_COOL_log.zip',sizeStr:'2.8 MB',chip:'IHU516G',modelCode:'SX11A3',vinLast6:'SIM001',capturedTime:'2026-11-01 20:00',message:'模拟日志打包完成'})")
+        await asyncio.sleep(1.2)
+        await cdp.evaluate("window.onLogUploadFinished({success:true,code:'181717',vin6:'SIM001'})")
+        await asyncio.sleep(0.8)
+        rect = await cdp.evaluate("""(() => {
+            const cards = Array.from(document.querySelectorAll('.tb-modal-surface.modal-card-anim'))
+                .filter(el => { const r = el.getBoundingClientRect(); return r.width > 300 && r.height > 100; });
+            const card = cards[cards.length - 1];
+            if (!card) return null;
+            const r = card.getBoundingClientRect();
+            return {x:r.left,y:r.top,width:r.width,height:r.height};
+        })()""")
+        assert rect, '日志上传结果弹窗未出现'
+        await cdp.evaluate("document.querySelectorAll('.tb-modal-surface.modal-card-anim').forEach(el => { const p = el.parentElement; if (p && getComputedStyle(p).position === 'fixed') p.style.background = 'transparent'; });")
+        await cdp.capture_rect(rect, 'preview_log_modal.webp', '车架后6位', max_width=1100)
+        # 原生桌面卡片：后续由 Android XML 同源渲染，非实车拍摄。
     finally:
-        proc.terminate()
+        if ws:
+            await ws.close()
+        close_browser(proc)
+
 
 async def capture_mobile():
-    print("\n--- 正在截取手机无线快传长图 ---")
-    proc = start_edge(MOBILE_HTML)
+    proc = start_edge(MOBILE_HTML, width=860, height=1600)
+    ws = None
     try:
         ws = await get_ws()
-        msg_id = 0
-        async def evaluate(js):
-            nonlocal msg_id
-            msg_id += 1
-            msg = {"id": msg_id, "method": "Runtime.evaluate",
-                   "params": {"expression": js, "returnByValue": True}}
-            await ws.send(json.dumps(msg))
-            res = json.loads(await ws.recv())
-            return res.get("result", {}).get("result", {}).get("value")
-
-        width = 860
-        target_h = 2400
-
-        msg_id += 1
-        msg = {"id": msg_id, "method": "Emulation.setDeviceMetricsOverride",
-               "params": {"width": width, "height": target_h, "deviceScaleFactor": 1, "mobile": True}}
-        await ws.send(json.dumps(msg))
-        await ws.recv()
+        cdp = CDP(ws)
+        await cdp.call('Emulation.setDeviceMetricsOverride', {'width':430,'height':1600,'deviceScaleFactor':1,'mobile':True})
         await asyncio.sleep(0.8)
-
-        # 注入 mock 示例文件并填充卡片
-        await evaluate("""(() => {
+        # 只向页面内存注入演示文件，不读取车机真实目录。
+        await cdp.evaluate("""(() => {
             const box = document.getElementById('car-files-box');
-            if (box) {
-                box.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #e2e8f0; background:rgba(255,255,255,0.8); border-radius:12px; margin-bottom:8px;">
-                        <div>
-                            <div style="font-weight:800; font-size:14.5px; color:#0f172a;">AutoNavi_Car_v8.5_LaneLevel.apk</div>
-                            <div style="font-size:12px; color:#64748b; margin-top:2px;">88.5 MB · 高德地图车机版 (车道级导航专版)</div>
-                        </div>
-                        <button style="border:none; background:#2563eb; color:#fff; padding:6px 14px; border-radius:8px; font-weight:700; font-size:12.5px;">下载到手机</button>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #e2e8f0; background:rgba(255,255,255,0.8); border-radius:12px; margin-bottom:8px;">
-                        <div>
-                            <div style="font-weight:800; font-size:14.5px; color:#0f172a;">Paimon_Voice_Pack_v2.zip</div>
-                            <div style="font-size:12px; color:#64748b; margin-top:2px;">4.2 MB · 原神派蒙车载语音提醒包</div>
-                        </div>
-                        <button style="border:none; background:#2563eb; color:#fff; padding:6px 14px; border-radius:8px; font-weight:700; font-size:12.5px;">下载到手机</button>
-                    </div>
-                `;
-            }
-            return 'mobile mock ok';
+            if (box) box.innerHTML = '<div style="padding:16px;background:#fff;border:1px solid #e4e4e7;border-radius:12px;margin:8px 0"><b>模拟安装包.apk</b><div style="color:#71717a;font-size:13px;margin-top:6px">88.5 MB · 仅用于界面展示</div></div><div style="padding:16px;background:#fff;border:1px solid #e4e4e7;border-radius:12px;margin:8px 0"><b>模拟语音包.zip</b><div style="color:#71717a;font-size:13px;margin-top:6px">4.2 MB · 仅用于界面展示</div></div>';
+            return !!box;
         })()""")
-        await asyncio.sleep(0.5)
-
-        # 探测 mobile 页面真实 bottom
-        mb = await evaluate("""(() => {
-            const els = Array.from(document.querySelectorAll('body *'));
-            let maxB = 0;
-            for (const el of els) {
-                if (el.offsetParent !== null) {
-                    const r = el.getBoundingClientRect();
-                    if (r.width > 0 && r.height > 0 && r.bottom > maxB) {
-                        maxB = r.bottom;
-                    }
-                }
-            }
-            return Math.round(maxB);
-        })()""")
-        calc_h = int(mb) + 28 if mb else 1380
-
-        msg_id += 1
-        msg = {"id": msg_id, "method": "Page.captureScreenshot",
-               "params": {
-                   "format": "png",
-                   "clip": {"x": 0, "y": 0, "width": width, "height": calc_h, "scale": 1}
-               }}
-        await ws.send(json.dumps(msg))
-        res = json.loads(await ws.recv())
-        img_bytes = base64.b64decode(res["result"]["data"])
-        out_path = os.path.join(OUT_DIR, "preview_mobile_transfer.png")
-        with open(out_path, "wb") as f:
-            f.write(img_bytes)
-        print(f"[OK] Saved preview_mobile_transfer.png ({width}x{calc_h})")
-
-        await ws.close()
+        height = await cdp.evaluate("Math.ceil(Math.max(document.body.scrollHeight, document.documentElement.scrollHeight))")
+        await cdp.call('Emulation.setDeviceMetricsOverride', {'width':430,'height':min(1800,max(900,height+30)),'deviceScaleFactor':1,'mobile':True})
+        await cdp.capture_rect({'x':0,'y':0,'width':430,'height':min(1800,max(900,height+30))}, 'preview_mobile_transfer.webp', max_width=430)
     finally:
-        proc.terminate()
+        if ws:
+            await ws.close()
+        close_browser(proc)
+
+
+def render_widget():
+    """按原生 widget_toolbox_3x1.xml 的布局与主题色生成模拟卡片说明图。"""
+    width, height = 720, 320
+    image = Image.new('RGB', (width, height), '#F7F9FC')
+    draw = ImageDraw.Draw(image)
+    font_path = '/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc'
+    if not Path(font_path).exists():
+        candidates = list(Path('/usr/share/fonts').rglob('*CJK*.ttc')) + list(Path('/usr/share/fonts').rglob('*noto*sans*cjk*'))
+        font_path = str(candidates[0]) if candidates else '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+    def font(size):
+        return ImageFont.truetype(font_path, size)
+    draw.rounded_rectangle((8,8,712,312), radius=24, fill='#FFFFFF', outline='#E2E8F0', width=2)
+    draw.text((28,20), '缤越助手 · 桌面卡片（同源布局示意）', font=font(22), fill='#18181B')
+    draw.text((28,55), '缤越COOL 2022款  |  电瓶健康监测中', font=font(18), fill='#0284C7')
+    draw.text((28,92), '12.6V', font=font(38), fill='#0284C7')
+    draw.text((28,140), '健康良好 · P挡', font=font(20), fill='#16A34A')
+    draw.text((28,184), '全车门锁 正常', font=font(20), fill='#64748B')
+    draw.rounded_rectangle((28,238,690,298), radius=14, fill='#EFF6FF')
+    draw.text((50,252), '今日油价：92# 7.85元/L   |   95# 8.35元/L', font=font(20), fill='#334155')
+    draw.text((355,90), '↑ 工程模式', font=font(23), fill='#18181B')
+    draw.text((355,135), '#*190110', font=font(28), fill='#18181B')
+    draw.text((355,190), '○ 360全景', font=font(23), fill='#18181B')
+    out = OUT_DIR / 'preview_widget.webp'
+    image.save(out, 'WEBP', quality=88, method=6)
+    MANIFEST.append({'file':out.name,'width':width,'height':height,'bytes':out.stat().st_size,'sha256':hashlib.sha256(out.read_bytes()).hexdigest(),'expected_text':'原生 RemoteViews 同源模拟图','mock_data':True})
+    print(f'[OK] {out.name} {width}x{height} {out.stat().st_size} bytes', flush=True)
+
 
 async def main():
-    print("==================================================")
-    print(">> 开始全自动化截取全新 v1.7.92 博客全套实车运行图景 (V2)")
-    print("==================================================")
-    await capture_toolbox()
+    print('开始生成 v1.8.17 模拟实车完整功能图鉴', flush=True)
+    apps = fetch_apps()
+    await capture_toolbox(apps)
     await capture_mobile()
-    print("==================================================")
-    print(">> 全部截图生成完毕！")
-    print("==================================================")
+    render_widget()
+    manifest_path = OUT_DIR / 'manifest.json'
+    manifest_path.write_text(json.dumps({'version':'1.8.17','source':'toolbox_ui.html + simulated COOL state','images':MANIFEST}, ensure_ascii=False, indent=2), encoding='utf-8')
+    print(f'生成完成：{len(MANIFEST)} 张，清单 {manifest_path}', flush=True)
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     asyncio.run(main())
