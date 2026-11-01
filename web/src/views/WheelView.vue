@@ -125,6 +125,22 @@
           :helpTip="customKeyTip"
         />
       </div>
+
+      <!-- 方控按键学习入口 (借鉴米小江按键录制：新车型零代码适配) -->
+      <FeatureCard
+        title="方控按键学习"
+        desc="按下方向盘任意键，助手自动识别真实键码；新车型适配零门槛。"
+        helpTitle="【功能指南】方控按键学习"
+        helpText="1. 学习作用：&#10;按下方向盘上的任意物理按键，助手会立即读出它的真实键码，不再需要抓日志人工分析。&#10;&#10;2. 新车型适配：&#10;如果是助手暂时不认识的按键，键码会被自动记录，反馈给作者后即可在后续版本适配。&#10;&#10;3. 安全保证：&#10;学习期间按下的按键不会触发任何已配置的功能，学习完一切照旧。"
+        helpTip="帝豪、博越等新车型车主按键无反应时，先来这里学习一次，把键码反馈给作者。"
+      >
+        <button
+          @click="openKeyLearning"
+          class="w-full min-h-[72px] rounded-2xl bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25 font-black text-[19px] cursor-pointer shadow-md hover:border-car-border-light transition-all active:scale-[0.99]"
+        >
+          🔍 开始学习方向盘按键
+        </button>
+      </FeatureCard>
     </div>
 
 
@@ -455,6 +471,10 @@ onBeforeUnmount(() => {
 });
 
 const { setGestureAction } = useWheelGesture();
+
+function openKeyLearning() {
+  openModal('wheelKeyLearning', { ts: Date.now() });
+}
 
 function toggleWheelMasterSwitch() {
   const next = !store.vehicleAuto.wheel_master_switch;

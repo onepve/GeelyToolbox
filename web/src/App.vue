@@ -56,6 +56,7 @@
     <VoiceItemSettingsModal />
     <OtaCaptureModal />
     <AppSelectModal />
+    <WheelKeyLearningModal v-if="store.modals.wheelKeyLearning" />
     <CleanDownloadModal />
     <VoiceThemeImportModal />
     <AllAppsModal />
@@ -156,6 +157,7 @@ import LogModal from './components/modals/LogModal.vue';
 import VoiceItemSettingsModal from './components/modals/VoiceItemSettingsModal.vue';
 import OtaCaptureModal from './components/modals/OtaCaptureModal.vue';
 import AppSelectModal from './components/modals/AppSelectModal.vue';
+import WheelKeyLearningModal from './components/modals/WheelKeyLearningModal.vue';
 import CleanDownloadModal from './components/modals/CleanDownloadModal.vue';
 import VoiceThemeImportModal from './components/modals/VoiceThemeImportModal.vue';
 import AllAppsModal from './components/modals/AllAppsModal.vue';

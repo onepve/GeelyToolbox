@@ -232,6 +232,7 @@ export const store = reactive({
     voiceItemSettings: null,
     otaCapture: false,
     appSelect: null,
+    wheelKeyLearning: null,
     cleanDownload: false,
     voiceThemeImport: false,
     allApps: false,

@@ -79,6 +79,14 @@ public class SteeringWheelKeyManager {
     public static final String ACTION_SCREEN_OFF = "screen_off";
     public static final String ACTION_DEFAULT = "default";
 
+    // ═══ 方控按键学习录制 (借鉴米小江 CarMedia 1.6.8 KeyMonitor.startRecording/stopRecording) ═══
+    // 静态单回调：服务端 logcat 通道与 UI 发起的 HW_KEY_INPUT 注册通道共用同一录制入口，
+    // 谁先捕获第一个按键谁消费，捕获即自动结束（互斥不双写）。
+    public interface KeyLearningCapture {
+        void onKeyCaptured(int keyCode);
+    }
+    private static volatile KeyLearningCapture sKeyLearningCallback = null;
+
     // 键码定义 (SX-0017)
     public static final int KEY_MUTE = 300;     // 键 3: 静音键短按
     public static final int KEY_VOL_DOWN = 301; // 键 2: 滚轮向下拨动 (音量减)
@@ -364,6 +372,25 @@ public class SteeringWheelKeyManager {
      * 按键核心触发入口（单击即发 · 0ms 零延迟极速模式）
      */
     public void onKeyTriggered(final int keyCode) {
+        handleKeyDownInternal(keyCode);
+    }
+
+    private void handleKeyDownInternal(final int keyCode) {
+        // ═══ 方控按键学习录制门禁 (借鉴米小江 CarMedia KeyRecorder) ═══
+        // 优先级最高：录制态下捕获到的第一个按键直接消费给录制回调，绝不触发任何业务动作，
+        // 确保学习期间不会误触 360 / 切歌 / 高德等已有映射（门禁铁律：录制通道与业务通道物理隔离）。
+        KeyLearningCapture cb = sKeyLearningCallback;
+        if (cb != null) {
+            sKeyLearningCallback = null; // 单次捕获即自动结束录制，绝不连续误捕
+            Log.i(TAG, "按键学习: 捕获键码 " + keyCode + " (" + getKeyName(keyCode) + ")");
+            try {
+                cb.onKeyCaptured(keyCode);
+            } catch (Throwable t) {
+                Log.w(TAG, "按键学习回调异常: " + t.getMessage());
+            }
+            return;
+        }
+
         if (!wheelMasterCached) return;
         long now = System.currentTimeMillis();
         Long lastTime = lastKeyTriggerTime.get(keyCode);
@@ -425,6 +452,30 @@ public class SteeringWheelKeyManager {
         onKeyTriggered(keyCode);
     }
 
+    // ================= 方控按键学习 (录制键码) =================
+
+    /**
+     * 开始按键学习录制：下一个捕获到的方控按键将被录制回调消费，不触发任何业务动作。
+     * @return true=受理成功（服务已在运行）
+     */
+    public static boolean startKeyLearning(KeyLearningCapture callback) {
+        if (callback == null) return false;
+        if (VehicleAutomationService.getInstance() == null) return false;
+        sKeyLearningCallback = callback;
+        Log.i(TAG, "按键学习: 录制已开启，等待车主按下方向盘按键...");
+        return true;
+    }
+
+    /** 停止学习录制（弹窗取消 / 超时兜底） */
+    public static void stopKeyLearning() {
+        sKeyLearningCallback = null;
+    }
+
+    /** 当前是否处于学习录制态 */
+    public static boolean isKeyLearning() {
+        return sKeyLearningCallback != null;
+    }
+
     private String getKeyName(int keyCode) {
         switch (keyCode) {
             case KEY_BACK: return "右方向盘 ① 主页/返回键";
@@ -452,6 +503,99 @@ public class SteeringWheelKeyManager {
     private volatile long lastToggleActionAt = 0L;
     private volatile boolean lastToggleWasPause = false;
     private static final long TOGGLE_STATE_CACHE_MS = 1200;
+
+    // ═══ 防连切两首：让位观察与签名补刀算法 (借鉴米小江 CarMedia 1.6.8 scheduleReceiverCutFallback) ═══
+    // 痛点：本地播放器自己也在监听 MEDIA_BUTTON 广播，方控再补发一次切歌 → 一次按压连跳两首。
+    // 解法：执行 NEXT/PREV 前先记录曲目签名(歌名+歌手+时长)，若目标播放器已在活跃播放，
+    // 先按兵不动等 900ms；900ms 后签名没变(播放器哑火没切动)才由助手补刀切歌；签名已变则静默退出。
+    // 既有失败兜底不受影响：补刀后才进入原有的「多级互斥派发」链路。
+    private static final long SKIP_VERIFY_DELAY_MS = 900;
+    private static final long SKIP_DEDUP_MIN_MS = 150;
+    private final android.os.Handler skipVerifyHandler = new android.os.Handler(Looper.getMainLooper());
+    private final long[] lastSkipFallbackAt = new long[2]; // 0=PREV, 1=NEXT
+
+    /** 播放目标包名 -> 是否自带 MEDIA_BUTTON 接收器（自带=可能与助手双触发连切两首） */
+    private boolean targetHasOwnMediaButtonReceiver(String targetPkg) {
+        if (targetPkg == null || targetPkg.isEmpty()) return false;
+        try {
+            android.content.Intent q = new android.content.Intent(android.content.Intent.ACTION_MEDIA_BUTTON);
+            q.setPackage(targetPkg);
+            java.util.List<android.content.pm.ResolveInfo> rs = context.getPackageManager().queryBroadcastReceivers(q, 0);
+            return rs != null && !rs.isEmpty();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** 采集当前活跃播放会话的曲目签名 (歌名|歌手|时长)，无活跃会话返回空串 */
+    private String currentTrackSignature() {
+        try {
+            MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);
+            if (msm == null) return "";
+            List<MediaController> controllers = msm.getActiveSessions(null);
+            if (controllers == null) return "";
+            for (MediaController mc : controllers) {
+                if (mc == null) continue;
+                android.media.session.PlaybackState st = mc.getPlaybackState();
+                if (st == null || st.getState() != android.media.session.PlaybackState.STATE_PLAYING) continue;
+                String pkg = mc.getPackageName();
+                if (isIgnoredMediaPackage(pkg)) continue;
+                android.media.MediaMetadata md = mc.getMetadata();
+                if (md == null) return "";
+                String t = md.getString(android.media.MediaMetadata.METADATA_KEY_TITLE);
+                String a = md.getString(android.media.MediaMetadata.METADATA_KEY_ARTIST);
+                long d = md.getLong(android.media.MediaMetadata.METADATA_KEY_DURATION);
+                return (t == null ? "" : t) + "|" + (a == null ? "" : a) + "|" + d;
+            }
+        } catch (Throwable ignored) {}
+        return "";
+    }
+
+    /**
+     * 防连切切歌入口：先让位观察，签名未变才补刀。
+     * @param keyCode KEYCODE_MEDIA_NEXT 或 KEYCODE_MEDIA_PREVIOUS
+     * @param targetSource 已解析的音频源
+     */
+    private void dispatchSkipWithDeferVerify(final int keyCode, final int targetSource) {
+        // 蓝牙独占直发通道维持既有零等待行为（手机端 AVRCP 天然单次消费，无连切问题）
+        if (targetSource == SOURCE_BLUETOOTH) {
+            sendMediaKeyEvent(keyCode, targetSource);
+            return;
+        }
+        final boolean isNext = (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT);
+        final int dir = isNext ? 1 : 0;
+        final String beforeSig = currentTrackSignature();
+        final String targetPkg = resolveTargetMediaPackage();
+
+        // 前置判定：无曲目活跃 / 目标播放器不自带媒体键接收器 → 直发（现状行为，无回归风险）
+        if (beforeSig.isEmpty() || !targetHasOwnMediaButtonReceiver(targetPkg)) {
+            sendMediaKeyEvent(keyCode, targetSource);
+            return;
+        }
+
+        final long now = System.currentTimeMillis();
+        // 跨通道抖动抑制：上次补刀极近(150ms 内)视为重复事件直接吞掉
+        if (now - lastSkipFallbackAt[dir] < SKIP_DEDUP_MIN_MS) {
+            Log.i(TAG, "防连切去重: " + (isNext ? "NEXT" : "PREV") + " 触发过近，忽略本次");
+            return;
+        }
+
+        Log.i(TAG, "防连切让位观察: 目标 " + targetPkg + " 自带媒体键接收器，先等待其自行切歌 (900ms)");
+        skipVerifyHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                String afterSig = currentTrackSignature();
+                // 签名未变 = 播放器 900ms 内没有自行切歌(哑火) → 助手补刀执行
+                if (afterSig.equals(beforeSig) && !beforeSig.isEmpty()) {
+                    lastSkipFallbackAt[dir] = System.currentTimeMillis();
+                    Log.i(TAG, "防连切补刀: 观察窗内曲目未变化，由助手接管切歌 (" + (isNext ? "NEXT" : "PREV") + ")");
+                    sendMediaKeyEvent(keyCode, resolveCurrentAudioSource());
+                } else {
+                    Log.i(TAG, "防连切静默退出: 目标播放器已自行完成切歌，助手不再补发");
+                }
+            }
+        }, SKIP_VERIFY_DELAY_MS);
+    }
 
     private void executeAction(String action) {
         if (action == null || ACTION_DEFAULT.equals(action)) return;
@@ -522,10 +666,10 @@ public class SteeringWheelKeyManager {
                 }
                 break;
             case ACTION_NEXT_TRACK:
-                sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_NEXT, resolveCurrentAudioSource());
+                dispatchSkipWithDeferVerify(KeyEvent.KEYCODE_MEDIA_NEXT, resolveCurrentAudioSource());
                 break;
             case ACTION_PREV_TRACK:
-                sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PREVIOUS, resolveCurrentAudioSource());
+                dispatchSkipWithDeferVerify(KeyEvent.KEYCODE_MEDIA_PREVIOUS, resolveCurrentAudioSource());
                 break;
             case ACTION_MUTE_TOGGLE:
                 toggleMute();

@@ -38,6 +38,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import app.onepve.geelyconsole.hal.AndroidCarClient;
+import app.onepve.geelyconsole.hal.HwKeyInputChannel;
 import app.onepve.geelyconsole.hal.IVehiclePlatform;
 import app.onepve.geelyconsole.hal.VehiclePlatformFactory;
 import app.onepve.geelyconsole.server.WebServer;
@@ -1411,6 +1413,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     // JSBridge
     public class ToolboxBridge {
         private final Context context;
+        // HW_KEY_INPUT 学习通道（仅按键学习录制期间存在，学习结束立即注销）
+        private HwKeyInputChannel hwKeyInputChannel;
+        // 仅供日志排查用的最近捕获键码
+        private volatile int hwKeyInputChannelLastCode = 0;
 
         public ToolboxBridge(Context context) {
             this.context = context;
@@ -5092,6 +5098,101 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public String getInstalledNavigationApps() {
             return AppFilterUtils.getInstalledNavigationApps(MainActivity.this);
+        }
+
+        // ═══ 方控按键学习 (借鉴米小江 CarMedia 1.6.8 按键录制) ═══
+        // JS 调 startWheelKeyLearning() 开启录制弹窗流程；原生双通道 (logcat 服务线程 + HW_KEY_INPUT
+        // 车规属性回调) 同时待命，谁先捕获第一个物理按键谁消费。捕获后通过 window.onWheelKeyLearned
+        // 回调 JS 展示识别结果，并写入 wheel_learned_key_code 配置供车型适配参考。
+
+        @JavascriptInterface
+        public boolean startWheelKeyLearning() {
+            try {
+                // 1. 先武装服务端 logcat 通道的录制回调（缤越 COOL 已实证该通道稳定可用）
+                boolean svcOk = SteeringWheelKeyManager.startKeyLearning(keyCode -> {
+                    notifyWheelKeyLearned(keyCode);
+                    return;
+                });
+                if (!svcOk) {
+                    // 方控后台服务未运行时拒绝学习，避免车主白按
+                    return false;
+                }
+
+                // 2. HW_KEY_INPUT 车规属性通道（米小江同款）：CarService 直推键码，
+                //    免 logcat 子进程。注册失败自动静默回退纯 logcat 通道，不打扰用户。
+                try {
+                    AndroidCarClient carClient = AndroidCarClient.getInstance();
+                    Object cpm = carClient.getCarPropertyManagerRef();
+                    if (cpm != null) {
+                        if (hwKeyInputChannel == null) {
+                            hwKeyInputChannel = new HwKeyInputChannel();
+                        }
+                        if (hwKeyInputChannel.register(cpm, MainActivity.this)) {
+                            hwKeyInputChannel.setListener((code, isDown) -> {
+                                if (isDown) {
+                                    // 只认物理按下沿；与 logcat 通道互斥由单回调捕获即清空机制保证
+                                    SteeringWheelKeyManager.stopKeyLearning();
+                                    hwKeyInputChannelLastCode = code;
+                                    notifyWheelKeyLearned(code);
+                                }
+                            }, true);
+                            AppLogger.i("方控按键学习", "HW_KEY_INPUT 车规属性通道注册成功");
+                        } else {
+                            AppLogger.i("方控按键学习", "HW_KEY_INPUT 通道不可用，回退纯 logcat 抓取");
+                        }
+                    }
+                } catch (Throwable t) {
+                    AppLogger.w("方控按键学习", "HW_KEY_INPUT 注册异常(不影响学习): " + t.getMessage());
+                }
+                return true;
+            } catch (Throwable t) {
+                AppLogger.e("方控按键学习", "开启学习失败: " + t.getMessage());
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public boolean stopWheelKeyLearning() {
+            try {
+                SteeringWheelKeyManager.stopKeyLearning();
+                releaseHwKeyInputChannel();
+            } catch (Throwable ignored) {}
+            return true;
+        }
+
+        private void notifyWheelKeyLearned(final int keyCode) {
+            // 学习结束第一时间释放 HW_KEY_INPUT 注册（RAII：录制态短生命周期，用毕即注销）
+            releaseHwKeyInputChannel();
+            // 记录学习到的键码，供前端展示与后续新车型适配参考
+            try {
+                getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                        .edit().putInt("wheel_learned_key_code", keyCode).apply();
+            } catch (Throwable ignored) {}
+            AppLogger.i("方控按键学习", "已学习按键键码: " + keyCode);
+            try {
+                org.json.JSONObject obj = new org.json.JSONObject();
+                obj.put("keyCode", keyCode);
+                final String js = "if(window.onWheelKeyLearned) window.onWheelKeyLearned(" + obj.toString() + ");";
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (webView != null) {
+                                webView.evaluateJavascript(js, null);
+                            }
+                        } catch (Throwable ignored) {}
+                    }
+                });
+            } catch (Throwable ignored) {}
+        }
+
+        private void releaseHwKeyInputChannel() {
+            try {
+                if (hwKeyInputChannel != null) {
+                    hwKeyInputChannel.unregister();
+                    hwKeyInputChannel = null;
+                }
+            } catch (Throwable ignored) {}
         }
     }
 

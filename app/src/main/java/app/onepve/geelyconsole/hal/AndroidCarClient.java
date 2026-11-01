@@ -175,6 +175,14 @@ public class AndroidCarClient {
         return this.mConnected && this.mCarPropertyManager != null;
     }
 
+    /**
+     * 暴露底层 CarPropertyManager 引用（仅供 HW_KEY_INPUT 方控按键学习通道反射注册回调使用）。
+     * 调用方持有后自行通过 HwKeyInputChannel 注册/注销，未连接时返回 null。
+     */
+    public Object getCarPropertyManagerRef() {
+        return isConnected() ? this.mCarPropertyManager : null;
+    }
+
     public int getIntProperty(int propId, int areaId, int defaultValue) {
         if (!isConnected()) return defaultValue;
         try {
