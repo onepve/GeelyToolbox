@@ -72,7 +72,7 @@
     </div>
 
     <!-- 2. 车速与启播 (左右双列卡片，一屏收尽，整卡点击开关) -->
-    <div v-if="activeTab === 'speed'" class="grid grid-cols-2 gap-4 items-stretch">
+    <div v-if="activeTab === 'speed'" class="grid grid-cols-2 gap-4 items-stretch pb-28">
       <div
         @click="toggleSetting('vehicle_speed_autoplay_enabled')"
         :class="[
@@ -87,11 +87,6 @@
             <span class="text-[20px] font-black text-car-text tracking-wide">车速达标智能启播音乐</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">起步自启</span>
             <HelpDot size="sm" @click.stop="showHelp('speed_music')" />
-            <!-- 问号后面紧跟的快捷跳转：一点直达「车载声音·音乐音源优先级」去换唤醒歌曲 -->
-            <span
-              @click.stop="goToMediaPrioritySettings"
-              class="text-[14px] font-black text-car-accent cursor-pointer shrink-0"
-            >快速跳转到音乐设置 ➔</span>
           </div>
           <!-- 右上角：轻量状态指示灯 + 文字（消灭独立大按钮） -->
           <div class="flex items-center space-x-2 shrink-0">
@@ -165,6 +160,15 @@
           >
             前台全屏播放
           </button>
+        </div>
+
+        <!-- 唤醒歌曲设置快捷跳转提示 -->
+        <div class="flex items-center justify-between text-[13px] pt-1" @click.stop>
+          <span class="text-car-sub font-bold">默认播放首选音源与唤醒歌曲</span>
+          <span
+            @click.stop="goToMediaPrioritySettings"
+            class="font-black text-car-accent cursor-pointer hover:underline"
+          >去设置唤醒歌曲 ➔</span>
         </div>
       </div>
 

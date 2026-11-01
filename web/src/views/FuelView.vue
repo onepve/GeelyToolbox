@@ -92,37 +92,34 @@
       </FeatureCard>
 
       <!-- 油箱容积与加满成本计算器卡片 -->
-      <div class="grid grid-cols-2 gap-4 items-stretch">
+      <div class="grid grid-cols-2 gap-4 items-stretch pb-28">
         <div class="p-5 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col justify-between">
           <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center space-x-2">
-              <span class="text-[19px] font-black text-car-text">{{ vehicleModelDisplay }} {{ tankCapacity }}L 油箱测算</span>
+            <div class="flex items-center space-x-2 min-w-0 mr-2">
+              <span class="text-[18px] font-black text-car-text truncate">{{ vehicleModelDisplay }} {{ tankCapacity }}L 油箱测算</span>
               <HelpDot size="sm" @click="showTankCalcHelp" />
             </div>
-            <div class="flex items-center space-x-2">
-              <div class="flex items-center p-0.5 rounded-xl bg-car-item border border-car-border">
-                <button
-                  v-for="f in ['92#', '95#', '98#']"
-                  :key="f"
-                  @click="onSelectDefaultFuel(f)"
-                  :class="[
-                    'h-[50px] px-3.5 rounded-lg text-[13px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center',
-                    defaultFuelType.includes(f.replace('#', ''))
-                      ? 'bg-car-card border-2 border-car-accent text-car-accent shadow-sm'
-                      : 'text-car-sub hover:text-car-text'
-                  ]"
-                >
-                  {{ f }}
-                </button>
-              </div>
-              <span class="px-2.5 py-1 text-[12px] font-black rounded-xl border bg-car-item border-car-border text-car-accent">官方标称</span>
+            <div class="flex items-center p-0.5 rounded-xl bg-car-item border border-car-border shrink-0">
+              <button
+                v-for="f in ['92#', '95#', '98#']"
+                :key="f"
+                @click="onSelectDefaultFuel(f)"
+                :class="[
+                  'h-[50px] px-3 rounded-lg text-[13px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center',
+                  defaultFuelType.includes(f.replace('#', ''))
+                    ? 'bg-car-card border-2 border-car-accent text-car-accent shadow-sm'
+                    : 'text-car-sub hover:text-car-text'
+                ]"
+              >
+                {{ f }}
+              </button>
             </div>
           </div>
 
           <!-- 核心双测算：车辆实时加满测算 vs 日常加200元实用换算 -->
           <div class="space-y-3 py-1">
             <!-- 1. 车辆实时动态加满补能计算 -->
-            <div class="p-3.5 bg-car-item border border-car-border rounded-2xl flex flex-col space-y-1.5">
+            <div class="p-3.5 bg-car-item border border-car-border rounded-2xl flex flex-col space-y-2">
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-2">
                   <span class="text-[14px] text-car-text font-black">当前油箱实际估算：</span>
@@ -137,37 +134,58 @@
                   {{ hasFuelSignal ? `加满缺口: ${fillGapLiters}L` : `标称总容积: ${tankCapacity}L` }}
                 </span>
               </div>
-              <div class="flex items-center justify-between mt-2 pt-4 border-t border-car-border/40">
-                <span class="text-[13px] text-car-sub font-bold">
-                  {{ hasFuelSignal ? '加满预估需补：' : '空箱加满整箱预估：' }}
-                </span>
-                <div class="flex items-baseline space-x-3">
-                  <span class="text-[13px] font-bold" :class="defaultFuelType.includes('92') ? 'text-car-accent' : 'text-car-sub'">
-                    92# <span class="text-[20px] font-black font-mono" :class="defaultFuelType.includes('92') ? 'text-car-accent' : 'text-car-text'">¥{{ displayCost92 }}</span>
+              <div class="mt-1 pt-4 border-t border-car-border/40 flex flex-col space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <span class="text-[13px] text-car-sub font-bold">
+                    {{ hasFuelSignal ? '加满预估需补：' : '空箱加满整箱预估：' }}
                   </span>
-                  <span class="text-[13px] font-bold" :class="defaultFuelType.includes('95') ? 'text-car-accent' : 'text-car-sub'">
-                    95# <span class="text-[20px] font-black font-mono" :class="defaultFuelType.includes('95') ? 'text-car-accent' : 'text-car-text'">¥{{ displayCost95 }}</span>
-                  </span>
-                  <span class="text-[13px] font-bold" :class="defaultFuelType.includes('98') ? 'text-car-accent' : 'text-car-sub'">
-                    98# <span class="text-[20px] font-black font-mono" :class="defaultFuelType.includes('98') ? 'text-car-accent' : 'text-car-text'">¥{{ displayCost98 }}</span>
-                  </span>
+                  <span class="text-[11px] text-car-accent font-black">点击可直接切换默认油品</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <div
+                    v-for="item in [
+                      { type: '92#', cost: displayCost92 },
+                      { type: '95#', cost: displayCost95 },
+                      { type: '98#', cost: displayCost98 }
+                    ]"
+                    :key="'cost_' + item.type"
+                    @click="onSelectDefaultFuel(item.type)"
+                    :class="[
+                      'p-2 rounded-xl border text-center cursor-pointer transition-all flex flex-col items-center justify-center',
+                      defaultFuelType.includes(item.type.replace('#', ''))
+                        ? 'bg-car-card border-car-accent shadow-sm'
+                        : 'bg-car-card/60 border-car-border hover:border-car-border-light'
+                    ]"
+                  >
+                    <span class="text-[11.5px] font-bold" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-sub'">{{ item.type }}</span>
+                    <span class="text-[16px] font-black font-mono leading-tight" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-text'">¥{{ item.cost }}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- 2. 日常加 200 元可加油量测算 -->
-            <div class="p-3.5 bg-car-item border border-car-border rounded-2xl flex items-center justify-between">
-              <span class="text-[14px] text-car-sub font-bold">日常加 200 元可加：</span>
-              <div class="flex items-baseline space-x-3">
-                <span class="text-[13px] font-bold" :class="defaultFuelType.includes('92') ? 'text-car-accent' : 'text-car-sub'">
-                  92# <span class="text-[20px] font-black font-mono" :class="defaultFuelType.includes('92') ? 'text-car-accent' : 'text-car-text'">{{ (currentOilData?.p92 ? 200 / currentOilData.p92 : 26.3).toFixed(1) }}</span> <span class="text-[12px]">L</span>
-                </span>
-                <span class="text-[13px] font-bold" :class="defaultFuelType.includes('95') ? 'text-car-accent' : 'text-car-sub'">
-                  95# <span class="text-[20px] font-black font-mono" :class="defaultFuelType.includes('95') ? 'text-car-accent' : 'text-car-text'">{{ (currentOilData?.p95 ? 200 / currentOilData.p95 : 24.6).toFixed(1) }}</span> <span class="text-[12px]">L</span>
-                </span>
-                <span class="text-[13px] font-bold" :class="defaultFuelType.includes('98') ? 'text-car-accent' : 'text-car-sub'">
-                  98# <span class="text-[20px] font-black font-mono" :class="defaultFuelType.includes('98') ? 'text-car-accent' : 'text-car-text'">{{ (currentOilData?.p98 ? 200 / currentOilData.p98 : 22.0).toFixed(1) }}</span> <span class="text-[12px]">L</span>
-                </span>
+            <div class="p-3.5 bg-car-item border border-car-border rounded-2xl flex flex-col space-y-1.5">
+              <span class="text-[13px] text-car-sub font-bold">日常加 200 元可加油量：</span>
+              <div class="grid grid-cols-3 gap-2">
+                <div
+                  v-for="item in [
+                    { type: '92#', lit: (currentOilData?.p92 ? 200 / currentOilData.p92 : 26.3).toFixed(1) },
+                    { type: '95#', lit: (currentOilData?.p95 ? 200 / currentOilData.p95 : 24.6).toFixed(1) },
+                    { type: '98#', lit: (currentOilData?.p98 ? 200 / currentOilData.p98 : 22.0).toFixed(1) }
+                  ]"
+                  :key="'lit_' + item.type"
+                  @click="onSelectDefaultFuel(item.type)"
+                  :class="[
+                    'p-2 rounded-xl border text-center cursor-pointer transition-all flex flex-col items-center justify-center',
+                    defaultFuelType.includes(item.type.replace('#', ''))
+                      ? 'bg-car-card border-car-accent shadow-sm'
+                      : 'bg-car-card/60 border-car-border hover:border-car-border-light'
+                  ]"
+                >
+                  <span class="text-[11.5px] font-bold" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-sub'">{{ item.type }}</span>
+                  <span class="text-[16px] font-black font-mono leading-tight" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-text'">{{ item.lit }} <span class="text-[11px] font-normal">L</span></span>
+                </div>
               </div>
             </div>
           </div>

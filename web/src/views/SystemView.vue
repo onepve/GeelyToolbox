@@ -181,7 +181,7 @@
     </div>
 
     <!-- Tab 2: 桌面车标与启动项 (车标定制 + 启动首屏默认视图) -->
-    <div v-if="activeTab === 'icon'" class="flex flex-col space-y-4">
+    <div v-if="activeTab === 'icon'" class="flex flex-col space-y-4 pb-28">
       <!-- 车型配置档位校准 (专为缤越COOL提供自动识别与手动校准兜底) -->
       <FeatureCard 
         v-if="store.deviceInfo.is_binyue_cool_model"
