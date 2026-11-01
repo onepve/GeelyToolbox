@@ -161,6 +161,25 @@
             前台全屏播放
           </button>
         </div>
+
+        <!-- 唤醒歌曲快捷跳转入口 (直达「车载声音 ➔ 音乐音源优先级」设置页) -->
+        <div 
+          @click.stop="goToMediaPrioritySettings" 
+          class="flex items-center justify-between bg-car-item border-2 border-car-border rounded-2xl px-4 min-h-[54px] cursor-pointer hover:border-car-accent transition-all shrink-0 group"
+        >
+          <div class="flex items-center space-x-2.5 min-w-0">
+            <StatusDot size="sm" :color="'info'" :glow-px="6" />
+            <span class="text-[15px] font-black text-car-text truncate">
+              唤醒歌曲设置
+            </span>
+          </div>
+          <div class="flex items-center space-x-2 shrink-0">
+            <span class="text-[13.5px] font-bold text-car-sub group-hover:text-car-accent transition-colors truncate">
+              想换唤醒播放的歌？去这里
+            </span>
+            <span class="text-car-accent text-[18px] font-black leading-none">➔</span>
+          </div>
+        </div>
       </div>
 
       <!-- 车速达标自定义动作与唤起应用 (紧凑车规卡片，高度对齐左侧，整卡点击开关) -->
@@ -498,11 +517,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { 
   store, bridge, showToast, openModal, getInstalledMusicAppsCached,
   setNetworkBootPolicy, toggleNetworkDeviceDirect, initNetworkDeviceStatus,
-  openDeviceSettings
+  openDeviceSettings, recordActiveNav
 } from '../store';
 import SubTabs from '../components/SubTabs.vue';
 import PlanCard from '../components/PlanCard.vue';
@@ -705,6 +724,18 @@ function setAutoplayFullscreen(fullscreen) {
 
 function openSelectModal(target) {
   openModal('appSelect', { keyTarget: target });
+}
+
+// 唤醒歌曲快捷跳转：切到「车载声音」大类并定位到「音乐音源优先级」标签页
+// (车速达标卡片上只看到开关，唤醒歌曲/首选音源实际在 BodyView 的 media 标签页，这里一键直达)
+function goToMediaPrioritySettings() {
+  store.currentNav = 'body';
+  recordActiveNav('body');
+  // BodyView 挂载后监听该事件自动定位到「音乐音源优先级」标签
+  nextTick(() => {
+    window.dispatchEvent(new CustomEvent('toolbox-goto-media-priority'));
+  });
+  showToast('已跳转到：车载声音 · 音乐音源优先级');
 }
 
 function showHelp(key) {

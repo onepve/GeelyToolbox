@@ -612,6 +612,10 @@ function confirmDeleteTheme(themeName) {
 
 onMounted(() => {
   window.refreshVoiceThemes = loadVoiceThemes;
+  // 「车速达标」卡片的「唤醒歌曲设置」快捷跳转入口：切到大类后自动定位音乐音源优先级标签
+  window.addEventListener('toolbox-goto-media-priority', () => {
+    activeTab.value = 'media';
+  });
   setTimeout(() => {
     loadVoiceThemes();
   }, 30);
