@@ -1,6 +1,6 @@
 <template>
   <header class="h-[64px] min-h-[64px] border-b border-car-border px-5 flex items-center justify-between z-20 select-none transition-colors" :style="{ background: 'var(--bg-panel)' }">
-    <!-- 品牌、版本与适配车型专属标签 (未适配或未知车型自动静默隐藏，保持界面极简) -->
+    <!-- 品牌、版本与适配车型专属标签 (未适配或未知车型展示温和引导胶囊，一键直达日志诊断协助适配) -->
     <div class="flex items-center space-x-2">
       <span class="text-[20px] font-black text-car-text tracking-wide">缤越助手</span>
       <span class="text-[12px] px-2 py-0.5 rounded bg-car-item text-car-text font-extrabold border border-car-border">v{{ displayVersion }}</span>
@@ -12,6 +12,15 @@
       >
         <span>{{ displayPlatformBadge }}</span>
       </span>
+      <!-- 未知车型温和引导胶囊：零打扰常驻，点击一键唤起日志抓取协助适配 -->
+      <button
+        v-else-if="isDeviceReady && isCarDevice"
+        @click="showVehicleAdaptGuide"
+        :title="'当前车型未精准识别，点击协助适配'"
+        class="text-[12px] px-2.5 py-0.5 rounded-full font-black border transition-all inline-flex items-center space-x-1 shadow-sm select-none cursor-pointer hover:opacity-80 bg-car-item border-car-border text-car-sub"
+      >
+        <span>⚠️ 未知车型 · 点此适配</span>
+      </button>
     </div>
 
     <!-- 中部状态指示器 (微胶囊流) -->
@@ -108,6 +117,30 @@ const isBinyueCool = computed(() => {
 const isSupportedPlatform = computed(() => {
   return isBinyueL.value || isEmgrandL.value || isBinyueCool.value;
 });
+
+// 设备信息是否已就绪（避免 App 启动初期 platform_code 尚未回填时误闪「未知车型」胶囊）
+const isDeviceReady = computed(() => {
+  return !!(store.deviceInfo && (store.deviceInfo.platform_code || store.deviceInfo.platform_name));
+});
+
+// 仅真实车机环境展示引导（手机/桌面调试运行时不误报）
+const isCarDevice = computed(() => {
+  return store.deviceInfo.is_car_device === true;
+});
+
+// 未知车型温和引导：一键直达车机日志诊断，协助作者完成新车型适配
+function showVehicleAdaptGuide() {
+  openModal('confirm', {
+    title: '【车型适配支持】',
+    badge: '适配引导',
+    desc: '检测到当前车机车型尚未精准识别，基础车载功能可正常使用。\n\n您可一键抓取车机运行日志并上传云端，作者将在后续版本为您跟进专属适配。\n日志全程自动脱敏，不含个人隐私信息。',
+    tip: '点击「前往抓取」后，在弹出的日志诊断页点击「抓取全量诊断日志」，打包完成后会自动弹出上传窗口，点「立即上传」即可。',
+    confirmText: '前往抓取车机日志',
+    onConfirm: () => {
+      openModal('log');
+    }
+  });
+}
 
 const displayPlatformBadge = computed(() => {
   const trim = store.deviceInfo.trim_name || '';
