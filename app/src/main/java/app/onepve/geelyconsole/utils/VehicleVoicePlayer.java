@@ -48,15 +48,7 @@ public class VehicleVoicePlayer {
 
     private static String resolveConfigKeyFallback(SharedPreferences prefs, String key, String prefix) {
         if (prefs == null || key == null || key.isEmpty()) return key;
-        // 1. 副驾衍生音效一律收敛至前端绑定的权威主项 (开门统一指向 door_fr，关门统一指向 door_fr_close)
-        // 彻底杜绝命中历史残留的幽灵配置
-        if (key.startsWith("door_fr_") || key.equals("door_fr")) {
-            return key.contains("close") ? "door_fr_close" : "door_fr";
-        }
-        // 2. 主驾通用开门关门别名收敛
-        if (key.startsWith("door_fl_") || key.equals("door_fl")) {
-            return key.contains("close") ? "door_fl_close" : "door_fl";
-        }
+        // 移除所有硬编码强制收敛逻辑，完全交由用户在前端自主选择的独立声道配置管控
         if (prefs.contains(prefix + key)) return key;
         return key;
     }
