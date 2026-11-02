@@ -91,10 +91,10 @@
         </div>
       </FeatureCard>
 
-      <!-- 油箱容积与加满成本计算器卡片 -->
-      <div class="grid grid-cols-2 gap-4 items-stretch pb-28">
-        <div class="p-5 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-3">
+      <!-- 油箱测算卡：全宽长条，内部左右双测算 -->
+      <div class="flex flex-col space-y-4 pb-6">
+        <div class="p-4 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col">
+          <div class="flex items-center justify-between mb-2">
             <div class="flex items-center space-x-2 min-w-0 mr-2">
               <span class="text-[18px] font-black text-car-text truncate">{{ vehicleModelDisplay }} {{ tankCapacity }}L 油箱测算</span>
               <HelpDot size="sm" @click="showTankCalcHelp" />
@@ -105,7 +105,7 @@
                 :key="f"
                 @click="onSelectDefaultFuel(f)"
                 :class="[
-                  'h-[50px] px-3 rounded-lg text-[13px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center',
+                  'h-[44px] px-4 rounded-lg text-[14px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center',
                   defaultFuelType.includes(f.replace('#', ''))
                     ? 'bg-car-card border-2 border-car-accent text-car-accent shadow-sm'
                     : 'text-car-sub hover:text-car-text'
@@ -116,58 +116,59 @@
             </div>
           </div>
 
-          <!-- 核心双测算：车辆实时加满测算 vs 日常加200元实用换算 -->
-          <div class="space-y-3 py-1">
+          <!-- 核心双测算：左实时加满预估 / 右加200元换算（横向并排，纵向空间换横向） -->
+          <div class="grid grid-cols-2 gap-3">
             <!-- 1. 车辆实时动态加满补能计算 -->
-            <div class="p-3.5 bg-car-item border border-car-border rounded-2xl flex flex-col space-y-2">
-              <div class="flex items-center justify-between">
+            <div class="p-3 bg-car-item border border-car-border rounded-2xl flex flex-col space-y-1.5">
+              <div class="flex items-center justify-between flex-wrap gap-x-2">
                 <div class="flex items-center space-x-2">
                   <span class="text-[14px] text-car-text font-black">当前油箱实际估算：</span>
                   <span v-if="hasFuelSignal" class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent font-mono text-[12px] font-black">
                     余 {{ currentFuelLiters }}L ({{ currentFuelPercent }}%)
                   </span>
                   <span v-else class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-car-sub font-bold text-[12px]">
-                    正在连接车辆 · 点火即显示
+                    点火即显示实时油量
                   </span>
                 </div>
                 <span class="text-[12.5px] text-car-sub font-bold">
                   {{ hasFuelSignal ? `加满缺口: ${fillGapLiters}L` : `标称总容积: ${tankCapacity}L` }}
                 </span>
               </div>
-              <div class="mt-1 pt-4 border-t border-car-border/40 flex flex-col space-y-1.5">
-                <div class="flex items-center justify-between">
-                  <span class="text-[13px] text-car-sub font-bold">
-                    {{ hasFuelSignal ? '加满预估需补：' : '空箱加满整箱预估：' }}
-                  </span>
-                  <span class="text-[11px] text-car-accent font-black">点击可直接切换默认油品</span>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                  <div
-                    v-for="item in [
-                      { type: '92#', cost: displayCost92 },
-                      { type: '95#', cost: displayCost95 },
-                      { type: '98#', cost: displayCost98 }
-                    ]"
-                    :key="'cost_' + item.type"
-                    @click="onSelectDefaultFuel(item.type)"
-                    :class="[
-                      'p-2 rounded-xl border text-center cursor-pointer transition-all flex flex-col items-center justify-center',
-                      defaultFuelType.includes(item.type.replace('#', ''))
-                        ? 'bg-car-card border-car-accent shadow-sm'
-                        : 'bg-car-card/60 border-car-border hover:border-car-border-light'
-                    ]"
-                  >
-                    <span class="text-[11.5px] font-bold" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-sub'">{{ item.type }}</span>
-                    <span class="text-[16px] font-black font-mono leading-tight" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-text'">¥{{ item.cost }}</span>
-                  </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[13px] text-car-sub font-bold">
+                  {{ hasFuelSignal ? '加满预估需补：' : '空箱加满整箱预估：' }}
+                </span>
+                <span class="text-[11px] text-car-accent font-black">点击可切换默认油品</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <div
+                  v-for="item in [
+                    { type: '92#', cost: displayCost92 },
+                    { type: '95#', cost: displayCost95 },
+                    { type: '98#', cost: displayCost98 }
+                  ]"
+                  :key="'cost_' + item.type"
+                  @click="onSelectDefaultFuel(item.type)"
+                  :class="[
+                    'p-2 rounded-xl border text-center cursor-pointer transition-all flex flex-col items-center justify-center',
+                    defaultFuelType.includes(item.type.replace('#', ''))
+                      ? 'bg-car-card border-car-accent shadow-sm'
+                      : 'bg-car-card/60 border-car-border hover:border-car-border-light'
+                  ]"
+                >
+                  <span class="text-[11.5px] font-bold" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-sub'">{{ item.type }}</span>
+                  <span class="text-[17px] font-black font-mono leading-tight" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-text'">¥{{ item.cost }}</span>
                 </div>
               </div>
             </div>
 
             <!-- 2. 日常加 200 元可加油量测算 -->
-            <div class="p-3.5 bg-car-item border border-car-border rounded-2xl flex flex-col space-y-1.5">
-              <span class="text-[13px] text-car-sub font-bold">日常加 200 元可加油量：</span>
-              <div class="grid grid-cols-3 gap-2">
+            <div class="p-3 bg-car-item border border-car-border rounded-2xl flex flex-col space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[14px] text-car-text font-black">日常加 200 元可加油量：</span>
+                <span class="text-[11px] text-car-accent font-black">点击可切换默认油品</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 flex-1">
                 <div
                   v-for="item in [
                     { type: '92#', lit: (currentOilData?.p92 ? 200 / currentOilData.p92 : 26.3).toFixed(1) },
@@ -184,28 +185,26 @@
                   ]"
                 >
                   <span class="text-[11.5px] font-bold" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-sub'">{{ item.type }}</span>
-                  <span class="text-[16px] font-black font-mono leading-tight" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-text'">{{ item.lit }} <span class="text-[11px] font-normal">L</span></span>
+                  <span class="text-[17px] font-black font-mono leading-tight" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-text'">{{ item.lit }} <span class="text-[11px] font-normal">L</span></span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="text-[12.5px] text-car-sub font-bold pt-3 border-t border-car-border/50">
-            根据 {{ currentProvinceName }} 发改委最新挂牌价换算；车主实际优惠及满减立减以加油机实显为准。
+          <div class="text-[12px] text-car-sub font-bold pt-2 mt-2 border-t border-car-border/50">
+            根据 {{ currentProvinceName }} 发改委最新挂牌价换算；实际优惠以加油机实显为准。
           </div>
         </div>
 
-        <div class="p-5 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-[19px] font-black text-car-text">全国调价窗口机制</span>
-            <span class="px-2.5 py-0.5 text-[12px] font-black rounded-full border bg-car-item border-car-border text-car-sub">10个工作日</span>
+        <!-- 调价机制：全宽单行扁条，完整说明收进帮助弹窗 -->
+        <div class="px-4 py-2.5 rounded-2xl bg-car-card border-2 border-car-border shadow-lg flex items-center justify-between">
+          <div class="flex items-center space-x-3 min-w-0">
+            <span class="text-[14px] font-black text-car-text whitespace-nowrap">调价机制</span>
+            <span class="px-2 py-0.5 text-[11.5px] font-black rounded-full border bg-car-item border-car-border text-car-sub whitespace-nowrap">10个工作日</span>
+            <span class="text-[12.5px] text-car-sub font-bold truncate">跟踪国际原油均价，不足 50 元/吨顺延累加</span>
+            <HelpDot size="sm" @click="showAdjustRuleHelp" />
           </div>
-          <div class="text-[14px] text-car-sub font-bold leading-relaxed py-1">
-            国内成品油调价以 10 个工作日为一个周期，跟踪国际原油加权均价。调价幅度不足 50 元/吨时暂不作调整，纳入下次调价累加或冲抵。
-          </div>
-          <div class="flex items-center justify-between pt-4 border-t border-car-border/50">
-            <span class="text-[13px] text-car-accent font-black">建议：预期上涨提前加满，预期下调晚一天加</span>
-          </div>
+          <span class="text-[12.5px] text-car-accent font-black whitespace-nowrap ml-3">建议：预期上涨提前加满，下调晚一天加</span>
         </div>
       </div>
     </div>
@@ -1238,6 +1237,16 @@ function showCloudPairModal() {
   openModal('confirm', {
     title: '【手机云同步】爱车专属配对',
     desc: `当前车辆识别身份：\n・出厂硬件唯一码：【 ${carId} 】\n・当前车牌号：【 ${plate} 】\n\n手机端打开专属车库页面后，扫码或输入此出厂码即可一键认领该车进您的车库。`,
+    showCancel: false,
+    confirmText: '我知道了'
+  });
+}
+
+function showAdjustRuleHelp() {
+  openModal('confirm', {
+    title: '【功能指南】全国调价窗口机制',
+    desc: '国内成品油调价以 10 个工作日为一个周期，跟踪国际原油加权均价。调价幅度不足 50 元/吨时暂不作调整，纳入下次调价累加或冲抵。',
+    tip: '建议：预期上涨提前加满，预期下调晚一天加。',
     showCancel: false,
     confirmText: '我知道了'
   });
