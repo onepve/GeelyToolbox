@@ -59,6 +59,7 @@ public class DriveModeManager {
         this.voicePlayer = voicePlayer;
     }
 
+    // 预留接口：当前全库零调用，保留供未来车型适配时外部查询当前驾驶模式使用
     public int getDriveMode() { return lastDriveMode; }
 
     /**

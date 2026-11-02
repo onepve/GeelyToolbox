@@ -78,6 +78,7 @@ public class GearStateMachine {
         this.voicePlayer = voicePlayer;
     }
 
+    // 安全兜底版挡位查询：无信号(-1)时默认当P挡(5)处理，专供业务安全判断使用（P挡+零车速等11处调用）
     public int getGear() { return lastGearPos == -1 ? 5 : lastGearPos; }
 
     /**
@@ -99,6 +100,7 @@ public class GearStateMachine {
         }
     }
 
+    // 原始真值版挡位查询：无信号时如实返回-1，不做假设。车型适配层(IVehicleSensorAdapter)专用，各车型平台实现此方法
     public synchronized int getCurrentGear() {
         return lastGearPos;
     }
