@@ -148,12 +148,11 @@
                     { type: '98#', cost: displayCost98 }
                   ]"
                   :key="'cost_' + item.type"
-                  @click="onSelectDefaultFuel(item.type)"
                   :class="[
-                    'p-2 rounded-xl border text-center cursor-pointer transition-all flex flex-col items-center justify-center',
+                    'p-2 rounded-xl border text-center transition-all flex flex-col items-center justify-center',
                     defaultFuelType.includes(item.type.replace('#', ''))
                       ? 'bg-car-card border-car-accent shadow-sm'
-                      : 'bg-car-card/60 border-car-border hover:border-car-border-light'
+                      : 'bg-car-card/60 border-car-border'
                   ]"
                 >
                   <span class="text-[11.5px] font-bold" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-sub'">{{ item.type }}</span>
@@ -189,12 +188,11 @@
                     { type: '98#', lit: (currentOilData?.p98 ? 200 / currentOilData.p98 : 22.0).toFixed(1) }
                   ]"
                   :key="'lit_' + item.type"
-                  @click="onSelectDefaultFuel(item.type)"
                   :class="[
-                    'p-2 rounded-xl border text-center cursor-pointer transition-all flex flex-col items-center justify-center',
+                    'p-2 rounded-xl border text-center transition-all flex flex-col items-center justify-center',
                     defaultFuelType.includes(item.type.replace('#', ''))
                       ? 'bg-car-card border-car-accent shadow-sm'
-                      : 'bg-car-card/60 border-car-border hover:border-car-border-light'
+                      : 'bg-car-card/60 border-car-border'
                   ]"
                 >
                   <span class="text-[11.5px] font-bold" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-sub'">{{ item.type }}</span>
@@ -207,17 +205,6 @@
           <div class="text-[12px] text-car-sub font-bold pt-2 mt-2 border-t border-car-border/50">
             根据 {{ currentProvinceName }} 发改委最新挂牌价换算；实际优惠以加油机实显为准。
           </div>
-        </div>
-
-        <!-- 调价机制：全宽单行扁条，完整说明收进帮助弹窗 -->
-        <div class="px-4 py-2.5 rounded-2xl bg-car-card border-2 border-car-border shadow-lg flex items-center justify-between">
-          <div class="flex items-center space-x-3 min-w-0">
-            <span class="text-[14px] font-black text-car-text whitespace-nowrap">调价机制</span>
-            <span class="px-2 py-0.5 text-[11.5px] font-black rounded-full border bg-car-item border-car-border text-car-sub whitespace-nowrap">10个工作日</span>
-            <span class="text-[12.5px] text-car-sub font-bold truncate">跟踪国际原油均价，不足 50 元/吨顺延累加</span>
-            <HelpDot size="sm" @click="showAdjustRuleHelp" />
-          </div>
-          <span class="text-[12.5px] text-car-accent font-black whitespace-nowrap ml-3">建议：预期上涨提前加满，下调晚一天加</span>
         </div>
       </div>
     </div>
