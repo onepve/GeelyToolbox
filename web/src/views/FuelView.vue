@@ -99,16 +99,16 @@
               <span class="text-[18px] font-black text-car-text truncate">{{ vehicleModelDisplay }} {{ tankCapacity }}L 油箱测算</span>
               <HelpDot size="sm" @click="showTankCalcHelp" />
             </div>
-            <div class="flex items-center p-0.5 rounded-xl bg-car-item border border-car-border shrink-0">
+            <div class="flex items-center space-x-1.5 shrink-0">
               <button
                 v-for="f in ['92#', '95#', '98#']"
                 :key="f"
                 @click="onSelectDefaultFuel(f)"
                 :class="[
-                  'h-[52px] px-4 rounded-lg text-[14px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center',
+                  'h-[52px] px-4 rounded-xl text-[15px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center border-2',
                   defaultFuelType.includes(f.replace('#', ''))
-                    ? 'bg-car-card border-2 border-car-accent text-car-accent shadow-sm'
-                    : 'text-car-sub hover:text-car-text'
+                    ? 'bg-car-accent-light border-car-accent text-car-accent shadow-sm'
+                    : 'bg-transparent border-transparent text-car-sub hover:text-car-text'
                 ]"
               >
                 {{ f }}
@@ -162,10 +162,23 @@
               </div>
             </div>
 
-            <!-- 2. 日常加 200 元可加油量测算 -->
+            <!-- 2. 日常加 200 元可加油量测算（行结构与左块对齐保证瓷砖平行） -->
             <div class="p-3 bg-car-item border border-car-border rounded-2xl flex flex-col space-y-1.5">
+              <div class="flex items-center justify-between flex-wrap gap-x-2">
+                <div class="flex items-center space-x-2">
+                  <span class="text-[14px] text-car-text font-black">日常加 200 元可加油量：</span>
+                  <span v-if="currentOilData" class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-car-accent font-mono text-[12px] font-black">
+                    200 ÷ 单价
+                  </span>
+                  <span v-else class="px-2 py-0.5 rounded-full bg-car-card border border-car-border text-car-sub font-bold text-[12px]">
+                    等待油价联网
+                  </span>
+                </div>
+              </div>
               <div class="flex items-center justify-between">
-                <span class="text-[14px] text-car-text font-black">日常加 200 元可加油量：</span>
+                <span class="text-[13px] text-car-sub font-bold">
+                  {{ currentOilData ? `按当前挂牌价换算得：` : '挂牌价到手后自动换算：' }}
+                </span>
                 <span class="text-[11px] text-car-accent font-black">点击可切换默认油品</span>
               </div>
               <div class="grid grid-cols-3 gap-2">
