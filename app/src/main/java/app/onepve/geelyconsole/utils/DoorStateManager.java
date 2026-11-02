@@ -193,6 +193,7 @@ public class DoorStateManager {
         if (fl >= 0 && fl != currentFL && (now - lastTimeFL > DOOR_PHYSICAL_DEBOUNCE_MS)) {
             lastTimeFL = now;
             changed = true;
+            AppLogger.i("车门状态", "FL 状态跃变: " + currentFL + " -> " + fl + " | 防抖窗口已过=" + (now - lastTimeFL) + "ms");
             handleDoorTransition("FL", "主驾", fl, currentFL, universalMode, voiceMasterSwitch, prefs);
             currentFL = fl;
         }
@@ -201,6 +202,7 @@ public class DoorStateManager {
         if (fr >= 0 && fr != currentFR && (now - lastTimeFR > DOOR_PHYSICAL_DEBOUNCE_MS)) {
             lastTimeFR = now;
             changed = true;
+            AppLogger.i("车门状态", "FR 状态跃变: " + currentFR + " -> " + fr + " | 防抖窗口已过=" + (now - lastTimeFR) + "ms");
             handleDoorTransition("FR", "副驾", fr, currentFR, universalMode, voiceMasterSwitch, prefs);
             currentFR = fr;
         }
@@ -209,6 +211,7 @@ public class DoorStateManager {
         if (rl >= 0 && rl != currentRL && (now - lastTimeRL > DOOR_PHYSICAL_DEBOUNCE_MS)) {
             lastTimeRL = now;
             changed = true;
+            AppLogger.i("车门状态", "RL 状态跃变: " + currentRL + " -> " + rl + " | 防抖窗口已过=" + (now - lastTimeRL) + "ms");
             handleDoorTransition("RL", "左后", rl, currentRL, universalMode, voiceMasterSwitch, prefs);
             currentRL = rl;
         }
@@ -217,6 +220,7 @@ public class DoorStateManager {
         if (rr >= 0 && rr != currentRR && (now - lastTimeRR > DOOR_PHYSICAL_DEBOUNCE_MS)) {
             lastTimeRR = now;
             changed = true;
+            AppLogger.i("车门状态", "RR 状态跃变: " + currentRR + " -> " + rr + " | 防抖窗口已过=" + (now - lastTimeRR) + "ms");
             handleDoorTransition("RR", "右后", rr, currentRR, universalMode, voiceMasterSwitch, prefs);
             currentRR = rr;
         }
@@ -257,7 +261,12 @@ public class DoorStateManager {
                 return;
             }
 
-            AppLogger.i("车门状态", doorName + "车门已打开");
+            AppLogger.i("车门状态", doorName + "车门已打开 | 即将触发迎宾音");
+
+            // 音频通路预热：开门瞬间先写静音唤醒功放，再播真实迎宾音
+            if (voicePlayer != null) {
+                voicePlayer.warmupAudioPath("door_open_" + doorCode);
+            }
 
             if (universalMode) {
                 boolean enableOpen = PrefUtils.getBoolean(prefs, "voice_enable_door_universal_open", true);
