@@ -105,7 +105,7 @@
                 :key="f"
                 @click="onSelectDefaultFuel(f)"
                 :class="[
-                  'h-[40px] px-3.5 rounded-lg text-[14px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center',
+                  'min-h-[50px] px-3.5 rounded-lg text-[14px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center',
                   defaultFuelType.includes(f.replace('#', ''))
                     ? 'bg-car-card border-2 border-car-accent text-car-accent shadow-sm'
                     : 'bg-transparent text-car-sub hover:text-car-text border-2 border-transparent'
