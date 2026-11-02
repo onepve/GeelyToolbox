@@ -138,7 +138,7 @@
                 <span class="text-[13px] text-car-sub font-bold">
                   {{ hasFuelSignal ? '加满预估需补：' : '空箱加满整箱预估：' }}
                 </span>
-                <span class="text-[11px] text-car-accent font-black">点击可切换默认油品</span>
+                <span class="text-[11px] text-car-sub font-bold">三档油号实时动态参考</span>
               </div>
               <div class="grid grid-cols-3 gap-2">
                 <div
@@ -148,15 +148,10 @@
                     { type: '98#', cost: displayCost98 }
                   ]"
                   :key="'cost_' + item.type"
-                  :class="[
-                    'p-2 rounded-xl border text-center transition-all flex flex-col items-center justify-center',
-                    defaultFuelType.includes(item.type.replace('#', ''))
-                      ? 'bg-car-card border-car-accent shadow-sm'
-                      : 'bg-car-card/60 border-car-border'
-                  ]"
+                  class="p-2 rounded-xl border border-car-border bg-car-card/60 text-center flex flex-col items-center justify-center"
                 >
-                  <span class="text-[11.5px] font-bold" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-sub'">{{ item.type }}</span>
-                  <span class="text-[17px] font-black font-mono leading-tight" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-text'">¥{{ item.cost }}</span>
+                  <span class="text-[11.5px] font-bold text-car-sub">{{ item.type }}</span>
+                  <span class="text-[17px] font-black font-mono leading-tight text-car-text">¥{{ item.cost }}</span>
                 </div>
               </div>
             </div>
@@ -178,7 +173,7 @@
                 <span class="text-[13px] text-car-sub font-bold">
                   {{ currentOilData ? `按当前挂牌价换算得：` : '挂牌价到手后自动换算：' }}
                 </span>
-                <span class="text-[11px] text-car-accent font-black">点击可切换默认油品</span>
+                <span class="text-[11px] text-car-sub font-bold">三档油号实时动态参考</span>
               </div>
               <div class="grid grid-cols-3 gap-2">
                 <div
@@ -188,15 +183,10 @@
                     { type: '98#', lit: (currentOilData?.p98 ? 200 / currentOilData.p98 : 22.0).toFixed(1) }
                   ]"
                   :key="'lit_' + item.type"
-                  :class="[
-                    'p-2 rounded-xl border text-center transition-all flex flex-col items-center justify-center',
-                    defaultFuelType.includes(item.type.replace('#', ''))
-                      ? 'bg-car-card border-car-accent shadow-sm'
-                      : 'bg-car-card/60 border-car-border'
-                  ]"
+                  class="p-2 rounded-xl border border-car-border bg-car-card/60 text-center flex flex-col items-center justify-center"
                 >
-                  <span class="text-[11.5px] font-bold" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-sub'">{{ item.type }}</span>
-                  <span class="text-[17px] font-black font-mono leading-tight" :class="defaultFuelType.includes(item.type.replace('#', '')) ? 'text-car-accent' : 'text-car-text'">{{ item.lit }} <span class="text-[11px] font-normal">L</span></span>
+                  <span class="text-[11.5px] font-bold text-car-sub">{{ item.type }}</span>
+                  <span class="text-[17px] font-black font-mono leading-tight text-car-text">{{ item.lit }} <span class="text-[11px] font-normal">L</span></span>
                 </div>
               </div>
             </div>
