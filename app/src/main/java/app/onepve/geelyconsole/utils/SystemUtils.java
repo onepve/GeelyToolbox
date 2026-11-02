@@ -531,6 +531,47 @@ public class SystemUtils {
      * 带硬超时的进程执行（返回 null 表示超时 / 失败，绝不阻塞调用线程超过 timeoutMs）
      */
     /**
+     * 带硬超时的进程执行（返回 null 表示超时 / 失败，绝不阻塞调用线程超过 timeoutMs）
+     */
+    public static String execProcess(String arg0, String arg1, String arg2, long timeoutMs) {
+        final java.util.concurrent.atomic.AtomicReference<String> out = new java.util.concurrent.atomic.AtomicReference<>(null);
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    java.util.List<String> cmdList = new java.util.ArrayList<>();
+                    if (arg0 != null) cmdList.add(arg0);
+                    if (arg1 != null) cmdList.add(arg1);
+                    if (arg2 != null) cmdList.add(arg2);
+                    Process p = Runtime.getRuntime().exec(cmdList.toArray(new String[0]));
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()), 1024);
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line).append("\n");
+                        if (sb.length() > 65536) break;
+                    }
+                    if (!p.waitFor(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                        p.destroy();
+                        return;
+                    }
+                    if (p.exitValue() == 0 || sb.length() > 0) {
+                        out.set(sb.toString());
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+        }, "SysExecTimeout");
+        t.setDaemon(true);
+        t.start();
+        try {
+            t.join(timeoutMs + 200L);
+        } catch (InterruptedException ignored) {
+        }
+        return out.get();
+    }
+
+    /**
      * 带硬超时的特权命令执行（专供常驻轮询线程使用，超时返回 ""）
      * 用于 dumpsys 等可能因权限/ADB 未开启而长时间无响应的读取，确保轮询 tick 永不卡死。
      */
