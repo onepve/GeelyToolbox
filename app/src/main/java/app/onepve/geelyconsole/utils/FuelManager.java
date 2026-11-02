@@ -835,21 +835,6 @@ public class FuelManager {
     }
 
     /**
-     * 单次行程出账功能已按车规极简原则废弃：
-     * 单次行程（里程、油耗、均速）完全交由原厂液晶仪表原生呈现；
-     * 燃油管家聚焦跨周期加注宏观台账，彻底拔除单次频繁刷写 flash 磁盘。
-     */
-    public static JSONArray getTrips(Context context) {
-        return new JSONArray();
-    }
-
-    public static JSONObject getLastTrip(Context context) {
-        return null;
-    }
-
-
-
-    /**
      * 小熊油耗跳枪法与阶段油耗算法统计引擎
      */
     public static JSONObject calculateStats(JSONArray records) {
@@ -1353,9 +1338,6 @@ public class FuelManager {
             root.put("fuel_liters", (double) curFuelLit);
             root.put("is_car_device", app.onepve.geelyconsole.MainActivity.isCarDevice(context));
 
-            JSONArray trips = getTrips(context);
-            root.put("trips", trips);
-            root.put("last_trip", trips.length() > 0 ? trips.getJSONObject(0) : JSONObject.NULL);
 
             return root.toString();
         } catch (Throwable t) {

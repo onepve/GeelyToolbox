@@ -272,8 +272,6 @@ export const store = reactive({
     monthly_stats: [],
     current_year: '',
     yearly_stats: [],
-    trips: [],
-    last_trip: null,
     isLoaded: false
   },
   oilPrice: {
@@ -677,8 +675,6 @@ export function loadFuelData() {
       if (Array.isArray(data.records)) store.fuelLedger.records = data.records;
       if (data.stats) Object.assign(store.fuelLedger.stats, data.stats);
       if (Array.isArray(data.monthly_stats)) store.fuelLedger.monthly_stats = data.monthly_stats;
-      if (Array.isArray(data.trips)) store.fuelLedger.trips = data.trips;
-      store.fuelLedger.last_trip = data.last_trip || (store.fuelLedger.trips.length > 0 ? store.fuelLedger.trips[0] : null);
       store.fuelLedger.isLoaded = true;
     }
   } catch (e) {
