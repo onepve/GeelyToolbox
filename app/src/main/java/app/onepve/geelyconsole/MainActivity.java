@@ -1548,36 +1548,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public String getDoorStatus() {
-            return safeCall("{}", () -> {
-                JSONObject obj = new JSONObject();
-                obj.put("fl", VehicleAutomationService.currentDoorFL);
-                obj.put("fr", VehicleAutomationService.currentDoorFR);
-                obj.put("rl", VehicleAutomationService.currentDoorRL);
-                obj.put("rr", VehicleAutomationService.currentDoorRR);
-                obj.put("trunk", VehicleAutomationService.currentTrunk);
-                obj.put("gear", VehicleAutomationService.lastGearPos);
-                obj.put("mode", VehicleAutomationService.lastDriveMode);
-                return obj.toString();
-            });
-        }
-
-        @JavascriptInterface
-        public String getDynamicCode() {
-            return SystemUtils.calculateDynamicCode();
-        }
-
-        @JavascriptInterface
-        public String getDynamicCodePlus5() {
-            return SystemUtils.calculateDynamicCodePlus5();
-        }
-
-        @JavascriptInterface
-        public String getNetworkStatusJson() {
-            return SystemUtils.getNetworkStatus().toJson().toString();
-        }
-
-        @JavascriptInterface
         public void saveTerminalLog(final String logText) {
             mainHandler.post(new Runnable() {
                 @Override
@@ -1601,12 +1571,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public String getCarIp() {
-            String ip = SystemUtils.getCarIpAddress();
-            return ip != null ? ip : "127.0.0.1";
-        }
-
-        @JavascriptInterface
         public void openDialer() {
             mainHandler.post(new Runnable() {
                 @Override
@@ -1626,228 +1590,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public void prepareThemeAssets() {
             ThemePatcher.prepareThemeAssetsAsync(MainActivity.this);
-        }
-
-        @JavascriptInterface
-        public String scanApksForRabbit() {
-            return safeCall("[]", () -> {
-                List<File> apks = AutoPilotManager.scanDownloadedApks(MainActivity.this);
-                JSONArray arr = new JSONArray();
-                PackageManager pm = context.getPackageManager();
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA);
-                for (File apk : apks) {
-                    if (apk == null || !apk.exists() || apk.length() == 0) continue;
-                    JSONObject obj = new JSONObject();
-                    obj.put("filename", apk.getName());
-                    obj.put("path", apk.getAbsolutePath());
-                    obj.put("sizeBytes", apk.length());
-                    obj.put("sizeStr", String.format(Locale.CHINA, "%.1f MB", apk.length() / (1024.0 * 1024.0)));
-                    obj.put("lastModified", apk.lastModified());
-                    obj.put("timeStr", sdf.format(new Date(apk.lastModified())));
-
-                    String label = apk.getName();
-                    String pkg = "";
-                    String verName = "";
-                    int verCode = 0;
-                    try {
-                        PackageInfo pi = pm.getPackageArchiveInfo(apk.getAbsolutePath(), 0);
-                        if (pi != null) {
-                            pkg = (pi.packageName != null) ? pi.packageName : "";
-                            verName = (pi.versionName != null) ? pi.versionName : "";
-                            verCode = pi.versionCode;
-                            if (pi.applicationInfo != null) {
-                                pi.applicationInfo.sourceDir = apk.getAbsolutePath();
-                                pi.applicationInfo.publicSourceDir = apk.getAbsolutePath();
-                                CharSequence cs = pm.getApplicationLabel(pi.applicationInfo);
-                                if (cs != null && cs.length() > 0) {
-                                    label = cs.toString();
-                                }
-                            }
-                        }
-                    } catch (Exception ignored) {}
-
-                    if (label.equals(apk.getName())) {
-                        String nameLower = apk.getName().toLowerCase();
-                        if (nameLower.contains("automap") || nameLower.contains("amap")) {
-                            label = "高德地图车机版";
-                        } else if (nameLower.contains("baidu") || nameLower.contains("baidumap")) {
-                            label = "百度地图车机版";
-                        }
-                    }
-
-                    boolean isNavi = isNavigationApp(pkg, apk.getName());
-                    obj.put("name", label);
-                    obj.put("packageName", pkg);
-                    obj.put("versionName", verName);
-                    obj.put("versionCode", verCode);
-                    obj.put("isNavigation", isNavi);
-                    arr.put(obj);
-                }
-                return arr.toString();
-            });
-        }
-
-        @JavascriptInterface
-        public void startAutoPilotInject(final String filename) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (filename == null || filename.trim().isEmpty()) {
-                        Toast.makeText(context, "请先在界面上选择需要注入的安装包！", Toast.LENGTH_LONG).show();
-                        return;
-                    }
-
-                    File targetFile = null;
-                    String cleanName = filename.trim();
-                    File directFile = new File(cleanName);
-                    if (directFile.exists() && directFile.isFile() && directFile.length() > 0) {
-                        targetFile = directFile;
-                    } else {
-                        // 在全量扫描目录中寻找同名文件
-                        List<File> allApks = AutoPilotManager.scanDownloadedApks(MainActivity.this);
-                        for (File f : allApks) {
-                            if (f != null && (f.getName().equalsIgnoreCase(cleanName) || f.getAbsolutePath().equalsIgnoreCase(cleanName))) {
-                                targetFile = f;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (targetFile == null) {
-                        Toast.makeText(context, "未找到安装包文件: " + cleanName + "，请先下载或传输至机身！", Toast.LENGTH_LONG).show();
-                        return;
-                    }
-
-                    final File finalTarget = targetFile;
-                    AutoPilotManager.getInstance().startAutoInject(MainActivity.this, finalTarget, new AutoPilotManager.AutoPilotCallback() {
-                        @Override
-                        public void onSuccess(final String apkName) {
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    pushDeviceInfoToWeb();
-                                }
-                            });
-                        }
-
-                        @Override
-                        public void onError(final String error) {
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    pushDeviceInfoToWeb();
-                                }
-                            });
-                        }
-                    });
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public void injectApkDirectly(final String filename) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                if (filename == null || filename.trim().isEmpty()) {
-                                    mainHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            Toast.makeText(context, "请先在界面上选择需要注入的安装包！", Toast.LENGTH_LONG).show();
-                                        }
-                                    });
-                                    return;
-                                }
-
-                                File dedicatedDir = SystemUtils.getAppDownloadDir();
-                                File legacyDir = new File(Environment.getExternalStorageDirectory(), "Download");
-                                File apkFile = null;
-                                File f1 = new File(dedicatedDir, filename.trim());
-                                File f2 = new File(legacyDir, filename.trim());
-                                if (f1.exists() && f1.length() > 0) {
-                                    apkFile = f1;
-                                } else if (f2.exists() && f2.length() > 0) {
-                                    apkFile = f2;
-                                }
-
-                                if (apkFile == null) {
-                                    mainHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            Toast.makeText(context, "未找到目标安装包: " + filename.trim() + "，请先下载！", Toast.LENGTH_LONG).show();
-                                        }
-                                    });
-                                    return;
-                                }
-
-                                String pkg = null;
-                                try {
-                                    PackageManager pm = context.getPackageManager();
-                                    PackageInfo pi = pm.getPackageArchiveInfo(apkFile.getAbsolutePath(), 0);
-                                    if (pi != null && pi.packageName != null) {
-                                        pkg = pi.packageName;
-                                        if (isDangerousSystemPackage(pkg) || isProtectedCriticalPackage(pkg)) {
-                                            final String dangerousPkg = pkg;
-                                            mainHandler.post(new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    showToast("【安全拦截】检测到该 APK 为系统核心组件（" + dangerousPkg + "），禁止伪装注入！");
-                                                }
-                                            });
-                                            return;
-                                        }
-                                    }
-                                } catch (Exception ignored) {}
-
-                                final boolean ok = ThemePatcher.packageToRabbitTheme(context, apkFile);
-                                mainHandler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        if (ok) {
-                                            pushDeviceInfoToWeb();
-                                            showToast("兔子时钟伪装主题注入成功！请打开车机主题中心应用『兔子时钟』，应用后重启车机。");
-                                        } else {
-                                            showToast("兔子时钟注入失败，请检查机身存储权限");
-                                        }
-                                    }
-                                });
-                            } catch (Exception e) {
-                                mainHandler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(context, "注入异常: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                        }
-                    }).start();
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public boolean setRabbitSafeModeEnabled(boolean enabled) {
-            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            prefs.edit().putBoolean("rabbit_safe_mode_enabled", enabled).apply();
-            pushDeviceInfoToWeb();
-            return enabled;
-        }
-
-        @JavascriptInterface
-        public boolean setExpertRabbitThemeEnabled(boolean enabled) {
-            android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-            prefs.edit().putBoolean("expert_rabbit_theme_enabled", enabled).apply();
-            pushDeviceInfoToWeb();
-            return enabled;
-        }
-
-        @JavascriptInterface
-        public boolean isSystemSettingsInstalled() {
-            return SystemUtils.isPackageInstalled(context, "com.android.settings");
         }
 
         @JavascriptInterface
@@ -1883,54 +1625,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public void onPostRebootHandled() {
-            try {
-                android.content.SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                if (prefs.getBoolean("temp_autostart_for_rabbit", false)) {
-                    boolean savedPref = prefs.getBoolean("saved_user_autostart_pref", false);
-                    prefs.edit()
-                            .putBoolean("autostart_enabled", savedPref)
-                            .putBoolean("temp_autostart_for_rabbit", false)
-                            .apply();
-                    pushDeviceInfoToWeb();
-                }
-            } catch (Exception ignored) {}
-            try {
-                android.content.SharedPreferences rPrefs = context.getSharedPreferences("rabbit_theme_prefs", Context.MODE_PRIVATE);
-                rPrefs.edit().putBoolean("pending_install_after_reboot", false).apply();
-            } catch (Exception ignored) {}
-        }
-
-        @JavascriptInterface
-        public String restoreOfficialTheme() {
-            try {
-                JSONObject res = ThemePatcher.restoreOfficialRabbitTheme(context);
-                mainHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        pushDeviceInfoToWeb();
-                    }
-                });
-                return res.toString();
-            } catch (Exception e) {
-                return "{\"success\":false,\"message\":\"" + e.getMessage() + "\"}";
-            }
-        }
-
-        @JavascriptInterface
         public String getRecentLogs(int lines) {
             return AppLogger.readRecentLogs(lines <= 0 ? 300 : lines);
-        }
-
-        @JavascriptInterface
-        public String getLogContent() {
-            return getRecentLogs(300);
-        }
-
-        @JavascriptInterface
-        public boolean toggleAppstoreFreeze() {
-            boolean currentFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
-            return toggleFreezeAppStore(!currentFrozen);
         }
 
         @JavascriptInterface
@@ -2094,147 +1790,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             });
         }
 
-        @JavascriptInterface
-        public void openThemeManager() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    boolean ok = ThemePatcher.openRabbitThemeSetting(context);
-                    if (!ok) {
-                        Toast.makeText(context, "未找到车机主题应用，请在原生应用列表打开", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            });
-        }
-
-        /**
-         * 车机内建屏保调用（无需 ADB / root）——原厂固件逆推实证：
-         *
-         * 下拉快捷栏（QS / 负一屏）里的「屏保」磁贴 = ecarx.settings 的
-         * ecarx.settings.vehicle.setting.widget.ScreenSaverWidget
-         * （createAttr().setAction("SpecialScreenSaver")，名称资源 R.string.widget_screen_saver）；
-         * 其基类 BaseNegativeOneScreenWidget.onReceive() 命中 "SpecialScreenSaver" 后执行：
-         *     Intent i = new Intent("android.intent.action.SCREENSAVER");
-         *     i.addCategory("android.intent.category.SCREENSAVER");
-         *     i.setPackage("com.ecarx.screensaver");
-         *     context.startService(i);
-         * 目标为 com.ecarx.screensaver/.ScreensaverService（清单中 exported，带
-         * action/category = SCREENSAVER 的 intent-filter），即原厂屏保宿主。
-         * 本方法 1:1 复刻该链路。
-         */
-        @JavascriptInterface
-        public String startScreenSaver() {
-            StringBuilder sb = new StringBuilder();
-
-            // 1. 主路径：原厂同款 —— startService 调起 com.ecarx.screensaver
-            try {
-                Intent i = new Intent("android.intent.action.SCREENSAVER");
-                i.addCategory("android.intent.category.SCREENSAVER");
-                i.setPackage("com.ecarx.screensaver");
-                context.startService(i);
-                AppLogger.action("车机屏保", "调起原厂屏保 (startService SCREENSAVER)", true, "com.ecarx.screensaver");
-                return "[OK] startService(SCREENSAVER) -> com.ecarx.screensaver";
-            } catch (Throwable e) {
-                sb.append("[FAIL] startService: ").append(e.getClass().getSimpleName()).append(' ').append(e.getMessage()).append('\n');
-                AppLogger.action("车机屏保", "startService 调起屏保失败", false, String.valueOf(e.getMessage()));
-            }
-
-            // 2. 兜底：启动屏保应用主界面
-            try {
-                Intent i2 = new Intent();
-                i2.setComponent(new android.content.ComponentName("com.ecarx.screensaver", "com.ecarx.screensaver.MainActivity"));
-                i2.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(i2);
-                AppLogger.action("车机屏保", "调起屏保 (MainActivity)", true, "com.ecarx.screensaver/.MainActivity");
-                return sb.append("[OK] 已启动 com.ecarx.screensaver/.MainActivity").toString();
-            } catch (Throwable e2) {
-                sb.append("[FAIL] MainActivity: ").append(e2.getClass().getSimpleName()).append(' ').append(e2.getMessage());
-                AppLogger.action("车机屏保", "屏保 MainActivity 调起失败", false, String.valueOf(e2.getMessage()));
-            }
-
-            return sb.toString();
-        }
-
-        /**
-         * 退出车机屏保：原厂为 launcher 向 com.ecarx.screensaver 发送
-         * ecarx.intent.action.QUIT_SCREENSAVER_VIEW（同样以服务/广播形式投递）。
-         */
-        @JavascriptInterface
-        public String stopScreenSaver() {
-            StringBuilder sb = new StringBuilder();
-            try {
-                Intent i = new Intent("ecarx.intent.action.QUIT_SCREENSAVER_VIEW");
-                i.setPackage("com.ecarx.screensaver");
-                context.startService(i);
-                AppLogger.action("车机屏保", "退出原厂屏保 (startService QUIT_SCREENSAVER_VIEW)", true, "com.ecarx.screensaver");
-                return "[OK] startService(QUIT_SCREENSAVER_VIEW)";
-            } catch (Throwable e) {
-                sb.append("[FAIL] startService: ").append(e.getClass().getSimpleName()).append(' ').append(e.getMessage()).append('\n');
-            }
-            try {
-                Intent i2 = new Intent("ecarx.intent.action.QUIT_SCREENSAVER_VIEW");
-                i2.setPackage("com.ecarx.screensaver");
-                sendBroadcast(i2);
-                return sb.append("[OK] 已发送广播 QUIT_SCREENSAVER_VIEW").toString();
-            } catch (Throwable e2) {
-                sb.append("[FAIL] sendBroadcast: ").append(e2.getClass().getSimpleName()).append(' ').append(e2.getMessage());
-            }
-            return sb.toString();
-        }
-
-        /** 打开系统「屏幕保护」设置页（选择屏保程序），失败则回退主题中心 */
-        @JavascriptInterface
-        public String openScreenSaverSettings() {
-            try {
-                Intent i = new Intent("android.settings.DREAM_SETTINGS");
-                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(i);
-                AppLogger.action("车机屏保", "打开屏幕保护设置页", true, "android.settings.DREAM_SETTINGS");
-                return "[OK] 已打开屏幕保护设置页 (DREAM_SETTINGS)";
-            } catch (Throwable e) {
-                try {
-                    Intent i2 = new Intent();
-                    i2.setComponent(new android.content.ComponentName("com.ecarx.thememanager", "com.ecarx.thememanager.main.MainActivity"));
-                    i2.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(i2);
-                    return "[OK] DREAM_SETTINGS 不可用，已回退主题中心";
-                } catch (Throwable e2) {
-                    return "[FAIL] 均不可用: " + e2.getMessage();
-                }
-            }
-        }
-
-        /** 枚举车机内屏保/主题/时钟相关组件（供调试面板查看真实入口） */
-        @JavascriptInterface
-        public String probeScreenSaverComponents() {
-            StringBuilder sb = new StringBuilder();
-            String[] pkgs = {"com.ecarx.screensaver", "com.ecarx.thememanager", "com.ecarx.theme.service", "com.android.systemui"};
-            android.content.pm.PackageManager pm = getPackageManager();
-            for (String p : pkgs) {
-                try {
-                    android.content.pm.PackageInfo pi = pm.getPackageInfo(p, 0);
-                    sb.append(p).append("  v").append(pi.versionName).append('\n');
-                    Intent launch = pm.getLaunchIntentForPackage(p);
-                    sb.append("   launcher: ").append(launch != null ? launch.getComponent().flattenToShortString() : "(无启动入口)").append('\n');
-                } catch (Throwable e) {
-                    sb.append(p).append("  (未安装)\n");
-                }
-            }
-            // 屏保服务是否声明
-            try {
-                Intent dream = new Intent("android.intent.action.SCREENSAVER");
-                dream.addCategory("android.intent.category.SCREENSAVER");
-                java.util.List<android.content.pm.ResolveInfo> list = pm.queryIntentServices(dream, 0);
-                sb.append("屏保服务(DreamService): ").append(list.size()).append(" 个\n");
-                for (android.content.pm.ResolveInfo ri : list) {
-                    sb.append("   ").append(ri.serviceInfo.packageName).append('/').append(ri.serviceInfo.name).append('\n');
-                }
-            } catch (Throwable e) {
-                sb.append("屏保服务查询失败: ").append(e.getMessage()).append('\n');
-            }
-            return sb.toString();
-        }
-
         // ==================== 闲置自动屏保（主页面闲置 N 秒后自动进入原厂屏保） ====================
 
         /**
@@ -2317,16 +1872,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 return IdleScreensaverManager.triggerNow(context);
             } catch (Throwable e) {
                 return "[FAIL] " + e.getClass().getSimpleName() + ": " + e.getMessage();
-            }
-        }
-
-        /** 查询当前前台应用与主页面判定结论（排查用） */
-        @JavascriptInterface
-        public String getForegroundInfo() {
-            try {
-                return ForegroundAppDetector.describe(context);
-            } catch (Throwable e) {
-                return "查询失败: " + e.getMessage();
             }
         }
 
@@ -2579,11 +2124,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public boolean openSystemUpdate() {
-            return SystemUtils.openSystemUpdate(MainActivity.this);
-        }
-
-        @JavascriptInterface
         public String extractOta() {
             return safeCall("{\"success\":false,\"url\":\"\"}", () -> {
                 SystemUtils.OtaExtractResult res = SystemUtils.extractOtaUrl();
@@ -2615,31 +2155,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                             Toast.makeText(context, "已复制到剪贴板", Toast.LENGTH_SHORT).show();
                         }
                     } catch (Exception ignored) {}
-                }
-            });
-            return true;
-        }
-
-        @JavascriptInterface
-        public boolean openBrowser(final String url) {
-            if (url == null || url.trim().isEmpty()) return false;
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url.trim()));
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        try {
-                            ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                            if (cm != null) {
-                                ClipData clip = ClipData.newPlainText("GeelyToolbox Tutorial", url.trim());
-                                cm.setPrimaryClip(clip);
-                                Toast.makeText(context, "未找到可用浏览器，已复制链接到剪贴板", Toast.LENGTH_SHORT).show();
-                            }
-                        } catch (Exception ignored) {}
-                    }
                 }
             });
             return true;
@@ -2734,17 +2249,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
 
         @JavascriptInterface
-        public String getDeviceUid() {
-            try {
-                String androidId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
-                if (androidId != null && !androidId.isEmpty()) {
-                    return androidId.toUpperCase(Locale.ROOT);
-                }
-            } catch (Exception ignored) {}
-            return "UNKNOWN_DEVICE";
-        }
-
-        @JavascriptInterface
         public void forceCheckUpdate(final boolean isBetaChannel) {
             checkUpdateInternal(false, isBetaChannel, true);
         }
@@ -2757,11 +2261,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public void checkBetaUpdate() {
             checkUpdateInternal(false, true, false);
-        }
-
-        @JavascriptInterface
-        public void checkBetaUpdateSilently() {
-            checkUpdateInternal(true, true, false);
         }
 
         @JavascriptInterface
@@ -3213,33 +2712,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public boolean setApkVerifyWhitelist(final boolean enable) {
-            if (!SystemUtils.isAdbMasterSwitchEnabled(context)) {
-                mainHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        showToast("ADB 总开关已关闭，该功能无法使用");
-                    }
-                });
-                return false;
-            }
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    if (enable) {
-                        SystemUtils.enableApkVerifyWhitelist(context);
-                        isWhitelistEnabled = true;
-                    } else {
-                        SystemUtils.executePrivileged(context, "setprop sys.jsbd.apk_verify 0 && setprop persist.sys.jsbd.apk_verify 0 && setprop sys.geely.apk_verify 0 && setprop persist.sys.geely.apk_verify 0");
-                        isWhitelistEnabled = false;
-                    }
-                    pushDeviceInfoToWeb();
-                }
-            }).start();
-            return true;
-        }
-
-        @JavascriptInterface
         public void toggleWhitelist() {
             if (!SystemUtils.isAdbMasterSwitchEnabled(context)) {
                 mainHandler.post(new Runnable() {
@@ -3274,11 +2746,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public boolean isAdbMasterSwitchEnabled() {
-            return SystemUtils.isAdbMasterSwitchEnabled(context);
-        }
-
-        @JavascriptInterface
         public void setAdbMasterSwitchEnabled(final boolean enabled) {
             mainHandler.post(new Runnable() {
                 @Override
@@ -3288,107 +2755,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     if (webView != null) {
                         webView.evaluateJavascript("if(window.onAdbMasterSwitchChanged) window.onAdbMasterSwitchChanged(" + enabled + ");", null);
                     }
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public void cleanCache() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
-                                int cleaned = 0;
-                                if (downloadDir.exists() && downloadDir.isDirectory()) {
-                                    File[] files = downloadDir.listFiles();
-                                    if (files != null) {
-                                        for (File f : files) {
-                                            if (f.isDirectory() && f.list() != null && f.list().length == 0) {
-                                                f.delete();
-                                                cleaned++;
-                                            }
-                                        }
-                                    }
-                                }
-                                final int count = cleaned;
-                                mainHandler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(context, "已清理 " + count + " 个无效空文件夹", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            } catch (Exception ignored) {
-                            }
-                        }
-                    }).start();
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public void cleanAllDownloadFiles() {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
-                        int count = 0;
-                        if (downloadDir.exists() && downloadDir.isDirectory()) {
-                            File[] files = downloadDir.listFiles();
-                            if (files != null) {
-                                for (File f : files) {
-                                    if (f.isFile() && f.delete()) {
-                                        count++;
-                                    }
-                                }
-                            }
-                        }
-                        final int finalCount = count;
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(context, "已清空下载目录全部文件 (已删除 " + finalCount + " 个文件)", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    } catch (Exception e) {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(context, "清空失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                }
-            }).start();
-        }
-
-        @JavascriptInterface
-        public void minimizeApp() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                    if (prefs.getBoolean("floating_enabled", false)) {
-                        FloatingWindowService.ensureServiceStarted(MainActivity.this);
-                    }
-                    moveTaskToBack(true);
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public void startWebServer() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (webServer == null) {
-                        webServer = new WebServer(context, MainActivity.this);
-                    }
-                    webServer.start();
                 }
             });
         }
@@ -3411,50 +2777,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     }
                 }
                 return array.toString();
-            });
-        }
-
-        @JavascriptInterface
-        public String checkLocalAppStatuses(String jsonArrayStr) {
-            return safeCall("{}", () -> {
-                org.json.JSONArray arr = new org.json.JSONArray(jsonArrayStr);
-                JSONObject result = new JSONObject();
-                File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
-                for (int i = 0; i < arr.length(); i++) {
-                    JSONObject item = arr.getJSONObject(i);
-                    String id = item.optString("id");
-                    String filename = item.optString("filename");
-                    String pkg = item.optString("package_name");
-
-                    boolean exists = false;
-                    long size = 0;
-                    String downloadTime = "";
-                    if (filename != null && !filename.isEmpty()) {
-                        File f = new File(downloadDir, filename);
-                        if (f.exists() && f.length() > 0) {
-                            exists = true;
-                            size = f.length();
-                            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.CHINA);
-                            downloadTime = sdf.format(new java.util.Date(f.lastModified()));
-                        }
-                    }
-
-                    boolean installed = false;
-                    String installedVer = "";
-                    if (pkg != null && !pkg.isEmpty()) {
-                        installedVer = SystemUtils.getInstalledVersionName(context, pkg);
-                        installed = (installedVer != null && !installedVer.isEmpty());
-                    }
-
-                    JSONObject stat = new JSONObject();
-                    stat.put("exists", exists);
-                    stat.put("size", size);
-                    stat.put("downloadTime", downloadTime);
-                    stat.put("installed", installed);
-                    stat.put("installedVersion", installedVer);
-                    result.put(id, stat);
-                }
-                return result.toString();
             });
         }
 
@@ -3544,11 +2866,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     });
                 }
             });
-        }
-
-        @JavascriptInterface
-        public String dumpSystemLogcat() {
-            return dumpFullSystemLogcat();
         }
 
         @JavascriptInterface
@@ -3645,15 +2962,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
             }, "AsyncLogUpload").start();
             return "{\"success\":true,\"message\":\"已发起后台上传\"}";
-        }
-
-        @JavascriptInterface
-        public String exportGuardLogZip() {
-            final JSONObject res = AppLogger.exportGuardLogZip(MainActivity.this);
-            boolean ok = res.optBoolean("success", false);
-            String filename = res.optString("filename", "Geely_Log_Guard.zip");
-            showToast(ok ? ("✓ 守护日志已导出: " + filename) : "❌ 导出守护日志失败");
-            return res.toString();
         }
 
         @JavascriptInterface
@@ -3866,54 +3174,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public void playAudioUsageChannel(final int usageChannel) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        app.onepve.geelyconsole.utils.ChannelAudioTester.playChannelBeep(MainActivity.this, usageChannel);
-                        showToast("正在向通道 " + usageChannel + " 播放微信测试音...");
-                    } catch (Throwable t) {
-                        showToast("播放通道 " + usageChannel + " 失败: " + t.getMessage());
-                    }
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public boolean setPreferredAudioUsageChannel(final int usageChannel) {
-            try {
-                android.content.SharedPreferences sp = getSharedPreferences("app_config", Context.MODE_PRIVATE);
-                sp.edit().putInt("preferred_audio_usage_channel", usageChannel).apply();
-                showToast("已将通道 " + usageChannel + " 保存为微信语音首选通道");
-                return true;
-            } catch (Throwable t) {
-                return false;
-            }
-        }
-
-        @JavascriptInterface
-        public int getPreferredAudioUsageChannel() {
-            try {
-                android.content.SharedPreferences sp = getSharedPreferences("app_config", Context.MODE_PRIVATE);
-                return sp.getInt("preferred_audio_usage_channel", 2); // 默认 2 (USAGE_VOICE_COMMUNICATION 通话/独立喇叭)
-            } catch (Throwable t) {
-                return 2;
-            }
-        }
-
-        @JavascriptInterface
-        public boolean switchEcarxSourceType(final int sourceType) {
-            try {
-                EasMediaBridge.getInstance(MainActivity.this).switchSourceTypeManually(sourceType);
-                showToast("已下发底层切源指令: " + sourceType);
-                return true;
-            } catch (Throwable t) {
-                return false;
-            }
-        }
-
-        @JavascriptInterface
         public void refreshCloudApps() {
             fetchCloudAppsAsync(false);
         }
@@ -3921,11 +3181,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         @JavascriptInterface
         public void refreshCloudAppsManual() {
             fetchCloudAppsAsync(true);
-        }
-
-        @JavascriptInterface
-        public String getRabbitThemeInfo() {
-            return ThemePatcher.getRabbitDisguiseInfo(MainActivity.this).toString();
         }
 
         @JavascriptInterface
@@ -4165,24 +3420,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public void selectCustomVoice(final String voiceKey) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    currentSelectingVoiceKey = voiceKey;
-                    try {
-                        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                        intent.setType("audio/*");
-                        intent.addCategory(Intent.CATEGORY_OPENABLE);
-                        startActivityForResult(Intent.createChooser(intent, "选择自定义音频文件"), REQ_CODE_SELECT_VOICE);
-                    } catch (Exception e) {
-                        Toast.makeText(MainActivity.this, "未能调起系统文件选择器，请直接将 MP3 文件放入 /sdcard/Music/ 目录", Toast.LENGTH_LONG).show();
-                    }
-                }
-            });
-        }
-
-        @JavascriptInterface
         public void resetCustomVoice(final String voiceKey) {
             mainHandler.post(new Runnable() {
                 @Override
@@ -4309,22 +3546,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             return true;
         }
 
-        @JavascriptInterface
-        public boolean setVoiceItemOffset(final String key, final int offset) {
-            mainHandler.post(() -> {
-                try {
-                    if (key == null || key.isEmpty()) return;
-                    // v1.7.51: 全量语音已推满车规级标准响度，彻底停用写入增益键；若有旧键顺手清除
-                    SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                    if (prefs.contains("voice_item_offset_" + key)) {
-                        prefs.edit().remove("voice_item_offset_" + key).apply();
-                        AppLogger.i("声音设置", "废弃增益键已物理清除[" + key + "]");
-                    }
-                } catch (Exception ignored) {}
-            });
-            return true;
-        }
-
         /** DetailedAppInfo 列表 → JSON 数组（供各 getInstalled*AppsJson 共用，消除样板克隆） */
         private static String appsToJson(List<SystemUtils.DetailedAppInfo> apps) {
             try {
@@ -4348,17 +3569,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             return safeCall("[]", () -> {
                 return appsToJson(SystemUtils.getInstalledMusicApps(MainActivity.this));
             });
-        }
-
-        @JavascriptInterface
-        public int getCurrentMusicVolume() {
-            try {
-                android.media.AudioManager am = (android.media.AudioManager) getSystemService(Context.AUDIO_SERVICE);
-                if (am != null) {
-                    return am.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
-                }
-            } catch (Throwable ignored) {}
-            return 15;
         }
 
         @JavascriptInterface
@@ -4430,70 +3640,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public boolean setVehicleAutomationSettingInt(final String key, final int value) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        android.content.SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-                        prefs.edit().putInt(key, value).apply();
-                        VehicleAutomationService.syncState(MainActivity.this);
-                        AppLogger.i("座舱自动化", "更新整数设置项: " + key + " -> " + value);
-                    } catch (Exception e) {
-                        AppLogger.e("座舱自动化", "更新整数设置失败: " + e.getMessage());
-                    }
-                }
-            });
-            return true;
-        }
-
-        @JavascriptInterface
-        public String getExperimentalVehicleStatus() {
-            // 实验通道车辆状态 (供前端显示真实物理状态，绝不编造)
-            try {
-                org.json.JSONObject obj = new org.json.JSONObject();
-                boolean engineRunning = VehicleAutomationService.isEngineRunningForBridge();
-                obj.put("engine_running", engineRunning);
-                obj.put("gear", VehicleAutomationService.lastGearPos);
-                obj.put("speed_kmh", VehicleAutomationService.currentSpeedKmH);
-                obj.put("battery_volt", (double) VehicleAutomationService.latestBatteryVoltage);
-                obj.put("drive_mode", VehicleAutomationService.lastDriveMode);
-                int fuelPct = VehicleAutomationService.currentFuelPercent;
-                float fuelLit = VehicleAutomationService.currentFuelLiters;
-                obj.put("fuel_percent", fuelPct);
-                obj.put("fuel_liters", (double) fuelLit);
-                obj.put("has_fuel_sensor", MainActivity.isCarDevice(MainActivity.this) && fuelPct >= 0);
-                // 状态描述: 如实汇报，未知就是未知
-                StringBuilder sb = new StringBuilder();
-                sb.append(engineRunning ? "发动机运行中" : "发动机未确认运行 (可能 KEY ON/ACC)");
-                if (VehicleAutomationService.currentSpeedKmH == 0) {
-                    sb.append(", 零车速");
-                } else {
-                    sb.append(", 车速 ").append(VehicleAutomationService.currentSpeedKmH).append("km/h");
-                }
-                if (VehicleAutomationService.lastGearPos == 5) {
-                    sb.append(", P挡");
-                } else if (VehicleAutomationService.lastGearPos > 0) {
-                    sb.append(", 非P挡");
-                } else {
-                    sb.append(", 挡位未定");
-                }
-                obj.put("message", sb.toString());
-                obj.put("status", engineRunning ? "ok" : "unknown");
-                return obj.toString();
-            } catch (Throwable t) {
-                try {
-                    org.json.JSONObject obj = new org.json.JSONObject();
-                    obj.put("status", "error");
-                    obj.put("message", "状态读取失败: " + t.getMessage());
-                    return obj.toString();
-                } catch (Exception ignored) {
-                    return "{\"status\":\"error\",\"message\":\"状态读取失败\"}";
-                }
-            }
-        }
-
-        @JavascriptInterface
         public boolean setWheelGestureAction(final String key, final String gesture, final String action) {
             mainHandler.post(new Runnable() {
                 @Override
@@ -4553,7 +3699,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         } else if ("floating_mode".equals(key)) {
                             setFloatingDisplayMode(value);
                         } else if ("expert_rabbit".equals(key)) {
-                            setExpertRabbitThemeEnabled(Boolean.parseBoolean(value));
+                            android.content.SharedPreferences expertPrefs = MainActivity.this.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+                            expertPrefs.edit().putBoolean("expert_rabbit_theme_enabled", Boolean.parseBoolean(value)).apply();
+                            pushDeviceInfoToWeb();
                         } else if ("adb_master_switch".equals(key) || SystemUtils.KEY_ADB_MASTER_SWITCH.equals(key)) {
                             setAdbMasterSwitchEnabled(Boolean.parseBoolean(value));
                         }
@@ -4561,16 +3709,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
             });
             return true;
-        }
-
-        @JavascriptInterface
-        public void testVehicleVoiceText(final String text) {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    VehicleVoicePlayer.getInstance(MainActivity.this).speakText(text);
-                }
-            });
         }
 
         @JavascriptInterface
@@ -4627,12 +3765,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public void importVoiceZipFromDownload(final String fileName) {
-            importVoiceThemeZip(fileName);
-        }
-
-        @JavascriptInterface
-        public void importVoiceThemeZip(final String fileName) {
+public void importVoiceZipFromDownload(final String fileName) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -4899,46 +4032,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
 
         @JavascriptInterface
-        public String getTtsEngineInfo() {
-            try {
-                JSONObject res = new JSONObject();
-                res.put("connected", true);
-                res.put("engine", "native_mp3");
-                res.put("name", "本地原生短音频引擎 (Pure MP3)");
-                res.put("status", "已切换为纯净原生短音频架构 · 无系统TTS开销");
-                return res.toString();
-            } catch (Exception e) {
-                return "{\"connected\":true,\"name\":\"本地原生短音频引擎\",\"status\":\"纯净MP3播放模式\",\"type\":\"native\"}";
-            }
-        }
-
-        @JavascriptInterface
-        public void openTtsSettings() {
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Intent sysTts = new Intent("com.android.settings.TTS_SETTINGS");
-                        sysTts.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(sysTts);
-                    } catch (Exception e) {
-                        Toast.makeText(MainActivity.this, "未找到语音引擎设置界面", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public boolean isCarDevice() {
-            return MainActivity.isCarDevice(MainActivity.this);
-        }
-
-        @JavascriptInterface
-        public boolean isAppstoreFrozen() {
-            return SystemUtils.getAppDetailedState(context, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED;
-        }
-
-        @JavascriptInterface
         public boolean isPackageFrozen(String pkg) {
             if (pkg == null || pkg.isEmpty()) return false;
             return SystemUtils.getAppDetailedState(context, pkg) == SystemUtils.APP_STATE_DISABLED;
@@ -5093,11 +4186,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 }
             } catch (Exception ignored) {}
             return arr.toString();
-        }
-
-        @JavascriptInterface
-        public String getInstalledNavigationApps() {
-            return AppFilterUtils.getInstalledNavigationApps(MainActivity.this);
         }
 
         // ═══ 方控按键学习 (借鉴米小江 CarMedia 1.6.8 按键录制) ═══
