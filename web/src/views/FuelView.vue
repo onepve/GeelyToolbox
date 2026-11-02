@@ -105,7 +105,7 @@
                 :key="f"
                 @click="onSelectDefaultFuel(f)"
                 :class="[
-                  'h-[44px] px-4 rounded-lg text-[14px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center',
+                  'h-[52px] px-4 rounded-lg text-[14px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center',
                   defaultFuelType.includes(f.replace('#', ''))
                     ? 'bg-car-card border-2 border-car-accent text-car-accent shadow-sm'
                     : 'text-car-sub hover:text-car-text'
@@ -168,7 +168,7 @@
                 <span class="text-[14px] text-car-text font-black">日常加 200 元可加油量：</span>
                 <span class="text-[11px] text-car-accent font-black">点击可切换默认油品</span>
               </div>
-              <div class="grid grid-cols-3 gap-2 flex-1">
+              <div class="grid grid-cols-3 gap-2">
                 <div
                   v-for="item in [
                     { type: '92#', lit: (currentOilData?.p92 ? 200 / currentOilData.p92 : 26.3).toFixed(1) },
