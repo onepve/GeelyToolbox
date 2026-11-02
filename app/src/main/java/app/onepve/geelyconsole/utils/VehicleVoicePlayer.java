@@ -116,91 +116,7 @@ public class VehicleVoicePlayer {
     private final Object arbiterLock = new Object();
     private volatile VoiceArbiter arbiter;
 
-    // ---- 音频通路静音预热 ----
-    private volatile long lastWarmupTimestampMs = 0;
-    private static final long WARMUP_INTERVAL_MS = 10000; // 10 秒内不重复预热
-    private static final int WARMUP_SILENCE_MS = 600; // 静音垫片时长
-    private static final int WARMUP_SAMPLE_RATE = 44100;
-    private static final int WARMUP_CHANNEL_CONFIG = android.media.AudioFormat.CHANNEL_OUT_STEREO;
-    private static final int WARMUP_AUDIO_FORMAT = android.media.AudioFormat.ENCODING_PCM_16BIT;
-    private static final int WARMUP_BYTES_PER_FRAME = 4; // 16bit stereo
 
-    /**
-     * 音频通路静音预热：在播放真实音频前，先写入一段静音 PCM 激活音频通路。
-     * 原理：AudioTrack.write() 触发 HAL 检测到 active stream，驱动执行 ApplyDeviceTurnonSequenceByName(speaker_output)，
-     * 让外部功放提前上电完成 De-pop，避免真实迎宾音被吞头。
-     * 10 秒内幂等，不重复预热。
-     */
-    public void warmupAudioPath(final String triggerSource) {
-        long now = System.currentTimeMillis();
-        if (now - lastWarmupTimestampMs < WARMUP_INTERVAL_MS) {
-            Log.d(TAG, "warmupAudioPath skipped (within " + WARMUP_INTERVAL_MS + "ms): " + triggerSource);
-            return;
-        }
-        lastWarmupTimestampMs = now;
-        AppLogger.i("音频预热", "触发静音预热 | 来源=" + triggerSource + " | 静音时长=" + WARMUP_SILENCE_MS + "ms");
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                android.media.AudioTrack track = null;
-                try {
-                    int minBuf = android.media.AudioTrack.getMinBufferSize(WARMUP_SAMPLE_RATE, WARMUP_CHANNEL_CONFIG, WARMUP_AUDIO_FORMAT);
-                    int silenceBytes = (WARMUP_SAMPLE_RATE * WARMUP_BYTES_PER_FRAME * WARMUP_SILENCE_MS) / 1000;
-                    int bufSize = Math.max(minBuf, silenceBytes);
-
-                    android.media.AudioAttributes attrs = new android.media.AudioAttributes.Builder()
-                            .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
-                            .build();
-                    android.media.AudioFormat fmt = new android.media.AudioFormat.Builder()
-                            .setSampleRate(WARMUP_SAMPLE_RATE)
-                            .setEncoding(WARMUP_AUDIO_FORMAT)
-                            .setChannelMask(WARMUP_CHANNEL_CONFIG)
-                            .build();
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        track = new android.media.AudioTrack.Builder()
-                                .setAudioAttributes(attrs)
-                                .setAudioFormat(fmt)
-                                .setBufferSizeInBytes(bufSize)
-                                .setTransferMode(android.media.AudioTrack.MODE_STREAM)
-                                .build();
-                    } else {
-                        track = new android.media.AudioTrack(
-                                AudioManager.STREAM_MUSIC,
-                                WARMUP_SAMPLE_RATE,
-                                WARMUP_CHANNEL_CONFIG,
-                                WARMUP_AUDIO_FORMAT,
-                                bufSize,
-                                android.media.AudioTrack.MODE_STREAM);
-                    }
-
-                    long t0 = System.currentTimeMillis();
-                    track.play();
-                    AppLogger.i("音频预热", "AudioTrack.play() 已调用 | 静音字节数=" + silenceBytes + " | 缓冲区=" + bufSize);
-
-                    // 写入纯静音 PCM (全 0)
-                    byte[] silence = new byte[silenceBytes];
-                    java.util.Arrays.fill(silence, (byte) 0);
-                    int written = track.write(silence, 0, silence.length);
-                    long t1 = System.currentTimeMillis();
-                    AppLogger.i("音频预热", "静音 PCM 写入完成 | 实际写入=" + written + "字节 | 耗时=" + (t1 - t0) + "ms");
-
-                    // 等待静音播完（给功放足够时间完成 Turnon）
-                    Thread.sleep(WARMUP_SILENCE_MS + 100);
-                    AppLogger.i("音频预热", "预热完成，音频通路应已就绪");
-                } catch (Exception e) {
-                    Log.w(TAG, "warmupAudioPath failed: " + e.getMessage());
-                    AppLogger.w("音频预热", "预热异常: " + e.getMessage());
-                } finally {
-                    if (track != null) {
-                        try { track.stop(); } catch (Exception ignored) {}
-                        try { track.release(); } catch (Exception ignored) {}
-                    }
-                }
-            }
-        }, "AudioWarmupThread").start();
-    }
 
     private final ExternalAudioDetector externalDetector;
 
@@ -1099,7 +1015,7 @@ public class VehicleVoicePlayer {
                     } catch (Exception ignored) {}
                     mp.start();
                     notifyArbiterStarted(arbiterGen);
-                    AppLogger.i("语音播报", "真实音频起播 | 文件=" + file.getName() + " | 距上次预热=" + (System.currentTimeMillis() - lastWarmupTimestampMs) + "ms");
+                    AppLogger.i("语音播报", "真实音频起播 | 文件=" + file.getName());
                     Log.i(TAG, "MediaPlayer started successfully for " + file.getName());
                 } catch (Exception e) {
                     Log.e(TAG, "playAudioFile failed: " + e.getMessage(), e);

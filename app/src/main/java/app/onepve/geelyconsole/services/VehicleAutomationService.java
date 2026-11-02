@@ -476,13 +476,6 @@ public class VehicleAutomationService extends Service {
         AppLogger.i("车辆迎宾", "车辆迎宾时间: " + welcomeTimeStr);
         AppLogger.i("车辆迎宾", "钥匙开门/靠近唤醒生效，物理基准已建立 (登车态)");
 
-        // 音频通路静音预热：解锁/冷启动时提前唤醒功放，确保开门迎宾秒出声
-        try {
-            voicePlayer.warmupAudioPath("boot_or_unlock");
-        } catch (Throwable e) {
-            Log.w(TAG, "warmupAudioPath on boot failed: " + e.getMessage());
-        }
-
         AppLogger.i("系统启动", "软件启动时间: " + startupTimeStr);
         AppLogger.i("系统启动", "缤越助手守护就绪 (PID: " + android.os.Process.myPid() + " | VHAL/Logcat双通道)");
         String verName = app.onepve.geelyconsole.BuildConfig.VERSION_NAME;

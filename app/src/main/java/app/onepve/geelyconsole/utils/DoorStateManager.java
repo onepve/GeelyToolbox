@@ -263,9 +263,6 @@ public class DoorStateManager {
 
             AppLogger.i("车门状态", doorName + "车门已打开 | 即将触发迎宾音");
 
-            // 单变量回归验证：取消拉门即时预热，避免在真实迎宾音前插入额外线性音轨干扰原车音频状态。
-            // 仅保留解锁/冷启动时的提前预热（boot_or_unlock）。
-
             if (universalMode) {
                 boolean enableOpen = PrefUtils.getBoolean(prefs, "voice_enable_door_universal_open", true);
                 if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
