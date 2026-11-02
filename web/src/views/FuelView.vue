@@ -99,16 +99,16 @@
               <span class="text-[18px] font-black text-car-text truncate">{{ vehicleModelDisplay }} {{ tankCapacity }}L 油箱测算</span>
               <HelpDot size="sm" @click="showTankCalcHelp" />
             </div>
-            <div class="flex items-center space-x-1.5 shrink-0">
+            <div class="flex items-center space-x-1 p-1 bg-car-item border border-car-border rounded-xl shrink-0">
               <button
                 v-for="f in ['92#', '95#', '98#']"
                 :key="f"
                 @click="onSelectDefaultFuel(f)"
                 :class="[
-                  'h-[52px] px-4 rounded-xl text-[15px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center border-2',
+                  'h-[40px] px-3.5 rounded-lg text-[14px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center',
                   defaultFuelType.includes(f.replace('#', ''))
-                    ? 'bg-car-accent-light border-car-accent text-car-accent shadow-sm'
-                    : 'bg-transparent border-transparent text-car-sub hover:text-car-text'
+                    ? 'bg-car-card border-2 border-car-accent text-car-accent shadow-sm'
+                    : 'bg-transparent text-car-sub hover:text-car-text border-2 border-transparent'
                 ]"
               >
                 {{ f }}
