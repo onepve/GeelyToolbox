@@ -243,22 +243,13 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         } catch (Exception ignored) {}
         AppLogger.i("应用启动", "缤越助手界面启动完成");
 
-        // 若是由开机自启静默预热唤起的，立即移入后台，完成渲染准备但不打扰当前屏幕
-        if (getIntent() != null && getIntent().getBooleanExtra("silent_boot_preload", false)) {
-            AppLogger.i("应用启动", "开机静默预热：已提前绘制就绪，静默退至后台待命");
-            if (splashView != null) {
-                splashView.setVisibility(View.GONE);
+        // 兜底安全防线：冷启动后最长 2.5 秒无论前端是否通知，均平滑解除启动层
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                hideSplashView();
             }
-            moveTaskToBack(true);
-        } else {
-            // 兜底安全防线：冷启动后最长 2.5 秒无论前端是否通知，均平滑解除启动层
-            mainHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    hideSplashView();
-                }
-            }, 2500);
-        }
+        }, 2500);
 
         // 前后台两条线路完全解耦：
         // 1. 后台静默预热：界面画好后立即移入后台，白名单等核心注入由 BootReceiver 后台线程 0ms 秒级先行完成，此处仅做轻量设备信息推送（500ms）；

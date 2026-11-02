@@ -111,21 +111,14 @@ public class BootReceiver extends BroadcastReceiver {
             }
         }, "Geely_BootWhitelistThread").start();
 
-        // 后台静默预热 MainActivity：延后 3 秒（仅用于提前画好 WebView 界面，避开广播高峰期，保证迎宾语音零阻塞先行）
+        // 后台延时处理外设与悬浮窗（避开广播高峰期，保证迎宾语音零阻塞先行）
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
                 try {
-                    try {
-                        Intent warmUpIntent = new Intent(context, MainActivity.class);
-                        warmUpIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
-                        warmUpIntent.putExtra("silent_boot_preload", true);
-                        context.startActivity(warmUpIntent);
-                    } catch (Throwable ignored) {}
-
                     SharedPreferences prefs = app.onepve.geelyconsole.utils.PrefUtils.getAppPreferences(context);
 
-                    // 2. 自动启动桌面悬浮小胶囊（独立遵循用户开关：只要开启了悬浮胶囊，开机/重启即自动挂载）
+                    // 1. 自动启动桌面悬浮小胶囊（独立遵循用户开关：只要开启了悬浮胶囊，开机/重启即自动挂载）
                     boolean floatingEnabled = prefs.getBoolean("floating_enabled", false);
                     if (floatingEnabled) {
                         try {
