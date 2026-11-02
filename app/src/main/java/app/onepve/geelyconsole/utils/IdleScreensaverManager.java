@@ -611,15 +611,6 @@ public final class IdleScreensaverManager {
         return lastIdleMs;
     }
 
-    public static long getLastReadOkAt() {
-        return lastReadOkAt;
-    }
-
-    /** 通道 A 最近一次原始输出（诊断展示用） */
-    public static String getLastRawDump() {
-        return lastRawDump;
-    }
-
     /** 通道 A 最近一次解析到的原始值（诊断展示用） */
     public static String getLastRawValue() {
         return lastRawValue;

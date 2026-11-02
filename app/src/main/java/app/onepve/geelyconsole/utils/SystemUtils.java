@@ -190,61 +190,6 @@ public class SystemUtils {
      * Accurate CPU usage using /proc/stat timeslice delta.
      * Prevents false 99% readings caused by kernel drivers in D-state.
      */
-    public static synchronized int getCpuUsage() {
-        long now = System.currentTimeMillis();
-        if (now - lastSampleTime < 1200 && lastSampleTime != 0) {
-            return lastCpuUsage;
-        }
-
-        try (BufferedReader reader = new BufferedReader(new FileReader("/proc/stat"))) {
-            String line = reader.readLine();
-            if (line != null && line.startsWith("cpu ")) {
-                String[] parts = line.trim().split("\\s+");
-                if (parts.length >= 5) {
-                    long user = Long.parseLong(parts[1]);
-                    long nice = Long.parseLong(parts[2]);
-                    long system = Long.parseLong(parts[3]);
-                    long idle = Long.parseLong(parts[4]);
-                    long iowait = parts.length > 5 ? Long.parseLong(parts[5]) : 0;
-                    long irq = parts.length > 6 ? Long.parseLong(parts[6]) : 0;
-                    long softirq = parts.length > 7 ? Long.parseLong(parts[7]) : 0;
-                    long steal = parts.length > 8 ? Long.parseLong(parts[8]) : 0;
-
-                    long total = user + nice + system + idle + iowait + irq + softirq + steal;
-                    long idleTotal = idle + iowait;
-
-                    if (prevTotal > 0 && total > prevTotal) {
-                        long diffTotal = total - prevTotal;
-                        long diffIdle = idleTotal - prevIdle;
-                        long diffActive = Math.max(0, diffTotal - diffIdle);
-                        int usage = (int) Math.round((diffActive * 100.0) / diffTotal);
-                        lastCpuUsage = Math.max(6, Math.min(95, usage));
-                    }
-                    prevTotal = total;
-                    prevIdle = idleTotal;
-                    lastSampleTime = now;
-                    return lastCpuUsage;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-
-        try {
-            long curFreq = getCpuFreq("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq");
-            long minFreq = getCpuFreq("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq");
-            long maxFreq = getCpuFreq("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
-            if (maxFreq > minFreq && curFreq >= minFreq) {
-                int usage = (int) Math.round(((double) (curFreq - minFreq) / (maxFreq - minFreq)) * 60.0 + 8.0);
-                lastCpuUsage = Math.max(8, Math.min(80, usage));
-                lastSampleTime = now;
-                return lastCpuUsage;
-            }
-        } catch (Exception ignored) {
-        }
-
-        return 12;
-    }
-
     public static class NetStatus {
         public String ip = "127.0.0.1";
         public String ifaceName = "";
@@ -400,10 +345,6 @@ public class SystemUtils {
     }
 
     /** 兼容方法 */
-    public static String calculateDynamicCodePlus10() {
-        return calculateDynamicCode(10);
-    }
-
     public static boolean isPlaceholderLockActive() {
         try {
             File themeDir = new File(Environment.getExternalStorageDirectory(), "XUI/theme");
@@ -467,22 +408,6 @@ public class SystemUtils {
     public static final int APP_STATE_NOT_INSTALLED = 0;
     public static final int APP_STATE_DISABLED = 1;
     public static final int APP_STATE_ENABLED = 2;
-
-    public static int getUsageColor(int percent) {
-        if (percent < 0) percent = 0;
-        if (percent > 100) percent = 100;
-
-        if (percent <= 10) return android.graphics.Color.parseColor("#10B981"); // 10% 翠绿
-        if (percent <= 20) return android.graphics.Color.parseColor("#059669"); // 20% 青绿
-        if (percent <= 30) return android.graphics.Color.parseColor("#0D9488"); // 30% 松绿
-        if (percent <= 40) return android.graphics.Color.parseColor("#0891B2"); // 40% 孔雀蓝
-        if (percent <= 50) return android.graphics.Color.parseColor("#0284C7"); // 50% 钛金蓝
-        if (percent <= 60) return android.graphics.Color.parseColor("#2563EB"); // 60% 经典蓝
-        if (percent <= 70) return android.graphics.Color.parseColor("#4F46E5"); // 70% 靛青
-        if (percent <= 80) return android.graphics.Color.parseColor("#D97706"); // 80% 琥珀黄
-        if (percent <= 90) return android.graphics.Color.parseColor("#EA580C"); // 90% 暖橙
-        return android.graphics.Color.parseColor("#E11D48");                    // 100% 警示红
-    }
 
     // ================= 高频状态查询缓存（车机性能铁律） =================
     // 背景：主界面顶栏每 2.5s、座舱页每 3s 都会查询「白名单/多媒体/商店/其它应用」状态。
@@ -576,36 +501,9 @@ public class SystemUtils {
         return getAppDetailedState(ctx, pkg) != APP_STATE_NOT_INSTALLED;
     }
 
-    public static boolean isPackageEnabled(Context ctx, String pkg) {
-        return getAppDetailedState(ctx, pkg) == APP_STATE_ENABLED;
-    }
-
     public static boolean isOtaFrozen(Context ctx) {
         // True if ecarx.upgrade is either disabled or not enabled
         return getAppDetailedState(ctx, "ecarx.upgrade") == APP_STATE_DISABLED;
-    }
-
-    public static OpResult setOtaFrozen(Context ctx, boolean freeze) {
-        StringBuilder sb = new StringBuilder();
-        boolean allOk = true;
-        for (String pkg : OTA_PACKAGES) {
-            OpResult res = setPackageEnabled(ctx, pkg, !freeze);
-            if (!res.success) {
-                allOk = false;
-            }
-            if (!res.rawOutput.isEmpty()) {
-                sb.append(pkg).append(": ").append(res.rawOutput).append("\n");
-            }
-        }
-
-        boolean currentFrozen = isOtaFrozen(ctx);
-        boolean finalSuccess = freeze ? currentFrozen : !currentFrozen;
-
-        if (finalSuccess) {
-            return new OpResult(true, freeze ? "已彻底冻结系统 OTA 更新！" : "已恢复系统 OTA 更新", sb.toString().trim());
-        } else {
-            return new OpResult(false, "未能完成 OTA " + (freeze ? "冻结" : "解冻") + "，请确认 ADB 调试权限是否已授权", sb.toString().trim());
-        }
     }
 
     public static String executePrivileged(Context ctx, String cmd) {
@@ -632,44 +530,6 @@ public class SystemUtils {
     /**
      * 带硬超时的进程执行（返回 null 表示超时 / 失败，绝不阻塞调用线程超过 timeoutMs）
      */
-    public static String execProcess(String arg0, String arg1, String arg2, long timeoutMs) {
-        final java.util.concurrent.atomic.AtomicReference<String> out = new java.util.concurrent.atomic.AtomicReference<>(null);
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    java.util.List<String> cmdList = new java.util.ArrayList<>();
-                    if (arg0 != null) cmdList.add(arg0);
-                    if (arg1 != null) cmdList.add(arg1);
-                    if (arg2 != null) cmdList.add(arg2);
-                    Process p = Runtime.getRuntime().exec(cmdList.toArray(new String[0]));
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()), 1024);
-                    StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        sb.append(line).append("\n");
-                        if (sb.length() > 65536) break;
-                    }
-                    if (!p.waitFor(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)) {
-                        p.destroy();
-                        return;
-                    }
-                    if (p.exitValue() == 0 || sb.length() > 0) {
-                        out.set(sb.toString());
-                    }
-                } catch (Throwable ignored) {
-                }
-            }
-        }, "SysExecTimeout");
-        t.setDaemon(true);
-        t.start();
-        try {
-            t.join(timeoutMs + 200L);
-        } catch (InterruptedException ignored) {
-        }
-        return out.get();
-    }
-
     /**
      * 带硬超时的特权命令执行（专供常驻轮询线程使用，超时返回 ""）
      * 用于 dumpsys 等可能因权限/ADB 未开启而长时间无响应的读取，确保轮询 tick 永不卡死。
@@ -813,34 +673,7 @@ public class SystemUtils {
     }
 
     /** 卸载应用（pm uninstall --user 0；失败退回到 pm uninstall） */
-    public static OpResult uninstallPackage(Context ctx, String pkg) {
-        OpResult result;
-        try {
-            String out = executePrivileged(ctx, "pm uninstall --user 0 " + pkg + " || pm uninstall " + pkg);
-            if (out != null && (out.contains("Success") || out.contains("success"))) {
-                clearAppsCache();
-                result = new OpResult(true, "已成功卸载 " + pkg, out);
-            } else {
-                result = new OpResult(false, (out != null && !out.isEmpty()) ? out : "卸载失败：ADB 端口未响应", out == null ? "" : out);
-            }
-        } catch (Exception e) {
-            result = new OpResult(false, "卸载异常: " + e.getMessage(), "");
-        }
-        AppLogger.action("应用管理", "卸载应用: " + pkg, result.success, result.message);
-        return result;
-    }
-
     /** 是否系统预装应用 */
-    public static boolean isSystemPackage(Context ctx, String pkg) {
-        try {
-            PackageInfo pi = ctx.getPackageManager().getPackageInfo(pkg, 0);
-            return pi != null && pi.applicationInfo != null
-                    && (pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     /**
      * 获取工具箱下载目录：/sdcard/Download/
      * 保持系统原生 Download 目录，与 Android DocumentsUI 官方标准最稳契合，
@@ -1067,38 +900,6 @@ public class SystemUtils {
         return false;
     }
 
-    public static boolean openAppPermissions(Context context) {
-        try {
-            Intent intent = new Intent("android.intent.action.MANAGE_APP_PERMISSIONS");
-            intent.putExtra("android.intent.extra.PACKAGE_NAME", context.getPackageName());
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
-            return true;
-        } catch (Exception ignored) {
-        }
-
-        try {
-            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-            intent.setData(Uri.fromParts("package", context.getPackageName(), null));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
-            return true;
-        } catch (Exception ignored) {
-        }
-
-        try {
-            Intent intent = new Intent();
-            intent.setComponent(new ComponentName("com.android.packageinstaller", "com.android.packageinstaller.permission.ui.ManagePermissionsActivity"));
-            intent.putExtra("android.intent.extra.PACKAGE_NAME", context.getPackageName());
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
-            return true;
-        } catch (Exception ignored) {
-        }
-
-        return false;
-    }
-
     public static boolean openSystemSettings(Context context) {
         try {
             Intent intent = new Intent(Settings.ACTION_SETTINGS);
@@ -1185,24 +986,6 @@ public class SystemUtils {
                 {"ecarx.debugtools", "ecarx.debugtools.install.InternalInstallActivity"},
                 {"com.ecarx.factory", "com.ecarx.factory.MainActivity"}
         });
-    }
-
-    public static boolean triggerOtaCheck(Context context) {
-        if (startFirstAvailable(context, new String[][]{
-                {"ecarx.upgrade", "ecarx.upgrade.ota.ui.MainActivity"},
-                {"ecarx.upgrade", "ecarx.upgrade.fota.ui.FotaMainActivity"},
-                {"com.android.car.systemupdater", "com.android.car.systemupdater.SystemUpdaterActivity"}
-        })) {
-            return true;
-        }
-
-        try {
-            Intent intent = new Intent("ecarx.upgrade.action.UPGRADE_SERVICE");
-            context.sendBroadcast(intent);
-            return true;
-        } catch (Exception ignored) {
-        }
-        return false;
     }
 
     public static boolean openSystemUpdate(Context context) {
@@ -1989,22 +1772,6 @@ public class SystemUtils {
         public String summary = "";
     }
 
-    public static CleanResult cleanEmptyDownloadFolders() {
-        CleanResult res = new CleanResult();
-        try {
-            File downloadDir = new File(Environment.getExternalStorageDirectory(), "Download");
-            if (!downloadDir.exists() || !downloadDir.isDirectory()) {
-                res.summary = "下载目录不存在";
-                return res;
-            }
-            cleanDirRecursive(downloadDir, res, false);
-            res.summary = "已成功清理 " + res.deletedFolders + " 个空文件夹与残留。\n当前 Download 目录保留 " + res.validApkFiles + " 个有效安装包 (" + String.format("%.1f MB", res.totalApkBytes / (1024.0 * 1024.0)) + ")。";
-        } catch (Exception e) {
-            res.summary = "清理出错: " + e.getMessage();
-        }
-        return res;
-    }
-
     private static boolean cleanDirRecursive(File dir, CleanResult res, boolean isSubdir) {
         File[] files = dir.listFiles();
         if (files == null || files.length == 0) {
@@ -2271,130 +2038,7 @@ public class SystemUtils {
         return "激擎版 (中配)";
     }
 
-    public static String getVehicleModelDetails() {
-        String model = executeShell("getprop ro.product.model");
-        String build = executeShell("getprop ro.build.display.id");
-        String density = executeShell("getprop ro.sf.lcd_density");
-        if (model == null || model.trim().isEmpty()) model = "IHU516G (吉利缤越/缤瑞 COOL)";
-        if (build == null || build.trim().isEmpty()) build = "SWOSX110930H116900000";
-        if (density == null || density.trim().isEmpty()) density = "160";
-        // 真实屏幕参数采集：wm size + DisplayMetrics 双通道，优先真实值，消灭写死魔数
-        String wmSize = executeShell("wm size");
-        String wmDensity = executeShell("wm density");
-        String res = "";
-        try {
-            // 用 Resources.getSystem().getDisplayMetrics() 拿真实 dpi，兼容 Android 9 (API 28)
-            android.util.DisplayMetrics metrics = android.content.res.Resources.getSystem().getDisplayMetrics();
-            String realDpi = String.valueOf(metrics.densityDpi);
-            if (wmSize != null && wmSize.contains("Physical size")) {
-                res = "屏幕参数: " + wmSize.trim().replace("Physical size: ", "")
-                    + " (" + realDpi + " dpi)"
-                    + (wmDensity != null && wmDensity.contains("Physical density")
-                        ? " / 密度 " + wmDensity.trim().replace("Physical density: ", "") : "");
-            } else {
-                res = "屏幕参数: " + realDpi + " dpi (wm 不可用)";
-            }
-        } catch (Exception e) {
-            res = "屏幕参数: 1920x720 (" + density.trim() + " dpi)";  // 极端回退，正常不会走这里
-        }
-        return "车机型号: " + model.trim() + "\n系统版本: " + build.trim() + "\n" + res;
-    }
-
-    public static boolean fixAmapPermissions(Context context) {
-        try {
-            String pkg = "com.autonavi.amapauto";
-            String[] perms = {
-                    "android.permission.ACCESS_FINE_LOCATION",
-                    "android.permission.ACCESS_COARSE_LOCATION",
-                    "android.permission.ACCESS_BACKGROUND_LOCATION",
-                    "android.permission.READ_PHONE_STATE",
-                    "android.permission.WRITE_EXTERNAL_STORAGE",
-                    "android.permission.READ_EXTERNAL_STORAGE",
-                    "android.permission.SYSTEM_ALERT_WINDOW"
-            };
-            for (String p : perms) {
-                executeShell("pm grant " + pkg + " " + p);
-            }
-            executeShell("appops set " + pkg + " SYSTEM_ALERT_WINDOW allow");
-            executeShell("appops set " + pkg + " FINE_LOCATION allow");
-            executeShell("appops set " + pkg + " COARSE_LOCATION allow");
-            executeShell("appops set " + pkg + " READ_PHONE_STATE allow");
-            executeShell("appops set " + pkg + " WRITE_EXTERNAL_STORAGE allow");
-            executeShell("appops set " + pkg + " READ_EXTERNAL_STORAGE allow");
-            executeShell("am force-stop " + pkg);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    public static File resolveAndRenameApkToFriendlyName(Context context, File sourceApk) {
-        if (sourceApk == null || !sourceApk.exists() || !sourceApk.getName().toLowerCase().endsWith(".apk")) {
-            return sourceApk;
-        }
-        String currentName = sourceApk.getName();
-        // 已有明确特征命名的商城或自研文件，保持原名不篡改
-        if (currentName.startsWith("AutoMap_") || currentName.startsWith("CarMedia_")
-                || currentName.startsWith("QQMusic_") || currentName.startsWith("NeteaseMusic_")
-                || currentName.startsWith("GeelyToolbox") || currentName.startsWith("高德地图_")) {
-            return sourceApk;
-        }
-
-        try {
-            PackageManager pm = context.getPackageManager();
-            PackageInfo pi = pm.getPackageArchiveInfo(sourceApk.getAbsolutePath(), 0);
-            if (pi != null && pi.applicationInfo != null) {
-                pi.applicationInfo.sourceDir = sourceApk.getAbsolutePath();
-                pi.applicationInfo.publicSourceDir = sourceApk.getAbsolutePath();
-                CharSequence label = pi.applicationInfo.loadLabel(pm);
-                if (label != null && label.length() > 0) {
-                    String appName = label.toString().trim();
-                    if ("地图".equals(appName) && pi.packageName != null && pi.packageName.contains("autonavi")) {
-                        appName = "高德地图";
-                    }
-                    String verSuffix = "";
-                    if (pi.versionName != null && !pi.versionName.trim().isEmpty()) {
-                        String cleanVer = pi.versionName.trim().replaceAll("\\s*\\([^)]*\\)", "");
-                        if (cleanVer.length() > 20) {
-                            cleanVer = cleanVer.substring(0, 20);
-                        }
-                        verSuffix = "_v" + cleanVer.trim();
-                    }
-                    String friendlyName = (appName + verSuffix).replaceAll("[\\\\/:*?\"<>|\\s]", "_") + ".apk";
-                    if (!friendlyName.equalsIgnoreCase(sourceApk.getName())) {
-                        File targetFile = new File(sourceApk.getParentFile(), friendlyName);
-                        if (targetFile.exists() && !targetFile.getAbsolutePath().equals(sourceApk.getAbsolutePath())) {
-                            targetFile.delete();
-                        }
-                        if (sourceApk.renameTo(targetFile)) {
-                            return targetFile;
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            Log.w("SystemUtils", "Failed to resolve friendly name for APK: " + e.getMessage());
-        }
-        return sourceApk;
-    }
-
     private static final java.util.Map<String, String> sMd5Cache = new java.util.concurrent.ConcurrentHashMap<>();
-
-    public static String getOrCalculateMD5(File file) {
-        if (file == null || !file.exists() || !file.isFile() || file.length() == 0) {
-            return "";
-        }
-        String key = file.getAbsolutePath() + ":" + file.length() + ":" + file.lastModified();
-        String cached = sMd5Cache.get(key);
-        if (cached != null) {
-            return cached;
-        }
-        String md5 = calculateMD5(file);
-        if (!md5.isEmpty()) {
-            sMd5Cache.put(key, md5);
-        }
-        return md5;
-    }
 
     public static String calculateMD5(File file) {
         if (file == null || !file.exists() || !file.isFile() || file.length() == 0) {

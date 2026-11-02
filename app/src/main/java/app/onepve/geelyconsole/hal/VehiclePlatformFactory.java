@@ -42,10 +42,6 @@ public class VehiclePlatformFactory {
     /**
      * 允许单元测试或调试时显式指定平台实现
      */
-    public static void setPlatformForTesting(IVehiclePlatform platform) {
-        sCurrentPlatform = platform;
-    }
-
     private static String getSystemProperty(String key) {
         try {
             Class<?> sp = Class.forName("android.os.SystemProperties");

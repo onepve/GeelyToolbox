@@ -677,26 +677,6 @@ public class EasMediaBridge {
     }
 
     /**
-     * 投递当前歌词到仪表盘/HUD (由 wheel_push_lyrics_cluster 门控)
-     */
-    public synchronized void pushLyricIfEnabled(String lyric) {
-        if (!pushLyricsCluster) {
-            return; // 默认关闭，仪表盘不显歌词
-        }
-        if (!"toolbox_alone".equals(currentControlMode) || mApi == null || !mRegistered || mToken == null) {
-            return;
-        }
-        if (lyric == null || lyric.trim().isEmpty()) {
-            return;
-        }
-        try {
-            mApi.updateCurrentLyric(mToken, lyric.trim());
-        } catch (Throwable t) {
-            AppLogger.w("音频通道", "投递歌词异常: " + t.getMessage());
-        }
-    }
-
-    /**
      * 监听 A2DP Sink 连接与真实推流状态
      */
     private void registerA2dpReceiver() {

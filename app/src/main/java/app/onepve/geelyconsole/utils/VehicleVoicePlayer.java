@@ -725,20 +725,6 @@ public class VehicleVoicePlayer {
         }
     }
 
-    public boolean isTtsReady() {
-        return false;
-    }
-
-    public String getActiveTtsEngine() {
-        return "none";
-    }
-
-    public synchronized void reinitTts() {
-    }
-
-    public synchronized void checkAndReloadTtsIfNeeded() {
-    }
-
     private void notifyArbiterStarted(final long gen) {
         mainHandler.post(new Runnable() {
             @Override

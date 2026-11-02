@@ -44,8 +44,6 @@ public class TrunkStateManager {
         this.voicePlayer = voicePlayer;
     }
 
-    public int getTrunk() { return currentTrunk == -1 ? 0 : currentTrunk; }
-
     /**
      * 更新电动尾门物理状态
      */
@@ -93,7 +91,4 @@ public class TrunkStateManager {
         }
     }
 
-    public int getCurrentTrunk() {
-        return currentTrunk;
-    }
 }

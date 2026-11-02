@@ -114,21 +114,6 @@ public class FloatingWindowService extends Service {
         }
     }
 
-    public static void showDynamicCode(Context context, String code) {
-        if (context == null) return;
-        try {
-            Intent intent = new Intent(context, FloatingWindowService.class);
-            intent.setAction(ACTION_SHOW_CODE);
-            intent.putExtra(EXTRA_CODE, code);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent);
-            } else {
-                context.startService(intent);
-            }
-        } catch (Exception ignored) {
-        }
-    }
-
     @Override
     public IBinder onBind(Intent intent) {
         return null;

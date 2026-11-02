@@ -649,10 +649,6 @@ public class AutoPilotManager {
         return scanDownloadedApks(null);
     }
 
-    public static List<File> scanDownloadedAmapApks() {
-        return scanDownloadedApks();
-    }
-
     private static int dp2px(Context context, float dp) {
         float density = context.getResources().getDisplayMetrics().density;
         return (int) (dp * density + 0.5f);

@@ -322,8 +322,6 @@ public class DoorStateManager {
         }
     }
 
-    public int getCurrentFL() { return currentFL; }
-    public int getCurrentFR() { return currentFR; }
     public int getCurrentRL() { return currentRL; }
     public int getCurrentRR() { return currentRR; }
     public boolean isAnyDoorOpen() {
