@@ -106,7 +106,6 @@ public final class IdleScreensaverManager {
     private static volatile boolean armed = true;
     private static volatile long lastTriggerAt = 0L;
     private static volatile long lastIdleMs = -1L;
-    private static volatile long lastReadOkAt = 0L;
     private static volatile int readFailStreak = 0;
     private static volatile String channelState = "未启动";
     /** 通道 A 最近一次读取的原始输出与解析到的原始值（诊断用，前端直接展示，免车主去猜） */
@@ -280,7 +279,6 @@ public final class IdleScreensaverManager {
         readFailStreak = 0;
         lastFailReason = "";
         lastIdleMs = idle;
-        lastReadOkAt = System.currentTimeMillis();
 
         long threshold = getSeconds(ctx) * 1000L;
 
