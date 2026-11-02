@@ -92,7 +92,7 @@
       :badge="uploadStatus === 'success' ? '上传成功' : (uploadStatus === 'uploading' ? '正在上传' : (isPausedCountdown ? '倒计时已暂停' : `仅保留30天 · ${uploadCountdown}s`))"
       maxWidthClass="max-w-[1100px]"
       zIndexClass="z-[9999]"
-      :showCloseButton="uploadStatus !== 'uploading'"
+      :showCloseButton="true"
       :closeOnBackdrop="uploadStatus !== 'uploading'"
       @close="cancelUpload"
     >
@@ -186,8 +186,8 @@
         </div>
       </div>
 
-      <!-- 阶段 2：上传中 (清晰步骤与流式进度条) -->
-      <div v-else-if="uploadStatus === 'uploading'" class="py-10 flex flex-col items-center justify-center text-center space-y-5 select-none w-full max-w-[500px] mx-auto">
+      <!-- 阶段 2：上传中 (清晰步骤与流式进度条 + 可随时中断的关闭按钮) -->
+      <div v-else-if="uploadStatus === 'uploading'" class="py-8 flex flex-col items-center justify-center text-center space-y-5 select-none w-full max-w-[500px] mx-auto">
         <div class="w-14 h-14 border-4 border-car-accent/30 border-t-car-accent rounded-full animate-spin"></div>
         <div class="space-y-1">
           <div class="text-[20px] font-black text-car-text">正在安全传输至云端...</div>
@@ -205,6 +205,14 @@
           <span>{{ uploadedKbStr || '准备建立连接...' }}</span>
           <span class="text-car-accent font-black">{{ uploadPercent }}%</span>
         </div>
+
+        <!-- 取消/中断上传按钮 -->
+        <button
+          @click="promptCancelUpload"
+          class="mt-2 px-6 min-h-[50px] h-[50px] rounded-xl bg-car-item border-2 border-car-border hover:border-red-500/50 text-car-sub hover:text-red-400 font-black text-[14px] cursor-pointer transition-all flex items-center justify-center space-x-2"
+        >
+          <span>中断上传并暂存车机</span>
+        </button>
       </div>
 
       <!-- 阶段 3：上传成功，展示云端生成的车机日志识别码与新车型适配赞赏支持 -->
@@ -647,6 +655,12 @@ function openUploadConfirm() {
   uploadStatus.value = 'confirm';
   showUploadModal.value = true;
   startCountdown();
+}
+
+function promptCancelUpload() {
+  if (confirm('正在安全传输至云端，是否确认中断上传？\n（日志已安全保存在车机内部存储，您可以随时再次发起上传）')) {
+    cancelUpload(false);
+  }
 }
 
 function cancelUpload(isTimeout = false) {
