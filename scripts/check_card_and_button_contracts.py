@@ -172,31 +172,31 @@ CARD_BUTTON_CONTRACTS = [
         "多媒体接管卡片", "2号蓝牙物理通道硬选通广播 (SOURCE_TYPE_BLUETOOTH=2)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "public synchronized void activateBluetoothChannel",
-        [r"SOURCE_TYPE_BLUETOOTH", r"updateCurrentSourceType", r"keepXcmediaOnBluetoothSource"],
+        [r"SOURCE_TYPE_BLUETOOTH", r"updateCurrentSourceType", r"sendKeepSourceBroadcastWhenFrozen"],
         [r"isAutoWakeSuppressed", r"dummyListener"]
     ),
     (
         "多媒体接管卡片", "常驻 MAY_DUCK 蓝牙闪避焦点守护 (经车主授权对齐 1.7.47 正式版，保障多媒体冻结后硬件声卡选通)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
-        "public synchronized void requestBluetoothFocusIfNeeded",
+        "public synchronized void requestDuckingFocusWhenFrozen",
         [r"AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK", r"requestAudioFocus"],
         [r"abandonBluetoothFocus"],
-        "0bb2fc3a3e4d49ea9625930956c7b819fd11b273a1c06c25ce09cc1169507fbf"
+        "526b7faa225d8a24c86ee2b7d14c131b8cbe97f8bcd074a56ccc35f101549f4a"
     ),
     (
         "多媒体接管卡片", "原厂部件蓝牙声道保持广播 (ECARX_WIDGET_BLUETOOTH_PLAY)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
-        "public void keepXcmediaOnBluetoothSource",
+        "public void sendKeepSourceBroadcastWhenFrozen",
         [r"ECARX_WIDGET_BLUETOOTH_PLAY", r"com\.ecarx\.multimedia"],
         [],
-        "8c59656ae6aa19a9aecd3c0a49f5b91b9f3149b7830cfbaa0386ea459e011f56"
+        "dc5b168345e5315c62e73873812040138dea7ee3199419a0bcfee5e546c6c810"
     ),
     (
         "多媒体接管卡片", "微信语音推流防误杀与静默守护 (A2DP Streaming 保护与免抢播)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "private void registerA2dpReceiver",
         [r"a2dpStreaming", r"activateBluetoothChannel", r"connectBtMediaBrowser"],
-        [r"pauseBluetoothAudioSink"]
+        [r"pauseBluetoothSinkWhenFrozen"]
     ),
     (
         "多媒体接管卡片", "底层 A2dpMediaBrowserService 直连通道锁死",
@@ -209,15 +209,15 @@ CARD_BUTTON_CONTRACTS = [
     (
         "多媒体接管卡片", "国科 GOC 驱动解静音唤醒锁死 (wakeBluetoothAudioSink)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
-        "public void wakeBluetoothAudioSink",
-        [r"requestBluetoothFocusIfNeeded\(\)", r"btMediaController\.getTransportControls\(\)\.play\(\)", r"mc\.getTransportControls\(\)\.play\(\)"],
+        "public void wakeBluetoothSinkWhenFrozen",
+        [r"requestDuckingFocusWhenFrozen\(\)", r"btMediaController\.getTransportControls\(\)\.play\(\)", r"mc\.getTransportControls\(\)\.play\(\)"],
         [],
-        "1c95826471c395381c758c12660f2c829a5adfaa943f3b441689f2b089ed0b63"
+        "986cd80952cc78fedbcefcaf2da33d6d86a7535356373963c3ea38aaf687f03d"
     ),
     (
         "多媒体接管卡片", "微信推流绝不抢占压低焦点硬哈希刚性锁死 (requestDuckingFocusForIncomingVoice)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
-        "public synchronized void requestDuckingFocusForIncomingVoice",
+        "public synchronized void ensureNoDuckingFocus",
         [r"if \(voiceDuckingFocusRequest != null\)", r"abandonDuckingFocus\(\)"],
         [r"AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK", r"USAGE_ASSISTANCE_NAVIGATION_GUIDANCE"],
         "0f0643d52480221a38cd5bdc20a191b2ad5fdb3084289e30b71ee420415d4740"
@@ -234,17 +234,17 @@ CARD_BUTTON_CONTRACTS = [
         "多媒体接管卡片", "微信语音推流广播监听与通道守护锁死 (A2DP / AVRCP)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
         "private void registerA2dpReceiver",
-        [r"requestDuckingFocusForIncomingVoice", r"abandonDuckingFocus", r"wakeBluetoothAudioSink"],
+        [r"ensureNoDuckingFocus", r"abandonDuckingFocus", r"wakeBluetoothSinkWhenFrozen"],
         [],
-        "3b11883266efc71be13408c040846c625e50ea8cb66e807f74264fb83d27b2bc"
+        "fc7f7a04eac01acef811d73b288249a44f0bafd90401a1b91dc384054987729a"
     ),
     (
         "多媒体接管卡片", "推流停止即时掐灭手机排队播放锁死 (pauseBluetoothAudioSink)",
         os.path.join(JAVA_BASE, "utils/EasMediaBridge.java"),
-        "public void pauseBluetoothAudioSink",
+        "public void pauseBluetoothSinkWhenFrozen",
         [r"btMediaController\.getTransportControls\(\)\.pause\(\)", r"mc\.getTransportControls\(\)\.pause\(\)"],
         [],
-        "e8f328aeb8eb53e32a53f77fdc50b264eb5a25f6cb791e07d8f5e6d29f0c4e97"
+        "e36161f12ed6bdd7d4538a03cdebc0bcbcd925a6a8e6144223c8e305d3367f01"
     ),
     (
         "多媒体接管卡片", "微信音频平滑压低与自动恢复音量锁死 (duckMediaVolume)",

@@ -70,9 +70,9 @@ public class EasMediaBridge {
     private boolean a2dpSinkConnected = false;   // 物理连接态 (connected != active!)
     private volatile boolean a2dpStreaming = false;
     private BroadcastReceiver a2dpReceiver;
-    private long lastA2dpWakeTime = 0;
-    private volatile long lastBtSourceKeepMs = 0;
-    private volatile boolean btFocusHeld = false;
+    private long lastA2dpChannelActivateTime = 0;
+    private volatile long lastFrozenKeepSourceBroadcastMs = 0;
+    private volatile boolean isFrozenFallbackFocusHeld = false;
     private AudioManager audioManager;
     private MediaBrowser btMediaBrowser;
     private MediaController btMediaController;
@@ -81,14 +81,14 @@ public class EasMediaBridge {
     private volatile int voiceCompensationOffset = 3;
 
 
-    private final AudioManager.OnAudioFocusChangeListener btFocusListener = new AudioManager.OnAudioFocusChangeListener() {
+    private final AudioManager.OnAudioFocusChangeListener frozenFallbackFocusListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
         public void onAudioFocusChange(int focusChange) {
-            AppLogger.i("蓝牙音频", "蓝牙 MAY_DUCK 音频焦点状态变更: " + focusChange);
+            AppLogger.i("蓝牙音频", "【冻结托底】MAY_DUCK 音频焦点状态变更: " + focusChange);
             if (focusChange < 0) {
-                btFocusHeld = false;
+                isFrozenFallbackFocusHeld = false;
             } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-                btFocusHeld = true;
+                isFrozenFallbackFocusHeld = true;
             }
         }
     };
@@ -284,42 +284,44 @@ public class EasMediaBridge {
     }
 
     /**
-     * 发送原厂小部件广播保持蓝牙音源 (仅在原厂多媒体被冻结时作为托底逻辑)
+     * 【冻结托底专属】发送原厂小部件广播保持蓝牙音源
+     * 注意：此广播附带 _PLAY 意图，严禁在原厂多媒体正常运行时发送，否则原厂多媒体会向手机发送 keyCode:68 唤醒音乐播放！
      */
-    public void keepXcmediaOnBluetoothSource() {
+    public void sendKeepSourceBroadcastWhenFrozen() {
         if (isOriginalMediaActive()) {
             // 原厂多媒体正常运行时，严禁发送带 _PLAY 意图的广播，杜绝原厂向手机误发 keyCode:68 唤醒播放
             return;
         }
         long now = System.currentTimeMillis();
-        if (now - lastBtSourceKeepMs < 4000) {
+        if (now - lastFrozenKeepSourceBroadcastMs < 4000) {
             return;
         }
-        lastBtSourceKeepMs = now;
+        lastFrozenKeepSourceBroadcastMs = now;
         try {
             Intent i = new Intent("ecarx.intent.broadcast.action.ECARX_WIDGET_BLUETOOTH_PLAY");
             i.setPackage("com.ecarx.multimedia");
             appContext.sendBroadcast(i);
             AppLogger.i("蓝牙音频", "【冻结托底】已下发 ECARX_WIDGET_BLUETOOTH_PLAY 广播保持原厂多媒体在蓝牙音源");
         } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "keepXcmediaOnBluetoothSource 失败: " + t.getMessage());
+            AppLogger.w("蓝牙音频", "sendKeepSourceBroadcastWhenFrozen 失败: " + t.getMessage());
         }
     }
 
     /**
-     * 申请常驻 MAY_DUCK 闪避音频焦点 (完整对齐 1.7.47 正式版车规核心逻辑)
+     * 【冻结托底专属】申请常驻 MAY_DUCK 闪避音频焦点
      * 1. 彻底解决原厂多媒体被冻结后蓝牙无声的物理死穴：
      *    当车主冻结原厂多媒体后，原厂不再向系统申请焦点。若助手不申请焦点，系统 AudioPolicy 会判定
      *    无活动音频源并彻底关闭功放通道 (硬件静音 val:0.000000)！
      * 2. 缤越助手主动申请 STREAM_MUSIC + MAY_DUCK 闪避常驻焦点，告知系统音频就绪，
      *    同时由于是 MAY_DUCK，手机微信语音、手机导航与第三方本地音乐可安全共存，绝不掐断微信！
+     * 3. 原厂多媒体存在时直接跳过，杜绝与原厂抢占焦点导致硬件静音。
      */
-    public synchronized void requestBluetoothFocusIfNeeded() {
+    public synchronized void requestDuckingFocusWhenFrozen() {
         if (isOriginalMediaActive()) {
             // 原厂多媒体正常运行时，全权交由原厂多媒体调度，助手严禁抢占焦点以防 MT8666 DSP 静音
             return;
         }
-        if (btFocusHeld) {
+        if (isFrozenFallbackFocusHeld) {
             return;
         }
         if (audioManager == null) {
@@ -329,28 +331,28 @@ public class EasMediaBridge {
             return;
         }
         try {
-            int r = audioManager.requestAudioFocus(btFocusListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
-            btFocusHeld = (r == AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
-            AppLogger.i("蓝牙音频", "【冻结托底】已申请常驻 MAY_DUCK 蓝牙闪避焦点 (保障多媒体冻结时功放选通)，result=" + r + " held=" + btFocusHeld);
+            int r = audioManager.requestAudioFocus(frozenFallbackFocusListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+            isFrozenFallbackFocusHeld = (r == AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
+            AppLogger.i("蓝牙音频", "【冻结托底】已申请常驻 MAY_DUCK 蓝牙闪避焦点 (保障多媒体冻结时功放选通)，result=" + r + " held=" + isFrozenFallbackFocusHeld);
         } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "requestBluetoothFocusIfNeeded 异常: " + t.getMessage());
+            AppLogger.w("蓝牙音频", "requestDuckingFocusWhenFrozen 异常: " + t.getMessage());
         }
     }
 
-    /**
-     * 释放蓝牙焦点
-     */
     public synchronized void abandonBluetoothFocus() {
-        if (!btFocusHeld || audioManager == null) {
+        if (audioManager == null) {
+            audioManager = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
+        }
+        if (audioManager == null) {
             return;
         }
         try {
-            audioManager.abandonAudioFocus(btFocusListener);
-            AppLogger.i("蓝牙音频", "已释放蓝牙残留焦点");
+            audioManager.abandonAudioFocus(frozenFallbackFocusListener);
+            isFrozenFallbackFocusHeld = false;
+            AppLogger.i("蓝牙音频", "【冻结托底】已释放常驻 MAY_DUCK 蓝牙闪避焦点");
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "abandonBluetoothFocus 异常: " + t.getMessage());
         }
-        btFocusHeld = false;
     }
 
     /**
@@ -420,7 +422,7 @@ public class EasMediaBridge {
      * 而手机蓝牙 A2DP 语音恰恰挂在 STREAM_MUSIC 通道上，导致微信语音自身被系统误伤腰斩，声音发闷极小。
      * 因此坚决不向系统申请此类压低焦点，若有残留则彻底释放，保障蓝牙音频 100% 满音量无损输出。
      */
-    public synchronized void requestDuckingFocusForIncomingVoice() {
+    public synchronized void ensureNoDuckingFocus() {
         if (voiceDuckingFocusRequest != null) {
             abandonDuckingFocus();
         }
@@ -475,11 +477,11 @@ public class EasMediaBridge {
                 AppLogger.i("蓝牙音频", "已下发 updateCurrentSourceType(2)，原车 2 号蓝牙音频物理通道已选通！");
             }
 
-            keepXcmediaOnBluetoothSource();
+            sendKeepSourceBroadcastWhenFrozen();
             connectBtMediaBrowser();
 
-            // 2. 尝试持有 MAY_DUCK 闪避焦点 (若底层蓝牙已接管则自动跳过外部争抢)
-            requestBluetoothFocusIfNeeded();
+            // 2. 尝试持有 MAY_DUCK 闪避焦点 (若原厂正常运行则自动跳过外部争抢)
+            requestDuckingFocusWhenFrozen();
 
             // 3. 确保系统媒体音量正常
             AudioManager am = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
@@ -502,20 +504,21 @@ public class EasMediaBridge {
     public void playBluetoothMusic() {
         clearAutoWakeSuppression();
         activateBluetoothChannel();
-        keepXcmediaOnBluetoothSource();
-        wakeBluetoothAudioSink();
+        sendKeepSourceBroadcastWhenFrozen();
+        wakeBluetoothSinkWhenFrozen();
     }
 
     /**
-     * 唤醒底层 com.android.bluetooth A2DP Sink 链路，使其主动向系统申请 AudioFocus 避免声卡硬件静音 (val:0.000000)
+     * 【冻结托底专属】唤醒底层 com.android.bluetooth A2DP Sink 链路，使其主动向系统申请 AudioFocus 避免声卡硬件静音 (val:0.000000)
      * 必须调用 play() 穿透触发系统蓝牙的 informAudioFocusStateNative: 1，解除 GOC a2dp_player.c 的硬件静音锁！
+     * 注意：原厂正常活跃时严禁下发 play()，否则会误把 iPhone 唤醒放歌！
      */
-    public void wakeBluetoothAudioSink() {
+    public void wakeBluetoothSinkWhenFrozen() {
         if (isOriginalMediaActive()) {
             // 原厂多媒体正常运行时，全权交由原厂多媒体调度底层蓝牙，严禁下发 play() 误唤醒手机播放
             return;
         }
-        requestBluetoothFocusIfNeeded();
+        requestDuckingFocusWhenFrozen();
         if (isAutoWakeSuppressed()) {
             AppLogger.i("蓝牙音频", "处于用户暂停抑制窗口内，跳过下发 play() (尊重用户暂停意图)");
             return;
@@ -541,21 +544,21 @@ public class EasMediaBridge {
                 }
             }
         } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "唤醒底层 A2DP AudioFocus 异常: " + t.getMessage());
+            AppLogger.w("蓝牙音频", "【冻结托底】唤醒底层 A2DP AudioFocus 异常: " + t.getMessage());
         }
         connectBtMediaBrowser();
     }
 
     /**
-     * 推流停止或防抢播守护：下发 pause() 掐灭可能排队的手机音乐播放
+     * 【冻结托底专属】推流停止或防抢播守护：下发 pause() 掐灭可能排队的手机音乐播放
      */
-    public void pauseBluetoothAudioSink() {
+    public void pauseBluetoothSinkWhenFrozen() {
         if (isOriginalMediaActive()) {
             return;
         }
         try {
             if (btMediaController != null) {
-                AppLogger.i("蓝牙音频", "推流停止，通过 btMediaController 下发 pause() 掐灭手机排队播放");
+                AppLogger.i("蓝牙音频", "【冻结托底】推流停止，通过 btMediaController 下发 pause() 掐灭手机排队播放");
                 btMediaController.getTransportControls().pause();
             } else {
                 MediaSessionManager mm = (MediaSessionManager) appContext.getSystemService(Context.MEDIA_SESSION_SERVICE);
@@ -564,7 +567,7 @@ public class EasMediaBridge {
                     if (controllers != null) {
                         for (MediaController mc : controllers) {
                             if ("com.android.bluetooth".equals(mc.getPackageName())) {
-                                AppLogger.i("蓝牙音频", "推流停止，命中系统蓝牙 MediaSession，下发 pause() 掐灭手机排队播放");
+                                AppLogger.i("蓝牙音频", "【冻结托底】推流停止，通过系统蓝牙 MediaSession 下发 pause() 掐灭手机排队播放");
                                 mc.getTransportControls().pause();
                                 break;
                             }
@@ -573,7 +576,7 @@ public class EasMediaBridge {
                 }
             }
         } catch (Throwable t) {
-            AppLogger.w("蓝牙音频", "下发 pause 异常: " + t.getMessage());
+            AppLogger.w("蓝牙音频", "【冻结托底】pauseBluetoothSinkWhenFrozen 异常: " + t.getMessage());
         }
     }
 
@@ -724,8 +727,13 @@ public class EasMediaBridge {
                 // 11 代表 BluetoothProfile.A2DP_SINK，2 代表 STATE_CONNECTED
                 this.a2dpSinkConnected = (ba.getProfileConnectionState(11) == 2);
                 if (this.a2dpSinkConnected) {
-                    connectBtMediaBrowser();
-                    requestBluetoothFocusIfNeeded();
+                    if (isOriginalMediaActive()) {
+                        AppLogger.i("蓝牙音频", "初始化探测到蓝牙已连接，原厂多媒体正常活跃，放弃接管");
+                    } else {
+                        AppLogger.i("蓝牙音频", "【冻结托底】初始化探测到蓝牙已连接，就绪底层链路与焦点守护");
+                        connectBtMediaBrowser();
+                        requestDuckingFocusWhenFrozen();
+                    }
                 }
             }
         } catch (Throwable ignored) {}
@@ -744,7 +752,7 @@ public class EasMediaBridge {
                         } else {
                             AppLogger.i("蓝牙音频", "【冻结托底】监听到蓝牙已连接，静默就绪底层链路与焦点守护");
                             connectBtMediaBrowser();
-                            requestBluetoothFocusIfNeeded();
+                            requestDuckingFocusWhenFrozen();
                         }
                     } else if (state == 0) {
                         a2dpSinkConnected = false;
@@ -762,14 +770,14 @@ public class EasMediaBridge {
                     if (streaming) {
                         if (!isOriginalMediaActive()) {
                             // 仅在原厂被冻结时，才介入压低焦点与声卡唤醒托底
-                            requestDuckingFocusForIncomingVoice();
-                            wakeBluetoothAudioSink();
+                            ensureNoDuckingFocus();
+                            wakeBluetoothSinkWhenFrozen();
                         }
 
                         // 选通原车 2 号蓝牙音频物理通道
                         long now = SystemClock.uptimeMillis();
-                        if (now - lastA2dpWakeTime > 4000) {
-                            lastA2dpWakeTime = now;
+                        if (now - lastA2dpChannelActivateTime > 4000) {
+                            lastA2dpChannelActivateTime = now;
                             activateBluetoothChannel();
                         }
                     } else {
@@ -786,8 +794,8 @@ public class EasMediaBridge {
                                 a2dpStreaming = true;
                                 AppLogger.i("蓝牙音频", "监听到 AVRCP 推流起播，选通声道");
                                 if (!isOriginalMediaActive()) {
-                                    requestDuckingFocusForIncomingVoice();
-                                    wakeBluetoothAudioSink();
+                                    ensureNoDuckingFocus();
+                                    wakeBluetoothSinkWhenFrozen();
                                 }
                                 activateBluetoothChannel();
                             } else if (!isPlaying && a2dpStreaming) {
