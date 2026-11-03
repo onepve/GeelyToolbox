@@ -335,7 +335,7 @@ async def capture_toolbox(apps_json):
         await capture_modal('about', 'preview_about.webp', '1.8.17')
         await capture_modal('battery', 'preview_vehicle_health.webp', '12.6')
         await capture_modal('oilPrice', 'preview_oil_price.webp', '92#')
-        await capture_modal('wheelKeyLearning', 'preview_wheel_learning.webp', '已成功识别按键',
+        await capture_modal('wheelKeyLearning', 'preview_wheel_learning.webp', '底盘信号通路正常',
                             before="window.ToolboxBridge=window.ToolboxBridge||{};window.ToolboxBridge.startWheelKeyLearning=()=>true;window.onWheelKeyLearned({keyCode:349});")
         await capture_modal('voiceThemeImport', 'preview_voice_import.webp', '一键解压导入',
                             pre="window.ToolboxBridge=window.ToolboxBridge||{};window.ToolboxBridge.scanVoiceZipsInDownload=()=>JSON.stringify([{name:'SIM_甜美女声.zip',size:'4.2 MB',time:'2026-11-01 20:00'}]);")

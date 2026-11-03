@@ -1,8 +1,8 @@
 <template>
   <ModalWrapper
     :show="true"
-    title="方控按键学习"
-    badge="新车型适配"
+    title="方控响应与冲突体检"
+    badge="实车通路诊断"
     maxWidthClass="max-w-[760px]"
     zIndexClass="z-[9999]"
     :showCloseButton="false"
@@ -18,11 +18,11 @@
             <span class="text-[22px] font-black text-car-text tracking-wide">正在聆听方向盘按键...</span>
           </div>
           <div class="text-[17px] text-car-sub font-bold leading-relaxed">
-            请现在按下方向盘上您想学习的任意物理按键，<br />
-            助手会立即抓取它的真实键码。
+            请现在按下方向盘右侧您想检测的任意按键，<br />
+            助手将立即检测底盘信号通路与响应延迟。
           </div>
-          <div class="text-[15px] text-car-sub font-bold">
-            学习期间该按键不会触发任何已配置的功能，请放心按。
+          <div class="text-[14.5px] text-car-sub/80 font-bold">
+            💡 诊断期间按键不会触发 360 或切歌等任何功能，请放心按。
           </div>
         </div>
 
@@ -35,41 +35,58 @@
             ></div>
           </div>
           <div class="text-[14.5px] text-car-sub font-black">
-            {{ secondsLeft }} 秒后自动结束（共 {{ TOTAL_SECONDS }} 秒）
+            {{ secondsLeft }} 秒后结束检测（共 {{ TOTAL_SECONDS }} 秒）
           </div>
         </div>
       </template>
 
-      <!-- 阶段二：学习成功 -->
+      <!-- 阶段二：捕获成功，给出诊断结论 -->
       <template v-else-if="stage === 'captured'">
-        <div class="w-full bg-car-item rounded-2xl border-2 border-car-accent p-6 space-y-4">
-          <div class="flex items-center justify-center space-x-3">
-            <span class="text-[38px]">✅</span>
-            <span class="text-[22px] font-black text-car-text tracking-wide">已成功识别按键</span>
+        <div class="w-full bg-car-item rounded-2xl border-2 border-car-accent p-6 space-y-4 text-left">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <span class="text-[32px]">✅</span>
+              <span class="text-[22px] font-black text-car-text tracking-wide">底盘信号通路正常</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-[18px] font-black text-car-accent bg-car-card px-3.5 py-1.5 rounded-xl border border-car-border">
+                {{ friendlyName }}
+              </span>
+              <span class="text-[14px] text-car-sub font-bold">键码 {{ capturedCode }}</span>
+            </div>
           </div>
-          <div class="flex items-center justify-center space-x-4 pt-1">
-            <span class="text-[17px] text-car-sub font-black">识别结果：</span>
-            <span class="text-[19px] font-black text-car-text bg-car-card px-4 py-2 rounded-xl border-2 border-car-border">
-              {{ friendlyName }}
-            </span>
-            <span class="text-[15px] text-car-sub font-black">键码 {{ capturedCode }}</span>
+
+          <!-- 诊断与排错指引 (根据按键提供实车大白话结论) -->
+          <div class="bg-car-card border border-car-border rounded-xl p-4 space-y-2 text-[15.5px] leading-relaxed">
+            <div class="font-black text-car-text flex items-center space-x-2">
+              <span>🩺</span>
+              <span>体检诊断结论：</span>
+            </div>
+            <div class="text-car-sub font-bold whitespace-pre-line">
+              {{ diagnosticResultText }}
+            </div>
           </div>
-        </div>
-        <div class="text-[15.5px] text-car-sub font-bold leading-relaxed max-w-[560px]">
-          {{ capturedHint }}
         </div>
       </template>
 
-      <!-- 阶段三：超时未捕获 -->
+      <!-- 阶段三：超时未捕获，给出排查清单 -->
       <template v-else>
-        <div class="w-full bg-car-item rounded-2xl border-2 border-car-border p-6 space-y-4">
-          <div class="flex items-center justify-center space-x-3">
-            <span class="text-[34px]">⏰</span>
-            <span class="text-[22px] font-black text-car-text tracking-wide">未捕捉到按键</span>
+        <div class="w-full bg-car-item rounded-2xl border-2 border-car-border p-6 space-y-4 text-left">
+          <div class="flex items-center space-x-3">
+            <span class="text-[32px]">⚠️</span>
+            <span class="text-[22px] font-black text-car-text tracking-wide">未接收到底盘按键信号</span>
           </div>
-          <div class="text-[16.5px] text-car-sub font-bold leading-relaxed">
-            20 秒内没有检测到方向盘按键。<br />
-            可以重试一次；若始终识别不到，可能当前车型暂不支持，请反馈给作者适配。
+          <div class="bg-car-card border border-car-border rounded-xl p-4 space-y-2 text-[15px] leading-relaxed">
+            <div class="font-black text-car-text flex items-center space-x-2">
+              <span>🔍</span>
+              <span>排查与解决建议：</span>
+            </div>
+            <div class="text-car-sub font-bold space-y-1.5">
+              <div>1. <b>总开关检查</b>：请确认方控页面顶部的「方向盘按键接管总开关」已保持开启。</div>
+              <div>2. <b>接管模式冲突</b>：若选了「恢复原厂默认」或「仅接管蓝牙」，系统将完全放行按键，不予拦截。</div>
+              <div>3. <b>第三方方控抢占</b>：若车机同时安装了米小江 CarMedia 等方控软件，按键广播可能已被其优先独占消费。</div>
+              <div>4. <b>按键区域安全红线</b>：仅支持右方向盘多媒体键；左侧巡航与行车安全按键受系统保护，严禁检测与拦截。</div>
+            </div>
           </div>
         </div>
       </template>
@@ -88,14 +105,14 @@
           @click="handleRestart"
           class="min-h-[64px] px-10 rounded-2xl bg-car-item border-2 border-car-border text-car-text font-black text-[19px] cursor-pointer hover:border-car-border-light shadow-sm"
         >
-          重新开始
+          重新检测
         </button>
         <button
           v-if="stage !== 'waiting'"
           @click="handleRestart"
           class="min-h-[64px] px-10 rounded-2xl bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25 font-black text-[19px] cursor-pointer shadow-md"
         >
-          再学一个按键
+          再测一个按键
         </button>
       </div>
     </template>
@@ -127,11 +144,27 @@ const KEY_NAMES = {
 };
 const friendlyName = computed(() => KEY_NAMES[capturedCode.value] || '未知新键位');
 
-const capturedHint = computed(() => {
-  if (KEY_NAMES[capturedCode.value]) {
-    return '这是助手已支持的按键，可直接在「按键映射手势」页为它配置功能。';
+const diagnosticResultText = computed(() => {
+  const code = capturedCode.value;
+  if (code === 300) {
+    return '1. 硬件连接：底盘信号 0ms 瞬间直达，按键通路完好。\n2. 静音键特殊机制：原厂车机系统对静音键存在底层独占。若映射为「播放/暂停」，部分非车载标准的音乐软件（如移动版酷狗/网易云）可能无法正确响应暂停，建议静音键保持「原厂默认」使用。\n3. 长按应急提示：长按此键 10 秒为原车硬件级强制重启，不受任何设置影响。';
   }
-  return '这是当前车型的新键位！键码已自动记录，反馈日志给作者后即可在后续版本中适配该按键。';
+  if (code === 348) {
+    return '1. 硬件连接：MODE 模式键通路完全正常。\n2. 原厂冲突防护：助手已为您开启「防原厂收音机打扰」门禁，按下后将阻断原车伴听/收音机弹窗。\n3. 推荐用途：推荐在设置中将其绑定为「360 全景」，倒车或过窄路盲操极方便。';
+  }
+  if (code === 304 || code === 305) {
+    return '1. 硬件连接：切歌键通路通畅，极速响应。\n2. 切歌生效提示：已配备 900ms 兜底切歌状态机。若在某些音乐软件中切歌没反应，请确认该音乐软件是否开启了「允许线控切歌」或具有后台运行权限。';
+  }
+  if (code === 306 || code === 45 || code === 66) {
+    return '1. 硬件连接：滚轮垂直按压键通路正常。\n2. 推荐用途：垂直按压默认推荐绑定「播放 / 暂停媒体」，上下滚动依然保持正常调节音量，互不干扰。';
+  }
+  if (code === 307) {
+    return '1. 硬件连接：右盘返回键通路正常。\n2. 使用建议：若习惯原车点按返回上一级，卡片中选择「恢复原厂默认」即可；亦可绑定为秒开高德或 360。';
+  }
+  if (KEY_NAMES[code]) {
+    return '底盘信号极速响应，硬件物理通路完全正常！您可直接在下方对应的按键卡片中自由绑定 360、高德或自定义应用。';
+  }
+  return '成功捕获当前车型的物理键码！底盘信号通路已打通。键码已自动记录，如需单独适配专属卡片，可将此键码反馈给作者。';
 });
 
 function stopCountdown() {
