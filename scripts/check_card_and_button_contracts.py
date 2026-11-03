@@ -181,7 +181,7 @@ CARD_BUTTON_CONTRACTS = [
         "public synchronized void requestBluetoothFocusIfNeeded",
         [r"AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK", r"requestAudioFocus"],
         [r"abandonBluetoothFocus"],
-        "7ad5108060c662fb2076d8b67b171127f96e008e4de27102c8f2c6285fd842ee"
+        "0bb2fc3a3e4d49ea9625930956c7b819fd11b273a1c06c25ce09cc1169507fbf"
     ),
     (
         "多媒体接管卡片", "原厂部件蓝牙声道保持广播 (ECARX_WIDGET_BLUETOOTH_PLAY)",
@@ -189,7 +189,7 @@ CARD_BUTTON_CONTRACTS = [
         "public void keepXcmediaOnBluetoothSource",
         [r"ECARX_WIDGET_BLUETOOTH_PLAY", r"com\.ecarx\.multimedia"],
         [],
-        "03499d2b478b899953f3c5347e6a9e5230ab4df0d78c6603830daeb850cc81c3"
+        "8c59656ae6aa19a9aecd3c0a49f5b91b9f3149b7830cfbaa0386ea459e011f56"
     ),
     (
         "多媒体接管卡片", "微信语音推流防误杀与静默守护 (A2DP Streaming 保护与免抢播)",
@@ -212,7 +212,7 @@ CARD_BUTTON_CONTRACTS = [
         "public void wakeBluetoothAudioSink",
         [r"requestBluetoothFocusIfNeeded\(\)", r"btMediaController\.getTransportControls\(\)\.play\(\)", r"mc\.getTransportControls\(\)\.play\(\)"],
         [],
-        "09499990eb2028d398a28dfda0850fce6e6804e655f7fe7bc5268342a750f2d3"
+        "1c95826471c395381c758c12660f2c829a5adfaa943f3b441689f2b089ed0b63"
     ),
     (
         "多媒体接管卡片", "微信推流绝不抢占压低焦点硬哈希刚性锁死 (requestDuckingFocusForIncomingVoice)",
@@ -236,7 +236,7 @@ CARD_BUTTON_CONTRACTS = [
         "private void registerA2dpReceiver",
         [r"requestDuckingFocusForIncomingVoice", r"abandonDuckingFocus", r"wakeBluetoothAudioSink"],
         [],
-        "931def8c60fb1c017c4eeab12d1762e29f2e900640d16034261d93d8c2896876"
+        "3b11883266efc71be13408c040846c625e50ea8cb66e807f74264fb83d27b2bc"
     ),
     (
         "多媒体接管卡片", "推流停止即时掐灭手机排队播放锁死 (pauseBluetoothAudioSink)",
@@ -244,7 +244,7 @@ CARD_BUTTON_CONTRACTS = [
         "public void pauseBluetoothAudioSink",
         [r"btMediaController\.getTransportControls\(\)\.pause\(\)", r"mc\.getTransportControls\(\)\.pause\(\)"],
         [],
-        "308ef130f093b5b46b5581021587941223f204c1d8975273f8577adf914037fb"
+        "e8f328aeb8eb53e32a53f77fdc50b264eb5a25f6cb791e07d8f5e6d29f0c4e97"
     ),
     (
         "多媒体接管卡片", "微信音频平滑压低与自动恢复音量锁死 (duckMediaVolume)",
