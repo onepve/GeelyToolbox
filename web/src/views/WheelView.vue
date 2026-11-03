@@ -14,12 +14,12 @@
     >
       <div 
         @click="toggleWheelMasterSwitch"
-        class="flex-1 flex flex-col space-y-1.5 cursor-pointer pr-4"
+        class="flex-1 min-w-0 flex flex-col space-y-1.5 cursor-pointer pr-4"
       >
         <div class="flex items-center space-x-3">
           <StatusDot size="lg" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">方向盘按键接管总开关</span>
-          <span :class="['text-[14.5px] font-black px-2.5 py-0.5 rounded-lg border', store.vehicleAuto.wheel_master_switch ? 'bg-car-accent/15 text-car-accent border-car-accent/30' : 'bg-car-sub/10 text-car-sub border-car-border']">
+          <span :class="['text-[14.5px] font-black px-2.5 py-0.5 rounded-lg border', store.vehicleAuto.wheel_master_switch ? 'bg-car-item text-car-accent border-car-accent' : 'bg-car-card text-car-sub border-car-border']">
             {{ store.vehicleAuto.wheel_master_switch ? '已接管' : '原车默认' }}
           </span>
         </div>
@@ -33,7 +33,7 @@
         <button
           @click="setMappingMode('preset')"
           :class="[
-            'px-5 py-2.5 rounded-xl font-black text-[15.5px] transition-all cursor-pointer',
+            'px-5 h-[52px] rounded-xl font-black text-[15.5px] transition-all cursor-pointer flex items-center justify-center',
             mappingMode === 'preset'
               ? 'bg-car-item text-car-accent border-2 border-car-accent shadow-sm'
               : 'text-car-sub hover:text-car-text border-2 border-transparent'
@@ -44,7 +44,7 @@
         <button
           @click="setMappingMode('custom_list')"
           :class="[
-            'px-5 py-2.5 rounded-xl font-black text-[15.5px] transition-all cursor-pointer',
+            'px-5 h-[52px] rounded-xl font-black text-[15.5px] transition-all cursor-pointer flex items-center justify-center',
             mappingMode === 'custom_list'
               ? 'bg-car-item text-car-accent border-2 border-car-accent shadow-sm'
               : 'text-car-sub hover:text-car-text border-2 border-transparent'
@@ -175,7 +175,7 @@
         <div class="flex flex-col space-y-1">
           <div class="flex items-center space-x-2">
             <span class="text-[18px] font-black text-car-text">动态按键映射表</span>
-            <span class="text-[13px] font-black px-2.5 py-0.5 rounded-full bg-car-accent/15 text-car-accent border border-car-accent/30">
+            <span class="text-[13px] font-black px-2.5 py-0.5 rounded-full bg-car-item text-car-accent border border-car-accent">
               已捕获 {{ customMappingList.length }} 个按键
             </span>
           </div>
@@ -186,9 +186,9 @@
 
         <button
           @click="openAddKeyLearning"
-          class="px-5 py-3 rounded-xl bg-car-item border-2 border-car-accent text-car-accent hover:border-car-border-light font-black text-[16px] cursor-pointer shadow-md active:scale-[0.98] transition-all shrink-0 flex items-center space-x-2"
+          class="px-5 h-[52px] rounded-xl bg-car-item border-2 border-car-accent text-car-accent hover:border-car-border-light font-black text-[16px] cursor-pointer shadow-md active:scale-[0.98] transition-all shrink-0 flex items-center justify-center"
         >
-          <span>＋ 按键学习添加</span>
+          <span>按键学习添加</span>
         </button>
       </div>
 
@@ -197,14 +197,13 @@
         v-if="customMappingList.length === 0"
         class="flex flex-col items-center justify-center p-12 rounded-3xl bg-car-card border-2 border-dashed border-car-border text-center space-y-3"
       >
-        <span class="text-[40px] opacity-40">🎛️</span>
         <span class="text-[18px] font-black text-car-text">暂无捕获的按键映射</span>
         <span class="text-[14px] text-car-sub font-bold max-w-[420px]">
           点击右上角「按键学习添加」，然后按下方向盘右侧多媒体区任意按键，即可将其添加到本列表中自由分配动作。
         </span>
         <button
           @click="openAddKeyLearning"
-          class="mt-2 px-6 py-3 rounded-xl bg-car-accent text-white font-black text-[16px] cursor-pointer shadow-lg active:scale-[0.98] transition-all"
+          class="mt-2 px-6 h-[52px] rounded-xl bg-car-accent text-white font-black text-[16px] cursor-pointer shadow-lg active:scale-[0.98] transition-all flex items-center justify-center"
         >
           立即捕获第一个按键
         </button>
@@ -219,7 +218,7 @@
         >
           <!-- 左侧：按键键码徽章 + 按键名称 -->
           <div class="flex items-center space-x-3.5 min-w-[200px] shrink-0">
-            <span class="px-3 py-1.5 rounded-xl bg-car-accent/15 text-car-accent border border-car-accent/30 font-black text-[15px] tracking-wider shrink-0">
+            <span class="px-3 py-1.5 rounded-xl bg-car-item text-car-accent border border-car-accent font-black text-[15px] tracking-wider shrink-0">
               # {{ item.code }}
             </span>
             <div class="flex flex-col">
@@ -246,7 +245,7 @@
           <div class="shrink-0 pl-2">
             <button
               @click="removeCustomKey(idx)"
-              class="px-4 py-2.5 rounded-xl border-2 border-red-500/30 text-red-400 hover:bg-red-500/10 font-black text-[14.5px] cursor-pointer transition-all active:scale-[0.97]"
+              class="px-4 h-[52px] rounded-xl border-2 border-red-500 text-red-400 hover:bg-car-item font-black text-[14.5px] cursor-pointer transition-all active:scale-[0.97] flex items-center justify-center"
             >
               移除
             </button>
