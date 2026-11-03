@@ -91,6 +91,13 @@ jobs:
           fi
           echo "[PASS] build.gradle now: ${GOT_NAME} (code ${GOT_CODE}) — matches publish_r2.py formula"
 
+      # 发版版本单调性门禁（防降级双通道）：在昂贵 gradle 构建前 fail-fast，
+      # 拦截「候选 versionCode < 线上正式版」的降级 Tag（如正式 1.8.20 后误打 beta-v1.8.20.1）。
+      # 正式版与测试版分开校验，规则见 scripts/check_release_version_gate.py。
+      - name: Release Version Monotonicity Gate (Anti-Downgrade · Dual Channel)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: python3 scripts/check_release_version_gate.py --tag "${GITHUB_REF#refs/tags/}"
+
       - name: Run CI Health Checks (Links, JSBridge, DOM Handlers, Version Contract)
         run: python3 scripts/ci_health_check.py
 
