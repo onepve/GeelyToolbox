@@ -1,0 +1,313 @@
+{
+  "environment": "{\"ua\":\"Mozilla/5.0 (Linux; Android 9; Android SDK built for x86_64 Build/PSR1.180720.012; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/66.0.3359.158 Safari/537.36\",\"width\":1920,\"height\":672}",
+  "pages": [
+    {
+      "order": 1,
+      "slug": "01-wheel",
+      "title": "方控按键",
+      "click": "SPAN:truncate",
+      "image": "/data/projects/GeelyToolbox/docs/blog-assets/v1.7.35-release-webview66/01-wheel.png",
+      "state": {
+        "title": "缤越助手\nv1.7.11-beta.5\n电瓶: 采集中...\n暗码(+10): #*191805\n商店: 未冻结\nIP: 192.168.232.2\n\n关于\n\n✕\n退出\n方控按键\n核心改装\n车身联动\n360/车速\n座舱语音\n语音播报\n精选商城\n专车应用\n车载音频\n语音/蓝牙\n特权安装\n暗码/快传\n系统维护\n维护/悬浮\n方向盘按键方控接管总开关\n方控接管已启用\n全面接管静音键、Mode键与上一曲/下一曲。支持单击、双击、长按三种手势。\n\n方控接管已开启\n点击切换为彻底放行\n吉利缤越 COOL (IHU516G / E02) 原厂方控图解\n右方向盘多媒体控制区 (SX-0017)：静音、切歌、MO",
+        "grids": [
+          {
+            "gridIndex": 0,
+            "pair": 0,
+            "leftHeight": 339,
+            "rightHeight": 339,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "flex-start"
+          },
+          {
+            "gridIndex": 0,
+            "pair": 1,
+            "leftHeight": 339,
+            "rightHeight": 341,
+            "difference": 2,
+            "topDifference": 0,
+            "alignItems": "flex-start"
+          },
+          {
+            "gridIndex": 1,
+            "pair": 0,
+            "leftHeight": 168,
+            "rightHeight": 168,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 2,
+            "pair": 0,
+            "leftHeight": 339,
+            "rightHeight": 339,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "flex-start"
+          }
+        ]
+      }
+    },
+    {
+      "order": 2,
+      "slug": "02-link",
+      "title": "车身联动",
+      "click": "SPAN:truncate",
+      "image": "/data/projects/GeelyToolbox/docs/blog-assets/v1.7.35-release-webview66/02-link.png",
+      "state": {
+        "title": "缤越助手\nv1.7.11-beta.5\n电瓶: 采集中...\n暗码(+10): #*191805\n商店: 未冻结\nIP: 192.168.232.2\n\n关于\n\n✕\n退出\n方控按键\n核心改装\n车身联动\n360/车速\n座舱语音\n语音播报\n精选商城\n专车应用\n车载音频\n语音/蓝牙\n特权安装\n暗码/快传\n系统维护\n维护/悬浮\n车身智能联动计划\n0 / 4 项运行中\n基于车载 CAN 总线与 MCU 底层传感器事件驱动。四大联动计划固定常驻，支持独立开关与加减微调触发阈值。\n2. 前进 D 挡起步联动 360\n单次跃变\n?\n从 P 挡或 R 挡切入前进 D 挡起步 (单次跃变锁)\n唤醒 360 扫除起步",
+        "grids": [
+          {
+            "gridIndex": 0,
+            "pair": 0,
+            "leftHeight": 260,
+            "rightHeight": 260,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 0,
+            "pair": 1,
+            "leftHeight": 623,
+            "rightHeight": 623,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 1,
+            "pair": 0,
+            "leftHeight": 52,
+            "rightHeight": 52,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "stretch"
+          },
+          {
+            "gridIndex": 2,
+            "pair": 0,
+            "leftHeight": 52,
+            "rightHeight": 52,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "stretch"
+          }
+        ]
+      }
+    },
+    {
+      "order": 3,
+      "slug": "03-body",
+      "title": "座舱语音",
+      "click": "SPAN:truncate",
+      "image": "/data/projects/GeelyToolbox/docs/blog-assets/v1.7.35-release-webview66/03-body.png",
+      "state": {
+        "title": "缤越助手\nv1.7.11-beta.5\n电瓶: 采集中...\n暗码(+10): #*191805\n商店: 未冻结\nIP: 192.168.232.2\n\n关于\n\n✕\n退出\n方控按键\n核心改装\n车身联动\n360/车速\n座舱语音\n语音播报\n精选商城\n专车应用\n车载音频\n语音/蓝牙\n特权安装\n暗码/快传\n系统维护\n维护/悬浮\n座舱车身语音播报总开关\n全车播报已启用\n一键管控全车车门、尾门、挡位与驾驶模式语音播报。关闭后全车物理静音，独立生效。\n\n全车播报已开启\n点击切换为全车静音\n车身全域物理信号实时探针 (实车调试专用)\n采集中... · 采集中... · 五门电平监听中\n展开实时探针 (实车调试)",
+        "grids": [
+          {
+            "gridIndex": 0,
+            "pair": 0,
+            "leftHeight": 260,
+            "rightHeight": 260,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 0,
+            "pair": 1,
+            "leftHeight": 260,
+            "rightHeight": 260,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 1,
+            "pair": 0,
+            "leftHeight": 52,
+            "rightHeight": 52,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 2,
+            "pair": 0,
+            "leftHeight": 52,
+            "rightHeight": 52,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 3,
+            "pair": 0,
+            "leftHeight": 52,
+            "rightHeight": 52,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 4,
+            "pair": 0,
+            "leftHeight": 52,
+            "rightHeight": 52,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 5,
+            "pair": 0,
+            "leftHeight": 260,
+            "rightHeight": 260,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 6,
+            "pair": 0,
+            "leftHeight": 52,
+            "rightHeight": 52,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 7,
+            "pair": 0,
+            "leftHeight": 52,
+            "rightHeight": 52,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          }
+        ]
+      }
+    },
+    {
+      "order": 4,
+      "slug": "04-store",
+      "title": "精选商城",
+      "click": "SPAN:truncate",
+      "image": "/data/projects/GeelyToolbox/docs/blog-assets/v1.7.35-release-webview66/04-store.png",
+      "state": {
+        "title": "缤越助手\nv1.7.11-beta.5\n电瓶: 采集中...\n暗码(+10): #*191805\n商店: 未冻结\nIP: 192.168.232.2\n\n关于\n\n✕\n退出\n方控按键\n核心改装\n车身联动\n360/车速\n座舱语音\n语音播报\n精选商城\n专车应用\n车载音频\n语音/蓝牙\n特权安装\n暗码/快传\n系统维护\n维护/悬浮\n【实测机型声明】以下精选车载软件已在 吉利缤越COOL 2022 (亿咖通 E02 / IHU516G / Android 9) 专车深度实测调优，其他车型车友请自行评估后安全安装。\n精选车机应用列表\n全部\n车载导航\n音乐应用\n车机工具\n刷新清单\n\n清理下载目录\n正在从云端获取最",
+        "grids": []
+      }
+    },
+    {
+      "order": 5,
+      "slug": "05-audio",
+      "title": "车载音频",
+      "click": "SPAN:truncate",
+      "image": "/data/projects/GeelyToolbox/docs/blog-assets/v1.7.35-release-webview66/05-audio.png",
+      "state": {
+        "title": "缤越助手\nv1.7.11-beta.5\n电瓶: 采集中...\n暗码(+10): #*191805\n商店: 未冻结\nIP: 192.168.232.2\n\n关于\n\n✕\n退出\n方控按键\n核心改装\n车身联动\n360/车速\n座舱语音\n语音播报\n精选商城\n专车应用\n车载音频\n语音/蓝牙\n特权安装\n暗码/快传\n系统维护\n维护/悬浮\n车载蓝牙音频与网络互联 (原厂混音与硬件声道调试)\n?\n直控车机蓝牙与 Wi-Fi 开关，实时呈现 6 号蓝牙硬件声道仲裁与推流状态，提供一键强制声道选通与发声调试。\n车机蓝牙\n已关闭\n设备: 未连接设备\n配对与连接管理\n打开蓝牙设置 ➔\n车机 Wi-Fi\n已开启\n热点: 未连接",
+        "grids": [
+          {
+            "gridIndex": 0,
+            "pair": 0,
+            "leftHeight": 196,
+            "rightHeight": 196,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 1,
+            "pair": 0,
+            "leftHeight": 450,
+            "rightHeight": 450,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 2,
+            "pair": 0,
+            "leftHeight": 64,
+            "rightHeight": 64,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 3,
+            "pair": 0,
+            "leftHeight": 56,
+            "rightHeight": 56,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          }
+        ]
+      }
+    },
+    {
+      "order": 6,
+      "slug": "06-install",
+      "title": "特权安装",
+      "click": "SPAN:truncate",
+      "image": "/data/projects/GeelyToolbox/docs/blog-assets/v1.7.35-release-webview66/06-install.png",
+      "state": {
+        "title": "缤越助手\nv1.7.11-beta.5\n电瓶: 采集中...\n暗码(+10): #*191805\n商店: 未冻结\nIP: 192.168.232.2\n\n关于\n\n✕\n退出\n方控按键\n核心改装\n车身联动\n360/车速\n座舱语音\n语音播报\n精选商城\n专车应用\n车载音频\n语音/蓝牙\n特权安装\n暗码/快传\n系统维护\n维护/悬浮\n车载原生文件管理 (特权安装正解通道)\n?\n严禁直接通过 ADB 命令行 pm install 强行静默安装，底层安全策略会导致应用无法运行或白屏！\n标准无损安装路线：\n手机通过无线快传或甲壳虫将 APK 推送至车机 /sdcard/Download/ 目录，点击右侧按钮进入原生",
+        "grids": [
+          {
+            "gridIndex": 0,
+            "pair": 0,
+            "leftHeight": 357,
+            "rightHeight": 357,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          },
+          {
+            "gridIndex": 1,
+            "pair": 0,
+            "leftHeight": 133,
+            "rightHeight": 133,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          }
+        ]
+      }
+    },
+    {
+      "order": 7,
+      "slug": "07-system",
+      "title": "系统维护",
+      "click": "SPAN:truncate",
+      "image": "/data/projects/GeelyToolbox/docs/blog-assets/v1.7.35-release-webview66/07-system.png",
+      "state": {
+        "title": "缤越助手\nv1.7.11-beta.5\n电瓶: 采集中...\n暗码(+10): #*191805\n商店: 未冻结\nIP: 192.168.232.2\n\n关于\n\n✕\n退出\n方控按键\n核心改装\n车身联动\n360/车速\n座舱语音\n语音播报\n精选商城\n专车应用\n车载音频\n语音/蓝牙\n特权安装\n暗码/快传\n系统维护\n维护/悬浮\n检测到吉利应用商店处于未冻结状态\n建议处置\n原厂商店运行会破坏白名单策略，直接导致第三方软件无法安装，强烈建议立即冻结锁定！\n\n一键安全冻结\n点击锁定商店防破坏\n桌面悬浮与息屏保护\n桌面迷你悬浮胶囊\n桌面常驻\n?\n悬浮胶囊常驻开关\n在桌面及全屏应用上层常驻，支持自由拖拽吸附\n胶囊",
+        "grids": [
+          {
+            "gridIndex": 0,
+            "pair": 0,
+            "leftHeight": 460,
+            "rightHeight": 460,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "stretch"
+          },
+          {
+            "gridIndex": 1,
+            "pair": 0,
+            "leftHeight": 52,
+            "rightHeight": 52,
+            "difference": 0,
+            "topDifference": 0,
+            "alignItems": "normal"
+          }
+        ]
+      }
+    }
+  ]
+}

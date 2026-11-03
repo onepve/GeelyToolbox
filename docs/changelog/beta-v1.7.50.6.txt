@@ -1,0 +1,2 @@
+1. 修复本地音乐按键与自启被蓝牙截胡：精准回退 EasMediaBridge 蓝牙活跃状态判断至 v1.7.49 正式版基线，仅在手机真正推流发声时判定为蓝牙活跃，彻底解除手机仅连接待机时对 QQ 音乐上一曲/下一曲及起步自启的霸道拦截；
+2. 加固车速自启后台服务保活：将 vehicle_speed_autoplay_enabled 与 vehicle_speed_custom_action_enabled 纳入 syncState 常驻门禁守卫，保障车速达标自启 100% 稳定驻留运行。
