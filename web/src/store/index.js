@@ -157,6 +157,8 @@ export const store = reactive({
   vehicleAuto: {
     voice_master_switch: true, // 座舱车身语音总开关 (全车总闸，优先判定)
     wheel_master_switch: true, // 方向盘方控接管总开关 (独立生效，放行米小江)
+    wheel_mapping_mode: 'preset', // 'preset' (标准卡片) | 'custom_list' (自定义列表)
+    wheel_custom_mapping_list: '[]', // 模式 B 独立存储 JSON
     voice_audio_channel: 'music', // 'music' | 'nav' | 'notification'
     wheel_control_mode: 'toolbox_alone', // 出厂默认控制台独立接管
     wheel_action_mute: 'default',

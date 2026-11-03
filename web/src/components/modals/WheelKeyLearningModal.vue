@@ -124,6 +124,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { closeModal } from '../../store';
 import ModalWrapper from './ModalWrapper.vue';
 import StatusDot from '../StatusDot.vue';
+import { store } from '../../store';
 
 const emit = defineEmits(['close']);
 
@@ -142,7 +143,7 @@ const KEY_NAMES = {
   286: '语音按键', 287: '电话按键', 348: 'MODE 键', 349: '自定义菱形键',
   45: '滚轮按压确认', 66: '滚轮按压确认'
 };
-const friendlyName = computed(() => KEY_NAMES[capturedCode.value] || '未知新键位');
+const friendlyName = computed(() => KEY_NAMES[capturedCode.value] || '自定义按键');
 
 const diagnosticResultText = computed(() => {
   const code = capturedCode.value;
@@ -212,6 +213,10 @@ window.onWheelKeyLearned = (payload) => {
       stopCountdown();
       capturedCode.value = code;
       stage.value = 'captured';
+      // 若携带了自定义添加回调（用于模式 B 添加按键）
+      if (store.modals.wheelKeyLearning && typeof store.modals.wheelKeyLearning.onCaptured === 'function') {
+        store.modals.wheelKeyLearning.onCaptured(code, KEY_NAMES[code] || '自定义按键');
+      }
     }
   } catch (e) {}
 };

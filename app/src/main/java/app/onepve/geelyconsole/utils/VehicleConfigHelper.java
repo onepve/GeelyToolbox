@@ -123,6 +123,8 @@ public final class VehicleConfigHelper {
             obj.put("has_carmedia_installed", hasCarMedia);
             obj.put("wheel_push_playback_cluster", prefs.getBoolean("wheel_push_playback_cluster", false));
             obj.put("wheel_push_lyrics_cluster", prefs.getBoolean("wheel_push_lyrics_cluster", false));
+            obj.put("wheel_mapping_mode", prefs.getString("wheel_mapping_mode", "preset"));
+            obj.put("wheel_custom_mapping_list", prefs.getString("wheel_custom_mapping_list", "[]"));
 
             // 车速联动自启与行车安全 (若车机装有 QQ 音乐，默认优先以 QQ 音乐为默认主力并默认开启运行)
             String defaultSpeedAutoplayPkg = "com.android.bluetooth";

@@ -5,30 +5,53 @@
 
     <!-- 核心：方向盘按键方控接管总开关 (置顶常驻整卡开关大磁贴) -->
     <div
-      @click="toggleWheelMasterSwitch"
+      class="border-2 rounded-2xl p-4 min-h-[92px] shadow-xl flex items-center justify-between transition-all select-none"
       :class="[
-        'border-2 rounded-2xl p-4 min-h-[88px] shadow-xl flex items-center justify-between transition-all cursor-pointer select-none active:scale-[0.99]',
         store.vehicleAuto.wheel_master_switch
           ? 'bg-car-item border-car-accent shadow-md'
-          : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
+          : 'bg-car-card border-car-border shadow-sm'
       ]"
     >
-      <div class="w-[65%] max-w-[65%] flex flex-col space-y-1.5 shrink-0">
+      <div 
+        @click="toggleWheelMasterSwitch"
+        class="flex-1 flex flex-col space-y-1.5 cursor-pointer pr-4"
+      >
         <div class="flex items-center space-x-3">
           <StatusDot size="lg" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
           <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">方向盘按键接管总开关</span>
+          <span :class="['text-[14.5px] font-black px-2.5 py-0.5 rounded-lg border', store.vehicleAuto.wheel_master_switch ? 'bg-car-accent/15 text-car-accent border-car-accent/30' : 'bg-car-sub/10 text-car-sub border-car-border']">
+            {{ store.vehicleAuto.wheel_master_switch ? '已接管' : '原车默认' }}
+          </span>
         </div>
         <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-          全面接管静音键、Mode键、切歌键与主页返回键。单击即发，零延迟触发。
+          全面接管静音键、Mode键、切歌键与主页返回键。单击即发，零延迟极速响应。
         </div>
       </div>
 
-      <!-- 右侧：轻量化状态大磁贴（消灭外框大按钮） -->
-      <div class="flex items-center space-x-3 shrink-0 pr-2">
-        <StatusDot size="md" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" :glow-px="8" />
-        <span :class="['text-[20px] font-black tracking-wide', store.vehicleAuto.wheel_master_switch ? 'text-car-text' : 'text-car-sub']">
-          {{ store.vehicleAuto.wheel_master_switch ? '按键接管已启用' : '原车默认未接管' }}
-        </span>
+      <!-- 右侧：车规模式切换双胶囊（标准卡片 vs 自定义列表） -->
+      <div class="flex items-center space-x-2 shrink-0 bg-car-card p-1.5 rounded-2xl border-2 border-car-border">
+        <button
+          @click="setMappingMode('preset')"
+          :class="[
+            'px-5 py-2.5 rounded-xl font-black text-[15.5px] transition-all cursor-pointer',
+            mappingMode === 'preset'
+              ? 'bg-car-item text-car-accent border-2 border-car-accent shadow-sm'
+              : 'text-car-sub hover:text-car-text border-2 border-transparent'
+          ]"
+        >
+          标准卡片模式
+        </button>
+        <button
+          @click="setMappingMode('custom_list')"
+          :class="[
+            'px-5 py-2.5 rounded-xl font-black text-[15.5px] transition-all cursor-pointer',
+            mappingMode === 'custom_list'
+              ? 'bg-car-item text-car-accent border-2 border-car-accent shadow-sm'
+              : 'text-car-sub hover:text-car-text border-2 border-transparent'
+          ]"
+        >
+          自定义列表模式
+        </button>
       </div>
     </div>
 
@@ -36,10 +59,11 @@
 
     <!-- Tab 1: 按键独立映射 (v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'keys'" class="flex flex-col space-y-4 pb-28">
-    <!-- 各按键映射配置 (右方向盘多媒体 SX-0017 物理按键逐项配置) -->
-    <div class="flex flex-col space-y-4">
-      <!-- 双列规整网格：一排两卡，工整对齐，共三排 -->
-      <div class="grid grid-cols-2 gap-4">
+      
+      <!-- 模式 A：标准卡片模式 (六大按键网格) -->
+      <div v-if="mappingMode === 'preset'" class="flex flex-col space-y-4">
+        <!-- 双列规整网格：一排两卡，工整对齐，共三排 -->
+        <div class="grid grid-cols-2 gap-4">
         <!-- ① 右方向盘主页/返回键 -->
         <WheelGestureCard
           class="!mb-0"
@@ -141,6 +165,93 @@
             开始方控响应与冲突体检
           </button>
         </FeatureCard>
+      </div>
+    </div>
+
+    <!-- 模式 B：自定义按键列表模式 (多车型动态学习与独立映射) -->
+    <div v-else-if="mappingMode === 'custom_list'" class="flex flex-col space-y-4">
+      <!-- 顶部操作条：大白话说明 + 新增学习按钮 -->
+      <div class="flex items-center justify-between p-4 rounded-2xl bg-car-card border-2 border-car-border shadow-md">
+        <div class="flex flex-col space-y-1">
+          <div class="flex items-center space-x-2">
+            <span class="text-[18px] font-black text-car-text">动态按键映射表</span>
+            <span class="text-[13px] font-black px-2.5 py-0.5 rounded-full bg-car-accent/15 text-car-accent border border-car-accent/30">
+              已捕获 {{ customMappingList.length }} 个按键
+            </span>
+          </div>
+          <div class="text-[13.5px] text-car-sub font-bold">
+            按下方向盘上的实体按键自动学习，单行直观改绑；0ms 极速响应，各车型独立生效。
+          </div>
+        </div>
+
+        <button
+          @click="openAddKeyLearning"
+          class="px-5 py-3 rounded-xl bg-car-item border-2 border-car-accent text-car-accent hover:border-car-border-light font-black text-[16px] cursor-pointer shadow-md active:scale-[0.98] transition-all shrink-0 flex items-center space-x-2"
+        >
+          <span>＋ 按键学习添加</span>
+        </button>
+      </div>
+
+      <!-- 空状态卡片：暂无按键引导 -->
+      <div
+        v-if="customMappingList.length === 0"
+        class="flex flex-col items-center justify-center p-12 rounded-3xl bg-car-card border-2 border-dashed border-car-border text-center space-y-3"
+      >
+        <span class="text-[40px] opacity-40">🎛️</span>
+        <span class="text-[18px] font-black text-car-text">暂无捕获的按键映射</span>
+        <span class="text-[14px] text-car-sub font-bold max-w-[420px]">
+          点击右上角「按键学习添加」，然后按下方向盘右侧多媒体区任意按键，即可将其添加到本列表中自由分配动作。
+        </span>
+        <button
+          @click="openAddKeyLearning"
+          class="mt-2 px-6 py-3 rounded-xl bg-car-accent text-white font-black text-[16px] cursor-pointer shadow-lg active:scale-[0.98] transition-all"
+        >
+          立即捕获第一个按键
+        </button>
+      </div>
+
+      <!-- 宽行列表结构：消灭网格嵌套与卡片重叠 -->
+      <div v-else class="flex flex-col space-y-3">
+        <div
+          v-for="(item, idx) in customMappingList"
+          :key="item.code"
+          class="p-4 rounded-2xl bg-car-card border-2 border-car-border shadow-md flex items-center justify-between space-x-4 transition-all"
+        >
+          <!-- 左侧：按键键码徽章 + 按键名称 -->
+          <div class="flex items-center space-x-3.5 min-w-[200px] shrink-0">
+            <span class="px-3 py-1.5 rounded-xl bg-car-accent/15 text-car-accent border border-car-accent/30 font-black text-[15px] tracking-wider shrink-0">
+              # {{ item.code }}
+            </span>
+            <div class="flex flex-col">
+              <span class="text-[17.5px] font-black text-car-text leading-tight">
+                {{ item.name || '新车型专属按键' }}
+              </span>
+              <span class="text-[12.5px] font-bold text-car-sub mt-0.5">
+                底盘硬件物理键
+              </span>
+            </div>
+          </div>
+
+          <!-- 中间：车规双列磁贴动作下拉框 -->
+          <div class="flex-1 max-w-[360px]">
+            <CustomKeyActionSelect
+              :model-value="item.action || 'default'"
+              :custom-app-name="item.custom_name || ''"
+              :row-id="String(item.code)"
+              @change="payload => updateCustomKeyAction(idx, payload.action, payload.customName)"
+            />
+          </div>
+
+          <!-- 右侧：移除操作 -->
+          <div class="shrink-0 pl-2">
+            <button
+              @click="removeCustomKey(idx)"
+              class="px-4 py-2.5 rounded-xl border-2 border-red-500/30 text-red-400 hover:bg-red-500/10 font-black text-[14.5px] cursor-pointer transition-all active:scale-[0.97]"
+            >
+              移除
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -345,6 +456,7 @@ import BaseButton from '../components/BaseButton.vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
 import ActionSelect from '../components/ActionSelect.vue';
+import CustomKeyActionSelect from '../components/CustomKeyActionSelect.vue';
 import WheelGestureCard from '../components/WheelGestureCard.vue';
 
 // 缤越 COOL 专车原厂 SX-0017 多媒体按键图解（深色车规，柔和不刺眼）
@@ -363,6 +475,81 @@ const props = defineProps({
 });
 
 const activeTab = ref(props.initialTab || 'keys');
+
+const mappingMode = computed(() => store.vehicleAuto.wheel_mapping_mode || 'preset');
+
+function setMappingMode(mode) {
+  store.vehicleAuto.wheel_mapping_mode = mode;
+  bridge.call('setVehicleAutomationSetting', 'wheel_mapping_mode', mode);
+  showToast(mode === 'custom_list' ? '已切换至「自定义列表模式」' : '已切换至「标准卡片模式」');
+}
+
+// 模式 B：自定义按键列表
+const customMappingList = computed(() => {
+  try {
+    const raw = store.vehicleAuto.wheel_custom_mapping_list;
+    if (!raw) return [];
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+});
+
+function saveCustomMappingList(list) {
+  const jsonStr = JSON.stringify(list);
+  store.vehicleAuto.wheel_custom_mapping_list = jsonStr;
+  bridge.call('setVehicleAutomationSetting', 'wheel_custom_mapping_list', jsonStr);
+}
+
+function updateCustomKeyAction(index, action, customName) {
+  const list = [...customMappingList.value];
+  if (list[index]) {
+    list[index].action = action;
+    if (customName !== undefined) {
+      list[index].custom_name = customName;
+    }
+    saveCustomMappingList(list);
+  }
+}
+
+function removeCustomKey(index) {
+  const list = [...customMappingList.value];
+  const item = list[index];
+  openModal('confirm', {
+    title: '删除按键映射',
+    desc: `是否确认移除「${item.name || '按键'}」的自定义映射？`,
+    isDanger: true,
+    confirmText: '确认删除',
+    onConfirm: () => {
+      list.splice(index, 1);
+      saveCustomMappingList(list);
+      showToast('已移除该按键映射');
+    }
+  });
+}
+
+function openAddKeyLearning() {
+  openModal('wheelKeyLearning', {
+    ts: Date.now(),
+    onCaptured: (code, defaultName) => {
+      const list = [...customMappingList.value];
+      const exists = list.some(item => item.code === code);
+      if (exists) {
+        showToast(`按键 [${defaultName}] 已在列表中，无需重复添加`);
+        return;
+      }
+      list.push({
+        code,
+        name: defaultName,
+        action: 'default',
+        custom_name: ''
+      });
+      saveCustomMappingList(list);
+      showToast(`已成功添加「${defaultName}」`);
+    }
+  });
+}
 
 // 车型档位差异化文案（trim_name 由车机端自动探测推送）
 const trimName = computed(() => store.deviceInfo.trim_name || '');

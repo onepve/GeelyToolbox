@@ -405,6 +405,13 @@ public class SteeringWheelKeyManager {
             return;
         }
 
+        // ═══ 模式 B：自定义列表模式路由 (与模式 A 物理隔离) ═══
+        String mappingMode = prefs.getString("wheel_mapping_mode", "preset");
+        if ("custom_list".equals(mappingMode)) {
+            handleCustomListTrigger(keyCode);
+            return;
+        }
+
         final String singleAction = getGestureAction(keyCode, GESTURE_SINGLE);
         if (ACTION_DEFAULT.equals(singleAction)) {
             // 控制台独立接管模式下，原厂 MediaKeyReceiver 已由 ADB 停用以防多源冲突
@@ -427,6 +434,37 @@ public class SteeringWheelKeyManager {
         executeAction(singleAction);
         if (keyCode == KEY_WMODE) {
             // MODE 键接管铁律：无论绑定什么自定义功能（360/高德/App/切歌等），执行后均严格执行防唤醒多媒体门禁
+            suppressOriginalMultimedia();
+        }
+    }
+
+    /**
+     * 模式 B：自定义列表分发逻辑 (独立存储、动态查表、0ms 响应)
+     */
+    private void handleCustomListTrigger(final int keyCode) {
+        String jsonStr = prefs.getString("wheel_custom_mapping_list", "[]");
+        String targetAction = null;
+        try {
+            org.json.JSONArray arr = new org.json.JSONArray(jsonStr);
+            for (int i = 0; i < arr.length(); i++) {
+                org.json.JSONObject item = arr.getJSONObject(i);
+                if (item.optInt("code", 0) == keyCode) {
+                    targetAction = item.optString("action", ACTION_DEFAULT);
+                    break;
+                }
+            }
+        } catch (Throwable t) {
+            AppLogger.w("方控自定义列表", "解析自定义映射表异常: " + t.getMessage());
+        }
+
+        if (targetAction == null || targetAction.isEmpty() || ACTION_DEFAULT.equals(targetAction)) {
+            AppLogger.i("方控按键", "自定义列表模式放行按键: " + getKeyName(keyCode) + " (键码 " + keyCode + ")");
+            return;
+        }
+
+        AppLogger.i("方控按键", "自定义列表触发: " + getKeyName(keyCode) + " (键码 " + keyCode + ") -> " + targetAction);
+        executeAction(targetAction);
+        if (keyCode == KEY_WMODE) {
             suppressOriginalMultimedia();
         }
     }

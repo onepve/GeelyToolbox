@@ -303,6 +303,13 @@ function selectApp(app) {
     closeModal('appSelect');
     return;
   }
+  // 模式 B：自定义按键列表专用选择回调
+  if (store.modals.appSelect && typeof store.modals.appSelect.onSelect === 'function') {
+    store.modals.appSelect.onSelect(app.pkg, app.name);
+    showToast(`按键已映射为打开: ${app.name}`);
+    closeModal('appSelect');
+    return;
+  }
   const act = `app:${app.pkg}`;
   // keyTarget 为 <键>_<手势> 全量 id（如 voice_double）；必须写带手势后缀的完整键，
   // 否则双击/长按配置会丢失回落 default（表现为只有单击有效）——与 ActionSelect 下拉
