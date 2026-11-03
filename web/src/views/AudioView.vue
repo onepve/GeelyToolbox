@@ -13,6 +13,7 @@
               <span class="px-2 py-0.5 text-[11.5px] font-black rounded-full bg-car-card border border-car-border text-car-sub shrink-0">
                 按顺序自动播放
               </span>
+              <HelpDot size="sm" @click.stop="showAudioHelp" />
             </div>
           </div>
 
@@ -516,6 +517,16 @@ function afterFirstPaint(fn) {
 // 轮询句柄必须持有：本页由 App.vue 的 v-if 销毁重建，若不清理，
 // 每进一次「语音」页就永久多留一条 4 秒同步跨端轮询（越用越卡的实测铁证）。
 let connectivityTimer = null;
+
+function showAudioHelp() {
+  openModal('confirm', {
+    title: '【功能指南】车载音源优先级与智能调度',
+    desc: '1. 首选音源锁定：支持将 QQ音乐、网易云音乐、酷狗等任意音乐软件指定为默认首选播放器。\\n\\n2. 智能顺序调度：当车速达标或方控切歌时，助手会按照您设定的优先级顺序依次尝试唤醒播放。\\n\\n3. 独立通道互不干扰：车门迎宾播报与车载语音采用独立通道，音源切换互不冲突。',
+    tip: '点击右上角「调整优先级」可自由拖拽调整各音乐软件的先后顺序。',
+    showCancel: false,
+    confirmText: '我知道了'
+  });
+}
 
 onMounted(() => {
   // 2. 异步分片调度：延后 30ms 执行，彻底不阻断组件首帧挂载与绘制
