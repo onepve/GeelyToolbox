@@ -127,7 +127,7 @@ def archive_and_rotate_old(s3, bucket, prefix, app_filename, app_id, old_version
     except Exception as e:
         print(f"  [WARN] 扫描 OLD 目录轮换失败: {e}")
 
-def update_store_app(new_apk_path, target_app_id=None, custom_filename=None, custom_name=None, custom_desc=None):
+def update_store_app(new_apk_path, target_app_id=None, custom_filename=None, custom_name=None, custom_desc=None, custom_category=None, custom_badge=None):
     if not os.path.isfile(new_apk_path):
         print(f"[ERROR] APK 文件不存在: {new_apk_path}")
         return False
@@ -191,7 +191,7 @@ def update_store_app(new_apk_path, target_app_id=None, custom_filename=None, cus
             if a.get('id') == target_app_id:
                 app_entry = a
                 break
-    if not app_entry and pkg_name:
+    elif pkg_name:
         for a in apps_data.get('apps', []):
             if a.get('package_name') == pkg_name:
                 app_entry = a
@@ -221,6 +221,10 @@ def update_store_app(new_apk_path, target_app_id=None, custom_filename=None, cus
             app_entry['name'] = custom_name
         if custom_desc:
             app_entry['description'] = custom_desc
+        if custom_category:
+            app_entry['category'] = custom_category
+        if custom_badge:
+            app_entry['badge'] = custom_badge
     else:
         app_filename = custom_filename or os.path.basename(new_apk_path)
         new_id = target_app_id or (pkg_name.split('.')[-1] if pkg_name else "custom_app")
@@ -237,8 +241,8 @@ def update_store_app(new_apk_path, target_app_id=None, custom_filename=None, cus
             "bytes": file_bytes,
             "md5": md5_str,
             "sha256": sha256_str,
-            "badge": "官方上架",
-            "category": "tool",
+            "badge": custom_badge or "官方上架",
+            "category": custom_category or "tool",
             "architecture": "universal",
             "need_steering_helper": False,
             "need_freeze_original": False,
@@ -289,6 +293,8 @@ if __name__ == '__main__':
     parser.add_argument("--filename", help="线上固定的文件名 (可选)")
     parser.add_argument("--name", help="应用显示名称 (可选)")
     parser.add_argument("--desc", help="应用简介 (可选)")
+    parser.add_argument("--category", help="应用分类 (可选，如 archive_test, music, tool)")
+    parser.add_argument("--badge", help="应用角标 (可选，如 归档测试, 官方原版)")
     
     args = parser.parse_args()
     update_store_app(
@@ -296,5 +302,7 @@ if __name__ == '__main__':
         target_app_id=args.id,
         custom_filename=args.filename,
         custom_name=args.name,
-        custom_desc=args.desc
+        custom_desc=args.desc,
+        custom_category=args.category,
+        custom_badge=args.badge
     )

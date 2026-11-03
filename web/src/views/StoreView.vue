@@ -98,7 +98,7 @@
         <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <span class="text-[12.5px] px-2 py-0.5 rounded bg-car-card border border-car-border text-car-sub font-black">
-              {{ app.category || 'tool' }}
+              {{ formatCategoryName(app.category) }}
             </span>
             <span v-if="app.version" class="text-[12.5px] text-car-sub font-bold">
               v{{ app.version }}
@@ -151,7 +151,8 @@ const categories = [
   { id: 'all', name: '全部' },
   { id: 'navigation', name: '车载导航' },
   { id: 'music', name: '音乐应用' },
-  { id: 'tool', name: '车机工具' }
+  { id: 'tool', name: '车机工具' },
+  { id: 'archive_test', name: '归档测试' }
 ];
 
 const allApps = computed(() => {
@@ -162,6 +163,9 @@ const filteredApps = computed(() => {
   if (currentCategory.value === 'all') return allApps.value;
   if (currentCategory.value === 'tool') {
     return allApps.value.filter(a => a.category === 'tool' || a.category === 'tools' || a.category === 'system');
+  }
+  if (currentCategory.value === 'archive_test') {
+    return allApps.value.filter(a => a.category === 'archive_test');
   }
   return allApps.value.filter(a => a.category === currentCategory.value);
 });
@@ -176,6 +180,18 @@ onMounted(() => {
 function getBriefDesc(app) {
   const raw = app?.desc || app?.description || '';
   return raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function formatCategoryName(cat) {
+  const map = {
+    navigation: '车载导航',
+    music: '音乐应用',
+    tool: '车机工具',
+    tools: '车机工具',
+    system: '系统应用',
+    archive_test: '归档测试'
+  };
+  return map[cat] || cat || '车机工具';
 }
 
 function refreshApps() {
