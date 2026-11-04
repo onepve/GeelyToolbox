@@ -13,7 +13,7 @@
               <span class="px-2 py-0.5 text-[11.5px] font-black rounded-full bg-car-card border border-car-border text-car-sub shrink-0">
                 按顺序自动播放
               </span>
-              <HelpDot size="sm" @click.stop="showAudioHelp" />
+              <HelpDot size="sm" @click="showAudioHelp" />
             </div>
           </div>
 

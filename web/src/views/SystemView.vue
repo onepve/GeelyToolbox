@@ -384,7 +384,7 @@
           <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
             <div class="flex items-center space-x-2.5">
               <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">运行与守护日志</span>
-              <HelpDot @click.stop="openModal('confirm', {
+              <HelpDot @click="openModal('confirm', {
                 title: '【功能指南】运行与守护日志',
                 desc: '1. 运行记录：\n自动记录车门、挡位、方向盘按键等状态，遇到功能异常时可一键导出给作者排查。\n\n2. 隐私安全保护：\n日志导出时会自动抹除车牌、手机号、行车轨迹等敏感信息，充分保护车主隐私。\n\n3. 不占存储：\n平时仅保存在临时运行内存中，不占车机存储空间，重启后自动释放。',
                 tip: '日常无需理会，只有在排查问题时按需导出即可。',
@@ -427,7 +427,7 @@
           <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
             <div class="flex items-center space-x-2.5">
               <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">车机 ADB 终端</span>
-              <HelpDot @click.stop="showAdbHelp" title="查看 ADB 总开关与失效功能说明" />
+              <HelpDot @click="showAdbHelp" title="查看 ADB 总开关与失效功能说明" />
             </div>
             <div class="flex items-center space-x-2">
               <StatusDot size="sm" :color="store.deviceInfo.adb_master_switch !== false ? 'ok' : 'off'" :glow="store.deviceInfo.adb_master_switch !== false" :glow-px="store.deviceInfo.adb_master_switch !== false ? 6 : 0" />
@@ -473,7 +473,7 @@
           <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
             <div class="flex items-center space-x-2.5">
               <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-rose-500 transition-colors">整车重新启动</span>
-              <HelpDot @click.stop="openModal('confirm', {
+              <HelpDot @click="openModal('confirm', {
                 title: '【功能指南】整车重新启动',
                 desc: '1. 彻底重启车机：\n像重新打火一样彻底重启中控屏幕和车机系统，解决系统卡顿或刚改的配置没生效的问题。\n\n2. 安全提醒：\n行车过程中严禁操作！请在车辆安全停稳、挂入 P 挡后再点击重启。\n\n3. 重启耗时：\n整个过程大约 25~35 秒，期间屏幕暂时黑屏属于正常现象，请耐心等待重新点亮。',
                 tip: '车辆停稳挂 P 挡后再点重启，期间黑屏请耐心等待。',
@@ -515,7 +515,7 @@
           <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
             <div class="flex items-center space-x-2.5">
               <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">开机自启静默守护</span>
-              <HelpDot @click.stop="openModal('confirm', {
+              <HelpDot @click="openModal('confirm', {
                 title: '【功能指南】工具箱开机自启动与后台守护',
                 desc: '1. 开机后台自启：\n车辆打火通电后，工具箱自动在后台安静启动，让各项自动化联动功能上车就能直接用。\n\n2. 关闭说明：\n关闭后车辆通电将不再自启工具箱，完全不占用后台资源；仅在您桌面主动打开时运行。\n\n3. 推荐常开：\n默认保持常开，确保上车后一切功能运转顺畅。',
                 tip: '这是自动化功能的基础开关，可按需开启或关闭。',

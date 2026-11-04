@@ -17,7 +17,7 @@
         <HelpDot
           v-if="helpText"
           :size="helpSize"
-          @click.stop="$emit('help')"
+          @click="$emit('help')"
         />
       </div>
     </div>

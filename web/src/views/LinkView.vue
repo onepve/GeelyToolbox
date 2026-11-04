@@ -86,7 +86,7 @@
           <div class="flex items-center space-x-2.5">
             <span class="text-[20px] font-black text-car-text tracking-wide">车速达标智能启播音乐</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">起步自启</span>
-            <HelpDot size="sm" @click.stop="showHelp('speed_music')" />
+            <HelpDot size="sm" @click="showHelp('speed_music')" />
           </div>
           <!-- 右上角：轻量状态指示灯 + 文字（消灭独立大按钮） -->
           <div class="flex items-center space-x-2 shrink-0">
@@ -186,7 +186,7 @@
           <div class="flex items-center space-x-2.5">
             <span class="text-[20px] font-black text-car-text tracking-wide">车速达标自定义动作</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">自定动作</span>
-            <HelpDot size="sm" @click.stop="showHelp('speed_custom')" />
+            <HelpDot size="sm" @click="showHelp('speed_custom')" />
           </div>
           <!-- 右上角：轻量状态指示灯 + 文字（消灭独立大按钮） -->
           <div class="flex items-center space-x-2 shrink-0">
@@ -305,7 +305,7 @@
           <div class="flex items-center space-x-2.5">
             <span class="text-[20px] font-black text-car-text tracking-wide">车载 Wi-Fi</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">无线网络</span>
-            <HelpDot size="sm" @click.stop="showHelp('network_policy')" />
+            <HelpDot size="sm" @click="showHelp('network_policy')" />
           </div>
           <button
             @click.stop="openSettings('wifi')"
@@ -372,7 +372,7 @@
           <div class="flex items-center space-x-2.5">
             <span class="text-[20px] font-black text-car-text tracking-wide">车机热点</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">网络共享</span>
-            <HelpDot size="sm" @click.stop="showHelp('network_policy')" />
+            <HelpDot size="sm" @click="showHelp('network_policy')" />
           </div>
           <button
             @click.stop="openSettings('hotspot')"
@@ -429,7 +429,7 @@
           <div class="flex items-center space-x-2.5">
             <span class="text-[20px] font-black text-car-text tracking-wide">车载蓝牙</span>
             <span class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0">车载外设</span>
-            <HelpDot size="sm" @click.stop="showHelp('network_policy')" />
+            <HelpDot size="sm" @click="showHelp('network_policy')" />
           </div>
           <button
             @click.stop="openSettings('bluetooth')"
