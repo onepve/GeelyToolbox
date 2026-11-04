@@ -445,11 +445,10 @@
           <span class="text-[13px] text-car-sub font-bold">
             点卡片切换总开关
           </span>
-          <button 
+          <button class="h-[52px] px-5 rounded-xl border-2 font-black text-[14px] transition-all shadow-sm flex items-center justify-center whitespace-nowrap select-none"
             @click.stop="openDeepTools"
-            :disabled="store.deviceInfo.adb_master_switch === false || adbWarmupCountdown > 0"
+            :disabled="(store.deviceInfo.adb_master_switch === false || adbWarmupCountdown > 0)"
             :class="[
-              'h-[52px] px-5 rounded-xl border-2 font-black text-[14px] transition-all shadow-sm flex items-center justify-center whitespace-nowrap select-none',
               (store.deviceInfo.adb_master_switch === false || adbWarmupCountdown > 0)
                 ? 'border-car-border/40 bg-car-item/50 text-car-sub/40 cursor-not-allowed opacity-50'
                 : 'border-car-border bg-car-card text-car-text hover:border-car-accent cursor-pointer active:scale-95'
