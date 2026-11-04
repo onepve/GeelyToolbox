@@ -1482,11 +1482,44 @@ if _g29:
 else:
     print("[PASS] 车速自启单次行程硬锁、防倒车误触、主线程防死锁与方控音源仲裁全面刚性锁死，严禁篡改！")
 
+# ----------------------------------------------------------------------
+# 30. Checking Vue Custom Component Event Modifier Safety Gate (组件自定义事件严禁非法 .stop/.prevent 门禁)
+# ----------------------------------------------------------------------
+log_step("30. Checking Vue Custom Component Event Modifier Safety Gate (组件自定义事件严禁非法 .stop/.prevent 门禁)")
+_g30 = []
+_vue_component_tag_pat = re.compile(r'<([A-Z][A-Za-z0-9]*)\b([^>]*)>', re.S)
+_illegal_modifier_pat = re.compile(r'@[a-zA-Z0-9_-]+\.(?:stop|prevent)\b')
+
+for root, _, files in os.walk(WEB_SRC_DIR):
+    for fn in files:
+        if fn.endswith(".vue"):
+            fp = os.path.join(root, fn)
+            with open(fp, "r", encoding="utf-8") as f:
+                vue_content = f.read()
+            for tag_m in _vue_component_tag_pat.finditer(vue_content):
+                comp_name = tag_m.group(1)
+                attrs_str = tag_m.group(2)
+                for mod_m in _illegal_modifier_pat.finditer(attrs_str):
+                    line_no = vue_content[:tag_m.start()].count('\n') + 1
+                    matched_attr = mod_m.group(0)
+                    _g30.append(
+                        f"{os.path.relpath(fp, ROOT_DIR)}:{line_no} "
+                        f"组件 <{comp_name}> 监听严禁携带 DOM 专有修饰符 `{matched_attr}`！"
+                        f"（组件 emit 未传 Event 对象时会触发 TypeError 导致点击无反应，请在组件内原生 DOM 元素上使用 .stop）"
+                    )
+
+if _g30:
+    for _v30 in _g30:
+        print(f"  [FAIL] {_v30}")
+    passed = False
+else:
+    print("[PASS] 全站 Vue 自定义组件事件修饰符 100% 合规，杜绝 .stop 导致 TypeError 吞掉帮助弹窗！")
+
 # Final Summary Verdict
 # ----------------------------------------------------------------------
 log_step("CI 30-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 29 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering closed, framework & background architecture frozen, speed autoplay trip-lock & steering arbitration rigidity locked)")
+    print("[SUCCESS] All 30 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering closed, framework & background architecture frozen, speed autoplay trip-lock & steering arbitration rigidity locked, zero component event modifier runtime traps)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")
