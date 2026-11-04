@@ -1238,7 +1238,18 @@ public class SystemUtils {
         ", streamType=3",
 
         // 10. WiFi 内核驱动底层 Netlink 等待心跳 (不影响上层 WifiManager 开关与状态监测)
-        "nl80211: wait for nl cmd"
+        "nl80211: wait for nl cmd",
+
+        // 11. 预装第三方应用与桌面高频轮询噪音 (输入法、导航心跳、桌面卡片打卡)
+        "lyre_logger", "iov_ime_sl", "getStackStackInfosByDisplayId",
+        "PermissionUtils", "EcarxAutoFactorGps", "XCNaviService",
+        "CarMediaWidget", "BD>SigCommManager", "[AutoMapSDK]MapSDKImpl",
+        "Calling a method in the system process without a qualified user",
+        "mGpsObserverLocation", "FlowUIHandler] >>>>> Dispatching to Handler",
+
+        // 12. 车机触控滑动事件与系统底层冗余日志
+        "BDSMessageConversionUtility", "processPointerEvent handled = true",
+        "Found stale backup journal", "Ignoring duplicate uses-permissions"
     };
 
     // 防误杀白名单 (包含以下车身/业务核心关键字绝对不拦截)
