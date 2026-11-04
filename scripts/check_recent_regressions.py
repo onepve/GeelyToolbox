@@ -58,9 +58,9 @@ CONTRACTS = [
  ('idle-ui-adjust', 'web/src/views/FloatingView.vue', 'function adjustSeconds(delta)', [r'ssSeconds\.value\s*\+\s*delta', r'saveSeconds\(\)'], []),
  ('theme-install-flag', 'web/src/components/modals/AppDetailModal.vue', 'const isMapApp = computed',
   [r'if\s*\(typeof app.value.need_theme_install === .boolean.\)\s*\{\s*return app.value.need_theme_install;'], [r'category\s*===\s*.navigation.']),
- # 卡主题按钮必须同时受「专业模式」门禁约束 (历史缺陷: 仅判 isMapApp 导致未开专业模式也露出按钮)
- ('rabbit-theme-entry-gate', 'web/src/components/modals/AppDetailModal.vue', 'function openRabbitGuide',
-  [r'store\.settings\.expert_rabbit\s*!==\s*true'], []),
+ # 卡兔子主题高阶通道：必须收纳于【整车应用管理】独立卡片并通过三重安全确认，严禁在商城下载弹窗开设旁路入口
+ ('rabbit-theme-entry-isolated', 'web/src/views/InstallView.vue', 'function openRabbitGuideModal',
+  [r'store\.modals\.rabbitInstall\s*=\s*true'], []),
  ('appselect-gesture-channel', 'web/src/components/modals/AppSelectModal.vue', 'function selectApp(app)',
   [r"setWheelGestureAction", r"lastIndexOf\('_'\)"], [r'setWheelControlStringSetting[^;]*wheel_action_']),
  ('pkg-query-no-shell', JAVA+'utils/SystemUtils.java', 'public static int getAppDetailedState',
@@ -148,10 +148,10 @@ def evaluate(files):
     retired_safety_guard_pattern = r'SafetySensorStateMachine|checkSteerAngleOnPark|checkEpbNotEngagedOnPDoorOpen|voice_enable_steer_angle_guard|voice_steer_angle_threshold_deg|voice_enable_epb_guard|steer_angle_guard\.mp3|epb_alarm\.mp3|SafetyGuardVoiceSection'
     if re.search(retired_safety_guard_pattern, all_java) or re.search(retired_safety_guard_pattern, all_web):
         failures.append('retired-safety-guard-card')
-    # 卡兔子主题按钮可见性：仅需受「专家模式」约束即可，不再限制应用类型（用户知晓风险，自主选包）
+    # 商城下载弹窗严禁泄露卡兔子主题通道入口（商城仅负责纯粹下载，卡兔子入口严格收敛于 InstallView 独立卡片与三重确认）
     appdetail = files.get('web/src/components/modals/AppDetailModal.vue', '')
-    if not re.search(r'const canUseRabbitTheme = computed\(\(\) => store\.settings\.expert_rabbit === true\)', appdetail):
-        failures.append('rabbit-theme-computed-gate')
+    if re.search(r'canUseRabbitTheme|openRabbitGuide|卡兔子主题安装向导|注入兔子时钟', appdetail):
+        failures.append('rabbit-theme-no-store-bypass')
     logger = clean(files.get(JAVA+'utils/AppLogger.java', ''))
     if not re.search(r'if\s*\(lastLogTime\.size\(\) > 500\)\s*\{\s*lastLogTime\.clear\(\);', logger):
         failures.append('log-dedup-bounded')

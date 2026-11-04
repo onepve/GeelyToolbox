@@ -61,19 +61,8 @@
 
     <!-- 底部 66px 巨型车规大触控操作栏 (操作按钮全覆盖) -->
     <template #footer>
-      <div class="flex items-center justify-between w-full">
-        <!-- 专家模式卡主题通道按键 (双重限制：必须开启专业模式 + 仅限高德地图底包) -->
-        <button
-          v-if="canUseRabbitTheme"
-          @click="openRabbitGuide"
-          class="h-[60px] px-6 bg-amber-500/15 border-2 border-amber-500/50 rounded-2xl text-amber-300 font-black text-[17.5px] cursor-pointer hover:bg-amber-500/25 ring-2 ring-amber-500/20 shadow-md flex items-center"
-        >
-          
-          <span>卡兔子主题安装向导</span>
-        </button>
-        <div v-else></div>
-
-        <!-- 右侧核心操作按钮流 -->
+      <div class="flex items-center justify-end w-full">
+        <!-- 右侧核心操作按钮流 (商城专职下载与安装，卡兔子高阶玩法统一在应用管理卡片闭环) -->
         <div class="flex items-center space-x-3">
           <!-- 1. 正在下载中：提供大尺寸暂停与取消按钮 -->
           <template v-if="currentTask?.status === 'downloading'">
@@ -107,15 +96,8 @@
             </button>
           </template>
 
-          <!-- 3. 下载完成：提供卡主题注入/直接覆盖安装与重新下载按钮 -->
+          <!-- 3. 下载完成：提供直接覆盖安装与重新下载按钮 -->
           <template v-else-if="currentTask?.status === 'completed'">
-            <button 
-              v-if="canUseRabbitTheme"
-              @click="openRabbitGuide"
-              class="min-h-[66px] px-8 bg-amber-500/20 border-2 border-amber-500 text-amber-300 rounded-2xl font-black text-[19px] cursor-pointer hover:bg-amber-500/30 shadow-lg ring-2 ring-amber-500/20 transition-all flex items-center"
-            >
-               注入兔子时钟 (卡兔子主题安装)
-            </button>
             <button 
               @click="handleInstallDownloaded"
               :class="[
@@ -182,9 +164,6 @@ const isMapApp = computed(() => {
   return pkg.includes('autonavi') || filename.startsWith('automap') || name.includes('高德') || name.includes('地图');
 });
 
-// 卡兔子主题通道：对所有应用开放（用户自主选包，自知风险）
-const canUseRabbitTheme = computed(() => store.settings.expert_rabbit === true);
-
 // 地图类应用判定（与云端 category=navigation 对齐）：用于区分「直装版/卡主题版」说明框
 const isMapCategory = computed(() => {
   if (!app.value) return false;
@@ -234,16 +213,5 @@ function handleInstallDownloaded() {
   const filename = currentTask.value?.savedFileName || app.value.filename;
   bridge.call('installDownloadedApk', filename);
   showToast(`正在调起系统安装: ${filename}`);
-}
-
-function openRabbitGuide() {
-  if (!app.value) return;
-  if (store.settings.expert_rabbit !== true) {
-    showToast('请先在设置中开启专家模式，再使用卡兔子主题通道', 'warn');
-    return;
-  }
-  const currentApp = app.value;
-  closeModal('appDetail');
-  store.modals.rabbitInstall = currentApp;
 }
 </script>

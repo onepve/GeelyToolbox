@@ -35,8 +35,8 @@ results.append({'id':'retired-safety-guard-card/java','caught':'retired-safety-g
 mutated=dict(files);mutated['web/src/components/SafetyGuardVoiceSection.vue']='<template><div>voice_enable_steer_angle_guard</div></template>'
 results.append({'id':'retired-safety-guard-card/web','caught':'retired-safety-guard-card' in evaluate(mutated)})
 # 卡兔子主题按钮：仅需受「专家模式」约束，不再限制应用类型（用户知晓风险，自主选包）
-mutated=dict(files);mutated['web/src/components/modals/AppDetailModal.vue']=files['web/src/components/modals/AppDetailModal.vue'].replace('const canUseRabbitTheme = computed(() => store.settings.expert_rabbit === true)','const canUseRabbitTheme = computed(() => true)')
-results.append({'id':'rabbit-theme-computed-gate','caught':'rabbit-theme-computed-gate' in evaluate(mutated)})
+mutated=dict(files);mutated['web/src/components/modals/AppDetailModal.vue']=files['web/src/components/modals/AppDetailModal.vue'] + '\nconst canUseRabbitTheme = true;\n'
+results.append({'id':'rabbit-theme-no-store-bypass','caught':'rabbit-theme-no-store-bypass' in evaluate(mutated)})
 # 发布说明：回退成硬编码固定文案必须被拦截
 mutated=dict(files);mutated['scripts/publish_r2.py']=files['scripts/publish_r2.py'].replace('build_changelog(','hardcoded_changelog(')
 results.append({'id':'changelog-from-vcs','caught':'changelog-from-vcs' in evaluate(mutated)})
