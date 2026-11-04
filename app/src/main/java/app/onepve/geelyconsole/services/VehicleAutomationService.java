@@ -1481,10 +1481,15 @@ public class VehicleAutomationService extends Service {
         if (turnLight == 1 || turnLight == 2) {
             // 倒车 R 挡 (4) 时避让原厂倒车影像，不打扰
             if (lastGearPos == 4) return;
+            // 吉利原厂 360 车速限制：车速大于 30km/h 无法唤起全景（会弹超速警告弹窗），直接拦截防打扰
+            if (currentSpeedKmH > 30) {
+                AppLogger.i("车身联动", "【转向灯联动360】车速 " + currentSpeedKmH + " km/h > 30km/h，拦截调起避免超速打扰");
+                return;
+            }
             if (!isTurnSignal360Active) {
                 isTurnSignal360Active = true;
                 open360Camera();
-                AppLogger.i("车身联动", "【转向灯联动360】检测到" + (turnLight == 1 ? "左" : "右") + "转向灯开启，唤起 360 全景影像");
+                AppLogger.i("车身联动", "【转向灯联动360】检测到" + (turnLight == 1 ? "左" : "右") + "转向灯开启 (车速 " + currentSpeedKmH + " km/h <= 30)，唤起 360 全景影像");
             }
         } else if (turnLight == 0) {
             if (isTurnSignal360Active) {
