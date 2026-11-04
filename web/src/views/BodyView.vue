@@ -188,43 +188,79 @@
         />
       </div>
 
-      <!-- 独立分门播报卡片 (4 张卡片) -->
+      <!-- 独立分门播报卡片 (8 张卡片：四门开/关对称成对) -->
       <div v-else class="grid grid-cols-2 gap-4 items-stretch">
         <VoiceItemCard
           title="主驾驶门迎宾"
-          tag="FL 主驾"
+          tag="FL 开门"
           desc="主驾驶门专属登车迎宾与启程提示"
-          :active="!!store.vehicleAuto.voice_enable_door_fl"
+          :active="store.vehicleAuto.voice_enable_door_fl !== false"
           @toggle="toggleSetting('voice_enable_door_fl')"
           @test="testVoice('door_fl')"
-          @custom="openCustomVoice('door_fl', '主驾驶车门', 'door_fl.mp3')"
+          @custom="openCustomVoice('door_fl', '主驾开门播报', 'door_fl.mp3')"
+        />
+        <VoiceItemCard
+          title="主驾驶门关门"
+          tag="FL 关门"
+          desc="主驾驶门就位确认与启程关门确认"
+          :active="store.vehicleAuto.voice_enable_door_fl_close !== false"
+          @toggle="toggleSetting('voice_enable_door_fl_close')"
+          @test="testVoice('door_fl_close')"
+          @custom="openCustomVoice('door_fl_close', '主驾关门播报', 'door_fl_close.mp3')"
         />
         <VoiceItemCard
           title="副驾驶门迎宾"
-          tag="FR 副驾"
-          desc="副驾驶乘客登车温馨提示与关门确认"
-          :active="!!store.vehicleAuto.voice_enable_door_fr"
+          tag="FR 开门"
+          desc="副驾驶乘客登车温馨提示与欢迎"
+          :active="store.vehicleAuto.voice_enable_door_fr !== false"
           @toggle="toggleSetting('voice_enable_door_fr')"
           @test="testVoice('door_fr')"
-          @custom="openCustomVoice('door_fr', '副驾驶车门', 'door_fr.mp3')"
+          @custom="openCustomVoice('door_fr', '副驾开门播报', 'door_fr.mp3')"
         />
         <VoiceItemCard
-          title="左后排车门迎宾"
-          tag="RL 左后"
-          desc="左后排尊贵乘客登车提示与下车防开门碰擦"
-          :active="!!store.vehicleAuto.voice_enable_door_rl"
+          title="副驾驶门关门"
+          tag="FR 关门"
+          desc="副驾驶关门到位确认，告别反复观望"
+          :active="store.vehicleAuto.voice_enable_door_fr_close !== false"
+          @toggle="toggleSetting('voice_enable_door_fr_close')"
+          @test="testVoice('door_fr_close')"
+          @custom="openCustomVoice('door_fr_close', '副驾关门播报', 'door_fr_close.mp3')"
+        />
+        <VoiceItemCard
+          title="左后排车门开门"
+          tag="RL 开门"
+          desc="左后排尊贵乘客登车提示与下车防碰擦"
+          :active="store.vehicleAuto.voice_enable_door_rl !== false"
           @toggle="toggleSetting('voice_enable_door_rl')"
           @test="testVoice('door_rl')"
-          @custom="openCustomVoice('door_rl', '左后排车门', 'door_rl.mp3')"
+          @custom="openCustomVoice('door_rl', '左后开门播报', 'door_rl.mp3')"
         />
         <VoiceItemCard
-          title="右后排车门迎宾"
-          tag="RR 右后"
-          desc="右后排乘客登车提示与下车关门确认"
-          :active="!!store.vehicleAuto.voice_enable_door_rr"
+          title="左后排车门关门"
+          tag="RL 关门"
+          desc="左后门关紧锁止确认，防止虚掩上路"
+          :active="store.vehicleAuto.voice_enable_door_rl_close !== false"
+          @toggle="toggleSetting('voice_enable_door_rl_close')"
+          @test="testVoice('door_rl_close')"
+          @custom="openCustomVoice('door_rl_close', '左后关门播报', 'door_rl_close.mp3')"
+        />
+        <VoiceItemCard
+          title="右后排车门开门"
+          tag="RR 开门"
+          desc="右后排乘客登车提示与防开门碰擦"
+          :active="store.vehicleAuto.voice_enable_door_rr !== false"
           @toggle="toggleSetting('voice_enable_door_rr')"
           @test="testVoice('door_rr')"
-          @custom="openCustomVoice('door_rr', '右后排车门', 'door_rr.mp3')"
+          @custom="openCustomVoice('door_rr', '右后开门播报', 'door_rr.mp3')"
+        />
+        <VoiceItemCard
+          title="右后排车门关门"
+          tag="RR 关门"
+          desc="右后门关紧锁止确认，保障行车安全"
+          :active="store.vehicleAuto.voice_enable_door_rr_close !== false"
+          @toggle="toggleSetting('voice_enable_door_rr_close')"
+          @test="testVoice('door_rr_close')"
+          @custom="openCustomVoice('door_rr_close', '右后关门播报', 'door_rr_close.mp3')"
         />
       </div>
     </div>
@@ -463,7 +499,16 @@ const isDoorVoicePlanActive = computed(() => {
   if (store.vehicleAuto.voice_door_mode_universal === true) {
     return !!(store.vehicleAuto.voice_enable_door_universal_open !== false || store.vehicleAuto.voice_enable_door_universal_close !== false);
   }
-  return !!(store.vehicleAuto.voice_enable_door_fl || store.vehicleAuto.voice_enable_door_fr || store.vehicleAuto.voice_enable_door_rl || store.vehicleAuto.voice_enable_door_rr);
+  return !!(
+    store.vehicleAuto.voice_enable_door_fl !== false ||
+    store.vehicleAuto.voice_enable_door_fl_close !== false ||
+    store.vehicleAuto.voice_enable_door_fr !== false ||
+    store.vehicleAuto.voice_enable_door_fr_close !== false ||
+    store.vehicleAuto.voice_enable_door_rl !== false ||
+    store.vehicleAuto.voice_enable_door_rl_close !== false ||
+    store.vehicleAuto.voice_enable_door_rr !== false ||
+    store.vehicleAuto.voice_enable_door_rr_close !== false
+  );
 });
 
 const isTrunkVoicePlanActive = computed(() => {
@@ -499,15 +544,23 @@ function toggleAllDoorVoice() {
   store.vehicleAuto.voice_enable_door_universal_open = next;
   store.vehicleAuto.voice_enable_door_universal_close = next;
   store.vehicleAuto.voice_enable_door_fl = next;
+  store.vehicleAuto.voice_enable_door_fl_close = next;
   store.vehicleAuto.voice_enable_door_fr = next;
+  store.vehicleAuto.voice_enable_door_fr_close = next;
   store.vehicleAuto.voice_enable_door_rl = next;
+  store.vehicleAuto.voice_enable_door_rl_close = next;
   store.vehicleAuto.voice_enable_door_rr = next;
+  store.vehicleAuto.voice_enable_door_rr_close = next;
   bridge.call('setVehicleAutomationSetting', 'voice_enable_door_universal_open', next);
   bridge.call('setVehicleAutomationSetting', 'voice_enable_door_universal_close', next);
   bridge.call('setVehicleAutomationSetting', 'voice_enable_door_fl', next);
+  bridge.call('setVehicleAutomationSetting', 'voice_enable_door_fl_close', next);
   bridge.call('setVehicleAutomationSetting', 'voice_enable_door_fr', next);
+  bridge.call('setVehicleAutomationSetting', 'voice_enable_door_fr_close', next);
   bridge.call('setVehicleAutomationSetting', 'voice_enable_door_rl', next);
+  bridge.call('setVehicleAutomationSetting', 'voice_enable_door_rl_close', next);
   bridge.call('setVehicleAutomationSetting', 'voice_enable_door_rr', next);
+  bridge.call('setVehicleAutomationSetting', 'voice_enable_door_rr_close', next);
   showToast(next ? '车门播报已开启' : '车门播报已关闭');
 }
 
