@@ -1225,7 +1225,20 @@ public class SystemUtils {
         "concurrent mark sweep GC", "concurrent copying GC", "Explicit concurrent mark sweep",
         
         // 7. 系统压制行与大数据埋点
-        "chatty", "SA.AnalyticsMessages", "SA.TrackTaskManager"
+        "chatty", "SA.AnalyticsMessages", "SA.TrackTaskManager",
+
+        // 8. 联发科 MTK GPS/GNSS 底层芯片原始时钟与测量数据 (非业务导航，高频硬件灌水)
+        "get_gnss_measurement_clock_data", "update_gnss_measurement",
+        "mtk_gps_mnl_trigger_mpe", "mtk_gps_sys_gps_mnl_callback", "mnl2hal_gnss_measurements",
+        "mtk_gps_sys_nmea_output", "main_event_hdlr", "gps_control_thread",
+        "mnld_main_thread", "update_gnss_clock", "send_active_notify",
+        "GpsLocationProvider: Location changed", "NativeGnssStatus",
+
+        // 9. 第三方音乐播放器高频 AudioTrack 缓冲心跳 (20ms/次)
+        ", streamType=3",
+
+        // 10. WiFi 内核驱动底层 Netlink 等待心跳 (不影响上层 WifiManager 开关与状态监测)
+        "nl80211: wait for nl cmd"
     };
 
     // 防误杀白名单 (包含以下车身/业务核心关键字绝对不拦截)
