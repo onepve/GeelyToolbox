@@ -33,7 +33,7 @@
         <button
           @click="setMappingMode('preset')"
           :class="[
-            'px-5 h-[48px] rounded-xl font-black text-[15.5px] transition-all cursor-pointer flex items-center justify-center border-2 select-none outline-none focus:outline-none',
+            'px-5 h-[50px] rounded-xl font-black text-[15.5px] transition-all cursor-pointer flex items-center justify-center border-2 select-none outline-none focus:outline-none',
             mappingMode === 'preset'
               ? 'bg-car-card border-car-accent text-car-accent shadow-md'
               : 'bg-transparent border-transparent text-car-sub hover:text-car-text font-bold'
@@ -44,7 +44,7 @@
         <button
           @click="setMappingMode('custom_list')"
           :class="[
-            'px-5 h-[48px] rounded-xl font-black text-[15.5px] transition-all cursor-pointer flex items-center justify-center border-2 select-none outline-none focus:outline-none',
+            'px-5 h-[50px] rounded-xl font-black text-[15.5px] transition-all cursor-pointer flex items-center justify-center border-2 select-none outline-none focus:outline-none',
             mappingMode === 'custom_list'
               ? 'bg-car-card border-car-accent text-car-accent shadow-md'
               : 'bg-transparent border-transparent text-car-sub hover:text-car-text font-bold'
