@@ -96,14 +96,14 @@ public class Fe6a3Ihu510gPlatform extends BinruiCoolPlatform {
                     if (m.find()) {
                         long val = Long.parseLong(m.group(1), 16);
                         int lowByte = (int) (val & 0xFF);
-                        if (lowByte == 0x10) {
-                            return 5; // P 挡
-                        } else if (lowByte == 0x20) {
-                            return 4; // R 挡
-                        } else if (lowByte == 0x30) {
-                            return 3; // N 挡
+                        if (lowByte == 0x30) {
+                            return 5; // P 挡 (Park)
                         } else if (lowByte == 0x40) {
-                            return 2; // D 挡
+                            return 4; // R 挡 (Reverse)
+                        } else if (lowByte == 0x10) {
+                            return 3; // N 挡 (Neutral)
+                        } else if (lowByte == 0x20) {
+                            return 2; // D 挡 (Drive)
                         }
                     }
                 } catch (Exception ignored) {}

@@ -144,8 +144,8 @@ def test_fe6a3_ihu510g():
         print("     [FAIL] FE6A3_IHU510G 专属挡位解析 resolveGear 缺失！")
         failures += 1
 
-    # 仿真：实车真实 Sensor 跳变事件（0x10=P, 0x40=D, 0x20=R, 0x30=N）能正确识别
-    # 同时静态轮询 return funValue(0x00200230) 必须被驳回吞掉（返回0，绝不引起假N翻转）
+    # 仿真：实车真实 Sensor 跳变事件（0x30=P, 0x10=N, 0x40=R, 0x20=D）能正确识别
+    # 同时静态轮询 return funValue(0x00200230) 必须被驳回吞掉（返回0，绝不引起假翻转）
     p_val = re.compile(r"(?:funcValue|funValue)\((?:0x)?([0-9a-fA-F]+)\)")
 
     def fe6a3_resolve_gear(line, can_gear):
@@ -158,23 +158,26 @@ def test_fe6a3_ihu510g():
                 m = p_val.search(line)
                 if m:
                     low = int(m.group(1), 16) & 0xFF
-                    if low == 0x10: return 5
-                    elif low == 0x20: return 4
-                    elif low == 0x30: return 3
-                    elif low == 0x40: return 2
+                    if low == 0x30: return 5  # P 挡
+                    elif low == 0x40: return 4  # R 挡
+                    elif low == 0x10: return 3  # N 挡
+                    elif low == 0x20: return 2  # D 挡
             return 0
         return -1
 
     logs = [
-        # 1. 真实挂 P 挡
-        "10-27 16:48:49.483 I/SensorModule( 1425): onFunctionValueChanged:funId(0x00200200) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) funcValue(0x00200210)",
-        # 2. 真实切 D 挡
-        "10-27 16:48:50.340 I/SensorModule( 1425): onFunctionValueChanged:funId(0x00200200) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) funcValue(0x00200240)",
-        # 3. 真实切回 P 挡
-        "10-27 16:48:51.681 I/SensorModule( 1874): onFunctionValueChanged:funId(0x00200200) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) funcValue(0x00200210)",
-        # 4. 后台静态轮询（假 N 信号，必须被安全吞掉）
-        "10-27 16:51:46.756 I/SensorModule( 5486): getFunctionValue:funId(0x00200200) zone(0x00000000) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) return funValue(0x00200230)",
-        "10-27 16:51:47.806 I/SensorModule( 5486): getFunctionValue:funId(0x00200200) zone(0x00000000) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) return funValue(0x00200230)",
+        # 1. 轻推进入 N 挡 (0x10)
+        "11-04 11:47:08.357 I/SensorModule( 1914): onFunctionValueChanged:funId(0x00200200) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) funcValue(0x00200210)",
+        # 2. 推入 R 挡倒车 (0x40)
+        "11-04 11:47:13.922 I/SensorModule( 1443): onFunctionValueChanged:funId(0x00200200) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) funcValue(0x00200240)",
+        # 3. 回退到 N 挡 (0x10)
+        "11-04 11:47:15.817 I/SensorModule( 1443): onFunctionValueChanged:funId(0x00200200) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) funcValue(0x00200210)",
+        # 4. 切入 D 挡前进 (0x20)
+        "11-04 11:47:18.657 I/SensorModule( 1443): onFunctionValueChanged:funId(0x00200200) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) funcValue(0x00200220)",
+        # 5. 按下 P 挡驻车 (0x30)
+        "11-04 11:47:21.897 I/SensorModule( 1914): onFunctionValueChanged:funId(0x00200200) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) funcValue(0x00200230)",
+        # 6. 后台静态轮询（假信号过滤测试）
+        "11-04 11:47:22.500 I/SensorModule( 5486): getFunctionValue:funId(0x00200200) zone(0x00000000) propId(INFO_ID_VDRIVEINFO_GEAR_POSITION) return funValue(0x00200230)",
     ]
 
     current_gear = -1
@@ -185,9 +188,9 @@ def test_fe6a3_ihu510g():
             current_gear = g
             changes.append(g)
 
-    # 预期变化: P (5) -> D (2) -> P (5)，后续轮询假 N 被吞掉，保持 P 挡
-    if changes != [5, 2, 5]:
-        print(f"     [FAIL] FE6A3 实车换挡识别或假N过滤不符合预期！changes={changes}")
+    # 预期变化: N (3) -> R (4) -> N (3) -> D (2) -> P (5)，后续静态轮询被吞掉
+    if changes != [3, 4, 3, 2, 5]:
+        print(f"     [FAIL] FE6A3 实车换挡识别或假信号过滤不符合预期！changes={changes}")
         failures += 1
 
     if failures == 0:
