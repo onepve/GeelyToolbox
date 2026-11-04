@@ -447,9 +447,20 @@
           </span>
           <button 
             @click.stop="openDeepTools"
-            class="h-[52px] px-5 rounded-xl border-2 border-car-border bg-car-card text-car-text hover:border-car-accent font-black text-[14px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+            :disabled="store.deviceInfo.adb_master_switch === false || adbWarmupCountdown > 0"
+            :class="[
+              'h-[52px] px-5 rounded-xl border-2 font-black text-[14px] transition-all shadow-sm flex items-center justify-center whitespace-nowrap select-none',
+              (store.deviceInfo.adb_master_switch === false || adbWarmupCountdown > 0)
+                ? 'border-car-border/40 bg-car-item/50 text-car-sub/40 cursor-not-allowed opacity-50'
+                : 'border-car-border bg-car-card text-car-text hover:border-car-accent cursor-pointer active:scale-95'
+            ]"
           >
-            <span>打开终端 ➔</span>
+            <span v-if="store.deviceInfo.adb_master_switch === false">终端已停用</span>
+            <span v-else-if="adbWarmupCountdown > 0" class="flex items-center space-x-1.5 text-car-accent">
+              <span class="inline-block w-2 h-2 rounded-full bg-car-accent animate-ping mr-1"></span>
+              <span>通道建立中 ({{ adbWarmupCountdown }}s)</span>
+            </span>
+            <span v-else>打开终端 ➔</span>
           </button>
         </div>
       </div>
@@ -544,7 +555,7 @@ import FeatureCard from '../components/FeatureCard.vue';
 import StatusDot from '../components/StatusDot.vue';
 import HelpDot from '../components/HelpDot.vue';
 import { store, bridge, openModal, showToast, setStartupNav, refreshOilPrices } from '../store';
-import { ref, computed } from 'vue';
+import { ref, computed, onUnmounted } from 'vue';
 import FloatingView from './FloatingView.vue';
 import ThemeV2Panel from '../components/ThemeV2Panel.vue';
 import { openAppstoreFlow } from '../utils/appstoreFreeze';
@@ -552,6 +563,8 @@ import { getDaysToAdjustment } from '../utils/oilPriceData';
 import { ICON_PREVIEW_DEFAULT, ICON_PREVIEW_COOL } from '../utils/launcherIcons';
 
 const activeTab = ref('desktop');
+const adbWarmupCountdown = ref(0);
+let adbWarmupTimer = null;
 const systemTabs = [
   { id: 'desktop', name: '桌面胶囊悬浮', tag: '悬浮/屏保' },
   { id: 'capsules', name: '顶栏状态胶囊', tag: '显隐控制' },
@@ -634,6 +647,10 @@ function openDeepTools() {
     showToast('ADB 总开关已关闭，该功能无法使用');
     return;
   }
+  if (adbWarmupCountdown.value > 0) {
+    showToast(`正在建立底层 ADB 调试通道，请稍候 ${adbWarmupCountdown.value} 秒...`);
+    return;
+  }
   openModal('deepTools');
 }
 
@@ -641,8 +658,33 @@ function toggleAdbMasterSwitch() {
   const next = !(store.deviceInfo.adb_master_switch !== false);
   store.deviceInfo.adb_master_switch = next;
   bridge.call('setAdbMasterSwitchEnabled', next);
-  showToast(next ? '已开启 ADB 特权服务总开关' : '已关闭 ADB 总开关 (彻底切断 ADB 探测与连接)');
+  if (adbWarmupTimer) {
+    clearInterval(adbWarmupTimer);
+    adbWarmupTimer = null;
+  }
+  if (next) {
+    // 重新开启总开关时，给予 10 秒通道平滑预热倒计时
+    adbWarmupCountdown.value = 10;
+    adbWarmupTimer = setInterval(() => {
+      adbWarmupCountdown.value--;
+      if (adbWarmupCountdown.value <= 0) {
+        clearInterval(adbWarmupTimer);
+        adbWarmupTimer = null;
+      }
+    }, 1000);
+    showToast('已开启 ADB 特权总开关，正在建立底层通道...');
+  } else {
+    adbWarmupCountdown.value = 0;
+    showToast('已关闭 ADB 总开关 (彻底切断 ADB 探测与连接)');
+  }
 }
+
+onUnmounted(() => {
+  if (adbWarmupTimer) {
+    clearInterval(adbWarmupTimer);
+    adbWarmupTimer = null;
+  }
+});
 
 function showAdbHelp() {
   openModal('confirm', {
