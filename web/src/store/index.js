@@ -617,6 +617,11 @@ if (typeof window !== 'undefined') {
       Object.assign(store.networkDevice, parsed);
     } catch (e) {}
   };
+  window.onFuelDataChanged = () => {
+    try {
+      loadFuelData();
+    } catch (e) {}
+  };
 }
 
 export function loadFuelData() {

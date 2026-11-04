@@ -106,6 +106,15 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         }
     }
 
+    public static void requestFuelDataRefresh() {
+        if (currentActivity != null) {
+            MainActivity activity = currentActivity.get();
+            if (activity != null && !activity.isFinishing()) {
+                activity.notifyFuelDataChanged();
+            }
+        }
+    }
+
     private static final String TAG = "MainActivity";
     private static final int REQ_CODE_STORAGE = 1001;
     private static final int REQ_CODE_SELECT_APK = 2001;
@@ -181,6 +190,20 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     obj.put("is_cellular", net.isCellular);
                     if (webView != null) {
                         webView.evaluateJavascript("if(window.onNetworkChanged) window.onNetworkChanged(" + obj.toString() + ");", null);
+                    }
+                } catch (Exception ignored) {}
+            }
+        });
+    }
+
+    public void notifyFuelDataChanged() {
+        if (webView == null) return;
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (webView != null) {
+                        webView.evaluateJavascript("if(window.onFuelDataChanged) window.onFuelDataChanged();", null);
                     }
                 } catch (Exception ignored) {}
             }

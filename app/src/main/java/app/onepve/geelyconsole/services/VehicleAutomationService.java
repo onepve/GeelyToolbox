@@ -2096,6 +2096,7 @@ public class VehicleAutomationService extends Service {
             record.put("fuel_after", Math.round(currentOil * 10.0) / 10.0);
 
             FuelManager.addRecord(this, record);
+            app.onepve.geelyconsole.MainActivity.requestFuelDataRefresh();
             AppLogger.i("加油感知", "【智能静默微记账成功】ID=" + recordId + ", 加油=" + addedLiters + "L, 当前总里程=" + odo + "km, 预估金额=" + amount + "元(免打扰入账)");
             return recordId;
         } catch (Throwable t) {
@@ -2124,6 +2125,7 @@ public class VehicleAutomationService extends Service {
                     r.put("fuel_after", Math.round(newCurrentOil * 10.0) / 10.0);
                     r.put("is_full", newCurrentOil >= (capacity - 3.0));
                     FuelManager.updateRecord(this, r);
+                    app.onepve.geelyconsole.MainActivity.requestFuelDataRefresh();
                     AppLogger.i("加油感知", "【D挡起步终审校准完成】台账 ID=" + recordId + " 微调更新: 加油=" + newAddedLiters + "L, 修正金额=" + amount + "元");
                     break;
                 }
