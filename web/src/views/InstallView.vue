@@ -84,17 +84,17 @@
 
     <!-- Tab 2: 整车应用高级管理 (左右对称布局 + 整卡可点 + 消除空白) -->
     <div v-if="activeTab === 'manage'" class="grid grid-cols-2 gap-4 items-stretch">
-      <!-- 左列：应用高级管理与专家模式卡片 (垂直撑满，min-h-[260px]) -->
-      <div class="flex flex-col space-y-4 justify-between min-h-[260px]">
+      <!-- 左列：应用高级管理与专家模式卡片 (垂直撑满，紧凑匀称) -->
+      <div class="flex flex-col space-y-3 justify-between min-h-[260px]">
         <!-- 应用高级管理 (整卡点击) -->
         <div 
           @click="openAllApps"
-          class="rounded-3xl border-2 border-car-border p-6 shadow-2xl transition-all bg-car-card flex-1 min-w-0 flex flex-col justify-between cursor-pointer hover:border-car-accent active:scale-[0.99] group min-h-[120px]"
+          class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card flex-1 min-w-0 flex flex-col justify-between cursor-pointer hover:border-car-accent active:scale-[0.99] group min-h-[120px]"
         >
-          <div class="flex flex-col space-y-3">
-            <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
+          <div class="flex flex-col space-y-2.5">
+            <div class="flex items-center justify-between pb-2.5 border-b border-car-border/60">
               <div class="flex items-center space-x-2.5">
-                <div class="text-[21px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">
+                <div class="text-[20px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">
                   整车应用高级管理
                 </div>
                 <HelpDot
@@ -102,37 +102,36 @@
                   title="查看本功能详细说明与核心原理"
                 />
               </div>
-              <span class="text-[12.5px] font-extrabold px-3 py-1 rounded-xl bg-car-item border border-car-border text-car-accent flex items-center space-x-1.5">
+              <span class="text-[12px] font-extrabold px-2.5 py-1 rounded-xl bg-car-item border border-car-border text-car-accent flex items-center space-x-1.5">
                 <span>点击打开</span>
-                <span class="text-[14px]">➔</span>
+                <span class="text-[13px]">➔</span>
               </span>
             </div>
-            <div class="text-[15px] text-car-sub font-bold leading-relaxed">
+            <div class="text-[13.5px] text-car-sub font-bold leading-relaxed">
               内置整车应用分类管理，查看整车已装应用，支持一键卸载残留、冻结预装软件与清理运行缓存。
             </div>
           </div>
 
-          <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
-            <div class="flex items-center text-[13.5px] text-emerald-400 font-extrabold">
+          <div class="mt-4 pt-4 border-t border-car-border/40 flex items-center justify-between">
+            <div class="flex items-center text-[13px] text-emerald-400 font-extrabold">
               <StatusDot class="mr-2" size="sm" color="ok" :glow-px="6" />
               <span>支持系统/用户应用智能分类与状态管控</span>
             </div>
-            <span class="text-[14px] font-black text-car-accent group-hover:underline">
+            <span class="text-[13.5px] font-black text-car-accent group-hover:underline">
               进入管理 ➔
             </span>
           </div>
         </div>
 
-        <!-- 专家模式卡兔子主题安装通道 (整卡点击) -->
+        <!-- 专家模式卡兔子主题安装通道 (整卡点击，默认全量常驻展示) -->
         <div 
-          v-if="store.isTester || store.settings.expert_rabbit"
           @click="store.settings.expert_rabbit ? openRabbitGuideModal() : confirmUnlockExpert()"
-          class="rounded-3xl border-2 border-car-border p-6 shadow-2xl transition-all bg-car-card flex-1 min-w-0 flex flex-col justify-between cursor-pointer hover:border-car-accent active:scale-[0.99] group"
+          class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card flex-1 min-w-0 flex flex-col justify-between cursor-pointer hover:border-car-accent active:scale-[0.99] group min-h-[120px]"
         >
-          <div class="flex flex-col space-y-3">
-            <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
+          <div class="flex flex-col space-y-2.5">
+            <div class="flex items-center justify-between pb-2.5 border-b border-car-border/60">
               <div class="flex items-center space-x-2.5">
-                <div class="text-[21px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">
+                <div class="text-[20px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">
                   卡兔子主题通道
                 </div>
                 <HelpDot
@@ -140,25 +139,25 @@
                   title="查看本功能详细说明与核心原理"
                 />
               </div>
-              <div class="bg-car-item border-car-border text-car-text inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl border border-car-border">
+              <div class="bg-car-item border-car-border text-car-text inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-xl border border-car-border">
                 <StatusDot size="sm" :color="store.settings.expert_rabbit ? 'accent' : 'ok'" />
-                <span class="text-[13px] font-black text-car-text">
+                <span class="text-[12.5px] font-black text-car-text">
                   {{ store.settings.expert_rabbit ? '专家模式已激活' : '专家模式安全锁定中' }}
                 </span>
               </div>
             </div>
-            <div class="text-[15px] text-car-sub font-bold leading-relaxed">
+            <div class="text-[13.5px] text-car-sub font-bold leading-relaxed">
               {{ store.settings.expert_rabbit ? '解除地图与音乐安装签名限制，已解锁：支持向原厂时钟屏保注入第三方高德或音乐。' : '解除地图与音乐安装签名限制，用于突破特定机型白名单，普通安装请优先使用特权安装通道。' }}
             </div>
           </div>
 
-          <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
-            <span class="text-[13px] text-car-sub font-bold">
+          <div class="mt-4 pt-4 border-t border-car-border/40 flex items-center justify-between">
+            <span class="text-[12.5px] text-car-sub font-bold">
               {{ store.settings.expert_rabbit ? '点击直接打开主题替换向导' : '点击按提示安全解锁专家模式' }}
             </span>
             <button 
               @click.stop="confirmUnlockExpert"
-              class="h-[52px] px-4 rounded-xl border font-black text-[13.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+              class="h-[50px] px-4 rounded-xl border font-black text-[13px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
               :class="store.settings.expert_rabbit ? 'bg-car-item border-car-border text-car-sub hover:text-car-text' : 'bg-car-item border-car-accent text-car-accent'"
             >
               {{ store.settings.expert_rabbit ? '恢复锁定' : '解锁专家模式' }}
@@ -167,44 +166,44 @@
         </div>
       </div>
 
-      <!-- 右列：车载应用安装与白名单说明面板 (左右对称平衡，min-h-[260px]) -->
+      <!-- 右列：车载应用安装与白名单说明面板 (左右等高紧凑排布，整页一屏收尽) -->
       <div class="rounded-3xl border-2 border-car-border p-6 shadow-2xl bg-car-card flex flex-col justify-between min-h-[260px]">
-        <div class="flex flex-col space-y-4">
-          <div class="flex items-center space-x-2.5 pb-3 border-b border-car-border/60">
-            <span class="text-car-accent font-black text-[18px]">◆</span>
-            <div class="text-[21px] font-black text-car-text tracking-wide">
+        <div class="flex flex-col space-y-3">
+          <div class="flex items-center space-x-2.5 pb-2.5 border-b border-car-border/60">
+            <span class="text-car-accent font-black text-[17px]">◆</span>
+            <div class="text-[20px] font-black text-car-text tracking-wide">
               车载应用管理规范与白名单须知
             </div>
           </div>
 
-          <div class="space-y-4 text-[15px] text-car-sub font-bold leading-relaxed">
-            <div class="bg-car-item border border-car-border rounded-2xl p-4 space-y-1.5">
-              <div class="text-car-text font-black text-[16px] flex items-center space-x-2">
+          <div class="space-y-2.5 text-car-sub font-bold leading-normal">
+            <div class="bg-car-item border border-car-border rounded-2xl p-3 space-y-1">
+              <div class="text-car-text font-black text-[15px] flex items-center space-x-2">
                 <span class="text-car-accent font-black">【1】</span>
                 <span>原厂应用商店与白名单保护</span>
               </div>
-              <p class="text-[14px]">
-                原厂内置应用商店在后台运行时会主动重置系统安装白名单，从而导致外部安装的第三方应用闪退或失效。建议在系统设置中将其保持冻结状态。
+              <p class="text-[13px] leading-relaxed">
+                原厂商店在后台运行时会主动重置系统安装白名单，从而导致外部安装的第三方应用失效闪退。建议保持商店处于冻结状态。
               </p>
             </div>
 
-            <div class="bg-car-item border border-car-border rounded-2xl p-4 space-y-1.5">
-              <div class="text-car-text font-black text-[16px] flex items-center space-x-2">
+            <div class="bg-car-item border border-car-border rounded-2xl p-3 space-y-1">
+              <div class="text-car-text font-black text-[15px] flex items-center space-x-2">
                 <span class="text-car-accent font-black">【2】</span>
                 <span>原生文件管理器直接点装</span>
               </div>
-              <p class="text-[14px]">
-                请勿使用电脑 ADB 命令行后台静默强装，强装缺乏系统环境初始化易导致白屏。将 APK 文件推送到 Download 目录后，通过车载原生管理器点选安装最为稳定。
+              <p class="text-[13px] leading-relaxed">
+                请勿用电脑命令行强装（缺环境易白屏）。把 APK 传到 Download 目录后，通过原生管理器点选安装最稳定。
               </p>
             </div>
 
-            <div class="bg-car-item border border-car-border rounded-2xl p-4 space-y-1.5">
-              <div class="text-car-text font-black text-[16px] flex items-center space-x-2">
+            <div class="bg-car-item border border-car-border rounded-2xl p-3 space-y-1">
+              <div class="text-car-text font-black text-[15px] flex items-center space-x-2">
                 <span class="text-car-accent font-black">【3】</span>
                 <span>安装、冻结与卸载一站搞定</span>
               </div>
-              <p class="text-[14px]">
-                在本模块内即可无缝完成局域网无线传包、特权安全直装、无用预装软件冻结以及旧版本残留卸载，无需依赖任何电脑与外接设备。
+              <p class="text-[13px] leading-relaxed">
+                在本模块内即可无缝完成局域网无线传包、特权直装、无用预装软件冻结与残留卸载，无需依赖外接电脑。
               </p>
             </div>
           </div>
@@ -212,25 +211,25 @@
 
         <!-- 白名单常驻锁定确认条 (车主手动确认已彻底冻结商店) -->
         <div class="mt-4 pt-4 border-t border-car-border/40 flex items-center justify-between">
-          <div class="flex flex-col space-y-1 pr-3 min-w-0">
+          <div class="flex flex-col space-y-0.5 pr-3 min-w-0">
             <div class="flex items-center space-x-2">
               <StatusDot size="sm" :color="store.settings.whitelist_permanent_lock ? 'ok' : 'sub'" />
-              <span class="text-[16px] font-black text-car-text">彻底冻结商店 · 永久锁定白名单</span>
+              <span class="text-[15.5px] font-black text-car-text">彻底冻结商店 · 永久锁定白名单</span>
             </div>
-            <div class="text-[13px] text-car-sub font-bold leading-normal truncate">
+            <div class="text-[12.5px] text-car-sub font-bold leading-normal truncate">
               {{ store.settings.whitelist_permanent_lock ? '已确认为彻底冻结，启动 0ms 免检直通' : '由车主手动确认已冻结，开启后免去启动等待' }}
             </div>
           </div>
           <button
             @click.stop="confirmTogglePermanentLock"
-            class="h-[52px] px-5 rounded-xl border font-black text-[13.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
+            class="h-[50px] px-5 rounded-xl border font-black text-[13.5px] cursor-pointer transition-all shadow-sm flex items-center justify-center whitespace-nowrap"
             :class="store.settings.whitelist_permanent_lock ? 'bg-car-item border-car-border text-car-accent' : 'bg-car-item border-car-border text-car-sub hover:text-car-text'"
           >
             {{ store.settings.whitelist_permanent_lock ? '已锁定' : '确认锁定' }}
           </button>
         </div>
 
-        <div class="pt-4 mt-2 border-t border-car-border/40 flex items-center justify-between text-[13px] text-car-sub">
+        <div class="pt-4 border-t border-car-border/40 flex items-center justify-between text-[12.5px] text-car-sub">
           <span>安全环境就绪 · 本地沙盒无联网泄露风险</span>
           <span class="font-mono text-car-accent font-bold">GeelyOS HMI Safe Guard</span>
         </div>
@@ -246,6 +245,7 @@ import StatusDot from '../components/StatusDot.vue';
 import HelpDot from '../components/HelpDot.vue';
 import { ref } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
+import { playTouchFeedback } from '../utils/sound';
 
 const props = defineProps({
   initialTab: { type: String, default: '' }
@@ -268,6 +268,7 @@ function openHelpModal(title, desc, tip) {
 }
 
 function confirmTogglePermanentLock() {
+  playTouchFeedback();
   if (store.deviceInfo.adb_master_switch === false) {
     showToast('ADB 总开关已关闭，该功能无法使用');
     return;
@@ -332,10 +333,12 @@ function openAllApps() {
     showToast('ADB 总开关已关闭，该功能无法使用');
     return;
   }
+  playTouchFeedback();
   store.modals.allApps = true;
 }
 
 function confirmUnlockExpert() {
+  playTouchFeedback();
   if (store.settings.expert_rabbit) {
     store.settings.expert_rabbit = false;
     bridge.call('setSetting', 'expert_rabbit', false);
@@ -383,15 +386,18 @@ function confirmUnlockExpert() {
 }
 
 function openRabbitGuideModal() {
+  playTouchFeedback();
   store.modals.rabbitInstall = true;
 }
 
 function openFileManager() {
+  playTouchFeedback();
   bridge.call('openFileManager');
   showToast('正在打开车机原生文件管理...');
 }
 
 function showQrCode() {
+  playTouchFeedback();
   openModal('qrCode');
 }
 </script>
