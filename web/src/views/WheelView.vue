@@ -29,14 +29,14 @@
       </div>
 
       <!-- 右侧：车规模式切换双胶囊（标准卡片 vs 自定义列表） -->
-      <div class="flex items-center space-x-2 shrink-0 bg-car-card p-1.5 rounded-2xl border-2 border-car-border">
+      <div class="flex items-center space-x-1.5 shrink-0 bg-car-item p-1.5 rounded-2xl border-2 border-car-border select-none shadow-sm">
         <button
           @click="setMappingMode('preset')"
           :class="[
-            'px-5 h-[52px] rounded-xl font-black text-[15.5px] transition-all cursor-pointer flex items-center justify-center',
+            'px-5 h-[48px] rounded-xl font-black text-[15.5px] transition-all cursor-pointer flex items-center justify-center border-2 select-none outline-none focus:outline-none',
             mappingMode === 'preset'
-              ? 'bg-car-item text-car-accent border-2 border-car-accent shadow-sm'
-              : 'text-car-sub hover:text-car-text border-2 border-transparent'
+              ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+              : 'bg-transparent border-transparent text-car-sub hover:text-car-text font-bold'
           ]"
         >
           标准卡片模式
@@ -44,10 +44,10 @@
         <button
           @click="setMappingMode('custom_list')"
           :class="[
-            'px-5 h-[52px] rounded-xl font-black text-[15.5px] transition-all cursor-pointer flex items-center justify-center',
+            'px-5 h-[48px] rounded-xl font-black text-[15.5px] transition-all cursor-pointer flex items-center justify-center border-2 select-none outline-none focus:outline-none',
             mappingMode === 'custom_list'
-              ? 'bg-car-item text-car-accent border-2 border-car-accent shadow-sm'
-              : 'text-car-sub hover:text-car-text border-2 border-transparent'
+              ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+              : 'bg-transparent border-transparent text-car-sub hover:text-car-text font-bold'
           ]"
         >
           自定义列表模式
@@ -203,7 +203,7 @@
         </span>
         <button
           @click="openAddKeyLearning"
-          class="mt-2 px-6 h-[52px] rounded-xl bg-car-accent text-white font-black text-[16px] cursor-pointer shadow-lg active:scale-[0.98] transition-all flex items-center justify-center"
+          class="mt-2 px-6 h-[52px] rounded-xl bg-car-accent-bg border-2 border-car-accent text-car-accent font-black text-[16px] cursor-pointer shadow-md hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center"
         >
           立即捕获第一个按键
         </button>
@@ -245,7 +245,7 @@
           <div class="shrink-0 pl-2">
             <button
               @click="removeCustomKey(idx)"
-              class="px-4 h-[52px] rounded-xl border-2 border-red-500 text-red-400 hover:bg-car-item font-black text-[14.5px] cursor-pointer transition-all active:scale-[0.97] flex items-center justify-center"
+              class="px-4 h-[50px] rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 font-black text-[14.5px] cursor-pointer transition-all active:scale-95 flex items-center justify-center shadow-sm select-none"
             >
               移除
             </button>
@@ -449,6 +449,7 @@
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { store, bridge, openModal, showToast } from '../store';
 import { useWheelGesture } from '../composables/useWheelGesture';
+import { playTouchFeedback } from '../utils/sound';
 import SubTabs from '../components/SubTabs.vue';
 import StatusDot from '../components/StatusDot.vue';
 import BaseButton from '../components/BaseButton.vue';
@@ -478,6 +479,8 @@ const activeTab = ref(props.initialTab || 'keys');
 const mappingMode = computed(() => store.vehicleAuto.wheel_mapping_mode || 'preset');
 
 function setMappingMode(mode) {
+  if (store.vehicleAuto.wheel_mapping_mode === mode) return;
+  playTouchFeedback();
   store.vehicleAuto.wheel_mapping_mode = mode;
   bridge.call('setVehicleAutomationSetting', 'wheel_mapping_mode', mode);
   showToast(mode === 'custom_list' ? '已切换至「自定义列表模式」' : '已切换至「标准卡片模式」');
@@ -513,6 +516,7 @@ function updateCustomKeyAction(index, action, customName) {
 }
 
 function removeCustomKey(index) {
+  playTouchFeedback();
   const list = [...customMappingList.value];
   const item = list[index];
   openModal('confirm', {
@@ -529,6 +533,7 @@ function removeCustomKey(index) {
 }
 
 function openAddKeyLearning() {
+  playTouchFeedback();
   openModal('wheelKeyLearning', {
     ts: Date.now(),
     onCaptured: (code, defaultName) => {
@@ -576,6 +581,7 @@ watch(() => props.initialTab, (v) => {
 const showDiagram = ref(true);
 
 function toggleDiagram() {
+  playTouchFeedback();
   showDiagram.value = !showDiagram.value;
 }
 const FLOAT_TOGGLE_KEY = 'wheel_floating_guide_enabled';
@@ -583,6 +589,7 @@ const floatingEnabled = ref(localStorage.getItem(FLOAT_TOGGLE_KEY) !== 'false');
 const showFloating = ref(false);
 
 function toggleFloating() {
+  playTouchFeedback();
   floatingEnabled.value = !floatingEnabled.value;
   localStorage.setItem(FLOAT_TOGGLE_KEY, String(floatingEnabled.value));
   if (!floatingEnabled.value) {
@@ -660,10 +667,12 @@ onBeforeUnmount(() => {
 const { setGestureAction } = useWheelGesture();
 
 function openKeyLearning() {
+  playTouchFeedback();
   openModal('wheelKeyLearning', { ts: Date.now() });
 }
 
 function toggleWheelMasterSwitch() {
+  playTouchFeedback();
   const next = !store.vehicleAuto.wheel_master_switch;
   store.vehicleAuto.wheel_master_switch = next;
   bridge.call('setVehicleAutomationSetting', 'wheel_master_switch', next);
@@ -683,6 +692,7 @@ function setWheelMode(mode) {
 }
 
 function toggleClusterPlayback() {
+  playTouchFeedback();
   const next = !store.vehicleAuto.wheel_push_playback_cluster;
   if (next) {
     openModal('confirm', {
@@ -704,6 +714,7 @@ function toggleClusterPlayback() {
 }
 
 function toggleClusterLyrics() {
+  playTouchFeedback();
   const next = !store.vehicleAuto.wheel_push_lyrics_cluster;
   if (next) {
     openModal('confirm', {
