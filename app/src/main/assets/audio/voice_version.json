@@ -1,6 +1,8 @@
 {
-  "voice_version": 18,
-  "total_files": 22,
+  "voice_version": 19,
+  "updated_at": "2026-09-22",
+  "description": "吉利智驾车规级内置音频资产版本清单与哈希校验索引",
+  "total_files": 23,
   "files": {
     "door_close.mp3": {
       "size": 13916,
@@ -41,6 +43,10 @@
     "door_rr_close.mp3": {
       "size": 14492,
       "md5": "dd2eba6037d74ad17be2fb0cb18a067b"
+    },
+    "download_complete.mp3": {
+      "size": 15068,
+      "md5": "cdbf54eb7f20bd050f02e4f6d5f3248f"
     },
     "gear_d.mp3": {
       "size": 18092,

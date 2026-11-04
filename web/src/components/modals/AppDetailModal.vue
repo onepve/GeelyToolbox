@@ -178,8 +178,14 @@ const actionButtonText = computed(() => {
 function handleInstallAction() {
   if (!app.value) return;
   const url = app.value.download_url || app.value.url;
+  store.downloadProgress[app.value.id] = {
+    status: 'downloading',
+    percent: 0,
+    speed: '0 KB/s',
+    name: app.value.name
+  };
   bridge.call('downloadApp', app.value.id, url, app.value.filename);
-  showToast(`已下发下载任务: ${app.value.name}`);
+  showToast(`已开始后台下载: ${app.value.name}，可随时关闭页面`);
 }
 
 function pauseDownload() {
@@ -197,8 +203,9 @@ function resumeDownload() {
   bridge.call('downloadApp', app.value.id, url, app.value.filename);
   if (store.downloadProgress[app.value.id]) {
     store.downloadProgress[app.value.id].status = 'downloading';
+    store.downloadProgress[app.value.id].name = app.value.name;
   }
-  showToast('正在继续下载...');
+  showToast('正在继续后台下载...');
 }
 
 function cancelDownload() {

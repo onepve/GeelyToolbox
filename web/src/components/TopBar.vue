@@ -201,6 +201,31 @@ const statusPills = computed(() => {
 
   const pills = [];
 
+  // 0. 后台下载动态指示胶囊 (优先级最高，有下载时置顶显示在最前)
+  const downloadingCount = Object.keys(store.downloadProgress || {}).filter(k => store.downloadProgress[k]?.status === 'downloading').length;
+  if (downloadingCount > 0) {
+    let topDownloadName = '正在下载';
+    let topPercent = 0;
+    for (const [id, item] of Object.entries(store.downloadProgress)) {
+      if (item?.status === 'downloading') {
+        topPercent = item.percent || 0;
+        topDownloadName = item.name || '应用安装包';
+        break;
+      }
+    }
+    const label = downloadingCount > 1 
+      ? `下载中(${downloadingCount}): ${topPercent}%` 
+      : `${topDownloadName}: ${topPercent}%`;
+    pills.push({
+      id: 'downloading',
+      text: label,
+      dot: { color: 'accent', pulse: true },
+      onClick: () => {
+        store.currentNav = 'store';
+      }
+    });
+  }
+
   // 1. 电瓶胶囊
   if (vis.battery !== false) {
     pills.push({ 

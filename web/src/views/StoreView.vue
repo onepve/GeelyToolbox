@@ -201,7 +201,13 @@ function refreshApps() {
 
 function handleDownload(app) {
   const url = app.download_url || app.url;
+  store.downloadProgress[app.id] = {
+    status: 'downloading',
+    percent: 0,
+    speed: '0 KB/s',
+    name: app.name
+  };
   bridge.call('downloadApp', app.id, url, app.filename);
-  showToast('已下发下载任务: ' + app.name);
+  showToast(`已开始后台下载: ${app.name}，可随时切换页面`);
 }
 </script>

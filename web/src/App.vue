@@ -333,7 +333,8 @@ onMounted(() => {
   };
 
   window.updateDownloadProgress = (appId, percent, speed) => {
-    store.downloadProgress[appId] = { status: 'downloading', percent, speed };
+    const existing = store.downloadProgress[appId] || {};
+    store.downloadProgress[appId] = { ...existing, status: 'downloading', percent, speed };
   };
 
   window.updateDownloadPaused = (appId) => {
@@ -349,11 +350,15 @@ onMounted(() => {
   };
 
   window.updateDownloadSuccess = (appId, savedFileName) => {
-    store.downloadProgress[appId] = { status: 'completed', percent: 100, speed: '0 KB/s', savedFileName };
+    const existing = store.downloadProgress[appId] || {};
+    store.downloadProgress[appId] = { ...existing, status: 'completed', percent: 100, speed: '0 KB/s', savedFileName };
+    showToast(`「${existing.name || savedFileName || '应用'}」下载完成！`, 'success');
   };
 
   window.updateDownloadError = (appId, errorMsg) => {
-    store.downloadProgress[appId] = { status: 'error', errorMsg, percent: 0 };
+    const existing = store.downloadProgress[appId] || {};
+    store.downloadProgress[appId] = { ...existing, status: 'error', errorMsg, percent: 0 };
+    showToast(`下载失败: ${errorMsg}`, 'error');
   };
 
   try {

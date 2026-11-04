@@ -2792,6 +2792,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
                         @Override
                         public void onSuccess(String id, final File savedFile) {
+                            try {
+                                VehicleVoicePlayer voicePlayer = VehicleVoicePlayer.getInstance(MainActivity.this);
+                                if (voicePlayer != null) {
+                                    voicePlayer.play("download_complete.mp3", "应用下载完成", VehicleVoicePlayer.PRIORITY_P3_ADVISORY);
+                                }
+                            } catch (Exception ignored) {}
                             mainHandler.post(new Runnable() {
                                 @Override
                                 public void run() {

@@ -9,7 +9,7 @@ VOICE="${VOICE:-zh-CN-XiaoxiaoNeural}"
 RATE="${RATE:--5%}"
 PITCH="${PITCH:--1Hz}"
 
-EDGE_TTS="$(command -v edge-tts || echo /usr/local/lib/hermes-agent/venv/bin/edge-tts)"
+EDGE_TTS="$(command -v ~/.local/bin/edge-tts || command -v edge-tts || echo /usr/local/lib/hermes-agent/venv/bin/edge-tts)"
 TMP="$(mktemp --suffix=.mp3)"
 trap 'rm -f "$TMP"' EXIT
 
