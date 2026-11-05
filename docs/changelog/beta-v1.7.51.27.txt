@@ -1,0 +1,4 @@
+1. 彻底回退车速达标自启与方控监听至正式版 v1.7.50 基线：
+   - VehicleAutomationService 与 SteeringWheelKeyManager 100% 字节级完整复原，零额外修改；
+   - 坚决贯彻不加任何私有操作铁律，完整保留正式版原有音乐起调与媒体判定时序。
+2. 保持 CI Gate 29 道刚性门禁 100% 全绿通过。
