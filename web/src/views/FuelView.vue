@@ -251,8 +251,9 @@
         </div>
 
         <div class="flex items-center space-x-3 shrink-0">
-          <!-- 快速车牌卡片 / 录入入口 (大触控、高辨识度) -->
+          <!-- 快速车牌卡片 / 录入入口 (暂不使用，先隐藏) -->
           <button 
+            v-if="false"
             @click="showPlateModal = true"
             class="min-h-[52px] px-4 rounded-xl border-2 border-car-border bg-car-item text-car-text font-black text-[15px] cursor-pointer hover:border-car-accent transition-all shadow-md flex items-center space-x-2 whitespace-nowrap"
           >
@@ -267,7 +268,9 @@
             <span>+ 手动记一笔</span>
           </button>
 
+          <!-- 手机扫码绑定 (暂不使用，先隐藏) -->
           <button 
+            v-if="false"
             @click="showCloudPairModal"
             class="min-h-[52px] px-4 rounded-xl border-2 border-car-border bg-car-item text-car-sub font-black text-[14.5px] cursor-pointer hover:text-car-text hover:border-car-border-light transition-all shadow-md flex items-center space-x-1.5 whitespace-nowrap"
           >
