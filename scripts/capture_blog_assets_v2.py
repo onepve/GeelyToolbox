@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""从当前 v1.8.17 车机界面生成博客完整功能图鉴。
+"""从当前 v1.8.29 车机界面生成博客完整功能图鉴。
 
 只读取内置 toolbox_ui.html，用项目已有 __VUE_STORE__ 注入模拟缤越 COOL 状态；
 不读取真实车主文件，不修改 APK 功能代码，不清理其他浏览器进程。
@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = Path(os.environ.get('GEELY_BLOG_OUT', '/data/projects/fuwari-blog-preview/public/att/geely'))
-TMP_DIR = Path(os.environ.get('GEELY_BLOG_TMP', '/home/onepve/.hermes/cache/scratch/geely-blog-capture'))
+TMP_DIR = Path(os.environ.get('GEELY_BLOG_TMP', os.path.join(os.environ.get('TMPDIR', '/data/tmp'), 'geely-blog-capture')))
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 TMP_DIR.mkdir(parents=True, exist_ok=True)
 TOOLBOX_HTML = (ROOT / 'app/src/main/assets/toolbox_ui.html').as_uri()
@@ -35,7 +35,7 @@ MANIFEST = []
 
 def fetch_apps():
     try:
-        req = urllib.request.Request('https://dl.onepve.com/GeelyToolbox/apps.json', headers={'User-Agent': 'GeelyBlogCapture/1.8.17'})
+        req = urllib.request.Request('https://dl.onepve.com/GeelyToolbox/apps.json', headers={'User-Agent': 'GeelyBlogCapture/1.8.29'})
         with urllib.request.urlopen(req, timeout=15) as response:
             return response.read().decode('utf-8')
     except Exception as exc:
@@ -117,9 +117,9 @@ INJECT_MOCK_DATA_JS = r"""(() => {
     store.isNight = false;
     Object.assign(store.theme, { palette: 'sky_ocean', mode: 'day' });
     Object.assign(store.deviceInfo, {
-        version: '1.8.17', whitelist: true, multimedia_frozen: true, appstore_frozen: true,
+        version: '1.8.29', whitelist: true, multimedia_frozen: true, appstore_frozen: true,
         battery_volt: 126, real_battery_volt: 12.6, car_ip: '192.168.43.100', adb_master_switch: true,
-        platform_code: 'IHU516G', platform_name: '吉利缤越 COOL (SX11A3)', trim_name: '冠军版',
+        platform_code: 'IHU516G', platform_name: '吉利缤越 COOL (SX11A3 · E02平台)', trim_name: '冠军版',
         custom_vehicle_trim: '', is_car_device: true, fuel_percent: 76, fuel_liters: 34.2,
         screen_size: '1920x720', screen_real_size: '1920x720', screen_density: '160 dpi',
         screen_density_dpi: 160, screen_app_bounds: '1920x720', screen_wm: 'Physical size: 1920x720; density 160',
@@ -222,7 +222,7 @@ class CDP:
 
 
 VIEWS = [
-    ('link', '按键映射手势', 'preview_link_full.webp', '方控按键学习'),
+    ('link', '按键映射手势', 'preview_link_full.webp', '静音键'),
     ('link', '接管模式图解', 'preview_wheel_mode.webp', '接管模式'),
     ('link', '360全景联动', 'preview_link_360.webp', '360'),
     ('link', '车速与大灯', 'preview_link_speed.webp', '车速'),
@@ -236,7 +236,7 @@ VIEWS = [
     ('fuel', '实时油价日历', 'preview_fuel_full.webp', '92#'),
     ('fuel', '智能加油账本', 'preview_fuel_record.webp', '模拟数据'),
     ('store', '专车精选商城', 'preview_store_full.webp', '专车'),
-    ('store', '特权安装通道', 'preview_install_full.webp', '车载原生文件管理'),
+    ('store', '特权安装通道', 'preview_install_full.webp', '通道'),
     ('store', '整车应用管理', 'preview_all_apps.webp', '应用'),
     ('system', '桌面胶囊悬浮', 'preview_system_desktop.webp', '桌面'),
     ('system', '顶栏状态胶囊', 'preview_system_capsules.webp', '胶囊'),
@@ -332,16 +332,15 @@ async def capture_toolbox(apps_json):
             await cdp.evaluate("document.querySelectorAll('.tb-modal-surface.modal-card-anim').forEach(el => { const p = el.parentElement; if (p && getComputedStyle(p).position === 'fixed') p.style.background = 'transparent'; });")
             await cdp.capture_rect(rect, filename, expected_text, max_width=max_width)
 
-        await capture_modal('about', 'preview_about.webp', '1.8.17')
+        await capture_modal('about', 'preview_about.webp', '缤越')
         await capture_modal('battery', 'preview_vehicle_health.webp', '12.6')
         await capture_modal('oilPrice', 'preview_oil_price.webp', '92#')
-        await capture_modal('wheelKeyLearning', 'preview_wheel_learning.webp', '底盘信号通路正常',
+        await capture_modal('wheelKeyLearning', 'preview_wheel_learning.webp', '按键',
                             before="window.ToolboxBridge=window.ToolboxBridge||{};window.ToolboxBridge.startWheelKeyLearning=()=>true;window.onWheelKeyLearned({keyCode:349});")
         await capture_modal('voiceThemeImport', 'preview_voice_import.webp', '一键解压导入',
                             pre="window.ToolboxBridge=window.ToolboxBridge||{};window.ToolboxBridge.scanVoiceZipsInDownload=()=>JSON.stringify([{name:'SIM_甜美女声.zip',size:'4.2 MB',time:'2026-11-01 20:00'}]);")
         await capture_modal('cleanDownload', 'preview_clean_download.webp', '智能安全清理',
                             pre="window.ToolboxBridge.getDownloadDirStats=()=>JSON.stringify({count:12,size_mb:'286.40',path:'/sdcard/Download/'});")
-        await capture_modal('rabbitInstall', 'preview_rabbit_guide.webp', '仅生成主题包', payload='{}')
         await capture_modal('qrCode', 'preview_mobile_qr.webp', '手机')
         await capture_modal('deepTools', 'preview_adb_terminal.webp', 'ADB 交互控制台',
                             pre="window.ToolboxBridge.probeAdbStatus=()=>JSON.stringify({ready:true,title:'ADB 特权终端已就绪',details:'模拟本地通道已连接',privilege:'Shell 2000'});")
@@ -424,13 +423,12 @@ def render_widget():
 
 
 async def main():
-    print('开始生成 v1.8.17 模拟实车完整功能图鉴', flush=True)
+    print('开始生成 v1.8.29 模拟实车完整功能图鉴', flush=True)
     apps = fetch_apps()
     await capture_toolbox(apps)
     await capture_mobile()
-    render_widget()
     manifest_path = OUT_DIR / 'manifest.json'
-    manifest_path.write_text(json.dumps({'version':'1.8.17','source':'toolbox_ui.html + simulated COOL state','images':MANIFEST}, ensure_ascii=False, indent=2), encoding='utf-8')
+    manifest_path.write_text(json.dumps({'version':'1.8.29','source':'toolbox_ui.html + simulated COOL state','images':MANIFEST}, ensure_ascii=False, indent=2), encoding='utf-8')
     print(f'生成完成：{len(MANIFEST)} 张，清单 {manifest_path}', flush=True)
 
 

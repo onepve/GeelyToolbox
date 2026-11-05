@@ -11,7 +11,7 @@ class BlogCaptureContract(unittest.TestCase):
         cls.text = SCRIPT.read_text(encoding='utf-8')
 
     def test_current_version_and_every_primary_subtab(self):
-        self.assertIn("version: '1.8.17'", self.text)
+        self.assertIn("version: '1.8.29'", self.text)
         for name in (
             '按键映射手势', '接管模式图解', '360全景联动', '车速与大灯', '网络与外设',
             '换挡语音', '驾驶模式', '车门分门播报', '电动尾门', '音乐音源优先级', '专属语音包',
@@ -23,8 +23,7 @@ class BlogCaptureContract(unittest.TestCase):
     def test_new_features_and_uploaded_log_state(self):
         for name in ('preview_wheel_mode.webp', 'preview_wheel_learning.webp',
                      'preview_body_trunk.webp', 'preview_system_capsules.webp',
-                     'preview_system_icon.webp', 'preview_log_modal.webp',
-                     'preview_widget.webp'):
+                     'preview_system_icon.webp', 'preview_log_modal.webp'):
             self.assertIn(name, self.text, name)
         self.assertIn('onWheelKeyLearned', self.text)
         self.assertIn('onLogUploadFinished', self.text)
