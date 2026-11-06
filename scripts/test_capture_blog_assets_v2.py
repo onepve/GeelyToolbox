@@ -11,7 +11,11 @@ class BlogCaptureContract(unittest.TestCase):
         cls.text = SCRIPT.read_text(encoding='utf-8')
 
     def test_current_version_and_every_primary_subtab(self):
-        self.assertIn("version: '1.8.29'", self.text)
+        self.assertIn("version: '1.8.30'", self.text)
+        # 博客图鉴统一使用通用车型名称，不带任何配置版型后缀
+        self.assertNotIn("trim_name: '冠军版'", self.text)
+        self.assertNotIn("冠军版", self.text)
+        self.assertIn("platform_name: '吉利缤越 COOL', trim_name: ''", self.text)
         for name in (
             '按键映射手势', '接管模式图解', '360全景联动', '车速与大灯', '网络与外设',
             '换挡语音', '驾驶模式', '车门分门播报', '电动尾门', '音乐音源优先级', '专属语音包',

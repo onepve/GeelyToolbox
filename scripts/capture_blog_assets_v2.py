@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""从当前 v1.8.29 车机界面生成博客完整功能图鉴。
+"""从当前 v1.8.30 车机界面生成博客完整功能图鉴。
 
 只读取内置 toolbox_ui.html，用项目已有 __VUE_STORE__ 注入模拟缤越 COOL 状态；
 不读取真实车主文件，不修改 APK 功能代码，不清理其他浏览器进程。
@@ -35,7 +35,7 @@ MANIFEST = []
 
 def fetch_apps():
     try:
-        req = urllib.request.Request('https://dl.onepve.com/GeelyToolbox/apps.json', headers={'User-Agent': 'GeelyBlogCapture/1.8.29'})
+        req = urllib.request.Request('https://dl.onepve.com/GeelyToolbox/apps.json', headers={'User-Agent': 'GeelyBlogCapture/1.8.30'})
         with urllib.request.urlopen(req, timeout=15) as response:
             return response.read().decode('utf-8')
     except Exception as exc:
@@ -117,9 +117,9 @@ INJECT_MOCK_DATA_JS = r"""(() => {
     store.isNight = false;
     Object.assign(store.theme, { palette: 'sky_ocean', mode: 'day' });
     Object.assign(store.deviceInfo, {
-        version: '1.8.29', whitelist: true, multimedia_frozen: true, appstore_frozen: true,
+        version: '1.8.30', whitelist: true, multimedia_frozen: true, appstore_frozen: true,
         battery_volt: 126, real_battery_volt: 12.6, car_ip: '192.168.43.100', adb_master_switch: true,
-        platform_code: 'IHU516G', platform_name: '吉利缤越 COOL (SX11A3 · E02平台)', trim_name: '冠军版',
+        platform_code: 'IHU516G', platform_name: '吉利缤越 COOL', trim_name: '',
         custom_vehicle_trim: '', is_car_device: true, fuel_percent: 76, fuel_liters: 34.2,
         screen_size: '1920x720', screen_real_size: '1920x720', screen_density: '160 dpi',
         screen_density_dpi: 160, screen_app_bounds: '1920x720', screen_wm: 'Physical size: 1920x720; density 160',
@@ -423,12 +423,12 @@ def render_widget():
 
 
 async def main():
-    print('开始生成 v1.8.29 模拟实车完整功能图鉴', flush=True)
+    print('开始生成 v1.8.30 模拟实车完整功能图鉴', flush=True)
     apps = fetch_apps()
     await capture_toolbox(apps)
     await capture_mobile()
     manifest_path = OUT_DIR / 'manifest.json'
-    manifest_path.write_text(json.dumps({'version':'1.8.29','source':'toolbox_ui.html + simulated COOL state','images':MANIFEST}, ensure_ascii=False, indent=2), encoding='utf-8')
+    manifest_path.write_text(json.dumps({'version':'1.8.30','source':'toolbox_ui.html + simulated COOL state','images':MANIFEST}, ensure_ascii=False, indent=2), encoding='utf-8')
     print(f'生成完成：{len(MANIFEST)} 张，清单 {manifest_path}', flush=True)
 
 
