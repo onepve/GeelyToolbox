@@ -2070,10 +2070,10 @@ public class SystemUtils {
                         || countMatches(allLog, "TRACKING_REVERSE") > 0
                         || countMatches(allLog, "INFO_ID_BLIND_SPOT_MONITORING_SWITCH) return funValue(0x00000001)") > 0;
                 if (hasBattleExclusive) {
-                    return "Battle版 (顶配)";
+                    return "Battle";
                 }
 
-                // 中配（激擎版）与顶配共有的核心硬件特征：
+                // 激擎与 Battle 共有的核心硬件特征：
                 // 1. L2 级驾驶辅助（FCS 前向碰撞系统、ALAD 领航辅助、SLIF 交通标识识别）
                 // 2. 电动后备箱 (POWERTAILGATE)
                 // 3. 全景天窗电动遮阳帘 (INFO_ID_WINDOW_ROLLSHADE，必须剔除 notavailable 不支持状态)
@@ -2085,17 +2085,17 @@ public class SystemUtils {
                 boolean hasRollshade = countAvailableMatches(allLog, "INFO_ID_WINDOW_ROLLSHADE") > 0;
 
                 if (hasL2Traffic || hasTailgate || hasRollshade) {
-                    return "激擎版 (中配)";
+                    return "激擎";
                 }
 
-                // 无 L2、无电动尾门、无电动遮阳帘时，判定为低配
-                return "热擎版 (低配)";
+                // 无 L2、无电动尾门、无电动遮阳帘时，判定为热擎
+                return "热擎";
             }
         }
 
-        if ("热擎版".equals(baseTrim)) return "热擎版 (低配)";
-        if ("Battle版".equals(baseTrim)) return "Battle版 (顶配)";
-        return "激擎版 (中配)";
+        if ("热擎".equals(baseTrim) || "热擎版".equals(baseTrim)) return "热擎";
+        if ("Battle".equals(baseTrim) || "Battle版".equals(baseTrim)) return "Battle";
+        return "激擎";
     }
 
     private static final java.util.Map<String, String> sMd5Cache = new java.util.concurrent.ConcurrentHashMap<>();

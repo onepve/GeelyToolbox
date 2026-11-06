@@ -1,8 +1,8 @@
 <template>
   <ModalWrapper 
     :show="showModal" 
-    :title="updateInfo?.is_beta ? '【测试通道】检测到实验新版' : '检测到新版本发布'" 
-    :badge="updateInfo?.is_beta ? 'Beta测试' : 'OTA升级'"
+    :title="updateInfo?.is_beta ? '【Beta 通道】检测到新版本' : '检测到新版本发布'" 
+    :badge="updateInfo?.is_beta ? 'Beta' : 'OTA升级'"
     maxWidthClass="max-w-[760px]"
     zIndexClass="z-[9998]"
     @close="closeUpdate"

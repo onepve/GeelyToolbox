@@ -2,7 +2,7 @@
   <ModalWrapper 
     :show="store.modals.about" 
     title="关于与版本信息" 
-    :badge="isBeta ? 'BETA 测试版' : '正式版'"
+    :badge="isBeta ? 'Beta' : '正式版'"
     maxWidthClass="max-w-[960px]"
     @close="closeModal('about')"
   >

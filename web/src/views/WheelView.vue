@@ -145,7 +145,7 @@
           card-title="方向盘 ⑤ 自定义按键"
           :card-desc="customKeyDesc"
           helpTitle="【功能指南】方向盘自定义按键映射与车型适配"
-          helpText="1. 低配（热擎版）：&#10;原车无 360 与专属交互，该按键在原厂处于闲置状态，是低配车友改绑 360 或高德导航的绝佳按键。&#10;&#10;2. 中高配（激擎版/Battle版）：&#10;若原车已被特定交互占用，可选择「恢复原厂默认」放行；若闲置亦可自由映射。&#10;&#10;3. 全功能接管：&#10;可自由映射为秒开 360 全景、导航、静音、打开常用应用等。"
+          helpText="1. 热擎：&#10;原车无 360 与专属交互，该按键在原厂处于闲置状态，是改绑 360 或高德导航的绝佳按键。&#10;&#10;2. 激擎 / Battle：&#10;若原车已被特定交互占用，可选择「恢复原厂默认」放行；若闲置亦可自由映射。&#10;&#10;3. 全功能接管：&#10;可自由映射为秒开 360 全景、导航、静音、打开常用应用等。"
           :helpTip="customKeyTip"
         />
 
@@ -555,17 +555,17 @@ function openAddKeyLearning() {
   });
 }
 
-// 车型档位差异化文案（trim_name 由车机端自动探测推送）
+// 车型差异化文案（trim_name 由车机端自动探测推送）
 const trimName = computed(() => store.deviceInfo.trim_name || '');
 const isLowTrim = computed(() => trimName.value.includes('热擎'));
 const isHighTrim = computed(() => trimName.value.includes('Battle'));
 const customKeyDesc = computed(() => {
-  if (isLowTrim.value) return '⑤ 号自定义键：热擎版原厂闲置按键，可放心改绑常用功能。';
-  if (isHighTrim.value) return '⑤ 号自定义键：Battle版原厂有专属交互，可接管也可放行。';
+  if (isLowTrim.value) return '⑤ 号自定义键：热擎原厂闲置按键，可放心改绑常用功能。';
+  if (isHighTrim.value) return '⑤ 号自定义键：Battle 原厂有专属交互，可接管也可放行。';
   return '⑤ 号自定义键，原厂预留按键，单击秒级触发。';
 });
 const customKeyTip = computed(() => {
-  if (isLowTrim.value) return '低配推荐设为「360 影像」或「高德导航」，弥补无原生 360 的遗憾。';
+  if (isLowTrim.value) return '热擎推荐设为「360 影像」或「高德导航」，方便行车随时看盲区。';
   return '推荐设为「360 全景影像」，行车随时查看周边盲区。';
 });
 

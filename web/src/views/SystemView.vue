@@ -182,10 +182,10 @@
 
     <!-- Tab 2: 桌面车标与启动项 (车标定制 + 启动首屏默认视图) -->
     <div v-if="activeTab === 'icon'" class="flex flex-col space-y-4 pb-28">
-    <!-- 车型配置档位校准 (覆盖全系及非官方预置车型，由车主自主选择实车配置) -->
+    <!-- 车型配置 (覆盖全系及非官方预置车型，由车主自主选择实车配置) -->
     <FeatureCard 
-      title="车型配置档位"
-      :desc="`当前配置：${store.deviceInfo.custom_vehicle_trim || store.deviceInfo.trim_name || '未选择 (默认展示纯车型)'}。可根据您的实车版型点选。`"
+      title="车型配置"
+      :desc="`当前配置：${store.deviceInfo.custom_vehicle_trim || store.deviceInfo.trim_name || '未选择 (默认展示纯车型)'}。可根据您的实车点选。`"
     >
       <div class="w-full flex flex-col space-y-3">
         <div class="grid grid-cols-2 md:grid-cols-3 gap-2.5 w-full">
@@ -571,9 +571,9 @@ const currentTrimPreset = computed(() => {
   if (store.deviceInfo.is_binyue_cool_model || code.includes('binyue_cool') || name.includes('COOL') || model.includes('SX11')) {
     return {
       trims: [
-        { name: 'Battle版', title: 'Battle版' },
-        { name: '激擎版', title: '激擎版' },
-        { name: '热擎版', title: '热擎版' }
+        { name: 'Battle', title: 'Battle' },
+        { name: '激擎', title: '激擎' },
+        { name: '热擎', title: '热擎' }
       ]
     };
   }
@@ -582,8 +582,8 @@ const currentTrimPreset = computed(() => {
   if (code.includes('binyue_l') || name.includes('缤越 L') || name.includes('缤越L') || model.includes('SX12')) {
     return {
       trims: [
-        { name: '星钻版', title: '星钻版' },
-        { name: '星耀版', title: '星耀版' }
+        { name: '星钻', title: '星钻' },
+        { name: '星耀', title: '星耀' }
       ]
     };
   }
@@ -592,9 +592,9 @@ const currentTrimPreset = computed(() => {
   if (code.includes('ss11') || model.includes('SS11') || name.includes('第四代帝豪') || (name.includes('帝豪') && !name.includes('帝豪L') && !name.includes('帝豪 L'))) {
     return {
       trims: [
-        { name: '旗舰型', title: '旗舰型' },
-        { name: '尊贵型', title: '尊贵型' },
-        { name: '豪华型', title: '豪华型' }
+        { name: '旗舰', title: '旗舰' },
+        { name: '尊贵', title: '尊贵' },
+        { name: '豪华', title: '豪华' }
       ]
     };
   }
@@ -603,8 +603,8 @@ const currentTrimPreset = computed(() => {
   if (code.includes('emgrand') || name.includes('帝豪 L') || name.includes('帝豪L') || code.includes('ss13') || model.includes('SS13')) {
     return {
       trims: [
-        { name: '至尊型', title: '至尊型' },
-        { name: '旗舰型', title: '旗舰型' }
+        { name: '至尊', title: '至尊' },
+        { name: '旗舰', title: '旗舰' }
       ]
     };
   }
@@ -613,8 +613,8 @@ const currentTrimPreset = computed(() => {
   if (code.includes('binrui') || code.includes('fe6a') || model.includes('FE6A') || name.includes('缤瑞')) {
     return {
       trims: [
-        { name: '雷霆版', title: '雷霆版' },
-        { name: '风驰版', title: '风驰版' }
+        { name: '雷霆', title: '雷霆' },
+        { name: '风驰', title: '风驰' }
       ]
     };
   }
@@ -623,9 +623,9 @@ const currentTrimPreset = computed(() => {
   if (code.includes('fx11') || model.includes('FX11') || model.includes('NL3') || model.includes('NL4') || name.includes('博越')) {
     return {
       trims: [
-        { name: '旗舰版', title: '旗舰版' },
-        { name: '尊贵版', title: '尊贵版' },
-        { name: '智享版', title: '智享版' }
+        { name: '旗舰', title: '旗舰' },
+        { name: '尊贵', title: '尊贵' },
+        { name: '智享', title: '智享' }
       ]
     };
   }
@@ -634,9 +634,9 @@ const currentTrimPreset = computed(() => {
   if (code.includes('vx11') || model.includes('VX11') || name.includes('星越')) {
     return {
       trims: [
-        { name: '旗舰型', title: '旗舰型' },
-        { name: '尊贵型', title: '尊贵型' },
-        { name: '豪华型', title: '豪华型' }
+        { name: '旗舰', title: '旗舰' },
+        { name: '尊贵', title: '尊贵' },
+        { name: '豪华', title: '豪华' }
       ]
     };
   }
@@ -645,9 +645,9 @@ const currentTrimPreset = computed(() => {
   if (code.includes('fs11') || model.includes('FS11') || name.includes('星瑞')) {
     return {
       trims: [
-        { name: '尊贵型', title: '尊贵型' },
-        { name: '豪华型', title: '豪华型' },
-        { name: '精英型', title: '精英型' }
+        { name: '尊贵', title: '尊贵' },
+        { name: '豪华', title: '豪华' },
+        { name: '精英', title: '精英' }
       ]
     };
   }
@@ -656,9 +656,9 @@ const currentTrimPreset = computed(() => {
   if (name.includes('银河') || code.includes('galaxy')) {
     return {
       trims: [
-        { name: '星舰版', title: '星舰版' },
-        { name: 'MAX版', title: 'MAX版' },
-        { name: 'PLUS版', title: 'PLUS版' }
+        { name: '星舰', title: '星舰' },
+        { name: 'MAX', title: 'MAX' },
+        { name: 'PLUS', title: 'PLUS' }
       ]
     };
   }
@@ -667,19 +667,19 @@ const currentTrimPreset = computed(() => {
   if (name.includes('几何') || code.includes('geometry') || model.includes('GE11')) {
     return {
       trims: [
-        { name: '尊贵版', title: '尊贵版' },
-        { name: '畅享版', title: '畅享版' },
-        { name: '乖萌版', title: '乖萌版' }
+        { name: '尊贵', title: '尊贵' },
+        { name: '畅享', title: '畅享' },
+        { name: '乖萌', title: '乖萌' }
       ]
     };
   }
 
-  // 通用/其他车型：按左到右排布纯粹版型
+  // 通用/其他车型：按左到右排布纯粹配置
   return {
     trims: [
-      { name: '旗舰版', title: '旗舰版' },
-      { name: '尊贵版', title: '尊贵版' },
-      { name: '舒适版', title: '舒适版' }
+      { name: '旗舰', title: '旗舰' },
+      { name: '尊贵', title: '尊贵' },
+      { name: '舒适', title: '舒适' }
     ]
   };
 });
@@ -690,7 +690,7 @@ function onSelectTrim(trim) {
     store.deviceInfo.trim_name = trim;
   }
   bridge.call('setVehicleTrim', trim);
-  showToast(trim ? `已将车型配置档位校准为「${trim}」` : '已恢复系统自动识别车型档位');
+  showToast(trim ? `已切换车型配置为「${trim}」` : '已恢复默认车型配置');
 }
 
 function onSelectAppIconStyle(style) {
