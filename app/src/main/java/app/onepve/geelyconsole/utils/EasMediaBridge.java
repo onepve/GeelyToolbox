@@ -79,6 +79,11 @@ public class EasMediaBridge {
     private volatile boolean btMediaBrowserConnected = false;
     private volatile boolean voiceCompensationEnabled = true;
     private volatile int voiceCompensationOffset = 3;
+    /**
+     * 【仅接管方控】模式下的单次放行闸：仅由车主在其他卡片主动触发的显式蓝牙动作开关，
+     * 用完即复位，绝不长期放开，防「仅接管方控」被静默穿透成接管蓝牙。
+     */
+    private volatile boolean explicitBtActionBypass = false;
 
 
     private final AudioManager.OnAudioFocusChangeListener frozenFallbackFocusListener = new AudioManager.OnAudioFocusChangeListener() {
@@ -118,6 +123,8 @@ public class EasMediaBridge {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             this.voiceCompensationEnabled = prefs.getBoolean("voice_gain_compensation_enabled", true);
             this.voiceCompensationOffset = prefs.getInt("voice_gain_compensation_offset", 3);
+            // 冷启动即按车主已存模式初始化，杜绝【仅接管方控】模式下构造函数先误连蓝牙媒体浏览器
+            this.currentControlMode = prefs.getString("wheel_control_mode", "carmedia_first");
         } catch (Throwable ignored) {}
         registerA2dpReceiver();
     }
@@ -150,6 +157,15 @@ public class EasMediaBridge {
             return;
         }
 
+        // 【仅接管方控】模式铁律：只拦方向盘按键，蓝牙音频通道 100% 保持原厂调度，
+        // 助手绝不注册 EAS、绝不选通蓝牙物理通道、绝不申请闪避焦点（车主明确要求“不接管蓝牙”）。
+        if (SteeringWheelKeyManager.MODE_WHEEL_ONLY.equals(mode)) {
+            AppLogger.i("音频通道", "当前为【仅接管方控】模式，助手不接管蓝牙音频，释放 EAS 注册与蓝牙焦点，完整交还原厂");
+            releaseEasRegistration();
+            abandonBluetoothFocus();
+            return;
+        }
+
         if ("toolbox_alone".equals(mode) || "bt_only".equals(mode) || a2dpSinkConnected) {
             // 控制台独立接管、仅接管蓝牙或手机蓝牙已连接：确保 EAS 初始化并注册选通蓝牙通道
             ensureEasReady();
@@ -164,9 +180,24 @@ public class EasMediaBridge {
     }
 
     /**
+     * 当前是否为【仅接管方控】模式：只拦方向盘按键，蓝牙链路一律不接管。
+     * 事实边界：该模式下助手不注册 EAS、不选通蓝牙物理通道、不申请闪避焦点、不发保源广播，
+     * 蓝牙声音与原厂多媒体调度 100% 保持车主原车行为。
+     * 例外：车主在【其他卡片】主动触发的显式蓝牙动作（如车速自启选手机蓝牙、音源测试）不受本模式压制，
+     * 由 explicitBtActionBypass 单次放行，保证「方控接管模式」绝不连带干扰其他功能卡片的既有逻辑。
+     */
+    private boolean isWheelOnlyMode() {
+        return !explicitBtActionBypass && SteeringWheelKeyManager.MODE_WHEEL_ONLY.equals(currentControlMode);
+    }
+
+    /**
      * 确保 EAS API 就绪并注册
      */
     private synchronized void ensureEasReady() {
+        if (isWheelOnlyMode()) {
+            AppLogger.i("音频通道", "【仅接管方控】模式，禁止任何 EAS 注册与声道选通，蓝牙链路完整交还原厂");
+            return;
+        }
         if (pushPlaybackCluster || pushLyricsCluster) {
             AppLogger.i("音频通道", "当前已开启仪表歌词/屏保投递，跳过助手 EAS 媒体注册以防挤占通道");
             return;
@@ -263,6 +294,12 @@ public class EasMediaBridge {
     }
 
     private boolean isOriginalMediaActive() {
+        // 【仅接管方控】模式：从助手视角一律视为“原厂多媒体正常活跃”，
+        // 从而让所有蓝牙介入动作（保源广播、闪避焦点、声卡唤醒 play、排队播放 pause）全部走原厂跳过分支，
+        // 助手 100% 不接管蓝牙；车主在其他卡片的显式蓝牙动作由 explicitBtActionBypass 单次放行。
+        if (isWheelOnlyMode()) {
+            return true;
+        }
         try {
             // 1. 原生进程活跃探测（零 ADB，零 shell）：检测 com.ecarx.multimedia 是否存在存活进程
             ActivityManager am = (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
@@ -470,6 +507,10 @@ public class EasMediaBridge {
     }
 
     public synchronized void activateBluetoothChannel() {
+        if (isWheelOnlyMode()) {
+            AppLogger.i("蓝牙音频", "【仅接管方控】模式，跳过蓝牙物理通道选通与媒体浏览器连接，蓝牙声音仍由原厂调度");
+            return;
+        }
         try {
             ensureEasReady();
             if (mApi != null && mRegistered && mToken != null) {
@@ -500,12 +541,18 @@ public class EasMediaBridge {
 
     /**
      * 主动唤醒手机蓝牙开始播放音乐 (仅在用户主动按方控播放或车速自启明确要放歌时调用)
+     * 边界：车速自启/音源测试等其他卡片的显式蓝牙动作属车主明确指令，单次放行，不受【仅接管方控】压制。
      */
     public void playBluetoothMusic() {
         clearAutoWakeSuppression();
-        activateBluetoothChannel();
-        sendKeepSourceBroadcastWhenFrozen();
-        wakeBluetoothSinkWhenFrozen();
+        explicitBtActionBypass = true;
+        try {
+            activateBluetoothChannel();
+            sendKeepSourceBroadcastWhenFrozen();
+            wakeBluetoothSinkWhenFrozen();
+        } finally {
+            explicitBtActionBypass = false;
+        }
     }
 
     /**

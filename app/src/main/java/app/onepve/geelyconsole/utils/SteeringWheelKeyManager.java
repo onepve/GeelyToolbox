@@ -64,7 +64,8 @@ public class SteeringWheelKeyManager {
 
     // 接管模式
     public static final String MODE_CARMEDIA_FIRST = "carmedia_first"; // 米小江方控优先
-    public static final String MODE_TOOLBOX_ALONE = "toolbox_alone";   // 控制台接管
+    public static final String MODE_TOOLBOX_ALONE = "toolbox_alone";   // 控制台接管（按键 + 蓝牙全接管）
+    public static final String MODE_WHEEL_ONLY = "wheel_only";         // 仅接管方控按键（蓝牙保持原厂，绝不接管）
     public static final String MODE_BT_ONLY = "bt_only";               // 仅接管蓝牙(放行方控)
     public static final String MODE_FACTORY_DEFAULT = "factory_default"; // 恢复原厂
 
@@ -414,15 +415,15 @@ public class SteeringWheelKeyManager {
 
         final String singleAction = getGestureAction(keyCode, GESTURE_SINGLE);
         if (ACTION_DEFAULT.equals(singleAction)) {
-            // 控制台独立接管模式下，原厂 MediaKeyReceiver 已由 ADB 停用以防多源冲突
+            // 控制台独立接管 / 仅接管方控 模式下，原厂 MediaKeyReceiver 已由 ADB 停用以防多源冲突
             // 若用户对上一曲/下一曲保留【原厂默认】，由助手履行原厂默认切歌职责，确保切歌功能 100% 可用且不空转
-            if (MODE_TOOLBOX_ALONE.equals(wheelModeCached)) {
+            if (MODE_TOOLBOX_ALONE.equals(wheelModeCached) || MODE_WHEEL_ONLY.equals(wheelModeCached)) {
                 if (keyCode == KEY_NEXT) {
-                    AppLogger.i("方控按键", getKeyName(keyCode) + " 处于[原厂默认]，独立接管模式下执行下一曲切歌");
+                    AppLogger.i("方控按键", getKeyName(keyCode) + " 处于[原厂默认]，接管模式下执行下一曲切歌");
                     executeAction(ACTION_NEXT_TRACK);
                     return;
                 } else if (keyCode == KEY_PREV) {
-                    AppLogger.i("方控按键", getKeyName(keyCode) + " 处于[原厂默认]，独立接管模式下执行上一曲切歌");
+                    AppLogger.i("方控按键", getKeyName(keyCode) + " 处于[原厂默认]，接管模式下执行上一曲切歌");
                     executeAction(ACTION_PREV_TRACK);
                     return;
                 }

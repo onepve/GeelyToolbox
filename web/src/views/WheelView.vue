@@ -264,10 +264,10 @@
       title="方控按键接管模式"
       desc="屏蔽原厂伴听抢占广播；若同时安装米小江建议选择协同优先。"
       helpTitle="【功能指南】方控接管模式与仪表显示"
-      helpText="1. 接管模式选择：&#10;• 控制台独立接管（推荐）：方向盘按键直接控制切歌与播放，自动唤醒车载喇叭，体验最流畅。&#10;• 米小江方控优先：如果车机上装了米小江 CarMedia，选这项让它优先处理切歌，两者互不打扰。&#10;• 恢复原厂默认：不拦截方向盘按键，全部交回原车控制。&#10;&#10;2. 蓝牙无声问题解决：&#10;独立接管模式下，手机连车机蓝牙放微信语音或音乐没声音时，会自动帮您接通车载喇叭。&#10;&#10;3. 仪表与屏保显示：&#10;可自由选择是否把当前歌名和歌词推送到仪表盘或屏保上显示。" 
-      helpTip="如果同时装了米小江请选「米小江方控优先」；只用本工具箱建议选「控制台独立接管」。"
+      helpText="1. 接管模式选择：&#10;• 控制台独立接管（推荐）：方向盘按键直接控制切歌与播放，自动唤醒车载喇叭，体验最流畅。&#10;• 仅接管方控按键：只拦方向盘按键，蓝牙音频完全交回原厂，助手一律不插手蓝牙声音。&#10;• 米小江方控优先：如果车机上装了米小江 CarMedia，选这项让它优先处理切歌，两者互不打扰。&#10;• 恢复原厂默认：不拦截方向盘按键，全部交回原车控制。&#10;&#10;2. 蓝牙无声问题解决：&#10;独立接管模式下，手机连车机蓝牙放微信语音或音乐没声音时，会自动帮您接通车载喇叭。选「仅接管方控按键」则不接管蓝牙，蓝牙声音全部按原厂处理。&#10;&#10;3. 仪表与屏保显示：&#10;可自由选择是否把当前歌名和歌词推送到仪表盘或屏保上显示。" 
+      helpTip="如果同时装了米小江请选「米小江方控优先」；只想改按键、不想让助手碰蓝牙请选「仅接管方控按键」；全都想交给助手建议选「控制台独立接管」。"
     >
-      <div class="grid grid-cols-4 gap-3.5" style="grid-gap: 12px; -webkit-column-gap: 12px;">
+      <div class="grid grid-cols-5 gap-3.5" style="grid-gap: 12px; -webkit-column-gap: 12px;">
         <MatrixButton 
           title="米小江方控优先"
           subtitle="放行切歌与Mode键，补充静音键接管"
@@ -277,8 +277,14 @@
         <MatrixButton 
           title="控制台独立接管"
           subtitle="全量接管按键，保持蓝牙声音正常"
-          :active="store.vehicleAuto.wheel_control_mode === 'toolbox_alone' || (!store.vehicleAuto.wheel_control_mode && store.vehicleAuto.wheel_control_mode !== 'factory_default' && store.vehicleAuto.wheel_control_mode !== 'bt_only')"
+          :active="store.vehicleAuto.wheel_control_mode === 'toolbox_alone' || (!store.vehicleAuto.wheel_control_mode && store.vehicleAuto.wheel_control_mode !== 'factory_default' && store.vehicleAuto.wheel_control_mode !== 'bt_only' && store.vehicleAuto.wheel_control_mode !== 'wheel_only')"
           @click="setWheelMode('toolbox_alone')"
+        />
+        <MatrixButton 
+          title="仅接管方控按键"
+          subtitle="只接管按键，蓝牙完全不动"
+          :active="store.vehicleAuto.wheel_control_mode === 'wheel_only'"
+          @click="setWheelMode('wheel_only')"
         />
         <MatrixButton 
           title="仅接管蓝牙"
@@ -685,6 +691,7 @@ function setWheelMode(mode) {
   const modeNames = {
     carmedia_first: '米小江优先',
     toolbox_alone: '控制台独立接管',
+    wheel_only: '仅接管方控按键(蓝牙不动)',
     bt_only: '仅接管蓝牙(不改按键)',
     factory_default: '恢复原厂'
   };
