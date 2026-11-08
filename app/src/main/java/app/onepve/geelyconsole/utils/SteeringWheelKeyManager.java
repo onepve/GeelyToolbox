@@ -699,7 +699,7 @@ public class SteeringWheelKeyManager {
                     if (targetSource == SOURCE_BLUETOOTH) {
                         // 核心：用户主动恢复播放时，立即解除暂停抑制窗口，并重新激活选通蓝牙物理通道
                         EasMediaBridge.getInstance(context).clearAutoWakeSuppression();
-                        EasMediaBridge.getInstance(context).activateBluetoothChannel();
+                        EasMediaBridge.getInstance(context).activateBluetoothChannelExplicit();
                     }
                     sendMediaKeyEvent(KeyEvent.KEYCODE_MEDIA_PLAY, targetSource);
                 }
@@ -1173,7 +1173,7 @@ public class SteeringWheelKeyManager {
             try {
                 if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
                     EasMediaBridge.getInstance(context).clearAutoWakeSuppression();
-                    EasMediaBridge.getInstance(context).activateBluetoothChannel();
+                    EasMediaBridge.getInstance(context).activateBluetoothChannelExplicit();
                 }
 
                 MediaSessionManager msm = (MediaSessionManager) context.getSystemService(Context.MEDIA_SESSION_SERVICE);

@@ -84,6 +84,8 @@ public class EasMediaBridge {
      * 用完即复位，绝不长期放开，防「仅接管方控」被静默穿透成接管蓝牙。
      */
     private volatile boolean explicitBtActionBypass = false;
+    /** 让路态显式放行：车主在方控播放键/音源测试中主动发声时，单次穿透「仪表卡片让路」门禁 */
+    private volatile boolean explicitClusterBypass = false;
 
 
     private final AudioManager.OnAudioFocusChangeListener frozenFallbackFocusListener = new AudioManager.OnAudioFocusChangeListener() {
@@ -101,6 +103,12 @@ public class EasMediaBridge {
     private String currentControlMode = "carmedia_first";
     private boolean pushPlaybackCluster = false;
     private boolean pushLyricsCluster = false;
+
+    /** 上一次 syncConfig 时仪表/屏保显示开关是否处于开启态（用于识别「开→关」跃变并清屏） */
+    private boolean lastPushPlaybackCluster = false;
+    private boolean lastPushLyricsCluster = false;
+    /** 助手是否真的向仪表/息屏卡片投递过内容：仅投递过才有残留可清，杜绝无谓抢注 EAS */
+    private volatile boolean clusterContentPushed = false;
 
     private String lastPushedTitle = "";
     private String lastPushedArtist = "";
@@ -143,6 +151,13 @@ public class EasMediaBridge {
      */
     public synchronized void syncConfig(String mode, boolean pushPlayback, boolean pushLyrics) {
         this.currentControlMode = mode;
+
+        // 「开→关」跃变：让路期间卡片上的内容属于车机自带播放器，助手重新接管媒体中心后若不主动接管卡片，
+        // 车主会一直看到上一首停在仪表/息屏上。因此仅在助手确实要接管媒体中心时，才由助手把卡片刷新为本机状态。
+        boolean turnedOff = (lastPushPlaybackCluster || lastPushLyricsCluster) && !(pushPlayback || pushLyrics);
+        this.lastPushPlaybackCluster = pushPlayback;
+        this.lastPushLyricsCluster = pushLyrics;
+
         this.pushPlaybackCluster = pushPlayback;
         this.pushLyricsCluster = pushLyrics;
 
@@ -154,6 +169,7 @@ public class EasMediaBridge {
             AppLogger.i("音频通道", "已开启仪表歌词/屏保投递，注销助手 EAS 媒体注册并释放焦点，完整交还给音乐播放器");
             releaseEasRegistration();
             abandonBluetoothFocus();
+            disconnectBtMediaBrowser();
             return;
         }
 
@@ -168,6 +184,15 @@ public class EasMediaBridge {
 
         if ("toolbox_alone".equals(mode) || "bt_only".equals(mode) || a2dpSinkConnected) {
             // 控制台独立接管、仅接管蓝牙或手机蓝牙已连接：确保 EAS 初始化并注册选通蓝牙通道
+            if (turnedOff) {
+                // 从让路态切回接管态：先把助手自己留在卡片上的残留擦掉（从未投递过则自动跳过，绝不越权），
+                // 再清空投递去重缓存，保证下一次播放状态一定重新刷到卡片上。
+                clearClusterCardOnDemand();
+                lastPushedTitle = "";
+                lastPushedArtist = "";
+                lastPushedStatus = -1;
+                AppLogger.i("音频通道", "已从仪表让路态切回接管态，清空投递去重缓存以刷新卡片");
+            }
             ensureEasReady();
             if (a2dpSinkConnected && a2dpStreaming) {
                 activateBluetoothChannel();
@@ -191,6 +216,17 @@ public class EasMediaBridge {
     }
 
     /**
+     * 当前是否处于「仪表/息屏卡片显示开启」的让路态。
+     * 事实边界：让路态下助手已注销 EAS 注册，绝不能再私下保持蓝牙媒体浏览器连接、不再发保源广播、
+     * 不申请闪避焦点 —— 否则车主看到的是「开了歌词，手机音乐反而被助手弄醒」。
+     * 例外：车主在其他卡片主动触发的显式蓝牙动作（车速自启选手机蓝牙、音源测试）由
+     * explicitBtActionBypass 单次放行，保证卡片之间门禁独立、互不连带。
+     */
+    private boolean isClusterPushYielding() {
+        return !explicitClusterBypass && (pushPlaybackCluster || pushLyricsCluster);
+    }
+
+    /**
      * 确保 EAS API 就绪并注册
      */
     private synchronized void ensureEasReady() {
@@ -198,7 +234,7 @@ public class EasMediaBridge {
             AppLogger.i("音频通道", "【仅接管方控】模式，禁止任何 EAS 注册与声道选通，蓝牙链路完整交还原厂");
             return;
         }
-        if (pushPlaybackCluster || pushLyricsCluster) {
+        if (isClusterPushYielding()) {
             AppLogger.i("音频通道", "当前已开启仪表歌词/屏保投递，跳过助手 EAS 媒体注册以防挤占通道");
             return;
         }
@@ -300,6 +336,11 @@ public class EasMediaBridge {
         if (isWheelOnlyMode()) {
             return true;
         }
+        // 让路态（已开启仪表/屏保卡片显示）：助手已把媒体中心交还车机自带播放器，
+        // 从助手视角同样一律视为原厂活跃，杜绝任何保源广播/焦点争抢/play 唤醒打扰正在放歌的播放器。
+        if (isClusterPushYielding()) {
+            return true;
+        }
         try {
             // 1. 原生进程活跃探测（零 ADB，零 shell）：检测 com.ecarx.multimedia 是否存在存活进程
             ActivityManager am = (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
@@ -390,6 +431,27 @@ public class EasMediaBridge {
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "abandonBluetoothFocus 异常: " + t.getMessage());
         }
+    }
+
+    /**
+     * 断开底层蓝牙 MediaBrowser 连接。
+     * 让路态必须调用：助手退出媒体中心后若仍握着 A2dpMediaBrowserService 连接，
+     * 会与原厂多媒体争夺底层蓝牙会话，表现为「开了歌词，手机音乐反而被唤醒/声音发飘」。
+     */
+    private synchronized void disconnectBtMediaBrowser() {
+        if (btMediaBrowser == null) {
+            btMediaBrowserConnected = false;
+            btMediaController = null;
+            return;
+        }
+        try {
+            btMediaBrowser.disconnect();
+        } catch (Throwable ignored) {
+        }
+        btMediaBrowser = null;
+        btMediaController = null;
+        btMediaBrowserConnected = false;
+        AppLogger.i("蓝牙音频", "已断开底层 A2DP MediaBrowser 连接，蓝牙会话完整交还原厂");
     }
 
     /**
@@ -511,6 +573,12 @@ public class EasMediaBridge {
             AppLogger.i("蓝牙音频", "【仅接管方控】模式，跳过蓝牙物理通道选通与媒体浏览器连接，蓝牙声音仍由原厂调度");
             return;
         }
+        // 让路态铁律：仪表/息屏卡片显示开关已开，助手已退出媒体中心，此处必须同步停手，
+        // 不再连蓝牙媒体浏览器、不发保源广播、不抢闪避焦点，真正做到「说让路就全让」。
+        if (isClusterPushYielding()) {
+            AppLogger.i("蓝牙音频", "已开启仪表/息屏卡片显示，跳过蓝牙媒体浏览器连接、保源广播与闪避焦点，避免误唤醒手机放歌");
+            return;
+        }
         try {
             ensureEasReady();
             if (mApi != null && mRegistered && mToken != null) {
@@ -536,6 +604,19 @@ public class EasMediaBridge {
             }
         } catch (Throwable t) {
             AppLogger.w("蓝牙音频", "选通蓝牙音频物理通道失败: " + t.getMessage());
+        }
+    }
+
+    /**
+     * 车主显式指令（方控播放键、音源测试、强制选通按钮）下的蓝牙通道选通。
+     * 边界：让路态只压制助手的被动后台守护，绝不吞掉车主的显式操作 —— 显式动作单次放行。
+     */
+    public void activateBluetoothChannelExplicit() {
+        explicitClusterBypass = true;
+        try {
+            activateBluetoothChannel();
+        } finally {
+            explicitClusterBypass = false;
         }
     }
 
@@ -721,6 +802,60 @@ public class EasMediaBridge {
     }
 
     /**
+     * 擦除仪表盘中间卡片与息屏音乐卡片上的助手残留内容。
+     * 铁律（绝不越界）：只有助手自己确实向卡片投递过内容 (clusterContentPushed) 才执行擦除；
+     * 若助手从未投递（当前常态：仪表显示一律由车机自带播放器自行推送），则什么也不做，
+     * 严禁为「清屏」去抢注 EAS 并覆盖正在放歌的车机播放器的卡片内容。
+     */
+    private synchronized void clearClusterCardOnDemand() {
+        if (!clusterContentPushed) {
+            AppLogger.i("音频通道", "助手未向仪表投递过内容,跳过清屏（卡片归属车机播放器,严禁越权擦除）");
+            return;
+        }
+        try {
+            if (mApi == null) {
+                mApi = MediaCenterAPI.get(appContext);
+            }
+            if (mApi == null || !mApi.isReady()) {
+                AppLogger.w("音频通道", "清屏跳过：EAS API 未就绪");
+                return;
+            }
+            if (!mRegistered || mToken == null) {
+                performRegistration();
+            }
+            if (!mRegistered || mToken == null) {
+                AppLogger.w("音频通道", "清屏跳过：EAS 注册失败");
+                return;
+            }
+            MusicPlaybackInfo info = new MusicPlaybackInfo();
+            info.setTitle("");
+            info.setArtist("");
+            info.setAlbum("");
+            info.setDuration(0L);
+            info.setPlaybackStatus(0);
+            info.setSourceType(SOURCE_TYPE_BLUETOOTH);
+            info.setPackageName(appContext.getPackageName());
+            info.setAppName("缤越助手");
+            info.setMediaType("music");
+            info.setUuid("");
+            info.setSupportLoopModeSwitch(true);
+            info.setSupportVrCtrlPlayStatus(true);
+            info.setLyricContent(" ");
+            info.setCurrentLyricSentence(" ");
+            mApi.updateMusicPlaybackState(mToken, info);
+            mApi.updateCurrentProgress(mToken, 0L);
+            AppLogger.i("音频通道", "已向仪表/息屏卡片投递空内容，擦除助手残留");
+        } catch (Throwable t) {
+            AppLogger.w("音频通道", "清屏异常: " + t.getMessage());
+        } finally {
+            clusterContentPushed = false;
+            lastPushedTitle = "";
+            lastPushedArtist = "";
+            lastPushedStatus = -1;
+        }
+    }
+
+    /**
      * 投递播放状态与歌曲信息到仪表盘与屏保 (由 wheel_push_playback_cluster 门控)
      */
     public synchronized void pushPlaybackInfoIfEnabled(String title, String artist, String album, long duration, int status) {
@@ -757,6 +892,7 @@ public class EasMediaBridge {
             info.setUuid(title + "|" + artist);
 
             mApi.updateMusicPlaybackState(mToken, info);
+            clusterContentPushed = true;
             AppLogger.i("音频通道", "已向 EAS 投递媒体状态 (仪表/屏保可见): " + title + " - " + artist + " 状态=" + status);
         } catch (Throwable t) {
             AppLogger.w("音频通道", "投递媒体状态异常: " + t.getMessage());
