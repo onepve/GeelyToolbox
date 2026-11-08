@@ -280,10 +280,8 @@ public class VehicleAutomationService extends Service {
             boolean modeSport = prefs.getBoolean("voice_enable_mode_sport", true);
             String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
             boolean wheelEnabled = wheelMaster && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
-            boolean pushPlayback = prefs.getBoolean("wheel_push_playback_cluster", false);
-            boolean pushLyrics = prefs.getBoolean("wheel_push_lyrics_cluster", false);
             try {
-                EasMediaBridge.getInstance(context).syncConfig(wheelMode, pushPlayback, pushLyrics);
+                EasMediaBridge.getInstance(context).syncConfig(wheelMode);
             } catch (Throwable ignored) {}
 
             boolean voiceCompEnabled = prefs.getBoolean("voice_gain_compensation_enabled", true);
@@ -434,7 +432,6 @@ public class VehicleAutomationService extends Service {
             startLogcatReader();
         }
         registerEcarxKeyReceiver();
-        startMediaMonitor();
         EasMediaBridge.getInstance(this); // 确保蓝牙 A2DP 连接/推流监听与原车音频通道常驻就绪
 
         // 开机点火防洪峰：重开销的包缓存预热延后 20 秒异步错峰执行，彻底避开车机开机与用户上车初期的 CPU/IO 争抢
@@ -1722,65 +1719,12 @@ public class VehicleAutomationService extends Service {
         try {
             IdleScreensaverManager.stop();
         } catch (Throwable ignored) {}
-        stopMediaMonitor();
         try {
             EasMediaBridge.getInstance(this).releaseEasRegistration();
         } catch (Throwable ignored) {}
         Log.i(TAG, "VehicleAutomationService stopped");
     }
 
-    private final Runnable mediaMonitorRunnable = new Runnable() {
-        @Override
-        public void run() {
-            try {
-                pollActiveMediaSession();
-            } catch (Throwable ignored) {}
-            if (isRunning) {
-                mainHandler.postDelayed(this, 3000);
-            }
-        }
-    };
-
-    private void startMediaMonitor() {
-        mainHandler.removeCallbacks(mediaMonitorRunnable);
-        mainHandler.postDelayed(mediaMonitorRunnable, 3000);
-    }
-
-    private void stopMediaMonitor() {
-        mainHandler.removeCallbacks(mediaMonitorRunnable);
-    }
-
-    private void pollActiveMediaSession() {
-        SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
-        boolean pushPb = prefs.getBoolean("wheel_push_playback_cluster", false);
-        if (!pushPb) return;
-        String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
-        if (!"toolbox_alone".equals(wheelMode)) return;
-
-        MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
-        if (msm == null) return;
-        List<MediaController> controllers = null;
-        try {
-            controllers = msm.getActiveSessions(null);
-        } catch (Throwable ignored) {}
-        if (controllers == null || controllers.isEmpty()) return;
-
-        for (MediaController mc : controllers) {
-            if (mc == null) continue;
-            PlaybackState state = mc.getPlaybackState();
-            if (state != null && state.getState() == PlaybackState.STATE_PLAYING) {
-                MediaMetadata md = mc.getMetadata();
-                if (md != null) {
-                    String title = md.getString(MediaMetadata.METADATA_KEY_TITLE);
-                    String artist = md.getString(MediaMetadata.METADATA_KEY_ARTIST);
-                    String album = md.getString(MediaMetadata.METADATA_KEY_ALBUM);
-                    long duration = md.getLong(MediaMetadata.METADATA_KEY_DURATION);
-                    EasMediaBridge.getInstance(this).pushPlaybackInfoIfEnabled(title, artist, album, duration, 1);
-                    return;
-                }
-            }
-        }
-    }
 
     // ==========================================
     // 车速与门控自动化中枢 (单次行程防抖闭环)

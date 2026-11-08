@@ -121,8 +121,6 @@ public final class VehicleConfigHelper {
             obj.put("wheel_action_mode", prefs.getString("wheel_action_mode", defaultModeAction));
             obj.put("wheel_action_ok", prefs.getString("wheel_action_ok", "default"));
             obj.put("has_carmedia_installed", hasCarMedia);
-            obj.put("wheel_push_playback_cluster", prefs.getBoolean("wheel_push_playback_cluster", false));
-            obj.put("wheel_push_lyrics_cluster", prefs.getBoolean("wheel_push_lyrics_cluster", false));
             obj.put("wheel_mapping_mode", prefs.getString("wheel_mapping_mode", "preset"));
             obj.put("wheel_custom_mapping_list", prefs.getString("wheel_custom_mapping_list", "[]"));
 

@@ -264,7 +264,7 @@
       title="方控按键接管模式"
       desc="屏蔽原厂伴听抢占广播；若同时安装米小江建议选择协同优先。"
       helpTitle="【功能指南】方控接管模式与仪表显示"
-      helpText="1. 接管模式选择：&#10;• 控制台独立接管（推荐）：方向盘按键直接控制切歌与播放，自动唤醒车载喇叭，体验最流畅。&#10;• 仅接管方控按键：只拦方向盘按键，蓝牙音频完全交回原厂，助手一律不插手蓝牙声音。&#10;• 米小江方控优先：如果车机上装了米小江 CarMedia，选这项让它优先处理切歌，两者互不打扰。&#10;• 恢复原厂默认：不拦截方向盘按键，全部交回原车控制。&#10;&#10;2. 蓝牙无声问题解决：&#10;独立接管模式下，手机连车机蓝牙放微信语音或音乐没声音时，会自动帮您接通车载喇叭。选「仅接管方控按键」则不接管蓝牙，蓝牙声音全部按原厂处理。&#10;&#10;3. 仪表与屏保显示：&#10;这两项开关打开后，助手会把媒体中心和蓝牙声音整体交还给车机自带播放器，由它来显示歌名和歌词；助手的后台蓝牙保活同步停手，方向盘按键设置不受影响。" 
+      helpText="1. 接管模式选择：&#10;• 控制台独立接管（推荐）：方向盘按键直接控制切歌与播放，自动唤醒车载喇叭，体验最流畅。&#10;• 仅接管方控按键：只拦方向盘按键，蓝牙音频完全交回原厂，助手一律不插手蓝牙声音。&#10;• 米小江方控优先：如果车机上装了米小江 CarMedia，选这项让它优先处理切歌，两者互不打扰。&#10;• 恢复原厂默认：不拦截方向盘按键，全部交回原车控制。&#10;&#10;2. 蓝牙无声问题解决：&#10;独立接管模式下，手机连车机蓝牙放微信语音或音乐没声音时，会自动帮您接通车载喇叭。选「仅接管方控按键」则不接管蓝牙，蓝牙声音全部按原厂处理。" 
 
       helpTip="如果同时装了米小江请选「米小江方控优先」；只想改按键、不想让助手碰蓝牙请选「仅接管方控按键」；全都想交给助手建议选「控制台独立接管」。"
     >
@@ -301,52 +301,6 @@
         />
       </div>
     </FeatureCard>
-
-    <!-- 2. 仪表盘与屏保显示扩展 (独立双列卡片，左右等高对称，整卡点击开关) -->
-    <div class="grid grid-cols-2 gap-4 items-stretch">
-      <div
-        @click="toggleClusterPlayback"
-        :class="[
-          'flex items-center justify-between p-5 rounded-3xl border-2 cursor-pointer select-none active:scale-[0.985] transition-all shadow-xl',
-          store.vehicleAuto.wheel_push_playback_cluster
-            ? 'bg-car-item border-car-accent shadow-md'
-            : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
-        ]"
-      >
-        <div class="flex flex-col space-y-1 pr-3">
-          <span class="text-[17px] font-black text-car-text">息屏时钟显示音乐卡片</span>
-          <span class="text-[13px] text-car-sub font-bold">助手退出媒体接管，歌名歌手由车机自带播放器显示</span>
-        </div>
-        <div class="flex items-center space-x-2 shrink-0">
-          <StatusDot size="sm" :color="store.vehicleAuto.wheel_push_playback_cluster ? 'ok' : 'off'" :glow-px="6" />
-          <span :class="['text-[15px] font-black', store.vehicleAuto.wheel_push_playback_cluster ? 'text-car-text' : 'text-car-sub']">
-            {{ store.vehicleAuto.wheel_push_playback_cluster ? '已开启' : '已关闭' }}
-          </span>
-        </div>
-      </div>
-
-      <div
-        @click="toggleClusterLyrics"
-        :class="[
-          'flex items-center justify-between p-5 rounded-3xl border-2 cursor-pointer select-none active:scale-[0.985] transition-all shadow-xl',
-          store.vehicleAuto.wheel_push_lyrics_cluster
-            ? 'bg-car-item border-car-accent shadow-md'
-            : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
-        ]"
-      >
-        <div class="flex flex-col space-y-1 pr-3">
-          <span class="text-[17px] font-black text-car-text">液晶仪表盘同步滚动歌词</span>
-          <span class="text-[13px] text-car-sub font-bold">助手退出媒体接管，歌词由车机自带播放器显示</span>
-        </div>
-        <div class="flex items-center space-x-2 shrink-0">
-          <StatusDot size="sm" :color="store.vehicleAuto.wheel_push_lyrics_cluster ? 'ok' : 'off'" :glow-px="6" />
-          <span :class="['text-[15px] font-black', store.vehicleAuto.wheel_push_lyrics_cluster ? 'text-car-text' : 'text-car-sub']">
-            {{ store.vehicleAuto.wheel_push_lyrics_cluster ? '已开启' : '已关闭' }}
-          </span>
-        </div>
-      </div>
-    </div>
-
 
     <div
       @click="toggleFloating()"
@@ -697,50 +651,6 @@ function setWheelMode(mode) {
     factory_default: '恢复原厂'
   };
   showToast('方控模式已切换: ' + (modeNames[mode] || mode));
-}
-
-function toggleClusterPlayback() {
-  playTouchFeedback();
-  const next = !store.vehicleAuto.wheel_push_playback_cluster;
-  if (next) {
-    openModal('confirm', {
-      title: '提示',
-      desc: '开启后，助手会把媒体中心和蓝牙声音完整交还给车机自带播放器，让它在息屏时钟上显示歌名歌手。助手的后台蓝牙保活会一并停手，不会再抢声音。您的方向盘按键设置保持不变。是否确认开启？',
-      confirmText: '确认开启',
-      onConfirm: () => {
-        store.vehicleAuto.wheel_push_playback_cluster = true;
-        bridge.call('setVehicleAutomationSetting', 'wheel_push_playback_cluster', true);
-        showToast('已开启，歌名歌手交给车机播放器');
-      }
-    });
-    return;
-  }
-
-  store.vehicleAuto.wheel_push_playback_cluster = false;
-  bridge.call('setVehicleAutomationSetting', 'wheel_push_playback_cluster', false);
-  showToast('已关闭，助手重新接管媒体通道');
-}
-
-function toggleClusterLyrics() {
-  playTouchFeedback();
-  const next = !store.vehicleAuto.wheel_push_lyrics_cluster;
-  if (next) {
-    openModal('confirm', {
-      title: '提示',
-      desc: '开启后，助手会把媒体中心和蓝牙声音完整交还给车机自带播放器，让它在液晶仪表盘上显示滚动歌词。助手的后台蓝牙保活会一并停手，不会再抢声音。您的方向盘按键设置保持不变。是否确认开启？',
-      confirmText: '确认开启',
-      onConfirm: () => {
-        store.vehicleAuto.wheel_push_lyrics_cluster = true;
-        bridge.call('setVehicleAutomationSetting', 'wheel_push_lyrics_cluster', true);
-        showToast('已开启，歌词交给车机播放器');
-      }
-    });
-    return;
-  }
-
-  store.vehicleAuto.wheel_push_lyrics_cluster = false;
-  bridge.call('setVehicleAutomationSetting', 'wheel_push_lyrics_cluster', false);
-  showToast('已关闭，助手重新接管媒体通道');
 }
 
 function resetAllToFactory() {
