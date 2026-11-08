@@ -58,30 +58,6 @@ public class DoorStateManager {
     private final Map<String, Long> lastVoiceTime = new HashMap<>();
     private static final long DOOR_VOICE_DEBOUNCE_MS = 1500;
 
-    // 底盘硬件传感器多重融合 (兼容保留接口，防止外部调用编译异常)
-    private boolean hardwareDriverBeltBuckled = false;
-    private boolean hardwarePassengerSeated = false;
-    private boolean hasDriverBeltSensor = false;
-    private boolean hasPassengerSensor = false;
-
-    public void updateDriverBeltState(boolean buckled) {
-        this.hardwareDriverBeltBuckled = buckled;
-        this.hasDriverBeltSensor = true;
-        if (buckled) {
-            this.isDriverInside = true;
-            this.doorActionIntent.put("FL", INTENT_NONE);
-        }
-    }
-
-    public void updatePassengerOccupancy(boolean seated) {
-        this.hardwarePassengerSeated = seated;
-        this.hasPassengerSensor = true;
-        if (seated) {
-            this.isFRInside = true;
-            this.doorActionIntent.put("FR", INTENT_NONE);
-        }
-    }
-
     public DoorStateManager(Context context, VehicleVoicePlayer voicePlayer) {
         this.context = context.getApplicationContext();
         this.voicePlayer = voicePlayer;
