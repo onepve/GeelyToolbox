@@ -3439,6 +3439,27 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             return safeCall("{}", () -> VehicleConfigHelper.getVehicleAutomationSettingsJson(MainActivity.this));
         }
 
+        /**
+         * 原厂多媒体（com.ecarx.multimedia）当前状态，供方控档位按钮点击时按需查询一次。
+         * 性能与权限边界：纯 Android 标准 API（PackageManager 启用状态 + ActivityManager 进程表），
+         * 全程零 ADB、零 shell，未开启 ADB 的车辆同样准确；不做任何持续监听或轮询。
+         * 返回："installed" 未冻结 / "frozen" 已被停用或冻结 / "absent" 未安装
+         */
+        @JavascriptInterface
+        public String getMultimediaState() {
+            return safeCall("absent", () -> {
+                String pkg = "com.ecarx.multimedia";
+                int state = SystemUtils.getAppDetailedState(MainActivity.this, pkg);
+                if (state == SystemUtils.APP_STATE_NOT_INSTALLED) {
+                    return "absent";
+                }
+                if (state == SystemUtils.APP_STATE_DISABLED) {
+                    return "frozen";
+                }
+                return "installed";
+            });
+        }
+
         @JavascriptInterface
         public void resetCustomVoice(final String voiceKey) {
             mainHandler.post(new Runnable() {
@@ -3626,7 +3647,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         prefs.edit().remove(key).putBoolean(key, enabled).apply();
                         VehicleAutomationService.syncState(MainActivity.this);
                         if ("wheel_master_switch".equals(key)) {
-                            new SteeringWheelKeyManager(MainActivity.this).syncMediaKeyReceiverState();
+                            new SteeringWheelKeyManager(MainActivity.this).refreshRuntimeCache();
                         }
                         AppLogger.i("座舱自动化", "更新设置项: " + key + " -> " + enabled);
                     } catch (Exception e) {

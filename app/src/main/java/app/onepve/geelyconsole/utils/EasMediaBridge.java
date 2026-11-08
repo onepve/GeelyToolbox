@@ -80,12 +80,6 @@ public class EasMediaBridge {
     private volatile boolean voiceCompensationEnabled = true;
     private volatile int voiceCompensationOffset = 3;
     /**
-     * 【仅接管方控】模式下的单次放行闸：仅由车主在其他卡片主动触发的显式蓝牙动作开关，
-     * 用完即复位，绝不长期放开，防「仅接管方控」被静默穿透成接管蓝牙。
-     */
-    private volatile boolean explicitBtActionBypass = false;
-
-
     private final AudioManager.OnAudioFocusChangeListener frozenFallbackFocusListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
         public void onAudioFocusChange(int focusChange) {
@@ -97,8 +91,6 @@ public class EasMediaBridge {
             }
         }
     };
-
-    private String currentControlMode = "carmedia_first";
 
     public static EasMediaBridge getInstance(Context context) {
         if (sInstance == null) {
@@ -117,8 +109,6 @@ public class EasMediaBridge {
             SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
             this.voiceCompensationEnabled = prefs.getBoolean("voice_gain_compensation_enabled", true);
             this.voiceCompensationOffset = prefs.getInt("voice_gain_compensation_offset", 3);
-            // 冷启动即按车主已存模式初始化，杜绝【仅接管方控】模式下构造函数先误连蓝牙媒体浏览器
-            this.currentControlMode = prefs.getString("wheel_control_mode", "carmedia_first");
         } catch (Throwable ignored) {}
         registerA2dpReceiver();
     }
@@ -138,25 +128,22 @@ public class EasMediaBridge {
      * 开关开着只会误导车主以为能显示，关着又与默认行为无差别），此处不再接收投递参数。
      */
     public synchronized void syncConfig(String mode) {
-        this.currentControlMode = mode;
-
         AppLogger.i("音频通道", "同步 EAS 桥接配置: 模式=" + mode);
 
-        // 【仅接管方控】模式铁律：只拦方向盘按键，蓝牙音频通道 100% 保持原厂调度，
-        // 助手绝不注册 EAS、绝不选通蓝牙物理通道、绝不申请闪避焦点（车主明确要求“不接管蓝牙”）。
-        if (SteeringWheelKeyManager.MODE_WHEEL_ONLY.equals(mode)) {
-            AppLogger.i("音频通道", "当前为【仅接管方控】模式，助手不接管蓝牙音频，释放 EAS 注册与蓝牙焦点，完整交还原厂");
+        // ═══ 注册层统一原厂检测（依据实车日志实证结论）═══
+        // 原厂多媒体在线时，副屏卡片与当前播放源本就由它正常持有。助手一旦注册就会抢走 EAS 焦点，
+        // 却从不投递任何歌名/歌词，实车日志显示后果是：卡片定格长达 100 秒、原厂进程被系统回收后重启。
+        // 因此原厂活着时助手全程不注册；只有原厂被冻结、车机侧已无人驱动 A2DP Sink 时才接管保活。
+        if (isOriginalMediaActive()) {
+            AppLogger.i("音频通道", "原厂多媒体正常在线，助手不注册 EAS、不抢播放源，卡片与声音完整归原厂");
             releaseEasRegistration();
             abandonBluetoothFocus();
             disconnectBtMediaBrowser();
             return;
         }
 
-        // 【恢复原厂默认】只关乎方向盘按键：此档表示「不拦截按键，全部交回原车」，
-        // 绝不等同于「蓝牙也撒手」。原厂多媒体一旦被冻结，车机侧就没人驱动 A2DP Sink，
-        // 助手若连蓝牙保活也一起停手，车主会直接变成整车没声音，因此蓝牙维度按下方
-        // a2dpSinkConnected 正常判定，不受本档影响。
-
+        // 原厂已被冻结：车机侧没有任何进程驱动 A2DP Sink，必须由助手接管保活，否则整车无声。
+        // 该判定与方向盘档位无关 —— 【恢复原厂默认】只交还按键，绝不等于连声音一起撒手。
         if ("toolbox_alone".equals(mode) || "bt_only".equals(mode) || a2dpSinkConnected) {
             // 控制台独立接管、仅接管蓝牙或手机蓝牙已连接：确保 EAS 初始化并注册选通蓝牙通道
             ensureEasReady();
@@ -171,24 +158,9 @@ public class EasMediaBridge {
     }
 
     /**
-     * 当前是否为【仅接管方控】模式：只拦方向盘按键，蓝牙链路一律不接管。
-     * 事实边界：该模式下助手不注册 EAS、不选通蓝牙物理通道、不申请闪避焦点、不发保源广播，
-     * 蓝牙声音与原厂多媒体调度 100% 保持车主原车行为。
-     * 例外：车主在【其他卡片】主动触发的显式蓝牙动作（如车速自启选手机蓝牙、音源测试）不受本模式压制，
-     * 由 explicitBtActionBypass 单次放行，保证「方控接管模式」绝不连带干扰其他功能卡片的既有逻辑。
-     */
-    private boolean isWheelOnlyMode() {
-        return !explicitBtActionBypass && SteeringWheelKeyManager.MODE_WHEEL_ONLY.equals(currentControlMode);
-    }
-
-    /**
      * 确保 EAS API 就绪并注册
      */
     private synchronized void ensureEasReady() {
-        if (isWheelOnlyMode()) {
-            AppLogger.i("音频通道", "【仅接管方控】模式，禁止任何 EAS 注册与声道选通，蓝牙链路完整交还原厂");
-            return;
-        }
         if (mApi == null) {
             mApi = MediaCenterAPI.get(appContext);
         }
@@ -277,12 +249,6 @@ public class EasMediaBridge {
     }
 
     private boolean isOriginalMediaActive() {
-        // 【仅接管方控】模式：从助手视角一律视为“原厂多媒体正常活跃”，
-        // 从而让所有蓝牙介入动作（保源广播、闪避焦点、声卡唤醒 play、排队播放 pause）全部走原厂跳过分支，
-        // 助手 100% 不接管蓝牙；车主在其他卡片的显式蓝牙动作由 explicitBtActionBypass 单次放行。
-        if (isWheelOnlyMode()) {
-            return true;
-        }
         try {
             // 1. 原生进程活跃探测（零 ADB，零 shell）：检测 com.ecarx.multimedia 是否存在存活进程
             ActivityManager am = (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
@@ -511,10 +477,6 @@ public class EasMediaBridge {
     }
 
     public synchronized void activateBluetoothChannel() {
-        if (isWheelOnlyMode()) {
-            AppLogger.i("蓝牙音频", "【仅接管方控】模式，跳过蓝牙物理通道选通与媒体浏览器连接，蓝牙声音仍由原厂调度");
-            return;
-        }
         try {
             ensureEasReady();
             if (mApi != null && mRegistered && mToken != null) {
@@ -545,31 +507,21 @@ public class EasMediaBridge {
 
     /**
      * 车主显式指令（方控播放键、音源测试、强制选通按钮）下的蓝牙通道选通。
-     * 边界：本方法只用于穿透【仅接管方控】模式的被动守护，绝不吞掉车主的显式操作。
+     * 边界：与自动链路共用同一套判定，唯一区别是不经过节流抑制，确保车主按下即生效。
      */
     public void activateBluetoothChannelExplicit() {
-        explicitBtActionBypass = true;
-        try {
-            activateBluetoothChannel();
-        } finally {
-            explicitBtActionBypass = false;
-        }
+        activateBluetoothChannel();
     }
 
     /**
      * 主动唤醒手机蓝牙开始播放音乐 (仅在用户主动按方控播放或车速自启明确要放歌时调用)
-     * 边界：车速自启/音源测试等其他卡片的显式蓝牙动作属车主明确指令，单次放行，不受【仅接管方控】压制。
+     * 边界：车速自启/音源测试等其他卡片的显式蓝牙动作属车主明确指令，必须立即执行。
      */
     public void playBluetoothMusic() {
         clearAutoWakeSuppression();
-        explicitBtActionBypass = true;
-        try {
-            activateBluetoothChannel();
-            sendKeepSourceBroadcastWhenFrozen();
-            wakeBluetoothSinkWhenFrozen();
-        } finally {
-            explicitBtActionBypass = false;
-        }
+        activateBluetoothChannel();
+        sendKeepSourceBroadcastWhenFrozen();
+        wakeBluetoothSinkWhenFrozen();
     }
 
     /**

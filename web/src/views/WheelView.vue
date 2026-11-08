@@ -264,38 +264,32 @@
       title="方控按键接管模式"
       desc="屏蔽原厂伴听抢占广播；若同时安装米小江建议选择协同优先。"
       helpTitle="【功能指南】方控接管模式与仪表显示"
-      helpText="1. 接管模式选择：&#10;• 控制台独立接管（推荐）：方向盘按键直接控制切歌与播放，自动唤醒车载喇叭，体验最流畅。&#10;• 仅接管方控按键：只拦方向盘按键，蓝牙音频完全交回原厂，助手一律不插手蓝牙声音。&#10;• 米小江方控优先：如果车机上装了米小江 CarMedia，选这项让它优先处理切歌，两者互不打扰。&#10;• 恢复原厂默认：不拦截方向盘按键，全部交回原车控制。&#10;&#10;2. 蓝牙无声问题解决：&#10;独立接管模式下，手机连车机蓝牙放微信语音或音乐没声音时，会自动帮您接通车载喇叭。选「仅接管方控按键」则不接管蓝牙，蓝牙声音全部按原厂处理。" 
+      helpText="1. 接管模式选择：&#10;• 控制台独立接管（推荐）：方向盘按键全部由助手接管，响应最快。原厂多媒体还在时，助手完全不碰蓝牙，声音和卡片都留给原厂，互不干扰。&#10;• 米小江方控优先：如果车机上装了米小江 CarMedia，选这项让它优先处理切歌，助手只补静音键。&#10;• 仅接管蓝牙：方向盘按键全部交回原车，助手只负责把蓝牙声音保住。&#10;• 恢复原厂默认：按键全部交回原车，助手不干预按键。&#10;&#10;2. 蓝牙无声问题解决：&#10;原厂多媒体被冻结后，车机就没人驱动蓝牙出声了，助手会自动接手保活，手机连车机蓝牙放微信语音或音乐都能正常出声。原厂多媒体正常时助手不插手，声音全部按原厂处理。" 
 
-      helpTip="如果同时装了米小江请选「米小江方控优先」；只想改按键、不想让助手碰蓝牙请选「仅接管方控按键」；全都想交给助手建议选「控制台独立接管」。"
+      helpTip="装了米小江请选「米小江方控优先」；只想让助手管声音、按键还给原车请选「仅接管蓝牙」；按键全都想交给助手请选「控制台独立接管」。"
     >
       <div class="grid grid-cols-5 gap-3.5" style="grid-gap: 12px; -webkit-column-gap: 12px;">
         <MatrixButton 
           title="米小江方控优先"
-          subtitle="放行切歌与Mode键，补充静音键接管"
+          subtitle="切歌交米小江，助手只补静音键"
           :active="store.vehicleAuto.wheel_control_mode === 'carmedia_first'"
           @click="setWheelMode('carmedia_first')"
         />
         <MatrixButton 
           title="控制台独立接管"
-          subtitle="全量接管按键，保持蓝牙声音正常"
-          :active="store.vehicleAuto.wheel_control_mode === 'toolbox_alone' || (!store.vehicleAuto.wheel_control_mode && store.vehicleAuto.wheel_control_mode !== 'factory_default' && store.vehicleAuto.wheel_control_mode !== 'bt_only' && store.vehicleAuto.wheel_control_mode !== 'wheel_only')"
+          subtitle="接管全部按键；原厂在就不碰蓝牙"
+          :active="store.vehicleAuto.wheel_control_mode === 'toolbox_alone' || store.vehicleAuto.wheel_control_mode === 'wheel_only' || !store.vehicleAuto.wheel_control_mode"
           @click="setWheelMode('toolbox_alone')"
         />
         <MatrixButton 
-          title="仅接管方控按键"
-          subtitle="只接管按键，蓝牙完全不动"
-          :active="store.vehicleAuto.wheel_control_mode === 'wheel_only'"
-          @click="setWheelMode('wheel_only')"
-        />
-        <MatrixButton 
           title="仅接管蓝牙"
-          subtitle="不接管方向盘按键，仅保持蓝牙声音正常"
+          subtitle="按键交回原车，只保蓝牙出声"
           :active="store.vehicleAuto.wheel_control_mode === 'bt_only'"
           @click="setWheelMode('bt_only')"
         />
         <MatrixButton 
           title="恢复原厂默认"
-          subtitle="恢复原车按键功能，不拦截按键"
+          subtitle="按键全交回原车，助手不干预"
           :active="store.vehicleAuto.wheel_control_mode === 'factory_default'"
           @click="setWheelMode('factory_default')"
         />
@@ -641,16 +635,51 @@ function toggleWheelMasterSwitch() {
 }
 
 function setWheelMode(mode) {
+  // 只在点按钮这一下查一次原厂多媒体状态：纯本地权限判定，零 ADB、零轮询，不给车机添消耗。
+  // 检测结果只用于给车主一句提示，绝不拦截切换。
+  let mmState = 'installed';
+  try {
+    mmState = bridge.call('getMultimediaState') || 'installed';
+  } catch (e) {
+    mmState = 'installed';
+  }
+
   store.vehicleAuto.wheel_control_mode = mode;
   bridge.call('setWheelControlStringSetting', 'wheel_control_mode', mode);
+
   const modeNames = {
     carmedia_first: '米小江优先',
     toolbox_alone: '控制台独立接管',
-    wheel_only: '仅接管方控按键(蓝牙不动)',
     bt_only: '仅接管蓝牙(不改按键)',
     factory_default: '恢复原厂'
   };
-  showToast('方控模式已切换: ' + (modeNames[mode] || mode));
+  const name = modeNames[mode] || mode;
+
+  // 以下是「提示」，不是「拦截」：档位照常切换，只是把真实后果讲给车主看。
+  let tip = '';
+  if (mmState === 'frozen') {
+    if (mode === 'bt_only' || mode === 'toolbox_alone' || mode === 'factory_default') {
+      tip = '原厂多媒体已被冻结，已由助手接手保蓝牙声音。若想恢复原厂多媒体，请到「应用管理」里解冻。';
+    }
+  } else if (mmState === 'installed') {
+    if (mode === 'bt_only') {
+      tip = '原厂多媒体正常，助手只保蓝牙声音，不会去抢原厂的多媒体卡片。';
+    } else if (mode === 'toolbox_alone') {
+      tip = '原厂多媒体正常，助手接管方向盘按键；蓝牙声音仍由原厂调度，不会打断。';
+    }
+  }
+
+  if (tip) {
+    // 纯提示框（单按钮、无取消），点掉即可，档位已经切好了
+    openModal('confirm', {
+      title: '已切换到「' + name + '」',
+      desc: tip,
+      showCancel: false,
+      confirmText: '我知道了'
+    });
+  } else {
+    showToast('方控模式已切换: ' + name);
+  }
 }
 
 function resetAllToFactory() {

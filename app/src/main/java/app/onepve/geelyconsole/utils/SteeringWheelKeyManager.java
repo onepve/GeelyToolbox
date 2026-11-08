@@ -64,8 +64,9 @@ public class SteeringWheelKeyManager {
 
     // 接管模式
     public static final String MODE_CARMEDIA_FIRST = "carmedia_first"; // 米小江方控优先
-    public static final String MODE_TOOLBOX_ALONE = "toolbox_alone";   // 控制台接管（按键 + 蓝牙全接管）
-    public static final String MODE_WHEEL_ONLY = "wheel_only";         // 仅接管方控按键（蓝牙保持原厂，绝不接管）
+    public static final String MODE_TOOLBOX_ALONE = "toolbox_alone";   // 控制台独立接管（按键全接管 + 蓝牙按原厂存活判定）
+    /** 已下线的旧档位：v1.8.32 起并入【控制台独立接管】，仅用于老车主配置自动迁移 */
+    public static final String MODE_WHEEL_ONLY_LEGACY = "wheel_only";
     public static final String MODE_BT_ONLY = "bt_only";               // 仅接管蓝牙(放行方控)
     public static final String MODE_FACTORY_DEFAULT = "factory_default"; // 恢复原厂
 
@@ -166,60 +167,23 @@ public class SteeringWheelKeyManager {
         }
     }
 
-    /**
-     * 同步并应用原厂 MediaKeyReceiver 拦截状态
-     */
-    public void syncMediaKeyReceiverState() {
-        refreshRuntimeCache();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                boolean masterSwitch = wheelMasterCached;
-                if (!masterSwitch) {
-                    // 方控总开关已关闭：彻底解禁原厂 MediaKeyReceiver，完全不拦截！
-                    try {
-                        PackageManager pm = context.getPackageManager();
-                        ComponentName comp = new ComponentName("ecarx.xsf.mediacenter", "ecarx.xsf.mediacenter.MediaKeyReceiver");
-                        pm.setComponentEnabledSetting(comp, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
-                    } catch (Exception ignored) {}
-                    try {
-                        AdbClient.execute(context, "pm enable ecarx.xsf.mediacenter/ecarx.xsf.mediacenter.MediaKeyReceiver");
-                    } catch (Exception ignored) {}
-                    Log.i(TAG, "Wheel master switch is OFF, MediaKeyReceiver restored to ENABLED");
-                    return;
-                }
-
-                String mode = getWheelMode();
-                boolean shouldBlock = !MODE_FACTORY_DEFAULT.equals(mode);
-                try {
-                    PackageManager pm = context.getPackageManager();
-                    ComponentName comp = new ComponentName("ecarx.xsf.mediacenter", "ecarx.xsf.mediacenter.MediaKeyReceiver");
-                    int newState = shouldBlock ? PackageManager.COMPONENT_ENABLED_STATE_DISABLED : PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
-                    pm.setComponentEnabledSetting(comp, newState, PackageManager.DONT_KILL_APP);
-                } catch (Exception ignored) {}
-
-                // 遵循车规纯净解耦：仅停用广播接收器 MediaKeyReceiver，坚决不破坏/冻结整个多媒体应用包
-                try {
-                    if (shouldBlock) {
-                        AdbClient.execute(context, "pm disable-user --user 0 ecarx.xsf.mediacenter/ecarx.xsf.mediacenter.MediaKeyReceiver");
-                        Log.i(TAG, "Successfully disabled MediaKeyReceiver via ADB");
-                    } else {
-                        AdbClient.execute(context, "pm enable ecarx.xsf.mediacenter/ecarx.xsf.mediacenter.MediaKeyReceiver");
-                        Log.i(TAG, "Successfully re-enabled MediaKeyReceiver via ADB");
-                    }
-                } catch (Exception e) {
-                    Log.w(TAG, "syncMediaKeyReceiverState via ADB failed: " + e.getMessage());
-                }
-            }
-        }).start();
-    }
 
     public String getWheelMode() {
         if (!prefs.contains("wheel_control_mode")) {
             boolean hasCarMedia = SystemUtils.isPackageInstalled(context, "com.ecarx.carmedia");
             return hasCarMedia ? MODE_CARMEDIA_FIRST : MODE_TOOLBOX_ALONE;
         }
-        return prefs.getString("wheel_control_mode", MODE_CARMEDIA_FIRST);
+        String saved = prefs.getString("wheel_control_mode", MODE_CARMEDIA_FIRST);
+        // 老车主无感迁移：v1.8.32 起【仅接管方控按键】并入【控制台独立接管】。
+        // 两档在按键维度本就完全一致，差异仅在蓝牙；而蓝牙接管已改为按原厂多媒体存活动态判定，
+        // 原厂活着时两档都不碰蓝牙，因此迁移不会让老车主感知到任何行为变化。
+        if (MODE_WHEEL_ONLY_LEGACY.equals(saved)) {
+            try {
+                prefs.edit().putString("wheel_control_mode", MODE_TOOLBOX_ALONE).commit();
+            } catch (Throwable ignored) {}
+            return MODE_TOOLBOX_ALONE;
+        }
+        return saved;
     }
 
     public String getKeyPrefix(int keyCode) {
@@ -415,9 +379,10 @@ public class SteeringWheelKeyManager {
 
         final String singleAction = getGestureAction(keyCode, GESTURE_SINGLE);
         if (ACTION_DEFAULT.equals(singleAction)) {
-            // 控制台独立接管 / 仅接管方控 模式下，原厂 MediaKeyReceiver 已由 ADB 停用以防多源冲突
-            // 若用户对上一曲/下一曲保留【原厂默认】，由助手履行原厂默认切歌职责，确保切歌功能 100% 可用且不空转
-            if (MODE_TOOLBOX_ALONE.equals(wheelModeCached) || MODE_WHEEL_ONLY.equals(wheelModeCached)) {
+            // 【控制台独立接管】模式下，原厂 MediaKeyReceiver 始终保持启用、由原厂正常收键；
+            // 若车主对上一曲/下一曲保留【原厂默认】，助手必须补上切歌职责，
+            // 避免因原厂接收器在某些车型上不可用而出现「按键按了没反应」的空转。
+            if (MODE_TOOLBOX_ALONE.equals(wheelModeCached)) {
                 if (keyCode == KEY_NEXT) {
                     AppLogger.i("方控按键", getKeyName(keyCode) + " 处于[原厂默认]，接管模式下执行下一曲切歌");
                     executeAction(ACTION_NEXT_TRACK);

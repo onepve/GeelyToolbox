@@ -85,7 +85,6 @@ public class BinyueLPlatform implements IVehiclePlatform {
         public void startListening(Context context, OnVehicleKeyListener listener) {
             Log.i(TAG, "BinyueLKeyAdapter started listening via SteeringWheelKeyManager");
             this.keyManager = new SteeringWheelKeyManager(context);
-            this.keyManager.syncMediaKeyReceiverState();
         }
 
         @Override
@@ -101,8 +100,10 @@ public class BinyueLPlatform implements IVehiclePlatform {
 
         @Override
         public void setInterceptionEnabled(boolean enabled) {
+            // 原厂 MediaKeyReceiver 不可由第三方应用停用（本机实测：无系统权限必然失败、ADB 超时也不生效），
+            // 该档位仅刷新热路径缓存，绝不触碰原厂组件。
             if (keyManager != null) {
-                keyManager.syncMediaKeyReceiverState();
+                keyManager.refreshRuntimeCache();
             }
         }
     }

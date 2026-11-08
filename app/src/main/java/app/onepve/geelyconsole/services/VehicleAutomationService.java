@@ -404,17 +404,8 @@ public class VehicleAutomationService extends Service {
 
         reloadPreferences();
 
-        // 开机点火防洪峰与防堵塞铁律：
-        // 1. 原厂 MediaKeyReceiver 拦截状态同步涉及 ADB/网络IO，开机初 ADB 守护进程未就绪容易 Broken pipe / Timeout 阻塞主线程；
-        // 2. 必须错峰延后 15 秒异步执行，彻底保障开机第一秒车门与挡位信号毫秒级响应
-        mainHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (wheelKeyManager != null) {
-                    wheelKeyManager.syncMediaKeyReceiverState();
-                }
-            }
-        }, 15000);
+        // 原厂 MediaKeyReceiver 已确认无法由第三方应用停用（v1.8.32 起彻底移除该段 ADB 逻辑），
+        // 方控接管只依赖 logcat / ECARX 广播旁听，开机不再需要任何 ADB 预热等待。
         try {
             IdleScreensaverManager.start(this);
         } catch (Throwable e) {
@@ -487,9 +478,9 @@ public class VehicleAutomationService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         reloadPreferences();
-        // 配置更新或热启动时异步同步，避免主线程阻塞
+        // 配置更新或热启动：刷新方控热路径缓存即可，不再触碰原厂 MediaKeyReceiver
         if (wheelKeyManager != null) {
-            wheelKeyManager.syncMediaKeyReceiverState();
+            wheelKeyManager.refreshRuntimeCache();
         }
         // 每次服务被拉起/配置变更后，按最新配置重新装载闲置屏保计时器
         try {
