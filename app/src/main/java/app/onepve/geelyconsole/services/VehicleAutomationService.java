@@ -278,7 +278,8 @@ public class VehicleAutomationService extends Service {
             boolean modeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
             boolean modeEco = prefs.getBoolean("voice_enable_mode_eco", true);
             boolean modeSport = prefs.getBoolean("voice_enable_mode_sport", true);
-            String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
+            // 统一走 getWheelMode()：确保老车主 wheel_only 配置在同一条路径上完成迁移
+            String wheelMode = new SteeringWheelKeyManager(context).getWheelMode();
             boolean wheelEnabled = wheelMaster && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
             try {
                 EasMediaBridge.getInstance(context).syncConfig(wheelMode);
@@ -536,7 +537,8 @@ public class VehicleAutomationService extends Service {
             doorStateManager.markDriverInside();
         }
 
-        String wheelMode = prefs.getString("wheel_control_mode", SteeringWheelKeyManager.MODE_CARMEDIA_FIRST);
+        // 统一走 getWheelMode()：确保老车主 wheel_only 配置在同一条路径上完成迁移
+        String wheelMode = new SteeringWheelKeyManager(context).getWheelMode();
         boolean wheelEnabled = wheelMasterSwitch && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
 
         boolean anyVoiceEnabled = voiceMasterSwitch && (enableDoorFl || enableDoorFlClose || enableDoorFr || enableDoorFrClose ||

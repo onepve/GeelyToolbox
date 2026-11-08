@@ -116,7 +116,10 @@ public final class VehicleConfigHelper {
             String defaultWheelMode = "toolbox_alone";
             String defaultModeAction = "open_360";
 
-            obj.put("wheel_control_mode", prefs.getString("wheel_control_mode", defaultWheelMode));
+            // 走 getWheelMode() 而非裸读：老车主 wheel_only 配置必须在此完成迁移，
+            // 否则前端四档按钮会一个都不高亮（wheel_only 已从 UI 移除）。
+            String effectiveWheelMode = new SteeringWheelKeyManager(context).getWheelMode();
+            obj.put("wheel_control_mode", effectiveWheelMode);
             obj.put("wheel_action_mute", prefs.getString("wheel_action_mute", "default"));
             obj.put("wheel_action_mode", prefs.getString("wheel_action_mode", defaultModeAction));
             obj.put("wheel_action_ok", prefs.getString("wheel_action_ok", "default"));
