@@ -152,16 +152,10 @@ public class EasMediaBridge {
             return;
         }
 
-        // 【恢复原厂默认】铁律：车主明确要求还原原车行为，助手必须彻底撒手。
-        // 历史坑：旧判定带 a2dpSinkConnected，手机蓝牙一连上就照样注册 EAS 占住仪表卡片，
-        // 名字叫「恢复原厂默认」却偷偷接管，此处显式拦住。
-        if (SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(mode)) {
-            AppLogger.i("音频通道", "当前为【恢复原厂默认】模式，助手彻底撒手，注销 EAS 并释放蓝牙焦点");
-            releaseEasRegistration();
-            abandonBluetoothFocus();
-            disconnectBtMediaBrowser();
-            return;
-        }
+        // 【恢复原厂默认】只关乎方向盘按键：此档表示「不拦截按键，全部交回原车」，
+        // 绝不等同于「蓝牙也撒手」。原厂多媒体一旦被冻结，车机侧就没人驱动 A2DP Sink，
+        // 助手若连蓝牙保活也一起停手，车主会直接变成整车没声音，因此蓝牙维度按下方
+        // a2dpSinkConnected 正常判定，不受本档影响。
 
         if ("toolbox_alone".equals(mode) || "bt_only".equals(mode) || a2dpSinkConnected) {
             // 控制台独立接管、仅接管蓝牙或手机蓝牙已连接：确保 EAS 初始化并注册选通蓝牙通道
