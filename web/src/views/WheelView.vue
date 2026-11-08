@@ -655,31 +655,21 @@ function setWheelMode(mode) {
   };
   const name = modeNames[mode] || mode;
 
-  // 以下是「提示」，不是「拦截」：档位照常切换，只是把真实后果讲给车主看。
+  // 以下是「胶囊提示」，只讲真实后果，绝不拦截切换；文案控制在 20 字内，2 秒内一眼看完。
   let tip = '';
   if (mmState === 'frozen') {
     if (mode === 'bt_only' || mode === 'toolbox_alone' || mode === 'factory_default') {
-      tip = '原厂多媒体已被冻结，已由助手接手保蓝牙声音。若想恢复原厂多媒体，请到「应用管理」里解冻。';
+      tip = '原厂多媒体已冻结，助手已接手保住声音';
     }
   } else if (mmState === 'installed') {
     if (mode === 'bt_only') {
-      tip = '原厂多媒体正常，助手只保蓝牙声音，不会去抢原厂的多媒体卡片。';
+      tip = '原厂正常，蓝牙只在没声音时才出手';
     } else if (mode === 'toolbox_alone') {
-      tip = '原厂多媒体正常，助手接管方向盘按键；蓝牙声音仍由原厂调度，不会打断。';
+      tip = '原厂正常，蓝牙声音交给原厂';
     }
   }
 
-  if (tip) {
-    // 纯提示框（单按钮、无取消），点掉即可，档位已经切好了
-    openModal('confirm', {
-      title: '已切换到「' + name + '」',
-      desc: tip,
-      showCancel: false,
-      confirmText: '我知道了'
-    });
-  } else {
-    showToast('方控模式已切换: ' + name);
-  }
+  showToast(tip ? (name + '：' + tip) : ('方控模式已切换: ' + name));
 }
 
 function resetAllToFactory() {

@@ -79,7 +79,7 @@ public class EasMediaBridge {
     private volatile boolean btMediaBrowserConnected = false;
     private volatile boolean voiceCompensationEnabled = true;
     private volatile int voiceCompensationOffset = 3;
-    /**
+
     private final AudioManager.OnAudioFocusChangeListener frozenFallbackFocusListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
         public void onAudioFocusChange(int focusChange) {
