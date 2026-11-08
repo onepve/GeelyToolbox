@@ -1,0 +1,24 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+/app/build/
+node_modules/
+web/node_modules/
+web/dist/
+__pycache__/
+.shots/
+
+# probe screenshots
+scripts/shots/
+
+# 本地实车仿真测试全量日志包（严禁上传到 GitHub 仓库防隐私泄露与膨胀）
+local_test_logs/
+*.log
+

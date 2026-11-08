@@ -1,0 +1,145 @@
+package app.onepve.geelyconsole.hal.platform;
+
+import android.content.Context;
+import android.util.Log;
+
+import app.onepve.geelyconsole.hal.IVehicleKeyAdapter;
+import app.onepve.geelyconsole.hal.IVehiclePlatform;
+import app.onepve.geelyconsole.hal.IVehicleSensorAdapter;
+import app.onepve.geelyconsole.utils.GearStateMachine;
+import app.onepve.geelyconsole.utils.SteeringWheelKeyManager;
+
+/**
+ * 吉利缤瑞 COOL (亿咖通 E02 / IHU510G / FE6A3) 原厂硬件平台适配器
+ */
+public class BinruiCoolPlatform implements IVehiclePlatform {
+    private static final String TAG = "BinruiCoolPlatform";
+    public static final String PLATFORM_CODE = "binrui_cool_e02";
+
+    private IVehicleKeyAdapter keyAdapter;
+    private IVehicleSensorAdapter sensorAdapter;
+
+    @Override
+    public String getPlatformCode() {
+        return PLATFORM_CODE;
+    }
+
+    @Override
+    public String getPlatformName() {
+        return "吉利缤瑞 COOL (E02 / IHU510G / FE6A3)";
+    }
+
+    @Override
+    public double getDefaultFuelCapacityLiters() {
+        return 50.0; // 吉利缤瑞 COOL 官方标称容积 50L
+    }
+
+    @Override
+    public AudioDecodeStrategy getAudioDecodeStrategy() {
+        return AudioDecodeStrategy.HARD_FIRST_WITH_SOFT_FALLBACK;
+    }
+
+    @Override
+    public synchronized IVehicleKeyAdapter getKeyAdapter(Context context) {
+        if (keyAdapter == null) {
+            keyAdapter = new BinruiKeyAdapterImpl(context);
+        }
+        return keyAdapter;
+    }
+
+    @Override
+    public synchronized IVehicleSensorAdapter getSensorAdapter(Context context) {
+        if (sensorAdapter == null) {
+            sensorAdapter = new BinruiSensorAdapterImpl(context);
+        }
+        return sensorAdapter;
+    }
+
+    /** 缤瑞 COOL 方控按键桥接实现 (与缤越 COOL 同属 E02 架构) */
+    private static class BinruiKeyAdapterImpl implements IVehicleKeyAdapter {
+        private final Context context;
+        private SteeringWheelKeyManager keyManager;
+
+        BinruiKeyAdapterImpl(Context context) {
+            this.context = context.getApplicationContext();
+        }
+
+        @Override
+        public void startListening(Context context, OnVehicleKeyListener listener) {
+            Log.i(TAG, "BinruiKeyAdapter started listening via SteeringWheelKeyManager");
+            this.keyManager = new SteeringWheelKeyManager(context);
+            this.keyManager.syncMediaKeyReceiverState();
+        }
+
+        @Override
+        public void stopListening() {
+            Log.i(TAG, "BinruiKeyAdapter stopped listening");
+            this.keyManager = null;
+        }
+
+        @Override
+        public boolean supportsHardwareInterception() {
+            return true;
+        }
+
+        @Override
+        public void setInterceptionEnabled(boolean enabled) {
+            if (keyManager != null) {
+                keyManager.syncMediaKeyReceiverState();
+            }
+        }
+    }
+
+    /** 缤瑞 COOL 车身信号与挡位桥接实现 */
+    private static class BinruiSensorAdapterImpl implements IVehicleSensorAdapter {
+        private final Context context;
+        private GearStateMachine gearStateMachine;
+
+        BinruiSensorAdapterImpl(Context context) {
+            this.context = context.getApplicationContext();
+        }
+
+        @Override
+        public void startListening(Context context, final OnVehicleSensorListener listener) {
+            Log.i(TAG, "BinruiSensorAdapter started listening");
+            this.gearStateMachine = new GearStateMachine(context, null);
+            this.gearStateMachine.setListener(new GearStateMachine.GearStateListener() {
+                @Override
+                public void onGearChanged(int gear) {
+                    if (listener != null) {
+                        // 统一 HAL 挡位映射: 0=P, 1=R, 2=N, 3=D
+                        int halGear = 0;
+                        if (gear == 4) halGear = 1;      // R
+                        else if (gear == 3) halGear = 2; // N
+                        else if (gear == 2) halGear = 3; // D
+                        else if (gear == 5) halGear = 0; // P
+                        listener.onGearChanged(halGear);
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void stopListening() {
+            Log.i(TAG, "BinruiSensorAdapter stopped listening");
+            this.gearStateMachine = null;
+        }
+
+        @Override
+        public int getCurrentGear() {
+            if (gearStateMachine != null) {
+                int g = gearStateMachine.getGear();
+                if (g == 4) return 1; // R
+                if (g == 3) return 2; // N
+                if (g == 2) return 3; // D
+                if (g == 5) return 0; // P
+            }
+            return 0;
+        }
+
+        @Override
+        public float getCurrentSpeed() {
+            return 0.0f;
+        }
+    }
+}
