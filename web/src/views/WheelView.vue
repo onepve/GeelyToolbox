@@ -261,37 +261,36 @@
     <div v-if="activeTab === 'mode'" class="flex flex-col space-y-4">
     <!-- 1. 方向盘方控接管模式 -->
     <FeatureCard 
-      title="方控按键接管模式"
-      desc="屏蔽原厂伴听抢占广播；若同时安装米小江建议选择协同优先。"
-      helpTitle="【功能指南】方控接管模式与仪表显示"
-      helpText="1. 接管模式选择：&#10;• 控制台独立接管（推荐）：方向盘按键全部由助手接管，响应最快。原厂多媒体还在时，助手完全不碰蓝牙，声音和卡片都留给原厂，互不干扰。&#10;• 米小江方控优先：如果车机上装了米小江 CarMedia，选这项让它优先处理切歌，助手只补静音键。&#10;• 仅接管蓝牙：方向盘按键全部交回原车，助手只负责把蓝牙声音保住。&#10;• 恢复原厂默认：按键全部交回原车，助手不干预按键。&#10;&#10;2. 蓝牙无声问题解决：&#10;原厂多媒体被冻结后，车机就没人驱动蓝牙出声了，助手会自动接手保活，手机连车机蓝牙放微信语音或音乐都能正常出声。原厂多媒体正常时助手不插手，声音全部按原厂处理。" 
-
-      helpTip="装了米小江请选「米小江方控优先」；只想让助手管声音、按键还给原车请选「仅接管蓝牙」；按键全都想交给助手请选「控制台独立接管」。"
+      title="接管方式"
+      desc="按键和蓝牙分开管，四个按钮直接选组合。"
+      helpTitle="【功能指南】接管方式怎么选"
+      helpText="按键和蓝牙是两件独立的事，分开选就好：&#10;&#10;• ① 全面接管（推荐）：方向盘切歌和蓝牙声音都交给助手。原厂多媒体被冻结、或者你用第三方播放器，选这个。&#10;• ② 只接管方控：只拦方向盘切歌，蓝牙声音全归原车。适合原厂多媒体正常、只想让助手管按键的。&#10;• ③ 只接管蓝牙：方向盘按键全还给原车，助手只负责把蓝牙声音保住。适合原厂按键够用、但蓝牙偶尔没声音的。&#10;• ④ 完整原厂：按键和声音都不碰，助手只在后台待着。&#10;&#10;提醒：选②或④时，如果原厂多媒体被冻结，车机里没人管蓝牙，助手也没接手，蓝牙就会没声音。想让助手保声音，请改选①或③。&#10;&#10;换完选项如果没马上生效，重启一下车机就好。"
+      helpTip="想全交给助手选①；只想管声音选③；只想管按键选②；都不要选④。"
     >
-      <div class="grid grid-cols-5 gap-3.5" style="grid-gap: 12px; -webkit-column-gap: 12px;">
+      <div class="grid grid-cols-4 gap-3.5" style="grid-gap: 12px; -webkit-column-gap: 12px;">
         <MatrixButton 
-          title="米小江方控优先"
-          subtitle="切歌交米小江，助手只补静音键"
-          :active="store.vehicleAuto.wheel_control_mode === 'carmedia_first'"
-          @click="setWheelMode('carmedia_first')"
+          title="① 全面接管"
+          subtitle="按键和声音都交给助手"
+          :active="isPreset(1)"
+          @click="applyPreset(1)"
         />
         <MatrixButton 
-          title="控制台独立接管"
-          subtitle="接管全部按键；原厂在就不碰蓝牙"
-          :active="store.vehicleAuto.wheel_control_mode === 'toolbox_alone' || store.vehicleAuto.wheel_control_mode === 'wheel_only' || !store.vehicleAuto.wheel_control_mode"
-          @click="setWheelMode('toolbox_alone')"
+          title="② 只接管方控"
+          subtitle="只管切歌，声音还给原车"
+          :active="isPreset(2)"
+          @click="applyPreset(2)"
         />
         <MatrixButton 
-          title="仅接管蓝牙"
-          subtitle="按键交回原车，只保蓝牙出声"
-          :active="store.vehicleAuto.wheel_control_mode === 'bt_only'"
-          @click="setWheelMode('bt_only')"
+          title="③ 只接管蓝牙"
+          subtitle="只管声音，按键还给原车"
+          :active="isPreset(3)"
+          @click="applyPreset(3)"
         />
         <MatrixButton 
-          title="恢复原厂默认"
-          subtitle="按键全交回原车，助手不干预"
-          :active="store.vehicleAuto.wheel_control_mode === 'factory_default'"
-          @click="setWheelMode('factory_default')"
+          title="④ 完整原厂"
+          subtitle="按键和声音全还给原车"
+          :active="isPreset(4)"
+          @click="applyPreset(4)"
         />
       </div>
     </FeatureCard>
@@ -634,8 +633,34 @@ function toggleWheelMasterSwitch() {
   showToast(next ? '按键接管总开关: 已开启' : '按键接管总开关: 已关闭 (原车控制)');
 }
 
-function setWheelMode(mode) {
-  // 只在点按钮这一下查一次原厂多媒体状态：纯本地权限判定，零 ADB、零轮询，不给车机添消耗。
+/**
+ * 一键套用预设组合。四个按钮 = 方控维度 × 蓝牙维度 的 2×2 全组合。
+ *   preset 1: 方控接管 + 蓝牙接管  （全面接管，推荐）
+ *   preset 2: 方控接管 + 蓝牙原厂  （只接管方控）
+ *   preset 3: 方控原厂 + 蓝牙接管  （只接管蓝牙）
+ *   preset 4: 方控原厂 + 蓝牙原厂  （完整原厂）
+ */
+const PRESET_TABLE = {
+  1: { wheel: 'takeover', media: 'takeover', name: '全面接管' },
+  2: { wheel: 'takeover', media: 'factory',  name: '只接管方控' },
+  3: { wheel: 'factory',  media: 'takeover', name: '只接管蓝牙' },
+  4: { wheel: 'factory',  media: 'factory',  name: '完整原厂' },
+};
+
+function isPreset(n) {
+  const p = PRESET_TABLE[n];
+  if (!p) return false;
+  const curWheel = store.vehicleAuto.wheel_control_mode || 'takeover';
+  const curMedia = store.vehicleAuto.media_control_mode || 'takeover';
+  return curWheel === p.wheel && curMedia === p.media;
+}
+
+function applyPreset(n) {
+  const p = PRESET_TABLE[n];
+  if (!p) return;
+  playTouchFeedback();
+
+  // 只在点按钮这一下查一次原厂多媒体状态：纯本地权限判定，零 ADB、零轮询。
   // 检测结果只用于给车主一句提示，绝不拦截切换。
   let mmState = 'installed';
   try {
@@ -644,32 +669,27 @@ function setWheelMode(mode) {
     mmState = 'installed';
   }
 
-  store.vehicleAuto.wheel_control_mode = mode;
-  bridge.call('setWheelControlStringSetting', 'wheel_control_mode', mode);
+  store.vehicleAuto.wheel_control_mode = p.wheel;
+  store.vehicleAuto.media_control_mode = p.media;
+  bridge.call('setWheelControlStringSetting', 'wheel_control_mode', p.wheel);
+  bridge.call('setWheelControlStringSetting', 'media_control_mode', p.media);
 
-  const modeNames = {
-    carmedia_first: '米小江优先',
-    toolbox_alone: '控制台独立接管',
-    bt_only: '仅接管蓝牙(不改按键)',
-    factory_default: '恢复原厂'
-  };
-  const name = modeNames[mode] || mode;
-
-  // 以下是「胶囊提示」，只讲真实后果，绝不拦截切换；文案控制在 20 字内，2 秒内一眼看完。
+  // 胶囊提示：只讲真实后果，绝不拦截切换；文案 ≤20 字，2 秒内看完。
   let tip = '';
-  if (mmState === 'frozen') {
-    if (mode === 'bt_only' || mode === 'toolbox_alone' || mode === 'factory_default') {
-      tip = '原厂多媒体已冻结，助手已接手保住声音';
+  if (p.media === 'factory') {
+    if (mmState === 'frozen' || mmState === 'absent') {
+      // 车主明确选了不接管蓝牙，这时确实可能没声音，如实告知，但不替他改主意
+      tip = '原厂多媒体已冻结，蓝牙可能没声音';
     }
-  } else if (mmState === 'installed') {
-    if (mode === 'bt_only') {
-      tip = '原厂正常，蓝牙只在没声音时才出手';
-    } else if (mode === 'toolbox_alone') {
-      tip = '原厂正常，蓝牙声音交给原厂';
+  } else {
+    if (mmState === 'frozen' || mmState === 'absent') {
+      tip = '助手已接管，蓝牙声音保住了';
+    } else {
+      tip = '助手接管蓝牙，声音按助手走';
     }
   }
 
-  showToast(tip ? (name + '：' + tip) : ('方控模式已切换: ' + name));
+  showToast(tip ? (p.name + '：' + tip) : ('已切换：' + p.name));
 }
 
 function resetAllToFactory() {

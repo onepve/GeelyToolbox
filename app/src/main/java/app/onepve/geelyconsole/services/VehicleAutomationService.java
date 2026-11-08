@@ -280,7 +280,7 @@ public class VehicleAutomationService extends Service {
             boolean modeSport = prefs.getBoolean("voice_enable_mode_sport", true);
             // 统一走 getWheelMode()：确保老车主 wheel_only 配置在同一条路径上完成迁移
             String wheelMode = new SteeringWheelKeyManager(context).getWheelMode();
-            boolean wheelEnabled = wheelMaster && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
+            boolean wheelEnabled = wheelMaster && SteeringWheelKeyManager.MODE_TAKEOVER.equals(wheelMode);
             try {
                 EasMediaBridge.getInstance(context).syncConfig(wheelMode);
             } catch (Throwable ignored) {}
@@ -539,7 +539,7 @@ public class VehicleAutomationService extends Service {
 
         // 统一走 getWheelMode()：确保老车主 wheel_only 配置在同一条路径上完成迁移
         String wheelMode = new SteeringWheelKeyManager(this).getWheelMode();
-        boolean wheelEnabled = wheelMasterSwitch && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
+        boolean wheelEnabled = wheelMasterSwitch && SteeringWheelKeyManager.MODE_TAKEOVER.equals(wheelMode);
 
         boolean anyVoiceEnabled = voiceMasterSwitch && (enableDoorFl || enableDoorFlClose || enableDoorFr || enableDoorFrClose ||
                              enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
@@ -547,8 +547,9 @@ public class VehicleAutomationService extends Service {
                              enableModeSmart || enableModeComfort || enableModeEco || enableModeSport);
         boolean speedAutoplay = prefs.getBoolean("vehicle_speed_autoplay_enabled", true);
         boolean speedCustom = prefs.getBoolean("vehicle_speed_custom_action_enabled", false);
+        boolean mediaTakeover = EasMediaBridge.isMediaTakeover(this);
         boolean anyEnabled = anyVoiceEnabled || wheelEnabled || enableTurnSignal360
-                || speedAutoplay || speedCustom
+                || speedAutoplay || speedCustom || mediaTakeover
                 || prefs.getBoolean(IdleScreensaverManager.KEY_ENABLED, false);
 
         if (!anyEnabled) {

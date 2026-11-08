@@ -111,19 +111,18 @@ public final class VehicleConfigHelper {
             obj.put("voice_enable_mode_eco", prefs.getBoolean("voice_enable_mode_eco", true));
             obj.put("voice_enable_mode_sport", prefs.getBoolean("voice_enable_mode_sport", true));
 
-            // 默认值：出厂统一默认控制台独立接管模式，短按 Mode 唤起 360
-            boolean hasCarMedia = SystemUtils.isPackageInstalled(context, "com.ecarx.carmedia");
-            String defaultWheelMode = "toolbox_alone";
+            // 默认值：出厂统一默认接管，短按 Mode 唤起 360
             String defaultModeAction = "open_360";
 
-            // 走 getWheelMode() 而非裸读：老车主 wheel_only 配置必须在此完成迁移，
-            // 否则前端四档按钮会一个都不高亮（wheel_only 已从 UI 移除）。
+            // 走 getWheelMode() 而非裸读：老车主旧档位必须在此完成迁移，
+            // 否则前端按钮会一个都不高亮。
             String effectiveWheelMode = new SteeringWheelKeyManager(context).getWheelMode();
+            String effectiveMediaMode = EasMediaBridge.getMediaMode(context);
             obj.put("wheel_control_mode", effectiveWheelMode);
+            obj.put("media_control_mode", effectiveMediaMode);
             obj.put("wheel_action_mute", prefs.getString("wheel_action_mute", "default"));
             obj.put("wheel_action_mode", prefs.getString("wheel_action_mode", defaultModeAction));
             obj.put("wheel_action_ok", prefs.getString("wheel_action_ok", "default"));
-            obj.put("has_carmedia_installed", hasCarMedia);
             obj.put("wheel_mapping_mode", prefs.getString("wheel_mapping_mode", "preset"));
             obj.put("wheel_custom_mapping_list", prefs.getString("wheel_custom_mapping_list", "[]"));
 

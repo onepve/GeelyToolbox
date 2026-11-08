@@ -92,6 +92,75 @@ public class EasMediaBridge {
         }
     };
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // 蓝牙多媒体接管模式：本键只管「蓝牙声音归谁」，与方向盘按键完全解耦
+    // 由车主显式选择，助手不做任何「原厂多媒体是否存活」的自适应探测
+    // ═══════════════════════════════════════════════════════════════════════
+    public static final String MEDIA_MODE_TAKEOVER = "takeover";
+    public static final String MEDIA_MODE_FACTORY  = "factory";
+    /** 偏好键名（与全应用统一存储同库） */
+    public static final String PREF_MEDIA_MODE = "media_control_mode";
+
+    /** 旧档位字面量：迁移用，不得再作为新写入值 */
+    private static final String LEGACY_CARMEDIA_FIRST  = "carmedia_first";
+    private static final String LEGACY_TOOLBOX_ALONE   = "toolbox_alone";
+    private static final String LEGACY_WHEEL_ONLY      = "wheel_only";
+    private static final String LEGACY_BT_ONLY         = "bt_only";
+    private static final String LEGACY_FACTORY_DEFAULT = "factory_default";
+
+    /**
+     * 读取蓝牙多媒体接管模式：只回 takeover / factory 两个值。
+     *
+     * 新装机默认 takeover —— 助手自带多媒体能力，本就需要驱动蓝牙链路。
+     * 老车主按原档位原意拆分迁移，仅在 media_control_mode 尚未写入时执行一次：
+     *   toolbox_alone   -> takeover （原本即全接管，含蓝牙）
+     *   bt_only         -> takeover （原意就是「只接管蓝牙」）
+     *   carmedia_first  -> factory  （空壳档，按键全放行、蓝牙交原厂）
+     *   wheel_only      -> factory  （原意是「只接管方控，蓝牙不动」）
+     *   factory_default -> factory  （完整原厂）
+     */
+    public static String getMediaMode(Context ctx) {
+        try {
+            SharedPreferences sp = PrefUtils.getAppPreferences(ctx);
+            if (sp == null) return MEDIA_MODE_TAKEOVER;
+            if (sp.contains(PREF_MEDIA_MODE)) {
+                String v = sp.getString(PREF_MEDIA_MODE, MEDIA_MODE_TAKEOVER);
+                return MEDIA_MODE_FACTORY.equals(v) ? MEDIA_MODE_FACTORY : MEDIA_MODE_TAKEOVER;
+            }
+            String legacy = sp.getString("wheel_control_mode", LEGACY_TOOLBOX_ALONE);
+            String migrated;
+            switch (legacy == null ? "" : legacy) {
+                case LEGACY_CARMEDIA_FIRST:
+                case LEGACY_WHEEL_ONLY:
+                case LEGACY_FACTORY_DEFAULT:
+                    migrated = MEDIA_MODE_FACTORY;
+                    break;
+                default:
+                    migrated = MEDIA_MODE_TAKEOVER;
+                    break;
+            }
+            sp.edit().putString(PREF_MEDIA_MODE, migrated).commit();
+            AppLogger.i("音频通道", "蓝牙接管配置迁移: " + legacy + " -> " + migrated);
+            return migrated;
+        } catch (Throwable t) {
+            return MEDIA_MODE_TAKEOVER;
+        }
+    }
+
+    public static boolean isMediaTakeover(Context ctx) {
+        return MEDIA_MODE_TAKEOVER.equals(getMediaMode(ctx));
+    }
+
+    /** 写入蓝牙接管模式（前端按钮调用） */
+    public static void setMediaMode(Context ctx, String mode) {
+        try {
+            SharedPreferences sp = PrefUtils.getAppPreferences(ctx);
+            if (sp == null) return;
+            String v = MEDIA_MODE_FACTORY.equals(mode) ? MEDIA_MODE_FACTORY : MEDIA_MODE_TAKEOVER;
+            sp.edit().putString(PREF_MEDIA_MODE, v).commit();
+        } catch (Throwable ignored) {}
+    }
+
     public static EasMediaBridge getInstance(Context context) {
         if (sInstance == null) {
             synchronized (EasMediaBridge.class) {
@@ -127,33 +196,32 @@ public class EasMediaBridge {
      * 说明：仪表/息屏音乐卡片开关已整体下线（助手从未真正推送过卡片内容，
      * 开关开着只会误导车主以为能显示，关着又与默认行为无差别），此处不再接收投递参数。
      */
+    /**
+     * 同步蓝牙多媒体接管配置。
+     *
+     * 【铁律】蓝牙声音归谁，只认车主选择的 media_control_mode，与方向盘按键档位无关：
+     *   takeover -> 助手注册 EAS、抢音源、申请焦点、保蓝牙声音
+     *   factory  -> 助手完全不注册、不抢焦点、不干预，声音全归原厂
+     *
+     * 助手不做任何「原厂多媒体是否存活」的自适应探测。车主选了 factory 就算原厂被冻结
+     * 也不偷偷接管 —— 那是车主的明确选择，助手不替他改主意。
+     *
+     * @param mode 方控档位，仅用于日志留痕，不参与蓝牙决策
+     */
     public synchronized void syncConfig(String mode) {
-        AppLogger.i("音频通道", "同步 EAS 桥接配置: 模式=" + mode);
+        String mediaMode = getMediaMode(appContext);
+        AppLogger.i("音频通道", "同步 EAS 桥接配置: 方控档位=" + mode + "，蓝牙档位=" + mediaMode);
 
-        // ═══ 注册层统一原厂检测（依据实车日志实证结论）═══
-        // 原厂多媒体在线时，副屏卡片与当前播放源本就由它正常持有。助手一旦注册就会抢走 EAS 焦点，
-        // 却从不投递任何歌名/歌词，实车日志显示后果是：卡片定格长达 100 秒、原厂进程被系统回收后重启。
-        // 因此原厂活着时助手全程不注册；只有原厂被冻结、车机侧已无人驱动 A2DP Sink 时才接管保活。
-        if (isOriginalMediaActive()) {
-            AppLogger.i("音频通道", "原厂多媒体正常在线，助手不注册 EAS、不抢播放源，卡片与声音完整归原厂");
-            releaseEasRegistration();
-            abandonBluetoothFocus();
-            disconnectBtMediaBrowser();
-            return;
-        }
-
-        // 原厂已被冻结：车机侧没有任何进程驱动 A2DP Sink，必须由助手接管保活，否则整车无声。
-        // 该判定与方向盘档位无关 —— 【恢复原厂默认】只交还按键，绝不等于连声音一起撒手。
-        if ("toolbox_alone".equals(mode) || "bt_only".equals(mode) || a2dpSinkConnected) {
-            // 控制台独立接管、仅接管蓝牙或手机蓝牙已连接：确保 EAS 初始化并注册选通蓝牙通道
+        if (MEDIA_MODE_TAKEOVER.equals(mediaMode)) {
             ensureEasReady();
             if (a2dpSinkConnected && a2dpStreaming) {
                 activateBluetoothChannel();
             }
         } else {
-            // 未连接蓝牙且非独立接管：注销 EAS 释放焦点，退让给米小江或原厂多媒体
+            // 蓝牙交回原厂：注销注册、释放焦点、断开底层浏览器连接
             releaseEasRegistration();
             abandonBluetoothFocus();
+            disconnectBtMediaBrowser();
         }
     }
 
@@ -161,6 +229,10 @@ public class EasMediaBridge {
      * 确保 EAS API 就绪并注册
      */
     private synchronized void ensureEasReady() {
+        // 注意：此处不加蓝牙档位总闸。ensureEasReady 是注册基础设施，
+        // 方控切歌后选通本地 DAC 通道（activateLocalMediaChannel）同样依赖它，
+        // 若在此拦死会导致「只接管方控」选项下本地音乐没声音。
+        // 蓝牙侧的门禁只加在 activateBluetoothChannel 与各 *WhenFrozen 守护函数上。
         if (mApi == null) {
             mApi = MediaCenterAPI.get(appContext);
         }
@@ -248,37 +320,6 @@ public class EasMediaBridge {
         }
     }
 
-    private boolean isOriginalMediaActive() {
-        try {
-            // 1. 原生进程活跃探测（零 ADB，零 shell）：检测 com.ecarx.multimedia 是否存在存活进程
-            ActivityManager am = (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
-            if (am != null) {
-                List<ActivityManager.RunningAppProcessInfo> procs = am.getRunningAppProcesses();
-                if (procs != null) {
-                    for (ActivityManager.RunningAppProcessInfo proc : procs) {
-                        if ("com.ecarx.multimedia".equals(proc.processName)) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            // 2. 包根本不存在（未安装）：等同于原厂多媒体不在，必须由助手接管。
-            //    对车机而言「被冻结」与「未安装」是等价状态 —— 两者都没有任何进程驱动 A2DP Sink、
-            //    都没有人申请音频焦点。旧实现只判「是否被冻结」，导致未安装时 frozen=false
-            //    被误判成「原厂活着」，助手永不接管，整车无声且无从恢复。
-            int state = SystemUtils.getAppDetailedState(appContext, "com.ecarx.multimedia");
-            if (state == SystemUtils.APP_STATE_NOT_INSTALLED) {
-                return false;
-            }
-            if (state == SystemUtils.APP_STATE_DISABLED) {
-                return false;
-            }
-            // 3. 包已安装且启用但进程暂未拉起：视为原厂在线，助手不抢
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
-    }
 
     /**
      * 【冻结托底专属】发送原厂小部件广播保持蓝牙音源
@@ -489,6 +530,11 @@ public class EasMediaBridge {
 
     public synchronized void activateBluetoothChannel() {
         try {
+            // 【蓝牙专用总闸】车主把蓝牙交回原厂时，本入口整体不执行：
+            // 不注册、不选通 2 号蓝牙物理通道、不发保源广播，蓝牙完整交还原厂。
+            if (!isMediaTakeover(appContext)) {
+                return;
+            }
             ensureEasReady();
             if (mApi != null && mRegistered && mToken != null) {
                 mApi.updateCurrentSourceType(mToken, SOURCE_TYPE_BLUETOOTH);
@@ -684,6 +730,45 @@ public class EasMediaBridge {
     /**
      * 释放 EAS 注册 (退让焦点给米小江或原厂)
      */
+    private boolean isOriginalMediaActive() {
+        // 【策略闸】车主把蓝牙交回原厂（media_control_mode=factory）时，
+        // 本函数一律返回 true，等价于「原厂在管」——调用方（全部为哈希锁定的声音守护函数）
+        // 会照旧跳过下发 play/pause、跳过抢焦点、跳过保源广播，蓝牙完整交还原厂。
+        // 这样改策略无需触碰任何被门禁锁定的函数体。
+        if (!isMediaTakeover(appContext)) {
+            return true;
+        }
+        try {
+            // 1. 原生进程活跃探测（零 ADB，零 shell）：检测 com.ecarx.multimedia 是否存在存活进程
+            ActivityManager am = (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
+            if (am != null) {
+                List<ActivityManager.RunningAppProcessInfo> procs = am.getRunningAppProcesses();
+                if (procs != null) {
+                    for (ActivityManager.RunningAppProcessInfo proc : procs) {
+                        if ("com.ecarx.multimedia".equals(proc.processName)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            // 2. 包根本不存在（未安装）：等同于原厂多媒体不在，必须由助手接管。
+            //    对车机而言「被冻结」与「未安装」是等价状态 —— 两者都没有任何进程驱动 A2DP Sink、
+            //    都没有人申请音频焦点。旧实现只判「是否被冻结」，导致未安装时 frozen=false
+            //    被误判成「原厂活着」，助手永不接管，整车无声且无从恢复。
+            int state = SystemUtils.getAppDetailedState(appContext, "com.ecarx.multimedia");
+            if (state == SystemUtils.APP_STATE_NOT_INSTALLED) {
+                return false;
+            }
+            if (state == SystemUtils.APP_STATE_DISABLED) {
+                return false;
+            }
+            // 3. 包已安装且启用但进程暂未拉起：视为原厂在线，助手不抢
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     public synchronized void releaseEasRegistration() {
         try {
             if (mApi != null && mRegistered && mToken != null) {

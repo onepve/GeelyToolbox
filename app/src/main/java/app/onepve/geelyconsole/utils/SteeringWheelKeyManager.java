@@ -62,13 +62,21 @@ public class SteeringWheelKeyManager {
     public static final String GESTURE_LONG = "long";
     public static final int LONG_PRESS_MS = 1500; // 长按判定门限明确锁定 1.5 秒 (远离 10 秒看门狗硬重启)
 
-    // 接管模式
-    public static final String MODE_CARMEDIA_FIRST = "carmedia_first"; // 米小江方控优先
-    public static final String MODE_TOOLBOX_ALONE = "toolbox_alone";   // 控制台独立接管（按键全接管 + 蓝牙按原厂存活判定）
-    /** 已下线的旧档位：v1.8.32 起并入【控制台独立接管】，仅用于老车主配置自动迁移 */
-    public static final String MODE_WHEEL_ONLY_LEGACY = "wheel_only";
-    public static final String MODE_BT_ONLY = "bt_only";               // 仅接管蓝牙(放行方控)
-    public static final String MODE_FACTORY_DEFAULT = "factory_default"; // 恢复原厂
+    // ═══════════════════════════════════════════════════════════════════════
+    // 方控接管模式：本键只管「方向盘按键归谁」，绝不掺和蓝牙多媒体
+    // 蓝牙归谁由 EasMediaBridge 的 media_control_mode 独立决定，两者互不影响
+    // ═══════════════════════════════════════════════════════════════════════
+    /** 方向盘按键由助手接管 */
+    public static final String MODE_TAKEOVER = "takeover";
+    /** 方向盘按键全部交回原厂 */
+    public static final String MODE_FACTORY = "factory";
+
+    // ── 已下线的旧档位：仅用于老车主配置自动迁移，不得再写入 ──
+    private static final String LEGACY_CARMEDIA_FIRST  = "carmedia_first";
+    private static final String LEGACY_TOOLBOX_ALONE   = "toolbox_alone";
+    private static final String LEGACY_WHEEL_ONLY      = "wheel_only";
+    private static final String LEGACY_BT_ONLY         = "bt_only";
+    private static final String LEGACY_FACTORY_DEFAULT = "factory_default";
 
     // 按键功能选项
     public static final String ACTION_OPEN_360 = "open_360";
@@ -156,7 +164,7 @@ public class SteeringWheelKeyManager {
     }
     // parseKeyFromLine 会被 logcat 全量监听的每一行调用，严禁每行都读 SharedPreferences。
     private volatile boolean wheelMasterCached = true;
-    private volatile String wheelModeCached = MODE_CARMEDIA_FIRST;
+    private volatile String wheelModeCached = MODE_TAKEOVER;
 
     /** 刷新热路径缓存（配置变更 / 服务启动时调用一次即可） */
     public void refreshRuntimeCache() {
@@ -168,22 +176,50 @@ public class SteeringWheelKeyManager {
     }
 
 
+    /**
+     * 读取方控接管模式：只回 takeover / factory 两个值。
+     *
+     * 老车主配置一次性迁移（读写同一处，杜绝任何绕过迁移的裸读）：
+     *   carmedia_first  / bt_only         -> factory   （按键原本就是全放行）
+     *   toolbox_alone   / wheel_only      -> takeover  （按键原本就是全接管）
+     *   factory_default                   -> factory
+     *
+     * 不再依据 com.ecarx.carmedia 是否安装来猜默认档 —— 那是在替车主做决定。
+     */
     public String getWheelMode() {
-        if (!prefs.contains("wheel_control_mode")) {
-            boolean hasCarMedia = SystemUtils.isPackageInstalled(context, "com.ecarx.carmedia");
-            return hasCarMedia ? MODE_CARMEDIA_FIRST : MODE_TOOLBOX_ALONE;
-        }
-        String saved = prefs.getString("wheel_control_mode", MODE_CARMEDIA_FIRST);
-        // 老车主无感迁移：v1.8.32 起【仅接管方控按键】并入【控制台独立接管】。
-        // 两档在按键维度本就完全一致，差异仅在蓝牙；而蓝牙接管已改为按原厂多媒体存活动态判定，
-        // 原厂活着时两档都不碰蓝牙，因此迁移不会让老车主感知到任何行为变化。
-        if (MODE_WHEEL_ONLY_LEGACY.equals(saved)) {
+        String saved = prefs.getString("wheel_control_mode", MODE_TAKEOVER);
+        String migrated = migrateLegacyMode(saved);
+        if (!migrated.equals(saved)) {
             try {
-                prefs.edit().putString("wheel_control_mode", MODE_TOOLBOX_ALONE).commit();
+                prefs.edit().putString("wheel_control_mode", migrated).commit();
+                AppLogger.i("方控按键", "老配置自动迁移: " + saved + " -> " + migrated);
             } catch (Throwable ignored) {}
-            return MODE_TOOLBOX_ALONE;
         }
-        return saved;
+        return migrated;
+    }
+
+    /** 旧档位 -> 新档位映射，非旧档位原样返回 */
+    private static String migrateLegacyMode(String saved) {
+        if (saved == null) return MODE_TAKEOVER;
+        switch (saved) {
+            case LEGACY_CARMEDIA_FIRST:
+            case LEGACY_BT_ONLY:
+            case LEGACY_FACTORY_DEFAULT:
+                return MODE_FACTORY;
+            case LEGACY_TOOLBOX_ALONE:
+            case LEGACY_WHEEL_ONLY:
+                return MODE_TAKEOVER;
+            case MODE_TAKEOVER:
+            case MODE_FACTORY:
+                return saved;
+            default:
+                return MODE_TAKEOVER;
+        }
+    }
+
+    /** 方向盘按键是否需要助手接管 */
+    public boolean isWheelTakeover() {
+        return MODE_TAKEOVER.equals(wheelModeCached);
     }
 
     public String getKeyPrefix(int keyCode) {
@@ -365,8 +401,9 @@ public class SteeringWheelKeyManager {
         }
         lastKeyTriggerTime.put(keyCode, now);
 
-        if (MODE_FACTORY_DEFAULT.equals(wheelModeCached) || MODE_BT_ONLY.equals(wheelModeCached)) {
-            AppLogger.i("方控按键", "处于[" + (MODE_BT_ONLY.equals(wheelModeCached) ? "仅接管蓝牙" : "恢复原厂默认") + "]模式，放行按键事件: " + getKeyName(keyCode));
+        // 按键全交回原厂：本档不拦任何方向盘按键，全部放行
+        if (!isWheelTakeover()) {
+            AppLogger.i("方控按键", "处于[按键交回原厂]模式，放行按键事件: " + getKeyName(keyCode));
             return;
         }
 
@@ -379,10 +416,10 @@ public class SteeringWheelKeyManager {
 
         final String singleAction = getGestureAction(keyCode, GESTURE_SINGLE);
         if (ACTION_DEFAULT.equals(singleAction)) {
-            // 【控制台独立接管】模式下，原厂 MediaKeyReceiver 始终保持启用、由原厂正常收键；
+            // 【按键由助手接管】模式下，原厂 MediaKeyReceiver 始终保持启用、由原厂正常收键；
             // 若车主对上一曲/下一曲保留【原厂默认】，助手必须补上切歌职责，
             // 避免因原厂接收器在某些车型上不可用而出现「按键按了没反应」的空转。
-            if (MODE_TOOLBOX_ALONE.equals(wheelModeCached)) {
+            if (isWheelTakeover()) {
                 if (keyCode == KEY_NEXT) {
                     AppLogger.i("方控按键", getKeyName(keyCode) + " 处于[原厂默认]，接管模式下执行下一曲切歌");
                     executeAction(ACTION_NEXT_TRACK);

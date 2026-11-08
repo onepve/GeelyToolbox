@@ -160,7 +160,8 @@ export const store = reactive({
     wheel_mapping_mode: 'preset', // 'preset' (标准卡片) | 'custom_list' (自定义列表)
     wheel_custom_mapping_list: '[]', // 模式 B 独立存储 JSON
     voice_audio_channel: 'music', // 'music' | 'nav' | 'notification'
-    wheel_control_mode: 'toolbox_alone', // 出厂默认控制台独立接管
+    wheel_control_mode: 'takeover', // 方控维度：出厂默认助手接管
+    media_control_mode: 'takeover', // 蓝牙维度：出厂默认助手接管
     wheel_action_mute: 'default',
     wheel_action_mode: 'open_360',
     wheel_action_ok: 'default',
