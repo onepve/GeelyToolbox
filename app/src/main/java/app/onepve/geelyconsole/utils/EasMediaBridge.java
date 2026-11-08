@@ -262,8 +262,19 @@ public class EasMediaBridge {
                     }
                 }
             }
-            // 2. 原生包启用状态探测：若包已安装且未被停用/冻结，同样视为原厂多媒体存在
-            return !SteeringWheelKeyManager.isMultimediaFrozenFast(appContext);
+            // 2. 包根本不存在（未安装）：等同于原厂多媒体不在，必须由助手接管。
+            //    对车机而言「被冻结」与「未安装」是等价状态 —— 两者都没有任何进程驱动 A2DP Sink、
+            //    都没有人申请音频焦点。旧实现只判「是否被冻结」，导致未安装时 frozen=false
+            //    被误判成「原厂活着」，助手永不接管，整车无声且无从恢复。
+            int state = SystemUtils.getAppDetailedState(appContext, "com.ecarx.multimedia");
+            if (state == SystemUtils.APP_STATE_NOT_INSTALLED) {
+                return false;
+            }
+            if (state == SystemUtils.APP_STATE_DISABLED) {
+                return false;
+            }
+            // 3. 包已安装且启用但进程暂未拉起：视为原厂在线，助手不抢
+            return true;
         } catch (Throwable t) {
             return false;
         }
