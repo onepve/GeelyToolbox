@@ -538,7 +538,7 @@ public class VehicleAutomationService extends Service {
         }
 
         // 统一走 getWheelMode()：确保老车主 wheel_only 配置在同一条路径上完成迁移
-        String wheelMode = new SteeringWheelKeyManager(context).getWheelMode();
+        String wheelMode = new SteeringWheelKeyManager(this).getWheelMode();
         boolean wheelEnabled = wheelMasterSwitch && !SteeringWheelKeyManager.MODE_FACTORY_DEFAULT.equals(wheelMode);
 
         boolean anyVoiceEnabled = voiceMasterSwitch && (enableDoorFl || enableDoorFlClose || enableDoorFr || enableDoorFrClose ||
