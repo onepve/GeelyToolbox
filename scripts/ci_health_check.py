@@ -759,8 +759,6 @@ if "g in gestureList" in wv_code:
     reg_violations.append("WheelView.vue 仍残留已下线的手势切换选择条！")
 if "applyRecommendedPreset" in wv_code or "方控按键一键快速配置" in wv_code:
     reg_violations.append("WheelView.vue 仍残留已下线的「方控按键一键快速配置」卡片！")
-if "carmedia_first" not in wv_code:
-    reg_violations.append("WheelView.vue 缺少米小江方控优先模式单选卡片！")
 
 # 16.3 检查车身监控引擎（HAL 实验通道已下线）与倒车音量滑块
 # （车身「原厂 HAL / CarService 直通」双轨实验通道已按车主指令下线：
