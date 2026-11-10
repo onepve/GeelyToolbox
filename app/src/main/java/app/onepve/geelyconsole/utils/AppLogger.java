@@ -108,7 +108,7 @@ public class AppLogger {
         MODULE_MAPPING.put("系统退出", "电源与系统");
         MODULE_MAPPING.put("悬浮胶囊", "电源与系统");
         MODULE_MAPPING.put("座舱自动化", "电源与系统");
-        MODULE_MAPPING.put("系统日志", "系统启动");
+        MODULE_MAPPING.put("系统日志", "电源与系统");
     }
 
     /**
@@ -186,6 +186,19 @@ public class AppLogger {
 
     public static void e(String module, String message, Throwable tr) {
         writeLog("ERROR", module, message, tr);
+    }
+
+    /**
+     * 诊断通道日志（通道自愈/断流取证专用）
+     *
+     * 与 i/w/e 的根本区别：**只输出到系统 logcat，绝不进 guard.log 内存日志**。
+     * 1. 不受 8 大领域开关管控 —— 开关全关也能在系统 logcat 里查到通道健康轨迹；
+     * 2. 不占内存环形缓冲区 —— 诊断通道自身永远不会刷屏，也永远不会把真实业务日志挤出 500 行窗口。
+     * 抓包导出的 all.log / app.log 天然包含本通道内容，排查时照旧能看到。
+     */
+    public static void diag(String module, String message) {
+        String norm = module == null ? "系统启动" : module.trim();
+        Log.i(TAG, "[" + norm + "] " + message);
     }
 
     /**

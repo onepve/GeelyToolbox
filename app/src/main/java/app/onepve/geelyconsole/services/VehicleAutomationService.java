@@ -132,11 +132,48 @@ public class VehicleAutomationService extends Service {
     private app.onepve.geelyconsole.hal.IVehiclePlatform cachedPlatform;
     private Thread logcatThread;
     private Process logcatProcess;
+
+    // ═══ Logcat 通道稳定性治理 (v1.8.32-beta.3) ═══
+    // 历史故障：-b all 让 logcat 子进程约 20ms 就退出，外层 while 每 2 秒无脑重建，
+    // 25 分钟重建 219 次、guard.log 刷屏、方控/车门/挡位信号全断（方控只能靠原厂广播兜底）。
+    private static final long[] LOGCAT_BACKOFF_MS = {2000L, 5000L, 15000L, 30000L, 60000L};
+    private static final long LOGCAT_SILENCE_WATCHDOG_MS = 300000L; // 连续 5 分钟无任何新日志判定通道假死
+    private volatile long logcatLastLineAtMs = 0L;
+    private volatile boolean logcatEverEstablished = false;   // 就绪提示全程只打一次，杜绝刷屏
+    private volatile boolean logcatDrainReported = false;     // 抽干提示全程只打一次
+    private volatile boolean logcatWatchdogStarted = false;
+    private int logcatConsecutiveFailures = 0;                // 连续失败次数（退避阶梯 + 取证）
+    private volatile boolean logcatTailSeekDisabled = false;  // 老系统不认 -T 参数时永久降级，不再反复试错
+
+    // 通道健康快照（随诊断包 summary.json 一并带回，车主只需发一个包就能判断通道是否稳）
+    private static volatile int sLogcatBuildCount = 0;         // 通道建立次数（全程累计）
+    private static volatile int sLogcatFailCount = 0;          // 通道异常断开次数（全程累计）
+    private static volatile int sLogcatFallbackCount = 0;      // 方控兜底通道接管次数
+    private static volatile String sLogcatLastExit = "";       // 最近一次断开退出码与 stderr 摘要
+    private static volatile String sLogcatBuf = "";            // 当前订阅的缓冲区组合
+
+    /** 供诊断包摘要读取：Logcat 通道健康快照 */
+    public static String getLogcatHealthSnapshot() {
+        return "建立=" + sLogcatBuildCount + " 断开=" + sLogcatFailCount
+                + " 方控兜底=" + sLogcatFallbackCount + " 订阅=" + sLogcatBuf
+                + " 末次断因=" + sLogcatLastExit;
+    }
+
     private VehicleVoicePlayer voicePlayer;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private SteeringWheelKeyManager wheelKeyManager;
     private BroadcastReceiver powerReceiver;
     private BroadcastReceiver ecarxKeyReceiver;
+
+    // ═══ 方控独立兜底通道 (v1.8.32-beta.3) ═══
+    // 历史故障：方控切歌时好时坏，根因是唯一的按键来源 logcat 通道被反复切断。
+    // 现在把 HW_KEY_INPUT 车规属性通道（米小江同款，免 logcat 子进程）从「只在学习界面临时开」
+    // 升级为「随 logcat 健康度自动接管的兜底通道」：
+    //   - logcat 健康时：完全不注册，零重复触发风险，基准链路一字不改；
+    //   - logcat 连续失败时：自动注册 CarProperty 回调接管方控，按键立即恢复；
+    //   - logcat 恢复稳定后：自动注销，回到唯一来源，杜绝双通道并发误触发。
+    private app.onepve.geelyconsole.hal.HwKeyInputChannel wheelHalChannel;
+    private volatile boolean wheelHalFallbackActive = false;
 
     // 四大独立解耦状态管理器
     private DoorStateManager doorStateManager;
@@ -728,11 +765,20 @@ public class VehicleAutomationService extends Service {
     private void startLogcatReader() {
         initActiveFeatureWhitelist();
         if (logcatThread != null && logcatThread.isAlive()) return;
+        logcatLastLineAtMs = android.os.SystemClock.elapsedRealtime(); // 看门狗基准：从建通道那刻起算，避免首轮空转
+        startLogcatWatchdog();
 
         logcatThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (isRunning) {
+                    Process proc = null;
+                    int exitCode = Integer.MIN_VALUE;
+                    long lineCount = 0;
+                    boolean drained = false;
+                    boolean establishedOk = false;
+                    long startedAtMs = android.os.SystemClock.elapsedRealtime();
+                    final StringBuilder stderrBuf = new StringBuilder();
                     try {
                         // 核心日志通道: 
                         // 1. VehicleDataBuilder (CAN 信号)
@@ -740,51 +786,296 @@ public class VehicleAutomationService extends Service {
                         // 3. ECARX@ECP & MCULog (MCU 物理挡位 GearPosition 与门控 FL_DOOR_STS)
                         // 4. InputManager / CAR.INPUT (方向盘按键报文)
                         // 5. ecarx_core_server (mModelLFDoor 门控信号)
-                        // 放宽串口与系统标签日志级别至 :V，彻底杜绝车门报文被丢弃
-                        // 不在命令行中限制 -s 标签（避免因为底层模块标签变动或漏掉标签导致整包被丢弃）
-                        // 直接全量监听，由我们在 parseLogLine 中进行高效关键字判定！
-                        // 核心铁律：持续实时监听 logcat，由我们在 parseLogLine 中进行高效关键字判定！
-                        // 稳定性规范：严禁使用 -t 50 / -d 等非阻塞参数，否则进程读完 50 行立即 EOF 退出导致外层 while 陷入每 2 秒死循环重启！
-                        // 核心防翻旧账：写入纳秒同步标记行，读到标记前秒级抽干存量历史缓冲区
+                        // 【缓冲区铁律】只订阅 main + system + events 三个应用侧缓冲区。
+                        // 严禁使用 -b all：车机上 security / stats 等系统缓冲区对第三方不可读，
+                        // logcat 会立刻报 "Unable to open log device" 后退出，外层 while 随之
+                        // 每 2 秒重建一次（实车实测 25 分钟重建 219 次），不仅 guard.log 刷屏，
+                        // 更让方控/车门/挡位信号统统收不到（方控只能退回原厂广播兜底，时好时坏）。
+                        //
+                        // 【续流铁律】常态用 -T 200 直接从缓冲区尾部 200 行开始流式续接：
+                        // 既天然不从开机第一行重放（旧的纳秒标记行永远落在缓冲区尾部之外、
+                        // 根本读不到，实测 19 次抽干全部靠 5001 行兜底白烧 CPU），
+                        // 又免掉每次重建都要回灌数千行旧日志。老系统不支持 -T 时自动降级。
+                        int tier = logcatConsecutiveFailures;
+                        String[] cmd;
+                        if (tier >= 6) {
+                            // 兜底降级：只订阅 main，最保守的组合（老系统 / 权限受限时仍能拿到方控与 CAN 主日志）
+                            cmd = new String[]{"logcat", "-v", "time", "-b", "main"};
+                            sLogcatBuf = "main(降级)";
+                        } else if (tier >= 3 || logcatTailSeekDisabled) {
+                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events"};
+                            sLogcatBuf = "main+system+events";
+                        } else {
+                            // -T 200 = 先吐缓冲区最新 200 行再保持流式续接（不像 -t/-d 那样读完即退出）
+                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events", "-T", "200"};
+                            sLogcatBuf = "main+system+events(-T200)";
+                        }
+
+                        // 通道重建打点：在系统 logcat 里留一条纳秒标记行，方便抓包时肉眼定位「第几次重连」
+                        // （抽干判定已改为时间栅栏，不再依赖读到本行）
                         final String drainMarker = "GEELY_TOOLBOX_DRAIN_MARKER_" + android.os.SystemClock.elapsedRealtimeNanos();
                         Log.i("GeelyConsole", drainMarker);
 
-                        ProcessBuilder pb = new ProcessBuilder("logcat", "-v", "time", "-b", "all");
-                        pb.redirectErrorStream(true);
-                        logcatProcess = pb.start();
-                        AppLogger.i("系统日志", "Logcat 实时监听守护线程已建立就绪");
+                        // 【时间栅栏抽干铁律】用「开流瞬间的真实时间」作为分界线，早于该时刻的历史行一律丢，
+                        // 绝不靠纳秒标记行（-T 从尾部续接时标记行永远在尾部之外，根本读不到，
+                        // 旧的 5001 行兜底会盲跳过 5001 行实时日志）。
+                        final String streamStartStamp = new java.text.SimpleDateFormat("MM-dd HH:mm:ss.SSS", java.util.Locale.US)
+                                .format(new java.util.Date(System.currentTimeMillis()));
 
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(logcatProcess.getInputStream()), 1024);
+                        ProcessBuilder pb = new ProcessBuilder(cmd);
+                        // 错误流独立收集：既不阻塞管道，又能把断开真因（权限/参数被拒）留下来
+                        pb.redirectErrorStream(false);
+                        proc = pb.start();
+                        logcatProcess = proc;
+                        establishedOk = true;
+                        sLogcatBuildCount++;
+
+                        final java.io.InputStream errStream = proc.getErrorStream();
+                        Thread stderrDrainer = new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    BufferedReader er = new BufferedReader(new InputStreamReader(errStream), 256);
+                                    String el;
+                                    int kept = 0;
+                                    while ((el = er.readLine()) != null) {
+                                        if (kept++ < 6) stderrBuf.append(el.trim()).append(" | ");
+                                    }
+                                } catch (Throwable ignored) {}
+                            }
+                        }, "VehicleLogcatStderr");
+                        stderrDrainer.setDaemon(true);
+                        stderrDrainer.start();
+
+                        // 就绪提示全程只打一次，杜绝每次重建都刷屏
+                        if (!logcatEverEstablished) {
+                            logcatEverEstablished = true;
+                            AppLogger.diag("系统日志", "Logcat 实时监听守护线程已建立就绪");
+                        }
+
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()), 1024);
                         String line;
-                        boolean bufferDrained = false;
-                        long drainLinesCount = 0;
+                        long drainDeadlineMs = android.os.SystemClock.elapsedRealtime() + 4000L;
                         while (isRunning && (line = reader.readLine()) != null) {
-                            if (!bufferDrained) {
-                                drainLinesCount++;
-                                if (line.contains(drainMarker) || drainLinesCount > 5000) {
-                                    bufferDrained = true;
-                                    AppLogger.i("系统日志", "Logcat 历史缓冲抽干就绪 (跳过 " + drainLinesCount + " 行旧日志)，正式进入实时信号监听");
+                            lineCount++;
+                            logcatLastLineAtMs = android.os.SystemClock.elapsedRealtime();
+                            if (!drained) {
+                                // 时间栅栏：时间戳早于开流瞬间的历史行直接丢，跨过栅栏即正式进入实时解析。
+                                // 无时间戳的续行（堆栈等）跟随上一行判定，历史段内一并丢弃。
+                                // 安全阀：4 秒内没跨过栅栏（时钟跳变/时间戳异常）就强制放行，绝不把通道卡死成静默。
+                                if (line.length() >= 18 && line.charAt(2) == '-' && line.charAt(5) == ' ') {
+                                    String stamp = line.substring(0, 18);
+                                    if (stamp.compareTo(streamStartStamp) >= 0
+                                            || android.os.SystemClock.elapsedRealtime() > drainDeadlineMs) {
+                                        drained = true;
+                                        if (!logcatDrainReported) {
+                                            logcatDrainReported = true;
+                                            AppLogger.diag("系统日志", "Logcat 历史缓冲抽干就绪，正式进入实时信号监听");
+                                        }
+                                    } else {
+                                        continue;
+                                    }
+                                } else {
+                                    continue;
                                 }
-                                continue;
                             }
                             parseLogLine(line);
                         }
-                    } catch (Exception e) {
+                        try {
+                            exitCode = proc.exitValue();
+                        } catch (Throwable ignored) {}
+                    } catch (Throwable e) {
                         Log.w(TAG, "Logcat stream interrupted: " + e.getMessage());
+                    } finally {
+                        // RAII 铁律：本轮子进程一律回收，杜绝每次重建遗留孤儿 logcat 句柄拖慢车机
+                        if (proc != null) {
+                            try { proc.destroy(); } catch (Throwable ignored) {}
+                        }
+                        logcatProcess = null;
                     }
 
-                    if (isRunning) {
-                        try {
-                            Thread.sleep(2000);
-                        } catch (InterruptedException ignored) {
-                            break;
+                    if (!isRunning) break;
+
+                    // 健康判定：跑满 20 秒即视为链路正常（车停着不产生日志也算健康），退避阶梯归零
+                    boolean healthy = establishedOk
+                            && (android.os.SystemClock.elapsedRealtime() - startedAtMs) >= 20000L;
+                    if (healthy) {
+                        if (logcatConsecutiveFailures > 0) {
+                            Log.i(TAG, "Logcat 通道已恢复稳定，退避阶梯归零（此前连续失败 " + logcatConsecutiveFailures + " 次）");
                         }
+                        logcatConsecutiveFailures = 0;
+                        // 主通道恢复 → 收回方控兜底通道，回到唯一按键来源
+                        deactivateWheelHalFallback();
+                    } else {
+                        logcatConsecutiveFailures++;
+                        // 连续两次建不起来（约 7 秒），立刻拉方控兜底通道接管，别让车主干按没反应
+                        if (logcatConsecutiveFailures >= 2) {
+                            activateWheelHalFallback();
+                        }
+                    }
+
+                    // 老系统不认 -T 参数（stderr 报 invalid option / unknown option）时永久降级，
+                    // 不再每一轮都拿参数去撞，避免把它变成新的刷屏源
+                    String errText = stderrBuf.toString();
+                    if (!logcatTailSeekDisabled && errText.length() > 0
+                            && (errText.contains("nknown option") || errText.contains("nvalid option")
+                                || errText.contains("Unsupported") || errText.contains("usage: logcat"))) {
+                        logcatTailSeekDisabled = true;
+                        Log.w(TAG, "当前系统不支持 -T 续流参数，已永久降级为基础缓冲订阅 stderr=" + errText);
+                    }
+
+                    // 断因取证：退出码 + 错误输出 + 连续失败次数，落 logcat 随诊断包一并带回
+                    // （只进 logcat，不写 AppLogger 内存日志，避免诊断通道自己刷屏）
+                    if (logcatConsecutiveFailures > 0) {
+                        sLogcatFailCount++;
+                        sLogcatLastExit = "退出码=" + (exitCode == Integer.MIN_VALUE ? "未取到" : String.valueOf(exitCode))
+                                + " 行数=" + lineCount
+                                + " stderr=" + (stderrBuf.length() == 0 ? "空" : stderrBuf.toString());
+                        Log.w(TAG, "Logcat 通道断开 第" + logcatConsecutiveFailures + "次 " + sLogcatLastExit);
+                    }
+
+                    // 阶梯退避：2s → 5s → 15s → 30s → 60s 封顶，杜绝 2 秒死循环重启
+                    long wait = LOGCAT_BACKOFF_MS[Math.min(Math.max(logcatConsecutiveFailures, 1), LOGCAT_BACKOFF_MS.length) - 1];
+                    try {
+                        Thread.sleep(wait);
+                    } catch (InterruptedException ignored) {
+                        break;
                     }
                 }
             }
         }, "VehicleLogcatReader");
         logcatThread.start();
     }
+
+    /**
+     * 方控兜底通道：logcat 通道连续失败时，改用 HW_KEY_INPUT 车规属性直推键码，免 logcat 子进程。
+     * 仅在主通道不健康时接管；主通道恢复后自动注销，保证任何时刻只有一条按键来源，绝不双触发。
+     */
+    private void activateWheelHalFallback() {
+        if (wheelHalFallbackActive) return;
+        wheelHalFallbackActive = true;
+        sLogcatFallbackCount++;
+        try {
+            final app.onepve.geelyconsole.hal.AndroidCarClient carClient =
+                    app.onepve.geelyconsole.hal.AndroidCarClient.getInstance();
+            Runnable doRegister = new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Object cpm = carClient.getCarPropertyManagerRef();
+                        if (cpm == null) {
+                            // 未连上就先放弃，标志复位，等下一轮 logcat 失败再试，绝不永久卡死
+                            wheelHalFallbackActive = false;
+                            Log.w(TAG, "方控兜底通道: CarPropertyManager 不可用，保持原厂广播兜底");
+                            return;
+                        }
+                        if (wheelHalChannel == null) {
+                            wheelHalChannel = new app.onepve.geelyconsole.hal.HwKeyInputChannel();
+                        }
+                        if (!wheelHalChannel.register(cpm, VehicleAutomationService.this)) {
+                            wheelHalFallbackActive = false;
+                            Log.w(TAG, "方控兜底通道: HW_KEY_INPUT 属性不可用，保持原厂广播兜底");
+                            return;
+                        }
+                        wheelHalChannel.setListener(new app.onepve.geelyconsole.hal.HwKeyInputChannel.OnHwKeyListener() {
+                            @Override
+                            public void onHwKey(int keyCode, boolean isDown) {
+                                // 只认物理按下沿，抬起沿忽略（单击即发架构无需等待抬起）
+                                if (!isDown) return;
+                                if (wheelKeyManager != null) {
+                                    wheelKeyManager.handleKeyDown(keyCode);
+                                }
+                            }
+                        }, true);
+                        Log.i(TAG, "方控兜底通道: HW_KEY_INPUT 已接管按键监听（logcat 主通道不通）");
+                    } catch (Throwable t) {
+                        Log.w(TAG, "方控兜底通道注册异常: " + t.getMessage());
+                    }
+                }
+            };
+            if (carClient.isConnected()) {
+                doRegister.run();
+            } else {
+                carClient.connect(getApplicationContext(), new app.onepve.geelyconsole.hal.AndroidCarClient.OnCarConnectListener() {
+                    @Override
+                    public void onCarConnected() {
+                        if (wheelHalFallbackActive) doRegister.run();
+                    }
+                    @Override
+                    public void onCarDisconnected() {
+                        wheelHalFallbackActive = false;
+                    }
+                });
+            }
+            // 兜底超时保护：8 秒内没真注册成功就复位标志，等下一轮主通道失败再重试，
+            // 绝不因为一次握手失败就永久放弃方控兜底（车主那边会表现为「方控一直没反应」）
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (wheelHalFallbackActive
+                            && (wheelHalChannel == null || !wheelHalChannel.isRegistered())) {
+                        wheelHalFallbackActive = false;
+                        Log.w(TAG, "方控兜底通道: 8 秒内未注册成功，已复位等待重试");
+                    }
+                }
+            }, 8000L);
+        } catch (Throwable t) {
+            Log.w(TAG, "方控兜底通道拉起失败: " + t.getMessage());
+        }
+    }
+
+    /**
+     * 注销方控兜底通道（主通道恢复后调用，RAII 闭环，绝不残留 CarService 回调）
+     */
+    private void deactivateWheelHalFallback() {
+        if (!wheelHalFallbackActive) return;
+        wheelHalFallbackActive = false;
+        try {
+            if (wheelHalChannel != null) {
+                wheelHalChannel.unregister();
+                wheelHalChannel = null;
+                Log.i(TAG, "方控兜底通道: 主通道已恢复，兜底回调已注销（单一来源）");
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    /**
+     * Logcat 通道假死看门狗：子进程还活着但长时间一条日志都没有（logd 冻结 / 缓冲区卡死），
+     * 主动销毁句柄让主循环重建。宁可重建一次，也不让方控与车门信号静默失效等车主重启车机。
+     */
+    private void startLogcatWatchdog() {
+        if (logcatWatchdogStarted) return;
+        logcatWatchdogStarted = true;
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (isRunning) {
+                    try {
+                        Thread.sleep(60000L);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                    if (!isRunning) break;
+                    long last = logcatLastLineAtMs;
+                    if (last <= 0) continue;
+                    long silentMs = android.os.SystemClock.elapsedRealtime() - last;
+                    if (silentMs >= LOGCAT_SILENCE_WATCHDOG_MS) {
+                        Log.w(TAG, "Logcat 通道疑似假死（" + (silentMs / 1000L) + " 秒无任何新日志），主动重建通道自愈");
+                        // 假死期间方控也收不到按键，先接管，重建成功后主循环会自动收回
+                        activateWheelHalFallback();
+                        logcatLastLineAtMs = android.os.SystemClock.elapsedRealtime();
+                        Process p = logcatProcess;
+                        if (p != null) {
+                            try { p.destroy(); } catch (Throwable ignored) {}
+                        }
+                    }
+                }
+            }
+        }, "VehicleLogcatWatchdog");
+        t.setDaemon(true);
+        t.start();
+    }
+
 
     private void parseLogLine(String line) {
         if (line == null || line.isEmpty()) return;
@@ -1678,6 +1969,8 @@ public class VehicleAutomationService extends Service {
             } catch (Exception ignored) {}
             ecarxKeyReceiver = null;
         }
+        // RAII 闭环：方控兜底通道随服务一起注销，绝不把 CarService 回调漏在系统里
+        deactivateWheelHalFallback();
         try {
             VehiclePlatformFactory.getPlatform(this).getSensorAdapter(this).stopListening();
         } catch (Throwable ignored) {}

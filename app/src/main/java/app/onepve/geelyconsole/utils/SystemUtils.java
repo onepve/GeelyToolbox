@@ -1568,6 +1568,10 @@ public class SystemUtils {
                 }
             } catch (Throwable ignored) {}
             summary.put("privacy_status", "100%_desensitized_phone_vin_location_redacted");
+            // Logcat 通道健康快照：车主发包后仅看这一行即可判断通道是否稳定（建立/断开/兜底次数 + 末次断因）
+            try {
+                summary.put("logcat_channel", app.onepve.geelyconsole.services.VehicleAutomationService.getLogcatHealthSnapshot());
+            } catch (Throwable ignored) {}
             writeTextFile(summaryFile, summary.toString(2));
 
             // 4. 打包并自动清理历史旧包（实现唯一文件覆盖）
