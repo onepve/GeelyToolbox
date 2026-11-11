@@ -1762,6 +1762,48 @@ try:
         passed = False
     else:
         print("  [PASS] no bare FE0F emoji without explicit color (night-mode black-text trap closed)")
+
+    # 铁律 4：任何 .vue 都不得内联硬编码黑色外投影（含任意值 shadow-[...]）
+    #   白天浅色画布上会糊成脏灰；一律走 --glass-shadow / --glass-modal-shadow。
+    _hard_shadow = []
+    for _f34b in _glob34.glob(os.path.join(ROOT_DIR, "web/src/**/*.vue"), recursive=True):
+        _s34 = open(_f34b, encoding="utf-8").read()
+        for _m34b in _re34.finditer(r"shadow-\[[^\]]*rgba?\(\s*0\s*,\s*0\s*,\s*0[^\]]*\]", _s34):
+            _hard_shadow.append(os.path.basename(_f34b))
+    if _hard_shadow:
+        print("  [FAIL] hardcoded black shadow-[...] found (use theme vars): %s" % ", ".join(sorted(set(_hard_shadow))))
+        passed = False
+    else:
+        print("  [PASS] no hardcoded black shadow-[...] utilities anywhere")
+
+    # 铁律 5：弹窗外壳投影必须走 --glass-modal-shadow，白天不得用夜间深黑影
+    _modal34 = _re34.search(r'\.bg-car-modal,', _app34_clean)
+    if _modal34:
+        _tail = _app34_clean[_modal34.start():_modal34.start() + 600]
+        _modal34 = _re34.search(r'\{((?:(?!\n\})[\s\S])*?)\n\}', _tail)
+    if not _modal34:
+        print("  [FAIL] .bg-car-modal block not found in App.vue")
+        passed = False
+    else:
+        _mb34 = _modal34.group(1)
+        if "--glass-modal-shadow" not in _mb34:
+            print("  [FAIL] modal shell shadow must use --glass-modal-shadow, not fixed black")
+            passed = False
+        else:
+            print("  [PASS] modal shell shadow is theme-driven (--glass-modal-shadow)")
+
+    # 铁律 6：12 套配色的弹窗投影必须齐全（6 夜深影 + 6 日淡影）
+    _mshadow = _re34.findall(r"'--glass-modal-shadow'\s*:\s*'([^']+)'", _pal34)
+    if len(_mshadow) != 12:
+        print("  [FAIL] expected 12 --glass-modal-shadow definitions, found %d" % len(_mshadow))
+        passed = False
+    else:
+        _day_soft = [v for v in _mshadow if "0,0,0" not in v]
+        if len(_day_soft) != 6:
+            print("  [FAIL] DAY modal shadows must not be pure black, found %d/6" % len(_day_soft))
+            passed = False
+        else:
+            print("  [PASS] all 12 palettes define modal shadow (6 night deep, 6 day soft)")
 except Exception as _e34:
     print("  [FAIL] Gate 34 error: %s" % _e34)
     passed = False

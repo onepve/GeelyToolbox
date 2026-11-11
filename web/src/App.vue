@@ -519,14 +519,24 @@ html.light body {
     inset 0 -1px 0 var(--glass-underline, rgba(255, 255, 255, .06));
 }
 
-/* 弹窗外壳：高透玻璃 + 强投影，从深色遮罩上明确浮起 */
+/* 弹窗外壳：高透玻璃 + 强投影，从深色遮罩上明确浮起。
+   投影同样必须跟随主题：白天遮罩很淡（rgba(0,0,0,.22)），
+   若仍用夜间那层 .70 深黑影，会在浅色页面上糊成一大团脏灰。 */
 .bg-car-modal,
 [class*="max-w-["][class*="rounded"] {
   background-clip: padding-box;
   box-shadow:
-    0 30px 90px rgba(0, 0, 0, .70),
-    0 6px 20px rgba(0, 0, 0, .42),
+    0 30px 90px var(--glass-modal-shadow, rgba(0, 0, 0, .70)),
+    0 6px 20px var(--glass-modal-shadow-soft, rgba(0, 0, 0, .42)),
     inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, .18));
+}
+
+/* 深层弹窗（页面内的二级弹窗，没有全屏遮罩托底）：
+   同类跟随主题，白天是主题色柔化投影，夜间才是深黑影。 */
+.shadow-modal-deep {
+  box-shadow:
+    0 25px 60px -10px var(--glass-modal-shadow, rgba(0, 0, 0, .70)),
+    0 8px 24px var(--glass-modal-shadow-soft, rgba(0, 0, 0, .42));
 }
 
 /* ===== 激活态：一圈主题色实线边框（唯一判据）=====

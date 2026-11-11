@@ -432,10 +432,18 @@ public class VehicleAutomationService extends Service {
                 instance.enableTurnSignal360 = turn360;
             }
 
-            boolean anyVoiceEnabled = voiceMaster && (doorFl || doorFlClose || doorFr || doorFrClose ||
-                                doorRl || doorRlClose || doorRr || doorRrClose || doorRear ||
-                                trunkOpen || trunkClose || gearD || gearR || gearP || gearN ||
-                                modeSmart || modeComfort || modeEco || modeSport);
+            // 组闸门必须参与「是否还有语音可播」判定，否则车主关掉整组后，
+            // 组内子项仍为开，anyVoiceEnabled 依旧为 true，服务会一直空跑不退出。
+            boolean gGateGear = prefs.getBoolean("voice_gate_gear", true);
+            boolean gGateMode = prefs.getBoolean("voice_gate_mode", true);
+            boolean gGateTrunk = prefs.getBoolean("voice_gate_trunk", true);
+            boolean gGateDoorUni = prefs.getBoolean("voice_gate_door_universal", true);
+            boolean anyVoiceEnabled = voiceMaster && (
+                                (gGateDoorUni && (doorFl || doorFlClose || doorFr || doorFrClose ||
+                                doorRl || doorRlClose || doorRr || doorRrClose || doorRear)) ||
+                                (gGateTrunk && (trunkOpen || trunkClose)) ||
+                                (gGateGear && (gearD || gearR || gearP || gearN)) ||
+                                (gGateMode && (modeSmart || modeComfort || modeEco || modeSport)));
 
             boolean speedAutoplay = prefs.getBoolean("vehicle_speed_autoplay_enabled", true);
             boolean speedCustom = prefs.getBoolean("vehicle_speed_custom_action_enabled", false);
@@ -693,10 +701,16 @@ public class VehicleAutomationService extends Service {
         String wheelMode = new SteeringWheelKeyManager(this).getWheelMode();
         boolean wheelEnabled = wheelMasterSwitch && SteeringWheelKeyManager.MODE_TAKEOVER.equals(wheelMode);
 
-        boolean anyVoiceEnabled = voiceMasterSwitch && (enableDoorFl || enableDoorFlClose || enableDoorFr || enableDoorFrClose ||
-                             enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear ||
-                             enableTrunkOpen || enableTrunkClose || enableGearD || enableGearR || enableGearP || enableGearN || enableGearS ||
-                             enableModeSmart || enableModeComfort || enableModeEco || enableModeSport);
+        boolean sGateGear = prefs.getBoolean("voice_gate_gear", true);
+        boolean sGateMode = prefs.getBoolean("voice_gate_mode", true);
+        boolean sGateTrunk = prefs.getBoolean("voice_gate_trunk", true);
+        boolean sGateDoorUni = prefs.getBoolean("voice_gate_door_universal", true);
+        boolean anyVoiceEnabled = voiceMasterSwitch && (
+                             (sGateDoorUni && (enableDoorFl || enableDoorFlClose || enableDoorFr || enableDoorFrClose ||
+                             enableDoorRl || enableDoorRlClose || enableDoorRr || enableDoorRrClose || enableDoorRear)) ||
+                             (sGateTrunk && (enableTrunkOpen || enableTrunkClose)) ||
+                             (sGateGear && (enableGearD || enableGearR || enableGearP || enableGearN || enableGearS)) ||
+                             (sGateMode && (enableModeSmart || enableModeComfort || enableModeEco || enableModeSport)));
         boolean speedAutoplay = prefs.getBoolean("vehicle_speed_autoplay_enabled", true);
         boolean speedCustom = prefs.getBoolean("vehicle_speed_custom_action_enabled", false);
         boolean mediaTakeover = EasMediaBridge.isMediaTakeover(this);
