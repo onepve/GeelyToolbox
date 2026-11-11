@@ -216,6 +216,10 @@
               <span class="text-[13px] text-car-sub font-bold">
                 {{ store.fuelLedger.stats.is_calculable ? 'L/100km' : `(${store.fuelLedger.stats.status_desc})` }}
               </span>
+              <span v-if="store.fuelLedger.stats.is_calculable && store.fuelLedger.stats.status_desc"
+                class="text-[10.5px] text-car-sub/80 font-bold ml-1.5 px-1.5 py-0.5 rounded bg-car-item border border-car-border whitespace-nowrap">
+                {{ store.fuelLedger.stats.status_desc }}
+              </span>
             </div>
           </div>
 
@@ -501,9 +505,15 @@
                 </div>
 
                 <!-- 中间备注标签展示区 (有备注才展示，支持自动折行并列展示，车规标准 margin 间距) -->
-                <div v-if="rec.note && String(rec.note).trim()" class="flex-1 flex flex-wrap items-center min-w-0 pl-1">
+                <div v-if="(rec.note && String(rec.note).trim()) || rec.needs_review" class="flex-1 flex flex-wrap items-center min-w-0 pl-1">
                   <span 
-                    v-for="(tag, tIdx) in String(rec.note).trim().split(/\s+/).filter(Boolean)" 
+                    v-if="rec.needs_review"
+                    class="text-[10px] px-1.5 py-0.5 m-0.5 rounded-md bg-car-warn/15 border border-car-warn/50 text-car-warn font-bold whitespace-nowrap"
+                  >
+                    待核对
+                  </span>
+                  <span 
+                    v-for="(tag, tIdx) in String(rec.note || '').trim().split(/\s+/).filter(Boolean)" 
                     :key="tIdx"
                     class="text-[10px] px-1.5 py-0.5 m-0.5 rounded-md bg-car-card/90 border border-car-accent/40 text-car-accent font-bold whitespace-nowrap"
                   >
@@ -594,7 +604,7 @@
         </div>
 
         <div class="text-[13.5px] text-car-sub font-bold bg-car-item/70 p-3 rounded-xl border border-car-border leading-relaxed">
-          说明：本月数据由当前本地明细与历史汇总合并生成。若本月存在漏记的发票或想统一校准，可直接修改下方实付总金额与总升数；亦可仅清空本月的所有记录，其他月份不受任何影响。
+          说明：这里的校准只改「本月花了多少钱、一共加了多少升」这两本账，油耗不用校准，助手会按每次加油自动算。如果本月有漏记的发票，改下面两个数就行；只想清掉本月流水也可以，别的月份不受影响。
         </div>
 
         <!-- 手动校准输入区 -->
@@ -1045,7 +1055,20 @@ function onSaveEditedRecord() {
     });
     return;
   }
-  updateFuelRecord(editingRecord.value);
+  // 车主手动核对并保存后，自动记账留下的「待核对」标记必须消失，否则提示永远挂在卡片上。
+  // 核对状态存在独立标记 needs_review 上，绝不写死在备注文字里（老版本就是写死的，所以保存了也不消失）。
+  const rec = editingRecord.value;
+  const wasAuto = rec.is_auto_detected || rec.needs_review || String(rec.note || '').includes('核对');
+  rec.needs_review = false;
+  if (wasAuto) {
+    rec.verified = true;
+    rec.is_auto_detected = false;
+  }
+  const kept = String(rec.note || '').trim().split(/\s+/)
+    .filter(t => t && t !== '待核对' && t !== '⚡自动记账' && t !== '已核对' && !t.includes('待车主核对'));
+  if (wasAuto) kept.push('已核对');
+  rec.note = kept.join(' ');
+  updateFuelRecord(rec);
   showEditModal.value = false;
 }
 

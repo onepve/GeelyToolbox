@@ -2280,7 +2280,8 @@ public class VehicleAutomationService extends Service {
             record.put("fuel_type", fuelType);
             record.put("province", province);
             record.put("gas_station", "智能自动感知");
-            record.put("note", "【智能感知自动记账·待车主核对】");
+            record.put("note", "⚡自动记账");
+            record.put("needs_review", true); // 待核对状态独立存储，车主保存核对后立即清除，绝不写死在备注文案里
             record.put("source", "auto");
             record.put("is_auto_detected", true);
             record.put("fuel_before", Math.round(parkedBaselineOil * 10.0) / 10.0);

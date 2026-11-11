@@ -28,7 +28,7 @@ import java.util.UUID;
  * 包含:
  * 1. fuel_config.json: 基础参数、标称容积、常用油品、配对码
  * 2. fuel_records.json: 加油流水与能耗台账
- * 3. 小熊油耗跳枪法 (加满优先) 与阶段油耗分摊统计引擎
+ * 3. 油耗统计引擎：跳枪法 + 油位差值法 + 多次加油累计法 (后两条不需要加满)
  */
 public class FuelManager {
 
@@ -556,13 +556,47 @@ public class FuelManager {
             if (recordsFile.exists() && recordsFile.length() > 0) {
                 try {
                     String content = readFileContent(recordsFile);
-                    return new JSONArray(content);
+                    JSONArray arr = new JSONArray(content);
+                    if (migrateReviewNotes(arr)) {
+                        // 旧版本把「待核对」写进备注，车主核对保存后文案永远不消失。
+                        // 这里一次性迁移成独立标记 needs_review，备注只留干净标签。
+                        try { saveRecordsInternal(arr); } catch (Throwable ignored) {}
+                    }
+                    return arr;
                 } catch (Throwable t) {
                     Log.w(TAG, "读取 fuel_records.json 异常: " + t.getMessage());
                 }
             }
             return new JSONArray();
         }
+    }
+
+    /**
+     * 旧台账「待核对」文案迁移：备注里的核对提示 → 独立 needs_review 标记。
+     * 返回 true 表示有改动、需要回写。
+     */
+    private static boolean migrateReviewNotes(JSONArray arr) {
+        boolean changed = false;
+        try {
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject r = arr.optJSONObject(i);
+                if (r == null) continue;
+                String note = r.optString("note", "");
+                boolean hasPendingText = note.contains("待车主核对") || note.contains("待核对");
+                boolean verified = r.optBoolean("verified", false);
+                if (!hasPendingText) continue;
+                String cleaned = note.replace("【智能感知自动记账·待车主核对】", "⚡自动记账")
+                        .replace("待车主核对", "")
+                        .replace("待核对", "")
+                        .replace("【】", "")
+                        .trim();
+                if (cleaned.isEmpty()) cleaned = "⚡自动记账";
+                r.put("note", cleaned);
+                r.put("needs_review", !verified);
+                changed = true;
+            }
+        } catch (Throwable ignored) {}
+        return changed;
     }
 
     /**
@@ -610,6 +644,18 @@ public class FuelManager {
                 if (!record.has("date")) {
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
                     record.put("date", sdf.format(new Date()));
+                }
+                // 手填记录也自动带上当时油位，让「油位差值法」同样能作用于手工记账
+                // 加完油后的当前油位即 fuel_after；fuel_before 用「当前油位 − 本次升数」反推。
+                if (!record.has("fuel_after") || record.optDouble("fuel_after", 0.0) <= 0) {
+                    double nowOil = app.onepve.geelyconsole.services.VehicleAutomationService.currentRemainingOilLiters;
+                    if (nowOil > 0.5 && nowOil <= 80.0) {
+                        record.put("fuel_after", Math.round(nowOil * 10.0) / 10.0);
+                        if (!record.has("fuel_before") || record.optDouble("fuel_before", 0.0) <= 0) {
+                            double estBefore = nowOil - record.optDouble("liters", 0.0);
+                            if (estBefore > 0) record.put("fuel_before", Math.round(estBefore * 10.0) / 10.0);
+                        }
+                    }
                 }
                 JSONArray current = getRecords(context);
                 JSONArray updated = new JSONArray();
@@ -790,9 +836,9 @@ public class FuelManager {
                     }
                 }
 
-                // 差额补入基底
-                double diffPaid = Math.max(0.0, Math.round((totalPaid - currentPaid) * 100.0) / 100.0);
-                double diffLiters = Math.max(0.0, Math.round((totalLiters - currentLiters) * 10.0) / 10.0);
+                // 差额补入基底（允许为负：车主把总额改小了也必须真正生效，否则等于没保存）
+                double diffPaid = Math.round((totalPaid - currentPaid) * 100.0) / 100.0;
+                double diffLiters = Math.round((totalLiters - currentLiters) * 10.0) / 10.0;
 
                 JSONObject cfg = getConfig(context);
                 JSONObject bases = cfg.optJSONObject("monthly_bases");
@@ -835,7 +881,7 @@ public class FuelManager {
     }
 
     /**
-     * 小熊油耗跳枪法与阶段油耗算法统计引擎
+     * 油耗统计引擎：跳枪法 / 油位差值法 / 多次加油累计法（后两条不需要加满）
      */
     public static JSONObject calculateStats(JSONArray records) {
         JSONObject stats = new JSONObject();
@@ -868,65 +914,142 @@ public class FuelManager {
             stats.put("total_liters", Math.round(totalLiters * 10.0) / 10.0);
             stats.put("full_count", fullCount);
 
-            // 小熊油耗跳枪法核算：需按时间升序(旧->新)重排计算
-            if (len >= 2 && fullCount >= 2) {
-                // 将记录按 odo 排序 (从小到大)
-                java.util.List<JSONObject> list = new java.util.ArrayList<>();
-                for (int i = 0; i < len; i++) {
-                    list.add(records.getJSONObject(i));
-                }
-                list.sort((a, b) -> Double.compare(a.optDouble("odo", 0.0), b.optDouble("odo", 0.0)));
+            // ------------------- 油耗核算引擎（三条路径） -------------------
+            // 说明：跳枪法要求「两次加满」，对「每次只加 200 元、从不加满」的车主完全失效，
+            //      因此新增两条不依赖加满的算法，任一条出结果即可出账。
+            java.util.List<JSONObject> sorted = new java.util.ArrayList<>();
+            for (int i = 0; i < len; i++) {
+                JSONObject r0 = records.getJSONObject(i);
+                if (r0.optDouble("odo", 0.0) > 0) sorted.add(r0);
+            }
+            java.util.Collections.sort(sorted, (a, b) -> Double.compare(a.optDouble("odo", 0.0), b.optDouble("odo", 0.0)));
 
+            boolean solved = false;
+
+            // 【算法一】加满跳枪法：两次加满之间的里程差与期间加油量（能加满时最准）
+            if (fullCount >= 2 && sorted.size() >= 2) {
                 double sumWeightedConsumption = 0.0;
                 double sumDistance = 0.0;
-
-                // 寻找连续加满或阶段加满区间
+                double sumPaidInWindow = 0.0;
                 int lastFullIdx = -1;
-                for (int i = 0; i < list.size(); i++) {
-                    JSONObject r = list.get(i);
+                for (int i = 0; i < sorted.size(); i++) {
+                    JSONObject r = sorted.get(i);
                     if (r.optBoolean("is_full", false)) {
                         if (lastFullIdx != -1) {
-                            double startOdo = list.get(lastFullIdx).optDouble("odo", 0.0);
+                            double startOdo = sorted.get(lastFullIdx).optDouble("odo", 0.0);
                             double endOdo = r.optDouble("odo", 0.0);
                             double dist = endOdo - startOdo;
-
-                            if (dist > 5.0) { // 过滤异常零里程
+                            if (dist > 5.0) {
                                 // 统计两区间之间的耗油量 (包含本次加满的加油量)
                                 double consumedLiters = 0.0;
                                 for (int k = lastFullIdx + 1; k <= i; k++) {
-                                    consumedLiters += list.get(k).optDouble("liters", 0.0);
+                                    consumedLiters += sorted.get(k).optDouble("liters", 0.0);
                                 }
-                                double segConsumption = (consumedLiters / dist) * 100.0;
-                                sumWeightedConsumption += segConsumption * dist;
+                                sumWeightedConsumption += consumedLiters * 100.0;
                                 sumDistance += dist;
+                                for (int k = lastFullIdx + 1; k <= i; k++) {
+                                    JSONObject kr = sorted.get(k);
+                                    sumPaidInWindow += kr.optDouble("actual_paid", kr.optDouble("amount", 0.0));
+                                }
                             }
                         }
                         lastFullIdx = i;
                     }
                 }
-
                 if (sumDistance > 10.0) {
-                    double avgConsumption = sumWeightedConsumption / sumDistance;
-                    stats.put("is_calculable", true);
-                    stats.put("avg_consumption", Math.round(avgConsumption * 100.0) / 100.0);
-                    stats.put("total_distance", Math.round(sumDistance * 10.0) / 10.0);
-                    double costPerKm = (totalPaid / sumDistance);
-                    stats.put("cost_per_km", Math.round(costPerKm * 100.0) / 100.0);
-                    stats.put("status_desc", "加权综合油耗 (跳枪法)");
-                } else {
-                    stats.put("is_calculable", false);
-                    stats.put("avg_consumption", 0.0);
-                    stats.put("cost_per_km", 0.0);
-                    stats.put("status_desc", "加满间距过短，继续行驶中");
+                    double avg = sumWeightedConsumption / sumDistance;
+                    if (avg >= 2.0 && avg <= 25.0) {
+                        solved = true;
+                        stats.put("is_calculable", true);
+                        stats.put("avg_consumption", Math.round(avg * 100.0) / 100.0);
+                        stats.put("total_distance", Math.round(sumDistance * 10.0) / 10.0);
+                        stats.put("cost_per_km", Math.round((sumPaidInWindow / sumDistance) * 100.0) / 100.0);
+                        stats.put("calc_method", "jump_gun");
+                        stats.put("status_desc", "两次加满实测（最准）");
+                    }
                 }
-            } else {
+            }
+
+            // 【算法二】油位差值法（不需要加满）
+            //   上一笔加油后的油位 − 本次加油前的油位 = 这段路真实烧掉的油
+            if (!solved) {
+                double obWeighted = 0.0;
+                double obDist = 0.0;
+                double obPaid = 0.0;
+                for (int i = 1; i < sorted.size(); i++) {
+                    JSONObject prev = sorted.get(i - 1);
+                    JSONObject cur = sorted.get(i);
+                    double afterPrev = prev.optDouble("fuel_after", 0.0);
+                    double beforeCur = cur.optDouble("fuel_before", 0.0);
+                    double dist = cur.optDouble("odo", 0.0) - prev.optDouble("odo", 0.0);
+                    if (afterPrev <= 0 || beforeCur <= 0) continue;
+                    // 同一条记录里「加完油后的油位」必须高于「加油前油位」，否则是脏数据，整段跳过
+                    if (cur.optDouble("fuel_after", 0.0) > 0
+                            && cur.optDouble("fuel_after", 0.0) <= beforeCur) continue;
+                    if (dist < 30.0 || dist > 2000.0) continue;
+                    double burned = afterPrev - beforeCur;
+                    if (burned <= 0.5 || burned > 80.0) continue;
+                    double cons = burned / dist * 100.0;
+                    if (cons < 2.0 || cons > 25.0) continue;
+                    obWeighted += cons * dist;
+                    obDist += dist;
+                    obPaid += cur.optDouble("actual_paid", cur.optDouble("amount", 0.0));
+                }
+                if (obDist >= 100.0) {
+                    double avg = obWeighted / obDist;
+                    solved = true;
+                    stats.put("is_calculable", true);
+                    stats.put("avg_consumption", Math.round(avg * 100.0) / 100.0);
+                    stats.put("total_distance", Math.round(obDist * 10.0) / 10.0);
+                    stats.put("cost_per_km", Math.round((obPaid / obDist) * 100.0) / 100.0);
+                    stats.put("calc_method", "oil_balance");
+                    stats.put("status_desc", "油位差值实测（不用加满）");
+                }
+            }
+
+            // 【算法三】多次加油累计法（不需要加满）
+            //   跳过第一笔加油量，其余加油量累计 ÷ 首尾里程差；
+            //   跑得越远，首尾油位差被摊得越薄，误差越小，日常加 200 元完全够用。
+            if (!solved && sorted.size() >= 2) {
+                double firstOdo = sorted.get(0).optDouble("odo", 0.0);
+                double lastOdo = sorted.get(sorted.size() - 1).optDouble("odo", 0.0);
+                double dist = lastOdo - firstOdo;
+                double litersWindow = 0.0;
+                double paidWindow = 0.0;
+                int fills = 0;
+                for (int i = 1; i < sorted.size(); i++) {
+                    JSONObject r = sorted.get(i);
+                    double l = r.optDouble("liters", 0.0);
+                    if (l <= 0) continue;
+                    litersWindow += l;
+                    paidWindow += r.optDouble("actual_paid", r.optDouble("amount", 0.0));
+                    fills++;
+                }
+                if (dist >= 150.0 && fills >= 1 && litersWindow > 0) {
+                    double avg = litersWindow / dist * 100.0;
+                    if (avg >= 2.0 && avg <= 25.0) {
+                        solved = true;
+                        stats.put("is_calculable", true);
+                        stats.put("avg_consumption", Math.round(avg * 100.0) / 100.0);
+                        stats.put("total_distance", Math.round(dist * 10.0) / 10.0);
+                        stats.put("cost_per_km", Math.round((paidWindow / dist) * 100.0) / 100.0);
+                        stats.put("calc_method", "cumulative");
+                        stats.put("status_desc", "按 " + fills + " 次加油累计估算（不用加满）");
+                    }
+                }
+            }
+
+            if (!solved) {
                 stats.put("is_calculable", false);
                 stats.put("avg_consumption", 0.0);
                 stats.put("cost_per_km", 0.0);
-                if (fullCount < 1) {
-                    stats.put("status_desc", "需至少2次加满自动核算");
+                stats.put("calc_method", "pending");
+                if (len <= 0) {
+                    stats.put("status_desc", "先记一笔加油");
+                } else if (sorted.size() < 2) {
+                    stats.put("status_desc", "再记 1 次加油就能估算（不用加满）");
                 } else {
-                    stats.put("status_desc", "需再加满1次即可出账");
+                    stats.put("status_desc", "再开一段路就能估算（不用加满）");
                 }
             }
         } catch (Throwable t) {
