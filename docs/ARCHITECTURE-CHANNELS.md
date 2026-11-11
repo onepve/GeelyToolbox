@@ -91,7 +91,7 @@ HAL 的挡位/车速/电压/点火属性只有 `BinyueLPlatform`（缤越 L / IH
 |---|---|
 | 车速（含随速音量、车速自启多媒体） | `CarAudioInfo / Get Speed` |
 | 挡位（含挡位安全联动、D 档限制） | `vehicle_gear` |
-| 油量百分比（含加油自动记账感知） | `mmodelfuel` |
+| 油量百分比（含加油自动记账感知） | `mModelFuel` / `0x11600407` |
 | 电瓶电压 | `mModelBatteryVolt` |
 | 电源/点火/熄火休眠 | `vpowerinfo` |
 | 转向灯 / 360 随动 | `turnlight=` |
@@ -140,7 +140,7 @@ HAL 的挡位/车速/电压/点火属性只有 `BinyueLPlatform`（缤越 L / IH
 
 **共享单点风险**：
 - `VehicleAutomationService` 的日志行分发是**所有 B 线功能的共有入口**。改这里必然影响全部 B 线功能。
-- `logcatQueue`（容量 2000）是所有 B 线功能共用的队列。队列满会同时影响全部。
+- `logcatQueue`（容量 **50000** 行）+ `RAW_RING`（环形原样缓冲 **100000** 行，约 25~30MB，覆盖 2~3 分钟）是所有 B 线功能共用的队列。队列满会同时影响全部。
 - `KeySignalRecorder` 是纯观察者，只记录不改逻辑，改动零风险。
 - `SteeringWheelKeyManager` 只被方控使用，独立。
 - `DoorStateManager` / `GearStateMachine` / `FuelManager` 各自独立。
@@ -153,7 +153,7 @@ HAL 的挡位/车速/电压/点火属性只有 `BinyueLPlatform`（缤越 L / IH
 |---|---|---|
 | 本文件（仓库 `docs/ARCHITECTURE-CHANNELS.md`） | 只有「数据从哪来」：三条线、通道全表、耦合关系、共享单点风险 | 踩坑史、UI 规范、发版流程 |
 | 本地技能 `onepve-geelytoolbox/SKILL.md` | 只放「不看就会做错」的铁律与决策依据 | 大段协议细节 |
-| 本地技能 `references/`（19 份，导航见 `INDEX.md`） | 各领域规格与 SOP：日志管道、方控音频、HMI、发版、语音包、油耗、备份、CAN 反编译等 | 与本文件重复的内容 |
+| 本地技能 `references/`（18 份专题 + `INDEX.md` 导航） | 各领域规格与 SOP：日志管道、方控音频、HMI、发版、语音包、油耗、备份、CAN 反编译等 | 与本文件重复的内容 |
 | `docs/changelog/` | 只有最新正式版 + 在测测试版各一份手写说明 | 历史发版记录、截图、日志包 |
 
 **禁止在本仓库新增解释性 MD**：车型对照、信号语义、实现笔记一律进本地技能 `references/`。仓库里多一份就必然与技能那份脱节，之后没人分得清哪份最新。
@@ -162,5 +162,5 @@ HAL 的挡位/车速/电压/点火属性只有 `BinyueLPlatform`（缤越 L / IH
 
 ## 八、本车待验证
 
-- `DOOR_POS` / `TRUNK_POS` 在 IHU516G 上是否真能读到（`DoorHalChannel` 从未实车验证）
-- `CURRENT_GEAR` 在本车能否读到（`BinyueCoolPlatform` 未调用，仅 `BinyueLPlatform` 调用）
+- `DOOR_POS` / `TRUNK_POS` 在 IHU516G 上是否真能读到：`DoorHalChannel` **代码已接入**（`VehicleAutomationService:1399` 在车门主通道静默时 `new DoorHalChannel().register(cpm)`，注册失败就保持主通道），但**从未在实车上被触发过**——所以「A 线兜底真能救回车门」这件事至今只是设计意图，不是实测结论。
+- `CURRENT_GEAR` 在本车能否读到（`BinyueCoolPlatform` 未调用，仅 `BinyueLPlatform` 调用）。
