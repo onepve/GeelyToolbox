@@ -1,5 +1,5 @@
 {
-  "voice_version": 20,
+  "voice_version": 21,
   "updated_at": "2026-11-11",
   "description": "吉利智驾车规级内置音频资产版本清单与哈希校验索引",
   "total_files": 25,
@@ -49,24 +49,24 @@
       "md5": "cdbf54eb7f20bd050f02e4f6d5f3248f"
     },
     "gear_d.mp3": {
-      "size": 11324,
-      "md5": "79a28c726df8ef6326b822a067316465"
+      "size": 11756,
+      "md5": "f5259baaf234a25e0173017cd6a5bc7d"
     },
     "gear_n.mp3": {
-      "size": 9884,
-      "md5": "cf679462536389979792e2c420832a1f"
+      "size": 10316,
+      "md5": "5f9d24cdc7b5341f9581aedc436bae04"
     },
     "gear_p.mp3": {
-      "size": 11324,
-      "md5": "bec139ab1d7d715c1b486e5460ac8df4"
+      "size": 11612,
+      "md5": "a4f15162c2e832ff563d07ee45b20c6f"
     },
     "gear_park_alarm.mp3": {
       "size": 12764,
       "md5": "6f970146aff458c668e7a2034c4d30c0"
     },
     "gear_r.mp3": {
-      "size": 11180,
-      "md5": "ad300d2096220f7c3288816d3efdb392"
+      "size": 11756,
+      "md5": "28399f9727ea6ac86036b46d26e4ed31"
     },
     "gear_s.mp3": {
       "size": 10604,
@@ -81,20 +81,20 @@
       "md5": "1eb3b4b1451388789efc51a435ca2002"
     },
     "mode_comfort.mp3": {
-      "size": 5852,
-      "md5": "19622dabea6732372eba5c4fafcede06"
+      "size": 13196,
+      "md5": "502b7889f2a6cd8f4445135255a0e9d4"
     },
     "mode_eco.mp3": {
-      "size": 5420,
-      "md5": "3356df3570315564e0c1bc8af26dcf3f"
+      "size": 12764,
+      "md5": "20f2c7565514c8b487ba5d810fab6459"
     },
     "mode_smart.mp3": {
-      "size": 5420,
-      "md5": "e583690af62f380c676015ab51c90242"
+      "size": 12908,
+      "md5": "71049662d109d8598f583f587fae3fda"
     },
     "mode_sport.mp3": {
-      "size": 5132,
-      "md5": "b5770fef3f058b01816bc057257cb1e5"
+      "size": 12764,
+      "md5": "b35dad31c43a2ea25468ac9a50262c92"
     },
     "trunk_close.mp3": {
       "size": 14636,

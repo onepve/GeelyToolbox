@@ -36,36 +36,36 @@
     <div v-if="activeTab === 'gear'" class="flex flex-col space-y-4">
       <div class="grid grid-cols-2 gap-4 items-stretch">
         <VoiceItemCard
-          title="前进挡 (D 挡)"
+          title="前进挡 D"
           desc="踩刹车挂入前进 D 挡触发启程语音播报"
           :active="!!store.vehicleAuto.voice_enable_gear_d"
           @toggle="toggleSetting('voice_enable_gear_d')"
           @test="testVoice('gear_d')"
-          @custom="openCustomVoice('gear_d', '前进挡 (D 挡)', 'gear_d.mp3')"
+          @custom="openCustomVoice('gear_d', '前进挡 D', 'gear_d.mp3')"
         />
         <VoiceItemCard
-          title="倒车挡 (R 挡)"
+          title="倒车挡 R"
           desc="挂入倒车 R 挡触发倒车警示与后方安全提醒"
           :active="!!store.vehicleAuto.voice_enable_gear_r"
           @toggle="toggleSetting('voice_enable_gear_r')"
           @test="testVoice('gear_r')"
-          @custom="openCustomVoice('gear_r', '倒车挡 (R 挡)', 'gear_r.mp3')"
+          @custom="openCustomVoice('gear_r', '倒车挡 R', 'gear_r.mp3')"
         />
         <VoiceItemCard
-          title="驻车挡 (P 挡)"
+          title="驻车挡 P"
           desc="挂回驻车 P 挡播报，并结束本次行程"
           :active="!!store.vehicleAuto.voice_enable_gear_p"
           @toggle="toggleSetting('voice_enable_gear_p')"
           @test="testVoice('gear_p')"
-          @custom="openCustomVoice('gear_p', '驻车挡 (P 挡)', 'gear_p.mp3')"
+          @custom="openCustomVoice('gear_p', '驻车挡 P', 'gear_p.mp3')"
         />
         <VoiceItemCard
-          title="空挡 (N 挡)"
+          title="空挡 N"
           desc="挂入空挡 N 挡防溜车提醒，默认关闭防红绿灯打扰"
           :active="!!store.vehicleAuto.voice_enable_gear_n"
           @toggle="toggleSetting('voice_enable_gear_n')"
           @test="testVoice('gear_n')"
-          @custom="openCustomVoice('gear_n', '空挡 (N 挡)', 'gear_n.mp3')"
+          @custom="openCustomVoice('gear_n', '空挡 N', 'gear_n.mp3')"
         />
       </div>
     </div>

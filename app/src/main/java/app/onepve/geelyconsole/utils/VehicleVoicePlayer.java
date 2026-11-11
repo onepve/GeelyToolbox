@@ -397,6 +397,10 @@ public class VehicleVoicePlayer {
             return new String[]{"后备箱开启", "打开后备箱", "后备箱打开", "尾门开启", "尾门打开"};
         } else if ("trunk_close".equalsIgnoreCase(baseName)) {
             return new String[]{"后备箱关闭", "关闭后备箱", "后备箱已关好", "尾门关闭", "尾门已关好"};
+        } else if ("hood_open".equalsIgnoreCase(baseName)) {
+            return new String[]{"引擎盖已打开", "引擎盖打开", "前盖打开"};
+        } else if ("hood_close".equalsIgnoreCase(baseName)) {
+            return new String[]{"引擎盖已关闭", "引擎盖关闭", "前盖关闭"};
         } else if ("gear_p".equalsIgnoreCase(baseName)) {
             return new String[]{"P挡", "动力已锁止【P】", "挂入P挡", "驻车挡", "驻车"};
         } else if ("gear_d".equalsIgnoreCase(baseName)) {
@@ -414,7 +418,7 @@ public class VehicleVoicePlayer {
         } else if ("drive_mode_smart".equalsIgnoreCase(baseName) || "mode_smart".equalsIgnoreCase(baseName)) {
             return new String[]{"智能模式", "智能", "smart"};
         } else if ("engine_start".equalsIgnoreCase(baseName) || "start".equalsIgnoreCase(baseName)) {
-            return new String[]{"车辆已启动系统自检正常【启动】", "启动", "点火", "欢迎乘坐量子号飞船【启动】"};
+            return new String[]{"车辆已启动系统自检正常【启动】", "启动", "点火", "启动"};
         } else if ("engine_stop".equalsIgnoreCase(baseName) || "stop".equalsIgnoreCase(baseName)) {
             return new String[]{"车辆已熄火下次再见【熄火】", "熄火", "下电"};
         } else if ("handbrake_on".equalsIgnoreCase(baseName)) {

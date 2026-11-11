@@ -4078,27 +4078,35 @@ public void importVoiceZipFromDownload(final String fileName) {
                     } else if ("trunk_close".equals(type)) {
                         player.play("trunk_close.mp3", "后备箱已关闭");
                     } else if ("gear_d".equals(type)) {
-                        player.play("gear_d.mp3", "已挂入前进挡，系好安全带，祝你一路平安");
+                        player.play("gear_d.mp3", "前进挡");
                     } else if ("gear_r".equals(type)) {
-                        player.play("gear_r.mp3", "已挂入倒车挡，请注意观察后方安全");
+                        player.play("gear_r.mp3", "倒车挡");
                     } else if ("gear_p".equals(type)) {
-                        player.play("gear_p.mp3", "已挂入驻车挡");
+                        player.play("gear_p.mp3", "已驻车");
                     } else if ("gear_n".equals(type)) {
-                        player.play("gear_n.mp3", "已挂入空挡");
+                        player.play("gear_n.mp3", "空挡");
                     } else if ("gear_s".equals(type)) {
-                        player.play("gear_s.mp3", "已挂入运动挡，动力充沛");
+                        player.play("gear_s.mp3", "运动挡");
+                    } else if ("hood_open".equals(type)) {
+                        player.play("hood_open.mp3", "引擎盖已打开");
+                    } else if ("hood_close".equals(type)) {
+                        player.play("hood_close.mp3", "引擎盖已关闭");
                     } else if ("mode_smart".equals(type)) {
-                        player.play("mode_smart.mp3", "智能");
+                        player.play("mode_smart.mp3", "智能模式");
                     } else if ("mode_comfort".equals(type)) {
-                        player.play("mode_comfort.mp3", "舒适");
+                        player.play("mode_comfort.mp3", "舒适模式");
                     } else if ("mode_eco".equals(type)) {
-                        player.play("mode_eco.mp3", "经济");
+                        player.play("mode_eco.mp3", "经济模式");
                     } else if ("mode_sport".equals(type)) {
-                        player.play("mode_sport.mp3", "运动");
+                        player.play("mode_sport.mp3", "运动模式");
                     } else if ("seatbelt".equals(type)) {
                         player.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
                     } else {
-                        player.play("mode_smart.mp3", "智能");
+                        // v1.8.32.15：原来这里兜底播 mode_smart.mp3「智能」，
+                        // 导致新增了 hood_open/hood_close 却忘了加分支时，
+                        // 点试听会莫名其妙听到"智能"两个字，极难排查。
+                        // 现在改为不播 + 留日志，缺分支就立刻暴露，绝不静默顶替。
+                        AppLogger.diag("语音试听", "未识别的试听类型: " + type + "（未播放任何音频）");
                     }
                 }
             });
