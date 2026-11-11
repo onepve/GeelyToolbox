@@ -336,13 +336,7 @@
               </div>
             </div>
 
-            <!-- 清除该年归档按钮 -->
-            <button 
-              @click="onClearPastYear(selectedPastYearData.year)"
-              class="h-[50px] min-h-[50px] px-4 rounded-xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-[13px] font-bold cursor-pointer transition-colors whitespace-nowrap shadow-sm"
-            >
-              清空{{ selectedPastYearData.year }}年归档
-            </button>
+            <!-- 年度归档批量清空入口已移除（车主 2026-11-11 要求）：单条删除请走编辑弹窗 -->
           </div>
 
           <!-- 往年月度收敛分布网格 -->
@@ -433,22 +427,8 @@
         <div class="flex items-center justify-between pb-1 text-[13px] text-car-sub font-bold px-1">
           <div class="flex items-center space-x-2">
             <span>{{ selectedMonth ? `【${selectedMonth}】详细流水 (${filteredRecords.length} 笔)` : `近期加油流水 (${filteredRecords.length} 笔 · 双列卡片)` }}</span>
-            <!-- 未选单月时：清空全部 -->
-            <span 
-              v-if="!selectedMonth && store.fuelLedger.records && store.fuelLedger.records.length > 0"
-              @click="clearAllRecords"
-              class="px-2 py-0.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-[11px] font-bold cursor-pointer transition-colors"
-            >
-              清空全部记录
-            </span>
-            <!-- 选中单月时：智能联动为清空本月 (带笔数) -->
-            <span 
-              v-if="selectedMonth && filteredRecords.length > 0"
-              @click="clearCurrentMonthRecords"
-              class="px-2 py-0.5 rounded-lg border border-rose-500/40 bg-rose-500/15 text-rose-400 hover:bg-rose-500/25 text-[11px] font-bold cursor-pointer transition-colors"
-            >
-              清空【{{ selectedMonth }}】流水 ({{ filteredRecords.length }} 笔)
-            </span>
+            <!-- 批量清空入口已移除（车主 2026-11-11 要求）：加油记录逐条手动添加，误触全删不可恢复。
+                 删除单条请点开对应记录卡片，在编辑弹窗内操作。 -->
             <!-- 选中单月时：提供快捷管理校准入口 -->
             <span 
               v-if="selectedMonth"
@@ -634,15 +614,9 @@
       </div>
 
       <template #footer>
-        <div class="flex items-center justify-between w-full">
-          <button 
-            type="button"
-            @click="onConfirmClearMonth"
-            class="min-h-[56px] px-5 rounded-2xl border-2 border-rose-500/40 bg-rose-500/10 text-rose-400 font-black text-[16px] hover:bg-rose-500/20 active:scale-95 transition-all cursor-pointer"
-          >
-            清空本月台账
-          </button>
-          <div class="flex items-center space-x-3">
+      <div class="flex items-center justify-between w-full">
+      <!-- 月度批量清空入口已移除（车主 2026-11-11 要求）：单条删除请走编辑弹窗 -->
+      <div class="flex items-center space-x-3 ml-auto">
             <button 
               type="button"
               @click="showMonthModal = false"
@@ -674,9 +648,6 @@ import {
   addFuelRecord, 
   updateFuelRecord, 
   deleteFuelRecord,
-  clearFuelRecords,
-  clearMonthlyRecords,
-  clearYearlyArchive,
   saveMonthlyAdjustment,
   setDefaultFuelType,
   showToast
@@ -729,18 +700,9 @@ function onYearChange(yr) {
   selectedMonth.value = '';
 }
 
-function onClearPastYear(year) {
-  openModal('confirm', {
-    title: `确认清空【${year}年度】历史归档？`,
-    desc: `清空后【${year}年】的历史年度总账与月度分布将被彻底抹除，不可恢复。`,
-    confirmText: '确定清空',
-    isDanger: true,
-    onConfirm: () => {
-      clearYearlyArchive(year);
-      activeYear.value = '';
-    }
-  });
-}
+// 【铁律】记油模块不提供任何批量/一键清空入口（车主 2026-11-11 明确要求）：
+// 加油记录全部是一条条手动添加的，批量清空误触即不可恢复，损失远大于便利。
+// 日常修正只需单条删除（编辑弹窗内）。新增功能时严禁再加回批量清除回调。
 
 // 单击筛选 (防抖防止与双击冲突)
 function onMonthClick(month) {
@@ -795,39 +757,6 @@ function onSaveMonthAdjust() {
   const mKey = activeManagingMonth.value.month;
   saveMonthlyAdjustment(mKey, adjustPaidInput.value, adjustLitersInput.value);
   showMonthModal.value = false;
-}
-
-function onConfirmClearMonth() {
-  if (!activeManagingMonth.value) return;
-  const mKey = activeManagingMonth.value.month;
-  openModal('confirm', {
-    title: `确认清空【${mKey}】月度台账？`,
-    desc: `清空后该月份的历史流水明细及汇总基底将被彻底抹除，其他月份台账完全不受影响。`,
-    confirmText: '确定清空本月',
-    isDanger: true,
-    onConfirm: () => {
-      clearMonthlyRecords(mKey);
-      showMonthModal.value = false;
-      if (selectedMonth.value === mKey) {
-        selectedMonth.value = '';
-      }
-    }
-  });
-}
-
-function clearCurrentMonthRecords() {
-  if (!selectedMonth.value) return;
-  const mKey = selectedMonth.value;
-  openModal('confirm', {
-    title: `确认清空【${mKey}】加油流水？`,
-    desc: `清空后【${mKey}】月份的全部加油记录将被抹除，其他月份台账完全不受影响。`,
-    confirmText: '确定清空本月',
-    isDanger: true,
-    onConfirm: () => {
-      clearMonthlyRecords(mKey);
-      selectedMonth.value = '';
-    }
-  });
 }
 
 const filteredRecords = computed(() => {
@@ -984,18 +913,6 @@ function openEditRecordModal(rec) {
     }
   }
   showEditModal.value = true;
-}
-
-function clearAllRecords() {
-  openModal('confirm', {
-    title: '确认清空全部加油台账？',
-    desc: '清空后所有历史加油流水与统计将被彻底抹除，恢复为空白台账，不可恢复。',
-    confirmText: '确定清空',
-    isDanger: true,
-    onConfirm: () => {
-      clearFuelRecords();
-    }
-  });
 }
 
 function onEditProvinceChange() {
