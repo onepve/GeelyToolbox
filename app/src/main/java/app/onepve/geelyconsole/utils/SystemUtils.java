@@ -1225,7 +1225,11 @@ public class SystemUtils {
         "concurrent mark sweep GC", "concurrent copying GC", "Explicit concurrent mark sweep",
         
         // 7. 系统压制行与大数据埋点
-        "chatty", "SA.AnalyticsMessages", "SA.TrackTaskManager",
+        // chatty = logd 按进程限流的记账行（expire N lines / identical N lines），
+        // 只说明「某个进程刷屏被 limit 掉了」，**不证明缓冲区被覆盖**。
+        // 保留它做排查线索：功能失灵时能一眼看出是不是目标进程的日志被限流吃掉。
+        // 成本每包几十行、无功能影响，远小于丢失线索的代价。
+        "SA.AnalyticsMessages", "SA.TrackTaskManager",
 
         // 8. 联发科 MTK GPS/GNSS 底层芯片原始时钟与测量数据 (非业务导航，高频硬件灌水)
         "get_gnss_measurement_clock_data", "update_gnss_measurement",
@@ -1578,6 +1582,27 @@ public class SystemUtils {
                 }
             } catch (Throwable ignored) {}
             summary.put("privacy_status", "100%_desensitized_phone_vin_location_redacted");
+
+            // ═══ 抓包可诊断性（2026-11-11 新增）═══
+            // 教训：车主连续几次抓到「main 段只有 3 秒」，误以为是缓冲区只有 256KB、
+            // 是我们的采集故障。实际解包发现 all.log 第一行就是 "vold (the awakening)
+            // firing up"（Android 卷管理冷启动第一句）—— 车机刚开机就点了抓日志，
+            // logd 缓冲里本来就只有那几秒的内容，抓到的就是全部。
+            // 结论：日志短不一定是故障，可能只是抓早了。把「车机运行多久」写进摘要，
+            // 以后拿到包第一眼就能判断这次数据能不能用，不用再解包翻 vold。
+            try {
+                long bootAgeSec = android.os.SystemClock.elapsedRealtime() / 1000L;
+                summary.put("boot_age_seconds", bootAgeSec);
+                summary.put("boot_age_text", formatBootAge(bootAgeSec));
+                // 小于 120 秒基本必然只有几秒日志，直接给出人话提示，免得白排查一轮
+                summary.put("boot_age_hint", bootAgeSec < 120L
+                        ? "车机刚开机 " + bootAgeSec + " 秒就抓的包，日志天然很短，不代表采集故障"
+                        : "车机已运行 " + formatBootAge(bootAgeSec) + "，日志长度应属正常");
+            } catch (Throwable ignored) {}
+            // 实际抓到的日志时间跨度（与 boot_age 交叉验证：跨度远小于运行时长才说明被覆盖/限流）
+            try {
+                summary.put("log_span", measureLogSpan(logFile));
+            } catch (Throwable ignored) {}
             // 关键信号采集体检：各功能变化次数、车门报文收帧数、丢行数（一眼看出是否漏采）
             try {
                 summary.put("signal_health", app.onepve.geelyconsole.utils.KeySignalRecorder.getHealthSnapshot());
@@ -1720,6 +1745,61 @@ public class SystemUtils {
             }
         } catch (Exception ignored) {}
         return dest;
+    }
+
+    /**
+     * 把「车机已运行多少秒」格式化成大白话（1小时23分05秒）。
+     * 给 summary.json 的 boot_age_text 用，车主和排查者一眼能读。
+     */
+    private static String formatBootAge(long sec) {
+        if (sec < 60) return sec + "秒";
+        long h = sec / 3600, m = (sec % 3600) / 60, s2 = sec % 60;
+        StringBuilder sb = new StringBuilder();
+        if (h > 0) sb.append(h).append("小时");
+        if (m > 0) sb.append(m).append("分");
+        sb.append(s2).append("秒");
+        return sb.toString();
+    }
+
+    /**
+     * 量出这次抓到的日志实际覆盖多长时间（秒，保留一位小数）。
+     *
+     * 为什么需要它：光有 boot_age 还不够 ——
+     *   · 车机开机 2 小时、日志只覆盖 40 秒 → 缓冲被覆盖或限流过（真故障）
+     *   · 车机开机 30 秒、日志覆盖 28 秒 → 抓得早而已（数据本来就该这么短）
+     * 两个数一对比，就能把「采集故障」和「抓早了」彻底分开，不用再靠猜。
+     *
+     * 只取 main 段首行与末行的时间戳，不整文件解析，几乎零开销。
+     */
+    private static double measureLogSpan(File all) {
+        if (all == null || !all.exists()) return 0.0;
+        String first = null, last = null;
+        boolean inMain = false;
+        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.FileReader(all))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                if (line.contains("beginning of")) {
+                    // 只认 main 段，system/crash 段的时间跨度口径不同，混在一起没意义
+                    inMain = line.trim().endsWith("main");
+                    continue;
+                }
+                if (!inMain || line.length() < 18) continue;
+                if (line.charAt(2) != '-' || line.charAt(5) != ' ') continue;
+                String stamp = line.substring(0, 18);
+                if (first == null) first = stamp;
+                last = stamp;
+            }
+        } catch (Throwable ignored) {}
+        if (first == null || last == null) return 0.0;
+        try {
+            java.text.SimpleDateFormat f = new java.text.SimpleDateFormat("MM-dd HH:mm:ss.SSS", java.util.Locale.US);
+            java.util.Date d1 = f.parse(first), d2 = f.parse(last);
+            double span = (d2.getTime() - d1.getTime()) / 1000.0;
+            if (span < 0) span += 86400.0;   // 跨零点
+            return Math.round(span * 10.0) / 10.0;
+        } catch (Throwable t) {
+            return 0.0;
+        }
     }
 
     private static JSONObject buildLogSummary(File all, File wheel, File door, File gear, File power, File app) {
