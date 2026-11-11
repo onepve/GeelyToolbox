@@ -1,108 +1,108 @@
 {
-  "voice_version": 21,
+  "voice_version": 22,
   "updated_at": "2026-11-11",
   "description": "吉利智驾车规级内置音频资产版本清单与哈希校验索引",
   "total_files": 25,
   "files": {
     "door_close.mp3": {
-      "size": 13484,
-      "md5": "3467d6a18efdce784237f54770c8fa6c"
+      "size": 13868,
+      "md5": "4f2f0e5d3d3dabece598ff1dfdae1029"
     },
     "door_fl.mp3": {
-      "size": 16220,
-      "md5": "22044f6536df2631c7dccb93a68ea090"
+      "size": 17132,
+      "md5": "bee75113a20de791135643d25375ee5c"
     },
     "door_fl_close.mp3": {
-      "size": 16076,
-      "md5": "f681af17208d07d0502b647ce92e9e28"
+      "size": 16748,
+      "md5": "4bc84046eb9e8fb0d29f63b97f8a5b78"
     },
     "door_fr.mp3": {
-      "size": 16364,
-      "md5": "4ab443a41eb80e2a9c0794896629e3c6"
+      "size": 17132,
+      "md5": "fb036b6cfa41cf0fb080b791f748fe7b"
     },
     "door_fr_close.mp3": {
-      "size": 16364,
-      "md5": "aac4d629a0eb0ac15e86b4216f550602"
+      "size": 17132,
+      "md5": "a4eba3f6c65689249703a83ccb37eaef"
     },
     "door_open.mp3": {
-      "size": 13772,
-      "md5": "0241c37772f4ed896bfbbb0185842381"
+      "size": 14060,
+      "md5": "534a18c88c13c5d9ab766669cf6e87e7"
     },
     "door_rl.mp3": {
-      "size": 15932,
-      "md5": "fc56a5fcb7cfbea0e8a322af2f2da28c"
+      "size": 16748,
+      "md5": "5801960330eb6240afc75f0d1e5371d5"
     },
     "door_rl_close.mp3": {
-      "size": 15788,
-      "md5": "c1b6aab3d5c9810ff04a98fdf9781201"
+      "size": 16556,
+      "md5": "a4789329f42383b5c88f7287e40e560c"
     },
     "door_rr.mp3": {
-      "size": 16220,
-      "md5": "f8089125d350c0b82e2a1d00906fff1d"
+      "size": 16940,
+      "md5": "a2e5819db3f6f778f0d2b55b7f5f577c"
     },
     "door_rr_close.mp3": {
-      "size": 16076,
-      "md5": "878ebbb90b1b3340c33c7b5ec98f75fd"
+      "size": 16748,
+      "md5": "aec887260a9d1956dd94af4f463de295"
     },
     "download_complete.mp3": {
       "size": 15068,
       "md5": "cdbf54eb7f20bd050f02e4f6d5f3248f"
     },
     "gear_d.mp3": {
-      "size": 11756,
-      "md5": "f5259baaf234a25e0173017cd6a5bc7d"
+      "size": 11564,
+      "md5": "e2b98507c295333f089296c8629d5f3d"
     },
     "gear_n.mp3": {
-      "size": 10316,
-      "md5": "5f9d24cdc7b5341f9581aedc436bae04"
+      "size": 9836,
+      "md5": "15527921307fdada92e44cfa5a72ba8b"
     },
     "gear_p.mp3": {
-      "size": 11612,
-      "md5": "a4f15162c2e832ff563d07ee45b20c6f"
+      "size": 11372,
+      "md5": "fd2561fed91d5fbbc340130d589f5881"
     },
     "gear_park_alarm.mp3": {
       "size": 12764,
       "md5": "6f970146aff458c668e7a2034c4d30c0"
     },
     "gear_r.mp3": {
-      "size": 11756,
-      "md5": "28399f9727ea6ac86036b46d26e4ed31"
+      "size": 11564,
+      "md5": "be07cf6b5e595d6d1a5f3b644705b866"
     },
     "gear_s.mp3": {
       "size": 10604,
       "md5": "b3ec4d818999d186db26c4e7ed421c9c"
     },
     "hood_close.mp3": {
-      "size": 14636,
-      "md5": "ac5293cc8e70045b5b474ece70fc1609"
+      "size": 15212,
+      "md5": "c5a7e99001ea6c195bad36ec8308a7fa"
     },
     "hood_open.mp3": {
-      "size": 14924,
-      "md5": "1eb3b4b1451388789efc51a435ca2002"
+      "size": 15404,
+      "md5": "96bd983c149fe4f872a74351286c023b"
     },
     "mode_comfort.mp3": {
-      "size": 13196,
-      "md5": "502b7889f2a6cd8f4445135255a0e9d4"
+      "size": 10604,
+      "md5": "0e4639002219994e37d0b134e9728087"
     },
     "mode_eco.mp3": {
-      "size": 12764,
-      "md5": "20f2c7565514c8b487ba5d810fab6459"
+      "size": 10028,
+      "md5": "2019e3d3818f11fd6b5413e27d90659d"
     },
     "mode_smart.mp3": {
-      "size": 12908,
-      "md5": "71049662d109d8598f583f587fae3fda"
+      "size": 9836,
+      "md5": "ee6ab8b6dcee5e68a04e44ae97033517"
     },
     "mode_sport.mp3": {
-      "size": 12764,
-      "md5": "b35dad31c43a2ea25468ac9a50262c92"
+      "size": 9644,
+      "md5": "146a9fe6b69511c350eda5dee8d47894"
     },
     "trunk_close.mp3": {
-      "size": 14636,
-      "md5": "2af52004db975c210d677fcc836dba38"
+      "size": 15212,
+      "md5": "b3b43c58b29588776faea56079b9a65e"
     },
     "trunk_open.mp3": {
-      "size": 14924,
-      "md5": "388d480631fada4b32b0ddf803f574c6"
+      "size": 15596,
+      "md5": "0301537ab49e3febc5dde447a28cc2aa"
     }
   }
 }

@@ -4,6 +4,7 @@
 吉利智驾 内置音频清单与哈希自动更新工具 (scripts/update_voice_manifest.py)
 用于自动维护 app/src/main/assets/audio/voice_version.json
 """
+import datetime
 import hashlib
 import json
 import os
@@ -44,7 +45,7 @@ def generate_manifest():
 
     manifest = {
         "voice_version": target_ver,
-        "updated_at": "2026-09-22",
+        "updated_at": datetime.date.today().isoformat(),
         "description": "吉利智驾车规级内置音频资产版本清单与哈希校验索引",
         "total_files": len(files),
         "files": files,
