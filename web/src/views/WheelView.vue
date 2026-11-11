@@ -548,7 +548,7 @@ const wheelModeOptions = computed(() => [
 ]);
 
 const wheelTabs = [
-  { id: 'keys', name: '按键映射手势', tag: '7大按键' },
+  { id: 'keys', name: '方向盘按键', tag: '按键映射' },
   { id: 'mode', name: '接管模式图解', tag: '工作模式' }
 ];
 

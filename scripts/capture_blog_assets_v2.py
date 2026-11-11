@@ -222,7 +222,7 @@ class CDP:
 
 
 VIEWS = [
-    ('link', '按键映射手势', 'preview_link_full.webp', '静音键'),
+    ('link', '方向盘按键', 'preview_link_full.webp', '静音键'),
     ('link', '接管模式图解', 'preview_wheel_mode.webp', '接管模式'),
     ('link', '360全景联动', 'preview_link_360.webp', '360'),
     ('link', '车速与大灯', 'preview_link_speed.webp', '车速'),
