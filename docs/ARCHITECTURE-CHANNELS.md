@@ -37,14 +37,20 @@ HAL 的挡位/车速/电压/点火属性只有 `BinyueLPlatform`（缤越 L / IH
 
 ## 三、B 线：日志管道解析的全部内容
 
-订阅命令（`VehicleAutomationService:957` 起按能力逐级降级，跑通哪级就用哪级）：
-1. `logcat -v time -b crash,main`（最保守，crash 必订——吉利 logd 把方控按键报文分流进 crash 缓冲区，只订 main/system/events 时一次都读不到）
-2. `logcat -v time -b main,system,events,crash`
-3. `logcat -v time -b main,system,events,crash -T 200`（首选，`-T 200` 只取最近 200 行起步不回溯旧日志）
-4. 降级线：`-b main` → `-b main,system,events` → 再加 `-T 200`
+订阅命令（`VehicleAutomationService` 建流处，按 `logcatConsecutiveFailures` 逐级降级）：
 
-**禁止 `-b all`**：本机第三方进程读不到 `security` / `stats`，logcat 会在 2 秒内退出并被迫重建子进程。
-白名单预筛：`BASE_FEATURE_WHITELIST`（9 组关键字，`VehicleAutomationService:866`）
+| 级 | 命令 | 触发条件 |
+|---|---|---|
+| 0（首选） | `logcat -v time -b main,system,events,crash -T 200` | 正常态 |
+| 3 | `logcat -v time -b main,system,events,crash` | 连续失败 3 次，或老系统不支持 `-T` |
+| 6（兜底） | `logcat -v time -b crash,main` | 连续失败 6 次 |
+
+- `-T 200` 是**续流**不是快照：先吐缓冲区最新 200 行再保持流式，既不从开机第一行重放，也免掉每次重建回灌数千行旧日志。
+- **`crash` 必订**：吉利 logd 把 `InputManager` 的方控报文（`reportKeyToAdaptApi`）整个分流进 crash 缓冲区，只订 `main,system,events` 时 press 报文一条都读不到（实测三份诊断包：crash 段 1252 行含 87 次 press，main 段同期 0 条）。
+- **禁止 `-b all`**：`security` / `stats` 对第三方不可读，logcat 报 "Unable to open log device" 立刻退出，外层 while 每 2 秒重建（实测 25 分钟重建 219 次）。
+- **crash 探针**只在建流前判一次：`logcat -b crash -d -t 1`，连续 2 次不可读才**永久**剔除 crash（改由 HAL 常开兜底），剔除后不再重试——重试本身会变成刷屏源。绝不在流中途改命令。
+
+白名单预筛：`BASE_FEATURE_WHITELIST`（`VehicleAutomationService:866`）
 解析入口：`parseLogLine()`（`VehicleAutomationService:1595`）——行号会随改版漂移，定位一律用方法名 + 关键字 grep，不要照抄数字
 
 | 序号 | 功能 | 日志关键字 | 分支起点（行号仅供快速跳转） |
