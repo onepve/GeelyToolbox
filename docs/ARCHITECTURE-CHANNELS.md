@@ -37,23 +37,34 @@ HAL 的挡位/车速/电压/点火属性只有 `BinyueLPlatform`（缤越 L / IH
 
 ## 三、B 线：日志管道解析的全部内容
 
-订阅命令：`logcat -v time -b main,system,events,crash -T 200`
-白名单预筛：`BASE_FEATURE_WHITELIST`（9 组关键字）
-解析入口：`VehicleAutomationService` 的日志行分发（1582 行起）
+订阅命令（`VehicleAutomationService:957` 起按能力逐级降级，跑通哪级就用哪级）：
+1. `logcat -v time -b crash,main`（最保守，crash 必订——吉利 logd 把方控按键报文分流进 crash 缓冲区，只订 main/system/events 时一次都读不到）
+2. `logcat -v time -b main,system,events,crash`
+3. `logcat -v time -b main,system,events,crash -T 200`（首选，`-T 200` 只取最近 200 行起步不回溯旧日志）
+4. 降级线：`-b main` → `-b main,system,events` → 再加 `-T 200`
 
-| 序号 | 功能 | 日志关键字 | 解析点 |
+**禁止 `-b all`**：本机第三方进程读不到 `security` / `stats`，logcat 会在 2 秒内退出并被迫重建子进程。
+白名单预筛：`BASE_FEATURE_WHITELIST`（9 组关键字，`VehicleAutomationService:866`）
+解析入口：`parseLogLine()`（`VehicleAutomationService:1595`）——行号会随改版漂移，定位一律用方法名 + 关键字 grep，不要照抄数字
+
+| 序号 | 功能 | 日志关键字 | 分支起点（行号仅供快速跳转） |
 |---|---|---|---|
-| 1 | 方向盘方控 | `reportKeyToAdaptApi` | 1582 |
-| 2 | 油量百分比 | `mmodelfuel` / `fuel_level` | 1641 |
-| 3 | 实时车速 | `CarAudioInfo / Get Speed` | 1659 |
-| 4 | 挡位 | `vehicle_gear` | 1737 |
-| 5 | CAN 通用数据 | `parsecandata` | 1899 |
-| 6 | 电瓶电压 | `mModelBatteryVolt` | 1959 |
-| 7 | 电源/点火/熄火 | `vpowerinfo` / `peps_powermode` | 2076 |
-| 8 | 车门（主通道） | `91 02 01` | `DoorStateManager` |
-| 9 | 转向灯 / 360 | `turnlight=` / `camera_state:` | — |
-| 10 | 驾驶模式 | `dm_func_drive_mode` | — |
-| 11 | 蓝牙音频 / DSP | `a2dp_player_` | — |
+| 1 | 方向盘方控 | `reportKeyToAdaptApi` | 1654 |
+| 1.1 | 仪表总里程 / 剩余油量 | `ipkinfo_total_odo` / `remaining_oil` | 1678 |
+| 2 | 实时车速 | `CarAudioInfo / Get Speed` | 1731 |
+| 3 | 挡位 | `vehicle_gear` | 1809 |
+| 4.1 | 车门（主通道）+ 尾门 + **引擎盖** | `91 02 01`（b6=四门、b7=尾门/引擎盖） | 1844 |
+| 4.2 | 单门状态容灾 | `MCULog: *_DOOR_STS` | 1908 |
+| 4.3 | 驾驶模式 | `dm_func_drive_mode` | 1934 |
+| 4.9 | 电源/点火/熄火 | `vpowerinfo` / `peps_powermode` | 1976 |
+| 5 | CAN 通用数据 | `parsecandata` | 1983 |
+| 5.1 | 转向灯 | `turnlight=` | 1995 |
+| 5.2 | 360 画面启闭 | `camera_state:` | 2007 |
+| 5.3 | 蓝牙音频 / DSP | `a2dp_player_` | 2022 |
+| 6 | 12V 蓄电池电压 | `mModelBatteryVolt =` | 2043 |
+| 6.1 | 油量百分比 | `mModelFuel` / `0x11600407` | 2084 |
+
+**引擎盖是 `91 02 01` 同一帧里的 `b7` bit2**（`HoodStateManager.updateFromB7()`：`((b7 >> 2) & 1) == 1` → 闭合，否则开启），不是独立报文。它和车门/尾门共用帧心跳，所以**通道一断引擎盖也一起失灵**，排查顺序与车门完全相同。
 
 ---
 
@@ -136,19 +147,16 @@ HAL 的挡位/车速/电压/点火属性只有 `BinyueLPlatform`（缤越 L / IH
 
 ---
 
-## 七、技能拆分建议
+## 七、技能与文档分工（已定案，不要再拆）
 
-| 现有 | 问题 | 建议 |
+| 位置 | 装什么 | 不装什么 |
 |---|---|---|
-| `onepve-geelytoolbox`（42,823 字） | 什么都装，改方控要先读车门 | 拆成「龙骨 + 分册」 |
+| 本文件（仓库 `docs/ARCHITECTURE-CHANNELS.md`） | 只有「数据从哪来」：三条线、通道全表、耦合关系、共享单点风险 | 踩坑史、UI 规范、发版流程 |
+| 本地技能 `onepve-geelytoolbox/SKILL.md` | 只放「不看就会做错」的铁律与决策依据 | 大段协议细节 |
+| 本地技能 `references/`（19 份，导航见 `INDEX.md`） | 各领域规格与 SOP：日志管道、方控音频、HMI、发版、语音包、油耗、备份、CAN 反编译等 | 与本文件重复的内容 |
+| `docs/changelog/` | 只有最新正式版 + 在测测试版各一份手写说明 | 历史发版记录、截图、日志包 |
 
-拆分方案：
-- `onepve-geelytoolbox`（保留）：**龙骨**——架构总纲、通道表、耦合关系、门禁规则、发版流程
-- `references/logcat-pipeline.md`：日志管道、白名单、缓冲区、队列
-- `references/hal-channels.md`：HAL 属性、探针、兜底触发条件
-- `references/wheel-keys.md`：方控全链路、防抖、键码、媒体派发
-- `references/doors-gear-fuel.md`：车门/挡位/油量
-- `references/ui-theme.md`：主题、门禁 43 项、Chromium 68
+**禁止在本仓库新增解释性 MD**：车型对照、信号语义、实现笔记一律进本地技能 `references/`。仓库里多一份就必然与技能那份脱节，之后没人分得清哪份最新。
 
 ---
 
