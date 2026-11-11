@@ -3,21 +3,22 @@ plugins {
 }
 
 android {
-    namespace 'app.onepve.geelyconsole'
+    namespace = 'app.onepve.geelyconsole'
     compileSdk 34
 
     defaultConfig {
         applicationId "app.onepve.geelyconsole"
         minSdk 28
         targetSdk 28
+        // versionCode / versionName 必须保留旧式写法：CI 版本注入脚本与门禁正则依赖此格式
         versionCode 1083299
         versionName "1.8.32"
 
-    testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildFeatures {
-        buildConfig true
+        buildConfig = true
     }
 
     signingConfigs {
@@ -35,24 +36,24 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
-            shrinkResources false
-            signingConfig signingConfigs.release
+            minifyEnabled = false
+            shrinkResources = false
+            signingConfig = signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            signingConfig signingConfigs.release
+            signingConfig = signingConfigs.release
         }
     }
 
     lint {
-        abortOnError false
-        checkReleaseBuilds false
+        abortOnError = false
+        checkReleaseBuilds = false
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     aaptOptions {
