@@ -36,7 +36,7 @@ export const THEMES = {
     swatch: '#2563eb',
     night: {
       '--bg-main': '#0a0f1d',
-      '--bg-panel': '#111827',
+      '--bg-panel': 'rgba(15,22,38,.62)',
       '--bg-modal': 'rgba(17,24,39,1)',
       '--bg-card': 'rgba(22,32,50,.58)',
       '--bg-item': 'rgba(30,41,59,.42)',
@@ -58,7 +58,7 @@ export const THEMES = {
     },
     day: {
       '--bg-main': '#eef3fa',
-      '--bg-panel': '#f4f8fd',
+      '--bg-panel': 'rgba(246,250,255,.78)',
       '--bg-modal': 'rgba(255,255,255,1)',
       '--bg-card': 'rgba(255,255,255,.84)',
       '--bg-item': 'rgba(238,245,254,.68)',
@@ -84,7 +84,7 @@ export const THEMES = {
     swatch: '#06b6d4',
     night: {
       '--bg-main': '#080812',
-      '--bg-panel': '#0f1020',
+      '--bg-panel': 'rgba(14,15,32,.62)',
       '--bg-modal': 'rgba(15,16,32,1)',
       '--bg-card': 'rgba(21,23,43,.58)',
       '--bg-item': 'rgba(28,31,58,.42)',
@@ -106,7 +106,7 @@ export const THEMES = {
     },
     day: {
       '--bg-main': '#f0f9fa',
-      '--bg-panel': '#f7fcfe',
+      '--bg-panel': 'rgba(249,253,255,.78)',
       '--bg-modal': 'rgba(255,255,255,1)',
       '--bg-card': 'rgba(255,255,255,.84)',
       '--bg-item': 'rgba(235,248,252,.68)',
@@ -132,7 +132,7 @@ export const THEMES = {
     swatch: '#d97706',
     night: {
       '--bg-main': '#14110b',
-      '--bg-panel': '#1c1811',
+      '--bg-panel': 'rgba(28,24,17,.62)',
       '--bg-modal': 'rgba(28,24,17,1)',
       '--bg-card': 'rgba(36,31,23,.58)',
       '--bg-item': 'rgba(47,41,31,.42)',
@@ -154,7 +154,7 @@ export const THEMES = {
     },
     day: {
       '--bg-main': '#fbf7ee',
-      '--bg-panel': '#fdfbf5',
+      '--bg-panel': 'rgba(253,252,247,.78)',
       '--bg-modal': 'rgba(255,255,255,1)',
       '--bg-card': 'rgba(255,255,255,.86)',
       '--bg-item': 'rgba(254,249,235,.66)',
@@ -180,7 +180,7 @@ export const THEMES = {
     swatch: '#16a34a',
     night: {
       '--bg-main': '#0a140f',
-      '--bg-panel': '#11221a',
+      '--bg-panel': 'rgba(17,34,26,.62)',
       '--bg-modal': 'rgba(17,34,26,1)',
       '--bg-card': 'rgba(23,46,35,.58)',
       '--bg-item': 'rgba(31,60,47,.42)',
@@ -202,7 +202,7 @@ export const THEMES = {
     },
     day: {
       '--bg-main': '#ecfdf5',
-      '--bg-panel': '#f0fdf4',
+      '--bg-panel': 'rgba(240,253,244,.78)',
       '--bg-modal': 'rgba(255,255,255,1)',
       '--bg-card': 'rgba(255,255,255,.86)',
       '--bg-item': 'rgba(236,253,245,.68)',
@@ -228,7 +228,7 @@ export const THEMES = {
     swatch: '#f43f5e',
     night: {
       '--bg-main': '#160c12',
-      '--bg-panel': '#22121c',
+      '--bg-panel': 'rgba(34,18,28,.62)',
       '--bg-modal': 'rgba(34,18,28,1)',
       '--bg-card': 'rgba(29,18,25,.58)',
       '--bg-item': 'rgba(40,22,34,.42)',
@@ -250,7 +250,7 @@ export const THEMES = {
     },
     day: {
       '--bg-main': '#fdf2f4',
-      '--bg-panel': '#fef7f9',
+      '--bg-panel': 'rgba(254,247,249,.78)',
       '--bg-modal': 'rgba(255,255,255,1)',
       '--bg-card': 'rgba(255,255,255,.86)',
       '--bg-item': 'rgba(253,242,245,.68)',
@@ -276,7 +276,7 @@ export const THEMES = {
     swatch: '#8b5cf6',
     night: {
       '--bg-main': '#110c1c',
-      '--bg-panel': '#1b122c',
+      '--bg-panel': 'rgba(27,18,44,.62)',
       '--bg-modal': 'rgba(27,18,44,1)',
       '--bg-card': 'rgba(25,18,39,.58)',
       '--bg-item': 'rgba(35,23,55,.42)',
@@ -298,7 +298,7 @@ export const THEMES = {
     },
     day: {
       '--bg-main': '#f6f3fc',
-      '--bg-panel': '#faf7fd',
+      '--bg-panel': 'rgba(250,247,253,.78)',
       '--bg-modal': 'rgba(255,255,255,1)',
       '--bg-card': 'rgba(255,255,255,.86)',
       '--bg-item': 'rgba(245,241,254,.68)',

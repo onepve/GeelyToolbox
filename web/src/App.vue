@@ -407,7 +407,10 @@ onMounted(() => {
 :root {
   /* 默认夜间豪华车规深色模式 (实体卡片高对比架构，彻底杜绝隐形错位感) */
   --bg-main: #0B0F19;
-  --bg-panel: #101728;   /* 侧栏/顶栏实底面板，杜绝彩色光晕透垫文字发糊 */
+  /* 侧栏/顶栏面板：半透，让 body 环境光透上来，与右侧内容区共用同一套光，
+     消除「左边一块实心平板、右边透光」的左右割裂感。
+     透明度取值已用对比度实测校验（顶栏小字 >= 7:1），不可再随意调低。 */
+  --bg-panel: rgba(15, 22, 38, .62);
   --bg-card: #151C2C;          /* 提升卡片不透明实体度，轮廓分明 */
   --bg-item: #1E273C;          /* 按钮底座与卡片底座形成层次分明对比 */
   --bg-item-hover: #28334E;
@@ -517,48 +520,14 @@ html.light body {
     inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, .18));
 }
 
-/* 核心铁律：全站激活态卡片与总开关流光呼吸光环（动态继承主题高亮色 var(--accent-gold)） */
-/* ===== 激活态：环绕流光 + 开关闪光 + 静息降亮 =====
-   老内核 Chrome 66 硬约束（违反任何一条都会静默失效）：
-   1. conic-gradient 是 Chrome 69+，车机用不了 ⇒ 流光改用 4 条 linear-gradient
-      各占一条边，靠 background-position 同步推进形成顺时针绕圈。
-   2. **多个 CSS 动画严禁同时写同一个属性**：曾用 4 个 keyframes 分别驱动
-      background-position，结果后一个把前一个覆盖，四条光带全停在同一点，
-      流光彻底消失。⇒ 只能用一个 keyframes 同时写 4 个位置值。
-   3. @property 是 Chrome 85+，不可用 ⇒ 只动 opacity / background-position。
-   4. 严禁 filter:blur（老内核溢出）。
-   5. 严禁把 animation 挂在卡片本体上 —— 那是改整张卡（含文字）的透明度，
-      文字会跟着一起忽明忽暗。只许挂在 ::after 上。*/
-
-/* 单束光绕圈（跑马灯）：四条边轮流跑，同一时刻只有一条边在亮。
-   做法：每条光带只在自己那 1/4 周期内从起点跑到终点，其余 3/4 周期
-   停在画布外（-60% 或 160%），于是观感是一束光顺时针绕卡片一圈。
-   注意必须写在同一组 keyframes 里 —— 拆成 4 个动画会互相覆盖 background-position。 */
-@keyframes accent-run {
-  /* 上边：0-25% 左→右 */
-  0%   { background-position: -60% 0%,     100% -60%,   160% 100%,   0% 160%; }
-  25%  { background-position: 160% 0%,     100% -60%,   160% 100%,   0% 160%; }
-  /* 右边：25-50% 上→下 */
-  50%  { background-position: 160% 0%,     100% 160%,   160% 100%,   0% 160%; }
-  /* 下边：50-75% 右→左 */
-  75%  { background-position: 160% 0%,     100% 160%,   -60% 100%,   0% 160%; }
-  /* 左边：75-100% 下→上 */
-  100% { background-position: 160% 0%,     100% 160%,   -60% 100%,   0% -60%; }
-}
-
-/* 点亮后先保持高亮约 2.6s，再在 16s 长周期里缓慢落到暗一档（车规护眼） */
-@keyframes accent-dim {
-  0%, 16%  { opacity: 1;   }
-  55%      { opacity: .62; }
-  100%     { opacity: .50; }
-}
-
-/* 点亮瞬间的一次性快闪 */
-@keyframes accent-flash {
-  0%   { opacity: 0;   }
-  14%  { opacity: .92; }
-  100% { opacity: 0;   }
-}
+/* ===== 激活态：一圈主题色实线边框（唯一判据）=====
+   设计裁定（实车反馈定稿）：
+   - 点亮与未点亮必须一眼分得清，靠「边框变成主题色实线」区分。
+   - 不做环绕流光/跑马灯，不做亮爆快闪 —— 全站卡片同时跑 = 光污染。
+   - 亮度克制：实线 + 8px 轻托光，不做大面积泛光。
+   老内核 Chrome 66 约束：禁用 conic-gradient / @property / filter:blur。
+   反馈只用 transition 不用 keyframes —— 动画会在元素挂载时自播一次，
+   切 Tab 整页卡片重挂载就会全页闪，这是必须避免的回归。 */
 
 /* ---- 卡片本体：只负责边框色，不挂动画（保护正文可读性）---- */
 .bg-car-card,
@@ -572,90 +541,26 @@ html.light body {
   border-color: var(--border-color) !important;
 }
 
-/* ---- 环绕流光：只给卡片级别的容器 ----
-   按钮（h-[52px] 这类小控件）也带 border-car-accent，但一排按钮同时跑跑马灯
-   会变成一片乱闪 —— 按钮只保留点亮/点灭的一次快闪，不跑光束。 */
-.bg-car-card.border-car-accent::after {
-  content: '';
-  position: absolute;
-  left: -2px;
-  right: -2px;
-  top: -2px;
-  bottom: -2px;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 3;
-  background-image:
-    linear-gradient(90deg,  rgba(255,255,255,0) 0%, var(--accent-gold) 22%, #ffffff 50%, var(--accent-gold) 78%, rgba(255,255,255,0) 100%),
-    linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--accent-gold) 22%, #ffffff 50%, var(--accent-gold) 78%, rgba(255,255,255,0) 100%),
-    linear-gradient(270deg, rgba(255,255,255,0) 0%, var(--accent-gold) 22%, #ffffff 50%, var(--accent-gold) 78%, rgba(255,255,255,0) 100%),
-    linear-gradient(0deg,   rgba(255,255,255,0) 0%, var(--accent-gold) 22%, #ffffff 50%, var(--accent-gold) 78%, rgba(255,255,255,0) 100%);
-  background-repeat: no-repeat;
-  background-size:
-    40% 3px,
-    3px 40%,
-    40% 3px,
-    3px 40%;
-  background-position: -60% 0%, 100% -60%, 160% 100%, 0% 160%;
-  opacity: 1;
-  /* drop-shadow 跟随 alpha 通道 —— 只有亮的那一段发光，轨道不发光。
-     Chrome 23 起就支持，且不像 blur() 会在老内核上溢出裁切。 */
-  filter: drop-shadow(0 0 6px var(--accent-gold));
-  animation:
-    accent-run 3.6s linear infinite,
-    accent-dim 16s ease-in-out .5s 1 forwards;
-  will-change: background-position, opacity;
-}
-
-/* 点亮瞬间：整张卡片的光环一次性"亮爆→收回"，0.45s 结束即走。
-   ::before 是高光水线，不能挪用；这里直接动卡片本体的 box-shadow。
-   注意：本段规则里的 box-shadow 严禁加 !important，否则动画会被压死。 */
-@keyframes accent-ring-in {
-  0% {
-    box-shadow:
-      0 0 0 2px var(--accent-gold),
-      0 0 30px 3px var(--accent-gold),
-      0 10px 34px rgba(0, 0, 0, .42);
-  }
-  100% {
-    box-shadow:
-      0 0 0 1px var(--accent-gold-bg, rgba(56, 189, 248, .30)),
-      0 0 0 0 rgba(0, 0, 0, 0),
-      0 6px 26px rgba(0, 0, 0, .42);
-  }
-}
-
-.bg-car-card.border-car-accent,
-.bg-car-item.border-car-accent {
-  animation: accent-ring-in .45s cubic-bezier(.2, .7, .3, 1) 1;
-}
-
-/* 点灭时的快速闪现：边框光在 0.3s 内塌缩，配合点亮时的 accent-ring-in，
-   进出各一次闪光，中间不常亮。 */
+/* 点亮/点灭的反馈：只用 transition 平滑过渡边框色与投影，不播 keyframes。
+   关键：CSS 动画会在元素挂载时自动播一次 —— 切 Tab 时整页卡片重新挂载，
+   等于一页卡片全部闪一下，这是用户明确否决的光污染。
+   用 transition 则只在值真正变化（用户点击开关）时才有过渡。 */
 .bg-car-card,
 .bg-car-item {
   transition: box-shadow .30s ease-out, border-color .30s ease-out;
 }
 
-html.light .bg-car-card.border-car-accent,
-html.light .bg-car-item.border-car-accent {
-  animation: accent-ring-in .45s cubic-bezier(.2, .7, .3, 1) 1;
-}
-
-/* ---- 激活态静息外观（动画结束后的定格态）----
-   与 accent-ring-in 的 100% 完全一致，避免动画一结束就"跳一下"。
-   这里只做细环 + 克制的近场投影，不再有大面积外发光。 */
-html.light /* 底边框只留一圈很淡的"轨道"，亮度交给 ::after 的那束光。
-   否则整圈常亮 = 您说的视觉污染。 */
+/* 未激活态：中性边框，与激活态的主题色实线形成明确对比 */
 .border-car-accent {
   border-color: var(--border-color) !important;
 }
 
 html.light .bg-car-card.border-car-accent,
 html.light .bg-car-item.border-car-accent {
-  border-color: var(--accent-gold-bg) !important;
+  /* 白天同理：边框必须是主题色实线才看得出来（原来 14% 不透明度等于没有） */
+  border-color: var(--accent-gold) !important;
   box-shadow:
-    0 0 0 1px var(--accent-gold-bg, rgba(37, 99, 235, .30)),
+    0 0 6px 0 var(--accent-gold-bg, rgba(37, 99, 235, .30)),
     0 6px 22px rgba(15, 23, 42, .10),
     inset 0 1px 0 #ffffff;
 }
@@ -671,9 +576,13 @@ html.dark .bg-car-card.border-car-accent,
 html.dark .bg-car-item.border-car-accent,
 html:not(.light) .bg-car-card.border-car-accent,
 html:not(.light) .bg-car-item.border-car-accent {
-  border-color: var(--accent-gold-bg) !important;
+  /* 激活态唯一判据：一圈主题色实线。
+     此前误用 --accent-gold-bg（仅 20% 不透明度）当边框色，压在深色卡片上
+     与未激活态肉眼无差，导致「点亮/不点亮分不清」——这是必须避免的回归。
+     亮度克制：实线边框 + 8px 极轻外托光，不做大面积泛光。 */
+  border-color: var(--accent-gold) !important;
   box-shadow:
-    0 0 0 1px var(--accent-gold-bg, rgba(56, 189, 248, .30)),
+    0 0 8px 0 var(--accent-gold-bg, rgba(56, 189, 248, .30)),
     0 6px 26px rgba(0, 0, 0, .42),
     inset 0 1px 0 rgba(255, 255, 255, .14);
 }
@@ -686,24 +595,6 @@ html.light .bg-car-item.border-car-accent {
 html.dark .bg-car-item.border-car-accent,
 html:not(.light) .bg-car-item.border-car-accent {
   background: var(--bg-item, rgba(30, 41, 59, .42)) !important;
-}
-
-/* 白天档：流光收窄一档（浅底上更晃眼），但保留绕圈科技感 */
-html.light .bg-car-card.border-car-accent::after {
-  /* 浅底上白色光带会"消失"，白天改用主题深色的实心光带 */
-  background-image:
-    linear-gradient(90deg,  rgba(255,255,255,0) 0%, var(--accent-gold) 30%, var(--accent-gold) 70%, rgba(255,255,255,0) 100%),
-    linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--accent-gold) 30%, var(--accent-gold) 70%, rgba(255,255,255,0) 100%),
-    linear-gradient(270deg, rgba(255,255,255,0) 0%, var(--accent-gold) 30%, var(--accent-gold) 70%, rgba(255,255,255,0) 100%),
-    linear-gradient(0deg,   rgba(255,255,255,0) 0%, var(--accent-gold) 30%, var(--accent-gold) 70%, rgba(255,255,255,0) 100%);
-  background-size:
-    40% 3px,
-    3px 40%,
-    40% 3px,
-    3px 40%;
-  /* 白天浅底上辉光要收窄：3px 光带配 5px 辉光会糊成一团蓝雾，
-     收到 3px 让光带"实"起来，只留一圈淡淡的托光。 */
-  filter: drop-shadow(0 0 3px var(--accent-gold));
 }
 
 .fade-enter-active,

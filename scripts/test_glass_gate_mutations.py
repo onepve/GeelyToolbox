@@ -99,57 +99,49 @@ def run_gate():
     return r.returncode, r.stdout + r.stderr
 
 
-# ===== 激活态跑马灯（accent 流光）变异 =====
+# ===== 激活态可见性变异 =====
 
-# 11) 整段流光被删（退回静态常亮圈）
-case("环绕流光被整段删除",
+# 11) 激活态边框退回半透明 bg 色（实车「点亮和不点亮一样」的真凶）
+case("激活态边框退回半透明色",
      APP,
-     "@keyframes accent-run {",
-     "@keyframes accent-run-disabled {",
-     "accent-run")
+     "  /* 激活态唯一判据：一圈主题色实线。",
+     "  border-color: var(--accent-gold-bg) !important;\n  /* 激活态唯一判据：一圈主题色实线。",
+     "肉眼无差")
 
-# 12) 四条边拆成 4 个独立动画（会互相覆盖 background-position）
-case("流光拆成四段覆盖",
+# 12) 夜间激活态整段规则被删（点亮后完全没有边框）
+case("夜间激活态规则被删",
      APP,
-     "@keyframes accent-run {",
-     "@keyframes accent-run {\n  0% { background-position: -60% 0; }\n}\n@keyframes accent-run-x {",
-     "少于 2 个")
+     "border-color: var(--accent-gold) !important;",
+     "border-color: var(--border-color) !important;",
+     "没有任何可见边框")
 
-# 13) 降亮动画被删（光圈常亮刺眼）
-case("点亮后不降亮",
+# 13) 环绕流光复活
+case("环绕流光复活",
      APP,
-     "@keyframes accent-dim {",
-     "@keyframes accent-dim-removed {",
-     "accent-dim")
+     "/* 未激活态：中性边框",
+     "@keyframes accent-run { 0% { background-position: 0 0; } }\n/* 未激活态：中性边框",
+     "光污染")
 
-# 14) 降亮幅度不够：末期仍几乎全亮（改中段没用，末档才是用户长期看到的状态）
-case("降亮幅度不足",
+# 14) 降亮动画复活
+case("降亮动画残留",
      APP,
-     "  100%     { opacity: .50; }",
-     "  100%     { opacity: .95; }",
-     "降得不够")
+     "/* 未激活态：中性边框",
+     "@keyframes accent-dim { 0% { opacity: 1 } }\n/* 未激活态：中性边框",
+     "光污染")
 
-# 15) 跑马灯挂到卡片本体（文字会跟着闪）
-case("流光挂到卡片本体",
+# 15) 切 Tab 整页闪：keyframes 挂回卡片本体
+case("卡片本体挂 animation（切Tab全页闪）",
      APP,
-     ".bg-car-card.border-car-accent,\n.bg-car-item.border-car-accent {\n  animation: accent-ring-in .45s cubic-bezier(.2, .7, .3, 1) 1;\n}",
-     ".bg-car-card.border-car-accent,\n.bg-car-item.border-car-accent {\n  animation: accent-ring-in .45s cubic-bezier(.2, .7, .3, 1) 1, accent-run 3.6s linear infinite;\n}",
-     "卡片本体")
+     ".bg-car-card,\n.bg-car-item {\n  transition:",
+     ".bg-car-card.border-car-accent,\n.bg-car-item.border-car-accent {\n  animation: x .4s 1;\n}\n.bg-car-card,\n.bg-car-item {\n  transition:",
+     "全页闪")
 
-# 16) 内层槽位也跑跑马灯（圈套圈）
-case("内层槽位也跑流光",
+# 16) 卡片过渡误加 opacity（文字忽明忽暗）
+case("卡片过渡加了 opacity",
      APP,
-     ".bg-car-card.border-car-accent::after {",
-     ".bg-car-card.border-car-accent::after,\n.bg-car-item.border-car-accent::after {",
-     "圈套圈")
-
-# 17) @property 复活（Chrome 85+）
-case("@property 复活",
-     APP,
-     "@keyframes accent-flash {",
-     "@property --x { syntax: '<number>'; inherits: false; initial-value: 0; }\n@keyframes accent-flash {",
-     "@property")
-
+     "transition: box-shadow .30s ease-out, border-color .30s ease-out;",
+     "transition: box-shadow .30s ease-out, border-color .30s ease-out, opacity .3s;",
+     "文字跟着忽明忽暗")
 
 def main():
     print("=" * 70)

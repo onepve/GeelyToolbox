@@ -268,84 +268,80 @@ if "V1_PALETTES" in pal:
 
 
 # ---------------------------------------------------------------------------
-# 7) 激活态跑马灯（accent 流光）—— 老内核上极易静默失效，逐条锁死
+# 7) 激活态可见性 —— 点亮与未点亮必须一眼分得清
 #
-#    这些坑都是真实踩出来的，且失败方式极其隐蔽：代码在、样式不生效，
-#    截图看起来「只是没那么亮」，很容易被判成审美问题放过。
+#    实车回归教训：曾把激活态边框色写成 --accent-gold-bg（仅 14%~20% 不透明度），
+#    压在深色卡片上与未激活态肉眼无差，用户原话「点亮和不点亮都是一样的显示，
+#    导致没办法区分」。这类失效极其隐蔽 —— 代码在、样式也生效，只是看不出来。
+#
+#    同时明令禁止两类光污染（用户实车否决）：
+#    a) 环绕流光/跑马灯：全站卡片同时跑，比常亮更晃眼。
+#    b) 挂在卡片本体上的 keyframes：CSS 动画在元素挂载时自动播一次，
+#       切 Tab 时整页卡片重新挂载 = 一页卡片全部闪一下。
 # ---------------------------------------------------------------------------
-m_css = re.search(r"@keyframes\s+accent-run\s*\{(.*?)\n\}", app_src, re.S)
-if not m_css:
-    fail(
-        "App.vue 找不到 @keyframes accent-run —— 激活态环绕流光已丢失，"
-        "卡片点亮后会退回「整圈常亮」的静态光圈（长时间观看有视觉污染）。"
-    )
-else:
-    body = m_css.group(1)
-    # 7.1 四条边必须写在同一个 keyframes 里：拆成 4 个动画会互相覆盖
-    #     background-position，实测四条光带全停在同一处，流光彻底消失。
-    n_pos = len(re.findall(r"background-position\s*:", body))
-    if n_pos < 2:
-        fail("@keyframes accent-run 少于 2 个 background-position 关键帧，流光不会移动。")
-    # 7.2 单束光：任一关键帧内，四层光带的坐标必须互不相同且只有一层在可视区，
-    #     否则退化成「四条边一起亮」＝四盏灯同步闪，不是跑马灯。
-    for m in re.finditer(r"background-position\s*:\s*([^;]+);", body):
-        nums = re.findall(r"(-?[\d.]+)%", m.group(1))
-        if len(nums) < 8:
-            fail("@keyframes accent-run 的 background-position 不足 4 层 × 2 坐标，光带层数被删。")
-    # 7.3 动画不得挂在卡片本体上：那会改整张卡（含正文）的透明度，文字跟着忽明忽暗。
-    card_anim = re.search(
-        r"\.bg-car-card\.border-car-accent\s*,\s*\n\.bg-car-item\.border-car-accent\s*\{([^}]*)\}",
-        app_src)
-    if card_anim and "accent-run" in card_anim.group(1):
+
+# 7.1 激活态边框必须是主题色实线，不得用半透明 bg 色当边框
+for sel_m in re.finditer(
+    r"html(?:\.dark|\.light|:not\(\.light\))\s+\.bg-car-(?:card|item)\.border-car-accent[^{]*\{([^}]*)\}",
+    app_src,
+):
+    block = sel_m.group(1)
+    bc = re.search(r"border-color\s*:\s*([^;!]+)", block)
+    if bc and "accent-gold-bg" in bc.group(1):
         fail(
-            "accent-run 被挂到了卡片本体上 —— 会把整张卡片（含正文文字）一起做透明度动画，"
-            "文字会跟着闪烁。流光只能挂在 ::after 上。"
-        )
-    # 7.4 跑马灯只允许卡片级容器使用：按钮也带 border-car-accent，
-    #     一排按钮同时跑会变成一片乱闪。
-    if re.search(r"\.bg-car-item\.border-car-accent::after\s*\{[^}]*accent-run", app_src):
-        fail(
-            "内层槽位（bg-car-item）也在跑跑马灯 —— 会与卡片光束叠成圈套圈，"
-            "光污染翻倍。跑马灯只给卡片级容器。"
+            "激活态边框用了 --accent-gold-bg（半透明底色）—— 压在卡片上与未激活态"
+            "肉眼无差，用户实车反馈「点亮和不点亮一样」。必须用 --accent-gold 实色。"
         )
 
-# 7.5 点亮后必须降亮（车规护眼）：没有 accent-dim 就是长时间刺眼
-#     注意必须用精确正则：accent-dim-removed / accent-dim-x 这类改名后的残留
-#     用子串判断会误判成"存在"，门禁形同虚设（变异测试实测抓出过）。
-dim = re.search(r"@keyframes\s+accent-dim\s*\{", app_src)
-if not dim:
+# 7.2 夜间与白天激活态都必须写出 --accent-gold 实线边框（防止整段规则被删）
+for scope, label in ((r"html\.dark|html:not\(\.light\)", "夜间"),
+                     (r"html\.light", "白天")):
+    found = False
+    for m in re.finditer(
+        r"((?:html\.dark|html:not\(\.light\)|html\.light)\s+"
+        r"\.bg-car-(?:card|item)\.border-car-accent[^{]*)\{([^}]*)\}",
+        app_src,
+    ):
+        sel, block = m.group(1), m.group(2)
+        if not re.search(scope, sel):
+            continue
+        if re.search(r"border-color\s*:\s*var\(--accent-gold\)\s*!important", block):
+            found = True
+            break
+    if not found:
+        fail(
+            "%s激活态缺少 `border-color: var(--accent-gold) !important` —— "
+            "卡片点亮后没有任何可见边框，用户无法区分开关状态。" % label
+        )
+
+# 7.3 严禁环绕流光/跑马灯回归
+for banned in ("accent-run", "accent-dim", "@keyframes accent-flash"):
+    if banned in app_src:
+        fail(
+            "App.vue 重新出现 %s —— 环绕流光已按实车反馈整体下线"
+            "（全站卡片同时跑 = 光污染）。请勿复活。" % banned
+        )
+
+# 7.4 严禁把 keyframes 挂在卡片本体上（切 Tab 会整页闪）
+if re.search(r"\.bg-car-(?:card|item)\.border-car-accent\s*,\s*\n"
+             r"\.bg-car-(?:card|item)\.border-car-accent\s*\{\s*\n?\s*animation\s*:",
+             app_src):
     fail(
-        "App.vue 缺少 @keyframes accent-dim —— 光圈点亮后会一直保持最亮，"
-        "长时间观看产生视觉污染（用户明确要求「等几秒后暗一点」）。"
+        "卡片激活态挂了 animation —— CSS 动画在元素挂载时自动播一次，"
+        "切 Tab 整页卡片重挂载会全页闪一下（用户明确否决的光污染）。"
+        "反馈只能用 transition。"
     )
-else:
-    block = re.search(r"@keyframes\s+accent-dim\s*\{(.*?)\n\}", app_src, re.S)
-    if not block:
-        fail("@keyframes accent-dim 无法解析，降亮逻辑可能已损坏。")
-    else:
-        # 逐档核对整条亮度曲线，不能只看最小值。
-        # 曾经的写法是 min(dimmed) > 0.7：只要还有一档够暗就通过，
-        # 把末档（用户长期看到的状态）改回 0.95 也能骗过门禁。
-        pairs = re.findall(r"([\d.]+)%\s*\{[^}]*opacity\s*:\s*([\d.]+)", block.group(1))
-        if len(pairs) < 2:
-            fail("@keyframes accent-dim 里没有多个 opacity 关键帧，等于没降亮。")
-        else:
-            curve = [(float(k), float(v)) for k, v in pairs]
-            # 1) 起始必须够亮（否则"点亮"看不出来）
-            if max(v for _, v in curve) < 0.9:
-                fail("@keyframes accent-dim 起始亮度不足 0.9，点亮瞬间不够醒目。")
-            # 2) 末期必须真的降下来：取最后一个关键帧，必须 <= 0.62
-            last_k, last_v = max(curve, key=lambda kv: kv[0])
-            if last_v > 0.62:
-                fail(
-                    "@keyframes accent-dim 末期(%g%%)亮度仍 %.2f —— 降得不够，"
-                    "等于光圈持续刺眼（要求末档 <= 0.62，稳定在 0.5 上下）。"
-                    % (last_k, last_v)
-                )
-            # 3) 整条曲线必须真的在下降（高亮期之后不能回升）
-            tail = [v for k, v in sorted(curve) if k >= 30]
-            if len(tail) >= 2 and tail[-1] > tail[0] + 0.05:
-                fail("@keyframes accent-dim 亮度后段反而回升，护眼降亮失效。")
+
+# 7.5 卡片的过渡只能动 box-shadow / border-color，不得动 opacity
+for tr in re.finditer(
+    r"\.bg-car-(?:card|item)\s*,\s*\n?\.bg-car-(?:card|item)\s*\{([^}]*)\}",
+    app_src,
+):
+    if re.search(r"transition[^;]*opacity", tr.group(1)):
+        fail(
+            "卡片 transition 里出现 opacity —— 会让整张卡片（含正文文字）一起变淡，"
+            "文字跟着忽明忽暗。过渡只允许 box-shadow / border-color。"
+        )
 
 # 7.6 禁用 conic-gradient：Chrome 69+ 才支持，车机是 Chrome 66，
 #     用了不会报错，只会整层流光静默消失。
