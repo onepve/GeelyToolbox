@@ -19,6 +19,10 @@
         >
           <StatusDot size="md" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" :glow-px="store.vehicleAuto.wheel_master_switch ? 8 : 0" />
           <span class="text-[19px] font-black text-car-text whitespace-nowrap">方向盘按键接管</span>
+          <HelpDot
+            @click="openModeHelp"
+            title="查看两种摆放方式的区别"
+          />
           <span
             :class="['text-[13.5px] font-black px-2.5 py-0.5 rounded-lg border shrink-0',
                      store.vehicleAuto.wheel_master_switch ? 'bg-car-item text-car-accent border-car-accent' : 'bg-car-item text-car-sub border-car-border']"
@@ -44,7 +48,7 @@
       </div>
 
 
-      <!-- 模式 A：标准卡片模式 (六大按键网格) -->
+      <!-- 模式 A：常用按键（原车 7 个常用实体键，一键一卡，网格排布） -->
       <div v-if="mappingMode === 'preset'" class="flex flex-col space-y-4">
         <!-- 双列规整网格：一排两卡，工整对齐，共三排 -->
         <div class="grid grid-cols-3 gap-3">
@@ -155,6 +159,7 @@
     </div>
 
     <!-- 模式 B：自定义按键列表模式 (多车型动态学习与独立映射) -->
+    <!-- 模式 B：按键学习（按一下车上任意键自动捕获，动态列表，适合原车清单里没有的键） -->
     <div v-else-if="mappingMode === 'custom_list'" class="flex flex-col space-y-4">
       <!-- 顶部操作条：大白话说明 + 新增学习按钮 -->
       <div class="flex items-center justify-between p-4 rounded-2xl bg-car-card border-2 border-car-border shadow-md">
@@ -392,6 +397,7 @@ import { useWheelGesture } from '../composables/useWheelGesture';
 import { playTouchFeedback } from '../utils/sound';
 import SubTabs from '../components/SubTabs.vue';
 import StatusDot from '../components/StatusDot.vue';
+import HelpDot from '../components/HelpDot.vue';
 import BaseButton from '../components/BaseButton.vue';
 import FeatureCard from '../components/FeatureCard.vue';
 import MatrixButton from '../components/MatrixButton.vue';
@@ -418,12 +424,38 @@ const activeTab = ref(props.initialTab || 'keys');
 
 const mappingMode = computed(() => store.vehicleAuto.wheel_mapping_mode || 'preset');
 
+// 页内帮助弹窗：与 InstallView/SystemView 一致，复用 confirm 弹窗承载长文案
+function openHelpModal(title, desc, tip) {
+  openModal('confirm', {
+    title,
+    desc,
+    tip: tip || '',
+    showCancel: false,
+    confirmText: '我知道了'
+  });
+}
+
+// 两种摆放方式的区别说明（文案放脚本里，避免模板内联引号转义踩坑）
+const MODE_HELP_DESC = [
+  '这里有两个摆放方式，功能完全一样，只是排布不一样，挑顺手的即可。',
+  '',
+  '· 常用按键：方向盘上原车那几个常用键，一张卡一个键列好，点开就能改，适合绝大多数车主。',
+  '',
+  '· 按键学习：列表一开始是空的，点「按键学习添加」后按下方向盘上任意一个键，它就自动认出来加进列表。适合原车清单里没列到的键，或者你想自己挑几个键来配。',
+  '',
+  '两边配的都是同一件事：这个键按下去做什么。随时能切回来，两边设置各存各的，互不覆盖。'
+].join('\n');
+
+function openModeHelp() {
+  openHelpModal('【功能指南】常用按键 与 按键学习 怎么选', MODE_HELP_DESC, '不确定选哪个，就用常用按键。');
+}
+
 function setMappingMode(mode) {
   if (store.vehicleAuto.wheel_mapping_mode === mode) return;
   playTouchFeedback();
   store.vehicleAuto.wheel_mapping_mode = mode;
   bridge.call('setVehicleAutomationSetting', 'wheel_mapping_mode', mode);
-  showToast(mode === 'custom_list' ? '已切换至「自定义列表模式」' : '已切换至「标准卡片模式」');
+  showToast(mode === 'custom_list' ? '已切换至「按键学习」，按一下方向盘上的键就能加进来' : '已切换至「常用按键」，原车这几个常用键都已列好');
 }
 
 // 模式 B：自定义按键列表
@@ -511,12 +543,12 @@ const customKeyTip = computed(() => {
 
 // 方控组卡内的模式切换（原顶部胶囊搬进卡身，避免双处维护）
 const wheelModeOptions = computed(() => [
-  { id: 'preset', name: '标准卡片模式', active: mappingMode.value === 'preset' },
-  { id: 'custom_list', name: '自定义列表模式', active: mappingMode.value === 'custom_list' }
+  { id: 'preset', name: '常用按键', active: mappingMode.value === 'preset' },
+  { id: 'custom_list', name: '按键学习', active: mappingMode.value === 'custom_list' }
 ]);
 
 const wheelTabs = [
-  { id: 'keys', name: '按键映射手势', tag: '6大按键' },
+  { id: 'keys', name: '按键映射手势', tag: '7大按键' },
   { id: 'mode', name: '接管模式图解', tag: '工作模式' }
 ];
 

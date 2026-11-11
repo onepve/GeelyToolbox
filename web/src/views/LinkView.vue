@@ -502,7 +502,7 @@ import WheelView from './WheelView.vue';
 
 const activeTab = ref('wheel_keys');
 const linkTabs = [
-  { id: 'wheel_keys', name: '按键映射手势', tag: '6大按键' },
+  { id: 'wheel_keys', name: '按键映射手势', tag: '7大按键' },
   { id: 'wheel_mode', name: '接管模式图解', tag: '工作模式' },
   { id: '360', name: '360全景联动', tag: 'D挡/转向灯' },
   { id: 'speed', name: '车速与大灯', tag: '车速/大灯' },
