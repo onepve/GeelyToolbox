@@ -29,7 +29,9 @@ var v=T[P][md],d=document.documentElement;
 for(var k in v){try{d.style.setProperty(k,v[k]);}catch(e){}}
 d.setAttribute('data-palette',P);d.setAttribute('data-mode',md);
 if(md==='day'){d.classList.add('light');}
-d.style.background=v['--bg-main'];
+// 只设底色，严禁用 background 简写：简写会把 App.vue 里 body 的环境光渐变整条抹掉
+// （首帧引导脚本作用在 <html> 上，简写会重置 background-image 为 none 并向下穿透）
+d.style.backgroundColor=v['--bg-main'];
 window.__TOOLBOX_BOOT_THEME__={palette:P,mode:md};
 }catch(e){}})();
 `.trim()

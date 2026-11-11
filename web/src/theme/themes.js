@@ -1,22 +1,21 @@
-// 液态玻璃 4 色 + 曜石金（初代实底主题复活）× 白夜主题系统
+// 液态玻璃 6 色 × 白夜主题系统
 // 模式三档：auto（跟随车机原厂昼夜信号）| day | night
-// 配色：blue / brown / green / pink / gold，出厂默认 green · night
+// 配色：sky_ocean / aurora_cyber / amber_gold / bamboo_emerald / sakura_pink / taro_purple
+// 出厂默认 sky_ocean · night
 
 import { store } from '../store';
 
-import { DAY_START, DAY_END, STORAGE_KEY, THEMES, DEFAULT_PALETTE, DEFAULT_MODE, MODES, PALETTES, V1_PALETTES, V2_PALETTES } from './palette';
+import { DAY_START, DAY_END, STORAGE_KEY, THEMES, DEFAULT_PALETTE, DEFAULT_MODE, MODES, PALETTES, V2_PALETTES } from './palette';
 
 // MODES / PALETTES 与默认档统一定义在 palette.js（构建期首帧引导脚本同源共用），此处只做转出。
-export { MODES, PALETTES, V1_PALETTES, V2_PALETTES };
+export { MODES, PALETTES, V2_PALETTES };
 export const MODE_LABELS = { auto: '跟随车机', day: '白天', night: '黑夜' };
 export const PALETTE_LABELS = {
-  blue: '蓝', brown: '棕', green: '绿', pink: '粉', gold: '金',
   sky_ocean: '蓝', aurora_cyber: '霓虹', amber_gold: '金', bamboo_emerald: '绿',
   sakura_pink: '粉', taro_purple: '紫'
 };
 // 色卡小圆点取色（各配色主色，取自认可效果图）
 export const PALETTE_DOT = {
-  blue: '#5b8cff', brown: '#d4a04a', green: '#3fbf88', pink: '#d46a8c', gold: '#d99a26',
   sky_ocean: '#2563eb', aurora_cyber: '#06b6d4', amber_gold: '#d97706', bamboo_emerald: '#16a34a',
   sakura_pink: '#f43f5e', taro_purple: '#8b5cf6'
 };
@@ -111,25 +110,14 @@ export function setNightBrightness(val) {
 }
 
 
-const OLD_TO_NEW_PALETTE = {
-  blue: 'sky_ocean',
-  brown: 'amber_gold',
-  green: 'bamboo_emerald',
-  pink: 'sakura_pink',
-  gold: 'amber_gold'
-};
-
 function loadSaved() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const obj = JSON.parse(raw);
-    if (obj) {
-      if (OLD_TO_NEW_PALETTE[obj.palette]) {
-        obj.palette = OLD_TO_NEW_PALETTE[obj.palette];
-      }
-      if (PALETTES.includes(obj.palette) && MODES.includes(obj.mode)) return obj;
-    }
+    // 旧版本（蓝/棕/绿/粉/金）配色键已随 V1 主题整体下线：
+    // 校验失败即视为「未选择」，直接回落到出厂默认 sky_ocean，不做旧键映射。
+    if (obj && PALETTES.includes(obj.palette) && MODES.includes(obj.mode)) return obj;
   } catch (e) { /* WebView 存储不可用时静默降级为默认 */ }
   return null;
 }

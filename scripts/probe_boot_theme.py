@@ -99,7 +99,7 @@ async def run():
         await send("Page.navigate", url=f"http://127.0.0.1:{PORT_HTTP}/set.html")
         await asyncio.sleep(1.0)
         print("  写入 localStorage:", await ev(
-            "localStorage.setItem('toolbox_theme_v1', JSON.stringify({palette:'green',mode:'day'}));"
+            "localStorage.setItem('toolbox_theme_v1', JSON.stringify({palette:'bamboo_emerald',mode:'day'}));"
             "localStorage.getItem('toolbox_theme_v1')"))
 
         for tag, f in (("A 有引导脚本（修复后）", "boot_on.html"), ("B 无引导脚本（修复前）", "boot_off.html")):
@@ -131,9 +131,9 @@ async def run():
                    "bodyBg: getComputedStyle(document.body).backgroundColor})")
         cases = [
             ("未存过任何设置（出厂默认）", "null"),
-            ("已存：晨曦绿 + 白天", "JSON.stringify({palette:'green',mode:'day'})"),
-            ("已存：樱语粉 + 黑夜", "JSON.stringify({palette:'pink',mode:'night'})"),
-            ("已存：琥珀棕 + 跟随时间", "JSON.stringify({palette:'brown',mode:'auto'})"),
+            ("已存：翡翠绿 + 白天", "JSON.stringify({palette:'bamboo_emerald',mode:'day'})"),
+            ("已存：樱语粉 + 黑夜", "JSON.stringify({palette:'sakura_pink',mode:'night'})"),
+            ("已存：琥珀金 + 跟随时间", "JSON.stringify({palette:'amber_gold',mode:'auto'})"),
             ("已存：非法值（应回落出厂默认）", "JSON.stringify({palette:'hacker',mode:'rainbow'})"),
         ]
         ok = True
@@ -167,7 +167,7 @@ async def run():
                 " return JSON.stringify(samples); })()")
         await send("Page.navigate", url=f"http://127.0.0.1:{PORT_HTTP}/set.html")
         await asyncio.sleep(0.6)
-        await ev("localStorage.setItem('toolbox_theme_v1', JSON.stringify({palette:'blue',mode:'day'})); 'ok'")
+        await ev("localStorage.setItem('toolbox_theme_v1', JSON.stringify({palette:'sky_ocean',mode:'day'})); 'ok'")
         await send("Page.navigate", url=f"http://127.0.0.1:{PORT_HTTP}/toolbox_ui.html")
         await asyncio.sleep(1.6)
         for s in json.loads(await ev(VEIL)):

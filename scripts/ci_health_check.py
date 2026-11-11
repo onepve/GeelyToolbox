@@ -903,6 +903,9 @@ regression_scripts = [
     "test_vehicle_matrix.py",
     "test_regression_mutations.py",
     "test_voice_gain_resolver.py",
+    # 玻璃材质与配色真源：防「卡片退回实色塑料贴片」「光效层被删」「老内核 blur 溢出」
+    "check_glass_material_gate.py",
+    "test_glass_gate_mutations.py",
 ]
 for regression_script in regression_scripts:
     try:

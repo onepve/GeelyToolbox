@@ -88,9 +88,9 @@ export const store = reactive({
     return normalizeNav(startup);
   })(),
   isNight: true,
-  // 液态玻璃主题：palette=蓝/棕/绿/粉，mode=auto(跟随时间)/day/night
+  // 液态玻璃主题：6 套配色，mode=auto(跟随时间)/day/night
   theme: {
-    palette: 'blue',
+    palette: 'sky_ocean',
     mode: 'night'
   },
   toast: { show: false, msg: '', kind: 'info' },

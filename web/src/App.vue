@@ -440,14 +440,52 @@ html.light {
 }
 
 body {
-  background: var(--bg-main) !important;
+  /* 底色 + 环境光同层叠加：直接把径向渐变画在 body 背景上。
+     不走 ::before + z-index:-1 —— 伪元素负层级会被 body 自身背景色盖住，
+     而车机页面滚动发生在内层 section，body 本身不滚动，背景天然静止。 */
+  background-color: var(--bg-main) !important;
+  background-image:
+    radial-gradient(780px 440px at 12% 4%,  var(--ambient-1, transparent), transparent 62%),
+    radial-gradient(700px 420px at 90% 10%, var(--ambient-2, transparent), transparent 64%),
+    radial-gradient(940px 560px at 58% 104%, var(--ambient-1, transparent), transparent 68%),
+    radial-gradient(560px 360px at 26% 90%, var(--ambient-2, transparent), transparent 66%) !important;
+  background-repeat: no-repeat !important;
+}
+
+/* 白天模式：浅底上光晕必须收得更淡，否则整屏发脏、正文对比度下降。
+   做法是把渐变整体调低不透明度，而不是改色值（色值由 palette.js 单一真源掌管）。 */
+html.light body {
+  background-image:
+    radial-gradient(780px 440px at 12% 4%,  var(--ambient-1, transparent), transparent 58%),
+    radial-gradient(700px 420px at 90% 10%, var(--ambient-2, transparent), transparent 60%),
+    radial-gradient(940px 560px at 58% 104%, var(--ambient-1, transparent), transparent 64%),
+    radial-gradient(560px 360px at 26% 90%, var(--ambient-2, transparent), transparent 62%) !important;
+  background-blend-mode: normal;
+  opacity: 1;
 }
 
 /* ===== 液态玻璃主题层 ===== */
-/* 玻璃卡片反射质感：顶部高光条 + 斜向折射光带（仅大卡片，小按钮不加防杂乱） */
+
+/* ---------------------------------------------------------------------------
+   环境光氛围层（替代当年被拔除的 900px blur 光斑）
+   铁律：只用 radial-gradient 叠多色柔和衰减，严禁 filter:blur ——
+   老 WebView(Chrome 66) 上 blur 会算错、色块从屏幕边缘溢出成「半截未知窗口」，
+   正是当年整层被删除的原因。radial-gradient 不涉及 filter，永不出界。
+   position:fixed + 负偏移 + 尺寸仅 1px 的容器，配 inset:0 的子层铺满视口，
+   绕开 fixed 在滚动容器内被裁切的老内核缺陷。
+--------------------------------------------------------------------------- */
 .bg-car-card {
   position: relative;
+  background-clip: padding-box;
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, .46),
+    0 3px 8px rgba(0, 0, 0, .28),
+    inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, .18)),
+    inset 0 -1px 0 var(--glass-underline, rgba(255, 255, 255, .04));
+  transition: box-shadow .18s ease, border-color .18s ease;
 }
+
+/* 玻璃卡片反射质感：顶部高光水线（原 1px blur 已改为纯渐变，杜绝溢出） */
 .bg-car-card::before {
   content: '';
   position: absolute;
@@ -457,9 +495,26 @@ body {
   height: 5px;
   border-radius: 999px;
   background: linear-gradient(90deg, transparent, var(--glass-toplight), transparent);
-  filter: blur(1px);
-  opacity: .35;
+  opacity: .38;
   pointer-events: none;
+}
+
+/* 内层插槽：冲压下沉质感，让「槽位」和「卡片」区分开 */
+.bg-car-item {
+  background-clip: padding-box;
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, .34),
+    inset 0 -1px 0 var(--glass-underline, rgba(255, 255, 255, .06));
+}
+
+/* 弹窗外壳：高透玻璃 + 强投影，从深色遮罩上明确浮起 */
+.bg-car-modal,
+[class*="max-w-["][class*="rounded"] {
+  background-clip: padding-box;
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, .70),
+    0 6px 20px rgba(0, 0, 0, .42),
+    inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, .18));
 }
 
 /* 核心铁律：全站激活态卡片与总开关流光呼吸光环（动态继承主题高亮色 var(--accent-gold)） */
