@@ -32,80 +32,28 @@
       </div>
     </div>
 
-    <!-- Tab 1: 换挡语音 (前进D / 倒车R / 驻车P / 空挡N 4 大实体开关卡片平铺首屏，去除同名重复胶囊) -->
+    <!-- Tab 1: 换挡语音 (v1.8.32.16 合并：原来的 4 张卡合成 1 张双联卡，四个挡位格子并排) -->
     <div v-if="activeTab === 'gear'" class="flex flex-col space-y-4">
-      <div class="grid grid-cols-2 gap-4 items-stretch">
-        <VoiceItemCard
-          title="前进挡 D"
-          desc="踩刹车挂入前进 D 挡触发启程语音播报"
-          :active="!!store.vehicleAuto.voice_enable_gear_d"
-          @toggle="toggleSetting('voice_enable_gear_d')"
-          @test="testVoice('gear_d')"
-          @custom="openCustomVoice('gear_d', '前进挡 D', 'gear_d.mp3')"
-        />
-        <VoiceItemCard
-          title="倒车挡 R"
-          desc="挂入倒车 R 挡触发倒车警示与后方安全提醒"
-          :active="!!store.vehicleAuto.voice_enable_gear_r"
-          @toggle="toggleSetting('voice_enable_gear_r')"
-          @test="testVoice('gear_r')"
-          @custom="openCustomVoice('gear_r', '倒车挡 R', 'gear_r.mp3')"
-        />
-        <VoiceItemCard
-          title="驻车挡 P"
-          desc="挂回驻车 P 挡播报，并结束本次行程"
-          :active="!!store.vehicleAuto.voice_enable_gear_p"
-          @toggle="toggleSetting('voice_enable_gear_p')"
-          @test="testVoice('gear_p')"
-          @custom="openCustomVoice('gear_p', '驻车挡 P', 'gear_p.mp3')"
-        />
-        <VoiceItemCard
-          title="空挡 N"
-          desc="挂入空挡 N 挡防溜车提醒，默认关闭防红绿灯打扰"
-          :active="!!store.vehicleAuto.voice_enable_gear_n"
-          @toggle="toggleSetting('voice_enable_gear_n')"
-          @test="testVoice('gear_n')"
-          @custom="openCustomVoice('gear_n', '空挡 N', 'gear_n.mp3')"
-        />
-      </div>
+      <VoicePairCard
+        title="换挡播报"
+        tag="D / R / P / N"
+        :items="gearItems"
+        @toggle="onGearToggle"
+        @test="testVoice"
+        @custom="onGearCustom"
+      />
     </div>
 
-    <!-- Tab 2: 驾驶模式 (舒适 / 经济 / 运动 / 智能 4 大纯中文卡片，去除英文与同名重复胶囊) -->
+    <!-- Tab 2: 驾驶模式 (v1.8.32.16 合并：4 张卡合成 1 张双联卡) -->
     <div v-if="activeTab === 'mode'" class="flex flex-col space-y-4">
-      <div class="grid grid-cols-2 gap-4 items-stretch">
-        <VoiceItemCard
-          title="舒适模式"
-          desc="中控旋钮切入舒适模式，换挡平顺温润知性播报"
-          :active="!!store.vehicleAuto.voice_enable_mode_comfort"
-          @toggle="toggleSetting('voice_enable_mode_comfort')"
-          @test="testVoice('mode_comfort')"
-          @custom="openCustomVoice('mode_comfort', '舒适模式', 'mode_comfort.mp3')"
-        />
-        <VoiceItemCard
-          title="经济模式"
-          desc="中控旋钮切入经济模式，极致节油长途巡航播报"
-          :active="!!store.vehicleAuto.voice_enable_mode_eco"
-          @toggle="toggleSetting('voice_enable_mode_eco')"
-          @test="testVoice('mode_eco')"
-          @custom="openCustomVoice('mode_eco', '经济模式', 'mode_eco.mp3')"
-        />
-        <VoiceItemCard
-          title="运动模式"
-          desc="中控旋钮切入运动模式，激活动感声浪与热血播报"
-          :active="!!store.vehicleAuto.voice_enable_mode_sport"
-          @toggle="toggleSetting('voice_enable_mode_sport')"
-          @test="testVoice('mode_sport')"
-          @custom="openCustomVoice('mode_sport', '运动模式', 'mode_sport.mp3')"
-        />
-        <VoiceItemCard
-          title="智能模式"
-          desc="中控旋钮切入智能模式，智能识别路况自适应播报"
-          :active="!!store.vehicleAuto.voice_enable_mode_smart"
-          @toggle="toggleSetting('voice_enable_mode_smart')"
-          @test="testVoice('mode_smart')"
-          @custom="openCustomVoice('mode_smart', '智能模式', 'mode_smart.mp3')"
-        />
-      </div>
+      <VoicePairCard
+        title="驾驶模式播报"
+        tag="舒适 / 经济 / 运动 / 智能"
+        :items="modeItems"
+        @toggle="onModeToggle"
+        @test="testVoice"
+        @custom="onModeCustom"
+      />
     </div>
 
     <!-- Tab 3: 车门语音 (极简合并 / 独立分门 互斥模式中枢) -->
@@ -139,7 +87,7 @@
           </div>
         </div>
 
-        <!-- 模式 2: 独立分门播报 (详细迎宾) -->
+        <!-- 模式 2: 独立分门播报 -->
         <div
           @click="setDoorMode(false)"
           :class="[
@@ -162,155 +110,60 @@
             </div>
           </div>
           <div class="text-[14px] text-car-sub font-bold leading-relaxed">
-            主驾、副驾、左后、右后四门独立识别登车迎宾与关门确认，尊贵仪式感更强
+            主驾、副驾、左后、右后四门独立识别开门与关门，一扇门一张卡，方位一眼对上
           </div>
         </div>
       </div>
 
-      <!-- 下方内容区：根据选中的模式，动态呈现具体的开关卡片 -->
-      <!-- 极简合并播报卡片 (2 张卡片) -->
-      <div v-if="store.vehicleAuto.voice_door_mode_universal === true" class="grid grid-cols-2 gap-4 items-stretch">
-        <VoiceItemCard
-          title="通用开门提醒"
-          desc="任意车门开启触发下车防落物品与行车防误开报警"
-          :active="store.vehicleAuto.voice_enable_door_universal_open !== false"
-          @toggle="toggleSetting('voice_enable_door_universal_open')"
-          @test="testVoice('door_open')"
-          @custom="openCustomVoice('door_open', '通用开门提醒', 'door_open.mp3')"
-        />
-        <VoiceItemCard
-          title="通用关门好提示"
-          desc="全车车门关好就位确认，告别反复回头观望"
-          :active="store.vehicleAuto.voice_enable_door_universal_close !== false"
-          @toggle="toggleSetting('voice_enable_door_universal_close')"
-          @test="testVoice('door_close')"
-          @custom="openCustomVoice('door_close', '通用关门好提示', 'door_close.mp3')"
+      <!-- 极简合并播报：1 张双联卡 -->
+      <div v-if="store.vehicleAuto.voice_door_mode_universal === true">
+        <VoicePairCard
+          title="全车车门"
+          tag="任意车门"
+          :items="doorUniversalItems"
+          @toggle="onDoorUniversalToggle"
+          @test="testVoice"
+          @custom="onDoorUniversalCustom"
         />
       </div>
 
-      <!-- 独立分门播报卡片 (8 张卡片：四门开/关对称成对) -->
+      <!-- 独立分门播报：4 张双联卡，按车内方位摆（左上主驾·右上副驾·左下左后·右下右后） -->
       <div v-else class="grid grid-cols-2 gap-4 items-stretch">
-        <VoiceItemCard
-          title="主驾驶门迎宾"
-          tag="FL 开门"
-          desc="主驾驶门专属登车迎宾与启程提示"
-          :active="store.vehicleAuto.voice_enable_door_fl !== false"
-          @toggle="toggleSetting('voice_enable_door_fl')"
-          @test="testVoice('door_fl')"
-          @custom="openCustomVoice('door_fl', '主驾开门播报', 'door_fl.mp3')"
-        />
-        <VoiceItemCard
-          title="主驾驶门关门"
-          tag="FL 关门"
-          desc="主驾驶门就位确认与启程关门确认"
-          :active="store.vehicleAuto.voice_enable_door_fl_close !== false"
-          @toggle="toggleSetting('voice_enable_door_fl_close')"
-          @test="testVoice('door_fl_close')"
-          @custom="openCustomVoice('door_fl_close', '主驾关门播报', 'door_fl_close.mp3')"
-        />
-        <VoiceItemCard
-          title="副驾驶门迎宾"
-          tag="FR 开门"
-          desc="副驾驶乘客登车温馨提示与欢迎"
-          :active="store.vehicleAuto.voice_enable_door_fr !== false"
-          @toggle="toggleSetting('voice_enable_door_fr')"
-          @test="testVoice('door_fr')"
-          @custom="openCustomVoice('door_fr', '副驾开门播报', 'door_fr.mp3')"
-        />
-        <VoiceItemCard
-          title="副驾驶门关门"
-          tag="FR 关门"
-          desc="副驾驶关门到位确认，告别反复观望"
-          :active="store.vehicleAuto.voice_enable_door_fr_close !== false"
-          @toggle="toggleSetting('voice_enable_door_fr_close')"
-          @test="testVoice('door_fr_close')"
-          @custom="openCustomVoice('door_fr_close', '副驾关门播报', 'door_fr_close.mp3')"
-        />
-        <VoiceItemCard
-          title="左后排车门开门"
-          tag="RL 开门"
-          desc="左后排尊贵乘客登车提示与下车防碰擦"
-          :active="store.vehicleAuto.voice_enable_door_rl !== false"
-          @toggle="toggleSetting('voice_enable_door_rl')"
-          @test="testVoice('door_rl')"
-          @custom="openCustomVoice('door_rl', '左后开门播报', 'door_rl.mp3')"
-        />
-        <VoiceItemCard
-          title="左后排车门关门"
-          tag="RL 关门"
-          desc="左后门关紧锁止确认，防止虚掩上路"
-          :active="store.vehicleAuto.voice_enable_door_rl_close !== false"
-          @toggle="toggleSetting('voice_enable_door_rl_close')"
-          @test="testVoice('door_rl_close')"
-          @custom="openCustomVoice('door_rl_close', '左后关门播报', 'door_rl_close.mp3')"
-        />
-        <VoiceItemCard
-          title="右后排车门开门"
-          tag="RR 开门"
-          desc="右后排乘客登车提示与防开门碰擦"
-          :active="store.vehicleAuto.voice_enable_door_rr !== false"
-          @toggle="toggleSetting('voice_enable_door_rr')"
-          @test="testVoice('door_rr')"
-          @custom="openCustomVoice('door_rr', '右后开门播报', 'door_rr.mp3')"
-        />
-        <VoiceItemCard
-          title="右后排车门关门"
-          tag="RR 关门"
-          desc="右后门关紧锁止确认，保障行车安全"
-          :active="store.vehicleAuto.voice_enable_door_rr_close !== false"
-          @toggle="toggleSetting('voice_enable_door_rr_close')"
-          @test="testVoice('door_rr_close')"
-          @custom="openCustomVoice('door_rr_close', '右后关门播报', 'door_rr_close.mp3')"
+        <VoicePairCard
+          v-for="d in doorPairDefs"
+          :key="d.pos"
+          :title="d.title"
+          :tag="d.tag"
+          :items="doorItemsOf(d.pos)"
+          @toggle="(key) => onDoorToggle(d.pos, key)"
+          @test="testVoice"
+          @custom="(key) => onDoorCustom(d.pos, key)"
         />
       </div>
     </div>
 
-    <!-- Tab 5: 电动尾门 (开启升起 + 闭锁关好 2 大实体开关卡片平铺首屏) -->
+    <!-- Tab 5: 电动尾门 (v1.8.32.16 合并：开/关合成 1 张双联卡) -->
     <div v-if="activeTab === 'trunk'" class="flex flex-col space-y-4">
-      <div class="grid grid-cols-2 gap-4 items-stretch">
-        <VoiceItemCard
-          title="尾门升起提醒"
-          tag="开门提示"
-          desc="尾门按键触发升起短促提醒，防止碰擦低矮车库顶梁"
-          :active="!!store.vehicleAuto.voice_enable_trunk_open"
-          @toggle="toggleSetting('voice_enable_trunk_open')"
-          @test="testVoice('trunk_open')"
-          @custom="openCustomVoice('trunk_open', '尾门升起提醒', 'trunk_open.mp3')"
-        />
-        <VoiceItemCard
-          title="尾门完全锁止"
-          tag="关门提示"
-          desc="电吸闭合锁止时播报确认，无需回头确认关门"
-          :active="!!store.vehicleAuto.voice_enable_trunk_close"
-          @toggle="toggleSetting('voice_enable_trunk_close')"
-          @test="testVoice('trunk_close')"
-          @custom="openCustomVoice('trunk_close', '尾门完全锁止', 'trunk_close.mp3')"
-        />
-      </div>
+      <VoicePairCard
+        title="电动尾门"
+        tag="后备箱"
+        :items="trunkItems"
+        @toggle="onTrunkToggle"
+        @test="testVoice"
+        @custom="onTrunkCustom"
+      />
     </div>
 
-    <!-- Tab: 前引擎盖 (v1.8.32.13 新增) -->
+    <!-- Tab: 前引擎盖 (v1.8.32.16 合并：开/关合成 1 张双联卡) -->
     <div v-if="activeTab === 'hood'" class="flex flex-col space-y-4">
-      <div class="grid grid-cols-2 gap-4 items-stretch">
-        <VoiceItemCard
-          title="引擎盖打开提醒"
-          tag="开启提示"
-          desc="引擎盖开启时播报，防止忘记关盖就上路"
-          :active="!!store.vehicleAuto.voice_enable_hood_open"
-          @toggle="toggleSetting('voice_enable_hood_open')"
-          @test="testVoice('hood_open')"
-          @custom="openCustomVoice('hood_open', '引擎盖打开提醒', 'hood_open.mp3')"
-        />
-        <VoiceItemCard
-          title="引擎盖关闭确认"
-          tag="关闭提示"
-          desc="引擎盖闭合锁止后播报确认，不用再低头看"
-          :active="!!store.vehicleAuto.voice_enable_hood_close"
-          @toggle="toggleSetting('voice_enable_hood_close')"
-          @test="testVoice('hood_close')"
-          @custom="openCustomVoice('hood_close', '引擎盖关闭确认', 'hood_close.mp3')"
-        />
-      </div>
+      <VoicePairCard
+        title="前引擎盖"
+        tag="掀盖 / 扣盖"
+        :items="hoodItems"
+        @toggle="onHoodToggle"
+        @test="testVoice"
+        @custom="onHoodCustom"
+      />
 
       <!-- 报文学习入口：给车主和分析用的实时数值观察窗 -->
       <FeatureCard
@@ -499,6 +352,7 @@ import FeatureCard from '../components/FeatureCard.vue';
 import SubTabs from '../components/SubTabs.vue';
 import StatusDot from '../components/StatusDot.vue';
 import VoiceItemCard from '../components/VoiceItemCard.vue';
+import VoicePairCard from '../components/VoicePairCard.vue';
 import GearConfigModal from '../components/GearConfigModal.vue';
 import ModeConfigModal from '../components/ModeConfigModal.vue';
 import DoorConfigModal from '../components/DoorConfigModal.vue';
@@ -620,6 +474,112 @@ function toggleVoiceMasterSwitch() {
   store.vehicleAuto.voice_master_switch = next;
   bridge.call('setVehicleAutomationSetting', 'voice_master_switch', next);
   showToast(next ? '全车语音播报总开关: 已开启 (正常播报)' : '全车语音播报总开关: 已关闭 (全车静音)');
+}
+
+
+// ============================================================================
+// v1.8.32.16 卡片合并：所有双联卡的 items 数据源与事件分发
+// 台词预览(live)必须与 Java 端 VehicleVoicePlayer 的实际播报逐字一致
+// ============================================================================
+
+// ---------- 换挡播报（4 格并排） ----------
+const gearItems = computed(() => [
+  { key: 'voice_enable_gear_p', label: '驻车挡 P', line: '已驻车', active: !!store.vehicleAuto.voice_enable_gear_p },
+  { key: 'voice_enable_gear_d', label: '前进挡 D', line: '前进挡', active: !!store.vehicleAuto.voice_enable_gear_d },
+  { key: 'voice_enable_gear_n', label: '空挡 N', line: '空挡', active: !!store.vehicleAuto.voice_enable_gear_n },
+  { key: 'voice_enable_gear_r', label: '倒车挡 R', line: '倒车挡', active: !!store.vehicleAuto.voice_enable_gear_r }
+]);
+function onGearToggle(key) { toggleSetting(key); }
+function onGearCustom(key) {
+  const map = {
+    voice_enable_gear_p: ['gear_p', '驻车挡 P', 'gear_p.mp3'],
+    voice_enable_gear_d: ['gear_d', '前进挡 D', 'gear_d.mp3'],
+    voice_enable_gear_n: ['gear_n', '空挡 N', 'gear_n.mp3'],
+    voice_enable_gear_r: ['gear_r', '倒车挡 R', 'gear_r.mp3']
+  };
+  const m = map[key];
+  if (m) openCustomVoice(m[0], m[1], m[2]);
+}
+
+// ---------- 驾驶模式（4 格并排） ----------
+const modeItems = computed(() => [
+  { key: 'voice_enable_mode_comfort', label: '舒适模式', line: '舒适模式', active: !!store.vehicleAuto.voice_enable_mode_comfort },
+  { key: 'voice_enable_mode_eco', label: '经济模式', line: '经济模式', active: !!store.vehicleAuto.voice_enable_mode_eco },
+  { key: 'voice_enable_mode_sport', label: '运动模式', line: '运动模式', active: !!store.vehicleAuto.voice_enable_mode_sport },
+  { key: 'voice_enable_mode_smart', label: '智能模式', line: '智能模式', active: !!store.vehicleAuto.voice_enable_mode_smart }
+]);
+function onModeToggle(key) { toggleSetting(key); }
+function onModeCustom(key) {
+  const map = {
+    voice_enable_mode_comfort: ['mode_comfort', '舒适模式', 'mode_comfort.mp3'],
+    voice_enable_mode_eco: ['mode_eco', '经济模式', 'mode_eco.mp3'],
+    voice_enable_mode_sport: ['mode_sport', '运动模式', 'mode_sport.mp3'],
+    voice_enable_mode_smart: ['mode_smart', '智能模式', 'mode_smart.mp3']
+  };
+  const m = map[key];
+  if (m) openCustomVoice(m[0], m[1], m[2]);
+}
+
+// ---------- 车门：极简合并（1 张双联卡） ----------
+const doorUniversalItems = computed(() => [
+  { key: 'voice_enable_door_universal_open', label: '开门播报', line: '车门已打开', active: store.vehicleAuto.voice_enable_door_universal_open !== false },
+  { key: 'voice_enable_door_universal_close', label: '关门播报', line: '车门已关闭', active: store.vehicleAuto.voice_enable_door_universal_close !== false }
+]);
+function onDoorUniversalToggle(key) { toggleSetting(key); }
+function onDoorUniversalCustom(key) {
+  const isOpen = key === 'voice_enable_door_universal_open';
+  openCustomVoice(isOpen ? 'door_open' : 'door_close', isOpen ? '全车开门播报' : '全车关门播报', isOpen ? 'door_open.mp3' : 'door_close.mp3');
+}
+
+// ---------- 车门：独立分门（4 张双联卡，按车内方位摆） ----------
+const doorPairDefs = [
+  { pos: 'fl', title: '主驾驶门', tag: '左前' },
+  { pos: 'fr', title: '副驾驶门', tag: '右前' },
+  { pos: 'rl', title: '左后侧门', tag: '左后' },
+  { pos: 'rr', title: '右后侧门', tag: '右后' }
+];
+const DOOR_META = {
+  fl: { name: '主驾', openKey: 'voice_enable_door_fl', closeKey: 'voice_enable_door_fl_close', openLine: '主驾车门已打开', closeLine: '主驾车门已关闭' },
+  fr: { name: '副驾', openKey: 'voice_enable_door_fr', closeKey: 'voice_enable_door_fr_close', openLine: '副驾车门已打开', closeLine: '副驾车门已关闭' },
+  rl: { name: '左后', openKey: 'voice_enable_door_rl', closeKey: 'voice_enable_door_rl_close', openLine: '左后侧门已打开', closeLine: '左后侧门已关闭' },
+  rr: { name: '右后', openKey: 'voice_enable_door_rr', closeKey: 'voice_enable_door_rr_close', openLine: '右后侧门已打开', closeLine: '右后侧门已关闭' }
+};
+function doorItemsOf(pos) {
+  const m = DOOR_META[pos];
+  return [
+    { key: m.openKey, label: '开门', line: m.openLine, active: store.vehicleAuto[m.openKey] !== false },
+    { key: m.closeKey, label: '关门', line: m.closeLine, active: store.vehicleAuto[m.closeKey] !== false }
+  ];
+}
+function onDoorToggle(pos, key) { toggleSetting(key); }
+function onDoorCustom(pos, key) {
+  const m = DOOR_META[pos];
+  const isOpen = key === m.openKey;
+  const slug = isOpen ? `door_${pos}` : `door_${pos}_close`;
+  const label = `${m.name}车门${isOpen ? '打开' : '关闭'}`;
+  openCustomVoice(slug, label, `${slug}.mp3`);
+}
+
+// ---------- 电动尾门（1 张双联卡） ----------
+const trunkItems = computed(() => [
+  { key: 'voice_enable_trunk_open', label: '尾门打开', line: '后备箱已打开', active: !!store.vehicleAuto.voice_enable_trunk_open },
+  { key: 'voice_enable_trunk_close', label: '尾门关闭', line: '后备箱已关闭', active: !!store.vehicleAuto.voice_enable_trunk_close }
+]);
+function onTrunkToggle(key) { toggleSetting(key); }
+function onTrunkCustom(key) {
+  const isOpen = key === 'voice_enable_trunk_open';
+  openCustomVoice(isOpen ? 'trunk_open' : 'trunk_close', isOpen ? '尾门打开' : '尾门关闭', isOpen ? 'trunk_open.mp3' : 'trunk_close.mp3');
+}
+
+// ---------- 前引擎盖（1 张双联卡） ----------
+const hoodItems = computed(() => [
+  { key: 'voice_enable_hood_open', label: '引擎盖打开', line: '引擎盖已打开', active: !!store.vehicleAuto.voice_enable_hood_open },
+  { key: 'voice_enable_hood_close', label: '引擎盖关闭', line: '引擎盖已关闭', active: !!store.vehicleAuto.voice_enable_hood_close }
+]);
+function onHoodToggle(key) { toggleSetting(key); }
+function onHoodCustom(key) {
+  const isOpen = key === 'voice_enable_hood_open';
+  openCustomVoice(isOpen ? 'hood_open' : 'hood_close', isOpen ? '引擎盖打开' : '引擎盖关闭', isOpen ? 'hood_open.mp3' : 'hood_close.mp3');
 }
 
 const voiceThemes = ref([]);

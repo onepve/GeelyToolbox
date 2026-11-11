@@ -98,6 +98,10 @@ public final class VehicleConfigHelper {
             obj.put("voice_enable_door_rear", prefs.getBoolean("voice_enable_door_rear", true));
             obj.put("voice_enable_trunk_open", prefs.getBoolean("voice_enable_trunk_open", true));
             obj.put("voice_enable_trunk_close", prefs.getBoolean("voice_enable_trunk_close", true));
+            // v1.8.32.16 修复：引擎盖两个键此前漏进本白名单，写进 prefs 但读不回来，
+            // 表现就是「点开了→重开软件又变已关闭」。
+            obj.put("voice_enable_hood_open", prefs.getBoolean("voice_enable_hood_open", true));
+            obj.put("voice_enable_hood_close", prefs.getBoolean("voice_enable_hood_close", true));
 
             // 4 大挡位播报 (D/R/P 默认开启，N 挡空挡默认关闭防频报)
             obj.put("voice_enable_gear_d", prefs.getBoolean("voice_enable_gear_d", true));
@@ -179,6 +183,8 @@ public final class VehicleConfigHelper {
             obj.put("voice_door_rear", prefs.getBoolean("voice_enable_door_rear", true));
             obj.put("voice_trunk_open", prefs.getBoolean("voice_enable_trunk_open", true));
             obj.put("voice_trunk_close", prefs.getBoolean("voice_enable_trunk_close", true));
+            obj.put("voice_hood_open", prefs.getBoolean("voice_enable_hood_open", true));
+            obj.put("voice_hood_close", prefs.getBoolean("voice_enable_hood_close", true));
             obj.put("voice_gear_d", prefs.getBoolean("voice_enable_gear_d", true));
             obj.put("voice_gear_r", prefs.getBoolean("voice_enable_gear_r", true));
 
@@ -193,6 +199,8 @@ public final class VehicleConfigHelper {
             obj.put("custom_door_rear", !prefs.getString("custom_voice_door_rl.mp3", "").isEmpty());
             obj.put("custom_trunk_open", !prefs.getString("custom_voice_trunk_open.mp3", "").isEmpty());
             obj.put("custom_trunk_close", !prefs.getString("custom_voice_trunk_close.mp3", "").isEmpty());
+            obj.put("custom_hood_open", !prefs.getString("custom_voice_hood_open.mp3", "").isEmpty());
+            obj.put("custom_hood_close", !prefs.getString("custom_voice_hood_close.mp3", "").isEmpty());
             obj.put("custom_gear_d", !prefs.getString("custom_voice_gear_d.mp3", "").isEmpty());
             obj.put("custom_gear_r", !prefs.getString("custom_voice_gear_r.mp3", "").isEmpty());
 

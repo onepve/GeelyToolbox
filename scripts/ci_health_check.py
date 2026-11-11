@@ -1513,6 +1513,42 @@ if _g30:
 else:
     print("[PASS] 全站 Vue 自定义组件事件修饰符 100% 合规，杜绝 .stop 导致 TypeError 吞掉帮助弹窗！")
 
+# ----------------------------------------------------------------------
+# Gate 31: 前端 vehicleAuto 键 ↔ 后端 VehicleConfigHelper 导出键 对账
+# 教训：引擎盖两个开关写进了 prefs 但漏登记白名单，表现为「点开了、重启又变已关闭」。
+# 新增任何 voice_enable_* 开关，必须同时在 VehicleConfigHelper 里导出，否则前端永远读不到。
+# ----------------------------------------------------------------------
+log_step("Gate 31: vehicleAuto config key front-back reconciliation")
+try:
+    import re as _re31
+    import glob as _glob31
+
+    _vch = os.path.join(
+        ROOT_DIR, "app/src/main/java/app/onepve/geelyconsole/utils/VehicleConfigHelper.java"
+    )
+    _vch_src = open(_vch, encoding="utf-8").read()
+    _exported = set(_re31.findall(r'obj\.put\("([a-z_0-9]+)"', _vch_src))
+
+    _referenced = set()
+    _scan_files = _glob31.glob(os.path.join(ROOT_DIR, "web/src/**/*.vue"), recursive=True)
+    _scan_files += _glob31.glob(os.path.join(ROOT_DIR, "web/src/**/*.js"), recursive=True)
+    for _fp in _scan_files:
+        _referenced |= set(
+            _re31.findall(r'vehicleAuto\.([a-z_0-9]+)', open(_fp, encoding="utf-8").read())
+        )
+
+    _missing = sorted(_k for _k in _referenced if _k not in _exported)
+    if _missing:
+        print("  [FAIL] frontend uses %d vehicleAuto keys not exported by backend (will reset after restart):" % len(_missing))
+        for _k in _missing:
+            print('         - %s  -> add obj.put("%s", ...) in VehicleConfigHelper' % (_k, _k))
+        passed = False
+    else:
+        print("[PASS] All %d vehicleAuto keys referenced by frontend are exported by backend, toggles survive restart!" % len(_referenced))
+except Exception as _e31:
+    print("  [FAIL] Gate 31 error: %s" % _e31)
+    passed = False
+
 # Final Summary Verdict
 # ----------------------------------------------------------------------
 log_step("CI 30-Gate Health Check Verdict")
