@@ -1552,6 +1552,127 @@ except Exception as _e31:
     print("  [FAIL] Gate 31 error: %s" % _e31)
     passed = False
 
+# ----------------------------------------------------------------------
+log_step("Gate 32: group master switch must never overwrite child settings")
+try:
+    import re as _re32
+
+    _body_view = os.path.join(WEB_SRC_DIR, "views/BodyView.vue")
+    _bv = open(_body_view, encoding="utf-8").read()
+
+    _m = _re32.search(r"function setGroupAll\((.*?)\)\s*\{(.*?)\n\}", _bv, _re32.S)
+    if not _m:
+        print("  [FAIL] setGroupAll not found in BodyView.vue")
+        passed = False
+    else:
+        _impl = _m.group(2)
+        _param = _m.group(1)
+
+        if "keys" in _param:
+            print("  [FAIL] setGroupAll takes a keys array -> it will overwrite every child setting")
+            passed = False
+        else:
+            print("  [PASS] setGroupAll takes a single gate key, not a child key array")
+
+        # 允许写闸门键本身（变量名必须含 gate），但绝不允许写子项
+        _dyn = _re32.findall(r"vehicleAuto\s*\[\s*([^\]]+)\]", _impl)
+        _bad = [d.strip() for d in _dyn if "gate" not in d.lower()]
+        if _bad:
+            print("  [FAIL] setGroupAll writes non-gate key(s) %s -> overwrites child settings" % ", ".join(_bad))
+            passed = False
+        else:
+            print("  [PASS] setGroupAll only writes gate keys, never a child setting")
+
+        if _re32.search(r"\.forEach\s*\(", _impl) or _re32.search(r"\bfor\s*\(", _impl):
+            print("  [FAIL] setGroupAll loops over children -> master switch clobbers per-item settings")
+            passed = False
+        else:
+            print("  [PASS] setGroupAll has no child loop")
+
+    if "voice_gate_" not in _bv:
+        print("  [FAIL] no voice_gate_* gate keys in BodyView -> master switch issues child writes")
+        passed = False
+    else:
+        _gates = sorted(set(_re32.findall(r"voice_gate_[a-z_]+", _bv)))
+        print("[PASS] group gates present (%s), master switch blocks instead of overwriting" % ", ".join(_gates))
+
+    _vch32 = open(os.path.join(
+        ROOT_DIR, "app/src/main/java/app/onepve/geelyconsole/utils/VehicleConfigHelper.java"
+    ), encoding="utf-8").read()
+    # 动态前缀（形如 voice_gate_door_ + pos）不是完整键，按前缀存在性校验
+    _all32 = sorted(set(_re32.findall(r"voice_gate_[a-z_]*", _bv)))
+    _missing32 = []
+    for g in _all32:
+        if g.endswith("_"):
+            if g not in _vch32:
+                _missing32.append(g + "*")
+        elif ('"%s"' % g) not in _vch32:
+            _missing32.append(g)
+    if _missing32:
+        print("  [FAIL] gate keys not exported by VehicleConfigHelper: %s" % ", ".join(_missing32))
+        passed = False
+    else:
+        print("  [PASS] every voice_gate_* key is exported by backend")
+except Exception as _e32:
+    print("  [FAIL] Gate 32 error: %s" % _e32)
+    passed = False
+
+# ----------------------------------------------------------------------
+log_step("Gate 33: unified canvas + day-mode shadow must follow theme")
+try:
+    import re as _re33
+
+    _app = open(APP_VUE_PATH, encoding="utf-8").read()
+
+    # 铁律 1：卡片阴影绝不允许硬编码黑色（白天会压出一片脏灰）
+    _card_block = _re33.search(r"\.bg-car-card\s*\{((?:(?!\n\})[\s\S])*?)\n\}", _app)
+    if not _card_block:
+        print("  [FAIL] .bg-car-card rule not found in App.vue")
+        passed = False
+    else:
+        # 先剔除 CSS 注释与 var() 的兜底值，只看真正生效的阴影来源
+        _cb = _re33.sub(r"/\*.*?\*/", "", _card_block.group(1), flags=_re33.S)
+        _cb_novar = _re33.sub(r"var\([^)]*\)", "VAR", _cb)
+        if _re33.search(r"box-shadow[^;]*rgba\(\s*0\s*,\s*0\s*,\s*0\s*,", _cb_novar):
+            print("  [FAIL] .bg-car-card hardcodes rgba(0,0,0,...) shadow -> day mode gets dirty grey")
+            passed = False
+        elif "--glass-shadow" not in _cb:
+            print("  [FAIL] .bg-car-card shadow does not use --glass-shadow -> cannot follow theme")
+            passed = False
+        else:
+            print("  [PASS] card shadow is driven by --glass-shadow, follows day/night")
+
+    # 铁律 2：每个主题都必须定义 --glass-shadow（否则白天退回硬编码）
+    _pal = open(os.path.join(WEB_SRC_DIR, "theme/palette.js"), encoding="utf-8").read()
+    _n_shadow = _pal.count("'--glass-shadow'")
+    _n_soft = _pal.count("'--glass-shadow-soft'")
+    if _n_shadow != 12 or _n_soft != 12:
+        print("  [FAIL] --glass-shadow=%d, --glass-shadow-soft=%d (expect 12 each: 6 palettes x day/night)"
+              % (_n_shadow, _n_soft))
+        passed = False
+    else:
+        print("  [PASS] all 12 palette variants define --glass-shadow and --glass-shadow-soft")
+
+    # 铁律 3：侧栏 / 顶栏 不得再自绘 --bg-panel 实底（否则页面被切成三块）
+    for _comp in ("components/Sidebar.vue", "components/TopBar.vue"):
+        _src = open(os.path.join(WEB_SRC_DIR, _comp), encoding="utf-8").read()
+        if "var(--bg-panel)" in _src:
+            print("  [FAIL] %s paints its own --bg-panel -> page splits into 3 regions" % _comp)
+            passed = False
+        else:
+            print("  [PASS] %s is transparent, shares the one page canvas" % _comp)
+
+    # 铁律 4：App.vue 中不得出现被注释插断的 CSS 选择器（会造成规则整体失效）
+    _broken = _re33.findall(r"html[^{};]*?/\*.*?\*/\s*\.[a-z-]+\s*\{", _app, _re33.S)
+    if _broken:
+        print("  [FAIL] comment injected inside a CSS selector list -> rule silently dies")
+        passed = False
+    else:
+        print("  [PASS] no comment-broken CSS selector lists")
+except Exception as _e33:
+    print("  [FAIL] Gate 33 error: %s" % _e33)
+    passed = False
+
 # Final Summary Verdict
 # ----------------------------------------------------------------------
 log_step("CI 30-Gate Health Check Verdict")

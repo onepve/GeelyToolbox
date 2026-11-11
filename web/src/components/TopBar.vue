@@ -1,5 +1,5 @@
 <template>
-  <header class="h-[64px] min-h-[64px] border-b border-car-border px-5 flex items-center justify-between z-20 select-none transition-colors" :style="{ background: 'var(--bg-panel)' }">
+  <header class="h-[64px] min-h-[64px] px-5 flex items-center justify-between z-20 select-none transition-colors">
     <!-- 品牌、版本与适配车型专属标签 (未适配或未知车型展示温和引导胶囊，一键直达日志诊断协助适配) -->
     <div class="flex items-center space-x-2">
       <span class="text-[20px] font-black text-car-text tracking-wide">缤越助手</span>

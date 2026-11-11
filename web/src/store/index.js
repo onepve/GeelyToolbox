@@ -168,7 +168,7 @@ export const store = reactive({
     voice_enable_gear_d: true,
     voice_enable_gear_r: true,
     voice_enable_gear_p: true,
-    voice_enable_gear_n: false,
+    voice_enable_gear_n: true,
     voice_enable_mode_smart: true,
     voice_enable_mode_comfort: true,
     voice_enable_mode_eco: true,

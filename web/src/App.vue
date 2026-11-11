@@ -480,9 +480,11 @@ html.light body {
 .bg-car-card {
   position: relative;
   background-clip: padding-box;
+  /* 阴影强度必须跟随主题：白天用 --glass-shadow（各主题浅色投影 .18），
+     夜间才是深黑影。此前硬编码 rgba(0,0,0,.46) 导致白天卡片压出一片脏灰。 */
   box-shadow:
-    0 14px 40px rgba(0, 0, 0, .46),
-    0 3px 8px rgba(0, 0, 0, .28),
+    0 14px 40px var(--glass-shadow, rgba(0, 0, 0, .46)),
+    0 3px 8px var(--glass-shadow-soft, rgba(0, 0, 0, .28)),
     inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, .18)),
     inset 0 -1px 0 var(--glass-underline, rgba(255, 255, 255, .04));
   transition: box-shadow .18s ease, border-color .18s ease;
@@ -566,9 +568,7 @@ html.light .bg-car-item.border-car-accent {
 }
 
 html.dark .border-car-accent,
-html:not(.light) /* 底边框只留一圈很淡的"轨道"，亮度交给 ::after 的那束光。
-   否则整圈常亮 = 您说的视觉污染。 */
-.border-car-accent {
+html:not(.light) .border-car-accent {
   border-color: var(--border-color) !important;
 }
 

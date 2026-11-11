@@ -171,7 +171,10 @@ public class GearStateMachine {
                     }
 
                     // 2. 播报判定 (干脆利落短句，强制瞬发顶掉任何旧语音，绝不排队延时)
-                    if (voiceMasterSwitch) {
+                    // 组闸门：车主关掉「换挡播报」整组时，本组一律不播，
+                    // 但每个挡位各自的设置值原封不动保留，重新打开即恢复。
+                    boolean gearGate = prefs.getBoolean("voice_gate_gear", true);
+                    if (voiceMasterSwitch && gearGate) {
                         if (voicePlayer != null) {
                             voicePlayer.stopCurrentVoice();
                         }

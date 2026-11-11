@@ -44,7 +44,7 @@
           :master-on="!!store.vehicleAuto.wheel_master_switch"
           @toggle="toggleWheelMasterSwitch"
         >
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-3 gap-3">
         <!-- ① 右方向盘主页/返回键 -->
         <WheelGestureCard
           class="!mb-0"
@@ -91,7 +91,8 @@
 
         <!-- ④ & ⑦ 切歌双键：上一曲 / 下一曲 -->
         <FeatureCard
-          class="!mb-0"
+          class="!mb-0 col-span-2"
+          dense
           title="右方向盘 ④ 下一曲 / ⑦ 上一曲"
           desc="右盘 ④/⑦ 号切歌键，接管后防偶发失效，切歌零延迟。"
           helpTitle="【功能指南】下一曲 / 上一曲切歌按键映射"
@@ -132,7 +133,8 @@
 
         <!-- 方控响应体检与排错 (通道测试与冲突诊断) -->
         <FeatureCard
-          class="!mb-0"
+          class="!mb-0 col-span-2"
+          dense
           title="方控响应与冲突体检"
           desc="按下方向盘任意键，实时检测信号通路与硬件延迟；排查按键无反应与通道冲突。"
           helpTitle="【功能指南】方控响应与冲突体检"
@@ -146,7 +148,7 @@
             开始方控响应与冲突体检
           </button>
         </FeatureCard>
-      </div>
+        </div>
         </WheelGroupCard>
     </div>
 

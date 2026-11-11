@@ -5,6 +5,7 @@
     :helpTitle="helpTitle"
     :helpText="helpText"
     :helpTip="helpTip"
+    dense
   >
     <!-- 仅保留单击映射：直接展示动作下拉选择器，不再展示多余的手势切换胶囊 -->
     <ActionSelect :key-name="keyName" gesture="single" />

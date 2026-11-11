@@ -1,7 +1,6 @@
 <template>
   <aside
-    class="w-[300px] shrink-0 border-r border-car-border flex flex-col p-4 space-y-2.5 select-none transition-colors overflow-y-auto"
-    :style="{ background: 'var(--bg-panel)' }"
+    class="w-[300px] shrink-0 flex flex-col p-4 space-y-2.5 select-none transition-colors overflow-y-auto"
   >
     <div
       v-for="item in navItems"

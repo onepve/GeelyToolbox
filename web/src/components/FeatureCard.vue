@@ -1,15 +1,16 @@
 <template>
   <div :class="[
-    'rounded-3xl border-2 p-5 shadow-2xl transition-all bg-car-card min-h-[170px] flex flex-col justify-between',
+    'rounded-3xl border-2 shadow-2xl transition-all bg-car-card flex flex-col justify-between',
+    dense ? 'p-3.5 min-h-0' : 'p-5 min-h-[170px]',
     active ? 'border-car-accent' : 'border-car-border'
   ]">
     <!-- 头部标题与说明：内嵌在卡片顶端 (仅在声明 title 或 header slot 时渲染) -->
-    <div v-if="title || $slots.header" class="flex flex-col pb-4 mb-4 border-b border-car-border/60">
+    <div v-if="title || $slots.header" :class="['flex flex-col border-b border-car-border/60', dense ? 'pb-2 mb-2.5' : 'pb-4 mb-4']">
       <div class="flex items-center justify-between mb-1">
         <slot name="header">
           <div class="flex items-center space-x-2.5">
             <StatusDot v-if="isSwitch" size="sm" :color="active ? 'ok' : 'off'" :glow-px="active ? 6 : 0" />
-            <div class="text-[21px] font-black text-car-text tracking-wide">
+            <div :class="['font-black text-car-text tracking-wide', dense ? 'text-[17px]' : 'text-[21px]']">
               {{ title }}
             </div>
             <!-- 问号说明按钮 (若提供 helpText) -->
@@ -46,7 +47,13 @@ const props = defineProps({
   helpTitle: String,
   helpTip: String,
   active: { type: Boolean, default: false },
-  isSwitch: { type: Boolean, default: false }
+  isSwitch: { type: Boolean, default: false },
+  /**
+   * 紧凑模式：用于一屏要塞多张卡的区域（如方向盘按键 7 张卡片）。
+   * 只压缩留白与标题字号，绝不缩小内部可点区域（下拉仍 80px 高），
+   * 保证车规点按手感不退化。
+   */
+  dense: { type: Boolean, default: false }
 });
 
 function showHelp() {

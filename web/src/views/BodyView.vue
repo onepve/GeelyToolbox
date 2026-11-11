@@ -502,14 +502,42 @@ function customVoiceByKey(voiceKey) {
 }
 
 /** 分组总开关：把一组开关整体置为 next（以「是否已全开」决定翻向） */
-function setGroupAll(keys, next) {
-  keys.forEach((k) => {
-    if (!!store.vehicleAuto[k] !== next) {
-      store.vehicleAuto[k] = next;
-      bridge.call('setVehicleAutomationSetting', k, next);
-    }
-  });
-  showToast(next ? '本组播报已全部开启' : '本组播报已全部关闭');
+/**
+ * 组总开关 —— 只做「拦截」，绝不改写组内每一项。
+ *
+ * 曾经的错误实现：把组内 N 个键逐个写成同一个值，导致车主辛苦调好的
+ * 「只播 D 挡、不播 N 挡」一键变成全开/全关，设置不可挽回。
+ *
+ * 正确语义：组开关 = 一道闸门。开着时各子项按自己的值播报；关掉时整组静音，
+ * 但每个子项记住的值原封不动，重新打开就恢复原样。
+ *
+ * 由于车机侧 method body 被门禁哈希锁死，无法新增后端键，这里用
+ * 「组闸门键 × 子项」的与运算在前端算出生效态，闸门键单独持久化。
+ */
+const GROUP_GATE_KEYS = {
+  gear: 'voice_gate_gear',
+  mode: 'voice_gate_mode',
+  doorUniversal: 'voice_gate_door_universal',
+  trunk: 'voice_gate_trunk',
+  hood: 'voice_gate_hood'
+};
+
+/** 读组闸门（默认开启，绝不因为缺字段就判成关闭） */
+function gateOn(gateKey) {
+  const v = store.vehicleAuto[gateKey];
+  return v === undefined || v === null ? true : !!v;
+}
+
+/** 子项生效态 = 组闸门 且 子项自己 */
+function effOn(gateKey, itemKey) {
+  return gateOn(gateKey) && !!store.vehicleAuto[itemKey];
+}
+
+/** 组总开关：只翻闸门，子项一个都不碰 */
+function setGroupAll(gateKey, next) {
+  store.vehicleAuto[gateKey] = next;
+  bridge.call('setVehicleAutomationSetting', gateKey, next);
+  showToast(next ? '本组播报已恢复，各按键保持原有设置' : '本组播报已整体静音，各按键设置已保留');
 }
 function isAllOn(keys) {
   return keys.every((k) => !!store.vehicleAuto[k]);
@@ -518,22 +546,22 @@ function isAllOn(keys) {
 // ---------- 换挡播报 ----------
 const GEAR_KEYS = ['voice_enable_gear_p', 'voice_enable_gear_d', 'voice_enable_gear_n', 'voice_enable_gear_r'];
 const gearItems = computed(() => [
-  { voiceKey: 'gear_p', settingKey: 'voice_enable_gear_p', label: '驻车挡 P', line: '已驻车', active: !!store.vehicleAuto.voice_enable_gear_p },
-  { voiceKey: 'gear_d', settingKey: 'voice_enable_gear_d', label: '前进挡 D', line: '前进挡', active: !!store.vehicleAuto.voice_enable_gear_d },
-  { voiceKey: 'gear_n', settingKey: 'voice_enable_gear_n', label: '空挡 N', line: '空挡', active: !!store.vehicleAuto.voice_enable_gear_n },
-  { voiceKey: 'gear_r', settingKey: 'voice_enable_gear_r', label: '倒车挡 R', line: '倒车挡', active: !!store.vehicleAuto.voice_enable_gear_r }
+  { voiceKey: 'gear_p', settingKey: 'voice_enable_gear_p', label: '驻车挡 P', line: '已驻车', active: effOn('voice_gate_gear', 'voice_enable_gear_p'), rawOn: !!store.vehicleAuto.voice_enable_gear_p },
+  { voiceKey: 'gear_d', settingKey: 'voice_enable_gear_d', label: '前进挡 D', line: '前进挡', active: effOn('voice_gate_gear', 'voice_enable_gear_d'), rawOn: !!store.vehicleAuto.voice_enable_gear_d },
+  { voiceKey: 'gear_n', settingKey: 'voice_enable_gear_n', label: '空挡 N', line: '空挡', active: effOn('voice_gate_gear', 'voice_enable_gear_n'), rawOn: !!store.vehicleAuto.voice_enable_gear_n },
+  { voiceKey: 'gear_r', settingKey: 'voice_enable_gear_r', label: '倒车挡 R', line: '倒车挡', active: effOn('voice_gate_gear', 'voice_enable_gear_r'), rawOn: !!store.vehicleAuto.voice_enable_gear_r }
 ]);
-function toggleGearAll() { setGroupAll(GEAR_KEYS, !isAllOn(GEAR_KEYS)); }
+function toggleGearAll() { setGroupAll('voice_gate_gear', !gateOn('voice_gate_gear')); }
 
 // ---------- 驾驶模式 ----------
 const MODE_KEYS = ['voice_enable_mode_comfort', 'voice_enable_mode_eco', 'voice_enable_mode_sport', 'voice_enable_mode_smart'];
 const modeItems = computed(() => [
-  { voiceKey: 'mode_smart', settingKey: 'voice_enable_mode_smart', label: '智能', line: '智能', active: !!store.vehicleAuto.voice_enable_mode_smart },
-  { voiceKey: 'mode_comfort', settingKey: 'voice_enable_mode_comfort', label: '舒适', line: '舒适', active: !!store.vehicleAuto.voice_enable_mode_comfort },
-  { voiceKey: 'mode_eco', settingKey: 'voice_enable_mode_eco', label: '经济', line: '经济', active: !!store.vehicleAuto.voice_enable_mode_eco },
-  { voiceKey: 'mode_sport', settingKey: 'voice_enable_mode_sport', label: '运动', line: '运动', active: !!store.vehicleAuto.voice_enable_mode_sport }
+  { voiceKey: 'mode_smart', settingKey: 'voice_enable_mode_smart', label: '智能', line: '智能', active: effOn('voice_gate_mode', 'voice_enable_mode_smart'), rawOn: !!store.vehicleAuto.voice_enable_mode_smart },
+  { voiceKey: 'mode_comfort', settingKey: 'voice_enable_mode_comfort', label: '舒适', line: '舒适', active: effOn('voice_gate_mode', 'voice_enable_mode_comfort'), rawOn: !!store.vehicleAuto.voice_enable_mode_comfort },
+  { voiceKey: 'mode_eco', settingKey: 'voice_enable_mode_eco', label: '经济', line: '经济', active: effOn('voice_gate_mode', 'voice_enable_mode_eco'), rawOn: !!store.vehicleAuto.voice_enable_mode_eco },
+  { voiceKey: 'mode_sport', settingKey: 'voice_enable_mode_sport', label: '运动', line: '运动', active: effOn('voice_gate_mode', 'voice_enable_mode_sport'), rawOn: !!store.vehicleAuto.voice_enable_mode_sport }
 ]);
-function toggleModeAll() { setGroupAll(MODE_KEYS, !isAllOn(MODE_KEYS)); }
+function toggleModeAll() { setGroupAll('voice_gate_mode', !gateOn('voice_gate_mode')); }
 
 // ---------- 车门：模式二选一 ----------
 const doorModes = computed(() => [
@@ -559,7 +587,7 @@ const doorUniversalItems = computed(() => [
   { voiceKey: 'door_open', settingKey: 'voice_enable_door_universal_open', label: '开门播报', line: '车门已打开', active: store.vehicleAuto.voice_enable_door_universal_open !== false },
   { voiceKey: 'door_close', settingKey: 'voice_enable_door_universal_close', label: '关门播报', line: '车门已关闭', active: store.vehicleAuto.voice_enable_door_universal_close !== false }
 ]);
-function toggleDoorUniversalAll() { setGroupAll(DOOR_UNIVERSAL_KEYS, !isAllOn(DOOR_UNIVERSAL_KEYS)); }
+function toggleDoorUniversalAll() { setGroupAll('voice_gate_door_universal', !gateOn('voice_gate_door_universal')); }
 
 // ---------- 车门：独立分门 ----------
 const doorPairDefs = [
@@ -587,25 +615,25 @@ function doorItemsOf(pos) {
   ];
 }
 function toggleDoorAll(pos) {
-  const keys = doorKeysOf(pos);
-  setGroupAll(keys, !isAllOn(keys));
+  const gate = 'voice_gate_door_' + pos;
+  setGroupAll(gate, !gateOn(gate));
 }
 
 // ---------- 电动尾门 ----------
 const TRUNK_KEYS = ['voice_enable_trunk_open', 'voice_enable_trunk_close'];
 const trunkItems = computed(() => [
-  { voiceKey: 'trunk_open', settingKey: 'voice_enable_trunk_open', label: '尾门打开', line: '后备箱已打开', active: !!store.vehicleAuto.voice_enable_trunk_open },
-  { voiceKey: 'trunk_close', settingKey: 'voice_enable_trunk_close', label: '尾门关闭', line: '后备箱已关闭', active: !!store.vehicleAuto.voice_enable_trunk_close }
+  { voiceKey: 'trunk_open', settingKey: 'voice_enable_trunk_open', label: '尾门打开', line: '后备箱已打开', active: effOn('voice_gate_trunk', 'voice_enable_trunk_open'), rawOn: !!store.vehicleAuto.voice_enable_trunk_open },
+  { voiceKey: 'trunk_close', settingKey: 'voice_enable_trunk_close', label: '尾门关闭', line: '后备箱已关闭', active: effOn('voice_gate_trunk', 'voice_enable_trunk_close'), rawOn: !!store.vehicleAuto.voice_enable_trunk_close }
 ]);
-function toggleTrunkAll() { setGroupAll(TRUNK_KEYS, !isAllOn(TRUNK_KEYS)); }
+function toggleTrunkAll() { setGroupAll('voice_gate_trunk', !gateOn('voice_gate_trunk')); }
 
 // ---------- 前引擎盖 ----------
 const HOOD_KEYS = ['voice_enable_hood_open', 'voice_enable_hood_close'];
 const hoodItems = computed(() => [
-  { voiceKey: 'hood_open', settingKey: 'voice_enable_hood_open', label: '引擎盖打开', line: '引擎盖已打开', active: !!store.vehicleAuto.voice_enable_hood_open },
-  { voiceKey: 'hood_close', settingKey: 'voice_enable_hood_close', label: '引擎盖关闭', line: '引擎盖已关闭', active: !!store.vehicleAuto.voice_enable_hood_close }
+  { voiceKey: 'hood_open', settingKey: 'voice_enable_hood_open', label: '引擎盖打开', line: '引擎盖已打开', active: effOn('voice_gate_hood', 'voice_enable_hood_open'), rawOn: !!store.vehicleAuto.voice_enable_hood_open },
+  { voiceKey: 'hood_close', settingKey: 'voice_enable_hood_close', label: '引擎盖关闭', line: '引擎盖已关闭', active: effOn('voice_gate_hood', 'voice_enable_hood_close'), rawOn: !!store.vehicleAuto.voice_enable_hood_close }
 ]);
-function toggleHoodAll() { setGroupAll(HOOD_KEYS, !isAllOn(HOOD_KEYS)); }
+function toggleHoodAll() { setGroupAll('voice_gate_hood', !gateOn('voice_gate_hood')); }
 
 const voiceThemes = ref([]);
 const activeThemeName = ref('');

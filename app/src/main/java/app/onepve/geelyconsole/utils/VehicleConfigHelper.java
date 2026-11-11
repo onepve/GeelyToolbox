@@ -107,7 +107,17 @@ public final class VehicleConfigHelper {
             obj.put("voice_enable_gear_d", prefs.getBoolean("voice_enable_gear_d", true));
             obj.put("voice_enable_gear_r", prefs.getBoolean("voice_enable_gear_r", true));
             obj.put("voice_enable_gear_p", prefs.getBoolean("voice_enable_gear_p", true));
-            obj.put("voice_enable_gear_n", prefs.getBoolean("voice_enable_gear_n", false));
+            obj.put("voice_enable_gear_n", prefs.getBoolean("voice_enable_gear_n", true));
+            // 组闸门：组总开关只做拦截，绝不回写子项（重启后必须保留车主设置）
+            obj.put("voice_gate_gear", prefs.getBoolean("voice_gate_gear", true));
+            obj.put("voice_gate_mode", prefs.getBoolean("voice_gate_mode", true));
+            obj.put("voice_gate_trunk", prefs.getBoolean("voice_gate_trunk", true));
+            obj.put("voice_gate_hood", prefs.getBoolean("voice_gate_hood", true));
+            obj.put("voice_gate_door_universal", prefs.getBoolean("voice_gate_door_universal", true));
+            obj.put("voice_gate_door_fl", prefs.getBoolean("voice_gate_door_fl", true));
+            obj.put("voice_gate_door_fr", prefs.getBoolean("voice_gate_door_fr", true));
+            obj.put("voice_gate_door_rl", prefs.getBoolean("voice_gate_door_rl", true));
+            obj.put("voice_gate_door_rr", prefs.getBoolean("voice_gate_door_rr", true));
 
             // 4 大功能模式播报 (智能/舒适/经济/运动 默认均开启)
             obj.put("voice_enable_mode_smart", prefs.getBoolean("voice_enable_mode_smart", true));

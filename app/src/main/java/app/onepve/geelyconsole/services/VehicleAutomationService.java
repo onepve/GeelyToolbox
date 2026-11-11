@@ -409,7 +409,7 @@ public class VehicleAutomationService extends Service {
             boolean gearD = prefs.getBoolean("voice_enable_gear_d", true);
             boolean gearR = prefs.getBoolean("voice_enable_gear_r", true);
             boolean gearP = prefs.getBoolean("voice_enable_gear_p", true);
-            boolean gearN = prefs.getBoolean("voice_enable_gear_n", false);
+            boolean gearN = prefs.getBoolean("voice_enable_gear_n", true);
             boolean modeSmart = prefs.getBoolean("voice_enable_mode_smart", true);
             boolean modeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
             boolean modeEco = prefs.getBoolean("voice_enable_mode_eco", true);
@@ -653,6 +653,14 @@ public class VehicleAutomationService extends Service {
         voiceMasterSwitch = prefs.getBoolean("voice_master_switch", true);
         wheelMasterSwitch = prefs.getBoolean("wheel_master_switch", true);
 
+        // 组闸门：组开关只做拦截，绝不回写子项 —— 车主关掉整组后，
+        // 每个子项各自的设置值必须原封不动保留，重新打开即恢复原样。
+        boolean gateGear = prefs.getBoolean("voice_gate_gear", true);
+        boolean gateMode = prefs.getBoolean("voice_gate_mode", true);
+        boolean gateTrunk = prefs.getBoolean("voice_gate_trunk", true);
+        boolean gateHood = prefs.getBoolean("voice_gate_hood", true);
+        boolean gateDoorUni = prefs.getBoolean("voice_gate_door_universal", true);
+
         enableDoorFl = PrefUtils.getBoolean(prefs, "voice_enable_door_fl", true);
         enableDoorFlClose = PrefUtils.getBoolean(prefs, "voice_enable_door_fl_close", true);
         enableDoorFr = PrefUtils.getBoolean(prefs, "voice_enable_door_fr", true);
@@ -661,18 +669,18 @@ public class VehicleAutomationService extends Service {
         enableDoorRlClose = PrefUtils.getBoolean(prefs, "voice_enable_door_rl_close", true);
         enableDoorRr = PrefUtils.getBoolean(prefs, "voice_enable_door_rr", true);
         enableDoorRrClose = PrefUtils.getBoolean(prefs, "voice_enable_door_rr_close", true);
-        enableDoorRear = PrefUtils.getBoolean(prefs, "voice_enable_door_rear", true);
-        enableTrunkOpen = PrefUtils.getBoolean(prefs, "voice_enable_trunk_open", true);
-        enableTrunkClose = PrefUtils.getBoolean(prefs, "voice_enable_trunk_close", true);
-        enableGearD = prefs.getBoolean("voice_enable_gear_d", true);
-        enableGearR = prefs.getBoolean("voice_enable_gear_r", true);
-        enableGearP = prefs.getBoolean("voice_enable_gear_p", true);
-        enableGearN = prefs.getBoolean("voice_enable_gear_n", false);
-        enableGearS = prefs.getBoolean("voice_enable_gear_s", true);
-        enableModeSmart = prefs.getBoolean("voice_enable_mode_smart", true);
-        enableModeComfort = prefs.getBoolean("voice_enable_mode_comfort", true);
-        enableModeEco = prefs.getBoolean("voice_enable_mode_eco", true);
-        enableModeSport = prefs.getBoolean("voice_enable_mode_sport", true);
+        enableDoorRear = gateDoorUni && PrefUtils.getBoolean(prefs, "voice_enable_door_rear", true);
+        enableTrunkOpen = gateTrunk && PrefUtils.getBoolean(prefs, "voice_enable_trunk_open", true);
+        enableTrunkClose = gateTrunk && PrefUtils.getBoolean(prefs, "voice_enable_trunk_close", true);
+        enableGearD = gateGear && prefs.getBoolean("voice_enable_gear_d", true);
+        enableGearR = gateGear && prefs.getBoolean("voice_enable_gear_r", true);
+        enableGearP = gateGear && prefs.getBoolean("voice_enable_gear_p", true);
+        enableGearN = gateGear && prefs.getBoolean("voice_enable_gear_n", true);
+        enableGearS = gateGear && prefs.getBoolean("voice_enable_gear_s", true);
+        enableModeSmart = gateMode && prefs.getBoolean("voice_enable_mode_smart", true);
+        enableModeComfort = gateMode && prefs.getBoolean("voice_enable_mode_comfort", true);
+        enableModeEco = gateMode && prefs.getBoolean("voice_enable_mode_eco", true);
+        enableModeSport = gateMode && prefs.getBoolean("voice_enable_mode_sport", true);
 
         enableTurnSignal360 = PrefUtils.getBoolean(prefs, "vehicle_turn_signal_360_enabled", false);
 
@@ -1889,7 +1897,7 @@ public class VehicleAutomationService extends Service {
 
                     // 引擎盖（v1.8.32.12 新增）：同一帧的 b7 字节 bit2，与车门/尾门互不干扰。
                     // 实车取证：b6 只有副驾位变化期间，b7 的 bit2 由 1→0→1，正好对应开/关引擎盖。
-                    app.onepve.geelyconsole.utils.HoodStateManager.updateFromB7(b7, voiceMasterSwitch);
+                    app.onepve.geelyconsole.utils.HoodStateManager.updateFromB7(b7, voiceMasterSwitch && getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE).getBoolean("voice_gate_hood", true));
 
                     // 报文学习（v1.8.32.13）：车主打开学习界面时，把这一帧喂给录制器。
                     // 只读旁路，绝不回写串口；界面关着时这里是一次空转判断，零开销。
