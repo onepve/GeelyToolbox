@@ -1679,9 +1679,16 @@ public class SystemUtils {
             try {
                 summary.put("log_span", measureLogSpan(logFile));
             } catch (Throwable ignored) {}
+            // 日志来源（v1.8.32.12）：memory_ring = 内存全量环形缓冲（正常），logcat_snapshot = logd 快照兜底
+            //   看这一行就能判断这次抓包到底抓全了没有
+            try {
+                summary.put("log_source", result.optString("log_source", "unknown"));
+                summary.put("log_ring_lines", result.optInt("log_ring_lines", 0));
+            } catch (Throwable ignored) {}
             // 关键信号采集体检：各功能变化次数、车门报文收帧数、丢行数（一眼看出是否漏采）
             try {
-                summary.put("signal_health", app.onepve.geelyconsole.utils.KeySignalRecorder.getHealthSnapshot());
+                summary.put("signal_health", app.onepve.geelyconsole.utils.KeySignalRecorder.getHealthSnapshot()
+                        + " | " + app.onepve.geelyconsole.utils.HoodStateManager.getHealthSnapshot());
                 summary.put("signal_stats", app.onepve.geelyconsole.utils.KeySignalRecorder.buildStatsJson());
             } catch (Throwable ignored) {}
             // Logcat 通道健康快照：车主发包后仅看这一行即可判断通道是否稳定（建立/断开/兜底次数 + 末次断因）

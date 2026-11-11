@@ -58,6 +58,8 @@ public class KeySignalRecorder {
     public static final String CH_POWER = "电源";
     public static final String CH_WHEEL = "方控";
     public static final String CH_CHANNEL = "通道";
+    /** 引擎盖（v1.8.32.12 新增）：91 02 01 的 b7 字节 bit2，1=闭合 0=开启 */
+    public static final String CH_HOOD = "引擎盖";
 
     // ── 车门报文收帧统计（判断「管道到底通不通」的唯一硬指标）──
     private static volatile long firstDoorFrameAtMs = 0L;

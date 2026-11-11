@@ -1884,6 +1884,10 @@ public class VehicleAutomationService extends Service {
                     app.onepve.geelyconsole.utils.KeySignalRecorder.record(
                             app.onepve.geelyconsole.utils.KeySignalRecorder.CH_TRUNK,
                             trunk == 1 ? "尾门=开" : "尾门=关");
+
+                    // 引擎盖（v1.8.32.12 新增）：同一帧的 b7 字节 bit2，与车门/尾门互不干扰。
+                    // 实车取证：b6 只有副驾位变化期间，b7 的 bit2 由 1→0→1，正好对应开/关引擎盖。
+                    app.onepve.geelyconsole.utils.HoodStateManager.updateFromB7(b7);
                     return;
                 }
             } catch (Exception e) {
