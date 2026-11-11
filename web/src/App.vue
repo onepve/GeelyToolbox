@@ -518,43 +518,180 @@ html.light body {
 }
 
 /* 核心铁律：全站激活态卡片与总开关流光呼吸光环（动态继承主题高亮色 var(--accent-gold)） */
+/* ===== 激活态：环绕流光 + 开关闪光 + 静息降亮 =====
+   老内核 Chrome 66 硬约束（违反任何一条都会静默失效）：
+   1. conic-gradient 是 Chrome 69+，车机用不了 ⇒ 流光改用 4 条 linear-gradient
+      各占一条边，靠 background-position 同步推进形成顺时针绕圈。
+   2. **多个 CSS 动画严禁同时写同一个属性**：曾用 4 个 keyframes 分别驱动
+      background-position，结果后一个把前一个覆盖，四条光带全停在同一点，
+      流光彻底消失。⇒ 只能用一个 keyframes 同时写 4 个位置值。
+   3. @property 是 Chrome 85+，不可用 ⇒ 只动 opacity / background-position。
+   4. 严禁 filter:blur（老内核溢出）。
+   5. 严禁把 animation 挂在卡片本体上 —— 那是改整张卡（含文字）的透明度，
+      文字会跟着一起忽明忽暗。只许挂在 ::after 上。*/
+
+/* 单束光绕圈（跑马灯）：四条边轮流跑，同一时刻只有一条边在亮。
+   做法：每条光带只在自己那 1/4 周期内从起点跑到终点，其余 3/4 周期
+   停在画布外（-60% 或 160%），于是观感是一束光顺时针绕卡片一圈。
+   注意必须写在同一组 keyframes 里 —— 拆成 4 个动画会互相覆盖 background-position。 */
+@keyframes accent-run {
+  /* 上边：0-25% 左→右 */
+  0%   { background-position: -60% 0%,     100% -60%,   160% 100%,   0% 160%; }
+  25%  { background-position: 160% 0%,     100% -60%,   160% 100%,   0% 160%; }
+  /* 右边：25-50% 上→下 */
+  50%  { background-position: 160% 0%,     100% 160%,   160% 100%,   0% 160%; }
+  /* 下边：50-75% 右→左 */
+  75%  { background-position: 160% 0%,     100% 160%,   -60% 100%,   0% 160%; }
+  /* 左边：75-100% 下→上 */
+  100% { background-position: 160% 0%,     100% 160%,   -60% 100%,   0% -60%; }
+}
+
+/* 点亮后先保持高亮约 2.6s，再在 16s 长周期里缓慢落到暗一档（车规护眼） */
+@keyframes accent-dim {
+  0%, 16%  { opacity: 1;   }
+  55%      { opacity: .62; }
+  100%     { opacity: .50; }
+}
+
+/* 点亮瞬间的一次性快闪 */
+@keyframes accent-flash {
+  0%   { opacity: 0;   }
+  14%  { opacity: .92; }
+  100% { opacity: 0;   }
+}
+
+/* ---- 卡片本体：只负责边框色，不挂动画（保护正文可读性）---- */
+.bg-car-card,
+.bg-car-item {
+  position: relative;
+}
+
+/* 底边框只留一圈很淡的"轨道"，亮度交给 ::after 的那束光。
+   否则整圈常亮 = 您说的视觉污染。 */
 .border-car-accent {
-  border-color: var(--accent-gold) !important;
-  box-shadow: 0 0 16px var(--accent-gold) !important;
+  border-color: var(--accent-gold-bg) !important;
 }
 
-html.light .border-car-accent {
-  border-color: var(--accent-gold) !important;
-  box-shadow: 0 0 18px var(--accent-gold-bg, rgba(37, 99, 235, 0.45)),
-              0 4px 20px var(--accent-gold-bg, rgba(37, 99, 235, 0.18)),
-              inset 0 0 10px var(--accent-gold-bg, rgba(37, 99, 235, 0.08)),
-              inset 0 1px 1px #ffffff !important;
+/* ---- 环绕流光：只给卡片级别的容器 ----
+   按钮（h-[52px] 这类小控件）也带 border-car-accent，但一排按钮同时跑跑马灯
+   会变成一片乱闪 —— 按钮只保留点亮/点灭的一次快闪，不跑光束。 */
+.bg-car-card.border-car-accent::after {
+  content: '';
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: -2px;
+  bottom: -2px;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  background-image:
+    linear-gradient(90deg,  rgba(255,255,255,0) 0%, var(--accent-gold) 50%, rgba(255,255,255,0) 100%),
+    linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--accent-gold) 50%, rgba(255,255,255,0) 100%),
+    linear-gradient(270deg, rgba(255,255,255,0) 0%, var(--accent-gold) 50%, rgba(255,255,255,0) 100%),
+    linear-gradient(0deg,   rgba(255,255,255,0) 0%, var(--accent-gold) 50%, rgba(255,255,255,0) 100%);
+  background-repeat: no-repeat;
+  background-size:
+    34% 2px,
+    2px 34%,
+    34% 2px,
+    2px 34%;
+  background-position: -60% 0%, 100% -60%, 160% 100%, 0% 160%;
+  opacity: 1;
+  animation:
+    accent-run 3.6s linear infinite,
+    accent-dim 16s ease-in-out .5s 1 forwards;
+  will-change: background-position, opacity;
 }
 
+/* 点亮瞬间：整张卡片的光环一次性"亮爆→收回"，0.45s 结束即走。
+   ::before 是高光水线，不能挪用；这里直接动卡片本体的 box-shadow。
+   注意：本段规则里的 box-shadow 严禁加 !important，否则动画会被压死。 */
+@keyframes accent-ring-in {
+  0% {
+    box-shadow:
+      0 0 0 2px var(--accent-gold),
+      0 0 30px 3px var(--accent-gold),
+      0 10px 34px rgba(0, 0, 0, .42);
+  }
+  100% {
+    box-shadow:
+      0 0 0 1px var(--accent-gold-bg, rgba(56, 189, 248, .30)),
+      0 0 0 0 rgba(0, 0, 0, 0),
+      0 6px 26px rgba(0, 0, 0, .42);
+  }
+}
+
+.bg-car-card.border-car-accent,
+.bg-car-item.border-car-accent {
+  animation: accent-ring-in .45s cubic-bezier(.2, .7, .3, 1) 1;
+}
+
+/* 点灭时的快速闪现：边框光在 0.3s 内塌缩，配合点亮时的 accent-ring-in，
+   进出各一次闪光，中间不常亮。 */
+.bg-car-card,
+.bg-car-item {
+  transition: box-shadow .30s ease-out, border-color .30s ease-out;
+}
+
+html.light .bg-car-card.border-car-accent,
 html.light .bg-car-item.border-car-accent {
-  background: var(--bg-item, linear-gradient(165deg, rgba(239, 246, 255, 0.96), rgba(219, 234, 254, 0.85))) !important;
-  border-color: var(--accent-gold) !important;
-  box-shadow: 0 0 20px var(--accent-gold-bg, rgba(37, 99, 235, 0.50)),
-              0 6px 24px var(--accent-gold-bg, rgba(37, 99, 235, 0.22)),
-              inset 0 0 12px var(--accent-gold-bg, rgba(37, 99, 235, 0.10)),
-              inset 0 1px 2px #ffffff !important;
+  animation: accent-ring-in .45s cubic-bezier(.2, .7, .3, 1) 1;
 }
 
-html.dark .border-car-accent {
-  border-color: var(--accent-gold) !important;
-  box-shadow: 0 0 16px var(--accent-gold-bg, rgba(56, 189, 248, 0.45)),
-              0 4px 20px var(--accent-gold-bg, rgba(56, 189, 248, 0.20)),
-              inset 0 0 12px var(--accent-gold-bg, rgba(56, 189, 248, 0.10)),
-              inset 0 1px 1px rgba(255, 255, 255, 0.20) !important;
+/* ---- 激活态静息外观（动画结束后的定格态）----
+   与 accent-ring-in 的 100% 完全一致，避免动画一结束就"跳一下"。
+   这里只做细环 + 克制的近场投影，不再有大面积外发光。 */
+html.light /* 底边框只留一圈很淡的"轨道"，亮度交给 ::after 的那束光。
+   否则整圈常亮 = 您说的视觉污染。 */
+.border-car-accent {
+  border-color: var(--accent-gold-bg) !important;
 }
 
-html.dark .bg-car-item.border-car-accent {
-  background: var(--bg-item, linear-gradient(165deg, rgba(30, 41, 59, 0.90), rgba(15, 23, 42, 0.80))) !important;
-  border-color: var(--accent-gold) !important;
-  box-shadow: 0 0 20px var(--accent-gold-bg, rgba(56, 189, 248, 0.45)),
-              0 6px 24px var(--accent-gold-bg, rgba(56, 189, 248, 0.25)),
-              inset 0 0 12px var(--accent-gold-bg, rgba(56, 189, 248, 0.15)),
-              inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+html.light .bg-car-card.border-car-accent,
+html.light .bg-car-item.border-car-accent {
+  border-color: var(--accent-gold-bg) !important;
+  box-shadow:
+    0 0 0 1px var(--accent-gold-bg, rgba(37, 99, 235, .30)),
+    0 6px 22px rgba(15, 23, 42, .10),
+    inset 0 1px 0 #ffffff;
+}
+
+html.dark .border-car-accent,
+html:not(.light) /* 底边框只留一圈很淡的"轨道"，亮度交给 ::after 的那束光。
+   否则整圈常亮 = 您说的视觉污染。 */
+.border-car-accent {
+  border-color: var(--accent-gold-bg) !important;
+}
+
+html.dark .bg-car-card.border-car-accent,
+html.dark .bg-car-item.border-car-accent,
+html:not(.light) .bg-car-card.border-car-accent,
+html:not(.light) .bg-car-item.border-car-accent {
+  border-color: var(--accent-gold-bg) !important;
+  box-shadow:
+    0 0 0 1px var(--accent-gold-bg, rgba(56, 189, 248, .30)),
+    0 6px 26px rgba(0, 0, 0, .42),
+    inset 0 1px 0 rgba(255, 255, 255, .14);
+}
+
+/* 内层槽位激活：只提升底色，不重复叠外圈（防圈套圈） */
+html.light .bg-car-item.border-car-accent {
+  background: var(--bg-item, rgba(238, 245, 254, .68)) !important;
+}
+
+html.dark .bg-car-item.border-car-accent,
+html:not(.light) .bg-car-item.border-car-accent {
+  background: var(--bg-item, rgba(30, 41, 59, .42)) !important;
+}
+
+/* 白天档：流光收窄一档（浅底上更晃眼），但保留绕圈科技感 */
+html.light .bg-car-card.border-car-accent::after {
+  background-size:
+    30% 1px,
+    1px 30%,
+    30% 1px,
+    1px 30%;
 }
 
 .fade-enter-active,

@@ -99,6 +99,58 @@ def run_gate():
     return r.returncode, r.stdout + r.stderr
 
 
+# ===== 激活态跑马灯（accent 流光）变异 =====
+
+# 11) 整段流光被删（退回静态常亮圈）
+case("环绕流光被整段删除",
+     APP,
+     "@keyframes accent-run {",
+     "@keyframes accent-run-disabled {",
+     "accent-run")
+
+# 12) 四条边拆成 4 个独立动画（会互相覆盖 background-position）
+case("流光拆成四段覆盖",
+     APP,
+     "@keyframes accent-run {",
+     "@keyframes accent-run {\n  0% { background-position: -60% 0; }\n}\n@keyframes accent-run-x {",
+     "少于 2 个")
+
+# 13) 降亮动画被删（光圈常亮刺眼）
+case("点亮后不降亮",
+     APP,
+     "@keyframes accent-dim {",
+     "@keyframes accent-dim-removed {",
+     "accent-dim")
+
+# 14) 降亮幅度不够：末期仍几乎全亮（改中段没用，末档才是用户长期看到的状态）
+case("降亮幅度不足",
+     APP,
+     "  100%     { opacity: .50; }",
+     "  100%     { opacity: .95; }",
+     "降得不够")
+
+# 15) 跑马灯挂到卡片本体（文字会跟着闪）
+case("流光挂到卡片本体",
+     APP,
+     ".bg-car-card.border-car-accent,\n.bg-car-item.border-car-accent {\n  animation: accent-ring-in .45s cubic-bezier(.2, .7, .3, 1) 1;\n}",
+     ".bg-car-card.border-car-accent,\n.bg-car-item.border-car-accent {\n  animation: accent-ring-in .45s cubic-bezier(.2, .7, .3, 1) 1, accent-run 3.6s linear infinite;\n}",
+     "卡片本体")
+
+# 16) 内层槽位也跑跑马灯（圈套圈）
+case("内层槽位也跑流光",
+     APP,
+     ".bg-car-card.border-car-accent::after {",
+     ".bg-car-card.border-car-accent::after,\n.bg-car-item.border-car-accent::after {",
+     "圈套圈")
+
+# 17) @property 复活（Chrome 85+）
+case("@property 复活",
+     APP,
+     "@keyframes accent-flash {",
+     "@property --x { syntax: '<number>'; inherits: false; initial-value: 0; }\n@keyframes accent-flash {",
+     "@property")
+
+
 def main():
     print("=" * 70)
     print(">> 玻璃材质门禁 · 变异测试（每个 bug 重新注入，必须被拦下）")
