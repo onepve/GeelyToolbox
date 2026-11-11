@@ -395,6 +395,11 @@ public class SteeringWheelKeyManager {
         if (!wheelMasterCached) return;
         long now = System.currentTimeMillis();
         Long lastTime = lastKeyTriggerTime.get(keyCode);
+        // 同一按键防抖窗口内，过滤硬件触点抖动与多源并发日志重复。
+        // 【多源统一闸门 v1.8.32.10】方控现在三条来源同时常开（日志管道 / ECARX广播 / HAL兜底），
+        // 同一个物理按下会被多条来源各报一次，到达时间差实测 10~40ms。
+        // 这里不需要额外改动：三条来源最终都汇到本方法，260ms 窗口天然把多源重复吃掉，
+        // 一次物理按下只会执行一次动作（这也是先前的既有行为，保持不变）。
         if (lastTime != null && (now - lastTime) < KEY_DEBOUNCE_MS) {
             // 同一按键防抖窗口内，过滤硬件触点抖动与多源并发日志重复
             return;

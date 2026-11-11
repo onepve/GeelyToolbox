@@ -151,6 +151,10 @@ public class VehicleAutomationService extends Service {
     private static volatile int sLogcatFallbackCount = 0;      // 方控兜底通道接管次数
     private static volatile String sLogcatLastExit = "";       // 最近一次断开退出码与 stderr 摘要
     private static volatile String sLogcatBuf = "";            // 当前订阅的缓冲区组合
+    // ═══ crash 缓冲区订阅（v1.8.32.10）═══
+    // 实车铁证：吉利 logd 把 InputManager 方控按键报文分流进 crash 段，只订 main 读不到按键。
+    private volatile boolean logcatCrashBufDisabled = false;   // crash 缓冲区已被判定不可读（永久剔除）
+    private int logcatCrashProbeFailures = 0;                  // crash 探针连续失败次数（满 2 次才永久剔除）
     private volatile long logcatDroppedLines = 0L;             // 解析队列满时主动丢弃的行数（通道拥塞硬指标）
 
     // ═══ 读解耦队列 (v1.8.33) ═══
@@ -494,6 +498,14 @@ public class VehicleAutomationService extends Service {
             startLogcatReader();
         }
         registerEcarxKeyReceiver();
+
+        // 【方控 HAL 常开铁律 v1.8.32.10】服务一启动就让 HAL 通道就位，不再等 logcat 失败才接管。
+        // 三个诊断包实证：吉利 logd 把方控按键报文分流进 crash 缓冲区，旧订阅（main,system,events）
+        // 根本读不到，而 logcat 又「建了又断、每次都算建立成功」，永远到不了兜底触发条件，
+        // 导致按键监听大段时间是关着的（775645：按 84 次只响 6 次，且那 6 次都是本通道接的）。
+        // 现在常开，与日志管道互为冗余；多源重复由 SteeringWheelKeyManager 的 260ms 防抖统一合并。
+        // CarService 未就绪时自动复位标志，由后续连接回调与看门狗继续重试，绝不永久卡死。
+        activateWheelHalFallback();
         EasMediaBridge.getInstance(this); // 确保蓝牙 A2DP 连接/推流监听与原车音频通道常驻就绪
 
         // 开机点火防洪峰：重开销的包缓存预热延后 20 秒异步错峰执行，彻底避开车机开机与用户上车初期的 CPU/IO 争抢
@@ -852,11 +864,25 @@ public class VehicleAutomationService extends Service {
                         // 3. ECARX@ECP & MCULog (MCU 物理挡位 GearPosition 与门控 FL_DOOR_STS)
                         // 4. InputManager / CAR.INPUT (方向盘按键报文)
                         // 5. ecarx_core_server (mModelLFDoor 门控信号)
-                        // 【缓冲区铁律】只订阅 main + system + events 三个应用侧缓冲区。
+                        // 【缓冲区铁律】订阅 main + system + events + crash 四个应用侧缓冲区。
                         // 严禁使用 -b all：车机上 security / stats 等系统缓冲区对第三方不可读，
                         // logcat 会立刻报 "Unable to open log device" 后退出，外层 while 随之
                         // 每 2 秒重建一次（实车实测 25 分钟重建 219 次），不仅 guard.log 刷屏，
                         // 更让方控/车门/挡位信号统统收不到（方控只能退回原厂广播兜底，时好时坏）。
+                        //
+                        // 【crash 缓冲必订铁律 v1.8.32.10】必须包含 crash，这是方控失灵的真正根因：
+                        // 吉利车机的 logd 把 InputManager 的方控按键报文（reportKeyToAdaptApi）
+                        // 整个分流进 crash 缓冲区，而不是 main。三个诊断包实测（同车 602076）：
+                        //   775645：crash 段 1252 行，其中 InputManager 346 行、87 次按键 press 全在这里；
+                        //           main 段同期一条按键报文都没有（main 段只剩最后 3 秒）。
+                        //   971598：crash 段 148 条 reportKeyToAdaptApi，main 段 0 条。
+                        //   790286：crash 段整段不在包里，system 段只有 4 条 release，press 一条都没有。
+                        // 只订 main,system,events 时这些 press 报文一次都读不到 → 车主开高德导航
+                        // 按 84 次切歌，助手只响应了 6 次（那 6 次是 HAL 兜底通道碰巧激活时接的），
+                        // 表现为「一会能换、一会不能换」。
+                        // 该缓冲区本机第三方完全可读：抓包用的 `logcat -d -v time`（不带 -b，
+                        // 默认就是 main,system,crash）在这台车上稳定导出全部 crash 行，从未失败。
+                        // 仍保留探针 + 自动回退，个别车型 crash 不可读时绝不把整条通道拖死。
                         //
                         // 【续流铁律】常态用 -T 200 直接从缓冲区尾部 200 行开始流式续接：
                         // 既天然不从开机第一行重放（旧的纳秒标记行永远落在缓冲区尾部之外、
@@ -865,16 +891,47 @@ public class VehicleAutomationService extends Service {
                         int tier = logcatConsecutiveFailures;
                         String[] cmd;
                         if (tier >= 6) {
-                            // 兜底降级：只订阅 main，最保守的组合（老系统 / 权限受限时仍能拿到方控与 CAN 主日志）
-                            cmd = new String[]{"logcat", "-v", "time", "-b", "main"};
-                            sLogcatBuf = "main(降级)";
+                            // 兜底降级：crash + main 两个最小组合（老系统 / 权限受限时仍能拿到方控与 CAN 主日志）
+                            cmd = new String[]{"logcat", "-v", "time", "-b", "crash,main"};
+                            sLogcatBuf = "crash+main(降级)";
                         } else if (tier >= 3 || logcatTailSeekDisabled) {
-                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events"};
-                            sLogcatBuf = "main+system+events";
+                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events,crash"};
+                            sLogcatBuf = "main+system+events+crash";
                         } else {
                             // -T 200 = 先吐缓冲区最新 200 行再保持流式续接（不像 -t/-d 那样读完即退出）
-                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events", "-T", "200"};
-                            sLogcatBuf = "main+system+events(-T200)";
+                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events,crash", "-T", "200"};
+                            sLogcatBuf = "main+system+events+crash(-T200)";
+                        }
+
+                        // 【crash 探针铁律】只在建流前判一次，绝不在流中途改命令。
+                        // 用 `logcat -b crash -d -t 1`（读完即退出、最多 1 行、不留常驻进程）。
+                        // 连续 2 次探针失败才永久剔除 crash（避免一次偶发进程创建失败就永久失去按键源）；
+                        // 一旦剔除就永久记住，绝不每轮重试（重试会把探针本身变成新刷屏源）。
+                        if (!logcatCrashBufDisabled) {
+                            String[] probe = new String[]{"logcat", "-b", "crash", "-d", "-t", "1"};
+                            if (probeBufferReadable(probe)) {
+                                logcatCrashProbeFailures = 0;
+                            } else {
+                                logcatCrashProbeFailures++;
+                                Log.w(TAG, "crash 缓冲区探针失败 第" + logcatCrashProbeFailures + "次");
+                                if (logcatCrashProbeFailures >= 2) {
+                                    logcatCrashBufDisabled = true;
+                                    Log.w(TAG, "crash 缓冲区连续不可读，已永久剔除 crash（方控改由 HAL 常开兜底接管）");
+                                }
+                            }
+                        }
+                        if (logcatCrashBufDisabled) {
+                            // 剔除 crash 后回到旧组合（方控此时完全依赖下面常开的 HAL 兜底通道）
+                            if (tier >= 6) {
+                                cmd = new String[]{"logcat", "-v", "time", "-b", "main"};
+                                sLogcatBuf = "main(降级,无crash)";
+                            } else if (tier >= 3 || logcatTailSeekDisabled) {
+                                cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events"};
+                                sLogcatBuf = "main+system+events(无crash)";
+                            } else {
+                                cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events", "-T", "200"};
+                                sLogcatBuf = "main+system+events(-T200,无crash)";
+                            }
                         }
 
                         // 通道重建打点：在系统 logcat 里留一条纳秒标记行，方便抓包时肉眼定位「第几次重连」
@@ -994,8 +1051,10 @@ public class VehicleAutomationService extends Service {
                             Log.i(TAG, "Logcat 通道已恢复稳定，退避阶梯归零（此前连续失败 " + logcatConsecutiveFailures + " 次）");
                         }
                         logcatConsecutiveFailures = 0;
-                        // 主通道恢复 → 收回方控兜底通道，回到唯一按键来源
-                        deactivateWheelHalFallback();
+                        // 主通道恢复：HAL 常开通道**不再注销**（v1.8.32.10）。
+                        // 历史故障根因就是这里：主通道「看起来健康」但实际读不到 crash 里的按键报文，
+                        // 一注销 HAL 就彻底失聪。现在 HAL 常开，主通道恢复只是多一条冗余来源，
+                        // 同一个物理按下由 SteeringWheelKeyManager 的 260ms 防抖统一去重，不会双触发。
                     } else {
                         logcatConsecutiveFailures++;
                         // 连续两次建不起来（约 7 秒），立刻拉方控兜底通道接管，别让车主干按没反应
@@ -1040,8 +1099,68 @@ public class VehicleAutomationService extends Service {
     }
 
     /**
-     * 方控兜底通道：logcat 通道连续失败时，改用 HW_KEY_INPUT 车规属性直推键码，免 logcat 子进程。
-     * 仅在主通道不健康时接管；主通道恢复后自动注销，保证任何时刻只有一条按键来源，绝不双触发。
+     * 探针：判断某个 logcat 缓冲区组合是否真的可读。
+     * 用 -d -t 1（读完即退出、最多 1 行），绝不残留常驻进程；4 秒超时兜底。
+     * 铁律：只返回 true/false，绝不抛异常、绝不阻塞建流。
+     */
+    private boolean probeBufferReadable(String[] probeCmd) {
+        Process p = null;
+        try {
+            ProcessBuilder pb = new ProcessBuilder(probeCmd);
+            pb.redirectErrorStream(true);
+            p = pb.start();
+            final Process fp = p;
+            final StringBuilder out = new StringBuilder();
+            Thread t = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        BufferedReader r = new BufferedReader(new InputStreamReader(fp.getInputStream()), 256);
+                        String l;
+                        int kept = 0;
+                        while ((l = r.readLine()) != null && kept++ < 4) out.append(l).append(' ');
+                    } catch (Throwable ignored) {}
+                }
+            }, "LogcatBufProbe");
+            t.setDaemon(true);
+            t.start();
+            boolean done = p.waitFor(4, java.util.concurrent.TimeUnit.SECONDS);
+            if (!done) {
+                try { p.destroy(); } catch (Throwable ignored) {}
+                return false;
+            }
+            if (p.exitValue() != 0) return false;
+            String txt = out.toString().toLowerCase(java.util.Locale.ROOT);
+            return !(txt.contains("unable to open") || txt.contains("permission denied")
+                    || txt.contains("couldn't open") || txt.contains("no such buffer"));
+        } catch (Throwable e) {
+            return false;
+        } finally {
+            // RAII 铁律：探针子进程一律回收，绝不留孤儿
+            if (p != null) {
+                try { p.destroy(); } catch (Throwable ignored) {}
+            }
+        }
+    }
+
+    /**
+     * 方控 HAL 常开通道（v1.8.32.10 起改为常开，不再只在主通道失败时接管）。
+     *
+     * 【为什么必须常开】实车铁证（诊断包 775645 / 11:48~12:00）：
+     * 车主开高德导航期间按了 84 次切歌，助手只响应了 6 次，而那 6 次全部来自本通道。
+     * 主 logcat 通道一次都没读到 —— 因为 logd 把按键报文分流进了 crash 缓冲区，
+     * 而旧订阅只有 main,system,events。旧设计里本通道是「logcat 连续失败 2 次才接管」，
+     * 可高德场景下 logcat 是「建了又断、每次都觉得建立成功」，永远到不了触发条件，
+     * 于是助手的按键监听大部分时间是关着的 → 表现为「一会能换、一会不能换」。
+     *
+     * 【为什么常开不会双触发】三条来源（日志管道 / ECARX广播 / HAL兜底）最终都汇到
+     * SteeringWheelKeyManager.handleKeyDown → handleKeyDownInternal，那里有 260ms
+     * 同键码防抖（门禁锁定的正式版契约）。同一物理按下多源上报的到达时间差实测 10~40ms，
+     * 260ms 窗口天然只放行第一次，动作只执行一次。实测车主最快连按间隔为 173ms，
+     * 也高于多源时间差、且连按是不同时间点的独立按下，不受影响。
+     *
+     * 【为什么不再随主通道恢复而注销】注销会造成「主通道以为健康、实际读不到按键」时
+     * 完全失聪的窗口期，正是本次故障的根源。现在常开，主通道恢复只是多一条冗余来源。
      */
     private void activateWheelHalFallback() {
         if (wheelHalFallbackActive) return;
@@ -1056,9 +1175,9 @@ public class VehicleAutomationService extends Service {
                     try {
                         Object cpm = carClient.getCarPropertyManagerRef();
                         if (cpm == null) {
-                            // 未连上就先放弃，标志复位，等下一轮 logcat 失败再试，绝不永久卡死
+                            // 未连上就先放弃，标志复位，等 CarService 就绪后重试，绝不永久卡死
                             wheelHalFallbackActive = false;
-                            Log.w(TAG, "方控兜底通道: CarPropertyManager 不可用，保持原厂广播兜底");
+                            Log.w(TAG, "方控 HAL 通道: CarPropertyManager 不可用，等待重试");
                             return;
                         }
                         if (wheelHalChannel == null) {
@@ -1066,7 +1185,7 @@ public class VehicleAutomationService extends Service {
                         }
                         if (!wheelHalChannel.register(cpm, VehicleAutomationService.this)) {
                             wheelHalFallbackActive = false;
-                            Log.w(TAG, "方控兜底通道: HW_KEY_INPUT 属性不可用，保持原厂广播兜底");
+                            Log.w(TAG, "方控 HAL 通道: HW_KEY_INPUT 属性不可用，保持原厂广播兜底");
                             return;
                         }
                         wheelHalChannel.setListener(new app.onepve.geelyconsole.hal.HwKeyInputChannel.OnHwKeyListener() {
@@ -1077,14 +1196,14 @@ public class VehicleAutomationService extends Service {
                                 if (wheelKeyManager != null) {
                                     app.onepve.geelyconsole.utils.KeySignalRecorder.record(
                                     app.onepve.geelyconsole.utils.KeySignalRecorder.CH_WHEEL,
-                                    "方控按键 key=" + keyCode + " [HW_KEY_INPUT兜底]");
+                                    "方控按键 key=" + keyCode + " [HAL常开]");
                             wheelKeyManager.handleKeyDown(keyCode);
                                 }
                             }
                         }, true);
-                        Log.i(TAG, "方控兜底通道: HW_KEY_INPUT 已接管按键监听（logcat 主通道不通）");
+                        Log.i(TAG, "方控 HAL 通道: HW_KEY_INPUT 常开监听已就位（与日志管道互为冗余）");
                     } catch (Throwable t) {
-                        Log.w(TAG, "方控兜底通道注册异常: " + t.getMessage());
+                        Log.w(TAG, "方控 HAL 通道注册异常: " + t.getMessage());
                     }
                 }
             };
@@ -1120,7 +1239,9 @@ public class VehicleAutomationService extends Service {
     }
 
     /**
-     * 注销方控兜底通道（主通道恢复后调用，RAII 闭环，绝不残留 CarService 回调）
+     * 注销方控 HAL 通道 —— **只在服务销毁时调用**（RAII 闭环，绝不残留 CarService 回调）。
+     * v1.8.32.10 起不再因「主通道恢复」而注销：主通道看起来健康但实际读不到 crash 里的按键，
+     * 一注销就彻底失聪，这正是本次「一会能换、一会不能换」的根因。
      */
     private void deactivateWheelHalFallback() {
         if (!wheelHalFallbackActive) return;
@@ -1129,7 +1250,7 @@ public class VehicleAutomationService extends Service {
             if (wheelHalChannel != null) {
                 wheelHalChannel.unregister();
                 wheelHalChannel = null;
-                Log.i(TAG, "方控兜底通道: 主通道已恢复，兜底回调已注销（单一来源）");
+                Log.i(TAG, "方控 HAL 通道: 服务销毁，回调已注销（RAII 闭环）");
             }
         } catch (Throwable ignored) {}
     }
@@ -1461,9 +1582,23 @@ public class VehicleAutomationService extends Service {
         // 1. 解析方向盘按键
         // parseKeyFromLine 内部已根据 press/release 调用 handleKeyDown/handleKeyUp，
         // 这里只负责识别到按键后提前结束本行解析，避免继续被其它正则误匹配。
+        //
+        // 【方控取证铁律 v1.8.32.10】必须在这里落一条 CH_WHEEL 记录。
+        // 历史盲区：CH_WHEEL 以前只在 ECARX 广播分支和 HAL 兜底分支记录，
+        // logcat 主管道这条路一条都不记 → 车主报「方控没反应」时抓回来的包里
+        // signals.log 的「方控」通道永远是 0 条，完全无法判断按键到底有没有被读到
+        //（775645 就是这种情况：6 次成功全由 HAL 兜底接的，主通道一条记录都没有，
+        //  导致误判成「主通道读到了按键但执行失败」）。
+        // 现在只要 logcat 主通道解析出按键就留痕，三条来源（主通道 / ECARX广播 / HAL兜底）
+        // 各自带来源标记，下次抓包一眼就能看出按键是从哪条路进来的。
         if (wheelKeyManager != null) {
-            int wheelKey = wheelKeyManager.parseKeyFromLine(line);
+            final int wheelKey = wheelKeyManager.parseKeyFromLine(line);
             if (wheelKey > 0) {
+                try {
+                    app.onepve.geelyconsole.utils.KeySignalRecorder.record(
+                            app.onepve.geelyconsole.utils.KeySignalRecorder.CH_WHEEL,
+                            "方控按键 key=" + wheelKey + " [日志管道]");
+                } catch (Throwable ignored) {}
                 return;
             }
         }
