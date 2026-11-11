@@ -500,40 +500,39 @@
 
                 <div class="h-7 w-px bg-car-border/70 shrink-0"></div>
 
-                <!-- 加油规格与加满标签 -->
+                <!-- 加油规格与明细：标号 → 自动/手动 → 单价 → 备注，全部纯文字无边框。
+                     车规铁律：这些是同一行的从属信息，统一排在标号后面，不要东一块西一块，
+                     也不要给每个词套一个白框框——那会让整行看起来像一堆按钮，很别扭。 -->
                 <div class="flex flex-col shrink-0">
                   <span class="text-[15px] font-black text-car-text font-mono leading-tight whitespace-nowrap">加 {{ rec.liters }} L</span>
-                  <div class="flex items-center space-x-1 mt-0.5">
-                    <!-- 油品标号永远显示；只有自动记账的记录额外加一枚「⚡自动」角标。
-                         以前把标号与「自动」做成二选一，导致自动记录的 92# 被吞掉，
-                         车主核对过标号却看不到，误以为程序记错。 -->
-                    <span
-                      class="text-[10.5px] px-1.5 py-0.2 rounded font-black border whitespace-nowrap bg-car-card border-car-border text-car-sub"
-                    >
+                  <div class="flex items-center space-x-2 mt-0.5">
+                    <!-- 油品标号永远显示 -->
+                    <span class="text-[11px] font-black text-car-sub whitespace-nowrap">
                       {{ (rec.fuel_type || '92#') + (rec.is_full ? '·满' : '') }}
                     </span>
+                    <!-- 来源：自动/手动统一紧跟标号，位置固定 -->
                     <span
-                      v-if="rec.gas_station === '智能自动感知'"
-                      class="text-[10.5px] px-1.5 py-0.2 rounded font-black border whitespace-nowrap border-car-accent/60 text-car-accent bg-car-accent-light"
+                      class="text-[11px] font-bold whitespace-nowrap"
+                      :class="rec.gas_station === '智能自动感知' ? 'text-car-accent' : 'text-car-sub'"
                     >
-                      ⚡自动
+                      {{ rec.gas_station === '智能自动感知' ? '⚡自动' : '手动' }}
                     </span>
                     <span class="text-[11.5px] text-car-sub font-mono font-bold whitespace-nowrap">¥{{ rec.price ? rec.price.toFixed(2) : '--' }}</span>
                   </div>
                 </div>
 
-                <!-- 中间备注标签展示区 (有备注才展示，支持自动折行并列展示，车规标准 margin 间距) -->
+                <!-- 备注纯文字展示区（有备注才展示，自动折行并排，不加任何边框底色） -->
                 <div v-if="(rec.note && String(rec.note).trim()) || rec.needs_review" class="flex-1 flex flex-wrap items-center min-w-0 pl-1">
-                  <span 
+                  <span
                     v-if="rec.needs_review"
-                    class="text-[10px] px-1.5 py-0.5 m-0.5 rounded-md bg-car-warn/15 border border-car-warn/50 text-car-warn font-bold whitespace-nowrap"
+                    class="text-[10.5px] mr-2 text-car-warn font-bold whitespace-nowrap"
                   >
                     待核对
                   </span>
-                  <span 
-                    v-for="(tag, tIdx) in String(rec.note || '').trim().split(/\s+/).filter(Boolean)" 
+                  <span
+                    v-for="(tag, tIdx) in String(rec.note || '').trim().split(/\s+/).filter(Boolean)"
                     :key="tIdx"
-                    class="text-[10px] px-1.5 py-0.5 m-0.5 rounded-md bg-car-card/90 border border-car-accent/40 text-car-accent font-bold whitespace-nowrap"
+                    class="text-[10.5px] mr-2 text-car-sub font-bold whitespace-nowrap"
                   >
                     {{ tag }}
                   </span>
@@ -544,12 +543,10 @@
               <div class="flex items-center shrink-0">
                 <div class="flex flex-col text-right">
                   <span class="text-[17px] font-black text-car-accent font-mono leading-tight whitespace-nowrap">¥{{ rec.actual_paid ? rec.actual_paid.toFixed(1) : (rec.amount ? rec.amount.toFixed(1) : '0.0') }}</span>
-                  <div class="flex items-center justify-end space-x-1">
-                    <span v-if="Number(rec.coupon || 0) > 0" class="text-[10px] px-1 py-0.2 rounded bg-car-accent-light border border-car-accent/40 text-car-accent font-bold whitespace-nowrap">
-                      {{ (Number(rec.discount || 10) < 10 && Number(rec.discount || 10) > 0) ? `${Number(rec.discount).toFixed(1)}折·` : '' }}省¥{{ Number(rec.coupon).toFixed(1) }}
-                    </span>
-                    <span v-if="rec.gas_station !== '智能自动感知'" class="text-[11px] text-car-sub font-bold whitespace-nowrap">手动</span>
-                  </div>
+                  <!-- 省下的钱只显示文字，不套白框；「手动」已统一挪到标号后面，这里不再重复 -->
+                  <span v-if="Number(rec.coupon || 0) > 0" class="text-[10.5px] text-car-accent font-bold whitespace-nowrap mt-0.5">
+                    {{ (Number(rec.discount || 10) < 10 && Number(rec.discount || 10) > 0) ? `${Number(rec.discount).toFixed(1)}折·` : '' }}省¥{{ Number(rec.coupon).toFixed(1) }}
+                  </span>
                 </div>
               </div>
             </div>

@@ -154,7 +154,10 @@
           ]"
           title="点击切换是否自动检测更新"
         >
-          <StatusDot size="xs" :color="autoCheckUpdateEnabled ? 'success' : 'neutral'" class="mr-0.5" />
+          <!-- 铁律：StatusDot 的色名只有 ok/warn/err/info/off/offDim/accent/sub/border，
+               以前这里传 'success'/'neutral' 属于不存在的键，查表回退成默认的绿色，
+               所以关掉之后胶囊依然是绿的。必须用真实存在的语义名。 -->
+          <StatusDot size="xs" :color="autoCheckUpdateEnabled ? 'ok' : 'off'" class="mr-0.5" :glow="autoCheckUpdateEnabled" />
           <span>自动检查更新: <b>{{ autoCheckUpdateEnabled ? '开启' : '关闭' }}</b></span>
         </button>
       </div>

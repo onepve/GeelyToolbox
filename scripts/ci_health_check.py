@@ -1872,10 +1872,69 @@ except Exception as _e35x:
     print(f"  [FAIL] Gate 35 crashed: {_e35x}")
     passed = False
 
+
 # ----------------------------------------------------------------------
-log_step("CI 35-Gate Health Check Verdict")
+log_step("Gate 36: StatusDot color tokens must exist (no silent fallback to green)")
+try:
+    import re as _re36
+
+    _dot_path = os.path.join(ROOT_DIR, "web", "src", "components", "StatusDot.vue")
+    _dot_src = open(_dot_path, encoding="utf-8").read()
+
+    # 从 COLORS 对象里抓出所有合法键名
+    _cm36 = _re36.search(r"const\s+COLORS\s*=\s*\{(.*?)\n\};", _dot_src, _re36.S)
+    if not _cm36:
+        print("  [FAIL] StatusDot.vue: COLORS table not found")
+        passed = False
+    else:
+        _valid36 = set(_re36.findall(r"^\s*([A-Za-z][A-Za-z0-9]*)\s*:", _cm36.group(1), _re36.M))
+        if not _valid36:
+            print("  [FAIL] StatusDot.vue: COLORS table appears empty")
+            passed = False
+        else:
+            # 扫描全站所有 :color="..." 传参
+            _bad36 = []
+            import glob as _glob36
+            for _f36 in _glob36.glob(os.path.join(ROOT_DIR, "web", "src", "**", "*.vue"), recursive=True):
+                _txt36 = open(_f36, encoding="utf-8").read()
+                if "<StatusDot" not in _txt36:
+                    continue
+                for _m36 in _re36.finditer(r'<StatusDot[^>]*?:color="([^"]*)"', _txt36, _re36.S):
+                    _expr36 = _m36.group(1)
+                    # 只校验「作为结果值出现的字符串字面量」。
+                    # 关键：三元表达式里 === / !== 后面跟的字面量是「比较目标」,不是颜色,
+                    # 例如 :color="st === 'paused' ? 'warnSoft' : 'accent'" 里的 'paused'
+                    # 必须排除，否则会误判。
+                    for _lit36 in _re36.findall(r"['\"]([A-Za-z][A-Za-z0-9]*)['\"]", _expr36):
+                        # 判断该字面量在表达式里是否只出现在 === / !== / == / != 右侧
+                        _only_cmp36 = True
+                        for _pos36 in [mm.start() for mm in _re36.finditer(
+                                r"['\"]" + _re36.escape(_lit36) + r"['\"]", _expr36)]:
+                            _pre36 = _expr36[max(0, _pos36 - 6):_pos36]
+                            if not _re36.search(r"[=!]==?\s*$", _pre36):
+                                _only_cmp36 = False
+                                break
+                        if _only_cmp36:
+                            continue
+                        if _lit36 not in _valid36:
+                            _rel36 = os.path.relpath(_f36, ROOT_DIR)
+                            _bad36.append(f"{_rel36}: StatusDot color '{_lit36}' is not a real token "
+                                          f"(valid: {', '.join(sorted(_valid36))}) — it silently falls back to green")
+
+            if _bad36:
+                for _b36 in _bad36:
+                    print(f"  [FAIL] {_b36}")
+                passed = False
+            else:
+                print(f"  [PASS] all StatusDot :color tokens valid ({len(_valid36)} tokens)")
+except Exception as _e36x:
+    print(f"  [FAIL] Gate 36 crashed: {_e36x}")
+    passed = False
+
+# ----------------------------------------------------------------------
+log_step("CI 36-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 35 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering closed, framework & background architecture frozen, speed autoplay trip-lock & steering arbitration rigidity locked, zero component event modifier runtime traps, zero sticky grey hover on touch)")
+    print("[SUCCESS] All 36 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering closed, framework & background architecture frozen, speed autoplay trip-lock & steering arbitration rigidity locked, zero component event modifier runtime traps, zero sticky grey hover on touch, zero StatusDot token typos)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")
