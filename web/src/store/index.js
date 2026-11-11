@@ -238,6 +238,8 @@ export const store = reactive({
     wheelKeyLearning: null,
     cleanDownload: false,
     voiceThemeImport: false,
+    // 加油台账导入弹窗（车主 2026-11-11：批量清空改为导出/导入）
+    fuelBackupImport: false,
     allApps: false,
     geekInstall: false,
     oilPrice: false
@@ -721,6 +723,46 @@ export function deleteFuelRecord(id) {
   } catch (e) {
     console.error('deleteFuelRecord error', e);
     return false;
+  }
+}
+
+// ═══ 加油台账导出 / 导入（替代已移除的批量清空，车主 2026-11-11）═══
+// 导出的是一份明文 JSON 完整快照，落在 /sdcard/Download/，用户可用记事本或
+// Excel 直接打开，也能手机快传 / U 盘拷走长期保存。数据内无车牌号、手机号。
+
+/** 导出一份完整台账备份，返回 {ok,file,path,records,size,msg} */
+export function exportFuelBackup() {
+  try {
+    const raw = bridge.call('exportFuelBackup');
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch (e) {
+    console.error('exportFuelBackup error', e);
+    return { ok: false, msg: '导出失败' };
+  }
+}
+
+/** 扫描 Download 目录下所有备份，返回 [{name,size,time,records}]，最新在最前 */
+export function scanFuelBackups() {
+  try {
+    const raw = bridge.call('scanFuelBackups');
+    const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return Array.isArray(data?.list) ? data.list : [];
+  } catch (e) {
+    console.error('scanFuelBackups error', e);
+    return [];
+  }
+}
+
+/** 从指定备份文件恢复台账（整体替换，导入前自动留保险备份） */
+export function importFuelBackup(fileName) {
+  try {
+    const raw = bridge.call('importFuelBackup', String(fileName));
+    const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (data?.ok) loadFuelData();
+    return data || { ok: false, msg: '导入失败' };
+  } catch (e) {
+    console.error('importFuelBackup error', e);
+    return { ok: false, msg: '导入失败' };
   }
 }
 

@@ -613,6 +613,255 @@ public class FuelManager {
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    //  加油台账 导出 / 导入 / 扫描（车主 2026-11-11 要求）
+    //
+    //  背景：记油页原本有「清空全部记录」按钮，车主指出加油记录全是逐条
+    //  手动添加的，误触全删不可恢复、损失远大于便利，要求移除。但移除后
+    //  用户就没有任何「把台账带走 / 留底」的办法了 —— 而本地只保留最近
+    //  120 条（MAX_LOCAL_RECORDS），超出自动归档进 yearly_archives。
+    //  所以把那个位置改成「导出备份 + 导入恢复」，从「危险按钮」变成
+    //  「资产按钮」，这才是用户真正需要的。
+    //
+    //  设计取向（车主确认 A/A/A）：
+    //   ① 导入采用整体替换，且替换前强制自动导出当前数据做保险
+    //   ② 文件落 /sdcard/Download/，与语音包同一套路，能手机快传 / U 盘拷走
+    //   ③ 纯明文 JSON 不加密、不加封，用户自己能用记事本或 Excel 打开看；
+    //      数据里本就无车牌号 / 手机号 / VIN，加密反而让用户失去长期可读性
+    // ═══════════════════════════════════════════════════════════════════
+
+    /** 备份文件命名前缀，扫描时据此识别，避免误把别的 json 当台账 */
+    private static final String BACKUP_PREFIX = "GeelyPilot_加油台账_";
+    /** 备份格式版本，日后字段结构若有调整靠它做兼容判断 */
+    private static final int BACKUP_FORMAT_VERSION = 1;
+
+    /** 备份文件落地目录：/sdcard/Download/（与语音包同心智模型，用户好找） */
+    private static File getBackupDir() {
+        File dir = new File(Environment.getExternalStorageDirectory(), "Download");
+        if (!dir.exists()) dir.mkdirs();
+        return dir;
+    }
+
+    /**
+     * 导出一份完整台账备份到 Download 目录。
+     *
+     * 备份内容刻意做成「完整状态快照」而不是增量：流水 + 参数配置（内含
+     * yearly_archives 往年归档与 monthly_bases 月度校准基底）。导入时整体
+     * 替换即可，不会出现新旧数据混在一起、还要逐条核对的情况。
+     *
+     * @return {"ok":true,"file":"文件名","path":"绝对路径","records":N,"size":"12.3 KB"}
+     */
+    public static String exportBackup(Context context) {
+        JSONObject ret = new JSONObject();
+        synchronized (LOCK) {
+            try {
+                JSONObject root = new JSONObject();
+                root.put("format", "GeelyPilotFuelBackup");
+                root.put("format_version", BACKUP_FORMAT_VERSION);
+                root.put("exported_at", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date()));
+
+                JSONObject config = getConfig(context);
+                JSONArray records = getRecords(context);
+                // 归档与校准基底都在 config 里，一并带走才算完整家底
+                root.put("config", config != null ? config : new JSONObject());
+                root.put("records", records != null ? records : new JSONArray());
+                root.put("record_count", records != null ? records.length() : 0);
+
+                String stamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+                String fileName = BACKUP_PREFIX + stamp + ".json";
+                File out = new File(getBackupDir(), fileName);
+                writeFileContent(out, root.toString(2));
+
+                if (!out.exists() || out.length() <= 0) {
+                    ret.put("ok", false);
+                    ret.put("msg", "写入 Download 失败，请检查存储空间");
+                    return ret.toString();
+                }
+                AppLogger.i("行程油耗", "台账已导出备份: " + fileName
+                        + " (" + root.optInt("record_count") + " 笔)");
+                ret.put("ok", true);
+                ret.put("file", fileName);
+                ret.put("path", out.getAbsolutePath());
+                ret.put("records", root.optInt("record_count"));
+                ret.put("size", String.format(Locale.US, "%.1f KB", out.length() / 1024.0));
+                return ret.toString();
+            } catch (Throwable t) {
+                Log.e(TAG, "exportBackup 失败: " + t.getMessage());
+                try {
+                    ret.put("ok", false);
+                    ret.put("msg", "导出失败: " + t.getMessage());
+                } catch (Throwable ignored) {}
+                return ret.toString();
+            }
+        }
+    }
+
+    /**
+     * 扫描 Download 目录下所有台账备份，按时间倒序（最新在最前）。
+     *
+     * @return {"ok":true,"list":[{"name":..,"size":"12.3 KB","time":..,"records":N}]}
+     */
+    public static String scanBackups() {
+        JSONObject ret = new JSONObject();
+        JSONArray list = new JSONArray();
+        try {
+            File dir = getBackupDir();
+            File[] files = dir.listFiles();
+            if (files != null) {
+                // 先按文件名（含时间戳）倒序，最新备份排前面
+                java.util.Arrays.sort(files, (a, b) -> b.getName().compareTo(a.getName()));
+                SimpleDateFormat df = new SimpleDateFormat("MM-dd HH:mm", Locale.US);
+                for (File f : files) {
+                    if (!f.isFile()) continue;
+                    String n = f.getName();
+                    if (!n.startsWith(BACKUP_PREFIX) || !n.endsWith(".json")) continue;
+                    JSONObject o = new JSONObject();
+                    o.put("name", n);
+                    o.put("size", String.format(Locale.US, "%.1f KB", f.length() / 1024.0));
+                    o.put("time", df.format(new Date(f.lastModified())));
+                    // 顺手读出笔数，让用户在列表上就能认出哪份是哪份
+                    o.put("records", peekBackupRecordCount(f));
+                    list.put(o);
+                }
+            }
+            ret.put("ok", true);
+            ret.put("list", list);
+            ret.put("dir", "/sdcard/Download/");
+            return ret.toString();
+        } catch (Throwable t) {
+            Log.e(TAG, "scanBackups 失败: " + t.getMessage());
+            try {
+                ret.put("ok", false);
+                ret.put("list", list);
+                ret.put("msg", t.getMessage());
+            } catch (Throwable ignored) {}
+            return ret.toString();
+        }
+    }
+
+    /** 轻量读一眼备份里的笔数，只解析外层字段，不整份反序列化 */
+    private static int peekBackupRecordCount(File f) {
+        try {
+            String txt = readFileContent(f);
+            if (txt == null || txt.isEmpty()) return 0;
+            JSONObject o = new JSONObject(txt);
+            int c = o.optInt("record_count", -1);
+            if (c >= 0) return c;
+            JSONArray arr = o.optJSONArray("records");
+            return arr != null ? arr.length() : 0;
+        } catch (Throwable t) {
+            return 0;
+        }
+    }
+
+    /**
+     * 从备份文件恢复台账（整体替换，车主确认方案 A）。
+     *
+     * 安全设计：替换前**强制**把当前数据自动导出成一个 rescure 备份，
+     * 万一导错了文件、或导入后发现不对，还能在 Download 里找回上一份。
+     * 这一步失败就整体中止，绝不出现「旧的already被清、新的还没写进去」的空窗。
+     *
+     * @return {"ok":true,"records":N,"safety":"保险备份名"}
+     */
+    public static String importBackup(Context context, String fileName) {
+        JSONObject ret = new JSONObject();
+        synchronized (LOCK) {
+            File backupFile = null;
+            try {
+                if (fileName == null || fileName.trim().isEmpty()) {
+                    ret.put("ok", false);
+                    ret.put("msg", "未指定备份文件");
+                    return ret.toString();
+                }
+                // 防目录穿越：只认 Download 目录下的普通文件名
+                String safeName = new File(fileName).getName();
+                if (!safeName.startsWith(BACKUP_PREFIX) || !safeName.endsWith(".json")) {
+                    ret.put("ok", false);
+                    ret.put("msg", "不是有效的台账备份文件");
+                    return ret.toString();
+                }
+                backupFile = new File(getBackupDir(), safeName);
+                if (!backupFile.exists() || !backupFile.isFile()) {
+                    ret.put("ok", false);
+                    ret.put("msg", "备份文件不存在，请重新扫描");
+                    return ret.toString();
+                }
+
+                String txt = readFileContent(backupFile);
+                if (txt == null || txt.trim().isEmpty()) {
+                    ret.put("ok", false);
+                    ret.put("msg", "备份文件是空的，无法导入");
+                    return ret.toString();
+                }
+                JSONObject root = new JSONObject(txt);
+
+                // 格式校验：宁可拒绝，也不能把别的 json 当台账写进去把数据搞坏
+                if (!"GeelyPilotFuelBackup".equals(root.optString("format", ""))) {
+                    ret.put("ok", false);
+                    ret.put("msg", "这不是加油台账备份文件");
+                    return ret.toString();
+                }
+                int ver = root.optInt("format_version", 0);
+                if (ver > BACKUP_FORMAT_VERSION) {
+                    ret.put("ok", false);
+                    ret.put("msg", "备份来自更新版本的助手（v" + ver + "），请先升级后再导入");
+                    return ret.toString();
+                }
+                JSONArray inRecords = root.optJSONArray("records");
+                JSONObject inConfig = root.optJSONObject("config");
+                if (inRecords == null) {
+                    ret.put("ok", false);
+                    ret.put("msg", "备份里没有加油流水数据");
+                    return ret.toString();
+                }
+
+                // ① 先做保险备份（失败即中止，不留空窗）
+                String safetyName = "";
+                try {
+                    JSONObject safety = new JSONObject(exportBackup(context));
+                    if (!safety.optBoolean("ok", false)) {
+                        ret.put("ok", false);
+                        ret.put("msg", "无法生成导入前保险备份，已中止导入（当前数据完好未动）");
+                        return ret.toString();
+                    }
+                    safetyName = safety.optString("file", "");
+                } catch (Throwable t) {
+                    ret.put("ok", false);
+                    ret.put("msg", "生成保险备份异常，已中止导入（当前数据完好未动）");
+                    return ret.toString();
+                }
+
+                // ② 整体替换：先写流水，再写配置（config 内含归档与校准基底）
+                if (!saveRecordsInternal(inRecords)) {
+                    ret.put("ok", false);
+                    ret.put("msg", "写入流水失败，当前数据未变，请重试");
+                    return ret.toString();
+                }
+                if (inConfig != null) {
+                    try {
+                        saveConfig(context, inConfig);
+                    } catch (Throwable t) {
+                        Log.e(TAG, "导入时写 config 失败: " + t.getMessage());
+                    }
+                }
+
+                AppLogger.i("行程油耗", "台账已从备份导入: " + safeName
+                        + " (" + inRecords.length() + " 笔)，导入前保险备份: " + safetyName);
+                ret.put("ok", true);
+                ret.put("records", inRecords.length());
+                ret.put("safety", safetyName);
+                return ret.toString();
+            } catch (Throwable t) {
+                Log.e(TAG, "importBackup 失败: " + t.getMessage());
+                try {
+                    ret.put("ok", false);
+                    ret.put("msg", "导入失败: " + t.getMessage());
+                } catch (Throwable ignored) {}
+                return ret.toString();
+            }
+        }
+    }
+
     /**
      * 将溢出淘汰的记录归档至月度历史基底 (防止超限滚动导致月度总额缩水)
      */

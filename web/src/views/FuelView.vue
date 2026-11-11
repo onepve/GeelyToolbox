@@ -427,9 +427,23 @@
         <div class="flex items-center justify-between pb-1 text-[13px] text-car-sub font-bold px-1">
           <div class="flex items-center space-x-2">
             <span>{{ selectedMonth ? `【${selectedMonth}】详细流水 (${filteredRecords.length} 笔)` : `近期加油流水 (${filteredRecords.length} 笔 · 双列卡片)` }}</span>
-            <!-- 批量清空入口已移除（车主 2026-11-11 要求）：加油记录逐条手动添加，误触全删不可恢复。
-                 删除单条请点开对应记录卡片，在编辑弹窗内操作。 -->
-            <!-- 选中单月时：提供快捷管理校准入口 -->
+            <!-- 原来这里是「清空全部记录」批量删除按钮，车主 2026-11-11 指出加油记录
+                 全是逐条手动添加的，误触全删不可恢复、损失远大于便利，已移除。
+                 改为「导出备份 / 导入恢复」：本地只保留最近 120 条，超出归档进年度，
+                 用户需要一个把台账带走留底的口子。备份是明文 JSON，落 Download 目录。 -->
+            <span
+              v-if="store.fuelLedger.records && store.fuelLedger.records.length > 0"
+              @click="onExportBackup"
+              class="px-2 py-0.5 rounded-lg border border-car-accent bg-car-card text-car-accent hover:border-car-accent-light text-[11px] font-bold cursor-pointer transition-colors"
+            >
+              导出备份
+            </span>
+            <span
+              @click="openModal('fuelBackupImport')"
+              class="px-2 py-0.5 rounded-lg border border-car-border bg-car-item text-car-sub hover:text-car-text text-[11px] font-bold cursor-pointer transition-colors"
+            >
+              导入恢复
+            </span>
             <span 
               v-if="selectedMonth"
               @click="openSelectedMonthManage"
@@ -648,6 +662,7 @@ import {
   addFuelRecord, 
   updateFuelRecord, 
   deleteFuelRecord,
+  exportFuelBackup,
   saveMonthlyAdjustment,
   setDefaultFuelType,
   showToast
@@ -703,6 +718,20 @@ function onYearChange(yr) {
 // 【铁律】记油模块不提供任何批量/一键清空入口（车主 2026-11-11 明确要求）：
 // 加油记录全部是一条条手动添加的，批量清空误触即不可恢复，损失远大于便利。
 // 日常修正只需单条删除（编辑弹窗内）。新增功能时严禁再加回批量清除回调。
+
+/**
+ * 导出一份完整台账备份到 /sdcard/Download/。
+ * 本地只保留最近 120 条、超出归档进年度，用户需要一个把台账带走留底的口子；
+ * 导出的明文 JSON 可用记事本或 Excel 直接看，也能随手机快传 / U 盘拷走。
+ */
+function onExportBackup() {
+  const res = exportFuelBackup();
+  if (res && res.ok) {
+    showToast(`已导出 ${res.records} 笔记录（${res.size}）到 Download 目录`, 'success');
+  } else {
+    showToast((res && res.msg) || '导出失败，请检查存储空间', 'danger');
+  }
+}
 
 // 单击筛选 (防抖防止与双击冲突)
 function onMonthClick(month) {

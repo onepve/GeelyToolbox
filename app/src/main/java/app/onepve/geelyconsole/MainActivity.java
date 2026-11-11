@@ -2260,6 +2260,27 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             return FuelManager.saveMonthlyAdjustment(MainActivity.this, month, totalPaid, totalLiters);
         }
 
+        // ═══ 加油台账导出 / 导入（车主 2026-11-11 要求，替代已移除的批量清空）═══
+        // 设计取向：明文 JSON 落 /sdcard/Download/，用户自己能用记事本/Excel 看，
+        // 也能手机快传、U 盘拷走长期保存；不加密封存，数据里本就无车牌/手机号。
+        @JavascriptInterface
+        public String exportFuelBackup() {
+            return safeCall("{\"ok\":false,\"msg\":\"导出失败\"}",
+                    () -> FuelManager.exportBackup(MainActivity.this));
+        }
+
+        @JavascriptInterface
+        public String scanFuelBackups() {
+            return safeCall("{\"ok\":false,\"list\":[]}",
+                    () -> FuelManager.scanBackups());
+        }
+
+        @JavascriptInterface
+        public String importFuelBackup(String fileName) {
+            return safeCall("{\"ok\":false,\"msg\":\"导入失败\"}",
+                    () -> FuelManager.importBackup(MainActivity.this, fileName));
+        }
+
 
 
         @JavascriptInterface

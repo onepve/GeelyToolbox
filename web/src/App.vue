@@ -59,6 +59,7 @@
     <WheelKeyLearningModal v-if="store.modals.wheelKeyLearning" />
     <CleanDownloadModal />
     <VoiceThemeImportModal />
+    <FuelBackupImportModal />
     <AllAppsModal />
     <OilPriceModal />
 
@@ -162,6 +163,7 @@ import AppSelectModal from './components/modals/AppSelectModal.vue';
 import WheelKeyLearningModal from './components/modals/WheelKeyLearningModal.vue';
 import CleanDownloadModal from './components/modals/CleanDownloadModal.vue';
 import VoiceThemeImportModal from './components/modals/VoiceThemeImportModal.vue';
+import FuelBackupImportModal from './components/modals/FuelBackupImportModal.vue';
 import AllAppsModal from './components/modals/AllAppsModal.vue';
 import OilPriceModal from './components/modals/OilPriceModal.vue';
 
