@@ -13,7 +13,7 @@ import app.onepve.geelyconsole.services.VehicleAutomationService;
 /**
  * 四门物理门控独立状态机 (DoorStateManager)
  * 彻底解耦四门逻辑，独立维护每扇门的物理状态与乘员上下车感知状态机！
- * 基于 v1.7.47 稳定基线打造，支持默认女声、公主专属、女王专属三套完整副驾车门音效。
+ * 基于 v1.7.47 稳定基线打造，四门各自独立的开门/关门播报音效。
  * 
  * 权威输入源:
  * 1. SerialControl_v2_0: 91 02 01 00 04 00 [b6] [b7] ... (b6 为四门状态位图)

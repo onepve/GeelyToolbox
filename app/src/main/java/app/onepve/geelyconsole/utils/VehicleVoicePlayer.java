@@ -357,7 +357,7 @@ public class VehicleVoicePlayer {
 
     private static String[] getChineseAliases(String baseName) {
         if ("door_fl_enter".equalsIgnoreCase(baseName)) {
-            return new String[]{"车主您好欢迎回来", "欢迎回来", "主驾上车迎宾", "主驾登车迎宾", "车主上车", "主驾上车", "主驾迎宾", "主驾开门", "主驾车门开启", "迎宾"};
+            return new String[]{"车主您好欢迎回来", "车主您好", "欢迎回来", "主驾上车迎宾", "主驾登车迎宾", "车主上车", "主驾上车", "主驾迎宾", "主驾开门", "主驾车门开启", "迎宾"};
         } else if ("door_fl_ready".equalsIgnoreCase(baseName)) {
             return new String[]{"准备启程", "主驾就绪", "主驾准备启程", "主驾系好安全带", "主驾安全带", "系好安全带"};
         } else if ("door_fl_exit".equalsIgnoreCase(baseName)) {
@@ -392,15 +392,15 @@ public class VehicleVoicePlayer {
         } else if ("door_open".equalsIgnoreCase(baseName)) {
             return new String[]{"开门", "车门开启", "车门打开", "主驾车门开启", "主驾开门", "迎宾"};
         } else if ("door_close".equalsIgnoreCase(baseName)) {
-            return new String[]{"关门", "车门关闭", "车门已关好", "主驾车门关闭", "主驾开门关闭"};
+            return new String[]{"关门", "车门关闭", "车门已关好", "车门关好", "主驾车门关闭", "主驾开门关闭"};
         } else if ("trunk_open".equalsIgnoreCase(baseName)) {
             return new String[]{"后备箱开启", "打开后备箱", "后备箱打开", "尾门开启", "尾门打开"};
         } else if ("trunk_close".equalsIgnoreCase(baseName)) {
             return new String[]{"后备箱关闭", "关闭后备箱", "后备箱已关好", "尾门关闭", "尾门已关好"};
         } else if ("hood_open".equalsIgnoreCase(baseName)) {
-            return new String[]{"引擎盖已打开", "引擎盖打开", "前盖打开"};
+            return new String[]{"引擎盖已打开", "引擎盖打开", "前盖打开", "前引擎盖打开", "机盖打开", "引擎盖开启", "前盖开启", "机盖开启"};
         } else if ("hood_close".equalsIgnoreCase(baseName)) {
-            return new String[]{"引擎盖已关闭", "引擎盖关闭", "前盖关闭"};
+            return new String[]{"引擎盖已关闭", "引擎盖关闭", "前盖关闭", "前引擎盖关闭", "机盖关闭", "引擎盖已关好", "机盖已关闭"};
         } else if ("gear_p".equalsIgnoreCase(baseName)) {
             return new String[]{"P挡", "动力已锁止【P】", "挂入P挡", "驻车挡", "驻车"};
         } else if ("gear_d".equalsIgnoreCase(baseName)) {
@@ -409,6 +409,10 @@ public class VehicleVoicePlayer {
             return new String[]{"R挡", "倒车挡注意安全【R】", "挂入R挡", "倒车挡", "倒车", "倒挡"};
         } else if ("gear_n".equalsIgnoreCase(baseName)) {
             return new String[]{"N挡", "当前空挡，注意溜车【N】", "挂入N挡", "空挡"};
+        } else if ("gear_s".equalsIgnoreCase(baseName)) {
+            return new String[]{"S挡", "运动挡", "挂入S挡", "运动模式挡"};
+        } else if ("gear_park_alarm".equalsIgnoreCase(baseName)) {
+            return new String[]{"未挂P挡警报", "停车请挂P挡", "请挂P挡", "挂P挡再下车"};
         } else if ("drive_mode_sport".equalsIgnoreCase(baseName) || "mode_sport".equalsIgnoreCase(baseName)) {
             return new String[]{"运动模式", "运动", "sport"};
         } else if ("drive_mode_comfort".equalsIgnoreCase(baseName) || "mode_comfort".equalsIgnoreCase(baseName)) {
