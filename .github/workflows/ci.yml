@@ -102,18 +102,19 @@ jobs:
         run: python3 scripts/ci_health_check.py
 
       - name: Build Release APK (Verification)
-        run: ./gradlew assembleRelease --stacktrace --warning-mode all 2>&1 | tee /tmp/gradle-warnings.log; exit ${PIPESTATUS[0]}
-
-      - name: Report Gradle Deprecation Warnings
-        if: always()
-        run: |
-          echo "=== Gradle deprecation warnings (all sources) ==="
-          grep -iE "deprecat|will be removed|no longer supported" /tmp/gradle-warnings.log | head -40 || echo "(none)"
+        run: ./gradlew assembleRelease --stacktrace
 
       - name: Copy & Rename APK
         run: |
           mkdir -p output
           cp app/build/outputs/apk/release/app-release.apk output/GeelyConsole.apk
+
+      - name: Upload APK for Toolchain Verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: toolchain-verify-apk
+          path: output/GeelyConsole.apk
+          retention-days: 1
 
             # APK 直接通过 R2 和 GitHub Release 分发，免占用 Actions Artifact 存储配额
 
