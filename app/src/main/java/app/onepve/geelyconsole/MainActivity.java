@@ -4092,13 +4092,13 @@ public void importVoiceZipFromDownload(final String fileName) {
                     } else if ("hood_close".equals(type)) {
                         player.play("hood_close.mp3", "引擎盖已关闭");
                     } else if ("mode_smart".equals(type)) {
-                        player.play("mode_smart.mp3", "智能模式");
+                        player.play("mode_smart.mp3", "智能");
                     } else if ("mode_comfort".equals(type)) {
-                        player.play("mode_comfort.mp3", "舒适模式");
+                        player.play("mode_comfort.mp3", "舒适");
                     } else if ("mode_eco".equals(type)) {
-                        player.play("mode_eco.mp3", "经济模式");
+                        player.play("mode_eco.mp3", "经济");
                     } else if ("mode_sport".equals(type)) {
-                        player.play("mode_sport.mp3", "运动模式");
+                        player.play("mode_sport.mp3", "运动");
                     } else if ("seatbelt".equals(type)) {
                         player.play("door_fr_close.mp3", "副驾已就坐，请系好安全带");
                     } else {

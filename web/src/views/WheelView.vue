@@ -3,66 +3,47 @@
     <!-- 顶部车规二级分段胶囊：一页全景掌控 (支持外部统一接管隐藏) -->
     <SubTabs v-if="!hideSubTabs" :tabs="wheelTabs" v-model="activeTab" />
 
-    <!-- 核心：方向盘按键方控接管总开关 (置顶常驻整卡开关大磁贴) -->
-    <div
-      class="border-2 rounded-2xl p-4 min-h-[92px] shadow-xl flex items-center justify-between transition-all select-none"
-      :class="[
-        store.vehicleAuto.wheel_master_switch
-          ? 'bg-car-item border-car-accent shadow-md'
-          : 'bg-car-card border-car-border shadow-sm'
-      ]"
-    >
-      <div 
-        @click="toggleWheelMasterSwitch"
-        class="flex-1 min-w-0 flex flex-col space-y-1.5 cursor-pointer pr-4"
-      >
-        <div class="flex items-center space-x-3">
-          <StatusDot size="lg" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" :glow-px="10" class="shadow-md" />
-          <span class="text-[21px] font-black text-car-text tracking-wide whitespace-nowrap">方向盘按键接管总开关</span>
-          <span :class="['text-[14.5px] font-black px-2.5 py-0.5 rounded-lg border', store.vehicleAuto.wheel_master_switch ? 'bg-car-item text-car-accent border-car-accent' : 'bg-car-card text-car-sub border-car-border']">
-            {{ store.vehicleAuto.wheel_master_switch ? '已接管' : '原车默认' }}
-          </span>
-        </div>
-        <div class="text-[14.5px] text-car-sub font-bold leading-normal">
-          全面接管静音键、Mode键、切歌键与主页返回键。单击即发，零延迟极速响应。
-        </div>
-      </div>
-
-      <!-- 右侧：车规模式切换双胶囊（标准卡片 vs 自定义列表） -->
-      <div class="flex items-center space-x-1.5 shrink-0 bg-car-item p-1.5 rounded-2xl border-2 border-car-border select-none shadow-sm">
-        <button
-          @click="setMappingMode('preset')"
-          :class="[
-            'px-5 h-[50px] rounded-xl font-black text-[15.5px] transition-all cursor-pointer flex items-center justify-center border-2 select-none outline-none focus:outline-none',
-            mappingMode === 'preset'
-              ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-              : 'bg-transparent border-transparent text-car-sub hover:text-car-text font-bold'
-          ]"
-        >
-          标准卡片模式
-        </button>
-        <button
-          @click="setMappingMode('custom_list')"
-          :class="[
-            'px-5 h-[50px] rounded-xl font-black text-[15.5px] transition-all cursor-pointer flex items-center justify-center border-2 select-none outline-none focus:outline-none',
-            mappingMode === 'custom_list'
-              ? 'bg-car-card border-car-accent text-car-accent shadow-md'
-              : 'bg-transparent border-transparent text-car-sub hover:text-car-text font-bold'
-          ]"
-        >
-          自定义列表模式
-        </button>
-      </div>
-    </div>
-
-
-
     <!-- Tab 1: 按键独立映射 (v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'keys'" class="flex flex-col space-y-4 pb-28">
       
+      <!-- 常驻：方控接管总开关 + 模式切换（切换后仍可用，防卡死） -->
+      <div class="rounded-3xl border-2 border-car-border bg-car-card shadow-md px-5 py-4 flex items-center justify-between">
+        <div
+          @click="toggleWheelMasterSwitch"
+          class="flex items-center space-x-3 min-w-0 cursor-pointer select-none active:scale-[0.995] transition-all"
+        >
+          <StatusDot size="md" :color="store.vehicleAuto.wheel_master_switch ? 'ok' : 'off'" :glow-px="store.vehicleAuto.wheel_master_switch ? 8 : 0" />
+          <span class="text-[19px] font-black text-car-text whitespace-nowrap">方向盘按键接管</span>
+          <span
+            :class="['text-[13.5px] font-black px-2.5 py-0.5 rounded-lg border shrink-0',
+                     store.vehicleAuto.wheel_master_switch ? 'bg-car-item text-car-accent border-car-accent' : 'bg-car-item text-car-sub border-car-border']"
+          >
+            {{ store.vehicleAuto.wheel_master_switch ? '已接管' : '原车默认' }}
+          </span>
+        </div>
+        <div class="flex items-center space-x-1.5 shrink-0 bg-car-item p-1.5 rounded-2xl border-2 border-car-border">
+          <button
+            v-for="m in wheelModeOptions"
+            :key="m.id"
+            type="button"
+            @click="setMappingMode(m.id)"
+            :class="['px-4 h-[50px] rounded-xl font-black text-[14.5px] transition-all cursor-pointer flex items-center justify-center border-2 select-none',
+                     m.active ? 'bg-car-card border-car-accent text-car-accent shadow-md' : 'bg-transparent border-transparent text-car-sub hover:text-car-text']"
+          >
+            {{ m.name }}
+          </button>
+        </div>
+      </div>
+
+
       <!-- 模式 A：标准卡片模式 (六大按键网格) -->
       <div v-if="mappingMode === 'preset'" class="flex flex-col space-y-4">
         <!-- 双列规整网格：一排两卡，工整对齐，共三排 -->
+        <WheelGroupCard
+          title="方向盘按键"
+          :master-on="!!store.vehicleAuto.wheel_master_switch"
+          @toggle="toggleWheelMasterSwitch"
+        >
         <div class="grid grid-cols-2 gap-4">
         <!-- ① 右方向盘主页/返回键 -->
         <WheelGestureCard
@@ -166,6 +147,7 @@
           </button>
         </FeatureCard>
       </div>
+        </WheelGroupCard>
     </div>
 
     <!-- 模式 B：自定义按键列表模式 (多车型动态学习与独立映射) -->
@@ -412,6 +394,7 @@ import MatrixButton from '../components/MatrixButton.vue';
 import ActionSelect from '../components/ActionSelect.vue';
 import CustomKeyActionSelect from '../components/CustomKeyActionSelect.vue';
 import WheelGestureCard from '../components/WheelGestureCard.vue';
+import WheelGroupCard from '../components/WheelGroupCard.vue';
 
 // 缤越 COOL 专车原厂 SX-0017 多媒体按键图解（深色车规，柔和不刺眼）
 import wheelGuideImg from '../assets/steering_wheel_guide.webp';
@@ -522,6 +505,12 @@ const customKeyTip = computed(() => {
   if (isLowTrim.value) return '热擎推荐设为「360 影像」或「高德导航」，方便行车随时看盲区。';
   return '推荐设为「360 全景影像」，行车随时查看周边盲区。';
 });
+
+// 方控组卡内的模式切换（原顶部胶囊搬进卡身，避免双处维护）
+const wheelModeOptions = computed(() => [
+  { id: 'preset', name: '标准卡片模式', active: mappingMode.value === 'preset' },
+  { id: 'custom_list', name: '自定义列表模式', active: mappingMode.value === 'custom_list' }
+]);
 
 const wheelTabs = [
   { id: 'keys', name: '按键映射手势', tag: '6大按键' },
