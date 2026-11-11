@@ -1809,10 +1809,73 @@ except Exception as _e34:
     passed = False
 
 # Final Summary Verdict
+
 # ----------------------------------------------------------------------
-log_step("CI 34-Gate Health Check Verdict")
+log_step("Gate 35: touch devices must not get sticky grey hover / long-press grey")
+try:
+    import re as _re35
+
+    _idx_path = os.path.join(ROOT_DIR, "web", "index.html")
+    _tw_path = os.path.join(ROOT_DIR, "web", "tailwind.config.js")
+    _sb_path = os.path.join(ROOT_DIR, "web", "src", "components", "Sidebar.vue")
+    _qr_path = os.path.join(ROOT_DIR, "web", "src", "components", "SidebarQrCodeCard.vue")
+
+    _e35 = []
+
+    # 铁律 1：index.html 的 tap-highlight 必须覆盖所有元素（*），
+    # 否则 div 这类非 button 的可点区域在触摸时会被浏览器刷上默认灰色高亮。
+    _ih35 = open(_idx_path, encoding="utf-8").read()
+    _hl35 = _re35.search(r"-webkit-tap-highlight-color:\s*transparent", _ih35)
+    if not _hl35:
+        _e35.append("index.html: -webkit-tap-highlight-color: transparent missing")
+    else:
+        # 找这条规则所属的选择器列表，必须含通配 *
+        _head35 = _ih35[:_hl35.start()]
+        _brace35 = _head35.rfind("{")
+        _sel35 = _head35[:_brace35] if _brace35 > 0 else ""
+        _sel35 = _sel35[_sel35.rfind("}") + 1:] if "}" in _sel35 else _sel35
+        _sel35 = _sel35[_sel35.rfind(">") + 1:] if ">" in _sel35 else _sel35
+        if "*" not in _sel35 and "*" not in _ih35.split("-webkit-tap-highlight-color")[0].split("{")[-1]:
+            _e35.append(
+                "index.html: tap-highlight reset must cover ALL elements (add '*' to the selector list); "
+                "otherwise div-based clickable rows flash grey on touch"
+            )
+
+    # 铁律 2：tailwind 必须开启 hoverOnlyWhenSupported，
+    # 否则触摸设备上 hover 状态会粘在被点过的元素上（sticky hover → 长按变灰）。
+    # 注意：必须剥掉 // 与 /* */ 注释再判断，否则注释里提到这个关键词会让门禁假绿。
+    _tw35 = open(_tw_path, encoding="utf-8").read()
+    _tw35_clean = _re35.sub(r"/\*.*?\*/", "", _tw35, flags=_re35.S)
+    _tw35_clean = _re35.sub(r"(?m)^\s*//.*$", "", _tw35_clean)
+    if not _re35.search(r"hoverOnlyWhenSupported\s*:\s*true", _tw35_clean):
+        _e35.append(
+            "tailwind.config.js: future.hoverOnlyWhenSupported must be true; "
+            "without it every hover:bg-* rule fires on touch screens and leaves a grey block behind"
+        )
+
+    # 铁律 3：左侧大区导航项（含左侧关于卡片）严禁使用 hover 改底色。
+    for _p35, _n35 in ((_sb_path, "Sidebar.vue"), (_qr_path, "SidebarQrCodeCard.vue")):
+        _c35 = open(_p35, encoding="utf-8").read()
+        if _re35.search(r"hover:bg-car-(item|hover|card)", _c35):
+            _e35.append(
+                f"{_n35}: nav rows must not use hover:bg-*; "
+                "tapping a nav area leaves a grey block that looks like a disabled/long-press state"
+            )
+
+    if _e35:
+        for _m35 in _e35:
+            print(f"  [FAIL] {_m35}")
+        passed = False
+    else:
+        print("  [PASS] no sticky grey hover on touch devices, tap-highlight covers all elements")
+except Exception as _e35x:
+    print(f"  [FAIL] Gate 35 crashed: {_e35x}")
+    passed = False
+
+# ----------------------------------------------------------------------
+log_step("CI 35-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 34 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering closed, framework & background architecture frozen, speed autoplay trip-lock & steering arbitration rigidity locked, zero component event modifier runtime traps)")
+    print("[SUCCESS] All 35 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering closed, framework & background architecture frozen, speed autoplay trip-lock & steering arbitration rigidity locked, zero component event modifier runtime traps, zero sticky grey hover on touch)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")

@@ -1,7 +1,7 @@
 <template>
   <div
     @click="handleClick"
-    class="flex items-center justify-between px-5 min-h-[68px] rounded-2xl border-2 border-transparent transition-colors duration-150 cursor-pointer font-black text-[21px] tracking-wide bg-car-item text-car-text hover:bg-car-hover"
+    class="flex items-center justify-between px-5 min-h-[68px] rounded-2xl border-2 border-transparent transition-colors duration-150 cursor-pointer font-black text-[21px] tracking-wide bg-car-item text-car-text"
     title="点击查看关于与赞助作者信息"
   >
     <div class="flex items-center space-x-2.5 truncate">
