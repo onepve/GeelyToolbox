@@ -109,12 +109,55 @@ jobs:
           mkdir -p output
           cp app/build/outputs/apk/release/app-release.apk output/GeelyConsole.apk
 
-      - name: Upload APK for Toolchain Verification
-        uses: actions/upload-artifact@v4
-        with:
-          name: toolchain-verify-apk
-          path: output/GeelyConsole.apk
-          retention-days: 1
+      - name: Verify APK Integrity After Toolchain Upgrade
+        run: |
+          set -e
+          APK=output/GeelyConsole.apk
+          echo "=== 1. 体积 ==="
+          ls -l "$APK" | awk '{print "  "$5" bytes"}'
+          python3 - <<'PY'
+          import zipfile, sys, os
+          apk = 'output/GeelyConsole.apk'
+          z = zipfile.ZipFile(apk)
+          infos = z.infolist()
+          fail = []
+
+          # dex 必须仍是 deflate（useLegacyPackaging 生效）
+          for i in infos:
+              if i.filename.endswith('.dex'):
+                  method = 'DEFLATE' if i.compress_type == 8 else 'STORE'
+                  print(f"  dex {i.filename}: {i.file_size}B -> {i.compress_size}B {method}")
+                  if i.filename == 'classes.dex' and i.compress_type != 8:
+                      fail.append('classes.dex 未压缩，useLegacyPackaging 失效')
+
+          # 图标必须是 webp 且无残留 png
+          webp = [i.filename for i in infos if 'ic_launcher' in i.filename]
+          pngs = [i.filename for i in infos if i.filename.endswith('.png')]
+          print(f"  图标 webp: {len(webp)} 个 | 残留 png: {len(pngs)} 个")
+          if not webp: fail.append('图标资源丢失')
+          if pngs: fail.append(f'残留 PNG: {pngs[:3]}')
+
+          # 启动车标
+          splash = [i.filename for i in infos if 'splash_logo' in i.filename]
+          print(f"  启动车标: {len(splash)} 个 {splash}")
+          if len(splash) < 2: fail.append('启动车标素材不全')
+
+          # 语音资产未被动过
+          mp3 = [i for i in infos if i.filename.endswith('.mp3')]
+          print(f"  语音 mp3: {len(mp3)} 个")
+          if len(mp3) != 25: fail.append(f'语音数量异常: {len(mp3)} != 25')
+
+          print()
+          if fail:
+              for f in fail: print('  [FAIL]', f)
+              sys.exit(1)
+          print('  [PASS] 工具链升级后 APK 内容完整')
+          PY
+
+      - name: Verify APK Signature
+        run: |
+          APKSIGNER=$(ls $ANDROID_HOME/build-tools/*/apksigner 2>/dev/null | tail -1)
+          "$APKSIGNER" verify --print-certs output/GeelyConsole.apk 2>&1 | head -5
 
             # APK 直接通过 R2 和 GitHub Release 分发，免占用 Actions Artifact 存储配额
 
