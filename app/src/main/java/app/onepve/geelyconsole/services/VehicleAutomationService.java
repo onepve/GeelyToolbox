@@ -499,6 +499,8 @@ public class VehicleAutomationService extends Service {
         });
 
         trunkStateManager = new TrunkStateManager(this, voicePlayer);
+        // 引擎盖状态机复用同一个播放器实例（v1.8.32.13）
+        app.onepve.geelyconsole.utils.HoodStateManager.init(this, voicePlayer);
         trunkStateManager.setListener(trunk -> {
             currentTrunk = trunk;
         });
@@ -1887,7 +1889,15 @@ public class VehicleAutomationService extends Service {
 
                     // 引擎盖（v1.8.32.12 新增）：同一帧的 b7 字节 bit2，与车门/尾门互不干扰。
                     // 实车取证：b6 只有副驾位变化期间，b7 的 bit2 由 1→0→1，正好对应开/关引擎盖。
-                    app.onepve.geelyconsole.utils.HoodStateManager.updateFromB7(b7);
+                    app.onepve.geelyconsole.utils.HoodStateManager.updateFromB7(b7, voiceMasterSwitch);
+
+                    // 报文学习（v1.8.32.13）：车主打开学习界面时，把这一帧喂给录制器。
+                    // 只读旁路，绝不回写串口；界面关着时这里是一次空转判断，零开销。
+                    if (app.onepve.geelyconsole.utils.FrameLearningRecorder.isActive()) {
+                        String raw = line.substring(sm.start());
+                        if (raw.length() > 40) raw = raw.substring(0, 40);
+                        app.onepve.geelyconsole.utils.FrameLearningRecorder.onSerialFrame(raw, b6, b7);
+                    }
                     return;
                 }
             } catch (Exception e) {

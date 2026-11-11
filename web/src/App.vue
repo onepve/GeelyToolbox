@@ -57,6 +57,7 @@
     <OtaCaptureModal />
     <AppSelectModal />
     <WheelKeyLearningModal v-if="store.modals.wheelKeyLearning" />
+    <FrameLearningModal v-if="store.modals.frameLearning" />
     <CleanDownloadModal />
     <VoiceThemeImportModal />
     <FuelBackupImportModal />
@@ -161,6 +162,7 @@ import VoiceItemSettingsModal from './components/modals/VoiceItemSettingsModal.v
 import OtaCaptureModal from './components/modals/OtaCaptureModal.vue';
 import AppSelectModal from './components/modals/AppSelectModal.vue';
 import WheelKeyLearningModal from './components/modals/WheelKeyLearningModal.vue';
+import FrameLearningModal from './components/modals/FrameLearningModal.vue';
 import CleanDownloadModal from './components/modals/CleanDownloadModal.vue';
 import VoiceThemeImportModal from './components/modals/VoiceThemeImportModal.vue';
 import FuelBackupImportModal from './components/modals/FuelBackupImportModal.vue';

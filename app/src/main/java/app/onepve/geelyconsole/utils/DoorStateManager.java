@@ -248,17 +248,19 @@ public class DoorStateManager {
                 String openKey = "voice_enable_door_" + doorCode.toLowerCase();
                 boolean enableOpen = PrefUtils.getBoolean(prefs, openKey, true);
                 if (voiceMasterSwitch && enableOpen && voicePlayer != null) {
+                    // v1.8.32.13：分门语音统一成「<位置>车门已打开」的固定句，
+                    // 与音频文件台词逐字一致，副驾不再播「欢迎乘车」这种带感情色彩的多余描述。
                     String soundFile = "door_fl.mp3";
-                    String text = doorName + "车门已打开";
+                    String text = "主驾车门已打开";
                     if ("FR".equals(doorCode)) {
                         soundFile = "door_fr.mp3";
-                        text = "欢迎乘车";
+                        text = "副驾车门已打开";
                     } else if ("RL".equals(doorCode)) {
                         soundFile = "door_rl.mp3";
-                        text = "左后车门已打开";
+                        text = "左后侧门已打开";
                     } else if ("RR".equals(doorCode)) {
                         soundFile = "door_rr.mp3";
-                        text = "右后车门已打开";
+                        text = "右后侧门已打开";
                     }
                     voicePlayer.play(soundFile, text);
                 }
@@ -276,18 +278,19 @@ public class DoorStateManager {
                 String closeKey = "voice_enable_door_" + doorCode.toLowerCase() + "_close";
                 boolean enableClose = PrefUtils.getBoolean(prefs, closeKey, true);
                 if (voiceMasterSwitch && enableClose && voicePlayer != null) {
+                    // v1.8.32.13：与开门句对称，统一成「<位置>车门已关闭」。
                     String soundFile = "door_fl_close.mp3";
-                    String text = doorName + "车门已关闭";
+                    String text = "主驾车门已关闭";
 
                     if ("FR".equals(doorCode)) {
                         soundFile = "door_fr_close.mp3";
                         text = "副驾车门已关闭";
                     } else if ("RL".equals(doorCode)) {
                         soundFile = "door_rl_close.mp3";
-                        text = "左后车门已关闭";
+                        text = "左后侧门已关闭";
                     } else if ("RR".equals(doorCode)) {
                         soundFile = "door_rr_close.mp3";
-                        text = "右后车门已关闭";
+                        text = "右后侧门已关闭";
                     }
                     voicePlayer.play(soundFile, text);
                 }

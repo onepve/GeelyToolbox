@@ -94,7 +94,10 @@ public class PrefUtils {
             "enable_door_rl", "enable_door_rl_close",
             "enable_door_rr", "enable_door_rr_close",
             "voice_enable_trunk_open", "voice_enable_trunk_close",
-            "enable_trunk_open", "enable_trunk_close"
+            "enable_trunk_open", "enable_trunk_close",
+            // v1.8.32.13 引擎盖语音开关
+            "voice_enable_hood_open", "voice_enable_hood_close",
+            "enable_hood_open", "enable_hood_close"
         };
         for (String k : boolKeys) {
             getBoolean(prefs, k, true);

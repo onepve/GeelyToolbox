@@ -183,26 +183,26 @@ public class GearStateMachine {
 
                         if (gear == 2) { // D 挡
                             if (enableD && voicePlayer != null) {
-                                voicePlayer.play("gear_d.mp3", "已挂入前进挡");
+                                voicePlayer.play("gear_d.mp3", "前进档");
                             }
                         } else if (gear == 4) { // R 挡
                             if (enableR && voicePlayer != null) {
-                                voicePlayer.play("gear_r.mp3", "已挂入倒车挡");
+                                voicePlayer.play("gear_r.mp3", "倒车档");
                             }
                         } else if (gear == 3) { // N 挡
                             if (enableN && voicePlayer != null) {
-                                voicePlayer.play("gear_n.mp3", "已挂入空挡");
+                                voicePlayer.play("gear_n.mp3", "空档");
                             }
                         } else if (gear == 6 || gear == 7) { // S 挡
                             if (enableS && voicePlayer != null) {
-                                voicePlayer.play("gear_s.mp3", "已挂入运动挡");
+                                voicePlayer.play("gear_s.mp3", "运动档");
                             }
                         } else if (gear == 5) { // P 挡
                             // 核心铁律：只要是从非 P 挡切换回 P 挡（prevGear != 5），100% 灵敏播报驻车挡！
                             // 彻底消除按 P 键偶尔哑巴无声的顽疾！
                             if (prevGear != 5) {
                                 if (enableP && voicePlayer != null) {
-                                    voicePlayer.play("gear_p.mp3", "已挂入驻车挡");
+                                    voicePlayer.play("gear_p.mp3", "已驻车");
                                 }
                             }
                             isGearVoiceArmed = 0; // 归零！进入休眠态

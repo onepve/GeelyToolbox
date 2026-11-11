@@ -236,6 +236,8 @@ export const store = reactive({
     otaCapture: false,
     appSelect: null,
     wheelKeyLearning: null,
+    // 报文学习观察（v1.8.32.13）：实时看车身报文数值
+    frameLearning: null,
     cleanDownload: false,
     voiceThemeImport: false,
     // 加油台账导入弹窗（车主 2026-11-11：批量清空改为导出/导入）

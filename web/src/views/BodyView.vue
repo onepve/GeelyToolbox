@@ -289,6 +289,47 @@
       </div>
     </div>
 
+    <!-- Tab: 前引擎盖 (v1.8.32.13 新增) -->
+    <div v-if="activeTab === 'hood'" class="flex flex-col space-y-4">
+      <div class="grid grid-cols-2 gap-4 items-stretch">
+        <VoiceItemCard
+          title="引擎盖打开提醒"
+          tag="开启提示"
+          desc="引擎盖开启时播报，防止忘记关盖就上路"
+          :active="!!store.vehicleAuto.voice_enable_hood_open"
+          @toggle="toggleSetting('voice_enable_hood_open')"
+          @test="testVoice('hood_open')"
+          @custom="openCustomVoice('hood_open', '引擎盖打开提醒', 'hood_open.mp3')"
+        />
+        <VoiceItemCard
+          title="引擎盖关闭确认"
+          tag="关闭提示"
+          desc="引擎盖闭合锁止后播报确认，不用再低头看"
+          :active="!!store.vehicleAuto.voice_enable_hood_close"
+          @toggle="toggleSetting('voice_enable_hood_close')"
+          @test="testVoice('hood_close')"
+          @custom="openCustomVoice('hood_close', '引擎盖关闭确认', 'hood_close.mp3')"
+        />
+      </div>
+
+      <!-- 报文学习入口：给车主和分析用的实时数值观察窗 -->
+      <FeatureCard
+        id="frame_learning"
+        title="报文学习观察"
+        desc="打开后边操作边看数值：开关车门、引擎盖、后备箱，屏幕会实时显示当前状态，方便核对和排查。"
+        help-text="遇到某个功能不灵敏，可以开着这个界面操作一遍，把屏幕上的数值记下来发给开发者，能大幅加快定位。"
+        help-tip="不设倒计时，看够了自己关；只观察不改变车上任何设置。"
+      >
+        <button
+          type="button"
+          @click="openModal('frameLearning', { ts: Date.now() })"
+          class="w-full min-h-[64px] rounded-2xl bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25 font-black text-[17px] cursor-pointer shadow-md hover:border-car-border-light transition-all active:scale-[0.99]"
+        >
+          开始观察报文数值
+        </button>
+      </FeatureCard>
+    </div>
+
     <!-- Tab 6: 音乐音源优先级与回退调度 -->
     <div v-if="activeTab === 'media'" class="flex flex-col space-y-4">
       <AudioView />
@@ -471,6 +512,7 @@ const voiceTabs = computed(() => [
   { id: 'mode', name: '驾驶模式' },
   { id: 'door', name: store.vehicleAuto.voice_door_mode_universal === true ? '车门合并播报' : '车门分门播报' },
   { id: 'trunk', name: '电动尾门' },
+  { id: 'hood', name: '前引擎盖' },
   { id: 'media', name: '音乐音源优先级' },
   { id: 'packs', name: '专属语音包' }
 ]);

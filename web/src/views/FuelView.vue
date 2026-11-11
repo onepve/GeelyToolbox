@@ -293,7 +293,13 @@
               <div 
                 v-for="yItem in availableYears" 
                 :key="yItem.year"
-                @click="onYearChange(yItem.year)"
+                @click="swallowClickIfLongPressed() || onYearChange(yItem.year)"
+                @mousedown="startLongPressYear(yItem)"
+                @mouseup="cancelLongPress"
+                @mouseleave="cancelLongPress"
+                @touchstart.prevent="startLongPressYear(yItem)"
+                @touchend="cancelLongPress"
+                @touchcancel="cancelLongPress"
                 class="h-[36px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-center font-black text-[13px] select-none shadow-sm"
                 :class="(activeYear === yItem.year || (activeYear === '' && yItem.year === currentYear)) 
                   ? 'bg-car-accent-light border-car-accent text-car-accent' 
@@ -336,7 +342,7 @@
               </div>
             </div>
 
-            <!-- 年度归档批量清空入口已移除（车主 2026-11-11 要求）：单条删除请走编辑弹窗 -->
+            <!-- 年度归档清空不做显式按钮，改走「长按年度胶囊 + 二次确认」（v1.8.32.13） -->
           </div>
 
           <!-- 往年月度收敛分布网格 -->
@@ -375,14 +381,20 @@
         <div v-if="store.fuelLedger.monthly_stats && store.fuelLedger.monthly_stats.length > 0" class="flex flex-col space-y-1.5 pb-2 border-b border-car-border/60">
           <div class="flex items-center justify-between text-[13px] text-car-sub font-bold px-1">
             <span>月度花费汇总清单 (按月汇总)</span>
-            <span class="text-car-accent">单击筛选 · 双击管理/校准本月</span>
+            <span class="text-car-accent">单击筛选 · 双击管理 · 长按清空</span>
           </div>
 
           <div class="flex flex-wrap -m-1">
             <div class="p-1">
               <div 
-                @click="toggleMonthFilter('')"
-                class="h-[50px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center space-x-3 shadow-sm"
+                @click="swallowClickIfLongPressed() || toggleMonthFilter('')"
+                @mousedown="startLongPressAll"
+                @mouseup="cancelLongPress"
+                @mouseleave="cancelLongPress"
+                @touchstart.prevent="startLongPressAll"
+                @touchend="cancelLongPress"
+                @touchcancel="cancelLongPress"
+                class="h-[50px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center space-x-3 shadow-sm select-none"
                 :class="selectedMonth === '' ? 'bg-car-accent-light border-car-accent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
               >
                 <div class="flex flex-col text-left">
@@ -402,11 +414,17 @@
               class="p-1"
             >
               <div 
-                @click="onMonthClick(m.month)"
+                @click="swallowClickIfLongPressed() || onMonthClick(m.month)"
                 @dblclick="openMonthManageModal(m)"
+                @mousedown="startLongPressMonth(m)"
+                @mouseup="cancelLongPress"
+                @mouseleave="cancelLongPress"
+                @touchstart.prevent="startLongPressMonth(m)"
+                @touchend="cancelLongPress"
+                @touchcancel="cancelLongPress"
                 class="h-[50px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center space-x-3 shadow-sm select-none"
                 :class="selectedMonth === m.month ? 'bg-car-accent-light border-car-accent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
-                :title="'单击筛选，双击管理/校准【' + m.month + '】账单'"
+                :title="'单击筛选 · 双击管理/校准 · 长按清空【' + m.month + '】'"
               >
                 <div class="flex flex-col text-left">
                   <div class="flex items-center space-x-1">
@@ -427,10 +445,8 @@
         <div class="flex items-center justify-between pb-1 text-[13px] text-car-sub font-bold px-1">
           <div class="flex items-center space-x-2">
             <span>{{ selectedMonth ? `【${selectedMonth}】详细流水 (${filteredRecords.length} 笔)` : `近期加油流水 (${filteredRecords.length} 笔 · 双列卡片)` }}</span>
-            <!-- 原来这里是「清空全部记录」批量删除按钮，车主 2026-11-11 指出加油记录
-                 全是逐条手动添加的，误触全删不可恢复、损失远大于便利，已移除。
-                 改为「导出备份 / 导入恢复」：本地只保留最近 120 条，超出归档进年度，
-                 用户需要一个把台账带走留底的口子。备份是明文 JSON，落 Download 目录。 -->
+            <!-- 这里保留「导出备份 / 导入恢复」，不放显式批量删除按钮。
+                 清空入口改走长按（v1.8.32.13）：车主要求「功能可以不用但不能没有」。 -->
             <span
               v-if="store.fuelLedger.records && store.fuelLedger.records.length > 0"
               @click="onExportBackup"
@@ -452,7 +468,7 @@
               校准本月账单
             </span>
           </div>
-          <span>点击卡片微调或删除 · 双击月份胶囊管理月度</span>
+          <span>点击卡片微调或删除 · 双击月份胶囊管理月度 · 长按胶囊可清空</span>
         </div>
 
         <!-- 空状态提示 -->
@@ -629,7 +645,7 @@
 
       <template #footer>
       <div class="flex items-center justify-between w-full">
-      <!-- 月度批量清空入口已移除（车主 2026-11-11 要求）：单条删除请走编辑弹窗 -->
+      <!-- 月度清空不做显式按钮，改走「长按月份胶囊 + 二次确认」（v1.8.32.13） -->
       <div class="flex items-center space-x-3 ml-auto">
             <button 
               type="button"
@@ -665,6 +681,10 @@ import {
   exportFuelBackup,
   saveMonthlyAdjustment,
   setDefaultFuelType,
+  // v1.8.32.13 长按删除用到的三个清理接口（后端早已具备，之前只是没接入 UI）
+  clearFuelRecords,
+  clearMonthlyRecords,
+  clearYearlyArchive,
   showToast
 } from '../store';
 import SubTabs from '../components/SubTabs.vue';
@@ -715,9 +735,132 @@ function onYearChange(yr) {
   selectedMonth.value = '';
 }
 
-// 【铁律】记油模块不提供任何批量/一键清空入口（车主 2026-11-11 明确要求）：
-// 加油记录全部是一条条手动添加的，批量清空误触即不可恢复，损失远大于便利。
-// 日常修正只需单条删除（编辑弹窗内）。新增功能时严禁再加回批量清除回调。
+// ────────────────────────────────────────────────────────────
+// 长按删除（v1.8.32.13）
+//
+// 背景：车主 2026-11-11 先要求去掉批量清空按钮（误触全删不可恢复），
+// 随后又补了一句「做好功能可以不用，但是不能没有」。折中方案就是长按：
+//   · 平常用不到——单击永远是「筛选/切换」，双击永远是「管理/校准」，跟以前一模一样；
+//   · 真需要时够得着——长按 1.2 秒才弹二次确认，误触概率趋近于零。
+// 三处入口：全部汇总、月份胶囊、年度胶囊。三层语义严格分开，互不越界。
+// ────────────────────────────────────────────────────────────
+const LONG_PRESS_MS = 1200;
+let longPressTimer = null;
+let longPressFired = false;
+
+function clearLongPressTimer() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+}
+
+/** 任何松手动作都取消计时，保证只有「按满 1.2 秒」才算数 */
+function cancelLongPress() {
+  clearLongPressTimer();
+}
+
+/**
+ * 长按触发后，浏览器仍会补发一次 click，必须拦掉，
+ * 否则清空当月后还会顺带把筛选切回该月（界面看上去像没生效）。
+ */
+function swallowClickIfLongPressed() {
+  if (longPressFired) {
+    longPressFired = false;
+    return true;
+  }
+  return false;
+}
+
+/** 全部汇总：长按清空本年全部流水 */
+function startLongPressAll() {
+  clearLongPressTimer();
+  longPressFired = false;
+  longPressTimer = setTimeout(() => {
+    longPressFired = true;
+    const total = store.fuelLedger.records ? store.fuelLedger.records.length : 0;
+    if (total === 0) {
+      showToast('今年还没有加油记录', 'info');
+      return;
+    }
+    openModal('confirm', {
+      title: '清空今年的全部流水？',
+      desc: `将删除今年全部 ${total} 笔加油记录，往年归档不受影响。此操作删完就找不回来了，建议先「导出备份」留一份。`,
+      confirmText: '确定全部清空',
+      isDanger: true,
+      onConfirm: () => {
+        const ok = clearFuelRecords();
+        showToast(ok ? '今年流水已清空' : '清空失败，请重试', ok ? 'success' : 'danger');
+      }
+    });
+  }, LONG_PRESS_MS);
+}
+
+/** 月份胶囊：长按清空该月流水 */
+function startLongPressMonth(m) {
+  clearLongPressTimer();
+  longPressFired = false;
+  longPressTimer = setTimeout(() => {
+    longPressFired = true;
+    if (!m || !m.count) {
+      showToast(`【${m ? m.month : ''}】没有记录`, 'info');
+      return;
+    }
+    openModal('confirm', {
+      title: `清空【${m.month}】的流水？`,
+      desc: `将删除 ${m.month} 全部 ${m.count} 笔加油记录，其他月份不受影响。删完找不回来，建议先导出备份。`,
+      confirmText: '确定清空本月',
+      isDanger: true,
+      onConfirm: () => {
+        const ok = clearMonthlyRecords(m.month);
+        if (selectedMonth.value === m.month) selectedMonth.value = '';
+        showToast(ok ? `【${m.month}】已清空` : '清空失败，请重试', ok ? 'success' : 'danger');
+      }
+    });
+  }, LONG_PRESS_MS);
+}
+
+/** 年度胶囊：长按清空该年归档 */
+function startLongPressYear(yItem) {
+  clearLongPressTimer();
+  longPressFired = false;
+  longPressTimer = setTimeout(() => {
+    longPressFired = true;
+    // 本年走「清空流水」，往年走「清空归档」，两条路不混用
+    if (yItem.year === currentYear.value) {
+      const total = store.fuelLedger.records ? store.fuelLedger.records.length : 0;
+      if (total === 0) {
+        showToast('今年还没有加油记录', 'info');
+        return;
+      }
+      openModal('confirm', {
+        title: '清空今年的全部流水？',
+        desc: `将删除今年全部 ${total} 笔加油记录，已归档的往年数据不受影响。删完找不回来，建议先导出备份。`,
+        confirmText: '确定全部清空',
+        isDanger: true,
+        onConfirm: () => {
+          const ok = clearFuelRecords();
+          showToast(ok ? '今年流水已清空' : '清空失败，请重试', ok ? 'success' : 'danger');
+        }
+      });
+      return;
+    }
+    // 往年归档
+    const arch = (store.fuelLedger.yearly_stats || []).find(y => y.year === yItem.year);
+    const cnt = arch ? arch.count : 0;
+    openModal('confirm', {
+      title: `删除 ${yItem.year} 年的归档总账？`,
+      desc: `将删除 ${yItem.year} 年整年的归档汇总（共 ${cnt} 笔记录的压缩总账）。删除后该年份会从年度轴上消失，无法恢复。`,
+      confirmText: '确定删除该年归档',
+      isDanger: true,
+      onConfirm: () => {
+        const ok = clearYearlyArchive(yItem.year);
+        if (activeYear.value === yItem.year) activeYear.value = '';
+        showToast(ok ? `${yItem.year} 年归档已删除` : '删除失败，请重试', ok ? 'success' : 'danger');
+      }
+    });
+  }, LONG_PRESS_MS);
+}
 
 /**
  * 导出一份完整台账备份到 /sdcard/Download/。

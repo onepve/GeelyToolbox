@@ -352,6 +352,16 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         webView = findViewById(R.id.webview);
         if (webView == null) return;
 
+        // 报文学习：把 WebView 注入点交给录制器，它才能在字节变化时把数值推给页面。
+        // 用接口注入而不是让录制器直接持有 MainActivity，保证录制器可在纯 JVM 单测。
+        app.onepve.geelyconsole.utils.FrameLearningRecorder.installEmitter(js -> {
+            try {
+                if (webView != null) {
+                    webView.evaluateJavascript(js, null);
+                }
+            } catch (Throwable ignored) {}
+        });
+
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -4308,6 +4318,64 @@ public void importVoiceZipFromDownload(final String fileName) {
                 releaseHwKeyInputChannel();
             } catch (Throwable ignored) {}
             return true;
+        }
+
+        // ═══ HAL / CAN 报文学习观察 (v1.8.32.13) ═══
+        // 与方控学习的本质区别：方控是「按一下 → 得一个键码」的一次性捕获；
+        // 报文学习是「边操作 → 边看数值」的持续观察，所以不设倒计时，也不自动结束，
+        // 车主什么时候看够了自己关。
+        //
+        // 数据来源是车辆服务里解析 91 02 01 的那段代码，打开开关后才会往这里推，
+        // 关掉立刻停，不占 CPU、不吃内存。
+
+        @JavascriptInterface
+        public boolean startFrameLearning() {
+            try {
+                FrameLearningRecorder.setActive(true);
+                AppLogger.diag("报文学习", "车主打开了报文学习界面");
+                // 立刻推一次全量快照，让界面不用等下一次变化就有内容
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (webView != null) {
+                                String js = "if(window.onFrameLearningUpdate) window.onFrameLearningUpdate("
+                                        + FrameLearningRecorder.snapshot().toString() + ");";
+                                webView.evaluateJavascript(js, null);
+                            }
+                        } catch (Throwable ignored) {}
+                    }
+                });
+                return true;
+            } catch (Throwable e) {
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public boolean stopFrameLearning() {
+            try {
+                FrameLearningRecorder.setActive(false);
+                return true;
+            } catch (Throwable e) {
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public String getFrameLearningSnapshot() {
+            try {
+                return FrameLearningRecorder.snapshot().toString();
+            } catch (Throwable e) {
+                return "{}";
+            }
+        }
+
+        @JavascriptInterface
+        public void clearFrameLearning() {
+            try {
+                FrameLearningRecorder.clear();
+            } catch (Throwable ignored) {}
         }
 
         private void notifyWheelKeyLearned(final int keyCode) {

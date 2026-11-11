@@ -1,5 +1,8 @@
 package app.onepve.geelyconsole.utils;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
 import app.onepve.geelyconsole.services.VehicleAutomationService;
 
 /**
@@ -46,11 +49,27 @@ public class HoodStateManager {
     private static volatile boolean baselineEstablished = false;
     private static volatile long lastChangeAtMs = 0L;
     private static volatile HoodStateListener listener;
+    /** 语音播报依赖（由 VehicleAutomationService 注入，与车门/尾门同一套） */
+    private static volatile VehicleVoicePlayer voicePlayer;
+    private static volatile boolean voiceMasterSwitch = false;
+    /** 读语音开关偏好用；与 DoorStateManager 共用同一个 toolbox_settings */
+    private static volatile SharedPreferences prefs;
     private static volatile long frameCount = 0L;
     private static volatile long lastStateRawAtMs = 0L;
 
     public static void setListener(HoodStateListener l) {
         listener = l;
+    }
+
+    /**
+     * 由 VehicleAutomationService 在初始化时注入，与车门/尾门共用同一个播放器实例。
+     * Context 只用来取 toolbox_settings 偏好，不持有 Activity 引用。
+     */
+    public static void init(Context ctx, VehicleVoicePlayer p) {
+        voicePlayer = p;
+        if (ctx != null) {
+            prefs = ctx.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+        }
     }
 
     /** 当前引擎盖状态：0=闭合 1=开启 */
@@ -67,8 +86,10 @@ public class HoodStateManager {
      * 由 VehicleAutomationService 在解析 91 02 01 时调用。
      *
      * @param b7 该帧的 b7 字节（尾门 + 引擎盖位图）
+     * @param voiceMaster 语音总开关当前状态（与其他状态机同源）
      */
-    public static void updateFromB7(int b7) {
+    public static void updateFromB7(int b7, boolean voiceMaster) {
+        voiceMasterSwitch = voiceMaster;
         frameCount++;
         lastStateRawAtMs = System.currentTimeMillis();
         // bit2: 1=闭合, 0=开启
@@ -96,6 +117,26 @@ public class HoodStateManager {
                 + " (b7=0x" + String.format("%02x", b7) + ")");
         KeySignalRecorder.record(KeySignalRecorder.CH_HOOD,
                 hood == HOOD_OPEN ? "引擎盖=开" : "引擎盖=关");
+
+        // 语音播报（v1.8.32.13）：文案固定为「引擎盖已打开 / 已关闭」，
+        // 与 hood_open.mp3 / hood_close.mp3 台词逐字一致。
+        // 开关读取顺序与车门/尾门保持一致：先看新键 voice_enable_hood_*，
+        // 再兼容旧键 enable_hood_*，默认开启。
+        if (voiceMasterSwitch && voicePlayer != null) {
+            try {
+                boolean enabled;
+                if (hood == HOOD_OPEN) {
+                    enabled = PrefUtils.getBoolean(prefs, "voice_enable_hood_open", true);
+                } else {
+                    enabled = PrefUtils.getBoolean(prefs, "voice_enable_hood_close", true);
+                }
+                if (enabled) {
+                    voicePlayer.play(hood == HOOD_OPEN ? "hood_open.mp3" : "hood_close.mp3",
+                            hood == HOOD_OPEN ? "引擎盖已打开" : "引擎盖已关闭");
+                }
+            } catch (Throwable ignored) {
+            }
+        }
 
         HoodStateListener l = listener;
         if (l != null) {

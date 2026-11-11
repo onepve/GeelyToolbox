@@ -1,76 +1,84 @@
 {
-  "voice_version": 19,
-  "updated_at": "2026-09-22",
+  "voice_version": 20,
+  "updated_at": "2026-11-11",
   "description": "吉利智驾车规级内置音频资产版本清单与哈希校验索引",
-  "total_files": 23,
+  "total_files": 25,
   "files": {
     "door_close.mp3": {
-      "size": 13916,
-      "md5": "abb16e1d25ca0ad3efc0b6bdcd6dc2a5"
+      "size": 13484,
+      "md5": "3467d6a18efdce784237f54770c8fa6c"
     },
     "door_fl.mp3": {
-      "size": 22844,
-      "md5": "7ecbba983fa3c10e28f67707c8b47070"
+      "size": 16220,
+      "md5": "22044f6536df2631c7dccb93a68ea090"
     },
     "door_fl_close.mp3": {
-      "size": 22844,
-      "md5": "10dad00247546f5cc6c85912ca1dd3e0"
+      "size": 16076,
+      "md5": "f681af17208d07d0502b647ce92e9e28"
     },
     "door_fr.mp3": {
-      "size": 18092,
-      "md5": "2e816ea6283e40ca41a38646fe23f23a"
+      "size": 16364,
+      "md5": "4ab443a41eb80e2a9c0794896629e3c6"
     },
     "door_fr_close.mp3": {
-      "size": 22844,
-      "md5": "0eb92c75f811f4ccfe0033bd5c428874"
+      "size": 16364,
+      "md5": "aac4d629a0eb0ac15e86b4216f550602"
     },
     "door_open.mp3": {
       "size": 13772,
-      "md5": "09e362d7dbd1481a7115710e3fa8c326"
+      "md5": "0241c37772f4ed896bfbbb0185842381"
     },
     "door_rl.mp3": {
-      "size": 22556,
-      "md5": "b0de26f1557d01d82ddeb2249050ee6b"
+      "size": 15932,
+      "md5": "fc56a5fcb7cfbea0e8a322af2f2da28c"
     },
     "door_rl_close.mp3": {
-      "size": 14492,
-      "md5": "b5d4dadde8b9cc3d050356f36f62074b"
+      "size": 15788,
+      "md5": "c1b6aab3d5c9810ff04a98fdf9781201"
     },
     "door_rr.mp3": {
-      "size": 22556,
-      "md5": "da3fe10a8fe103d6cda0505f1bae2221"
+      "size": 16220,
+      "md5": "f8089125d350c0b82e2a1d00906fff1d"
     },
     "door_rr_close.mp3": {
-      "size": 14492,
-      "md5": "dd2eba6037d74ad17be2fb0cb18a067b"
+      "size": 16076,
+      "md5": "878ebbb90b1b3340c33c7b5ec98f75fd"
     },
     "download_complete.mp3": {
       "size": 15068,
       "md5": "cdbf54eb7f20bd050f02e4f6d5f3248f"
     },
     "gear_d.mp3": {
-      "size": 18092,
-      "md5": "71f11a420c5f74c2deab59de35ba2f44"
+      "size": 11324,
+      "md5": "79a28c726df8ef6326b822a067316465"
     },
     "gear_n.mp3": {
-      "size": 8444,
-      "md5": "a521974d43b28070ebfa9b2c1439ba1b"
+      "size": 9884,
+      "md5": "cf679462536389979792e2c420832a1f"
     },
     "gear_p.mp3": {
-      "size": 12764,
-      "md5": "0aee3bc804e432b647c4a0359bcbf194"
+      "size": 11324,
+      "md5": "bec139ab1d7d715c1b486e5460ac8df4"
     },
     "gear_park_alarm.mp3": {
       "size": 12764,
       "md5": "6f970146aff458c668e7a2034c4d30c0"
     },
     "gear_r.mp3": {
-      "size": 8444,
-      "md5": "4e8794e01daad04d67d8d96e61f6e786"
+      "size": 11180,
+      "md5": "ad300d2096220f7c3288816d3efdb392"
     },
     "gear_s.mp3": {
       "size": 10604,
       "md5": "b3ec4d818999d186db26c4e7ed421c9c"
+    },
+    "hood_close.mp3": {
+      "size": 14636,
+      "md5": "ac5293cc8e70045b5b474ece70fc1609"
+    },
+    "hood_open.mp3": {
+      "size": 14924,
+      "md5": "1eb3b4b1451388789efc51a435ca2002"
     },
     "mode_comfort.mp3": {
       "size": 5852,
@@ -89,12 +97,12 @@
       "md5": "b5770fef3f058b01816bc057257cb1e5"
     },
     "trunk_close.mp3": {
-      "size": 20108,
-      "md5": "41db41398d833867db65148e10250976"
+      "size": 14636,
+      "md5": "2af52004db975c210d677fcc836dba38"
     },
     "trunk_open.mp3": {
-      "size": 13196,
-      "md5": "b8a8307397ac76d70142e98d85e504f6"
+      "size": 14924,
+      "md5": "388d480631fada4b32b0ddf803f574c6"
     }
   }
 }
