@@ -504,11 +504,19 @@
                 <div class="flex flex-col shrink-0">
                   <span class="text-[15px] font-black text-car-text font-mono leading-tight whitespace-nowrap">加 {{ rec.liters }} L</span>
                   <div class="flex items-center space-x-1 mt-0.5">
-                    <span 
-                      :class="rec.gas_station === '智能自动感知' ? 'border-car-accent/60 text-car-accent bg-car-accent-light' : 'bg-car-card border-car-border text-car-sub'"
-                      class="text-[10.5px] px-1.5 py-0.2 rounded font-black border whitespace-nowrap"
+                    <!-- 油品标号永远显示；只有自动记账的记录额外加一枚「⚡自动」角标。
+                         以前把标号与「自动」做成二选一，导致自动记录的 92# 被吞掉，
+                         车主核对过标号却看不到，误以为程序记错。 -->
+                    <span
+                      class="text-[10.5px] px-1.5 py-0.2 rounded font-black border whitespace-nowrap bg-car-card border-car-border text-car-sub"
                     >
-                      {{ rec.gas_station === '智能自动感知' ? '⚡自动' : (rec.fuel_type || '92#') + (rec.is_full ? '·满' : '') }}
+                      {{ (rec.fuel_type || '92#') + (rec.is_full ? '·满' : '') }}
+                    </span>
+                    <span
+                      v-if="rec.gas_station === '智能自动感知'"
+                      class="text-[10.5px] px-1.5 py-0.2 rounded font-black border whitespace-nowrap border-car-accent/60 text-car-accent bg-car-accent-light"
+                    >
+                      ⚡自动
                     </span>
                     <span class="text-[11.5px] text-car-sub font-mono font-bold whitespace-nowrap">¥{{ rec.price ? rec.price.toFixed(2) : '--' }}</span>
                   </div>
@@ -540,7 +548,7 @@
                     <span v-if="Number(rec.coupon || 0) > 0" class="text-[10px] px-1 py-0.2 rounded bg-car-accent-light border border-car-accent/40 text-car-accent font-bold whitespace-nowrap">
                       {{ (Number(rec.discount || 10) < 10 && Number(rec.discount || 10) > 0) ? `${Number(rec.discount).toFixed(1)}折·` : '' }}省¥{{ Number(rec.coupon).toFixed(1) }}
                     </span>
-                    <span class="text-[11px] text-car-sub font-bold whitespace-nowrap">{{ rec.gas_station === '智能自动感知' ? '自动' : '手动' }}</span>
+                    <span v-if="rec.gas_station !== '智能自动感知'" class="text-[11px] text-car-sub font-bold whitespace-nowrap">手动</span>
                   </div>
                 </div>
               </div>

@@ -488,12 +488,22 @@ export function recordActiveNav(navId) {
   if (!navId || navId === 'floating') return;
   const normalized = normalizeNav(navId);
   store.settings.last_active_nav = normalized;
-  try {
-    localStorage.setItem('geely_last_active_nav', normalized);
-  } catch (e) {}
-  try {
-    bridge.call('setLastActiveNav', normalized);
-  } catch (e) {}
+  // 铁律：切换大区必须「点下就亮」。
+  // localStorage 同步写 + JSBridge 跨进程调用都放到下一帧之后，
+  // 否则点击瞬间主线程被占住，高亮会明显滞后、感觉切换很慢。
+  const flush = () => {
+    try {
+      localStorage.setItem('geely_last_active_nav', normalized);
+    } catch (e) {}
+    try {
+      bridge.call('setLastActiveNav', normalized);
+    } catch (e) {}
+  };
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(() => setTimeout(flush, 0));
+  } else {
+    setTimeout(flush, 0);
+  }
 }
 
 export async function refreshOilPrices(force = false) {

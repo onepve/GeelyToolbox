@@ -18,9 +18,9 @@
     <transition name="drop">
       <div
         v-if="open"
-        class="absolute z-50 w-[520px] max-w-[90vw] overflow-y-auto rounded-2xl border-2 border-car-border bg-[var(--bg-modal)] shadow-2xl p-2.5 space-y-2"
-        :class="[dropUp ? 'bottom-full mb-2' : 'top-full mt-2', alignRight ? 'right-0' : 'left-0']"
-        :style="{ maxHeight: maxPanelH + 'px' }"
+        ref="panelEl"
+        class="fixed z-[80] overflow-y-auto rounded-2xl border-2 border-car-border bg-[var(--bg-modal)] shadow-2xl p-2.5 space-y-2"
+        :style="panelStyle"
       >
         <div class="grid grid-cols-2 gap-2">
           <button
@@ -62,7 +62,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useWheelGesture } from '../composables/useWheelGesture';
 import { playTouchFeedback } from '../utils/sound';
 
@@ -73,9 +73,10 @@ const props = defineProps({
 
 const open = ref(false);
 const rootEl = ref(null);
-const dropUp = ref(false);
-const alignRight = ref(false);
-const maxPanelH = ref(360);
+const panelEl = ref(null);
+// 面板用 fixed 定位：absolute 会被右侧滚动容器(overflow-y-auto)裁剪，
+// 第一排卡片向上展开时整块顶部被顶栏切掉，车主看不到内容。
+const panelStyle = ref({ left: '0px', top: '0px', width: '520px', maxHeight: '360px' });
 
 const { getActionOptions, getGestureAction, setGestureAction, isCustomApp, getCustomAppName, openAppSelectModal, getActionName } = useWheelGesture();
 
@@ -98,20 +99,76 @@ const displaySub = computed(() => {
   return found ? found.sub : '';
 });
 
-function toggle() {
+// 竖直方向的硬边界：不许压到顶栏，也不许漏出屏幕底部
+const GAP = 8;    // 面板与触发按钮之间的间距
+const EDGE = 10;  // 距可用区上下边缘的最小留白
+const MIN_H = 150; // 再小就点不准；只有两侧都放不下时才允许贴边
+
+function panelBounds() {
+  const rect = rootEl.value?.getBoundingClientRect();
+  if (!rect) return null;
+  // 实际可用的上下空间 = 视口内、且不被顶栏压住的那一段。
+  // 顶栏是 flex 流内元素，这里用它的下沿作为上边界，下边界就是视口底部。
+  const topBar = document.querySelector('header, .tb-topbar');
+  const topBound = topBar ? topBar.getBoundingClientRect().bottom : 0;
+  return {
+    rect,
+    vw: window.innerWidth,
+    vh: window.innerHeight,
+    spaceUp: rect.top - topBound - GAP - EDGE,
+    spaceDown: window.innerHeight - rect.bottom - GAP - EDGE
+  };
+}
+
+async function toggle() {
   playTouchFeedback();
-  if (!open.value) {
-    const rect = rootEl.value?.getBoundingClientRect();
-    if (rect) {
-      const spaceUp = rect.top;
-      const spaceDown = window.innerHeight - rect.bottom;
-      dropUp.value = spaceUp > spaceDown;
-      alignRight.value = (rect.left + 520) > window.innerWidth;
-      const margin = 16;
-      maxPanelH.value = Math.max(220, Math.floor((dropUp.value ? spaceUp : spaceDown) - margin));
-    }
-  }
-  open.value = !open.value;
+  if (open.value) { open.value = false; return; }
+
+  const b = panelBounds();
+  if (!b) { open.value = true; return; }
+
+  const { rect, vw, vh } = b;
+  const width = Math.min(520, vw - 2 * EDGE);
+
+  // 先按「哪边空间大」定方向；若该方向连 MIN_H 都放不下就翻到另一边
+  let useUp = b.spaceUp > b.spaceDown;
+  if (useUp && b.spaceUp < MIN_H && b.spaceDown > b.spaceUp) useUp = false;
+  if (!useUp && b.spaceDown < MIN_H && b.spaceUp > b.spaceDown) useUp = true;
+
+  const avail = Math.max(MIN_H, useUp ? b.spaceUp : b.spaceDown);
+  let panelH = Math.min(avail, 420);
+
+  // 水平方向夹紧，绝不漏出左/右边
+  const left = Math.max(EDGE, Math.min(rect.left, vw - width - EDGE));
+  const top = useUp ? rect.top - GAP - panelH : rect.bottom + GAP;
+
+  panelStyle.value = {
+    left: Math.round(left) + 'px',
+    top: Math.round(Math.max(EDGE, top)) + 'px',
+    width: Math.round(width) + 'px',
+    maxHeight: Math.round(panelH) + 'px'
+  };
+  open.value = true;
+
+  // 渲染后按真实高度二次校正：内容比预估更矮时把面板贴回按钮，
+  // 更高时再收一次高度，确保任何情况下都完整落在可视区内。
+  await nextTick();
+  const realH = panelEl.value?.offsetHeight || 0;
+  if (!realH) return;
+  const finalH = Math.min(realH, panelH);
+  const finalTop = useUp
+    ? Math.max(EDGE, rect.top - GAP - finalH)
+    : Math.min(vh - EDGE - finalH, rect.bottom + GAP);
+  panelStyle.value = {
+    ...panelStyle.value,
+    top: Math.round(finalTop) + 'px',
+    maxHeight: Math.round(Math.min(finalH, useUp ? rect.top - GAP - EDGE : vh - EDGE - rect.bottom - GAP)) + 'px'
+  };
+}
+
+// 页面一滚，fixed 面板就会跟按钮脱节，直接收起
+function onScrollClose() {
+  if (open.value) open.value = false;
 }
 
 function pick(action) {
@@ -134,10 +191,14 @@ function onDocClick(e) {
 
 onMounted(() => {
   document.addEventListener('click', onDocClick);
+  window.addEventListener('scroll', onScrollClose, true);
+  window.addEventListener('resize', onScrollClose);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', onDocClick);
+  window.removeEventListener('scroll', onScrollClose, true);
+  window.removeEventListener('resize', onScrollClose);
 });
 </script>
 

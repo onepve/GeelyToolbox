@@ -7,7 +7,7 @@
       :key="item.id"
       @click="selectNav(item.id)"
       :class="[
-        'flex items-center justify-between px-5 min-h-[68px] rounded-2xl border-2 transition-colors duration-150 cursor-pointer font-black text-[21px] tracking-wide',
+        'flex items-center justify-between px-5 min-h-[68px] rounded-2xl border-2 nav-item cursor-pointer font-black text-[21px] tracking-wide',
         store.currentNav === item.id
           ? 'bg-car-item border-car-accent text-car-text shadow-md'
           : 'bg-car-item border-transparent text-car-text hover:bg-car-hover shadow-nav-rest'
@@ -16,7 +16,7 @@
       <span class="truncate">{{ item.name }}</span>
       <span
         :class="[
-          'text-[14px] px-2.5 py-1 rounded-lg font-extrabold shrink-0 transition-all',
+          'text-[14px] px-2.5 py-1 rounded-lg font-extrabold shrink-0 nav-badge',
           store.currentNav === item.id
             ? 'border-2 border-car-accent text-car-accent font-black bg-car-card shadow-sm'
             : 'bg-car-card/60 border border-car-border/60 text-car-sub/70 opacity-75'
@@ -53,3 +53,18 @@ function selectNav(id) {
   recordActiveNav(id);
 }
 </script>
+
+<style scoped>
+/* 车规交互铁律：点下去必须「即亮」。
+   以前这里是 transition-colors duration-150 + 全局 box-shadow .18s，
+   点一个新大区要等 150ms 边框才亮完、阴影再拖 180ms，
+   观感就是「慢慢切过去、按钮不干脆」。
+   现在边框与文字颜色 0 过渡（瞬间切换），只给投影留 90ms 微收，
+   既保住质感的柔和，又不拖反应速度。 */
+.nav-item {
+  transition: box-shadow 90ms ease-out;
+}
+.nav-badge {
+  transition: box-shadow 90ms ease-out, background-color 0ms, border-color 0ms, color 0ms;
+}
+</style>

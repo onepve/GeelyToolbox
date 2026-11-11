@@ -134,6 +134,9 @@ const mainContent = ref(null);
 watch(() => store.currentNav, (nav) => {
   recordActiveNav(nav);
   const targetKey = normalizeNav(nav);
+  // 智能插队：车主主动点的大区必须立即挂载，绝不等预热队列。
+  // 注：不能推迟到下一帧再挂载——那会让内容区白一帧，闪一下更难看。
+  // 「点击发闷」的真正原因是侧栏的过渡时长（见 Sidebar.vue），不是这里。
   if (targetKey && !mountedViews[targetKey]) {
     mountedViews[targetKey] = true;
   }
@@ -172,6 +175,32 @@ import OilPriceModal from './components/modals/OilPriceModal.vue';
 import { store, bridge, openModal, recordActiveNav, refreshOilPrices, initOilPersistentSettings, normalizeNav } from './store';
 import { initTheme, applyTheme, quickToggleDayNight } from './theme/themes';
 
+// 错峰预热队列：优先用 requestIdleCallback（浏览器空闲时段），
+// 老 WebView 没有就退回 setTimeout，保证不抢首屏主线程。
+let preloadTimer = null;
+function scheduleIdlePreload() {
+  const sequence = ['link', 'body', 'fuel', 'store', 'system'];
+  const queue = sequence.filter(k => !mountedViews[k]);
+  if (!queue.length) {
+    // 默认大区就是全部时，只补历史兼容视图
+    setTimeout(() => { mountedViews.legacy = true; }, 400);
+    return;
+  }
+  const step = () => {
+    if (!queue.length) {
+      // 全部大区就位后，最后静默挂载历史兼容视图
+      setTimeout(() => { mountedViews.legacy = true; }, 320);
+      return;
+    }
+    // 每次只挂一个，挂完让出一帧，绝不连续占用主线程
+    const key = queue.shift();
+    if (!mountedViews[key]) mountedViews[key] = true;
+    preloadTimer = setTimeout(step, 180);
+  };
+  // 首屏成画后再启动，避免和首屏争抢
+  preloadTimer = setTimeout(step, 160);
+}
+
 onMounted(() => {
   // 极速首屏成画：通知 Android 原生解除启动画屏
   nextTick(() => {
@@ -180,25 +209,13 @@ onMounted(() => {
     } catch (e) {}
   });
 
-  // 后台阶梯式静默预热：首屏渲染完成并平稳后，在后台闲时按序逐个挂载剩余大视图与兼容卡片
-  setTimeout(() => {
-    const sequence = ['link', 'body', 'fuel', 'store', 'system'];
-    const pending = sequence.filter(k => !mountedViews[k]);
-    let idx = 0;
-    function preloadNext() {
-      if (idx < pending.length) {
-        const key = pending[idx++];
-        mountedViews[key] = true;
-        setTimeout(preloadNext, 350);
-      } else {
-        // 全量大功能挂载完成后，最后静默载入历史兼容视图
-        setTimeout(() => {
-          mountedViews.legacy = true;
-        }, 400);
-      }
-    }
-    preloadNext();
-  }, 450);
+  // 分阶段加载铁律（两难必须同时避开）：
+  //   A. 开机不许把 5 个大区一口气全编译 → 否则启动白屏变长；
+  //   B. 点击别的大区不许现场编译 → 否则高亮滞后、像「慢慢切过去」。
+  // 解法：启动只挂车主设定的默认大区；首屏成画后立刻按空闲节奏错峰预热其余四个，
+  //      间隔压到 180ms（原来 350ms），约 0.7s 内全部就位；
+  //      期间若车主提前点了未挂载的大区，由 watch 里的「智能插队」优先挂载并把它从队列摘掉。
+  scheduleIdlePreload();
 
   // 从原生 SharedPreferences 同步油价常用省份持久化设置 (防覆盖升级丢失)
   try { initOilPersistentSettings(); } catch (e) {}
