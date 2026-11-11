@@ -10,7 +10,7 @@
       <!-- 扫描路径与备份数量 -->
       <div class="bg-car-item border border-car-border rounded-2xl p-5 flex items-center justify-between shadow-sm">
         <div class="flex items-center space-x-3.5">
-          <span class="w-3.5 h-3.5 rounded-full bg-car-accent shadow-[0_0_8px_var(--accent-gold)]"></span>
+          <span class="w-3.5 h-3.5 rounded-full bg-car-accent"></span>
           <div class="flex flex-col">
             <span class="text-[17.5px] font-black text-car-text">备份位置: /sdcard/Download/</span>
             <span class="text-[14px] text-car-sub font-mono font-bold mt-0.5">
