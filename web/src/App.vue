@@ -504,11 +504,18 @@ html.light body {
   pointer-events: none;
 }
 
-/* 内层插槽：冲压下沉质感，让「槽位」和「卡片」区分开 */
+/* 内层插槽：跟随主题的内嵌质感。
+   历史坑：这里曾硬编码 inset 0 1px 3px rgba(0,0,0,.34)，
+   与 .bg-car-card 硬编码 rgba(0,0,0,.46) 是同一个 bug 的两处残留。
+   白天浅色画布上，黑色内阴影会把每一个未选中的导航项、顶栏胶囊
+   压成一个个「凹进去的坑」；而选中项因为激活规则覆盖成外投影，
+   反而是浮起来的 —— 一凹一凸并排，看着就很怪。
+   修法同卡片：内阴影也必须走主题变量。
+   白天给白色内高光（微凸、干净），夜间才是深色内嵌（保留玻璃槽位感，但已减轻）。 */
 .bg-car-item {
   background-clip: padding-box;
   box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, .34),
+    inset 0 1px 3px var(--glass-inset, rgba(0, 0, 0, .34)),
     inset 0 -1px 0 var(--glass-underline, rgba(255, 255, 255, .06));
 }
 
@@ -587,7 +594,18 @@ html:not(.light) .bg-car-item.border-car-accent {
     inset 0 1px 0 rgba(255, 255, 255, .14);
 }
 
-/* 内层槽位激活：只提升底色，不重复叠外圈（防圈套圈） */
+/* 未选中的导航项 / 胶囊按钮：轻微外投影，让它「贴」在画布上而不是凹进去。
+   与选中态的 shadow-md 是一套语言：选中更凸、未选中微凸，绝不出现凹槽。
+   注意不能直接写 box-shadow 覆盖，否则会吃掉 .bg-car-item 的主题内高光，
+   所以这里用同一组内阴影 + 一层浅外投影组合。 */
+.shadow-nav-rest {
+  box-shadow:
+    0 2px 6px var(--glass-shadow-soft, rgba(0, 0, 0, .22)),
+    inset 0 1px 3px var(--glass-inset, rgba(0, 0, 0, .34)),
+    inset 0 -1px 0 var(--glass-underline, rgba(255, 255, 255, .06));
+}
+
+/* 内层插槽激活：只提升底色，不重复叠外圈（防圈套圈） */
 html.light .bg-car-item.border-car-accent {
   background: var(--bg-item, rgba(238, 245, 254, .68)) !important;
 }

@@ -71,7 +71,7 @@
 
       <!-- 安全说明：让用户放心点 -->
       <div class="bg-car-item border border-car-border rounded-2xl p-4 flex items-start space-x-3">
-        <span class="text-[20px] leading-none mt-0.5">🛡️</span>
+        <span class="text-[20px] leading-none mt-0.5" style="color: var(--text-main);">🛡️</span>
         <div class="flex flex-col space-y-1">
           <span class="text-[14.5px] font-black text-car-text">导入前会自动给您当前的记录留一份备份</span>
           <span class="text-[13px] text-car-sub font-bold leading-relaxed">

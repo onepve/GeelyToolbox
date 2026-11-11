@@ -55,7 +55,8 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.05)',
       '--glass-toplight': 'rgba(56,189,248,.50)',
       '--glass-shadow': 'rgba(0,0,0,.60)',
-      '--glass-shadow-soft': 'rgba(0,0,0,0.36)'
+      '--glass-shadow-soft': 'rgba(0,0,0,0.36)',
+      '--glass-inset': 'rgba(0,0,0,.18)',
     },
     day: {
       '--bg-main': '#eef3fa',
@@ -78,7 +79,8 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.40)',
       '--glass-toplight': 'rgba(255,255,255,.95)',
       '--glass-shadow': 'rgba(37,99,235,.18)',
-      '--glass-shadow-soft': 'rgba(37,99,235,0.11)'
+      '--glass-shadow-soft': 'rgba(37,99,235,0.11)',
+      '--glass-inset': 'rgba(255,255,255,.96)',
     }
   },
   aurora_cyber: {
@@ -105,7 +107,8 @@ export const THEMES = {
       '--glass-underline': 'rgba(139,92,246,.10)',
       '--glass-toplight': 'rgba(6,182,212,.60)',
       '--glass-shadow': 'rgba(0,0,0,.65)',
-      '--glass-shadow-soft': 'rgba(0,0,0,0.39)'
+      '--glass-shadow-soft': 'rgba(0,0,0,0.39)',
+      '--glass-inset': 'rgba(0,0,0,.18)',
     },
     day: {
       '--bg-main': '#f0f9fa',
@@ -128,7 +131,8 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.40)',
       '--glass-toplight': 'rgba(255,255,255,.95)',
       '--glass-shadow': 'rgba(8,145,178,.18)',
-      '--glass-shadow-soft': 'rgba(8,145,178,0.11)'
+      '--glass-shadow-soft': 'rgba(8,145,178,0.11)',
+      '--glass-inset': 'rgba(255,255,255,.96)',
     }
   },
   amber_gold: {
@@ -155,7 +159,8 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.05)',
       '--glass-toplight': 'rgba(245,158,11,.50)',
       '--glass-shadow': 'rgba(0,0,0,.60)',
-      '--glass-shadow-soft': 'rgba(0,0,0,0.36)'
+      '--glass-shadow-soft': 'rgba(0,0,0,0.36)',
+      '--glass-inset': 'rgba(0,0,0,.18)',
     },
     day: {
       '--bg-main': '#fbf7ee',
@@ -178,7 +183,8 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.40)',
       '--glass-toplight': 'rgba(255,255,255,.95)',
       '--glass-shadow': 'rgba(217,119,6,.18)',
-      '--glass-shadow-soft': 'rgba(217,119,6,0.11)'
+      '--glass-shadow-soft': 'rgba(217,119,6,0.11)',
+      '--glass-inset': 'rgba(255,255,255,.96)',
     }
   },
   bamboo_emerald: {
@@ -205,7 +211,8 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.05)',
       '--glass-toplight': 'rgba(74,222,128,.50)',
       '--glass-shadow': 'rgba(0,0,0,.60)',
-      '--glass-shadow-soft': 'rgba(0,0,0,0.36)'
+      '--glass-shadow-soft': 'rgba(0,0,0,0.36)',
+      '--glass-inset': 'rgba(0,0,0,.18)',
     },
     day: {
       '--bg-main': '#ecfdf5',
@@ -228,7 +235,8 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.40)',
       '--glass-toplight': 'rgba(255,255,255,.95)',
       '--glass-shadow': 'rgba(16,185,129,.18)',
-      '--glass-shadow-soft': 'rgba(16,185,129,0.11)'
+      '--glass-shadow-soft': 'rgba(16,185,129,0.11)',
+      '--glass-inset': 'rgba(255,255,255,.96)',
     }
   },
   sakura_pink: {
@@ -255,7 +263,8 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.05)',
       '--glass-toplight': 'rgba(251,113,133,.50)',
       '--glass-shadow': 'rgba(0,0,0,.60)',
-      '--glass-shadow-soft': 'rgba(0,0,0,0.36)'
+      '--glass-shadow-soft': 'rgba(0,0,0,0.36)',
+      '--glass-inset': 'rgba(0,0,0,.18)',
     },
     day: {
       '--bg-main': '#fdf2f4',
@@ -278,7 +287,8 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.40)',
       '--glass-toplight': 'rgba(255,255,255,.95)',
       '--glass-shadow': 'rgba(225,29,72,.18)',
-      '--glass-shadow-soft': 'rgba(225,29,72,0.11)'
+      '--glass-shadow-soft': 'rgba(225,29,72,0.11)',
+      '--glass-inset': 'rgba(255,255,255,.96)',
     }
   },
   taro_purple: {
@@ -305,7 +315,8 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.05)',
       '--glass-toplight': 'rgba(167,139,250,.50)',
       '--glass-shadow': 'rgba(0,0,0,.60)',
-      '--glass-shadow-soft': 'rgba(0,0,0,0.36)'
+      '--glass-shadow-soft': 'rgba(0,0,0,0.36)',
+      '--glass-inset': 'rgba(0,0,0,.18)',
     },
     day: {
       '--bg-main': '#f6f3fc',
@@ -328,7 +339,8 @@ export const THEMES = {
       '--glass-underline': 'rgba(255,255,255,.40)',
       '--glass-toplight': 'rgba(255,255,255,.95)',
       '--glass-shadow': 'rgba(124,58,237,.18)',
-      '--glass-shadow-soft': 'rgba(124,58,237,0.11)'
+      '--glass-shadow-soft': 'rgba(124,58,237,0.11)',
+      '--glass-inset': 'rgba(255,255,255,.96)',
     }
   }
 };

@@ -148,7 +148,7 @@
           <div class="p-3.5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 flex flex-col justify-between">
             <div>
               <div class="font-black text-[14.5px] mb-1 flex items-center">
-                <span class="mr-1.5">🛡️</span>【隐私安全承诺：不取任何车主个人信息】
+                <span class="mr-1.5" style="color: var(--text-main);">🛡️</span>【隐私安全承诺：不取任何车主个人信息】
               </div>
               <p class="text-[12.5px] leading-relaxed">
                 本工具箱在本地已完成 5 重脱敏过滤，日志中：<br>

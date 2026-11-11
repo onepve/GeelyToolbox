@@ -6,8 +6,13 @@
     <!-- Tab 1: 按键独立映射 (v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'keys'" class="flex flex-col space-y-4 pb-28">
       
-      <!-- 常驻：方控接管总开关 + 模式切换（切换后仍可用，防卡死） -->
-      <div class="rounded-3xl border-2 border-car-border bg-car-card shadow-md px-5 py-4 flex items-center justify-between">
+      <!-- 常驻：方控接管总开关 + 模式切换（切换后仍可用，防卡死）
+           这张卡本身就是本页的总开关，不再另设外层大卡包住下面的按键卡片。
+           点左侧「方向盘按键接管」文字区 = 开/关接管；右侧切换卡片模式。 -->
+      <div
+        :class="['rounded-3xl border-2 bg-car-card px-5 py-4 flex items-center justify-between transition-all',
+                 store.vehicleAuto.wheel_master_switch ? 'border-car-accent shadow-md' : 'border-car-border shadow-sm']"
+      >
         <div
           @click="toggleWheelMasterSwitch"
           class="flex items-center space-x-3 min-w-0 cursor-pointer select-none active:scale-[0.995] transition-all"
@@ -19,6 +24,9 @@
                      store.vehicleAuto.wheel_master_switch ? 'bg-car-item text-car-accent border-car-accent' : 'bg-car-item text-car-sub border-car-border']"
           >
             {{ store.vehicleAuto.wheel_master_switch ? '已接管' : '原车默认' }}
+          </span>
+          <span class="text-[14px] font-black whitespace-nowrap text-car-sub">
+            {{ store.vehicleAuto.wheel_master_switch ? '点此关闭' : '点此开启' }}
           </span>
         </div>
         <div class="flex items-center space-x-1.5 shrink-0 bg-car-item p-1.5 rounded-2xl border-2 border-car-border">
@@ -39,11 +47,6 @@
       <!-- 模式 A：标准卡片模式 (六大按键网格) -->
       <div v-if="mappingMode === 'preset'" class="flex flex-col space-y-4">
         <!-- 双列规整网格：一排两卡，工整对齐，共三排 -->
-        <WheelGroupCard
-          title="方向盘按键"
-          :master-on="!!store.vehicleAuto.wheel_master_switch"
-          @toggle="toggleWheelMasterSwitch"
-        >
         <div class="grid grid-cols-3 gap-3">
         <!-- ① 右方向盘主页/返回键 -->
         <WheelGestureCard
@@ -149,7 +152,6 @@
           </button>
         </FeatureCard>
         </div>
-        </WheelGroupCard>
     </div>
 
     <!-- 模式 B：自定义按键列表模式 (多车型动态学习与独立映射) -->
@@ -396,7 +398,6 @@ import MatrixButton from '../components/MatrixButton.vue';
 import ActionSelect from '../components/ActionSelect.vue';
 import CustomKeyActionSelect from '../components/CustomKeyActionSelect.vue';
 import WheelGestureCard from '../components/WheelGestureCard.vue';
-import WheelGroupCard from '../components/WheelGroupCard.vue';
 
 // 缤越 COOL 专车原厂 SX-0017 多媒体按键图解（深色车规，柔和不刺眼）
 import wheelGuideImg from '../assets/steering_wheel_guide.webp';

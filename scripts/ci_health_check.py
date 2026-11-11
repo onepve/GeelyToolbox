@@ -1673,11 +1673,104 @@ except Exception as _e33:
     print("  [FAIL] Gate 33 error: %s" % _e33)
     passed = False
 
+# ----------------------------------------------------------------------
+log_step("Gate 34: inner-slot inset shadow must follow theme (no black sink in day mode)")
+try:
+    import re as _re34
+    import glob as _glob34
+
+    _app34 = open(APP_VUE_PATH, encoding="utf-8").read()
+
+    # 剥掉注释，避免注释里提到的旧写法误判
+    _app34_clean = _re34.sub(r"/\*.*?\*/", "", _app34, flags=_re34.S)
+
+    # 铁律 1：.bg-car-item 的内阴影必须走 --glass-inset，不得硬编码黑色
+    _blocks34 = list(_re34.finditer(r"\.bg-car-item\s*\{((?:(?!\n\})[\s\S])*?)\n\}", _app34_clean))
+    if not _blocks34:
+        print("  [FAIL] .bg-car-item block not found in App.vue")
+        passed = False
+    else:
+        _bad34 = False
+        for _b34 in _blocks34:
+            _body34 = _b34.group(1)
+            if "inset" not in _body34:
+                continue  # 只管带内阴影的块（position/transition 块无关）
+            # var(...) 里可能嵌套 rgba(...)，必须按括号配对整体剥掉，正则做不到
+            def _strip_var(s):
+                out = []
+                i = 0
+                while i < len(s):
+                    if s.startswith("var(", i):
+                        depth = 0
+                        j = i + 3
+                        while j < len(s):
+                            if s[j] == "(":
+                                depth += 1
+                            elif s[j] == ")":
+                                depth -= 1
+                                if depth == 0:
+                                    break
+                            j += 1
+                        out.append("VAR")
+                        i = j + 1
+                    else:
+                        out.append(s[i])
+                        i += 1
+                return "".join(out)
+
+            _novar = _strip_var(_body34)
+            if _re34.search(r"rgba?\(\s*0\s*,\s*0\s*,\s*0", _novar):
+                print("  [FAIL] .bg-car-item hardcodes a black inset shadow -> sinks into a pit in DAY mode")
+                _bad34 = True
+            elif "--glass-inset" not in _body34:
+                print("  [FAIL] .bg-car-item inset shadow must use var(--glass-inset), not a fixed black")
+                _bad34 = True
+        if _bad34:
+            passed = False
+        else:
+            print("  [PASS] .bg-car-item inset shadow is theme-driven (--glass-inset)")
+
+    # 铁律 2：12 套配色必须都定义 --glass-inset，且白天是白色高光、夜间是深色内嵌
+    _pal34 = open(os.path.join(ROOT_DIR, "web/src/theme/palette.js"), encoding="utf-8").read()
+    _insets = _re34.findall(r"'--glass-inset'\s*:\s*'([^']+)'", _pal34)
+    if len(_insets) != 12:
+        print("  [FAIL] expected 12 --glass-inset definitions (6 themes x day/night), found %d" % len(_insets))
+        passed = False
+    else:
+        _white34 = [v for v in _insets if "255,255,255" in v or "255, 255, 255" in v]
+        if len(_white34) != 6:
+            print("  [FAIL] DAY palettes must use a WHITE inset highlight, found %d/6" % len(_white34))
+            passed = False
+        else:
+            print("  [PASS] all 12 palettes define --glass-inset (6 day = white highlight, 6 night = dark)")
+
+    # 铁律 3：裸 emoji（含 FE0F 变体选择符）必须显式给文字色，
+    #   否则字体会按「文字样式」渲染成黑色字形，夜间主题下彻底看不见。
+    _bad_emoji34 = []
+    for _f34 in _glob34.glob(os.path.join(ROOT_DIR, "web/src/components/modals/*.vue")):
+        _src34 = open(_f34, encoding="utf-8").read()
+        for _m34 in _re34.finditer(r"<span([^>]*)>([^<]*)</span>", _src34):
+            _attrs34, _txt34 = _m34.group(1), _m34.group(2).strip()
+            if "\uFE0F" not in _txt34:
+                continue
+            if not _re34.fullmatch(r"[\U0001F300-\U0001FAFF\u2600-\u27BF\uFE0F\u2B00-\u2BFF\s]+", _txt34):
+                continue
+            if not _re34.search(r"text-(car|accent|white|black)", _attrs34) and "style=" not in _attrs34:
+                _bad_emoji34.append(os.path.basename(_f34))
+    if _bad_emoji34:
+        print("  [FAIL] bare FE0F emoji without explicit color renders BLACK in night mode: %s" % ", ".join(sorted(set(_bad_emoji34))))
+        passed = False
+    else:
+        print("  [PASS] no bare FE0F emoji without explicit color (night-mode black-text trap closed)")
+except Exception as _e34:
+    print("  [FAIL] Gate 34 error: %s" % _e34)
+    passed = False
+
 # Final Summary Verdict
 # ----------------------------------------------------------------------
-log_step("CI 30-Gate Health Check Verdict")
+log_step("CI 34-Gate Health Check Verdict")
 if passed:
-    print("[SUCCESS] All 30 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering closed, framework & background architecture frozen, speed autoplay trip-lock & steering arbitration rigidity locked, zero component event modifier runtime traps)")
+    print("[SUCCESS] All 34 CI Health Gates PASSED cleanly! (Zero dead links, zero AST errors, zero Chromium 68 flex/stretch violations, zero changelog bugs, zero hacker jargon, 100% decoupled state architecture, voice isolation, 3-tier clean gates, core feature regression defense, version contract consistency, HMI geometric alignment & UI anti-regression, real-device narrow-viewport tile safety, floating-layer opaque background, voice leading-silence & pill mount guard, changelog double-numbering closed, framework & background architecture frozen, speed autoplay trip-lock & steering arbitration rigidity locked, zero component event modifier runtime traps)")
     sys.exit(0)
 else:
     print("[FAILED] One or more CI Health Gates failed. Please fix before pushing.")

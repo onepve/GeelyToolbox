@@ -10,7 +10,7 @@
         'flex items-center justify-between px-5 min-h-[68px] rounded-2xl border-2 transition-colors duration-150 cursor-pointer font-black text-[21px] tracking-wide',
         store.currentNav === item.id
           ? 'bg-car-item border-car-accent text-car-text shadow-md'
-          : 'bg-car-item border-transparent text-car-text hover:bg-car-hover'
+          : 'bg-car-item border-transparent text-car-text hover:bg-car-hover shadow-nav-rest'
       ]"
     >
       <span class="truncate">{{ item.name }}</span>

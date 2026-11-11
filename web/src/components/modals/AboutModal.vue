@@ -85,7 +85,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         <div class="p-4 rounded-2xl bg-car-card border border-car-border flex flex-col justify-between">
           <div class="flex items-center space-x-2 text-[16px] font-black text-car-text">
-            <span class="text-emerald-400">🛡️</span>
+            <span class="text-emerald-400" style="color: var(--text-main);">🛡️</span>
             <span>永久承诺 · 纯净免费</span>
           </div>
           <div class="text-[13.5px] text-car-sub font-bold leading-relaxed mt-2">
@@ -94,7 +94,7 @@
         </div>
         <div class="p-4 rounded-2xl bg-car-card border border-car-border flex flex-col justify-between">
           <div class="flex items-center space-x-2 text-[16px] font-black text-car-text">
-            <span class="text-amber-400">⚠️</span>
+            <span class="text-amber-400" style="color: var(--text-main);">⚠️</span>
             <span>安全与免责底线</span>
           </div>
           <div class="text-[13.5px] text-car-sub font-bold leading-relaxed mt-2">

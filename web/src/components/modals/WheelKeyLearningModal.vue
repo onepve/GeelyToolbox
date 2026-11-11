@@ -73,7 +73,7 @@
       <template v-else>
         <div class="w-full bg-car-item rounded-2xl border-2 border-car-border p-6 space-y-4 text-left">
           <div class="flex items-center space-x-3">
-            <span class="text-[32px]">⚠️</span>
+            <span class="text-[32px]" style="color: var(--text-main);">⚠️</span>
             <span class="text-[22px] font-black text-car-text tracking-wide">未接收到底盘按键信号</span>
           </div>
           <div class="bg-car-card border border-car-border rounded-xl p-4 space-y-2 text-[15px] leading-relaxed">
