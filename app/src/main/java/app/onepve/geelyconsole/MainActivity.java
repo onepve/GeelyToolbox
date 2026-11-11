@@ -37,6 +37,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import app.onepve.geelyconsole.hal.AndroidCarClient;
@@ -240,6 +241,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         hideSystemUI();
         setContentView(R.layout.activity_main);
         splashView = findViewById(R.id.splash_view);
+        applySplashLogo();
 
         // 异步应用车标策略（自适应车型或保持自定义配置）
         AppIconManager.applyAppIconStyle(this);
@@ -394,6 +396,21 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         webView.setWebChromeClient(new WebChromeClient());
         webView.addJavascriptInterface(new ToolboxBridge(this), "ToolboxBridge");
         webView.loadUrl("file:///android_asset/toolbox_ui.html");
+    }
+
+    /**
+     * 启动层 logo 按当前车标策略切换：缤越 COOL（或手动选 COOL）用专属高清车标，其他车型用通用车标。
+     * 两份图均为 336px 高清版（84dp @ xxxhdpi），不再由 48dp 图标拉伸，彻底消除模糊。
+     */
+    private void applySplashLogo() {
+        try {
+            ImageView logo = findViewById(R.id.splash_logo);
+            if (logo == null) return;
+            boolean cool = AppIconManager.shouldUseCoolIcon(this);
+            logo.setImageResource(cool ? R.drawable.splash_logo_cool : R.drawable.splash_logo_default);
+        } catch (Throwable t) {
+            AppLogger.w("应用启动", "切换启动 logo 失败，沿用默认图：" + t.getMessage());
+        }
     }
 
     private void hideSplashView() {
@@ -555,7 +572,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         super.onStop();
         isForeground = false;
         FloatingWindowService.isMainActivityInForeground = false;
-        
+
         // 核心防干扰门禁：绝不在 onStop 瞬间立即挂载悬浮窗！
         // 当用户在车机最左侧呼出原厂菜单时，MainActivity 会短暂触发 onStop。
         // 若立即 addView，顶层 Overlay 窗口会打断原厂系统抽屉导致菜单被顶掉退回为返回键！
@@ -863,7 +880,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         }
                     } catch (Exception ignored) {}
                     obj.put("battery_volt", batteryVolt);
-                    boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) || 
+                    boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) ||
                                            (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.xcmedia") == SystemUtils.APP_STATE_DISABLED);
                     boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
                     obj.put("multimedia_frozen", isMediaFrozen);
@@ -1516,7 +1533,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                     ver = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
                 } catch (Exception ignored) {}
                 obj.put("version", ver);
-                boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) || 
+                boolean isMediaFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.multimedia") == SystemUtils.APP_STATE_DISABLED) ||
                                        (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.xcmedia") == SystemUtils.APP_STATE_DISABLED);
                 boolean isAppstoreFrozen = (SystemUtils.getAppDetailedState(MainActivity.this, "com.ecarx.appstore") == SystemUtils.APP_STATE_DISABLED);
                 obj.put("multimedia_frozen", isMediaFrozen);
@@ -2376,7 +2393,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 @Override
                 public void run() {
                     try {
-                        String endpoint = isBetaChannel 
+                        String endpoint = isBetaChannel
                                 ? "https://dl.onepve.com/GeelyToolbox/version-beta.json?t=" + System.currentTimeMillis()
                                 : "https://dl.onepve.com/GeelyToolbox/version.json?t=" + System.currentTimeMillis();
                         java.net.URL url = new java.net.URL(endpoint);
@@ -3423,7 +3440,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 public void run() {
                     try {
                         AppLogger.i("系统退出", "车主点击退出，安全停止后台服务并彻底杀死自身进程");
-                        
+
                         // 1. 显式停止所有后台守护服务
                         try {
                             stopService(new Intent(MainActivity.this, VehicleAutomationService.class));
@@ -3794,10 +3811,10 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             });
         }
 
-        
-        
-        
-        
+
+
+
+
         @JavascriptInterface
         public String getVoiceThemesJson() {
             return VehicleVoicePlayer.listInstalledThemesJson(MainActivity.this);
@@ -3944,7 +3961,7 @@ public void importVoiceZipFromDownload(final String fileName) {
                 File downloadDir = SystemUtils.getAppDownloadDir();
                 File poolDir = new File(downloadDir, "车载语音自定义");
                 if (!poolDir.exists()) poolDir.mkdirs();
-                
+
                 JSONArray arr = new JSONArray();
                 java.util.HashSet<String> seenNames = new java.util.HashSet<>();
 

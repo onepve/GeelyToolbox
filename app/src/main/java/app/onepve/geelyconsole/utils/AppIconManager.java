@@ -64,6 +64,23 @@ public class AppIconManager {
     }
 
     /**
+     * 当前车标策略最终是否走 COOL 改款车标（不做组件切换，只做判断，供闪屏等只读场景复用）
+     */
+    public static boolean shouldUseCoolIcon(Context context) {
+        if (context == null) return false;
+        try {
+            SharedPreferences prefs = context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            String style = prefs.getString(PREF_KEY_APP_ICON_STYLE, "auto");
+            if ("cool".equals(style)) return true;
+            if ("default".equals(style)) return false;
+            return isBinyueCoolModel();
+        } catch (Throwable t) {
+            Log.w(TAG, "shouldUseCoolIcon error: " + t.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * 应用当前车标策略 (开机初始化或设置变更时调用)
      */
     public static void applyAppIconStyle(Context context) {
