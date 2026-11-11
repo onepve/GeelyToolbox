@@ -526,8 +526,20 @@
 
       <FeatureCard
         title="致谢与反馈"
-        desc="助手由 OnePve 独立开发维护，全系车型免费使用。遇到问题可一键抓取车机日志协助适配。"
+        desc="助手由 OnePve 独立开发维护。遇到问题可一键抓取车机日志协助适配。"
       >
+        <!-- 车型适配说明：必须让车主明确知道本软件的开发基准车型，
+             其他车型不是「装上就能用」，需抓日志适配或用 AI 自行适配 -->
+        <div class="w-full rounded-2xl border-2 border-car-border bg-car-card px-5 py-4 mb-3 flex items-start">
+          <div class="flex flex-col space-y-1.5 min-w-0">
+            <span class="text-[15.5px] font-black text-car-text leading-snug">
+              开发车型：吉利缤越 COOL (2022款)
+            </span>
+            <span class="text-[14px] font-bold text-car-sub leading-relaxed whitespace-pre-line">本助手是在【缤越 COOL 2022款】上开发和实测的，该车型功能可正常使用。
+其他吉利车型（帝豪、博越等）基础功能通用，但车型专属联动需先适配：
+请点击下方【抓取车机日志】把日志发给作者，由作者协助适配；也可自行借助 AI 工具，依据日志完成适配。</span>
+          </div>
+        </div>
         <div class="w-full flex flex-wrap items-center -m-1.5">
           <button
             @click="doOpenAbout"
