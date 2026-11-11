@@ -74,7 +74,8 @@ public final class FrameLearningRecorder {
             latestSignals.clear();
         }
         synchronized (frames) {
-            frames.clear();
+            // Android 的 JSONArray 没有 clear()，直接换一个新实例（引用已是 volatile）
+            frames = new JSONArray();
         }
         frameSeq = 0L;
         lastRawFrame = "";

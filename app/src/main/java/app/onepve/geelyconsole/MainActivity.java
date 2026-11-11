@@ -17,6 +17,7 @@ import android.content.pm.PackageManager;
 import android.bluetooth.BluetoothAdapter;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiInfo;
+import app.onepve.geelyconsole.utils.FrameLearningRecorder;
 import app.onepve.geelyconsole.utils.EasMediaBridge;
 import app.onepve.geelyconsole.utils.NetworkPolicyManager;
 import android.content.pm.ResolveInfo;
