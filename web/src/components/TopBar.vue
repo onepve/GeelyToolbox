@@ -92,7 +92,7 @@ import StatusDot from './StatusDot.vue';
 let topBarTimer = null;
 
 const displayVersion = computed(() => {
-  return store.deviceInfo.version || '1.6.1';
+  return store.deviceInfo.version || __APP_VERSION__;
 });
 
 const isBinyueL = computed(() => {

@@ -1,6 +1,22 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { viteSingleFile } from 'vite-plugin-singlefile'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
+
+// 版本号单一真源：直接读 android 侧 build.gradle 的 versionName，
+// 构建期注入成 __APP_VERSION__，前端再也不用写死 '1.6.1' 这种会过期的兜底值。
+function readAppVersion() {
+  try {
+    const here = dirname(fileURLToPath(import.meta.url))
+    const gradle = readFileSync(resolve(here, '../app/build.gradle'), 'utf8')
+    const m = gradle.match(/versionName\s+"([^"]+)"/)
+    if (m) return m[1]
+  } catch (e) {}
+  return '0.0.0'
+}
+const APP_VERSION = readAppVersion()
 // 主题「单一数据源」：构建期读取，用于生成首帧引导脚本（严禁在别处再抄一份配色表）
 import { THEMES, DAY_START, DAY_END, STORAGE_KEY, DEFAULT_PALETTE, DEFAULT_MODE, MODES, PALETTES } from './src/theme/palette.js'
 
@@ -49,6 +65,9 @@ window.__TOOLBOX_BOOT_THEME__={palette:P,mode:md};
 }
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION)
+  },
   plugins: [
     vue(),
     themeBoot(),

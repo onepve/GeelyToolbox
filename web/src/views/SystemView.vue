@@ -501,6 +501,49 @@
         </div>
       </div>
     </div>
+
+    <!-- Tab: 关于与更新（原「关于助手」弹窗的常驻入口，兑现更新弹窗里「设置 ➔ 关于」的承诺） -->
+    <div v-if="activeTab === 'about'" class="flex flex-col space-y-4">
+      <FeatureCard
+        title="版本与更新"
+        :desc="`当前版本 v${appVersion}。可在此手动检查最新版本，自动检测开关在「关于」内。`"
+      >
+        <div class="w-full flex flex-wrap items-center -m-1.5">
+          <button
+            @click="doCheckUpdate"
+            class="m-1.5 min-h-[54px] px-6 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[16.5px] cursor-pointer hover:border-car-accent shadow-md"
+          >
+            检查版本更新
+          </button>
+          <button
+            @click="doOpenAbout"
+            class="m-1.5 min-h-[54px] px-5 bg-car-item border-2 border-car-border rounded-xl text-car-sub hover:text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+          >
+            完整关于信息 ➔
+          </button>
+        </div>
+      </FeatureCard>
+
+      <FeatureCard
+        title="致谢与反馈"
+        desc="助手由 OnePve 独立开发维护，全系车型免费使用。遇到问题可一键抓取车机日志协助适配。"
+      >
+        <div class="w-full flex flex-wrap items-center -m-1.5">
+          <button
+            @click="doOpenAbout"
+            class="m-1.5 min-h-[54px] px-5 bg-car-item border-2 border-car-border rounded-xl text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+          >
+            赞助作者 ➔
+          </button>
+          <button
+            @click="doOpenLog"
+            class="m-1.5 min-h-[54px] px-5 bg-car-item border-2 border-car-border rounded-xl text-car-sub hover:text-car-text font-black text-[15.5px] cursor-pointer hover:border-car-border-light shadow-sm"
+          >
+            抓取车机日志
+          </button>
+        </div>
+      </FeatureCard>
+    </div>
   </div>
 </template>
 
@@ -525,7 +568,8 @@ const systemTabs = [
   { id: 'capsules', name: '顶栏状态胶囊', tag: '显隐控制' },
   { id: 'tools', name: '系统维护与工具', tag: '日志/ADB' },
   { id: 'theme', name: '外观主题风格', tag: '双模高质感' },
-  { id: 'icon', name: '车标与启动项', tag: '图标/首屏' }
+  { id: 'icon', name: '车标与启动项', tag: '图标/首屏' },
+  { id: 'about', name: '关于与更新', tag: '版本/致谢' }
 ];
 
 function toggleCapsuleVisibility(key) {
@@ -813,6 +857,9 @@ const STARTUP_NAV_ITEMS = [
   { id: 'system', name: '系统设置', desc: '桌面/外观' }
 ];
 
+/** 版本号：优先用车机返回的真实安装版本，兜底用构建期注入的 build.gradle 版本 */
+const appVersion = computed(() => store.deviceInfo.version || __APP_VERSION__);
+
 function getNavName(id) {
   const map = {
     wheel: '行车联动',
@@ -833,5 +880,30 @@ function onSelectStartupNav(navId) {
 
 function onRefreshOilPrice() {
   refreshOilPrices(true);
+}
+
+/** 手动检查更新：与「关于助手」弹窗内按钮同一套桥接与提示，不另造逻辑 */
+function doCheckUpdate() {
+  window._manualCheckUpdateActive = true;
+  setTimeout(() => { window._manualCheckUpdateActive = false; }, 15000);
+  showToast('正在检查最新版本...');
+  try {
+    const beta = localStorage.getItem('geely_use_beta_channel') === 'true';
+    if (beta) {
+      bridge.call('checkBetaUpdate');
+    } else {
+      bridge.call('checkUpdate');
+    }
+  } catch (e) {}
+}
+
+/** 完整关于信息：复用现有弹窗，不重复实现 */
+function doOpenAbout() {
+  openModal('about');
+}
+
+/** 抓取车机日志：复用现有日志弹窗 */
+function doOpenLog() {
+  openModal('log');
 }
 </script>

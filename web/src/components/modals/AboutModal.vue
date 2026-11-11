@@ -176,7 +176,7 @@ const useBetaChannel = ref(localStorage.getItem('geely_use_beta_channel') === 't
 let versionClickCount = 0;
 let lastVersionClickTime = 0;
 
-const displayVersion = computed(() => store.deviceInfo.version || '1.6.1');
+const displayVersion = computed(() => store.deviceInfo.version || __APP_VERSION__);
 const isBeta = computed(() => {
   const ver = (store.deviceInfo.version || '').toLowerCase();
   return ver.includes('beta');

@@ -514,7 +514,7 @@ const wheelModeOptions = computed(() => [
 
 const wheelTabs = [
   { id: 'keys', name: '按键映射手势', tag: '6大按键' },
-  { id: 'mode', name: '接管模式与图解', tag: '工作模式' }
+  { id: 'mode', name: '接管模式图解', tag: '工作模式' }
 ];
 
 watch(() => props.initialTab, (v) => {
