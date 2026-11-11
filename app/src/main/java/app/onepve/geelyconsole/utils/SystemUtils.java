@@ -1550,6 +1550,16 @@ public class SystemUtils {
             File guardFile = new File(tempDir, "guard.log");
             writeTextFile(guardFile, desensitizeText(AppLogger.readRecentLogs(500)));
 
+            // 2.6 关键车身信号轨迹（纯内存记录，不受车机 3 秒缓冲区影响）
+            // 车主点"抓日志"这一刻才把内存里的变化轨迹一次性写盘，平时零磁盘写入。
+            File signalsFile = new File(tempDir, "signals.log");
+            try {
+                writeTextFile(signalsFile, desensitizeText(
+                        app.onepve.geelyconsole.utils.KeySignalRecorder.exportAll()));
+            } catch (Throwable t) {
+                signalsFile = null;
+            }
+
             // 3. 生成统计摘要
             if (listener != null) listener.onProgress(75, "正在生成车辆诊断健康体检摘要 (JSON)...");
             summaryFile = new File(tempDir, "summary.json");
@@ -1568,6 +1578,11 @@ public class SystemUtils {
                 }
             } catch (Throwable ignored) {}
             summary.put("privacy_status", "100%_desensitized_phone_vin_location_redacted");
+            // 关键信号采集体检：各功能变化次数、车门报文收帧数、丢行数（一眼看出是否漏采）
+            try {
+                summary.put("signal_health", app.onepve.geelyconsole.utils.KeySignalRecorder.getHealthSnapshot());
+                summary.put("signal_stats", app.onepve.geelyconsole.utils.KeySignalRecorder.buildStatsJson());
+            } catch (Throwable ignored) {}
             // Logcat 通道健康快照：车主发包后仅看这一行即可判断通道是否稳定（建立/断开/兜底次数 + 末次断因）
             try {
                 summary.put("logcat_channel", app.onepve.geelyconsole.services.VehicleAutomationService.getLogcatHealthSnapshot());
@@ -1604,6 +1619,7 @@ public class SystemUtils {
             if (gearFile.exists() && gearFile.length() > 0) filesToZip.add(gearFile);
             if (powerFile.exists() && powerFile.length() > 0) filesToZip.add(powerFile);
             if (appFile.exists() && appFile.length() > 0) filesToZip.add(appFile);
+            if (signalsFile != null && signalsFile.exists() && signalsFile.length() > 0) filesToZip.add(signalsFile);
             if (summaryFile.exists() && summaryFile.length() > 0) filesToZip.add(summaryFile);
 
             boolean zipped = zipFiles(filesToZip, zipFile);

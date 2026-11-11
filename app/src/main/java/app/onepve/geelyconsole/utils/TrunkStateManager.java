@@ -45,6 +45,15 @@ public class TrunkStateManager {
     }
 
     /**
+     * 只读获取当前尾门物理状态（0=关, 1=开, -1=未初始化）。
+     * 供车门/尾门兜底通道（DoorHalChannel）判断「状态是否真的发生变化」用，
+     * 避免兜底通道每一帧回调都重复触发播报与状态机。纯读取，不改任何既有逻辑。
+     */
+    public int getTrunk() {
+        return currentTrunk;
+    }
+
+    /**
      * 更新电动尾门物理状态
      */
     public synchronized void updateTrunk(int trunk, boolean voiceMasterSwitch, SharedPreferences prefs) {

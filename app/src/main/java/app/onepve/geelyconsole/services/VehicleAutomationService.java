@@ -151,6 +151,54 @@ public class VehicleAutomationService extends Service {
     private static volatile int sLogcatFallbackCount = 0;      // 方控兜底通道接管次数
     private static volatile String sLogcatLastExit = "";       // 最近一次断开退出码与 stderr 摘要
     private static volatile String sLogcatBuf = "";            // 当前订阅的缓冲区组合
+    private volatile long logcatDroppedLines = 0L;             // 解析队列满时主动丢弃的行数（通道拥塞硬指标）
+
+    // ═══ 读解耦队列 (v1.8.33) ═══
+    // 读线程只入队，独立线程解析。容量按「3 秒洪水 × 2」冗余设定：
+    // 实测最猛的一次 PBAP 洪水是 79KB/s、约 720 行/秒，2000 行 ≈ 3 秒缓冲，
+    // 足够吸收解析线程偶尔的 GC / 正则慢行，又不会把车机内存撑大。
+    private static final int LOGCAT_QUEUE_CAPACITY = 2000;
+    private final java.util.concurrent.ArrayBlockingQueue<String> logcatQueue =
+            new java.util.concurrent.ArrayBlockingQueue<>(LOGCAT_QUEUE_CAPACITY);
+    private Thread logcatParserThread;
+
+    /** 入队（读线程调用，绝不阻塞）。队列满则丢最旧一行，保证实时帧永远进得来。 */
+    private boolean offerLogLine(String line) {
+        if (line == null) return true;
+        if (logcatQueue.offer(line)) return true;
+        logcatQueue.poll(); // 丢弃最旧的历史行
+        return logcatQueue.offer(line);
+    }
+
+    /**
+     * 解析线程：从队列取行交给 parseLogLine，全程不碰 IO 流。
+     * 单独成线程的意义：解析再慢也只堆积队列，绝不会把 logd 的管道读空速度拖住。
+     */
+    private void startLogcatParser() {
+        if (logcatParserThread != null && logcatParserThread.isAlive()) return;
+        logcatParserThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (isRunning) {
+                    try {
+                        String line = logcatQueue.poll(500L, java.util.concurrent.TimeUnit.MILLISECONDS);
+                        if (line == null) continue;
+                        try {
+                            parseLogLine(line);
+                        } catch (Throwable t) {
+                            // 单行解析异常绝不允许杀死解析线程（否则整条车况链路静默死亡）
+                            Log.w(TAG, "解析日志行异常: " + t.getMessage());
+                        }
+                    } catch (InterruptedException e) {
+                        break;
+                    } catch (Throwable ignored) {
+                    }
+                }
+            }
+        }, "VehicleLogcatParser");
+        logcatParserThread.setDaemon(true);
+        logcatParserThread.start();
+    }
 
     /** 供诊断包摘要读取：Logcat 通道健康快照 */
     public static String getLogcatHealthSnapshot() {
@@ -174,6 +222,17 @@ public class VehicleAutomationService extends Service {
     //   - logcat 恢复稳定后：自动注销，回到唯一来源，杜绝双通道并发误触发。
     private app.onepve.geelyconsole.hal.HwKeyInputChannel wheelHalChannel;
     private volatile boolean wheelHalFallbackActive = false;
+
+    // ═══ 车门/尾门独立兜底通道 (v1.8.33) ═══
+    // 历史故障（日志 395816 实证）：车门/尾门只有 logcat 里 91 02 01 串口报文一条来源，
+    // 3 秒一帧；一旦读不到车况（子进程被掐 / 缓冲区被洪水冲穿），车门状态就冻结在旧值，
+    // 诊断包里 doorLines 直接是 0。现在改为条件兜底：
+    //   - 主通道正常收帧：绝不注册，单一来源，零抖动；
+    //   - 连续 15 秒（5 帧）收不到车门报文：注册 DOOR_POS/TRUNK_POS 属性回调接管；
+    //   - 主通道恢复收帧：立刻注销，回到唯一来源。
+    private app.onepve.geelyconsole.hal.DoorHalChannel doorHalChannel;
+    private volatile boolean doorHalFallbackActive = false;
+    private static final long DOOR_FRAME_SILENCE_LIMIT_MS = 15000L;
 
     // 四大独立解耦状态管理器
     private DoorStateManager doorStateManager;
@@ -200,6 +259,8 @@ public class VehicleAutomationService extends Service {
 
     // 服务启动时间戳（用于时间戳软栅栏，毫秒级丢弃开机前的陈旧日志）
     private long serviceBootTimestampMs = 0;
+    // 服务启动时刻（SystemClock.elapsedRealtime 基准，用于车门帧静默判定不被系统改时间干扰）
+    private long serviceStartElapsedMs = 0L;
 
     // 转向灯联动 360 状态
     private boolean enableTurnSignal360 = false;
@@ -343,6 +404,7 @@ public class VehicleAutomationService extends Service {
     public void onCreate() {
         super.onCreate();
         serviceBootTimestampMs = System.currentTimeMillis();
+        serviceStartElapsedMs = android.os.SystemClock.elapsedRealtime();
         isRunning = true;
         instance = this;
         voicePlayer = VehicleVoicePlayer.getInstance(this);
@@ -600,6 +662,9 @@ public class VehicleAutomationService extends Service {
                 }
                 if (mappedKey > 0 && wheelKeyManager != null) {
                     AppLogger.i("方控按键", "ECARX广播触发: " + action + " -> key=" + mappedKey);
+                    app.onepve.geelyconsole.utils.KeySignalRecorder.record(
+                            app.onepve.geelyconsole.utils.KeySignalRecorder.CH_WHEEL,
+                            "方控按键 key=" + mappedKey + " [管道]");
                     wheelKeyManager.handleKeyDown(mappedKey);
                     wheelKeyManager.handleKeyUp(mappedKey);
                 }
@@ -767,6 +832,7 @@ public class VehicleAutomationService extends Service {
         if (logcatThread != null && logcatThread.isAlive()) return;
         logcatLastLineAtMs = android.os.SystemClock.elapsedRealtime(); // 看门狗基准：从建通道那刻起算，避免首轮空转
         startLogcatWatchdog();
+        startLogcatParser(); // 解析线程必须与读线程同时在场：读线程只入队，绝不自己解析
 
         logcatThread = new Thread(new Runnable() {
             @Override
@@ -780,7 +846,7 @@ public class VehicleAutomationService extends Service {
                     long startedAtMs = android.os.SystemClock.elapsedRealtime();
                     final StringBuilder stderrBuf = new StringBuilder();
                     try {
-                        // 核心日志通道: 
+                        // 核心日志通道:
                         // 1. VehicleDataBuilder (CAN 信号)
                         // 2. SerialControl_v2_0 & VehicleEmulator_v2_0 (MCU 物理串口报文 91 02 01)
                         // 3. ECARX@ECP & MCULog (MCU 物理挡位 GearPosition 与门控 FL_DOOR_STS)
@@ -829,6 +895,8 @@ public class VehicleAutomationService extends Service {
                         logcatProcess = proc;
                         establishedOk = true;
                         sLogcatBuildCount++;
+                app.onepve.geelyconsole.utils.KeySignalRecorder.recordChannelEvent(
+                        "logcat 通道建立 #" + sLogcatBuildCount);
 
                         final java.io.InputStream errStream = proc.getErrorStream();
                         Thread stderrDrainer = new Thread(new Runnable() {
@@ -879,7 +947,29 @@ public class VehicleAutomationService extends Service {
                                     continue;
                                 }
                             }
-                            parseLogLine(line);
+                            // ═══ 【堵塞根治铁律 v1.8.33】两级解耦：先筛后队 ═══
+                            // 历史故障：readLine() 与 parseLogLine() 在同一个线程里串行执行。
+                            // 车机 main 缓冲区只有约 3~20 秒容量（实测 PBAP 电话本同步时 79KB/s、
+                            // 723 行/秒，3 秒就把缓冲区冲满），一旦某一行解析稍慢（正则回溯 / 写盘 /
+                            // 语音播报），读端跟不上产出速度 → logd 丢弃该读者队列的行 →
+                            // 中间大段报文永久丢失，表现为「管道没断，但车门、挡位信号整段消失」。
+                            //
+                            // 第一级：白名单前置预筛（v1.8.33 新增，关键一环）。
+                            //   白名单以前挂在 parseLogLine 里 —— 意味着每一行都要先被读进来、
+                            //   做 toLowerCase、再遍历 45 个关键字，才决定要不要扔。
+                            //   洪峰时这一步本身就是瓶颈。现在前移到入队之前：
+                            //   不命中就 continue，不入队、不建对象、不进解析线程。
+                            //   蓝牙电话本 PBAP 那 1200+ 行洪水从此完全不占我们进程 CPU。
+                            // 第二级：命中的行才入队（零解析、零正则、零 IO），独立线程消费；
+                            //   队列满时**丢最旧的**而不是阻塞读线程，宁可丢历史也不让实时帧被覆盖。
+                            boolean matched = quickPrefilter(line);
+                            app.onepve.geelyconsole.utils.KeySignalRecorder.countLineRead(matched);
+                            if (matched) {
+                                if (!offerLogLine(line)) {
+                                    logcatDroppedLines++;
+                                    app.onepve.geelyconsole.utils.KeySignalRecorder.countLineDropped();
+                                }
+                            }
                         }
                         try {
                             exitCode = proc.exitValue();
@@ -928,6 +1018,8 @@ public class VehicleAutomationService extends Service {
                     // （只进 logcat，不写 AppLogger 内存日志，避免诊断通道自己刷屏）
                     if (logcatConsecutiveFailures > 0) {
                         sLogcatFailCount++;
+                app.onepve.geelyconsole.utils.KeySignalRecorder.recordChannelEvent(
+                        "logcat 通道断开 #" + sLogcatFailCount + " 原因=" + sLogcatLastExit);
                         sLogcatLastExit = "退出码=" + (exitCode == Integer.MIN_VALUE ? "未取到" : String.valueOf(exitCode))
                                 + " 行数=" + lineCount
                                 + " stderr=" + (stderrBuf.length() == 0 ? "空" : stderrBuf.toString());
@@ -983,7 +1075,10 @@ public class VehicleAutomationService extends Service {
                                 // 只认物理按下沿，抬起沿忽略（单击即发架构无需等待抬起）
                                 if (!isDown) return;
                                 if (wheelKeyManager != null) {
-                                    wheelKeyManager.handleKeyDown(keyCode);
+                                    app.onepve.geelyconsole.utils.KeySignalRecorder.record(
+                                    app.onepve.geelyconsole.utils.KeySignalRecorder.CH_WHEEL,
+                                    "方控按键 key=" + keyCode + " [HW_KEY_INPUT兜底]");
+                            wheelKeyManager.handleKeyDown(keyCode);
                                 }
                             }
                         }, true);
@@ -1040,6 +1135,179 @@ public class VehicleAutomationService extends Service {
     }
 
     /**
+     * 车门通道健康巡检（每 5 秒由看门狗调用）—— 兜底通道的唯一扳机。
+     *
+     * 判据是"车门报文收帧间隔"本身，不是"多久没日志"：
+     *  - 其它日志再热闹也不能证明车门帧在进来（这正是 395816 的情况：
+     *    通道建立 1 次断开 0 次、但车门帧一条都没有）；
+     *  - 所以只认 KeySignalRecorder 里车门帧的真实时间戳。
+     *
+     * 15 秒 = 连丢 5 帧心跳，判定主通道已读不到车况 → 注册 DOOR_POS/TRUNK_POS 接管；
+     * 一旦重新收到车门帧 → 立刻注销兜底，回到单一来源。整个过程只在状态翻转时记事件，
+     * 绝不每 5 秒刷一条，避免把内存记录撑满。
+     */
+    private void checkDoorChannelHealth() {
+        long silence = app.onepve.geelyconsole.utils.KeySignalRecorder.getDoorFrameSilenceMs();
+
+        // 本次开机从未收到过车门帧：可能刚启动还没到第一个 3 秒周期，也可能真的读不到。
+        // 用"服务启动时长"兜底判断，避免一启动就误接管（老车主会看到重复播报）。
+        if (silence < 0) {
+            long upMs = android.os.SystemClock.elapsedRealtime() - serviceStartElapsedMs;
+            if (upMs > DOOR_FRAME_SILENCE_LIMIT_MS && !doorHalFallbackActive) {
+                activateDoorHalFallback();
+            }
+            return;
+        }
+
+        if (silence > DOOR_FRAME_SILENCE_LIMIT_MS) {
+            if (!doorHalFallbackActive) {
+                Log.w(TAG, "车门报文已 " + (silence / 1000L) + " 秒未收到（阈值 15 秒），启用兜底通道接管");
+                try {
+                    app.onepve.geelyconsole.utils.KeySignalRecorder.recordChannelEvent(
+                            "车门报文静默 " + (silence / 1000L) + " 秒，启用兜底接管");
+                } catch (Throwable ignored) {}
+                activateDoorHalFallback();
+            }
+        } else {
+            if (doorHalFallbackActive) {
+                Log.i(TAG, "车门报文已恢复（" + (silence / 1000L) + " 秒前收到帧），收回兜底通道");
+                try {
+                    app.onepve.geelyconsole.utils.KeySignalRecorder.recordChannelEvent(
+                            "车门报文恢复，收回兜底（单一来源）");
+                } catch (Throwable ignored) {}
+                deactivateDoorHalFallback();
+            }
+        }
+    }
+
+    /**
+     * 车门/尾门兜底通道：主通道（logcat 串口报文 91 02 01）连续 15 秒收不到车门帧时，
+     * 改用 DOOR_POS / TRUNK_POS 车规属性回调接管车门状态，免 logcat 子进程。
+     * 主通道恢复收帧后立刻注销，任何时刻只有一条车门来源，绝不让两路互相打架。
+     * 设计上完全对齐方控兜底（HwKeyInputChannel），不复活 CarGearHALMonitor。
+     */
+    private void activateDoorHalFallback() {
+        if (doorHalFallbackActive) return;
+        doorHalFallbackActive = true;
+        try {
+            final app.onepve.geelyconsole.hal.AndroidCarClient carClient =
+                    app.onepve.geelyconsole.hal.AndroidCarClient.getInstance();
+            Runnable doRegister = new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Object cpm = carClient.getCarPropertyManagerRef();
+                        if (cpm == null) {
+                            doorHalFallbackActive = false;
+                            Log.w(TAG, "车门兜底通道: CarPropertyManager 不可用，等下一轮重试");
+                            return;
+                        }
+                        if (doorHalChannel == null) {
+                            doorHalChannel = new app.onepve.geelyconsole.hal.DoorHalChannel();
+                        }
+                        if (!doorHalChannel.register(cpm)) {
+                            doorHalFallbackActive = false;
+                            Log.w(TAG, "车门兜底通道: 本车型无 DOOR_POS/TRUNK_POS，保持主通道");
+                            return;
+                        }
+                        doorHalChannel.setListener(new app.onepve.geelyconsole.hal.DoorHalChannel.OnDoorStateListener() {
+                            @Override
+                            public void onDoorState(int fl, int fr, int rl, int rr, int trunk) {
+                                onDoorStateFromHal(fl, fr, rl, rr, trunk);
+                            }
+                        });
+                        Log.i(TAG, "车门兜底通道: DOOR_POS/TRUNK_POS 已接管车门监听（主通道读不到车况）");
+                    } catch (Throwable t) {
+                        doorHalFallbackActive = false;
+                        Log.w(TAG, "车门兜底通道注册异常: " + t.getMessage());
+                    }
+                }
+            };
+            if (carClient.isConnected()) {
+                doRegister.run();
+            } else {
+                carClient.connect(getApplicationContext(), new app.onepve.geelyconsole.hal.AndroidCarClient.OnCarConnectListener() {
+                    @Override
+                    public void onCarConnected() {
+                        if (doorHalFallbackActive) doRegister.run();
+                    }
+                    @Override
+                    public void onCarDisconnected() {
+                        doorHalFallbackActive = false;
+                    }
+                });
+            }
+            // 8 秒未注册成功就复位，等下一轮，绝不因一次握手失败永久放弃车门兜底
+            mainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (doorHalFallbackActive && (doorHalChannel == null || !doorHalChannel.isRegistered())) {
+                        doorHalFallbackActive = false;
+                        Log.w(TAG, "车门兜底通道: 8 秒内未注册成功，已复位等待重试");
+                    }
+                }
+            }, 8000L);
+        } catch (Throwable t) {
+            doorHalFallbackActive = false;
+            Log.w(TAG, "车门兜底通道拉起失败: " + t.getMessage());
+        }
+    }
+
+    /** 注销车门兜底通道（主通道恢复后调用，RAII 闭环，绝不残留 CarService 回调） */
+    private void deactivateDoorHalFallback() {
+        if (!doorHalFallbackActive) return;
+        doorHalFallbackActive = false;
+        try {
+            if (doorHalChannel != null) {
+                doorHalChannel.unregister();
+                doorHalChannel = null;
+                Log.i(TAG, "车门兜底通道: 主通道已恢复，兜底回调已注销（单一来源）");
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    /**
+     * 接收兜底通道上来的车门/尾门状态，复用现有状态机与播报逻辑，
+     * 与主通道走完全相同的下游处理，避免出现「兜底一套、主通道另一套」的分裂。
+     * @param v -1 表示该门本次未取到，保持原状态不覆盖
+     */
+    private void onDoorStateFromHal(int fl, int fr, int rl, int rr, int trunk) {
+        try {
+            SharedPreferences prefs = getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE);
+            if (doorStateManager != null) {
+                int curFL = doorStateManager.getFL();
+                int curFR = doorStateManager.getFR();
+                int curRL = doorStateManager.getRL();
+                int curRR = doorStateManager.getRR();
+                int nFL = fl < 0 ? curFL : fl;
+                int nFR = fr < 0 ? curFR : fr;
+                int nRL = rl < 0 ? curRL : rl;
+                int nRR = rr < 0 ? curRR : rr;
+                if (nFL != curFL || nFR != curFR || nRL != curRL || nRR != curRR) {
+                    doorStateManager.updateDoors(nFL, nFR, nRL, nRR, voiceMasterSwitch, prefs);
+                    app.onepve.geelyconsole.utils.KeySignalRecorder.record(
+                            app.onepve.geelyconsole.utils.KeySignalRecorder.CH_DOOR,
+                            "主驾=" + (nFL == 1 ? "开" : "关") + " 副驾=" + (nFR == 1 ? "开" : "关")
+                                    + " 左后=" + (nRL == 1 ? "开" : "关") + " 右后=" + (nRR == 1 ? "开" : "关")
+                                    + " [兜底通道]");
+                }
+            }
+            if (trunk >= 0 && trunkStateManager != null) {
+                int cur = trunkStateManager.getTrunk(); // 当前尾门状态
+                if (trunk != cur) {
+                    trunkStateManager.updateTrunk(trunk, voiceMasterSwitch, prefs);
+                    app.onepve.geelyconsole.utils.KeySignalRecorder.record(
+                            app.onepve.geelyconsole.utils.KeySignalRecorder.CH_TRUNK,
+                            (trunk == 1 ? "尾门=开" : "尾门=关") + " [兜底通道]");
+                }
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "兜底车门状态处理异常: " + t.getMessage());
+        }
+    }
+
+
+    /**
      * Logcat 通道假死看门狗：子进程还活着但长时间一条日志都没有（logd 冻结 / 缓冲区卡死），
      * 主动销毁句柄让主循环重建。宁可重建一次，也不让方控与车门信号静默失效等车主重启车机。
      */
@@ -1049,20 +1317,45 @@ public class VehicleAutomationService extends Service {
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
+                int tick = 0;
                 while (isRunning) {
                     try {
-                        Thread.sleep(60000L);
+                        // 5 秒一轮：既要能在 15 秒内发现车门报文停摆，又不能自己吃掉 CPU
+                        Thread.sleep(5000L);
                     } catch (InterruptedException e) {
                         break;
                     }
                     if (!isRunning) break;
+                    tick++;
+
+                    // ═══ 每 60 秒记一条通道心跳（CH_CHANNEL）═══
+                    // 车主这次遇到的正是「通道没断，但信号整段消失」，
+                    // 只有把吞吐/丢行/收帧数定期记进内存，诊断包里才查得出丢行。
+                    if (tick % 12 == 0) {
+                        try {
+                            app.onepve.geelyconsole.utils.KeySignalRecorder.recordChannelHeartbeat();
+                        } catch (Throwable ignored) {}
+                    }
+
+                    // ═══ 车门/尾门兜底：主通道连续 15 秒收不到车门报文就接管 ═══
+                    // 车门报文 91 02 01 固定 3 秒一帧，15 秒 = 连丢 5 帧，已不可能是偶发抖动。
+                    // 接管后主通道一恢复收帧立刻注销，任何时刻只有一条车门来源。
+                    try {
+                        checkDoorChannelHealth();
+                    } catch (Throwable ignored) {}
+
                     long last = logcatLastLineAtMs;
                     if (last <= 0) continue;
                     long silentMs = android.os.SystemClock.elapsedRealtime() - last;
                     if (silentMs >= LOGCAT_SILENCE_WATCHDOG_MS) {
                         Log.w(TAG, "Logcat 通道疑似假死（" + (silentMs / 1000L) + " 秒无任何新日志），主动重建通道自愈");
+                        try {
+                            app.onepve.geelyconsole.utils.KeySignalRecorder.recordChannelEvent(
+                                    "通道假死 " + (silentMs / 1000L) + " 秒无新日志，主动重建");
+                        } catch (Throwable ignored) {}
                         // 假死期间方控也收不到按键，先接管，重建成功后主循环会自动收回
                         activateWheelHalFallback();
+                        activateDoorHalFallback();
                         logcatLastLineAtMs = android.os.SystemClock.elapsedRealtime();
                         Process p = logcatProcess;
                         if (p != null) {
@@ -1076,6 +1369,35 @@ public class VehicleAutomationService extends Service {
         t.start();
     }
 
+
+    /**
+     * 【白名单前置预筛 v1.8.33】—— 读线程专用，必须是全链路最便宜的一步。
+     *
+     * 与 parseLogLine 里的 Pre-Filter Gate 用的是同一份 activeFeatureWhitelist，
+     * 区别只在于时机：这里挡在入队之前，命中率约 2%，剩下 98% 在读完这一行后立刻终结，
+     * 既不进队列、也不进解析线程、更不产生后续任何对象。
+     *
+     * 为什么这事重要（实测 395816）：车机 main 日志缓冲区只装得下 3 秒，而蓝牙电话本
+     * PBAP 同步会以 79KB/s、723 行/秒的速度刷屏。这些行**不命中白名单任何一个词**，
+     * 但以前全部要走完 readLine → 入队 → toLowerCase → 遍历 45 个关键字才被扔掉，
+     * 白白占满 64KB 的 OS 管道和 2000 行队列，把真正需要的车门/方控帧挤到丢失。
+     * 前移之后，洪水在这一行就被拦住，读端几乎零成本，能稳稳跟上产出行速。
+     *
+     * 注意：这里只做「是否可能命中」的判断，绝不做时间栅栏、绝不做正则、绝不做解析，
+     * 时间栅栏与业务判定仍由 parseLogLine 负责，避免两处逻辑漂移。
+     */
+    private boolean quickPrefilter(String line) {
+        if (line == null || line.length() < 4) return false;
+        // 自身日志与声卡高频轮询直接排除（与 parseLogLine 同一套排除规则）
+        if (line.contains("GeelyToolbox") || line.contains("APM_AudioPolicyManager")) return false;
+        String lower = line.toLowerCase(java.util.Locale.ROOT);
+        String[] wl = activeFeatureWhitelist;
+        if (wl == null) return false;
+        for (int i = 0; i < wl.length; i++) {
+            if (lower.contains(wl[i])) return true;
+        }
+        return false;
+    }
 
     private void parseLogLine(String line) {
         if (line == null || line.isEmpty()) return;
@@ -1105,9 +1427,9 @@ public class VehicleAutomationService extends Service {
                 bootCal.setTimeInMillis(serviceBootTimestampMs);
                 // 吉利车机冷启动未对齐时出厂默认基准为 2010-01-01；只要年份 >= 2024 即为已同步真实时间
                 boolean isBootInRealTime = bootCal.get(java.util.Calendar.YEAR) >= 2024;
-                boolean isTodayNewYearsDay = (bootCal.get(java.util.Calendar.MONTH) == java.util.Calendar.JANUARY 
+                boolean isTodayNewYearsDay = (bootCal.get(java.util.Calendar.MONTH) == java.util.Calendar.JANUARY
                         && bootCal.get(java.util.Calendar.DAY_OF_MONTH) == 1);
-                
+
                 // 系统已校准至真实日期且今天不是元旦当天：所有 01-01 阶段的存量冷启动积压日志瞬时丢弃！
                 if (isBootInRealTime && !isTodayNewYearsDay && line.startsWith("01-01")) {
                     return;
@@ -1119,7 +1441,7 @@ public class VehicleAutomationService extends Service {
                 int min = Integer.parseInt(line.substring(9, 11));
                 int sec = Integer.parseInt(line.substring(12, 14));
                 int ms = (line.length() >= 18 && line.charAt(14) == '.') ? Integer.parseInt(line.substring(15, 18)) : 0;
-                
+
                 java.util.Calendar cal = java.util.Calendar.getInstance();
                 cal.setTimeInMillis(serviceBootTimestampMs);
                 cal.set(java.util.Calendar.MONTH, month - 1);
@@ -1128,7 +1450,7 @@ public class VehicleAutomationService extends Service {
                 cal.set(java.util.Calendar.MINUTE, min);
                 cal.set(java.util.Calendar.SECOND, sec);
                 cal.set(java.util.Calendar.MILLISECOND, ms);
-                
+
                 // 早于服务启动时刻的历史日志，判定为历史录像日志直接丢弃，严禁流入状态机翻旧账！
                 if (cal.getTimeInMillis() < serviceBootTimestampMs) {
                     return;
@@ -1339,6 +1661,14 @@ public class VehicleAutomationService extends Service {
                         doorStateManager.updateDoors(fl, fr, rl, rr, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
                     }
 
+                    // 穿刺取证：每帧都打点（用于判断主通道是否真的还活着），
+                    // 变化才落盘（不记心跳，省内存也不磨损闪存）
+                    app.onepve.geelyconsole.utils.KeySignalRecorder.markDoorFrame(line);
+                    app.onepve.geelyconsole.utils.KeySignalRecorder.record(
+                            app.onepve.geelyconsole.utils.KeySignalRecorder.CH_DOOR,
+                            "主驾=" + (fl == 1 ? "开" : "关") + " 副驾=" + (fr == 1 ? "开" : "关")
+                                    + " 左后=" + (rl == 1 ? "开" : "关") + " 右后=" + (rr == 1 ? "开" : "关"));
+
                     // b7 解析尾门: bit0=0 开, bit0=1 关
                     int trunk = ((b7 & 0x01) == 0) ? 1 : 0;
 
@@ -1346,6 +1676,9 @@ public class VehicleAutomationService extends Service {
                     if (trunkStateManager != null) {
                         trunkStateManager.updateTrunk(trunk, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
                     }
+                    app.onepve.geelyconsole.utils.KeySignalRecorder.record(
+                            app.onepve.geelyconsole.utils.KeySignalRecorder.CH_TRUNK,
+                            trunk == 1 ? "尾门=开" : "尾门=关");
                     return;
                 }
             } catch (Exception e) {
@@ -1572,6 +1905,33 @@ public class VehicleAutomationService extends Service {
     public void handleSpeedSignal(final int speed) {
         currentSpeedKmH = speed;
         onSpeedUpdated(speed);
+        // 关键信号取证：车速按"整 5km/h 档位 + 0/非0 翻转"记录（车主决策 1 选 A）。
+        // 不原样记整数车速：跟车时 0→1→0 反复跳会把 260 条通道刷满，翻日志时反而找不到车门。
+        int bucket = (speed <= 0) ? 0 : ((speed + 4) / 5) * 5;
+        if (bucket != lastSpeedBucketForRecord) {
+            lastSpeedBucketForRecord = bucket;
+            app.onepve.geelyconsole.utils.KeySignalRecorder.record(
+                    app.onepve.geelyconsole.utils.KeySignalRecorder.CH_SPEED,
+                    bucket == 0 ? "车速=0(静止)" : ("车速≈" + bucket + "km/h"));
+        }
+    }
+
+    /** 车速取证分档的上一次档位（整 5km/h 一档，避免高频刷屏） */
+    private int lastSpeedBucketForRecord = -1;
+
+    /**
+     * 挡位中文名：直接复用 GearStateMachine 的既有编码口径（2/17/18=D、3/19=N、
+     * 4/20=R、5/21=P、6/7/22=S），绝不另起一套映射，避免两处口径漂移。
+     */
+    private static String gearName(int gear) {
+        switch (gear) {
+            case 2: case 17: case 18: return "D挡(前进)";
+            case 3: case 19: return "N挡(空挡)";
+            case 4: case 20: return "R挡(倒车)";
+            case 5: case 21: return "P挡(驻车)";
+            case 6: case 7: case 22: return "S挡(运动)";
+            default: return "未知(" + gear + ")";
+        }
     }
 
     public void handleGearSignal(final int gear) {
@@ -1593,6 +1953,10 @@ public class VehicleAutomationService extends Service {
         // 2. 正常行车工况 (包括等红绿灯发动机自动启停)：
         //    保持状态机状态记忆，放行真实换挡跃变与语音播报！
         gearStateMachine.updateGear(gear, voiceMasterSwitch, getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
+        // 关键信号取证：挡位变化（只记变化，同值 1.2 秒内去重，不给闪存添压力）
+        app.onepve.geelyconsole.utils.KeySignalRecorder.record(
+                app.onepve.geelyconsole.utils.KeySignalRecorder.CH_GEAR,
+                "挡位=" + gearName(gear) + "(raw=" + gear + ")");
 
         if (gear == 5) {
             currentSpeedKmH = 0; // 挂入 P 挡驻车时车速立即强制归零，防止残留蠕行车速外溢
@@ -1818,6 +2182,13 @@ public class VehicleAutomationService extends Service {
         if (rawLine.toLowerCase().contains("info_id_vpowerinfo_key_state") || (rawLine.toLowerCase().contains("key_state") && (rawLine.toLowerCase().contains("power") || rawLine.toLowerCase().contains("peps")))) {
             int prevKey = lastKeyState;
             lastKeyState = val;
+            // 关键信号取证：钥匙位跃变（ACC/ON/OFF 是上下电判定的独立真源）
+            if (prevKey != val) {
+                app.onepve.geelyconsole.utils.KeySignalRecorder.record(
+                        app.onepve.geelyconsole.utils.KeySignalRecorder.CH_POWER,
+                        "钥匙位=" + (val == 0 ? "OFF" : val == 1 ? "ACC" : val == 2 ? "ON" : String.valueOf(val))
+                        + "(原" + prevKey + ") 电源模式=" + lastPowerMode);
+            }
             if (val == 2) {
                 lastPowerMode = 1; // 钥匙 ON -> 点火就绪
                 // 预设门控: KEY ON 只是就绪，不喂发动机边沿 (仅上升沿防抖触发单次预热，绝不每秒循环轰炸)
@@ -1844,6 +2215,13 @@ public class VehicleAutomationService extends Service {
         if (rawLine.toLowerCase().contains("engine_state") || rawLine.toLowerCase().contains("info_id_vpowerinfo_engine_state")) {
             int prevEngine = lastEngineState;
             lastEngineState = val;
+            // 关键信号取证：发动机启停跃变（自动启停与真熄火必须分得清）
+            if (prevEngine != val) {
+                app.onepve.geelyconsole.utils.KeySignalRecorder.record(
+                        app.onepve.geelyconsole.utils.KeySignalRecorder.CH_POWER,
+                        "发动机=" + (val == 0 ? "停止" : val == 1 ? "启动中" : val == 2 ? "停止中" : val == 3 ? "运行" : String.valueOf(val))
+                        + "(原" + prevEngine + ") 电源模式=" + lastPowerMode + " 车速=" + currentSpeedKmH);
+            }
             if (val == 3) {
                 lastPowerMode = 1;
                 if (prevEngine != 3) {
@@ -1858,6 +2236,15 @@ public class VehicleAutomationService extends Service {
         if (rawLine.toLowerCase().contains("peps_powermode")) {
             int prevPowerMode = lastPowerMode;
             lastPowerMode = val;
+            // 关键信号取证：电源模式跃变（熄火/下电/自动启停判定的真源，车规关键）。
+            // 只在真正跃变时记一条，不跟 MCU 每秒心跳走，避免刷满通道。
+            if (prevPowerMode != val) {
+                app.onepve.geelyconsole.utils.KeySignalRecorder.record(
+                        app.onepve.geelyconsole.utils.KeySignalRecorder.CH_POWER,
+                        "电源模式=" + val + "(原" + prevPowerMode + ")"
+                        + " 钥匙=" + lastKeyState + " 发动机=" + lastEngineState
+                        + " 电压=" + latestBatteryVoltage + "V");
+            }
             if (val > 0) {
                 if (prevPowerMode <= 0) {
                     doorStateManager.markDriverInside();
@@ -2257,7 +2644,7 @@ public class VehicleAutomationService extends Service {
             String province = OilPriceHelper.getFavoriteProvince(this);
             double defaultCapacity = VehiclePlatformFactory.getPlatform(this).getDefaultFuelCapacityLiters();
             double capacity = config.optDouble("fuel_capacity", defaultCapacity);
-            
+
             // 铁律：优先使用车主收藏的基准省份及对应标号的当日真实油价
             double price = OilPriceHelper.getFavoriteOilPrice(this, fuelType);
             if (price <= 4.0 || price >= 25.0) {
@@ -2990,6 +3377,10 @@ public class VehicleAutomationService extends Service {
                 currentFuelPercent = pct;
                 currentFuelLiters = liters;
                 AppLogger.i("行程油耗", "底盘燃油信号更新: 剩余 " + pct + "% (约 " + String.format(java.util.Locale.US, "%.1f", liters) + "L)");
+                // 关键信号取证：油量百分比变化（智能油耗的原始输入，车主最关心是否丢了）
+                app.onepve.geelyconsole.utils.KeySignalRecorder.record(
+                        app.onepve.geelyconsole.utils.KeySignalRecorder.CH_FUEL,
+                        "剩余油量=" + pct + "%(约" + String.format(java.util.Locale.US, "%.1f", liters) + "L)");
                 // 实时通知前台网页更新油箱估算卡片
                 app.onepve.geelyconsole.MainActivity.requestDeviceInfoPush();
             }
