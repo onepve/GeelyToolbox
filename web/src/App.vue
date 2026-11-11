@@ -569,7 +569,7 @@ html.light body {
 /* 底边框只留一圈很淡的"轨道"，亮度交给 ::after 的那束光。
    否则整圈常亮 = 您说的视觉污染。 */
 .border-car-accent {
-  border-color: var(--accent-gold-bg) !important;
+  border-color: var(--border-color) !important;
 }
 
 /* ---- 环绕流光：只给卡片级别的容器 ----
@@ -586,18 +586,21 @@ html.light body {
   pointer-events: none;
   z-index: 3;
   background-image:
-    linear-gradient(90deg,  rgba(255,255,255,0) 0%, var(--accent-gold) 50%, rgba(255,255,255,0) 100%),
-    linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--accent-gold) 50%, rgba(255,255,255,0) 100%),
-    linear-gradient(270deg, rgba(255,255,255,0) 0%, var(--accent-gold) 50%, rgba(255,255,255,0) 100%),
-    linear-gradient(0deg,   rgba(255,255,255,0) 0%, var(--accent-gold) 50%, rgba(255,255,255,0) 100%);
+    linear-gradient(90deg,  rgba(255,255,255,0) 0%, var(--accent-gold) 22%, #ffffff 50%, var(--accent-gold) 78%, rgba(255,255,255,0) 100%),
+    linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--accent-gold) 22%, #ffffff 50%, var(--accent-gold) 78%, rgba(255,255,255,0) 100%),
+    linear-gradient(270deg, rgba(255,255,255,0) 0%, var(--accent-gold) 22%, #ffffff 50%, var(--accent-gold) 78%, rgba(255,255,255,0) 100%),
+    linear-gradient(0deg,   rgba(255,255,255,0) 0%, var(--accent-gold) 22%, #ffffff 50%, var(--accent-gold) 78%, rgba(255,255,255,0) 100%);
   background-repeat: no-repeat;
   background-size:
-    34% 2px,
-    2px 34%,
-    34% 2px,
-    2px 34%;
+    40% 3px,
+    3px 40%,
+    40% 3px,
+    3px 40%;
   background-position: -60% 0%, 100% -60%, 160% 100%, 0% 160%;
   opacity: 1;
+  /* drop-shadow 跟随 alpha 通道 —— 只有亮的那一段发光，轨道不发光。
+     Chrome 23 起就支持，且不像 blur() 会在老内核上溢出裁切。 */
+  filter: drop-shadow(0 0 6px var(--accent-gold));
   animation:
     accent-run 3.6s linear infinite,
     accent-dim 16s ease-in-out .5s 1 forwards;
@@ -645,7 +648,7 @@ html.light .bg-car-item.border-car-accent {
 html.light /* 底边框只留一圈很淡的"轨道"，亮度交给 ::after 的那束光。
    否则整圈常亮 = 您说的视觉污染。 */
 .border-car-accent {
-  border-color: var(--accent-gold-bg) !important;
+  border-color: var(--border-color) !important;
 }
 
 html.light .bg-car-card.border-car-accent,
@@ -661,7 +664,7 @@ html.dark .border-car-accent,
 html:not(.light) /* 底边框只留一圈很淡的"轨道"，亮度交给 ::after 的那束光。
    否则整圈常亮 = 您说的视觉污染。 */
 .border-car-accent {
-  border-color: var(--accent-gold-bg) !important;
+  border-color: var(--border-color) !important;
 }
 
 html.dark .bg-car-card.border-car-accent,
@@ -687,11 +690,20 @@ html:not(.light) .bg-car-item.border-car-accent {
 
 /* 白天档：流光收窄一档（浅底上更晃眼），但保留绕圈科技感 */
 html.light .bg-car-card.border-car-accent::after {
+  /* 浅底上白色光带会"消失"，白天改用主题深色的实心光带 */
+  background-image:
+    linear-gradient(90deg,  rgba(255,255,255,0) 0%, var(--accent-gold) 30%, var(--accent-gold) 70%, rgba(255,255,255,0) 100%),
+    linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--accent-gold) 30%, var(--accent-gold) 70%, rgba(255,255,255,0) 100%),
+    linear-gradient(270deg, rgba(255,255,255,0) 0%, var(--accent-gold) 30%, var(--accent-gold) 70%, rgba(255,255,255,0) 100%),
+    linear-gradient(0deg,   rgba(255,255,255,0) 0%, var(--accent-gold) 30%, var(--accent-gold) 70%, rgba(255,255,255,0) 100%);
   background-size:
-    30% 1px,
-    1px 30%,
-    30% 1px,
-    1px 30%;
+    40% 3px,
+    3px 40%,
+    40% 3px,
+    3px 40%;
+  /* 白天浅底上辉光要收窄：3px 光带配 5px 辉光会糊成一团蓝雾，
+     收到 3px 让光带"实"起来，只留一圈淡淡的托光。 */
+  filter: drop-shadow(0 0 3px var(--accent-gold));
 }
 
 .fade-enter-active,
