@@ -3,8 +3,46 @@
     <!-- 顶部车规二级分段胶囊：一页全景掌控（按功能小类扁平拆分直达） -->
     <SubTabs :tabs="voiceTabs" v-model="activeTab" />
 
-    <!-- Tab 1: 换挡语音 — 1 张分组卡，卡头=换挡总开关，卡内四挡各自独立 -->
+    <!-- Tab 1: 换挡语音 — 顶部全车语音总闸 + 1 张分组卡（卡头=换挡总开关，卡内四挡各自独立） -->
     <div v-if="activeTab === 'gear'" class="flex flex-col space-y-4">
+      <!-- 全车语音播报总闸：唯一入口，置于 Tab1 顶部便于一键静音；
+           只放 Tab1，绝不做成全 Tab 常驻（否则会把功能卡片挤到屏幕外） -->
+      <div
+        @click="toggleVoiceMasterSwitch"
+        :class="[
+          'rounded-3xl border-2 px-5 py-4 flex items-center justify-between cursor-pointer select-none transition-all duration-150 active:scale-[0.995]',
+          store.vehicleAuto.voice_master_switch
+            ? 'bg-car-item border-car-accent shadow-md'
+            : 'bg-car-card border-car-border shadow-sm'
+        ]"
+      >
+        <div class="flex items-center space-x-3 min-w-0">
+          <span class="text-[20px] font-black text-car-text tracking-wide truncate">全车语音播报</span>
+          <span class="text-[12.5px] px-2.5 py-1 rounded-lg font-extrabold border bg-car-card border-car-border text-car-sub shrink-0">
+            总开关
+          </span>
+          <span class="text-[13.5px] font-bold text-car-sub truncate">
+            {{ store.vehicleAuto.voice_master_switch ? '挡位 / 模式 / 车门 / 尾门 / 前盖 全部会播报' : '已全部静音，点此处恢复播报' }}
+          </span>
+        </div>
+        <div class="flex items-center space-x-2.5 shrink-0">
+          <span
+            :class="[
+              'text-[15px] font-black',
+              store.vehicleAuto.voice_master_switch ? 'text-car-accent' : 'text-car-sub'
+            ]"
+          >
+            {{ store.vehicleAuto.voice_master_switch ? '已开启' : '已静音' }}
+          </span>
+          <span
+            :class="[
+              'w-3 h-3 rounded-full',
+              store.vehicleAuto.voice_master_switch ? 'bg-car-accent' : 'bg-car-sub/50'
+            ]"
+          ></span>
+        </div>
+      </div>
+
       <VoiceGroupCard
         title="换挡播报"
         tag="D / R / P / N"
