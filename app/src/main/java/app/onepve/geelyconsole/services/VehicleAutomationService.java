@@ -158,10 +158,70 @@ public class VehicleAutomationService extends Service {
     private volatile long logcatDroppedLines = 0L;             // 解析队列满时主动丢弃的行数（通道拥塞硬指标）
 
     // ═══ 读解耦队列 (v1.8.33) ═══
-    // 读线程只入队，独立线程解析。容量按「3 秒洪水 × 2」冗余设定：
-    // 实测最猛的一次 PBAP 洪水是 79KB/s、约 720 行/秒，2000 行 ≈ 3 秒缓冲，
-    // 足够吸收解析线程偶尔的 GC / 正则慢行，又不会把车机内存撑大。
-    private static final int LOGCAT_QUEUE_CAPACITY = 2000;
+    // 读线程只入队，独立线程解析。
+    // 【容量铁律 v1.8.32.11】2000 → 50000。
+    //   2000 只够 2.5 秒（实测洪峰 787~863 行/秒），解析线程一次 GC 或正则回溯就会丢帧。
+    //   50000 行 ≈ 60 秒缓冲，约 10MB 堆内存 —— 车主明确要求「内存够用，不能丢功能所需」。
+    //   队列只是解析缓冲，跟 logcat 缓冲区容量无关，改大不会拖慢车机。
+    private static final int LOGCAT_QUEUE_CAPACITY = 50000;
+
+    // ═══ 全量日志内存环形缓冲（v1.8.32.11 新增，根治「抓日志只剩 3 秒」）═══
+    // 病根：`logcat -d` 只是给 logd 缓冲区拍快照，常驻订阅一开，快照就只剩尾部 3 秒。
+    //   铁证：同车 1.8.28 及以前 all.log 全是 2.5~5MB（2 万~4.5 万行、52~210 秒），
+    //         beta.2 引入常驻订阅之后全部只剩 290~450KB（700~2000 行、3 秒）。
+    //   车主诉求：抓日志必须以「脱敏 + 全量」为主，噪音只做体积控制，绝不能丢功能所需数据。
+    // 解法：读线程顺手把**每一行原始日志**（不做白名单预筛）抄一份进内存环形缓冲，
+    //   抓日志时一次性写盘，彻底摆脱 logd 快照窗口限制。纯内存、零磁盘写入。
+    private static final int RAW_RING_CAPACITY = 100000;       // 约 25~30MB，覆盖 2~3 分钟（够一次完整开关门操作）
+    private static final java.util.concurrent.atomic.AtomicReferenceArray<String> RAW_RING =
+            new java.util.concurrent.atomic.AtomicReferenceArray<>(RAW_RING_CAPACITY);
+    private static final java.util.concurrent.atomic.AtomicLong RAW_RING_SEQ =
+            new java.util.concurrent.atomic.AtomicLong(0L);
+    private static volatile boolean rawRingEnabled = true;
+
+    /** 读线程每读到一行就抄进环形缓冲（无锁，代价约 40ns/行）。 */
+    static void appendRawRing(String line) {
+        if (line == null || !rawRingEnabled) return;
+        long seq = RAW_RING_SEQ.getAndIncrement();
+        RAW_RING.set((int) (seq % RAW_RING_CAPACITY), line);
+    }
+
+    /**
+     * 把环形缓冲流式写进文件（绝不拼成一个巨型 String，避免内存翻倍 OOM）。
+     * @return 实际写入行数
+     */
+    public static int dumpRawRingToFile(java.io.File dest) {
+        long head = RAW_RING_SEQ.get();
+        int n = (int) Math.min(head, RAW_RING_CAPACITY);
+        long start = head - n;
+        int wrote = 0;
+        java.io.BufferedWriter w = null;
+        try {
+            w = new java.io.BufferedWriter(new java.io.OutputStreamWriter(
+                    new java.io.FileOutputStream(dest), "UTF-8"), 1 << 16);
+            StringBuilder chunk = new StringBuilder(1 << 16);
+            for (long i = start; i < head; i++) {
+                String v = RAW_RING.get((int) (i % RAW_RING_CAPACITY));
+                if (v == null) continue;
+                chunk.append(v).append('\n');
+                wrote++;
+                if (chunk.length() >= (1 << 16)) {
+                    w.write(chunk.toString());
+                    chunk.setLength(0);
+                }
+            }
+            if (chunk.length() > 0) w.write(chunk.toString());
+        } catch (Throwable ignored) {
+        } finally {
+            if (w != null) { try { w.close(); } catch (Throwable ignored) {} }
+        }
+        return wrote;
+    }
+
+    /** 环形缓冲已攒了多少行（供抓包时判断够不够用）。 */
+    public static int rawRingSize() {
+        return (int) Math.min(RAW_RING_SEQ.get(), RAW_RING_CAPACITY);
+    }
     private final java.util.concurrent.ArrayBlockingQueue<String> logcatQueue =
             new java.util.concurrent.ArrayBlockingQueue<>(LOGCAT_QUEUE_CAPACITY);
     private Thread logcatParserThread;
@@ -984,6 +1044,9 @@ public class VehicleAutomationService extends Service {
                         while (isRunning && (line = reader.readLine()) != null) {
                             lineCount++;
                             logcatLastLineAtMs = android.os.SystemClock.elapsedRealtime();
+                            // 【全量留证铁律 v1.8.32.11】不走白名单、不过滤，每一行原始日志都抄进内存。
+                            // 放在抽干栅栏之前：历史缓冲段也要留，那正是 logd 快照拿不到的部分。
+                            appendRawRing(line);
                             if (!drained) {
                                 // 时间栅栏：时间戳早于开流瞬间的历史行直接丢，跨过栅栏即正式进入实时解析。
                                 // 无时间戳的续行（堆栈等）跟随上一行判定，历史段内一并丢弃。
@@ -1178,6 +1241,8 @@ public class VehicleAutomationService extends Service {
                             // 未连上就先放弃，标志复位，等 CarService 就绪后重试，绝不永久卡死
                             wheelHalFallbackActive = false;
                             Log.w(TAG, "方控 HAL 通道: CarPropertyManager 不可用，等待重试");
+                            // v1.8.32.11：注册结果必须进助手自己的日志，否则车里看不到 HAL 到底有没有生效
+                            AppLogger.diag("方控通道", "HAL 未就绪：CarPropertyManager 拿不到，等 CarService 后再试");
                             return;
                         }
                         if (wheelHalChannel == null) {
@@ -1186,6 +1251,7 @@ public class VehicleAutomationService extends Service {
                         if (!wheelHalChannel.register(cpm, VehicleAutomationService.this)) {
                             wheelHalFallbackActive = false;
                             Log.w(TAG, "方控 HAL 通道: HW_KEY_INPUT 属性不可用，保持原厂广播兜底");
+                            AppLogger.diag("方控通道", "HAL 注册失败：本车 HW_KEY_INPUT 属性不可用，方控只靠日志管道+原厂广播");
                             return;
                         }
                         wheelHalChannel.setListener(new app.onepve.geelyconsole.hal.HwKeyInputChannel.OnHwKeyListener() {
@@ -1202,6 +1268,10 @@ public class VehicleAutomationService extends Service {
                             }
                         }, true);
                         Log.i(TAG, "方控 HAL 通道: HW_KEY_INPUT 常开监听已就位（与日志管道互为冗余）");
+                        // v1.8.32.11：注册成功也必须留痕，否则从包里无法判断 HAL 到底走没走
+                        AppLogger.diag("方控通道", "HAL 注册成功：HW_KEY_INPUT 常开监听已就位，与日志管道互为冗余");
+                        app.onepve.geelyconsole.utils.KeySignalRecorder.recordChannelEvent(
+                                "方控 HAL 通道已就位（HW_KEY_INPUT 常开）");
                     } catch (Throwable t) {
                         Log.w(TAG, "方控 HAL 通道注册异常: " + t.getMessage());
                     }

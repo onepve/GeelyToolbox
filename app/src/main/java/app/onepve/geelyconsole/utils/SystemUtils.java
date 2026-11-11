@@ -1283,6 +1283,52 @@ public class SystemUtils {
         return false;
     }
 
+    /**
+     * 噪音折叠（v1.8.32.11 新增，替代 isNoiseLogLine 的「整类删除」）。
+     *
+     * 【车主铁律】脱敏是主目的，去噪只是减体积。噪音里也可能藏着我们需要的东西——
+     *   一旦整类删掉，出问题就彻底没线索，那就没法分析问题了。
+     * 【做法】每类噪音保留前 {@link #NOISE_SAMPLE_KEEP} 条原文，之后同类只累加计数，
+     *   在噪音结束时补一行「同类噪音已折叠 N 条」。真正重复的才折叠，不丢证据。
+     *
+     * @return 命中返回 true 并累加计数；调用方据此决定是否写这一行（不写时由 endNoiseFold 补汇总行）
+     */
+    private static final int NOISE_SAMPLE_KEEP = 3;
+    private static final java.util.HashMap<String, Integer> noiseKeepCount = new java.util.HashMap<>();
+    private static final java.util.HashMap<String, Integer> noiseFoldCount = new java.util.HashMap<>();
+
+    public static boolean foldNoiseLogLine(String line) {
+        if (line == null || line.isEmpty()) return false;
+        if (!isNoiseLogLine(line)) return false;
+        if (line.trim().length() == 0) return false;
+        // 找出命中的是哪一类噪音（用于分类计数）
+        String kind = null;
+        for (int i = 0; i < NOISE_PATTERNS.length; i++) {
+            if (line.contains(NOISE_PATTERNS[i])) { kind = NOISE_PATTERNS[i]; break; }
+        }
+        if (kind == null) kind = "其它噪音";
+        int kept = noiseKeepCount.containsKey(kind) ? noiseKeepCount.get(kind) : 0;
+        if (kept < NOISE_SAMPLE_KEEP) {
+            noiseKeepCount.put(kind, kept + 1);
+            return false;   // 保留样本原文
+        }
+        noiseFoldCount.put(kind, (noiseFoldCount.containsKey(kind) ? noiseFoldCount.get(kind) : 0) + 1);
+        return true;        // 折叠（不写这一行）
+    }
+
+    /** 噪音折叠汇总行（写进 all.log 末尾，让分析者知道哪些类被折叠了多少条）。 */
+    public static String noiseFoldSummary() {
+        if (noiseFoldCount.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("---------- 噪音折叠汇总（每类已保留前 ").append(NOISE_SAMPLE_KEEP).append(" 条原文）----------");
+        for (String k : noiseFoldCount.keySet()) {
+            sb.append('\n').append("[已折叠 ").append(noiseFoldCount.get(k)).append(" 条] ").append(k);
+        }
+        noiseKeepCount.clear();
+        noiseFoldCount.clear();
+        return sb.toString();
+    }
+
     public static String desensitizeLogLine(String line) {
         if (line == null || line.isEmpty()) return line;
         String clean = line;
@@ -1311,10 +1357,18 @@ public class SystemUtils {
              java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter(dest))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (isNoiseLogLine(line)) {
+                // v1.8.32.11：不再「命中噪音就整行丢弃」，改为每类保留前 3 条、其余折叠计数。
+                // 脱敏（隐私）与去噪（体积）彻底分开：这里只折叠重复，隐私一律抹成 [REDACTED]。
+                if (foldNoiseLogLine(line)) {
                     continue;
                 }
                 writer.write(desensitizeLogLine(line));
+                writer.newLine();
+            }
+            // 末尾补噪音折叠汇总，让分析者知道哪些类被折叠了多少条（证据可追溯）
+            String foldSummary = noiseFoldSummary();
+            if (foldSummary.length() > 0) {
+                writer.write(foldSummary);
                 writer.newLine();
             }
         } catch (Exception ignored) {}
@@ -1503,11 +1557,33 @@ public class SystemUtils {
             File tempDir = new File(downloadDir, "log_verify_" + System.currentTimeMillis());
             if (!tempDir.exists()) tempDir.mkdirs();
 
-            // 1. 抓取系统全量 logcat
-            if (listener != null) listener.onProgress(15, "正在倾倒整车底层 logcat 缓冲区...");
+            // 1. 抓取全量日志（v1.8.32.11 重写）
+            //    【病根】`logcat -d` 只是给 logd 缓冲区拍快照。常驻订阅一开，快照只剩尾部 3 秒。
+            //      铁证：同车 1.8.28 及以前 all.log 有 2 万~4.5 万行（52~210 秒），
+            //           beta.2 之后全部只剩 700~2000 行（3 秒），引擎盖那类操作整段抓不到。
+            //    【解法】主源改为助手自己内存里的全量环形缓冲（读线程逐行抄录、无过滤），
+            //       一次抓包能覆盖最近 4~5 分钟；只有环形缓冲不足 5000 行时才退回 logcat -d 拍快照。
+            if (listener != null) listener.onProgress(15, "正在汇总整车底层日志...");
             File rawLogFile = new File(tempDir, "raw_all.log");
-            String cmd = "logcat -d -v time > " + rawLogFile.getAbsolutePath();
-            executeShell(cmd);
+            int ringLines = 0;
+            try {
+                ringLines = app.onepve.geelyconsole.services.VehicleAutomationService.rawRingSize();
+            } catch (Throwable ignored) {}
+            if (ringLines >= 5000) {
+                // 主源：内存全量缓冲（流式写盘，不拼巨型字符串）
+                try {
+                    ringLines = app.onepve.geelyconsole.services.VehicleAutomationService.dumpRawRingToFile(rawLogFile);
+                } catch (Throwable ignored) {}
+                result.put("log_source", "memory_ring");
+                result.put("log_ring_lines", ringLines);
+                if (listener != null) listener.onProgress(25, "已汇总内存全量日志 " + ringLines + " 行...");
+            } else {
+                // 兜底：内存缓冲还没攒够（刚开机/刚装完），退回 logd 快照
+                String cmd = "logcat -d -v time > " + rawLogFile.getAbsolutePath();
+                executeShell(cmd);
+                result.put("log_source", "logcat_snapshot");
+                result.put("log_ring_lines", ringLines);
+            }
 
             if (!rawLogFile.exists() || rawLogFile.length() == 0) {
                 result.put("success", false);
