@@ -451,7 +451,7 @@
           <div class="flex items-center text-[13.5px] text-rose-500 font-extrabold">
             <span>⚠️ 停稳挂 P 挡使用</span>
           </div>
-          <span class="text-[14px] font-black text-rose-500 dark:text-rose-400 group-hover:underline">
+          <span class="text-[14px] font-black text-rose-500 dk-rose-400 group-hover:underline">
             立即硬件冷重启 ➔
           </span>
         </div>

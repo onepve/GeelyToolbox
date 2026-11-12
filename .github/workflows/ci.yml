@@ -50,6 +50,9 @@ jobs:
           pnpm build
           cd ..
 
+      - name: WebView Render Parity Gate (车机内核一致性 · 效果图=车机)
+        run: python3 scripts/check_webview_render_parity.py
+
       - name: Inject Tag Version & VersionCode (Tag-Driven, Dual Channel)
         if: startsWith(github.ref, 'refs/tags/')
         run: |

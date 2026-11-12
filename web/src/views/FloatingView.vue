@@ -23,7 +23,7 @@
             <span :class="[
               'px-3 py-1 rounded-full text-[14px] font-black tracking-wide border flex items-center space-x-1.5 transition-colors',
               store.deviceInfo.floating_enabled 
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dk-emerald-400' 
                 : 'bg-car-item border-car-border text-car-sub'
             ]">
               <StatusDot size="xs" :color="store.deviceInfo.floating_enabled ? 'ok' : 'off'" />
@@ -106,7 +106,7 @@
             <span :class="[
               'px-3 py-1 rounded-full text-[14px] font-black tracking-wide border flex items-center space-x-1.5 transition-colors',
               ssEnabled 
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dk-emerald-400' 
                 : 'bg-car-item border-car-border text-car-sub'
             ]">
               <StatusDot size="xs" :color="ssEnabled ? 'ok' : 'off'" />

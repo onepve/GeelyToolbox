@@ -159,7 +159,7 @@
             
             <span class="text-[16px] font-black text-car-text">下轮调价窗口:</span>
             <span class="text-[16px] font-black text-car-accent">{{ store.oilPrice.nextAdjustment.dateLabel }}</span>
-            <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-item text-rose-600 dark:text-rose-300 font-extrabold border border-car-border">
+            <span class="text-[13px] px-2.5 py-0.5 rounded-full bg-car-item text-rose-600 dk-rose-300 font-extrabold border border-car-border">
               仅剩 {{ daysLeft.days }} 天
             </span>
           </div>

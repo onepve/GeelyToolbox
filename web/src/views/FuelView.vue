@@ -55,11 +55,11 @@
               <div class="flex items-center space-x-1.5">
                 <span 
                   class="text-[13px] font-black"
-                  :class="store.oilPrice.nextAdjustment?.trend === 'down' ? 'text-emerald-500 dark:text-emerald-400' : (store.oilPrice.nextAdjustment?.trend === 'up' ? 'text-rose-500 dark:text-rose-400' : 'text-car-sub')"
+                  :class="store.oilPrice.nextAdjustment?.trend === 'down' ? 'text-emerald-500 dk-emerald-400' : (store.oilPrice.nextAdjustment?.trend === 'up' ? 'text-rose-500 dk-rose-400' : 'text-car-sub')"
                 >
                   下轮预期: {{ store.oilPrice.nextAdjustment ? store.oilPrice.nextAdjustment.predictedLiter + '元/L' : '获取中...' }}
                 </span>
-                <span class="text-[12px] px-2 py-0.5 rounded-full bg-car-card text-rose-600 dark:text-rose-300 font-extrabold border border-car-border whitespace-nowrap">
+                <span class="text-[12px] px-2 py-0.5 rounded-full bg-car-card text-rose-600 dk-rose-300 font-extrabold border border-car-border whitespace-nowrap">
                   {{ oilDaysText }}
                 </span>
               </div>

@@ -13,6 +13,12 @@
 
       <!-- 右侧专属大舞台 (切换功能时自动回顶) -->
       <!-- 右侧专属大舞台：开机即全量载入内存常驻，全生命周期绝不销毁重绘，任何大菜单切换 100% 物理 0ms 纯粹秒开 -->
+      <!-- 【车机老内核铁律】section 是 overflow-y-auto 的纵向 flex 容器，子视图是 flex item。
+           车机 Chromium 66 对 flex item 的 min-height:auto 不按内容计算，会算成 0，
+           于是在内容超高时不是滚动，而是把整层卡片 flex-shrink 压扁
+           （实测首页大卡 98px → 73px，卡片内文字全部贴边）。
+           本地新版 Edge 会先按内容撑开再滚动，所以出图「松」，车机「挤」。
+           修法见下方 CSS：section > * 一律 flex-shrink:0，按自然高参与滚动。 -->
       <section ref="mainContent" class="flex-1 h-full overflow-y-auto p-5 flex flex-col">
         <!-- 1. 行车联动 (集成方向盘按键 + 360联动 + 车速大灯 + 网络外设) -->
         <LinkView v-if="mountedViews.link" v-show="store.currentNav === 'link' || store.currentNav === 'wheel'" />
@@ -652,6 +658,59 @@ html:not(.light) .bg-car-item.border-car-accent {
   opacity: 0;
   transform: translate(-50%, -10px);
 }
+
+/* ---------------------------------------------------------------------------
+   车机老内核铁律：滚动容器里的子视图禁止被 flex-shrink 压扁
+   section 是 overflow-y-auto + flex-col 的滚动容器，子视图是它的 flex item。
+   Chromium 66 对 flex item 的 min-height:auto 不按内容尺寸计算（算作 0），
+   于是内容超高时浏览器选择压缩而不是滚动：
+     首页大卡 98px → 73px、整层内容栈 732px → 616px，卡片内文字全部贴边。
+   本地新版 Edge 会先把容器撑到内容自然高再滚动，所以出图「松」、车机「挤」，
+   同一份产物两处看起来完全是两套版式 —— 这就是效果图与车机实拍差异的主因。
+   修法：子视图一律 flex-shrink:0，按自然高参与滚动，永不被压缩。
+--------------------------------------------------------------------------- */
+section > * {
+  flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   车机老内核铁律：Tailwind preflight 里的 :where() 规则会被整条丢弃
+   preflight 用 `button,input:where([type=button],...){background-color:transparent}`
+   把浏览器默认控件灰底抹平。Chromium 66 不认识 :is()/:where()（Chrome 88+），
+   整条规则直接判为无效语法丢弃 —— 于是所有「没显式写 bg-*」的按钮在车机上
+   露出 UA 默认灰底 rgb(221,221,221)，而本地 Edge 正常透明。
+   实测：同一份产物，裸 button 车机 rgb(221,221,221) / 本地 rgba(0,0,0,0)。
+   修法：用不带 :where 的直白选择器把 preflight 的三条兜底重新声明一遍。
+--------------------------------------------------------------------------- */
+button,
+input[type="button"],
+input[type="reset"],
+input[type="submit"] {
+  -webkit-appearance: button;
+  background-color: transparent;
+  background-image: none;
+}
+
+/* preflight 的 [hidden]:where(:not([hidden=until-found])){display:none} 同样失效，
+   补一条老内核可用版本，否则带 hidden 属性的元素在车机上不会被隐藏。 */
+[hidden] {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   车机老内核铁律：Tailwind 的 dark: 变体在 Chromium 66 上全部失效
+   Tailwind 把 dark:xxx 编译成 `.dark\:text-amber-300:is(.dark *){...}`，
+   :is() 需要 Chrome 88+，车机内核不认 → 整条规则丢弃 → 深色主题下的
+   强调色（涨跌红绿、告警黄、链接蓝）全部退回普通正文色，看不出状态。
+   修法：源码里改用 dk-xxx 自定义类，这里用不带 :is 的老内核可读选择器补声明。
+   新增 dark: 配色时，必须同步在这里加一条 html.dark .dk-xxx。
+--------------------------------------------------------------------------- */
+html.dark .dk-amber-300 { color: #fcd34d; }
+html.dark .dk-emerald-300 { color: #6ee7b7; }
+html.dark .dk-emerald-400 { color: #34d399; }
+html.dark .dk-rose-300 { color: #fda4af; }
+html.dark .dk-rose-400 { color: #fb7185; }
+html.dark .dk-sky-300 { color: #7dd3fc; }
 
 /* 隐藏细小滚动条，保持车规整洁 */
 ::-webkit-scrollbar {

@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""五个主视图 1920x720 真视口截图（UI 复核用）。
+"""五个主视图车机真视口截图（UI 复核用）。
+
+默认视口 1760x720，等于车机真实 appBounds（wm size 1920x720 减去右侧 160px 系统侧栏）。
+历史教训：曾按 1920x720 出图，卡片更宽松、标签不换行，与车机实拍差别极大，
+每次都要上车实测纠偏。出图必须与车机可用窗口一致，否则效果图没有参考价值。
+
+想看车机内核（Chromium 66）真渲染，用 scripts/check_webview_render_parity.py。
 
 用法：
     python3 scripts/shot_views.py                  # 黑夜（出厂默认）
     python3 scripts/shot_views.py day              # 白天
     python3 scripts/shot_views.py day amber_gold   # 白天 + 指定配色
+    SHOT_VW=1920 python3 scripts/shot_views.py day # 显式指定视口（仅调试用）
 输出：/data/tmp/ui_audit/<view>.png / day_<view>.png
 """
 import os, sys, json, time, asyncio, subprocess, urllib.request, base64, websockets
@@ -15,6 +22,11 @@ HTML = f"file://{ROOT}/app/src/main/assets/toolbox_ui.html"
 PORT = 9341
 OUT = "/data/tmp/ui_audit"
 MODE = (sys.argv[1] if len(sys.argv) > 1 else "night").lower()
+# 车机真实可用视口：guard.log 实测 wm size 1920x720，但 appBounds=1760x720
+# （右侧 160px 被系统侧栏吃掉）。按 1920 出图会让卡片更宽松、不换行，
+# 与车机实拍差别极大，因此默认按真实 appBounds 出图。
+VW = int(os.environ.get("SHOT_VW", "1760"))
+VH = int(os.environ.get("SHOT_VH", "720"))
 PALETTE = sys.argv[2] if len(sys.argv) > 2 else "sky_ocean"
 THEME_KEY = "toolbox_theme_v2"
 VIEWS = [("link", "行车联动"), ("body", "车载声音"), ("fuel", "行程油耗"),
@@ -26,7 +38,7 @@ def start_edge():
     time.sleep(0.5)
     proc = subprocess.Popen(["/usr/bin/microsoft-edge", "--headless=new",
                              f"--remote-debugging-port={PORT}", "--no-sandbox", "--disable-gpu",
-                             "--window-size=1920,720", "--hide-scrollbars", HTML],
+                             f"--window-size={VW},{VH}", "--hide-scrollbars", HTML],
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for _ in range(40):
         try:

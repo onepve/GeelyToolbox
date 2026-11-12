@@ -133,7 +133,7 @@
         <!-- 左右并列 2 列栅格，全一屏完整展示杜绝滚动 -->
         <div class="grid grid-cols-2 gap-3.5 text-[13px] leading-relaxed select-none">
           <!-- 左列 1：排查提示 -->
-          <div class="p-3.5 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-500 dark:text-amber-300 flex flex-col justify-between">
+          <div class="p-3.5 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-500 dk-amber-300 flex flex-col justify-between">
             <div>
               <div class="font-black text-[14.5px] mb-1 flex items-center">
                 <span class="mr-1.5">💡</span>【排查提示：先复现，再抓取】
@@ -145,7 +145,7 @@
           </div>
 
           <!-- 右列 1：隐私安全承诺 -->
-          <div class="p-3.5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 flex flex-col justify-between">
+          <div class="p-3.5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dk-emerald-300 flex flex-col justify-between">
             <div>
               <div class="font-black text-[14.5px] mb-1 flex items-center">
                 <span class="mr-1.5" style="color: var(--text-main);">🛡️</span>【隐私安全承诺：不取任何车主个人信息】
@@ -160,7 +160,7 @@
           </div>
 
           <!-- 左列 2：存放规则 -->
-          <div class="p-3.5 rounded-2xl border border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-300 flex flex-col justify-between">
+          <div class="p-3.5 rounded-2xl border border-sky-500/40 bg-sky-500/10 text-sky-600 dk-sky-300 flex flex-col justify-between">
             <div>
               <div class="font-black text-[14.5px] mb-1 flex items-center">
                 <span class="mr-1.5">⏳</span>【存放规则：30天自动销毁 · 支持自主查阅】
