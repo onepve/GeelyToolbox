@@ -69,7 +69,7 @@
     </div>
 
     <!-- Tab 3: 车门语音 — 模式卡(二选一) + 门卡 -->
-    <div v-if="activeTab === 'door'" class="flex flex-col space-y-3">
+    <div v-if="activeTab === 'door'" class="flex flex-col gap-y-[8px]">
       <!-- 第一层：选播报方式，二选一，不套娃 -->
       <VoiceGroupCard
         title="车门播报方式"
@@ -109,7 +109,7 @@
     </div>
 
     <!-- Tab: 尾门与引擎盖（v1.8.33.12 合并）——两张卡上下排列，报文观察收成引擎盖卡内小按钮 -->
-    <div v-if="activeTab === 'body'" class="flex flex-col space-y-3">
+    <div v-if="activeTab === 'body'" class="flex flex-col space-y-4">
       <VoiceGroupCard
         title="电动尾门"
         tag="后备箱"

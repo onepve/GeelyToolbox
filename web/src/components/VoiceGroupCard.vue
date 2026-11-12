@@ -32,7 +32,7 @@
     <div
       v-if="!modePickable"
       @click="onMasterToggle()"
-      class="flex items-center justify-between px-5 py-3 transition-all duration-150 cursor-pointer select-none active:scale-[0.995]"
+      class="flex items-center justify-between px-5 py-4 transition-all duration-150 cursor-pointer select-none active:scale-[0.995]"
     >
       <div class="flex items-center space-x-2.5 min-w-0">
         <span class="text-[20px] font-black text-car-text tracking-wide truncate">{{ title }}</span>
@@ -54,7 +54,7 @@
     <!-- 卡身：模式二选一 —— 横向并列两枚大胶囊（v1.8.33.13 压扁）
          原来上下堆两行说明文字，整张卡吃掉 136px，把四扇门挤到屏幕外。
          现在选择项本身就是按钮：左圆点 + 名字 + 一行不换行的短说明，一眼选完。 -->
-    <div v-if="modePickable" class="px-5 py-3 grid grid-cols-2 gap-3 items-start">
+    <div v-if="modePickable" class="px-5 pt-2 pb-2 grid grid-cols-2 gap-3 items-stretch">
       <div
         v-for="m in modes"
         :key="m.id"
@@ -78,18 +78,18 @@
     </div>
 
     <!-- 卡身：零件格子 -->
-    <div v-else class="px-5 pb-4" :class="cols === 1 ? '' : 'grid gap-3'"
+    <div v-else class="px-5 pb-5" :class="cols === 1 ? '' : 'grid gap-3'"
          :style="cols === 1 ? '' : `grid-template-columns: repeat(${cols}, minmax(0, 1fr));`">
       <div
         v-for="item in items"
         :key="item.voiceKey"
         :class="[
-          'rounded-2xl p-2 flex flex-col justify-between transition-all duration-150',
+          'rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-150',
           item.active ? 'bg-car-item border-solid border-l-[4px] border-l-car-accent' : 'bg-car-item opacity-85'
         ]"
       >
         <!-- 格头：名称 + 独立开关小圆点 -->
-        <div class="flex items-center justify-between mb-1 cursor-pointer select-none active:scale-[0.98]"
+        <div class="flex items-center justify-between mb-2 cursor-pointer select-none active:scale-[0.98]"
              @click.stop="emit('toggleItem', item.voiceKey)">
           <span class="text-[15.5px] font-black text-car-text">{{ item.label }}</span>
           <div class="flex items-center space-x-1.5 shrink-0">
@@ -100,7 +100,7 @@
           </div>
         </div>
 
-        <div class="text-[12.5px] text-car-sub font-bold leading-tight mb-1">{{ item.line }}</div>
+        <div class="text-[12.5px] text-car-sub font-bold leading-snug mb-2">{{ item.line }}</div>
 
         <div class="flex items-center space-x-2">
           <button
