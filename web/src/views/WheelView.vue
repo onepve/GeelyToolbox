@@ -6,11 +6,14 @@
     <!-- Tab 1: 按键独立映射 (v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'keys'" class="flex flex-col space-y-4 pb-28">
       
-      <!-- 常驻：方控接管总开关 + 模式切换（切换后仍可用，防卡死）
-           这张卡本身就是本页的总开关，不再另设外层大卡包住下面的按键卡片。
-           点左侧「方向盘按键接管」文字区 = 开/关接管；右侧切换卡片模式。 -->
+      <!-- 常驻：方控接管总开关 + 三个分段（常用按键 / 按键学习 / 方控诊断）
+           2026-11 改版：原来「方控响应与冲突体检」是横跨两列的独立大卡，按钮文字超长，
+           把下面的按键九宫格整排挤出屏幕，底部要滚屏才看得见。
+           现在把它收进第一排的分段控件里，第一排只占一行：
+             左侧 = 总开关（点文字开/关），右侧 = 常用按键 | 按键学习 | 方控诊断。
+           下面两排 3 + 3 正好一屏装完，不用滚。 -->
       <div
-        :class="['rounded-3xl border-2 bg-car-card px-5 py-4 flex items-center justify-between transition-all border-car-border shadow-sm']"
+        :class="['rounded-3xl border-2 bg-car-card px-5 py-3.5 flex items-center justify-between transition-all border-car-border shadow-sm']"
       >
         <div
           @click="toggleWheelMasterSwitch"
@@ -43,6 +46,15 @@
           >
             {{ m.name }}
           </button>
+          <!-- 方控诊断：这是一个「动作」不是「布局」，点了直接弹体检窗，
+               所以永远不高亮（不参与选中态），避免车主误以为整页切到了别的模式。 -->
+          <button
+            type="button"
+            @click="openKeyLearning"
+            class="px-4 h-[50px] rounded-xl font-black text-[14.5px] transition-all cursor-pointer flex items-center justify-center border-2 border-transparent select-none bg-transparent text-car-sub hover:text-car-text"
+          >
+            方控诊断
+          </button>
         </div>
       </div>
 
@@ -54,6 +66,7 @@
         <!-- ① 右方向盘主页/返回键 -->
         <WheelGestureCard
           class="!mb-0"
+          tighter
           key-name="back"
           card-title="右方向盘 ① 主页/返回按键"
           card-desc="右盘 ① 号返回键，单击映射为高德导航、360 全景等。"
@@ -65,6 +78,7 @@
         <!-- ② 右方向盘音量滚轮按压 -->
         <WheelGestureCard
           class="!mb-0"
+          tighter
           key-name="ok"
           card-title="右方向盘 ② 音量滚轮按压"
           card-desc="右盘 ② 号滚轮垂直向下按压，默认播放/暂停，支持改绑。"
@@ -76,6 +90,7 @@
         <!-- ③ 右方向盘静音键 -->
         <WheelGestureCard
           class="!mb-0"
+          tighter
           key-name="mute"
           card-title="右方向盘 ③ 静音按键"
           card-desc="右盘 ③ 号静音键，单击自定义；长按 10 秒仍为原车冷重启。"
@@ -87,6 +102,7 @@
         <!-- ⑥ 右方向盘 MODE 键 -->
         <WheelGestureCard
           class="!mb-0"
+          tighter
           key-name="mode"
           card-title="右方向盘 ⑥ MODE 模式键"
           card-desc="右盘 ⑥ 号 MODE 键，默认一键秒开 360 全景，支持改绑。"
@@ -95,40 +111,33 @@
           helpTip="绝大多数车友强烈推荐绑定「360 全景影像」，过窄路神器。"
         />
 
-        <!-- ④ & ⑦ 切歌双键：上一曲 / 下一曲 -->
+        <!-- ④ & ⑦ 切歌双键：上一曲 / 下一曲
+             2026-11 改版：原来是横跨两列、上下两层（标题在一层、两个下拉框在另一层），
+             高度比旁边两张卡高出一截，把第三排整排顶到屏幕外面。
+             现在压成标准单格：标题一行，下面两个下拉框左右并排、各 60px 高，
+             和左右两张卡同一高度，第二排三个正好齐平。 -->
         <FeatureCard
-          class="!mb-0 col-span-2"
+          class="!mb-0"
           dense
-          title="右方向盘 ④ 下一曲 / ⑦ 上一曲"
-          desc="右盘 ④/⑦ 号切歌键，接管后防偶发失效，切歌零延迟。"
+          tighter
+          title="右盘 ④⑦ 切歌"
           helpTitle="【功能指南】下一曲 / 上一曲切歌按键映射"
           helpText="1. 单击极速响应：&#10;方向盘右侧「上一曲 / 下一曲」按键按压即刻响应，零延迟跟手。&#10;&#10;2. 完美适配音乐软件：&#10;深度适配 QQ音乐车机版、网易云音乐、酷狗等，切歌稳定不冲突。&#10;&#10;3. 灵活改绑：&#10;如需由方控开 360 或调用其他功能，也可在此自由改绑。"
           helpTip="切歌动作建议保持「切歌(官方调度)」，切歌最稳定。"
         >
-          <div class="grid grid-cols-2 gap-3.5">
-            <!-- ⑦ 上一曲 -->
-            <div class="bg-car-item rounded-2xl p-3.5 flex flex-col space-y-2.5">
-              <div class="flex items-center justify-between">
-                <span class="text-[15.5px] font-black text-car-text">⑦ 上一曲 (向左)</span>
-                <span class="text-[12px] text-car-accent font-bold">按压即发</span>
-              </div>
-              <ActionSelect key-name="prev" gesture="single" />
-            </div>
-
-            <!-- ④ 下一曲 -->
-            <div class="bg-car-item rounded-2xl p-3.5 flex flex-col space-y-2.5">
-              <div class="flex items-center justify-between">
-                <span class="text-[15.5px] font-black text-car-text">④ 下一曲 (向右)</span>
-                <span class="text-[12px] text-car-accent font-bold">按压即发</span>
-              </div>
-              <ActionSelect key-name="next" gesture="single" />
-            </div>
+          <!-- 2026-11 改版：⑦④ 两个下拉本来竖着摞（标签 + 下拉各两行 = 91px），
+               把整行三张卡从 125px 顶到 160px，第三排就被挤出屏幕。
+               改成左右并排、每个 56px 单行，内容区 91 → 56，整行与第一排齐平。 -->
+          <div class="grid grid-cols-2 gap-2">
+            <ActionSelect key-name="prev" gesture="single" compact />
+            <ActionSelect key-name="next" gesture="single" compact />
           </div>
         </FeatureCard>
 
         <!-- ⑤ 方向盘自定义键 -->
         <WheelGestureCard
           class="!mb-0"
+          tighter
           key-name="custom"
           card-title="方向盘 ⑤ 自定义按键"
           :card-desc="customKeyDesc"
@@ -136,24 +145,6 @@
           helpText="1. 热擎：&#10;原车无 360 与专属交互，该按键在原厂处于闲置状态，是改绑 360 或高德导航的绝佳按键。&#10;&#10;2. 激擎 / Battle：&#10;若原车已被特定交互占用，可选择「恢复原厂默认」放行；若闲置亦可自由映射。&#10;&#10;3. 全功能接管：&#10;可自由映射为秒开 360 全景、导航、静音、打开常用应用等。"
           :helpTip="customKeyTip"
         />
-
-        <!-- 方控响应体检与排错 (通道测试与冲突诊断) -->
-        <FeatureCard
-          class="!mb-0 col-span-2"
-          dense
-          title="方控响应与冲突体检"
-          desc="按下方向盘任意键，实时检测信号通路与硬件延迟；排查按键无反应与通道冲突。"
-          helpTitle="【功能指南】方控响应与冲突体检"
-          helpText="1. 体检作用：&#10;按下方向盘上的任意物理按键，助手会立即检测底盘信号通路是否通畅，0ms 读出硬件键码。&#10;&#10;2. 冲突排查：&#10;如果遇到按键没反应、失灵或冲突，点击体检按一下方向盘，即可精准定位是通道未开启、被第三方抢占还是软件未适配。&#10;&#10;3. 安全测试：&#10;体检期间按下的按键仅用于信号检测，不会触发已绑定的切歌、360 等任何功能，测完即恢复。&#10;&#10;4. 安全红线：&#10;仅支持检测右方向盘多媒体控制按键；左侧巡航与驾驶安全按键为原车核心安全件，严禁测试与拦截。"
-          helpTip="遇到按键不响应或切歌失效时，先点此体检，按一下看信号是否通畅。"
-        >
-          <button
-            @click="openKeyLearning"
-            class="w-full min-h-[72px] rounded-2xl bg-car-item border-2 border-car-accent text-car-text font-black text-[19px] cursor-pointer shadow-md hover:border-car-border-light transition-all active:scale-[0.99]"
-          >
-            开始方控响应与冲突体检
-          </button>
-        </FeatureCard>
         </div>
     </div>
 
@@ -250,14 +241,17 @@
     <!-- Tab 2: 接管模式与图解 (v-if 彻底杜绝幽灵重叠) -->
     <div v-if="activeTab === 'mode'" class="flex flex-col space-y-4">
     <!-- 1. 方向盘方控接管模式 -->
-    <FeatureCard 
-      title="接管方式"
-      desc="按键和蓝牙分开管，四个按钮直接选组合。"
-      helpTitle="【功能指南】接管方式怎么选"
-      helpText="按键和蓝牙是两件独立的事，分开选就好：&#10;&#10;• ① 全面接管（推荐）：方向盘切歌和蓝牙声音都交给助手。原厂多媒体被冻结、或者你用第三方播放器，选这个。&#10;• ② 只接管方控：只拦方向盘切歌，蓝牙声音全归原车。适合原厂多媒体正常、只想让助手管按键的。&#10;• ③ 只接管蓝牙：方向盘按键全还给原车，助手只负责把蓝牙声音保住。适合原厂按键够用、但蓝牙偶尔没声音的。&#10;• ④ 完整原厂：按键和声音都不碰，助手只在后台待着。&#10;&#10;提醒：选②或④时，如果原厂多媒体被冻结，车机里没人管蓝牙，助手也没接手，蓝牙就会没声音。想让助手保声音，请改选①或③。&#10;&#10;换完选项如果没马上生效，重启一下车机就好。"
-      helpTip="想全交给助手选①；只想管声音选③；只想管按键选②；都不要选④。"
-    >
-      <div class="grid grid-cols-4 gap-3.5" style="grid-gap: 12px; -webkit-column-gap: 12px;">
+    <!-- 1. 方向盘方控接管模式
+         2026-11 改版：原来套 FeatureCard，标题「接管方式」独占一行、说明文字再占一行、
+         四个按钮又占下面一大块，上半部分整片留白浪费，下面还要滚屏。
+         现在改成和总开关同款直排卡：左边四个字 + 问号，右边四个按钮同一行，
+         整张卡从约 200dp 压到约 100dp，一页正好看完。 -->
+    <div class="rounded-3xl border-2 bg-car-card px-5 py-3.5 flex items-center justify-between shadow-sm transition-all border-car-border">
+      <div class="flex items-center space-x-2 shrink-0">
+        <span class="text-[19px] font-black text-car-text whitespace-nowrap">接管方式</span>
+        <HelpDot @click="openTakeoverHelp" title="查看四种接管方式怎么选" />
+      </div>
+      <div class="grid grid-cols-4 gap-2.5 flex-1 ml-4 min-w-0">
         <MatrixButton 
           title="① 全面接管"
           subtitle="按键和声音都交给助手"
@@ -283,7 +277,7 @@
           @click="applyPreset(4)"
         />
       </div>
-    </FeatureCard>
+    </div>
 
     <div
       @click="toggleFloating()"
@@ -447,6 +441,27 @@ const MODE_HELP_DESC = [
 
 function openModeHelp() {
   openHelpModal('【功能指南】常用按键 与 按键学习 怎么选', MODE_HELP_DESC, '不确定选哪个，就用常用按键。');
+}
+
+// 接管方式四种组合的说明（文案放脚本里，避免模板内联引号转义踩坑）
+const TAKEOVER_HELP_DESC = [
+  '按键和蓝牙是两件独立的事，分开选就好：',
+  '',
+  '· ① 全面接管（推荐）：方向盘切歌和蓝牙声音都交给助手。原厂多媒体被冻结、或者你用第三方播放器，选这个。',
+  '',
+  '· ② 只接管方控：只拦方向盘切歌，蓝牙声音全归原车。适合原厂多媒体正常、只想让助手管按键的。',
+  '',
+  '· ③ 只接管蓝牙：方向盘按键全还给原车，助手只负责把蓝牙声音保住。适合原厂按键够用、但蓝牙偶尔没声音的。',
+  '',
+  '· ④ 完整原厂：按键和声音都不碰，助手只在后台待着。',
+  '',
+  '提醒：选②或④时，如果原厂多媒体被冻结，车机里没人管蓝牙，助手也没接手，蓝牙就会没声音。想让助手保声音，请改选①或③。',
+  '',
+  '换完选项如果没马上生效，重启一下车机就好。'
+].join('\n');
+
+function openTakeoverHelp() {
+  openHelpModal('【功能指南】接管方式怎么选', TAKEOVER_HELP_DESC, '想全交给助手选①；只想管声音选③；只想管按键选②；都不要选④。');
 }
 
 function setMappingMode(mode) {

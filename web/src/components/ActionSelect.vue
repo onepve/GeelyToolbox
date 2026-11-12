@@ -1,16 +1,18 @@
 <template>
   <div class="relative" ref="rootEl">
-    <!-- 触发按钮：车规大磁贴 (80px 高)，显示当前选中动作 -->
+    <!-- 触发按钮：车规大磁贴 (80px 高)，显示当前选中动作；compact 时压到 56px 单行 -->
     <button
       @click="toggle"
       class="w-full rounded-2xl border flex items-center justify-between cursor-pointer transition-all shadow-md bg-car-item border-car-border text-car-text hover:border-car-border-light"
-      style="min-height: 80px; height: 80px; padding: 12px 20px; box-sizing: border-box;"
+      :style="compact
+        ? 'min-height:56px; height:56px; padding:8px 12px; box-sizing:border-box;'
+        : 'min-height:80px; height:80px; padding:12px 20px; box-sizing:border-box;'"
     >
       <span class="flex flex-col items-start min-w-0">
-        <span class="text-[19px] font-black text-car-text leading-tight truncate w-full text-left">{{ displayName }}</span>
-        <span class="text-[14px] font-bold text-car-sub mt-1 truncate w-full text-left">{{ displaySub }}</span>
+        <span :class="compact ? 'text-[16px]' : 'text-[19px]'" class="font-black text-car-text leading-tight truncate w-full text-left">{{ displayName }}</span>
+        <span v-if="!compact" class="text-[14px] font-bold text-car-sub mt-1 truncate w-full text-left">{{ displaySub }}</span>
       </span>
-      <span class="text-[20px] text-car-sub font-black ml-3 shrink-0">▾</span>
+      <span :class="compact ? 'text-[17px] ml-2' : 'text-[20px] ml-3'" class="text-car-sub font-black shrink-0">▾</span>
     </button>
 
     <!-- 下拉面板：双列车规磁贴列表（宽度 520px，双列并排，避免单列纵向撑破屏幕导致显示不全）
@@ -68,7 +70,13 @@ import { playTouchFeedback } from '../utils/sound';
 
 const props = defineProps({
   keyName: { type: String, required: true },
-  gesture: { type: String, required: true }
+  gesture: { type: String, required: true },
+  /**
+   * 紧凑模式：用于「切歌」这种一格内要塞两个下拉的卡片。
+   * 触发按钮从 80px 压到 56px，只留一行主文字（不显示副标题），
+   * 下拉面板本身不变（60px 磁贴），所以点开照样好点。
+   */
+  compact: { type: Boolean, default: false }
 });
 
 const open = ref(false);
