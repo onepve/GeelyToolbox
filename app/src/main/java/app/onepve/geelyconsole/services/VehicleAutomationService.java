@@ -136,8 +136,20 @@ public class VehicleAutomationService extends Service {
     // ═══ Logcat 通道稳定性治理 (v1.8.32-beta.3) ═══
     // 历史故障：-b all 让 logcat 子进程约 20ms 就退出，外层 while 每 2 秒无脑重建，
     // 25 分钟重建 219 次、guard.log 刷屏、方控/车门/挡位信号全断（方控只能靠原厂广播兜底）。
-    private static final long[] LOGCAT_BACKOFF_MS = {2000L, 5000L, 15000L, 30000L, 60000L};
-    private static final long LOGCAT_SILENCE_WATCHDOG_MS = 300000L; // 连续 5 分钟无任何新日志判定通道假死
+    // 【v1.8.33 修正】退避表封顶。
+    // 历史病根：旧表 {2,5,15,30,60} 秒，断得越多等得越久。
+    //   而这些等待期间是「完全没有 logcat 通道」的真空期 —— 挡位、车门、尾门报文全在丢。
+    //   车主实测感受：「以前最多等 8~10 秒，现在要 10、20、30 秒甚至更长」，正是这张表在作怪。
+    //   实测：第 3 次断要空等 15 秒 + 重连抽干期 4 秒 ≈ 19 秒没有挡位信号。
+    // 现在改为 {2,2,3,4,5}：最坏只空等 5 秒（+ 抽干 0.8 秒 ≈ 5.8 秒），不再翻倍。
+    //   代价：万一车机 logd 彻底不可用，重连会稍频繁一些。但每次重连本身就是几十毫秒的事，
+    //   比「静默 60 秒收不到挡位」的代价小得多。
+    private static final long[] LOGCAT_BACKOFF_MS = {2000L, 2000L, 3000L, 4000L, 5000L};
+    // 【v1.8.33 修正】假死看门狗从 5 分钟收到 20 秒。
+    // 5 分钟太长：通道悄悄死掉后，要 5 分钟才发现，这 5 分钟里挡位/车门全丢，
+    //   车主感受就是「怎么按都没反应，过好久才突然好了」。
+    // 20 秒足够区分「车真安静」与「通道死了」—— 车机常驻进程每秒都在写日志，20 秒一行都没有必然异常。
+    private static final long LOGCAT_SILENCE_WATCHDOG_MS = 20000L;
     private volatile long logcatLastLineAtMs = 0L;
     private volatile boolean logcatEverEstablished = false;   // 就绪提示全程只打一次，杜绝刷屏
     private volatile boolean logcatDrainReported = false;     // 抽干提示全程只打一次
@@ -177,7 +189,13 @@ public class VehicleAutomationService extends Service {
             new java.util.concurrent.atomic.AtomicReferenceArray<>(RAW_RING_CAPACITY);
     private static final java.util.concurrent.atomic.AtomicLong RAW_RING_SEQ =
             new java.util.concurrent.atomic.AtomicLong(0L);
-    private static volatile boolean rawRingEnabled = true;
+    // 【v1.8.33 性能修正】默认关闭。
+    // 历史包袱：此前写死 true，等于「只要车开着，读线程每读到一行就要做一次原子自增+取模+数组写」。
+    //   车机洪峰实测 787~863 行/秒，这活全压在 logcat 读线程上，读端一旦跟不上产出速度，
+    //   logd 就把该读者队列的行丢掉 —— 表现为管道没断但车门/挡位信号整段消失。
+    //   而这份缓冲平时根本没人用：它只在车主点【抓日志】时才写盘。平时开着纯属白烧 CPU。
+    // 现在改为按需：平时 false（每行只判一个 volatile 布尔，纳秒级）；点抓日志时先补建历史再开。
+    private static volatile boolean rawRingEnabled = false;
 
     /** 读线程每读到一行就抄进环形缓冲（无锁，代价约 40ns/行）。 */
     static void appendRawRing(String line) {
@@ -221,6 +239,40 @@ public class VehicleAutomationService extends Service {
     /** 环形缓冲已攒了多少行（供抓包时判断够不够用）。 */
     public static int rawRingSize() {
         return (int) Math.min(RAW_RING_SEQ.get(), RAW_RING_CAPACITY);
+    }
+
+    /**
+     * 抓日志时按需开启环形缓冲，并先把 logd 里的历史补进来。
+     *
+     * 为什么要有这一步：缓冲平时是关的（省 CPU），但如果直接开，
+     * 车主点「抓日志」那一刻之前发生的事就只剩读线程往后抄的部分，
+     * 这次的换挡/开门操作很可能已经在点按钮之前就做完了 —— 那就白抓。
+     *
+     * 所以开启时先跑一次 `logcat -d` 把 logd 现存快照整体补进缓冲（当作历史段），
+     * 再由读线程往后续（实时段），两段首尾自然衔接。
+     * 补历史失败不影响实时抄录，最多是历史段短一些。
+     */
+    public static void enableRawRingAndBackfill() {
+        if (rawRingEnabled) return;
+        // 先补历史：此刻读线程还没开始抄，不会和实时段打架
+        try {
+            Process p = new ProcessBuilder("logcat", "-d", "-v", "time", "-t", "20000")
+                    .redirectErrorStream(true).start();
+            java.io.BufferedReader br = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(p.getInputStream()), 4096);
+            String l;
+            int n = 0;
+            while ((l = br.readLine()) != null) {
+                RAW_RING.set((int) (RAW_RING_SEQ.getAndIncrement() % RAW_RING_CAPACITY), l);
+                n++;
+            }
+            br.close();
+            p.destroy();
+            AppLogger.i("系统启动", "抓包环形缓冲补建历史 " + n + " 行");
+        } catch (Throwable t) {
+            AppLogger.w("系统启动", "抓包环形缓冲补建历史失败(不影响实时抄录): " + t.getMessage());
+        }
+        rawRingEnabled = true;
     }
     private final java.util.concurrent.ArrayBlockingQueue<String> logcatQueue =
             new java.util.concurrent.ArrayBlockingQueue<>(LOGCAT_QUEUE_CAPACITY);
@@ -1204,7 +1256,11 @@ public class VehicleAutomationService extends Service {
 
                         BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()), 1024);
                         String line;
-                        long drainDeadlineMs = android.os.SystemClock.elapsedRealtime() + 4000L;
+                        // 安全阀：抽干期从 4000ms 收到 800ms。
+                        // 原 4 秒太长：每次重连都要在「历史段」里空转，这期间实时挡位报文全被 continue 丢掉。
+                        // 车机 logd 的历史回放通常几百毫秒就跨过栅栏了，800ms 足够；
+                        // 万一真遇到时钟跳变，下面还有 elapsedRealtime 兜底放行，不会卡死。
+                        long drainDeadlineMs = android.os.SystemClock.elapsedRealtime() + 800L;
                         while (isRunning && (line = reader.readLine()) != null) {
                             lineCount++;
                             logcatLastLineAtMs = android.os.SystemClock.elapsedRealtime();

@@ -1616,6 +1616,11 @@ public class SystemUtils {
             if (listener != null) listener.onProgress(15, "正在汇总整车底层日志...");
             File rawLogFile = new File(tempDir, "raw_all.log");
             int ringLines = 0;
+            // 【v1.8.33】缓冲平时是关的（省 CPU）。抓包这一刻先打开并补建 logd 历史，
+            //   否则车主点按钮之前刚做的换挡/开门就拿不到了。
+            try {
+                app.onepve.geelyconsole.services.VehicleAutomationService.enableRawRingAndBackfill();
+            } catch (Throwable ignored) {}
             try {
                 ringLines = app.onepve.geelyconsole.services.VehicleAutomationService.rawRingSize();
             } catch (Throwable ignored) {}

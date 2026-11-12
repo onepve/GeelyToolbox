@@ -310,6 +310,18 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 + (SystemClock.elapsedRealtime() - bootT0) + "ms）");
         AppLogger.i("系统启动", "启动取证 | 界面 onCreate 全部完成（总耗时 " + (SystemClock.elapsedRealtime() - bootT0) + "ms）");
 
+        // 【v1.8.33】界面被打开 = 用户在车机前面，不会同时换挡/听迎宾播报，
+        // 所以这里可以直接同步语音资产，不必等空闲。（后台冷启动那条路才等空闲）
+        // 放后台线程，绝不占主线程；版本没变时 syncBuiltinAssets 会秒退。
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    VehicleVoicePlayer.getInstance(MainActivity.this).onUiOpenSyncVoice();
+                } catch (Throwable ignored) {}
+            }
+        }, 800L);
+
         // 兜底安全防线：冷启动后最长 2.5 秒无论前端是否通知，均平滑解除启动层
         mainHandler.postDelayed(new Runnable() {
             @Override

@@ -515,6 +515,33 @@ public class VehicleVoicePlayer {
         }, "VoiceIdleSync").start();
     }
 
+    /**
+     * 界面被打开时的立即同步（用户拍板的第二条路径）。
+     *
+     * 为什么界面打开就可以立即写、不用等空闲：
+     *   人正站在车机前面点屏幕，这时候不可能同时在换挡、也不可能突然要听迎宾播报。
+     *   就算他真去换挡，那也是他在测试，晚一点听到无所谓。
+     *
+     * 与 onIdleSyncVoice() 的分工：
+     *   · 后台冷启动（点火自启，人不在屏幕前）→ onIdleSyncVoice()，等车开起来再写；
+     *   · 用户点开界面 / 升级后点「打开」      → 本方法，立刻写。
+     *
+     * 两者都走 syncBuiltinAssets，靠版本戳与文件长度比对兜底，重复调用是安全的。
+     */
+    public void onUiOpenSyncVoice() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    int n = syncBuiltinAssets(context, false);
+                    Log.i(TAG, "UI-open voice sync result=" + n);
+                } catch (Exception e) {
+                    Log.w(TAG, "UI-open voice sync failed: " + e.getMessage());
+                }
+            }
+        }, "VoiceUiOpenSync").start();
+    }
+
     /** 是否正在播放（供空闲判定使用）。 */
     public boolean isBusyOrQueued() {
         synchronized (playerLock) {
@@ -617,14 +644,42 @@ public class VehicleVoicePlayer {
                 }
             }
 
-            // 升级后首次启动 / 强制重装 / 缺失自愈：后台全量从 assets/audio 覆盖最新音频
+            // 升级后首次启动 / 强制重装 / 缺失自愈：逐个核对后补齐，不再无脑全量重写。
+            //
+            // 【v1.8.33 第4条：到底比什么】
+            // 比「每个语音文件在 APK 里的大小」和「它在车机上的大小」，两者相等就跳过不写。
+            //   · 左边：AssetManager.openFd("audio/xxx.mp3").getLength()，这是打包进 APK 的原始长度，
+            //           APK 里 mp3 是不压缩存储的，所以这个数就是权威字节数。
+            //   · 右边：new File(voiceDir, "xxx.mp3").length()，车机上现有文件的字节数。
+            //   相等 → 说明这个文件已经是最新的，直接跳过（0 次磁盘写）。
+            //   不等 → 说明是旧版本残留、上次写一半被打断（截断）、或压根没有，就地重写这一个。
+            //
+            // 为什么不用 MD5：MP3 是随 APK 一起打包下发的只读资产，我不会去改它、也不会被外部改。
+            //   唯一可能出问题的是「写得完不完整」，而截断必然导致长度不同。
+            //   所以长度比对已经能 100% 抓住「半新半旧」这个真正的病根，不必每次升级对 25 个文件算 404KB 摘要。
+            //   （真需要逐字节确认时，代码里另有 force=true 的「强制重装原声」按钮，那条路是无条件全写。）
             String[] list = context.getAssets().list("audio");
             int count = 0;
+            int skipped = 0;
             if (list != null) {
                 byte[] buf = new byte[16 * 1024];
                 for (String f : list) {
                     if ("voice_version.json".equals(f) || !f.endsWith(".mp3")) continue;
                     File dest = new File(voiceDir, f);
+                    long expected = -1L;
+                    try {
+                        android.content.res.AssetFileDescriptor afd = context.getAssets().openFd("audio/" + f);
+                        if (afd != null) {
+                            expected = afd.getLength();
+                            afd.close();
+                        }
+                    } catch (Exception ignored) {
+                    }
+                    // 大小一致 → 已是最新，跳过（这是升级时省掉 404KB 重写的地方）
+                    if (!force && expected > 0 && dest.exists() && dest.length() == expected) {
+                        skipped++;
+                        continue;
+                    }
                     try (InputStream in = context.getAssets().open("audio/" + f);
                          FileOutputStream out = new FileOutputStream(dest)) {
                         int len;
@@ -643,8 +698,10 @@ public class VehicleVoicePlayer {
                         .putInt(PREF_LAST_VOICE_ASSET_VER, targetVoiceVer)
                         .apply();
             }
-            Log.i(TAG, "Builtin voice assets synced (force=" + force + ", verChanged=" + versionChanged + "), updated=" + count);
-            AppLogger.i("语音资产", "内置语音升级自动覆盖就绪: 覆写更新=" + count + "个, 版本号=" + code);
+            Log.i(TAG, "Builtin voice assets synced (force=" + force + ", verChanged=" + versionChanged
+                    + "), updated=" + count + ", skipped=" + skipped);
+            AppLogger.i("语音资产", "内置语音升级核对完成: 重写=" + count + "个, 大小一致跳过=" + skipped
+                    + "个, 版本号=" + code);
             return count;
         } catch (Exception e) {
             Log.w(TAG, "syncBuiltinAssets error: " + e.getMessage());
