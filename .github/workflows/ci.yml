@@ -80,11 +80,14 @@ jobs:
           # 正式版序号固定 99，测试版序号 1~98 → 同版本测试号恒排在正式号之前
           VCODE=$(( (MAJ*10000 + MIN*100 + PATCH) * 100 + REV ))
           echo "Injecting tag-driven version: ${VNAME} (versionCode ${VCODE}, base ${BASE_VER}, rev ${REV})"
-          sed -i "s/versionCode [0-9]*/versionCode ${VCODE}/" app/build.gradle
-          sed -i "s/versionName \"[^\"]*\"/versionName \"${VNAME}\"/" app/build.gradle
-          grep -E 'version(Name|Code)' app/build.gradle
-          GOT_CODE=$(grep -oP 'versionCode \K[0-9]+' app/build.gradle)
-          GOT_NAME=$(grep -oP 'versionName "\K[^"]+' app/build.gradle)
+          # 只替换真正的赋值行：全局 sed 会把注释里出现的 "versionCode /versionName" 也
+          # 补上一个号（[0-9]* 允许零位），凭空造出第二行 versionCode，
+          # 导致下面 grep -oP 取回两行、校验必然失败（beta-v1.8.33.1 实测踩到）。
+          sed -i -E "s/^([[:space:]]*versionCode )[0-9]+/\1${VCODE}/" app/build.gradle
+          sed -i -E "s/^([[:space:]]*versionName )\"[^\"]*\"/\1\"${VNAME}\"/" app/build.gradle
+          grep -nE '^[[:space:]]*version(Name|Code)' app/build.gradle
+          GOT_CODE=$(grep -oP '^[[:space:]]*versionCode \K[0-9]+' app/build.gradle | head -1)
+          GOT_NAME=$(grep -oP '^[[:space:]]*versionName "\K[^"]+' app/build.gradle | head -1)
           if [[ "$GOT_CODE" != "$VCODE" || "$GOT_NAME" != "$VNAME" ]]; then
             echo "!! [FAIL] Tag version/versionCode injection verification failed. Aborting."
             exit 1
@@ -318,6 +321,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
+          # 铁律：同一次推送可能并发触发 main 与 tag 两条流水线。只要有别的运行还在排队/进行中，
+          # 本次清理整体跳过 —— 否则会删掉兄弟运行正在用的构建缓存与历史产物，
+          # 甚至（旧版逻辑）直接把对方的 run 记录删掉，造成「tag 打了但没有发版」。
+          BUSY=$(gh run list -R "${{ github.repository }}" -L 100 --json databaseId,status \
+            -q "[.[] | select(.databaseId != ${{ github.run_id }}) | select(.status == \"in_progress\" or .status == \"queued\" or .status == \"waiting\")] | length")
+          if [ "${BUSY:-0}" != "0" ]; then
+            echo "Another run is still active (${BUSY}) — skipping cleanup this round."
+            exit 0
+          fi
+
           echo "1. Cleaning up repository action caches..."
           gh extension install actions/gh-actions-cache 2>/dev/null || true
           gh actions-cache list -R "${{ github.repository }}" -L 100 --order desc | cut -f 1 | while read -r key; do
@@ -332,8 +345,14 @@ jobs:
             fi
           done
 
-          echo "3. Cleaning up all old workflow runs (keeping current)..."
-          gh run list -R "${{ github.repository }}" -L 100 --json databaseId -q '.[] | select(.databaseId != ${{ github.run_id }}) | .databaseId' | while read -r run_id; do
+          echo "3. Cleaning up old workflow runs (keeping current)..."
+          # 铁律：只清「已经结束且至少 1 小时前」的运行。
+          # 以前这里无条件删掉除自己以外的所有 run，结果同一次推送里 main 与 tag
+          # 两条流水线并发启动时，先结束的那条把还在跑的 tag 发布彻底删掉 —— 
+          # beta-v1.8.33.1 实测：tag run 被兄弟 run 清理掉，仓库里只剩一条 main run。
+          gh run list -R "${{ github.repository }}" -L 100 --json databaseId,status,createdAt \
+            -q '.[] | select(.databaseId != ${{ github.run_id }}) | select(.status == "completed") | select((.createdAt | fromdateiso8601) < (now - 3600)) | .databaseId' \
+            | while read -r run_id; do
             if [ -n "$run_id" ]; then
               echo "Deleting old run: $run_id"
               gh run delete "$run_id" -R "${{ github.repository }}" 2>/dev/null || true
