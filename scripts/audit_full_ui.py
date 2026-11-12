@@ -76,9 +76,11 @@ def start_edge():
     # 必须给独立 user-data-dir：默认 profile 有锁，残留实例会让新进程秒退，
     # 表现为 DevTools 端口一直 connection refused。
     # 另外 Chromium 66 不能把 stdout/stderr 指向 DEVNULL —— 会直接秒退；
-    # 且临时目录必须落在 /data 盘（scratch 目录会被守护进程回收，导致浏览器被 SIGTERM）。
+    # 且临时目录必须落在 /data 盘（本机 scratch 会被守护进程回收，浏览器被 SIGTERM）。
+    # CI 上没有 /data 盘，回退系统 temp。
     base = os.environ.get("AUDIT_TMPDIR") or "/data/tmp"
-    os.makedirs(base, exist_ok=True)
+    if not (os.path.isdir(base) and os.access(base, os.W_OK)):
+        base = tempfile.gettempdir()
     work = tempfile.mkdtemp(prefix="audit-ui-", dir=base)
     profile = os.path.join(work, "prof")
     logf = open(os.path.join(work, "browser.log"), "wb")
