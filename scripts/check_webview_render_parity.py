@@ -225,13 +225,18 @@ def runtime_probe():
     if not os.path.exists(HTML):
         return 'SKIP'
     port = free_port()
+    env = dict(os.environ)
+    # 本地自带字体映射（中文渲染需要）；CI 上没有该文件就不设，用系统字体
+    fc = env.get('FONTCONFIG_FILE') or '/data/tmp/chromium66/fc/fonts.conf'
+    if os.path.exists(fc):
+        env['FONTCONFIG_FILE'] = fc
+    else:
+        env.pop('FONTCONFIG_FILE', None)
     proc = subprocess.Popen(
         [CHROME66, '--headless', '--disable-gpu', '--no-sandbox',
          f'--remote-debugging-port={port}', f'--window-size={VW},{VH}',
          '--hide-scrollbars', 'file://' + HTML],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        env={**os.environ,
-             'FONTCONFIG_FILE': os.environ.get('FONTCONFIG_FILE', '/data/tmp/chromium66/fc/fonts.conf')},
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env,
     )
     try:
         ws = wait_devtools(port)

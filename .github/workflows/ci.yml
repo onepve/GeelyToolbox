@@ -50,8 +50,24 @@ jobs:
           pnpm build
           cd ..
 
+      - name: Fetch Chrome 540276 (车机 WebView 同款内核快照)
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/cr66"
+          if [ ! -x "$RUNNER_TEMP/cr66/x/chrome-linux/chrome" ]; then
+            curl -sSL -o "$RUNNER_TEMP/cr66/c.zip" \
+              "https://storage.googleapis.com/chromium-browser-snapshots/Linux_x64/540276/chrome-linux.zip"
+            unzip -oq "$RUNNER_TEMP/cr66/c.zip" -d "$RUNNER_TEMP/cr66/x"
+            chmod +x "$RUNNER_TEMP/cr66/x/chrome-linux/chrome"
+          fi
+          "$RUNNER_TEMP/cr66/x/chrome-linux/chrome" --version
+
       - name: WebView Render Parity Gate (车机内核一致性 · 效果图=车机)
-        run: python3 scripts/check_webview_render_parity.py
+        env:
+          CHROME66: ${{ runner.temp }}/cr66/x/chrome-linux/chrome
+        run: |
+          python3 -m pip install --quiet websockets
+          python3 scripts/check_webview_render_parity.py
 
       - name: Inject Tag Version & VersionCode (Tag-Driven, Dual Channel)
         if: startsWith(github.ref, 'refs/tags/')
