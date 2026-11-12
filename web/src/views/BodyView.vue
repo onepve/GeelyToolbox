@@ -260,8 +260,10 @@
             <div 
               v-for="theme in voiceThemes" 
               :key="theme.id"
-              class="bg-car-item border-2 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all"
-              :class="activeThemeName === theme.name ? 'border-car-accent' : 'border-car-border'"
+              class="border-2 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all border-solid"
+              :class="activeThemeName === theme.name
+                ? 'bg-car-item border-car-border border-l-[5px] border-l-car-accent'
+                : 'bg-car-item border-car-border'"
             >
               <div class="flex-1 min-w-0 pr-4 flex flex-col space-y-1">
                 <div class="flex items-center space-x-2">

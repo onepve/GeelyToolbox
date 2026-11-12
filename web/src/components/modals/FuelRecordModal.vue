@@ -44,7 +44,7 @@
               :class="[
                 'min-h-[50px] px-4 py-1.5 rounded-xl border-2 flex items-center space-x-2 text-left cursor-pointer transition-all shadow-sm select-none',
                 activeModalTab === tab.id
-                  ? 'border-car-accent bg-car-accent-light text-car-accent'
+                  ? 'bg-car-accent-light border-2 border-transparent text-car-accent'
                   : 'border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-border-light'
               ]"
             >
@@ -84,7 +84,7 @@
                 :class="[
                   'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'total_amount'
-                    ? 'border-car-accent bg-car-accent-light'
+                    ? 'bg-car-accent-light border-2 border-transparent'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
@@ -103,7 +103,7 @@
                 :class="[
                   'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'coupon'
-                    ? 'border-car-accent bg-car-accent-light'
+                    ? 'bg-car-accent-light border-2 border-transparent'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
@@ -122,7 +122,7 @@
                 :class="[
                   'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'actual_paid'
-                    ? 'border-car-accent bg-car-accent-light'
+                    ? 'bg-car-accent-light border-2 border-transparent'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
@@ -144,7 +144,7 @@
                 :class="[
                   'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'discount'
-                    ? 'border-car-accent bg-car-accent-light'
+                    ? 'bg-car-accent-light border-2 border-transparent'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
@@ -163,7 +163,7 @@
                 :class="[
                   'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'liters'
-                    ? 'border-car-accent bg-car-accent-light'
+                    ? 'bg-car-accent-light border-2 border-transparent'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
@@ -182,7 +182,7 @@
                 :class="[
                   'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'price'
-                    ? 'border-car-accent bg-car-accent-light'
+                    ? 'bg-car-accent-light border-2 border-transparent'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
@@ -202,7 +202,7 @@
               :class="[
                 'min-h-[58px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm select-none',
                 activeField === 'odo'
-                  ? 'border-car-accent bg-car-accent-light'
+                  ? 'bg-car-accent-light border-2 border-transparent'
                   : 'border-car-border bg-car-card hover:border-car-border-light'
               ]"
             >
@@ -266,7 +266,7 @@
                   :class="[
                     'min-h-[50px] rounded-lg border-2 font-mono text-[12px] font-bold cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     isQuickDiscountActive(editingRecord, d.val)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
+                      ? 'bg-car-accent-light border-2 border-transparent text-car-accent font-black'
                       : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
@@ -278,9 +278,9 @@
                   :class="[
                     'min-h-[50px] rounded-lg border-2 text-[12px] cursor-pointer transition-all flex flex-col items-center justify-center shadow-sm select-none px-1',
                     isCustomDiscountActive(editingRecord)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
+                      ? 'bg-car-accent-light border-2 border-transparent text-car-accent font-black'
                       : (activeField === 'discount'
-                          ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
+                          ? 'bg-car-accent-light border-2 border-transparent text-car-accent font-black'
                           : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent')
                   ]"
                   title="点击在右侧小键盘手动输入任意折扣数字"
@@ -376,7 +376,7 @@
               <button 
                 type="button" 
                 @click="activeModalTab = 'fuel'" 
-                class="min-h-[54px] rounded-xl border-2 border-car-accent bg-car-accent-light text-car-accent text-[15px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-md hover:opacity-90"
+                class="min-h-[54px] rounded-xl bg-car-accent-light border-2 border-transparent text-car-accent text-[15px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-md hover:opacity-90"
               >
                 油品 ➔
               </button>
@@ -388,7 +388,7 @@
               <button 
                 type="button" 
                 @click="$emit('save-edit')" 
-                class="px-3.5 py-1.5 rounded-lg border-2 border-car-accent bg-car-accent-light text-car-accent font-black text-[12px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-sm"
+                class="px-3.5 py-1.5 rounded-lg bg-car-accent-light border-2 border-transparent text-car-accent font-black text-[12px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-sm"
               >
                 直接保存
               </button>
@@ -412,7 +412,7 @@
                   :class="[
                     'min-h-[50px] rounded-xl border-2 font-mono text-[15px] font-black cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     editingRecord.fuel_type === f
-                      ? 'border-car-accent bg-car-accent-light text-car-accent'
+                      ? 'bg-car-accent-light border-2 border-transparent text-car-accent'
                       : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
@@ -430,7 +430,7 @@
                   :class="[
                     'min-h-[54px] p-2.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between shadow-sm select-none',
                     editingRecord.is_full
-                      ? 'border-car-accent bg-car-accent-light'
+                      ? 'bg-car-accent-light border-2 border-transparent'
                       : 'border-car-border bg-car-item hover:border-car-border-light'
                   ]"
                 >
@@ -438,7 +438,7 @@
                     <span :class="editingRecord.is_full ? 'text-car-accent' : 'text-car-text'" class="text-[14px] font-black">⛽ 跳枪加满</span>
                     <span class="text-[11px] text-car-sub font-bold">精准跳枪基准线</span>
                   </div>
-                  <span :class="editingRecord.is_full ? 'border-2 border-car-accent bg-car-accent-light text-car-accent shadow-sm' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11.5px] px-2.5 py-1 rounded-lg font-black">
+                  <span :class="editingRecord.is_full ? 'bg-car-accent-light border-2 border-transparent text-car-accent shadow-sm' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11.5px] px-2.5 py-1 rounded-lg font-black">
                     {{ editingRecord.is_full ? '✓ 已标记' : '点此设为' }}
                   </span>
                 </div>
@@ -448,7 +448,7 @@
                   :class="[
                     'min-h-[54px] p-2.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between shadow-sm select-none',
                     !editingRecord.is_full
-                      ? 'border-car-accent bg-car-accent-light'
+                      ? 'bg-car-accent-light border-2 border-transparent'
                       : 'border-car-border bg-car-item hover:border-car-border-light'
                   ]"
                 >
@@ -456,7 +456,7 @@
                     <span :class="!editingRecord.is_full ? 'text-car-accent' : 'text-car-text'" class="text-[14px] font-black">💧 阶段补油</span>
                     <span class="text-[11px] text-car-sub font-bold">普通日常按金额补充</span>
                   </div>
-                  <span :class="!editingRecord.is_full ? 'border-2 border-car-accent bg-car-accent-light text-car-accent shadow-sm' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11.5px] px-2.5 py-1 rounded-lg font-black">
+                  <span :class="!editingRecord.is_full ? 'bg-car-accent-light border-2 border-transparent text-car-accent shadow-sm' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11.5px] px-2.5 py-1 rounded-lg font-black">
                     {{ !editingRecord.is_full ? '✓ 已标记' : '点此设为' }}
                   </span>
                 </div>
@@ -478,7 +478,7 @@
                   :class="[
                     'min-h-[50px] rounded-xl border-2 font-bold text-[13.5px] cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     editingRecord.gas_station === st
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
+                      ? 'bg-car-accent-light border-2 border-transparent text-car-accent font-black'
                       : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
@@ -494,7 +494,7 @@
               <div class="flex items-center justify-between pb-2 border-b border-car-border">
                 <div class="flex items-center space-x-2">
                   <span class="text-[13px] font-black text-car-text">加油所在省份:</span>
-                  <span class="px-2.5 py-1 rounded-lg border border-car-accent bg-car-accent-light text-car-accent font-black text-[13px]">
+                  <span class="px-2.5 py-1 rounded-lg border bg-car-accent-light border-2 border-transparent text-car-accent font-black text-[13px]">
                     {{ editingRecord.province || '浙江' }}
                   </span>
                 </div>
@@ -510,7 +510,7 @@
                     :class="[
                       'w-full min-h-[50px] rounded-xl border-2 text-[13px] font-black cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                       editingRecord.province === prov
-                        ? 'border-car-accent bg-car-accent-light text-car-accent'
+                        ? 'bg-car-accent-light border-2 border-transparent text-car-accent'
                         : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                     ]"
                   >
@@ -563,7 +563,7 @@
                   :class="[
                     'min-h-[50px] rounded-lg border-2 text-[12.5px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(editingRecord, tag)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
+                      ? 'bg-car-accent-light border-2 border-transparent text-car-accent font-black'
                       : 'border-car-border bg-car-card text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
@@ -640,7 +640,7 @@
               :class="[
                 'min-h-[50px] px-4 py-1.5 rounded-xl border-2 flex items-center space-x-2 text-left cursor-pointer transition-all shadow-sm select-none',
                 activeModalTab === tab.id
-                  ? 'border-car-accent bg-car-accent-light text-car-accent'
+                  ? 'bg-car-accent-light border-2 border-transparent text-car-accent'
                   : 'border-car-border bg-car-item text-car-sub hover:text-car-text hover:border-car-border-light'
               ]"
             >
@@ -679,7 +679,7 @@
                 :class="[
                   'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'total_amount'
-                    ? 'border-car-accent bg-car-accent-light'
+                    ? 'bg-car-accent-light border-2 border-transparent'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
@@ -697,7 +697,7 @@
                 :class="[
                   'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'coupon'
-                    ? 'border-car-accent bg-car-accent-light'
+                    ? 'bg-car-accent-light border-2 border-transparent'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
@@ -715,7 +715,7 @@
                 :class="[
                   'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'actual_paid'
-                    ? 'border-car-accent bg-car-accent-light'
+                    ? 'bg-car-accent-light border-2 border-transparent'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
@@ -736,7 +736,7 @@
                 :class="[
                   'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'discount'
-                    ? 'border-car-accent bg-car-accent-light'
+                    ? 'bg-car-accent-light border-2 border-transparent'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
@@ -754,7 +754,7 @@
                 :class="[
                   'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'liters'
-                    ? 'border-car-accent bg-car-accent-light'
+                    ? 'bg-car-accent-light border-2 border-transparent'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
@@ -772,7 +772,7 @@
                 :class="[
                   'min-h-[56px] px-3 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm',
                   activeField === 'price'
-                    ? 'border-car-accent bg-car-accent-light'
+                    ? 'bg-car-accent-light border-2 border-transparent'
                     : 'border-car-border bg-car-card hover:border-car-border-light'
                 ]"
               >
@@ -792,7 +792,7 @@
               :class="[
                 'min-h-[52px] px-3.5 py-1.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all shadow-sm select-none',
                 activeField === 'odo'
-                  ? 'border-car-accent bg-car-accent-light'
+                  ? 'bg-car-accent-light border-2 border-transparent'
                   : 'border-car-border bg-car-card hover:border-car-border-light'
               ]"
             >
@@ -856,7 +856,7 @@
                   :class="[
                     'min-h-[50px] rounded-lg border-2 font-mono text-[12px] font-bold cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     isQuickDiscountActive(newRecord, d.val)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
+                      ? 'bg-car-accent-light border-2 border-transparent text-car-accent font-black'
                       : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
@@ -868,9 +868,9 @@
                   :class="[
                     'min-h-[50px] rounded-lg border-2 text-[12px] cursor-pointer transition-all flex flex-col items-center justify-center shadow-sm select-none px-1',
                     isCustomDiscountActive(newRecord)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
+                      ? 'bg-car-accent-light border-2 border-transparent text-car-accent font-black'
                       : (activeField === 'discount'
-                          ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
+                          ? 'bg-car-accent-light border-2 border-transparent text-car-accent font-black'
                           : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent')
                   ]"
                   title="点击在右侧小键盘手动输入任意折扣数字"
@@ -965,7 +965,7 @@
               <button 
                 type="button" 
                 @click="activeModalTab = 'fuel'" 
-                class="min-h-[54px] rounded-xl border-2 border-car-accent bg-car-accent-light text-car-accent text-[15px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-md hover:opacity-90"
+                class="min-h-[54px] rounded-xl bg-car-accent-light border-2 border-transparent text-car-accent text-[15px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-md hover:opacity-90"
               >
                 油品 ➔
               </button>
@@ -977,7 +977,7 @@
               <button 
                 type="button" 
                 @click="$emit('save-new')" 
-                class="px-3.5 py-1.5 rounded-lg border-2 border-car-accent bg-car-accent-light text-car-accent font-black text-[12px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-sm"
+                class="px-3.5 py-1.5 rounded-lg bg-car-accent-light border-2 border-transparent text-car-accent font-black text-[12px] hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-sm"
               >
                 直接入账
               </button>
@@ -1000,7 +1000,7 @@
                   :class="[
                     'min-h-[50px] rounded-xl border-2 font-mono text-[15px] font-black cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     newRecord.fuel_type === f
-                      ? 'border-car-accent bg-car-accent-light text-car-accent'
+                      ? 'bg-car-accent-light border-2 border-transparent text-car-accent'
                       : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
@@ -1018,7 +1018,7 @@
                   :class="[
                     'min-h-[54px] p-2.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between shadow-sm select-none',
                     newRecord.is_full
-                      ? 'border-car-accent bg-car-accent-light'
+                      ? 'bg-car-accent-light border-2 border-transparent'
                       : 'border-car-border bg-car-item hover:border-car-border-light'
                   ]"
                 >
@@ -1026,7 +1026,7 @@
                     <span :class="newRecord.is_full ? 'text-car-accent' : 'text-car-text'" class="text-[14px] font-black">⛽ 跳枪加满</span>
                     <span class="text-[11px] text-car-sub font-bold">精准跳枪基准线</span>
                   </div>
-                  <span :class="newRecord.is_full ? 'border-2 border-car-accent bg-car-accent-light text-car-accent shadow-sm' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11.5px] px-2.5 py-1 rounded-lg font-black">
+                  <span :class="newRecord.is_full ? 'bg-car-accent-light border-2 border-transparent text-car-accent shadow-sm' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11.5px] px-2.5 py-1 rounded-lg font-black">
                     {{ newRecord.is_full ? '✓ 已标记' : '点此设为' }}
                   </span>
                 </div>
@@ -1036,7 +1036,7 @@
                   :class="[
                     'min-h-[54px] p-2.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between shadow-sm select-none',
                     !newRecord.is_full
-                      ? 'border-car-accent bg-car-accent-light'
+                      ? 'bg-car-accent-light border-2 border-transparent'
                       : 'border-car-border bg-car-item hover:border-car-border-light'
                   ]"
                 >
@@ -1044,7 +1044,7 @@
                     <span :class="!newRecord.is_full ? 'text-car-accent' : 'text-car-text'" class="text-[14px] font-black">💧 阶段补油</span>
                     <span class="text-[11px] text-car-sub font-bold">普通日常按金额补充</span>
                   </div>
-                  <span :class="!newRecord.is_full ? 'border-2 border-car-accent bg-car-accent-light text-car-accent shadow-sm' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11.5px] px-2.5 py-1 rounded-lg font-black">
+                  <span :class="!newRecord.is_full ? 'bg-car-accent-light border-2 border-transparent text-car-accent shadow-sm' : 'bg-car-card text-car-sub border border-car-border'" class="text-[11.5px] px-2.5 py-1 rounded-lg font-black">
                     {{ !newRecord.is_full ? '✓ 已标记' : '点此设为' }}
                   </span>
                 </div>
@@ -1066,7 +1066,7 @@
                   :class="[
                     'min-h-[50px] rounded-xl border-2 font-bold text-[13.5px] cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     newRecord.gas_station === st
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
+                      ? 'bg-car-accent-light border-2 border-transparent text-car-accent font-black'
                       : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
@@ -1082,7 +1082,7 @@
               <div class="flex items-center justify-between pb-2 border-b border-car-border">
                 <div class="flex items-center space-x-2">
                   <span class="text-[13px] font-black text-car-text">加油所在省份:</span>
-                  <span class="px-2.5 py-1 rounded-lg border border-car-accent bg-car-accent-light text-car-accent font-black text-[13px]">
+                  <span class="px-2.5 py-1 rounded-lg border bg-car-accent-light border-2 border-transparent text-car-accent font-black text-[13px]">
                     {{ newRecord.province || '浙江' }}
                   </span>
                 </div>
@@ -1098,7 +1098,7 @@
                     :class="[
                       'w-full min-h-[50px] rounded-xl border-2 text-[13px] font-black cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                       newRecord.province === prov
-                        ? 'border-car-accent bg-car-accent-light text-car-accent'
+                        ? 'bg-car-accent-light border-2 border-transparent text-car-accent'
                         : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                     ]"
                   >
@@ -1151,7 +1151,7 @@
                   :class="[
                     'min-h-[50px] rounded-lg border-2 text-[12.5px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(newRecord, tag)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
+                      ? 'bg-car-accent-light border-2 border-transparent text-car-accent font-black'
                       : 'border-car-border bg-car-card text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >

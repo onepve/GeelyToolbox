@@ -49,7 +49,7 @@
         :class="[
           'rounded-2xl border-2 p-3.5 flex flex-col justify-between transition-all duration-150 cursor-pointer select-none active:scale-[0.985]',
           item.active
-            ? 'bg-car-card border-car-accent'
+            ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent'
             : 'bg-car-card border-car-border opacity-80 hover:border-car-border-light'
         ]"
       >

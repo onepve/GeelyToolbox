@@ -1,9 +1,9 @@
 <template>
   <div class="flex flex-col space-y-4">
     <FeatureCard
-      title="车规视觉主题"
+      title="主题"
       desc="吉利全系车型标准双模外观：白天漫反射温润防眩目，夜间黑晶超清冷光字；支持白天柔光微调。"
-      helpTitle="【功能指南】车规双模外观系统"
+      helpTitle="【功能指南】主题与外观"
       helpText="1. 昼夜自适应：&#10;支持跟随车机大灯/时间自动切换，也可随时强制锁定白天高透或黑夜黑晶模式。&#10;&#10;2. 防眩调光：&#10;夜间偏好白色底色的车友，可使用「白天柔光亮度」滑块适度压暗，护眼不刺眼。&#10;&#10;3. 6套质感配色：&#10;包含晴空蓝、极光青、暖阳金、翡翠绿，以及专属女性向落樱粉、香芋紫，纯自绘抗暴晒不掉帧。"
     >
       <div class="w-full flex flex-col space-y-4">
@@ -22,7 +22,7 @@
                 :class="[
                   'px-3.5 py-1.5 rounded-lg border text-[13px] font-black cursor-pointer transition-all',
                   store.theme.mode === m
-                    ? 'bg-car-accent-bg border-car-accent text-car-accent shadow-sm'
+                    ? 'bg-car-accent-bg border-2 border-transparent text-car-accent shadow-sm'
                     : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
                 ]"
               >
@@ -82,7 +82,7 @@
             :class="[
               'p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between space-y-2.5 min-h-[96px]',
               store.theme.palette === key
-                ? 'bg-car-item border-car-accent shadow-lg'
+                ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
                 : 'bg-car-card border-car-border hover:border-car-border-light'
             ]"
           >
@@ -95,7 +95,7 @@
                 :class="[
                   'text-[12px] px-2.5 py-0.5 rounded-lg font-extrabold border',
                   store.theme.palette === key
-                    ? 'bg-car-accent-bg border-car-accent text-car-accent'
+                    ? 'bg-car-accent-bg border-2 border-transparent text-car-accent'
                     : 'bg-car-card border-car-border text-car-sub'
                 ]"
               >

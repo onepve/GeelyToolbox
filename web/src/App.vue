@@ -644,16 +644,32 @@ html:not(.light) .bg-car-card::after {
     0 8px 24px var(--glass-modal-shadow-soft, rgba(0, 0, 0, .42));
 }
 
-/* ===== 激活态：一圈主题色实线边框（唯一判据）=====
-   设计裁定（实车反馈定稿）：
-   - 点亮与未点亮必须一眼分得清，靠「边框变成主题色实线」区分。
-   - 不做环绕流光/跑马灯，不做亮爆快闪 —— 全站卡片同时跑 = 光污染。
-   - 亮度克制：实线 + 8px 轻托光，不做大面积泛光。
-   老内核 Chrome 66 约束：禁用 conic-gradient / @property / filter:blur。
-   反馈只用 transition 不用 keyframes —— 动画会在元素挂载时自播一次，
-   切 Tab 整页卡片重挂载就会全页闪，这是必须避免的回归。 */
+/* ===== 激活态：三轨制（按元素类型分流，严禁混用）=====
 
-/* ---- 卡片本体：只负责边框色，不挂动画（保护正文可读性）---- */
+   【轨 1 · 可选卡片】未选中底是卡片色的块头元素（功能开关卡、皮肤卡、四宫格磁贴）：
+     选中 = 左侧 5px 主题色竖条 + 底色抬升
+       bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md
+   【轨 2 · 分段控件 / 页签 / 小选项】一排里多选一、块头小（播放模式双按钮、油品、
+     引脚分段、页签、3 档策略）：
+     选中 = 主题色淡底 + 主题色文字，不画任何边框
+       bg-car-accent-bg text-car-accent border-2 border-transparent
+     理由：一排小方块各自套一圈亮边，就是用户说的「满地圈圈」；淡底填充同样能一眼看出选中。
+   【轨 3 · 按钮 / 动作 / 状态开关】可点/不可点、开/关：
+     保留整圈主题色实线（border-2 border-car-accent）——整圈是「现在可以点」的语言。
+
+   历史教训：本文件曾写「激活态唯一判据：一圈主题色实线」，与早已改成左侧条的
+   LinkView 冲突，导致主题面板皮肤卡还在整圈亮边。规范必须唯一，不许并存。
+
+   设计裁定（实车反馈定稿，v1.8.33.5 补全左侧条轨）：
+   - 三轨都不做环绕流光/跑马灯/亮爆快闪 —— 全站同时跑 = 光污染。
+   - 老内核 Chrome 66 约束：禁用 conic-gradient / @property / filter:blur。
+   反馈只用 transition 不用 keyframes —— 动画会在元素挂载时自播一次，
+   切 Tab 整页卡片重挂载就会全页闪，这是必须避免的回归。
+   门禁：scripts/check_active_state_contract.py（可选卡片整圈 = FAIL）。 */
+
+/* ---- 卡片本体：只负责边框色，不挂动画（保护正文可读性）----
+   注意：下面这批 .border-car-accent 规则服务的是「按钮/胶囊」轨；
+   可选卡片走左侧条，压根不带 .border-car-accent 类，所以不会吃到整圈光晕。 */
 .bg-car-card,
 .bg-car-item {
   position: relative;
@@ -674,7 +690,7 @@ html:not(.light) .bg-car-card::after {
   transition: box-shadow .30s ease-out, border-color .30s ease-out;
 }
 
-/* 未激活态：中性边框，与激活态的主题色实线形成明确对比 */
+/* 未激活态：中性边框，与按钮轨的实线、卡片轨的左侧竖条都形成明确对比 */
 .border-car-accent {
   border-color: var(--border-color) !important;
 }
@@ -698,8 +714,9 @@ html.dark .bg-car-card.border-car-accent,
 html.dark .bg-car-item.border-car-accent,
 html:not(.light) .bg-car-card.border-car-accent,
 html:not(.light) .bg-car-item.border-car-accent {
-  /* 激活态唯一判据：一圈主题色实线。
-     此前误用 --accent-gold-bg（仅 20% 不透明度）当边框色，压在深色卡片上
+  /* 这条规则只服务「按钮/胶囊/图章/CTA」轨（它们整圈描边就是可点击的语言）。
+     可选卡片不走这里 —— 可选卡片用左侧 5px 竖条，压根不带 .border-car-accent。
+     历史坑：曾误用 --accent-gold-bg（仅 20% 不透明度）当边框色，压在深色卡片上
      与未激活态肉眼无差，导致「点亮/不点亮分不清」——这是必须避免的回归。
      亮度克制：实线边框 + 8px 极轻外托光，不做大面积泛光。 */
   border-color: var(--accent-gold) !important;

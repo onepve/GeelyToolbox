@@ -73,13 +73,13 @@
               <span
                 class="px-2 py-0.5 rounded-lg border"
                 :class="f.hood === '开启'
-                  ? 'bg-car-accent-light border-car-accent text-car-accent'
+                  ? 'bg-car-accent-light border-2 border-transparent text-car-accent'
                   : 'bg-car-card border-car-border text-car-sub'"
               >引擎盖{{ f.hood }}</span>
               <span
                 class="px-2 py-0.5 rounded-lg border"
                 :class="f.trunk === '开启'
-                  ? 'bg-car-accent-light border-car-accent text-car-accent'
+                  ? 'bg-car-accent-light border-2 border-transparent text-car-accent'
                   : 'bg-car-card border-car-border text-car-sub'"
               >后备箱{{ f.trunk }}</span>
             </div>

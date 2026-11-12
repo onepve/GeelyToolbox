@@ -352,6 +352,8 @@
     <template #footer>
       <div class="flex items-center justify-between w-full">
         <div class="flex items-center space-x-3 shrink-0">
+          <!-- active-state:button 「最新置顶」是开/关状态开关，不是多选一选项卡：
+               同屏只有它一个，整圈醒目才对；改左侧条会看不出是开还是关。 -->
           <button 
             @click="toggleAutoScroll"
             :class="[
@@ -364,6 +366,8 @@
             <span class="mr-1.5">{{ autoScroll ? '●' : '○' }}</span>
             {{ autoScroll ? '最新置顶: 开启' : '最新置顶: 暂停' }}
           </button>
+          <!-- active-state:button 导出是动作按钮（可点 / 导出中禁用），不是选项卡：
+               两个分支都是主题色整圈，只是禁用时降透明度，属于按钮状态。 -->
           <button 
             @click="exportFullLogs"
             :disabled="isExporting"

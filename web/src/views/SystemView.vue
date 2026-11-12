@@ -297,7 +297,7 @@
                 :class="[
                   'w-full min-h-[64px] p-2 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center space-y-1 shadow-sm',
                   store.settings.startup_nav === item.id
-                    ? 'bg-car-item border-car-accent text-car-accent shadow-md font-black'
+                    ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent text-car-accent shadow-md font-black'
                     : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
                 ]"
               >

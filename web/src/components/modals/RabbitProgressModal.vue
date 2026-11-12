@@ -27,8 +27,8 @@
               :class="[
                 'flex-1 py-2 rounded-xl text-[13px] font-black border transition-all cursor-pointer',
                 store.rabbitProgress.nameMode === opt.value
-                  ? 'bg-car-item border-car-accent text-car-accent'
-                  : 'bg-car-item border-car-border text-car-sub hover:border-car-border-light'
+                  ? 'bg-car-accent-bg text-car-accent border-2 border-transparent'
+                  : 'bg-car-item text-car-sub border-2 border-transparent hover:text-car-text'
               ]"
             >{{ opt.label }}</button>
           </div>
@@ -42,8 +42,8 @@
                 :class="[
                   'flex-1 py-2 rounded-xl text-[13px] font-black border transition-all cursor-pointer',
                   store.rabbitProgress.nameLang === 'cn'
-                    ? 'bg-car-item border-car-accent text-car-accent'
-                    : 'bg-car-item border-car-border text-car-sub hover:border-car-border-light'
+                    ? 'bg-car-accent-bg text-car-accent border-2 border-transparent'
+                    : 'bg-car-item text-car-sub border-2 border-transparent hover:text-car-text'
                 ]"
               >中文名</button>
               <button
@@ -51,8 +51,8 @@
                 :class="[
                   'flex-1 py-2 rounded-xl text-[13px] font-black border transition-all cursor-pointer',
                   store.rabbitProgress.nameLang === 'pkg'
-                    ? 'bg-car-item border-car-accent text-car-accent'
-                    : 'bg-car-item border-car-border text-car-sub hover:border-car-border-light'
+                    ? 'bg-car-accent-bg text-car-accent border-2 border-transparent'
+                    : 'bg-car-item text-car-sub border-2 border-transparent hover:text-car-text'
                 ]"
               >包名（英文）</button>
             </div>

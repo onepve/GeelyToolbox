@@ -21,7 +21,7 @@
                 :class="[
                   'min-h-[50px] px-4 rounded-xl border-2 font-black text-[15.5px] cursor-pointer transition-all flex items-center shadow-sm',
                   store.oilPrice.selectedProvince === prov
-                    ? 'bg-car-item border-car-accent text-car-accent'
+                    ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent text-car-accent'
                     : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
                 ]"
               >
@@ -55,7 +55,7 @@
               @click="showPicker = !showPicker"
               :class="[
                 'min-h-[50px] px-4 rounded-xl border-2 font-black text-[14.5px] cursor-pointer transition-all flex items-center shadow-sm whitespace-nowrap',
-                showPicker ? 'bg-car-item border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
+                showPicker ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
               ]"
             >
               <span>{{ showPicker ? '收起省份 ▴' : '更多省份 ▾' }}</span>
@@ -76,7 +76,7 @@
                 :class="[
                   'w-full min-h-[50px] rounded-xl border-2 font-black text-[15px] cursor-pointer transition-all flex items-center justify-center shadow-sm truncate',
                   store.oilPrice.selectedProvince === prov
-                    ? 'bg-car-item border-car-accent text-car-accent'
+                    ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent text-car-accent'
                     : 'bg-car-card border-car-border text-car-text hover:border-car-border-light'
                 ]"
               >
@@ -96,7 +96,7 @@
           class="flex-1 p-4 rounded-2xl border-2 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden cursor-pointer transition-all active:scale-[0.98]"
           :class="[
             defaultFuelType.includes(item.key)
-              ? 'bg-car-card border-car-accent shadow-md'
+              ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
               : 'bg-car-item border-car-border hover:border-car-border-light'
           ]"
         >

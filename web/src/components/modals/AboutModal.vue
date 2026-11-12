@@ -144,6 +144,8 @@
         </div>
 
         <!-- 右侧操作项：自动检查更新胶囊开关 (车规标准 54px 高度对齐) -->
+        <!-- active-state:button 这是「开/关」状态开关，不是多选一选项卡：
+             同屏只有它一个，整圈醒目才是对的，若改成左侧条反而看不出开关状态。 -->
         <button 
           @click="toggleAutoCheckUpdate"
           :class="[

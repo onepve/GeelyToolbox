@@ -8,7 +8,7 @@
         :class="[
           'rounded-3xl border-2 p-5 shadow-xl h-full flex flex-col justify-between transition-all duration-200 cursor-pointer select-none active:scale-[0.99]',
           store.deviceInfo.floating_enabled
-            ? 'bg-car-card border-car-accent shadow-car-accent/10'
+            ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-car-accent/10'
             : 'bg-car-card border-car-border hover:border-car-border-light'
         ]"
       >
@@ -47,7 +47,7 @@
               :class="[
                 'h-[58px] p-2 rounded-xl font-black text-[15.5px] border border-car-border cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
                 store.deviceInfo.floating_display_mode === 'battery' || (!store.deviceInfo.floating_display_mode)
-                  ? 'bg-car-item border-car-accent text-car-text shadow-md' 
+                  ? 'bg-car-accent-bg text-car-accent border-2 border-transparent shadow-sm' 
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
               ]"
             >
@@ -58,7 +58,7 @@
               :class="[
                 'h-[58px] p-2 rounded-xl font-black text-[15.5px] border border-car-border cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
                 store.deviceInfo.floating_display_mode === 'code'
-                  ? 'bg-car-item border-car-accent text-car-text shadow-md' 
+                  ? 'bg-car-accent-bg text-car-accent border-2 border-transparent shadow-sm' 
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
               ]"
             >
@@ -69,7 +69,7 @@
               :class="[
                 'h-[58px] p-2 rounded-xl font-black text-[15.5px] border border-car-border cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
                 store.deviceInfo.floating_display_mode === 'name'
-                  ? 'bg-car-item border-car-accent text-car-text shadow-md' 
+                  ? 'bg-car-accent-bg text-car-accent border-2 border-transparent shadow-sm' 
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
               ]"
             >
@@ -91,7 +91,7 @@
         :class="[
           'rounded-3xl border-2 p-5 shadow-xl h-full flex flex-col justify-between transition-all duration-200 cursor-pointer select-none active:scale-[0.99]',
           ssEnabled
-            ? 'bg-car-card border-car-accent shadow-car-accent/10'
+            ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-car-accent/10'
             : 'bg-car-card border-car-border hover:border-car-border-light'
         ]"
       >
@@ -154,8 +154,8 @@
               :class="[
                 'h-[50px] px-1 rounded-xl border border-car-border font-black text-[14px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center space-x-1.5',
                 ssPolicy === p.value
-                  ? 'bg-car-item border-car-accent text-car-text'
-                  : 'bg-car-item border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
+                  ? 'bg-car-accent-bg text-car-accent border-2 border-transparent'
+                  : 'bg-car-item text-car-sub border-2 border-transparent hover:text-car-text'
               ]"
             >
               <StatusDot size="sm" :color="ssPolicy === p.value ? 'okBright' : 'offDim'" :glow="false" />

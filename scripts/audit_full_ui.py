@@ -131,17 +131,47 @@ async def run_audit():
 
     total_violations = []
 
-    async with websockets.connect(ws_url, max_size=16 * 1024 * 1024) as ws:
+    async with websockets.connect(ws_url, max_size=32 * 1024 * 1024, ping_interval=None) as _first_ws:
+        # CDP 长连接在连续截图 17+ 个弹窗后会被内核断掉（ConnectionClosedError: no close frame）。
+        # 这里统一走 _rpc：断线自动重连并对同一请求重投递，请求 id 自增避免串回复。
+        _st = {"ws": _first_ws, "id": 0}
+
+        async def _rpc(method, params=None, _retry=4):
+            last = None
+            for _ in range(_retry):
+                _st["id"] += 1
+                rid = _st["id"]
+                msg = {"id": rid, "method": method}
+                if params is not None:
+                    msg["params"] = params
+                try:
+                    await _st["ws"].send(json.dumps(msg))
+                    while True:
+                        res = json.loads(await _st["ws"].recv())
+                        if res.get("id") == rid:
+                            return res
+                except Exception as e:
+                    last = e
+                    try:
+                        await _st["ws"].close()
+                    except Exception:
+                        pass
+                    await asyncio.sleep(0.6)
+                    try:
+                        _st["ws"] = await websockets.connect(
+                            ws_url, max_size=32 * 1024 * 1024, ping_interval=None)
+                    except Exception as e2:
+                        last = e2
+                        await asyncio.sleep(1.0)
+            raise RuntimeError(f"CDP {method} 重试 {_retry} 次仍失败: {last}")
+
         async def evaluate(js):
-            msg = {"id": 1, "method": "Runtime.evaluate", "params": {"expression": js, "returnByValue": True}}
-            await ws.send(json.dumps(msg))
-            res = json.loads(await ws.recv())
+            res = await _rpc("Runtime.evaluate",
+                             {"expression": js, "returnByValue": True})
             return res.get("result", {}).get("result", {}).get("value")
 
         async def capture(filename):
-            msg = {"id": 2, "method": "Page.captureScreenshot"}
-            await ws.send(json.dumps(msg))
-            res = json.loads(await ws.recv())
+            res = await _rpc("Page.captureScreenshot")
             img_data = base64.b64decode(res["result"]["data"])
             save_path = os.path.join(MEDIA_DIR, f"{filename}.png")
             with open(save_path, "wb") as f:

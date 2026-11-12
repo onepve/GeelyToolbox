@@ -26,7 +26,7 @@
             :class="[
               'w-[46px] h-[50px] rounded-xl border-2 flex items-center justify-center font-black transition-all shadow-sm cursor-pointer select-none',
               idx === currentSlotIndex
-                ? 'border-car-accent bg-car-card scale-105 shadow-car-accent/20'
+                ? 'bg-car-accent-bg border-2 border-transparent scale-105 shadow-car-accent/20'
                 : 'border-car-border bg-car-card hover:border-car-border-light',
               idx === 0 ? 'text-[22px] text-car-accent' : 'text-[24px] font-mono text-car-text',
               isGreenPlate && idx === 7 ? 'text-emerald-400' : ''
@@ -181,6 +181,8 @@
         稍后再录
       </button>
 
+      <!-- active-state:button 这是提交动作按钮（可点/不可点），不是选项卡：
+           车牌填满就变亮，整圈亮边是「现在可以点」的语言。 -->
       <button
         type="button"
         @click="onConfirmSave"

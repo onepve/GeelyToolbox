@@ -256,7 +256,7 @@ public class NetworkPolicyManager {
             @Override
             public void run() {
                 try {
-                    AppLogger.i("网络中枢", "开机网络策略守护线程已拉起，开始硬件就绪自检探测...");
+                    AppLogger.i("系统启动", "启动取证 | 网络策略守护线程已拉起，开始硬件就绪自检");
                     long startTime = System.currentTimeMillis();
                     long maxTimeoutMs = 25000; // 最长 25 秒安全兜底
 
@@ -283,7 +283,7 @@ public class NetworkPolicyManager {
                     }
 
                     long elapsed = System.currentTimeMillis() - startTime;
-                    AppLogger.i("网络中枢", "硬件就绪探针判定结束: ready=" + isHardwareReady + ", 耗时=" + elapsed + "ms");
+                    AppLogger.i("系统启动", "启动取证 | 硬件就绪探针判定结束 | ready=" + isHardwareReady + " | 耗时=" + elapsed + "ms");
 
                     // 2. 依次按用户策略安全生效 (脱离冷启动脆弱期)
                     int wifiPolicy = getPolicy(context, "wifi");

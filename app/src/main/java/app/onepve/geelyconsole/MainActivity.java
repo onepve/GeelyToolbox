@@ -238,6 +238,31 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         super.onCreate(savedInstanceState);
         currentActivity = new WeakReference<>(this);
         AppLogger.init(this);
+        // ── 启动取证（v1.8.33.5：只打点，不改任何执行顺序与判断逻辑）──────────────
+        // 1) 进程被拉起 → onCreate 入口之间耗掉的时间：dex 加载、类校验、资源预加载都在这里。
+        //    之前只有「界面启动完成」一个总耗时，无法区分「进程加载慢」与「onCreate 慢」。
+        try {
+            long procStart = android.os.Process.getStartElapsedRealtime();
+            AppLogger.i("系统启动", "启动取证 | 界面进程已就绪 | 进程启动到 onCreate 耗时 "
+                    + (SystemClock.elapsedRealtime() - procStart) + "ms");
+        } catch (Throwable t) {
+            AppLogger.i("系统启动", "启动取证 | 界面进程已就绪 | 取进程启动时间失败: " + t.getMessage());
+        }
+        // 2) 谁把界面拉起来的：点火后本应只在后台跑服务，界面被拉起必须查清来源。
+        try {
+            Intent srcIntent = getIntent();
+            String act = srcIntent != null ? String.valueOf(srcIntent.getAction()) : "null";
+            StringBuilder extras = new StringBuilder();
+            if (srcIntent != null && srcIntent.getExtras() != null) {
+                for (String k : srcIntent.getExtras().keySet()) extras.append(k).append(',');
+            }
+            String ref = "null";
+            try { ref = String.valueOf(getReferrer()); } catch (Throwable ignored) {}
+            AppLogger.i("系统启动", "启动取证 | 界面被拉起 | action=" + act + " | extras键=" + extras
+                    + " | referrer=" + ref);
+        } catch (Throwable t) {
+            AppLogger.i("系统启动", "启动取证 | 界面被拉起 | 取启动来源失败: " + t.getMessage());
+        }
         // 启动分段计时：车主反馈「开机后要等很久界面才出来」，但旧日志只有「界面启动完成」
         // 一个总耗时，无法判断卡在哪一段。这里按段打点，每段都带累计毫秒，
         // 下次取日志即可一眼看出是车标切换 / WebView 初始化 / 权限与广播注册哪一段慢。
@@ -283,7 +308,7 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         } catch (Exception ignored) {}
         AppLogger.i("启动耗时", "段4 权限与广播注册: " + (SystemClock.elapsedRealtime() - t3) + "ms（累计 "
                 + (SystemClock.elapsedRealtime() - bootT0) + "ms）");
-        AppLogger.i("应用启动", "缤越助手界面启动完成（onCreate 总耗时 " + (SystemClock.elapsedRealtime() - bootT0) + "ms）");
+        AppLogger.i("系统启动", "启动取证 | 界面 onCreate 全部完成（总耗时 " + (SystemClock.elapsedRealtime() - bootT0) + "ms）");
 
         // 兜底安全防线：冷启动后最长 2.5 秒无论前端是否通知，均平滑解除启动层
         mainHandler.postDelayed(new Runnable() {
@@ -532,6 +557,11 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     @Override
     protected void onResume() {
         super.onResume();
+        // 启动取证：界面真正可见的时刻（onCreate 完成 ≠ 用户看到画面）
+        try {
+            AppLogger.i("系统启动", "启动取证 | 界面 onResume 可见 | 进程已运行 "
+                    + (SystemClock.elapsedRealtime() - android.os.Process.getStartElapsedRealtime()) + "ms");
+        } catch (Throwable ignored) {}
         isForeground = true;
         FloatingWindowService.isMainActivityInForeground = true;
         currentActivity = new WeakReference<>(this);

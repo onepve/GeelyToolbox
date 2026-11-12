@@ -39,7 +39,7 @@
             type="button"
             @click="setMappingMode(m.id)"
             :class="['px-4 h-[50px] rounded-xl font-black text-[14.5px] transition-all cursor-pointer flex items-center justify-center border select-none',
-                     m.active ? 'bg-car-card border-car-accent text-car-accent shadow-md' : 'bg-transparent border-transparent text-car-sub hover:text-car-text']"
+                     m.active ? 'bg-car-accent-bg text-car-accent border-2 border-transparent shadow-sm' : 'bg-transparent text-car-sub border-2 border-transparent hover:text-car-text']"
           >
             {{ m.name }}
           </button>

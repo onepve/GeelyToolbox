@@ -32,7 +32,7 @@
                 @click="toggleSetting('voice_enable_gear_d')"
                 :class="[
                   'h-[52px] px-3.5 rounded-xl border-2 font-black text-[14px] cursor-pointer shadow-sm',
-                  store.vehicleAuto.voice_enable_gear_d ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'
+                  store.vehicleAuto.voice_enable_gear_d ? 'bg-car-accent-bg text-car-accent border-2 border-transparent' : 'bg-car-card border-car-border text-car-sub'
                 ]"
               >
                 {{ store.vehicleAuto.voice_enable_gear_d ? '已开启' : '已关闭' }}
@@ -63,7 +63,7 @@
                 @click="toggleSetting('voice_enable_gear_r')"
                 :class="[
                   'h-[52px] px-3.5 rounded-xl border-2 font-black text-[14px] cursor-pointer shadow-sm',
-                  store.vehicleAuto.voice_enable_gear_r ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'
+                  store.vehicleAuto.voice_enable_gear_r ? 'bg-car-accent-bg text-car-accent border-2 border-transparent' : 'bg-car-card border-car-border text-car-sub'
                 ]"
               >
                 {{ store.vehicleAuto.voice_enable_gear_r ? '已开启' : '已关闭' }}
@@ -94,7 +94,7 @@
                 @click="toggleSetting('voice_enable_gear_p')"
                 :class="[
                   'h-[52px] px-3.5 rounded-xl border-2 font-black text-[14px] cursor-pointer shadow-sm',
-                  store.vehicleAuto.voice_enable_gear_p ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'
+                  store.vehicleAuto.voice_enable_gear_p ? 'bg-car-accent-bg text-car-accent border-2 border-transparent' : 'bg-car-card border-car-border text-car-sub'
                 ]"
               >
                 {{ store.vehicleAuto.voice_enable_gear_p ? '已开启' : '已关闭' }}
@@ -125,7 +125,7 @@
                 @click="toggleSetting('voice_enable_gear_n')"
                 :class="[
                   'h-[52px] px-3.5 rounded-xl border-2 font-black text-[14px] cursor-pointer shadow-sm',
-                  store.vehicleAuto.voice_enable_gear_n ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'
+                  store.vehicleAuto.voice_enable_gear_n ? 'bg-car-accent-bg text-car-accent border-2 border-transparent' : 'bg-car-card border-car-border text-car-sub'
                 ]"
               >
                 {{ store.vehicleAuto.voice_enable_gear_n ? '已开启' : '已关闭' }}

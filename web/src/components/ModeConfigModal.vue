@@ -32,7 +32,7 @@
                 @click="toggleSetting('voice_enable_mode_comfort')"
                 :class="[
                   'h-[52px] px-3.5 rounded-xl border-2 font-black text-[14px] cursor-pointer shadow-sm',
-                  store.vehicleAuto.voice_enable_mode_comfort ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'
+                  store.vehicleAuto.voice_enable_mode_comfort ? 'bg-car-accent-bg text-car-accent border-2 border-transparent' : 'bg-car-card border-car-border text-car-sub'
                 ]"
               >
                 {{ store.vehicleAuto.voice_enable_mode_comfort ? '已开启' : '已关闭' }}
@@ -63,7 +63,7 @@
                 @click="toggleSetting('voice_enable_mode_eco')"
                 :class="[
                   'h-[52px] px-3.5 rounded-xl border-2 font-black text-[14px] cursor-pointer shadow-sm',
-                  store.vehicleAuto.voice_enable_mode_eco ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'
+                  store.vehicleAuto.voice_enable_mode_eco ? 'bg-car-accent-bg text-car-accent border-2 border-transparent' : 'bg-car-card border-car-border text-car-sub'
                 ]"
               >
                 {{ store.vehicleAuto.voice_enable_mode_eco ? '已开启' : '已关闭' }}
@@ -94,7 +94,7 @@
                 @click="toggleSetting('voice_enable_mode_sport')"
                 :class="[
                   'h-[52px] px-3.5 rounded-xl border-2 font-black text-[14px] cursor-pointer shadow-sm',
-                  store.vehicleAuto.voice_enable_mode_sport ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'
+                  store.vehicleAuto.voice_enable_mode_sport ? 'bg-car-accent-bg text-car-accent border-2 border-transparent' : 'bg-car-card border-car-border text-car-sub'
                 ]"
               >
                 {{ store.vehicleAuto.voice_enable_mode_sport ? '已开启' : '已关闭' }}
@@ -125,7 +125,7 @@
                 @click="toggleSetting('voice_enable_mode_smart')"
                 :class="[
                   'h-[52px] px-3.5 rounded-xl border-2 font-black text-[14px] cursor-pointer shadow-sm',
-                  store.vehicleAuto.voice_enable_mode_smart ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'
+                  store.vehicleAuto.voice_enable_mode_smart ? 'bg-car-accent-bg text-car-accent border-2 border-transparent' : 'bg-car-card border-car-border text-car-sub'
                 ]"
               >
                 {{ store.vehicleAuto.voice_enable_mode_smart ? '已开启' : '已关闭' }}

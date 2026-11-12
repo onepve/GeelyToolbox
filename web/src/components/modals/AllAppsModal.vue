@@ -15,7 +15,7 @@
             :class="[
               'min-h-[52px] px-5 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center space-x-2',
               activeTab === 'all'
-                ? 'bg-car-item border-car-accent text-car-accent shadow-md'
+                ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent text-car-accent shadow-md'
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
@@ -30,7 +30,7 @@
             :class="[
               'min-h-[52px] px-5 rounded-2xl font-black text-[16px] cursor-pointer transition-all border-2 flex items-center space-x-2',
               activeTab === 'recommended'
-                ? 'bg-car-item border-car-accent text-car-accent shadow-md'
+                ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent text-car-accent shadow-md'
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
@@ -90,7 +90,7 @@
               :class="[
                 'min-h-[50px] px-4 rounded-xl border-2 text-[14.5px] font-black cursor-pointer transition-all',
                 currentType === t.key
-                  ? 'bg-car-item border-car-accent text-car-accent shadow-md'
+                  ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent text-car-accent shadow-md'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
               ]"
             >
@@ -107,7 +107,7 @@
               :class="[
                 'min-h-[50px] px-4 rounded-xl border-2 text-[14.5px] font-black cursor-pointer transition-all',
                 currentState === s.key
-                  ? 'bg-car-item border-car-accent text-car-accent shadow-md'
+                  ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent text-car-accent shadow-md'
                   : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
               ]"
             >

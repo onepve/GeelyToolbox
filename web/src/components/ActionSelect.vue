@@ -29,7 +29,7 @@
             @click="pick(opt.action)"
             class="rounded-xl flex items-center justify-between cursor-pointer transition-all text-left px-3 py-2.5"
             :class="currentAction === opt.action
-              ? 'bg-car-item border-2 border-car-accent text-car-text shadow-sm'
+              ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent text-car-text shadow-md'
               : 'bg-car-item border-2 border-car-border text-car-text hover:border-car-border-light'"
             style="min-height: 60px; box-sizing: border-box;"
           >
@@ -45,7 +45,7 @@
             @click="pickCustom"
             class="rounded-xl flex items-center justify-between cursor-pointer transition-all text-left px-3 py-2.5"
             :class="isCustom
-              ? 'bg-car-item border-2 border-car-accent text-car-text shadow-sm'
+              ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent text-car-text shadow-md'
               : 'bg-car-item border-2 border-car-border text-car-text hover:border-car-border-light'"
             style="min-height: 60px; box-sizing: border-box;"
           >

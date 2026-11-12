@@ -473,19 +473,38 @@ public class VehicleAutomationService extends Service {
     }
 
     @Override
+    // ── 启动取证（v1.8.33.5）：只打点，不改任何执行顺序与判断逻辑 ──────────────
+    private static long sBootProbeT0 = 0L;
+
+    private void probe(String label) {
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (sBootProbeT0 <= 0L) sBootProbeT0 = now;
+        AppLogger.i("系统启动", "启动取证 | " + label + " | 进程已运行 " + (now - sBootProbeT0) + "ms");
+    }
+
+    @Override
     public void onCreate() {
         super.onCreate();
+        try {
+            sBootProbeT0 = android.os.Process.getStartElapsedRealtime();
+        } catch (Throwable ignored) {
+            sBootProbeT0 = android.os.SystemClock.elapsedRealtime();
+        }
+        probe("服务 onCreate 入口");
         serviceBootTimestampMs = System.currentTimeMillis();
         serviceStartElapsedMs = android.os.SystemClock.elapsedRealtime();
         isRunning = true;
         instance = this;
         voicePlayer = VehicleVoicePlayer.getInstance(this);
         wheelKeyManager = new SteeringWheelKeyManager(this);
+        probe("语音播放器与方控管理器就绪");
 
         // 预热 QQ 音乐车机版官方 AIDL 服务连接 (移植自老版本 QQ音乐助手 极速响应机制)
         try {
             QQMusicCarController.getInstance(this).ensureConnected();
         } catch (Throwable ignored) {}
+
+        probe("QQ音乐AIDL预热请求已派出");
 
         // 每次启动服务或开机时，显式复位用户手动暂停标记与单次行程锁
         // 彻底根除因上一趟行程按了暂停，重启车机后 user_manually_paused_media 依然死锁在磁盘导致起步不放歌的 Bug！
@@ -523,6 +542,8 @@ public class VehicleAutomationService extends Service {
             lastDriveMode = mode;
         });
 
+        probe("四大状态机就绪");
+
         // 预载上次持久化的仪表总里程基准与剩余油量 (保障开机首秒即有真实里程与油量，无需苦等第一包慢广播)
         try {
             JSONObject lastFuel = FuelManager.getLastFuelState(this);
@@ -546,6 +567,7 @@ public class VehicleAutomationService extends Service {
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .build();
         startForeground(NOTIF_ID, notification);
+        probe("前台通知已就绪");
 
         reloadPreferences();
 
@@ -557,16 +579,24 @@ public class VehicleAutomationService extends Service {
             Log.w(TAG, "Failed to start IdleScreensaverManager: " + e.getMessage());
         }
 
+        probe("偏好配置装载完成");
+
         registerPowerStateReceiver();
         IVehiclePlatform currentPlatform = VehiclePlatformFactory.getPlatform(this);
         cachedPlatform = currentPlatform;
         cachedPlatformCode = currentPlatform != null ? currentPlatform.getPlatformCode() : "";
-        if (cachedPlatform != null && cachedPlatform.usesVhalSensorDriver()) {
+        boolean useVhal = cachedPlatform != null && cachedPlatform.usesVhalSensorDriver();
+        AppLogger.i("系统启动", "启动取证 | 信号通道选型 | 平台=" + cachedPlatformCode + " | 用VHAL驱动=" + useVhal);
+        if (useVhal) {
             AppLogger.i("车身联动", "检测到 " + cachedPlatform.getPlatformName() + "，通过 HAL 启动 VHAL 感知驱动 (免 logcat)");
             cachedPlatform.getSensorAdapter(this).startListening(this, null);
+            AppLogger.i("系统启动", "启动取证 | VHAL 感知驱动已调用 startListening");
         } else {
             startLogcatReader();
+            AppLogger.i("系统启动", "启动取证 | logcat 读线程已拉起");
         }
+        probe("车型平台探测与信号通道已拉起");
+
         registerEcarxKeyReceiver();
 
         // 【方控 HAL 常开铁律 v1.8.32.10】服务一启动就让 HAL 通道就位，不再等 logcat 失败才接管。
@@ -576,7 +606,9 @@ public class VehicleAutomationService extends Service {
         // 现在常开，与日志管道互为冗余；多源重复由 SteeringWheelKeyManager 的 260ms 防抖统一合并。
         // CarService 未就绪时自动复位标志，由后续连接回调与看门狗继续重试，绝不永久卡死。
         activateWheelHalFallback();
+        probe("方控 HAL 兜底通道就绪");
         EasMediaBridge.getInstance(this); // 确保蓝牙 A2DP 连接/推流监听与原车音频通道常驻就绪
+        probe("EAS 音频桥接就绪");
 
         // 开机点火防洪峰：重开销的包缓存预热延后 20 秒异步错峰执行，彻底避开车机开机与用户上车初期的 CPU/IO 争抢
         mainHandler.postDelayed(new Runnable() {
@@ -607,6 +639,8 @@ public class VehicleAutomationService extends Service {
             NetworkPolicyManager.runBootPolicyWorkerAsync(this);
         } catch (Throwable ignored) {}
 
+        probe("网络策略探针已派出");
+
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", java.util.Locale.CHINA);
         long now = System.currentTimeMillis();
         long bootUpElapsed = android.os.SystemClock.elapsedRealtime();
@@ -625,6 +659,29 @@ public class VehicleAutomationService extends Service {
         } catch (Exception ignored) {}
         AppLogger.i("系统启动", "软件版本: " + verName);
         AppLogger.i("系统启动", "车型平台: " + currentPlatform.getPlatformName() + " (" + currentPlatform.getPlatformCode() + ")");
+        probe("服务 onCreate 全部完成");
+
+        // 主线程阻塞取证：服务与界面同进程同主线程。启动后 40 秒内每 500ms 摸一次心跳，
+        // 若某次晚于预期 800ms 以上，说明主线程被整段占死（例如界面 onCreate 卡住），
+        // 这个差值能直接区分「我们自己代码慢」与「主线程被别人占住」。
+        final long hbEndAt = android.os.SystemClock.elapsedRealtime() + 40000L;
+        mainHandler.postDelayed(new Runnable() {
+            private long lastBeat = 0L;
+            @Override
+            public void run() {
+                long nowMs = android.os.SystemClock.elapsedRealtime();
+                if (lastBeat > 0L) {
+                    long gap = nowMs - lastBeat;
+                    if (gap > 800L) {
+                        AppLogger.i("系统启动", "启动取证 | 主线程被占约 " + (gap - 500L)
+                                + "ms | 进程已运行 " + (nowMs - sBootProbeT0) + "ms");
+                    }
+                }
+                lastBeat = nowMs;
+                if (nowMs < hbEndAt) mainHandler.postDelayed(this, 500L);
+            }
+        }, 500L);
+
         Log.i(TAG, "VehicleAutomationService started successfully");
     }
 
@@ -1038,6 +1095,10 @@ public class VehicleAutomationService extends Service {
                         sLogcatBuildCount++;
                 app.onepve.geelyconsole.utils.KeySignalRecorder.recordChannelEvent(
                         "logcat 通道建立 #" + sLogcatBuildCount);
+                if (sLogcatBuildCount <= 3) {
+                    AppLogger.i("系统启动", "启动取证 | logcat 通道建立 #" + sLogcatBuildCount
+                            + " | 缓冲区=" + sLogcatBuf + " | 命令=" + java.util.Arrays.toString(cmd));
+                }
 
                         final java.io.InputStream errStream = proc.getErrorStream();
                         Thread stderrDrainer = new Thread(new Runnable() {
@@ -1059,7 +1120,7 @@ public class VehicleAutomationService extends Service {
                         // 就绪提示全程只打一次，杜绝每次重建都刷屏
                         if (!logcatEverEstablished) {
                             logcatEverEstablished = true;
-                            AppLogger.diag("系统日志", "Logcat 实时监听守护线程已建立就绪");
+                            AppLogger.i("系统启动", "启动取证 | Logcat 实时监听线程已建立");
                         }
 
                         BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()), 1024);
@@ -1082,7 +1143,7 @@ public class VehicleAutomationService extends Service {
                                         drained = true;
                                         if (!logcatDrainReported) {
                                             logcatDrainReported = true;
-                                            AppLogger.diag("系统日志", "Logcat 历史缓冲抽干就绪，正式进入实时信号监听");
+                                            AppLogger.i("系统启动", "启动取证 | Logcat 历史缓冲抽干完成，进入实时监听");
                                         }
                                     } else {
                                         continue;

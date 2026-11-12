@@ -143,7 +143,7 @@
             :class="[
               'w-full h-[50px] rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2 whitespace-nowrap',
               !store.vehicleAuto.vehicle_speed_autoplay_fullscreen
-                ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+                ? 'bg-car-accent-bg text-car-accent border-2 border-transparent shadow-sm'
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
@@ -154,7 +154,7 @@
             :class="[
               'w-full h-[50px] rounded-xl font-black text-[14.5px] cursor-pointer transition-all border-2 whitespace-nowrap',
               store.vehicleAuto.vehicle_speed_autoplay_fullscreen
-                ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+                ? 'bg-car-accent-bg text-car-accent border-2 border-transparent shadow-sm'
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
@@ -243,7 +243,7 @@
             :class="[
               'w-full h-[50px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap',
               store.vehicleAuto.vehicle_speed_custom_action_target === 'pkg:com.autonavi.amapauto'
-                ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+                ? 'bg-car-accent-bg text-car-accent border-2 border-transparent shadow-sm'
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
@@ -254,7 +254,7 @@
             :class="[
               'w-full h-[50px] rounded-xl font-black text-[15px] cursor-pointer transition-all border-2 whitespace-nowrap truncate px-3',
               store.vehicleAuto.vehicle_speed_custom_action_target?.startsWith('pkg:') && store.vehicleAuto.vehicle_speed_custom_action_target !== 'pkg:com.autonavi.amapauto'
-                ? 'bg-car-card border-car-accent text-car-accent shadow-md'
+                ? 'bg-car-accent-bg text-car-accent border-2 border-transparent shadow-sm'
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >
@@ -338,7 +338,7 @@
                 :class="[
                   'h-[50px] rounded-xl font-black text-[14px] cursor-pointer transition-all border-2 text-center flex items-center justify-center',
                   store.networkDevice.wifi_policy === item.value
-                    ? 'bg-car-card border-car-accent text-car-accent shadow-sm'
+                    ? 'bg-car-accent-bg text-car-accent border-2 border-transparent'
                     : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
                 ]"
               >
@@ -462,7 +462,7 @@
                 :class="[
                   'h-[50px] rounded-xl font-black text-[14px] cursor-pointer transition-all border-2 text-center flex items-center justify-center',
                   store.networkDevice.bluetooth_policy === item.value
-                    ? 'bg-car-card border-car-accent text-car-accent shadow-sm'
+                    ? 'bg-car-accent-bg text-car-accent border-2 border-transparent'
                     : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
                 ]"
               >

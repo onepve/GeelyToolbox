@@ -107,7 +107,7 @@
                 :class="[
                   'min-h-[50px] px-3.5 rounded-lg text-[14px] font-black transition-all cursor-pointer whitespace-nowrap flex items-center justify-center',
                   defaultFuelType.includes(f.replace('#', ''))
-                    ? 'bg-car-card border-2 border-car-accent text-car-accent shadow-sm'
+                    ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent text-car-accent shadow-md'
                     : 'bg-transparent text-car-sub hover:text-car-text border-2 border-transparent'
                 ]"
               >
@@ -302,7 +302,7 @@
                 @touchcancel="cancelLongPress"
                 class="h-[36px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-center font-black text-[13px] select-none shadow-sm"
                 :class="(activeYear === yItem.year || (activeYear === '' && yItem.year === currentYear)) 
-                  ? 'bg-car-accent-light border-car-accent text-car-accent' 
+                  ? 'bg-car-accent-light border-2 border-transparent text-car-accent' 
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text'"
               >
                 {{ yItem.label }}
@@ -395,7 +395,7 @@
                 @touchend="cancelLongPress"
                 @touchcancel="cancelLongPress"
                 class="h-[50px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center space-x-3 shadow-sm select-none"
-                :class="selectedMonth === '' ? 'bg-car-accent-light border-car-accent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
+                :class="selectedMonth === '' ? 'bg-car-accent-light border-2 border-transparent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
               >
                 <div class="flex flex-col text-left">
                   <span class="text-[13px] font-black leading-tight whitespace-nowrap">全部汇总</span>
@@ -423,7 +423,7 @@
                 @touchend="cancelLongPress"
                 @touchcancel="cancelLongPress"
                 class="h-[50px] px-3.5 rounded-xl border cursor-pointer transition-all flex items-center space-x-3 shadow-sm select-none"
-                :class="selectedMonth === m.month ? 'bg-car-accent-light border-car-accent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
+                :class="selectedMonth === m.month ? 'bg-car-accent-light border-2 border-transparent text-car-accent' : 'bg-car-item border-car-border text-car-text hover:border-car-border-light'"
                 :title="'单击筛选 · 双击管理/校准 · 长按清空【' + m.month + '】'"
               >
                 <div class="flex flex-col text-left">

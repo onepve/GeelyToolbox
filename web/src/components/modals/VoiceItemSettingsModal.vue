@@ -36,7 +36,7 @@
                 :key="ch.value"
                 @click="setItemChannel(ch.value)"
                 class="px-3 h-[50px] rounded-xl border-2 font-black text-[13.5px] cursor-pointer transition-all shadow-sm whitespace-nowrap"
-                :class="itemChannel === ch.value ? 'bg-car-card border-car-accent text-car-accent shadow-md' : 'bg-car-card border-car-border text-car-sub hover:text-car-text'"
+                :class="itemChannel === ch.value ? 'bg-car-accent-bg text-car-accent border-2 border-transparent shadow-sm' : 'bg-car-card text-car-sub border-2 border-transparent hover:text-car-text'"
               >
                 {{ ch.label }}
               </button>

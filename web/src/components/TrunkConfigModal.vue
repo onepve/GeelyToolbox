@@ -35,7 +35,7 @@
                 @click="toggleSetting('voice_enable_trunk_open')"
                 :class="[
                   'h-[52px] px-3.5 rounded-xl border-2 font-black text-[14px] cursor-pointer shadow-sm',
-                  store.vehicleAuto.voice_enable_trunk_open ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'
+                  store.vehicleAuto.voice_enable_trunk_open ? 'bg-car-accent-bg text-car-accent border-2 border-transparent' : 'bg-car-card border-car-border text-car-sub'
                 ]"
               >
                 {{ store.vehicleAuto.voice_enable_trunk_open ? '已开启' : '已关闭' }}
@@ -69,7 +69,7 @@
                 @click="toggleSetting('voice_enable_trunk_close')"
                 :class="[
                   'h-[52px] px-3.5 rounded-xl border-2 font-black text-[14px] cursor-pointer shadow-sm',
-                  store.vehicleAuto.voice_enable_trunk_close ? 'bg-car-card border-car-accent text-car-accent' : 'bg-car-card border-car-border text-car-sub'
+                  store.vehicleAuto.voice_enable_trunk_close ? 'bg-car-accent-bg text-car-accent border-2 border-transparent' : 'bg-car-card border-car-border text-car-sub'
                 ]"
               >
                 {{ store.vehicleAuto.voice_enable_trunk_close ? '已开启' : '已关闭' }}

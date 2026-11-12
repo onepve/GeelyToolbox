@@ -119,8 +119,8 @@ def run_gate():
 # 11) 激活态边框退回半透明 bg 色（实车「点亮和不点亮一样」的真凶）
 case("激活态边框退回半透明色",
      APP,
-     "  /* 激活态唯一判据：一圈主题色实线。",
-     "  border-color: var(--accent-gold-bg) !important;\n  /* 激活态唯一判据：一圈主题色实线。",
+     "  /* 白天同理：边框必须是主题色实线才看得出来（原来 14% 不透明度等于没有） */\n  border-color: var(--accent-gold) !important;",
+     "  /* 白天同理：边框必须是主题色实线才看得出来（原来 14% 不透明度等于没有） */\n  border-color: var(--accent-gold-bg) !important;",
      "肉眼无差")
 
 # 12) 夜间激活态整段规则被删（点亮后完全没有边框）

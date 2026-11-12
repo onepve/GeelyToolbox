@@ -4,7 +4,7 @@
     :class="[
       'w-full min-h-[74px] p-4 rounded-2xl border-2 transition-all flex items-center justify-between shadow-sm cursor-pointer select-none',
       active 
-        ? 'bg-car-item border-car-accent text-car-text font-black shadow-md' 
+        ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent text-car-text font-black shadow-md' 
         : 'bg-car-card border-car-border text-car-sub hover:border-car-border-light hover:text-car-text font-bold'
     ]"
     style="min-height: 80px; height: 80px; max-height: 84px; padding: 10px 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden;"

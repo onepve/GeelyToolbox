@@ -45,7 +45,7 @@
           :class="[
             'h-[52px] rounded-xl border-2 font-black text-[17px] cursor-pointer transition-all whitespace-nowrap shadow-sm',
             appFilter === tab.key
-              ? 'bg-car-item border-car-accent text-car-text shadow-md'
+              ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent text-car-text shadow-md'
               : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
           ]"
         >{{ tab.label }}</button>
@@ -64,8 +64,8 @@
           v-for="app in filteredApps"
           :key="app.pkg"
           @click="selectApp(app)"
-          class="p-4 rounded-xl bg-car-item border border-car-border hover:border-car-accent flex items-center justify-between cursor-pointer transition-all active:scale-[0.99]"
-          :class="{ 'border-car-accent bg-car-card': isCurrentSelected(app.pkg) }"
+          class="p-4 rounded-xl bg-car-item border border-car-border hover:border-car-border-light flex items-center justify-between cursor-pointer transition-all active:scale-[0.99] border-solid"
+          :class="{ 'border-l-[5px] border-l-car-accent': isCurrentSelected(app.pkg) }"
         >
           <div class="flex flex-col space-y-1">
             <div class="flex items-center space-x-2">

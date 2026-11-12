@@ -66,7 +66,8 @@ public class BootReceiver extends BroadcastReceiver {
         }
 
         // 场景 C：开机/点火/休眠恢复广播 (BOOT_COMPLETED / POWER_RESUME / QUICKBOOT)
-        AppLogger.i("开机守护", "收到系统开机/唤醒广播: " + action);
+        AppLogger.i("系统启动", "启动取证 | 收到开机/唤醒广播 | action=" + action
+                + " | 开机已过 " + (android.os.SystemClock.elapsedRealtime() / 1000) + "秒");
 
         SharedPreferences bootPrefs = app.onepve.geelyconsole.utils.PrefUtils.getAppPreferences(context);
         boolean autostartEnabled = bootPrefs != null ? bootPrefs.getBoolean("autostart_enabled", true) : true;
@@ -79,6 +80,8 @@ public class BootReceiver extends BroadcastReceiver {
         // 核心服务 0ms 秒级拉起常驻守护 (绝不延迟，防系统在 onReceive 结束前杀进程)
         try {
             VehicleAutomationService.syncState(context);
+            AppLogger.i("系统启动", "启动取证 | 广播已派发拉起常驻服务 | 开机已过 "
+                    + (android.os.SystemClock.elapsedRealtime() / 1000) + "秒");
             Log.i(TAG, "VehicleAutomationService synced immediately on boot/resume broadcast");
         } catch (Exception e) {
             Log.w(TAG, "Failed to sync VehicleAutomationService immediately: " + e.getMessage());
