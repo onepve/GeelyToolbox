@@ -472,7 +472,6 @@ public class VehicleAutomationService extends Service {
         return null;
     }
 
-    @Override
     // ── 启动取证（v1.8.33.5）：只打点，不改任何执行顺序与判断逻辑 ──────────────
     private static long sBootProbeT0 = 0L;
 
