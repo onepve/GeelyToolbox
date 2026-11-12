@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col space-y-4">
+  <div class="flex flex-col space-y-3">
     <!-- 顶部车规二级分段胶囊：一页全景掌控（按功能小类扁平拆分直达） -->
     <SubTabs :tabs="voiceTabs" v-model="activeTab" />
 
@@ -10,7 +10,7 @@
       <div
         @click="toggleVoiceMasterSwitch"
         :class="[
-          'rounded-3xl border-2 px-5 py-4 flex items-center justify-between cursor-pointer select-none transition-all duration-150 active:scale-[0.995]',
+          'rounded-3xl border-2 px-5 py-3 flex items-center justify-between cursor-pointer select-none transition-all duration-150 active:scale-[0.995]',
           store.vehicleAuto.voice_master_switch
             ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
             : 'bg-car-card border-car-border shadow-sm'
@@ -53,10 +53,9 @@
         @test="testVoice"
         @custom="customVoiceByKey"
       />
-    </div>
 
-    <!-- Tab 2: 驾驶模式 — 1 张分组卡，卡头=模式总开关 -->
-    <div v-if="activeTab === 'mode'" class="flex flex-col space-y-4">
+      <!-- 驾驶模式紧跟换挡语音下方（v1.8.33.12 合并）：两者都是「车在动才播」的即时提示，
+           合并后同一页面一眼看全，少点一次页签。互不覆盖：各自有独立闸门与独立四格。 -->
       <VoiceGroupCard
         title="驾驶模式播报"
         tag="智能 / 舒适 / 经济 / 运动"
@@ -109,8 +108,8 @@
       </div>
     </div>
 
-    <!-- Tab 5: 电动尾门 -->
-    <div v-if="activeTab === 'trunk'" class="flex flex-col space-y-4">
+    <!-- Tab: 尾门与引擎盖（v1.8.33.12 合并）——两张卡上下排列，报文观察收成引擎盖卡内小按钮 -->
+    <div v-if="activeTab === 'body'" class="flex flex-col space-y-3">
       <VoiceGroupCard
         title="电动尾门"
         tag="后备箱"
@@ -121,10 +120,7 @@
         @test="testVoice"
         @custom="customVoiceByKey"
       />
-    </div>
 
-    <!-- Tab: 前引擎盖 -->
-    <div v-if="activeTab === 'hood'" class="flex flex-col space-y-4">
       <VoiceGroupCard
         title="前引擎盖"
         tag="掀盖 / 扣盖"
@@ -134,23 +130,25 @@
         @toggleItem="toggleItemByVoiceKey"
         @test="testVoice"
         @custom="customVoiceByKey"
-      />
-
-      <FeatureCard
-        id="frame_learning"
-        title="报文学习观察"
-        desc="打开后边操作边看数值：开关车门、引擎盖、后备箱，屏幕会实时显示当前状态，方便核对和排查。"
-        help-text="遇到某个功能不灵敏，可以开着这个界面操作一遍，把屏幕上的数值记下来发给开发者，能大幅加快定位。"
-        help-tip="不设倒计时，看够了自己关；只观察不改变车上任何设置。"
       >
-        <button
-          type="button"
-          @click="openModal('frameLearning', { ts: Date.now() })"
-          class="w-full min-h-[64px] rounded-2xl bg-car-item border-2 border-car-accent text-car-text font-black text-[17px] cursor-pointer shadow-md hover:border-car-border-light transition-all active:scale-[0.99]"
-        >
-          开始观察报文数值
-        </button>
-      </FeatureCard>
+        <!-- 报文学习观察：从独立大卡收成卡内一枚小按钮。
+             它只是给开发者看的诊断入口，不该和播报开关平起平坐占一整张大卡。 -->
+        <template #footer>
+          <div class="flex items-center space-x-3">
+            <div class="flex flex-col min-w-0">
+              <span class="text-[13.5px] font-black text-car-text">报文学习观察</span>
+              <span class="text-[12px] text-car-sub font-bold truncate">边开关车门 / 引擎盖 / 尾门边看实时数值，不改变车上任何设置</span>
+            </div>
+            <button
+              type="button"
+              @click.stop="openModal('frameLearning', { ts: Date.now() })"
+              class="shrink-0 h-[50px] px-5 rounded-xl bg-car-item border-2 border-car-accent text-car-text font-black text-[14px] cursor-pointer active:scale-95 transition-all"
+            >
+              开始观察
+            </button>
+          </div>
+        </template>
+      </VoiceGroupCard>
     </div>
 
     <!-- Tab 6: 音乐音源优先级与回退调度 -->
@@ -334,11 +332,9 @@ import { useConfigModal } from '../composables/useConfigModal';
 
 const activeTab = ref('gear');
 const voiceTabs = computed(() => [
-  { id: 'gear', name: '换挡语音' },
-  { id: 'mode', name: '驾驶模式' },
+  { id: 'gear', name: '换挡与驾驶模式' },
   { id: 'door', name: store.vehicleAuto.voice_door_mode_universal === true ? '车门合并播报' : '车门分门播报' },
-  { id: 'trunk', name: '电动尾门' },
-  { id: 'hood', name: '前引擎盖' },
+  { id: 'body', name: '尾门与引擎盖' },
   { id: 'media', name: '音乐音源优先级' },
   { id: 'packs', name: '专属语音包' }
 ]);

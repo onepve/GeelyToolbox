@@ -180,6 +180,34 @@ def ui_border_density_contract(files):
     if 'w-[4px] bg-car-accent' not in feat:
         out.append('ui-featurecard-no-gold-frame')
 
+    # 5.5) 「车载声音」页二级 Tab 只许 5 个且名称固定（v1.8.33.12 合并后锁死）。
+    #      换挡与驾驶模式合并、尾门与引擎盖合并、报文观察收进卡脚，是车主明确确认的拓扑。
+    #      有人凭「看起来挤」把 Tab 拆回去，就是又要把车门卡挤到屏幕外，必须拦。
+    body = of('web/src/views/BodyView.vue')
+    tab_block = re.search(r'const voiceTabs = computed\(\(\) => \[(.*?)\]\);', body, re.S)
+    if not tab_block:
+        out.append('ui-body-voicetabs-missing')
+    else:
+        block = tab_block.group(1)
+        names = re.findall(r"name:\s*['\"]([^'\"]+)['\"]", block)
+        statics = [n for n in names if '{' not in n and '$' not in n]
+        ids = re.findall(r"id:\s*'([^']+)'", block)
+        if len(ids) != 5:
+            out.append('ui-body-voicetabs-count')
+        for must in ('换挡与驾驶模式', '尾门与引擎盖'):
+            if must not in block:
+                out.append('ui-body-voicetabs-merged-name')
+        for gone in ("id: 'mode'", "id: 'trunk'", "id: 'hood'"):
+            if gone in block:
+                out.append('ui-body-voicetabs-split-back')
+        # 合并后的目标页签必须有对应面板，否则点了空白
+        for need in ("activeTab === 'gear'", "activeTab === 'body'"):
+            if need not in body:
+                out.append('ui-body-panel-missing')
+        # 报文观察必须收进引擎盖卡的卡脚，不得再独立成 FeatureCard 大卡
+        if 'name="footer"' not in body and '#footer' not in body:
+            out.append('ui-body-frame-learning-not-in-card')
+
     # 6) 严禁对 var(--x) 主题色写透明度变体（bg-car-card/60、border-car-border/60 等）。
     #    Tailwind 只有在颜色是 rgb 三元组时才能拼出 rgb(var(--x) / .6)；本项目颜色全部是
     #    'var(--bg-card)' 字符串，这类类名在产物里根本没有 CSS 规则，元素直接回退到

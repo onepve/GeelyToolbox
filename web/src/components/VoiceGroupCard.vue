@@ -29,7 +29,7 @@
     <div
       @click="modePickable ? null : onMasterToggle()"
       :class="[
-        'flex items-center justify-between px-5 py-4 transition-all duration-150',
+        'flex items-center justify-between px-5 py-3 transition-all duration-150',
         modePickable ? 'cursor-default' : 'cursor-pointer select-none active:scale-[0.995]'
       ]"
     >
@@ -78,13 +78,13 @@
     </div>
 
     <!-- 卡身：零件格子 -->
-    <div v-else class="px-5 pb-5" :class="cols === 1 ? '' : 'grid gap-3'"
+    <div v-else class="px-5 pb-4" :class="cols === 1 ? '' : 'grid gap-3'"
          :style="cols === 1 ? '' : `grid-template-columns: repeat(${cols}, minmax(0, 1fr));`">
       <div
         v-for="item in items"
         :key="item.voiceKey"
         :class="[
-          'rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-150',
+          'rounded-2xl p-2.5 flex flex-col justify-between transition-all duration-150',
           item.active ? 'bg-car-item border-solid border-l-[4px] border-l-car-accent' : 'bg-car-item opacity-85'
         ]"
       >
@@ -100,7 +100,7 @@
           </div>
         </div>
 
-        <div class="text-[12.5px] text-car-sub font-bold leading-snug mb-2.5">{{ item.line }}</div>
+        <div class="text-[12.5px] text-car-sub font-bold leading-snug mb-1.5">{{ item.line }}</div>
 
         <div class="flex items-center space-x-2">
           <button
@@ -118,6 +118,14 @@
             换声音
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- 卡脚（可选）：给调用方塞「诊断入口」这类小按钮。
+         单独一行、与格子区隔开，避免被误认为某一格的附属按钮。 -->
+    <div v-if="$slots.footer" class="px-5 pb-4">
+      <div class="pt-3 border-t border-car-border">
+        <slot name="footer" />
       </div>
     </div>
   </div>

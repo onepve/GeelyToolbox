@@ -3,7 +3,7 @@
 ## 1. Project Context
 - **Description**: 吉利车机辅助悬浮窗、桌面悬浮胶囊、硬件按键与系统级车载服务 (GeelyToolbox).
 - **Tech Stack**: Android Java 8 (AOSP / ECarX SDK / OEM Services) + 内置 Web 前端 (Vue 3 / Vite).
-- **Docs 真源**: 数据通道总纲只看 `docs/ARCHITECTURE-CHANNELS.md`；发版说明只在 `docs/changelog/`（只留最新正式版 + 在测测试版各一份）；实现细节与踩坑一律写本地技能，严禁在本仓库新建解释性 MD。
+- **Docs 真源（单一真源铁律）**: 数据通道、踩坑与实现细节**只写在本地技能** `onepve-geelytoolbox`（`references/data-channels.md` 等），本仓库**不建任何解释性 MD**；`docs/changelog/` 只留当次要发的说明文件（正式版一份 / 在测测试版一份），旧件发完即删。发现仓库与技能说法冲突，一律以技能为准并立刻修仓库代码，绝不维护第二份文档。
 
 ## 2. Hard Rules & Guardrails (STRICT)
 - **Gatekeeper Lockdown (门禁铁律)**: 各功能模块底层逻辑严格独立门禁锁死。修单一 bug 严禁连带触碰其他模块；若被门禁拦截，必须详细说明改动理由与破坏性影响并经明确确认授权后方可放开修改，严禁擅自做主拆门禁。
