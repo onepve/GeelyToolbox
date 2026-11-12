@@ -181,7 +181,7 @@
         </button>
         <button 
           @click="closeModal('voiceItemSettings')"
-          class="h-[56px] px-10 bg-car-item border-2 border-car-accent text-car-text font-black text-[18.5px] rounded-2xl cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md"
+          class="h-[56px] px-10 bg-car-item border-2 border-car-accent text-car-text font-black text-[18.5px] rounded-2xl cursor-pointer hover:border-car-accent shadow-md"
         >
           完成并关闭
         </button>

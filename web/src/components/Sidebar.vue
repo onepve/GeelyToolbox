@@ -7,10 +7,10 @@
       :key="item.id"
       @click="selectNav(item.id)"
       :class="[
-        'flex items-center justify-between px-5 min-h-[68px] rounded-2xl border-2 nav-item cursor-pointer font-black text-[21px] tracking-wide',
+        'flex items-center justify-between px-5 min-h-[68px] rounded-2xl nav-item cursor-pointer font-black text-[21px] tracking-wide',
         store.currentNav === item.id
-          ? 'bg-car-item border-car-accent text-car-text shadow-md'
-          : 'bg-car-item border-transparent text-car-text shadow-nav-rest'
+          ? 'bg-car-item border-solid border-l-[6px] border-l-car-accent text-car-text shadow-md'
+          : 'bg-car-item text-car-text shadow-nav-rest'
       ]"
     >
       <span class="truncate">{{ item.name }}</span>
@@ -18,8 +18,8 @@
         :class="[
           'text-[14px] px-2.5 py-1 rounded-lg font-extrabold shrink-0 nav-badge',
           store.currentNav === item.id
-            ? 'border-2 border-car-accent text-car-accent font-black bg-car-card shadow-sm'
-            : 'bg-car-card/60 border border-car-border/60 text-car-sub/70 opacity-75'
+            ? 'text-car-accent font-black bg-car-accent/15'
+            : 'bg-car-card/60 text-car-sub/70 opacity-75'
         ]"
       >
         {{ item.badge }}

@@ -18,12 +18,11 @@
     - 触控高度一律 >= 50px（车规门禁硬性要求）
     ==========================================================================
   -->
+  <!-- 大卡只做「容器」，永远不铺整圈金光：金色是珍贵强调色，只分配给卡内真正被选中的那一格。
+       原来 anyActive 时整张大卡变金边，内层格子也是金边，同一条边界亮两层，夜里一片金光反而没有焦点。 -->
   <div
     :class="[
-      'rounded-3xl border-2 flex flex-col transition-all duration-150 overflow-hidden',
-      modePickable
-        ? 'bg-car-card border-car-border shadow-sm'
-        : (anyActive ? 'bg-car-item border-car-accent shadow-md' : 'bg-car-card border-car-border shadow-sm')
+      'rounded-3xl border-2 flex flex-col transition-all duration-150 overflow-hidden bg-car-card border-car-border shadow-sm'
     ]"
   >
     <!-- 卡片头 = 总开关（模式二选一时不可点，仅作标题） -->
@@ -38,7 +37,7 @@
         <span class="text-[20px] font-black text-car-text tracking-wide truncate">{{ title }}</span>
         <span
           v-if="tag"
-          class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full border bg-car-item border-car-border text-car-accent shrink-0"
+          class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full bg-car-accent/15 text-car-accent shrink-0"
         >
           {{ tag }}
         </span>
@@ -61,8 +60,8 @@
         :key="m.id"
         @click.stop="emit('pickMode', m.id)"
         :class="[
-          'rounded-2xl border-2 px-4 py-4 flex flex-col justify-between transition-all duration-150 cursor-pointer select-none active:scale-[0.985]',
-          m.active ? 'bg-car-item border-car-accent' : 'bg-car-card border-car-border hover:border-car-border-light'
+          'rounded-2xl px-4 py-4 flex flex-col justify-between transition-all duration-150 cursor-pointer select-none active:scale-[0.985]',
+          m.active ? 'bg-car-item border-solid border-l-[5px] border-l-car-accent' : 'bg-car-item'
         ]"
       >
         <div class="flex items-center justify-between mb-2">
@@ -85,8 +84,8 @@
         v-for="item in items"
         :key="item.voiceKey"
         :class="[
-          'rounded-2xl border-2 p-3.5 flex flex-col justify-between transition-all duration-150',
-          item.active ? 'bg-car-card border-car-accent' : 'bg-car-card border-car-border opacity-85'
+          'rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-150',
+          item.active ? 'bg-car-item border-solid border-l-[4px] border-l-car-accent' : 'bg-car-item opacity-85'
         ]"
       >
         <!-- 格头：名称 + 独立开关小圆点 -->
@@ -107,14 +106,14 @@
           <button
             type="button"
             @click.stop="emit('test', item.voiceKey)"
-            class="flex-1 h-[50px] rounded-xl bg-car-item border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[13px] cursor-pointer shadow-sm active:scale-95 transition-all"
+            class="flex-1 h-[50px] rounded-xl bg-car-card text-car-text font-black text-[13px] cursor-pointer active:scale-95 transition-all"
           >
             试听
           </button>
           <button
             type="button"
             @click.stop="emit('custom', item.voiceKey)"
-            class="flex-1 h-[50px] rounded-xl bg-car-item border-2 border-car-border hover:border-car-accent text-car-sub hover:text-car-text font-black text-[13px] cursor-pointer shadow-sm active:scale-95 transition-all"
+            class="flex-1 h-[50px] rounded-xl bg-car-card text-car-sub hover:text-car-text font-black text-[13px] cursor-pointer active:scale-95 transition-all"
           >
             换声音
           </button>

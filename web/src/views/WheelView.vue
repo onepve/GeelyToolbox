@@ -10,8 +10,7 @@
            这张卡本身就是本页的总开关，不再另设外层大卡包住下面的按键卡片。
            点左侧「方向盘按键接管」文字区 = 开/关接管；右侧切换卡片模式。 -->
       <div
-        :class="['rounded-3xl border-2 bg-car-card px-5 py-4 flex items-center justify-between transition-all',
-                 store.vehicleAuto.wheel_master_switch ? 'border-car-accent shadow-md' : 'border-car-border shadow-sm']"
+        :class="['rounded-3xl border-2 bg-car-card px-5 py-4 flex items-center justify-between transition-all border-car-border shadow-sm']"
       >
         <div
           @click="toggleWheelMasterSwitch"
@@ -24,8 +23,8 @@
             title="查看两种摆放方式的区别"
           />
           <span
-            :class="['text-[13.5px] font-black px-2.5 py-0.5 rounded-lg border shrink-0',
-                     store.vehicleAuto.wheel_master_switch ? 'bg-car-item text-car-accent border-car-accent' : 'bg-car-item text-car-sub border-car-border']"
+            :class="['text-[13.5px] font-black px-2.5 py-0.5 rounded-lg shrink-0',
+                     store.vehicleAuto.wheel_master_switch ? 'bg-car-accent/15 text-car-accent' : 'bg-car-card text-car-sub']"
           >
             {{ store.vehicleAuto.wheel_master_switch ? '已接管' : '原车默认' }}
           </span>
@@ -33,13 +32,13 @@
             {{ store.vehicleAuto.wheel_master_switch ? '点此关闭' : '点此开启' }}
           </span>
         </div>
-        <div class="flex items-center space-x-1.5 shrink-0 bg-car-item p-1.5 rounded-2xl border-2 border-car-border">
+        <div class="flex items-center space-x-1.5 shrink-0 bg-car-item p-1.5 rounded-2xl">
           <button
             v-for="m in wheelModeOptions"
             :key="m.id"
             type="button"
             @click="setMappingMode(m.id)"
-            :class="['px-4 h-[50px] rounded-xl font-black text-[14.5px] transition-all cursor-pointer flex items-center justify-center border-2 select-none',
+            :class="['px-4 h-[50px] rounded-xl font-black text-[14.5px] transition-all cursor-pointer flex items-center justify-center border select-none',
                      m.active ? 'bg-car-card border-car-accent text-car-accent shadow-md' : 'bg-transparent border-transparent text-car-sub hover:text-car-text']"
           >
             {{ m.name }}
@@ -108,7 +107,7 @@
         >
           <div class="grid grid-cols-2 gap-3.5">
             <!-- ⑦ 上一曲 -->
-            <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex flex-col space-y-2.5">
+            <div class="bg-car-item rounded-2xl p-3.5 flex flex-col space-y-2.5">
               <div class="flex items-center justify-between">
                 <span class="text-[15.5px] font-black text-car-text">⑦ 上一曲 (向左)</span>
                 <span class="text-[12px] text-car-accent font-bold">按压即发</span>
@@ -117,7 +116,7 @@
             </div>
 
             <!-- ④ 下一曲 -->
-            <div class="bg-car-item border border-car-border rounded-2xl p-3.5 flex flex-col space-y-2.5">
+            <div class="bg-car-item rounded-2xl p-3.5 flex flex-col space-y-2.5">
               <div class="flex items-center justify-between">
                 <span class="text-[15.5px] font-black text-car-text">④ 下一曲 (向右)</span>
                 <span class="text-[12px] text-car-accent font-bold">按压即发</span>
@@ -150,7 +149,7 @@
         >
           <button
             @click="openKeyLearning"
-            class="w-full min-h-[72px] rounded-2xl bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25 font-black text-[19px] cursor-pointer shadow-md hover:border-car-border-light transition-all active:scale-[0.99]"
+            class="w-full min-h-[72px] rounded-2xl bg-car-item border-2 border-car-accent text-car-text font-black text-[19px] cursor-pointer shadow-md hover:border-car-border-light transition-all active:scale-[0.99]"
           >
             开始方控响应与冲突体检
           </button>
@@ -291,7 +290,7 @@
       :class="[
         'rounded-3xl border-2 p-5 shadow-xl transition-all duration-200 cursor-pointer select-none active:scale-[0.99]',
         floatingEnabled
-          ? 'bg-car-item border-car-accent shadow-md'
+          ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
           : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
       ]"
     >

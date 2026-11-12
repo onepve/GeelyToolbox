@@ -11,7 +11,7 @@
         helpTitle="【功能指南】全国实时油价与调价日历"
         helpText="1. 官方限价：&#10;基于国家发改委最新发布的各省成品油最高零售限价，同省同价。&#10;&#10;2. 调价倒计时：&#10;按照国家发改委 10 个工作日调价周期倒计时，提前提供涨跌预期预警。&#10;&#10;3. 省钱算账：&#10;结合当前车型标称油箱容积自动折算加满一箱所需成本变动。" helpTip="点击可查看全国 31 省份 92#/95#/98#/柴油价格及调价详情。"
       >
-        <div class="w-full flex items-center justify-between p-4 rounded-2xl bg-car-item border border-car-border">
+        <div class="w-full flex items-center justify-between p-4 rounded-2xl bg-car-item">
           <div class="flex items-center space-x-4">
             <div class="flex items-center space-x-2">
               <div class="flex flex-col">
@@ -73,7 +73,7 @@
             <button 
               @click="onRefreshOilPrice"
               :disabled="store.oilPrice.isSyncing"
-              class="min-h-[56px] px-5 rounded-xl border-2 border-car-border bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light transition-all shadow-md flex items-center space-x-2 whitespace-nowrap"
+              class="min-h-[56px] px-5 rounded-xl border border-car-border/70 bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light transition-all shadow-md flex items-center space-x-2 whitespace-nowrap"
             >
               <svg class="w-4 h-4 text-car-sub" :class="{'animate-spin text-car-accent': store.oilPrice.isSyncing}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
@@ -83,7 +83,7 @@
 
             <button 
               @click="openModal('oilPrice')"
-              class="min-h-[56px] px-6 rounded-xl border-2 border-car-accent bg-car-item text-car-accent font-black text-[16.5px] cursor-pointer hover:border-car-accent transition-all shadow-md flex items-center whitespace-nowrap"
+              class="min-h-[56px] px-6 rounded-xl border border-car-accent bg-car-item text-car-accent font-black text-[16.5px] cursor-pointer hover:border-car-accent transition-all shadow-md flex items-center whitespace-nowrap"
             >
               <span>全国详情 ➔</span>
             </button>
@@ -99,7 +99,7 @@
               <span class="text-[18px] font-black text-car-text truncate">{{ vehicleModelDisplay }} {{ tankCapacity }}L 油箱测算</span>
               <HelpDot size="sm" @click="showTankCalcHelp" />
             </div>
-            <div class="flex items-center space-x-1 p-1 bg-car-item border border-car-border rounded-xl shrink-0">
+            <div class="flex items-center space-x-1 p-1 bg-car-item rounded-xl shrink-0">
               <button
                 v-for="f in ['92#', '95#', '98#']"
                 :key="f"
@@ -119,7 +119,7 @@
           <!-- 核心双测算：左实时加满预估 / 右加200元换算（横向并排，纵向空间换横向） -->
           <div class="grid grid-cols-2 gap-3">
             <!-- 1. 车辆实时动态加满补能计算 -->
-            <div class="p-3 bg-car-item border border-car-border rounded-2xl flex flex-col space-y-1.5">
+            <div class="p-3 bg-car-item rounded-2xl flex flex-col space-y-1.5">
               <div class="flex items-center justify-between flex-wrap gap-x-2">
                 <div class="flex items-center space-x-2">
                   <span class="text-[14px] text-car-text font-black">当前油箱实际估算：</span>
@@ -148,7 +148,7 @@
                     { type: '98#', cost: displayCost98 }
                   ]"
                   :key="'cost_' + item.type"
-                  class="p-2 rounded-xl border border-car-border bg-car-card/60 text-center flex flex-col items-center justify-center"
+                  class="p-2 rounded-xl bg-car-card/60 text-center flex flex-col items-center justify-center"
                 >
                   <span class="text-[11.5px] font-bold text-car-sub">{{ item.type }}</span>
                   <span class="text-[17px] font-black font-mono leading-tight text-car-text">¥{{ item.cost }}</span>
@@ -157,7 +157,7 @@
             </div>
 
             <!-- 2. 日常加 200 元可加油量测算（行结构与左块对齐保证瓷砖平行） -->
-            <div class="p-3 bg-car-item border border-car-border rounded-2xl flex flex-col space-y-1.5">
+            <div class="p-3 bg-car-item rounded-2xl flex flex-col space-y-1.5">
               <div class="flex items-center justify-between flex-wrap gap-x-2">
                 <div class="flex items-center space-x-2">
                   <span class="text-[14px] text-car-text font-black">日常加 200 元可加油量：</span>
@@ -183,7 +183,7 @@
                     { type: '98#', lit: (currentOilData?.p98 ? 200 / currentOilData.p98 : 22.0).toFixed(1) }
                   ]"
                   :key="'lit_' + item.type"
-                  class="p-2 rounded-xl border border-car-border bg-car-card/60 text-center flex flex-col items-center justify-center"
+                  class="p-2 rounded-xl bg-car-card/60 text-center flex flex-col items-center justify-center"
                 >
                   <span class="text-[11.5px] font-bold text-car-sub">{{ item.type }}</span>
                   <span class="text-[17px] font-black font-mono leading-tight text-car-text">{{ item.lit }} <span class="text-[11px] font-normal">L</span></span>

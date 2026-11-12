@@ -78,7 +78,7 @@
         :class="[
           'rounded-3xl border-2 p-5 shadow-xl h-full flex flex-col space-y-3.5 transition-all duration-200 cursor-pointer select-none active:scale-[0.985]',
           store.vehicleAuto.vehicle_speed_autoplay_enabled
-            ? 'bg-car-item border-car-accent shadow-md'
+            ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
             : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
         ]"
       >
@@ -178,7 +178,7 @@
         :class="[
           'rounded-3xl border-2 p-5 shadow-xl h-full flex flex-col space-y-3.5 transition-all duration-200 cursor-pointer select-none active:scale-[0.985]',
           store.vehicleAuto.vehicle_speed_custom_action_enabled
-            ? 'bg-car-item border-car-accent shadow-md'
+            ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
             : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
         ]"
       >
@@ -296,7 +296,7 @@
         :class="[
           'rounded-3xl border-2 p-5 shadow-xl flex flex-col justify-between transition-all duration-200 cursor-pointer select-none active:scale-[0.985]',
           store.networkDevice.wifi_enabled
-            ? 'bg-car-item border-car-accent shadow-md'
+            ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
             : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
         ]"
       >
@@ -363,7 +363,7 @@
         :class="[
           'rounded-3xl border-2 p-5 shadow-xl flex flex-col justify-between transition-all duration-200 cursor-pointer select-none active:scale-[0.985]',
           store.networkDevice.hotspot_enabled
-            ? 'bg-car-item border-car-accent shadow-md'
+            ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
             : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
         ]"
       >
@@ -420,7 +420,7 @@
         :class="[
           'rounded-3xl border-2 p-5 shadow-xl flex flex-col justify-between transition-all duration-200 cursor-pointer select-none active:scale-[0.985]',
           store.networkDevice.bluetooth_enabled
-            ? 'bg-car-item border-car-accent shadow-md'
+            ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
             : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
         ]"
       >

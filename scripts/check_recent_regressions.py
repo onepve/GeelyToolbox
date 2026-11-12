@@ -127,6 +127,62 @@ CONTRACTS = [
 ]
 
 
+
+def ui_border_density_contract(files):
+    """界面线条密度门禁（用户实车反馈「线条太多、点亮态一圈金边刺眼」后锁死）。
+
+    三组铁律，任一被改回即视为回归：
+      1. 全栈禁用 Tailwind ring-*（Chromium 68 多重 box-shadow 会浮错位鬼影）。
+      2. 点亮/选中一律只给一道局部标记（左侧竖条或实底胶囊），
+         严禁把整张卡片或整个 tab 染成一圈金边。
+      3. 卡片内部不再画小方框套娃：托盘/格子用底色分层。
+    """
+    out = []
+    web = [(k, v) for k, v in files.items() if k.startswith('web/src/')]
+    all_web = '\n'.join(v for _, v in web)
+
+    # 1) ring-* 全栈清除
+    if re.search(r'\bring-(?:inset|offset-\d+|\d+|\[\d+px\])', all_web):
+        out.append('ui-no-ring-shadow')
+
+    def of(path):
+        return files.get(path, '')
+
+    # 2) 侧边栏大导航：选中用左侧竖条，不得整圈金边
+    side = of('web/src/components/Sidebar.vue')
+    if 'border-l-car-accent' not in side or 'border-l-[6px]' not in side:
+        out.append('ui-nav-selected-left-bar')
+    if re.search(r"currentNav === item\.id\s*\?\s*'[^']*border-car-accent", side):
+        out.append('ui-nav-selected-left-bar')
+
+    # 3) 顶部分段 tab：托盘不画框，选中用实底胶囊
+    sub = of('web/src/components/SubTabs.vue')
+    if re.search(r'p-1\.5 rounded-2xl bg-car-item border', sub):
+        out.append('ui-subtabs-tray-no-frame')
+    if re.search(r"modelValue === tab\.id\s*\?\s*'[^']*border-car-accent", sub):
+        out.append('ui-subtabs-selected-no-ring')
+
+    # 4) 语音分组卡：外层大卡永不铺金光，格子选中只给左条
+    voice = of('web/src/components/VoiceGroupCard.vue')
+    if re.search(r"anyActive\s*\?\s*'bg-car-item border-car-accent", voice):
+        out.append('ui-voicegroup-card-no-gold-frame')
+    # 同一文件里有两处（零件格子 / 模式二选一）带同样文案的状态类，
+    # 必须按宽度锚定，否则改回其中一处仍能被另一处掩盖。
+    if not re.search(r"item\.active\s*\?\s*'bg-car-item border-solid border-l-\[4px\] border-l-car-accent'", voice):
+        out.append('ui-voicegroup-item-left-bar')
+    if not re.search(r"m\.active\s*\?\s*'bg-car-item border-solid border-l-\[5px\] border-l-car-accent'", voice):
+        out.append('ui-voicegroup-mode-left-bar')
+
+    # 5) 通用功能卡：激活态不得整圈金边，必须左侧竖条
+    feat = of('web/src/components/FeatureCard.vue')
+    if re.search(r"active\s*\?\s*'border-car-accent'", feat):
+        out.append('ui-featurecard-no-gold-frame')
+    if 'w-[4px] bg-car-accent' not in feat:
+        out.append('ui-featurecard-no-gold-frame')
+
+    return out
+
+
 def evaluate(files):
     failures = []
     for ident, path, marker, required, forbidden in CONTRACTS:
@@ -221,6 +277,7 @@ def evaluate(files):
     if not re.search(r'!sawMarker\s*\|\|\s*inMain', span_body) or 'minStamp' not in span_body:
         failures.append('log-span-marker-tolerant')
     failures.extend(log_slice_contract(utils_src))
+    failures.extend(ui_border_density_contract(files))
     return failures
 
 

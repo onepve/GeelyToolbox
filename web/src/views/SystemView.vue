@@ -33,7 +33,7 @@
             :class="[
               'rounded-2xl border-2 p-5 transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[170px]',
               store.capsuleVisibility.battery !== false
-                ? 'bg-car-item border-car-accent shadow-md'
+                ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
                 : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
             ]"
           >
@@ -58,7 +58,7 @@
             :class="[
               'rounded-2xl border-2 p-5 transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[170px]',
               store.capsuleVisibility.oilPrice !== false
-                ? 'bg-car-item border-car-accent shadow-md'
+                ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
                 : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
             ]"
           >
@@ -83,7 +83,7 @@
             :class="[
               'rounded-2xl border-2 p-5 transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[170px]',
               store.capsuleVisibility.secretCode !== false
-                ? 'bg-car-item border-car-accent shadow-md'
+                ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
                 : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
             ]"
           >
@@ -108,7 +108,7 @@
             :class="[
               'rounded-2xl border-2 p-5 transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[170px]',
               store.capsuleVisibility.store !== false
-                ? 'bg-car-item border-car-accent shadow-md'
+                ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
                 : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
             ]"
           >
@@ -133,7 +133,7 @@
             :class="[
               'rounded-2xl border-2 p-5 transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[170px]',
               store.capsuleVisibility.whitelist !== false
-                ? 'bg-car-item border-car-accent shadow-md'
+                ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
                 : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
             ]"
           >
@@ -158,7 +158,7 @@
             :class="[
               'rounded-2xl border-2 p-5 transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[170px]',
               store.capsuleVisibility.ip !== false
-                ? 'bg-car-item border-car-accent shadow-md'
+                ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
                 : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
             ]"
           >
@@ -197,7 +197,7 @@
             :class="[
               'p-3 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-center shadow-sm min-h-[54px]',
               (store.deviceInfo.custom_vehicle_trim === item.name || (!store.deviceInfo.custom_vehicle_trim && store.deviceInfo.trim_name === item.name))
-                ? 'bg-car-item border-car-accent shadow-md text-car-accent font-black'
+                ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md text-car-accent font-black'
                 : 'bg-car-card border-car-border text-car-text hover:border-car-border-light font-bold'
             ]"
           >
@@ -221,7 +221,7 @@
               :class="[
                 'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
                 (store.deviceInfo.app_icon_style === 'auto' || !store.deviceInfo.app_icon_style)
-                  ? 'bg-car-item border-car-accent shadow-md'
+                  ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
                   : 'bg-car-card border-car-border hover:border-car-border-light'
               ]"
             >
@@ -242,7 +242,7 @@
               :class="[
                 'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
                 store.deviceInfo.app_icon_style === 'default'
-                  ? 'bg-car-item border-car-accent shadow-md'
+                  ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
                   : 'bg-car-card border-car-border hover:border-car-border-light'
               ]"
             >
@@ -261,7 +261,7 @@
               :class="[
                 'p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-between space-y-2.5 shadow-sm min-h-[140px]',
                 store.deviceInfo.app_icon_style === 'cool'
-                  ? 'bg-car-item border-car-accent shadow-md'
+                  ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
                   : 'bg-car-card border-car-border hover:border-car-border-light'
               ]"
             >
@@ -375,7 +375,7 @@
         :class="[
           'rounded-3xl border-2 p-6 shadow-2xl transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[220px] group',
           store.deviceInfo.adb_master_switch !== false
-            ? 'bg-car-item border-car-accent shadow-md'
+            ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
             : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
         ]"
       >
@@ -463,7 +463,7 @@
         :class="[
           'rounded-3xl border-2 p-6 shadow-2xl transition-all flex flex-col justify-between cursor-pointer select-none active:scale-[0.985] min-h-[220px] group',
           store.deviceInfo.autostart
-            ? 'bg-car-item border-car-accent shadow-md'
+            ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
             : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
         ]"
       >

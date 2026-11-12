@@ -1,14 +1,16 @@
 <template>
-  <div class="flex items-center space-x-2.5 p-1.5 rounded-2xl bg-car-item border-2 border-car-border shrink-0 select-none shadow-sm">
+  <!-- 分段容器本身不是控件，只是一个底色托盘：不画边框，把唯一一道金边留给真正选中的那一格。
+       原来这里是 border-2 灰框包着 border-2 金框，同一条视觉边界画了两层，车机上显得又厚又杂。 -->
+  <div class="flex items-center space-x-2.5 p-1.5 rounded-2xl bg-car-item shrink-0 select-none">
     <button
       v-for="tab in tabs"
       :key="tab.id"
       @click="onSelect(tab.id)"
       :class="[
-        'h-[50px] px-5 rounded-xl text-[16px] transition-all flex items-center space-x-2 cursor-pointer border-2 select-none outline-none focus:outline-none',
+        'h-[50px] px-5 rounded-xl text-[16px] transition-all flex items-center space-x-2 cursor-pointer select-none outline-none focus:outline-none',
         modelValue === tab.id
-          ? 'bg-car-card border-car-accent text-car-accent font-black shadow-md'
-          : 'bg-transparent border-transparent text-car-sub hover:text-car-text font-bold'
+          ? 'bg-car-card text-car-accent font-black'
+          : 'bg-transparent text-car-sub hover:text-car-text font-bold'
       ]"
     >
       <span v-if="tab.badge" class="w-2 h-2 rounded-full" :class="modelValue === tab.id ? 'bg-car-accent' : 'bg-car-sub/60'"></span>
@@ -16,10 +18,10 @@
       <span
         v-if="tab.tag"
         :class="[
-          'text-[12px] px-2 py-0.5 rounded-lg font-black border transition-all',
+          'text-[12px] px-2 py-0.5 rounded-lg font-black transition-all',
           modelValue === tab.id
-            ? 'bg-car-item border-car-accent/60 text-car-accent shadow-xs'
-            : 'bg-car-card/50 border-car-border/50 text-car-sub/60 opacity-70'
+            ? 'bg-car-accent/15 text-car-accent'
+            : 'bg-car-card/50 text-car-sub/60 opacity-70'
         ]"
       >
         {{ tab.tag }}

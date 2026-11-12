@@ -48,7 +48,7 @@
         <!-- 选项 2：智能安全清理 -->
         <div 
           @click="confirmClean(2)"
-          class="bg-car-card border-2 border-car-accent/60 rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-car-accent hover:bg-car-item ring-2 ring-car-accent/15 transition-all shadow-md group"
+          class="bg-car-card border-2 border-car-accent/60 rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-car-accent hover:bg-car-item transition-all shadow-md group"
         >
           <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
             <div class="flex items-center space-x-2.5">
@@ -59,7 +59,7 @@
               清理已下载的 APK 安装包、临时压缩包与空文件夹；自动识别并保留音频素材与非空目录，安全释放数百兆闪存。
             </span>
           </div>
-          <button class="h-[52px] px-6 bg-car-item border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl ring-2 ring-car-accent/20 group-hover:border-car-accent shrink-0 transition-all pointer-events-none">
+          <button class="h-[52px] px-6 bg-car-item border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl group-hover:border-car-accent shrink-0 transition-all pointer-events-none">
             安全清理
           </button>
         </div>

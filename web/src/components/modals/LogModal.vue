@@ -357,7 +357,7 @@
             :class="[
               'min-h-[50px] px-5 rounded-xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm flex items-center',
               autoScroll 
-                ? 'bg-car-item border-car-accent text-car-accent ring-2 ring-car-accent/20' 
+                ? 'bg-car-item border-car-accent text-car-accent' 
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text'
             ]"
           >

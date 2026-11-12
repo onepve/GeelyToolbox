@@ -110,7 +110,7 @@
         <button
           v-if="stage !== 'waiting'"
           @click="handleRestart"
-          class="min-h-[64px] px-10 rounded-2xl bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25 font-black text-[19px] cursor-pointer shadow-md"
+          class="min-h-[64px] px-10 rounded-2xl bg-car-item border-2 border-car-accent text-car-text font-black text-[19px] cursor-pointer shadow-md"
         >
           再测一个按键
         </button>

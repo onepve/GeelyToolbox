@@ -114,7 +114,7 @@
           </button>
           <button
             @click="handleClose"
-            class="min-h-[60px] px-9 rounded-2xl bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25 font-black text-[18px] cursor-pointer shadow-md"
+            class="min-h-[60px] px-9 rounded-2xl bg-car-item border-2 border-car-accent text-car-text font-black text-[18px] cursor-pointer shadow-md"
           >
             关闭
           </button>

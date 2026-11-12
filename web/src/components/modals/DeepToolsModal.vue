@@ -70,7 +70,7 @@
             :class="[
               'min-h-[50px] px-5 mr-3 rounded-xl border-2 font-black text-[15.5px] cursor-pointer shadow-sm flex items-center shrink-0 transition-all disabled:opacity-40 disabled:cursor-not-allowed',
               isCapturingKeys
-                ? 'bg-rose-500/20 border-rose-500 text-rose-400 animate-pulse ring-2 ring-rose-500/30'
+                ? 'bg-rose-500/20 border-rose-500 text-rose-400 animate-pulse'
                 : 'bg-amber-500/15 border-amber-500/50 text-amber-400 hover:border-amber-400'
             ]"
           >
@@ -148,7 +148,7 @@
         <!-- 执行指令主操作按钮 (独立分区留白 ml-2 · 加宽至 150px) -->
         <button 
           @click="execCmd"
-          class="min-h-[68px] h-[68px] min-w-[150px] px-7 bg-car-item border-2 border-car-accent rounded-2xl text-car-text font-black text-[19px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md shrink-0 active:scale-95 ml-2"
+          class="min-h-[68px] h-[68px] min-w-[150px] px-7 bg-car-item border-2 border-car-accent rounded-2xl text-car-text font-black text-[19px] cursor-pointer hover:border-car-accent shadow-md shrink-0 active:scale-95 ml-2"
         >
           执行指令
         </button>

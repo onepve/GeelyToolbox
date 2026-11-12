@@ -83,7 +83,7 @@
           <button 
             v-if="!isDownloading && !isInstalledLaunched"
             @click="startUpgrade"
-            class="h-[54px] px-8 rounded-xl bg-car-item border-2 border-car-accent text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md transition-all"
+            class="h-[54px] px-8 rounded-xl bg-car-item border-2 border-car-accent text-car-text font-black text-[18px] cursor-pointer hover:border-car-accent shadow-md transition-all"
           >
             立即下载升级
           </button>
@@ -110,7 +110,7 @@
           <button 
             v-else-if="isInstalledLaunched"
             @click="relaunchInstall"
-            class="h-[54px] px-8 rounded-xl bg-car-item border-2 border-emerald-500 text-emerald-400 font-black text-[17px] cursor-pointer hover:border-emerald-400 ring-2 ring-emerald-500/20 shadow-md transition-all"
+            class="h-[54px] px-8 rounded-xl bg-car-item border-2 border-emerald-500 text-emerald-400 font-black text-[17px] cursor-pointer hover:border-emerald-400 shadow-md transition-all"
           >
             重新调起安装
           </button>

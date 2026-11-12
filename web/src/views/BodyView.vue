@@ -12,7 +12,7 @@
         :class="[
           'rounded-3xl border-2 px-5 py-4 flex items-center justify-between cursor-pointer select-none transition-all duration-150 active:scale-[0.995]',
           store.vehicleAuto.voice_master_switch
-            ? 'bg-car-item border-car-accent shadow-md'
+            ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
             : 'bg-car-card border-car-border shadow-sm'
         ]"
       >
@@ -146,7 +146,7 @@
         <button
           type="button"
           @click="openModal('frameLearning', { ts: Date.now() })"
-          class="w-full min-h-[64px] rounded-2xl bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25 font-black text-[17px] cursor-pointer shadow-md hover:border-car-border-light transition-all active:scale-[0.99]"
+          class="w-full min-h-[64px] rounded-2xl bg-car-item border-2 border-car-accent text-car-text font-black text-[17px] cursor-pointer shadow-md hover:border-car-border-light transition-all active:scale-[0.99]"
         >
           开始观察报文数值
         </button>

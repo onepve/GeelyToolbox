@@ -28,13 +28,13 @@
         <div class="flex items-center space-x-3 shrink-0">
           <button 
             @click="refreshApps"
-            class="h-[50px] px-6 rounded-xl bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-md transition-all whitespace-nowrap flex items-center justify-center active:scale-95"
+            class="h-[50px] px-6 rounded-xl bg-car-card border border-car-border/70 hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-md transition-all whitespace-nowrap flex items-center justify-center active:scale-95"
           >
             刷新清单
           </button>
           <button 
             @click="openModal('cleanDownload')"
-            class="h-[50px] px-6 rounded-xl bg-car-card border-2 border-car-border hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-md transition-all flex items-center justify-center whitespace-nowrap active:scale-95"
+            class="h-[50px] px-6 rounded-xl bg-car-card border border-car-border/70 hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-md transition-all flex items-center justify-center whitespace-nowrap active:scale-95"
           >
             <span>清理下载目录</span>
           </button>
@@ -57,10 +57,10 @@
             :key="cat.id"
             @click="currentCategory = cat.id"
             :class="[
-              'h-[50px] px-6 rounded-xl font-black text-[15.5px] cursor-pointer transition-all whitespace-nowrap shadow-md flex items-center justify-center active:scale-95',
+              'h-[50px] px-6 rounded-xl font-black text-[15.5px] cursor-pointer transition-all whitespace-nowrap flex items-center justify-center active:scale-95',
               currentCategory === cat.id 
-                ? 'bg-car-card border-2 border-car-accent text-car-text shadow-lg' 
-                : 'bg-car-card text-car-text/80 border-2 border-car-border hover:border-car-border-light hover:text-car-text'
+                ? 'bg-car-accent/20 text-car-accent shadow-sm' 
+                : 'bg-car-card text-car-text/80 hover:text-car-text'
             ]"
           >
             {{ cat.name }}

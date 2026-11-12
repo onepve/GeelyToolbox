@@ -266,7 +266,7 @@
                   :class="[
                     'min-h-[50px] rounded-lg border-2 font-mono text-[12px] font-bold cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     isQuickDiscountActive(editingRecord, d.val)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
                       : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
@@ -278,7 +278,7 @@
                   :class="[
                     'min-h-[50px] rounded-lg border-2 text-[12px] cursor-pointer transition-all flex flex-col items-center justify-center shadow-sm select-none px-1',
                     isCustomDiscountActive(editingRecord)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
                       : (activeField === 'discount'
                           ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
                           : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent')
@@ -412,7 +412,7 @@
                   :class="[
                     'min-h-[50px] rounded-xl border-2 font-mono text-[15px] font-black cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     editingRecord.fuel_type === f
-                      ? 'border-car-accent bg-car-accent-light text-car-accent ring-1 ring-car-accent/30'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent'
                       : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
@@ -478,7 +478,7 @@
                   :class="[
                     'min-h-[50px] rounded-xl border-2 font-bold text-[13.5px] cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     editingRecord.gas_station === st
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
                       : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
@@ -510,7 +510,7 @@
                     :class="[
                       'w-full min-h-[50px] rounded-xl border-2 text-[13px] font-black cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                       editingRecord.province === prov
-                        ? 'border-car-accent bg-car-accent-light text-car-accent ring-1 ring-car-accent/30'
+                        ? 'border-car-accent bg-car-accent-light text-car-accent'
                         : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                     ]"
                   >
@@ -563,7 +563,7 @@
                   :class="[
                     'min-h-[50px] rounded-lg border-2 text-[12.5px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(editingRecord, tag)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
                       : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
@@ -856,7 +856,7 @@
                   :class="[
                     'min-h-[50px] rounded-lg border-2 font-mono text-[12px] font-bold cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     isQuickDiscountActive(newRecord, d.val)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
                       : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
@@ -868,7 +868,7 @@
                   :class="[
                     'min-h-[50px] rounded-lg border-2 text-[12px] cursor-pointer transition-all flex flex-col items-center justify-center shadow-sm select-none px-1',
                     isCustomDiscountActive(newRecord)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
                       : (activeField === 'discount'
                           ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
                           : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent')
@@ -1000,7 +1000,7 @@
                   :class="[
                     'min-h-[50px] rounded-xl border-2 font-mono text-[15px] font-black cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     newRecord.fuel_type === f
-                      ? 'border-car-accent bg-car-accent-light text-car-accent ring-1 ring-car-accent/30'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent'
                       : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
@@ -1066,7 +1066,7 @@
                   :class="[
                     'min-h-[50px] rounded-xl border-2 font-bold text-[13.5px] cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     newRecord.gas_station === st
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
                       : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >
@@ -1098,7 +1098,7 @@
                     :class="[
                       'w-full min-h-[50px] rounded-xl border-2 text-[13px] font-black cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                       newRecord.province === prov
-                        ? 'border-car-accent bg-car-accent-light text-car-accent ring-1 ring-car-accent/30'
+                        ? 'border-car-accent bg-car-accent-light text-car-accent'
                         : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
                     ]"
                   >
@@ -1151,7 +1151,7 @@
                   :class="[
                     'min-h-[50px] rounded-lg border-2 text-[12.5px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(newRecord, tag)
-                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black ring-1 ring-car-accent/30'
+                      ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
                       : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
                   ]"
                 >

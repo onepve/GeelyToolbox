@@ -42,7 +42,7 @@
               ? 'bg-car-item border-2 border-car-border text-car-sub opacity-60 cursor-not-allowed'
               : (confirmData?.isDanger 
                   ? 'bg-rose-500/20 border-2 border-rose-500 text-rose-500 hover:bg-rose-500/30 cursor-pointer'
-                  : 'bg-car-item border-2 border-car-accent text-car-text ring-2 ring-car-accent/25 cursor-pointer')
+                  : 'bg-car-item border-2 border-car-accent text-car-text cursor-pointer')
           ]"
         >
           {{ countdownLeft > 0 ? `请仔细阅读 (${countdownLeft}s)` : (confirmData?.confirmText || (confirmData?.showCancel === false ? '我知道了' : '确认执行')) }}

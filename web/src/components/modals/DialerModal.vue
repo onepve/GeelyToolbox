@@ -10,7 +10,7 @@
       <!-- 核心双轨暗码展示 -->
       <div class="flex space-x-4">
         <!-- 主算法 (+10) 缤越COOL首选 -->
-        <div class="flex-1 bg-car-item border-2 border-car-accent rounded-2xl p-5 flex flex-col space-y-2 ring-2 ring-car-accent/20">
+        <div class="flex-1 bg-car-item border-2 border-car-accent rounded-2xl p-5 flex flex-col space-y-2">
           <div class="flex items-center justify-between">
             <span class="text-[17px] font-black text-car-text">主算法 (+10 模式)</span>
             <span class="text-[12px] px-2 py-0.5 rounded bg-car-card text-car-accent font-extrabold border border-car-accent">
@@ -46,7 +46,7 @@
       <!-- 操作按钮 -->
       <button 
         @click="openPhoneDialer"
-        class="w-full min-h-[66px] bg-car-item border-2 border-car-accent rounded-2xl text-car-text font-black text-[20px] cursor-pointer hover:border-car-accent shadow-lg ring-2 ring-car-accent/20"
+        class="w-full min-h-[66px] bg-car-item border-2 border-car-accent rounded-2xl text-car-text font-black text-[20px] cursor-pointer hover:border-car-accent shadow-lg"
       >
         打开车机电话拨号盘
       </button>

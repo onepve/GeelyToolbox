@@ -43,7 +43,7 @@
           </button>
           <button 
             @click="startCapture"
-            class="min-h-[58px] px-8 bg-car-item border-2 border-amber-500/80 rounded-xl text-amber-400 font-black text-[17px] cursor-pointer hover:bg-amber-500/20 ring-2 ring-amber-500/30 shadow-md flex items-center"
+            class="min-h-[58px] px-8 bg-car-item border-2 border-amber-500/80 rounded-xl text-amber-400 font-black text-[17px] cursor-pointer hover:bg-amber-500/20 shadow-md flex items-center"
           >
             已确认运行过 · 立即抓取
           </button>
@@ -90,7 +90,7 @@
             </button>
             <button 
               @click="copyUrl(captureResult.url)"
-              class="min-h-[54px] px-8 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md flex items-center"
+              class="min-h-[54px] px-8 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[17px] cursor-pointer hover:border-car-accent shadow-md flex items-center"
             >
               一键复制下载直链
             </button>

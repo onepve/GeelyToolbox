@@ -43,7 +43,7 @@
             :class="[
               'h-[52px] px-3 rounded-2xl font-black text-[14px] cursor-pointer transition-all border-2 flex items-center justify-center space-x-1.5 shadow-sm whitespace-nowrap min-w-0',
               item.pkg === currentPrimaryPkg
-                ? 'bg-car-item border-car-accent text-car-accent shadow-md ring-2 ring-car-accent/20'
+                ? 'bg-car-item border-car-accent text-car-accent shadow-md'
                 : 'bg-car-card border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
             ]"
           >

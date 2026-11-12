@@ -59,7 +59,7 @@
 
             <button 
               @click="importZip(zip.name)"
-              class="h-[52px] px-6 bg-car-item border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl hover:border-car-accent ring-2 ring-car-accent/20 cursor-pointer shadow-md shrink-0 transition-all"
+              class="h-[52px] px-6 bg-car-item border-2 border-car-accent text-car-text font-black text-[16px] rounded-xl hover:border-car-accent cursor-pointer shadow-md shrink-0 transition-all"
             >
               一键解压导入
             </button>

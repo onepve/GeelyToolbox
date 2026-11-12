@@ -29,7 +29,7 @@
       <!-- 主操作：注入 -->
       <button
         @click="startWizard"
-        class="w-full min-h-[76px] p-4 rounded-2xl bg-car-item border-2 border-car-accent cursor-pointer hover:border-car-accent shadow-lg ring-2 ring-car-accent/20 flex flex-col items-center justify-center text-center"
+        class="w-full min-h-[76px] p-4 rounded-2xl bg-car-item border-2 border-car-accent cursor-pointer hover:border-car-accent shadow-lg flex flex-col items-center justify-center text-center"
       >
         <span class="text-[20px] font-black text-car-text">选择 APK 并注入兔子主题</span>
         <span class="text-[14px] font-bold text-car-sub mt-1">调起系统文件选择器，选中后自动伪装注入本车</span>

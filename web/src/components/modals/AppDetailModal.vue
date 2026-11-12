@@ -84,7 +84,7 @@
           <template v-else-if="currentTask?.status === 'paused'">
             <button 
               @click="resumeDownload"
-              class="min-h-[66px] px-8 bg-car-item border-2 border-car-accent text-car-text hover:border-car-accent rounded-2xl font-black text-[19px] cursor-pointer shadow-md ring-2 ring-car-accent/20 transition-all flex items-center"
+              class="min-h-[66px] px-8 bg-car-item border-2 border-car-accent text-car-text hover:border-car-accent rounded-2xl font-black text-[19px] cursor-pointer shadow-md transition-all flex items-center"
             >
                继续下载
             </button>
@@ -104,7 +104,7 @@
                 'min-h-[66px] rounded-2xl font-black transition-all flex items-center cursor-pointer shadow-lg',
                 isMapApp
                   ? 'px-6 bg-car-item border border-car-border text-car-text hover:border-car-border-light text-[17px]'
-                  : 'px-10 bg-car-item border-2 border-emerald-500 text-emerald-400 hover:border-emerald-400 text-[20px] ring-2 ring-emerald-500/20'
+                  : 'px-10 bg-car-item border-2 border-emerald-500 text-emerald-400 hover:border-emerald-400 text-[20px]'
               ]"
             >
                {{ isMapApp ? '尝试直接覆盖安装' : '立即安装应用' }}
@@ -121,7 +121,7 @@
           <template v-else>
             <button 
               @click="handleInstallAction"
-              class="min-h-[66px] px-10 bg-car-item border-2 border-car-accent rounded-2xl text-car-text font-black text-[21px] cursor-pointer hover:border-car-accent shadow-lg ring-2 ring-car-accent/20 transition-all"
+              class="min-h-[66px] px-10 bg-car-item border-2 border-car-accent rounded-2xl text-car-text font-black text-[21px] cursor-pointer hover:border-car-accent shadow-lg transition-all"
             >
               {{ actionButtonText }}
             </button>

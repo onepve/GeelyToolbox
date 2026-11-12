@@ -1,9 +1,16 @@
 <template>
+  <!-- 激活态不再把整圈边框染成金色：金色只留左侧一道 4px 竖条 + 状态点。
+       整圈金边会让一屏里同时亮七八个金框，反而看不出哪个是关键。 -->
   <div :class="[
-    'rounded-3xl border-2 shadow-2xl transition-all bg-car-card flex flex-col justify-between',
+    'rounded-3xl border-2 shadow-2xl transition-all bg-car-card flex flex-col justify-between relative overflow-hidden',
     dense ? 'p-3.5 min-h-0' : 'p-5 min-h-[170px]',
-    active ? 'border-car-accent' : 'border-car-border'
+    'border-car-border'
   ]">
+    <span
+      v-if="active"
+      aria-hidden="true"
+      class="absolute left-0 top-0 bottom-0 w-[4px] bg-car-accent pointer-events-none"
+    ></span>
     <!-- 头部标题与说明：内嵌在卡片顶端 (仅在声明 title 或 header slot 时渲染) -->
     <div v-if="title || $slots.header" :class="['flex flex-col border-b border-car-border/60', dense ? 'pb-2 mb-2.5' : 'pb-4 mb-4']">
       <div class="flex items-center justify-between mb-1">

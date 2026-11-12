@@ -59,7 +59,7 @@
             :class="[
               'h-[52px] px-5 rounded-xl border-2 font-black text-[15.5px] cursor-pointer transition-all shadow-sm flex items-center',
               useBetaChannel 
-                ? 'bg-amber-500/20 border-amber-500 text-amber-400 ring-2 ring-amber-500/30' 
+                ? 'bg-amber-500/20 border-amber-500 text-amber-400' 
                 : 'bg-car-item border-car-border text-car-sub'
             ]"
           >
@@ -137,7 +137,7 @@
           </button>
           <button 
             @click="checkUpdate"
-            class="min-h-[54px] px-6 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[16.5px] cursor-pointer hover:border-car-accent ring-2 ring-car-accent/20 shadow-md"
+            class="min-h-[54px] px-6 bg-car-item border-2 border-car-accent rounded-xl text-car-text font-black text-[16.5px] cursor-pointer hover:border-car-accent shadow-md"
           >
             检查版本更新
           </button>

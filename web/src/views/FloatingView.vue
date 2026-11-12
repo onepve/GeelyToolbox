@@ -45,9 +45,9 @@
             <button 
               @click="setFloatingMode('battery')"
               :class="[
-                'h-[58px] p-2 rounded-xl font-black text-[15.5px] border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
+                'h-[58px] p-2 rounded-xl font-black text-[15.5px] border border-car-border/70 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
                 store.deviceInfo.floating_display_mode === 'battery' || (!store.deviceInfo.floating_display_mode)
-                  ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20 shadow-md' 
+                  ? 'bg-car-item border-car-accent text-car-text shadow-md' 
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
               ]"
             >
@@ -56,9 +56,9 @@
             <button 
               @click="setFloatingMode('code')"
               :class="[
-                'h-[58px] p-2 rounded-xl font-black text-[15.5px] border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
+                'h-[58px] p-2 rounded-xl font-black text-[15.5px] border border-car-border/70 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
                 store.deviceInfo.floating_display_mode === 'code'
-                  ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20 shadow-md' 
+                  ? 'bg-car-item border-car-accent text-car-text shadow-md' 
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
               ]"
             >
@@ -67,9 +67,9 @@
             <button 
               @click="setFloatingMode('name')"
               :class="[
-                'h-[58px] p-2 rounded-xl font-black text-[15.5px] border-2 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
+                'h-[58px] p-2 rounded-xl font-black text-[15.5px] border border-car-border/70 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
                 store.deviceInfo.floating_display_mode === 'name'
-                  ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20 shadow-md' 
+                  ? 'bg-car-item border-car-accent text-car-text shadow-md' 
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
               ]"
             >
@@ -122,11 +122,11 @@
             <div class="flex items-center space-x-2.5">
               <button 
                 @click="adjustSeconds(-15)"
-                class="h-[52px] px-5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border/70 hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
               >-15s</button>
               <button 
                 @click="adjustSeconds(-5)"
-                class="h-[52px] px-5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border/70 hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
               >-5s</button>
             </div>
             <div class="flex items-baseline space-x-2 px-4">
@@ -136,11 +136,11 @@
             <div class="flex items-center space-x-2.5">
               <button 
                 @click="adjustSeconds(5)"
-                class="h-[52px] px-5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border/70 hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
               >+5s</button>
               <button 
                 @click="adjustSeconds(15)"
-                class="h-[52px] px-5 rounded-xl bg-car-card border-2 border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border/70 hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
               >+15s</button>
             </div>
           </div>
@@ -152,9 +152,9 @@
               :key="p.value"
               @click="setPolicy(p.value)"
               :class="[
-                'h-[50px] px-1 rounded-xl border-2 font-black text-[14px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center space-x-1.5',
+                'h-[50px] px-1 rounded-xl border border-car-border/70 font-black text-[14px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center space-x-1.5',
                 ssPolicy === p.value
-                  ? 'bg-car-item border-car-accent text-car-text ring-2 ring-car-accent/20'
+                  ? 'bg-car-item border-car-accent text-car-text'
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
               ]"
             >

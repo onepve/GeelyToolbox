@@ -4,7 +4,7 @@
     :class="[
       'rounded-3xl border-2 p-5 flex flex-col justify-between transition-all duration-150 cursor-pointer select-none active:scale-[0.985]',
       active
-        ? 'bg-car-item border-car-accent shadow-md'
+        ? 'bg-car-item border-car-border border-solid border-l-[5px] border-l-car-accent shadow-md'
         : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
     ]"
   >
