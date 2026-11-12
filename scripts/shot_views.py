@@ -33,13 +33,50 @@ VIEWS = [("link", "行车联动"), ("body", "车载声音"), ("fuel", "行程油
          ("store", "应用生态"), ("system", "系统设置")]
 
 
+def _find_browser():
+    """优先车机同款内核（Chromium 66），找不到才回退本机 Edge/Chrome。
+
+    为什么必须优先 66：本机 Edge 是 120+，flex 布局、:is()/:where()、flex gap、
+    background-clip 等行为全都不一样 —— 同一份产物在 Edge 上好看、上车就塌，
+    历史上每次出图都要上车纠偏。出图必须与车机同内核，效果图才有参考价值。
+    CHROME66 环境变量优先（CI 里由流水线下载快照后注入）。
+    """
+    for p in [os.environ.get("CHROME66"),
+              "/data/tmp/chromium66/x/chrome-linux/chrome",
+              "/usr/bin/microsoft-edge", "/usr/bin/google-chrome", "/usr/bin/chromium"]:
+        if p and os.path.exists(p):
+            return p
+    raise RuntimeError("找不到任何可用浏览器（CHROME66 / Chromium66 / Edge / Chrome）")
+
+
+def _browser_env():
+    env = dict(os.environ)
+    fc = "/data/tmp/chromium66/fc/fonts.conf"
+    if os.path.exists(fc):
+        env["FONTCONFIG_FILE"] = fc
+    else:
+        env.pop("FONTCONFIG_FILE", None)
+    return env
+
+
 def start_edge():
     subprocess.run(["pkill", "-f", f"--remote-debugging-port={PORT}"], stderr=subprocess.DEVNULL)
     time.sleep(0.5)
-    proc = subprocess.Popen(["/usr/bin/microsoft-edge", "--headless=new",
-                             f"--remote-debugging-port={PORT}", "--no-sandbox", "--disable-gpu",
-                             f"--window-size={VW},{VH}", "--hide-scrollbars", HTML],
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    browser = _find_browser()
+    is66 = "chromium66" in browser or "cr66" in browser
+    # 临时目录与 profile 必须落在可写持久盘：Chromium 66 若用默认 profile 会被锁冲突秒退，
+    # 若 stdout 指向 DEVNULL 也会秒退（老内核的已知坑，见 audit_full_ui.py）。
+    prof = "/data/tmp/shotprof"
+    subprocess.run(["rm", "-rf", prof], stderr=subprocess.DEVNULL)
+    os.makedirs(OUT, exist_ok=True)
+    logf = open("/data/tmp/shot_views_browser.log", "wb")
+    args = [browser,
+            "--headless" if is66 else "--headless=new",
+            f"--remote-debugging-port={PORT}", "--no-sandbox", "--disable-gpu",
+            f"--user-data-dir={prof}",
+            f"--window-size={VW},{VH}", "--hide-scrollbars", HTML]
+    proc = subprocess.Popen(args, stdout=logf, stderr=logf, env=_browser_env())
+    print(f"浏览器={browser} 视口={VW}x{VH}")
     for _ in range(40):
         try:
             urllib.request.urlopen(f"http://127.0.0.1:{PORT}/json/list", timeout=1).read()
@@ -47,7 +84,8 @@ def start_edge():
         except Exception:
             time.sleep(0.4)
     proc.terminate()
-    raise RuntimeError("Edge 未就绪")
+    raise RuntimeError("浏览器未就绪，日志尾部：\n"
+                       + open("/data/tmp/shot_views_browser.log", errors="replace").read()[-1500:])
 
 
 async def run():

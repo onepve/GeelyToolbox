@@ -31,6 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PALETTE = ROOT / "web/src/theme/palette.js"
 APP_VUE = ROOT / "web/src/App.vue"
 VITE_CFG = ROOT / "web/vite.config.js"
+PROD_HTML = ROOT / "app/src/main/assets/toolbox_ui.html"
 
 violations = []
 
@@ -355,6 +356,74 @@ for m in re.finditer(r"conic-gradient", app_src):
 # 7.7 禁用 @property：Chrome 85+，同样静默失效
 if "@property" in app_src:
     fail("@property 需要 Chrome 85+，车机为 Chrome 66，自定义属性无法注册动画。")
+
+
+# ---------------------------------------------------------------------------
+# 8) 车机内核「通透配方」契约（Chromium 66 实测结论）
+#
+#    背景：车主长期反馈「效果图好看、上车没有通透感」。
+#    真因是车机 WebView 为 Chrome 66，backdrop-filter 完全不存在 ——
+#    网上 glassmorphism 教程 100% 依赖它，搬过来必然一场空。
+#    唯一可行路线是「受光渐变 + 内高光 + 分层投影 + 噪点颗粒」，
+#    且白天/夜间必须分开写（白天卡比背景亮 = 发白割裂；夜间卡比背景暗 = 糊成一片）。
+#    下面把这条配方锁死，防止日后被"简化"回去。
+# ---------------------------------------------------------------------------
+
+# 8.1 卡片必须有受光渐变（background-image 纵向提亮），否则退回纯色平面
+card_rule = re.search(r"\.bg-car-card\s*\{([^}]*)\}", app_src)
+if not card_rule:
+    fail("App.vue 找不到 .bg-car-card 规则 —— 卡片质感真源丢失。")
+else:
+    if "background-image" not in card_rule.group(1):
+        fail(
+            "卡片 .bg-car-card 缺少受光渐变 background-image —— "
+            "车机无 backdrop-filter，去掉这层卡片会退回纯色平面，通透感彻底消失。"
+        )
+
+# 8.2 昼夜必须各有独立配方（不能一套参数走天下）
+for scope, label in ((r"html\.light\s+\.bg-car-card", "白天"),
+                     (r"html:not\(\.light\)\s+\.bg-car-card", "夜间")):
+    if not re.search(scope + r"\s*\{", app_src):
+        fail(
+            "App.vue 缺少 %s 专属的 .bg-car-card 规则 —— "
+            "昼夜必须分档：白天卡比背景亮会发白割裂，夜间卡比背景暗会糊成一片。" % label
+        )
+
+# 8.3 噪点层必须存在，且必须 pointer-events:none（否则挡住卡片点击）
+if "feTurbulence" not in app_src:
+    fail(
+        "App.vue 丢失了 feTurbulence 噪点层 —— 这是 Chrome 66 上最接近真玻璃的"
+        "唯一手段（backdrop-filter 不可用），删掉卡片会退回塑料贴片。"
+    )
+after_rule = re.search(r"\.bg-car-card::after\s*\{([^}]*)\}", app_src)
+if not after_rule:
+    fail("App.vue 找不到 .bg-car-card::after 噪点层规则。")
+else:
+    body = after_rule.group(1)
+    if "pointer-events" not in body or "none" not in body:
+        fail(
+            "噪点层 .bg-car-card::after 缺少 pointer-events:none —— "
+            "会盖住整张卡片拦截点击，卡片上的按钮全部点不动。"
+        )
+    # 严禁用 left/top/right/bottom 四连：Vite(esbuild) 会把它压成 inset:0，
+    # 而 inset 简写要 Chrome 87+，车机 66 静默忽略 → 噪点层缩成 0 尺寸，
+    # 表现是"代码在、样式没了"，且本地 Edge 上完全正常（已真实踩到）。
+    if re.search(r"right\s*:\s*0", body) and re.search(r"bottom\s*:\s*0", body):
+        fail(
+            "噪点层用了 left/top/right/bottom 四连 —— 构建时会被压缩成 "
+            "`inset:0`（Chrome 87+），车机 66 静默忽略后噪点层缩成 0 尺寸。"
+            "必须改用 width:100% / height:100%。"
+        )
+
+# 8.4 产物里不得残留 inset 简写（构建后的兜底复核）
+prod = read(PROD_HTML)
+if prod and re.search(r"(?<![-\w])inset\s*:", prod):
+    fail(
+        "构建产物里出现 inset 简写（Chrome 87+，车机 66 静默忽略）。"
+        "常见来源：源码写了 left/top/right/bottom 被压缩器自动合并，"
+        "或直接写了 inset:0。必须改用 left/top + width/height。"
+    )
+
 
 
 # ---------------------------------------------------------------------------

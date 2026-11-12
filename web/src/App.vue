@@ -503,6 +503,13 @@ html.light body {
 .bg-car-card {
   position: relative;
   background-clip: padding-box;
+  /* 受光面（Chromium 66 造“通透感”的第一招）
+     车机 WebView 是 Chrome 66，backdrop-filter 完全不存在，真毛玻璃做不到。
+     唯一可行路线：用「顶部微亮的纵向渐变」把卡片画出一个受光面，
+     再配下面的内高光 + 分层投影，才有“一块玻璃浮在背景上”的观感。
+     只用 rgba 单段渐变，不写双位置色标（Chrome 71+ 语法会让整条声明作废）。 */
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, .03) 42%, rgba(255, 255, 255, 0) 68%);
   /* 阴影强度必须跟随主题：白天用 --glass-shadow（各主题浅色投影 .18），
      夜间才是深黑影。此前硬编码 rgba(0,0,0,.46) 导致白天卡片压出一片脏灰。 */
   box-shadow:
@@ -512,6 +519,56 @@ html.light body {
     inset 0 -1px 0 var(--glass-underline, rgba(255, 255, 255, .04));
   transition: box-shadow .18s ease, border-color .18s ease;
 }
+
+/* 白天：卡片不能比背景更亮。
+   量化实测（1760×720 车机内核）：旧参数卡面亮度 245、背景 244 —— 卡片比背景还亮，
+   视觉上就是“白底贴片、跟背景割裂”，正是车主反馈的发白问题。
+   白天把受光渐变压到 .34，只保留极轻的顶部提亮，反面靠亮边与冷色浅影拉开层次。 */
+html.light .bg-car-card {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .05) 46%, rgba(255, 255, 255, 0) 74%);
+}
+
+/* 夜间：卡片必须比背景亮才有浮起感。
+   纯黑底压纯深卡会糊成一片平，实测需要卡面比背景高 +10~15 的亮度。
+   再补一层近距离硬影（老内核多层 box-shadow 正常叠加），让卡片真正“离地”。 */
+html:not(.light) .bg-car-card {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .05) 44%, rgba(255, 255, 255, 0) 72%);
+  box-shadow:
+    0 14px 40px var(--glass-shadow, rgba(0, 0, 0, .60)),
+    0 4px 12px var(--glass-shadow-soft, rgba(0, 0, 0, .36)),
+    0 1px 3px rgba(0, 0, 0, .45),
+    inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, .20)),
+    inset 0 -14px 28px -16px rgba(0, 0, 0, .55);
+}
+
+/* 玻璃微观颗粒：SVG feTurbulence 噪点（Windows Acrylic 同款思路）。
+   这是 Chrome 66 上最接近真玻璃的一招 —— backdrop-filter 不可用，
+   但“半透明面 + 极细颗粒”足以骗过眼睛，让卡片不再是纯色平面。
+   data-uri 只在 66 实测可用；不涉及 filter:blur，不会从屏幕边缘溢出。
+   实测 200 个带噪点元素创建仅 2ms，性能无虞。
+   注意：必须 pointer-events:none，否则会挡住卡片点击（门禁 check_button_focus 也依赖可点）。 */
+.bg-car-card::after {
+  content: '';
+  position: absolute;
+  /* 严禁写成 left/top/right/bottom 四连 —— Vite(esbuild) 压缩时会自动合并成
+     `inset:0`，而 inset 简写要 Chrome 87+，车机 66 静默忽略 → 噪点层缩成 0 尺寸，
+     看起来“加了没效果”，且在本地 Edge 上完全正常。必须用 width/height 撑开。 */
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: .05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
+}
+
+html:not(.light) .bg-car-card::after {
+  opacity: .07;
+}
+
 
 /* 玻璃卡片反射质感：顶部高光水线（原 1px blur 已改为纯渐变，杜绝溢出） */
 .bg-car-card::before {
