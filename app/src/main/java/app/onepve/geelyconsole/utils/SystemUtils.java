@@ -1211,6 +1211,11 @@ public class SystemUtils {
     //    与应用身份强绑定，属于必须抹除的设备标识；旧版只处理了 getXDSN:/deviceID: 两种写法
     private static final java.util.regex.Pattern PATTERN_DEVICE_FINGERPRINT = java.util.regex.Pattern.compile(
             "(?i)(\"?(?:ecarx_device_id|distinct_id|anonymous_id|\\$device_id|device_id|pcode)\"?\\s*[:=]\\s*\"?)([A-Za-z0-9_\\-]{6,})");
+    // ④ 车机 IMEI（15 位 86 开头）与埋点设备 UID：430884 包实测 T-Box 串号 868337038618101、
+    //    "uid.string":"B0928A74...|0" 全部裸奔。这两项能直接定位到具体一台车，比 VIN 还敏感。
+    private static final java.util.regex.Pattern PATTERN_IMEI = java.util.regex.Pattern.compile("\\b86[0-9]{13}\\b");
+    private static final java.util.regex.Pattern PATTERN_TRACK_UID = java.util.regex.Pattern.compile(
+            "(?i)(\"uid\.string\"\\s*:\\s*\")[^\"]+");
     private static final java.util.regex.Pattern PATTERN_MAC = java.util.regex.Pattern.compile(
             "\\b(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}\\b");
     private static final java.util.regex.Pattern PATTERN_ADDRESS = java.util.regex.Pattern.compile("(?i)(address|geofullAddress|formatedAddress|poiName)\\s*[:=]\\s*['\"][^'\"]*['\"]");
@@ -1384,6 +1389,13 @@ public class SystemUtils {
         // MAC 物理地址脱敏（蓝牙/Wi-Fi 网卡地址可用于设备定位）
         if (clean.contains(":")) {
             clean = PATTERN_MAC.matcher(clean).replaceAll("[REDACTED_MAC]");
+        }
+        // IMEI / 埋点设备 UID 兜底：不依赖键名，凡是 15 位 86 开头串号一律抹除
+        if (clean.contains("86") && clean.length() > 14) {
+            clean = PATTERN_IMEI.matcher(clean).replaceAll("[REDACTED_IMEI]");
+        }
+        if (clean.contains("uid.string")) {
+            clean = PATTERN_TRACK_UID.matcher(clean).replaceAll("$1[REDACTED_DEVICE_ID]");
         }
         return clean;
     }
@@ -1893,27 +1905,38 @@ public class SystemUtils {
      */
     private static double measureLogSpan(File all) {
         if (all == null || !all.exists()) return 0.0;
-        String first = null, last = null;
-        boolean inMain = false;
+        String first = null, last = null, minStamp = null, maxStamp = null;
+        boolean inMain = false, sawMarker = false;
+        java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat("MM-dd HH:mm:ss.SSS", java.util.Locale.US);
         try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.FileReader(all))) {
             String line;
             while ((line = r.readLine()) != null) {
                 if (line.contains("beginning of")) {
                     // 只认 main 段，system/crash 段的时间跨度口径不同，混在一起没意义
+                    sawMarker = true;
                     inMain = line.trim().endsWith("main");
                     continue;
                 }
-                if (!inMain || line.length() < 18) continue;
+                if (line.length() < 18) continue;
                 if (line.charAt(2) != '-' || line.charAt(5) != ' ') continue;
                 String stamp = line.substring(0, 18);
-                if (first == null) first = stamp;
-                last = stamp;
+                // 内存环形缓冲 dump 没有 "beginning of" 段标记；同时也可能因多次拼接而局部乱序，
+                // 所以除了首末行，再全程跟踪 min/max，避免把「抓早了」误判成「采集故障」。
+                if (!sawMarker || inMain) {
+                    if (first == null) first = stamp;
+                    last = stamp;
+                    // MM-dd HH:mm:ss.SSS 定长同格式，字符串比较等价于时间比较
+                    if (minStamp == null || stamp.compareTo(minStamp) < 0) minStamp = stamp;
+                    if (maxStamp == null || stamp.compareTo(maxStamp) > 0) maxStamp = stamp;
+                }
             }
         } catch (Throwable ignored) {}
         if (first == null || last == null) return 0.0;
         try {
-            java.text.SimpleDateFormat f = new java.text.SimpleDateFormat("MM-dd HH:mm:ss.SSS", java.util.Locale.US);
-            java.util.Date d1 = f.parse(first), d2 = f.parse(last);
+            // 优先用 min/max（对乱序免疫）；无乱序时与首末行结果一致
+            String s1 = minStamp != null ? minStamp : first;
+            String s2 = maxStamp != null ? maxStamp : last;
+            java.util.Date d1 = fmt.parse(s1), d2 = fmt.parse(s2);
             double span = (d2.getTime() - d1.getTime()) / 1000.0;
             if (span < 0) span += 86400.0;   // 跨零点
             return Math.round(span * 10.0) / 10.0;

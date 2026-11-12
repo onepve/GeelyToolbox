@@ -43,8 +43,6 @@ public class KeySignalRecorder {
     private static final Map<String, String> LAST_VALUE = new java.util.HashMap<>();
     private static final Map<String, Long> LAST_AT = new java.util.HashMap<>();
 
-    /** 同值去重窗口：避免多源报文串扰把同一状态重复记成两条 */
-    private static final long DEDUP_MS = 1200L;
 
     private static final java.text.SimpleDateFormat FMT =
             new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", java.util.Locale.CHINA);
@@ -84,7 +82,12 @@ public class KeySignalRecorder {
     }
 
     /**
-     * 记录一次状态变化。value 相同且距上次写入不足 DEDUP_MS 时静默丢弃。
+     * 记录一次状态变化。**只有状态真的变了才落盘**，同值心跳一律丢弃。
+     *
+     * 为什么不是「同值 1.2 秒内去重」：车门/尾门报文固定 3 秒一帧，1.2 秒窗口对它们等于没有，
+     * 430884 包实测有 112 条一模一样的「主驾=关 副驾=关 左后=关 右后=关」、112 条「尾门=关」、
+     * 106 条「挡位=D挡」，真正的开关门变化反而被这些心跳挤到 260 条上限之外被丢掉。
+     * 帧还活着的证据由 markDoorFrame 的原始报文抽样与统计行负责，不靠这里重复记同值。
      *
      * @param channel 通道名（用本类常量）
      * @param value   当前状态的可读描述，如 "主驾=开 副驾=关 左后=关 右后=关"
@@ -94,9 +97,9 @@ public class KeySignalRecorder {
         long now = System.currentTimeMillis();
         synchronized (CHANNELS) {
             String last = LAST_VALUE.get(channel);
-            Long lastAt = LAST_AT.get(channel);
-            if (last != null && last.equals(value) && lastAt != null && (now - lastAt) < DEDUP_MS) {
-                return;
+            if (last != null && last.equals(value)) {
+                LAST_AT.put(channel, now);
+                return;   // 状态没变，不占缓冲
             }
             LAST_VALUE.put(channel, value);
             LAST_AT.put(channel, now);

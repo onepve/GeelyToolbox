@@ -189,7 +189,7 @@ def evaluate(files):
     # 只留 latitude=/longitude= 一种写法等于没脱敏 —— 车主隐私一旦上传不可撤回。
     utils_src = files.get(JAVA+'utils/SystemUtils.java', '')
     for pat in (r'PATTERN_LOCATION_OBJ', r'PATTERN_LATLNG_SHORT', r'PATTERN_DEVICE_FINGERPRINT',
-                r'PATTERN_MAC', r'redactGpsCoord\('):
+                r'PATTERN_MAC', r'PATTERN_IMEI', r'PATTERN_TRACK_UID', r'redactGpsCoord\('):
         if not re.search(pat, utils_src):
             failures.append('log-desensitize-coverage:' + pat)
     # 重新抓取日志时必须立刻作废旧包的「已上传」状态，并禁止在上传按钮上继续点开旧弹窗
@@ -201,6 +201,25 @@ def evaluate(files):
         failures.append('log-reexport-clears-uploaded')
     if len(re.findall(r'@click="openUploadConfirm"[^>]*:disabled="isExporting"', logmodal, re.S)) < 1:
         failures.append('log-upload-button-disabled-while-exporting')
+    # 车身信号轨迹必须是「状态变了才记」：430884 包实测 112 条同值心跳把真实开关门挤出了 260 条上限
+    recorder = files.get(JAVA+'utils/KeySignalRecorder.java', '')
+    try:
+        rec_body = region(recorder, 'public static void record(String channel, String value)')
+    except ValueError:
+        rec_body = ''
+        failures.append('signal-recorder-missing')
+    if re.search(r'(now\s*-\s*lastAt)\s*<\s*DEDUP_MS', rec_body):
+        failures.append('signal-recorder-time-window-dedup-regressed')
+    if not re.search(r'last\.equals\(value\)\)\s*\{\s*\n\s*LAST_AT\.put', rec_body):
+        failures.append('signal-recorder-change-only-dedup')
+    # 日志跨度必须能兼容无 "beginning of" 段标记的内存环形缓冲 dump，否则 summary 恒为 0 被误判成采集故障
+    span_body = ''
+    try:
+        span_body = region(utils_src, 'private static double measureLogSpan(File all)')
+    except ValueError:
+        pass
+    if not re.search(r'!sawMarker\s*\|\|\s*inMain', span_body) or 'minStamp' not in span_body:
+        failures.append('log-span-marker-tolerant')
     return failures
 
 
