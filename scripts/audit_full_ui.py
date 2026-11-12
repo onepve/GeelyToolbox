@@ -16,29 +16,83 @@ import time
 import json
 import base64
 import asyncio
+import tempfile
 import subprocess
 import urllib.request
 import websockets
 
-MEDIA_DIR = "/home/onepve/hermes-media/audit"
+MEDIA_DIR = os.environ.get("AUDIT_MEDIA_DIR") or os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".audit_out"
+)
 os.makedirs(MEDIA_DIR, exist_ok=True)
 
-HTML_FILE = "file:///data/projects/GeelyToolbox/app/src/main/assets/toolbox_ui.html"
+# 产物路径按仓库自身定位，不能写死本机绝对路径（CI 上 /data/projects 不存在）
+_REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HTML_FILE = "file://" + os.path.join(_REPO, "app/src/main/assets/toolbox_ui.html")
 PORT = 9240
+
+# 车机真实 appBounds 1760x720（wm size 1920 减去右侧 160px 系统侧栏）。
+# 按 1920 出图会让卡片更宽松、标签不换行，与上车实测差别很大。
+SHOT_VW = os.environ.get("SHOT_VW", "1760")
+SHOT_VH = os.environ.get("SHOT_VH", "720")
+
+
+def _find_browser():
+    """按可用性挑浏览器：优先车机内核 Chromium 66 快照，其次本机 Edge/Chrome/Chromium。"""
+    cands = [
+        os.environ.get("CHROME66"),
+        "/data/tmp/chromium66/x/chrome-linux/chrome",
+        "/usr/bin/microsoft-edge",
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/chromium",
+    ]
+    for c in cands:
+        if c and os.path.exists(c):
+            return c
+    return None
+
+
+def _browser_env():
+    """Chromium 66 找不到默认字体时会 FATAL 秒退（Check failed: InitDefaultFont().），
+    必须给它一个可用的 fontconfig —— 本地自带 fonts.conf 映射到 Noto Sans CJK SC。"""
+    env = dict(os.environ)
+    fc = env.get("FONTCONFIG_FILE") or "/data/tmp/chromium66/fc/fonts.conf"
+    if os.path.exists(fc):
+        env["FONTCONFIG_FILE"] = fc
+    else:
+        env.pop("FONTCONFIG_FILE", None)
+    return env
+
 
 def start_edge():
     # 清理残留进程防止端口冲突
     subprocess.run(["pkill", "-f", f"--remote-debugging-port={PORT}"], stderr=subprocess.DEVNULL)
     time.sleep(0.5)
+    browser = _find_browser()
+    if not browser:
+        print("[SKIP] 未找到可用浏览器（Edge/Chrome/Chromium），跳过运行时视觉巡检")
+        return None
+    # 必须给独立 user-data-dir：默认 profile 有锁，残留实例会让新进程秒退，
+    # 表现为 DevTools 端口一直 connection refused。
+    # 另外 Chromium 66 不能把 stdout/stderr 指向 DEVNULL —— 会直接秒退；
+    # 且临时目录必须落在 /data 盘（scratch 目录会被守护进程回收，导致浏览器被 SIGTERM）。
+    base = os.environ.get("AUDIT_TMPDIR") or "/data/tmp"
+    os.makedirs(base, exist_ok=True)
+    work = tempfile.mkdtemp(prefix="audit-ui-", dir=base)
+    profile = os.path.join(work, "prof")
+    logf = open(os.path.join(work, "browser.log"), "wb")
     proc = subprocess.Popen([
-        "/usr/bin/microsoft-edge",
-        "--headless=new",
+        browser,
+        "--headless",
         f"--remote-debugging-port={PORT}",
         "--no-sandbox",
         "--disable-gpu",
-        "--window-size=1920,720",
+        "--hide-scrollbars",
+        f"--user-data-dir={profile}",
+        f"--window-size={SHOT_VW},{SHOT_VH}",
         HTML_FILE
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    ], stdout=logf, stderr=logf, env=_browser_env())
     
     # 轮询等待端口就绪，最长等待 10 秒
     start_t = time.time()
@@ -313,6 +367,8 @@ async def run_audit():
 
 if __name__ == "__main__":
     edge_proc = start_edge()
+    if edge_proc is None:
+        sys.exit(0)  # 无浏览器环境（纯静态 CI）：不算失败
     try:
         asyncio.run(run_audit())
     finally:
@@ -320,5 +376,8 @@ if __name__ == "__main__":
             edge_proc.terminate()
             edge_proc.wait(timeout=2)
         except Exception:
-            edge_proc.kill()
+            try:
+                edge_proc.kill()
+            except Exception:
+                pass
         subprocess.run(["pkill", "-f", f"--remote-debugging-port={PORT}"], stderr=subprocess.DEVNULL)
