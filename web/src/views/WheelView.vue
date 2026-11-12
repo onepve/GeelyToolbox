@@ -1,14 +1,10 @@
 <template>
-  <div class="flex flex-col space-y-4 flex-1 min-h-0 min-w-0">
+  <div class="flex flex-col space-y-4">
     <!-- 顶部车规二级分段胶囊：一页全景掌控 (支持外部统一接管隐藏) -->
     <SubTabs v-if="!hideSubTabs" :tabs="wheelTabs" v-model="activeTab" />
 
     <!-- Tab 1: 按键独立映射 (v-if 彻底杜绝幽灵重叠) -->
-    <!-- 【铺满铁律 v1.8.33.15】旧版这里 pb-28(112px) 纯浪费：内容只有两排卡片，
-         卡片到 534px 就结束，而可视区到 700px，底部整整空出 166px 一片黑。
-         现在：去掉 pb-28，外层改为 flex 纵向铺满，两排卡片用 flex-1 平分剩余高度，
-         格子 min-h 保底不压触控高度（下拉仍 56px、卡片不缩），只把多余的空间还给卡片。 -->
-    <div v-if="activeTab === 'keys'" class="flex flex-col flex-1 min-h-0 min-w-0 space-y-4">
+    <div v-if="activeTab === 'keys'" class="flex flex-col space-y-4 pb-28">
       
       <!-- 常驻：方控接管总开关 + 三个分段（常用按键 / 按键学习 / 方控诊断）
            2026-11 改版：原来「方控响应与冲突体检」是横跨两列的独立大卡，按钮文字超长，
@@ -64,9 +60,9 @@
 
 
       <!-- 模式 A：常用按键（原车 7 个常用实体键，一键一卡，网格排布） -->
-      <div v-if="mappingMode === 'preset'" class="flex flex-col flex-1 min-h-0 min-w-0">
-        <!-- 双列规整网格：一排两卡，工整对齐，共两排；吃满剩余高度铺到屏幕底部 -->
-        <div class="grid grid-cols-3 flex-1 min-h-0 min-w-0" style="grid-column-gap:12px; grid-row-gap:12px;">
+      <div v-if="mappingMode === 'preset'" class="flex flex-col space-y-4">
+        <!-- 双列规整网格：一排两卡，工整对齐，共三排 -->
+        <div class="grid grid-cols-3 gap-3">
         <!-- ① 右方向盘主页/返回键 -->
         <WheelGestureCard
           class="!mb-0"

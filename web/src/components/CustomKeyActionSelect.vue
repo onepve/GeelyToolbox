@@ -14,10 +14,9 @@
     </button>
 
     <!-- 下拉面板：车规双列磁贴浮层 (完全接入主题实底 --bg-modal) -->
-    <transition name="drop">
       <div
         v-if="open"
-        class="absolute z-50 w-[480px] max-w-[90vw] overflow-y-auto rounded-2xl border-2 border-car-border bg-[var(--bg-modal)] shadow-2xl p-2.5 space-y-2"
+        class="absolute z-50 w-[480px] max-w-[90vw] overflow-y-auto rounded-2xl border-2 border-car-border bg-[var(--bg-modal)] shadow-lg p-2.5"
         :class="[dropUp ? 'bottom-full mb-2' : 'top-full mt-2', alignRight ? 'right-0' : 'left-0']"
         :style="{ maxHeight: maxPanelH + 'px' }"
       >
@@ -56,7 +55,6 @@
           </button>
         </div>
       </div>
-    </transition>
   </div>
 </template>
 
@@ -65,6 +63,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useWheelGesture } from '../composables/useWheelGesture';
 import { playTouchFeedback } from '../utils/sound';
 import { openModal } from '../store';
+import { claimExclusive, releaseExclusive } from '../utils/dropdownMutex';
 
 const props = defineProps({
   modelValue: { type: String, default: 'default' },
@@ -100,8 +99,16 @@ function toggle() {
   playTouchFeedback();
   if (!open.value) {
     updatePosition();
+    // 与 ActionSelect 共用同一把互斥锁：整屏同时只允许一个下拉展开
+    claimExclusive(closeFromPeer);
   }
   open.value = !open.value;
+}
+
+// 让别的下拉（含 ActionSelect）能主动关掉我，收起后释放活跃句柄
+function closeFromPeer() {
+  open.value = false;
+  releaseExclusive(closeFromPeer);
 }
 
 function updatePosition() {
@@ -117,6 +124,7 @@ function updatePosition() {
 function pick(actionKey) {
   playTouchFeedback();
   open.value = false;
+  releaseExclusive(closeFromPeer);
   emit('update:modelValue', actionKey);
   emit('change', { action: actionKey, customName: '' });
 }
@@ -124,6 +132,7 @@ function pick(actionKey) {
 function pickCustom() {
   playTouchFeedback();
   open.value = false;
+  releaseExclusive(closeFromPeer);
   openModal('appSelect', {
     keyTarget: 'custom_row_' + props.rowId,
     onSelect: (pkg, appName) => {
@@ -138,6 +147,7 @@ function pickCustom() {
 function onDocClick(e) {
   if (open.value && rootEl.value && !rootEl.value.contains(e.target)) {
     open.value = false;
+    releaseExclusive(closeFromPeer);
   }
 }
 
@@ -146,13 +156,5 @@ onUnmounted(() => document.removeEventListener('click', onDocClick));
 </script>
 
 <style scoped>
-.drop-enter-active,
-.drop-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-.drop-enter-from,
-.drop-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
-}
+/* 同 ActionSelect：去掉淡入/位移动画，点开即显，杜绝车机上的中间帧掉帧 */
 </style>

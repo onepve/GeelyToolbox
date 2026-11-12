@@ -347,6 +347,7 @@ def evaluate(files):
         failures.append('log-span-marker-tolerant')
     failures.extend(log_slice_contract(utils_src))
     failures.extend(ui_border_density_contract(files))
+    failures.extend(dropdown_mutex_contract(files))
     return failures
 
 
@@ -391,6 +392,49 @@ def log_slice_contract(utils_src):
             bare = token.strip('"')
             if bare in kws:
                 out.append(label + ':bare-' + bare)
+    return out
+
+
+def dropdown_mutex_contract(files):
+    """下拉面板同屏互斥 + 点开即显（v1.8.33.17）。
+
+    实车与 headless 都复现过两个问题：
+    1) 方控页能同时展开 2~3 个下拉，面板叠在屏幕上；
+    2) 每个下拉点开都「愣一下」，因为面板挂着 0.15s 动画 + 50px 大模糊阴影，
+       车机 GPU 每次都要重算中间帧。
+
+    这里锁三件事：两个下拉组件必须走同一把互斥锁、开面板前必须先 claim、
+    且面板不得再挂 transition 动画与 shadow-2xl。
+    """
+    out = []
+    mutex = files.get('web/src/utils/dropdownMutex.js', '')
+    if not mutex:
+        return ['dropdown-mutex-missing']
+    for fn in ('export function claimExclusive', 'export function releaseExclusive'):
+        if fn not in mutex:
+            out.append('dropdown-mutex-need-' + fn.split()[-1])
+
+    for comp, label in (('web/src/components/ActionSelect.vue', 'action-select'),
+                        ('web/src/components/CustomKeyActionSelect.vue', 'custom-key-select')):
+        src = files.get(comp, '')
+        if not src:
+            out.append('dropdown-comp-missing:' + label)
+            continue
+        body = re.sub(r'//[^\n]*', '', src)
+        if "from '../utils/dropdownMutex'" not in src:
+            out.append('dropdown-not-using-shared-mutex:' + label)
+        if not re.search(r'claimExclusive\(closeFromPeer\)', body):
+            out.append('dropdown-no-claim-before-open:' + label)
+        if not re.search(r'releaseExclusive\(closeFromPeer\)', body):
+            out.append('dropdown-no-release-on-close:' + label)
+        # 点开即显：不许再有 transition 包装与入场动画
+        if re.search(r'<transition\b', body):
+            out.append('dropdown-transition-revived:' + label)
+        if re.search(r'drop-enter|drop-leave', body):
+            out.append('dropdown-anim-css-revived:' + label)
+        # 车机带不动 50px 模糊
+        if re.search(r'shadow-2xl', body):
+            out.append('dropdown-heavy-shadow-revived:' + label)
     return out
 
 
