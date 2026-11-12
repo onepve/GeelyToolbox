@@ -1214,8 +1214,9 @@ public class SystemUtils {
     // ④ 车机 IMEI（15 位 86 开头）与埋点设备 UID：430884 包实测 T-Box 串号 868337038618101、
     //    "uid.string":"B0928A74...|0" 全部裸奔。这两项能直接定位到具体一台车，比 VIN 还敏感。
     private static final java.util.regex.Pattern PATTERN_IMEI = java.util.regex.Pattern.compile("\\b86[0-9]{13}\\b");
+    private static final char QUOTE = (char) 34;   // 双引号，避开 Java 源码里 \" 的转义地狱
     private static final java.util.regex.Pattern PATTERN_TRACK_UID = java.util.regex.Pattern.compile(
-            "(?i)(\"uid\.string\"\\s*:\\s*\")[^\"]+");
+            "(?i)(" + QUOTE + "uid\\.string" + QUOTE + "\\s*:\\s*" + QUOTE + ")[^" + QUOTE + "]+");
     private static final java.util.regex.Pattern PATTERN_MAC = java.util.regex.Pattern.compile(
             "\\b(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}\\b");
     private static final java.util.regex.Pattern PATTERN_ADDRESS = java.util.regex.Pattern.compile("(?i)(address|geofullAddress|formatedAddress|poiName)\\s*[:=]\\s*['\"][^'\"]*['\"]");
