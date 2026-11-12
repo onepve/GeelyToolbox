@@ -163,6 +163,43 @@ def check_tail_seek_is_one(src):
         )
 
 
+def check_boot_storm_fast_retry(src):
+    """开机洪峰期必须快速重连并免抽干，否则开头几十秒完全没有挡位报文。
+
+    实测 932336：21:06:49 建 #1 → 断 → 等 2s → 21:07:03 建 #2 → 断 → 等 2s
+    → 21:07:06 建 #3 → 21:07:15 才抽干完成。开机后 26 秒没有实时挡位报文，
+    车主此时已经在换挡，报文全落在「建立中/抽干中」被丢，表现为「换好几圈才有声音」。
+    修法：开机窗口内退避压到 400ms，且跳过历史抽干（-T 1 本就无历史可抽）。
+    """
+    if not re.search(r'static final long BOOT_STORM_WINDOW_MS\s*=', src):
+        FAILS.append(
+            "找不到开机洪峰窗口 BOOT_STORM_WINDOW_MS 的定义：\n"
+            "  开机初期 logd 尚在灌开机日志，固定 2 秒退避会白等，\n"
+            "  必须用更短的退避尽快接上实时流。"
+        )
+        return
+    if not re.search(r'static final long BOOT_STORM_BACKOFF_MS\s*=', src):
+        FAILS.append(
+            "找不到 BOOT_STORM_BACKOFF_MS 的定义：\n"
+            "  开机洪峰期的快速重连退避常量被删了，会退回 2 秒起步的老行为。"
+        )
+        return
+    # 退避取值处必须真的用到洪峰分支（匹配三元表达式里的 bootStorm ?）
+    if not re.search(r'long wait\s*=\s*bootStorm\s*\?', src):
+        FAILS.append(
+            "退避取值处没有 bootStorm 三元分支：\n"
+            "  BOOT_STORM_BACKOFF_MS 常量存在但没被使用，等于没生效；\n"
+            "  必须写成 long wait = bootStorm ? BOOT_STORM_BACKOFF_MS : LOGCAT_BACKOFF_MS[...]。"
+        )
+    # 抽干必须能被洪峰期跳过
+    if not re.search(r'if\s*\(\s*bootStormDrain\s*\)\s*drained\s*=\s*true', src):
+        FAILS.append(
+            "抽干段没有 bootStormDrain 跳过分支：\n"
+            "  开机期历史段极长，走抽干会一路 continue 到 800ms 安全阀，\n"
+            "  期间实时挡位报文全被丢弃。"
+        )
+
+
 def main():
     src = read(SERVICE)
     player = read(PLAYER)
@@ -174,6 +211,7 @@ def main():
         check_raw_ring_default_off(src)
         check_watchdog(src)
         check_tail_seek_is_one(src)
+        check_boot_storm_fast_retry(src)
     check_capture_uses_enable(sysutils)
     check_voice_skip_by_length(player)
 

@@ -145,6 +145,15 @@ public class VehicleAutomationService extends Service {
     //   代价：万一车机 logd 彻底不可用，重连会稍频繁一些。但每次重连本身就是几十毫秒的事，
     //   比「静默 60 秒收不到挡位」的代价小得多。
     private static final long[] LOGCAT_BACKOFF_MS = {2000L, 2000L, 3000L, 4000L, 5000L};
+    // 【开机洪峰铁律 v1.8.33.14】开机前 90 秒内 logd 还在灌开机日志，此时建流极易
+    // 报 read: unexpected EOF 被打断。932336 实测：21:06:49 建 #1 → 断 → 21:07:03 建 #2
+    // → 断 → 21:07:06 建 #3 → 21:07:15 才抽干完成，整整 26 秒没有实时挡位报文。
+    // 车主 21:07:10 已经在换挡，报文全部落在「建立中/抽干中」窗口被丢，表现为
+    // 「换了好几圈才有一次声音」。
+    // 对策：开机初期把退避压到 400ms 抢回通道（logd 一旦就绪立刻接上），
+    // 并允许跳过历史抽干（开机期历史行本来就无意义），建流即实时。
+    private static final long BOOT_STORM_WINDOW_MS = 90_000L;   // 开机后 90 秒内算洪峰期
+    private static final long BOOT_STORM_BACKOFF_MS = 400L;     // 洪峰期退避压到 0.4 秒
     // 【v1.8.33 修正】假死看门狗从 5 分钟收到 20 秒。
     // 5 分钟太长：通道悄悄死掉后，要 5 分钟才发现，这 5 分钟里挡位/车门全丢，
     //   车主感受就是「怎么按都没反应，过好久才突然好了」。
@@ -1265,6 +1274,11 @@ public class VehicleAutomationService extends Service {
                         // 原 4 秒太长：每次重连都要在「历史段」里空转，这期间实时挡位报文全被 continue 丢掉。
                         // 车机 logd 的历史回放通常几百毫秒就跨过栅栏了，800ms 足够；
                         // 万一真遇到时钟跳变，下面还有 elapsedRealtime 兜底放行，不会卡死。
+                        // 【开机洪峰免抽干 v1.8.33.14】开机 90 秒内 logd 历史段极长（数千行），
+                        // 走抽干会一路 continue 到 800ms 安全阀才放行，期间实时挡位报文全被丢。
+                        // 洪峰期直接跳过抽干：-T 1 本来就从尾部一行起跟随，没有历史可抽。
+                        boolean bootStormDrain = android.os.SystemClock.elapsedRealtime() < BOOT_STORM_WINDOW_MS;
+                        if (bootStormDrain) drained = true;
                         long drainDeadlineMs = android.os.SystemClock.elapsedRealtime() + 800L;
                         while (isRunning && (line = reader.readLine()) != null) {
                             lineCount++;
@@ -1373,8 +1387,13 @@ public class VehicleAutomationService extends Service {
                         Log.w(TAG, "Logcat 通道断开 第" + logcatConsecutiveFailures + "次 " + sLogcatLastExit);
                     }
 
-                    // 阶梯退避：2s → 5s → 15s → 30s → 60s 封顶，杜绝 2 秒死循环重启
-                    long wait = LOGCAT_BACKOFF_MS[Math.min(Math.max(logcatConsecutiveFailures, 1), LOGCAT_BACKOFF_MS.length) - 1];
+                    // 阶梯退避：2s → 2s → 3s → 4s → 5s 封顶，杜绝死循环重启
+                    // 【开机洪峰】开机初期 logd 正在灌开机日志，越早重连越早接上实时流；
+                    // 固定 2 秒会让「#1 断 → 等 2s → #2 断 → 等 2s」白等 4 秒。
+                    boolean bootStorm = android.os.SystemClock.elapsedRealtime() < BOOT_STORM_WINDOW_MS;
+                    long wait = bootStorm
+                            ? BOOT_STORM_BACKOFF_MS
+                            : LOGCAT_BACKOFF_MS[Math.min(Math.max(logcatConsecutiveFailures, 1), LOGCAT_BACKOFF_MS.length) - 1];
                     try {
                         Thread.sleep(wait);
                     } catch (InterruptedException ignored) {
