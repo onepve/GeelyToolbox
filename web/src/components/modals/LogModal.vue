@@ -58,8 +58,8 @@
       <!-- 全量脱敏日志导出实时进度胶囊 -->
       <div 
         v-if="isExporting || exportFinished" 
-        class="mt-3 p-3.5 bg-car-item border-2 rounded-2xl transition-all shadow-md"
-        :class="exportFinished ? 'border-emerald-500/60' : 'border-car-accent/70'"
+        class="mt-3 p-3.5 bg-car-item border rounded-2xl transition-all shadow-sm"
+        :class="exportFinished ? 'border-emerald-500' : 'border-car-accent'"
       >
         <div class="flex items-center justify-between text-[14px] font-bold mb-2">
           <span class="flex items-center" :class="exportFinished ? 'text-emerald-400' : 'text-car-accent'">
@@ -71,7 +71,7 @@
             {{ exportPercent }}%
           </span>
         </div>
-        <div class="w-full h-3 bg-car-card rounded-full overflow-hidden p-0.5 border border-car-border/50">
+        <div class="w-full h-3 bg-car-card rounded-full overflow-hidden p-0.5 border border-car-border">
           <div 
             class="h-full rounded-full transition-all duration-300 ease-out"
             :class="exportFinished ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-car-accent shadow-[0_0_10px_rgba(245,158,11,0.5)]'"
@@ -188,14 +188,14 @@
 
       <!-- 阶段 2：上传中 (清晰步骤与流式进度条 + 可随时中断的关闭按钮) -->
       <div v-else-if="uploadStatus === 'uploading'" class="py-8 flex flex-col items-center justify-center text-center space-y-5 select-none w-full max-w-[500px] mx-auto">
-        <div class="w-14 h-14 border-4 border-car-accent/30 border-t-car-accent rounded-full animate-spin"></div>
+        <div class="w-14 h-14 border-4 border-car-accent border-t-car-accent rounded-full animate-spin"></div>
         <div class="space-y-1">
           <div class="text-[20px] font-black text-car-text">正在安全传输至云端...</div>
           <div class="text-[14px] text-car-sub font-mono font-medium">{{ uploadStepText }}</div>
         </div>
 
         <!-- 动态流式进度条 -->
-        <div class="w-full bg-car-item border border-car-border/60 rounded-full h-4 overflow-hidden p-0.5 shadow-inner">
+        <div class="w-full bg-car-item border border-car-border rounded-full h-4 overflow-hidden p-0.5 shadow-inner">
           <div 
             class="bg-gradient-to-r from-sky-500 to-car-accent h-full rounded-full transition-all duration-200 ease-out"
             :style="{ width: `${uploadPercent}%` }"
@@ -230,12 +230,12 @@
                 车型平台: <strong class="text-car-accent font-mono">{{ logMeta.modelCode }}</strong> · 30天全自动彻底物理销毁
               </div>
 
-              <div class="p-4 rounded-xl bg-car-card border border-car-border/60 text-center mb-3">
+              <div class="p-4 rounded-xl bg-car-card border border-car-border text-center mb-3">
                 <div class="text-[12px] font-bold text-car-sub uppercase tracking-wider mb-0.5">专属车机日志识别码</div>
                 <div class="text-[34px] font-mono font-black text-emerald-400 tracking-[0.18em]">
                   {{ extractedCode }}
                 </div>
-                <div class="text-[12px] text-car-sub mt-2 pt-2 border-t border-car-border/50">
+                <div class="text-[12px] text-car-sub mt-2 pt-2 border-t border-car-border">
                   车架后6位: <strong class="text-car-text font-mono tracking-[0.1em]">{{ logMeta.vinLast6 }}</strong>
                   <span class="mx-1 text-car-border">·</span>
                   自助下载: <strong class="text-sky-400 font-mono">log.onepve.com</strong>
@@ -249,7 +249,7 @@
               </div>
             </div>
 
-            <div class="text-[12px] text-car-sub/80 mt-3 pt-2.5 border-t border-car-border/50">
+            <div class="text-[12px] text-car-sub mt-3 pt-2.5 border-t border-car-border">
               车友交流 QQ 群：<span class="font-mono text-car-text font-bold">564654011</span>
             </div>
           </div>

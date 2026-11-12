@@ -13,7 +13,7 @@
           : 'bg-transparent text-car-sub hover:text-car-text font-bold'
       ]"
     >
-      <span v-if="tab.badge" class="w-2 h-2 rounded-full" :class="modelValue === tab.id ? 'bg-car-accent' : 'bg-car-sub/60'"></span>
+      <span v-if="tab.badge" class="w-2 h-2 rounded-full" :class="modelValue === tab.id ? 'bg-car-accent' : 'bg-car-sub'"></span>
       <span>{{ tab.name }}</span>
       <span
         v-if="tab.tag"
@@ -21,7 +21,7 @@
           'text-[12px] px-2 py-0.5 rounded-lg font-black transition-all',
           modelValue === tab.id
             ? 'bg-car-accent-bg text-car-accent'
-            : 'bg-car-card/50 text-car-sub/60 opacity-70'
+            : 'bg-car-card text-car-sub opacity-70'
         ]"
       >
         {{ tab.tag }}

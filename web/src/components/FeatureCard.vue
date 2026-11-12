@@ -12,7 +12,7 @@
       class="absolute left-0 top-0 bottom-0 w-[4px] bg-car-accent pointer-events-none"
     ></span>
     <!-- 头部标题与说明：内嵌在卡片顶端 (仅在声明 title 或 header slot 时渲染) -->
-    <div v-if="title || $slots.header" :class="['flex flex-col border-b border-car-border/60', dense ? 'pb-2 mb-2.5' : 'pb-4 mb-4']">
+    <div v-if="title || $slots.header" :class="['flex flex-col border-b border-car-border', dense ? 'pb-2 mb-2.5' : 'pb-4 mb-4']">
       <div class="flex items-center justify-between mb-1">
         <slot name="header">
           <div class="flex items-center space-x-2.5">

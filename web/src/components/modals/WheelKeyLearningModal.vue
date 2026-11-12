@@ -21,7 +21,7 @@
             请现在按下方向盘右侧您想检测的任意按键，<br />
             助手将立即检测底盘信号通路与响应延迟。
           </div>
-          <div class="text-[14.5px] text-car-sub/80 font-bold">
+          <div class="text-[14.5px] text-car-sub font-bold">
             💡 诊断期间按键不会触发 360 或切歌等任何功能，请放心按。
           </div>
         </div>

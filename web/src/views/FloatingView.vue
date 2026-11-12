@@ -13,7 +13,7 @@
         ]"
       >
         <!-- 头部标题 + 状态指示灯 + 帮助 -->
-        <div class="flex items-center justify-between shrink-0 mb-4 pb-3 border-b border-car-border/60">
+        <div class="flex items-center justify-between shrink-0 mb-4 pb-3 border-b border-car-border">
           <div class="flex items-center space-x-3">
             <StatusDot size="sm" :color="store.deviceInfo.floating_enabled ? 'ok' : 'off'" :glow="store.deviceInfo.floating_enabled" :glow-px="store.deviceInfo.floating_enabled ? 6 : 0" />
             <span class="text-[22px] font-black text-car-text tracking-wide">桌面迷你悬浮胶囊</span>
@@ -45,7 +45,7 @@
             <button 
               @click="setFloatingMode('battery')"
               :class="[
-                'h-[58px] p-2 rounded-xl font-black text-[15.5px] border border-car-border/70 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
+                'h-[58px] p-2 rounded-xl font-black text-[15.5px] border border-car-border cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
                 store.deviceInfo.floating_display_mode === 'battery' || (!store.deviceInfo.floating_display_mode)
                   ? 'bg-car-item border-car-accent text-car-text shadow-md' 
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
@@ -56,7 +56,7 @@
             <button 
               @click="setFloatingMode('code')"
               :class="[
-                'h-[58px] p-2 rounded-xl font-black text-[15.5px] border border-car-border/70 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
+                'h-[58px] p-2 rounded-xl font-black text-[15.5px] border border-car-border cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
                 store.deviceInfo.floating_display_mode === 'code'
                   ? 'bg-car-item border-car-accent text-car-text shadow-md' 
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
@@ -67,7 +67,7 @@
             <button 
               @click="setFloatingMode('name')"
               :class="[
-                'h-[58px] p-2 rounded-xl font-black text-[15.5px] border border-car-border/70 cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
+                'h-[58px] p-2 rounded-xl font-black text-[15.5px] border border-car-border cursor-pointer transition-all shadow-sm flex items-center justify-center text-center whitespace-nowrap',
                 store.deviceInfo.floating_display_mode === 'name'
                   ? 'bg-car-item border-car-accent text-car-text shadow-md' 
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text'
@@ -79,7 +79,7 @@
         </div>
 
         <!-- 底部提示信息：拉大留白 -->
-        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0 flex items-center justify-between" @click.stop>
+        <div class="pt-4 border-t border-car-border mt-auto shrink-0 flex items-center justify-between" @click.stop>
           <span class="text-[14px] text-car-sub font-bold">常驻屏幕顶层，点击秒开控制台</span>
           <span class="text-[13.5px] text-car-accent font-black">手指自由拖拽贴边智能吸附</span>
         </div>
@@ -96,7 +96,7 @@
         ]"
       >
         <!-- 头部标题 + 状态指示灯 + 帮助 -->
-        <div class="flex items-center justify-between shrink-0 mb-4 pb-3 border-b border-car-border/60">
+        <div class="flex items-center justify-between shrink-0 mb-4 pb-3 border-b border-car-border">
           <div class="flex items-center space-x-3">
             <StatusDot size="sm" :color="ssEnabled ? 'ok' : 'off'" :glow="ssEnabled" :glow-px="ssEnabled ? 6 : 0" />
             <span class="text-[22px] font-black text-car-text tracking-wide">闲置自动屏保</span>
@@ -122,11 +122,11 @@
             <div class="flex items-center space-x-2.5">
               <button 
                 @click="adjustSeconds(-15)"
-                class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border/70 hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
               >-15s</button>
               <button 
                 @click="adjustSeconds(-5)"
-                class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border/70 hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
               >-5s</button>
             </div>
             <div class="flex items-baseline space-x-2 px-4">
@@ -136,11 +136,11 @@
             <div class="flex items-center space-x-2.5">
               <button 
                 @click="adjustSeconds(5)"
-                class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border/70 hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
               >+5s</button>
               <button 
                 @click="adjustSeconds(15)"
-                class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border/70 hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="h-[52px] px-5 rounded-xl bg-car-card border border-car-border hover:border-car-accent text-car-text font-black text-[16px] cursor-pointer active:scale-95 transition-all shadow-sm"
               >+15s</button>
             </div>
           </div>
@@ -152,7 +152,7 @@
               :key="p.value"
               @click="setPolicy(p.value)"
               :class="[
-                'h-[50px] px-1 rounded-xl border border-car-border/70 font-black text-[14px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center space-x-1.5',
+                'h-[50px] px-1 rounded-xl border border-car-border font-black text-[14px] cursor-pointer transition-all whitespace-nowrap shadow-sm flex items-center justify-center space-x-1.5',
                 ssPolicy === p.value
                   ? 'bg-car-item border-car-accent text-car-text'
                   : 'bg-car-item border-car-border text-car-sub hover:text-car-text hover:border-car-border-light'
@@ -174,7 +174,7 @@
         </div>
 
         <!-- 底部提示信息：拉大留白 -->
-        <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0 flex items-center justify-between" @click.stop>
+        <div class="pt-4 border-t border-car-border mt-auto shrink-0 flex items-center justify-between" @click.stop>
           <span class="text-[14px] text-car-sub font-bold">桌面闲置自动唤醒原厂屏保</span>
           <span class="text-[13.5px] text-car-accent font-black">全屏应用中绝不打扰</span>
         </div>

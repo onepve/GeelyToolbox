@@ -37,14 +37,14 @@
                 : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
             ]"
           >
-            <div class="flex items-center justify-between pb-3 border-b border-car-border/50">
+            <div class="flex items-center justify-between pb-3 border-b border-car-border">
               <span class="text-[17px] font-black text-car-text">电瓶电压胶囊</span>
               <StatusDot size="sm" :color="store.capsuleVisibility.battery !== false ? 'ok' : 'off'" />
             </div>
             <div class="text-[13.5px] text-car-sub font-medium leading-relaxed my-2">
               实时监测车机蓄电池电压（健康/充能/亏电），点击可调阅电瓶健康状态说明。
             </div>
-            <div class="pt-4 border-t border-car-border/40 flex items-center justify-between">
+            <div class="pt-4 border-t border-car-border flex items-center justify-between">
               <span class="text-[12.5px] font-bold text-car-sub">默认状态：激活</span>
               <span class="text-[13.5px] font-black" :class="store.capsuleVisibility.battery !== false ? 'text-car-accent' : 'text-car-sub'">
                 {{ store.capsuleVisibility.battery !== false ? '正在显示' : '已隐藏' }}
@@ -62,14 +62,14 @@
                 : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
             ]"
           >
-            <div class="flex items-center justify-between pb-3 border-b border-car-border/50">
+            <div class="flex items-center justify-between pb-3 border-b border-car-border">
               <span class="text-[17px] font-black text-car-text">全国油价胶囊</span>
               <StatusDot size="sm" :color="store.capsuleVisibility.oilPrice !== false ? 'ok' : 'off'" />
             </div>
             <div class="text-[13.5px] text-car-sub font-medium leading-relaxed my-2">
               展示各省份 92#/95# 实时油价与调价倒计时天数，点击可切换省份或手动刷新。
             </div>
-            <div class="pt-4 border-t border-car-border/40 flex items-center justify-between">
+            <div class="pt-4 border-t border-car-border flex items-center justify-between">
               <span class="text-[12.5px] font-bold text-car-sub">默认状态：激活</span>
               <span class="text-[13.5px] font-black" :class="store.capsuleVisibility.oilPrice !== false ? 'text-car-accent' : 'text-car-sub'">
                 {{ store.capsuleVisibility.oilPrice !== false ? '正在显示' : '已隐藏' }}
@@ -87,14 +87,14 @@
                 : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
             ]"
           >
-            <div class="flex items-center justify-between pb-3 border-b border-car-border/50">
+            <div class="flex items-center justify-between pb-3 border-b border-car-border">
               <span class="text-[17px] font-black text-car-text">工程暗码胶囊</span>
               <StatusDot size="sm" :color="store.capsuleVisibility.secretCode !== false ? 'ok' : 'off'" />
             </div>
             <div class="text-[13.5px] text-car-sub font-medium leading-relaxed my-2">
               随时间动态计算的原厂工程拨号暗码（+10 偏移），点击可调起快速拨号盘。
             </div>
-            <div class="pt-4 border-t border-car-border/40 flex items-center justify-between">
+            <div class="pt-4 border-t border-car-border flex items-center justify-between">
               <span class="text-[12.5px] font-bold text-car-sub">默认状态：激活</span>
               <span class="text-[13.5px] font-black" :class="store.capsuleVisibility.secretCode !== false ? 'text-car-accent' : 'text-car-sub'">
                 {{ store.capsuleVisibility.secretCode !== false ? '正在显示' : '已隐藏' }}
@@ -112,14 +112,14 @@
                 : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
             ]"
           >
-            <div class="flex items-center justify-between pb-3 border-b border-car-border/50">
+            <div class="flex items-center justify-between pb-3 border-b border-car-border">
               <span class="text-[17px] font-black text-car-text">应用商店状态</span>
               <StatusDot size="sm" :color="store.capsuleVisibility.store !== false ? 'ok' : 'off'" />
             </div>
             <div class="text-[13.5px] text-car-sub font-medium leading-relaxed my-2">
               展示原厂应用商店冻结/正常状态，点击可直接触发安全冻结与解冻流程。
             </div>
-            <div class="pt-4 border-t border-car-border/40 flex items-center justify-between">
+            <div class="pt-4 border-t border-car-border flex items-center justify-between">
               <span class="text-[12.5px] font-bold text-car-sub">默认状态：激活</span>
               <span class="text-[13.5px] font-black" :class="store.capsuleVisibility.store !== false ? 'text-car-accent' : 'text-car-sub'">
                 {{ store.capsuleVisibility.store !== false ? '正在显示' : '已隐藏' }}
@@ -137,14 +137,14 @@
                 : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
             ]"
           >
-            <div class="flex items-center justify-between pb-3 border-b border-car-border/50">
+            <div class="flex items-center justify-between pb-3 border-b border-car-border">
               <span class="text-[17px] font-black text-car-text">白名单状态胶囊</span>
               <StatusDot size="sm" :color="store.capsuleVisibility.whitelist !== false ? 'ok' : 'off'" />
             </div>
             <div class="text-[13.5px] text-car-sub font-medium leading-relaxed my-2">
               指示第三方免签白名单是否放行，点击可调起快速授权与放行确认。
             </div>
-            <div class="pt-4 border-t border-car-border/40 flex items-center justify-between">
+            <div class="pt-4 border-t border-car-border flex items-center justify-between">
               <span class="text-[12.5px] font-bold text-car-sub">默认状态：激活</span>
               <span class="text-[13.5px] font-black" :class="store.capsuleVisibility.whitelist !== false ? 'text-car-accent' : 'text-car-sub'">
                 {{ store.capsuleVisibility.whitelist !== false ? '正在显示' : '已隐藏' }}
@@ -162,14 +162,14 @@
                 : 'bg-car-card border-car-border hover:border-car-border-light shadow-sm'
             ]"
           >
-            <div class="flex items-center justify-between pb-3 border-b border-car-border/50">
+            <div class="flex items-center justify-between pb-3 border-b border-car-border">
               <span class="text-[17px] font-black text-car-text">IP 网络状态胶囊</span>
               <StatusDot size="sm" :color="store.capsuleVisibility.ip !== false ? 'ok' : 'off'" />
             </div>
             <div class="text-[13.5px] text-car-sub font-medium leading-relaxed my-2">
               指示当前 Wi-Fi 热点 IP、4G SIM 流量卡在线状态或未连热点，点击调起快传二维码。
             </div>
-            <div class="pt-4 border-t border-car-border/40 flex items-center justify-between">
+            <div class="pt-4 border-t border-car-border flex items-center justify-between">
               <span class="text-[12.5px] font-bold text-car-sub">默认状态：激活</span>
               <span class="text-[13.5px] font-black" :class="store.capsuleVisibility.ip !== false ? 'text-car-accent' : 'text-car-sub'">
                 {{ store.capsuleVisibility.ip !== false ? '正在显示' : '已隐藏' }}
@@ -337,7 +337,7 @@
         class="rounded-3xl border-2 border-car-border p-6 shadow-2xl transition-all bg-car-card hover:border-car-border-light active:scale-[0.985] cursor-pointer select-none flex flex-col justify-between min-h-[220px] group"
       >
         <div class="flex flex-col space-y-3">
-          <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
+          <div class="flex items-center justify-between pb-3 border-b border-car-border">
             <div class="flex items-center space-x-2.5">
               <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">运行与守护日志</span>
               <HelpDot @click="openModal('confirm', {
@@ -358,7 +358,7 @@
           </div>
         </div>
 
-        <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
+        <div class="mt-4 pt-3 border-t border-car-border flex items-center justify-between">
           <div class="flex items-center text-[13.5px] text-emerald-400 font-extrabold">
             <StatusDot class="mr-2" size="sm" color="ok" :glow-px="6" />
             <span>内存循环缓存 · 重启自动清空</span>
@@ -380,7 +380,7 @@
         ]"
       >
         <div class="flex flex-col space-y-3">
-          <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
+          <div class="flex items-center justify-between pb-3 border-b border-car-border">
             <div class="flex items-center space-x-2.5">
               <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">车机 ADB 终端</span>
               <HelpDot @click="showAdbHelp" title="查看 ADB 总开关与失效功能说明" />
@@ -397,7 +397,7 @@
           </div>
         </div>
 
-        <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
+        <div class="mt-4 pt-3 border-t border-car-border flex items-center justify-between">
           <span class="text-[13px] text-car-sub font-bold">
             点卡片切换总开关
           </span>
@@ -406,7 +406,7 @@
             :disabled="(store.deviceInfo.adb_master_switch === false || adbWarmupCountdown > 0)"
             :class="[
               (store.deviceInfo.adb_master_switch === false || adbWarmupCountdown > 0)
-                ? 'border-car-border/40 bg-car-item/50 text-car-sub/40 cursor-not-allowed opacity-50'
+                ? 'border-car-border bg-car-item text-car-sub cursor-not-allowed opacity-50'
                 : 'border-car-border bg-car-card text-car-text hover:border-car-accent cursor-pointer active:scale-95'
             ]"
           >
@@ -426,7 +426,7 @@
         class="rounded-3xl border-2 border-car-border p-6 shadow-2xl transition-all bg-car-card hover:border-rose-500/80 active:scale-[0.985] cursor-pointer select-none flex flex-col justify-between min-h-[220px] group"
       >
         <div class="flex flex-col space-y-3">
-          <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
+          <div class="flex items-center justify-between pb-3 border-b border-car-border">
             <div class="flex items-center space-x-2.5">
               <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-rose-500 transition-colors">整车重新启动</span>
               <HelpDot @click="openModal('confirm', {
@@ -447,7 +447,7 @@
           </div>
         </div>
 
-        <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
+        <div class="mt-4 pt-3 border-t border-car-border flex items-center justify-between">
           <div class="flex items-center text-[13.5px] text-rose-500 font-extrabold">
             <span>⚠️ 停稳挂 P 挡使用</span>
           </div>
@@ -468,7 +468,7 @@
         ]"
       >
         <div class="flex flex-col space-y-3">
-          <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
+          <div class="flex items-center justify-between pb-3 border-b border-car-border">
             <div class="flex items-center space-x-2.5">
               <span class="text-[21px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">开机自启静默守护</span>
               <HelpDot @click="openModal('confirm', {
@@ -491,7 +491,7 @@
           </div>
         </div>
 
-        <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
+        <div class="mt-4 pt-3 border-t border-car-border flex items-center justify-between">
           <span class="text-[13px] text-car-sub font-bold">
             点卡片任意位置切换
           </span>

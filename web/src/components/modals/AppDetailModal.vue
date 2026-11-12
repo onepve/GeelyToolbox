@@ -33,7 +33,7 @@
       </div>
 
       <!-- 动态全宽下载进度条 (下载中/暂停/完成动态展开) -->
-      <div v-if="currentTask" class="bg-car-item border-2 border-car-accent/40 rounded-2xl p-4 flex flex-col space-y-2.5 shadow-md">
+      <div v-if="currentTask" class="bg-car-item border-2 border-car-accent rounded-2xl p-4 flex flex-col space-y-2.5 shadow-md">
         <div class="flex items-center justify-between text-[15px] font-bold text-car-text">
           <div class="flex items-center space-x-2">
             <StatusDot size="sm" :color="currentTask.status === 'paused' ? 'warnSoft' : (currentTask.status === 'completed' ? 'okBright' : 'accent')" :pulse="currentTask.status !== 'paused' && currentTask.status !== 'completed'" :glow="false" />

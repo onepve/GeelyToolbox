@@ -17,7 +17,7 @@ const props = defineProps({
 defineEmits(['click']);
 
 // 统一所有规格为清晰车规规格（24px x 24px，SVG 14px，高辨识度）
-const UNIFIED_STYLE = 'w-[24px] h-[24px] rounded-full border border-car-border/60 bg-car-item text-car-sub hover:text-car-accent hover:border-car-accent flex items-center justify-center cursor-pointer transition-transform active:scale-90 shrink-0 p-0 leading-none';
+const UNIFIED_STYLE = 'w-[24px] h-[24px] rounded-full border border-car-border bg-car-item text-car-sub hover:text-car-accent hover:border-car-accent flex items-center justify-center cursor-pointer transition-transform active:scale-90 shrink-0 p-0 leading-none';
 
 const dotClass = computed(() => UNIFIED_STYLE);
 </script>

@@ -48,7 +48,7 @@
         <!-- 选项 2：智能安全清理 -->
         <div 
           @click="confirmClean(2)"
-          class="bg-car-card border-2 border-car-accent/60 rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-car-accent hover:bg-car-item transition-all shadow-md group"
+          class="bg-car-card border-2 border-car-accent rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-car-accent hover:bg-car-item transition-all shadow-md group"
         >
           <div class="flex-1 min-w-0 pr-6 flex flex-col space-y-1">
             <div class="flex items-center space-x-2.5">

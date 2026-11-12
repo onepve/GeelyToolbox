@@ -64,7 +64,7 @@
             </button>
             <button
               @click="openModal('qrcode')"
-              class="h-[50px] px-3.5 rounded-xl bg-car-card border border-car-accent/60 text-car-accent text-[13.5px] font-bold cursor-pointer transition-all"
+              class="h-[50px] px-3.5 rounded-xl bg-car-card border border-car-accent text-car-accent text-[13.5px] font-bold cursor-pointer transition-all"
             >
               手机扫码快传 ➔
             </button>
@@ -72,7 +72,7 @@
         </div>
 
         <!-- 当前已绑定自定义提示条 -->
-        <div v-if="customFilePath" class="p-3 rounded-xl bg-car-card border border-car-accent/50 flex items-center justify-between shadow-sm">
+        <div v-if="customFilePath" class="p-3 rounded-xl bg-car-card border border-car-accent flex items-center justify-between shadow-sm">
           <div class="flex items-center space-x-2 min-w-0 pr-3">
             <span class="text-[13px] text-car-accent font-black shrink-0">已绑定音频:</span>
             <span class="text-[13.5px] text-car-text font-bold truncate">{{ customFileName || customFilePath }}</span>
@@ -101,7 +101,7 @@
           </div>
 
           <!-- 空状态 -->
-          <div v-if="downloadAudioFiles.length === 0" class="py-6 px-4 rounded-2xl bg-car-card border border-car-border/60 flex flex-col items-center justify-center space-y-2 text-center">
+          <div v-if="downloadAudioFiles.length === 0" class="py-6 px-4 rounded-2xl bg-car-card border border-car-border flex flex-col items-center justify-center space-y-2 text-center">
             <span class="text-[14px] font-black text-car-text">专属目录 (/sdcard/Download/车载语音自定义) 暂无音频</span>
             <span class="text-[12.5px] text-car-sub">点击右上角「手机扫码快传」秒传至车机，享受永久白名单保护</span>
           </div>
@@ -122,7 +122,7 @@
                     </span>
                     <span 
                       v-if="f.dir === '车载语音自定义'" 
-                      class="px-1.5 py-0.5 rounded bg-car-item border border-car-accent/40 text-car-accent text-[11px] font-bold shrink-0"
+                      class="px-1.5 py-0.5 rounded bg-car-item border border-car-accent text-car-accent text-[11px] font-bold shrink-0"
                     >
                       受保护
                     </span>
@@ -155,7 +155,7 @@
         </div>
 
         <!-- 快速从已安装语音包中点选混搭 -->
-        <div v-if="installedThemes.length > 0" class="flex flex-col space-y-2 pt-4 border-t border-car-border/40">
+        <div v-if="installedThemes.length > 0" class="flex flex-col space-y-2 pt-4 border-t border-car-border">
           <span class="text-[13px] text-car-sub font-bold">或从已导入音效包混搭选择：</span>
           <div class="flex flex-wrap space-x-2">
             <button

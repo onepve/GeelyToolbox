@@ -37,7 +37,7 @@
           <span
             :class="[
               'w-3 h-3 rounded-full',
-              store.vehicleAuto.voice_master_switch ? 'bg-car-accent' : 'bg-car-sub/50'
+              store.vehicleAuto.voice_master_switch ? 'bg-car-accent' : 'bg-car-sub'
             ]"
           ></span>
         </div>

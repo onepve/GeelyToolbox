@@ -349,7 +349,7 @@
         </div>
 
         <!-- 底部标准状态灯 -->
-        <div class="pt-4 border-t border-car-border/60 shrink-0 flex items-center space-x-2">
+        <div class="pt-4 border-t border-car-border shrink-0 flex items-center space-x-2">
           <StatusDot size="sm" :color="store.networkDevice.wifi_enabled ? 'ok' : 'off'" :glow-px="6" />
           <span :class="['text-[16px] font-black', store.networkDevice.wifi_enabled ? 'text-car-text' : 'text-car-sub']">
             {{ store.networkDevice.wifi_enabled ? 'Wi-Fi 已开启' : 'Wi-Fi 已关闭' }}
@@ -400,7 +400,7 @@
         </div>
 
         <!-- 底部标准状态灯与直达引导 -->
-        <div class="pt-4 border-t border-car-border/60 shrink-0 flex items-center justify-between">
+        <div class="pt-4 border-t border-car-border shrink-0 flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <StatusDot size="sm" :color="store.networkDevice.hotspot_enabled ? 'ok' : 'off'" :glow-px="6" />
             <span :class="['text-[16px] font-black', store.networkDevice.hotspot_enabled ? 'text-car-text' : 'text-car-sub']">
@@ -473,7 +473,7 @@
         </div>
 
         <!-- 底部标准状态灯 -->
-        <div class="pt-4 border-t border-car-border/60 shrink-0 flex items-center space-x-2">
+        <div class="pt-4 border-t border-car-border shrink-0 flex items-center space-x-2">
           <StatusDot size="sm" :color="store.networkDevice.bluetooth_enabled ? 'ok' : 'off'" :glow-px="6" />
           <span :class="['text-[16px] font-black', store.networkDevice.bluetooth_enabled ? 'text-car-text' : 'text-car-sub']">
             {{ store.networkDevice.bluetooth_enabled ? '蓝牙已开启' : '蓝牙已关闭' }}

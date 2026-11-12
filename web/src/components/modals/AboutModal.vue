@@ -68,7 +68,7 @@
         </div>
 
         <!-- 测试通道说明与独立检查按钮 -->
-        <div v-if="useBetaChannel" class="pt-3 border-t border-car-border/60 flex items-center justify-between">
+        <div v-if="useBetaChannel" class="pt-3 border-t border-car-border flex items-center justify-between">
           <span class="text-[13.5px] text-amber-300 font-bold">
             当前处于测试通道：将优先接收前沿功能实验固件包与内测修复。
           </span>
@@ -106,7 +106,7 @@
       <!-- 赞赏与车友交流支持 -->
       <div class="p-5 rounded-2xl bg-car-card border border-car-border flex items-center justify-between">
         <div class="flex items-center space-x-5">
-          <div class="p-2 bg-white rounded-2xl shadow-md border border-car-border/40 shrink-0">
+          <div class="p-2 bg-white rounded-2xl shadow-md border border-car-border shrink-0">
             <img :src="rewardQrImg" alt="微信赞赏码" class="w-24 h-24 rounded-lg object-contain block" />
           </div>
           <div class="flex flex-col space-y-1">

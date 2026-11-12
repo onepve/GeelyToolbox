@@ -17,7 +17,7 @@
               <div class="flex flex-col">
                 <div class="flex items-center space-x-2">
                   <span class="text-[19px] font-black text-car-text">{{ currentProvinceName }}</span>
-                  <span class="text-[13px] px-2 py-0.5 rounded bg-car-card text-car-accent font-extrabold border border-car-accent/30">当前地区</span>
+                  <span class="text-[13px] px-2 py-0.5 rounded bg-car-card text-car-accent font-extrabold border border-car-accent">当前地区</span>
                 </div>
                 <span class="text-[13px] text-car-sub font-bold mt-0.5">发改委限价 · {{ store.oilPrice.nextAdjustment?.lastAdjustmentDate || '--' }} 生效</span>
               </div>
@@ -73,7 +73,7 @@
             <button 
               @click="onRefreshOilPrice"
               :disabled="store.oilPrice.isSyncing"
-              class="min-h-[56px] px-5 rounded-xl border border-car-border/70 bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light transition-all shadow-md flex items-center space-x-2 whitespace-nowrap"
+              class="min-h-[56px] px-5 rounded-xl border border-car-border bg-car-item text-car-text font-black text-[16px] cursor-pointer hover:border-car-border-light transition-all shadow-md flex items-center space-x-2 whitespace-nowrap"
             >
               <svg class="w-4 h-4 text-car-sub" :class="{'animate-spin text-car-accent': store.oilPrice.isSyncing}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
@@ -148,7 +148,7 @@
                     { type: '98#', cost: displayCost98 }
                   ]"
                   :key="'cost_' + item.type"
-                  class="p-2 rounded-xl bg-car-card/60 text-center flex flex-col items-center justify-center"
+                  class="p-2 rounded-xl bg-car-card text-center flex flex-col items-center justify-center"
                 >
                   <span class="text-[11.5px] font-bold text-car-sub">{{ item.type }}</span>
                   <span class="text-[17px] font-black font-mono leading-tight text-car-text">¥{{ item.cost }}</span>
@@ -183,7 +183,7 @@
                     { type: '98#', lit: (currentOilData?.p98 ? 200 / currentOilData.p98 : 22.0).toFixed(1) }
                   ]"
                   :key="'lit_' + item.type"
-                  class="p-2 rounded-xl bg-car-card/60 text-center flex flex-col items-center justify-center"
+                  class="p-2 rounded-xl bg-car-card text-center flex flex-col items-center justify-center"
                 >
                   <span class="text-[11.5px] font-bold text-car-sub">{{ item.type }}</span>
                   <span class="text-[17px] font-black font-mono leading-tight text-car-text">{{ item.lit }} <span class="text-[11px] font-normal">L</span></span>
@@ -192,7 +192,7 @@
             </div>
           </div>
 
-          <div class="text-[12px] text-car-sub font-bold pt-2 mt-2 border-t border-car-border/50">
+          <div class="text-[12px] text-car-sub font-bold pt-2 mt-2 border-t border-car-border">
             根据 {{ currentProvinceName }} 发改委最新挂牌价换算；实际优惠以加油机实显为准。
           </div>
         </div>
@@ -217,7 +217,7 @@
                 {{ store.fuelLedger.stats.is_calculable ? 'L/100km' : `(${store.fuelLedger.stats.status_desc})` }}
               </span>
               <span v-if="store.fuelLedger.stats.is_calculable && store.fuelLedger.stats.status_desc"
-                class="text-[10.5px] text-car-sub/80 font-bold ml-1.5 px-1.5 py-0.5 rounded bg-car-item border border-car-border whitespace-nowrap">
+                class="text-[10.5px] text-car-sub font-bold ml-1.5 px-1.5 py-0.5 rounded bg-car-item border border-car-border whitespace-nowrap">
                 {{ store.fuelLedger.stats.status_desc }}
               </span>
             </div>
@@ -286,7 +286,7 @@
       <!-- 加油记录流水台账列表 (高对比度紧凑列表，拒绝大块空洞卡片) -->
       <div class="p-4 rounded-3xl bg-car-card border-2 border-car-border shadow-xl flex flex-col space-y-3">
         <!-- 顶栏：记账年份切换与状态栏 -->
-        <div class="flex items-center justify-between pb-2 border-b border-car-border/60">
+        <div class="flex items-center justify-between pb-2 border-b border-car-border">
           <div class="flex items-center space-x-2">
             <span class="text-[13px] text-car-sub font-bold">台账年份:</span>
             <div class="flex items-center space-x-1.5">
@@ -319,23 +319,23 @@
         <!-- 往年年度归档总账视图 (无需琐碎流水小票，直接呈现年度宏观总账与月度收敛分布) -->
         <div v-if="isPastYearView && selectedPastYearData" class="flex flex-col space-y-3">
           <!-- 往年年度宏观总览卡片 -->
-          <div class="p-4 rounded-2xl bg-car-item border border-car-accent/50 shadow-md flex items-center justify-between">
+          <div class="p-4 rounded-2xl bg-car-item border border-car-accent shadow-md flex items-center justify-between">
             <div class="flex items-center space-x-6">
               <div class="flex flex-col">
                 <span class="text-[12px] text-car-sub font-bold">{{ selectedPastYearData.year }} 年度总支出</span>
                 <span class="text-[22px] font-mono font-black text-car-accent">¥{{ selectedPastYearData.total_paid }}</span>
               </div>
-              <div class="h-8 w-px bg-car-border/80"></div>
+              <div class="h-8 w-px bg-car-border"></div>
               <div class="flex flex-col">
                 <span class="text-[12px] text-car-sub font-bold">年度加油总量</span>
                 <span class="text-[20px] font-mono font-black text-car-text">{{ selectedPastYearData.total_liters }} <span class="text-[14px]">L</span></span>
               </div>
-              <div class="h-8 w-px bg-car-border/80"></div>
+              <div class="h-8 w-px bg-car-border"></div>
               <div class="flex flex-col">
                 <span class="text-[12px] text-car-sub font-bold">加油频次</span>
                 <span class="text-[18px] font-mono font-black text-car-text">{{ selectedPastYearData.count }} <span class="text-[13px] text-car-sub">次 (加满 {{ selectedPastYearData.full_count || 0 }} 次)</span></span>
               </div>
-              <div v-if="selectedPastYearData.distance > 0" class="h-8 w-px bg-car-border/80"></div>
+              <div v-if="selectedPastYearData.distance > 0" class="h-8 w-px bg-car-border"></div>
               <div v-if="selectedPastYearData.distance > 0" class="flex flex-col">
                 <span class="text-[12px] text-car-sub font-bold">年度里程跨度</span>
                 <span class="text-[18px] font-mono font-black text-car-text">{{ selectedPastYearData.distance }} <span class="text-[13px] text-car-sub">km</span></span>
@@ -378,7 +378,7 @@
         <!-- 本年度常规详细流水视图 -->
         <template v-else>
         <!-- 月度聚合统计清单 (按月收敛，车机轻量化秒览) -->
-        <div v-if="store.fuelLedger.monthly_stats && store.fuelLedger.monthly_stats.length > 0" class="flex flex-col space-y-1.5 pb-2 border-b border-car-border/60">
+        <div v-if="store.fuelLedger.monthly_stats && store.fuelLedger.monthly_stats.length > 0" class="flex flex-col space-y-1.5 pb-2 border-b border-car-border">
           <div class="flex items-center justify-between text-[13px] text-car-sub font-bold px-1">
             <span>月度花费汇总清单 (按月汇总)</span>
             <span class="text-car-accent">单击筛选 · 双击管理 · 长按清空</span>
@@ -489,7 +489,7 @@
               v-for="rec in filteredRecords" 
               :key="rec.id"
               @click="openEditRecordModal(rec)"
-              class="min-h-[58px] px-3.5 py-2.5 rounded-2xl bg-car-item border border-car-border hover:border-car-accent/60 cursor-pointer transition-all flex items-center justify-between shadow-sm"
+              class="min-h-[58px] px-3.5 py-2.5 rounded-2xl bg-car-item border border-car-border hover:border-car-accent cursor-pointer transition-all flex items-center justify-between shadow-sm"
             >
               <div class="flex items-center space-x-3 flex-1 min-w-0 mr-3">
                 <!-- 日期与总里程 -->
@@ -498,7 +498,7 @@
                   <span class="text-[11.5px] text-car-sub font-bold font-mono whitespace-nowrap">{{ rec.odo ? rec.odo + ' km' : '未记里程' }}</span>
                 </div>
 
-                <div class="h-7 w-px bg-car-border/70 shrink-0"></div>
+                <div class="h-7 w-px bg-car-border shrink-0"></div>
 
                 <!-- 加油规格与明细：标号 → 自动/手动 → 单价 → 备注，全部纯文字无边框。
                      车规铁律：这些是同一行的从属信息，统一排在标号后面，不要东一块西一块，
@@ -618,7 +618,7 @@
           </div>
         </div>
 
-        <div class="text-[13.5px] text-car-sub font-bold bg-car-item/70 p-3 rounded-xl border border-car-border leading-relaxed">
+        <div class="text-[13.5px] text-car-sub font-bold bg-car-item p-3 rounded-xl border border-car-border leading-relaxed">
           说明：这里的校准只改「本月花了多少钱、一共加了多少升」这两本账，油耗不用校准，助手会按每次加油自动算。如果本月有漏记的发票，改下面两个数就行；只想清掉本月流水也可以，别的月份不受影响。
         </div>
 

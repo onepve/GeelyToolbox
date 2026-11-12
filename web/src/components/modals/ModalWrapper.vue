@@ -10,7 +10,7 @@
       <div 
         :class="[
           'tb-modal-surface rounded-3xl overflow-hidden flex flex-col w-full shadow-2xl modal-card-anim',
-          'border border-car-border/80',
+          'border border-car-border',
           maxWidthClass || 'max-w-[1000px]',
           maxHeightClass || 'max-h-[90vh]'
         ]"

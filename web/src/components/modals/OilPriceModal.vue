@@ -135,7 +135,7 @@
             上轮: ↑ {{ item.diff ? item.diff.toFixed(2) : '0.00' }}
           </div>
 
-          <div class="mt-2.5 pt-2 w-full border-t border-car-border/50 text-[12px] font-bold">
+          <div class="mt-2.5 pt-2 w-full border-t border-car-border text-[12px] font-bold">
             <span v-if="defaultFuelType.includes(item.key)" class="text-car-accent font-black flex items-center justify-center space-x-1">
               <span>●</span>
               <span>默认基准</span>

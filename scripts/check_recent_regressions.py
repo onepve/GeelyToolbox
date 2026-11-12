@@ -180,6 +180,14 @@ def ui_border_density_contract(files):
     if 'w-[4px] bg-car-accent' not in feat:
         out.append('ui-featurecard-no-gold-frame')
 
+    # 6) 严禁对 var(--x) 主题色写透明度变体（bg-car-card/60、border-car-border/60 等）。
+    #    Tailwind 只有在颜色是 rgb 三元组时才能拼出 rgb(var(--x) / .6)；本项目颜色全部是
+    #    'var(--bg-card)' 字符串，这类类名在产物里根本没有 CSS 规则，元素直接回退到
+    #    preflight 的 #e5e7eb —— 昼夜两档都会冒出一批刺眼的冷灰硬线，且改主题色也永远不跟随。
+    #    需要层次就用实体 token（bg-car-item / bg-car-card）或左竖条，不要写斜杠。
+    if re.search(r'\b(?:bg|text|border|from|to|via)-car-[a-z-]+/\d+', all_web):
+        out.append('ui-no-token-opacity-slash')
+
     return out
 
 

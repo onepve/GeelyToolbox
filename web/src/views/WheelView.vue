@@ -323,7 +323,7 @@
       </div>
 
       <!-- 图解内容展示区 (阻止冒泡防误触) -->
-      <div v-if="showDiagram" @click.stop class="mt-4 pt-4 border-t border-car-border/60 flex items-start space-x-6">
+      <div v-if="showDiagram" @click.stop class="mt-4 pt-4 border-t border-car-border flex items-start space-x-6">
         <!-- 原厂方向盘按键高清图示 (沉稳车规底座，绝非刺眼白底) -->
         <div class="p-3 bg-car-item rounded-2xl shadow-md border-2 border-car-border w-[320px] min-w-[320px] max-w-[320px] shrink-0">
           <img 

@@ -108,7 +108,7 @@
         <div v-else class="grid grid-cols-2 gap-4">
           <!-- 主驾车门 FL (左前) -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3 shadow-sm">
-            <div class="flex items-center justify-between border-b border-car-border/50 pb-2">
+            <div class="flex items-center justify-between border-b border-car-border pb-2">
               <span class="text-[17px] font-black text-car-text">主驾车门 (FL · 左前)</span>
             </div>
             <div class="flex items-center justify-between">
@@ -131,7 +131,7 @@
 
           <!-- 副驾车门 FR (右前 · 左右对称) -->
           <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3 shadow-sm">
-            <div class="flex items-center justify-between border-b border-car-border/50 pb-2">
+            <div class="flex items-center justify-between border-b border-car-border pb-2">
               <span class="text-[17px] font-black text-car-text">副驾车门 (FR · 右前)</span>
             </div>
             <div class="flex items-center justify-between">
@@ -154,7 +154,7 @@
 
           <!-- 左后 RL -->
             <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3">
-              <div class="flex items-center justify-between border-b border-car-border/50 pb-2">
+              <div class="flex items-center justify-between border-b border-car-border pb-2">
                 <span class="text-[17px] font-black text-car-text">左后车门 (RL)</span>
               </div>
               <div class="flex items-center justify-between">
@@ -177,7 +177,7 @@
 
             <!-- 右后 RR -->
             <div class="p-4 rounded-2xl bg-car-item border border-car-border flex flex-col space-y-3">
-              <div class="flex items-center justify-between border-b border-car-border/50 pb-2">
+              <div class="flex items-center justify-between border-b border-car-border pb-2">
                 <span class="text-[17px] font-black text-car-text">右后车门 (RR)</span>
               </div>
               <div class="flex items-center justify-between">

@@ -8,11 +8,13 @@
   · 点亮态（= 主题强调色）数量，以及「内层金框 + 外层金框」同时存在的双金框处数
   · ring-* 实测渲染（box-shadow 层数），用于核实旧内核鬼影风险
 """
-import os, json, time, asyncio, subprocess, urllib.request, websockets
+import os, sys, json, time, asyncio, subprocess, urllib.request, websockets
 
 ROOT = "/data/projects/GeelyToolbox"
 HTML = f"file://{ROOT}/app/src/main/assets/toolbox_ui.html"
 PORT = 9336
+MODE = (sys.argv[1] if len(sys.argv) > 1 else "night").lower()
+PALETTE = sys.argv[2] if len(sys.argv) > 2 else "sky_ocean"
 VIEWS = [("link", "行车联动"), ("body", "车载声音"), ("fuel", "行程油耗"),
          ("store", "应用生态"), ("system", "系统设置")]
 
@@ -108,12 +110,21 @@ async def run():
     page = [t for t in tabs if t.get("type") == "page"][0]
     async with websockets.connect(page["webSocketDebuggerUrl"], max_size=64*1024*1024) as ws:
         sid = {"v": 0}
-        async def ev(js):
+        async def call(method, **params):
             sid["v"] += 1
-            await ws.send(json.dumps({"id": sid["v"], "method": "Runtime.evaluate",
-                                      "params": {"expression": js, "returnByValue": True}}))
-            return json.loads(await ws.recv()).get("result", {}).get("result", {}).get("value")
+            await ws.send(json.dumps({"id": sid["v"], "method": method, "params": params}))
+            while True:
+                msg = json.loads(await ws.recv())
+                if msg.get("id") == sid["v"]:
+                    return msg.get("result", {})
+        async def ev(js):
+            r = await call("Runtime.evaluate", expression=js, returnByValue=True)
+            return r.get("result", {}).get("value")
         await ev("localStorage.setItem('has_shown_welcome_donate','true'); 'ok'")
+        await ev(f"localStorage.setItem('toolbox_theme_v2', JSON.stringify({{palette:'{PALETTE}', mode:'{MODE}'}})); 'ok'")
+        await call("Page.reload", ignoreCache=True)
+        await asyncio.sleep(2.5)
+        print("模式=", await ev("document.documentElement.getAttribute('data-mode')"))
         await ev("(() => { if(window.__VUE_STORE__) window.__VUE_STORE__.modals={}; return 'ok'; })()")
         await asyncio.sleep(0.8)
         agg = {}

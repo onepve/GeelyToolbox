@@ -27,7 +27,7 @@
               'w-[46px] h-[50px] rounded-xl border-2 flex items-center justify-center font-black transition-all shadow-sm cursor-pointer select-none',
               idx === currentSlotIndex
                 ? 'border-car-accent bg-car-card scale-105 shadow-car-accent/20'
-                : 'border-car-border bg-car-card/60 hover:border-car-border-light',
+                : 'border-car-border bg-car-card hover:border-car-border-light',
               idx === 0 ? 'text-[22px] text-car-accent' : 'text-[24px] font-mono text-car-text',
               isGreenPlate && idx === 7 ? 'text-emerald-400' : ''
             ]"
@@ -60,7 +60,7 @@
       <!-- 车规大号软键盘区 (控制工具栏 + 全平铺按键) -->
       <div class="p-3.5 rounded-2xl bg-car-card border-2 border-car-border shadow-xl flex flex-col space-y-2">
         <!-- 键盘状态与操作栏 -->
-        <div class="flex items-center justify-between pb-1.5 border-b border-car-border/60 px-1">
+        <div class="flex items-center justify-between pb-1.5 border-b border-car-border px-1">
           <div class="flex items-center space-x-2">
             <span class="text-[14px] font-black text-car-text">
               {{ currentSlotIndex === 0 ? '第一步：请点选车辆所属省份简称' : '第二步：请点选车牌字母与数字' }}

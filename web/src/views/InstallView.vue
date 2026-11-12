@@ -11,7 +11,7 @@
         class="rounded-3xl border-2 border-car-border p-6 shadow-2xl transition-all bg-car-card flex flex-col justify-between cursor-pointer hover:border-car-accent active:scale-[0.99] group min-h-[260px]"
       >
         <div class="flex flex-col space-y-3">
-          <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
+          <div class="flex items-center justify-between pb-3 border-b border-car-border">
             <div class="flex items-center space-x-2.5">
               <div class="text-[21px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">
                 车载原生文件管理
@@ -31,7 +31,7 @@
           </div>
         </div>
 
-        <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
+        <div class="mt-4 pt-3 border-t border-car-border flex items-center justify-between">
           <div class="flex items-center text-[13.5px] text-car-accent font-black">
             <StatusDot class="mr-2" size="sm" color="ok" :glow-px="6" />
             <span>已就绪 · 支持原厂安全安装放行</span>
@@ -51,7 +51,7 @@
         class="rounded-3xl border-2 border-car-border p-6 shadow-2xl transition-all bg-car-card flex flex-col justify-between cursor-pointer hover:border-car-accent active:scale-[0.99] group min-h-[260px]"
       >
         <div class="flex flex-col space-y-3">
-          <div class="flex items-center justify-between pb-3 border-b border-car-border/60">
+          <div class="flex items-center justify-between pb-3 border-b border-car-border">
             <div class="flex items-center space-x-2.5">
               <div class="text-[21px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">
                 局域网无线快传
@@ -71,7 +71,7 @@
           </div>
         </div>
 
-        <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
+        <div class="mt-4 pt-3 border-t border-car-border flex items-center justify-between">
           <div class="flex items-center text-[13.5px] text-car-sub font-mono font-bold">
             <span class="whitespace-nowrap min-w-0 truncate">局域网 IP: {{ store.deviceInfo.car_ip ? store.deviceInfo.car_ip + ':8888' : '未连接热点' }}</span>
           </div>
@@ -92,7 +92,7 @@
           class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card flex-1 min-w-0 flex flex-col justify-between cursor-pointer hover:border-car-accent active:scale-[0.99] group min-h-[120px]"
         >
           <div class="flex flex-col space-y-2.5">
-            <div class="flex items-center justify-between pb-2.5 border-b border-car-border/60">
+            <div class="flex items-center justify-between pb-2.5 border-b border-car-border">
               <div class="flex items-center space-x-2.5">
                 <div class="text-[20px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">
                   整车应用高级管理
@@ -112,7 +112,7 @@
             </div>
           </div>
 
-          <div class="mt-4 pt-4 border-t border-car-border/40 flex items-center justify-between">
+          <div class="mt-4 pt-4 border-t border-car-border flex items-center justify-between">
             <div class="flex items-center text-[13px] text-emerald-400 font-extrabold">
               <StatusDot class="mr-2" size="sm" color="ok" :glow-px="6" />
               <span>支持系统/用户应用智能分类与状态管控</span>
@@ -129,7 +129,7 @@
           class="rounded-3xl border-2 border-car-border p-5 shadow-2xl transition-all bg-car-card flex-1 min-w-0 flex flex-col justify-between cursor-pointer hover:border-car-accent active:scale-[0.99] group min-h-[120px]"
         >
           <div class="flex flex-col space-y-2.5">
-            <div class="flex items-center justify-between pb-2.5 border-b border-car-border/60">
+            <div class="flex items-center justify-between pb-2.5 border-b border-car-border">
               <div class="flex items-center space-x-2.5">
                 <div class="text-[20px] font-black text-car-text tracking-wide group-hover:text-car-accent transition-colors">
                   卡兔子主题通道
@@ -151,7 +151,7 @@
             </div>
           </div>
 
-          <div class="mt-4 pt-4 border-t border-car-border/40 flex items-center justify-between">
+          <div class="mt-4 pt-4 border-t border-car-border flex items-center justify-between">
             <span class="text-[12.5px] text-car-sub font-bold">
               {{ store.settings.expert_rabbit ? '点击直接打开主题替换向导' : '点击按提示安全解锁专家模式' }}
             </span>
@@ -169,7 +169,7 @@
       <!-- 右列：车载应用安装与白名单说明面板 (左右等高紧凑排布，整页一屏收尽) -->
       <div class="rounded-3xl border-2 border-car-border p-6 shadow-2xl bg-car-card flex flex-col justify-between min-h-[260px]">
         <div class="flex flex-col space-y-3">
-          <div class="flex items-center space-x-2.5 pb-2.5 border-b border-car-border/60">
+          <div class="flex items-center space-x-2.5 pb-2.5 border-b border-car-border">
             <span class="text-car-accent font-black text-[17px]">◆</span>
             <div class="text-[20px] font-black text-car-text tracking-wide">
               车载应用管理规范与白名单须知
@@ -210,7 +210,7 @@
         </div>
 
         <!-- 白名单常驻锁定确认条 (车主手动确认已彻底冻结商店) -->
-        <div class="mt-4 pt-4 border-t border-car-border/40 flex items-center justify-between">
+        <div class="mt-4 pt-4 border-t border-car-border flex items-center justify-between">
           <div class="flex flex-col space-y-0.5 pr-3 min-w-0">
             <div class="flex items-center space-x-2">
               <StatusDot size="sm" :color="store.settings.whitelist_permanent_lock ? 'ok' : 'sub'" />
@@ -229,7 +229,7 @@
           </button>
         </div>
 
-        <div class="pt-4 border-t border-car-border/40 flex items-center justify-between text-[12.5px] text-car-sub">
+        <div class="pt-4 border-t border-car-border flex items-center justify-between text-[12.5px] text-car-sub">
           <span>安全环境就绪 · 本地沙盒无联网泄露风险</span>
           <span class="font-mono text-car-accent font-bold">GeelyOS HMI Safe Guard</span>
         </div>

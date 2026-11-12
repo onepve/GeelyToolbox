@@ -45,7 +45,7 @@
           <div 
             v-for="zip in zipList" 
             :key="zip.name"
-            class="bg-car-card border-2 border-car-border hover:border-car-accent/60 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all"
+            class="bg-car-card border-2 border-car-border hover:border-car-accent rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all"
           >
             <div class="flex-1 min-w-0 pr-4 flex flex-col space-y-1">
               <div class="flex items-center space-x-2.5">

@@ -30,7 +30,7 @@
 
       <div v-if="editingRecord" class="flex flex-col space-y-3">
         <!-- 车规三段 Tab 导航栏 (分页收敛，杜绝上下滚动拖拽) -->
-        <div class="flex items-center justify-between border-b border-car-border/80 pb-2.5">
+        <div class="flex items-center justify-between border-b border-car-border pb-2.5">
           <div class="flex items-center space-x-2">
             <button
               v-for="tab in [
@@ -255,7 +255,7 @@
             <div class="flex flex-col space-y-1">
               <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
                 <span>会员折扣快捷直选 / 手动输入:</span>
-                <span class="text-car-sub/80">点击下方快捷项或手动输入任意折扣</span>
+                <span class="text-car-sub">点击下方快捷项或手动输入任意折扣</span>
               </div>
               <div class="grid grid-cols-8 gap-1">
                 <button
@@ -267,7 +267,7 @@
                     'min-h-[50px] rounded-lg border-2 font-mono text-[12px] font-bold cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     isQuickDiscountActive(editingRecord, d.val)
                       ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
-                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
+                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
                   {{ d.label }}
@@ -281,7 +281,7 @@
                       ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
                       : (activeField === 'discount'
                           ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
-                          : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent')
+                          : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent')
                   ]"
                   title="点击在右侧小键盘手动输入任意折扣数字"
                 >
@@ -294,7 +294,7 @@
 
           <!-- 右侧：车规大号数字软键盘 (4x4 紧凑排列，无重复 200/300 按钮) -->
           <div class="col-span-6 flex flex-col justify-between p-3 rounded-2xl bg-car-card border-2 border-car-border shadow-md">
-            <div class="flex items-center justify-between px-1 pb-2 border-b border-car-border/60 text-[12px] font-bold text-car-sub">
+            <div class="flex items-center justify-between px-1 pb-2 border-b border-car-border text-[12px] font-bold text-car-sub">
               <span>车载软键盘 · 当前修改: <b class="text-car-accent text-[13px]">{{ getFieldLabel(activeField) }}</b></span>
               <span class="text-[11px]">按键高度车规 ≥ 50px</span>
             </div>
@@ -347,7 +347,7 @@
               <button 
                 type="button" 
                 @click="onNextField" 
-                class="min-h-[54px] rounded-xl border-2 border-car-accent/60 bg-car-item text-car-accent text-[14px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="min-h-[54px] rounded-xl border-2 border-car-accent bg-car-item text-car-accent text-[14px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-sm"
               >
                 下项 ➔
               </button>
@@ -383,7 +383,7 @@
             </div>
 
             <!-- 底部快速指引 -->
-            <div class="mt-3 p-2.5 rounded-xl bg-car-item/70 border border-car-border text-[12px] text-car-sub flex items-center justify-between">
+            <div class="mt-3 p-2.5 rounded-xl bg-car-item border border-car-border text-[12px] text-car-sub flex items-center justify-between">
               <span>💡 提示：输入加油原价与优惠券后，系统将自动算出实付金额与加注升数。</span>
               <button 
                 type="button" 
@@ -413,7 +413,7 @@
                     'min-h-[50px] rounded-xl border-2 font-mono text-[15px] font-black cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     editingRecord.fuel_type === f
                       ? 'border-car-accent bg-car-accent-light text-car-accent'
-                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
+                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
                   {{ f }}
@@ -479,7 +479,7 @@
                     'min-h-[50px] rounded-xl border-2 font-bold text-[13.5px] cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     editingRecord.gas_station === st
                       ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
-                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
+                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
                   {{ st }}
@@ -491,7 +491,7 @@
           <!-- 右侧：省份切换与官方最高零售限价对齐 (夜间皮肤文字高对比度适配) -->
           <div class="col-span-6 flex flex-col justify-between p-3.5 rounded-2xl bg-car-card border-2 border-car-border shadow-sm">
             <div class="flex flex-col space-y-2">
-              <div class="flex items-center justify-between pb-2 border-b border-car-border/60">
+              <div class="flex items-center justify-between pb-2 border-b border-car-border">
                 <div class="flex items-center space-x-2">
                   <span class="text-[13px] font-black text-car-text">加油所在省份:</span>
                   <span class="px-2.5 py-1 rounded-lg border border-car-accent bg-car-accent-light text-car-accent font-black text-[13px]">
@@ -511,7 +511,7 @@
                       'w-full min-h-[50px] rounded-xl border-2 text-[13px] font-black cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                       editingRecord.province === prov
                         ? 'border-car-accent bg-car-accent-light text-car-accent'
-                        : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
+                        : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                     ]"
                   >
                     {{ prov }}
@@ -520,7 +520,7 @@
               </div>
             </div>
 
-            <div class="flex items-center justify-between pt-4 border-t border-car-border/60 text-[12px] text-car-sub">
+            <div class="flex items-center justify-between pt-4 border-t border-car-border text-[12px] text-car-sub">
               <span>选择省份将自动同步当地发改委最高限价至单价槽位。</span>
               <button 
                 type="button" 
@@ -564,7 +564,7 @@
                     'min-h-[50px] rounded-lg border-2 text-[12.5px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(editingRecord, tag)
                       ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
-                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
+                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
                   {{ isTagSelected(editingRecord, tag) ? '✓ ' + tag : tag }}
@@ -579,7 +579,7 @@
             <div class="flex-1 flex flex-wrap items-center">
               <span 
                 v-if="!editingRecord.note || !String(editingRecord.note).trim()" 
-                class="text-[12px] text-car-sub/60"
+                class="text-[12px] text-car-sub"
               >
                 (暂无备注，点击上方标签即可直接添加)
               </span>
@@ -626,7 +626,7 @@
 
       <div v-if="newRecord" class="flex flex-col space-y-3">
         <!-- 车规三段 Tab 导航栏 (分页收敛，杜绝上下滚动拖拽) -->
-        <div class="flex items-center justify-between border-b border-car-border/80 pb-2.5">
+        <div class="flex items-center justify-between border-b border-car-border pb-2.5">
           <div class="flex items-center space-x-2">
             <button
               v-for="tab in [
@@ -845,7 +845,7 @@
             <div class="flex flex-col space-y-1">
               <div class="flex items-center justify-between px-1 text-[11px] font-bold text-car-sub">
                 <span>会员折扣快捷直选 / 手动输入:</span>
-                <span class="text-car-sub/80">点击下方快捷项或手动输入任意折扣</span>
+                <span class="text-car-sub">点击下方快捷项或手动输入任意折扣</span>
               </div>
               <div class="grid grid-cols-8 gap-1">
                 <button
@@ -857,7 +857,7 @@
                     'min-h-[50px] rounded-lg border-2 font-mono text-[12px] font-bold cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     isQuickDiscountActive(newRecord, d.val)
                       ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
-                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
+                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
                   {{ d.label }}
@@ -871,7 +871,7 @@
                       ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
                       : (activeField === 'discount'
                           ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
-                          : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent')
+                          : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent')
                   ]"
                   title="点击在右侧小键盘手动输入任意折扣数字"
                 >
@@ -884,7 +884,7 @@
 
           <!-- 右侧：车规大号数字软键盘 (4x4 纯净版，无重复 200/300 按钮) -->
           <div class="col-span-6 flex flex-col justify-between p-3 rounded-2xl bg-car-card border-2 border-car-border shadow-md">
-            <div class="flex items-center justify-between px-1 pb-2 border-b border-car-border/60 text-[12px] font-bold text-car-sub">
+            <div class="flex items-center justify-between px-1 pb-2 border-b border-car-border text-[12px] font-bold text-car-sub">
               <span>车载软键盘 · 当前修改: <b class="text-car-accent text-[13px]">{{ getFieldLabel(activeField) }}</b></span>
               <span class="text-[11px]">按键高度车规 ≥ 50px</span>
             </div>
@@ -936,7 +936,7 @@
               <button 
                 type="button" 
                 @click="onNextField" 
-                class="min-h-[54px] rounded-xl border-2 border-car-accent/60 bg-car-item text-car-accent text-[14px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-sm"
+                class="min-h-[54px] rounded-xl border-2 border-car-accent bg-car-item text-car-accent text-[14px] font-black flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-sm"
               >
                 下项 ➔
               </button>
@@ -972,7 +972,7 @@
             </div>
 
             <!-- 底部快速指引 -->
-            <div class="mt-3 p-2.5 rounded-xl bg-car-item/70 border border-car-border text-[12px] text-car-sub flex items-center justify-between">
+            <div class="mt-3 p-2.5 rounded-xl bg-car-item border border-car-border text-[12px] text-car-sub flex items-center justify-between">
               <span>💡 提示：输入加油原价与优惠券后，系统将自动算出实付金额与加注升数。</span>
               <button 
                 type="button" 
@@ -1001,7 +1001,7 @@
                     'min-h-[50px] rounded-xl border-2 font-mono text-[15px] font-black cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     newRecord.fuel_type === f
                       ? 'border-car-accent bg-car-accent-light text-car-accent'
-                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
+                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
                   {{ f }}
@@ -1067,7 +1067,7 @@
                     'min-h-[50px] rounded-xl border-2 font-bold text-[13.5px] cursor-pointer transition-all flex items-center justify-center shadow-sm select-none',
                     newRecord.gas_station === st
                       ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
-                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
+                      : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
                   {{ st }}
@@ -1079,7 +1079,7 @@
           <!-- 右侧：省份切换与官方最高零售限价对齐 -->
           <div class="col-span-6 flex flex-col justify-between p-3.5 rounded-2xl bg-car-card border-2 border-car-border shadow-sm">
             <div class="flex flex-col space-y-2">
-              <div class="flex items-center justify-between pb-2 border-b border-car-border/60">
+              <div class="flex items-center justify-between pb-2 border-b border-car-border">
                 <div class="flex items-center space-x-2">
                   <span class="text-[13px] font-black text-car-text">加油所在省份:</span>
                   <span class="px-2.5 py-1 rounded-lg border border-car-accent bg-car-accent-light text-car-accent font-black text-[13px]">
@@ -1099,7 +1099,7 @@
                       'w-full min-h-[50px] rounded-xl border-2 text-[13px] font-black cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                       newRecord.province === prov
                         ? 'border-car-accent bg-car-accent-light text-car-accent'
-                        : 'border-car-border bg-car-item text-car-text hover:border-car-accent/50 hover:text-car-accent'
+                        : 'border-car-border bg-car-item text-car-text hover:border-car-accent hover:text-car-accent'
                     ]"
                   >
                     {{ prov }}
@@ -1108,7 +1108,7 @@
               </div>
             </div>
 
-            <div class="flex items-center justify-between pt-4 border-t border-car-border/60 text-[12px] text-car-sub">
+            <div class="flex items-center justify-between pt-4 border-t border-car-border text-[12px] text-car-sub">
               <span>选择省份将自动同步当地发改委最高限价至单价槽位。</span>
               <button 
                 type="button" 
@@ -1152,7 +1152,7 @@
                     'min-h-[50px] rounded-lg border-2 text-[12.5px] font-bold cursor-pointer transition-all flex items-center justify-center select-none shadow-sm',
                     isTagSelected(newRecord, tag)
                       ? 'border-car-accent bg-car-accent-light text-car-accent font-black'
-                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent/50 hover:text-car-accent'
+                      : 'border-car-border bg-car-card text-car-text hover:border-car-accent hover:text-car-accent'
                   ]"
                 >
                   {{ isTagSelected(newRecord, tag) ? '✓ ' + tag : tag }}
@@ -1166,7 +1166,7 @@
             <div class="flex-1 flex flex-wrap items-center">
               <span 
                 v-if="!newRecord.note || !String(newRecord.note).trim()" 
-                class="text-[12px] text-car-sub/60"
+                class="text-[12px] text-car-sub"
               >
                 (暂无备注，点击上方标签即可直接添加)
               </span>

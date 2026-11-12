@@ -29,7 +29,7 @@
     </div>
 
     <!-- 底部操作区（toggle / 配置按钮由调用方给） -->
-    <div class="pt-4 border-t border-car-border/60 mt-auto shrink-0">
+    <div class="pt-4 border-t border-car-border mt-auto shrink-0">
       <slot name="footer" />
     </div>
   </div>

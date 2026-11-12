@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""五个主视图 1920x720 真视口截图（UI 复核用）。"""
-import os, json, time, asyncio, subprocess, urllib.request, base64, websockets
+"""五个主视图 1920x720 真视口截图（UI 复核用）。
+
+用法：
+    python3 scripts/shot_views.py                  # 黑夜（出厂默认）
+    python3 scripts/shot_views.py day              # 白天
+    python3 scripts/shot_views.py day amber_gold   # 白天 + 指定配色
+输出：/data/tmp/ui_audit/<view>.png / day_<view>.png
+"""
+import os, sys, json, time, asyncio, subprocess, urllib.request, base64, websockets
 
 ROOT = "/data/projects/GeelyToolbox"
 HTML = f"file://{ROOT}/app/src/main/assets/toolbox_ui.html"
 PORT = 9341
 OUT = "/data/tmp/ui_audit"
+MODE = (sys.argv[1] if len(sys.argv) > 1 else "night").lower()
+PALETTE = sys.argv[2] if len(sys.argv) > 2 else "sky_ocean"
+THEME_KEY = "toolbox_theme_v2"
 VIEWS = [("link", "行车联动"), ("body", "车载声音"), ("fuel", "行程油耗"),
          ("store", "应用生态"), ("system", "系统设置")]
 
@@ -45,14 +55,22 @@ async def run():
         async def ev(js):
             r = await call("Runtime.evaluate", expression=js, returnByValue=True)
             return r.get("result", {}).get("value")
+        # 主题模式由 initTheme() 从 localStorage 读取，改完必须 reload 才会真正切昼夜
         await ev("localStorage.setItem('has_shown_welcome_donate','true'); 'ok'")
+        await ev(f"localStorage.setItem('toolbox_theme_v2', JSON.stringify({{palette:'{PALETTE}', mode:'{MODE}'}})); 'ok'")
+        await call("Page.reload", ignoreCache=True)
+        await asyncio.sleep(2.5)
+        real = await ev("document.documentElement.getAttribute('data-mode')")
+        pal = await ev("document.documentElement.getAttribute('data-palette')")
+        print(f"模式={real} 配色={pal}")
         await ev("(() => { if(window.__VUE_STORE__) window.__VUE_STORE__.modals={}; return 'ok'; })()")
         await asyncio.sleep(0.8)
+        prefix = "" if MODE == "night" else (f"{MODE}_" if PALETTE == "sky_ocean" else f"{MODE}_{PALETTE}_")
         for key, name in VIEWS:
             await ev(f"window.__VUE_STORE__.currentNav = '{key}'; 'ok'")
             await asyncio.sleep(1.2)
             shot = await call("Page.captureScreenshot", format="png")
-            path = f"{OUT}/{key}.png"
+            path = f"{OUT}/{prefix}{key}.png"
             open(path, "wb").write(base64.b64decode(shot["data"]))
             print(path, name, os.path.getsize(path))
 

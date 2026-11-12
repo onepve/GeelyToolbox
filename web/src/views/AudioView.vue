@@ -58,7 +58,7 @@
         </div>
 
         <!-- 底部提示 -->
-        <div class="pt-3 border-t border-car-border/50 flex items-center justify-between text-car-sub">
+        <div class="pt-3 border-t border-car-border flex items-center justify-between text-car-sub">
           <div class="text-[12.5px] font-bold">
             播放规则：行车车速达标或方向盘切歌时优先播放首选音源；若需调整音源先后顺序，请点击右上角「调整优先级」。
           </div>

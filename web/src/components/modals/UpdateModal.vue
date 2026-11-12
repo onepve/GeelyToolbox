@@ -27,7 +27,7 @@
       </div>
 
       <!-- 下载进度条卡片 (下载中动态展开，实时展现速度与百分比) -->
-      <div v-if="isDownloading" class="bg-car-item border-2 border-car-accent/40 rounded-2xl p-5 flex flex-col space-y-3 shadow-md">
+      <div v-if="isDownloading" class="bg-car-item border-2 border-car-accent rounded-2xl p-5 flex flex-col space-y-3 shadow-md">
         <div class="flex items-center justify-between text-[16px] font-black text-car-text">
           <span class="flex items-center">
             <span class="w-2.5 h-2.5 rounded-full bg-car-accent mr-2 animate-pulse shadow-[0_0_8px_var(--accent-gold)]"></span>

@@ -28,13 +28,13 @@
         <div class="flex items-center space-x-3 shrink-0">
           <button 
             @click="refreshApps"
-            class="h-[50px] px-6 rounded-xl bg-car-card border border-car-border/70 hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-md transition-all whitespace-nowrap flex items-center justify-center active:scale-95"
+            class="h-[50px] px-6 rounded-xl bg-car-card border border-car-border hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-md transition-all whitespace-nowrap flex items-center justify-center active:scale-95"
           >
             刷新清单
           </button>
           <button 
             @click="openModal('cleanDownload')"
-            class="h-[50px] px-6 rounded-xl bg-car-card border border-car-border/70 hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-md transition-all flex items-center justify-center whitespace-nowrap active:scale-95"
+            class="h-[50px] px-6 rounded-xl bg-car-card border border-car-border hover:border-car-border-light text-car-text font-black text-[15.5px] cursor-pointer shadow-md transition-all flex items-center justify-center whitespace-nowrap active:scale-95"
           >
             <span>清理下载目录</span>
           </button>
@@ -42,7 +42,7 @@
       </div>
 
       <!-- 1.2 中轴分割线 (沉稳车规分界) -->
-      <div class="border-b border-car-border/60 my-5"></div>
+      <div class="border-b border-car-border my-5"></div>
 
       <!-- 1.3 下半区：应用分类控制栏 (基线严格对齐，安全呼吸留白充足) -->
       <div class="flex items-center justify-between min-h-[50px]">
@@ -60,7 +60,7 @@
               'h-[50px] px-6 rounded-xl font-black text-[15.5px] cursor-pointer transition-all whitespace-nowrap flex items-center justify-center active:scale-95',
               currentCategory === cat.id 
                 ? 'bg-car-accent-bg text-car-accent shadow-sm' 
-                : 'bg-car-card text-car-text/80 hover:text-car-text'
+                : 'bg-car-card text-car-text hover:text-car-text'
             ]"
           >
             {{ cat.name }}
@@ -95,7 +95,7 @@
         </div>
 
         <!-- 卡片底栏信息 -->
-        <div class="mt-4 pt-3 border-t border-car-border/40 flex items-center justify-between">
+        <div class="mt-4 pt-3 border-t border-car-border flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <span class="text-[12.5px] px-2 py-0.5 rounded bg-car-card border border-car-border text-car-sub font-black">
               {{ formatCategoryName(app.category) }}

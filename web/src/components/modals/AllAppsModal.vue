@@ -125,7 +125,7 @@
           <div 
             v-for="app in filteredApps" 
             :key="app.pkg"
-            class="bg-car-item/90 hover:bg-car-item border border-car-border rounded-xl p-3.5 flex items-center justify-between shadow-sm transition-all"
+            class="bg-car-item hover:bg-car-hover border border-car-border rounded-xl p-3.5 flex items-center justify-between shadow-sm transition-all"
           >
             <!-- 左侧信息 -->
             <div class="flex items-center space-x-3.5 min-w-0 flex-1 pr-4">
@@ -224,7 +224,7 @@
                   :class="[
                     'w-[155px] min-h-[50px] px-2 rounded-xl border-2 font-black text-[13.5px] shrink-0 transition-all flex items-center justify-center shadow-sm',
                     presetStates['com.ecarx.appstore'] === 'not_installed'
-                      ? 'bg-car-card border-car-border text-car-sub/60 opacity-50 cursor-not-allowed'
+                      ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
                       : (freezingPackages['com.ecarx.appstore']
                           ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
                           : (presetStates['com.ecarx.appstore'] === 'frozen'
@@ -262,7 +262,7 @@
                   :class="[
                     'w-[155px] min-h-[50px] px-2 rounded-xl border-2 font-black text-[13.5px] shrink-0 transition-all flex items-center justify-center shadow-sm',
                     presetStates['com.ecarx.multimedia'] === 'not_installed'
-                      ? 'bg-car-card border-car-border text-car-sub/60 opacity-50 cursor-not-allowed'
+                      ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
                       : (freezingPackages['com.ecarx.multimedia']
                           ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
                           : (presetStates['com.ecarx.multimedia'] === 'frozen'
@@ -300,7 +300,7 @@
                   :class="[
                     'w-[155px] min-h-[50px] px-2 rounded-xl border-2 font-black text-[13.5px] shrink-0 transition-all flex items-center justify-center shadow-sm',
                     presetStates['com.edog.car'] === 'not_installed'
-                      ? 'bg-car-card border-car-border text-car-sub/60 opacity-50 cursor-not-allowed'
+                      ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
                       : (freezingPackages['com.edog.car']
                           ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
                           : (presetStates['com.edog.car'] === 'frozen'
@@ -338,7 +338,7 @@
                   :class="[
                     'w-[155px] min-h-[50px] px-2 rounded-xl border-2 font-black text-[13.5px] shrink-0 transition-all flex items-center justify-center shadow-sm',
                     presetStates['com.bytedance.byteautoservice'] === 'not_installed'
-                      ? 'bg-car-card border-car-border text-car-sub/60 opacity-50 cursor-not-allowed'
+                      ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
                       : (freezingPackages['com.bytedance.byteautoservice']
                           ? 'bg-car-card border-car-border text-car-sub opacity-50 cursor-not-allowed'
                           : (presetStates['com.bytedance.byteautoservice'] === 'frozen'
