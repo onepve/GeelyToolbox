@@ -165,6 +165,82 @@ if checked_card == 0:
     fail("未在 palette.js 中检出任何 --bg-card / --bg-item，门禁失去保护对象。")
 
 # ---------------------------------------------------------------------------
+# 3b) 白天卡片必须「同色系」，严禁被洗成中性白（发白真凶）
+#
+#     真机实测（同像素开关卡法）：旧配方 --bg-card 近中性高不透明白 + 卡面白色
+#     受光渐变，把主题色饱和度压掉 52%（卡面 S=15.5 vs 同像素背景 S=32.6）。
+#     车上看就是「未激活卡片一片死白，跟主题背景完全脱节」。
+#
+#     业界口径（Material Design 3 surface-container / Apple HIG elevated）：
+#     浅色主题的卡片不用纯白，而是同一 hue、明度比背景略低几级的 tinted surface。
+#     ⇒ 白天 --bg-card 的通道极差（色相含量）>= 25，且亮度不得高于页面底色。
+#     纯白 / 近白卡（极差 9~15）会被这条直接拦住。
+# ---------------------------------------------------------------------------
+MIN_CHROMA = 25          # 通道极差下限：低于它肉眼就判定为"白"
+MAX_LUMA_OVER_BG = 6     # 卡片亮度允许比页面底色亮的余量
+
+
+def _parse_color(val):
+    """把 '#rrggbb' / 'rgba(r,g,b,a)' 统一解析成 (r,g,b,alpha)。"""
+    val = val.strip()
+    m = re.match(r"^#([0-9a-fA-F]{6})$", val)
+    if m:
+        h = m.group(1)
+        return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16), 1.0
+    m = re.match(r"^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$", val)
+    if m:
+        return (float(m.group(1)), float(m.group(2)), float(m.group(3)),
+                float(m.group(4)) if m.group(4) else 1.0)
+    return None
+
+
+def _luma(r, g, b):
+    return 0.299 * r + 0.587 * g + 0.114 * b
+
+
+day_card_checked = 0
+for th in theme_names:
+    i = pal.find("\n  %s: {" % th)
+    if i < 0:
+        continue
+    blk, _ = _brace_block(pal, pal.index("{", i))
+    mi = blk.find("\n    day: {")
+    if mi < 0:
+        continue
+    mblk, _ = _brace_block(blk, blk.index("{", mi))
+
+    m_bg = re.search(r"'--bg-main':\s*'([^']*)'", mblk)
+    m_card = re.search(r"'--bg-card':\s*'([^']*)'", mblk)
+    if not m_bg or not m_card:
+        fail("主题 %s 的 day 档缺少 --bg-main 或 --bg-card，无法校验卡片色相一致性。" % th)
+        continue
+    bg_rgba = _parse_color(m_bg.group(1))
+    card_rgba = _parse_color(m_card.group(1))
+    if bg_rgba is None or card_rgba is None:
+        fail("主题 %s 的 day 档 --bg-main/--bg-card 色值无法解析。" % th)
+        continue
+
+    day_card_checked += 1
+    cr, cg, cb = card_rgba[0], card_rgba[1], card_rgba[2]
+    chroma = max(cr, cg, cb) - min(cr, cg, cb)
+    if chroma < MIN_CHROMA:
+        fail(
+            "主题 %s 的 day --bg-card = %s 通道极差仅 %d（要求 >= %d）—— "
+            "这张卡已被洗成中性白，叠在带色背景上会「发白」，与主题脱节。"
+            "必须改成同色系（同一 hue、明度略低于 %s 的 tinted surface）。"
+            % (th, m_card.group(1), chroma, MIN_CHROMA, m_bg.group(1))
+        )
+    luma_card = _luma(cr, cg, cb)
+    luma_bg = _luma(*bg_rgba[:3])
+    if luma_card > luma_bg + MAX_LUMA_OVER_BG:
+        fail(
+            "主题 %s 的 day 卡片亮度 %.1f 高于页面底色 %.1f（允许 +%d）—— "
+            "「比背景更亮的白卡」在带色背景上必然发白，且 sRGB 下无法靠调 alpha 挽回。"
+            "浅色主题请让卡片明度持平或略低于背景。"
+            % (th, luma_card, luma_bg, MAX_LUMA_OVER_BG)
+        )
+
+# ---------------------------------------------------------------------------
 # 4) 每个主题每档必须有 rgba 形式的 --ambient-1 / --ambient-2
 # ---------------------------------------------------------------------------
 amb_checked = 0

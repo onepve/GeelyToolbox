@@ -92,6 +92,21 @@ case("V1 主题复活",
      "export const THEMES = {\n  blue: {\n    label: '蓝',\n    night: { '--bg-card': '#162032' },\n    day: { '--bg-card': '#ffffff' }\n  },",
      "已下线的 V1 实色主题")
 
+# 9) 白天卡片被洗回中性白（车机「未激活卡片发白」真凶）
+#    旧配方 rgba(240,246,255,.90) 通道极差只有 15，肉眼就是白的。
+case("白天卡片洗成中性白",
+     PALETTE,
+     "'--bg-card': 'rgba(212,223,244,.92)'",
+     "'--bg-card': 'rgba(240,246,255,.90)'",
+     "通道极差")
+
+# 10) 白天卡片比背景更亮（白卡压在带色背景上必然发白）
+case("白天卡片比背景更亮",
+     PALETTE,
+     "'--bg-card': 'rgba(212,223,244,.92)'",
+     "'--bg-card': 'rgba(250,252,255,.92)'",
+     "高于页面底色")
+
 
 def run_gate():
     r = subprocess.run([sys.executable, str(GATE)],

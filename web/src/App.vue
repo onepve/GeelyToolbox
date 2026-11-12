@@ -526,7 +526,7 @@ html.light body {
    白天把受光渐变压到 .34，只保留极轻的顶部提亮，反面靠亮边与冷色浅影拉开层次。 */
 html.light .bg-car-card {
   background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .05) 46%, rgba(255, 255, 255, 0) 74%);
+    linear-gradient(180deg, rgba(255, 255, 255, .14) 0%, rgba(255, 255, 255, .02) 46%, rgba(255, 255, 255, 0) 74%);
 }
 
 /* 夜间：卡片必须比背景亮才有浮起感。
