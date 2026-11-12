@@ -379,12 +379,15 @@
           <button 
             v-if="logMeta.path || exportFileName"
             @click="openUploadConfirm"
-            class="min-h-[50px] px-5 rounded-xl border-2 font-black text-[15.5px] cursor-pointer shadow-sm transition-all flex items-center space-x-1.5"
-            :class="logMeta.isUploaded 
-              ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-400 hover:text-emerald-300' 
-              : 'bg-car-accent-bg border-car-accent text-car-accent hover:opacity-90'"
+            :disabled="isExporting"
+            class="min-h-[50px] px-5 rounded-xl border-2 font-black text-[15.5px] shadow-sm transition-all flex items-center space-x-1.5"
+            :class="isExporting
+              ? 'bg-car-item border-car-border text-car-sub opacity-60 cursor-not-allowed'
+              : (logMeta.isUploaded 
+                ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-400 hover:text-emerald-300 cursor-pointer' 
+                : 'bg-car-accent-bg border-car-accent text-car-accent hover:opacity-90 cursor-pointer')"
           >
-            <span>{{ logMeta.isUploaded ? '☁️ 日志已上传' : '☁️ 一键上传分析' }}</span>
+            <span>{{ isExporting ? '☁️ 抓取中，暂不可上传' : (logMeta.isUploaded ? '☁️ 日志已上传' : '☁️ 一键上传分析') }}</span>
           </button>
           <button 
             @click="clearLogs"
@@ -734,11 +737,16 @@ function exportFullLogs() {
   exportFinished.value = false;
   exportFileName.value = '';
   exportSizeStr.value = '';
+  // 抓取一发起就作废旧包的上传状态：此刻车机里正在生成新包，旧包的「已上传」标签
+  // 与新包毫无关系，继续显示会误导车主以为新日志已经传过（上传按钮同步置灰禁止点击）。
+  logMeta.value.isUploaded = false;
+  logMeta.value.uploadedCode = '';
   try {
     bridge.call('dumpFullSystemLogcat');
   } catch (e) {
     showToast('发起全量日志采集失败: ' + e);
     isExporting.value = false;
+    checkExistingLog(); // 采集没起来就把上一份包的「已上传」状态还原，别让车主失去上传入口
   }
 }
 

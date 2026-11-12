@@ -1198,7 +1198,21 @@ public class SystemUtils {
     private static final java.util.regex.Pattern PATTERN_PHONE = java.util.regex.Pattern.compile("(?<!\\d)(1[3-9]\\d{9})(?!\\d)");
     private static final java.util.regex.Pattern PATTERN_VIN = java.util.regex.Pattern.compile("(?i)\\b([A-HJ-NPR-Z0-9]{4})[A-HJ-NPR-Z0-9]{9}([A-HJ-NPR-Z0-9]{4})\\b");
     private static final java.util.regex.Pattern PATTERN_LATLNG = java.util.regex.Pattern.compile("(?i)LatLng\\{[^}]*\\}");
-    private static final java.util.regex.Pattern PATTERN_GPS_COORD = java.util.regex.Pattern.compile("(?i)(latitude|longitude|poiLatitude|poiLongitude)\\s*[:=]\\s*([0-9]+\\.[0-9]+)");
+    // 键名两侧可能带引号（埋点 JSON 写作 "latitude":31.72），旧正则只认 latitude= 因此整段漏掉
+    private static final java.util.regex.Pattern PATTERN_GPS_COORD = java.util.regex.Pattern.compile("(?i)([\"']?(?:latitude|longitude|poiLatitude|poiLongitude)[\"']?\\s*[:=]\\s*)([0-9]+\\.[0-9]+)");
+    // v1.8.32.13 补齐三处真实漏点（2026-11-12 430884 包实测：45,937 行里 287 行仍带明文坐标/设备号）
+    // ① 系统定位原文 Location[gps 31.720748,118.353723 hAcc=...] —— 键名不是 latitude，旧正则完全没命中
+    private static final java.util.regex.Pattern PATTERN_LOCATION_OBJ = java.util.regex.Pattern.compile(
+            "(?i)(Location\\[(?:gps|network|passive|fused)\\s*)(-?[0-9]+\\.[0-9]+)\\s*,\\s*(-?[0-9]+\\.[0-9]+)");
+    // ② MNLD/原生层 lat=31.720748 lng=118.353723 简写 —— 不是 latitude=，旧正则同样漏掉
+    private static final java.util.regex.Pattern PATTERN_LATLNG_SHORT = java.util.regex.Pattern.compile(
+            "(?i)\\b(lat|lon|lng|latitude|longitude)\\s*[=:]\\s*(-?[0-9]{2,3}\\.[0-9]{3,})");
+    // ③ 埋点 JSON 的设备指纹（ecarx_device_id / distinct_id / anonymous_id / $device_id / pcode），
+    //    与应用身份强绑定，属于必须抹除的设备标识；旧版只处理了 getXDSN:/deviceID: 两种写法
+    private static final java.util.regex.Pattern PATTERN_DEVICE_FINGERPRINT = java.util.regex.Pattern.compile(
+            "(?i)(\"?(?:ecarx_device_id|distinct_id|anonymous_id|\\$device_id|device_id|pcode)\"?\\s*[:=]\\s*\"?)([A-Za-z0-9_\\-]{6,})");
+    private static final java.util.regex.Pattern PATTERN_MAC = java.util.regex.Pattern.compile(
+            "\\b(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}\\b");
     private static final java.util.regex.Pattern PATTERN_ADDRESS = java.util.regex.Pattern.compile("(?i)(address|geofullAddress|formatedAddress|poiName)\\s*[:=]\\s*['\"][^'\"]*['\"]");
     private static final java.util.regex.Pattern PATTERN_XDSN = java.util.regex.Pattern.compile("(?i)(getXDSN|deviceID|XDSN)\\s*[:=]\\s*([A-Za-z0-9_]{4})[A-Za-z0-9_]{4,}([A-Za-z0-9_]{4})");
 
@@ -1329,6 +1343,17 @@ public class SystemUtils {
         return sb.toString();
     }
 
+    /** 经纬度键值脱敏：值必须以 0.000000 覆盖，用 Matcher 循环拼接避免 "$1" 后紧跟数字被误读成 $10。 */
+    private static String redactGpsCoord(String text) {
+        java.util.regex.Matcher m = PATTERN_GPS_COORD.matcher(text);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(m.group(1) + "0.000000"));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
     public static String desensitizeLogLine(String line) {
         if (line == null || line.isEmpty()) return line;
         String clean = line;
@@ -1338,15 +1363,27 @@ public class SystemUtils {
         if (clean.contains("LB3") || clean.contains("vin") || clean.contains("VIN")) {
             clean = PATTERN_VIN.matcher(clean).replaceAll("$1****$2");
         }
-        if (clean.contains("lat") || clean.contains("lng") || clean.contains("Lat") || clean.contains("Lng")) {
+        // 定位脱敏：先抹 LatLng{}/Location[gps ..]/latitude=.. 三种完整写法，再兜底抹裸 lat=/lng= 简写
+        if (clean.contains("lat") || clean.contains("Lat") || clean.contains("lng") || clean.contains("Lng")
+                || clean.contains("lon") || clean.contains("Lon") || clean.contains("Location[")) {
             clean = PATTERN_LATLNG.matcher(clean).replaceAll("LatLng{REDACTED_LOCATION}");
-            clean = PATTERN_GPS_COORD.matcher(clean).replaceAll("$1=0.000000");
+            clean = PATTERN_LOCATION_OBJ.matcher(clean).replaceAll("$1{REDACTED_LOCATION}");
+            clean = redactGpsCoord(clean);
+            clean = PATTERN_LATLNG_SHORT.matcher(clean).replaceAll("$1=0.000000");
         }
         if (clean.contains("address") || clean.contains("Address") || clean.contains("poiName")) {
             clean = PATTERN_ADDRESS.matcher(clean).replaceAll("$1=\"[REDACTED_ADDRESS]\"");
         }
-        if (clean.contains("XDSN") || clean.contains("deviceID")) {
+        // 设备指纹脱敏：埋点里的 ecarx_device_id / distinct_id / $device_id / pcode 与车机身份强绑定，一律抹除
+        if (clean.contains("device_id") || clean.contains("deviceID") || clean.contains("distinct_id")
+                || clean.contains("anonymous_id") || clean.contains("pcode")
+                || clean.contains("XDSN") || clean.contains("xdsn")) {
+            clean = PATTERN_DEVICE_FINGERPRINT.matcher(clean).replaceAll("$1[REDACTED_DEVICE_ID]");
             clean = PATTERN_XDSN.matcher(clean).replaceAll("$1:$2****$3");
+        }
+        // MAC 物理地址脱敏（蓝牙/Wi-Fi 网卡地址可用于设备定位）
+        if (clean.contains(":")) {
+            clean = PATTERN_MAC.matcher(clean).replaceAll("[REDACTED_MAC]");
         }
         return clean;
     }

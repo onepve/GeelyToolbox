@@ -184,6 +184,23 @@ def evaluate(files):
         failures.append('ci-store-probe-decoupled')
     if re.search(r'failures\.append\(\(url,\s*str\(err\)\)\)\s*\n\s*if failures:\s*\n\s*passed\s*=\s*False', ci_health):
         failures.append('ci-store-probe-non-blocking')
+    # 日志脱敏必须覆盖真实世界写法（2026-11-12 430884 包实测 287 行残留明文坐标/设备号）：
+    #   Location[gps 31.72,118.35]、lat=/lng= 简写、埋点 JSON 的 "latitude":、ecarx_device_id/distinct_id/pcode、MAC。
+    # 只留 latitude=/longitude= 一种写法等于没脱敏 —— 车主隐私一旦上传不可撤回。
+    utils_src = files.get(JAVA+'utils/SystemUtils.java', '')
+    for pat in (r'PATTERN_LOCATION_OBJ', r'PATTERN_LATLNG_SHORT', r'PATTERN_DEVICE_FINGERPRINT',
+                r'PATTERN_MAC', r'redactGpsCoord\('):
+        if not re.search(pat, utils_src):
+            failures.append('log-desensitize-coverage:' + pat)
+    # 重新抓取日志时必须立刻作废旧包的「已上传」状态，并禁止在上传按钮上继续点开旧弹窗
+    logmodal = files.get('web/src/components/modals/LogModal.vue', '')
+    try:
+        if not re.search(r'logMeta\.value\.isUploaded\s*=\s*false', region(logmodal, 'function exportFullLogs()')):
+            failures.append('log-reexport-clears-uploaded')
+    except ValueError:
+        failures.append('log-reexport-clears-uploaded')
+    if len(re.findall(r'@click="openUploadConfirm"[^>]*:disabled="isExporting"', logmodal, re.S)) < 1:
+        failures.append('log-upload-button-disabled-while-exporting')
     return failures
 
 
