@@ -174,8 +174,10 @@ public class VehicleAutomationService extends Service {
     private static volatile String sLogcatBuf = "";            // 当前订阅的缓冲区组合
     // ═══ crash 缓冲区订阅（v1.8.32.10）═══
     // 实车铁证：吉利 logd 把 InputManager 方控按键报文分流进 crash 段，只订 main 读不到按键。
-    private volatile boolean logcatCrashBufDisabled = false;   // crash 缓冲区已被判定不可读（永久剔除）
-    private int logcatCrashProbeFailures = 0;                  // crash 探针连续失败次数（满 2 次才永久剔除）
+    // 【crash 旁路 v1.8.33.15】crash 缓冲区独立线程/独立进程，与主通道物理隔离。
+    private Thread crashSidecarThread = null;
+    private Process crashSidecarProcess = null;
+    private static volatile int sCrashSidecarBuildCount = 0;   // 旁路通道建立次数（全程累计）
     private volatile long logcatDroppedLines = 0L;             // 解析队列满时主动丢弃的行数（通道拥塞硬指标）
 
     // ═══ 读解耦队列 (v1.8.33) ═══
@@ -329,6 +331,7 @@ public class VehicleAutomationService extends Service {
     public static String getLogcatHealthSnapshot() {
         return "建立=" + sLogcatBuildCount + " 断开=" + sLogcatFailCount
                 + " 方控兜底=" + sLogcatFallbackCount + " 订阅=" + sLogcatBuf
+                + " crash旁路=" + sCrashSidecarBuildCount
                 + " 末次断因=" + sLogcatLastExit;
     }
 
@@ -1126,6 +1129,7 @@ public class VehicleAutomationService extends Service {
         logcatLastLineAtMs = android.os.SystemClock.elapsedRealtime(); // 看门狗基准：从建通道那刻起算，避免首轮空转
         startLogcatWatchdog();
         startLogcatParser(); // 解析线程必须与读线程同时在场：读线程只入队，绝不自己解析
+        startCrashSidecarReader(); // crash 旁路：独立线程独立进程，绝不与主通道互相拖累
 
         logcatThread = new Thread(new Runnable() {
             @Override
@@ -1176,49 +1180,33 @@ public class VehicleAutomationService extends Service {
                         // ②时间栅栏保证不会把历史行误当实时行解析。老系统不认 -T 时仍自动降级。
                         int tier = logcatConsecutiveFailures;
                         String[] cmd;
+                        // 【crash 分流铁律 v1.8.33.15】crash 缓冲区绝不与主通道合并。
+                        // 实车铁证（诊断包 384522 / 932336，同车 602076）：
+                        //   合并 -b main,system,events,crash 后，建流成功却在 1~3 秒内报
+                        //   read: unexpected EOF! 退出；外层重连循环反复重建，384522 实测
+                        //   21:42:54.940 建 #1 → 21:43:08.064 建 #2 → 21:43:12.041 建 #3，
+                        //   直到 21:43:12.139 才进实时，整整 17.2 秒没有挡位报文。
+                        // 而 crash 只承载方控的 reportKeyToAdaptApi 一种报文，方控本身已有
+                        // HAL HW_KEY_INPUT 常开兜底 + 原厂广播兜底，绝不值得用全车主通道去换。
+                        // 现在：主通道只订 main,system,events（老版本 1.8.7~1.8.28 的稳定组合，
+                        // 实测 0.13~1.6 秒进入实时、0 次断连）；crash 由独立旁路线程单独订阅，
+                        // 它断了只影响方控日志源，主通道照常收挡位/车门/电源报文。
                         if (tier >= 6) {
-                            // 兜底降级：crash + main 两个最小组合（老系统 / 权限受限时仍能拿到方控与 CAN 主日志）
-                            cmd = new String[]{"logcat", "-v", "time", "-b", "crash,main"};
-                            sLogcatBuf = "crash+main(降级)";
+                            cmd = new String[]{"logcat", "-v", "time", "-b", "main"};
+                            sLogcatBuf = "main(降级)";
                         } else if (tier >= 3 || logcatTailSeekDisabled) {
-                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events,crash"};
-                            sLogcatBuf = "main+system+events+crash";
+                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events"};
+                            sLogcatBuf = "main+system+events";
                         } else {
                             // -T 1 = 只从缓冲区最后一行起跟随，不回放历史，建流即实时
-                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events,crash", "-T", "1"};
-                            sLogcatBuf = "main+system+events+crash(-T1)";
+                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events", "-T", "1"};
+                            sLogcatBuf = "main+system+events(-T1)";
                         }
 
-                        // 【crash 探针铁律】只在建流前判一次，绝不在流中途改命令。
-                        // 用 `logcat -b crash -d -t 1`（读完即退出、最多 1 行、不留常驻进程）。
-                        // 连续 2 次探针失败才永久剔除 crash（避免一次偶发进程创建失败就永久失去按键源）；
-                        // 一旦剔除就永久记住，绝不每轮重试（重试会把探针本身变成新刷屏源）。
-                        if (!logcatCrashBufDisabled) {
-                            String[] probe = new String[]{"logcat", "-b", "crash", "-d", "-t", "1"};
-                            if (probeBufferReadable(probe)) {
-                                logcatCrashProbeFailures = 0;
-                            } else {
-                                logcatCrashProbeFailures++;
-                                Log.w(TAG, "crash 缓冲区探针失败 第" + logcatCrashProbeFailures + "次");
-                                if (logcatCrashProbeFailures >= 2) {
-                                    logcatCrashBufDisabled = true;
-                                    Log.w(TAG, "crash 缓冲区连续不可读，已永久剔除 crash（方控改由 HAL 常开兜底接管）");
-                                }
-                            }
-                        }
-                        if (logcatCrashBufDisabled) {
-                            // 剔除 crash 后回到旧组合（方控此时完全依赖下面常开的 HAL 兜底通道）
-                            if (tier >= 6) {
-                                cmd = new String[]{"logcat", "-v", "time", "-b", "main"};
-                                sLogcatBuf = "main(降级,无crash)";
-                            } else if (tier >= 3 || logcatTailSeekDisabled) {
-                                cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events"};
-                                sLogcatBuf = "main+system+events(无crash)";
-                            } else {
-                                cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events", "-T", "1"};
-                                sLogcatBuf = "main+system+events(-T1,无crash)";
-                            }
-                        }
+                        // 【crash 探针已随分流迁走 v1.8.33.15】
+                        // 主通道不再订阅 crash，探针不再需要在主通道建流前判缓冲区可读性。
+                        // crash 的可读性由旁路线程 startCrashSidecarReader() 自己探、自己降级，
+                        // 绝不阻塞、绝不拖慢主通道建流。
 
                         // 通道重建打点：在系统 logcat 里留一条纳秒标记行，方便抓包时肉眼定位「第几次重连」
                         // （抽干判定已改为时间栅栏，不再依赖读到本行）
@@ -1403,6 +1391,94 @@ public class VehicleAutomationService extends Service {
             }
         }, "VehicleLogcatReader");
         logcatThread.start();
+    }
+
+    /**
+     * crash 缓冲区独立旁路线程（v1.8.33.15）。
+     *
+     * 【为什么必须独立】吉利 logd 把 InputManager 的方控按键报文（reportKeyToAdaptApi）
+     * 整个分流进 crash 缓冲区，main 里一条都没有。但实测（384522 / 932336，同车 602076）
+     * 一旦把 crash 与 main 合并在同一个 logcat 进程里订阅，建流成功却在 1~3 秒内报
+     * read: unexpected EOF! 退出，连带把挡位/车门/电源全部拖死 —— 384522 实测要重连 4 次、
+     * 17.2 秒才进实时。老版本 1.8.7~1.8.28 只订 main,system,events，0.13~1.6 秒即实时、0 次断连。
+     *
+     * 所以：crash 单独一个线程、单独一个进程、单独一套重连。它断了只损失方控日志源，
+     * 绝不会连累主通道。方控另有 HAL HW_KEY_INPUT 常开兜底与原厂广播兜底，不至于失聪。
+     *
+     * 铁律：本线程只读取、只入同一条解析队列（offerLogLine），绝不改主通道任何状态。
+     */
+    private void startCrashSidecarReader() {
+        if (crashSidecarThread != null && crashSidecarThread.isAlive()) return;
+        crashSidecarThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int consecutiveFailures = 0;
+                while (isRunning) {
+                    Process proc = null;
+                    long startedAtMs = android.os.SystemClock.elapsedRealtime();
+                    try {
+                        // 先用 -d -t 1 轻探一次：不可读就直接退避，绝不像主通道那样白建流
+                        String[] probe = new String[]{"logcat", "-b", "crash", "-d", "-t", "1"};
+                        if (!probeBufferReadable(probe)) {
+                            consecutiveFailures++;
+                            if (consecutiveFailures == 2) {
+                                AppLogger.diag("方控通道",
+                                        "crash 缓冲区不可读，方控日志源暂缺（HAL 常开通道继续兜底）");
+                            }
+                            // 旁路退避比主通道更保守：最长 15 秒，绝不刷屏、绝不抢 CPU
+                            long wait = Math.min(15000L, 3000L * consecutiveFailures);
+                            try {
+                                Thread.sleep(wait);
+                            } catch (InterruptedException ie) {
+                                break;
+                            }
+                            continue;
+                        }
+
+                        // -T 1：只从 crash 尾部一行起跟随，不回放历史（同主通道铁律）
+                        String[] cmd = new String[]{"logcat", "-v", "time", "-b", "crash", "-T", "1"};
+                        proc = new ProcessBuilder(cmd).redirectErrorStream(true).start();
+                        crashSidecarProcess = proc;
+                        consecutiveFailures = 0;
+                        if (sCrashSidecarBuildCount++ < 3) {
+                            AppLogger.i("系统启动", "启动取证 | crash 旁路通道建立 #" + sCrashSidecarBuildCount);
+                        }
+
+                        BufferedReader reader = new BufferedReader(
+                                new InputStreamReader(proc.getInputStream()), 512);
+                        String line;
+                        while (isRunning && (line = reader.readLine()) != null) {
+                            // 只挑方控按键报文，其余一律丢：旁路通道绝不占用解析线程与内存环形缓冲
+                            if (line.contains("reportKeyToAdaptApi")) {
+                                appendRawRing(line);
+                                offerLogLine(line);
+                            }
+                        }
+                    } catch (Throwable ignored) {
+                    } finally {
+                        // RAII 铁律：旁路子进程一律回收，绝不留孤儿
+                        if (proc != null) {
+                            try { proc.destroy(); } catch (Throwable ignored) {}
+                        }
+                        crashSidecarProcess = null;
+                    }
+                    if (!isRunning) break;
+                    // 存活满 20 秒才算健康，避免 crash 高频 EOF 时变成忙等
+                    if ((android.os.SystemClock.elapsedRealtime() - startedAtMs) < 20000L) {
+                        consecutiveFailures++;
+                    } else {
+                        consecutiveFailures = 0;
+                    }
+                    try {
+                        Thread.sleep(Math.min(15000L, 3000L * Math.max(consecutiveFailures, 1)));
+                    } catch (InterruptedException ie) {
+                        break;
+                    }
+                }
+            }
+        }, "VehicleLogcatCrashSidecar");
+        crashSidecarThread.setDaemon(true);
+        crashSidecarThread.start();
     }
 
     /**
@@ -2806,6 +2882,17 @@ public class VehicleAutomationService extends Service {
                 logcatProcess.destroy();
             } catch (Exception ignored) {}
             logcatProcess = null;
+        }
+        // crash 旁路同样必须回收：进程 + 线程一个都不留
+        if (crashSidecarProcess != null) {
+            try {
+                crashSidecarProcess.destroy();
+            } catch (Exception ignored) {}
+            crashSidecarProcess = null;
+        }
+        if (crashSidecarThread != null) {
+            crashSidecarThread.interrupt();
+            crashSidecarThread = null;
         }
         if (logcatThread != null) {
             logcatThread.interrupt();

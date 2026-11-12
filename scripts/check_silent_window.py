@@ -200,6 +200,49 @@ def check_boot_storm_fast_retry(src):
         )
 
 
+def check_crash_never_merged(src):
+    """crash 缓冲区绝不能并进主通道，必须有独立旁路线程。
+
+    实测 384522 / 932336（同车 602076）：主通道 -b 里带 crash 时，建流成功却在 1~3 秒内
+    报 read: unexpected EOF! 退出，外层重连循环反复重建；384522 实测要建 5 次、断 4 次、
+    17.2 秒才进实时，换挡/车门报文全落在空窗里。老版本只订 main,system,events 时
+    0.13~1.6 秒即实时、0 次断连。
+    正确结构：主通道命令绝不含 crash；crash 由 startCrashSidecarReader() 独立线程单独订阅。
+    """
+    # 主通道命令里出现 crash 即为回退。
+    # 判据：任何 -b 订阅组合只要「含 crash 且还含别的缓冲区」就是合并（回退）；
+    # crash 单独一条（旁路）是唯一合法写法。
+    merged = [b for b in re.findall(r'"-b",\s*"([^"]*)"', src)
+              if "crash" in b and b.strip() != "crash"]
+    if merged:
+        FAILS.append(
+            "主通道 logcat 命令里又出现了 crash 与其他缓冲区合并订阅：\n"
+            f"  实际发现 -b {merged}\n"
+            "  实测会导致 read: unexpected EOF 反复断连，17.2 秒没有实时挡位报文。\n"
+            "  crash 必须走 startCrashSidecarReader() 独立旁路线程，单独 -b crash。"
+        )
+        return
+    if not re.search(r'void startCrashSidecarReader\s*\(', src):
+        FAILS.append(
+            "找不到 crash 旁路线程 startCrashSidecarReader()：\n"
+            "  方控按键报文只在 crash 缓冲区里，删掉旁路会让方控日志源彻底失聪。"
+        )
+        return
+    # 旁路线程必须真的单独订阅 crash
+    if not re.search(r'\{"logcat",\s*"-v",\s*"time",\s*"-b",\s*"crash",\s*"-T",\s*"1"\}', src):
+        FAILS.append(
+            "crash 旁路线程没有独立订阅 crash 缓冲区：\n"
+            "  必须是 logcat -v time -b crash -T 1，单独进程单独线程。"
+        )
+        return
+    # 旁路必须只挑方控报文，不许把 crash 全量塞进解析队列
+    if not re.search(r'line\.contains\("reportKeyToAdaptApi"\)', src):
+        FAILS.append(
+            "crash 旁路没有按键报文筛选：\n"
+            "  crash 段全量入队会挤占解析队列与内存环形缓冲，只允许 reportKeyToAdaptApi。"
+        )
+
+
 def main():
     src = read(SERVICE)
     player = read(PLAYER)
@@ -212,6 +255,7 @@ def main():
         check_watchdog(src)
         check_tail_seek_is_one(src)
         check_boot_storm_fast_retry(src)
+        check_crash_never_merged(src)
     check_capture_uses_enable(sysutils)
     check_voice_skip_by_length(player)
 
