@@ -37,7 +37,7 @@
         <span class="text-[20px] font-black text-car-text tracking-wide truncate">{{ title }}</span>
         <span
           v-if="tag"
-          class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full bg-car-accent/15 text-car-accent shrink-0"
+          class="px-2.5 py-0.5 text-[12.5px] font-black rounded-full bg-car-accent-bg text-car-accent shrink-0"
         >
           {{ tag }}
         </span>

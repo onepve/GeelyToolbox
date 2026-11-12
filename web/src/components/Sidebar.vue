@@ -18,7 +18,7 @@
         :class="[
           'text-[14px] px-2.5 py-1 rounded-lg font-extrabold shrink-0 nav-badge',
           store.currentNav === item.id
-            ? 'text-car-accent font-black bg-car-accent/15'
+            ? 'text-car-accent font-black bg-car-accent-bg'
             : 'bg-car-card/60 text-car-sub/70 opacity-75'
         ]"
       >

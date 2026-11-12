@@ -20,7 +20,7 @@
         :class="[
           'text-[12px] px-2 py-0.5 rounded-lg font-black transition-all',
           modelValue === tab.id
-            ? 'bg-car-accent/15 text-car-accent'
+            ? 'bg-car-accent-bg text-car-accent'
             : 'bg-car-card/50 text-car-sub/60 opacity-70'
         ]"
       >

@@ -24,7 +24,7 @@
           />
           <span
             :class="['text-[13.5px] font-black px-2.5 py-0.5 rounded-lg shrink-0',
-                     store.vehicleAuto.wheel_master_switch ? 'bg-car-accent/15 text-car-accent' : 'bg-car-card text-car-sub']"
+                     store.vehicleAuto.wheel_master_switch ? 'bg-car-accent-bg text-car-accent' : 'bg-car-card text-car-sub']"
           >
             {{ store.vehicleAuto.wheel_master_switch ? '已接管' : '原车默认' }}
           </span>
