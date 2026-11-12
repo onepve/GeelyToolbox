@@ -74,6 +74,9 @@ jobs:
           python3 scripts/check_active_state_contract.py
           python3 scripts/test_active_state_mutations.py
 
+      - name: Dex Uncompressed Gate (classes.dex 必须 STORED · 禁压缩拖慢冷启动)
+        run: python3 scripts/check_dex_uncompressed.py
+
       - name: Inject Tag Version & VersionCode (Tag-Driven, Dual Channel)
         if: startsWith(github.ref, 'refs/tags/')
         run: |

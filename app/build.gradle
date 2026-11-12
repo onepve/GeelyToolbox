@@ -62,8 +62,10 @@ android {
 
     packaging {
         dex {
-            // 让 classes.dex 走 deflate 压缩，省约 500KB；安装时解压到 dalvik-cache，不影响启动速度
-            useLegacyPackaging = true
+            // classes.dex 必须走 STORED（不压缩）：ART 可直接 mmap 映射，冷启动零解压零写盘。
+            // 历史坑：曾设为 true 省下约 0.5MB，换来每次冷启动都要把 860KB dex 解压到 dalvik-cache，
+            // 车机 Android 9 弱 CPU 上明显拖慢首屏。0.5MB 的包体收益毫无意义，启动速度优先。
+            useLegacyPackaging = false
         }
     }
 }
