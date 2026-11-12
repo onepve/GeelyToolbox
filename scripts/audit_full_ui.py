@@ -98,13 +98,29 @@ def start_edge():
     
     # 轮询等待端口就绪，最长等待 10 秒
     start_t = time.time()
-    while time.time() - start_t < 10:
+    ready = False
+    while time.time() - start_t < 12:
         try:
             with urllib.request.urlopen(f"http://127.0.0.1:{PORT}/json/list", timeout=1) as resp:
                 if resp.status == 200:
+                    ready = True
                     break
         except Exception:
             time.sleep(0.3)
+    if not ready:
+        # 起不来时把浏览器自己的日志打出来，否则 CI 上只能看到 Connection refused 无从定位
+        try:
+            logf.flush()
+            tail = open(os.path.join(work, "browser.log"), "rb").read()[-4000:].decode("utf-8", "replace")
+        except Exception as e:
+            tail = f"(读取浏览器日志失败: {e})"
+        print(f"[FAIL] 浏览器未能就绪：{browser}  退出码={proc.poll()}")
+        print(f"[FAIL] 浏览器日志尾部：\n{tail}")
+        try:
+            proc.kill()
+        except Exception:
+            pass
+        return None
     return proc
 
 async def run_audit():
