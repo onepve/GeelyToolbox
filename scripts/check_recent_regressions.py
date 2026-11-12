@@ -208,6 +208,12 @@ def ui_border_density_contract(files):
         if 'name="footer"' not in body and '#footer' not in body:
             out.append('ui-body-frame-learning-not-in-card')
 
+        # 5.6) 车门页必须一屏装下（v1.8.33.13）：二选一卡不渲染标题行，否则白占 54px
+        #      把后排两扇门挤到屏幕外。车主已明确「那六个字可以去掉」。
+        vgc = of('web/src/components/VoiceGroupCard.vue')
+        if 'v-if="!modePickable"' not in vgc:
+            out.append('ui-vgc-modecard-no-header')
+
     # 6) 严禁对 var(--x) 主题色写透明度变体（bg-car-card/60、border-car-border/60 等）。
     #    Tailwind 只有在颜色是 rgb 三元组时才能拼出 rgb(var(--x) / .6)；本项目颜色全部是
     #    'var(--bg-card)' 字符串，这类类名在产物里根本没有 CSS 规则，元素直接回退到

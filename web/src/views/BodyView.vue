@@ -69,7 +69,7 @@
     </div>
 
     <!-- Tab 3: 车门语音 — 模式卡(二选一) + 门卡 -->
-    <div v-if="activeTab === 'door'" class="flex flex-col space-y-4">
+    <div v-if="activeTab === 'door'" class="flex flex-col space-y-3">
       <!-- 第一层：选播报方式，二选一，不套娃 -->
       <VoiceGroupCard
         title="车门播报方式"

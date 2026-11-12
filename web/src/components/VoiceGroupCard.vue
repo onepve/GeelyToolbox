@@ -25,13 +25,14 @@
       'rounded-3xl border-2 flex flex-col transition-all duration-150 overflow-hidden bg-car-card border-car-border shadow-sm'
     ]"
   >
-    <!-- 卡片头 = 总开关（模式二选一时不可点，仅作标题） -->
+    <!-- 卡片头 = 总开关。
+         模式二选一（车门播报方式）时整行不渲染：下面两枚胶囊本身就写着「极简合并播报 /
+         独立分门播报」，各自还带生效状态，再顶一行「车门播报方式」纯属重复，白占 54px
+         把四扇门挤到屏幕外。 -->
     <div
-      @click="modePickable ? null : onMasterToggle()"
-      :class="[
-        'flex items-center justify-between px-5 py-3 transition-all duration-150',
-        modePickable ? 'cursor-default' : 'cursor-pointer select-none active:scale-[0.995]'
-      ]"
+      v-if="!modePickable"
+      @click="onMasterToggle()"
+      class="flex items-center justify-between px-5 py-3 transition-all duration-150 cursor-pointer select-none active:scale-[0.995]"
     >
       <div class="flex items-center space-x-2.5 min-w-0">
         <span class="text-[20px] font-black text-car-text tracking-wide truncate">{{ title }}</span>
@@ -43,37 +44,36 @@
         </span>
       </div>
       <div class="flex items-center space-x-2 shrink-0">
-        <template v-if="!modePickable">
-          <StatusDot size="md" :color="anyActive ? 'ok' : 'off'" :glow-px="anyActive ? 8 : 0" />
-          <span :class="['text-[16px] font-black', anyActive ? 'text-car-text' : 'text-car-sub']">
-            {{ headerText }}
-          </span>
-        </template>
-        <span v-else class="text-[13px] text-car-sub font-bold">二选一</span>
+        <StatusDot size="md" :color="anyActive ? 'ok' : 'off'" :glow-px="anyActive ? 8 : 0" />
+        <span :class="['text-[16px] font-black', anyActive ? 'text-car-text' : 'text-car-sub']">
+          {{ headerText }}
+        </span>
       </div>
     </div>
 
-    <!-- 卡身：模式二选一 -->
-    <div v-if="modePickable" class="px-5 pb-5 grid grid-cols-2 gap-3.5 items-stretch">
+    <!-- 卡身：模式二选一 —— 横向并列两枚大胶囊（v1.8.33.13 压扁）
+         原来上下堆两行说明文字，整张卡吃掉 136px，把四扇门挤到屏幕外。
+         现在选择项本身就是按钮：左圆点 + 名字 + 一行不换行的短说明，一眼选完。 -->
+    <div v-if="modePickable" class="px-5 py-3 grid grid-cols-2 gap-3 items-start">
       <div
         v-for="m in modes"
         :key="m.id"
         @click.stop="emit('pickMode', m.id)"
         :class="[
-          'rounded-2xl px-4 py-4 flex flex-col justify-between transition-all duration-150 cursor-pointer select-none active:scale-[0.985]',
+          'rounded-2xl px-4 h-[64px] flex items-center justify-between transition-all duration-150 cursor-pointer select-none active:scale-[0.985]',
           m.active ? 'bg-car-item border-solid border-l-[5px] border-l-car-accent' : 'bg-car-item'
         ]"
       >
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-[17px] font-black text-car-text">{{ m.name }}</span>
-          <div class="flex items-center space-x-1.5 shrink-0">
-            <StatusDot size="sm" :color="m.active ? 'ok' : 'off'" :glow-px="m.active ? 6 : 0" />
-            <span :class="['text-[13px] font-black', m.active ? 'text-car-text' : 'text-car-sub']">
-              {{ m.active ? '当前生效' : '未选用' }}
-            </span>
-          </div>
+        <div class="flex flex-col min-w-0">
+          <span class="text-[16.5px] font-black text-car-text truncate">{{ m.name }}</span>
+          <span class="text-[12.5px] text-car-sub font-bold truncate">{{ m.desc }}</span>
         </div>
-        <div class="text-[13px] text-car-sub font-bold leading-relaxed">{{ m.desc }}</div>
+        <div class="flex items-center space-x-1.5 shrink-0 ml-2">
+          <StatusDot size="sm" :color="m.active ? 'ok' : 'off'" :glow-px="m.active ? 6 : 0" />
+          <span :class="['text-[12.5px] font-black', m.active ? 'text-car-text' : 'text-car-sub']">
+            {{ m.active ? '生效中' : '未选' }}
+          </span>
+        </div>
       </div>
     </div>
 
@@ -84,12 +84,12 @@
         v-for="item in items"
         :key="item.voiceKey"
         :class="[
-          'rounded-2xl p-2.5 flex flex-col justify-between transition-all duration-150',
+          'rounded-2xl p-2 flex flex-col justify-between transition-all duration-150',
           item.active ? 'bg-car-item border-solid border-l-[4px] border-l-car-accent' : 'bg-car-item opacity-85'
         ]"
       >
         <!-- 格头：名称 + 独立开关小圆点 -->
-        <div class="flex items-center justify-between mb-1.5 cursor-pointer select-none active:scale-[0.98]"
+        <div class="flex items-center justify-between mb-1 cursor-pointer select-none active:scale-[0.98]"
              @click.stop="emit('toggleItem', item.voiceKey)">
           <span class="text-[15.5px] font-black text-car-text">{{ item.label }}</span>
           <div class="flex items-center space-x-1.5 shrink-0">
@@ -100,7 +100,7 @@
           </div>
         </div>
 
-        <div class="text-[12.5px] text-car-sub font-bold leading-snug mb-1.5">{{ item.line }}</div>
+        <div class="text-[12.5px] text-car-sub font-bold leading-tight mb-1">{{ item.line }}</div>
 
         <div class="flex items-center space-x-2">
           <button
