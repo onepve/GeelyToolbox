@@ -149,11 +149,12 @@ jobs:
           info = z.getinfo('classes.dex')
           fail = []
 
-          # 1. dex 必须仍是 deflate 压缩（useLegacyPackaging 生效）
-          if info.compress_type != 8:
-              fail.append('classes.dex 未压缩，useLegacyPackaging 失效')
+          # 1. dex 必须是 STORED（不压缩）：ART 可 mmap 直接映射，冷启动零解压零写盘。
+          #    历史上曾反向要求 deflate 省 0.5MB，实测拖慢车机冷启动，已纠正。
+          if info.compress_type != 0:
+              fail.append('classes.dex 被压缩，useLegacyPackaging=false 失效（冷启动会解压拖慢）')
           print(f"  classes.dex: {info.file_size}B -> {info.compress_size}B "
-                f"{'DEFLATE' if info.compress_type==8 else 'STORE'}")
+                f"{'DEFLATE(错误)' if info.compress_type==8 else 'STORE(正确)'}")
 
           # 2. dex 体积上限，防止 kotlin-stdlib 等被悄悄注入
           #    纯 Java 项目实测 858KB；AGP 9 内置 Kotlin 会膨胀到 2.9MB
