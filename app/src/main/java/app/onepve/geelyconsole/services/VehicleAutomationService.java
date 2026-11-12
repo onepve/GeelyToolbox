@@ -1156,10 +1156,15 @@ public class VehicleAutomationService extends Service {
                         // 默认就是 main,system,crash）在这台车上稳定导出全部 crash 行，从未失败。
                         // 仍保留探针 + 自动回退，个别车型 crash 不可读时绝不把整条通道拖死。
                         //
-                        // 【续流铁律】常态用 -T 200 直接从缓冲区尾部 200 行开始流式续接：
-                        // 既天然不从开机第一行重放（旧的纳秒标记行永远落在缓冲区尾部之外、
-                        // 根本读不到，实测 19 次抽干全部靠 5001 行兜底白烧 CPU），
-                        // 又免掉每次重建都要回灌数千行旧日志。老系统不支持 -T 时自动降级。
+                        // 【续流铁律 v1.8.33.11 改为 -T 1】
+                        // 以前用 -T 200，本意是从缓冲区尾部 200 行开始续接，少回灌历史。
+                        // 但实测车机日志量是 723 行/秒（79KB/s），200 行只等于 0.28 秒 —— 根本盖不住
+                        // 重连那几秒的空窗，等于「白白多吞 200 行历史」，却一行实时报文也没补回来。
+                        // 多吞的这 200 行反而有实际危害：读端一建流就要连续消费 200 行，
+                        // OS 管道 64KB 一填满，logd 就停止向本读者投递并开始丢该队列的行。
+                        // 现在改成 -T 1：只从最后一行开始、立刻转入实时跟随，不运历史。
+                        // 漏掉的断连期报文靠两点补：①退避表已封顶 5 秒，空窗本来就短；
+                        // ②时间栅栏保证不会把历史行误当实时行解析。老系统不认 -T 时仍自动降级。
                         int tier = logcatConsecutiveFailures;
                         String[] cmd;
                         if (tier >= 6) {
@@ -1170,9 +1175,9 @@ public class VehicleAutomationService extends Service {
                             cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events,crash"};
                             sLogcatBuf = "main+system+events+crash";
                         } else {
-                            // -T 200 = 先吐缓冲区最新 200 行再保持流式续接（不像 -t/-d 那样读完即退出）
-                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events,crash", "-T", "200"};
-                            sLogcatBuf = "main+system+events+crash(-T200)";
+                            // -T 1 = 只从缓冲区最后一行起跟随，不回放历史，建流即实时
+                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events,crash", "-T", "1"};
+                            sLogcatBuf = "main+system+events+crash(-T1)";
                         }
 
                         // 【crash 探针铁律】只在建流前判一次，绝不在流中途改命令。
@@ -1201,8 +1206,8 @@ public class VehicleAutomationService extends Service {
                                 cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events"};
                                 sLogcatBuf = "main+system+events(无crash)";
                             } else {
-                                cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events", "-T", "200"};
-                                sLogcatBuf = "main+system+events(-T200,无crash)";
+                                cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events", "-T", "1"};
+                                sLogcatBuf = "main+system+events(-T1,无crash)";
                             }
                         }
 

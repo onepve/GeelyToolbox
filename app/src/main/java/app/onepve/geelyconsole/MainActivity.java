@@ -322,6 +322,20 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             }
         }, 800L);
 
+        // 【v1.8.33.11】ADB 受限提醒：总开关是开的，但端口实际连不上 → 10 秒长胶囊指路。
+        // 判据严格用三条件同时成立，避免误报：
+        //   ① 界面在前台（后台冷启动时车主根本看不到，弹了纯属白弹）
+        //   ② 总开关为开（用户没主动关，说明他以为 ADB 是能用的）
+        //   ③ 端口探测不通（真的连不上）
+        // 探测放后台线程（要连 socket，绝不能上主线程），结果回来再通知 UI。
+        // 本次打开界面期间只提示一次，不反复骚扰。
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                checkAdbRestrictedAndHint();
+            }
+        }, 4000L);
+
         // 兜底安全防线：冷启动后最长 2.5 秒无论前端是否通知，均平滑解除启动层
         mainHandler.postDelayed(new Runnable() {
             @Override
@@ -775,6 +789,14 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
     }
 
     public void showToast(final String msg, final String kind) {
+        showToast(msg, kind, 0);
+    }
+
+    /**
+     * @param durationMs 前端胶囊停留时长；传 0 表示用前端默认 2200ms。
+     *                   长指引类文案（ADB 受限后怎么恢复）传 10000，让车主来得及看完。
+     */
+    public void showToast(final String msg, final String kind, final int durationMs) {
         if (isFinishing()) return;
         mainHandler.post(new Runnable() {
             @Override
@@ -782,14 +804,59 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                 if (webView != null) {
                     try {
                         String k = (kind != null) ? kind : "info";
-                        String script = "if(window.showToast){window.showToast(" + org.json.JSONObject.quote(msg) + ",'" + k + "');}";
+                        String tail = (durationMs > 0) ? ("," + durationMs) : "";
+                        String script = "if(window.showToast){window.showToast(" + org.json.JSONObject.quote(msg) + ",'" + k + "'" + tail + ");}";
                         webView.evaluateJavascript(script, null);
                         return;
                     } catch (Exception ignored) {}
                 }
-                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    /**
+     * ADB 受限提醒（v1.8.33.11）
+     *
+     * 场景：车主在工程模式里明明把「无线 ADB」打开了，abdb 也显示在跑，
+     *      但第三方连 5555 端口根本连不上（今天实测就是这种）。
+     *      以前这种状态下点冻结/卸载/重启一律「点了没反应」，车主完全不知道为什么。
+     *
+     * 判据（必须两条同时成立，缺一不报，绝不误报）：
+     *   ① ADB 总开关 = 开 → 车主以为能用；若他自己关了，那就是主动关的，不该提醒。
+     *   ② 5555 端口探测失败 → 真的连不上。
+     *
+     * 提示：10 秒长胶囊，指路「进工程模式 → 关掉无线 ADB → 再重新打开」。
+     * 次数：本次打开界面只提示一次（adbRestrictedHinted 内存标记），关掉界面再开才会再提示。
+     * 线程：探测要连 socket，必须放后台；回到 UI 线程再弹胶囊。
+     */
+    private boolean adbRestrictedHinted = false;
+
+    private void checkAdbRestrictedAndHint() {
+        if (adbRestrictedHinted) return;
+        if (!isForeground) return;                                // 后台冷启动不提醒，只有车主真打开界面才弹
+        if (!SystemUtils.isAdbMasterSwitchEnabled(this)) return;  // 自己关的，不提醒
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean open;
+                try {
+                    open = AdbClient.isAdbPortOpen();
+                } catch (Throwable t) {
+                    open = false;
+                }
+                if (open) return;  // 正常，什么也不做
+                AppLogger.w("ADB", "ADB 受限：总开关为开但 5555 端口探测不通，已提示车主重置无线 ADB");
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (isFinishing() || adbRestrictedHinted) return;
+                        adbRestrictedHinted = true;
+                        showToast("ADB 连不上：请进工程模式，把「无线 ADB」关掉再重新打开，然后回来自动恢复", "warn", 10000);
+                    }
+                });
+            }
+        }, "AdbRestrictedProbe").start();
     }
 
     private void pushRabbitProgress(final org.json.JSONObject data) {

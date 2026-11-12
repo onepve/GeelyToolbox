@@ -385,14 +385,16 @@ export function closeModal(modalName) {
   }
 }
 
-export function showToast(msg, kind = 'info') {
+// durationMs 默认 2200（普通一句话提示）。长文案告警（如 ADB 受限指引）需要传 10000，
+// 让车主有时间看完「进工程模式→关无线ADB→再打开」这套动作再消失。
+export function showToast(msg, kind = 'info', durationMs = 2200) {
   store.toast.msg = msg;
   store.toast.kind = kind;
   store.toast.show = true;
   clearTimeout(showToast._t);
   showToast._t = setTimeout(() => {
     store.toast.show = false;
-  }, 2200);
+  }, durationMs);
 }
 if (typeof window !== 'undefined') {
   window.showToast = showToast;

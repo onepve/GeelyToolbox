@@ -73,13 +73,19 @@
     <!-- 极简 Toast 提示 (置顶于所有弹窗与遮罩层之上的最高层级) -->
     <Teleport to="body">
       <transition name="fade">
+        <!-- 胶囊位置：底部居中 bottom-[52px]。实测车机 1760x670 下：
+             顶部状态条 0~64px、副导航 Tab 行 64~146px、卡片区最高到 534px，
+             534~670px 是纯背景空白（页面原有底留白），胶囊高 44px 正好能整个落进去。
+             这样既不压顶部状态信息、也不压 Tab、也不压任何卡片，10 秒长提示全程不挡操作。 -->
         <div 
           v-if="store.toast.show" 
-          class="fixed top-8 left-1/2 -translate-x-1/2 z-[100000] bg-[var(--bg-card)] border px-6 py-2.5 rounded-full font-black text-[16.5px] shadow-2xl shadow-black/80 inline-flex items-center max-w-[86vw] select-none pointer-events-none"
+          class="fixed bottom-[52px] left-1/2 -translate-x-1/2 z-[100000] bg-[var(--bg-card)] border px-6 py-2.5 rounded-full font-black text-[16.5px] shadow-2xl shadow-black/80 inline-flex items-center max-w-[86vw] select-none pointer-events-none"
           :style="{ color: TOAST_SKINS[store.toast.kind]?.text, borderColor: TOAST_SKINS[store.toast.kind]?.border }"
         >
           <span class="w-2 h-2 rounded-full shrink-0 mr-2.5" :style="{ background: TOAST_SKINS[store.toast.kind]?.dot, boxShadow: `0 0 6px ${TOAST_SKINS[store.toast.kind]?.dot}` }"></span>
-          <span class="truncate">{{ store.toast.msg }}</span>
+          <!-- 长文案（如 ADB 受限指引）不要再 truncate 成一行省略号，改为最多两行完整显示；
+               短提示仍是一行，视觉不变。 -->
+          <span class="max-w-full" :class="store.toast.msg && store.toast.msg.length > 24 ? 'leading-snug whitespace-normal' : 'truncate'">{{ store.toast.msg }}</span>
         </div>
       </transition>
     </Teleport>

@@ -140,6 +140,29 @@ def check_watchdog(src):
         )
 
 
+def check_tail_seek_is_one(src):
+    """订阅必须用 -T 1，只收实时、不回放历史。
+
+    历史背景：曾用 -T 200，但车机日志量 723 行/秒，200 行只等于 0.28 秒，
+    盖不住重连空窗，却让读端一建流就连续消费 200 行；OS 管道 64KB 一满，
+    logd 就停止投递并开始丢该读者队列的行，反过来加剧丢报文。
+    """
+    hits = re.findall(r'"-T",\s*"([0-9]+)"', src)
+    if not hits:
+        FAILS.append(
+            "找不到 logcat 订阅的 -T 参数：\n"
+            "  必须显式写 -T 1，只从缓冲区最后一行起跟随。"
+        )
+        return
+    bad = [h for h in hits if h != "1"]
+    if bad:
+        FAILS.append(
+            f"logcat 订阅 -T 值必须为 1，实际发现 {bad}：\n"
+            "  -T 200 会先吞 200 行历史，车机 723 行/秒下只够 0.28 秒，\n"
+            "  既补不回断连空窗，又让 OS 管道塞满导致 logd 丢本读者的行。"
+        )
+
+
 def main():
     src = read(SERVICE)
     player = read(PLAYER)
@@ -150,6 +173,7 @@ def main():
         check_drain_window(src)
         check_raw_ring_default_off(src)
         check_watchdog(src)
+        check_tail_seek_is_one(src)
     check_capture_uses_enable(sysutils)
     check_voice_skip_by_length(player)
 
@@ -159,7 +183,7 @@ def main():
             print(f"{i}. {f}\n")
         return 1
 
-    print("[PASS] 退避封顶 5s、抽干 0.8s、缓冲按需开启、语音按长度跳过，静默窗口最坏 5.8s。")
+    print("[PASS] 退避封顶 5s、抽干 0.8s、-T 1 只收实时、缓冲按需开启、语音按长度跳过，静默窗口最坏 5.8s。")
     return 0
 
 
