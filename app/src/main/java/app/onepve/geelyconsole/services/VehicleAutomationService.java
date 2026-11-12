@@ -481,6 +481,77 @@ public class VehicleAutomationService extends Service {
         AppLogger.i("系统启动", "启动取证 | " + label + " | 进程已运行 " + (now - sBootProbeT0) + "ms");
     }
 
+    /**
+     * 语音资产空闲检测调度器。
+     *
+     * 为什么不在 onCreate 里直接同步：
+     *   上车最初这几十秒，迎宾播报、首次换挡播报都要求「开口即响」。
+     *   此刻去读 assets、写私有目录（25 个文件 404KB），纯属跟第一声抢 CPU 与磁盘。
+     *
+     * 触发条件（三者同时满足才动手）：
+     *   1. 距服务启动已过 IDLE_VOICE_MIN_UPTIME_MS（120 秒），覆盖迎宾+首次换挡+起步；
+     *   2. 当前没有语音正在播（不打断任何播报）；
+     *   3. 车已正常使用：车速>0，或电源模式为 ON/ACC，或挡位不在 P（说明车已经动起来了）。
+     *
+     * 只查一次就收工：同步完把标志置位，本进程内不再重复调度。
+     * 若本次不满足空闲条件，5 秒后再看，最多等 IDLE_VOICE_MAX_WAIT_MS（10 分钟）后强制放行，
+     * 确保升级后的语音资产最终一定会被核对上，不会因为一直堵车/一直怠速而永远不检测。
+     */
+    private static final long IDLE_VOICE_MIN_UPTIME_MS = 120_000L;   // 开机后至少等 2 分钟
+    private static final long IDLE_VOICE_POLL_MS = 5_000L;           // 每 5 秒看一次
+    private static final long IDLE_VOICE_MAX_WAIT_MS = 600_000L;     // 最多等 10 分钟，超时强制核对
+    private volatile boolean idleVoiceSynced = false;
+
+    private void startIdleVoiceSync() {
+        final long t0 = android.os.SystemClock.elapsedRealtime();
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (idleVoiceSynced) return;
+                long elapsed = android.os.SystemClock.elapsedRealtime() - t0;
+
+                boolean uptimeOk = elapsed >= IDLE_VOICE_MIN_UPTIME_MS;
+                boolean forced = elapsed >= IDLE_VOICE_MAX_WAIT_MS;
+                boolean playerIdle = voicePlayer == null || !voicePlayer.isBusyOrQueued();
+                boolean carInUse = currentSpeedKmH > 0
+                        || lastPowerMode >= 1
+                        || (lastGearPos != 5 && lastGearPos > 0);
+
+                if ((uptimeOk && playerIdle && carInUse) || forced) {
+                    idleVoiceSynced = true;
+                    AppLogger.i("系统启动", "语音资产空闲核对 | 已等 " + (elapsed / 1000)
+                            + "s | 车速=" + currentSpeedKmH + " | 电源=" + lastPowerMode
+                            + " | 挡位=" + lastGearPos + (forced ? " | 超时强制" : ""));
+                    if (voicePlayer != null) voicePlayer.onIdleSyncVoice();
+                    return;
+                }
+                mainHandler.postDelayed(this, IDLE_VOICE_POLL_MS);
+            }
+        }, IDLE_VOICE_POLL_MS);
+    }
+
+    /**
+     * 首次安装/语音目录为空的自救：这种时候不能等空闲，因为一声都放不出来。
+     * 只查目录条目数（不读文件内容、不算哈希），命中就立刻后台补齐。
+     */
+    private void checkVoiceAssetsMissing() {
+        try {
+            java.io.File dir = VehicleVoicePlayer.getSafeVoiceDir(this);
+            if (dir == null) return;
+            String[] names = dir.list();
+            int mp3 = 0;
+            if (names != null) {
+                for (String n : names) {
+                    if (n != null && n.endsWith(".mp3")) mp3++;
+                }
+            }
+            if (mp3 >= 15) return;  // 资产齐全，走空闲流程即可
+            AppLogger.i("系统启动", "语音资产缺失(现有 " + mp3 + " 个)，立即后台补齐");
+            if (voicePlayer != null) voicePlayer.onIdleSyncVoice();
+        } catch (Throwable ignored) {
+        }
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -659,6 +730,15 @@ public class VehicleAutomationService extends Service {
         AppLogger.i("系统启动", "软件版本: " + verName);
         AppLogger.i("系统启动", "车型平台: " + currentPlatform.getPlatformName() + " (" + currentPlatform.getPlatformCode() + ")");
         probe("服务 onCreate 全部完成");
+
+        // ── 语音资产空闲检测（不再开机第一刻就抢资源）──────────────────────────
+        // 用户定的规矩：升级检测不是急事。刚开始上车那几十秒是要秒出声的时候，
+        // 等车真正开起来、音乐也放上了、确认空闲，再去核对语音文件。
+        // 版本戳没变时 syncBuiltinAssets 直接返回，不遍历不读文件，开销为 0。
+        // 语音资产：先做一次「是不是压根没有」的轻量自救（首次安装场景），
+        // 再交给空闲调度器走正常的版本核对。
+        checkVoiceAssetsMissing();
+        startIdleVoiceSync();
 
         // 主线程阻塞取证：服务与界面同进程同主线程。启动后 40 秒内每 500ms 摸一次心跳，
         // 若某次晚于预期 800ms 以上，说明主线程被整段占死（例如界面 onCreate 卡住），

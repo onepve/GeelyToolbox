@@ -484,8 +484,48 @@ public class VehicleVoicePlayer {
         this.audioManager = (AudioManager) this.context.getSystemService(Context.AUDIO_SERVICE);
         this.externalDetector = new ExternalAudioDetector(this.context);
         getArbiter(); // 提前建立仲裁器
-        // 预热将内置音频解压到私有目录，确保极速秒播
-        extractAssetsAsync();
+        // 注意：这里【不再】立刻解压内置音频。
+        // 历史坑：过去在构造时就 extractAssetsAsync()，等于「点火开机第一刻」就去读 assets、
+        // 写私有目录。刚上车时正是换挡播报、迎宾播报最需要秒响的时刻，此时抢 CPU 与磁盘 IO，
+        // 反而拖慢第一声播报（实测首次 D 挡播报被拖到 4 秒以上）。
+        // 正确时机：交给 onIdleSyncVoice()，等车开起来、有音乐在放、确实空闲了再核对。
+    }
+
+    /**
+     * 空闲时机同步内置语音资产。
+     *
+     * 设计原则（用户拍板）：升级检测不是急事，绝不能跟「开口第一声」抢资源。
+     *   1. 初始化时不检测，只记下「待检测」；
+     *   2. 由后台在满足空闲条件时调用本方法：
+     *      · 已过开机活跃期（默认 120 秒，覆盖迎宾 + 首次换挡 + 起步）
+     *      · 当前没有语音在播、也没有排队
+     *      · 车速>0 或 有音乐在放（说明车已正常开起来，不是刚上车的紧张时段）
+     *   3. 版本戳未变则直接返回，不遍历、不读文件（0 毫秒放行）。
+     */
+    public void onIdleSyncVoice() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    syncBuiltinAssets(context, false);
+                } catch (Exception e) {
+                    Log.w(TAG, "Idle voice sync failed: " + e.getMessage());
+                }
+            }
+        }, "VoiceIdleSync").start();
+    }
+
+    /** 是否正在播放（供空闲判定使用）。 */
+    public boolean isBusyOrQueued() {
+        synchronized (playerLock) {
+            MediaPlayer mp = currentMediaPlayer;
+            if (mp == null) return false;
+            try {
+                return mp.isPlaying();
+            } catch (Throwable ignored) {
+                return false;
+            }
+        }
     }
 
     public static synchronized VehicleVoicePlayer getInstance(Context context) {
