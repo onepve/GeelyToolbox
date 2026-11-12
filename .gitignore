@@ -22,3 +22,6 @@ scripts/shots/
 local_test_logs/
 *.log
 
+
+# UI 巡检产物（每次跑 audit_full_ui.py 都会变，属构建副产物不入库）
+.audit_out/
