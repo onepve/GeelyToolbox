@@ -158,6 +158,34 @@ case("卡片过渡加了 opacity",
      "transition: box-shadow .30s ease-out, border-color .30s ease-out, opacity .3s;",
      "文字跟着忽明忽暗")
 
+# 17) 白天弹窗回到纯白（车主实拍里那块最大的白）
+case("白天弹窗回纯白",
+     PALETTE,
+     "'--bg-modal': 'rgba(248,240,225,1)'",
+     "'--bg-modal': 'rgba(255,255,255,1)'",
+     "纯白 --bg-modal")
+
+# 18) 弹窗改成半透（背后列表文字会串上来）
+case("弹窗改成半透",
+     PALETTE,
+     "'--bg-modal': 'rgba(248,240,225,1)'",
+     "'--bg-modal': 'rgba(248,240,225,0.72)'",
+     "不透明度")
+
+# 19) 组件里写死 bg-white（不跟主题的死白块）
+case("组件写死 bg-white",
+     ROOT / "web/src/components/modals/LogModal.vue",
+     "bg-[var(--bg-modal)]",
+     "bg-white",
+     "写死 bg-white")
+
+# 20) preflight 边框兜底被删（框套框双层描边复发）
+case("preflight 边框兜底被删",
+     APP,
+     "  border-color: var(--border-color);\n}",
+     "  border-color: #e5e7eb;\n}",
+     "框套框")
+
 def main():
     print("=" * 70)
     print(">> 玻璃材质门禁 · 变异测试（每个 bug 重新注入，必须被拦下）")

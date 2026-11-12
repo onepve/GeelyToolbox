@@ -46,7 +46,7 @@
 
       <!-- 二维码展示区 (车规深色语义卡片，独立白底衬垫保证扫码对比度) -->
       <div class="p-5 bg-car-item rounded-3xl border-2 border-car-border flex flex-col items-center justify-center mb-4 shadow-lg">
-        <div class="p-3 bg-white rounded-2xl shadow-inner">
+        <div class="p-3 bg-[var(--bg-modal)] rounded-2xl shadow-inner">
           <canvas ref="canvasRef" id="qrCodeCanvas" width="220" height="220" class="rounded-xl"></canvas>
         </div>
       </div>

@@ -32,6 +32,7 @@
 
 <script setup>
 import { playTouchFeedback } from '../utils/sound';
+import { suppressTransitionsBriefly } from '../theme/themes';
 
 const props = defineProps({
   tabs: {
@@ -49,6 +50,9 @@ const emit = defineEmits(['update:modelValue']);
 function onSelect(id) {
   if (props.modelValue === id) return;
   playTouchFeedback();
+  // 切页签会整块卸载旧面板、挂载新面板（上百个元素）。
+  // 不闸住过渡的话，新车规卡片会逐张从透明/旧色补间进来，车机上就是「慢慢自绘」。
+  suppressTransitionsBriefly();
   emit('update:modelValue', id);
 }
 </script>

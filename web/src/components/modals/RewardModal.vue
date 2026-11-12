@@ -14,7 +14,7 @@
       <!-- 赞赏展示卡片 (车规深色语义卡片，二维码独立白色贴合底衬) -->
       <div class="p-5 bg-car-item rounded-3xl border-2 border-car-border flex flex-col items-center justify-center shadow-lg">
         <!-- 微信赞赏码实体图片 (独立白底衬垫保证高对比度易扫) -->
-        <div class="p-3 bg-white rounded-2xl shadow-inner">
+        <div class="p-3 bg-[var(--bg-modal)] rounded-2xl shadow-inner">
           <img 
             :src="rewardQrImg" 
             alt="微信赞赏码" 

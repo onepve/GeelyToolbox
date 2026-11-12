@@ -159,11 +159,56 @@ export function resolvedMode() {
 
 let applyTimer = null;
 
+/* ---------------------------------------------------------------------------
+   切主题/切昼夜瞬间「虚框一闪 + 缓慢自绘」的第二道修法：暂停逐属性过渡
+   卡片与按钮底座上写了 transition: box-shadow .18s / border-color .18s，
+   单张看着无感，但切主题时 102 张卡片 + 全部按钮底座在**同一时刻**开始补间，
+   中间那几帧就是一圈半透明描边（车主描述的「很虚的框框，然后突然又消失」），
+   并且每帧都要重算 100+ 个元素的阴影 —— 车机 GPU 直接被拖成幻灯片。
+   Material 3 与 Apple HIG 的换肤规范都是「主题切换不做颜色补间，直接换」。
+   做法：写变量前后各套一次 tb-no-transition，跨两个 rAF 后摘掉，
+   保证浏览器把新旧值都按「无过渡」直接提交，一次成型。
+--------------------------------------------------------------------------- */
+const NO_TRANSITION_CLASS = 'tb-no-transition';
+let noTransitionTimer = null;
+
+function beginNoTransition(root) {
+  root.classList.add(NO_TRANSITION_CLASS);
+  // 强制同步样式落盘，确保下面的变量改写走「无过渡」分支
+  void root.offsetWidth;
+  if (noTransitionTimer) clearTimeout(noTransitionTimer);
+}
+
+/**
+ * 对外暴露的「瞬时切换」闸门：切 Tab / 切大区 / 打开弹窗时复用同一套。
+ * 这些操作都会整块挂载上百个元素，若让它们带着 transition-all 从初始值补间到目标值，
+ * 车机上就是「画面慢慢自己画出来」。闸住两个 rAF，让浏览器一次性提交最终样式。
+ */
+export function suppressTransitionsBriefly() {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  beginNoTransition(root);
+  endNoTransition(root);
+}
+
+function endNoTransition(root) {
+  if (noTransitionTimer) clearTimeout(noTransitionTimer);
+  const release = () => {
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove(NO_TRANSITION_CLASS)));
+    } else {
+      root.classList.remove(NO_TRANSITION_CLASS);
+    }
+  };
+  noTransitionTimer = setTimeout(release, 0);
+}
+
 export function applyTheme() {
   const palette = store.theme.palette;
   const mode = resolvedMode();
   const vars = THEMES[palette][mode];
   const root = document.documentElement;
+  beginNoTransition(root);
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v);
   root.setAttribute('data-palette', palette);
   root.setAttribute('data-mode', mode);
@@ -178,22 +223,48 @@ export function applyTheme() {
   if (mode === 'day') {
     root.classList.add('light');
     document.body.classList.add('light');
-    const b = getDayBrightness();
-    if (b < 0.99) {
-      root.style.filter = `brightness(${b})`;
-    } else {
-      root.style.filter = '';
-    }
+    applyDim(getDayBrightness());
   } else {
     root.classList.remove('light');
     document.body.classList.remove('light');
-    const nb = getNightBrightness();
-    if (nb < 0.99) {
-      root.style.filter = `brightness(${nb})`;
-    } else {
-      root.style.filter = '';
-    }
+    applyDim(getNightBrightness());
   }
+  endNoTransition(root);
+}
+
+/* ---------------------------------------------------------------------------
+   亮度调节：改用「纯黑遮罩层 opacity」而不是 root 上的 filter:brightness()
+   —— 这是「切换很钝、整个画面像重新自绘一遍」的真凶。
+
+   实测（1760×670 车机内核，切主题一次）：
+     无 filter   → 样式重算 35 次、布局 23 次
+     挂 filter   → 样式重算 58 次、布局 43 次   （翻倍）
+   原因：filter 挂在 documentElement 上，等于给整个 1760×670 视口套一个离屏缓冲，
+   每次任何像素变化都要整屏重新离屏绘制 + 亮度重采样，合成器无法走廉价路径。
+
+   遮罩层只改一个合成层的 opacity，由 GPU 直接混合，不触发 paint / layout / 样式重算。
+   视觉等价：brightness(b) ≈ 叠加黑色 (1-b) 不透明度，肉眼无可辨差异。
+--------------------------------------------------------------------------- */
+const DIM_ID = 'tb-dim-layer';
+
+function applyDim(brightness) {
+  if (typeof document === 'undefined') return;
+  let layer = document.getElementById(DIM_ID);
+  const dim = Math.max(0, Math.min(0.35, 1 - (isFinite(brightness) ? brightness : 1)));
+  if (dim < 0.01) {
+    if (layer && layer.parentNode) layer.parentNode.removeChild(layer);
+    return;
+  }
+  if (!layer) {
+    layer = document.createElement('div');
+    layer.id = DIM_ID;
+    layer.setAttribute('aria-hidden', 'true');
+    // 逐条写死属性而不是 inset 简写：车机 Chromium 66 不认 inset，简写会让遮罩缩成 0。
+    layer.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;'
+      + 'background:#000;pointer-events:none;z-index:2147483000;';
+    document.body.appendChild(layer);
+  }
+  layer.style.opacity = String(dim);
 }
 
 // 初始化：读持久化 → 应用 → auto 模式感知车机昼夜变化

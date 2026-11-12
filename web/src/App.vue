@@ -427,6 +427,19 @@ onMounted(() => {
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+   兜底修正 Tailwind preflight 的默认边框色 #e5e7eb。
+   preflight 里是「*,::before,::after{border-color:#e5e7eb}」，于是任何只写 `border`
+   没写颜色的元素都带一圈写死的冷灰边；叠加卡片自身主题边色后，
+   车机上就出现「框套框」双层描边（车主长期反馈的那圈多余实线）。
+   这里把它改成主题边色。选择器特异性为 0，`border-car-border` 等工具类依然优先。
+--------------------------------------------------------------------------- */
+*,
+::before,
+::after {
+  border-color: var(--border-color);
+}
+
 :root {
   /* 默认夜间豪华车规深色模式 (实体卡片高对比架构，彻底杜绝隐形错位感) */
   --bg-main: #0B0F19;
@@ -463,6 +476,18 @@ onMounted(() => {
    挂在 body.light 上的规则会漏掉首帧；--modal-backdrop 可从 html 正常向下继承。 */
 html.light {
   --modal-backdrop: rgba(20, 28, 44, 0.42);
+}
+
+/* 换肤瞬间的过渡暂停（由 theme/themes.js 的 applyTheme 加上、下一帧摘掉）。
+   只在这一瞬间关闭过渡，平时卡片/按钮的 hover、active 手感完全不受影响。
+   必须用 !important：Tailwind 工具类（transition-all / transition-colors）优先级高于普通选择器。 */
+.tb-no-transition,
+.tb-no-transition *,
+.tb-no-transition *::before,
+.tb-no-transition *::after {
+  transition: none !important;
+  transition-duration: 0s !important;
+  animation-duration: 0s !important;
 }
 
 body {

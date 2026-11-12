@@ -25,6 +25,23 @@ for ident,path,marker,required,forbidden in CONTRACTS:
 for path in ('web/src/App.vue','app/src/main/assets/toolbox_ui.html'):
     mutated=dict(files);mutated[path]='<style>button {color:white}</style>'
     results.append({'id':'button-focus:'+path,'caught':'button-focus:'+path in evaluate(mutated)})
+# 换肤/切页签流畅度：把三条修复分别回退，必须被拦下
+_m=dict(files); _m['web/src/theme/themes.js']=files['web/src/theme/themes.js'].replace(
+    'applyDim(getDayBrightness());','document.documentElement.style.filter="brightness(0.88)";')
+results.append({'id':'theme-root-filter-banned','caught':'theme-root-filter-banned' in evaluate(_m)})
+_m=dict(files); _m['web/src/theme/themes.js']=files['web/src/theme/themes.js'].replace('function applyDim(','function applyDimGone(')
+results.append({'id':'theme-dim-layer-missing','caught':'theme-dim-layer-missing' in evaluate(_m)})
+_m=dict(files)
+_src=files['web/src/theme/themes.js'].replace('NO_TRANSITION_CLASS','NOOP_CLASS').replace('tb-no-transition','tb-gone')
+_m['web/src/theme/themes.js']=_src
+results.append({'id':'theme-switch-no-transition-gate-missing','caught':'theme-switch-no-transition-gate-missing' in evaluate(_m)})
+_m=dict(files); _m['web/src/App.vue']=files['web/src/App.vue'].replace('.tb-no-transition','.tb-removed-gate')
+results.append({'id':'theme-switch-no-transition-css-missing','caught':'theme-switch-no-transition-css-missing' in evaluate(_m)})
+_m=dict(files); _m['web/src/components/SubTabs.vue']=files['web/src/components/SubTabs.vue'].replace('suppressTransitionsBriefly','voidFn')
+results.append({'id':'subtabs-no-transition-gate-missing','caught':'subtabs-no-transition-gate-missing' in evaluate(_m)})
+_m=dict(files); _m[JAVA+'MainActivity.java']=files[JAVA+'MainActivity.java'].replace('"启动耗时", "段2','"启动耗时", "seg2')
+results.append({'id':'boot-segment-timing-missing:段2','caught':'boot-segment-timing-missing:段2' in evaluate(_m)})
+
 mutated=dict(files);mutated[JAVA+'utils/AppLogger.java']=files[JAVA+'utils/AppLogger.java'].replace('lastLogTime.clear();','')
 results.append({'id':'log-dedup-bounded','caught':'log-dedup-bounded' in evaluate(mutated)})
 mutated=dict(files);mutated[JAVA+'utils/CarGearHALMonitor.java']='class CarGearHALMonitor {}'

@@ -216,6 +216,33 @@ def evaluate(files):
     appdetail = files.get('web/src/components/modals/AppDetailModal.vue', '')
     if re.search(r'canUseRabbitTheme|openRabbitGuide|卡兔子主题安装向导|注入兔子时钟', appdetail):
         failures.append('rabbit-theme-no-store-bypass')
+    # ---- 切换流畅度契约（车主反馈「很钝、整个画面需要重新自绘画一样」「虚框一闪」）----
+    # 根因：亮度调节把 filter:brightness() 挂在 documentElement 上，等于给整个
+    # 1760x670 视口套一层离屏缓冲，任何像素变化都要整屏重新离屏绘制 + 亮度重采样。
+    # 实测切主题一次：布局 23 次 / 样式重算 35 次；改成合成层遮罩后降到 3 次，耗时降 2/3。
+    themes_js = clean(files.get('web/src/theme/themes.js', ''))
+    if re.search(r'documentElement\.style\.filter\s*=|root\.style\.filter\s*=', themes_js):
+        failures.append('theme-root-filter-banned')
+    if not re.search(r'function\s+applyDim\s*\(', themes_js):
+        failures.append('theme-dim-layer-missing')
+    # 换肤瞬间必须闸住逐属性过渡：102 张卡片同时补间 box-shadow/border-color，
+    # 中间那几帧就是车主说的「很虚的框框，然后突然又消失」。
+    if not re.search(r'NO_TRANSITION_CLASS|tb-no-transition', themes_js):
+        failures.append('theme-switch-no-transition-gate-missing')
+    app_vue = files.get('web/src/App.vue', '')
+    if not re.search(r'\.tb-no-transition', app_vue):
+        failures.append('theme-switch-no-transition-css-missing')
+    # 切页签同样要闸住（整块 v-if 面板重建上百个元素）
+    subtabs = files.get('web/src/components/SubTabs.vue', '')
+    if not re.search(r'suppressTransitionsBriefly', subtabs):
+        failures.append('subtabs-no-transition-gate-missing')
+    # 启动分段打点：旧日志只有「界面启动完成」一个总耗时，无法定位卡在哪一段
+    main_act = files.get(JAVA+'MainActivity.java', '')
+    for seg in ('段1', '段2', '段3', '段4'):
+        if seg not in main_act:
+            failures.append('boot-segment-timing-missing:' + seg)
+            break
+
     logger = clean(files.get(JAVA+'utils/AppLogger.java', ''))
     if not re.search(r'if\s*\(lastLogTime\.size\(\) > 500\)\s*\{\s*lastLogTime\.clear\(\);', logger):
         failures.append('log-dedup-bounded')

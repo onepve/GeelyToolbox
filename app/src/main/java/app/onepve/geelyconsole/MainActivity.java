@@ -25,6 +25,7 @@ import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -237,16 +238,29 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         super.onCreate(savedInstanceState);
         currentActivity = new WeakReference<>(this);
         AppLogger.init(this);
+        // 启动分段计时：车主反馈「开机后要等很久界面才出来」，但旧日志只有「界面启动完成」
+        // 一个总耗时，无法判断卡在哪一段。这里按段打点，每段都带累计毫秒，
+        // 下次取日志即可一眼看出是车标切换 / WebView 初始化 / 权限与广播注册哪一段慢。
+        final long bootT0 = SystemClock.elapsedRealtime();
         PrefUtils.sanitizeDoorPreferences(getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE));
         hideSystemUI();
         setContentView(R.layout.activity_main);
         splashView = findViewById(R.id.splash_view);
         applySplashLogo();
+        AppLogger.i("启动耗时", "段1 布局与启动层就绪: " + (SystemClock.elapsedRealtime() - bootT0) + "ms");
 
         // 异步应用车标策略（自适应车型或保持自定义配置）
+        long t1 = SystemClock.elapsedRealtime();
         AppIconManager.applyAppIconStyle(this);
+        AppLogger.i("启动耗时", "段2 车标策略应用: " + (SystemClock.elapsedRealtime() - t1) + "ms（累计 "
+                + (SystemClock.elapsedRealtime() - bootT0) + "ms）");
 
+        long t2 = SystemClock.elapsedRealtime();
         initWebView();
+        AppLogger.i("启动耗时", "段3 WebView 初始化与首屏装载: " + (SystemClock.elapsedRealtime() - t2) + "ms（累计 "
+                + (SystemClock.elapsedRealtime() - bootT0) + "ms）");
+
+        long t3 = SystemClock.elapsedRealtime();
         checkAndRequestStoragePermission();
         try {
             IntentFilter netFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
@@ -267,7 +281,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             pkgFilter.addDataScheme("package");
             registerReceiver(packageChangeReceiver, pkgFilter);
         } catch (Exception ignored) {}
-        AppLogger.i("应用启动", "缤越助手界面启动完成");
+        AppLogger.i("启动耗时", "段4 权限与广播注册: " + (SystemClock.elapsedRealtime() - t3) + "ms（累计 "
+                + (SystemClock.elapsedRealtime() - bootT0) + "ms）");
+        AppLogger.i("应用启动", "缤越助手界面启动完成（onCreate 总耗时 " + (SystemClock.elapsedRealtime() - bootT0) + "ms）");
 
         // 兜底安全防线：冷启动后最长 2.5 秒无论前端是否通知，均平滑解除启动层
         mainHandler.postDelayed(new Runnable() {

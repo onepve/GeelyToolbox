@@ -106,7 +106,7 @@
       <!-- 赞赏与车友交流支持 -->
       <div class="p-5 rounded-2xl bg-car-card border border-car-border flex items-center justify-between">
         <div class="flex items-center space-x-5">
-          <div class="p-2 bg-white rounded-2xl shadow-md border border-car-border shrink-0">
+          <div class="p-2 bg-[var(--bg-modal)] rounded-2xl shadow-md border border-car-border shrink-0">
             <img :src="rewardQrImg" alt="微信赞赏码" class="w-24 h-24 rounded-lg object-contain block" />
           </div>
           <div class="flex flex-col space-y-1">

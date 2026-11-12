@@ -266,7 +266,7 @@
             </div>
 
             <!-- 微信赞赏二维码 -->
-            <div class="p-2.5 bg-white rounded-xl shadow-md my-1">
+            <div class="p-2.5 bg-[var(--bg-modal)] rounded-xl shadow-md my-1">
               <img 
                 :src="rewardQrImg" 
                 alt="微信赞赏码" 

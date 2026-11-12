@@ -503,6 +503,92 @@ if prod and re.search(r"(?<![-\w])inset\s*:", prod):
 
 
 # ---------------------------------------------------------------------------
+# 9) 白天「纯白死块」契约（2026-11 车主实拍复现三次后锁死）
+#
+#    现象：白天主题下弹窗整块纯白、下拉浮层纯白、二维码底板纯白，
+#    与同色系背景完全脱节，车主原话「好多白白的地方和背景不搭」。
+#    根因不是某个组件写错，而是 --bg-modal 六套白天全写 rgba(255,255,255,1)。
+#
+#    老 WebView 上这类死白更致命：它没有任何色彩管理，纯白会直接顶到
+#    面板最亮档，旁边所有 tinted surface 全被压成灰 —— 一眼就是「补丁」。
+#
+#    同时锁死 preflight 兜底：Tailwind 自带 *,::before,::after{border-color:#e5e7eb}，
+#    任何只写 border 不写颜色的元素都会带一圈写死的冷灰边，
+#    与卡片自身的主题边色叠成「框套框」双层描边（车主长期反馈的那圈多余实线）。
+# ---------------------------------------------------------------------------
+
+# 9.1 白天档 --bg-modal 禁止纯白
+day_blocks = re.findall(
+    r"(?:--bg-modal':\s*'([^']+)')", pal_raw
+)
+for val in day_blocks:
+    norm = val.replace(" ", "").lower()
+    if norm in ("rgba(255,255,255,1)", "#fff", "#ffffff", "rgb(255,255,255)", "white"):
+        fail(
+            "palette.js 出现纯白 --bg-modal（%s）—— 白天弹窗/下拉浮层会变成死白块，"
+            "与同色系背景割裂。必须改为该主题背景同色系的 tinted 实底。" % val
+        )
+if not day_blocks:
+    fail("palette.js 找不到任何 --bg-modal —— 弹窗底色真源丢失。")
+
+# 9.2 --bg-modal 必须不透明（弹窗背后是内容，半透会让文字串底看不清）
+for val in day_blocks:
+    m = re.match(r"rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([\d.]+)\s*\)", val.strip())
+    if m and float(m.group(1)) < 0.98:
+        fail(
+            "--bg-modal 不透明度 %.2f < 0.98（%s）—— 弹窗背后是列表内容，"
+            "半透会让文字串底，必须在保持不透明的前提下只调色相。" % (float(m.group(1)), val)
+        )
+
+# 9.3 源码里禁止写死 bg-white（六套主题下都会变成死白块）
+for vue in sorted((ROOT / "web/src").rglob("*.vue")):
+    src = vue.read_text(encoding="utf-8")
+    for m in re.finditer(r"\bbg-white\b", src):
+        line = src[: m.start()].count("\n") + 1
+        fail(
+            "%s:%d 写死 bg-white —— 不跟主题走，白天是死白块（车主实拍里最常见的那类）。"
+            "改用 bg-[var(--bg-modal)] 或 bg-car-card / bg-car-item。"
+            % (vue.relative_to(ROOT), line)
+        )
+
+# 9.4 preflight 默认边框色必须被主题色接管
+#     必须精确校验「选择器块内部」的值，不能全文件搜 —— 别处也有
+#     border-color: var(--border-color)（如 .border-car-border），会让这条门禁形同虚设。
+_universal = re.search(
+    r"(?P<sel>\*\s*,\s*:before\s*,\s*:after|\*\s*,\s*::before\s*,\s*::after|\*)\s*\{(?P<body>[^}]*)\}",
+    app_src,
+)
+if not _universal:
+    fail(
+        "App.vue 找不到全局元素选择器块（*,::before,::after）—— "
+        "Tailwind preflight 会把默认边框写死成 #e5e7eb 冷灰，必须有兜底接管。"
+    )
+elif not re.search(r"(?<![-\w])border-color\s*:\s*var\(--border-color\)", _universal.group("body")):
+    fail(
+        "App.vue 的 *,::before,::after 兜底块里 border-color 不是 var(--border-color) —— "
+        "Tailwind preflight 默认的 #e5e7eb 冷灰会漏到所有只写 border、不写颜色的元素上，"
+        "与卡片自身边色叠成「框套框」双层描边。"
+    )
+
+# 9.5 构建产物复核：preflight 的 #e5e7eb 允许存在，但必须被后面的主题兜底覆盖掉。
+#     判据是「顺序」而不是「是否命中」——Tailwind preflight 天然会带这一行，
+#     只要我们的 *,::before,::after 兜底写在它后面，级联就会用主题色赢。
+if prod:
+    i_legacy = prod.find("border-color:#e5e7eb")
+    m_override = re.search(r"\*\s*,\s*:before\s*,\s*:after\s*\{\s*border-color:\s*var\(--border-color\)", prod)
+    if i_legacy >= 0 and not m_override:
+        fail(
+            "构建产物里 preflight 默认边框 #e5e7eb 没有被主题兜底覆盖 —— "
+            "只写 border 不写颜色的元素会带一圈不跟主题的冷灰边，车机上就是「框套框」。"
+        )
+    elif i_legacy >= 0 and m_override and m_override.start() < i_legacy:
+        fail(
+            "构建产物里主题边框兜底排在 preflight 之前 —— 会被 Tailwind 的 #e5e7eb 反压回去，"
+            "车机上仍会出现「框套框」双层描边。兜底必须写在 @tailwind utilities 之后。"
+        )
+
+
+# ---------------------------------------------------------------------------
 def main():
     print("=" * 70)
     print(">> 玻璃材质与配色真源门禁 (Glass Material & Palette Source Gate)")
