@@ -220,7 +220,52 @@ def evaluate(files):
         pass
     if not re.search(r'!sawMarker\s*\|\|\s*inMain', span_body) or 'minStamp' not in span_body:
         failures.append('log-span-marker-tolerant')
+    failures.extend(log_slice_contract(utils_src))
     return failures
+
+
+def log_slice_keywords(src, var):
+    """取出某一路切片 filterLogByKeywords 调用的实际关键词（剔除注释）。"""
+    m = re.search(var + r'\s*=\s*filterLogByKeywords\([^;]*?\);', src, re.S)
+    if not m:
+        return None
+    body = re.sub(r'//[^\n]*', '', m.group(0))
+    return re.findall(r'"([^"]*)"', body[body.index('),') + 2:])
+
+
+def log_slice_contract(utils_src):
+    """切片关键词必须「真值零漏召回 + 不掺噪音」，用 430884 真实包校准过的口径。
+
+    切片是车主自己看的第一现场，漏召回比多几行更致命；但宽词（裸 gear / SCO）会把
+    雷达音频、auditd 的 scontext 一起灌进来，让真正的开关门/换挡被淹掉。
+    """
+    out = []
+    rules = {
+        # var: (必须包含, 必须不含, 缺失标签)
+        'wheelFile': (['onKeyEvent', 'keycode', 'keyCode', 'EcarxVolumeKeyPolicy', 'XCInputService',
+                       'AdaptAPI.InputImpl'], [], 'log-slice-wheel-chain'),
+        'doorFile': (['91 02 01'], [], 'log-slice-door-serial-frame'),
+        'gearFile': (['mGearState', 'gear_position', 'GEAR_'], ['"gear"', '"DRIVEINFO"', '"AvmStateManger"'],
+                     'log-slice-gear-precise'),
+        'btFile': (['BluetoothSCO', 'SCO_AUDIO_STATE'], ['"SCO"', '"HFP"'], 'log-slice-bt-sco-precise'),
+    }
+    for var, (need, forbid, label) in rules.items():
+        kws = log_slice_keywords(utils_src, var)
+        if kws is None:
+            out.append(label + ':missing')
+            continue
+        joined = '|'.join(kws)
+        for token in need:
+            if token not in kws:
+                # GEAR_ 这类前缀锚点用子串判定
+                if token.endswith('_') and any(t.startswith(token) for t in kws):
+                    continue
+                out.append(label + ':need-' + token)
+        for token in forbid:
+            bare = token.strip('"')
+            if bare in kws:
+                out.append(label + ':bare-' + bare)
+    return out
 
 
 def load(root):

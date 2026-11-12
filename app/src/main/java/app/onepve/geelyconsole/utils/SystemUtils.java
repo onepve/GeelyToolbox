@@ -1652,20 +1652,31 @@ public class SystemUtils {
             if (listener != null) listener.onProgress(55, "正在分类提取方控/换挡/车门/蓝牙专属切片...");
             wheelFile = filterLogByKeywords(logFile, new File(tempDir, "wheel.log"),
                     "方控按键", "HAL_KEY", "HW_KEY_INPUT", "reportKeyToAdaptApi", "shouldCallback",
-                    "ECARX_KEY", "方控按键", "方向盘", "steering", "SWC", "按键");
+                    "ECARX_KEY", "方控按键", "方向盘", "steering", "SWC", "按键",
+                    // 方控从按下到落地的整条链路：按键策略 -> 输入服务 -> AdaptAPI 注入 -> 应用收到 onKeyEvent
+                    // 少这几个只能抓到 InputManager 的 release 一行，430884 包实测漏掉 23 行关键链路
+                    "onKeyEvent", "keycode", "keyCode", "EcarxVolumeKeyPolicy", "XCInputService", "AdaptAPI.InputImpl");
 
+            // 车门切片必须带上 MCU 串口报文头 91 02 01：缤越 COOL 的四门/尾门真值是从这条串口帧解出来的，
+            // 只按 "车门"/"DoorState" 关键词兜，430884 包实测 33 条真实门状态只捞到 3 条。
             doorFile = filterLogByKeywords(logFile, new File(tempDir, "door.log"),
                     "DoorStateManager", "车门", "车门已打开", "车门已关好", "车门已关闭", "FL_DOOR", "FR_DOOR", "RL_DOOR", "RR_DOOR",
-                    "mModelLFDoor", "mModelRFDoor", "mModelLRDoor", "mModelRRDoor", "TRUNK", "尾门", "后备箱");
+                    "mModelLFDoor", "mModelRFDoor", "mModelLRDoor", "mModelRRDoor", "TRUNK", "尾门", "后备箱",
+                    "91 02 01");
 
+            // 挡位切片去掉两个「看起来相关其实全是噪声」的宽词：
+            //   · 裸 "gear" —— 会捞进 RadarApp 的 playRadarSound gear=4 之类的雷达音频行
+            //   · "AvmStateManger" —— 这个 TAG 每帧还在刷雷达距离/车速，430884 包里 2771 行只有 130 行跟挡位有关
+            //   · 裸 "DRIVEINFO" —— 会捞进 SensorModule 的 EPB/胎压等其它属性轮询
+            // 换成 mGearState / gear_position / GEAR_ 三个精确锚点，真挡位语义行零漏召回。
             gearFile = filterLogByKeywords(logFile, new File(tempDir, "gear.log"),
-                    "GearStateMachine", "挡位状态", "ECARX_GEAR_POSITION", "GEAR_SELECTION", "CURRENT_GEAR",
-                    "VehId=Vehicle_Gear", "onVehicleEventGear", "AvmStateManger", "isGearReverse",
-                    "换挡", "档位", "gear", "DRIVEINFO", "INFO_ID_VDRIVEINFO_GEAR_POSITION", "驾驶模式", "DriveMode");
+                    "GearStateMachine", "挡位", "ECARX_GEAR_POSITION", "GEAR_SELECTION", "CURRENT_GEAR",
+                    "VehId=Vehicle_Gear", "onVehicleEventGear", "mGearState", "isGearReverse", "gear_position",
+                    "换挡", "档位", "GEAR_", "INFO_ID_VDRIVEINFO_GEAR_POSITION", "驾驶模式", "DriveMode");
 
             powerFile = filterLogByKeywords(logFile, new File(tempDir, "power.log"),
                     "PEPS_PowerMode", "INFO_ID_VPOWERINFO", "KEY_STATE", "ENGINE_STATE",
-                    "AP_POWER_BOOTUP_REASON", "电源状态", "点火", "熄火", "上电", "下电", "battery");
+                    "AP_POWER_BOOTUP_REASON", "电源", "点火", "熄火", "上电", "下电", "battery");
 
             appFile = filterLogByKeywords(logFile, new File(tempDir, "app.log"),
                     "GeelyToolbox", "VehicleAutomationService",
@@ -1674,7 +1685,9 @@ public class SystemUtils {
             File btFile = filterLogByKeywords(logFile, new File(tempDir, "bluetooth.log"),
                     "Bluetooth", "bluetooth", "a2dp", "A2DP", "A2dpSink", "bt_stack", "avdt",
                     "AudioFocus", "requestAudioFocus", "abandonAudioFocus", "EasMediaBridge",
-                    "updateCurrentSourceType", "SourceType", "STREAM_BLUETOOTH", "SCO", "HFP", "音频通道", "蓝牙");
+                    "updateCurrentSourceType", "SourceType", "STREAM_BLUETOOTH",
+                    "BluetoothSCO", "SCO_AUDIO_STATE", "startBluetoothSco", "stopBluetoothSco",
+                    "HfpState", "hf_action", "音频通道", "蓝牙");
 
             // 2.5 将最新纯内存守护日志一并脱敏归入 guard.log
             File guardFile = new File(tempDir, "guard.log");

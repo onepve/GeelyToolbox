@@ -67,6 +67,27 @@ public class LogFilterRegressionTest {
         check(desensVin.contains("****") && !desensVin.contains("LB3742416N1234567"),
                 "车架号 VIN 必须被成功打码");
 
+        // 430884 真实包实测漏过的四种写法，逐一钉死（都是系统/埋点原样吐出来的格式）
+        String locObj = SystemUtils.desensitizeLogLine("11-12 08:15:20.452 I/location( 900): Location[gps 31.720748,118.353723 hAcc=20 et=+2d1h]");
+        check(!locObj.contains("31.720748") && !locObj.contains("118.353723"),
+                "Location[gps 纬度,经度] 对象原文必须打码");
+
+        String latShort = SystemUtils.desensitizeLogLine("11-12 08:15:20.452 I/amap( 900): lat=31.720748 lng=118.353723");
+        check(!latShort.contains("31.720748") && !latShort.contains("118.353723"),
+                "lat=/lng= 简写经纬度必须打码");
+
+        String gpsJson = SystemUtils.desensitizeLogLine("{\"latitude\":31.720748,\"longitude\":118.353723,\"city\":\"南京\"}");
+        check(!gpsJson.contains("31.720748") && !gpsJson.contains("118.353723"),
+                "埋点 JSON 里的 latitude/longitude 必须打码");
+
+        String imei = SystemUtils.desensitizeLogLine("11-12 08:15:20.452 I/TBox( 900): imei 868337038618101 online");
+        check(!imei.contains("868337038618101"),
+                "T-Box IMEI 串号必须打码（能直接定位到具体一台车）");
+
+        String uidStr = SystemUtils.desensitizeLogLine("{\"uid.string\":\"B0928A744002995DFBD27132673FAE7F|0\",\"x\":1}");
+        check(!uidStr.contains("B0928A744002995DFBD27132673FAE7F"),
+                "埋点 uid.string 设备 UID 必须打码");
+
         System.out.println("\n测试结果: 通过 " + passes + ", 失败 " + failures);
         if (failures > 0) {
             System.exit(1);
