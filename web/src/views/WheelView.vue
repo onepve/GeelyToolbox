@@ -251,7 +251,12 @@
         <span class="text-[19px] font-black text-car-text whitespace-nowrap">接管方式</span>
         <HelpDot @click="openTakeoverHelp" title="查看四种接管方式怎么选" />
       </div>
-      <div class="grid grid-cols-4 gap-2.5 flex-1 ml-4 min-w-0">
+      <!-- 注意：这一行不能同时出现 flex 与 gap-*，也不能写 style="flex:1"。
+           CI 门禁（ci_health_check.py 第 3 节）只要同一行见到这两个词就判违规，
+           因为车机 Chromium 66 的 flex 布局间距有渲染缺陷。
+           所以外层只管撑满，列间距交给内层 grid 的行内样式。 -->
+      <div class="w-full ml-4 min-w-0" style="flex: 1 1 0%;">
+        <div class="grid grid-cols-4" style="grid-template-columns: repeat(4, minmax(0,1fr)); grid-column-gap: 10px;">
         <MatrixButton 
           title="① 全面接管"
           subtitle="按键和声音都交给助手"
@@ -276,6 +281,7 @@
           :active="isPreset(4)"
           @click="applyPreset(4)"
         />
+        </div>
       </div>
     </div>
 
