@@ -1,8 +1,14 @@
 <template>
   <!-- 激活态不再把整圈边框染成金色：金色只留左侧一道 4px 竖条 + 状态点。
        整圈金边会让一屏里同时亮七八个金框，反而看不出哪个是关键。 -->
+  <!-- 【卡片纵向分布铁律 v1.8.33.15】
+       方控页卡片被 flex-1 拉高铺满到屏幕底部后，justify-between 会把标题顶到最上、
+       下拉顶到最下（但内容区没撑高，下拉其实停在标题下方），结果是标题与下拉之间开一道
+       死白，看着像中间挖了个洞。tighter 模式改成 justify-start：标题和下拉紧挨着排在顶部，
+       多出来的高度全部留在卡片底部，卡片是「内容在上、卡身在下」的正常卡，不再中间开洞。 -->
   <div :class="[
-    'rounded-3xl border-2 shadow-2xl transition-all bg-car-card flex flex-col justify-between relative overflow-hidden',
+    'rounded-3xl border-2 shadow-2xl transition-all bg-car-card flex flex-col relative overflow-hidden',
+    tighter ? 'justify-start' : 'justify-between',
     tighter ? 'p-3 min-h-0' : (dense ? 'p-3.5 min-h-0' : 'p-5 min-h-[170px]'),
     'border-car-border'
   ]">

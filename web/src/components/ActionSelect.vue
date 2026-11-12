@@ -147,6 +147,15 @@ function toggle() {
   playTouchFeedback();
   if (open.value) { open.value = false; return; }
 
+  // 【同屏互斥铁律 v1.8.33.15】先关掉同屏其他已展开的下拉，再打开自己。
+  // 实车与 headless 都稳定复现：三个下拉可以同时展开、叠三块面板在屏幕上。
+  // 原因是面板 position:fixed 挂在 body 上，不在各自 rootEl 内，
+  // 实例自己的「点外面就关」判定看到的是别人家按钮，靠它关不干净。
+  // 用模块级单一活跃句柄强制互斥：同一时刻整屏只允许一个下拉展开。
+  const prev = window.__geelyActiveActionSelect;
+  if (prev && prev !== closeFromPeer) prev();
+  window.__geelyActiveActionSelect = closeFromPeer;
+
   const b = panelBounds();
   if (!b) { open.value = true; return; }
 
@@ -190,6 +199,9 @@ function toggle() {
 // 页面一滚，fixed 面板就会跟按钮脱节，直接收起
 function onScrollClose() {
   if (open.value) open.value = false;
+  if (window.__geelyActiveActionSelect === closeFromPeer) {
+    window.__geelyActiveActionSelect = null;
+  }
 }
 
 function pick(action) {
@@ -215,6 +227,14 @@ function instanceCloser(e) {
   if (!open.value) return;
   if (e === null) { onScrollClose(); return; }
   onDocClick(e);
+}
+
+// 让其他实例能主动关掉我（同屏互斥用）；关掉后顺手释放活跃句柄
+function closeFromPeer() {
+  open.value = false;
+  if (window.__geelyActiveActionSelect === closeFromPeer) {
+    window.__geelyActiveActionSelect = null;
+  }
 }
 
 // 【全局监听单例铁律 v1.8.33.14】

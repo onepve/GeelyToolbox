@@ -1,10 +1,12 @@
 <template>
-  <div class="flex flex-col space-y-4">
+  <div class="flex flex-col space-y-4 flex-1 min-h-0 min-w-0">
     <!-- 顶部车规二级分段胶囊：一页全景掌控，消灭长滑 -->
     <SubTabs :tabs="linkTabs" v-model="activeTab" />
 
     <!-- 0. 方向盘按键接管与独立映射 (v-if 彻底杜绝幽灵重叠，传递 tab 参数消除第三级嵌套) -->
-    <div v-if="activeTab === 'wheel_keys' || activeTab === 'wheel_mode'" class="flex flex-col space-y-4">
+    <!-- 【铺满透传 v1.8.33.15】方控页要把卡片撑到屏幕底部，链路每一层都得能传高度；
+         其他页仍是自然高度（子标签是纯文本，不会被拉高），所以统一加 flex-1 不影响别页。 -->
+    <div v-if="activeTab === 'wheel_keys' || activeTab === 'wheel_mode'" class="flex flex-col flex-1 min-h-0 min-w-0">
       <WheelView :initial-tab="activeTab === 'wheel_mode' ? 'mode' : 'keys'" :hide-sub-tabs="true" />
     </div>
 

@@ -4,12 +4,20 @@
     title="运行与守护日志" 
     :badge="autoScroll ? '● 最新置顶轮转 (1.5s)' : '○ 自动置顶已暂停'"
     maxWidthClass="max-w-[1080px]"
+    maxHeightClass="h-[88vh]"
+    bodyClass="p-4 flex flex-col h-full overflow-hidden"
+    :body-scroll="false"
     :showCloseButton="false"
     @close="closeModal('log')"
   >
-    <div class="flex flex-col space-y-3">
+    <div class="flex flex-col space-y-3 flex-1 min-h-0">
+      <!-- 【单滚动条铁律 v1.8.33.15】
+           旧版这里会冒出两条并排的竖滚动槽：外层弹窗正文自己 overflow-y-auto（内容 653px、
+           可视 475px，超了 178px）+ 内层日志屏 h-[480px] 自己再来一条，两条挨在一起非常脏。
+           现在：外层改为「不滚、只让位」（bodyClass 传 h-full overflow-hidden），
+           高度全部交给日志屏 flex-1 吃掉、只留它一条滚动条，屏幕右下角永远只有一道槽。 -->
       <!-- 模块日志开关：用户可独立控制高频模块写入，默认全关以避免日志风暴卡死界面 -->
-      <div class="bg-car-item border border-car-border rounded-xl p-3 shadow-sm">
+      <div class="bg-car-item border border-car-border rounded-xl p-3 shadow-sm shrink-0">
         <div class="text-[13.5px] text-car-sub font-bold mb-2 flex items-center justify-between">
           <span>8大核心业务日志采集开关（默认全关，按需开启）</span>
           <div class="flex items-center space-x-2">
@@ -47,7 +55,7 @@
       <!-- 核心日志控制台输出屏 (独立平滑滚动，全量接入当前主题系统，消除生硬底色) -->
       <pre 
         ref="logContainer"
-        class="h-[480px] overflow-y-auto rounded-2xl p-5 font-mono text-[14.5px] font-semibold leading-[1.75] select-text whitespace-pre-wrap shadow-inner transition-colors duration-200"
+        class="flex-1 min-h-0 overflow-y-auto rounded-2xl p-5 font-mono text-[14.5px] font-semibold leading-[1.75] select-text whitespace-pre-wrap shadow-inner transition-colors duration-200"
         :class="[
           store.isNight 
             ? 'bg-car-card border-2 border-car-border text-car-text shadow-black/80' 

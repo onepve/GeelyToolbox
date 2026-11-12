@@ -33,8 +33,10 @@
           </div>
         </div>
 
-        <!-- 弹窗主体内容 (独立平滑滚动，实体隔离彻底杜绝 Android 9 gap 塌陷与透视穿帮) -->
-        <div :class="['flex-1 overflow-y-auto tb-modal-surface', bodyClass || 'p-8 space-y-6']">
+        <!-- 弹窗主体内容 (独立平滑滚动，实体隔离彻底杜绝 Android 9 gap 塌陷与透视穿帮)
+             【单滚动条铁律 v1.8.33.15】bodyScroll=false 时正文不滚、只让位，
+             把滚动权交给内容自己（如守护日志屏），避免内层外层两条竖滚动槽并排。 -->
+        <div :class="['flex-1 tb-modal-surface', bodyScroll === false ? 'overflow-hidden flex flex-col min-h-0' : 'overflow-y-auto', bodyClass || 'p-8 space-y-6']">
           <slot />
         </div>
 
@@ -61,6 +63,12 @@ const props = defineProps({
   headerClass: String,
   footerClass: String,
   zIndexClass: String,
+  // 正文是否可滚（默认滚）。守护日志这类「内容自己滚」的弹窗传 false，
+  // 关掉正文滚动，杜绝内外两条竖滚动槽并排。
+  bodyScroll: {
+    type: Boolean,
+    default: true
+  },
   showCloseButton: {
     type: Boolean,
     default: true
