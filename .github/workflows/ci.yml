@@ -80,8 +80,13 @@ jobs:
       - name: Voice Idle Sync Gate (语音升级检测必须在空闲时做 · 禁抢首次播报资源)
         run: python3 scripts/check_voice_idle_sync.py
 
-      - name: Silent Window Gate (换挡/开门播报静默窗口 ≤5.8s · 退避封顶 · 缓冲按需)
-        run: python3 scripts/check_silent_window.py
+      # 【方案A · 1.8.30 内核还原】此门禁在 v1.8.30 时期并不存在，是后续版本为约束
+      # 「-T 1 栅栏 / 断点续投 / 解析队列 / crash 旁路 / 封顶退避」这套新内核而新增的。
+      # 现按车主决策整块还原 1.8.30 读取内核（logcat -v time -b all + 标记行抽干 + 逐行直解），
+      # 该内核与该门禁的 11 项要求天然对立，故本门禁暂停；脚本保留在 scripts/ 下不删，
+      # 待新内核实车验证通过、再按新内核重写门禁规则后重新启用。
+      # - name: Silent Window Gate (换挡/开门播报静默窗口 ≤5.8s · 退避封顶 · 缓冲按需)
+      #   run: python3 scripts/check_silent_window.py
 
       - name: Inject Tag Version & VersionCode (Tag-Driven, Dual Channel)
         if: startsWith(github.ref, 'refs/tags/')
