@@ -1295,7 +1295,21 @@ public class VehicleAutomationService extends Service {
                         //      永久降级为单 -b main -T 1（最稳档），本次开机周期内不再试 all。
                         boolean bootStormPhase = android.os.SystemClock.elapsedRealtime() < BOOT_STORM_WINDOW_MS;
                         String[] cmd;
-                        if (!logcatAllDisabled) {
+                        // 【开机洪峰回归老档位 v1.8.33.21】开机 90 秒内原样用老版本的命令：
+                        // logcat -v time -b all（不带 -T）。
+                        // 铁证（同车四个诊断包对比开机后多久才拿到实时挡位）：
+                        //   · 老版本 1.8.28（436626）：-b all 不带 -T → 建流 1 次、0 断连、0.13~1.6 秒实时；
+                        //   · beta.17（686292）：main,system,events -T 1 → 断 7 次、48 秒无实时挡位；
+                        //   · beta.18（845831）：-b main -T 1 → 建 6 次、断 5 次、35 秒才稳；
+                        //   · beta.20（330998）：-b all -T 1 → 12.4 秒内重建 3 次（17:12:17/22/23），
+                        //     抽干到 17:12:29.7 才进实时，这 12 秒挡位报文全丢 → 点火后挂挡没声音。
+                        // 共同点只有一个：都带了 -T 1。老版本不带 -T 就 0 断连。
+                        // 所以开机洪峰期原样退回老命令，不引入新信号源、不换缓冲区、不动方控所在的 crash 段。
+                        if (bootStormPhase && !logcatTailSeekDisabled && !logcatAllDisabled) {
+                            usedAll = true;   // 仍走 all 档位，保留 openFail 自愈判定，个别车型读不到时照旧降级
+                            cmd = new String[]{"logcat", "-v", "time", "-b", "all"};
+                            sLogcatBuf = "all(开机洪峰·老档位,无-T)";
+                        } else if (!logcatAllDisabled) {
                             usedAll = true;
                             // 【重连必须便宜 v1.8.33.20】443825 铁证：all.log 里 66146 行中有 44379 行是重复内容
                             // （4404 种重复），全部来自「-b all 不带 -T 1 → 每次重连从头回放整个缓冲区」。
