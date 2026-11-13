@@ -1281,11 +1281,14 @@ public class VehicleAutomationService extends Service {
                         if (bootStormDrain) drained = true;
                         long drainDeadlineMs = android.os.SystemClock.elapsedRealtime() + 800L;
                         // 【读端瘦身 v1.8.34】热路径回到 1.8.28 的「几乎零开销」形态。
-                        // 686292 实测：读端落后 10 秒 → logd 踢读者 → 7 次 EOF。三个拖累点全部拿掉：
-                        //   1) 抽干段不再抄环形缓冲、不再算计数、不再预处理，纯 continue 空转
-                        //      （老版本就是这样，实测 5800 行/秒）；
-                        //   2) 每行不再做 volatile 时间戳写与两次静态计数，改成 64 行批量刷一次；
-                        //   3) 环形缓冲仍按需开启，攒够一批再抄，绝不在洪峰期逐行占用读端。
+                        // 686292 实测：读端落后 10 秒 → logd 踢读者 → 7 次 EOF（48 秒没实时挡位报文）。
+                        // 老版本读端几乎不干活：建流后 5001 行或标记行一路 continue，一行都不解析，
+                        // 实测 857ms 跳过 5001 行 ≈ 5800 行/秒；本版热路径只有 462 行/秒，洪峰输入 1400 行/秒。
+                        // 省下来的三处：
+                        //   1) 抽干段只做时间戳比较（老版本同样如此），不做计数、不做预处理、不碰队列；
+                        //   2) 每行不再写 volatile 时间戳、不再做两次静态计数，改成 64 行批量刷一次；
+                        //   3) 环形缓冲仍是按需开启（默认关闭只是一次 volatile 读，纳秒级），
+                        //      放在栅栏之前是为了抓日志时历史段也能留证 —— 这一条不许为提速砍掉。
                         int pendingRead = 0, pendingMatched = 0;
                         while (isRunning && (line = reader.readLine()) != null) {
                             lineCount++;
