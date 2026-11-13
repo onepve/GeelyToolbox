@@ -165,6 +165,7 @@ public class VehicleAutomationService extends Service {
     private volatile boolean logcatWatchdogStarted = false;
     private int logcatConsecutiveFailures = 0;                // 连续失败次数（退避阶梯 + 取证）
     private volatile boolean logcatTailSeekDisabled = false;  // 老系统不认 -T 参数时永久降级，不再反复试错
+    private volatile boolean logcatMainOnly = false;          // 断过一次即锁定单 -b main（最稳档，v1.8.34）
 
     // 通道健康快照（随诊断包 summary.json 一并带回，车主只需发一个包就能判断通道是否稳）
     private static volatile int sLogcatBuildCount = 0;         // 通道建立次数（全程累计）
@@ -1178,30 +1179,41 @@ public class VehicleAutomationService extends Service {
                         // 现在改成 -T 1：只从最后一行开始、立刻转入实时跟随，不运历史。
                         // 漏掉的断连期报文靠两点补：①退避表已封顶 5 秒，空窗本来就短；
                         // ②时间栅栏保证不会把历史行误当实时行解析。老系统不认 -T 时仍自动降级。
+                        // 【主通道订阅铁律 v1.8.34】开机洪峰期只订单 -b main。
+                        // 实测 686292（1.8.33-beta.17，缤泽 COOL）：开机后 08:10:41 建 #1 一路断到
+                        // 08:11:11 建 #8 才稳定，7 次 read: unexpected EOF，48 秒没有实时挡位报文；
+                        // 换到单 -b main 之后连跑 8 分钟 0 掉线、读到 66.8 万行、队列丢 0 行，
+                        // 21 次挡位跃变 + 169 帧车门报文一帧不少。根因不是参数挑车，
+                        // 而是开机期 logd 灌得比读端快，读端落后 10 秒 → logd 把本读者踢掉。
+                        // 砍掉 system/events 后读端立刻跟得上，管道不再积压。
+                        //
+                        // 规则：
+                        //   1) 开机 90 秒内一律单 -b main（洪峰期 system/events 全是噪音）；
+                        //   2) 洪峰期过了且通道一直健康，下一次自然重连才升到 main,system,events
+                        //      —— 绝不为了升级主动重建通道，白白制造空窗；
+                        //   3) 本开机周期内只要断过一次，就永久退回单 -b main，不再爬阶梯试错
+                        //      （旧阶梯要爬到第 6 次才降到 main，代价是白白丢掉几十秒报文）。
+                        boolean bootStormPhase = android.os.SystemClock.elapsedRealtime() < BOOT_STORM_WINDOW_MS;
                         int tier = logcatConsecutiveFailures;
                         String[] cmd;
-                        // 【crash 分流铁律 v1.8.33.15】crash 缓冲区绝不与主通道合并。
-                        // 实车铁证（诊断包 384522 / 932336，同车 602076）：
-                        //   合并 -b main,system,events,crash 后，建流成功却在 1~3 秒内报
-                        //   read: unexpected EOF! 退出；外层重连循环反复重建，384522 实测
-                        //   21:42:54.940 建 #1 → 21:43:08.064 建 #2 → 21:43:12.041 建 #3，
-                        //   直到 21:43:12.139 才进实时，整整 17.2 秒没有挡位报文。
-                        // 而 crash 只承载方控的 reportKeyToAdaptApi 一种报文，方控本身已有
-                        // HAL HW_KEY_INPUT 常开兜底 + 原厂广播兜底，绝不值得用全车主通道去换。
-                        // 现在：主通道只订 main,system,events（老版本 1.8.7~1.8.28 的稳定组合，
-                        // 实测 0.13~1.6 秒进入实时、0 次断连）；crash 由独立旁路线程单独订阅，
-                        // 它断了只影响方控日志源，主通道照常收挡位/车门/电源报文。
-                        if (tier >= 6) {
-                            cmd = new String[]{"logcat", "-v", "time", "-b", "main"};
-                            sLogcatBuf = "main(降级)";
-                        } else if (tier >= 3 || logcatTailSeekDisabled) {
-                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events"};
-                            sLogcatBuf = "main+system+events";
+                        if (tier >= 1) logcatMainOnly = true;   // 断过一次即锁定最稳档
+                        if (bootStormPhase || logcatMainOnly) {
+                            cmd = logcatTailSeekDisabled
+                                    ? new String[]{"logcat", "-v", "time", "-b", "main"}
+                                    : new String[]{"logcat", "-v", "time", "-b", "main", "-T", "1"};
+                            sLogcatBuf = bootStormPhase ? "main(开机洪峰)" : "main(降级)";
                         } else {
                             // -T 1 = 只从缓冲区最后一行起跟随，不回放历史，建流即实时
-                            cmd = new String[]{"logcat", "-v", "time", "-b", "main,system,events", "-T", "1"};
-                            sLogcatBuf = "main+system+events(-T1)";
+                            cmd = logcatTailSeekDisabled
+                                    ? new String[]{"logcat", "-v", "time", "-b", "main,system,events"}
+                                    : new String[]{"logcat", "-v", "time", "-b", "main,system,events", "-T", "1"};
+                            sLogcatBuf = logcatTailSeekDisabled ? "main+system+events" : "main+system+events(-T1)";
                         }
+                        // 【crash 分流铁律 v1.8.33.15】crash 缓冲区绝不与主通道合并。
+                        // 实车铁证（诊断包 384522 / 932336，同车 602076）：合并 -b main,system,events,crash
+                        // 后，建流成功却在 1~3 秒内报 read: unexpected EOF! 退出，17.2 秒没有挡位报文。
+                        // crash 只承载方控的 reportKeyToAdaptApi 一种报文，方控另有 HAL HW_KEY_INPUT
+                        // 常开兜底 + 原厂广播兜底，绝不值得用全车主通道去换；crash 由独立旁路线程订阅。
 
                         // 【crash 探针已随分流迁走 v1.8.33.15】
                         // 主通道不再订阅 crash，探针不再需要在主通道建流前判缓冲区可读性。
@@ -1256,7 +1268,7 @@ public class VehicleAutomationService extends Service {
                             AppLogger.i("系统启动", "启动取证 | Logcat 实时监听线程已建立");
                         }
 
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()), 1024);
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()), 65536);
                         String line;
                         // 安全阀：抽干期从 4000ms 收到 800ms。
                         // 原 4 秒太长：每次重连都要在「历史段」里空转，这期间实时挡位报文全被 continue 丢掉。
@@ -1268,16 +1280,35 @@ public class VehicleAutomationService extends Service {
                         boolean bootStormDrain = android.os.SystemClock.elapsedRealtime() < BOOT_STORM_WINDOW_MS;
                         if (bootStormDrain) drained = true;
                         long drainDeadlineMs = android.os.SystemClock.elapsedRealtime() + 800L;
+                        // 【读端瘦身 v1.8.34】热路径回到 1.8.28 的「几乎零开销」形态。
+                        // 686292 实测：读端落后 10 秒 → logd 踢读者 → 7 次 EOF。三个拖累点全部拿掉：
+                        //   1) 抽干段不再抄环形缓冲、不再算计数、不再预处理，纯 continue 空转
+                        //      （老版本就是这样，实测 5800 行/秒）；
+                        //   2) 每行不再做 volatile 时间戳写与两次静态计数，改成 64 行批量刷一次；
+                        //   3) 环形缓冲仍按需开启，攒够一批再抄，绝不在洪峰期逐行占用读端。
+                        int pendingRead = 0, pendingMatched = 0;
                         while (isRunning && (line = reader.readLine()) != null) {
                             lineCount++;
-                            logcatLastLineAtMs = android.os.SystemClock.elapsedRealtime();
+                            pendingRead++;
+                            // 慢流量时每行都刷（pendingRead==1 必然是每批第一行），
+                            // 快流量时每 64 行刷一次 —— 既不让读端背上 volatile 写，
+                            // 也不会让 20 秒静默看门狗误判空闲（那会白白重建通道）。
+                            if (pendingRead == 1 || (pendingRead & 63) == 0) {
+                                logcatLastLineAtMs = android.os.SystemClock.elapsedRealtime();
+                            }
+                            if ((pendingRead & 63) == 0) {
+                                app.onepve.geelyconsole.utils.KeySignalRecorder.countLineReadBatch(pendingRead, pendingMatched);
+                                pendingRead = 0;
+                                pendingMatched = 0;
+                            }
                             // 【全量留证铁律 v1.8.32.11】不走白名单、不过滤，每一行原始日志都抄进内存。
                             // 放在抽干栅栏之前：历史缓冲段也要留，那正是 logd 快照拿不到的部分。
+                            // 缓冲默认关闭，关闭时这里只是一次 volatile 读（纳秒级），不拖读端。
                             appendRawRing(line);
                             if (!drained) {
                                 // 时间栅栏：时间戳早于开流瞬间的历史行直接丢，跨过栅栏即正式进入实时解析。
                                 // 无时间戳的续行（堆栈等）跟随上一行判定，历史段内一并丢弃。
-                                // 安全阀：4 秒内没跨过栅栏（时钟跳变/时间戳异常）就强制放行，绝不把通道卡死成静默。
+                                // 安全阀：800ms 内没跨过栅栏（时钟跳变/时间戳异常）就强制放行，绝不把通道卡死成静默。
                                 if (line.length() >= 18 && line.charAt(2) == '-' && line.charAt(5) == ' ') {
                                     String stamp = line.substring(0, 18);
                                     if (stamp.compareTo(streamStartStamp) >= 0
@@ -1310,14 +1341,19 @@ public class VehicleAutomationService extends Service {
                             // 第二级：命中的行才入队（零解析、零正则、零 IO），独立线程消费；
                             //   队列满时**丢最旧的**而不是阻塞读线程，宁可丢历史也不让实时帧被覆盖。
                             boolean matched = quickPrefilter(line);
-                            app.onepve.geelyconsole.utils.KeySignalRecorder.countLineRead(matched);
                             if (matched) {
+                                pendingMatched++;
                                 if (!offerLogLine(line)) {
                                     logcatDroppedLines++;
                                     app.onepve.geelyconsole.utils.KeySignalRecorder.countLineDropped();
                                 }
                             }
                         }
+                        // 收尾：把最后不足一批的计数补齐，避免统计少算
+                        if (pendingRead > 0 || pendingMatched > 0) {
+                            app.onepve.geelyconsole.utils.KeySignalRecorder.countLineReadBatch(pendingRead, pendingMatched);
+                        }
+                        logcatLastLineAtMs = android.os.SystemClock.elapsedRealtime();
                         try {
                             exitCode = proc.exitValue();
                         } catch (Throwable ignored) {}

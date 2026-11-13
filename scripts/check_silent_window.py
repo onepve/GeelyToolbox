@@ -243,6 +243,48 @@ def check_crash_never_merged(src):
         )
 
 
+def check_boot_main_only(src):
+    """开机洪峰期必须只订单 -b main，且断过一次就锁定最稳档。
+
+    实测 686292（1.8.33-beta.17，缤越 COOL，1.8.33 全量铁证）：
+      08:10:41 建 #1 → 08:11:11 建 #8 才稳定，中间 7 次 read: unexpected EOF，
+      48 秒没有实时挡位报文；车主此时已点火、换挡、切模式，前置操作全丢，
+      导致换挡/驾驶模式识别错乱（表现为「换好几圈才有一次声音」）。
+      换到单 -b main 后连跑 8 分钟 0 掉线、读到 66.8 万行、队列丢 0 行，
+      21 次挡位跃变 + 169 帧车门报文一帧不少。
+    根因不是参数挑车，而是开机期 logd 灌得比读端快 → 读端落后 10 秒 → logd 踢读者。
+    砍掉 system/events 后读端立刻跟得上，管道不再积压。
+
+    所以门禁要求：
+      1) 必须存在「洪峰期或锁定后走单 -b main」的分支；
+      2) 断过一次必须立刻锁定单 -b main，不许再爬多级阶梯（旧阶梯要爬 6 次 = 白丢几十秒）；
+      3) 读端热路径不许逐行做计数/时间戳写（那是读端变慢的直接原因）。
+    """
+    if not re.search(r'\{"logcat",\s*"-v",\s*"time",\s*"-b",\s*"main",\s*"-T",\s*"1"\}', src):
+        FAILS.append(
+            "找不到开机期单 -b main 的订阅命令：\n"
+            "  实测 686292 单 -b main 连跑 8 分钟 0 掉线，而 main,system,events 开机期 7 次 EOF、\n"
+            "  48 秒没有实时挡位报文。必须保留 logcat -v time -b main -T 1 这一档。"
+        )
+    if not re.search(r'logcatMainOnly\s*=\s*true', src):
+        FAILS.append(
+            "断过一次没有立刻锁定单 -b main（logcatMainOnly = true）：\n"
+            "  旧阶梯要爬到第 6 次才降到 main，代价是白白丢掉几十秒实时报文。\n"
+            "  必须 tier >= 1 就锁定最稳档。"
+        )
+    if not re.search(r'boolean bootStormPhase\s*=', src):
+        FAILS.append(
+            "找不到开机洪峰判定 bootStormPhase：\n"
+            "  开机 90 秒内 logd 灌得最凶，必须单独走单 -b main，否则又是 7 次 EOF。"
+        )
+    if 'countLineReadBatch' not in src:
+        FAILS.append(
+            "读端没有批量计数（countLineReadBatch）：\n"
+            "  逐行 countLineRead + 每行写 volatile 时间戳会把读端拖慢，读端一慢 logd 就踢读者。\n"
+            "  必须读端本地累加、每 64 行刷一次。"
+        )
+
+
 def main():
     src = read(SERVICE)
     player = read(PLAYER)
@@ -256,6 +298,7 @@ def main():
         check_tail_seek_is_one(src)
         check_boot_storm_fast_retry(src)
         check_crash_never_merged(src)
+        check_boot_main_only(src)
     check_capture_uses_enable(sysutils)
     check_voice_skip_by_length(player)
 

@@ -144,6 +144,17 @@ public class KeySignalRecorder {
         if (matched) linesMatched++;
     }
 
+    /**
+     * 【读端瘦身 v1.8.34】批量计数。
+     * 逐行调用在生产端是每行两次静态 int 递增 + 一次 volatile 判断，洪峰期（实测 1400 行/秒）
+     * 这些开销会直接拖慢读端，读端一慢 logd 就把本读者踢掉（686292 实测 7 次 unexpected EOF、
+     * 48 秒没有实时报文）。改成读端本地累加、每 64 行刷一次，语义不变但热路径几乎零成本。
+     */
+    public static void countLineReadBatch(int read, int matched) {
+        if (read > 0) linesRead += read;
+        if (matched > 0) linesMatched += matched;
+    }
+
     /** 解析队列满主动丢弃的行数 */
     public static void countLineDropped() {
         linesDropped++;
