@@ -145,6 +145,8 @@ public class VehicleAutomationService extends Service {
     //   代价：万一车机 logd 彻底不可用，重连会稍频繁一些。但每次重连本身就是几十毫秒的事，
     //   比「静默 60 秒收不到挡位」的代价小得多。
     private static final long[] LOGCAT_BACKOFF_MS = {2000L, 2000L, 3000L, 4000L, 5000L};
+    /** 临时性断流（EOF / 被杀 / logd 重载）后的重连间隔：压倒 0.3 秒，不留听不见方控的空窗 */
+    private static final long LOGCAT_RECONNECT_MS = 300L;
     // 【开机洪峰铁律 v1.8.33.14】开机前 90 秒内 logd 还在灌开机日志，此时建流极易
     // 报 read: unexpected EOF 被打断。932336 实测：21:06:49 建 #1 → 断 → 21:07:03 建 #2
     // → 断 → 21:07:06 建 #3 → 21:07:15 才抽干完成，整整 26 秒没有实时挡位报文。
@@ -1237,8 +1239,17 @@ public class VehicleAutomationService extends Service {
                         String[] cmd;
                         if (!logcatAllDisabled) {
                             usedAll = true;
-                            cmd = new String[]{"logcat", "-v", "time", "-b", "all"};
-                            sLogcatBuf = bootStormPhase ? "all(开机洪峰)" : "all";
+                            // 【重连必须便宜 v1.8.33.20】443825 铁证：all.log 里 66146 行中有 44379 行是重复内容
+                            // （4404 种重复），全部来自「-b all 不带 -T 1 → 每次重连从头回放整个缓冲区」。
+                            // 13:57 日志暴涨到 53971 行/分钟后通道断了 11 次，等于把同一份历史反复读了 11 遍，
+                            // 读端一直在抄旧账，实时流被挤在后面 —— 这就是「日志暴增处理不过来」的真身。
+                            // 加上 -T 1 后重连只从尾行跟随，重连成本从「几万行」降到「一行」。
+                            cmd = logcatTailSeekDisabled
+                                    ? new String[]{"logcat", "-v", "time", "-b", "all"}
+                                    : new String[]{"logcat", "-v", "time", "-b", "all", "-T", "1"};
+                            sLogcatBuf = logcatTailSeekDisabled
+                                    ? (bootStormPhase ? "all(开机洪峰)" : "all")
+                                    : (bootStormPhase ? "all(开机洪峰,-T1)" : "all(-T1)");
                         } else if (bootStormPhase || logcatMainOnly) {
                             cmd = logcatTailSeekDisabled
                                     ? new String[]{"logcat", "-v", "time", "-b", "main"}
@@ -1452,25 +1463,35 @@ public class VehicleAutomationService extends Service {
 
                     // 老系统不认 -T 参数（stderr 报 invalid option / unknown option）时永久降级，
                     // 不再每一轮都拿参数去撞，避免把它变成新的刷屏源
+                    // 【去掉永久降级 · 改为回切 all v1.8.33.20】
+                    // beta.19 的老逻辑：用 -b all 建流却「3 秒内 EOF 且行数=0」就判定本车 all 不可用，
+                    // 永久退单 -b main。443825 实车证明这是误判，而且降级本身没有救回任何东西：
+                    //   · 13:57:00 车况总线 + 全景影像日志暴涨 180 倍（319 行/分钟 → 53971 行/分钟）。
+                    //   · 13:57:29 起通道反复 EOF —— 这是 logd 在高负载下的行为，不是 all 打不开。
+                    //   · 13:58:06 命中 instantEmpty 判定 → 「-b all 不可用，已永久降级单 -b main（行数=0）」。
+                    //   · 降级之后 13:58:11 / 13:58:18 依然每次 0~288 行就 EOF —— main 一样扛不住，
+                    //     降级纯粹把能用的 all 档位换掉了，一档好处没换到。
+                    // 现在的判据：只有 stderr 明确说「缓冲打不开 / 无效缓冲」才算真不可用（确定性错误），
+                    // 这类才永久降级。凡是 EOF 类（临时性，高负载也会发生）一律保持 all，直接重连。
                     String errText = stderrBuf.toString();
-                    // 【-b all 自愈】用 all 建流却秒断且一行没读到 → 本车 all 不可用（security/stats 被拒），
-                    // 永久退单 -b main -T 1。判据两条任一成立即降级：
-                    //   ① stderr 明确说缓冲打不开 / 无效缓冲；
-                    //   ② 建流不到 3 秒就 EOF 且行数=0（all 连 main 都没吐出来，说明开流即失败）。
-                    if (usedAll && !logcatAllDisabled) {
+                    if (usedAll) {
                         boolean openFail = errText.contains("Unable to open")
                                 || errText.contains("Invalid buffer")
                                 || errText.contains("invalid buffer")
                                 || errText.contains("Unknown buffer");
-                        boolean instantEmpty = lineCount == 0
-                                && (android.os.SystemClock.elapsedRealtime() - startedAtMs) < 3000L;
-                        if (openFail || instantEmpty) {
+                        if (openFail && !logcatAllDisabled) {
                             logcatAllDisabled = true;
                             logcatMainOnly = true;
-                            Log.w(TAG, "-b all 在本车不可用，永久降级单 -b main | stderr=" + errText
-                                    + " | 行数=" + lineCount);
-                            AppLogger.i("系统启动", "启动取证 | -b all 不可用，已永久降级单 -b main"
-                                    + "（行数=" + lineCount + "）");
+                            Log.w(TAG, "-b all 缓冲在本车不可读，降级单 -b main | stderr=" + errText);
+                            AppLogger.i("系统启动", "启动取证 | -b all 缓冲不可读，已降级单 -b main"
+                                    + "（stderr=" + errText + "）");
+                        } else if (logcatAllDisabled) {
+                            // 曾经因为瞬时 EOF 误降到 main：本机 all 其实是可用的，回切。
+                            // 只在「已降级 + 本次不是确定性 openFail」时回切，绝不会来回抖动。
+                            logcatAllDisabled = false;
+                            logcatMainOnly = false;
+                            Log.i(TAG, "-b all 档位回切（上次降级属临时 EOF 误判）");
+                            AppLogger.i("系统启动", "启动取证 | -b all 档位已回切，停止使用降级档");
                         }
                     }
                     if (!logcatTailSeekDisabled && errText.length() > 0
@@ -1492,13 +1513,24 @@ public class VehicleAutomationService extends Service {
                         Log.w(TAG, "Logcat 通道断开 第" + logcatConsecutiveFailures + "次 " + sLogcatLastExit);
                     }
 
-                    // 阶梯退避：2s → 2s → 3s → 4s → 5s 封顶，杜绝死循环重启
-                    // 【开机洪峰】开机初期 logd 正在灌开机日志，越早重连越早接上实时流；
-                    // 固定 2 秒会让「#1 断 → 等 2s → #2 断 → 等 2s」白等 4 秒。
+                    // 【去掉降级 · 改为快速重连 v1.8.33.20】
+                    // 443825 实测：13:57:29 之后 logd 每 0.01~1.78 秒就 EOF 一次，通道连续断 11 次。
+                    // 老逻辑「#n 断 → 等 2 秒 → #n+1」在这段时间里白等 20 秒以上，而这 2 秒空隙里
+                    // 车主按下的方控键直接落空（13:57:32.582 那次就是这样丢的）。
+                    // 所以：只要不是「确定性打开失败」（openFail，缓冲名写错/权限被拒），
+                    // EOF / 超时 / 被杀这类临时断开一律 0.3 秒内重连，把断档窗口压到最小。
+                    boolean hardOpenFail = errText.contains("Unable to open")
+                            || errText.contains("Invalid buffer")
+                            || errText.contains("invalid buffer")
+                            || errText.contains("Unknown buffer");
                     boolean bootStorm = android.os.SystemClock.elapsedRealtime() < BOOT_STORM_WINDOW_MS;
-                    long wait = bootStorm
-                            ? BOOT_STORM_BACKOFF_MS
-                            : LOGCAT_BACKOFF_MS[Math.min(Math.max(logcatConsecutiveFailures, 1), LOGCAT_BACKOFF_MS.length) - 1];
+                    // 默认按「临时断流」处理：立即重连，不留听不见按键的空窗。
+                    // 开机洪峰期用 0.4 秒退避（logd 正在灌开机日志，抢太急只会更碎）。
+                    long wait = bootStorm ? BOOT_STORM_BACKOFF_MS : LOGCAT_RECONNECT_MS;
+                    if (hardOpenFail) {
+                        // 参数级错误：慢一点，别拿错误命令刷屏
+                        wait = LOGCAT_BACKOFF_MS[Math.min(Math.max(logcatConsecutiveFailures, 1), LOGCAT_BACKOFF_MS.length) - 1];
+                    }
                     try {
                         Thread.sleep(wait);
                     } catch (InterruptedException ignored) {
