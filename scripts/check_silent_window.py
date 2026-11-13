@@ -141,19 +141,16 @@ def check_watchdog(src):
 
 
 def check_tail_seek_is_one(src):
-    """订阅必须用 -T 1，只收实时、不回放历史。
+    """订阅若带 -T，必须用 -T 1，只收实时、不回放历史。
 
     历史背景：曾用 -T 200，但车机日志量 723 行/秒，200 行只等于 0.28 秒，
     盖不住重连空窗，却让读端一建流就连续消费 200 行；OS 管道 64KB 一满，
     logd 就停止投递并开始丢该读者队列的行，反过来加剧丢报文。
+
+    v1.8.33.19 起 -b all 走「不带 -T、全量排出后由时间栅栏跳历史」这条路，
+    所以 -T 允许不出现；一旦出现就必须是 1。
     """
     hits = re.findall(r'"-T",\s*"([0-9]+)"', src)
-    if not hits:
-        FAILS.append(
-            "找不到 logcat 订阅的 -T 参数：\n"
-            "  必须显式写 -T 1，只从缓冲区最后一行起跟随。"
-        )
-        return
     bad = [h for h in hits if h != "1"]
     if bad:
         FAILS.append(
@@ -164,12 +161,16 @@ def check_tail_seek_is_one(src):
 
 
 def check_boot_storm_fast_retry(src):
-    """开机洪峰期必须快速重连并免抽干，否则开头几十秒完全没有挡位报文。
+    """开机洪峰期必须快速重连，否则开头几十秒完全没有挡位报文。
 
     实测 932336：21:06:49 建 #1 → 断 → 等 2s → 21:07:03 建 #2 → 断 → 等 2s
     → 21:07:06 建 #3 → 21:07:15 才抽干完成。开机后 26 秒没有实时挡位报文，
     车主此时已经在换挡，报文全落在「建立中/抽干中」被丢，表现为「换好几圈才有声音」。
-    修法：开机窗口内退避压到 400ms，且跳过历史抽干（-T 1 本就无历史可抽）。
+    修法：开机窗口内退避压到 400ms。
+
+    注意：v1.8.33.14 曾加过「洪峰期免抽干」来提速，845831 实测证明那是错的 ——
+    免抽干会把积压的历史行当实时播报（车门帧报文自带 11:40:28.799、助手 11:40:36.004
+    才收到，播报的是 7 秒前的动作）。所以这里改为反向门禁：栅栏不许被洪峰期跳过。
     """
     if not re.search(r'static final long BOOT_STORM_WINDOW_MS\s*=', src):
         FAILS.append(
@@ -191,12 +192,27 @@ def check_boot_storm_fast_retry(src):
             "  BOOT_STORM_BACKOFF_MS 常量存在但没被使用，等于没生效；\n"
             "  必须写成 long wait = bootStorm ? BOOT_STORM_BACKOFF_MS : LOGCAT_BACKOFF_MS[...]。"
         )
-    # 抽干必须能被洪峰期跳过
-    if not re.search(r'if\s*\(\s*bootStormDrain\s*\)\s*drained\s*=\s*true', src):
+    # 栅栏绝不允许被洪峰期跳过（845831 血证）
+    if re.search(r'if\s*\(\s*bootStormDrain\s*\)\s*drained\s*=\s*true', src) \
+            or re.search(r'BOOT_STORM[^\n]*\bdrained\s*=\s*true', src):
         FAILS.append(
-            "抽干段没有 bootStormDrain 跳过分支：\n"
-            "  开机期历史段极长，走抽干会一路 continue 到 800ms 安全阀，\n"
-            "  期间实时挡位报文全被丢弃。"
+            "抽干栅栏又被洪峰期跳过了（洪峰条件下直接置 drained=true）：\n"
+            "  845831 实测：跳过栅栏后读到的是 7 秒前的报文被当实时播报，\n"
+            "  车门帧自带 11:40:28.799、助手 11:40:36.004 才收到 → 车主听到滞后播报。\n"
+            "  栅栏必须留着，快和准是两件事。"
+        )
+    # 栅栏期必须纯空转：不许在 !drained 分支里做计数/入队/预处理
+    if not re.search(r'if\s*\(\s*!\s*drained\s*\)\s*\{', src):
+        FAILS.append(
+            "找不到抽干栅栏 if (!drained) 分支：\n"
+            "  历史段必须整段丢掉，不能当实时行解析。"
+        )
+    # 滞后守卫必须在场且真的被调用（只看方法定义会漏掉「定义在、调用删了」）
+    if not re.search(r'=\s*lineStampLagMs\s*\(', src):
+        FAILS.append(
+            "滞后守卫 lineStampLagMs() 没有真的被调用：\n"
+            "  刚进实时那十几秒历史积压常没追平，没有这道守卫就会把 5~10 秒前的\n"
+            "  旧动作当实时播报，正是 beta.18 语音滞后的直接原因。"
         )
 
 
@@ -244,43 +260,52 @@ def check_crash_never_merged(src):
 
 
 def check_boot_main_only(src):
-    """开机洪峰期必须只订单 -b main，且断过一次就锁定最稳档。
+    """订阅档位必须「先 -b all、失败自愈退单 -b main」，且读端不许逐行重活。
 
-    实测 686292（1.8.33-beta.17，缤越 COOL，1.8.33 全量铁证）：
-      08:10:41 建 #1 → 08:11:11 建 #8 才稳定，中间 7 次 read: unexpected EOF，
-      48 秒没有实时挡位报文；车主此时已点火、换挡、切模式，前置操作全丢，
-      导致换挡/驾驶模式识别错乱（表现为「换好几圈才有一次声音」）。
-      换到单 -b main 后连跑 8 分钟 0 掉线、读到 66.8 万行、队列丢 0 行，
-      21 次挡位跃变 + 169 帧车门报文一帧不少。
-    根因不是参数挑车，而是开机期 logd 灌得比读端快 → 读端落后 10 秒 → logd 踢读者。
-    砍掉 system/events 后读端立刻跟得上，管道不再积压。
+    实测链条（同一台缤越 COOL / SX11A3 / IHU516G）：
+      · 1.8.28（436626）：-b all 建流 1 次、0 断连、all.log 31569 行，
+        车门 5 条 / 挡位 1009 条 / 方控 84 条全在 —— -b all 在本车验证过好用。
+      · 1.8.33-beta.17（686292）：main,system,events -T 1 开机期 7 次 EOF，48 秒无实时挡位。
+      · 1.8.33-beta.18（845831）：单 -b main -T 1 仍建 6 次、断 5 次、35 秒才稳，
+        且读到 7 秒前的报文（播报滞后）—— 说明换订阅治不了开机期 logd 自己 EOF 的毛病。
 
     所以门禁要求：
-      1) 必须存在「洪峰期或锁定后走单 -b main」的分支；
-      2) 断过一次必须立刻锁定单 -b main，不许再爬多级阶梯（旧阶梯要爬 6 次 = 白丢几十秒）；
-      3) 读端热路径不许逐行做计数/时间戳写（那是读端变慢的直接原因）。
+      1) 首选档必须是 -b all，且带「不带 -T」的全量排出形态；
+      2) 必须有 -b all 自愈：失败即 logcatAllDisabled 永久降级；
+      3) 降级档必须保留单 -b main -T 1（最稳档）；
+      4) 读端热路径不许逐行做计数/时间戳写。
     """
-    if not re.search(r'\{"logcat",\s*"-v",\s*"time",\s*"-b",\s*"main",\s*"-T",\s*"1"\}', src):
+    if not re.search(r'\{\s*"logcat",\s*"-v",\s*"time",\s*"-b",\s*"all"\s*\}', src):
         FAILS.append(
-            "找不到开机期单 -b main 的订阅命令：\n"
-            "  实测 686292 单 -b main 连跑 8 分钟 0 掉线，而 main,system,events 开机期 7 次 EOF、\n"
-            "  48 秒没有实时挡位报文。必须保留 logcat -v time -b main -T 1 这一档。"
+            "找不到首选 -b all 的订阅命令（必须是 logcat -v time -b all，不带 -T）：\n"
+            "  1.8.28（436626）实测 -b all 建流 1 次、0 断连、all.log 31569 行，\n"
+            "  方控 84 次按键全在；拆开订阅反而在开机期 7 次 EOF。"
+        )
+    if not re.search(r'logcatAllDisabled\s*=\s*true', src):
+        FAILS.append(
+            "没有 -b all 的自愈降级（logcatAllDisabled = true）：\n"
+            "  个别车型 security/stats 对第三方不可读，all 会开流即失败，\n"
+            "  没有自愈就会退化成每 2 秒重建一次的刷屏。"
+        )
+    if not re.search(r'\{\s*"logcat",\s*"-v",\s*"time",\s*"-b",\s*"main",\s*"-T",\s*"1"\s*\}', src):
+        FAILS.append(
+            "找不到降级档单 -b main -T 1 的订阅命令：\n"
+            "  实测 686292 单 -b main 连跑 8 分钟 0 掉线，这是必须保留的最稳档。"
         )
     if not re.search(r'logcatMainOnly\s*=\s*true', src):
         FAILS.append(
-            "断过一次没有立刻锁定单 -b main（logcatMainOnly = true）：\n"
-            "  旧阶梯要爬到第 6 次才降到 main，代价是白白丢掉几十秒实时报文。\n"
-            "  必须 tier >= 1 就锁定最稳档。"
+            "断过一次没有锁定单 -b main（logcatMainOnly = true）：\n"
+            "  旧阶梯要爬到第 6 次才降到 main，代价是白白丢掉几十秒实时报文。"
         )
     if not re.search(r'boolean bootStormPhase\s*=', src):
         FAILS.append(
             "找不到开机洪峰判定 bootStormPhase：\n"
-            "  开机 90 秒内 logd 灌得最凶，必须单独走单 -b main，否则又是 7 次 EOF。"
+            "  开机 90 秒内 logd 灌得最凶，必须单独判定档位与退避。"
         )
     if 'countLineReadBatch' not in src:
         FAILS.append(
             "读端没有批量计数（countLineReadBatch）：\n"
-            "  逐行 countLineRead + 每行写 volatile 时间戳会把读端拖慢，读端一慢 logd 就踢读者。\n"
+            "  逐行 countLineRead + 每行写 volatile 时间戳会把读端拖慢。\n"
             "  必须读端本地累加、每 64 行刷一次。"
         )
 
