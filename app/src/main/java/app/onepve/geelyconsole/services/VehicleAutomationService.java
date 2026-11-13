@@ -162,6 +162,17 @@ public class VehicleAutomationService extends Service {
     // 20 秒足够区分「车真安静」与「通道死了」—— 车机常驻进程每秒都在写日志，20 秒一行都没有必然异常。
     private static final long LOGCAT_SILENCE_WATCHDOG_MS = 20000L;
     private volatile long logcatLastLineAtMs = 0L;
+    // 【断线续接 v1.8.33.22】上一次真正交给解析线程的那一行报文自带时间戳与接收时刻。
+    // 老内核（1.8.7~1.8.28）从头一路读到底，断流了就重开继续读，断连空档里的换挡/开门报文
+    // 只是晚一点到，绝不会凭空消失。v1.8.33 加了「以当前时刻为栅栏」之后，每次重连都把
+    // 断连那几百毫秒里发生的报文当成历史整段丢掉 —— 535940 实测 25 秒内断 9 次，
+    // 车主恰好在这几个空档里挂挡，就是「拨了没声音」。所以重连时若上次处理位置还新鲜，
+    // 就从那里续读，把空档补回来。
+    // 【断点续投 v1.8.33.22】-T 续投锚点：格式 "MM-dd HH:mm:ss.SSS"。
+    // 建流时用它，logcat 只投递该时刻之后的行 —— 既补齐断连空档，又不重读整个缓冲区。
+    private volatile String logcatResumeAny = null;
+    private volatile long logcatResumeAtMs = 0L;        // 上次处理的时刻（elapsedRealtime）
+    private static final long LOGCAT_RESUME_MAX_AGE_MS = 10000L; // 超过 10 秒就不再补，避免翻旧账
     private volatile boolean logcatEverEstablished = false;   // 就绪提示全程只打一次，杜绝刷屏
     private volatile boolean logcatDrainReported = false;     // 抽干提示全程只打一次
     private volatile boolean logcatWatchdogStarted = false;
@@ -1316,7 +1327,7 @@ public class VehicleAutomationService extends Service {
                         if (bootStormPhase && !logcatTailSeekDisabled && !logcatAllDisabled) {
                             usedAll = true;   // 仍走 all 档位，保留 openFail 自愈判定，个别车型读不到时照旧降级
                             cmd = new String[]{"logcat", "-v", "time", "-b", "all"};
-                            sLogcatBuf = "all(开机洪峰·老档位,无-T)";
+                            sLogcatBuf = "all(开机洪峰·老档位)";
                         } else if (!logcatAllDisabled) {
                             usedAll = true;
                             // 【重连必须便宜 v1.8.33.20】443825 铁证：all.log 里 66146 行中有 44379 行是重复内容
@@ -1341,6 +1352,27 @@ public class VehicleAutomationService extends Service {
                                     ? new String[]{"logcat", "-v", "time", "-b", "main,system,events"}
                                     : new String[]{"logcat", "-v", "time", "-b", "main,system,events", "-T", "1"};
                             sLogcatBuf = logcatTailSeekDisabled ? "main+system+events" : "main+system+events(-T1)";
+                        }
+                        // 【断点续投 v1.8.33.22】重连绝不能再拉整个缓冲区。
+                        // 535940 铁证：#8 在 0.5 秒里灌进 27795 行后立刻被 logd EOF 掐断，
+                        // 全程 10 建 9 断，每次把同一份历史重读一遍 —— 读端永远追在尾巴后面，
+                        // 车主 18:36:44 挂的挡要十几秒后才被解析，听感就是「拨了没声音」。
+                        // 修法：首次建流保持老命令（老版本几百毫秒冲进实时的手感），
+                        // 之后重连一律带 -T 上次已处理的时间戳，logcat 直接从那里往后投递，
+                        // 断连空档里的报文一条不少，建流成本从几万行降到几十行。
+                        // 注意：低档位命令本身已带 -T 1，这里必须「替换」而不是「追加」，否则两个 -T 会报错。
+                        if (sLogcatBuildCount > 0 && logcatResumeAny != null && !logcatTailSeekDisabled) {
+                            java.util.ArrayList<String> tailored = new java.util.ArrayList<String>();
+                            for (String a : cmd) tailored.add(a);
+                            int tIdx = tailored.indexOf("-T");
+                            if (tIdx >= 0) {
+                                tailored.set(tIdx + 1, logcatResumeAny);
+                            } else {
+                                tailored.add("-T");
+                                tailored.add(logcatResumeAny);
+                            }
+                            cmd = tailored.toArray(new String[0]);
+                            sLogcatBuf = sLogcatBuf + "(断点续投)";
                         }
                         // 【crash 分流铁律 v1.8.33.15】crash 缓冲区绝不与主通道合并。
                         // 实车铁证（诊断包 384522 / 932336，同车 602076）：合并 -b main,system,events,crash
@@ -1414,9 +1446,21 @@ public class VehicleAutomationService extends Service {
                         // 安全阀 1500ms：-T 1 / -b all 都是从尾部起跟随，正常情况下几毫秒就跨过栅栏；
                         // 真遇到时钟跳变，安全阀兜底放行，绝不把通道卡成静默。
                         long drainDeadlineMs = android.os.SystemClock.elapsedRealtime() + 1500L;
+                        // 【断线续接 v1.8.33.22】栅栏起点：正常情况用开流瞬间；
+                        // 若上一轮刚处理过报文（10 秒内），改用那个位置作栅栏 ——
+                        // 断连空档里发生的报文就补回来了，这正是老内核「一直往下读」的行为。
+                        final String resumeBase = (logcatResumeAny != null
+                                && (android.os.SystemClock.elapsedRealtime() - logcatResumeAtMs) <= LOGCAT_RESUME_MAX_AGE_MS)
+                                ? logcatResumeAny : null;
+                        final String fenceStamp = resumeBase != null ? resumeBase : streamStartStamp;
+                        if (resumeBase != null) {
+                            Log.i(TAG, "断线续接：从 " + resumeBase + " 续读，补齐断连空档（老内核行为）");
+                        }
                         // 滞后守卫：进实时后头 15 秒仍然盯报文自带时间戳。
                         // 落后当前时间 3 秒以上的行视作「还在追历史」，直接丢、不解析、不播报。
                         // 只对同一天（MM-dd 相同）的行做判断，避免 RTC 从 2010 跳到真实时间时误判。
+                        // 滞后守卫的「现在应该是什么时间」必须锚在真实开流时刻，
+                        // 不能用续读栅栏（它比现在早几百毫秒，会把滞后量算小）。
                         final String streamStartDay = streamStartStamp.substring(0, 5);
                         final long streamStartMsOfDay = hhmmssToMsOfDay(streamStartStamp.substring(6));
                         final long streamStartElapsed = android.os.SystemClock.elapsedRealtime();
@@ -1429,7 +1473,7 @@ public class VehicleAutomationService extends Service {
                                 // 无时间戳的续行（堆栈等）跟随上一行判定，历史段内一并丢弃。
                                 if (line.length() >= 18 && line.charAt(2) == '-' && line.charAt(5) == ' ') {
                                     String stamp = line.substring(0, 18);
-                                    if (stamp.compareTo(streamStartStamp) >= 0
+                                    if (stamp.compareTo(fenceStamp) >= 0
                                             || android.os.SystemClock.elapsedRealtime() > drainDeadlineMs) {
                                         drained = true;
                                         logcatLastLineAtMs = android.os.SystemClock.elapsedRealtime();
@@ -1470,6 +1514,15 @@ public class VehicleAutomationService extends Service {
                                 app.onepve.geelyconsole.utils.KeySignalRecorder.countLineReadBatch(pendingRead, pendingMatched);
                                 pendingRead = 0;
                                 pendingMatched = 0;
+                                // 【断线续接 v1.8.33.22】每 64 行记一次「读到哪儿了」。
+                                // 这是在老内核「一路往下读」基础上，给重连留下续读坐标：
+                                // 下一轮建流用 -T 这个时间戳，logcat 直接从这儿往后投递，
+                                // 断连那几百毫秒里发生的换挡/开门报文一条不少，也不会重读几万行历史。
+                                // 每行都记会做字符串分配（720 行/秒），所以按批记，最多回读几十行。
+                                if (line.length() >= 18 && line.charAt(2) == '-' && line.charAt(5) == ' ') {
+                                    logcatResumeAny = line.substring(0, 18);
+                                    logcatResumeAtMs = android.os.SystemClock.elapsedRealtime();
+                                }
                             }
                             // 【全量留证铁律 v1.8.32.11】不走白名单、不过滤，每一行原始日志都抄进内存。
                             // 缓冲默认关闭，关闭时这里只是一次 volatile 读（纳秒级），不拖读端。
@@ -1495,6 +1548,12 @@ public class VehicleAutomationService extends Service {
                                 if (!offerLogLine(line)) {
                                     logcatDroppedLines++;
                                     app.onepve.geelyconsole.utils.KeySignalRecorder.countLineDropped();
+                                }
+                                // 【断线续接 v1.8.33.22】记住这一行的自带时间戳：下一轮重连从这里续读，
+                                // 断连空档内的换挡/开门报文不会因为「以当前时刻重新起栅栏」被整段丢掉。
+                                if (line.length() >= 18 && line.charAt(2) == '-' && line.charAt(5) == ' ') {
+                                    logcatResumeAny = line.substring(0, 18);
+                                    logcatResumeAtMs = android.os.SystemClock.elapsedRealtime();
                                 }
                             }
                         }

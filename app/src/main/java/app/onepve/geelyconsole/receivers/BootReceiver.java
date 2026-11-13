@@ -87,13 +87,24 @@ public class BootReceiver extends BroadcastReceiver {
             Log.w(TAG, "Failed to sync VehicleAutomationService immediately: " + e.getMessage());
         }
 
-        try {
-            ThemePatcher.restoreDisguiseAndLockSilently(context);
-            Log.i(TAG, "Theme boot auto-heal executed: disguise and lock cleared");
-        } catch (Exception e) {
-            Log.w(TAG, "Theme boot auto-heal error: " + e.getMessage());
-            AppLogger.e("开机守护", "开机自愈清理异常: " + e.getMessage());
-        }
+        // 【启动提速 v1.8.33.22】开机自愈清理必须让路，绝不能挡在服务启动前面。
+        //
+        // 535940 实测：广播 18:36:24.463 已派发，服务 onCreate 到 18:36:29.089 才进，
+        // 中间空了 4.6 秒。原因就是这段清理（遍历主题目录、删文件、执行 shell 命令）
+        // 跑在主线程上，而服务 onCreate 排在同一条主线程后面 —— 车主点火后要白等这 4.6 秒，
+        // 期间挂挡没有任何人听。清理本身是纯文件 IO，挪到后台线程一分不少地照做。
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ThemePatcher.restoreDisguiseAndLockSilently(context);
+                    Log.i(TAG, "Theme boot auto-heal executed: disguise and lock cleared");
+                } catch (Exception e) {
+                    Log.w(TAG, "Theme boot auto-heal error: " + e.getMessage());
+                    AppLogger.e("开机守护", "开机自愈清理异常: " + e.getMessage());
+                }
+            }
+        }, "Geely_BootThemeHealThread").start();
 
         // 后台静默启动模式：收到开机/迎宾广播后，立即在后台异步线程执行白名单注入（零延时，毫秒级单条属性写入，极轻量，不与前台争抢算力）
         new Thread(new Runnable() {
