@@ -42,6 +42,13 @@ public class AndroidCarClient {
     private Method mCarDisconnectMethod;
     private volatile boolean mConnected = false;
     private OnCarConnectListener mListener;
+    /** 连接所处阶段，供上层取证日志回答「卡在哪一步」 */
+    private volatile String mConnectStage = "未开始";
+
+    public String getConnectStage() {
+        if (mConnected) return "已连上";
+        return mConnectStage;
+    }
 
     public interface OnCarConnectListener {
         void onCarConnected();
@@ -67,11 +74,17 @@ public class AndroidCarClient {
             return;
         }
         this.mListener = listener;
+        // ── 【连接可诊断 v1.8.33.20】──
+        // 历史坑（443825）：整个日志包里 "CarPropertyManager successfully initialized"
+        // 与 "Car API connection failed" 各 0 条 —— 连"到底有没有发起连接"都看不出来。
+        this.mConnectStage = "发起连接";
+        Log.i(TAG, "CarService 连接开始（stage=" + mConnectStage + "）");
         final Context appContext = context.getApplicationContext();
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
+                    mConnectStage = "反射 android.car.Car";
                     Class<?> carClass = Class.forName("android.car.Car");
                     Class<?> serviceConnClass = null;
                     try {
@@ -99,12 +112,14 @@ public class AndroidCarClient {
                                     }
                                 }
                         );
+                        mConnectStage = "调用 createCar（新版生命周期回调）";
                         Method createCarMethod = carClass.getMethod("createCar", Context.class, android.os.Handler.class, Long.TYPE, serviceConnClass);
                         createCarMethod.invoke(null, appContext, null, 0L, proxyListener);
                         return;
                     }
 
                     // 旧版 ServiceConnection 方式兼容
+                    mConnectStage = "调用 createCar（旧版 ServiceConnection）";
                     ServiceConnection connection = new ServiceConnection() {
                         @Override
                         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -129,7 +144,16 @@ public class AndroidCarClient {
                         connectMethod.invoke(AndroidCarClient.this.mCar);
                     }
                 } catch (Throwable t) {
-                    Log.w(TAG, "Car API connection failed: " + t.getMessage());
+                    Throwable cause = (t instanceof java.lang.reflect.InvocationTargetException && t.getCause() != null)
+                            ? t.getCause() : t;
+                    mConnectStage = "连接失败：" + cause.getClass().getSimpleName()
+                            + (cause.getMessage() != null ? "：" + cause.getMessage() : "");
+                    // 以前这里只打 getMessage()，InvocationTargetException 的消息是 null，
+                    // 于是日志里只有一行 "Car API connection failed: null"，等于没记。
+                    Log.w(TAG, "Car API 连接失败（stage=" + mConnectStage + "）", cause);
+                    if (cause instanceof ClassNotFoundException) {
+                        Log.w(TAG, "诊断：本车 ROM 无 android.car.Car 类，CarService 通道整体不可用");
+                    }
                 }
             }
         }, "CarClientConnect").start();
@@ -137,7 +161,12 @@ public class AndroidCarClient {
 
     /* package */ synchronized void initPropertyManager() {
         try {
-            if (this.mCar == null) return;
+            if (this.mCar == null) {
+                mConnectStage = "initPropertyManager 时 mCar=null";
+                Log.w(TAG, "initPropertyManager 跳过：" + mConnectStage);
+                return;
+            }
+            mConnectStage = "取 CarPropertyManager";
             Class<?> carClass = this.mCar.getClass();
             Method getCarManager = carClass.getMethod("getCarManager", String.class);
             this.mCarPropertyManager = getCarManager.invoke(this.mCar, "property");
@@ -153,19 +182,30 @@ public class AndroidCarClient {
                     this.mGetPropertyMethod = mgrClass.getMethod("getProperty", Integer.TYPE, Integer.TYPE);
                 } catch (NoSuchMethodException ignored) {}
                 this.mConnected = true;
-                Log.i(TAG, "CarPropertyManager successfully initialized");
+                mConnectStage = "已连上";
+                Log.i(TAG, "CarPropertyManager successfully initialized（getInt=" + (mGetIntPropertyMethod != null)
+                        + " getFloat=" + (mGetFloatPropertyMethod != null)
+                        + " getProperty=" + (mGetPropertyMethod != null) + "）");
                 if (this.mListener != null) {
                     this.mListener.onCarConnected();
                 }
+            } else {
+                mConnectStage = "CarService 返回的 property manager 为 null";
+                Log.w(TAG, "Car API 已返回但 property manager 为 null：" + mConnectStage);
             }
         } catch (Throwable t) {
-            Log.e(TAG, "Failed to init PropertyManager: " + t.getMessage());
+            Throwable cause = (t instanceof java.lang.reflect.InvocationTargetException && t.getCause() != null)
+                    ? t.getCause() : t;
+            mConnectStage = "初始化属性管理器失败：" + cause.getClass().getSimpleName();
+            Log.e(TAG, "Failed to init PropertyManager（stage=" + mConnectStage + "）", cause);
         }
     }
 
     /* package */ synchronized void handleDisconnected() {
         this.mConnected = false;
         this.mCarPropertyManager = null;
+        mConnectStage = "CarService 断开";
+        Log.w(TAG, "CarService 断开，属性通道失效");
         if (this.mListener != null) {
             this.mListener.onCarDisconnected();
         }

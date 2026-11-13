@@ -342,6 +342,46 @@ public class VehicleAutomationService extends Service {
                 + " 末次断因=" + sLogcatLastExit;
     }
 
+    /**
+     * 【HAL 三通道体检 v1.8.33.20】写给 summary.json 的一行。
+     *
+     * 历史坑（443825）：诊断包里只知道「HAL 没生效」，但说不清是哪条通道、
+     * 为什么失败、失败在反射的哪一步 —— 只能靠人翻 all.log 里几千行去猜。
+     * 现在三条 HAL 通道（CarService 连接 / 方控按键 / 车门兜底）的状态、
+     * 失败原因代号、收到回调次数，全部压进这一行，发包即可判读。
+     */
+    public String getHalHealthSnapshot() {
+        StringBuilder sb = new StringBuilder();
+        try {
+            sb.append("CarService=")
+              .append(app.onepve.geelyconsole.hal.AndroidCarClient.getInstance().getConnectStage());
+        } catch (Throwable t) {
+            sb.append("CarService=读取异常");
+        }
+        try {
+            if (wheelHalPermanentlyUnavailable) {
+                sb.append(" | 方控：永久不可用（本车ROM无此API，已停止重试）");
+            } else if (wheelHalChannel != null) {
+                sb.append(" | 方控：").append(wheelHalChannel.getHealthSummary());
+            } else {
+                sb.append(" | 方控：未尝试注册");
+            }
+        } catch (Throwable t) {
+            sb.append(" | 方控：读取异常");
+        }
+        try {
+            if (doorHalChannel != null) {
+                sb.append(" | 车门：").append(doorHalChannel.getHealthSummary())
+                  .append(doorHalFallbackActive ? "（兜底接管中）" : "（主通道正常，未接管）");
+            } else {
+                sb.append(" | 车门：未尝试注册");
+            }
+        } catch (Throwable t) {
+            sb.append(" | 车门：读取异常");
+        }
+        return sb.toString();
+    }
+
     /** "HH:mm:ss.SSS" → 当天毫秒数（滞后守卫用，避免解析整行日期） */
     private static long hhmmssToMsOfDay(String hms) {
         try {
@@ -391,6 +431,12 @@ public class VehicleAutomationService extends Service {
     //   - logcat 恢复稳定后：自动注销，回到唯一来源，杜绝双通道并发误触发。
     private app.onepve.geelyconsole.hal.HwKeyInputChannel wheelHalChannel;
     private volatile boolean wheelHalFallbackActive = false;
+    /**
+     * 【永久不可用标记 v1.8.33.20】当前车机 ROM 根本不提供 android.car 方控回调类，
+     * 这种失败是确定性的死路（重试一万次结果一样），标上之后不再反复注册，
+     * 免得每次断流都白烧一次反射 + 一条误导性的「属性不可用」日志。
+     */
+    private volatile boolean wheelHalPermanentlyUnavailable = false;
 
     // ═══ 车门/尾门独立兜底通道 (v1.8.33) ═══
     // 历史故障（日志 395816 实证）：车门/尾门只有 logcat 里 91 02 01 串口报文一条来源，
@@ -452,6 +498,18 @@ public class VehicleAutomationService extends Service {
 
     public static VehicleAutomationService getInstance() {
         return instance;
+    }
+
+    /**
+     * 静态入口：供 SystemUtils 写 summary.json 时直接取 HAL 三通道体检行，
+     * 不用先拿 Service 实例（服务没起来时也不该崩，返回「未运行」即可）。
+     */
+    public static String getHalHealthSnapshotStatic() {
+        VehicleAutomationService s = instance;
+        if (s == null) {
+            return "助手服务未运行（HAL 通道未初始化）";
+        }
+        return s.getHalHealthSnapshot();
     }
 
     public DoorStateManager getDoorStateManager() {
@@ -1696,6 +1754,8 @@ public class VehicleAutomationService extends Service {
      */
     private void activateWheelHalFallback() {
         if (wheelHalFallbackActive) return;
+        // 本车 ROM 压根没有这套 Car API（已判死路），不再反复注册白烧 CPU
+        if (wheelHalPermanentlyUnavailable) return;
         wheelHalFallbackActive = true;
         sLogcatFallbackCount++;
         try {
@@ -1719,8 +1779,22 @@ public class VehicleAutomationService extends Service {
                         }
                         if (!wheelHalChannel.register(cpm, VehicleAutomationService.this)) {
                             wheelHalFallbackActive = false;
-                            Log.w(TAG, "方控 HAL 通道: HW_KEY_INPUT 属性不可用，保持原厂广播兜底");
-                            AppLogger.diag("方控通道", "HAL 注册失败：本车 HW_KEY_INPUT 属性不可用，方控只靠日志管道+原厂广播");
+                            int err = wheelHalChannel.getLastErrorCode();
+                            // 以前这里不管什么原因都写「本车 HW_KEY_INPUT 属性不可用」，
+                            // 441825 实测抛的是 ClassNotFoundException（ROM 没这套 Car API），
+                            // 却被写成「属性不可用」，等于把死路包装成可修的路。现在按真实原因分开记。
+                            Log.w(TAG, "方控 HAL 通道: " + wheelHalChannel.getHealthSummary());
+                            AppLogger.diag("方控通道", "HAL 注册失败[" + app.onepve.geelyconsole.hal.HwKeyInputChannel.errorCodeName(err)
+                                    + "] " + wheelHalChannel.getLastErrorDetail());
+                            if (err == app.onepve.geelyconsole.hal.HwKeyInputChannel.ERR_CLASS_NOT_FOUND
+                                    || err == app.onepve.geelyconsole.hal.HwKeyInputChannel.ERR_NO_SUCH_METHOD) {
+                                // 死路：本车 ROM 没有这套 Car API / 签名完全不匹配。
+                                // 再重试一万次也还是同样结果，只会白烧 CPU，直接标记永久不可用。
+                                wheelHalPermanentlyUnavailable = true;
+                                AppLogger.diag("方控通道", "HAL 判定为永久不可用（"
+                                        + app.onepve.geelyconsole.hal.HwKeyInputChannel.errorCodeName(err)
+                                        + "），不再重试；方控只走日志管道+原厂广播");
+                            }
                             return;
                         }
                         wheelHalChannel.setListener(new app.onepve.geelyconsole.hal.HwKeyInputChannel.OnHwKeyListener() {
@@ -1994,6 +2068,13 @@ public class VehicleAutomationService extends Service {
                     if (tick % 12 == 0) {
                         try {
                             app.onepve.geelyconsole.utils.KeySignalRecorder.recordChannelHeartbeat();
+                        } catch (Throwable ignored) {}
+                        // 【HAL 心跳 v1.8.33.20】以前 HAL 只在注册那一刻留一条日志，
+                        // 之后到底有没有在收按键、有没有收到回调，全程无痕。
+                        // 车主按了键但没反应时，无法区分「HAL 没接上」和「接上了但车机不推」。
+                        // 这里每 60 秒把三通道状态记一条，形成可对比的时间线。
+                        try {
+                            AppLogger.diag("方控通道", "HAL 心跳 | " + getHalHealthSnapshot());
                         } catch (Throwable ignored) {}
                     }
 

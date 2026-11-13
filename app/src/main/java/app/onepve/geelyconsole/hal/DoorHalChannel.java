@@ -43,6 +43,32 @@ public class DoorHalChannel {
         void onDoorState(int fl, int fr, int rl, int rr, int trunk);
     }
 
+    // ── 【可诊断 v1.8.33.20】──
+    // 历史坑（443825）：signals.log 只记了「车门报文静默 19 秒，启用兜底接管」，
+    // 但兜底通道到底注册成功没有、有没有收到 DOOR_POS 回调，日志里一条都没有，
+    // 复盘时完全无法判断兜底是「没接上」还是「接上了但车机不推」。
+    private volatile String mLastFailReason = "";
+    private final java.util.concurrent.atomic.AtomicLong mEventCount = new java.util.concurrent.atomic.AtomicLong(0L);
+    private volatile long mRegisteredAtMs = 0L;
+    /** 每路属性的注册结果：1=成功 0=失败，供上层写取证日志 */
+    private volatile boolean mDoorPosOk = false;
+    private volatile boolean mTrunkPosOk = false;
+
+    public long getEventCount() {
+        return mEventCount.get();
+    }
+
+    public String getHealthSummary() {
+        if (mRegistered.get()) {
+            long upMin = mRegisteredAtMs > 0
+                    ? (android.os.SystemClock.elapsedRealtime() - mRegisteredAtMs) / 60000L : 0L;
+            return "已注册 " + upMin + " 分钟，收到属性回调 " + mEventCount.get() + " 次"
+                    + "（DOOR_POS=" + (mDoorPosOk ? "通" : "否") + " TRUNK_POS=" + (mTrunkPosOk ? "通" : "否") + "）"
+                    + "，当前值 主驾=" + vFl + " 副驾=" + vFr + " 左后=" + vRl + " 右后=" + vRr + " 尾门=" + vTrunk;
+        }
+        return "未注册" + (mLastFailReason.isEmpty() ? "" : "：" + mLastFailReason);
+    }
+
     private Object mCallbackProxy;
     private Object mRegisteredManager;
     private Method mUnregisterMethod;
@@ -73,8 +99,15 @@ public class DoorHalChannel {
             Log.w(TAG, "register: CarPropertyManager is null");
             return false;
         }
+        Class<?> callbackClass;
         try {
-            Class<?> callbackClass = Class.forName("android.car.CarPropertyManager$CarPropertyEventCallback");
+            callbackClass = Class.forName("android.car.CarPropertyManager$CarPropertyEventCallback");
+        } catch (ClassNotFoundException e) {
+            mLastFailReason = "ROM 无 CarPropertyEventCallback 类（ClassNotFoundException），本车不可能走 HAL 车门兜底";
+            Log.w(TAG, "register 失败：" + mLastFailReason);
+            return false;
+        }
+        try {
             mCallbackProxy = Proxy.newProxyInstance(
                     callbackClass.getClassLoader(),
                     new Class<?>[]{callbackClass},
@@ -94,8 +127,13 @@ public class DoorHalChannel {
 
             Class<?> mgrClass = carPropertyManager.getClass();
             boolean any = false;
-            any |= registerOne(carPropertyManager, mgrClass, callbackClass, AndroidCarClient.DOOR_POS);
-            any |= registerOne(carPropertyManager, mgrClass, callbackClass, AndroidCarClient.TRUNK_POS);
+            mDoorPosOk = registerOne(carPropertyManager, mgrClass, callbackClass, AndroidCarClient.DOOR_POS);
+            mTrunkPosOk = registerOne(carPropertyManager, mgrClass, callbackClass, AndroidCarClient.TRUNK_POS);
+            any = mDoorPosOk || mTrunkPosOk;
+            if (!any) {
+                mLastFailReason = "DOOR_POS(" + AndroidCarClient.DOOR_POS + ") 与 TRUNK_POS("
+                        + AndroidCarClient.TRUNK_POS + ") 两路 registerCallback 全部失败，本车无这两个属性或权限不足";
+            }
 
             if (any) {
                 try {
@@ -103,35 +141,51 @@ public class DoorHalChannel {
                     mRegisteredManager = carPropertyManager;
                 } catch (NoSuchMethodException ignored) {}
                 mRegistered.set(true);
-                Log.i(TAG, "车门兜底通道已注册 (DOOR_POS/TRUNK_POS)");
+                mRegisteredAtMs = android.os.SystemClock.elapsedRealtime();
+                mLastFailReason = "";
+                Log.i(TAG, "车门兜底通道已注册 (DOOR_POS=" + mDoorPosOk + ", TRUNK_POS=" + mTrunkPosOk + ")");
                 // 注册成功后立刻主动拉一次当前值，避免车主下一次开门之前界面还是旧状态
                 pullSnapshot(carPropertyManager);
             } else {
-                Log.w(TAG, "本车型不支持 DOOR_POS/TRUNK_POS 属性回调，车门兜底不可用");
+                Log.w(TAG, "车门兜底不可用：" + mLastFailReason);
             }
             return any;
         } catch (Throwable t) {
-            Log.w(TAG, "register 失败: " + t.getMessage());
+            mLastFailReason = "register 未知异常：" + t.getClass().getSimpleName() + " " + t.getMessage();
+            Log.w(TAG, mLastFailReason);
             return false;
         }
     }
 
     private boolean registerOne(Object mgr, Class<?> mgrClass, Class<?> callbackClass, int propId) {
+        Method sig1 = null, sig2 = null;
         try {
-            Method m = mgrClass.getMethod("registerCallback", callbackClass, Integer.TYPE, Float.TYPE);
-            m.invoke(mgr, mCallbackProxy, propId, 0.0f);
-            return true;
-        } catch (NoSuchMethodException ignored) {
-        } catch (Throwable t) {
-            Log.w(TAG, "registerCallback(prop=" + propId + ") 失败: " + t.getMessage());
+            sig1 = mgrClass.getMethod("registerCallback", callbackClass, Integer.TYPE, Float.TYPE);
+        } catch (NoSuchMethodException ignored) {}
+        try {
+            sig2 = mgrClass.getMethod("registerCallback", callbackClass, Integer.TYPE);
+        } catch (NoSuchMethodException ignored) {}
+        if (sig1 == null && sig2 == null) {
+            Log.w(TAG, "registerOne(prop=" + propId + ") 两种签名都不存在");
             return false;
         }
         try {
-            Method m = mgrClass.getMethod("registerCallback", callbackClass, Integer.TYPE);
-            m.invoke(mgr, mCallbackProxy, propId);
+            if (sig1 != null) {
+                sig1.invoke(mgr, mCallbackProxy, propId, 0.0f);
+            } else {
+                sig2.invoke(mgr, mCallbackProxy, propId);
+            }
             return true;
+        } catch (java.lang.reflect.InvocationTargetException ite) {
+            Throwable cause = ite.getCause() != null ? ite.getCause() : ite;
+            // 以前只打 getMessage()，InvocationTargetException 的消息永远是 null，
+            // 等于什么都没记。现在把真实原因类型带出来。
+            Log.w(TAG, "registerCallback(prop=" + propId + ") 失败："
+                    + cause.getClass().getSimpleName() + " " + cause.getMessage());
+            return false;
         } catch (Throwable t) {
-            Log.w(TAG, "registerCallback2(prop=" + propId + ") 失败: " + t.getMessage());
+            Log.w(TAG, "registerCallback(prop=" + propId + ") 失败：" + t.getClass().getSimpleName()
+                    + " " + t.getMessage());
             return false;
         }
     }
@@ -161,6 +215,8 @@ public class DoorHalChannel {
      */
     private void handlePropertyChange(Object carPropertyValue) {
         if (carPropertyValue == null) return;
+        // 计数放在解析之前：即使解析失败，也要能回答「车机到底推没推」
+        mEventCount.incrementAndGet();
         try {
             Class<?> cls = carPropertyValue.getClass();
             Object propIdObj = cls.getMethod("getPropertyId").invoke(carPropertyValue);

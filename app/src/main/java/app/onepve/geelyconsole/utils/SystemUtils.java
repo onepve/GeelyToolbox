@@ -1763,6 +1763,12 @@ public class SystemUtils {
             try {
                 summary.put("logcat_channel", app.onepve.geelyconsole.services.VehicleAutomationService.getLogcatHealthSnapshot());
             } catch (Throwable ignored) {}
+            // 【HAL 三通道体检 v1.8.33.20】以前包里只能看出「HAL 没生效」，
+            // 却分不清是 CarService 没连上、ROM 没这套 API、还是车机不推属性。
+            // 现在三条通道的注册结果、失败原因、收到回调次数压成一行，发包即可判读。
+            try {
+                summary.put("hal_channel", app.onepve.geelyconsole.services.VehicleAutomationService.getHalHealthSnapshotStatic());
+            } catch (Throwable ignored) {}
             writeTextFile(summaryFile, summary.toString(2));
 
             // 4. 打包并自动清理历史旧包（实现唯一文件覆盖）

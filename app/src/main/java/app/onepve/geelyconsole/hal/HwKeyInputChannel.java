@@ -31,6 +31,67 @@ public class HwKeyInputChannel {
     /** 吉利/亿咖通车型 CarService 暴露的方控硬按键属性 ID (与米小江 CarMedia 同源实证) */
     public static final int HW_KEY_INPUT_PROP = 678428923;
 
+    // ── 【注册结果可诊断 v1.8.33.20】──
+    // 历史坑：注册失败一律被写成「本车 HW_KEY_INPUT 属性不可用」，可实际日志里
+    // 抛的是 ClassNotFoundException（本车 ROM 根本没有这个回调类），
+    // 把「ROM 没这套 API」误判成「车型不支持该属性」，等于把死路当成可修的路。
+    // 现在把失败原因分成固定的几种代号，由上层原样记进内存取证日志。
+    public static final int ERR_NONE = 0;              // 未失败
+    public static final int ERR_NO_MANAGER = 1;        // CarPropertyManager 拿不到（CarService 未就绪）
+    public static final int ERR_CLASS_NOT_FOUND = 2;   // ROM 没有 CarPropertyEventCallback 类 → 本车不可能生效
+    public static final int ERR_NO_SUCH_METHOD = 3;    // 两种 registerCallback 签名都不存在 → API 版本不符
+    public static final int ERR_SECURITY = 4;          // 权限被拒
+    public static final int ERR_PROP_UNSUPPORTED = 5;  // 属性 ID 本车不支持
+    public static final int ERR_OTHER = 6;             // 其它
+
+    private volatile int mLastErrorCode = ERR_NONE;
+    private volatile String mLastErrorDetail = "";
+    private volatile long mRegisteredAtMs = 0L;
+    /** HW_KEY_INPUT 回调到达总次数（含未启用捕获时），用来区分「没接上」和「接上了但车机不推」 */
+    private final java.util.concurrent.atomic.AtomicLong mEventCount = new java.util.concurrent.atomic.AtomicLong(0L);
+
+    public int getLastErrorCode() {
+        return mLastErrorCode;
+    }
+
+    public String getLastErrorDetail() {
+        return mLastErrorDetail;
+    }
+
+    /** 事件计数：注册成功后一直为 0 就说明车机根本不推这个属性，而不是我们没注册上 */
+    public long getEventCount() {
+        return mEventCount.get();
+    }
+
+    /** 给上层写取证日志用的一句话摘要 */
+    public String getHealthSummary() {
+        if (mRegistered.get()) {
+            long upMin = mRegisteredAtMs > 0
+                    ? (android.os.SystemClock.elapsedRealtime() - mRegisteredAtMs) / 60000L : 0L;
+            return "已注册 " + upMin + " 分钟，收到按键回调 " + mEventCount.get() + " 次";
+        }
+        return "未注册(" + errorCodeName(mLastErrorCode) + ")" + (mLastErrorDetail.isEmpty() ? "" : "：" + mLastErrorDetail);
+    }
+
+    public static String errorCodeName(int code) {
+        switch (code) {
+            case ERR_NO_MANAGER: return "CarService未就绪";
+            case ERR_CLASS_NOT_FOUND: return "ROM无Car回调类";
+            case ERR_NO_SUCH_METHOD: return "注册签名不符";
+            case ERR_SECURITY: return "权限被拒";
+            case ERR_PROP_UNSUPPORTED: return "本车无此属性";
+            case ERR_OTHER: return "其它异常";
+            default: return "未失败";
+        }
+    }
+
+    private void markFailure(int code, String detail, Throwable t) {
+        mLastErrorCode = code;
+        mLastErrorDetail = detail != null ? detail : "";
+        Log.w(TAG, "HAL注册失败[" + errorCodeName(code) + "] " + mLastErrorDetail
+                + (t != null ? " | " + t.getClass().getSimpleName() : ""));
+    }
+
     public interface OnHwKeyListener {
         /**
          * 捕获到一次物理按键事件
@@ -65,11 +126,22 @@ public class HwKeyInputChannel {
     public synchronized boolean register(Object carPropertyManager, final Context context) {
         if (mRegistered.get()) return true;
         if (carPropertyManager == null) {
-            Log.w(TAG, "register: CarPropertyManager is null");
+            markFailure(ERR_NO_MANAGER, "CarPropertyManager=null", null);
+            return false;
+        }
+        Class<?> callbackClass;
+        try {
+            callbackClass = Class.forName("android.car.CarPropertyManager$CarPropertyEventCallback");
+        } catch (ClassNotFoundException e) {
+            // 本车 ROM 根本没这套 Car API：这是死路，重试一万次也不会通。
+            // 上层看到这个代号应当直接放弃该通道，而不是继续当成「可修」去等重试。
+            markFailure(ERR_CLASS_NOT_FOUND,
+                    "Class.forName(android.car.CarPropertyManager$CarPropertyEventCallback) 抛 ClassNotFoundException，本车 ROM 无此 API",
+                    e);
             return false;
         }
         try {
-            Class<?> callbackClass = Class.forName("android.car.CarPropertyManager$CarPropertyEventCallback");
+
             this.mCallbackProxy = Proxy.newProxyInstance(
                     callbackClass.getClassLoader(),
                     new Class<?>[]{callbackClass},
@@ -92,15 +164,38 @@ public class HwKeyInputChannel {
             // sig1: registerCallback(callback, propertyId, rate)
             // sig2: registerCallback(callback, propertyId)
             boolean ok = false;
+            Method sig1 = null, sig2 = null;
             try {
-                Method m = mgrClass.getMethod("registerCallback", callbackClass, Integer.TYPE, Float.TYPE);
-                m.invoke(carPropertyManager, mCallbackProxy, HW_KEY_INPUT_PROP, 0.0f);
-                ok = true;
+                sig1 = mgrClass.getMethod("registerCallback", callbackClass, Integer.TYPE, Float.TYPE);
             } catch (NoSuchMethodException ignored) {}
-            if (!ok) {
-                Method m = mgrClass.getMethod("registerCallback", callbackClass, Integer.TYPE);
-                m.invoke(carPropertyManager, mCallbackProxy, HW_KEY_INPUT_PROP);
+            try {
+                sig2 = mgrClass.getMethod("registerCallback", callbackClass, Integer.TYPE);
+            } catch (NoSuchMethodException ignored) {}
+            if (sig1 == null && sig2 == null) {
+                markFailure(ERR_NO_SUCH_METHOD,
+                        "CarPropertyManager 两种 registerCallback 签名都不存在（ROM 的 Car API 版本与本机不符）", null);
+                return false;
+            }
+            try {
+                if (sig1 != null) {
+                    sig1.invoke(carPropertyManager, mCallbackProxy, HW_KEY_INPUT_PROP, 0.0f);
+                } else {
+                    sig2.invoke(carPropertyManager, mCallbackProxy, HW_KEY_INPUT_PROP);
+                }
                 ok = true;
+            } catch (java.lang.reflect.InvocationTargetException ite) {
+                // 真正的原因藏在 target 异常里，以前这里只打 getMessage() 导致什么都看不出来
+                Throwable cause = ite.getCause() != null ? ite.getCause() : ite;
+                if (cause instanceof SecurityException) {
+                    markFailure(ERR_SECURITY, "registerCallback 被权限拒绝：" + cause.getMessage(), cause);
+                } else if (cause instanceof IllegalArgumentException) {
+                    markFailure(ERR_PROP_UNSUPPORTED,
+                            "属性 " + HW_KEY_INPUT_PROP + " 本车 CarService 未声明：" + cause.getMessage(), cause);
+                } else {
+                    markFailure(ERR_OTHER, "registerCallback 抛 "
+                            + cause.getClass().getSimpleName() + "：" + cause.getMessage(), cause);
+                }
+                return false;
             }
 
             if (ok) {
@@ -110,11 +205,14 @@ public class HwKeyInputChannel {
                     mRegisteredManager = carPropertyManager;
                 } catch (NoSuchMethodException ignored) {}
                 mRegistered.set(true);
+                mLastErrorCode = ERR_NONE;
+                mLastErrorDetail = "";
+                mRegisteredAtMs = android.os.SystemClock.elapsedRealtime();
                 Log.i(TAG, "HW_KEY_INPUT property callback registered (prop=" + HW_KEY_INPUT_PROP + ")");
             }
             return ok;
         } catch (Throwable t) {
-            Log.w(TAG, "registerPropertyCallback failed: " + t.getMessage());
+            markFailure(ERR_OTHER, "registerPropertyCallback 未知异常：" + t.getMessage(), t);
             return false;
         }
     }
@@ -123,6 +221,9 @@ public class HwKeyInputChannel {
      * HW_KEY_INPUT 报文解析：value = int[]{action(0按下/其他抬起), keyCode, display}
      */
     private void handlePropertyChange(Object carPropertyValue) {
+        // 事件计数必须在 mCaptureEnabled 判断之前：即使当前不是录制学习态，
+        // 「车机到底推不推这个属性」也必须留痕，否则无法区分「没接上」和「接上了但车机不推」。
+        mEventCount.incrementAndGet();
         if (!mCaptureEnabled) return; // 门禁：非录制学习态，捕获通道彻底静默
         if (carPropertyValue == null) return;
         try {
