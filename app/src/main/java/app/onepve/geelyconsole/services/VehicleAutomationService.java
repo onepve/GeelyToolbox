@@ -680,6 +680,13 @@ public class VehicleAutomationService extends Service {
         wheelKeyManager = new SteeringWheelKeyManager(this);
         probe("语音播放器与方控管理器就绪");
 
+        // v1.8.33.24: 开机常驻拉起无线快传服务 (8888 端口) —— 与界面解耦，
+        // 助手退后台/无界面时手机也能直连快传，根除「打开助手界面才能连上」的旧疾
+        try {
+            app.onepve.geelyconsole.server.WebServer.startShared(this, null);
+        } catch (Throwable ignored) {}
+        probe("快传服务已常驻监听8888");
+
         // 预热 QQ 音乐车机版官方 AIDL 服务连接 (移植自老版本 QQ音乐助手 极速响应机制)
         try {
             QQMusicCarController.getInstance(this).ensureConnected();

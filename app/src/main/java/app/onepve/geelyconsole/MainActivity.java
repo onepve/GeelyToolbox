@@ -127,7 +127,6 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
 
     private WebView webView;
     private View splashView;
-    private WebServer webServer;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean isWhitelistEnabled = false;
     private Runnable pendingShowPillRunnable = null;
@@ -392,12 +391,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
             }
         });
 
-        // 1. 默认常驻启动后台无线快传 WebServer (8888 端口，开机即秒连)
+        // 1. 前台接管快传服务回调（服务已在后台常驻监听 8888，此处幂等，仅更新回调指向当前界面）
         try {
-            if (webServer == null) {
-                webServer = new WebServer(this, this);
-                webServer.start();
-            }
+            WebServer.startShared(this, this);
         } catch (Exception ignored) {
         }
 
@@ -779,9 +775,8 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
         try {
             unregisterReceiver(packageChangeReceiver);
         } catch (Exception ignored) {}
-        if (webServer != null) {
-            webServer.stop();
-        }
+        // v1.8.33.24: 快传服务已改为进程级常驻（VehicleAutomationService 开机拉起），
+        // 退出界面不再关闭 8888 端口 —— 根除「助手退后台手机就连不上快传」的问题
     }
 
     public void showToast(final String msg) {

@@ -44,12 +44,46 @@ public class WebServer {
 
     private static final int PORT = 8888;
     private final Context context;
-    private final WebServerCallback callback;
+    // callback 可被前台宿主（界面/服务）热替换；volatile 保证跨线程可见，
+    // 实际调用均经 mainHandler.post 切主线程执行
+    private volatile WebServerCallback callback;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private ServerSocket serverSocket;
     private boolean isRunning = false;
 
-    public WebServer(Context context, WebServerCallback callback) {
+    /**
+     * v1.8.33.24: 快传服务全局单例化，生命周期随进程常驻。
+     * 旧实现绑定 MainActivity.onCreate/onDestroy —— 助手一退后台 8888 端口即关闭，
+     * 车主感知为「打开助手界面 WiFi 才能连上」。现改为：
+     *   - VehicleAutomationService.onCreate 开机即拉起监听（幂等）；
+     *   - MainActivity.onCreate 前台接管回调（幂等，仅更新 callback）；
+     *   - 退出界面不再 stop，进程存活期间端口始终监听。
+     */
+    private static volatile WebServer sSharedInstance;
+    private static final Object sSharedLock = new Object();
+
+    public static void startShared(Context context, WebServerCallback callback) {
+        if (context == null) return;
+        synchronized (sSharedLock) {
+            WebServer s = sSharedInstance;
+            if (s == null) {
+                s = new WebServer(context.getApplicationContext(), callback);
+                sSharedInstance = s;
+                s.start();
+                Log.i(TAG, "WebServer shared instance started (port " + PORT + "), lifecycle = process-wide");
+            } else if (callback != null) {
+                // 已在监听中，仅把回调换成当前前台的宿主（界面/服务），不重启端口
+                s.attachCallback(callback);
+            }
+        }
+    }
+
+    private void attachCallback(WebServerCallback callback) {
+        if (callback == null) return;
+        this.callback = callback;
+    }
+
+    private WebServer(Context context, WebServerCallback callback) {
         this.context = context.getApplicationContext();
         this.callback = callback;
     }
