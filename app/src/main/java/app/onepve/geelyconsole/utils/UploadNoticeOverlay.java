@@ -90,7 +90,17 @@ public final class UploadNoticeOverlay {
         }
         lastArriveMs = now;
 
+        // 选文件夹上传时文件落在 Download/子目录里，这里显示相对 Download 的路径，
+        // 车主才能确认「文件夹结构真的保留了」，而不是只看到一个光文件名。
         String name = file.getName();
+        try {
+            String base = SystemUtils.getAppDownloadDir().getCanonicalPath();
+            String full = file.getCanonicalPath();
+            if (full.startsWith(base + File.separator)) {
+                name = full.substring(base.length() + 1).replace(File.separatorChar, '/');
+            }
+        } catch (Throwable ignored) {
+        }
         String one = name + "（" + SystemUtils.formatFileSize(file.length()) + "）";
         if (received.size() >= MAX_LINES) {
             received.remove(0);

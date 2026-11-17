@@ -138,6 +138,29 @@
         }
         .upload-drop-zone:active { border-color: #2563eb; background: #eff6ff; }
 
+        /* 选文件 / 选文件夹 双按钮（车机内核 Chromium 68 不支持 flex gap，用 margin 撑开） */
+        .pick-row { display: flex; margin-top: 4px; }
+        .pick-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 44px;
+            padding: 0 6px;
+            border: 2px dashed #d4d4d8;
+            border-radius: 12px;
+            background: #fafafa;
+            color: #3f3f46;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .pick-btn:first-child { margin-right: 10px; }
+        .pick-btn:active { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+        .pick-btn .btn-icon { width: 16px; height: 16px; margin-right: 6px; flex: none; }
+
         /* 清理下载目录模式选择模态弹窗 */
         .clean-modal-mask {
             position: fixed;
@@ -248,11 +271,25 @@
                     <span class="status-badge" id="car-status">车机在线</span>
                 </div>
                 <div class="card-desc">
-                    支持手机任意格式文件，可一次多选，按选择顺序逐个直传至车机存储 Download 目录。
+                    支持手机任意格式文件：可一次多选多个文件，也可以直接选一个文件夹（连里面的子文件夹一起传），一律按顺序逐个直传至车机 Download 目录，并保持原来的文件夹结构。
                 </div>
-                <div class="input-group">
-                    <input type="file" id="file-input" multiple>
+                <div class="pick-row">
+                    <button class="pick-btn" onclick="document.getElementById('file-input').click()">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        选择文件（可多选）
+                    </button>
+                    <button class="pick-btn" onclick="pickFolder()">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                        选择整个文件夹
+                    </button>
                 </div>
+                <div style="position:absolute; width:1px; height:1px; opacity:0; overflow:hidden; left:-9999px; top:-9999px;">
+                    <input type="file" id="file-input" multiple onchange="onPickFiles(this, false)">
+                </div>
+                <div style="position:absolute; width:1px; height:1px; opacity:0; overflow:hidden; left:-9999px; top:-9999px;">
+                    <input type="file" id="folder-input" webkitdirectory directory multiple onchange="onPickFiles(this, true)">
+                </div>
+                <div id="pick-summary" style="font-size:12.5px; color:#52525b; margin-top:2px; margin-bottom:8px; text-align:center; word-break:break-all; font-weight:600; display:none;"></div>
                 <button class="btn btn-primary" id="btn-upload" onclick="uploadMainFile()">
                     <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>开始高速传输
                 </button>
@@ -661,13 +698,16 @@
 
         // ---- 通用分片上传核心逻辑 ----
         async function runChunkedUpload(file, options) {
-            const { targetDir, onProgress, onStatus } = options;
+            const { targetDir, onProgress, onStatus, relativePath } = options;
             let chunkSize = 2 * 1024 * 1024;
             if (file.size > 128 * 1024 * 1024) chunkSize = 8 * 1024 * 1024;
             else if (file.size > 16 * 1024 * 1024) chunkSize = 4 * 1024 * 1024;
 
-            const totalChunks = Math.ceil(file.size / chunkSize);
+            // 空文件（文件夹里常见的占位文件）也要发一片，否则循环一次都不跑、车机上根本不会出现这个文件
+            const totalChunks = Math.max(1, Math.ceil(file.size / chunkSize));
             let resolvedName = file.name;
+            // 相对路径（选文件夹时形如「主题包/图片/a.jpg」），服务端据此在 Download 下还原目录
+            const relPath = relativePath || '';
 
             let wakeLock = null;
             if ('wakeLock' in navigator) {
@@ -696,6 +736,7 @@
                         fileSize: file.size.toString()
                     });
                     if (targetDir) queryParams.set('targetDir', targetDir);
+                    // 目录信息只走请求头（单次 encode），避免 query 再被 URLSearchParams 二次编码导致乱码
 
                     const uploadUrl = '/api/upload_chunk?' + queryParams.toString();
                     let chunkSuccess = false;
@@ -707,16 +748,18 @@
                                 if (onStatus) onStatus(`网络波动，正在重试第 ${i + 1}/${totalChunks} 片 (${retry}/3)...`);
                                 await new Promise(r => setTimeout(r, 1000 * retry));
                             }
+                            const reqHeaders = {
+                                'Content-Type': 'application/octet-stream',
+                                'x-file-name': encodeURIComponent(resolvedName),
+                                'x-chunk-offset': start.toString(),
+                                'x-name-resolved': (i > 0 ? 'true' : 'false'),
+                                'x-last-chunk': isLast ? 'true' : 'false',
+                                'x-target-dir': targetDir || ''
+                            };
+                            if (relPath) reqHeaders['x-rel-path'] = encodeURIComponent(relPath);
                             const res = await fetch(uploadUrl, {
                                 method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/octet-stream',
-                                    'x-file-name': encodeURIComponent(resolvedName),
-                                    'x-chunk-offset': start.toString(),
-                                    'x-name-resolved': (i > 0 ? 'true' : 'false'),
-                                    'x-last-chunk': isLast ? 'true' : 'false',
-                                    'x-target-dir': targetDir || ''
-                                },
+                                headers: reqHeaders,
                                 body: chunk
                             });
                             if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -750,11 +793,99 @@
             }
         }
 
-        // ---- 1. 主页面普通文件上传（支持一次多选，按选择顺序逐个串行直传）----
+        // ---- 1. 主页面普通文件上传（多选文件 / 选整个文件夹，按选择顺序逐个串行直传）----
+        // 待传队列：选中后先暂存，点「开始高速传输」才真正上传
+        let pendingUploads = [];
+
+        function onPickFiles(input, isFolder) {
+            const picked = Array.prototype.slice.call(input.files || []);
+            pendingUploads = [];
+            if (!picked.length) {
+                renderPickSummary(isFolder);
+                return;
+            }
+
+            // 文件夹模式：webkitRelativePath 形如「主题包/图片/a.jpg」，首段是文件夹本身
+            let rootName = '';
+            let hasRel = false;
+            if (isFolder) {
+                for (let i = 0; i < picked.length; i++) {
+                    if (picked[i].webkitRelativePath) { hasRel = true; break; }
+                }
+                const firstRel = picked[0].webkitRelativePath || '';
+                rootName = firstRel.split('/')[0] || '';
+            }
+
+            // 兜底：当前浏览器的文件选择器其实不支持整选文件夹（只给了散文件），
+            // 这时按普通多选处理，并明确告知车主，不假装目录结构被保留了。
+            if (isFolder && !hasRel) {
+                showMobileToast('当前手机浏览器不能整选文件夹，已按「多选文件」方式接收', false);
+                isFolder = false;
+            }
+
+            for (let i = 0; i < picked.length; i++) {
+                const f = picked[i];
+                let rel = '';
+                if (isFolder) {
+                    rel = f.webkitRelativePath || (rootName ? (rootName + '/' + f.name) : f.name);
+                }
+                pendingUploads.push({ file: f, rel: rel });
+            }
+            renderPickSummary(isFolder, rootName);
+        }
+
+        function renderPickSummary(isFolder, rootName) {
+            const box = document.getElementById('pick-summary');
+            if (!box) return;
+            if (!pendingUploads.length) {
+                box.style.display = 'none';
+                box.innerText = '';
+                return;
+            }
+            let bytes = 0;
+            const dirs = {};
+            for (let i = 0; i < pendingUploads.length; i++) {
+                bytes += pendingUploads[i].file.size;
+                if (pendingUploads[i].rel) {
+                    const parts = pendingUploads[i].rel.split('/');
+                    let acc = '';
+                    for (let d = 0; d < parts.length - 1; d++) {
+                        acc = acc ? (acc + '/' + parts[d]) : parts[d];
+                        dirs[acc] = true;
+                    }
+                }
+            }
+            const dirCount = Object.keys(dirs).length;
+            const mb = (bytes / 1024 / 1024).toFixed(1);
+            let text;
+            if (isFolder && rootName) {
+                text = `📁 已选文件夹【${rootName}】：共 ${pendingUploads.length} 个文件`
+                    + (dirCount > 1 ? `，${dirCount} 层子目录` : '')
+                    + `，合计 ${mb}MB，将按原目录结构传入车机 Download`;
+            } else {
+                text = `📄 已选 ${pendingUploads.length} 个文件，合计 ${mb}MB，将按选择顺序逐个传入车机 Download`;
+            }
+            box.style.display = 'block';
+            box.innerText = text;
+        }
+
+        // 选文件夹：不支持目录选择的环境（绝大多数手机浏览器/系统选择器）给出明确提示，
+        // 让车主改走多选文件，而不是点了几次没反应、以为功能坏了。
+        function pickFolder() {
+            const folderInput = document.getElementById('folder-input');
+            if (!folderInput) return;
+            const supported = ('webkitdirectory' in folderInput) || ('directory' in folderInput);
+            folderInput.click();
+            if (!supported) {
+                setTimeout(function () {
+                    showMobileToast('当前手机浏览器不支持整选文件夹，请改用左侧「选择文件（可多选）」', false);
+                }, 300);
+            }
+        }
+
         async function uploadMainFile() {
-            const fileInput = document.getElementById('file-input');
-            const files = Array.prototype.slice.call(fileInput.files || []);
-            if (!files.length) { alert('请先选择文件'); return; }
+            const files = pendingUploads.slice();
+            if (!files.length) { alert('请先选择文件或文件夹'); return; }
 
             const pBar = document.getElementById('progress-bar');
             const pFill = document.getElementById('progress-fill');
@@ -764,6 +895,7 @@
             const total = files.length;
             const okList = [];
             const failList = [];
+            let rootFolder = '';
 
             if (btnUpload) { btnUpload.disabled = true; btnUpload.innerText = '⏳ 正在高速传输中...'; }
             pBar.style.display = 'block';
@@ -772,27 +904,35 @@
             try {
                 // 严格串行：一个传完再传下一个，绝不并发抢占车机带宽
                 for (let i = 0; i < total; i++) {
-                    const file = files[i];
+                    const item = files[i];
+                    const file = item.file;
+                    const rel = item.rel || '';
+                    if (rel && !rootFolder) {
+                        const seg = rel.split('/');
+                        if (seg.length > 1) rootFolder = seg[0];
+                    }
+                    const showName = rel || file.name;
                     const prefix = total > 1 ? `【第 ${i + 1}/${total} 个】` : '';
                     pFill.style.width = '0%';
-                    pStatus.innerText = prefix + '正在准备传输：' + file.name;
+                    pStatus.innerText = prefix + '正在准备传输：' + showName;
 
                     try {
                         const res = await runChunkedUpload(file, {
                             targetDir: '',
+                            relativePath: rel,
                             onProgress: (p) => {
                                 // 总进度 = 已完成个数 + 当前文件进度
                                 const overall = Math.round(((i + (p / 100)) / total) * 100);
                                 pFill.style.width = overall + '%';
                             },
                             onStatus: (msg) => {
-                                pStatus.innerText = prefix + msg + ' · ' + file.name;
+                                pStatus.innerText = prefix + msg + ' · ' + showName;
                             }
                         });
                         okList.push(res.fileName);
                         pFill.style.width = Math.round(((i + 1) / total) * 100) + '%';
                     } catch (err) {
-                        failList.push(file.name + '（' + (err.message || '传输中断') + '）');
+                        failList.push(showName + '（' + (err.message || '传输中断') + '）');
                     }
                 }
 
@@ -800,10 +940,12 @@
                 if (!failList.length) {
                     let tip;
                     if (total === 1) {
-                        const only = okList[0] || files[0].name;
+                        const only = okList[0] || files[0].file.name;
                         tip = only.toLowerCase().endsWith('.apk')
                             ? `🎉 安装包传输成功！请前往车机「车载原生文件管理」直接点选安装。`
                             : `🎉 传输成功！已存至车机 /sdcard/Download/${only}`;
+                    } else if (rootFolder) {
+                        tip = `🎉 文件夹【${rootFolder}】共 ${total} 个文件全部传输成功！已按原目录结构存至车机 /sdcard/Download/`;
                     } else {
                         tip = `🎉 全部 ${total} 个文件传输成功！已按顺序存至车机 /sdcard/Download/`;
                     }
@@ -957,6 +1099,16 @@
                 }
                 let html = '';
                 data.files.forEach(f => {
+                    if (f.isDir) {
+                        // 文件夹条目：选文件夹传上来的整包，点开只做提示，不提供单文件下载
+                        html += '<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid #f4f4f5;">' +
+                                '  <div style="overflow:hidden; margin-right:8px;">' +
+                                '    <div style="font-size:13.5px; font-weight:600; color:#18181b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📁 ' + f.name + '（文件夹）</div>' +
+                                '    <div style="font-size:11.5px; color:#52525b; font-weight:500;">' + (f.fileCount || 0) + ' 个文件 · ' + f.sizeFormatted + ' · 目录结构已保留</div>' +
+                                '  </div>' +
+                                '</div>';
+                        return;
+                    }
                     const lower = f.name.toLowerCase();
                     let icon = '📄';
                     if (lower.endsWith('.apk')) icon = '📦';

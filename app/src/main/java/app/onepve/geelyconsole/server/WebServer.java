@@ -267,8 +267,27 @@ public class WebServer {
                         JSONObject obj = new JSONObject();
                         try {
                             obj.put("name", f.getName());
+                            obj.put("isDir", false);
                             obj.put("size", f.length());
                             obj.put("sizeFormatted", formatFileSize(f.length()));
+                            obj.put("time", f.lastModified());
+                            obj.put("timeFormatted", sdf.format(new Date(f.lastModified())));
+                            array.put(obj);
+                        } catch (Exception ignored) {
+                        }
+                    } else if (f.isDirectory()) {
+                        // 手机端选文件夹传上来之后，这里要把文件夹也列出来，
+                        // 车主才知道「文件夹本身」确实传到了车机，而不是只有散落文件。
+                        JSONObject obj = new JSONObject();
+                        try {
+                            int[] acc = new int[]{0};
+                            long[] bytes = new long[]{0};
+                            countDirTree(f, acc, bytes, 0);
+                            obj.put("name", f.getName());
+                            obj.put("isDir", true);
+                            obj.put("fileCount", acc[0]);
+                            obj.put("size", bytes[0]);
+                            obj.put("sizeFormatted", formatFileSize(bytes[0]));
                             obj.put("time", f.lastModified());
                             obj.put("timeFormatted", sdf.format(new Date(f.lastModified())));
                             array.put(obj);
@@ -426,11 +445,68 @@ public class WebServer {
         return file.getName();
     }
 
+    /**
+     * 把「主题包/图片/a.jpg」这类相对路径解析成 Download 下的安全子目录。
+     *
+     * 防穿越铁律（手机端传什么都可能）：
+     *   · 逐段检查，出现「..」「.」「空段」「含冒号或反斜杠」的段直接整段丢弃；
+     *   · 全部段都非法就返回 null，调用方退回 Download 根目录，绝不写到别处；
+     *   · 最后用规范路径再确认一次仍在 baseDir 之内。
+     */
+    private File resolveSafeSubDir(File baseDir, String relPath) {
+        if (baseDir == null || relPath == null) return null;
+        String normalized = relPath.replace('\\', '/');
+        String[] rawSegs = normalized.split("/");
+        java.util.List<String> safeSegs = new java.util.ArrayList<>();
+        for (String seg : rawSegs) {
+            if (seg == null) continue;
+            String s = seg.trim();
+            if (s.isEmpty() || ".".equals(s) || "..".equals(s)) continue;
+            if (s.indexOf(':') >= 0) continue;            // 盘符 / 协议前缀
+            if (s.indexOf('\u0000') >= 0) continue;
+            safeSegs.add(s);
+        }
+        // 最后一段是文件名，目录部分只用前面的段
+        if (safeSegs.size() <= 1) return null;
+        safeSegs.remove(safeSegs.size() - 1);
+
+        File dir = baseDir;
+        for (String seg : safeSegs) {
+            dir = new File(dir, seg);
+        }
+        try {
+            String basePath = baseDir.getCanonicalPath();
+            String dirPath = dir.getCanonicalPath();
+            if (!dirPath.equals(basePath) && !dirPath.startsWith(basePath + File.separator)) {
+                Log.w(TAG, "拒绝越界目录: " + relPath);
+                return null;
+            }
+        } catch (Exception e) {
+            return null;
+        }
+        return dir;
+    }
+
+    /** 统计一个目录树里的文件个数与总字节数（限 6 层，防异常深目录拖慢列表） */
+    private void countDirTree(File dir, int[] countAcc, long[] sizeAcc, int depth) {
+        if (dir == null || depth > 6) return;
+        File[] children = dir.listFiles();
+        if (children == null) return;
+        for (File c : children) {
+            if (c.isFile()) {
+                countAcc[0]++;
+                sizeAcc[0] += c.length();
+            } else if (c.isDirectory()) {
+                countDirTree(c, countAcc, sizeAcc, depth + 1);
+            }
+        }
+    }
+
     private void handleOptions(OutputStream out) throws IOException {
         String header = "HTTP/1.1 204 No Content\r\n" +
                 "Access-Control-Allow-Origin: *\r\n" +
                 "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n" +
-                "Access-Control-Allow-Headers: Content-Type, x-file-name, x-chunk-offset, x-last-chunk, x-name-resolved, x-file-size, *\r\n" +
+                "Access-Control-Allow-Headers: Content-Type, x-file-name, x-chunk-offset, x-last-chunk, x-name-resolved, x-file-size, x-target-dir, x-rel-path, *\r\n" +
                 "Access-Control-Max-Age: 86400\r\n" +
                 "Content-Length: 0\r\n" +
                 "Connection: close\r\n\r\n";
@@ -504,6 +580,25 @@ public class WebServer {
         if ("custom_voice".equalsIgnoreCase(targetSubDir)) {
             downloadDir = new File(downloadDir, "车载语音自定义");
         }
+
+        // 选文件夹上传：前端会带上 webkitRelativePath（形如「主题包/图片/a.jpg」）。
+        // 逐段清洗后把子目录建出来，实现「连文件夹本身一起传、保持原目录格式」。
+        // 安全铁律：任一段出现 .. / 空段 / 绝对路径前缀一律丢弃整段，绝不越出 Download。
+        String relPath = headers.get("x-rel-path");
+        if (relPath == null || relPath.isEmpty()) {
+            relPath = queryParams.get("relPath");
+        }
+        if (relPath != null && !relPath.isEmpty()) {
+            try {
+                relPath = URLDecoder.decode(relPath, "UTF-8");
+            } catch (Exception ignored) {}
+            File relDir = resolveSafeSubDir(downloadDir, relPath);
+            if (relDir != null) {
+                fileName = new File(fileName).getName();
+                downloadDir = relDir;
+            }
+        }
+
         if (!downloadDir.exists()) downloadDir.mkdirs();
 
         // 仅在分片 offset == 0 且未经过重命名处理时检测同名冲突并自动重命名
@@ -552,7 +647,18 @@ public class WebServer {
             });
         }
 
-        String resp = "{\"success\":true,\"offset\":" + (chunkOffset + length) + ",\"done\":" + isLastChunk + ",\"savedName\":\"" + fileName + "\"}";
+        // 响应体用 JSONObject 生成：文件名/文件夹名可能带引号、反斜杠，手拼 JSON 会直接坏掉
+        String resp;
+        try {
+            JSONObject jo = new JSONObject();
+            jo.put("success", true);
+            jo.put("offset", chunkOffset + length);
+            jo.put("done", isLastChunk);
+            jo.put("savedName", fileName);
+            resp = jo.toString();
+        } catch (Exception e) {
+            resp = "{\"success\":true,\"offset\":" + (chunkOffset + length) + ",\"done\":" + isLastChunk + "}";
+        }
         sendJsonResponse(out, resp);
     }
 

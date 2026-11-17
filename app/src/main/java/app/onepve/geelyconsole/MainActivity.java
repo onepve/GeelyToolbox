@@ -1371,18 +1371,12 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                                         if (count > 0) {
                                             Toast.makeText(MainActivity.this, "🎉 成功导入语音包【" + themeName + "】(" + count + "个音频)，已就绪！", Toast.LENGTH_LONG).show();
                                             callJs("if(window.refreshVoiceThemes) window.refreshVoiceThemes();");
-                                        } else {
-                                            Toast.makeText(MainActivity.this, "收到快传文件: " + file.getName(), Toast.LENGTH_SHORT).show();
                                         }
+                                        // count == 0：不是语音包，通用到达提示由悬浮横幅负责，这里不再重复弹
                                     }
                                 });
                             } else {
-                                mainHandler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(MainActivity.this, "收到手机快传文件: " + file.getName(), Toast.LENGTH_LONG).show();
-                                    }
-                                });
+                                // 普通 zip 不是语音包：到达提示由悬浮横幅统一负责，避免连弹两条
                             }
                         }
                     }).start();
