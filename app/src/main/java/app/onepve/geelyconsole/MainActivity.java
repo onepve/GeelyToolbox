@@ -1387,9 +1387,9 @@ public class MainActivity extends Activity implements WebServer.WebServerCallbac
                         }
                     }).start();
                 } else if (file.getName().toLowerCase().endsWith(".apk")) {
-                    Toast.makeText(MainActivity.this, "收到安装包: " + file.getName() + " (" + SystemUtils.formatFileSize(file.length()) + ")，已保存至 Download", Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(MainActivity.this, "收到手机快传文件: " + file.getName() + " (" + SystemUtils.formatFileSize(file.length()) + ")", Toast.LENGTH_LONG).show();
+                    // 通用「已收到」提示已由 UploadNoticeOverlay 悬浮横幅统一负责（前台/后台都能看到），
+                    // 这里只补一条安装包专属指引，避免同一批文件连弹两次重复提示。
+                    Toast.makeText(MainActivity.this, "安装包已存到 Download，可去「车载原生文件管理」点选安装", Toast.LENGTH_LONG).show();
                 }
             }
         });

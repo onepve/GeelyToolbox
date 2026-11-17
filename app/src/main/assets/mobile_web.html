@@ -248,10 +248,10 @@
                     <span class="status-badge" id="car-status">车机在线</span>
                 </div>
                 <div class="card-desc">
-                    支持手机任意格式文件，极速直传至车机存储 Download 目录。
+                    支持手机任意格式文件，可一次多选，按选择顺序逐个直传至车机存储 Download 目录。
                 </div>
                 <div class="input-group">
-                    <input type="file" id="file-input">
+                    <input type="file" id="file-input" multiple>
                 </div>
                 <button class="btn btn-primary" id="btn-upload" onclick="uploadMainFile()">
                     <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>开始高速传输
@@ -750,38 +750,75 @@
             }
         }
 
-        // ---- 1. 主页面普通文件上传 ----
+        // ---- 1. 主页面普通文件上传（支持一次多选，按选择顺序逐个串行直传）----
         async function uploadMainFile() {
             const fileInput = document.getElementById('file-input');
-            if (!fileInput.files.length) { alert('请先选择文件'); return; }
-            const file = fileInput.files[0];
+            const files = Array.prototype.slice.call(fileInput.files || []);
+            if (!files.length) { alert('请先选择文件'); return; }
 
             const pBar = document.getElementById('progress-bar');
             const pFill = document.getElementById('progress-fill');
             const pStatus = document.getElementById('upload-status');
             const btnUpload = document.getElementById('btn-upload');
 
+            const total = files.length;
+            const okList = [];
+            const failList = [];
+
             if (btnUpload) { btnUpload.disabled = true; btnUpload.innerText = '⏳ 正在高速传输中...'; }
             pBar.style.display = 'block';
             pFill.style.width = '0%';
 
             try {
-                const res = await runChunkedUpload(file, {
-                    targetDir: '',
-                    onProgress: (p) => { pFill.style.width = p + '%'; },
-                    onStatus: (msg) => { pStatus.innerText = msg; }
-                });
-                const lower = res.fileName.toLowerCase();
-                let tip = `🎉 传输成功！已存至车机 /sdcard/Download/${res.fileName}`;
-                if (lower.endsWith('.apk')) {
-                    tip = `🎉 安装包传输成功！请前往车机「车载原生文件管理」直接点选安装。`;
+                // 严格串行：一个传完再传下一个，绝不并发抢占车机带宽
+                for (let i = 0; i < total; i++) {
+                    const file = files[i];
+                    const prefix = total > 1 ? `【第 ${i + 1}/${total} 个】` : '';
+                    pFill.style.width = '0%';
+                    pStatus.innerText = prefix + '正在准备传输：' + file.name;
+
+                    try {
+                        const res = await runChunkedUpload(file, {
+                            targetDir: '',
+                            onProgress: (p) => {
+                                // 总进度 = 已完成个数 + 当前文件进度
+                                const overall = Math.round(((i + (p / 100)) / total) * 100);
+                                pFill.style.width = overall + '%';
+                            },
+                            onStatus: (msg) => {
+                                pStatus.innerText = prefix + msg + ' · ' + file.name;
+                            }
+                        });
+                        okList.push(res.fileName);
+                        pFill.style.width = Math.round(((i + 1) / total) * 100) + '%';
+                    } catch (err) {
+                        failList.push(file.name + '（' + (err.message || '传输中断') + '）');
+                    }
                 }
-                pStatus.innerText = tip + ` (${res.totalSec.toFixed(1)}s, ${res.avgSpeed}MB/s)`;
-                showMobileToast('🎉 文件传输成功！');
+
+                // ---- 汇总结果 ----
+                if (!failList.length) {
+                    let tip;
+                    if (total === 1) {
+                        const only = okList[0] || files[0].name;
+                        tip = only.toLowerCase().endsWith('.apk')
+                            ? `🎉 安装包传输成功！请前往车机「车载原生文件管理」直接点选安装。`
+                            : `🎉 传输成功！已存至车机 /sdcard/Download/${only}`;
+                    } else {
+                        tip = `🎉 全部 ${total} 个文件传输成功！已按顺序存至车机 /sdcard/Download/`;
+                    }
+                    pStatus.innerText = tip;
+                    showMobileToast(total > 1 ? `🎉 ${total} 个文件全部传输成功！` : '🎉 文件传输成功！');
+                } else if (okList.length) {
+                    pStatus.innerText = `⚠️ 传输完成 ${okList.length} 个，失败 ${failList.length} 个：` + failList.join('；');
+                    showMobileToast(`⚠️ ${okList.length} 个成功，${failList.length} 个失败`, false);
+                    alert('以下文件传输失败，可单独重试：\n\n' + failList.join('\n'));
+                } else {
+                    pStatus.innerText = '❌ 传输全部失败：' + failList.join('；');
+                    showMobileToast('❌ 文件传输失败', false);
+                    alert('传输失败：\n\n' + failList.join('\n'));
+                }
                 loadCarFiles();
-            } catch (err) {
-                pStatus.innerText = '❌ 传输中断: ' + err.message;
-                alert('传输中断: ' + err.message);
             } finally {
                 if (btnUpload) { btnUpload.disabled = false; btnUpload.innerText = '🚀 开始高速传输'; }
             }

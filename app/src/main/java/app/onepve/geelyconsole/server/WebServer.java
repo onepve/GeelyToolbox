@@ -8,6 +8,7 @@ import android.util.Log;
 
 import app.onepve.geelyconsole.utils.SystemUtils;
 import app.onepve.geelyconsole.utils.PrefUtils;
+import app.onepve.geelyconsole.utils.UploadNoticeOverlay;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -535,6 +536,12 @@ public class WebServer {
         }
 
         if (isLastChunk) {
+            // 车机端提示：窗口级悬浮横幅，助手界面在前台/后台都能弹（多选连传按顺序累计）
+            try {
+                UploadNoticeOverlay.notifyUploaded(context, targetFile);
+            } catch (Throwable t) {
+                Log.w(TAG, "快传提示横幅调用失败: " + t.getMessage());
+            }
             mainHandler.post(new Runnable() {
                 @Override
                 public void run() {
