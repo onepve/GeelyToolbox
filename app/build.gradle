@@ -11,8 +11,8 @@ android {
         minSdk 28
         targetSdk 28
         // versionCode / versionName 必须保留旧式写法：CI 版本注入脚本与门禁正则依赖此格式
-        versionCode 1083299
-        versionName "1.8.32"
+        versionCode 1083499
+        versionName "1.8.34"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
