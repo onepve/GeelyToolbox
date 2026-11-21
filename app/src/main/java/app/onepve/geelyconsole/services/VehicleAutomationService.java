@@ -1197,9 +1197,16 @@ public class VehicleAutomationService extends Service {
                         // 直接全量监听，由我们在 parseLogLine 中进行高效关键字判定！
                         // 核心铁律：持续实时监听 logcat，由我们在 parseLogLine 中进行高效关键字判定！
                         // 稳定性规范：严禁使用 -t 50 / -d 等非阻塞参数，否则进程读完 50 行立即 EOF 退出导致外层 while 陷入每 2 秒死循环重启！
-                        // 核心防翻旧账：写入纳秒同步标记行，读到标记前秒级抽干存量历史缓冲区
+                        //核心防翻旧账：写入纳秒同步标记行（仅作通道重建取证定位），抽干判定改走时间栅栏
                         final String drainMarker = "GEELY_TOOLBOX_DRAIN_MARKER_" + android.os.SystemClock.elapsedRealtimeNanos();
                         Log.i("GeelyConsole", drainMarker);
+
+                        // 【时间栅栏抽干铁律】用「开流瞬间真实时间」做分界线，早于该时刻的历史行一律丢。
+                        //旧「满5000行即放行」兜底的致命缺陷：-b all会把整个环形缓冲区从头回放，
+                        //高速行车日志洪峰下缓冲区轻松超5000行，标记行还没读到就提前放行，
+                        //把5001行之后的历史按键（MODE/下一曲）当实时信号反复执行，即疯狂切歌 +反复弹360。
+                        final String streamStartStamp = new java.text.SimpleDateFormat("MM-dd HH:mm:ss.SSS", java.util.Locale.US)
+                        .format(new java.util.Date(System.currentTimeMillis()));
 
                         ProcessBuilder pb = new ProcessBuilder("logcat", "-v", "time", "-b", "all");
                         pb.redirectErrorStream(true);
@@ -1213,11 +1220,23 @@ public class VehicleAutomationService extends Service {
                         while (isRunning && (line = reader.readLine()) != null) {
                             if (!bufferDrained) {
                                 drainLinesCount++;
-                                if (line.contains(drainMarker) || drainLinesCount > 5000) {
+                                //兜底10万行：远大于环形缓冲历史上限，正常绝不触发；只在时间戳格式异常时放行，避免通道永久静默
+                                if (drainLinesCount > 100000) {
                                     bufferDrained = true;
-                                    AppLogger.i("系统日志", "Logcat 历史缓冲抽干就绪 (跳过 " + drainLinesCount + " 行旧日志)，正式进入实时信号监听");
+                                    AppLogger.i("系统日志", "Logcat 历史缓冲抽干就绪 (跳过 " + drainLinesCount + " 行旧日志，时间栅栏兜底放行)，正式进入实时信号监听");
+                                } else if (line.length() >= 18 && line.charAt(2) == '-' && line.charAt(5) == ' ') {
+                                    // logcat -v time每行前18字符是 "MM-dd HH:mm:ss.SSS"，固定格式下字典序即时间序，直接字符串比较
+                                    String stamp = line.substring(0, 18);
+                                    if (stamp.compareTo(streamStartStamp) >= 0) {
+                                        bufferDrained = true;
+                                        AppLogger.i("系统日志", "Logcat 历史缓冲抽干就绪 (跳过 " + drainLinesCount + " 行旧日志)，正式进入实时信号监听");
+                                    } else {
+                                        continue;
+                                    }
+                                } else {
+                                    //无时间戳的续行（堆栈等）跟随上一行判定，历史段内一并丢弃
+                                    continue;
                                 }
-                                continue;
                             }
                             parseLogLine(line);
                         }
