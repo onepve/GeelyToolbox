@@ -127,6 +127,8 @@ public class BinyueLPlatform implements IVehiclePlatform {
         private int lastHalGear = -1;
         private float lastSpeed = -1.0f;
         private int lastTrunkState = -1;
+        /** 归一化后的四门状态，仅用于变化取证，避免同一读数反复刷诊断日志 */
+        private int lastNormFl = -1, lastNormFr = -1, lastNormRl = -1, lastNormRr = -1;
 
         public BinyueLSensorAdapterImpl(Context context) {
             this.context = context.getApplicationContext();
@@ -299,19 +301,40 @@ public class BinyueLPlatform implements IVehiclePlatform {
                 }
 
                 // 4. 四门状态采集 (DOOR_POS)
-                int doorFl = carClient.getIntProperty(AndroidCarClient.DOOR_POS, AndroidCarClient.AREA_DOOR_ROW_1_LEFT, -1);
-                int doorFr = carClient.getIntProperty(AndroidCarClient.DOOR_POS, AndroidCarClient.AREA_DOOR_ROW_1_RIGHT, -1);
-                int doorRl = carClient.getIntProperty(AndroidCarClient.DOOR_POS, AndroidCarClient.AREA_DOOR_ROW_2_LEFT, -1);
-                int doorRr = carClient.getIntProperty(AndroidCarClient.DOOR_POS, AndroidCarClient.AREA_DOOR_ROW_2_RIGHT, -1);
+                // 【v1.8.35 根因修复】本车（缤越 L / IHU624G）关门稳定态读数是 2，不是 0。
+                // 车机自身 VehicleModules 适配层日志全程 374 帧均为 properValue=0 → adapterValue=2。
+                // 旧逻辑只认「1=开、其余当关」，行车时又把四门强制写成 0；一踩刹车车速归零，
+                // 2 != 0 立刻被当成「该门从 0 跳到 2」的假跃变，四门同轮齐触发，连播四句关门音。
+                // 修法：在本车型层先把原始值归一化到状态机约定的 0/1 契约，行车基准与静止读数一致，
+                // 从此车速归零不再产生任何假跃变。
+                int rawFl = carClient.getIntProperty(AndroidCarClient.DOOR_POS, AndroidCarClient.AREA_DOOR_ROW_1_LEFT, -1);
+                int rawFr = carClient.getIntProperty(AndroidCarClient.DOOR_POS, AndroidCarClient.AREA_DOOR_ROW_1_RIGHT, -1);
+                int rawRl = carClient.getIntProperty(AndroidCarClient.DOOR_POS, AndroidCarClient.AREA_DOOR_ROW_2_LEFT, -1);
+                int rawRr = carClient.getIntProperty(AndroidCarClient.DOOR_POS, AndroidCarClient.AREA_DOOR_ROW_2_RIGHT, -1);
+
+                int doorFl = normalizeDoorValue(rawFl);
+                int doorFr = normalizeDoorValue(rawFr);
+                int doorRl = normalizeDoorValue(rawRl);
+                int doorRr = normalizeDoorValue(rawRr);
+
+                logDoorReadingOnce(rawFl, rawFr, rawRl, rawRr, doorFl, doorFr, doorRl, doorRr);
 
                 VehicleAutomationService service = VehicleAutomationService.getInstance();
                 if (service != null && service.getDoorStateManager() != null &&
                         (doorFl >= 0 || doorFr >= 0 || doorRl >= 0 || doorRr >= 0)) {
-                    service.getDoorStateManager().updateDoors(
-                            doorFl, doorFr, doorRl, doorRr,
-                            VehicleAutomationService.voiceMasterSwitch,
-                            context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
-                    );
+                    // 【v1.8.35 防误播铁律】同一轮里三扇及以上车门齐变，物理上不可能，
+                    // 判定为一次数据异常：只更新本层基准，这一轮绝不交下游做播报。
+                    if (isSimultaneousDoorJump(doorFl, doorFr, doorRl, doorRr)) {
+                        rememberDoorReading(doorFl, doorFr, doorRl, doorRr);
+                        AppLogger.diag("车身联动单门", "多门同轮齐变，判定数据异常，本轮仅重建基准不播报");
+                    } else {
+                        rememberDoorReading(doorFl, doorFr, doorRl, doorRr);
+                        service.getDoorStateManager().updateDoors(
+                                doorFl, doorFr, doorRl, doorRr,
+                                VehicleAutomationService.voiceMasterSwitch,
+                                context.getSharedPreferences("toolbox_settings", Context.MODE_PRIVATE)
+                        );
+                    }
                 }
 
                 // 5. 后备箱尾门采集 (BODY_DOOR_TRUNK_DOOR_POS)
@@ -347,6 +370,67 @@ public class BinyueLPlatform implements IVehiclePlatform {
             } catch (Throwable t) {
                 Log.w(TAG, "pollVehicleState exception: " + t.getMessage());
             }
+        }
+
+        /**
+         * 【v1.8.35 根因修复】本车型 DOOR_POS 原始值归一化
+         *
+         * 实车取证（识别码 305151，缤越 L / IHU624G / Flyme Auto）：
+         * 车机自身 VehicleModules 适配层在整个日志窗口内打印 374 帧，
+         * 无一例外都是 properValue = 0 → adapterValue = 2，
+         * 而这段时间车辆一直在正常行驶、四门全程紧闭。
+         *
+         * 结论：本车「关门」的稳定读数就是 2，车机把 AOSP 的 0 平移成了自己的档位码。
+         * 旧代码只按「1=开、其余都当关」处理，看着像能用，实际埋了一个大坑：
+         * 行车时 DoorStateManager 把四门强制记为 0，一踩刹车车速归零，
+         * 真实读数 2 与基准 0 不等 → 被判成「该门刚发生一次跃变」→ 四门同轮齐报。
+         *
+         * 归一化契约（与 DoorStateManager 内部 0/1 语义严格对齐）：
+         *   1        → 1 开
+         *   0 或 2   → 0 关   （2 是本车关门稳定值）
+         *   其余/负数 → -1 未知，调用方保持原状态，绝不参与跃变判定
+         * 铁律：未知值一律不许硬塞成 0，否则又回到「拿未知当关门」的老坑。
+         */
+        private int normalizeDoorValue(int raw) {
+            if (raw == 1) return 1;              // 开
+            if (raw == 0 || raw == 2) return 0;  // 关（2 = 本车关门稳定读数）
+            return -1;                            // 未知：不参与判定
+        }
+
+        /** 四门读数变化取证：只在读数发生实质变化时打一条，绝不刷屏 */
+        private void logDoorReadingOnce(int rawFl, int rawFr, int rawRl, int rawRr,
+                                        int fl, int fr, int rl, int rr) {
+            if (fl == lastNormFl && fr == lastNormFr && rl == lastNormRl && rr == lastNormRr) return;
+            AppLogger.diag("车身联动单门",
+                    "四门读数: 原始[" + rawFl + "," + rawFr + "," + rawRl + "," + rawRr + "]"
+                            + " → 归一化[" + fl + "," + fr + "," + rl + "," + rr + "]"
+                            + "（1=开 0=关 -1=未知）");
+            lastNormFl = fl;
+            lastNormFr = fr;
+            lastNormRl = rl;
+            lastNormRr = rr;
+        }
+
+        /** 记录本轮读数，作为下一轮判定跃变的基准 */
+        private void rememberDoorReading(int fl, int fr, int rl, int rr) {
+            if (fl >= 0) lastNormFl = fl;
+            if (fr >= 0) lastNormFr = fr;
+            if (rl >= 0) lastNormRl = rl;
+            if (rr >= 0) lastNormRr = rr;
+        }
+
+        /**
+         * 多门同轮齐变识别：物理上四扇门不可能在同一次 500ms 轮询里一起开关。
+         * 三扇及以上同时变化即判定为数据异常（通道抖动、适配层瞬时错值），
+         * 这一轮只重建基准、不交下游播报，避免连环误播。
+         */
+        private boolean isSimultaneousDoorJump(int fl, int fr, int rl, int rr) {
+            int jumped = 0;
+            if (fl >= 0 && lastNormFl >= 0 && fl != lastNormFl) jumped++;
+            if (fr >= 0 && lastNormFr >= 0 && fr != lastNormFr) jumped++;
+            if (rl >= 0 && lastNormRl >= 0 && rl != lastNormRl) jumped++;
+            if (rr >= 0 && lastNormRr >= 0 && rr != lastNormRr) jumped++;
+            return jumped >= 3;
         }
 
         @Override
